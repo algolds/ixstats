@@ -9,17 +9,8 @@
 
 import React, { useEffect, useMemo, useRef, useCallback } from "react";
 import { usePlateEditor, Plate, PlateContent, useValueVersion } from "platejs/react";
-import {
-  Transforms,
-  Editor,
-  Range,
-  Element as SlateElement,
-  Node as SlateNode,
-  Path,
-  type Descendant,
-} from "slate";
+import { Transforms, type Descendant } from "slate";
 import { deserializeParsoidHtml, serializePlateToHtml, valueToPlainText } from "./wiki-html";
-// oxlint-disable-next-line eslint/no-unused-vars
 import { wikitextToAst, astToPlateNodes } from "~/lib/wiki-os/transformers/wiki-ast-converter";
 import { createIxWikiPlugins, getIxWikiComponents } from "./plugins/createIxWikiPlugins";
 import { useSlashMenuState } from "./slash-menu/useSlashMenuState";
@@ -33,6 +24,7 @@ import { PlateInteractiveTemplateElement } from "./elements/PlateInteractiveTemp
 import { PlateEngineChipElement } from "./elements/PlateEngineChipElement";
 import { PlateCoordChipElement, PlateMapEmbedChipElement } from "./elements/PlateCoordChipElement";
 import { PlateMediaElement } from "./elements/PlateMediaElement";
+import { handleEditorKeyDown } from "./plate-key-handlers";
 
 interface PlateWikiEditorProps {
   initialHtml?: string;
@@ -47,28 +39,34 @@ interface PlateWikiEditorProps {
   onSelectionChange?: () => void;
 }
 
+/** Leaf marks (and their legacy aliases) mapped to the element that renders them, innermost first. */
+const LEAF_MARKS: ReadonlyArray<
+  readonly [
+    keys: string[],
+    tag: "code" | "s" | "u" | "em" | "strong" | "sup" | "sub",
+    className?: string,
+  ]
+> = [
+  [["codeMark", "code"], "code", "bg-fill-3 rounded-control-sm px-1 text-[0.9em] tabular-nums"],
+  [["strike", "strikethrough"], "s"],
+  [["underline"], "u"],
+  [["italic"], "em"],
+  [["bold"], "strong"],
+  [["sup", "superscript"], "sup"],
+  [["sub", "subscript"], "sub"],
+];
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function LeafRenderer(props: any) {
-  const { attributes, children, leaf } = props as {
-    attributes: any;
-    children: React.ReactNode;
-    leaf: any;
-  };
-  let node = <>{children}</>;
-  if (leaf.codeMark || leaf.code)
-    node = (
-      <code className="bg-fill-3 rounded-control-sm px-1 text-[0.9em] tabular-nums">{node}</code>
-    );
-  if (leaf.strike || leaf.strikethrough) node = <s>{node}</s>;
-  if (leaf.underline) node = <u>{node}</u>;
-  if (leaf.italic) node = <em>{node}</em>;
-  if (leaf.bold) node = <strong>{node}</strong>;
-  if (leaf.sup || leaf.superscript) node = <sup>{node}</sup>;
-  if (leaf.sub || leaf.subscript) node = <sub>{node}</sub>;
-  return <span {...attributes}>{node}</span>;
+function LeafRenderer({ attributes, children, leaf }: any) {
+  const marked = LEAF_MARKS.reduce(
+    (node, [keys, Tag, className]) =>
+      keys.some((k) => leaf[k]) ? <Tag className={className}>{node}</Tag> : node,
+    <>{children}</>
+  );
+  return <span {...attributes}>{marked}</span>;
 }
 
-const BLOCK_CLASS: Record<string, string> = {
+const HEADING_CLASS: Record<string, string> = {
   h1: "wikios-ve-h1 mb-3 mt-6 border-b border-separator pb-2 text-title-1 text-label",
   h2: "wikios-ve-h2 mb-2 mt-5 border-b border-separator pb-1 text-title-2 text-label",
   h3: "wikios-ve-h3 mb-2 mt-4 text-title-3 text-label",
@@ -77,41 +75,76 @@ const BLOCK_CLASS: Record<string, string> = {
   h6: "wikios-ve-h6 mb-1 mt-2 text-caption font-semibold text-label-secondary",
 };
 
+type SimpleTag = "blockquote" | "ul" | "ol" | "span" | "tr" | "th" | "td" | "div";
+
+/** Elements that render as one tag with fixed classes around their children. */
+const SIMPLE_ELEMENTS: Record<string, readonly [tag: SimpleTag, className?: string]> = {
+  blockquote: [
+    "blockquote",
+    "border-tint/40 bg-tint/5 text-label-secondary my-2 border-l-4 px-3 py-2 italic",
+  ],
+  ul: ["ul", "text-body text-label my-2 list-disc space-y-1 pl-6 leading-relaxed"],
+  ol: ["ol", "text-body text-label my-2 list-decimal space-y-1 pl-6 leading-relaxed"],
+  lic: ["span"],
+  tr: ["tr", "border-separator hover:bg-fill-4 border-b transition-colors last:border-0"],
+  th: [
+    "th",
+    "border-separator bg-fill-2 text-label focus-within:ring-tint/50 focus-within:bg-tint/10 min-w-[90px] border p-3 text-left font-semibold transition-colors focus-within:ring-1",
+  ],
+  td: [
+    "td",
+    "border-separator text-label focus-within:ring-tint/50 focus-within:bg-tint/5 min-w-[90px] border p-3 transition-colors focus-within:ring-1",
+  ],
+};
+
+/** Atomic blocks and chips that own their rendering. */
+const ATOMIC_ELEMENTS: Record<string, React.ComponentType<any>> = {
+  infobox: PlateInteractiveTemplateElement,
+  "infobox-block": PlateInteractiveTemplateElement,
+  template: PlateInteractiveTemplateElement,
+  "template-block": PlateInteractiveTemplateElement,
+  "raw-html": PlateInteractiveTemplateElement,
+  "chip-engine": PlateEngineChipElement,
+  "chip-coord": PlateCoordChipElement,
+  "chip-mapembed": PlateMapEmbedChipElement,
+  media: PlateMediaElement,
+};
+
+const SELECTION_AFFECTING_OPS = new Set([
+  "set_selection",
+  "insert_text",
+  "remove_text",
+  "set_node",
+]);
+
+const LIST_INDENT = ["", "ml-4", "ml-8", "ml-12", "ml-16"];
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function ElementRenderer(props: any) {
-  const { attributes, children, element } = props as {
-    attributes: any;
-    children: React.ReactNode;
-    element: {
-      type: string;
-      url?: string;
-      internal?: boolean;
-      templateName?: string;
-      name?: string;
-    };
-  };
+  const { attributes, children, element } = props;
+  const type: string = element.type;
 
-  switch (element.type) {
-    case "h1":
-    case "h2":
-    case "h3":
-    case "h4":
-    case "h5":
-    case "h6":
-      return (
-        <div {...attributes} className={BLOCK_CLASS[element.type] || BLOCK_CLASS.h2} role="heading">
-          {children}
-        </div>
-      );
-    case "blockquote":
-      return (
-        <blockquote
-          {...attributes}
-          className="border-tint/40 bg-tint/5 text-label-secondary my-2 border-l-4 px-3 py-2 italic"
-        >
-          {children}
-        </blockquote>
-      );
+  if (Object.hasOwn(ATOMIC_ELEMENTS, type)) {
+    const Atomic = ATOMIC_ELEMENTS[type]!;
+    return <Atomic {...props} />;
+  }
+  if (Object.hasOwn(SIMPLE_ELEMENTS, type)) {
+    const [Tag, className] = SIMPLE_ELEMENTS[type]!;
+    return (
+      <Tag {...attributes} className={className}>
+        {children}
+      </Tag>
+    );
+  }
+  if (Object.hasOwn(HEADING_CLASS, type)) {
+    return (
+      <div {...attributes} className={HEADING_CLASS[type]} role="heading">
+        {children}
+      </div>
+    );
+  }
+
+  switch (type) {
     case "code-block":
       return (
         <pre
@@ -121,36 +154,8 @@ function ElementRenderer(props: any) {
           <code>{children}</code>
         </pre>
       );
-    case "ul":
-      return (
-        <ul
-          {...attributes}
-          className="text-body text-label my-2 list-disc space-y-1 pl-6 leading-relaxed"
-        >
-          {children}
-        </ul>
-      );
-    case "ol":
-      return (
-        <ol
-          {...attributes}
-          className="text-body text-label my-2 list-decimal space-y-1 pl-6 leading-relaxed"
-        >
-          {children}
-        </ol>
-      );
     case "li": {
-      const level = (element as any).level || 1;
-      const indentClass =
-        level === 2
-          ? "ml-4"
-          : level === 3
-            ? "ml-8"
-            : level === 4
-              ? "ml-12"
-              : level >= 5
-                ? "ml-16"
-                : "";
+      const indentClass = LIST_INDENT[Math.min((element.level || 1) - 1, 4)] ?? "";
       return (
         <li
           {...attributes}
@@ -160,50 +165,21 @@ function ElementRenderer(props: any) {
         </li>
       );
     }
-    case "lic":
-      return <span {...attributes}>{children}</span>;
     case "table":
       return (
         <div
           {...attributes}
           className="rounded-row border-separator bg-surface my-3 overflow-x-auto border p-2 transition-colors"
         >
-          {(element as any).caption && (
+          {element.caption && (
             <div className="text-caption text-label-secondary mb-2 px-1 font-semibold">
-              {(element as any).caption}
+              {element.caption}
             </div>
           )}
           <table className="text-footnote w-full border-collapse">
             <tbody>{children}</tbody>
           </table>
         </div>
-      );
-    case "tr":
-      return (
-        <tr
-          {...attributes}
-          className="border-separator hover:bg-fill-4 border-b transition-colors last:border-0"
-        >
-          {children}
-        </tr>
-      );
-    case "th":
-      return (
-        <th
-          {...attributes}
-          className="border-separator bg-fill-2 text-label focus-within:ring-tint/50 focus-within:bg-tint/10 min-w-[90px] border p-3 text-left font-semibold transition-colors focus-within:ring-1"
-        >
-          {children}
-        </th>
-      );
-    case "td":
-      return (
-        <td
-          {...attributes}
-          className="border-separator text-label focus-within:ring-tint/50 focus-within:bg-tint/5 min-w-[90px] border p-3 transition-colors focus-within:ring-1"
-        >
-          {children}
-        </td>
       );
     case "hr":
       return (
@@ -224,18 +200,11 @@ function ElementRenderer(props: any) {
         <span
           {...attributes}
           className="text-tint text-caption cursor-pointer align-super font-semibold select-none hover:underline"
-          title={(element as any).label ? `Reference: ${(element as any).label}` : "Citation"}
+          title={element.label ? `Reference: ${element.label}` : "Citation"}
         >
-          [{(element as any).label || (element as any).name || "ref"}]
-          <span className="hidden">{children}</span>
+          [{element.label || element.name || "ref"}]<span className="hidden">{children}</span>
         </span>
       );
-    case "infobox":
-    case "infobox-block":
-    case "template":
-    case "template-block":
-    case "raw-html":
-      return <PlateInteractiveTemplateElement {...props} />;
     case "chip-template":
     case "inline-template":
       return (
@@ -245,19 +214,11 @@ function ElementRenderer(props: any) {
           className="rounded-control-sm bg-fill-2 border-separator text-footnote text-label hover:bg-fill-3 mx-0.5 inline-flex items-center gap-1 border px-2 py-0.5 align-baseline tabular-nums transition-colors select-none"
         >
           <span className="text-tint font-semibold">{"{{"}</span>
-          <span>{element.templateName || (element as any).name || "template"}</span>
+          <span>{element.templateName || element.name || "template"}</span>
           <span className="text-tint font-semibold">{"}}"}</span>
           {children}
         </span>
       );
-    case "chip-engine":
-      return <PlateEngineChipElement {...props} />;
-    case "chip-coord":
-      return <PlateCoordChipElement {...props} />;
-    case "chip-mapembed":
-      return <PlateMapEmbedChipElement {...props} />;
-    case "media":
-      return <PlateMediaElement {...props} />;
     default:
       return (
         <p {...attributes} className="my-1 leading-relaxed">
@@ -356,12 +317,7 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
     const originalApply = baseEditor.apply;
     baseEditor.apply = (operation) => {
       originalApply(operation);
-      if (
-        operation.type === "set_selection" ||
-        operation.type === "insert_text" ||
-        operation.type === "remove_text" ||
-        operation.type === "set_node"
-      ) {
+      if (SELECTION_AFFECTING_OPS.has(operation.type)) {
         onSelectionChangeRef.current?.();
       }
     };
@@ -374,295 +330,7 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
     (e: React.KeyboardEvent) => {
       onKeyDownExtra?.(e);
       slash.handleKeyDown(e);
-      if (e.defaultPrevented || !editor) return;
-
-      // ── 0. Markdown List Auto-conversion on Space ──
-      if (e.key === " " && !e.shiftKey && editor.selection && Range.isCollapsed(editor.selection)) {
-        try {
-          const { anchor } = editor.selection;
-          const [blockEntry] = Array.from(
-            Editor.nodes(editor as unknown as import("slate").BaseEditor, {
-              match: (n) =>
-                SlateElement.isElement(n) &&
-                !Editor.isInline(editor as any, n as any) &&
-                (n as any).type === "p",
-              mode: "lowest",
-            })
-          );
-          if (blockEntry) {
-            const [, blockPath] = blockEntry;
-            const blockStart = Editor.start(editor as any, blockPath);
-            const rangeBefore = { anchor: blockStart, focus: anchor };
-            const textBefore = Editor.string(editor as any, rangeBefore);
-
-            if (textBefore === "*" || textBefore === "-") {
-              e.preventDefault();
-              Editor.withoutNormalizing(editor as any, () => {
-                Transforms.delete(editor as any, { at: rangeBefore });
-                Transforms.setNodes(editor as any, { type: "li", level: 1 } as any, {
-                  at: blockPath,
-                });
-                Transforms.wrapNodes(editor as any, { type: "ul", children: [] } as any, {
-                  at: blockPath,
-                });
-              });
-              return;
-            }
-
-            if (textBefore === "1.") {
-              e.preventDefault();
-              Editor.withoutNormalizing(editor as any, () => {
-                Transforms.delete(editor as any, { at: rangeBefore });
-                Transforms.setNodes(editor as any, { type: "li", level: 1 } as any, {
-                  at: blockPath,
-                });
-                Transforms.wrapNodes(editor as any, { type: "ol", children: [] } as any, {
-                  at: blockPath,
-                });
-              });
-              return;
-            }
-          }
-        } catch {
-          /* best effort */
-        }
-      }
-
-      // ── 1. Table Cell Navigation & Insertion ──
-      try {
-        const [cellEntry] = Editor.nodes(editor as unknown as import("slate").BaseEditor, {
-          match: (n) =>
-            SlateElement.isElement(n) && ((n as any).type === "td" || (n as any).type === "th"),
-        });
-
-        if (cellEntry) {
-          const [, cellPath] = cellEntry;
-          const [tableEntry] = Editor.nodes(editor as unknown as import("slate").BaseEditor, {
-            match: (n) => SlateElement.isElement(n) && (n as any).type === "table",
-          });
-
-          if (tableEntry) {
-            const [tableNode, tablePath] = tableEntry;
-
-            if (e.key === "Backspace") {
-              const selection = editor.selection;
-              if (selection && Range.isCollapsed(selection)) {
-                const isAtStart = Editor.isStart(editor as any, selection.anchor, cellPath);
-                if (isAtStart) {
-                  e.preventDefault();
-                  return;
-                }
-              }
-            }
-
-            if (e.key === "Delete") {
-              const selection = editor.selection;
-              if (selection && Range.isCollapsed(selection)) {
-                const isAtEnd = Editor.isEnd(editor as any, selection.anchor, cellPath);
-                if (isAtEnd) {
-                  e.preventDefault();
-                  return;
-                }
-              }
-            }
-
-            if (e.key === "Tab") {
-              e.preventDefault();
-              const allCells = Array.from(
-                Editor.nodes(editor as unknown as import("slate").BaseEditor, {
-                  at: tablePath,
-                  match: (n) =>
-                    SlateElement.isElement(n) &&
-                    ((n as any).type === "td" || (n as any).type === "th"),
-                })
-              );
-              const currentIdx = allCells.findIndex(([, p]) => Path.equals(p, cellPath));
-
-              if (!e.shiftKey) {
-                if (currentIdx !== -1 && currentIdx < allCells.length - 1) {
-                  const nextCell = allCells[currentIdx + 1]!;
-                  Transforms.select(editor as any, Editor.end(editor as any, nextCell[1]));
-                } else if (currentIdx === allCells.length - 1) {
-                  // Last cell: append a new row
-                  const rows = (tableNode as any).children || [];
-                  const lastRow = rows[rows.length - 1];
-                  const colCount = lastRow ? (lastRow.children || []).length : 2;
-                  const newRow = {
-                    type: "tr",
-                    children: Array.from({ length: colCount }, () => ({
-                      type: "td",
-                      children: [{ text: "" }],
-                    })),
-                  };
-                  const newRowPath = [...tablePath, rows.length];
-                  Transforms.insertNodes(editor as any, newRow as any, { at: newRowPath });
-                  Transforms.select(editor as any, Editor.start(editor as any, [...newRowPath, 0]));
-                }
-              } else {
-                if (currentIdx > 0) {
-                  const prevCell = allCells[currentIdx - 1]!;
-                  Transforms.select(editor as any, Editor.end(editor as any, prevCell[1]));
-                }
-              }
-              return;
-            }
-
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              const rowIndex = cellPath[tablePath.length];
-              const colIndex = cellPath[tablePath.length + 1];
-              const rows = (tableNode as any).children || [];
-
-              if (typeof rowIndex === "number" && typeof colIndex === "number") {
-                if (rowIndex < rows.length - 1) {
-                  const targetPath = [...tablePath, rowIndex + 1, colIndex];
-                  try {
-                    Transforms.select(editor as any, Editor.end(editor as any, targetPath));
-                  } catch {
-                    Transforms.select(
-                      editor as any,
-                      Editor.end(editor as any, [...tablePath, rowIndex + 1, 0])
-                    );
-                  }
-                } else {
-                  // Last row: append row
-                  const colCount = (rows[rowIndex]?.children || []).length || 2;
-                  const newRow = {
-                    type: "tr",
-                    children: Array.from({ length: colCount }, () => ({
-                      type: "td",
-                      children: [{ text: "" }],
-                    })),
-                  };
-                  const newRowPath = [...tablePath, rows.length];
-                  Transforms.insertNodes(editor as any, newRow as any, { at: newRowPath });
-                  const safeColIndex = Math.min(colIndex, colCount - 1);
-                  Transforms.select(
-                    editor as any,
-                    Editor.start(editor as any, [...newRowPath, safeColIndex])
-                  );
-                }
-              }
-              return;
-            }
-          }
-        }
-      } catch (err) {
-        console.warn("[PlateWikiEditor] Table keyboard navigation failed:", err);
-      }
-
-      // ── 2. List Item Navigation & Exit ──
-      try {
-        const [liEntry] = Editor.nodes(editor as unknown as import("slate").BaseEditor, {
-          match: (n) => SlateElement.isElement(n) && (n as any).type === "li",
-        });
-
-        if (liEntry) {
-          const [liNode, liPath] = liEntry;
-          const [listEntry] = Editor.nodes(editor as unknown as import("slate").BaseEditor, {
-            match: (n) =>
-              SlateElement.isElement(n) && ((n as any).type === "ul" || (n as any).type === "ol"),
-          });
-
-          // ── Indent / Outdent on Tab / Shift+Tab ──
-          if (e.key === "Tab") {
-            e.preventDefault();
-            const currentLevel = (liNode as any).level || 1;
-            if (!e.shiftKey) {
-              const newLevel = Math.min(currentLevel + 1, 6);
-              Transforms.setNodes(editor as any, { level: newLevel } as any, { at: liPath });
-            } else {
-              const newLevel = Math.max(currentLevel - 1, 1);
-              Transforms.setNodes(editor as any, { level: newLevel } as any, { at: liPath });
-            }
-            return;
-          }
-
-          if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            const textContent = SlateNode.string(liNode).trim();
-
-            if (textContent === "") {
-              // Empty bullet: check if indented first
-              const currentLevel = (liNode as any).level || 1;
-              if (currentLevel > 1) {
-                Transforms.setNodes(editor as any, { level: currentLevel - 1 } as any, {
-                  at: liPath,
-                });
-                return;
-              }
-
-              // Level 1 empty bullet: exit list
-              if (listEntry) {
-                const [listNode, listPath] = listEntry;
-                const items = (listNode as any).children || [];
-
-                if (items.length <= 1) {
-                  Transforms.removeNodes(editor as any, { at: listPath });
-                  Transforms.insertNodes(
-                    editor as any,
-                    { type: "p", children: [{ text: "" }] } as any,
-                    { at: listPath }
-                  );
-                  Transforms.select(editor as any, Editor.end(editor as any, listPath));
-                } else {
-                  Transforms.removeNodes(editor as any, { at: liPath });
-                  const nextBlockPath = Path.next(listPath);
-                  Transforms.insertNodes(
-                    editor as any,
-                    { type: "p", children: [{ text: "" }] } as any,
-                    { at: nextBlockPath }
-                  );
-                  Transforms.select(editor as any, Editor.end(editor as any, nextBlockPath));
-                }
-              }
-            } else {
-              // Non-empty bullet: cleanly split node at cursor position
-              Transforms.splitNodes(editor as any, { always: true });
-            }
-            return;
-          }
-
-          if (e.key === "Backspace") {
-            const textContent = SlateNode.string(liNode);
-            if (textContent === "" && listEntry) {
-              e.preventDefault();
-              const currentLevel = (liNode as any).level || 1;
-              if (currentLevel > 1) {
-                Transforms.setNodes(editor as any, { level: currentLevel - 1 } as any, {
-                  at: liPath,
-                });
-                return;
-              }
-
-              const [listNode, listPath] = listEntry;
-              const items = (listNode as any).children || [];
-
-              if (items.length <= 1) {
-                Transforms.removeNodes(editor as any, { at: listPath });
-                Transforms.insertNodes(
-                  editor as any,
-                  { type: "p", children: [{ text: "" }] } as any,
-                  { at: listPath }
-                );
-                Transforms.select(editor as any, Editor.end(editor as any, listPath));
-              } else {
-                Transforms.removeNodes(editor as any, { at: liPath });
-                const nextBlockPath = Path.next(listPath);
-                Transforms.insertNodes(
-                  editor as any,
-                  { type: "p", children: [{ text: "" }] } as any,
-                  { at: nextBlockPath }
-                );
-                Transforms.select(editor as any, Editor.end(editor as any, nextBlockPath));
-              }
-              return;
-            }
-          }
-        }
-      } catch (err) {
-        console.warn("[PlateWikiEditor] List keyboard navigation failed:", err);
-      }
+      if (!e.defaultPrevented && editor) handleEditorKeyDown(editor, e);
     },
     [editor, onKeyDownExtra, slash]
   );
