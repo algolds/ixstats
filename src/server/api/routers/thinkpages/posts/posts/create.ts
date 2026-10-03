@@ -5,21 +5,8 @@ import { TRPCError } from "@trpc/server";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { validateNoXSS } from "~/lib/utils";
 import { vaultService } from "~/lib/vault/vault-service";
-import { globalCache } from "~/lib/cache";
-import { personaDisplayName } from "../../post-utils";
+import { invalidateFeeds, personaDisplayName } from "../../post-utils";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
-
-const invalidateFeeds = async () => {
-  try {
-    await Promise.all([
-      globalCache.deleteByPattern("thinkpages_feed:*"),
-      globalCache.deleteByPattern("global_activity_feed:*"),
-      globalCache.deleteByPattern("user_following_feed:*"),
-    ]);
-  } catch (error) {
-    console.error("Failed to invalidate feeds:", error);
-  }
-};
 
 /** Visibilities whose posts other people can open, so they may trigger notifications. */
 const NOTIFIABLE_VISIBILITIES = new Set(["public", "unlisted"]);

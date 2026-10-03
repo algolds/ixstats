@@ -3,19 +3,7 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 // Import the wiki search service
 import { validateNoXSS } from "~/lib/utils";
-import { globalCache } from "~/lib/cache";
-
-const invalidateFeeds = async () => {
-  try {
-    await Promise.all([
-      globalCache.deleteByPattern("thinkpages_feed:*"),
-      globalCache.deleteByPattern("global_activity_feed:*"),
-      globalCache.deleteByPattern("user_following_feed:*"),
-    ]);
-  } catch (error) {
-    console.error("Failed to invalidate feeds:", error);
-  }
-};
+import { invalidateFeeds, loadPostForModeration } from "../../post-utils";
 
 export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
   // Update post content (edit post)
@@ -42,53 +30,13 @@ export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
-      const clerkUserId = ctx.auth?.userId;
-
-      if (!clerkUserId) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "You must be logged in to update posts",
-        });
-      }
-
-      // Verify post exists and user owns it
-      const post = await db.thinkpagesPost.findUnique({
-        where: { id: input.postId },
-        include: { account: true },
-      });
-
-      if (!post) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Post not found",
-        });
-      }
-
-      const isOwner = post.account.clerkUserId === clerkUserId;
-      let isAllowedMod = false;
-
-      if (!isOwner) {
-        const currentUserRoleLevel = ctx.user?.role?.level ?? 100;
-        if (currentUserRoleLevel <= 10) {
-          isAllowedMod = true;
-        } else if (currentUserRoleLevel <= 20) {
-          const targetUser = await db.user.findUnique({
-            where: { clerkUserId: post.account.clerkUserId },
-            include: { role: true },
-          });
-          const targetUserRoleLevel = targetUser?.role?.level ?? 100;
-          if (targetUserRoleLevel >= currentUserRoleLevel) {
-            isAllowedMod = true;
-          }
-        }
-      }
-
-      if (!isOwner && !isAllowedMod) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have permission to update this post",
-        });
-      }
+      const post = await loadPostForModeration(
+        db,
+        ctx.auth?.userId,
+        ctx.user?.role?.level,
+        input.postId,
+        "update"
+      );
 
       // Update the post
       const updatedPost = await db.thinkpagesPost.update({
@@ -158,53 +106,13 @@ export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
-      const clerkUserId = ctx.auth?.userId;
-
-      if (!clerkUserId) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "You must be logged in to delete posts",
-        });
-      }
-
-      // Verify post exists and user owns it
-      const post = await db.thinkpagesPost.findUnique({
-        where: { id: input.postId },
-        include: { account: true },
-      });
-
-      if (!post) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Post not found",
-        });
-      }
-
-      const isOwner = post.account.clerkUserId === clerkUserId;
-      let isAllowedMod = false;
-
-      if (!isOwner) {
-        const currentUserRoleLevel = ctx.user?.role?.level ?? 100;
-        if (currentUserRoleLevel <= 10) {
-          isAllowedMod = true;
-        } else if (currentUserRoleLevel <= 20) {
-          const targetUser = await db.user.findUnique({
-            where: { clerkUserId: post.account.clerkUserId },
-            include: { role: true },
-          });
-          const targetUserRoleLevel = targetUser?.role?.level ?? 100;
-          if (targetUserRoleLevel >= currentUserRoleLevel) {
-            isAllowedMod = true;
-          }
-        }
-      }
-
-      if (!isOwner && !isAllowedMod) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have permission to delete this post",
-        });
-      }
+      const post = await loadPostForModeration(
+        db,
+        ctx.auth?.userId,
+        ctx.user?.role?.level,
+        input.postId,
+        "delete"
+      );
 
       // Handle child posts before deletion:
       // 1. Nullify parentPostId on replies (prevents FK constraint, marks as orphaned)
