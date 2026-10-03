@@ -217,7 +217,7 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
         {/* Priority Indicator */}
         {activity.priority === "high" || activity.priority === "critical" ? (
           <Badge variant="destructive" className="text-footnote">
-            {activity.priority === "critical" ? "Critical" : "High Priority"}
+            {activity.priority === "critical" ? "Critical" : "High priority"}
           </Badge>
         ) : null}
       </div>

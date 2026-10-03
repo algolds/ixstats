@@ -11,7 +11,7 @@ export default function Page() {
       <div className="bg-background flex min-h-screen items-center justify-center p-4">
         <div className="border-border bg-card w-full max-w-md rounded-2xl border p-6 text-center shadow-2xl backdrop-blur-xl">
           <h1 className="text-foreground text-xl font-bold tracking-tight">
-            Authentication Not Configured
+            Authentication not configured
           </h1>
           <p className="text-muted-foreground mt-3 text-xs">
             Clerk publishable keys are not configured for this environment. Add your Clerk keys to
@@ -34,14 +34,14 @@ export default function Page() {
             href="/terms"
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
-            Terms of Service
+            Terms of service
           </Link>
           <span className="text-border mx-2">•</span>
           <Link
             href="/privacy"
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
-            Privacy Policy
+            Privacy policy
           </Link>
         </p>
       </div>

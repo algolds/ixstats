@@ -16,7 +16,7 @@ export default function CollectionsBrowsePage() {
     <div className="container mx-auto max-w-7xl px-4 py-6 sm:py-8">
       {/* Page header */}
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-large-title text-label mb-2">Browse Collections</h1>
+        <h1 className="text-large-title text-label mb-2">Browse collections</h1>
         <p className="text-body text-label-secondary">
           Discover amazing card collections from the IxWiki community
         </p>

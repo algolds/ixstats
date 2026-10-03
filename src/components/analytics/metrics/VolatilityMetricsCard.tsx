@@ -22,7 +22,7 @@ export const VolatilityMetricsCard = React.memo<VolatilityMetricsCardProps>(({ m
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Activity className="h-5 w-5 text-orange-600" />
-          Economic Volatility Analysis
+          Economic volatility analysis
         </CardTitle>
         <CardDescription>Standard deviation and variance metrics</CardDescription>
       </CardHeader>

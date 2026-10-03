@@ -80,9 +80,9 @@ export const OverviewSection = React.memo<OverviewSectionProps>(
                 { key: "totalGdp", header: "Total GDP", align: "right" },
                 { key: "gdpPerCapita", header: "GDP Per Capita", align: "right" },
                 { key: "population", header: "Population", align: "right" },
-                { key: "growth", header: "Growth Rate", align: "right" },
+                { key: "growth", header: "Growth rate", align: "right" },
               ]}
-              title="Economic Data"
+              title="Economic data"
               description="Historical economic performance data"
               searchable
               searchKeys={["date"]}
@@ -98,7 +98,7 @@ export const OverviewSection = React.memo<OverviewSectionProps>(
                 { key: "trend", header: "Trend", align: "center" },
                 { key: "status", header: "Status", align: "center" },
               ]}
-              title="Economic Health Indicators"
+              title="Economic health indicators"
               description="Multi-dimensional health metrics"
               searchable
               searchKeys={["indicator", "status"]}

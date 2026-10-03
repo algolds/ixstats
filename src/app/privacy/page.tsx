@@ -2,7 +2,7 @@ import { type Metadata } from "next";
 import { DocumentPage } from "~/components/documents/DocumentPage";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — IxStates",
+  title: "Privacy policy | IxStates",
   description: "Privacy Policy and Data Protection practices for the IxStates platform.",
 };
 

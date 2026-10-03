@@ -30,7 +30,7 @@ export const ECONOMY_THEME: AtomicComponentTheme = {
 
 // ==================== THEME UTILITIES ====================
 
-/** Theme palette names (legacy Tailwind hues) → Facet system colours (spec §2.1). */
+/** Theme palette names (legacy Tailwind hues) → Facet system colours. */
 const SYSTEM_COLOR: Record<string, string> = {
   amber: "yellow",
   yellow: "yellow",

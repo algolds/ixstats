@@ -21,7 +21,7 @@ export function QueuePanel() {
   return (
     <div className="flex w-full flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-subhead text-label-secondary">Up Next</h3>
+        <h3 className="text-subhead text-label-secondary">Up next</h3>
         {queue.length > 0 && (
           <Button
             variant="ghost"
@@ -30,7 +30,7 @@ export function QueuePanel() {
             className="text-red hover:bg-red/10"
           >
             <XCircle className="h-3.5 w-3.5" />
-            Clear Queue
+            Clear queue
           </Button>
         )}
       </div>

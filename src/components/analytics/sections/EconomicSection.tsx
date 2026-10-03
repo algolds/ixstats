@@ -62,11 +62,11 @@ export const EconomicSection = React.memo<EconomicSectionProps>(
             columns={[
               { key: "sector", header: "Sector", align: "left" },
               { key: "performance", header: "Performance", align: "right" },
-              { key: "growth", header: "Growth Rate", align: "right" },
+              { key: "growth", header: "Growth rate", align: "right" },
               { key: "contribution", header: "GDP Contribution", align: "right" },
               { key: "trend", header: "Trend", align: "center" },
             ]}
-            title="Sector Performance"
+            title="Sector performance"
             description="Economic sector performance metrics"
             searchable
             searchKeys={["sector"]}
@@ -80,10 +80,10 @@ export const EconomicSection = React.memo<EconomicSectionProps>(
               { key: "metric", header: "Metric", align: "left" },
               { key: "value", header: "Value", align: "right" },
               { key: "volatility", header: "Volatility", align: "right" },
-              { key: "risk", header: "Risk Level", align: "center" },
+              { key: "risk", header: "Risk level", align: "center" },
               { key: "trend", header: "Trend", align: "center" },
             ]}
-            title="Volatility Metrics"
+            title="Volatility metrics"
             description="Economic volatility and risk indicators"
             searchable
             searchKeys={["metric", "risk"]}
@@ -106,7 +106,7 @@ export const EconomicSection = React.memo<EconomicSectionProps>(
             onExportCSV={() =>
               exportToCSV(sectorPerformanceData, "sector-performance", {
                 sector: "Sector",
-                performance: "Performance Score",
+                performance: "Performance score",
                 growth: "Growth Rate (%)",
               })
             }

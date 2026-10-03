@@ -256,7 +256,7 @@ export function UnifiedCountryFlagExample() {
   return (
     <div className="space-y-8 p-6">
       <div>
-        <h3 className="mb-4 text-lg font-semibold">Flag Sizes</h3>
+        <h3 className="mb-4 text-lg font-semibold">Flag sizes</h3>
         <div className="flex items-end gap-4">
           {sizes.map((size) => (
             <div key={size} className="flex flex-col items-center gap-2">
@@ -268,12 +268,12 @@ export function UnifiedCountryFlagExample() {
       </div>
 
       <div>
-        <h3 className="mb-4 text-lg font-semibold">Flag Grid Example</h3>
+        <h3 className="mb-4 text-lg font-semibold">Flag grid example</h3>
         <FlagGrid countries={testCountries} flagSize="md" columns={3} />
       </div>
 
       <div>
-        <h3 className="mb-4 text-lg font-semibold">Individual Flags</h3>
+        <h3 className="mb-4 text-lg font-semibold">Individual flags</h3>
         <div className="flex flex-wrap gap-4">
           {testCountries.map((country) => (
             <div key={country.name} className="flex items-center gap-2">

@@ -18,7 +18,7 @@ export function TrendingTopics() {
     <Card padding="md">
       <div className="mb-4 flex items-center gap-2">
         <Flame aria-hidden className="text-orange h-5 w-5" />
-        <h3 className="text-headline text-label">Trending Now</h3>
+        <h3 className="text-headline text-label">Trending now</h3>
       </div>
 
       <div className="space-y-3">

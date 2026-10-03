@@ -32,7 +32,7 @@ export function TranscriptViewer() {
 
   return (
     <div className="border-separator flex flex-col gap-2 border-t pt-4">
-      <span className="text-subhead text-label-secondary px-1">Synchronized Transcript</span>
+      <span className="text-subhead text-label-secondary px-1">Synchronized transcript</span>
       <div className="flex max-h-48 flex-col gap-1 overflow-y-auto scroll-smooth p-0.5">
         {transcript.map((seg, idx) => {
           const isActive = idx === activeIndex;

@@ -215,7 +215,10 @@ const indicatorVariants = cva(
 );
 
 const progressVariants = cva(
-  ["absolute inset-y-0 left-0 rounded-l-lg", "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 ease-out"],
+  [
+    "absolute inset-y-0 left-0 rounded-l-lg",
+    "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 ease-out",
+  ],
   {
     variants: {
       state: {
@@ -255,7 +258,7 @@ export function PollWidgetRoot({
   onOpenChange,
   autoCollapseDelay = 2500,
   successDuration = 1500,
-  successTitle = "Thanks for voting!",
+  successTitle = "Vote recorded",
   successDescription = "Your vote has been recorded",
   children,
 }: PollWidgetRootProps) {
@@ -1151,7 +1154,7 @@ export function PollWidgetSubmit({
         </DialogClose>
         <Button
           className={cn(
-            "bg-poll hover:bg-poll/90 min-w-[120px] font-semibold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
+            "bg-poll hover:bg-poll/90 min-w-[120px] font-semibold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]",
             className
           )}
           data-slot="poll-widget-submit"
@@ -1169,7 +1172,7 @@ export function PollWidgetSubmit({
   return (
     <Button
       className={cn(
-        "bg-poll hover:bg-poll/90 w-full overflow-hidden font-semibold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
+        "bg-poll hover:bg-poll/90 w-full overflow-hidden font-semibold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]",
         className
       )}
       data-slot="poll-widget-submit"

@@ -55,7 +55,7 @@ export const PolicySection = React.memo<PolicySectionProps>(
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-green-600" />
-                Policy Effectiveness Over Time
+                Policy effectiveness over time
               </CardTitle>
               <CardDescription>Success rate and implementation tracking</CardDescription>
             </CardHeader>
@@ -63,7 +63,7 @@ export const PolicySection = React.memo<PolicySectionProps>(
               <div className="space-y-4">
                 <div className="rounded-lg bg-green-50 p-4 dark:bg-green-950/20">
                   <div className="mb-2 flex items-center justify-between">
-                    <span className="text-sm font-medium">Overall Effectiveness</span>
+                    <span className="text-sm font-medium">Overall effectiveness</span>
                     <Badge variant="secondary" className="bg-green-600">
                       High
                     </Badge>
@@ -77,7 +77,7 @@ export const PolicySection = React.memo<PolicySectionProps>(
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="rounded-lg bg-blue-50 p-3 dark:bg-blue-950/20">
-                    <p className="text-muted-foreground mb-1 text-xs">Active Policies</p>
+                    <p className="text-muted-foreground mb-1 text-xs">Active policies</p>
                     <p className="text-2xl font-bold text-blue-600">24</p>
                   </div>
                   <div className="rounded-lg bg-indigo-50 p-3 dark:bg-indigo-950/20">
@@ -86,7 +86,7 @@ export const PolicySection = React.memo<PolicySectionProps>(
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">Success Rate by Priority</p>
+                  <p className="text-sm font-medium">Success rate by priority</p>
                   {["High", "Medium", "Low"].map((priority, index) => (
                     <div key={priority} className="flex items-center gap-2">
                       <span className="w-16 text-xs">{priority}</span>
@@ -120,8 +120,8 @@ export const PolicySection = React.memo<PolicySectionProps>(
           onExportCSV={() =>
             exportToCSV(budgetImpactData, "budget-impact-analysis", {
               name: "Category",
-              impact: "Economic Impact",
-              cost: "Implementation Cost",
+              impact: "Economic impact",
+              cost: "Implementation cost",
             })
           }
           onExportPDF={() => exportToPDF("budget-impact-chart", "Budget Impact Analysis")}
@@ -149,7 +149,7 @@ export const PolicySection = React.memo<PolicySectionProps>(
             </div>
             <div className="mt-4 rounded-lg bg-gradient-to-br from-indigo-50 to-indigo-50 p-4 dark:from-indigo-950/20 dark:to-indigo-950/20">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">Net Benefit Ratio</p>
+                <p className="text-sm font-medium">Net benefit ratio</p>
                 <Badge variant="secondary" className="bg-indigo-600">
                   Excellent
                 </Badge>

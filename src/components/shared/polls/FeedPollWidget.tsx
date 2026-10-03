@@ -122,7 +122,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
         pollId: poll.id,
         optionIds: targetIds,
       });
-      notify.success("Vote recorded!");
+      notify.success("Vote recorded");
     });
   };
 
@@ -263,7 +263,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
                 onClick={() => handleFeatureToggleVote(opt.id)}
                 disabled={isDisabled || !isSignedIn}
                 className={cn(
-                  "flex h-12 min-w-[3.5rem] flex-col items-center justify-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-95",
+                  "flex h-12 min-w-[3.5rem] flex-col items-center justify-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                   hasVotedOpt
                     ? "border-poll bg-poll hover:bg-poll/90 text-white shadow-xs"
                     : "border-border/80 bg-background hover:bg-muted text-muted-foreground hover:text-foreground"

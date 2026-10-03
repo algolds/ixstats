@@ -18,6 +18,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Stat } from "~/components/ui/stat";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Switch } from "~/components/ui/switch";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Card } from "~/components/ui/card";
 
 type ActivityFilter = "all" | "achievements" | "diplomatic" | "economic" | "social" | "meta";
@@ -59,20 +60,11 @@ export function ActivityFeedContainer() {
 
   return (
     <div className="relative z-10 mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-      {/* Header */}
-      <div className="mb-6 sm:mb-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="mb-2 flex items-center gap-2 sm:gap-3">
-              <Activity aria-hidden className="text-tint h-6 w-6 sm:h-8 sm:w-8" />
-              <h1 className="text-large-title text-label">Activity Feed</h1>
-            </div>
-            <p className="text-body text-label-secondary">
-              Real-time platform activity and updates
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
+      <PageHeader
+        title="Activity feed"
+        className="-mx-2"
+        actions={
+          <>
             <Button
               variant="outline"
               size="sm"
@@ -92,14 +84,15 @@ export function ActivityFeedContainer() {
             >
               <RefreshCw aria-hidden className={isFetching ? "animate-spin" : ""} />
             </Button>
-          </div>
-        </div>
-
+          </>
+        }
+      />
+      <div className="mb-6 sm:mb-8">
         {/* Stats Bar */}
         {stats && (
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
             {[
-              ["Total Activities", stats.totalActivities],
+              ["Total activities", stats.totalActivities],
               ["Likes", stats.totalLikes],
               ["Comments", stats.totalComments],
               ["Shares", stats.totalShares],
@@ -177,7 +170,7 @@ export function ActivityFeedContainer() {
                 <EmptyState
                   icon={<Activity />}
                   title="No activities yet"
-                  message="Check back soon for updates from the IxStats community"
+                  message="No one has posted or updated anything yet."
                 />
               </Card>
             ) : (
@@ -199,7 +192,7 @@ export function ActivityFeedContainer() {
           {feedData?.nextCursor && (
             <div className="mt-6 text-center">
               <Button variant="outline" onClick={() => refetch()}>
-                Load More
+                Load more
               </Button>
             </div>
           )}
@@ -230,21 +223,21 @@ export function ActivityFeedContainer() {
           <Card padding="md">
             <div className="mb-3 flex items-center gap-2">
               <Zap aria-hidden className="text-tint h-5 w-5" />
-              <h3 className="text-headline text-label">Platform Pulse</h3>
+              <h3 className="text-headline text-label">Platform pulse</h3>
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-label-secondary text-body">Active Users</span>
+                <span className="text-label-secondary text-body">Active users</span>
                 <span className="text-label text-body font-medium">
                   {activities.length > 0 ? `${activities.length * 3}+` : "—"}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-label-secondary text-body">Recent Posts</span>
+                <span className="text-label-secondary text-body">Recent posts</span>
                 <span className="text-label text-body font-medium">{activities.length}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-label-secondary text-body">Engagement Rate</span>
+                <span className="text-label-secondary text-body">Engagement rate</span>
                 <span className="text-body text-green font-medium">
                   <TrendingUp className="inline h-3 w-3" /> High
                 </span>

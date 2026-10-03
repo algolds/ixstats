@@ -38,7 +38,7 @@ export const EconomicHealthRadar = React.memo<EconomicHealthRadarProps>(
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
               <Target className="h-5 w-5 text-indigo-600" />
-              Economic Health Indicators
+              Economic health indicators
             </span>
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="sm" onClick={onExportCSV} title="Export to CSV">

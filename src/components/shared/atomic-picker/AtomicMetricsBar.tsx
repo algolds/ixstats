@@ -17,7 +17,6 @@ import {
   Package,
   Archery as Target,
 } from "iconoir-react";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { cn, formatCurrency } from "~/lib/utils";
 import type { AtomicMetrics } from "./types";
 import { Card } from "~/components/ui/card";
@@ -60,7 +59,7 @@ export const AtomicMetricsBar = React.memo(function AtomicMetricsBar({
       onClick: onComponentsClick,
     },
     {
-      label: "Avg Effectiveness",
+      label: "Avg effectiveness",
       value: `${metrics.totalEffectiveness}%`,
       icon: Target,
       onClick: onEffectivenessClick,
@@ -129,7 +128,9 @@ export const AtomicMetricsBar = React.memo(function AtomicMetricsBar({
               )}
             />
             <div className="min-w-0 flex-1">
-              <Eyebrow className="block truncate">{item.label}</Eyebrow>
+              <span className="text-stat-label text-label-secondary block truncate">
+                {item.label}
+              </span>
               <div
                 className={cn(
                   "text-headline truncate leading-tight tabular-nums",

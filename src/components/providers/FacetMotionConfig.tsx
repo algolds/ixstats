@@ -4,7 +4,7 @@ import { useSyncExternalStore, type ReactNode } from "react";
 import { MotionConfig } from "motion/react";
 
 /**
- * Facet 3 reduced-motion switch for every `motion` element (spec §8, §10, §14).
+ * Reduced-motion switch for every `motion` element.
  *
  * `MotionConfig reducedMotion="user"` only follows the OS. The in-app Reduce Motion setting is
  * written to `html[data-motion="reduced"]` (pre-paint script + ThemeProvider), so this reads that

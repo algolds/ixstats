@@ -5,7 +5,7 @@ import { ActivityFeedContainer } from "./_components/ActivityFeedContainer";
 import { InteractiveGridPattern } from "~/components/ui/magicui/interactive-grid-pattern";
 
 export default function FeedPage() {
-  usePageTitle({ title: "Activity Feed" });
+  usePageTitle({ title: "Activity feed" });
 
   return (
     <div className="bg-background relative min-h-screen">

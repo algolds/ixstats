@@ -33,7 +33,7 @@ export const AnalyticsHeader = React.memo<AnalyticsHeaderProps>(
         <div>
           <h1 className="flex items-center gap-2 text-3xl font-bold text-gray-900 dark:text-white">
             <BarChart3 className="h-8 w-8 text-indigo-600" />
-            Analytics Dashboard
+            Analytics dashboard
           </h1>
           <p className="text-muted-foreground mt-1">
             Advanced analytics, trends, and predictive models
@@ -53,7 +53,7 @@ export const AnalyticsHeader = React.memo<AnalyticsHeaderProps>(
             </SelectContent>
           </Select>
           <Button variant="outline" size="sm" onClick={onShowDataTableToggle}>
-            {showDataTable ? "Chart View" : "Table View"}
+            {showDataTable ? "Chart view" : "Table view"}
           </Button>
           <Button
             variant="default"
@@ -62,7 +62,7 @@ export const AnalyticsHeader = React.memo<AnalyticsHeaderProps>(
             className="bg-indigo-600 hover:bg-indigo-700"
           >
             <FileDown className="mr-2 h-4 w-4" />
-            Export All
+            Export all
           </Button>
         </div>
       </div>
