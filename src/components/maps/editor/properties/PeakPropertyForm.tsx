@@ -1,25 +1,19 @@
 "use client";
 import React from "react";
-import type { PeakFormData, EditorFeature } from "~/hooks/useMapEditor";
-import { WikiLinkWizard } from "../WikiLinkWizard";
+import type { PeakFormData } from "~/hooks/useMapEditor";
 import { CoordinatePicker } from "./CoordinatePicker";
-import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import {
+  Field,
+  inputClasses,
+  SubdivisionSelect,
+  WikiLinkField,
+  type PointFormProps,
+} from "./fields";
 
-const inputClasses =
-  "w-full rounded-control border border-separator bg-surface px-3 py-2 sm:py-2 text-body sm:text-body text-label placeholder:text-label-secondary transition-colors focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
-
-const selectClasses =
-  "w-full rounded-control border border-separator bg-surface px-3 py-2 sm:py-2 text-body sm:text-body text-label transition-colors focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
-
-interface PeakPropertyFormProps {
-  form: PeakFormData;
-  onChange: (form: PeakFormData) => void;
-  pendingCoordinates?: [number, number] | null;
-  allFeatures?: EditorFeature[];
-  countryId?: string;
-  isPickingLocation?: boolean;
-  setIsPickingLocation?: (active: boolean) => void;
-}
+const MEASUREMENTS = [
+  { key: "elevation", label: "Elevation (m)", placeholder: "e.g. 1500" },
+  { key: "prominence", label: "Prominence (m)", placeholder: "e.g. 500" },
+] as const;
 
 export const PeakPropertyForm = React.memo(function PeakPropertyForm({
   form,
@@ -29,13 +23,7 @@ export const PeakPropertyForm = React.memo(function PeakPropertyForm({
   countryId,
   isPickingLocation = false,
   setIsPickingLocation,
-}: PeakPropertyFormProps) {
-  const activeCoords = form.coordinates ?? pendingCoordinates;
-  const subdivisions = React.useMemo(
-    () => (allFeatures ?? []).filter((f) => f.type === "subdivision"),
-    [allFeatures]
-  );
-
+}: PointFormProps<PeakFormData>) {
   return (
     <div className="space-y-2">
       <input
@@ -48,82 +36,41 @@ export const PeakPropertyForm = React.memo(function PeakPropertyForm({
       />
 
       <div className="grid grid-cols-2 gap-2">
-        <div>
-          <label className="text-label-secondary text-caption mb-1 block text-left">
-            Elevation (m)
-          </label>
-          <input
-            type="number"
-            placeholder="e.g. 1500"
-            value={form.elevation === 0 ? "" : form.elevation}
-            onChange={(e) =>
-              onChange({
-                ...form,
-                elevation: e.target.value === "" ? 0 : parseFloat(e.target.value) || 0,
-              })
-            }
-            className={inputClasses}
-          />
-        </div>
-        <div>
-          <label className="text-label-secondary text-caption mb-1 block text-left">
-            Prominence (m)
-          </label>
-          <input
-            type="number"
-            placeholder="e.g. 500"
-            value={form.prominence === 0 ? "" : form.prominence}
-            onChange={(e) =>
-              onChange({
-                ...form,
-                prominence: e.target.value === "" ? 0 : parseFloat(e.target.value) || 0,
-              })
-            }
-            className={inputClasses}
-          />
-        </div>
+        {MEASUREMENTS.map(({ key, label, placeholder }) => (
+          <Field key={key} label={label}>
+            <input
+              type="number"
+              placeholder={placeholder}
+              value={form[key] === 0 ? "" : form[key]}
+              onChange={(e) => onChange({ ...form, [key]: parseFloat(e.target.value) || 0 })}
+              className={inputClasses}
+            />
+          </Field>
+        ))}
       </div>
 
       {countryId && (
         <CoordinatePicker
-          coordinates={activeCoords}
+          coordinates={form.coordinates ?? pendingCoordinates}
           isPickingLocation={isPickingLocation}
           setIsPickingLocation={setIsPickingLocation}
         />
       )}
 
-      <WikiLinkWizard
-        value={form.wikiPageTitle}
-        onChange={(title) => onChange({ ...form, wikiPageTitle: title })}
-        onImport={(fields) => {
-          onChange({ ...form, wikiPageTitle: fields.wikiPageTitle });
-        }}
+      <WikiLinkField
+        form={form}
+        onChange={onChange}
         currentCoords={pendingCoordinates ?? undefined}
-        placeholder="Search wiki to link..."
       />
 
-      <div>
-        <label className="text-label-secondary text-caption mb-1 block text-left">
-          Subdivision / Region
-        </label>
-        <OptionSelect
-          aria-label="Subdivision / region"
-          value={form.subdivisionId ?? "auto"}
-          onValueChange={(v) =>
-            onChange({
-              ...form,
-              subdivisionId: v === "auto" ? "auto" : v === "none" ? "none" : v || undefined,
-            })
-          }
-          options={[
-            { value: "auto", label: "&mdash; Auto-detect Region (Recommended) &mdash;" },
-            { value: "none", label: "&mdash; None &mdash;" },
-            ...subdivisions.map((sub) => ({ value: sub.id, label: sub.name })),
-          ]}
-          size="sm"
-          className="w-full"
+      <Field label="Subdivision / Region">
+        <SubdivisionSelect
+          ariaLabel="Subdivision / region"
+          value={form.subdivisionId}
+          onChange={(subdivisionId) => onChange({ ...form, subdivisionId })}
+          allFeatures={allFeatures}
         />
-      </div>
+      </Field>
     </div>
   );
 });

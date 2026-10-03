@@ -2,11 +2,7 @@
 import React, { useMemo } from "react";
 import type { NamedRiverFormData, EditorFeature } from "~/hooks/useMapEditor";
 import { polylineLengthKm } from "~/lib/maps/geo-math";
-import { WikiLinkWizard } from "../WikiLinkWizard";
-import { Card } from "~/components/ui/card";
-
-const inputClasses =
-  "w-full rounded-control border border-separator bg-surface px-3 py-2 sm:py-2 text-body sm:text-body text-label placeholder:text-label-secondary transition-colors focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
+import { GeometryStatus, inputClasses, WikiLinkField } from "./fields";
 
 interface RiverPropertyFormProps {
   form: NamedRiverFormData;
@@ -14,6 +10,8 @@ interface RiverPropertyFormProps {
   pendingGeometry?: object | null;
   selectedFeature?: EditorFeature | null;
 }
+
+type Line = [number, number][];
 
 export const RiverPropertyForm = React.memo(function RiverPropertyForm({
   form,
@@ -25,23 +23,18 @@ export const RiverPropertyForm = React.memo(function RiverPropertyForm({
     type?: string;
     coordinates?: unknown;
   } | null;
-  const hasGeom = !!activeGeom;
 
   const lengthKm = useMemo(() => {
-    if (!activeGeom) return selectedFeature?.properties?.lengthKm as number | undefined;
-    if (activeGeom.type === "LineString" && Array.isArray(activeGeom.coordinates)) {
-      return polylineLengthKm(activeGeom.coordinates as [number, number][]);
+    const coords = activeGeom?.coordinates;
+    if (activeGeom?.type === "LineString" && Array.isArray(coords)) {
+      return polylineLengthKm(coords as Line);
     }
     if (
-      activeGeom.type === "MultiLineString" &&
-      Array.isArray(activeGeom.coordinates) &&
-      Array.isArray(activeGeom.coordinates[0])
+      activeGeom?.type === "MultiLineString" &&
+      Array.isArray(coords) &&
+      Array.isArray(coords[0])
     ) {
-      let total = 0;
-      for (const line of activeGeom.coordinates as [number, number][][]) {
-        total += polylineLengthKm(line);
-      }
-      return total;
+      return (coords as Line[]).reduce((total, line) => total + polylineLengthKm(line), 0);
     }
     return selectedFeature?.properties?.lengthKm as number | undefined;
   }, [activeGeom, selectedFeature?.properties?.lengthKm]);
@@ -57,32 +50,15 @@ export const RiverPropertyForm = React.memo(function RiverPropertyForm({
         autoFocus
       />
 
-      <Card className="text-footnote px-3 py-2">
-        <div className="text-label-secondary text-left font-medium">
-          Line Geometry:{" "}
-          {hasGeom ? (
-            <span className="text-label font-semibold">
-              Drawn {lengthKm !== undefined && `(${lengthKm.toFixed(2)} km)`}
-            </span>
-          ) : (
-            <span className="text-yellow italic">Not drawn yet (use Line tool)</span>
-          )}
-        </div>
-        {!hasGeom && (
-          <div className="text-label-secondary text-footnote mt-1 text-left">
-            Use the line drawing tool in the map controls to draw the path of the river.
-          </div>
-        )}
-      </Card>
-
-      <WikiLinkWizard
-        value={form.wikiPageTitle}
-        onChange={(title) => onChange({ ...form, wikiPageTitle: title })}
-        onImport={(fields) => {
-          onChange({ ...form, wikiPageTitle: fields.wikiPageTitle });
-        }}
-        placeholder="Search wiki to link..."
+      <GeometryStatus
+        label="Line Geometry"
+        hasGeom={!!activeGeom}
+        measure={lengthKm === undefined ? undefined : `${lengthKm.toFixed(2)} km`}
+        missing="Not drawn yet (use Line tool)"
+        hint="Use the line drawing tool in the map controls to draw the path of the river."
       />
+
+      <WikiLinkField form={form} onChange={onChange} />
     </div>
   );
 });

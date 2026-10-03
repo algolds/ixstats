@@ -13,7 +13,7 @@ import { RouteNodeInspector } from "./transport/RouteNodeInspector";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 
-interface TransportPropertyFormProps {
+export interface TransportPropertyFormProps {
   countryId?: string;
   onCancel: () => void;
   routeWaypoints?: [number, number][];

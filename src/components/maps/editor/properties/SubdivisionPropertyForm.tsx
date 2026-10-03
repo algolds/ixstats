@@ -6,11 +6,11 @@ import { Label } from "~/components/ui/label";
 import { ColorPickerInput } from "~/components/ui/color-picker";
 import { Ruler } from "iconoir-react";
 import type { SubdivisionFormData } from "~/hooks/useMapEditor";
-import { WikiLinkWizard } from "../WikiLinkWizard";
+import { capitalizedOptions, inputClasses, WikiLinkField } from "./fields";
 import { geometryAreaSqKm } from "~/lib/maps/geo-math";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 
-const SUBDIVISION_TYPES = [
+const SUBDIVISION_TYPE_OPTIONS = capitalizedOptions([
   "province",
   "state",
   "region",
@@ -18,13 +18,7 @@ const SUBDIVISION_TYPES = [
   "district",
   "county",
   "department",
-];
-
-const inputClasses =
-  "w-full rounded-control border border-separator bg-surface px-3 py-2 sm:py-2 text-body sm:text-body text-label placeholder:text-label-secondary transition-colors focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
-
-const selectClasses =
-  "w-full rounded-control border border-separator bg-surface px-3 py-2 sm:py-2 text-body sm:text-body text-label transition-colors focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
+]);
 
 interface SubdivisionPropertyFormProps {
   form: SubdivisionFormData;
@@ -70,10 +64,7 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
         aria-label="Subdivision type"
         value={form.type}
         onValueChange={(v) => onChange({ ...form, type: v })}
-        options={SUBDIVISION_TYPES.map((t) => ({
-          value: t,
-          label: t.charAt(0).toUpperCase() + t.slice(1),
-        }))}
+        options={SUBDIVISION_TYPE_OPTIONS}
         size="sm"
         className="w-full"
       />
@@ -149,17 +140,7 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
           onChange={(val: string) => onChange({ ...form, color: val })}
         />
       </div>
-      <WikiLinkWizard
-        value={form.wikiPageTitle}
-        onChange={(title) => onChange({ ...form, wikiPageTitle: title })}
-        onImport={(fields) => {
-          const updates: Partial<SubdivisionFormData> = { wikiPageTitle: fields.wikiPageTitle };
-          if (fields.population) updates.population = fields.population;
-          onChange({ ...form, ...updates });
-        }}
-        currentCoords={undefined}
-        placeholder="Search wiki to link..."
-      />
+      <WikiLinkField form={form} onChange={onChange} importPopulation />
     </div>
   );
 });
