@@ -1,8 +1,6 @@
-// src/server/api/routers/activities.ts
-// Activities router for live activity feed system
-
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { rangeStart } from "./feed/shared";
 
 export const activitiesActivitiesRouter = createTRPCRouter({
   // Get activity statistics
@@ -14,20 +12,7 @@ export const activitiesActivitiesRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const now = new Date();
-        let fromDate: Date;
-
-        switch (input.timeRange) {
-          case "24h":
-            fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-            break;
-          case "7d":
-            fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            break;
-          case "30d":
-            fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-            break;
-        }
+        const fromDate = rangeStart(input.timeRange);
 
         const stats = await ctx.db.activityFeed.aggregate({
           where: {
