@@ -87,7 +87,7 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
   return (
     <div className="border-separator bg-fill-4 rounded-row space-y-4 border p-4 text-left">
       <div className="flex items-center justify-between">
-        <h4 className="text-label text-subhead">Voice Sandbox</h4>
+        <h4 className="text-label text-subhead">Voice sandbox</h4>
         <span className="text-label-secondary text-caption font-mono">
           {speechConfig?.kokoro?.enabled ? "Kokoro Active" : "Browser TTS fallback"}
         </span>
@@ -96,7 +96,7 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
-            <label className="text-label-secondary text-subhead">Preview Text</label>
+            <label className="text-label-secondary text-subhead">Preview text</label>
             <Input
               type="text"
               value={sandboxText}
@@ -107,7 +107,7 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
           </div>
 
           <div className="space-y-1">
-            <label className="text-label-secondary text-subhead">Select Voice</label>
+            <label className="text-label-secondary text-subhead">Select voice</label>
             <Select
               value={sandboxVoice || "default"}
               onValueChange={(val) => setSandboxVoice(val === "default" ? "" : val)}

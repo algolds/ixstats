@@ -226,7 +226,7 @@ export const LayerPanel = React.memo(function LayerPanel({
       {list.slice(0, MAX_ROWS_PER_GROUP).map((feat) => renderFeatureRow(feat))}
       {list.length > MAX_ROWS_PER_GROUP && (
         <div className="text-label-secondary text-footnote py-1 pl-8 italic">
-          {list.length - MAX_ROWS_PER_GROUP} more — search to narrow the list
+          {list.length - MAX_ROWS_PER_GROUP} more; search to narrow the list
         </div>
       )}
     </>
@@ -272,7 +272,7 @@ export const LayerPanel = React.memo(function LayerPanel({
             <Icon className={`h-3 w-3 shrink-0 ${colorClass}`} />
             <span className="text-label text-footnote truncate">{feature.name}</span>
             {isCapital && (
-              <span title="National Capital">
+              <span title="National capital">
                 <Crown className="text-yellow h-2.5 w-2.5 shrink-0" />
               </span>
             )}
@@ -619,7 +619,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                 onClick={() => setGuidesExpanded((prev) => !prev)}
                 className="text-caption ml-1 flex-1 cursor-pointer truncate leading-none"
               >
-                Ruler Guides
+                Ruler guides
               </span>
 
               {/* Count */}
@@ -656,8 +656,8 @@ export const LayerPanel = React.memo(function LayerPanel({
                           e.stopPropagation();
                           onDeleteGuide?.(guide.id);
                         }}
-                        title="Delete Guide"
-                        aria-label="Delete Guide"
+                        title="Delete guide"
+                        aria-label="Delete guide"
                         className="text-label-secondary hover:bg-destructive/15 hover:text-destructive rounded-control-sm size-5 opacity-0 group-hover:opacity-100"
                       >
                         <Trash2 className="h-3 w-3" />

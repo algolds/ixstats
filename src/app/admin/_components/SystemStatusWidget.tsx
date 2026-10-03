@@ -110,13 +110,13 @@ export function SystemStatusStrip({ className }: { className?: string }) {
       </span>
       <span className="flex items-center gap-2">
         <span className="text-label-secondary">Countries</span>
-        <span className="text-label font-data font-medium">
+        <span className="text-label font-medium tabular-nums">
           {s.systemStatus?.countryCount ?? 0}
         </span>
       </span>
       <span className="flex items-center gap-2">
         <span className="text-label-secondary">Storyteller events</span>
-        <span className="text-label font-data font-medium">
+        <span className="text-label font-medium tabular-nums">
           {s.systemStatus?.activeStorytellerEffects ?? 0}
         </span>
       </span>
@@ -163,7 +163,7 @@ export function SystemStatusWidget() {
   };
 
   return (
-    // v2 (c5c6b382): a CutoutCard whose tinted header tab toggles the collapse.
+    // A CutoutCard whose tinted header tab toggles the collapse.
     <CutoutCard variant="card" trackPointerHover={false} className="w-full rounded-xl">
       {/* Cutout header tab (toggles collapse) */}
       <Button
@@ -244,7 +244,7 @@ export function SystemStatusWidget() {
           <div className="space-y-1">
             <div className="text-eyebrow text-label-secondary flex items-center gap-2">
               <Bot aria-hidden className="size-3.5" />
-              Discord Bot
+              Discord bot
             </div>
             {botStatusLoading ? (
               <Skeleton className="h-5 w-full" />
@@ -275,7 +275,7 @@ export function SystemStatusWidget() {
             </div>
 
             <div className="flex items-center justify-between">
-              <dt className="text-label-secondary">Storyteller Events</dt>
+              <dt className="text-label-secondary">Storyteller events</dt>
               <dd className="text-label font-medium">
                 {statusLoading ? (
                   <Skeleton className="h-3 w-8" />
@@ -286,7 +286,7 @@ export function SystemStatusWidget() {
             </div>
 
             <div className="flex items-center justify-between">
-              <dt className="text-label-secondary">Last Recalc</dt>
+              <dt className="text-label-secondary">Last recalc</dt>
               <dd className="text-label font-medium">
                 {statusLoading ? (
                   <Skeleton className="h-3 w-12" />

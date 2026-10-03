@@ -3,7 +3,7 @@
 import { BookmarkBook, GitFork, Star, Translate } from "iconoir-react";
 
 // src/app/labs/onoma/components/shared/LanguagePackCard.tsx
-// Onoma Lab — Language pack card: an inset panel inside the workspace card (Facet 3).
+// Onoma Lab — Language pack card: an inset panel inside the workspace card.
 
 import React from "react";
 import { Badge } from "~/components/ui/badge";
@@ -102,8 +102,7 @@ export function LanguagePackCard({
           )}
 
           <p className="text-label-secondary text-footnote mt-2 line-clamp-2 max-w-[260px] leading-relaxed">
-            {pack.description ||
-              "Comprehensive phonological rules, syllabic weights, and lexicon seeds."}
+            {pack.description || "Phonological rules, syllabic weights and lexicon seeds."}
           </p>
 
           {/* Tags */}

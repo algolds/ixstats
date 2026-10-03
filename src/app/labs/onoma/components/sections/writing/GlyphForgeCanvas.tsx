@@ -406,8 +406,8 @@ export function GlyphForgeCanvas({
               size="icon-sm"
               onClick={handleClear}
               disabled={strokes.length === 0 && !currentStroke}
-              title="Clear Canvas"
-              aria-label="Clear Canvas"
+              title="Clear canvas"
+              aria-label="Clear canvas"
               className="text-label-secondary hover:text-red hover:bg-red/10 w-5.5 justify-center"
             >
               <RotateCcw className="h-3 w-3" />
@@ -738,7 +738,7 @@ export function GlyphForgeCanvas({
             className="border-separator bg-fill-4 rounded-row overflow-hidden border p-3"
           >
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-label-secondary text-eyebrow">Geometric Shapes</span>
+              <span className="text-label-secondary text-eyebrow">Geometric shapes</span>
               <Button
                 variant="ghost"
                 size="sm"

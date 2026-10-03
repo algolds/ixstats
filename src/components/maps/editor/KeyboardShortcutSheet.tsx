@@ -98,7 +98,7 @@ interface KeyboardShortcutSheetProps {
 }
 
 export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
-  // Opened from the keyboard (?), so it appears and leaves with no animation (Facet §8).
+  // Opened from the keyboard (?), so it appears and leaves with no animation.
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="rounded-card max-h-[80vh] gap-0 overflow-y-auto p-0 duration-0 data-[state=closed]:animate-none data-[state=open]:animate-none sm:max-w-lg">

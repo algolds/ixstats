@@ -160,7 +160,7 @@ export function EventsRegistryPanel() {
           <Card className="flex flex-col gap-6 py-6">
             <CardContent className="flex items-center justify-between p-4">
               <div>
-                <p className="text-label-secondary text-caption">Total Events</p>
+                <p className="text-label-secondary text-caption">Total events</p>
                 <p className="text-title-1">{data.total}</p>
               </div>
               <BarChart3 className="text-label-secondary h-6 w-6" />
@@ -217,7 +217,7 @@ export function EventsRegistryPanel() {
               size="sm"
             >
               <Power className="text-green mr-2 h-4 w-4" />
-              Enable All
+              Enable all
             </Button>
             <Button
               onClick={() => batchToggleMutation.mutate({ enabled: false })}
@@ -226,7 +226,7 @@ export function EventsRegistryPanel() {
               size="sm"
             >
               <PowerOff className="text-red mr-2 h-4 w-4" />
-              Disable All
+              Disable all
             </Button>
             <Button onClick={() => refetch()} variant="ghost" size="sm">
               <RotateCcw className="mr-2 h-4 w-4" />
@@ -259,10 +259,10 @@ export function EventsRegistryPanel() {
                   <label className="text-label-secondary text-caption mb-1 block">Category</label>
                   <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                     <SelectTrigger>
-                      <SelectValue placeholder="All Categories" />
+                      <SelectValue placeholder="All categories" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value=" ">All Categories</SelectItem>
+                      <SelectItem value=" ">All categories</SelectItem>
                       {NOTIFICATION_CATEGORIES.map((cat) => (
                         <SelectItem key={cat} value={cat}>
                           {CATEGORY_LABELS[cat] ?? cat}
@@ -276,10 +276,10 @@ export function EventsRegistryPanel() {
                   <label className="text-label-secondary text-caption mb-1 block">Source</label>
                   <Select value={sourceFilter} onValueChange={setSourceFilter}>
                     <SelectTrigger>
-                      <SelectValue placeholder="All Sources" />
+                      <SelectValue placeholder="All sources" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value=" ">All Sources</SelectItem>
+                      <SelectItem value=" ">All sources</SelectItem>
                       {uniqueSources.map((src) => (
                         <SelectItem key={src} value={src}>
                           {src}
@@ -291,14 +291,14 @@ export function EventsRegistryPanel() {
 
                 <div className="w-[160px]">
                   <label className="text-label-secondary text-caption mb-1 block">
-                    Trigger Type
+                    Trigger type
                   </label>
                   <Select value={triggerFilter} onValueChange={setTriggerFilter}>
                     <SelectTrigger>
-                      <SelectValue placeholder="All Triggers" />
+                      <SelectValue placeholder="All triggers" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value=" ">All Triggers</SelectItem>
+                      <SelectItem value=" ">All triggers</SelectItem>
                       {NOTIFICATION_TRIGGER_TYPES.map((t) => (
                         <SelectItem key={t} value={t}>
                           {t}

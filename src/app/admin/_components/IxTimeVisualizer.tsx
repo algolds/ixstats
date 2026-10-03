@@ -55,9 +55,9 @@ interface TimeVisualizationData {
 
 // Reference milestones for the timeline table
 const MILESTONES = [
-  { label: "System Start", ixDate: "Oct 4, 2020", realDate: "Oct 4, 2020" },
+  { label: "System start", ixDate: "Oct 4, 2020", realDate: "Oct 4, 2020" },
   { label: "In-Game Epoch", ixDate: "Jan 1, 2028", realDate: "Oct 4, 2022" },
-  { label: "Speed Change", ixDate: "Jan 1, 2040", realDate: "Jul 27, 2025" },
+  { label: "Speed change", ixDate: "Jan 1, 2040", realDate: "Jul 27, 2025" },
 ];
 
 export function IxTimeVisualizer() {
@@ -322,7 +322,7 @@ export function IxTimeVisualizer() {
           {/* Multiplier + Rate */}
           <div className="rounded-control border-green/10 bg-green/5 hover:border-green/20 duration-fast border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
             <div className="text-caption text-green mb-1 flex items-center gap-2">
-              <Activity className="h-3.5 w-3.5" /> Speed & Rate
+              <Activity className="h-3.5 w-3.5" /> Speed & rate
             </div>
             <div className="flex items-center gap-2">
               <span className="text-headline text-green">{timeData.multiplier}x</span>
@@ -340,7 +340,7 @@ export function IxTimeVisualizer() {
           {/* System Health */}
           <div className="rounded-control border-purple/10 bg-purple/5 hover:border-purple/20 duration-fast border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
             <div className="text-caption text-purple mb-1 flex items-center gap-2">
-              <Target className="h-3.5 w-3.5" /> System Health
+              <Target className="h-3.5 w-3.5" /> System health
             </div>
             <div className="flex items-center gap-2">
               {accuracyStatus.status === "excellent" ? (
@@ -489,7 +489,7 @@ export function IxTimeVisualizer() {
             <div className="space-y-3">
               <div className="text-footnote grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div className="rounded-control-sm border-blue/10 bg-blue/5 hover:border-blue/20 border px-3 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]">
-                  <div className="text-blue font-semibold">Real World Epoch</div>
+                  <div className="text-blue font-semibold">Real world epoch</div>
                   <div className="text-label-secondary mt-0.5 tabular-nums">Oct 4, 2020</div>
                 </div>
                 <div className="rounded-control-sm border-green/10 bg-green/5 hover:border-green/20 border px-3 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]">
@@ -544,7 +544,7 @@ export function IxTimeVisualizer() {
                 aria-expanded={showDiagnostics}
                 className="text-label-secondary hover:text-label w-full justify-between px-2 text-left"
               >
-                <span className="text-eyebrow">Diagnostics & Testing</span>
+                <span className="text-eyebrow">Diagnostics & testing</span>
                 {showDiagnostics ? (
                   <ChevronUp aria-hidden className="h-4 w-4" />
                 ) : (
@@ -558,7 +558,7 @@ export function IxTimeVisualizer() {
                   <div className="border-separator bg-surface rounded-control flex flex-col justify-between space-y-3 border p-4">
                     <div className="space-y-3">
                       <div className="text-label-secondary text-caption flex items-center gap-2">
-                        <Activity className="text-blue h-3.5 w-3.5" /> Accuracy Verification
+                        <Activity className="text-blue h-3.5 w-3.5" /> Accuracy verification
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
@@ -592,7 +592,7 @@ export function IxTimeVisualizer() {
                   <div className="border-separator bg-surface rounded-control flex flex-col justify-between space-y-3 border p-4">
                     <div className="space-y-3">
                       <div className="text-label-secondary text-caption flex items-center gap-2">
-                        <RefreshCw className="text-green h-3.5 w-3.5" /> Sync Targets
+                        <RefreshCw className="text-green h-3.5 w-3.5" /> Sync targets
                       </div>
                       {syncStatuses.length === 0 ? (
                         <div className="text-label-secondary text-footnote flex flex-col items-center justify-center py-6 text-center">
@@ -642,7 +642,7 @@ export function IxTimeVisualizer() {
                         className="w-full"
                       >
                         <RefreshCw className="mr-2 h-3.5 w-3.5" />
-                        Force Sync All
+                        Force sync all
                       </Button>
                     </div>
                   </div>
@@ -651,7 +651,7 @@ export function IxTimeVisualizer() {
                   <div className="border-separator bg-surface rounded-control flex flex-col justify-between space-y-3 border p-4">
                     <div className="space-y-3">
                       <div className="text-label-secondary text-caption flex items-center gap-2">
-                        <Zap className="text-purple h-3.5 w-3.5" /> Test Suite
+                        <Zap className="text-purple h-3.5 w-3.5" /> Test suite
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <Button
@@ -673,7 +673,7 @@ export function IxTimeVisualizer() {
                           size="sm"
                         >
                           <RefreshCw className="mr-2 h-3.5 w-3.5" />
-                          Sync Verify
+                          Sync verify
                         </Button>
                       </div>
 
@@ -702,7 +702,7 @@ export function IxTimeVisualizer() {
                               <div className="text-headline tabular-nums">
                                 {simulationResults.averageExecutionTime.toFixed(0)}ms
                               </div>
-                              <Eyebrow className="block">Avg Time</Eyebrow>
+                              <Eyebrow className="block">Avg time</Eyebrow>
                             </div>
                           </div>
                           {simulationResults.criticalIssues.length > 0 && (

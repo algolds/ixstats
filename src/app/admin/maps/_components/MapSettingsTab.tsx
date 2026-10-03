@@ -25,7 +25,7 @@ type SubTab = "statistics" | "upload" | "style";
 const SUB_TABS: { value: SubTab; label: string }[] = [
   { value: "statistics", label: "Statistics" },
   { value: "upload", label: "SVG Upload" },
-  { value: "style", label: "Style Editor" },
+  { value: "style", label: "Style editor" },
 ];
 
 export function MapSettingsTab() {
@@ -67,7 +67,7 @@ function MapStyleSettingsPanel() {
 
       <div className="border-separator flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="text-label text-caption">Launch Style Editor</div>
+          <div className="text-label text-caption">Launch style editor</div>
           <div className="text-label-secondary text-footnote">
             Visual editing is done in a full-screen canvas environment.
           </div>
@@ -76,7 +76,7 @@ function MapStyleSettingsPanel() {
           href="/admin/maps/style-editor"
           className="bg-tint text-on-tint rounded-row text-caption inline-flex h-8 items-center gap-2 px-4"
         >
-          <span>Open Style Editor</span>
+          <span>Open style editor</span>
           <ExternalLink className="h-3.5 w-3.5" />
         </Link>
       </div>

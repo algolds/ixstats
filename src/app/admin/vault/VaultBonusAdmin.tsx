@@ -43,12 +43,12 @@ const GROUPS: BonusGroup[] = [
     fields: [
       {
         key: "newPlayer",
-        label: "New Player Bonus",
+        label: "New player bonus",
         hint: "Granted on first country link or account creation",
       },
       {
         key: "wikiImport",
-        label: "Wiki Country Import",
+        label: "Wiki country import",
         hint: "Granted when founding from a canonical wiki nation",
       },
     ],
@@ -59,7 +59,7 @@ const GROUPS: BonusGroup[] = [
     icon: Globe,
     accentColor: "text-blue",
     fields: [
-      { key: "nsPerCard", label: "Credits Per Card", hint: "Credits awarded per imported card" },
+      { key: "nsPerCard", label: "Credits per card", hint: "Credits awarded per imported card" },
       {
         key: "nsCap",
         label: "Per-Import Cap",
@@ -73,11 +73,11 @@ const GROUPS: BonusGroup[] = [
     icon: Trophy,
     accentColor: "text-yellow",
     fields: [
-      { key: "achievementCommon", label: "Common Unlock" },
-      { key: "achievementUncommon", label: "Uncommon Unlock" },
-      { key: "achievementRare", label: "Rare Unlock" },
-      { key: "achievementEpic", label: "Epic Unlock" },
-      { key: "achievementLegendary", label: "Legendary Unlock" },
+      { key: "achievementCommon", label: "Common unlock" },
+      { key: "achievementUncommon", label: "Uncommon unlock" },
+      { key: "achievementRare", label: "Rare unlock" },
+      { key: "achievementEpic", label: "Epic unlock" },
+      { key: "achievementLegendary", label: "Legendary unlock" },
     ],
   },
   {
@@ -132,7 +132,7 @@ export function VaultBonusAdmin() {
               <Gift className="text-green h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-label text-title-2">Metagame Economy & Bonuses</h2>
+              <h2 className="text-label text-title-2">Metagame economy & bonuses</h2>
               <p className="text-label-secondary text-footnote">
                 Global credit grants for milestones, deck imports, achievements, and lore rewards.
               </p>

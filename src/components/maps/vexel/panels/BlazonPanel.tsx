@@ -21,7 +21,7 @@ export default function BlazonPanel() {
     <Card className="overflow-hidden">
       <div className="p-4">
         <div className="mb-2 flex items-center justify-between">
-          <Eyebrow className="block">Heraldic Blazon Description</Eyebrow>
+          <Eyebrow className="block">Heraldic blazon description</Eyebrow>
           <Button variant="outline" size="xs" onClick={handleCopy} disabled={!blazon}>
             {copied ? "Copied" : "Copy"}
           </Button>

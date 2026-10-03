@@ -69,7 +69,7 @@ export class AdminErrorBoundary extends Component<Props, State> {
           <Card padding="lg" className="w-full max-w-md text-center">
             <div className="mb-4">
               <AlertTriangle aria-hidden className="text-destructive mx-auto mb-4 size-12" />
-              <h1 className="text-label text-title-1 mb-2">Admin Dashboard Error</h1>
+              <h1 className="text-label text-title-1 mb-2">Admin dashboard error</h1>
               <p className="text-label-secondary mb-4">
                 Something went wrong with the admin dashboard. This error has been logged.
               </p>
@@ -97,17 +97,17 @@ export class AdminErrorBoundary extends Component<Props, State> {
             <div className="space-y-2">
               <Button onClick={this.handleRetry} className="w-full">
                 <RefreshCw />
-                Try Again
+                Try again
               </Button>
 
               <Button variant="secondary" onClick={this.handleReload} className="w-full">
                 <RefreshCw />
-                Reload Page
+                Reload page
               </Button>
 
               <Button variant="secondary" onClick={this.handleGoHome} className="w-full">
                 <Home />
-                Go to Homepage
+                Go to homepage
               </Button>
             </div>
 
@@ -137,7 +137,7 @@ export function AdminErrorFallback({
     <div className="rounded-row border-destructive/20 bg-destructive/10 border p-6">
       <div className="flex items-center">
         <AlertTriangle className="text-red mr-2 h-5 w-5" />
-        <h3 className="text-body text-red font-medium">Component Error</h3>
+        <h3 className="text-body text-red font-medium">Component error</h3>
       </div>
       <div className="mt-2">
         <p className="text-body text-red">

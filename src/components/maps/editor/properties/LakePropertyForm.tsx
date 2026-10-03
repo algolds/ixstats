@@ -44,7 +44,7 @@ export const LakePropertyForm = React.memo(function LakePropertyForm({
     <div className="space-y-2">
       <input
         type="text"
-        placeholder="Lake Name"
+        placeholder="Lake name"
         value={form.name}
         onChange={(e) => onChange({ ...form, name: e.target.value })}
         className={inputClasses}

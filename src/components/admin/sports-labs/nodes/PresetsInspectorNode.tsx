@@ -30,7 +30,7 @@ export const PresetsInspectorNode = React.memo(function PresetsInspectorNode({
     return (
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label>Select Sport Preset</Label>
+          <Label>Select sport preset</Label>
           <Select
             value={selectedSport}
             onValueChange={(v) => setSelectedSport(v as SportPresetKey)}
@@ -52,7 +52,7 @@ export const PresetsInspectorNode = React.memo(function PresetsInspectorNode({
           <CardHeader className="pb-2">
             <CardTitle className="text-headline flex items-center gap-2">
               <Trophy className="text-yellow h-4 w-4" />
-              Preset Configuration
+              Preset configuration
             </CardTitle>
           </CardHeader>
           <CardContent className="text-footnote space-y-3">
@@ -62,13 +62,13 @@ export const PresetsInspectorNode = React.memo(function PresetsInspectorNode({
                 <p className="font-semibold capitalize">{activePreset.archetype}</p>
               </div>
               <div>
-                <span className="text-label-secondary">Roster Size</span>
+                <span className="text-label-secondary">Roster size</span>
                 <p className="font-semibold">{activePreset.rosterSize}</p>
               </div>
             </div>
             <div className="border-separator grid grid-cols-2 gap-2 border-b pb-2">
               <div>
-                <span className="text-label-secondary">Team Range</span>
+                <span className="text-label-secondary">Team range</span>
                 <p className="font-semibold">
                   {activePreset.minTeamCount} - {activePreset.maxTeamCount}
                 </p>
@@ -81,7 +81,7 @@ export const PresetsInspectorNode = React.memo(function PresetsInspectorNode({
               </div>
             </div>
             <div>
-              <span className="text-label-secondary">Rating Vectors</span>
+              <span className="text-label-secondary">Rating vectors</span>
               <div className="mt-1 flex flex-wrap gap-1">
                 {activePreset.ratingVector.map((v) => (
                   <Badge key={v} variant="default">

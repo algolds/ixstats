@@ -1,6 +1,6 @@
 /**
  * Typography-plugin (`prose`) colours bound to Facet roles, so rendered rich text follows the
- * theme and Increase Contrast with no per-theme prose inversion (spec §2: roles, not theme pairs).
+ * theme and Increase Contrast with no per-theme prose inversion.
  * Used by the story-pin reader and the MyCountry dossier wiki sections.
  */
 export const FACET_PROSE = [

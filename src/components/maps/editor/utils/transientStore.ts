@@ -1,5 +1,5 @@
 /**
- * Transient Map Editor Store (Phase 1: React State Isolation)
+ * Transient Map Editor Store
  *
  * Decouples high-frequency mouse pointer movements, hover tooltips,
  * and transient drag coordinates from React state to eliminate top-level

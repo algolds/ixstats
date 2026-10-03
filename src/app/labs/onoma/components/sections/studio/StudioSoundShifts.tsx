@@ -263,7 +263,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
       {/* Top Controls Bar with Segmented Mode Switch */}
       <div className="border-separator flex flex-col justify-between gap-4 border-b pb-4 sm:flex-row sm:items-center">
         <div className="space-y-1">
-          <h3 className="text-label text-title-2 font-bold">Sound Shifts & Phonetic Adaptation</h3>
+          <h3 className="text-label text-title-2 font-bold">Sound shifts & phonetic adaptation</h3>
           <p className="text-label-secondary text-footnote leading-relaxed">
             Model chronological diachronic sound change or configure interlinguistic borrowing and
             loanword adaptation.
@@ -292,7 +292,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
             <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
               <div className="space-y-1">
                 <h4 className="text-label text-body font-semibold">
-                  Diachronic Phonetic Transformation
+                  Diachronic phonetic transformation
                 </h4>
                 <p className="text-label-secondary text-footnote leading-relaxed">
                   Define chronological phonetic shift rules (<code>X → Y / ENV</code>) across
@@ -333,12 +333,12 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                 <div className="flex items-center gap-2">
                   <Layers className="text-tint h-4 w-4" />
                   <h4 className="text-label text-body font-semibold">
-                    Chronological Epochs & Rules
+                    Chronological epochs & rules
                   </h4>
                 </div>
                 <Button variant="outline" size="sm" onClick={handleAddEpoch}>
                   <Plus className="h-3.5 w-3.5" />
-                  <span>Add Epoch</span>
+                  <span>Add epoch</span>
                 </Button>
               </div>
 
@@ -388,8 +388,8 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                         size="icon-sm"
                         onClick={() => handleRemoveEpoch(epochIdx)}
                         disabled={epochs.length <= 1}
-                        title="Delete Epoch"
-                        aria-label="Delete Epoch"
+                        title="Delete epoch"
+                        aria-label="Delete epoch"
                         className="text-label-secondary hover:text-red"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -412,7 +412,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                             onCheckedChange={(checked) =>
                               handleUpdateRule(epochIdx, ruleIdx, "enabled", checked === true)
                             }
-                            title="Toggle Rule"
+                            title="Toggle rule"
                           />
 
                           {/* Source */}
@@ -511,7 +511,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                         className="text-label-secondary hover:text-tint text-label-secondary hover:text-tint px-2"
                       >
                         <Plus className="h-3 w-3" />
-                        <span>Add Shift Rule</span>
+                        <span>Add shift rule</span>
                       </Button>
                     </div>
                   </div>
@@ -561,7 +561,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                 <div className="flex items-center justify-between gap-2">
                   <div>
                     <h4 className="text-label text-footnote font-semibold">
-                      Evolved Daughter Lexicon
+                      Evolved daughter lexicon
                     </h4>
                     <span className="text-label-secondary text-caption">
                       {evolutionResults.length} simulated
@@ -610,8 +610,8 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                                 variant="ghost"
                                 size="icon-sm"
                                 onClick={() => handlePlay(res.original)}
-                                title="Pronounce Proto Word"
-                                aria-label="Pronounce Proto Word"
+                                title="Pronounce proto word"
+                                aria-label="Pronounce proto word"
                                 className="text-label-secondary hover:text-label"
                               >
                                 <Volume2 className="h-3 w-3" />
@@ -629,8 +629,8 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                                 variant="ghost"
                                 size="icon-sm"
                                 onClick={() => handlePlay(res.final)}
-                                title="Pronounce Evolved Word"
-                                aria-label="Pronounce Evolved Word"
+                                title="Pronounce evolved word"
+                                aria-label="Pronounce evolved word"
                                 className="text-tint hover:text-tint/80"
                               >
                                 <Volume2 className="h-3 w-3" />
@@ -657,8 +657,8 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                               variant="ghost"
                               size="icon-sm"
                               onClick={() => handleCopy(res.final, idx)}
-                              title="Copy Evolved Word"
-                              aria-label="Copy Evolved Word"
+                              title="Copy evolved word"
+                              aria-label="Copy evolved word"
                               className="text-label-secondary hover:text-label"
                             >
                               {copiedIdx === idx ? (
@@ -691,8 +691,8 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                         {/* Step-by-Step Derivation Inspector */}
                         {isExpanded && res.steps.length > 0 && (
                           <div className="border-separator bg-fill-4 rounded-control-sm text-caption mt-2 space-y-2 border p-2">
-                            <div className="text-label-secondary font-semibold uppercase">
-                              Derivation Trace:
+                            <div className="text-label-secondary font-semibold">
+                              Derivation trace:
                             </div>
                             {res.steps.map((step, sIdx) => (
                               <div

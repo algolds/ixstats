@@ -75,7 +75,7 @@ export function WikiLinkStatusSection({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <Link2 className="text-green h-4 w-4" />
-          <h3 className="text-label text-caption">Wiki Link Status</h3>
+          <h3 className="text-label text-caption">Wiki link status</h3>
         </div>
         <SegmentedControl
           size="sm"
@@ -116,9 +116,9 @@ export function WikiLinkStatusSection({
           <TableHeader sticky>
             <TableRow>
               <TableHead className="px-4">Country</TableHead>
-              <TableHead className="px-4">Wiki Page</TableHead>
+              <TableHead className="px-4">Wiki page</TableHead>
               <TableHead className="hidden px-4 sm:table-cell">Source</TableHead>
-              <TableHead className="hidden px-4 md:table-cell">Last Synced</TableHead>
+              <TableHead className="hidden px-4 md:table-cell">Last synced</TableHead>
               <TableHead className="px-4 text-right">Status</TableHead>
             </TableRow>
           </TableHeader>

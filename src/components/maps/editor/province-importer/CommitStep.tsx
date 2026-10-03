@@ -19,7 +19,7 @@ export const CommitStep = memo(function CommitStep({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-label text-body font-medium">Import Summary</h3>
+        <h3 className="text-label text-body font-medium">Import summary</h3>
         <p className="text-label-secondary text-footnote mt-1">
           Review and confirm the {importer.importScope === "cities" ? "city" : "province"} import.
         </p>

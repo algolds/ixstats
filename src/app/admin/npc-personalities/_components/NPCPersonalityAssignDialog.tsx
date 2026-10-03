@@ -40,7 +40,7 @@ export function NPCPersonalityAssignDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Assign Personality to Country</DialogTitle>
+          <DialogTitle>Assign personality to country</DialogTitle>
           <DialogDescription>
             Assign &quot;{personality?.name}&quot; to a country to govern its automated diplomatic
             actions.
@@ -59,7 +59,7 @@ export function NPCPersonalityAssignDialog({
           </div>
 
           <div>
-            <label className="text-label text-caption mb-2 block">Assignment Reason</label>
+            <label className="text-label text-caption mb-2 block">Assignment reason</label>
             <Textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}

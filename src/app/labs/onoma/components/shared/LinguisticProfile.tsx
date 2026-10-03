@@ -119,7 +119,7 @@ export function LinguisticProfile({
         <div className="flex items-center gap-2">
           <span className="text-tint text-footnote font-mono font-semibold">⟨{name}⟩</span>
           <span className="text-label-secondary text-caption">
-            Gender: <span className="text-label font-semibold uppercase">{morphology.gender}</span>
+            Gender: <span className="text-label font-semibold">{morphology.gender}</span>
           </span>
         </div>
 
@@ -168,7 +168,7 @@ export function LinguisticProfile({
       {activeTab === "declensions" && (
         <div className="border-separator bg-surface rounded-row overflow-hidden border">
           <div className="bg-fill-4 border-separator text-label-secondary text-eyebrow grid grid-cols-12 border-b px-3 py-2 font-mono">
-            <span className="col-span-4">Grammatical Case</span>
+            <span className="col-span-4">Grammatical case</span>
             <span className="col-span-4">Singular</span>
             <span className="col-span-4">Plural</span>
           </div>
@@ -203,7 +203,7 @@ export function LinguisticProfile({
       {activeTab === "lexicon" && (
         <div className="border-separator bg-surface rounded-row space-y-2 border p-4">
           <div className="border-separator flex items-center justify-between border-b pb-2">
-            <h4 className="text-label text-subhead font-mono">Conlang Lexicon Entry</h4>
+            <h4 className="text-label text-subhead font-mono">Conlang lexicon entry</h4>
             {!isEditingDef && definition && (
               <Button
                 variant="link"
@@ -211,7 +211,7 @@ export function LinguisticProfile({
                 onClick={() => setIsEditingDef(true)}
                 className="text-tint h-auto px-0"
               >
-                Edit Definition
+                Edit definition
               </Button>
             )}
           </div>
@@ -226,7 +226,7 @@ export function LinguisticProfile({
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <label className="text-label-secondary text-subhead font-mono">
-                    Part of Speech
+                    Part of speech
                   </label>
                   <Select value={editPos} onValueChange={setEditPos}>
                     <SelectTrigger className="text-footnote w-full">
@@ -243,7 +243,7 @@ export function LinguisticProfile({
                 </div>
                 <div className="space-y-1">
                   <label className="text-label-secondary text-subhead font-mono">
-                    Conlang Root
+                    Conlang root
                   </label>
                   <Input
                     type="text"
@@ -290,7 +290,7 @@ export function LinguisticProfile({
                   </Button>
                 )}
                 <Button size="sm" type="submit">
-                  Save Definition
+                  Save definition
                 </Button>
               </div>
             </form>

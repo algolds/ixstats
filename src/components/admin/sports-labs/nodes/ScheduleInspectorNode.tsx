@@ -62,7 +62,7 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
       <div className="space-y-4">
         <div className="flex gap-2">
           <div className="flex-1 space-y-1">
-            <Label>Team Count</Label>
+            <Label>Team count</Label>
             <Input
               type="number"
               min={2}
@@ -72,7 +72,7 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
             />
           </div>
           <div className="flex-1 space-y-1">
-            <Label>Format Archetype</Label>
+            <Label>Format archetype</Label>
             <Select value={selectedArchetype} onValueChange={(v) => setSelectedArchetype(v as any)}>
               <SelectTrigger>
                 <SelectValue placeholder="Default (Preset)" />
@@ -82,7 +82,7 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
                 <SelectItem value="league">Round-Robin (League)</SelectItem>
                 <SelectItem value="bracket">Elimination (Bracket)</SelectItem>
                 <SelectItem value="circuit">Racing (Circuit)</SelectItem>
-                <SelectItem value="division_conference">Division & Conference</SelectItem>
+                <SelectItem value="division_conference">Division & conference</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -122,7 +122,7 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label>Select League</Label>
+        <Label>Select league</Label>
         <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
           <SelectTrigger>
             <SelectValue placeholder="Choose league" />
@@ -139,7 +139,7 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
 
       {dbLeague && dbLeague.seasons && (
         <div className="space-y-2">
-          <Label>Select Season</Label>
+          <Label>Select season</Label>
           <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
             <SelectTrigger>
               <SelectValue placeholder="Choose season" />

@@ -732,7 +732,7 @@ export function LoreCardBatchAdmin() {
       "",
       ...failedItems.map(
         (c, i) =>
-          `${i + 1}. [${c.wikiSource.toUpperCase()}] "${c.articleTitle}" — Error: ${c.errorMessage || "Unknown generation error"}`
+          `${i + 1}. [${c.wikiSource.toUpperCase()}] "${c.articleTitle}" (error: ${c.errorMessage || "Unknown generation error"})`
       ),
     ].join("\n");
 
@@ -819,7 +819,7 @@ export function LoreCardBatchAdmin() {
             <BookOpen className="text-purple h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-label text-title-2">Lore Card Batch Studio & Requests</h2>
+            <h2 className="text-label text-title-2">Lore card batch studio & requests</h2>
             <p className="text-label-secondary text-caption">
               AI wiki card generation, category preset crawlers, CSV/JSON bulk import, and request
               queue.
@@ -855,14 +855,14 @@ export function LoreCardBatchAdmin() {
           <Card className="space-y-4 p-4">
             <div className="text-label text-caption flex items-center gap-2">
               <Sliders className="text-purple h-4 w-4" />
-              <span>Batch Generation Parameters</span>
+              <span>Batch generation parameters</span>
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-3">
               {/* Wiki Source */}
               <div>
                 <label className="text-label-secondary text-caption mb-1 block">
-                  Default Wiki Source
+                  Default wiki source
                 </label>
                 <Select
                   value={globalWikiSource}
@@ -881,7 +881,7 @@ export function LoreCardBatchAdmin() {
               {/* Target Rarity */}
               <div>
                 <label className="text-label-secondary text-caption mb-1 block">
-                  Target Rarity Strategy
+                  Target rarity strategy
                 </label>
                 <Select
                   value={globalTargetRarity}
@@ -895,7 +895,7 @@ export function LoreCardBatchAdmin() {
                     <SelectItem value="COMMON">Common</SelectItem>
                     <SelectItem value="UNCOMMON">Uncommon</SelectItem>
                     <SelectItem value="RARE">Rare</SelectItem>
-                    <SelectItem value="ULTRA_RARE">Ultra Rare</SelectItem>
+                    <SelectItem value="ULTRA_RARE">Ultra rare</SelectItem>
                     <SelectItem value="EPIC">Epic</SelectItem>
                     <SelectItem value="LEGENDARY">Legendary</SelectItem>
                   </SelectContent>
@@ -905,7 +905,7 @@ export function LoreCardBatchAdmin() {
               {/* Card Season */}
               <div>
                 <label className="text-label-secondary text-caption mb-1 block">
-                  Target Card Season
+                  Target card season
                 </label>
                 <Select
                   value={String(globalSeason)}
@@ -1092,7 +1092,7 @@ export function LoreCardBatchAdmin() {
                 onClick={handleAddArticlesFromText}
                 disabled={!articleInput.trim()}
               >
-                Add to Queue
+                Add to queue
               </Button>
             </div>
             <Textarea
@@ -1130,7 +1130,7 @@ export function LoreCardBatchAdmin() {
 
                     title="Remove duplicate articles currently in this queue"
                   >
-                    <Layers className="text-purple mr-1 h-3.5 w-3.5" /> Deduplicate Queue
+                    <Layers className="text-purple mr-1 h-3.5 w-3.5" /> Deduplicate queue
                   </Button>
 
                   {/* Purge Database Duplicates Button */}
@@ -1155,7 +1155,7 @@ export function LoreCardBatchAdmin() {
 
                     title="Backfill page creator and contributor attribution for existing lore cards"
                   >
-                    <Sparkles className="text-yellow mr-1 h-3.5 w-3.5" /> Backfill Wiki Authors
+                    <Sparkles className="text-yellow mr-1 h-3.5 w-3.5" /> Backfill wiki authors
                   </Button>
 
                   {/* Re-Catalog Categories Button */}
@@ -1177,7 +1177,7 @@ export function LoreCardBatchAdmin() {
                     disabled={isProcessingBatch}
                     className="text-destructive"
                   >
-                    <Trash2 className="mr-1 h-3.5 w-3.5" /> Clear All
+                    <Trash2 className="mr-1 h-3.5 w-3.5" /> Clear all
                   </Button>
 
                   <Button
@@ -1242,10 +1242,10 @@ export function LoreCardBatchAdmin() {
                       onClick={handleCopyErrorReport}
                       className="text-destructive"
                     >
-                      <Copy className="mr-1 h-3 w-3" /> Copy Error Log
+                      <Copy className="mr-1 h-3 w-3" /> Copy error log
                     </Button>
                     <Button size="sm" variant="outline" onClick={handleClearFailed}>
-                      <Trash2 className="mr-1 h-3 w-3" /> Clear Failed
+                      <Trash2 className="mr-1 h-3 w-3" /> Clear failed
                     </Button>
                     <Button
                       variant="destructive"
@@ -1263,11 +1263,11 @@ export function LoreCardBatchAdmin() {
                 <TableHeader sticky>
                   <TableRow>
                     <TableHead className="w-14 px-3 text-center">Artwork</TableHead>
-                    <TableHead className="px-4">Article Title</TableHead>
+                    <TableHead className="px-4">Article title</TableHead>
                     <TableHead className="px-4">Source</TableHead>
-                    <TableHead className="px-4">Target Rarity</TableHead>
+                    <TableHead className="px-4">Target rarity</TableHead>
                     <TableHead className="px-4">Season</TableHead>
-                    <TableHead className="px-4">Status & Error Diagnostics</TableHead>
+                    <TableHead className="px-4">Status & error diagnostics</TableHead>
                     <TableHead className="px-4 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -1414,12 +1414,12 @@ export function LoreCardBatchAdmin() {
                               <Button
                                 variant="ghost"
                                 size="icon-sm"
-                                aria-label="Retry Import"
+                                aria-label="Retry import"
                                 type="button"
                                 onClick={() => handleRetryCandidate(c.id)}
                                 disabled={isProcessingBatch}
 
-                                title="Retry Import"
+                                title="Retry import"
                               >
                                 <RotateCcw className="h-3.5 w-3.5" />
                               </Button>
@@ -1428,7 +1428,7 @@ export function LoreCardBatchAdmin() {
                               <Button
                                 variant="ghost"
                                 size="icon-sm"
-                                aria-label="Inspect Artwork"
+                                aria-label="Inspect artwork"
                                 type="button"
                                 onClick={() =>
                                   setPreviewImage({
@@ -1442,7 +1442,7 @@ export function LoreCardBatchAdmin() {
                                   })
                                 }
 
-                                title="Inspect Artwork"
+                                title="Inspect artwork"
                               >
                                 <Eye className="h-3.5 w-3.5" />
                               </Button>
@@ -1450,13 +1450,13 @@ export function LoreCardBatchAdmin() {
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              aria-label="Remove Candidate"
+                              aria-label="Remove candidate"
                               type="button"
                               onClick={() =>
                                 setCandidates((prev) => prev.filter((item) => item.id !== c.id))
                               }
 
-                              title="Remove Candidate"
+                              title="Remove candidate"
                             >
                               <X className="h-3.5 w-3.5" />
                             </Button>
@@ -1479,15 +1479,15 @@ export function LoreCardBatchAdmin() {
           {requestStats.data && (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <Card className="rounded-row p-3">
-                <div className="text-label-secondary text-footnote">Total Requests</div>
+                <div className="text-label-secondary text-footnote">Total requests</div>
                 <div className="text-label text-title-3 mt-0.5">{requestStats.data.total}</div>
               </Card>
               <Card className="rounded-row border-yellow/30 bg-yellow/10 p-3">
-                <div className="text-label-secondary text-footnote">Pending Approval</div>
+                <div className="text-label-secondary text-footnote">Pending approval</div>
                 <div className="text-title-3 text-yellow mt-0.5">{requestStats.data.pending}</div>
               </Card>
               <Card className="rounded-row border-green/30 bg-green/10 p-3">
-                <div className="text-label-secondary text-footnote">Generated Cards</div>
+                <div className="text-label-secondary text-footnote">Generated cards</div>
                 <div className="text-title-3 text-green mt-0.5">{requestStats.data.generated}</div>
               </Card>
               <Card className="rounded-row border-red/30 bg-red/10 p-3">
@@ -1506,11 +1506,11 @@ export function LoreCardBatchAdmin() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">All Requests</SelectItem>
-                  <SelectItem value="PENDING">Pending Only</SelectItem>
-                  <SelectItem value="APPROVED">Approved Only</SelectItem>
-                  <SelectItem value="GENERATED">Generated Only</SelectItem>
-                  <SelectItem value="REJECTED">Rejected Only</SelectItem>
+                  <SelectItem value="ALL">All requests</SelectItem>
+                  <SelectItem value="PENDING">Pending only</SelectItem>
+                  <SelectItem value="APPROVED">Approved only</SelectItem>
+                  <SelectItem value="GENERATED">Generated only</SelectItem>
+                  <SelectItem value="REJECTED">Rejected only</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1531,10 +1531,10 @@ export function LoreCardBatchAdmin() {
               <Table containerClassName="max-h-[500px]">
                 <TableHeader sticky>
                   <TableRow>
-                    <TableHead className="px-4">Article Title</TableHead>
-                    <TableHead className="px-4">Wiki Source</TableHead>
+                    <TableHead className="px-4">Article title</TableHead>
+                    <TableHead className="px-4">Wiki source</TableHead>
                     <TableHead className="px-4">Requester (Nation / User)</TableHead>
-                    <TableHead className="px-4">Requested Date</TableHead>
+                    <TableHead className="px-4">Requested date</TableHead>
                     <TableHead className="px-4">Status</TableHead>
                     <TableHead className="px-4 text-right">Actions</TableHead>
                   </TableRow>
@@ -1603,7 +1603,7 @@ export function LoreCardBatchAdmin() {
                                 }
                                 disabled={generateRequestedMutation.isPending}
                               >
-                                Mint Card
+                                Mint card
                               </Button>
                             )}
                           </div>
@@ -1675,7 +1675,7 @@ export function LoreCardBatchAdmin() {
                   </div>
                   <div>
                     <DialogTitle>{previewImage.title}</DialogTitle>
-                    <DialogDescription>Parsed Wiki Artwork & Media Inspector</DialogDescription>
+                    <DialogDescription>Parsed wiki artwork & media inspector</DialogDescription>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1756,7 +1756,7 @@ export function LoreCardBatchAdmin() {
                     rel="noreferrer"
                     className="text-tint text-caption inline-flex items-center gap-2 hover:underline"
                   >
-                    <ExternalLink className="h-3.5 w-3.5" /> View Wiki Article
+                    <ExternalLink className="h-3.5 w-3.5" /> View wiki article
                   </a>
                 ) : (
                   <div />
@@ -1836,7 +1836,7 @@ export function LoreCardBatchAdmin() {
             ) : (
               <div className="text-label-secondary py-4 text-center">
                 <CheckCircle2 className="text-green mx-auto mb-2 h-8 w-8 opacity-80" />
-                <p className="text-label font-semibold">No Duplicate Lore Cards Found</p>
+                <p className="text-label font-semibold">No duplicate lore cards found</p>
                 <p className="text-footnote">
                   Your database is clean with no redundant lore card records.
                 </p>
@@ -1880,7 +1880,7 @@ export function LoreCardBatchAdmin() {
                 <Sparkles className="text-yellow h-5 w-5" />
               </div>
               <div>
-                <DialogTitle>Backfill Wiki Authors</DialogTitle>
+                <DialogTitle>Backfill wiki authors</DialogTitle>
                 <DialogDescription>
                   Query MediaWiki API to parse and store creator & top contributor attribution on
                   lore cards.
@@ -1900,7 +1900,7 @@ export function LoreCardBatchAdmin() {
                 value={backfillSource}
                 onValueChange={(value) => setBackfillSource(value)}
                 options={[
-                  { value: "all", label: "All Sources" },
+                  { value: "all", label: "All sources" },
                   { value: "ixwiki", label: "IxWiki" },
                   { value: "iiwiki", label: "IIWiki" },
                 ]}
@@ -1989,7 +1989,7 @@ export function LoreCardBatchAdmin() {
                 value={reclassifySource}
                 onValueChange={(value) => setReclassifySource(value)}
                 options={[
-                  { value: "all", label: "All Sources" },
+                  { value: "all", label: "All sources" },
                   { value: "ixwiki", label: "IxWiki" },
                   { value: "iiwiki", label: "IIWiki" },
                 ]}
@@ -2016,7 +2016,7 @@ export function LoreCardBatchAdmin() {
             <div className="border-separator bg-fill-4 rounded-row flex items-center justify-between border p-3">
               <div>
                 <span id="reclassify-force-label" className="text-label text-caption block">
-                  Force Overwrite
+                  Force overwrite
                 </span>
                 <span id="reclassify-force-hint" className="text-label-secondary text-footnote">
                   Re-classify all cards, not just unclassified/defaults
@@ -2081,7 +2081,7 @@ export function LoreCardBatchAdmin() {
                 <AlertTriangle className="text-red h-5 w-5" />
               </div>
               <div>
-                <DialogTitle>Import Failure Diagnostics</DialogTitle>
+                <DialogTitle>Import failure diagnostics</DialogTitle>
                 <DialogDescription>
                   Troubleshooting details for why this lore card failed to generate.
                 </DialogDescription>
@@ -2100,7 +2100,7 @@ export function LoreCardBatchAdmin() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-label-secondary font-medium">Wiki Source:</span>
-                  <span className="text-label font-semibold uppercase">
+                  <span className="text-label font-semibold">
                     {selectedErrorCandidate.wikiSource}
                   </span>
                 </div>
@@ -2114,7 +2114,7 @@ export function LoreCardBatchAdmin() {
 
               <div className="rounded-row border-red/30 bg-red/10 space-y-2 border p-3">
                 <div className="text-caption text-red flex items-center gap-2">
-                  <XCircle className="text-red h-4 w-4" /> Error Reason
+                  <XCircle className="text-red h-4 w-4" /> Error reason
                 </div>
                 <div className="text-footnote text-red leading-relaxed break-words whitespace-pre-wrap tabular-nums">
                   {selectedErrorCandidate.errorMessage ||
@@ -2154,7 +2154,7 @@ export function LoreCardBatchAdmin() {
                 }}
                 disabled={isProcessingBatch}
               >
-                <RotateCcw className="mr-2 h-3.5 w-3.5" /> Retry Import Now
+                <RotateCcw className="mr-2 h-3.5 w-3.5" /> Retry import now
               </Button>
             )}
           </DialogFooter>

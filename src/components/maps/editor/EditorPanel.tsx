@@ -337,8 +337,8 @@ export function EditorPanel({
               variant="ghost"
               size="icon-sm"
               onClick={() => onChangePlacement("left")}
-              title="Dock Left"
-              aria-label="Dock Left"
+              title="Dock left"
+              aria-label="Dock left"
               className={cn(
                 "rounded-control-sm size-5",
                 `rounded-control-sm p-0.5 ${placement === "left" ? "text-tint bg-tint-fill" : "hover:text-label"}`
@@ -351,8 +351,8 @@ export function EditorPanel({
               variant="ghost"
               size="icon-sm"
               onClick={() => onChangePlacement("bottom")}
-              title="Dock Bottom"
-              aria-label="Dock Bottom"
+              title="Dock bottom"
+              aria-label="Dock bottom"
               className={cn(
                 "rounded-control-sm size-5",
                 `rounded-control-sm p-0.5 ${placement === "bottom" ? "text-tint bg-tint-fill" : "hover:text-label"}`
@@ -365,8 +365,8 @@ export function EditorPanel({
               variant="ghost"
               size="icon-sm"
               onClick={() => onChangePlacement("right")}
-              title="Dock Right"
-              aria-label="Dock Right"
+              title="Dock right"
+              aria-label="Dock right"
               className={cn(
                 "rounded-control-sm size-5",
                 `rounded-control-sm p-0.5 ${placement === "right" ? "text-tint bg-tint-fill" : "hover:text-label"}`

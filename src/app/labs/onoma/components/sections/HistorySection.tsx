@@ -132,7 +132,7 @@ export default function HistorySection({
       <div className="flex items-center justify-between">
         {!hideHeader ? (
           <div>
-            <h2 className="text-label text-title-2 font-bold">Generation History</h2>
+            <h2 className="text-label text-title-2 font-bold">Generation history</h2>
             <p className="text-label-secondary text-body mt-1">
               Every name you&apos;ve generated, searchable and replayable.
             </p>
@@ -161,7 +161,7 @@ export default function HistorySection({
                   <p className="text-title-1 text-yellow font-bold">
                     {stats.totalNames.toLocaleString()}
                   </p>
-                  <p className="text-label-secondary text-footnote">Names Generated</p>
+                  <p className="text-label-secondary text-footnote">Names generated</p>
                 </div>
                 <div className="text-center">
                   <p className="text-title-1 text-yellow font-bold">
@@ -179,7 +179,7 @@ export default function HistorySection({
                   <p className="text-label text-title-1 font-bold capitalize">
                     {stats.categoryBreakdown[0]?.category ?? "—"}
                   </p>
-                  <p className="text-label-secondary text-footnote">Top Category</p>
+                  <p className="text-label-secondary text-footnote">Top category</p>
                 </div>
               </div>
               {/* Category Breakdown */}
@@ -227,7 +227,7 @@ export default function HistorySection({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none__">All Categories</SelectItem>
+              <SelectItem value="__none__">All categories</SelectItem>
               <SelectItem value="country">Country</SelectItem>
               <SelectItem value="city">City</SelectItem>
               <SelectItem value="province">Province</SelectItem>
@@ -264,7 +264,7 @@ export default function HistorySection({
                 ? "No generation events match your search query."
                 : favoritesOnly
                   ? "No favorited names yet. Star names you love to find them here."
-                  : "No generation history yet. Generate some names and they'll appear here."}
+                  : "No generation history yet. Generate some names to start one."}
             </p>
           </div>
         </Card>
@@ -378,7 +378,7 @@ export default function HistorySection({
                                       title="Load entire run into Studio Workshop"
                                     >
                                       <Wrench className="h-3 w-3" />
-                                      <span>Load to Studio</span>
+                                      <span>Load to studio</span>
                                     </Button>
                                   )}
                                   <Button
@@ -399,7 +399,7 @@ export default function HistorySection({
                                     title="Save entire run as custom Stash Dictionary"
                                   >
                                     <BookmarkPlus className="h-3 w-3" />
-                                    <span>Save as Dictionary</span>
+                                    <span>Save as dictionary</span>
                                   </Button>
                                   <Button
                                     variant="secondary"
@@ -413,7 +413,7 @@ export default function HistorySection({
                                     title="Copy all names comma-separated"
                                   >
                                     <Copy className="h-3 w-3" />
-                                    <span>Copy All</span>
+                                    <span>Copy all</span>
                                   </Button>
                                 </div>
                               </div>

@@ -92,9 +92,7 @@ export const CardEditDialog = React.memo(function CardEditDialog({
         <div className="my-2 grid grid-cols-1 gap-6 md:grid-cols-12">
           {/* Left Column: Live Card Preview */}
           <div className="flex flex-col items-center justify-center md:col-span-5">
-            <div className="text-label-secondary text-caption mb-2 text-center">
-              Live Real-Time Card Preview
-            </div>
+            <div className="text-label-secondary text-caption mb-2 text-center">Card preview</div>
             {livePreviewCard && (
               <div className="scale-90 transition-[color,background-color,border-color,box-shadow,opacity,transform] sm:scale-100">
                 <CardDisplay card={livePreviewCard} size="md" />
@@ -122,7 +120,7 @@ export const CardEditDialog = React.memo(function CardEditDialog({
               </div>
 
               <div>
-                <label className="text-label text-caption mb-1 block">Card Title</label>
+                <label className="text-label text-caption mb-1 block">Card title</label>
                 <Input
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
@@ -135,7 +133,7 @@ export const CardEditDialog = React.memo(function CardEditDialog({
             {/* Lore Category */}
             <div>
               <label className="text-label text-caption mb-1 block flex items-center justify-between">
-                <span>Lore Category</span>
+                <span>Lore category</span>
                 <span className="text-label-secondary text-footnote font-normal">
                   Sets background theme & icon watermark
                 </span>
@@ -151,7 +149,7 @@ export const CardEditDialog = React.memo(function CardEditDialog({
                   <SelectItem value="__none__">(Default / Unassigned)</SelectItem>
                   {BROWSABLE_CATEGORIES.map((cat) => (
                     <SelectItem key={cat} value={cat}>
-                      {cat} — {getCategoryLabel(cat)}
+                      {cat}: {getCategoryLabel(cat)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -161,7 +159,7 @@ export const CardEditDialog = React.memo(function CardEditDialog({
             {/* Rarity & Market Value */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-label text-caption mb-1 block">Rarity Tier</label>
+                <label className="text-label text-caption mb-1 block">Rarity tier</label>
                 <Select value={editRarity} onValueChange={(v) => setEditRarity(v as CardRarity)}>
                   <SelectTrigger size="sm" className="w-full">
                     <SelectValue />
@@ -193,7 +191,7 @@ export const CardEditDialog = React.memo(function CardEditDialog({
             {/* Artwork Source & URL */}
             <div className="space-y-2">
               <div>
-                <label className="text-label text-caption mb-1 block">Artwork Source Tier</label>
+                <label className="text-label text-caption mb-1 block">Artwork source tier</label>
                 <Select
                   value={editArtworkSource}
                   onValueChange={(v) => setEditArtworkSource(v as ArtworkSource)}
@@ -232,7 +230,7 @@ export const CardEditDialog = React.memo(function CardEditDialog({
             {/* Visibility / Takedown Toggle */}
             <div className="border-separator bg-surface rounded-row flex items-center justify-between border p-3">
               <div>
-                <div className="text-label text-caption">Card Visibility Status</div>
+                <div className="text-label text-caption">Card visibility status</div>
                 <div className="text-label-secondary text-footnote">
                   Hidden cards are retired from packs & marketplace.
                 </div>
@@ -254,7 +252,7 @@ export const CardEditDialog = React.memo(function CardEditDialog({
             Cancel
           </Button>
           <Button onClick={onSave} disabled={isPending}>
-            Save Card Changes
+            Save card changes
           </Button>
         </SheetFooter>
       </SheetContent>

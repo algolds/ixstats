@@ -21,7 +21,7 @@ export function SmallArmsTab({
     <div className="space-y-6">
       <div className="bg-surface rounded-row border-separator border p-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-label text-title-2">Small Arms Equipment</h2>
+          <h2 className="text-label text-title-2">Small arms equipment</h2>
           <p className="text-label-secondary text-body">
             Manage small arms catalog and manufacturers
           </p>
@@ -39,11 +39,11 @@ export function SmallArmsTab({
           {smallArmsStats && (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
               <Card className="flex flex-col gap-6 p-4 py-6">
-                <p className="text-label-secondary text-body">Total Equipment</p>
+                <p className="text-label-secondary text-body">Total equipment</p>
                 <p className="text-label text-large-title mt-2">{smallArmsStats.totalEquipment}</p>
               </Card>
               <Card className="flex flex-col gap-6 p-4 py-6">
-                <p className="text-label-secondary text-body">Equipment Types</p>
+                <p className="text-label-secondary text-body">Equipment types</p>
                 <p className="text-large-title text-blue mt-2">
                   {smallArmsStats.equipmentByType.length}
                 </p>

@@ -89,21 +89,21 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
   if (feature.type === "gap") {
     if (onCreateFromGap) {
       primaryItems.push({
-        label: "Create Region from Gap",
+        label: "Create region from gap",
         icon: Plus,
         onClick: onCreateFromGap,
       });
     }
   } else {
     primaryItems.push(
-      { label: "Edit Properties", icon: Pencil, onClick: onEdit },
+      { label: "Edit properties", icon: Pencil, onClick: onEdit },
       { label: "Duplicate", icon: Copy, onClick: onDuplicate }
     );
-    if (onZoomTo) primaryItems.push({ label: "Zoom To", icon: ZoomIn, onClick: onZoomTo });
+    if (onZoomTo) primaryItems.push({ label: "Zoom to", icon: ZoomIn, onClick: onZoomTo });
 
     if (feature.type === "city" && onSplitCity) {
       primaryItems.push({
-        label: "Split City",
+        label: "Split city",
         icon: Scissors,
         onClick: onSplitCity,
       });
@@ -113,7 +113,7 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
 
     if (onCopyCoords) {
       secondaryItems.push({
-        label: "Copy Coordinates",
+        label: "Copy coordinates",
         icon: MapPin,
         onClick: onCopyCoords,
       });
@@ -122,14 +122,14 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
     if (feature.type === "city") {
       if (onSnapToBorder) {
         secondaryItems.push({
-          label: "Snap to Nearest Border",
+          label: "Snap to nearest border",
           icon: MapPin,
           onClick: onSnapToBorder,
         });
       }
       if (onSnapToCoast) {
         secondaryItems.push({
-          label: "Snap to Coastline",
+          label: "Snap to coastline",
           icon: MapPin,
           onClick: onSnapToCoast,
         });
@@ -138,7 +138,7 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
 
     if (feature.wikiPageTitle && onOpenWiki) {
       secondaryItems.push({
-        label: "Open Wiki Page",
+        label: "Open wiki page",
         icon: ExternalLink,
         onClick: onOpenWiki,
       });
@@ -146,7 +146,7 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
 
     if (!feature.wikiPageTitle) {
       secondaryItems.push({
-        label: "Link to Wiki",
+        label: "Link to wiki",
         icon: BookOpen,
         onClick: onEdit,
       });

@@ -12,8 +12,7 @@
  * - Settings popover → theme + projection only
  * - Click-outside → smooth retraction
  *
- * Facet 3.1 chrome (spec §16.1 #6): the island is Halo's acrylic — `FacetMaterial material="acrylic"`
- * with a soft glow underlay, opening into the
+ * The island is Halo's acrylic (`FacetMaterial material="acrylic"`), opening into the
  * 40px / 210% expanded sheet (`data-expanded`) while searching — and the results list a
  * `material-regular` panel.
  * Desktop springs its size (layout animation); phones swap content without it.
@@ -113,8 +112,8 @@ export function MapDynamicIsland({
   const debouncedQueryLength = query.trim().length;
 
   // Island controls: plain icon buttons on the material (no nested surfaces).
-  // The focus ring sits just inside the button: the acrylic pill clips its glow (`overflow-hidden`,
-  // 4px of padding), so the shared 2px-offset ring would be cut at the pill's edge (spec §16.8).
+  // The focus ring sits just inside the button: the acrylic pill clips (`overflow-hidden`,
+  // 4px of padding), so the shared 2px-offset ring would be cut at the pill's edge.
   const iconButton =
     "text-label-secondary hover:text-label rounded-full focus-visible:-outline-offset-2";
 

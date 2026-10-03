@@ -328,7 +328,7 @@ export function BotControlCard({
               <div className="rounded-control border-green/20 bg-green/10 text-green border p-2">
                 <Bot className="h-4 w-4" />
               </div>
-              Discord Bot Controller
+              Discord bot controller
             </CardTitle>
             <CardDescription className="text-footnote">
               Bot daemon processes, live command testing console, guild roles, and runtime logs
@@ -341,7 +341,7 @@ export function BotControlCard({
             {isAvailable ? (
               <Badge variant="success" className="text-eyebrow">
                 <span className="bg-green mr-2 h-1.5 w-1.5 rounded-full" />
-                Daemon Active
+                Daemon active
               </Badge>
             ) : (
               <Badge
@@ -363,10 +363,10 @@ export function BotControlCard({
           value={activeSubTab}
           onValueChange={(tab) => setActiveSubTab(tab as any)}
           options={[
-            { value: "processes", label: "Process Status", icon: <Sliders /> },
+            { value: "processes", label: "Process status", icon: <Sliders /> },
             { value: "commands", label: "Simulator", icon: <FileCode /> },
             { value: "roles", label: "Permissions", icon: <Shield /> },
-            { value: "logs", label: "Live Logs", icon: <Terminal /> },
+            { value: "logs", label: "Live logs", icon: <Terminal /> },
           ]}
         />
       </CardHeader>
@@ -518,7 +518,7 @@ export function BotControlCard({
                 <Alert className="rounded-control border-yellow/20 bg-yellow/5 flex items-start gap-2 py-2">
                   <AlertTriangle className="text-yellow mt-0.5 h-3.5 w-3.5 shrink-0" />
                   <AlertDescription className="text-footnote text-yellow leading-relaxed">
-                    Bot has an active time override. Use <strong>Clear Overrides</strong> to return
+                    Bot has an active time override. Use <strong>Clear overrides</strong> to return
                     to natural time progression.
                   </AlertDescription>
                 </Alert>
@@ -527,13 +527,13 @@ export function BotControlCard({
               {/* Grid matching details */}
               <div className="border-separator text-caption grid grid-cols-2 gap-3 border-b pb-3">
                 <div className="space-y-0.5">
-                  <span className="text-label-secondary text-eyebrow block">Health Status</span>
+                  <span className="text-label-secondary text-eyebrow block">Health status</span>
                   <span className="text-label block truncate font-semibold">
                     {botStatus?.botHealth?.message || "No report available"}
                   </span>
                 </div>
                 <div className="space-y-0.5">
-                  <span className="text-label-secondary text-eyebrow block">Sync Time</span>
+                  <span className="text-label-secondary text-eyebrow block">Sync time</span>
                   <span className="text-label block font-semibold">
                     {lastBotSync ? lastBotSync.toLocaleTimeString() : "Never synced"}
                   </span>
@@ -543,7 +543,7 @@ export function BotControlCard({
               {/* Execution Overrides */}
               <div className="space-y-2">
                 <span className="text-label-secondary text-eyebrow block">
-                  Execution Override Controls
+                  Execution override controls
                 </span>
                 <div className="grid grid-cols-3 gap-2">
                   <Button
@@ -591,7 +591,7 @@ export function BotControlCard({
               {/* Synchronization actions */}
               <div className="space-y-2">
                 <span className="text-label-secondary text-eyebrow block">
-                  Time Synchronization
+                  Time synchronization
                 </span>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
@@ -681,7 +681,7 @@ export function BotControlCard({
                       {/* Mock Author settings */}
                       <div className="bg-fill-4 border-separator rounded-control space-y-3 border p-3">
                         <span className="text-label-secondary text-eyebrow block">
-                          Mock User Settings
+                          Mock user settings
                         </span>
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1">
@@ -703,7 +703,7 @@ export function BotControlCard({
                               htmlFor="mock-disp"
                               className="text-label-secondary text-subhead"
                             >
-                              Display Name
+                              Display name
                             </Label>
                             <Input
                               id="mock-disp"
@@ -737,7 +737,7 @@ export function BotControlCard({
                       {selectedCommand.options && selectedCommand.options.length > 0 && (
                         <div className="border-separator space-y-4 border-t pt-4">
                           <span className="text-label-secondary text-eyebrow block">
-                            Command Options
+                            Command options
                           </span>
                           <div className="space-y-3">
                             {selectedCommand.options.map((opt: any) => renderOptionInput(opt))}
@@ -769,7 +769,7 @@ export function BotControlCard({
                         <div className="border-separator animate-in fade-in duration-fast space-y-4 border-t pt-4">
                           <div className="flex items-center justify-between">
                             <span className="text-label-secondary text-eyebrow">
-                              Output Console Preview
+                              Output console preview
                             </span>
                             <div className="flex items-center gap-2">
                               <span className="text-label-secondary text-caption">Raw JSON</span>
@@ -958,9 +958,9 @@ export function BotControlCard({
                 <TableHeader>
                   <TableRow>
                     <TableHead className="px-4">Position</TableHead>
-                    <TableHead className="px-4">Role Name</TableHead>
+                    <TableHead className="px-4">Role name</TableHead>
                     <TableHead className="px-4">Role ID</TableHead>
-                    <TableHead className="px-4">Permit Level</TableHead>
+                    <TableHead className="px-4">Permit level</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -992,7 +992,7 @@ export function BotControlCard({
                         <TableCell className="px-4">
                           {isAdm ? (
                             <Badge variant="warning" className="text-eyebrow px-2 py-0">
-                              Admin Permit
+                              Admin permit
                             </Badge>
                           ) : (
                             <Badge
@@ -1024,7 +1024,7 @@ export function BotControlCard({
                     htmlFor="log-proc-select"
                     className="text-label-secondary text-subhead block"
                   >
-                    Daemon Process
+                    Daemon process
                   </Label>
                   <Select value={logProcess} onValueChange={(v) => setLogProcess(v as any)}>
                     <SelectTrigger size="sm" id="log-proc-select">
@@ -1043,7 +1043,7 @@ export function BotControlCard({
                     htmlFor="log-type-select"
                     className="text-label-secondary text-subhead block"
                   >
-                    Stream Type
+                    Stream type
                   </Label>
                   <Select value={logType} onValueChange={(v) => setLogType(v as any)}>
                     <SelectTrigger size="sm" id="log-type-select">
@@ -1080,7 +1080,7 @@ export function BotControlCard({
                   disabled={isLogsFetching}
                 >
                   <RefreshCw className={cn("mr-2 h-3 w-3", isLogsFetching ? "animate-spin" : "")} />
-                  Refresh Logs
+                  Refresh logs
                 </Button>
               </div>
             </div>

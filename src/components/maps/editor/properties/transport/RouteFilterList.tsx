@@ -127,7 +127,7 @@ export const RouteFilterList = memo(function RouteFilterList({
                         e.stopPropagation();
                         onEditRoute(route.id);
                       }}
-                      title="Edit Route Path"
+                      title="Edit route path"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
@@ -142,7 +142,7 @@ export const RouteFilterList = memo(function RouteFilterList({
                         e.stopPropagation();
                         onDeleteRoute(route.id);
                       }}
-                      title="Delete Route"
+                      title="Delete route"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>

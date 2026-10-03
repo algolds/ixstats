@@ -330,7 +330,7 @@ export function QuickGeneratorControls({
                 title="Save current modified words as a new custom dictionary"
               >
                 <Plus className="h-2.5 w-2.5" />
-                <span>Save As New</span>
+                <span>Save as new</span>
               </Button>
             )}
           </div>
@@ -576,7 +576,7 @@ export function QuickGeneratorControls({
             {/* Length Range */}
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <label className="text-caption text-label block font-medium">Min Length</label>
+                <label className="text-caption text-label block font-medium">Min length</label>
                 <Input
                   type="number"
                   min={1}
@@ -590,7 +590,7 @@ export function QuickGeneratorControls({
               </div>
 
               <div className="space-y-1">
-                <label className="text-caption text-label block font-medium">Max Length</label>
+                <label className="text-caption text-label block font-medium">Max length</label>
                 <Input
                   type="number"
                   min={1}
@@ -621,7 +621,7 @@ export function QuickGeneratorControls({
 
             <div className="space-y-1">
               <label className="text-caption text-label block font-medium">
-                Ends With <span className="text-label-secondary text-caption font-mono">(_#)</span>
+                Ends with <span className="text-label-secondary text-caption font-mono">(_#)</span>
               </label>
               <Input
                 type="text"
@@ -634,7 +634,7 @@ export function QuickGeneratorControls({
 
             {/* Contains Filter */}
             <div className="space-y-1">
-              <label className="text-caption text-label block font-medium">Contains Pattern</label>
+              <label className="text-caption text-label block font-medium">Contains pattern</label>
               <Input
                 type="text"
                 placeholder="e.g. 'an'"
@@ -646,7 +646,7 @@ export function QuickGeneratorControls({
 
             {/* Excludes Filter */}
             <div className="space-y-1">
-              <label className="text-caption text-label block font-medium">Excludes Pattern</label>
+              <label className="text-caption text-label block font-medium">Excludes pattern</label>
               <Input
                 type="text"
                 placeholder="e.g. 'xx'"
@@ -658,7 +658,7 @@ export function QuickGeneratorControls({
 
             {/* Permit Seed Duplicates */}
             <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border px-3 py-2">
-              <label className="text-caption text-label font-medium">Allow Seed Duplicates</label>
+              <label className="text-caption text-label font-medium">Allow seed duplicates</label>
               <Checkbox
                 checked={options.allowDuplicates}
                 onCheckedChange={(checked) =>

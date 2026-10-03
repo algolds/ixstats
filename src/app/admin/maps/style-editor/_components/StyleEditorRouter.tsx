@@ -32,17 +32,17 @@ export function StyleEditorRouter() {
             onClick={() => {
               window.location.href = "/admin/maps";
             }}
-            title="Return to Admin Maps Settings"
+            title="Return to admin maps settings"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>Exit Editor</span>
+            <span>Exit editor</span>
           </Button>
 
           <div className="bg-surface-secondary h-4 w-px" />
 
           <div className="flex items-center gap-2">
             <Layers className="text-blue h-4.5 w-4" />
-            <Eyebrow>Style Editor</Eyebrow>
+            <Eyebrow>Style editor</Eyebrow>
           </div>
         </div>
 
@@ -66,7 +66,7 @@ export function StyleEditorRouter() {
             size="icon"
             className="w-7"
             onClick={() => setKey((prev) => prev + 1)}
-            title="Reload Style Editor"
+            title="Reload style editor"
           >
             <RefreshCw className="h-4 w-4" />
           </Button>
@@ -85,7 +85,7 @@ export function StyleEditorRouter() {
           src={iframeUrl}
           sandbox="allow-scripts allow-same-origin"
           className="bg-surface absolute inset-0 h-full w-full border-none"
-          title="Maputnik Visual Style Editor"
+          title="Maputnik visual style editor"
         />
       </div>
     </div>

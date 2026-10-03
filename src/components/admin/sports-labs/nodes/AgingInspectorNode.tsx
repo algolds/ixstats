@@ -100,7 +100,7 @@ export const AgingInspectorNode = React.memo(function AgingInspectorNode({
 
         {agingResults.length > 0 && (
           <div className="thin-scrollbar max-h-[280px] space-y-2 overflow-y-auto pr-1">
-            <h5 className="text-label-secondary text-subhead">Aging Results</h5>
+            <h5 className="text-label-secondary text-subhead">Aging results</h5>
             {agingResults.map((r, i) => (
               <div
                 key={i}
@@ -144,7 +144,7 @@ export const AgingInspectorNode = React.memo(function AgingInspectorNode({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label>Select League</Label>
+        <Label>Select league</Label>
         <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
           <SelectTrigger>
             <SelectValue placeholder="Choose league" />
@@ -161,7 +161,7 @@ export const AgingInspectorNode = React.memo(function AgingInspectorNode({
 
       {dbLeague && dbLeague.seasons && (
         <div className="space-y-2">
-          <Label>Select Season</Label>
+          <Label>Select season</Label>
           <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
             <SelectTrigger>
               <SelectValue placeholder="Choose season" />

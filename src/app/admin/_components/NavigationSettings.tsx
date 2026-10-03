@@ -90,7 +90,7 @@ export function NavigationSettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Navigation className="h-5 w-5" />
-            Navigation Settings
+            Navigation settings
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -107,7 +107,7 @@ export function NavigationSettings() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Navigation className="h-5 w-5" />
-          Navigation Settings
+          Navigation settings
         </CardTitle>
         <p className="text-label-secondary text-body">
           Control which navigation tabs are visible to users. These tabs can be hidden to simplify
@@ -127,7 +127,7 @@ export function NavigationSettings() {
             </div>
             <div>
               <Label htmlFor="wiki-tab" className="text-body font-medium">
-                Wiki Tab
+                Wiki tab
               </Label>
               <p className="text-label-secondary text-footnote">
                 Show/hide the Wiki navigation tab
@@ -153,7 +153,7 @@ export function NavigationSettings() {
             </div>
             <div>
               <Label htmlFor="cards-tab" className="text-body font-medium">
-                Cards Tab
+                Cards tab
               </Label>
               <p className="text-label-secondary text-footnote">
                 Show/hide the Cards navigation tab
@@ -179,7 +179,7 @@ export function NavigationSettings() {
             </div>
             <div>
               <Label htmlFor="labs-tab" className="text-body font-medium">
-                Labs Tab
+                Labs tab
               </Label>
               <p className="text-label-secondary text-footnote">
                 Show/hide the Labs navigation tab and dropdown
@@ -209,7 +209,7 @@ export function NavigationSettings() {
                 className="text-body flex items-center gap-1 font-medium"
               >
                 <Shield className="text-label-secondary h-4 w-4" />
-                Intelligence Tab
+                Intelligence tab
               </Label>
               <p className="text-label-secondary text-footnote">
                 Show/hide the Intelligence navigation tab
@@ -239,7 +239,7 @@ export function NavigationSettings() {
                 className="text-body flex items-center gap-1 font-medium"
               >
                 <Shield className="text-label-secondary h-4 w-4" />
-                Defense Tab
+                Defense tab
               </Label>
               <p className="text-label-secondary text-footnote">
                 Show/hide the Defense & Security navigation tab in MyCountry
@@ -265,7 +265,7 @@ export function NavigationSettings() {
             </div>
             <div>
               <Label htmlFor="maps-tab" className="text-body font-medium">
-                Maps Tab
+                Maps tab
               </Label>
               <p className="text-label-secondary text-footnote">
                 Show/hide the Maps navigation tab
@@ -291,7 +291,7 @@ export function NavigationSettings() {
             </div>
             <div>
               <Label htmlFor="forum-tab" className="text-body font-medium">
-                Forum Tab
+                Forum tab
               </Label>
               <p className="text-label-secondary text-footnote">
                 Show/hide the Forum navigation tab
@@ -317,7 +317,7 @@ export function NavigationSettings() {
             </div>
             <div>
               <Label htmlFor="help-tab" className="text-body font-medium">
-                Help Tab
+                Help tab
               </Label>
               <p className="text-label-secondary text-footnote">
                 Show/hide the Help navigation tab
@@ -343,7 +343,7 @@ export function NavigationSettings() {
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  Save Changes
+                  Save changes
                 </>
               )}
             </Button>

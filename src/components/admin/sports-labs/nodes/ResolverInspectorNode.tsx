@@ -150,11 +150,11 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
-            <Label>Home Team Name</Label>
+            <Label>Home team name</Label>
             <Input value={teamAName} onChange={(e) => setTeamAName(e.target.value)} />
           </div>
           <div className="space-y-1">
-            <Label>Away Team Name</Label>
+            <Label>Away team name</Label>
             <Input value={teamBName} onChange={(e) => setTeamBName(e.target.value)} />
           </div>
         </div>
@@ -203,13 +203,13 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
         {/* Spiritual Blessings & Storyteller Modifiers */}
         <div className="border-separator grid grid-cols-2 gap-3 border-t pt-3">
           <div className="space-y-2">
-            <Label className="text-subhead text-yellow">Home Saint Blessing</Label>
+            <Label className="text-subhead text-yellow">Home saint blessing</Label>
             <Select value={homeSaint} onValueChange={setHomeSaint}>
               <SelectTrigger size="sm">
-                <SelectValue placeholder="Select Saint" />
+                <SelectValue placeholder="Select saint" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No Blessing</SelectItem>
+                <SelectItem value="none">No blessing</SelectItem>
                 <SelectItem value="Saint Rais">Saint Rais (+5 ELO)</SelectItem>
                 <SelectItem value="Saint Inonsia">Saint Inonsia (+5 ELO)</SelectItem>
                 <SelectItem value="Saint Magador">Saint Magador (+5 ELO)</SelectItem>
@@ -231,13 +231,13 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-subhead text-yellow">Away Saint Blessing</Label>
+            <Label className="text-subhead text-yellow">Away saint blessing</Label>
             <Select value={awaySaint} onValueChange={setAwaySaint}>
               <SelectTrigger size="sm">
-                <SelectValue placeholder="Select Saint" />
+                <SelectValue placeholder="Select saint" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No Blessing</SelectItem>
+                <SelectItem value="none">No blessing</SelectItem>
                 <SelectItem value="Saint Rais">Saint Rais (+5 ELO)</SelectItem>
                 <SelectItem value="Saint Inonsia">Saint Inonsia (+5 ELO)</SelectItem>
                 <SelectItem value="Saint Magador">Saint Magador (+5 ELO)</SelectItem>
@@ -276,7 +276,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
         {singleResult && (
           <div className="space-y-3">
             <div className="bg-fill-4 rounded-control text-footnote space-y-1 border p-3 text-center">
-              <p className="text-label-secondary text-eyebrow">Simulated Result</p>
+              <p className="text-label-secondary text-eyebrow">Simulated result</p>
               <div className="text-title-2">
                 {teamAName} {singleResult.homeScore} - {singleResult.awayScore} {teamBName}
               </div>
@@ -292,7 +292,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
             {/* Match Events Ticker Trace */}
             {singleResult.trace && singleResult.trace.length > 0 && (
               <div className="space-y-2">
-                <h6 className="text-label-secondary text-subhead">Match Events Ticker</h6>
+                <h6 className="text-label-secondary text-subhead">Match events ticker</h6>
                 <div className="thin-scrollbar bg-fill-4 rounded-control-sm text-footnote max-h-[160px] space-y-2 overflow-y-auto border p-2 pr-1 text-left font-mono">
                   {singleResult.trace.map((step: any, idx: number) => (
                     <div
@@ -362,7 +362,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label>Select League</Label>
+        <Label>Select league</Label>
         <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
           <SelectTrigger>
             <SelectValue placeholder="Choose league" />
@@ -379,7 +379,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
 
       {dbLeague && dbLeague.seasons && (
         <div className="space-y-2">
-          <Label>Select Season</Label>
+          <Label>Select season</Label>
           <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
             <SelectTrigger>
               <SelectValue placeholder="Choose season" />

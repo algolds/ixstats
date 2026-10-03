@@ -281,7 +281,7 @@ export default function EtymologySection() {
           <Card variant="inset" padding="none" className="space-y-4 p-4">
             <h3 className="text-label text-body flex items-center gap-2 font-semibold">
               <Network className="text-indigo h-4 w-4" />
-              Roots Directory
+              Roots directory
             </h3>
 
             {rootsLoading ? (
@@ -337,11 +337,11 @@ export default function EtymologySection() {
           {/* Add New Root Form */}
           <Card variant="inset" padding="none" className="p-4">
             <form onSubmit={handleCreateRoot} className="space-y-3">
-              <h4 className="text-label text-subhead">Create New Root Word</h4>
+              <h4 className="text-label text-subhead">Create new root word</h4>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-label-secondary text-caption mb-1 block font-medium">
-                    Root Grapheme
+                    Root grapheme
                   </label>
                   <Input
                     type="text"
@@ -367,7 +367,7 @@ export default function EtymologySection() {
               </div>
               <div>
                 <label className="text-label-secondary text-caption mb-1 block font-medium">
-                  English Meaning
+                  English meaning
                 </label>
                 <Input
                   type="text"
@@ -380,7 +380,7 @@ export default function EtymologySection() {
               </div>
               <div>
                 <label className="text-label-secondary text-caption mb-1 block font-medium">
-                  Historical Notes
+                  Historical notes
                 </label>
                 <Textarea
                   value={newRootNotes}
@@ -397,7 +397,7 @@ export default function EtymologySection() {
                 className="w-full justify-center"
               >
                 <Plus className="h-3.5 w-3.5" />
-                Add Root Word
+                Add root word
               </Button>
             </form>
           </Card>
@@ -437,7 +437,7 @@ export default function EtymologySection() {
                     className="text-red hover:text-red text-red hover:bg-red/10"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                    Delete Root
+                    Delete root
                   </Button>
                 </div>
               </Card>
@@ -447,11 +447,11 @@ export default function EtymologySection() {
                 <div className="border-separator flex items-center justify-between border-b pb-2">
                   <h4 className="text-label text-subhead flex items-center gap-2">
                     <GitFork className="text-indigo h-4 w-4" />
-                    Derivation Tree Graph
+                    Derivation tree graph
                   </h4>
                   <Button variant="secondary" size="sm" onClick={() => setAddingToParentId(null)}>
                     <Plus className="h-3.5 w-3.5" />
-                    Add Direct Derivation
+                    Add direct derivation
                   </Button>
                 </div>
 
@@ -488,7 +488,7 @@ export default function EtymologySection() {
               <Card variant="inset" padding="none" className="p-4">
                 <form onSubmit={handleAddDerivation} className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-label text-subhead">Add Derivation</h4>
+                    <h4 className="text-label text-subhead">Add derivation</h4>
                     <span className="text-label-secondary bg-fill-3 rounded-control-sm text-caption px-2 py-0.5 font-medium">
                       Parent:{" "}
                       {addingToParentId
@@ -501,7 +501,7 @@ export default function EtymologySection() {
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
                     <div>
                       <label className="text-label-secondary text-caption mb-1 block font-medium">
-                        Derived Grapheme
+                        Derived grapheme
                       </label>
                       <Input
                         type="text"
@@ -526,7 +526,7 @@ export default function EtymologySection() {
                     </div>
                     <div>
                       <label className="text-label-secondary text-caption mb-1 block font-medium">
-                        Derivation Type
+                        Derivation type
                       </label>
                       <Select value={newDerivType} onValueChange={(v) => setNewDerivType(v)}>
                         <SelectTrigger size="sm" className="w-full">
@@ -536,7 +536,7 @@ export default function EtymologySection() {
                           <SelectItem value="prefix">Prefixation (Affix)</SelectItem>
                           <SelectItem value="suffix">Suffixation (Affix)</SelectItem>
                           <SelectItem value="compound">Compounding</SelectItem>
-                          <SelectItem value="semantic-shift">Semantic Shift</SelectItem>
+                          <SelectItem value="semantic-shift">Semantic shift</SelectItem>
                           <SelectItem value="reduplication">Reduplication</SelectItem>
                         </SelectContent>
                       </Select>
@@ -558,7 +558,7 @@ export default function EtymologySection() {
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <div>
                       <label className="text-label-secondary text-caption mb-1 block font-medium">
-                        English Meaning
+                        English meaning
                       </label>
                       <Input
                         type="text"
@@ -586,7 +586,7 @@ export default function EtymologySection() {
                   <div className="flex justify-end gap-2">
                     {addingToParentId && (
                       <Button variant="outline" size="sm" onClick={() => setAddingToParentId(null)}>
-                        Cancel Parent Link
+                        Cancel parent link
                       </Button>
                     )}
                     <Button
@@ -595,7 +595,7 @@ export default function EtymologySection() {
                       type="submit"
                       disabled={addDerivMutation.isPending}
                     >
-                      Create Derivation
+                      Create derivation
                     </Button>
                   </div>
                 </form>
@@ -608,7 +608,7 @@ export default function EtymologySection() {
                   <Network className="text-indigo h-7 w-7" />
                 </div>
                 <div className="max-w-sm space-y-1">
-                  <h4 className="text-label text-body font-semibold">Select or Create a Root</h4>
+                  <h4 className="text-label text-body font-semibold">Select or create a root</h4>
                   <p className="text-label-secondary text-footnote leading-relaxed">
                     Pick an etymology root word from the directory on the left to inspect its
                     morphological family tree, or create a new proto-root to begin branching

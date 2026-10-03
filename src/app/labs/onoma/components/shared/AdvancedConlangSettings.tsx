@@ -53,7 +53,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
       {/* Include Live World Data Toggle */}
       <div className="border-separator flex items-center justify-between border-b pb-3">
         <div className="space-y-0.5 pr-2">
-          <label className="text-label-secondary text-subhead">Include Live World Data</label>
+          <label className="text-label-secondary text-subhead">Include live world data</label>
           <p className="text-label-secondary text-caption leading-normal">
             Blend live database records (cities, leaders) into training seeds.
           </p>
@@ -68,7 +68,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
       {/* Category-aware Prefix Title Select (Person Category only) */}
       {category === "person" && (
         <div className="border-separator space-y-2 border-b pb-3">
-          <label className="text-label-secondary text-subhead">Title Prefix</label>
+          <label className="text-label-secondary text-subhead">Title prefix</label>
           <Select
             value={gen.selectedPrefix || "none"}
             onValueChange={(val) => gen.setSelectedPrefix(val === "none" ? "" : val)}
@@ -137,7 +137,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
       {/* Category-aware Suffix Select (Organization, Country, Province categories only) */}
       {(category === "organization" || category === "country" || category === "province") && (
         <div className="border-separator space-y-2 border-b pb-3">
-          <label className="text-caption text-label block font-medium">Name Suffix</label>
+          <label className="text-caption text-label block font-medium">Name suffix</label>
           <Select
             value={gen.selectedSuffix || "none"}
             onValueChange={(val) => gen.setSelectedSuffix(val === "none" ? "" : val)}
@@ -196,7 +196,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <label className="text-caption text-label block font-medium">Min Length</label>
+          <label className="text-caption text-label block font-medium">Min length</label>
           <Input
             type="number"
             min={1}
@@ -212,7 +212,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
           />
         </div>
         <div className="space-y-1">
-          <label className="text-caption text-label block font-medium">Max Length</label>
+          <label className="text-caption text-label block font-medium">Max length</label>
           <Input
             type="number"
             min={1}
@@ -233,7 +233,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
           <label className="text-caption text-label block font-medium">
-            Starts With <span className="text-label-secondary text-caption font-mono">(#_)</span>
+            Starts with <span className="text-label-secondary text-caption font-mono">(#_)</span>
           </label>
           <Input
             type="text"
@@ -245,7 +245,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
         </div>
         <div className="space-y-1">
           <label className="text-caption text-label block font-medium">
-            Ends With <span className="text-label-secondary text-caption font-mono">(_#)</span>
+            Ends with <span className="text-label-secondary text-caption font-mono">(_#)</span>
           </label>
           <Input
             type="text"
@@ -267,12 +267,12 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
 
       {/* Advanced conlang & phonotactics */}
       <div className="border-separator space-y-4 border-t pt-4">
-        <h5 className="text-subhead text-label">Advanced Conlang & Phonotactics</h5>
+        <h5 className="text-subhead text-label">Advanced conlang & phonotactics</h5>
 
         {/* Syllable Counts */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="text-caption text-label block font-medium">Min Syllables</label>
+            <label className="text-caption text-label block font-medium">Min syllables</label>
             <Input
               type="number"
               min={0}
@@ -288,7 +288,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
             />
           </div>
           <div className="space-y-1">
-            <label className="text-caption text-label block font-medium">Max Syllables</label>
+            <label className="text-caption text-label block font-medium">Max syllables</label>
             <Input
               type="number"
               min={-1}
@@ -331,7 +331,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
         <div className="grid gap-3 sm:grid-cols-2">
           {/* Must End With Vowel */}
           <div className="flex items-center justify-between">
-            <span className="text-caption text-label font-medium">Must End With Vowel</span>
+            <span className="text-caption text-label font-medium">Must end with vowel</span>
             <Switch
               checked={gen.options.mustEndWithVowel || false}
               onCheckedChange={(checked) =>
@@ -347,7 +347,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
 
           {/* Must End With Consonant */}
           <div className="flex items-center justify-between">
-            <span className="text-caption text-label font-medium">Must End With Consonant</span>
+            <span className="text-caption text-label font-medium">Must end with consonant</span>
             <Switch
               checked={gen.options.mustEndWithConsonant || false}
               onCheckedChange={(checked) =>

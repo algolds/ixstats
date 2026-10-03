@@ -241,7 +241,7 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
           onClick={onCancel}
         >
           <ArrowLeft className="h-3 w-3" />
-          <span>All Routes</span>
+          <span>All routes</span>
         </Button>
         <Eyebrow>{currentVertices.length} Nodes</Eyebrow>
       </div>
@@ -249,12 +249,12 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
       {/* Route Metadata Section */}
       <div className="space-y-2">
         <div className="space-y-1">
-          <Eyebrow className="block">Route Name</Eyebrow>
+          <Eyebrow className="block">Route name</Eyebrow>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Route Name"
+            placeholder="Route name"
             className="border-separator bg-surface text-label placeholder:text-label-secondary focus:border-tint rounded-control-sm text-footnote w-full border px-3 py-2 focus:outline-none"
           />
         </div>
@@ -289,7 +289,7 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
               onValueChange={(v) => setStatus(v as typeof status)}
               options={[
                 { value: "operational", label: "Operational" },
-                { value: "under_construction", label: "Under Construction" },
+                { value: "under_construction", label: "Under construction" },
                 { value: "planned", label: "Planned" },
                 { value: "abandoned", label: "Abandoned" },
               ]}
@@ -318,7 +318,7 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
               checked={isInternational}
               onCheckedChange={(c) => setIsInternational(c === true)}
             />
-            <span>International Corridor</span>
+            <span>International corridor</span>
           </label>
         </div>
       </div>
@@ -348,7 +348,7 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
       {/* Path Nodes List */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Eyebrow className="block">Path Vertices & Nodes</Eyebrow>
+          <Eyebrow className="block">Path vertices & nodes</Eyebrow>
           <span className="text-label-secondary text-footnote">
             {currentVertices.length} points
           </span>
@@ -443,7 +443,7 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
             ) : (
               <Check className="h-3.5 w-3.5" />
             )}
-            <span>Save Route Path</span>
+            <span>Save route path</span>
           </Button>
 
           <Button
@@ -500,7 +500,7 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
               onClick={() => setConfirmDelete(true)}
             >
               <Trash2 className="h-3 w-3" />
-              <span>Delete Route</span>
+              <span>Delete route</span>
             </Button>
           )}
         </div>

@@ -53,7 +53,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
     try {
       const result = generateProvinces(countryGeometry, count, { seed });
       if (result.length === 0) {
-        setError("Generation produced no cells — try a different seed or count.");
+        setError("Generation produced no cells. Try a different seed or count.");
         setCells(null);
       } else {
         setCells(result);
@@ -96,7 +96,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
   return (
     <div className="space-y-3 p-3">
       <div className="flex items-center justify-between">
-        <span className="text-label text-caption font-semibold">Generate Subdivisions</span>
+        <span className="text-label text-caption font-semibold">Generate subdivisions</span>
         <Button
           variant="ghost"
           size="icon"

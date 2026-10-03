@@ -51,7 +51,7 @@ const TIPS = [
     icon: Globe,
     title: "Select a Nation",
     description:
-      "Click any country to view its profile — territory, provinces, neighbors, and demographics. Each nation links to its full wiki entry.",
+      "Click any country to view its profile: territory, provinces, neighbors and demographics. Each nation links to its full wiki entry.",
   },
   {
     icon: Layers,
@@ -63,7 +63,7 @@ const TIPS = [
     icon: MapPin,
     title: "Inspect Any Location",
     description:
-      "Activate the pin tool and drop it anywhere. Get a full readout — elevation, climate, controlling nation, and nearby points of interest.",
+      "Activate the pin tool and drop it anywhere. Get a full readout: elevation, climate, controlling nation and nearby points of interest.",
   },
   {
     icon: Ruler,
@@ -254,14 +254,14 @@ export function MapWelcomeModal({
                   IxTime
                 </strong>
               </Tooltip>{" "}
-              — the in-world clock moves at 2x real time.
+              is the in-world clock, which moves at 2x real time.
             </div>
             <div>
               The world uses a{" "}
               <Tooltip
                 content={
                   <div className="text-footnote space-y-2">
-                    <p className="font-semibold">Trewartha Climate System</p>
+                    <p className="font-semibold">Trewartha climate system</p>
                     <div className="text-footnote grid grid-cols-2 gap-x-3 gap-y-0.5">
                       <span>
                         <span className="bg-red mr-1 inline-block h-2 w-2 rounded-full" />
@@ -324,7 +324,7 @@ export function MapWelcomeModal({
                   IxWiki
                 </a>
               </Tooltip>{" "}
-              — the canonical source of truth.
+              is the canonical source of truth.
             </div>
           </div>
         </div>

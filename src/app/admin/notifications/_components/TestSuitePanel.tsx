@@ -95,7 +95,7 @@ export function TestSuitePanel() {
           persistent: true,
           actions: [
             {
-              label: "Deploy Peacekeepers",
+              label: "Deploy peacekeepers",
               onClick: () => addResult("✅ Peacekeepers deployed"),
             },
           ],
@@ -136,7 +136,7 @@ export function TestSuitePanel() {
           duration: 5000,
           actions: [
             {
-              label: "Accept Treaty",
+              label: "Accept treaty",
               onClick: () => addResult("✅ Treaty accepted"),
             },
           ],
@@ -161,7 +161,7 @@ export function TestSuitePanel() {
       actions: hasAction
         ? [
             {
-              label: "Run Test Callback",
+              label: "Run test callback",
               onClick: () => addResult("✅ Custom callback executed"),
             },
           ]
@@ -176,7 +176,7 @@ export function TestSuitePanel() {
       await addNotification({
         source: "intelligence",
         title: "🚨 TEST: Critical Intelligence Alert",
-        message: "High-priority security alert detected — test from admin panel.",
+        message: "High-priority security alert detected. Test from admin panel.",
         category: "security",
         type: "alert",
         priority: "critical",
@@ -217,7 +217,7 @@ export function TestSuitePanel() {
         actions: [
           {
             id: "view",
-            label: "View Dashboard",
+            label: "View dashboard",
             type: "primary",
             onClick: () => addResult("📊 Dashboard opened"),
           },
@@ -300,7 +300,7 @@ export function TestSuitePanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Zap className="text-yellow h-5 w-5" />
-            Quick Test Presets
+            Quick test presets
           </CardTitle>
           <CardDescription>Trigger pre-configured notification scenarios</CardDescription>
         </CardHeader>
@@ -308,7 +308,7 @@ export function TestSuitePanel() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Button variant="destructive" onClick={() => triggerPreset("crisis")}>
               <ShieldAlert className="mr-2 h-4 w-4" />
-              Crisis Alert
+              Crisis alert
             </Button>
             <Button variant="secondary" onClick={() => triggerPreset("achievement")}>
               <Award className="mr-2 h-4 w-4" />
@@ -316,11 +316,11 @@ export function TestSuitePanel() {
             </Button>
             <Button variant="secondary" onClick={() => triggerPreset("security")}>
               <AlertTriangle className="mr-2 h-4 w-4" />
-              Security Intel
+              Security intel
             </Button>
             <Button variant="secondary" onClick={() => triggerPreset("trade")}>
               <Sparkles className="mr-2 h-4 w-4" />
-              Trade Pact
+              Trade pact
             </Button>
           </div>
         </CardContent>
@@ -331,7 +331,7 @@ export function TestSuitePanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FlaskConical className="text-purple h-5 w-5" />
-            System Integration Tests
+            System integration tests
           </CardTitle>
           <CardDescription>
             Test full notification pipeline: store, services, and delivery handlers
@@ -372,10 +372,10 @@ export function TestSuitePanel() {
           <div className="flex gap-3">
             <Button onClick={runFullTest} className="flex-1">
               <Play className="mr-2 h-4 w-4" />
-              Run Full Test Suite
+              Run full test suite
             </Button>
             <Button onClick={clearResults} variant="outline">
-              Clear Results
+              Clear results
             </Button>
           </div>
         </CardContent>
@@ -386,7 +386,7 @@ export function TestSuitePanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bell className="text-indigo h-5 w-5" />
-            Custom Notification Simulator
+            Custom notification simulator
           </CardTitle>
           <CardDescription>
             Configure and trigger a custom notification with specific parameters
@@ -478,14 +478,14 @@ export function TestSuitePanel() {
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <Label className="text-body font-medium">Action Callback</Label>
+                  <Label className="text-body font-medium">Action callback</Label>
                   <p className="text-label-secondary text-footnote">Include clickable action</p>
                 </div>
                 <Switch checked={hasAction} onCheckedChange={setHasAction} />
               </div>
               <Button onClick={handleCustomTrigger} className="w-full" size="lg">
                 <Play className="mr-2 h-4 w-4" />
-                Trigger Custom Notification
+                Trigger custom notification
               </Button>
             </div>
           </div>
@@ -497,7 +497,7 @@ export function TestSuitePanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FlaskConical className="h-5 w-5" />
-            Test Results
+            Test results
           </CardTitle>
         </CardHeader>
         <CardContent>

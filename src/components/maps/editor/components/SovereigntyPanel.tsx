@@ -74,7 +74,7 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
               setShowSovereigntyForm(true);
             }}
           >
-            <Plus className="h-3 w-3" /> New Relation
+            <Plus className="h-3 w-3" /> New relation
           </Button>
         )}
       </div>
@@ -210,7 +210,7 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
           aria-label="Sovereignty type"
           value={sovereigntyTypeFilter}
           onValueChange={(v) => setSovereigntyTypeFilter(v)}
-          options={[{ value: "all", label: "All Types" }, ...SOVEREIGNTY_TYPES]}
+          options={[{ value: "all", label: "All types" }, ...SOVEREIGNTY_TYPES]}
           size="sm"
           className="w-full"
         />

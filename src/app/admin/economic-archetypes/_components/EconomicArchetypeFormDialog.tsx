@@ -59,7 +59,7 @@ const TABS = [
   { id: "general", label: "General", icon: Award },
   { id: "economics", label: "Economics", icon: TrendingUp },
   { id: "government", label: "Government", icon: Building2 },
-  { id: "tax", label: "Tax System", icon: DollarSign },
+  { id: "tax", label: "Tax system", icon: DollarSign },
   { id: "employment", label: "Employment", icon: Users },
   { id: "metrics", label: "Metrics", icon: Activity },
   { id: "characteristics", label: "Characteristics", icon: Award },
@@ -93,11 +93,7 @@ export function EconomicArchetypeFormDialog({
             {TABS.map((tab) => {
               const Icon = tab.icon;
               return (
-                <TabsTrigger
-                  key={tab.id}
-                  value={tab.id}
-                  className="text-footnote"
-                >
+                <TabsTrigger key={tab.id} value={tab.id} className="text-footnote">
                   <Icon className="mr-2 inline h-4 w-4" />
                   {tab.label}
                 </TabsTrigger>

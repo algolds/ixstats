@@ -23,7 +23,7 @@ export function AtomicComponentStats({
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <Card className="p-4">
         <div className="flex items-center justify-between">
-          <span className="text-label-secondary text-eyebrow">Total Components</span>
+          <span className="text-label-secondary text-eyebrow">Total components</span>
           <Layers className="text-label-secondary h-3.5 w-3.5" />
         </div>
         <p className="text-label text-title-2 mt-1 tabular-nums">{totalCount}</p>
@@ -31,7 +31,7 @@ export function AtomicComponentStats({
 
       <Card className="p-4">
         <div className="flex items-center justify-between">
-          <span className="text-label-secondary text-eyebrow">Adopted by Nations</span>
+          <span className="text-label-secondary text-eyebrow">Adopted by nations</span>
           <CheckCircle className="text-green h-3.5 w-3.5" />
         </div>
         <p className="text-title-2 text-green mt-1 tabular-nums">{adoptionCount ?? "—"}</p>
@@ -39,7 +39,7 @@ export function AtomicComponentStats({
 
       <Card className="p-4">
         <div className="flex items-center justify-between">
-          <span className="text-label-secondary text-eyebrow">Synergy Links</span>
+          <span className="text-label-secondary text-eyebrow">Synergy links</span>
           <Network className="text-teal h-3.5 w-3.5" />
         </div>
         <p className="text-title-2 text-teal mt-1 tabular-nums">{synergyCount}</p>

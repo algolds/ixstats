@@ -366,7 +366,7 @@ function GeneralTab({
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-label text-body mb-2 block font-medium">Relationship Level</label>
+          <label className="text-label text-body mb-2 block font-medium">Relationship level</label>
           <Select
             value={formData.relationshipState}
             onValueChange={(value) =>
@@ -424,7 +424,7 @@ function GeneralTab({
           </Select>
         </div>
         <div>
-          <label className="text-label text-body mb-2 block font-medium">Time Frame</label>
+          <label className="text-label text-body mb-2 block font-medium">Time frame</label>
           <Select
             value={formData.timeFrame}
             onValueChange={(value) => setFormData((prev) => ({ ...prev, timeFrame: value }))}
@@ -476,7 +476,7 @@ function NarrativeTab({
         <Textarea
           value={formData.narrative}
           onChange={(e) => setFormData((prev) => ({ ...prev, narrative: e.target.value }))}
-          placeholder="Rich narrative describing the scenario (3-5 paragraphs)..."
+          placeholder="Narrative describing the scenario (3-5 paragraphs)..."
           rows={15}
         />
         <p className="text-label-secondary text-footnote mt-1">
@@ -556,7 +556,7 @@ function MetadataTab({
       </div>
 
       <div className="rounded-control border-blue/20 bg-blue/10 border p-4">
-        <h4 className="text-label text-body mb-2 font-medium">Scenario Guidelines</h4>
+        <h4 className="text-label text-body mb-2 font-medium">Scenario guidelines</h4>
         <ul className="text-label-secondary text-footnote space-y-1">
           <li>• Cultural Impact: How much this affects cultural ties and mutual understanding</li>
           <li>• Diplomatic Risk: Potential for relationship damage or escalation</li>

@@ -195,7 +195,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
 
       {/* Feature data card */}
       <Card className="space-y-2 p-3">
-        <Eyebrow className="block">Feature Data</Eyebrow>
+        <Eyebrow className="block">Feature data</Eyebrow>
         <div className="space-y-1">
           <div className="text-footnote flex justify-between">
             <span className="text-label-secondary">Feature ID</span>
@@ -211,7 +211,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
             </span>
           </div>
           <div className="text-footnote flex justify-between">
-            <span className="text-label-secondary">Fill Color</span>
+            <span className="text-label-secondary">Fill color</span>
             <span className="flex items-center gap-1">
               <span
                 className="border-separator inline-block h-3 w-3 rounded-xs border"
@@ -230,7 +230,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
       {/* DB feature details card */}
       {featureDetails && (
         <Card className="space-y-2 p-3">
-          <Eyebrow className="block">Database Record</Eyebrow>
+          <Eyebrow className="block">Database record</Eyebrow>
           <div className="space-y-1">
             {featureDetails.flagUrl && (
               <img
@@ -335,7 +335,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
           {createCountryFromShapeAction &&
             (isCreatingCountry ? (
               <div className="rounded-control border-green/30 bg-green/5 space-y-2 border p-2">
-                <Eyebrow className="block">New Country Name</Eyebrow>
+                <Eyebrow className="block">New country name</Eyebrow>
                 <input
                   type="text"
                   value={newCountryName}
@@ -409,7 +409,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
             onClick={() => enterBorderEdit()}
           >
             <Pencil className="h-3.5 w-3.5" />
-            Edit Borders
+            Edit borders
           </Button>
         )}
         {enterBorderEdit && (
@@ -445,7 +445,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
               }
             }}
           >
-            Manage Database Record
+            Manage database record
           </Button>
         )}
       </div>

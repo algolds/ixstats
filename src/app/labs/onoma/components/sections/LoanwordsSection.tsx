@@ -287,7 +287,7 @@ export default function LoanwordsSection() {
                 <div className="flex items-center gap-2">
                   <BookOpen className="text-tint h-4 w-4" />
                   <h4 className="text-label text-subhead">
-                    Loanwords & Historical Language Contact Guide
+                    Loanwords & historical language contact guide
                   </h4>
                 </div>
                 <Button
@@ -339,7 +339,7 @@ export default function LoanwordsSection() {
                 <div className="bg-tint/10 text-tint rounded-control flex h-6 w-6 items-center justify-center">
                   <Globe2 className="h-3.5 w-3.5" />
                 </div>
-                <h3 className="text-label text-subhead">Contact Channels</h3>
+                <h3 className="text-label text-subhead">Contact channels</h3>
               </div>
               <div className="flex items-center gap-2">
                 <Toggle
@@ -347,14 +347,14 @@ export default function LoanwordsSection() {
                   size="sm"
                   pressed={showHelpGuide}
                   onPressedChange={setShowHelpGuide}
-                  title="Toggle Contact Guide"
+                  title="Toggle contact guide"
                   aria-label="Contact guide"
                 >
                   <HelpCircle className="h-3.5 w-3.5" />
                 </Toggle>
                 <Button variant="secondary" size="sm" onClick={handleNewChannel}>
                   <Plus className="h-3 w-3" />
-                  <span>New Channel</span>
+                  <span>New channel</span>
                 </Button>
               </div>
             </div>
@@ -405,7 +405,7 @@ export default function LoanwordsSection() {
             <form onSubmit={handleSaveContact} className="space-y-4">
               <div className="border-separator flex items-center justify-between border-b pb-2">
                 <div className="flex items-center gap-2">
-                  <h4 className="text-label text-subhead">Channel Settings</h4>
+                  <h4 className="text-label text-subhead">Channel settings</h4>
                   {!selectedContactId && (
                     <span className="text-tint bg-tint/10 border-tint/30 py-0.2 rounded-control-sm text-caption border px-2 font-mono font-semibold">
                       New
@@ -468,25 +468,25 @@ export default function LoanwordsSection() {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-label-secondary text-subhead mb-1 block">
-                    Contact Domain
+                    Contact domain
                   </label>
                   <Select value={domain} onValueChange={(v) => setDomain(v)}>
                     <SelectTrigger size="sm" className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="trade">Trade & Commerce</SelectItem>
-                      <SelectItem value="military">Military & Warfare</SelectItem>
-                      <SelectItem value="religious">Religion & Ritual</SelectItem>
-                      <SelectItem value="academic">Sciences & Academia</SelectItem>
-                      <SelectItem value="general">General Cultural Exchange</SelectItem>
+                      <SelectItem value="trade">Trade & commerce</SelectItem>
+                      <SelectItem value="military">Military & warfare</SelectItem>
+                      <SelectItem value="religious">Religion & ritual</SelectItem>
+                      <SelectItem value="academic">Sciences & academia</SelectItem>
+                      <SelectItem value="general">General cultural exchange</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-1">
                   <div className="text-caption flex items-center justify-between">
-                    <span className="text-label-secondary font-semibold uppercase">Intensity</span>
+                    <span className="text-label-secondary font-semibold">Intensity</span>
                     <span className="text-tint bg-tint/10 py-0.2 rounded-control-sm px-2 font-mono font-semibold">
                       {Math.round(intensity * 100)}%
                     </span>
@@ -506,7 +506,7 @@ export default function LoanwordsSection() {
               <div className="border-separator space-y-2 border-t pt-3">
                 <div className="flex items-center justify-between">
                   <span className="text-label-secondary text-eyebrow">
-                    Phonetic Adaptation Rules
+                    Phonetic adaptation rules
                   </span>
                   <div className="flex items-center gap-1">
                     {PHONETIC_LAW_PRESETS.map((law) => (
@@ -639,9 +639,9 @@ export default function LoanwordsSection() {
                   <Sliders className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-label text-subhead">Adaptation Simulator</h3>
+                  <h3 className="text-label text-subhead">Adaptation simulator</h3>
                   <p className="text-label-secondary text-caption">
-                    Real-time phonological mutation & borrowing pipeline
+                    Phonological mutation and borrowing pipeline
                   </p>
                 </div>
               </div>
@@ -693,7 +693,7 @@ export default function LoanwordsSection() {
             <div className="border-separator bg-surface rounded-row overflow-hidden border shadow-inner">
               <div className="bg-fill-4 text-label-secondary border-separator text-eyebrow grid grid-cols-12 gap-2 border-b px-4 py-2 select-none">
                 <span className="col-span-4">Donor Word (L1)</span>
-                <span className="col-span-4">Transformation Pipeline</span>
+                <span className="col-span-4">Transformation pipeline</span>
                 <span className="col-span-4 text-right">Adapted Form (L2)</span>
               </div>
 
@@ -786,7 +786,7 @@ export default function LoanwordsSection() {
 
             {/* Add Custom Word to Simulator Form */}
             <form onSubmit={handleAddTestWord} className="border-separator space-y-2 border-t pt-4">
-              <h4 className="text-label-secondary text-subhead">Add Custom Word to Simulator</h4>
+              <h4 className="text-label-secondary text-subhead">Add custom word to simulator</h4>
               <div className="flex gap-2">
                 <Input
                   type="text"
@@ -806,7 +806,7 @@ export default function LoanwordsSection() {
                 />
                 <Button variant="outline" size="sm" type="submit" className="shrink-0">
                   <Plus className="text-tint mr-1 inline h-3.5 w-3.5" />
-                  <span>Add Word</span>
+                  <span>Add word</span>
                 </Button>
               </div>
             </form>

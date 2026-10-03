@@ -1,5 +1,5 @@
 /**
- * GeoJSON Patch & Feature State Engine (Phase 2: MapLibre Source Diffing)
+ * GeoJSON Patch & Feature State Engine
  *
  * Provides targeted single-feature updates and MapLibre `setFeatureState` toggles
  * to replace whole-collection GeoJSON stringification (`JSON.stringify` / `setData` of 500+ features).

@@ -39,11 +39,11 @@ export function LexiconDefinitionForm({
 }: LexiconDefinitionFormProps) {
   return (
     <div className="border-separator border-t pt-5">
-      <h4 className="text-label-secondary text-subhead mb-3">Define Lexicon Meaning</h4>
+      <h4 className="text-label-secondary text-subhead mb-3">Define lexicon meaning</h4>
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <label className="text-label-secondary text-subhead">Part of Speech</label>
+            <label className="text-label-secondary text-subhead">Part of speech</label>
             <Select value={lexEditPos} onValueChange={setLexEditPos}>
               <SelectTrigger className="text-footnote w-full">
                 <SelectValue placeholder="Select POS" />
@@ -59,7 +59,7 @@ export function LexiconDefinitionForm({
                   Verb
                 </SelectItem>
                 <SelectItem value="Proper Noun" className="text-footnote">
-                  Proper Noun
+                  Proper noun
                 </SelectItem>
                 <SelectItem value="Adverb" className="text-footnote">
                   Adverb
@@ -69,7 +69,7 @@ export function LexiconDefinitionForm({
           </div>
 
           <div className="space-y-2">
-            <label className="text-label-secondary text-subhead">Etymological Root</label>
+            <label className="text-label-secondary text-subhead">Etymological root</label>
             <Input
               type="text"
               value={lexEditRoot}
@@ -93,7 +93,7 @@ export function LexiconDefinitionForm({
         </div>
 
         <div className="space-y-2">
-          <label className="text-label-secondary text-subhead">Historical Origin & Notes</label>
+          <label className="text-label-secondary text-subhead">Historical origin & notes</label>
           <Textarea
             value={lexEditOrigin}
             onChange={(e) => setLexEditOrigin(e.target.value)}
@@ -103,7 +103,7 @@ export function LexiconDefinitionForm({
         </div>
 
         <Button size="sm" type="submit" className="w-full">
-          Save Lexicon Definition
+          Save lexicon definition
         </Button>
       </form>
     </div>

@@ -85,7 +85,7 @@ export function VaultSystemConfig() {
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle className="text-label text-title-3">Vault Config</CardTitle>
+            <CardTitle className="text-label text-title-3">Vault config</CardTitle>
             <p className="text-label-secondary text-footnote mt-0.5">
               Updates take effect immediately on active gameplay caps and credit generation.
             </p>
@@ -166,7 +166,7 @@ export function VaultSystemConfig() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cfg-streak" className="text-label">
-                    Max Streak Bonus
+                    Max streak bonus
                   </Label>
                   <div className="relative">
                     <Input
@@ -187,7 +187,7 @@ export function VaultSystemConfig() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cfg-premium" className="text-label">
-                    Premium Multiplier
+                    Premium multiplier
                   </Label>
                   <div className="relative">
                     <Input
@@ -215,7 +215,7 @@ export function VaultSystemConfig() {
                   {/* Enable Earning */}
                   <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-label text-caption">Enable Earning</span>
+                      <span className="text-label text-caption">Enable earning</span>
                       <span className="text-label-secondary text-footnote">
                         Enables user active & social credits.
                       </span>
@@ -230,7 +230,7 @@ export function VaultSystemConfig() {
                   {/* Enable Store Purchases */}
                   <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-label text-caption">Enable Store</span>
+                      <span className="text-label text-caption">Enable store</span>
                       <span className="text-label-secondary text-footnote">
                         Allows buying dynamic storefront cosmetics.
                       </span>
@@ -245,7 +245,7 @@ export function VaultSystemConfig() {
                   {/* Enable Card Crafting */}
                   <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-label text-caption">Enable Crafting</span>
+                      <span className="text-label text-caption">Enable crafting</span>
                       <span className="text-label-secondary text-footnote">
                         Allows fusing and evolving collector cards.
                       </span>
@@ -260,7 +260,7 @@ export function VaultSystemConfig() {
                   {/* Enable Card Packs */}
                   <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-label text-caption">Enable Card Packs</span>
+                      <span className="text-label text-caption">Enable card packs</span>
                       <span className="text-label-secondary text-footnote">
                         Enables pack purchases & award mutations.
                       </span>
@@ -305,7 +305,7 @@ export function VaultSystemConfig() {
                   {/* Maintenance Mode */}
                   <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-destructive text-caption">Maintenance Mode</span>
+                      <span className="text-destructive text-caption">Maintenance mode</span>
                       <span className="text-label-secondary text-footnote">
                         Blocks all write operations globally.
                       </span>
@@ -320,7 +320,7 @@ export function VaultSystemConfig() {
                   {/* Exempt Staff from Card Limits */}
                   <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-label text-caption">Exempt Staff</span>
+                      <span className="text-label text-caption">Exempt staff</span>
                       <span className="text-label-secondary text-footnote">
                         Exempt role levels 20 & lower from capacity limit.
                       </span>

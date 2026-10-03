@@ -222,11 +222,11 @@ export function AcousticFormantVisualizer({
           <div className="flex items-center gap-2">
             <Radio className="text-tint h-4 w-4" />
             <h4 className="text-label text-body font-semibold">
-              Acoustic Phonetics & Formant Space
+              Acoustic phonetics & formant space
             </h4>
           </div>
           <p className="text-label-secondary text-caption">
-            Real-time vowel height ($F_1$) vs frontness ($F_2$) trajectory and FFT resonance.
+            Vowel height ($F_1$) vs frontness ($F_2$) trajectory and FFT resonance.
           </p>
         </div>
 
@@ -388,7 +388,7 @@ export function AcousticFormantVisualizer({
                     fill="var(--color-yellow)"
                     fontWeight="bold"
                   >
-                    Center of Gravity
+                    Center of gravity
                   </text>
                 </g>
               )}
@@ -398,7 +398,7 @@ export function AcousticFormantVisualizer({
           {/* Metrics Summary Strip */}
           <div className="grid grid-cols-2 gap-2 text-left sm:grid-cols-4">
             <div className="border-separator bg-fill-4 rounded-control border p-2">
-              <div className="text-label-secondary text-eyebrow">Active Vowels</div>
+              <div className="text-label-secondary text-eyebrow">Active vowels</div>
               <div className="text-label text-footnote font-mono font-semibold">
                 {activeVowels.length > 0
                   ? activeVowels.map((v) => `/${v.ipa}/`).join(" ")
@@ -407,7 +407,7 @@ export function AcousticFormantVisualizer({
             </div>
 
             <div className="border-separator bg-fill-4 rounded-control border p-2">
-              <div className="text-label-secondary text-eyebrow">Acoustic Center</div>
+              <div className="text-label-secondary text-eyebrow">Acoustic center</div>
               <div className="text-tint text-footnote font-mono font-semibold">
                 {acousticCenter ? `${acousticCenter.f1}Hz / ${acousticCenter.f2}Hz` : "—"}
               </div>
@@ -421,7 +421,7 @@ export function AcousticFormantVisualizer({
             </div>
 
             <div className="border-separator bg-fill-4 rounded-control border p-2">
-              <div className="text-label-secondary text-eyebrow">Hovered Formant</div>
+              <div className="text-label-secondary text-eyebrow">Hovered formant</div>
               <div className="text-footnote text-green font-mono font-semibold">
                 {hoveredVowel
                   ? `/${hoveredVowel.ipa}/ (${hoveredVowel.f1}Hz, ${hoveredVowel.f2}Hz)`

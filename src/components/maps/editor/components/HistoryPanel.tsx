@@ -126,7 +126,7 @@ export const HistoryPanel = React.memo(function HistoryPanel({
               <Map className="h-3 w-3" />
             </div>
             <div className="flex min-w-0 flex-1 items-center justify-between">
-              <span className="truncate">Initial State</span>
+              <span className="truncate">Initial state</span>
               {position === -1 && <Badge variant="default">Current</Badge>}
             </div>
           </button>
@@ -192,7 +192,9 @@ export const HistoryPanel = React.memo(function HistoryPanel({
               </div>
               <div className="space-y-0.5">
                 <p className="text-label-secondary font-medium">No actions recorded</p>
-                <p className="text-footnote">Creations, edits, and deletions will appear here</p>
+                <p className="text-footnote">
+                  Create, edit or delete a feature to start the history
+                </p>
               </div>
             </div>
           )}

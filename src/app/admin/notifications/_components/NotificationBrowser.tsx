@@ -42,7 +42,7 @@ import {
 import { motion } from "motion/react";
 
 const TYPE_OPTIONS = [
-  { value: "all", label: "All Types" },
+  { value: "all", label: "All types" },
   { value: "info", label: "Info" },
   { value: "warning", label: "Warning" },
   { value: "success", label: "Success" },
@@ -56,7 +56,7 @@ const TYPE_OPTIONS = [
 ];
 
 const PRIORITY_OPTIONS = [
-  { value: "all", label: "All Priorities" },
+  { value: "all", label: "All priorities" },
   { value: "low", label: "Low" },
   { value: "medium", label: "Medium" },
   { value: "high", label: "High" },
@@ -226,7 +226,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
         <div className="rounded-b-row border-separator bg-fill-3 space-y-3 border-t p-4 pl-[52px]">
           {n.message && (
             <div className="space-y-1">
-              <span className="text-label-secondary text-eyebrow">Full Message</span>
+              <span className="text-label-secondary text-eyebrow">Full message</span>
               <p className="text-label text-caption leading-relaxed whitespace-pre-wrap select-text">
                 {n.message}
               </p>
@@ -281,7 +281,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
               disabled={deleteMutation.isPending}
             >
               <Trash2 className="mr-2 h-3 w-3" />
-              Delete Notification
+              Delete notification
             </Button>
           </div>
         </div>
@@ -427,7 +427,7 @@ export function NotificationBrowser() {
           disabled={deleteAllMutation.isPending}
         >
           <Trash2 className="mr-2 h-4 w-4" />
-          Clear All
+          Clear all
         </Button>
       </div>
 

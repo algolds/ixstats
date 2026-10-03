@@ -46,7 +46,7 @@ import {
 const EVENT_TYPES = [
   {
     value: "economic_crisis",
-    label: "Economic Crisis",
+    label: "Economic crisis",
     icon: TrendingDown,
     color: "text-red",
     bg: "bg-red/10 border-red/20",
@@ -54,7 +54,7 @@ const EVENT_TYPES = [
   },
   {
     value: "trade_war",
-    label: "Trade War",
+    label: "Trade war",
     icon: Swords,
     color: "text-orange",
     bg: "bg-orange/10 border-orange/20",
@@ -62,7 +62,7 @@ const EVENT_TYPES = [
   },
   {
     value: "natural_disaster",
-    label: "Natural Disaster",
+    label: "Natural disaster",
     icon: Wind,
     color: "text-yellow",
     bg: "bg-yellow/10 border-yellow/20",
@@ -70,7 +70,7 @@ const EVENT_TYPES = [
   },
   {
     value: "political_upheaval",
-    label: "Political Upheaval",
+    label: "Political upheaval",
     icon: Scale,
     color: "text-purple",
     bg: "bg-purple/10 border-purple/20",
@@ -78,7 +78,7 @@ const EVENT_TYPES = [
   },
   {
     value: "tech_revolution",
-    label: "Tech Revolution",
+    label: "Tech revolution",
     icon: Cpu,
     color: "text-blue",
     bg: "bg-blue/10 border-blue/20",
@@ -86,7 +86,7 @@ const EVENT_TYPES = [
   },
   {
     value: "peace_era",
-    label: "Peace & Prosperity",
+    label: "Peace & prosperity",
     icon: Sparkles,
     color: "text-green",
     bg: "bg-green/10 border-green/20",
@@ -102,7 +102,7 @@ const EVENT_TYPES = [
   },
   {
     value: "climate_disaster",
-    label: "Climate Emergency",
+    label: "Climate emergency",
     icon: Flame,
     color: "text-orange",
     bg: "bg-orange/10 border-orange/20",
@@ -110,7 +110,7 @@ const EVENT_TYPES = [
   },
   {
     value: "custom",
-    label: "Custom Event",
+    label: "Custom event",
     icon: Wand2,
     color: "text-indigo",
     bg: "bg-indigo/10 border-indigo/20",
@@ -123,11 +123,11 @@ type EventTypeValue = (typeof EVENT_TYPES)[number]["value"];
 // ── Wizard Steps ─────────────────────────────────────────────────────────────
 
 const STEPS = [
-  { label: "Event Type", number: 1 },
-  { label: "Scope & Countries", number: 2 },
+  { label: "Event type", number: 1 },
+  { label: "Scope & countries", number: 2 },
   { label: "Parameters", number: 3 },
-  { label: "Impact Preview", number: 4 },
-  { label: "Confirm & Schedule", number: 5 },
+  { label: "Impact preview", number: 4 },
+  { label: "Confirm & schedule", number: 5 },
 ] as const;
 
 // ── Form State ───────────────────────────────────────────────────────────────
@@ -304,7 +304,7 @@ export function EventWizard({ onCreated }: EventWizardProps) {
             ) : (
               <>
                 <CheckCircle2 className="mr-2 h-4 w-4" />
-                Create World Event
+                Create world event
               </>
             )}
           </Button>
@@ -325,7 +325,7 @@ function Step1EventType({
 }) {
   return (
     <div>
-      <h3 className="text-label text-title-3 mb-1">Choose Event Type</h3>
+      <h3 className="text-label text-title-3 mb-1">Choose event type</h3>
       <p className="text-label-secondary text-body mb-4">
         Select the category of world event to create.
       </p>
@@ -365,7 +365,7 @@ function Step2Scope({
 }) {
   return (
     <div>
-      <h3 className="text-label text-title-3 mb-1">Scope & Countries</h3>
+      <h3 className="text-label text-title-3 mb-1">Scope & countries</h3>
       <p className="text-label-secondary text-body mb-4">
         Choose whether this event affects all countries or specific targets.
       </p>
@@ -377,7 +377,7 @@ function Step2Scope({
         onValueChange={onScopeChange}
         options={[
           { value: "global", label: "Global (All Countries)", icon: <Globe aria-hidden /> },
-          { value: "targeted", label: "Targeted Countries", icon: <Swords aria-hidden /> },
+          { value: "targeted", label: "Targeted countries", icon: <Swords aria-hidden /> },
         ]}
       />
 
@@ -386,7 +386,7 @@ function Step2Scope({
       ) : (
         <div className="rounded-row border-blue/20 bg-blue/5 border p-6 text-center">
           <Globe className="text-blue mx-auto mb-2 h-8 w-8" />
-          <p className="text-label font-medium">Global Event</p>
+          <p className="text-label font-medium">Global event</p>
           <p className="text-label-secondary text-body">
             All countries will be affected. Countries will be automatically selected when the event
             is created.
@@ -410,7 +410,7 @@ function Step3Parameters({
 
   return (
     <div>
-      <h3 className="text-label text-title-3 mb-1">Event Parameters</h3>
+      <h3 className="text-label text-title-3 mb-1">Event parameters</h3>
       <p className="text-label-secondary text-body mb-4">
         Configure the details and severity of this event.
       </p>
@@ -418,7 +418,7 @@ function Step3Parameters({
       <div className="space-y-5">
         {/* Event Name */}
         <div>
-          <Label>Event Name</Label>
+          <Label>Event name</Label>
           <div className="relative mt-1">
             <Icon
               className={`absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 ${selectedType?.color ?? "text-label-secondary"}`}
@@ -565,7 +565,7 @@ function Step4Preview({
 
   return (
     <div>
-      <h3 className="text-label text-title-3 mb-1">Impact Preview</h3>
+      <h3 className="text-label text-title-3 mb-1">Impact preview</h3>
       <p className="text-label-secondary text-body mb-4">
         Projected impact based on event severity and affected economies.
       </p>
@@ -602,7 +602,7 @@ function Step4Preview({
             <TableHead className="px-3">Country</TableHead>
             <TableHead className="px-3">Tier</TableHead>
             <TableHead className="px-3 text-right">GDP Change</TableHead>
-            <TableHead className="px-3 text-right">Pop Change</TableHead>
+            <TableHead className="px-3 text-right">Pop change</TableHead>
             <TableHead className="px-3 text-right">Stability</TableHead>
           </TableRow>
         </TableHeader>
@@ -652,7 +652,7 @@ function Step5Confirm({
 
   return (
     <div>
-      <h3 className="text-label text-title-3 mb-1">Confirm & Schedule</h3>
+      <h3 className="text-label text-title-3 mb-1">Confirm & schedule</h3>
       <p className="text-label-secondary text-body mb-4">
         Review all details before creating this world event.
       </p>

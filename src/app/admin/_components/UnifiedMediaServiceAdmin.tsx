@@ -108,24 +108,24 @@ export function UnifiedMediaServiceAdmin() {
       {/* Stats Overview */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Cached Items</p>
+          <p className="text-label-secondary text-stat-label">Cached items</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">{stats?.cacheSize ?? 0}</p>
         </Card>
 
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Hit Rate</p>
+          <p className="text-label-secondary text-stat-label">Hit rate</p>
           <p className="text-title-2 text-green mt-1 tabular-nums">{hitRate}%</p>
         </Card>
 
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Flag Requests</p>
+          <p className="text-label-secondary text-stat-label">Flag requests</p>
           <p className="text-title-2 text-yellow mt-1 tabular-nums">
             {stats?.serviceStats?.flagRequests ?? 0}
           </p>
         </Card>
 
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Total Requests</p>
+          <p className="text-label-secondary text-stat-label">Total requests</p>
           <p className="text-title-2 text-purple mt-1 tabular-nums">
             {stats?.serviceStats?.totalRequests ?? 0}
           </p>
@@ -138,7 +138,7 @@ export function UnifiedMediaServiceAdmin() {
           <div className="flex items-center gap-2">
             <Database className="text-blue h-4 w-4" />
             <div>
-              <h3 className="text-label text-caption">Media Service Controls</h3>
+              <h3 className="text-label text-caption">Media service controls</h3>
               <p className="text-label-secondary text-footnote">
                 Centralized flag and wiki data caching system
               </p>
@@ -208,7 +208,7 @@ export function UnifiedMediaServiceAdmin() {
           </Button>
 
           <Button onClick={clearCache} disabled={isLoading} variant="destructive" size="sm">
-            Clear Cache
+            Clear cache
           </Button>
         </div>
 
@@ -216,7 +216,7 @@ export function UnifiedMediaServiceAdmin() {
         {stats && (
           <div className="border-separator grid grid-cols-1 gap-4 border-t pt-4 md:grid-cols-2">
             <div className="border-separator bg-fill-3 rounded-row space-y-2 border p-3">
-              <h4 className="text-label text-caption">Request Statistics</h4>
+              <h4 className="text-label text-caption">Request statistics</h4>
               <div className="text-footnote space-y-2">
                 <div className="flex justify-between">
                   <span className="text-label-secondary">Cache Hits:</span>
@@ -234,7 +234,7 @@ export function UnifiedMediaServiceAdmin() {
             </div>
 
             <div className="border-separator bg-fill-3 rounded-row space-y-2 border p-3">
-              <h4 className="text-label text-caption">Service Breakdown</h4>
+              <h4 className="text-label text-caption">Service breakdown</h4>
               <div className="text-footnote space-y-2">
                 <div className="flex justify-between">
                   <span className="text-label-secondary">Flag Requests:</span>

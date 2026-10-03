@@ -59,7 +59,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Eyebrow className="block">Route Name & Properties</Eyebrow>
+        <Eyebrow className="block">Route name & properties</Eyebrow>
         <input
           type="text"
           placeholder="e.g. Trans-National Highway 1"
@@ -68,7 +68,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
           className="border-separator bg-surface text-label placeholder:text-label-secondary focus:border-tint rounded-control-sm text-footnote w-full border px-3 py-2 focus:outline-none"
         />
 
-        <Eyebrow className="block pt-1">Route Type</Eyebrow>
+        <Eyebrow className="block pt-1">Route type</Eyebrow>
         <OptionSelect
           aria-label="Route type"
           value={manualRouteType}

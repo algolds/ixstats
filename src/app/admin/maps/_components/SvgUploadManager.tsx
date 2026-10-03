@@ -53,7 +53,7 @@ const STATUS_CONFIG: Record<string, { icon: any; color: string; label: string }>
   processing: { icon: Cog, color: "text-blue", label: "Processing" },
   processed: { icon: CheckCircle2, color: "text-green", label: "Processed" },
   failed: { icon: XCircle, color: "text-red", label: "Failed" },
-  rolled_back: { icon: RotateCcw, color: "text-label-secondary", label: "Rolled Back" },
+  rolled_back: { icon: RotateCcw, color: "text-label-secondary", label: "Rolled back" },
 };
 
 export function SvgUploadManager() {
@@ -180,7 +180,7 @@ export function SvgUploadManager() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left: Layer selector */}
         <div className="space-y-3">
-          <label className="text-label text-body font-medium">Target Layer</label>
+          <label className="text-label text-body font-medium">Target layer</label>
           <Select value={selectedLayer} onValueChange={(v) => setSelectedLayer(v as LayerType)}>
             <SelectTrigger>
               <SelectValue />
@@ -254,7 +254,7 @@ export function SvgUploadManager() {
       {/* Upload history */}
       <div>
         <h3 className="text-label text-body mb-3 font-medium">
-          Upload History — {LAYER_TYPES.find((l) => l.value === selectedLayer)?.label}
+          Upload history: {LAYER_TYPES.find((l) => l.value === selectedLayer)?.label}
         </h3>
 
         {historyLoading ? (

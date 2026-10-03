@@ -440,7 +440,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                     onValueChange={(v) => handleRouteStatusChange(v)}
                     options={[
                       { value: "operational", label: "Operational" },
-                      { value: "under_construction", label: "Under Construction" },
+                      { value: "under_construction", label: "Under construction" },
                       { value: "planned", label: "Planned" },
                       { value: "abandoned", label: "Abandoned" },
                     ]}
@@ -454,18 +454,18 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                     checked={isInternational}
                     onCheckedChange={(c) => handleInternationalChange(c === true)}
                   />
-                  <span className="text-label text-caption">International Corridor</span>
+                  <span className="text-label text-caption">International corridor</span>
                 </label>
 
                 {/* Velocity & Transit Telemetry Card */}
                 <div className="border-separator rounded-control space-y-2 border p-2">
                   <div className="flex items-center justify-between">
                     <Eyebrow className="flex items-center gap-2">
-                      <Gauge className="text-tint h-3 w-3" /> Velocity & Transit
+                      <Gauge className="text-tint h-3 w-3" /> Velocity & transit
                     </Eyebrow>
                     {travelTime?.isInstantaneous ? (
                       <span className="bg-tint-fill text-tint text-caption rounded-control-sm px-2 py-0.5">
-                        Light Speed
+                        Light speed
                       </span>
                     ) : (
                       <span className="text-label text-caption flex items-center gap-1 font-semibold tabular-nums">
@@ -480,7 +480,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                       {/* Speed custom input */}
                       <div className="space-y-1">
                         <div className="text-label-secondary text-footnote flex items-center justify-between">
-                          <span>Design Speed</span>
+                          <span>Design speed</span>
                           <span className="text-label font-medium tabular-nums">
                             {routeSpeed} km/h
                           </span>
@@ -522,7 +522,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                       {/* Travel summary stats */}
                       <div className="border-separator text-footnote grid grid-cols-2 gap-2 border-t pt-2">
                         <div>
-                          <span className="text-label-secondary block">Effective Speed</span>
+                          <span className="text-label-secondary block">Effective speed</span>
                           <span className="text-label font-medium tabular-nums">
                             {travelTime?.effectiveSpeedKmh} km/h
                           </span>
@@ -533,7 +533,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                           )}
                         </div>
                         <div>
-                          <span className="text-label-secondary block">Dwell Overhead</span>
+                          <span className="text-label-secondary block">Dwell overhead</span>
                           <span className="text-label font-medium tabular-nums">
                             {travelTime?.dwellTimeMinutes
                               ? `+${travelTime.dwellTimeMinutes}m stops`
@@ -547,7 +547,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
 
                 {typeof feature.properties?.lengthKm === "number" && (
                   <div className="border-separator rounded-control text-footnote flex items-center justify-between border px-3 py-2">
-                    <span className="text-label-secondary">Route Length</span>
+                    <span className="text-label-secondary">Route length</span>
                     <span className="text-label font-medium tabular-nums">
                       {(feature.properties.lengthKm as number).toFixed(1)} km
                     </span>
@@ -568,7 +568,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                         onClick={() => onEditRoute(feature.id)}
                       >
                         <Route className="h-3 w-3" />
-                        <span>Edit Path on Map</span>
+                        <span>Edit path on map</span>
                       </Button>
                     )}
                   </div>
@@ -690,7 +690,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                 {coords && (
                   <div className="border-separator rounded-control space-y-2 border p-2">
                     <div className="flex items-center justify-between">
-                      <Eyebrow>Elevation & Terrain</Eyebrow>
+                      <Eyebrow>Elevation & terrain</Eyebrow>
                       {sampleTerrain.isLoading && (
                         <div className="border-separator border-t-primary h-2.5 w-2.5 animate-spin rounded-full border-2" />
                       )}
@@ -769,7 +769,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                 className="border-separator bg-surface hover:bg-fill-3 text-label rounded-control text-caption flex items-center justify-center gap-2 border py-2 transition-[color,background-color,border-color,box-shadow,opacity]"
               >
                 <ExternalLink className="h-3.5 w-3.5 opacity-70" />
-                <span>Open in Wiki</span>
+                <span>Open in wiki</span>
               </a>
             )}
           </div>

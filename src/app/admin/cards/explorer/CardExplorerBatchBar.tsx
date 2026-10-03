@@ -70,13 +70,13 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
             <SlidersHorizontal className="text-tint h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-label text-title-2">Card Explorer</h3>
+            <h3 className="text-label text-title-2">Card explorer</h3>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="secondary" size="sm" onClick={() => setIsBulkModalOpen(true)}>
             <EyeOff className="mr-2 h-3.5 w-3.5" />
-            Bulk Visibility Controls
+            Bulk visibility controls
           </Button>
           <Badge variant="default" className="gap-2">
             <Layers className="text-tint h-3.5 w-3.5" />
@@ -89,7 +89,7 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
       <Dialog open={isBulkModalOpen} onOpenChange={setIsBulkModalOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Bulk Visibility & Takedowns</DialogTitle>
+            <DialogTitle>Bulk visibility & takedowns</DialogTitle>
             <DialogDescription>
               Batch update the visibility/retired status of cards matching selected filters.
             </DialogDescription>
@@ -99,7 +99,7 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-label-secondary text-caption mb-1 block">
-                  Target Category
+                  Target category
                 </label>
                 <Select
                   value={bulkCategoryFilter}
@@ -109,10 +109,10 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="all">All categories</SelectItem>
                     {Object.values(LoreCategory).map((cat) => (
                       <SelectItem key={cat} value={cat}>
-                        {cat} — {getCategoryLabel(cat)}
+                        {cat}: {getCategoryLabel(cat)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -120,17 +120,17 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
               </div>
 
               <div>
-                <label className="text-label-secondary text-caption mb-1 block">Source Type</label>
+                <label className="text-label-secondary text-caption mb-1 block">Source type</label>
                 <Select value={bulkTargetType} onValueChange={(v) => setBulkTargetType(v as any)}>
                   <SelectTrigger size="sm" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Sources</SelectItem>
-                    <SelectItem value="LORE">Lore Cards Only</SelectItem>
+                    <SelectItem value="all">All sources</SelectItem>
+                    <SelectItem value="LORE">Lore cards only</SelectItem>
                     <SelectItem value="NS_IMPORT">NS Imports Only</SelectItem>
-                    <SelectItem value="USER_CUSTOM">User Custom Only</SelectItem>
-                    <SelectItem value="COMMONS_IMPORT">Commons Imports</SelectItem>
+                    <SelectItem value="USER_CUSTOM">User custom only</SelectItem>
+                    <SelectItem value="COMMONS_IMPORT">Commons imports</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -139,7 +139,7 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
             <div className="grid grid-cols-3 gap-2">
               <div>
                 <label className="text-label-secondary text-caption mb-1 block">
-                  Nation Status
+                  Nation status
                 </label>
                 <Select value={bulkCteFilter} onValueChange={(v) => setBulkCteFilter(v as any)}>
                   <SelectTrigger size="sm" className="w-full">
@@ -179,7 +179,7 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
                     <SelectItem value="COMMON">Common</SelectItem>
                     <SelectItem value="UNCOMMON">Uncommon</SelectItem>
                     <SelectItem value="RARE">Rare</SelectItem>
-                    <SelectItem value="ULTRA_RARE">Ultra Rare</SelectItem>
+                    <SelectItem value="ULTRA_RARE">Ultra rare</SelectItem>
                     <SelectItem value="EPIC">Epic</SelectItem>
                     <SelectItem value="LEGENDARY">Legendary</SelectItem>
                   </SelectContent>
@@ -193,10 +193,10 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
               Cancel
             </Button>
             <Button variant="destructive" onClick={() => onBulkExecute(true)} disabled={isPending}>
-              Hide Matching Cards
+              Hide matching cards
             </Button>
             <Button onClick={() => onBulkExecute(false)} disabled={isPending}>
-              Restore Matching Cards
+              Restore matching cards
             </Button>
           </DialogFooter>
         </DialogContent>

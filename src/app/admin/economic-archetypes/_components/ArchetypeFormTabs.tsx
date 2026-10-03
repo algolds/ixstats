@@ -93,7 +93,7 @@ export function GeneralTab({ formData, setFormData }: TabProps) {
       </div>
 
       <div>
-        <label className="text-label text-caption mb-2 block">Implementation Complexity</label>
+        <label className="text-label text-caption mb-2 block">Implementation complexity</label>
         <Select
           value={formData.implementationComplexity}
           onValueChange={(v) => setFormData((prev) => ({ ...prev, implementationComplexity: v }))}
@@ -112,7 +112,7 @@ export function GeneralTab({ formData, setFormData }: TabProps) {
       </div>
 
       <div>
-        <label className="text-label text-caption mb-2 block">Historical Context</label>
+        <label className="text-label text-caption mb-2 block">Historical context</label>
         <Textarea
           value={formData.historicalContext}
           onChange={(e) => setFormData((prev) => ({ ...prev, historicalContext: e.target.value }))}
@@ -129,7 +129,7 @@ export function EconomicsTab({ formData, setFormData }: TabProps) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-label text-caption mb-2 block">Economic Components</label>
+        <label className="text-label text-caption mb-2 block">Economic components</label>
         <MultiSelect
           options={ECONOMIC_COMPONENTS as readonly string[]}
           value={formData.economicComponents}
@@ -170,7 +170,7 @@ export function GovernmentTab({ formData, setFormData }: TabProps) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-label text-caption mb-2 block">Government Components</label>
+        <label className="text-label text-caption mb-2 block">Government components</label>
         <MultiSelect
           options={GOVERNMENT_COMPONENTS as readonly string[]}
           value={formData.governmentComponents}
@@ -188,7 +188,7 @@ export function TaxTab({ formData, setFormData }: TabProps) {
       <div className="space-y-3">
         <div className="space-y-1">
           <div className="text-footnote flex items-center justify-between">
-            <span className="text-label font-medium">Corporate Tax Rate</span>
+            <span className="text-label font-medium">Corporate tax rate</span>
             <span className="text-label-secondary">{formData.taxProfile.corporateTax}%</span>
           </div>
           <Slider
@@ -206,7 +206,7 @@ export function TaxTab({ formData, setFormData }: TabProps) {
 
         <div className="space-y-1">
           <div className="text-footnote flex items-center justify-between">
-            <span className="text-label font-medium">Income Tax Rate</span>
+            <span className="text-label font-medium">Income tax rate</span>
             <span className="text-label-secondary">{formData.taxProfile.incomeTax}%</span>
           </div>
           <Slider
@@ -224,7 +224,7 @@ export function TaxTab({ formData, setFormData }: TabProps) {
 
         <div className="space-y-1">
           <div className="text-footnote flex items-center justify-between">
-            <span className="text-label font-medium">Consumption Tax Rate</span>
+            <span className="text-label font-medium">Consumption tax rate</span>
             <span className="text-label-secondary">{formData.taxProfile.consumptionTax}%</span>
           </div>
           <Slider
@@ -242,7 +242,7 @@ export function TaxTab({ formData, setFormData }: TabProps) {
 
         <div className="space-y-1">
           <div className="text-footnote flex items-center justify-between">
-            <span className="text-label font-medium">Tax Efficiency</span>
+            <span className="text-label font-medium">Tax efficiency</span>
             <span className="text-label-secondary">{formData.taxProfile.taxEfficiency}%</span>
           </div>
           <Slider
@@ -351,7 +351,7 @@ export function MetricsTab({ formData, setFormData }: TabProps) {
 
         <div className="space-y-1">
           <div className="text-footnote flex items-center justify-between">
-            <span className="text-label font-medium">Innovation Index</span>
+            <span className="text-label font-medium">Innovation index</span>
             <span className="text-label-secondary">{formData.growthMetrics.innovationIndex}</span>
           </div>
           <Slider

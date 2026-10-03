@@ -161,7 +161,7 @@ export function SystemTuningSection() {
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <Database className="text-green h-4 w-4" />
             <div>
-              <h3 className="text-label text-caption">Cache Operations</h3>
+              <h3 className="text-label text-caption">Cache operations</h3>
               <p className="text-label-secondary text-footnote">
                 Purge article wikitext and page parse trees from memory
               </p>
@@ -215,7 +215,7 @@ export function SystemTuningSection() {
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <SlidersHorizontal className="text-indigo h-4 w-4" />
             <div>
-              <h3 className="text-label text-caption">Wiki Templates Synchronization</h3>
+              <h3 className="text-label text-caption">Wiki templates synchronization</h3>
               <p className="text-label-secondary text-footnote">
                 Registered template components synced from MediaWiki
               </p>
@@ -224,7 +224,7 @@ export function SystemTuningSection() {
           <div className="space-y-4">
             <div className="border-separator grid gap-3 border-b pb-3 md:grid-cols-2">
               <form onSubmit={handleSyncTemplate} className="space-y-2">
-                <label className="text-label text-caption block">Sync by Name</label>
+                <label className="text-label text-caption block">Sync by name</label>
                 <div className="relative flex gap-2">
                   <div className="relative flex-1">
                     <Input
@@ -274,7 +274,7 @@ export function SystemTuningSection() {
               </form>
 
               <form onSubmit={handleSyncCategory} className="space-y-2">
-                <label className="text-label text-caption block">Sync by Category</label>
+                <label className="text-label text-caption block">Sync by category</label>
                 <div className="flex gap-2">
                   <Input
                     placeholder="e.g. Country templates"
@@ -312,7 +312,7 @@ export function SystemTuningSection() {
               <Table containerClassName="max-h-[12rem]">
                 <TableHeader sticky>
                   <TableRow>
-                    <TableHead className="px-3">Template Name</TableHead>
+                    <TableHead className="px-3">Template name</TableHead>
                     <TableHead className="px-3">Category</TableHead>
                     <TableHead className="px-3 text-right">Usage</TableHead>
                     <TableHead className="px-3 text-right">Params</TableHead>
@@ -346,7 +346,7 @@ export function SystemTuningSection() {
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <Sliders className="text-green h-4 w-4" />
             <div>
-              <h3 className="text-label text-caption">Cron Schedules Editor</h3>
+              <h3 className="text-label text-caption">Cron schedules editor</h3>
               <p className="text-label-secondary text-footnote">
                 Configure background job intervals in standard 5-field cron syntax
               </p>
@@ -355,7 +355,7 @@ export function SystemTuningSection() {
           <div className="space-y-4">
             <form onSubmit={handleSaveCron} className="space-y-3">
               <div className="space-y-2">
-                <label className="text-label text-caption">Lorewards Scoring Schedule</label>
+                <label className="text-label text-caption">Lorewards scoring schedule</label>
                 <Input
                   placeholder="e.g. 0 6 * * *"
                   value={cronScoring}
@@ -366,7 +366,7 @@ export function SystemTuningSection() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-label text-caption">Passive Income Schedule</label>
+                <label className="text-label text-caption">Passive income schedule</label>
                 <Input
                   placeholder="e.g. 0 0 * * *"
                   value={cronIncome}
@@ -377,7 +377,7 @@ export function SystemTuningSection() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-label text-caption">Card Value Tracking Schedule</label>
+                <label className="text-label text-caption">Card value tracking schedule</label>
                 <Input
                   placeholder="e.g. 0 */6 * * *"
                   value={cronCard}
@@ -401,7 +401,7 @@ export function SystemTuningSection() {
               <Button type="submit" disabled={saveCronMutation.isPending} className="w-full gap-2">
                 {saveCronMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 <Save className="h-3.5 w-3.5" />
-                Save Cron Configuration
+                Save cron configuration
               </Button>
             </form>
           </div>

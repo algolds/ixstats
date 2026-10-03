@@ -51,7 +51,7 @@ export function CalculationLogsCard({ logs, isLoading, error }: CalculationLogsC
               No calculation logs available
             </p>
             <p className="text-label-secondary text-footnote mt-1">
-              Logs will appear here after calculations are performed
+              No logs yet. Run a calculation to create one.
             </p>
           </div>
         )}

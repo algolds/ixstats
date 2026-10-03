@@ -79,21 +79,21 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
 
     if (entropy < 2.5) {
       return {
-        label: "Low Phonology Diversity",
+        label: "Low phonology diversity",
         desc: "Repetitive sounds; names will resemble each other highly.",
         color: "text-yellow bg-yellow/5 border-yellow/20",
         pct,
       };
     } else if (entropy < 3.5) {
       return {
-        label: "Balanced Phonology",
+        label: "Balanced phonology",
         desc: "Consistent cultural face with decent variation.",
         color: "text-tint bg-tint/5 border-tint/20",
         pct,
       };
     } else {
       return {
-        label: "High Phonology Diversity",
+        label: "High phonology diversity",
         desc: "Varied sounds; names will have high phonetic difference.",
         color: "text-green bg-green/5 border-green/20",
         pct,
@@ -114,10 +114,10 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
         <div>
           <h3 className="text-tint text-body flex items-center gap-2 font-semibold">
             <Activity className="h-4 w-4" />
-            <span>Lexicon Explorer & Health</span>
+            <span>Lexicon explorer & health</span>
           </h3>
           <p className="text-label-secondary text-caption mt-0.5">
-            Real-time phonetic and structure analysis of the seed list.
+            Phonetic and structure analysis of the seed list.
           </p>
         </div>
       </div>
@@ -127,7 +127,7 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
         {/* Health Score Panel */}
         <div className={`rounded-row border p-4 ${healthTheme.border} ${healthTheme.bg} space-y-3`}>
           <div className="flex items-center justify-between">
-            <span className="text-label-secondary text-eyebrow">Lexicon Health</span>
+            <span className="text-label-secondary text-eyebrow">Lexicon health</span>
             <HealthIcon className={`h-4.5 w-4.5 ${healthTheme.text}`} />
           </div>
 
@@ -175,7 +175,7 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
         >
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-label-secondary text-eyebrow">Phonetic Diversity</span>
+              <span className="text-label-secondary text-eyebrow">Phonetic diversity</span>
               <Award className="text-label-secondary h-4.5 w-4.5" />
             </div>
 
@@ -191,7 +191,7 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
           {/* Diversity progress bar */}
           <div className="mt-auto space-y-1 pt-1">
             <div className="text-label-secondary text-caption flex justify-between font-semibold">
-              <span>Entropy Range</span>
+              <span>Entropy range</span>
               <span>{diversityInfo.pct}%</span>
             </div>
             <div className="bg-fill-2 h-1.5 w-full overflow-hidden rounded-full">
@@ -210,7 +210,7 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
         <div className="space-y-2">
           <h4 className="text-label-secondary border-separator text-subhead flex items-center gap-2 border-b pb-2">
             <BarChart3 className="text-tint h-3.5 w-3.5" />
-            <span>Top Letter Densities</span>
+            <span>Top letter densities</span>
           </h4>
 
           {letterFrequencies.length === 0 ? (
@@ -241,7 +241,7 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
         <div className="space-y-2">
           <h4 className="text-label-secondary border-separator text-subhead flex items-center gap-2 border-b pb-2">
             <Layers className="text-tint h-3.5 w-3.5" />
-            <span>Frequent Substrings</span>
+            <span>Frequent substrings</span>
           </h4>
 
           <div className="grid grid-cols-2 gap-4">

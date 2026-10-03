@@ -105,7 +105,7 @@ const emptyForm: FormState = {
 
 const PRESETS = [
   {
-    label: "Engine Release",
+    label: "Engine release",
     mode: "system_message" as BroadcastMode,
     fill: {
       title: "🚀 IxStates 1.4.0 Engine Update Deployed",
@@ -119,7 +119,7 @@ const PRESETS = [
     },
   },
   {
-    label: "Crisis Alert",
+    label: "Crisis alert",
     mode: "platform_alert" as BroadcastMode,
     fill: {
       title: "🚨 System Crisis Detected",
@@ -133,7 +133,7 @@ const PRESETS = [
     },
   },
   {
-    label: "Diplomatic Dispatch",
+    label: "Diplomatic dispatch",
     mode: "direct_message" as BroadcastMode,
     fill: {
       title: "Summons for Bilateral Security Consultation",
@@ -149,7 +149,7 @@ const PRESETS = [
     },
   },
   {
-    label: "Scheduled Maintenance",
+    label: "Scheduled maintenance",
     mode: "platform_alert" as BroadcastMode,
     fill: {
       title: "🔧 Scheduled System Maintenance",
@@ -287,7 +287,7 @@ export function NotificationComposer() {
           <CardHeader className="pb-3">
             <CardTitle className="text-headline flex items-center gap-2">
               <Sparkles className="text-yellow h-4 w-4" />
-              Delivery Destination
+              Delivery destination
             </CardTitle>
             <CardDescription className="text-footnote">
               Choose where and how this message will be delivered across IxStates.
@@ -303,19 +303,19 @@ export function NotificationComposer() {
               <RadioCard
                 value="platform_alert"
                 icon={<Bell className="text-red" />}
-                title="Platform Alert"
+                title="Platform alert"
                 description="Halo tray & realtime notification center."
               />
               <RadioCard
                 value="system_message"
                 icon={<Crown className="text-yellow" />}
-                title="System Message"
+                title="System message"
                 description="Pinned System Messages thread in /messages inbox."
               />
               <RadioCard
                 value="direct_message"
                 icon={<MessageSquare className="text-indigo" />}
-                title="Direct Dispatch"
+                title="Direct dispatch"
                 description="Direct conversation or diplomatic cable in /messages."
               />
             </RadioCardGroup>
@@ -327,7 +327,7 @@ export function NotificationComposer() {
           <CardHeader className="pb-2">
             <CardTitle className="text-caption flex items-center gap-2">
               <Plus className="h-3.5 w-3.5" />
-              Quick Templates
+              Quick templates
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -390,7 +390,7 @@ export function NotificationComposer() {
             {form.mode === "direct_message" ? (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-caption">Conversation Type</Label>
+                  <Label className="text-caption">Conversation type</Label>
                   <Select
                     value={form.conversationType}
                     onValueChange={(v) => handleField("conversationType", v as any)}
@@ -399,15 +399,15 @@ export function NotificationComposer() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="official">Official System Dispatch</SelectItem>
-                      <SelectItem value="diplomatic">Diplomatic Cable</SelectItem>
-                      <SelectItem value="personal">Personal Direct Message</SelectItem>
+                      <SelectItem value="official">Official system dispatch</SelectItem>
+                      <SelectItem value="diplomatic">Diplomatic cable</SelectItem>
+                      <SelectItem value="personal">Personal direct message</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-caption">Security Classification</Label>
+                  <Label className="text-caption">Security classification</Label>
                   <Select
                     value={form.classification}
                     onValueChange={(v) => handleField("classification", v as any)}
@@ -479,7 +479,7 @@ export function NotificationComposer() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-caption">Recipient Scope</Label>
+                <Label className="text-caption">Recipient scope</Label>
                 <Select
                   value={form.scope}
                   onValueChange={(v) => handleField("scope", v as FormState["scope"])}
@@ -489,8 +489,8 @@ export function NotificationComposer() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="global">Global (All Users)</SelectItem>
-                    <SelectItem value="country">Country Specific</SelectItem>
-                    <SelectItem value="user">Specific User</SelectItem>
+                    <SelectItem value="country">Country specific</SelectItem>
+                    <SelectItem value="user">Specific user</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -498,7 +498,7 @@ export function NotificationComposer() {
 
             {form.scope === "country" && (
               <div className="space-y-2">
-                <Label className="text-caption">Target Country</Label>
+                <Label className="text-caption">Target country</Label>
                 <Select value={form.countryId} onValueChange={(v) => handleField("countryId", v)}>
                   <SelectTrigger size="sm">
                     <SelectValue placeholder="Select country" />
@@ -565,7 +565,7 @@ export function NotificationComposer() {
           <CardHeader className="pb-3">
             <CardTitle className="text-headline flex items-center gap-2">
               <Sparkles className="text-indigo h-4 w-4" />
-              Live Preview
+              Live preview
             </CardTitle>
             <CardDescription className="text-footnote">
               Render preview as seen by recipient players.
@@ -583,7 +583,7 @@ export function NotificationComposer() {
                 </div>
                 <h4 className="text-label text-caption">{form.title || "Notification Title"}</h4>
                 <p className="text-label-secondary text-footnote mt-1 leading-relaxed">
-                  {form.description || "Notification body preview will appear here."}
+                  {form.description || "Enter a description to preview the body."}
                 </p>
               </div>
             )}

@@ -64,7 +64,7 @@ export function GlyphMapRegistry({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="text-label text-footnote font-semibold">Glyph Registry</h4>
+              <h4 className="text-label text-footnote font-semibold">Glyph registry</h4>
               {glyphs.length > 0 && (
                 <span className="text-label-secondary bg-fill-3 py-0.2 text-caption rounded-full px-2 font-mono">
                   {glyphs.length}
@@ -83,7 +83,7 @@ export function GlyphMapRegistry({
           className="text-caption shrink-0 gap-1"
         >
           <Library className="h-3 w-3" />
-          <span>Starter Packs</span>
+          <span>Starter packs</span>
         </Toggle>
       </div>
 
@@ -98,7 +98,7 @@ export function GlyphMapRegistry({
             className="border-separator bg-fill-4 rounded-row overflow-hidden border p-3"
           >
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-label-secondary text-eyebrow">Preset Script Packs</span>
+              <span className="text-label-secondary text-eyebrow">Preset script packs</span>
               <Button
                 variant="ghost"
                 size="sm"

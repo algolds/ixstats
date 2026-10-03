@@ -75,7 +75,7 @@ export function HypsometricElevationHUD({
             <div>
               <h4 className="text-caption font-semibold">Hypsometric Elevation Cross-Section</h4>
               <p className="text-label-secondary text-footnote">
-                Terrain Slice & Hydrological Slope Gradient
+                Terrain slice & hydrological slope gradient
               </p>
             </div>
           </div>

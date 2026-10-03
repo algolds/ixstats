@@ -49,7 +49,7 @@ export default function PreviewPanel() {
     <Card className="h-[450px] overflow-hidden">
       <div className="flex h-full flex-col p-4">
         <h2 className="border-separator text-label text-headline mb-4 border-b pb-2">
-          Live Render
+          Live render
         </h2>
 
         {/* Render custom loaders */}

@@ -63,7 +63,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
         {/* Tool-specific configuration */}
         {borderState.mode === "brush" && (
           <div className="flex items-center gap-2">
-            <Eyebrow>Brush Size</Eyebrow>
+            <Eyebrow>Brush size</Eyebrow>
             <Slider
               aria-label="Brush size"
               min={1}
@@ -176,7 +176,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
                 className="text-label-secondary hover:text-label h-auto min-h-(--control-height-sm) w-full justify-start gap-2 py-2 text-left whitespace-normal"
               >
                 <Wrench className="text-yellow h-3.5 w-3.5" />
-                <span>Repair Spikes</span>
+                <span>Repair spikes</span>
               </Button>
               <Button
                 type="button"
@@ -192,7 +192,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
                 className="text-label-secondary hover:text-label h-auto min-h-(--control-height-sm) w-full justify-start gap-2 py-2 text-left whitespace-normal"
               >
                 <Spline className="text-blue h-3.5 w-3.5" />
-                <span>Smooth Geometry</span>
+                <span>Smooth geometry</span>
               </Button>
               <Button
                 type="button"
@@ -208,7 +208,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
                 className="text-label-secondary hover:text-label h-auto min-h-(--control-height-sm) w-full justify-start gap-2 py-2 text-left whitespace-normal"
               >
                 <Waves className="text-cyan h-3.5 w-3.5" />
-                <span>Naturalize Coastline</span>
+                <span>Naturalize coastline</span>
               </Button>
               <Button
                 type="button"
@@ -280,7 +280,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
         <div className="bg-separator h-4 w-px" />
 
         {/* Close / Exit Border Editor */}
-        <Button variant="secondary" size="xs" onClick={onExit} title="Close Border Editor">
+        <Button variant="secondary" size="xs" onClick={onExit} title="Close border editor">
           <X className="h-3 w-3" />
           <span>Close</span>
         </Button>

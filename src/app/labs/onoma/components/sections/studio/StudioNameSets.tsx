@@ -247,7 +247,7 @@ export function StudioNameSets() {
         <Card variant="inset" padding="none" className="space-y-4 p-4">
           <div className="space-y-2">
             <label className="text-label-secondary text-footnote flex items-center gap-1 font-semibold">
-              <Users className="h-3.5 w-3.5" /> Name Set
+              <Users className="h-3.5 w-3.5" /> Name set
             </label>
             {setNameKeys.length > 0 ? (
               <>
@@ -266,7 +266,7 @@ export function StudioNameSets() {
 
                 <div className="border-separator space-y-2 border-t pt-3">
                   <label className="text-label-secondary text-subhead flex items-center gap-1">
-                    Naming Convention Preset
+                    Naming convention preset
                   </label>
                   <Select value={presetKey} onValueChange={handlePresetChange}>
                     <SelectTrigger className="text-body w-full">
@@ -428,9 +428,7 @@ export function StudioNameSets() {
                       <div className="border-separator text-caption grid grid-cols-2 gap-2 border-t pt-2">
                         {/* Prefix */}
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-label-secondary font-semibold uppercase">
-                            Prefix
-                          </span>
+                          <span className="text-label-secondary font-semibold">Prefix</span>
                           <Input
                             value={slot.prefix || ""}
                             onChange={(e) => updateSlot(idx, { prefix: e.target.value })}
@@ -441,9 +439,7 @@ export function StudioNameSets() {
 
                         {/* Suffix Rule */}
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-label-secondary font-semibold uppercase">
-                            Suffix Rule
-                          </span>
+                          <span className="text-label-secondary font-semibold">Suffix rule</span>
                           <Select
                             value={slot.suffixRule || "none"}
                             onValueChange={(
@@ -477,7 +473,7 @@ export function StudioNameSets() {
                         {/* Parent Name input (matronymic/patronymic only) */}
                         {showParentInput && (
                           <div className="col-span-2 flex flex-col gap-0.5">
-                            <span className="text-label-secondary font-semibold uppercase">
+                            <span className="text-label-secondary font-semibold">
                               Parent Name Lock (Optional)
                             </span>
                             <Input
@@ -500,7 +496,7 @@ export function StudioNameSets() {
                                 })
                               }
                             />
-                            <span className="text-label-secondary font-semibold uppercase">
+                            <span className="text-label-secondary font-semibold">
                               Align with unified full-name gender
                             </span>
                           </label>
@@ -557,7 +553,7 @@ export function StudioNameSets() {
                   disabled={slots.length === 0}
                   className="flex-1 justify-center"
                 >
-                  <span>Generate Full Names</span>
+                  <span>Generate full names</span>
                 </Button>
               </div>
             </>
@@ -574,7 +570,7 @@ export function StudioNameSets() {
             className="animate-in fade-in space-y-4 p-4 duration-300"
           >
             <div className="border-separator border-b pb-3">
-              <h3 className="text-label text-body font-semibold">Full Names</h3>
+              <h3 className="text-label text-body font-semibold">Full names</h3>
               <p className="text-label-secondary text-caption mt-0.5">
                 Each slot generated from the {selectedSet} template.
               </p>

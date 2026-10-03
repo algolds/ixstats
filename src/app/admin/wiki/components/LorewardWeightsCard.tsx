@@ -26,11 +26,11 @@ import {
 import { Card } from "~/components/ui/card";
 
 const WEIGHT_SLIDERS = [
-  { key: "lorewardWeight_bytesAdded", label: "Bytes Added Weight" },
-  { key: "lorewardWeight_proseRatio", label: "Prose Ratio Weight" },
-  { key: "lorewardWeight_editDepth", label: "Edit Depth Weight" },
-  { key: "lorewardWeight_collaborationBonus", label: "Collaboration Bonus Weight" },
-  { key: "lorewardWeight_newArticleBonus", label: "New Article Bonus Weight" },
+  { key: "lorewardWeight_bytesAdded", label: "Bytes added weight" },
+  { key: "lorewardWeight_proseRatio", label: "Prose ratio weight" },
+  { key: "lorewardWeight_editDepth", label: "Edit depth weight" },
+  { key: "lorewardWeight_collaborationBonus", label: "Collaboration bonus weight" },
+  { key: "lorewardWeight_newArticleBonus", label: "New article bonus weight" },
 ] as const;
 
 export function LorewardWeightsCard() {
@@ -151,10 +151,10 @@ export function LorewardWeightsCard() {
         <div className="border-separator border-b pb-3">
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="text-blue h-4 w-4" />
-            <h3 className="text-label text-caption">Scoring Parameters Tuning</h3>
+            <h3 className="text-label text-caption">Scoring parameters tuning</h3>
           </div>
           <p className="text-label-secondary text-footnote mt-0.5">
-            Tune the daily Loreward scoring engine weights in real-time
+            Tune the daily Loreward scoring weights
           </p>
         </div>
         <div>
@@ -192,7 +192,7 @@ export function LorewardWeightsCard() {
               >
                 {saveWeightsMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 <Save className="h-3.5 w-3.5" />
-                Save Weight Configuration
+                Save weight configuration
               </Button>
             </form>
           ) : (
@@ -210,7 +210,7 @@ export function LorewardWeightsCard() {
         <div className="border-separator border-b pb-3">
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="text-indigo h-4 w-4" />
-            <h3 className="text-label text-caption">Weight Tuning Preview</h3>
+            <h3 className="text-label text-caption">Weight tuning preview</h3>
           </div>
           <p className="text-label-secondary text-footnote mt-0.5">
             Preview candidate ranks under simulated weights
@@ -219,7 +219,7 @@ export function LorewardWeightsCard() {
         <div className="space-y-4">
           <div className="flex items-end gap-2">
             <div className="flex-1 space-y-2">
-              <label className="text-label text-caption">Scoring Date</label>
+              <label className="text-label text-caption">Scoring date</label>
               <Input
                 type="date"
                 value={previewDate}
@@ -249,8 +249,8 @@ export function LorewardWeightsCard() {
                 <TableRow>
                   <TableHead className="w-16 px-3">Rank</TableHead>
                   <TableHead className="px-3">Candidate</TableHead>
-                  <TableHead className="px-3 text-right">Curr Score</TableHead>
-                  <TableHead className="px-3 text-right">Sim Score</TableHead>
+                  <TableHead className="px-3 text-right">Curr score</TableHead>
+                  <TableHead className="px-3 text-right">Sim score</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

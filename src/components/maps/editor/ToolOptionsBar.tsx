@@ -126,7 +126,7 @@ interface ToolOptionsBarProps {
   rulerPoints?: [number, number][];
   rulerDistance?: number;
   onClearRuler?: () => void;
-  // Lasso select options (Plan 120 P3)
+  // Lasso select options
   lassoTool?: "freehand" | "rect";
   onLassoToolChange?: (tool: "freehand" | "rect") => void;
 }
@@ -185,7 +185,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
         aria-label="Tool options"
         className="flex h-9 shrink-0 items-center gap-2 rounded-none px-3"
       >
-        <ToolLabel icon={Scissors} label="Split Region" />
+        <ToolLabel icon={Scissors} label="Split region" />
         <span className="text-label-secondary text-footnote hidden truncate md:inline">
           {props.selectedFeature?.type === "subdivision"
             ? `Click points across "${props.selectedFeature.name}" from edge to edge, then Split (Enter).`
@@ -207,10 +207,10 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
         </ToolbarButton>
         {props.onUndoWaypoint && (
           <ToolbarButton onClick={props.onUndoWaypoint} title="Undo last split point">
-            <Undo2 className="h-3 w-3" /> Undo Point
+            <Undo2 className="h-3 w-3" /> Undo point
           </ToolbarButton>
         )}
-        <ToolbarButton tone="danger" onClick={props.onCancelSplit} title="Cancel Split">
+        <ToolbarButton tone="danger" onClick={props.onCancelSplit} title="Cancel split">
           Cancel
         </ToolbarButton>
       </FacetMaterial>
@@ -264,12 +264,12 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
               onClick={props.onMergeSelectedSubdivisions}
               title="Merge selected subdivisions"
             >
-              <GitMerge className="h-3 w-3" /> Merge Regions
+              <GitMerge className="h-3 w-3" /> Merge regions
             </ToolbarButton>
           )}
           {props.selectedCitiesCount! > 1 && props.onMergeSelectedCities && (
             <ToolbarButton onClick={props.onMergeSelectedCities} title="Merge selected cities">
-              <GitMerge className="h-3 w-3" /> Merge Cities
+              <GitMerge className="h-3 w-3" /> Merge cities
             </ToolbarButton>
           )}
           {props.selectedCitiesCount! > 0 && props.onScalePopulation && props.onRotateCities && (
@@ -298,7 +298,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
                   onClick={() => props.onSplitCity!(props.selectedFeature!.id)}
                   title="Split city"
                 >
-                  <Scissors className="h-3 w-3" /> Split City
+                  <Scissors className="h-3 w-3" /> Split city
                 </ToolbarButton>
               </>
             )}
@@ -339,12 +339,12 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
                   onClick={() => props.onSplitCity!(props.selectedFeature!.id)}
                   title="Split city"
                 >
-                  <Scissors className="h-3 w-3" /> Split City
+                  <Scissors className="h-3 w-3" /> Split city
                 </ToolbarButton>
               )}
               {props.onCopyCoords && (
                 <ToolbarButton onClick={props.onCopyCoords} title="Copy coordinates">
-                  <MapPin className="h-3 w-3" /> Copy Coords
+                  <MapPin className="h-3 w-3" /> Copy coords
                 </ToolbarButton>
               )}
               {props.onMoveToCoords && <MoveToCoordsInput onMove={props.onMoveToCoords} />}
@@ -387,7 +387,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
       {/* ── POI mode ── */}
       {(mode === "add-poi" || mode === "edit-poi") && (
         <>
-          <ToolLabel icon={Landmark} label="Point of Interest" />
+          <ToolLabel icon={Landmark} label="Point of interest" />
           <Eyebrow>Category</Eyebrow>
           <OptionSelect
             aria-label="Point of interest category"
@@ -407,7 +407,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
               )}
               {props.onCopyCoords && (
                 <ToolbarButton onClick={props.onCopyCoords} title="Copy coordinates">
-                  <MapPin className="h-3 w-3" /> Copy Coords
+                  <MapPin className="h-3 w-3" /> Copy coords
                 </ToolbarButton>
               )}
               {props.onMoveToCoords && <MoveToCoordsInput onMove={props.onMoveToCoords} />}
@@ -419,7 +419,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
       {/* ── Lasso Select mode ── */}
       {mode === "lasso-select" && (
         <>
-          <ToolLabel icon={LassoSelect} label="Lasso Select" />
+          <ToolLabel icon={LassoSelect} label="Lasso select" />
           <span className="text-label-secondary text-footnote">
             Drag to select features. Freehand draws a loop; Rect draws a box. Shift = add, Alt =
             subtract.
@@ -446,7 +446,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
       {/* ── Add Route mode ── */}
       {mode === "add-route" && (
         <>
-          <ToolLabel icon={Route} label="Draw Route" />
+          <ToolLabel icon={Route} label="Draw route" />
           <Eyebrow>Type</Eyebrow>
           <OptionSelect
             aria-label="Route type"
@@ -480,7 +480,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
       {/* ── Edit Route mode ── */}
       {mode === "edit-route" && (
         <>
-          <ToolLabel icon={Route} label="Edit Route" />
+          <ToolLabel icon={Route} label="Edit route" />
           {props.editingRouteName && <Badge variant="default">{props.editingRouteName}</Badge>}
           <span className="text-label-secondary text-footnote tabular-nums">
             {props.editingRouteNodesCount ?? 0} nodes

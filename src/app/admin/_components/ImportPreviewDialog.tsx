@@ -152,7 +152,7 @@ export function ImportPreviewDialog({
               <div className="flex items-center">
                 <Plus className="text-green mr-3 h-6 w-6" />
                 <div>
-                  <p className="text-body text-green font-medium">New Countries to Add</p>
+                  <p className="text-body text-green font-medium">New countries to add</p>
                   <p className="text-large-title text-green">{newCountries.length}</p>
                 </div>
               </div>
@@ -162,7 +162,7 @@ export function ImportPreviewDialog({
               <div className="flex items-center">
                 <RefreshCw className="text-blue mr-3 h-6 w-6" />
                 <div>
-                  <p className="text-body text-blue font-medium">Countries to Update</p>
+                  <p className="text-body text-blue font-medium">Countries to update</p>
                   <p className="text-large-title text-blue">{updatedCountries.length}</p>
                 </div>
               </div>
@@ -301,7 +301,7 @@ export function ImportPreviewDialog({
               <Clock className="text-yellow mt-0.5 h-5 w-5" />
               <div className="flex-1">
                 <h4 className="text-body text-yellow mb-2 font-medium">
-                  Epoch Time Synchronization
+                  Epoch time synchronization
                 </h4>
                 <p className="text-footnote text-yellow mb-3">
                   Sync the game epoch with your imported data to ensure accurate tracking. This

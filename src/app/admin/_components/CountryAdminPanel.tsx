@@ -129,7 +129,7 @@ export function CountryAdminPanel() {
       <Card className="flex flex-col gap-6 p-8 py-6">
         <div className="mb-6 flex items-center gap-3">
           <Users className="text-tint h-6 w-6" />
-          <h2 className="text-title-1">Country Admin</h2>
+          <h2 className="text-title-1">Country admin</h2>
         </div>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -152,7 +152,7 @@ export function CountryAdminPanel() {
       <Card className="flex flex-col gap-6 p-8 py-6">
         <div className="mb-6 flex items-center gap-3">
           <AlertCircle className="text-red h-6 w-6" />
-          <h2 className="text-title-1 text-red">Country Admin</h2>
+          <h2 className="text-title-1 text-red">Country admin</h2>
         </div>
         <div className="text-red">Error loading countries: {error.message}</div>
       </Card>
@@ -164,7 +164,7 @@ export function CountryAdminPanel() {
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
           <Users className="text-tint h-6 w-6" />
-          <h2 className="text-title-1">Country Admin</h2>
+          <h2 className="text-title-1">Country admin</h2>
         </div>
         <div className="flex items-center gap-2">
           <div className="relative">
@@ -194,7 +194,7 @@ export function CountryAdminPanel() {
             <TableHead className="text-right">GDP p.c.</TableHead>
             <TableHead className="text-right">Total GDP</TableHead>
             <TableHead className="text-center">Tier</TableHead>
-            <TableHead className="text-center" title="Hide Diplomatic Ops Tab">
+            <TableHead className="text-center" title="Hide diplomatic ops tab">
               <div className="flex items-center justify-center gap-1">
                 <EyeOff className="h-3 w-3" />
                 <span className="text-footnote">Dipl</span>

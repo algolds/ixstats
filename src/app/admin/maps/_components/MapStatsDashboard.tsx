@@ -26,7 +26,7 @@ export function MapStatsDashboard() {
     <div className="space-y-6">
       {/* Layer breakdown */}
       <Card className="rounded-row p-6">
-        <Eyebrow className="text-label text-body mb-4 block">Layer Breakdown</Eyebrow>
+        <Eyebrow className="text-label text-body mb-4 block">Layer breakdown</Eyebrow>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {layerInfo?.map((layer) => (
             <div key={layer.type} className="border-separator rounded-control border p-3">
@@ -46,7 +46,7 @@ export function MapStatsDashboard() {
 
       {/* Linkage overview */}
       <Card className="rounded-row p-6">
-        <Eyebrow className="text-label text-body mb-4 block">Country Linkage</Eyebrow>
+        <Eyebrow className="text-label text-body mb-4 block">Country linkage</Eyebrow>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Progress bar */}
           <div>

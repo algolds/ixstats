@@ -134,7 +134,7 @@ export default function ComparatorSection({
       {/* Header */}
       {!hideHeader && (
         <div className="border-separator space-y-1 border-b pb-4">
-          <h2 className="text-label text-title-2 font-bold">Linguistic Comparison</h2>
+          <h2 className="text-label text-title-2 font-bold">Linguistic comparison</h2>
           <p className="text-label-secondary text-footnote mt-0.5">
             Analyze phonetic distance, bigram entropy, and synthesize hybrid vocabulary between
             natural cultures and custom conlangs.
@@ -178,7 +178,7 @@ export default function ComparatorSection({
           <span className="text-large-title font-mono font-bold">
             {comparison.linguisticDistance}
           </span>
-          <span className="text-eyebrow mt-1 opacity-85">Linguistic Distance</span>
+          <span className="text-eyebrow mt-1 opacity-85">Linguistic distance</span>
           <span className="text-caption mt-1 opacity-70">
             {comparison.linguisticDistance >= 75
               ? "Mutually Unintelligible (Completely Alien)"
@@ -194,7 +194,7 @@ export default function ComparatorSection({
             {comparison.phonemeOverlap}%
           </span>
           <span className="text-label-secondary text-eyebrow mt-1 block">
-            Phoneme Inventory Overlap
+            Phoneme inventory overlap
           </span>
           <span className="text-label-secondary text-caption mt-1 block">
             Jaccard overlap coefficient of sound charts
@@ -208,7 +208,7 @@ export default function ComparatorSection({
             {comparison.bigramSimilarity}%
           </span>
           <span className="text-label-secondary text-eyebrow mt-1 block">
-            Bigram Cosine Similarity
+            Bigram cosine similarity
           </span>
           <span className="text-label-secondary text-caption mt-1 block">
             Phonotactic structure vector correlation
@@ -218,7 +218,7 @@ export default function ComparatorSection({
 
       {/* Phoneme Inventories compare */}
       <div className="space-y-3">
-        <h3 className="text-label-secondary text-subhead">Phoneme Inventory Overlap Analysis</h3>
+        <h3 className="text-label-secondary text-subhead">Phoneme inventory overlap analysis</h3>
         <Card variant="inset" padding="none" className="space-y-4 p-4">
           {/* Shared sounds */}
           <div className="space-y-2">
@@ -286,11 +286,11 @@ export default function ComparatorSection({
 
       {/* Phonetic Diversity / Shannon Entropy comparison */}
       <div className="space-y-3">
-        <h3 className="text-label-secondary text-subhead">Phonetic Diversity & Entropy</h3>
+        <h3 className="text-label-secondary text-subhead">Phonetic diversity & entropy</h3>
         <Card variant="inset" padding="none" className="p-4">
           <div className="space-y-3">
             <div className="text-label-secondary text-footnote flex items-center justify-between">
-              <span>Entropy Difference</span>
+              <span>Entropy difference</span>
               <span className="text-label font-mono font-semibold">
                 {comparison.entropyDelta.toFixed(3)} bits
               </span>
@@ -402,7 +402,7 @@ export default function ComparatorSection({
             onClick={handleBlendPreview}
             className="justify-center"
           >
-            Blend Profiles
+            Blend profiles
           </Button>
         </div>
 

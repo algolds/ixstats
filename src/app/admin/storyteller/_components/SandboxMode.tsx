@@ -28,14 +28,14 @@ import {
 } from "iconoir-react";
 
 const EVENT_TYPES = [
-  { value: "economic_crisis", label: "Economic Crisis" },
-  { value: "trade_war", label: "Trade War" },
-  { value: "natural_disaster", label: "Natural Disaster" },
-  { value: "political_upheaval", label: "Political Upheaval" },
-  { value: "tech_revolution", label: "Tech Revolution" },
-  { value: "peace_era", label: "Peace & Prosperity" },
+  { value: "economic_crisis", label: "Economic crisis" },
+  { value: "trade_war", label: "Trade war" },
+  { value: "natural_disaster", label: "Natural disaster" },
+  { value: "political_upheaval", label: "Political upheaval" },
+  { value: "tech_revolution", label: "Tech revolution" },
+  { value: "peace_era", label: "Peace & prosperity" },
   { value: "pandemic", label: "Pandemic" },
-  { value: "climate_disaster", label: "Climate Emergency" },
+  { value: "climate_disaster", label: "Climate emergency" },
   { value: "custom", label: "Custom" },
 ];
 
@@ -63,7 +63,7 @@ export function SandboxMode() {
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <FlaskConical className="text-indigo h-5 w-5" />
-        <h3 className="text-label text-title-3">Sandbox Mode</h3>
+        <h3 className="text-label text-title-3">Sandbox mode</h3>
         <Badge variant="secondary">No changes applied</Badge>
       </div>
 
@@ -71,7 +71,7 @@ export function SandboxMode() {
         {/* Configuration */}
         <div className="space-y-5">
           <div>
-            <Label>Event Type</Label>
+            <Label>Event type</Label>
             <Select
               value={type}
               onValueChange={(v) => {
@@ -131,7 +131,7 @@ export function SandboxMode() {
           </div>
 
           <div>
-            <Label className="mb-2 block">Target Countries</Label>
+            <Label className="mb-2 block">Target countries</Label>
             <CountrySelector
               selectedIds={selectedCountryIds}
               onSelectionChange={(ids) => {
@@ -147,7 +147,7 @@ export function SandboxMode() {
             className="w-full"
           >
             <Play className="mr-2 h-4 w-4" />
-            Run Simulation
+            Run simulation
           </Button>
         </div>
 
@@ -156,7 +156,7 @@ export function SandboxMode() {
           {!runSimulation ? (
             <div className="border-separator rounded-row flex flex-col items-center justify-center border border-dashed py-20 text-center">
               <FlaskConical className="text-label-secondary mb-3 h-10 w-10" />
-              <p className="text-label font-medium">Configure & Run</p>
+              <p className="text-label font-medium">Configure & run</p>
               <p className="text-label-secondary text-body mt-1">
                 Set parameters and select countries, then click Run Simulation.
               </p>
@@ -188,7 +188,7 @@ export function SandboxMode() {
                   </div>
                 </div>
                 <div className="border-separator rounded-control border p-3 text-center">
-                  <div className="text-label-secondary text-footnote">At Risk</div>
+                  <div className="text-label-secondary text-footnote">At risk</div>
                   <div className="text-label text-title-2">
                     {formatCurrency(simulation.data.summary.totalGdpAtRisk)}
                   </div>

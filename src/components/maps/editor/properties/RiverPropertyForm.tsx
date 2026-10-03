@@ -50,7 +50,7 @@ export const RiverPropertyForm = React.memo(function RiverPropertyForm({
     <div className="space-y-2">
       <input
         type="text"
-        placeholder="River Name"
+        placeholder="River name"
         value={form.name}
         onChange={(e) => onChange({ ...form, name: e.target.value })}
         className={inputClasses}

@@ -104,7 +104,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
           feedback.
         </CardDescription>
         <Button onClick={onCreateNew} className="cursor-pointer gap-2">
-          <Plus className="h-4 w-4" /> Create First Poll
+          <Plus className="h-4 w-4" /> Create first poll
         </Button>
       </Card>
     );
@@ -115,17 +115,17 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
       {/* Stats Overview */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Ballots Configured</p>
+          <p className="text-label-secondary text-stat-label">Ballots configured</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">{polls.length}</p>
         </Card>
 
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Active Ballots</p>
+          <p className="text-label-secondary text-stat-label">Active ballots</p>
           <p className="text-title-2 text-green mt-1 tabular-nums">{activePollsCount}</p>
         </Card>
 
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Responses Collected</p>
+          <p className="text-label-secondary text-stat-label">Responses collected</p>
           <p className="text-title-2 text-teal mt-1 tabular-nums">{totalVotesCast}</p>
         </Card>
       </div>

@@ -62,7 +62,7 @@ export function MapPipelineTelemetry({
       {/* Header */}
       <div className="border-separator border-b p-4">
         <h2 className="text-tint text-title-3 flex items-center gap-2">
-          <Activity className="h-4 w-4" /> Pipeline Telemetry & Inspector
+          <Activity className="h-4 w-4" /> Pipeline telemetry & inspector
         </h2>
         <p className="text-label-secondary text-footnote">
           PostGIS Spatial Analysis & GeoProfile Statistics
@@ -91,7 +91,7 @@ export function MapPipelineTelemetry({
       {(activeTab === "geoprofile" || activeTab === "resources") && (
         <div className="border-separator bg-surface border-b p-3">
           <label className="text-label-secondary text-footnote mb-1 block">
-            Target Nation Inspector
+            Target nation inspector
           </label>
           <OptionSelect
             aria-label="Country"
@@ -111,29 +111,29 @@ export function MapPipelineTelemetry({
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="border-separator bg-surface rounded-control-sm border p-3">
-                <div className="text-label-secondary text-footnote">Execution Speed</div>
+                <div className="text-label-secondary text-footnote">Execution speed</div>
                 <div className="text-tint text-title-3 tabular-nums">
                   {stats.generationTimeMs} ms
                 </div>
               </div>
               <div className="border-separator bg-surface rounded-control-sm border p-3">
-                <div className="text-label-secondary text-footnote">Mesh Resolution</div>
+                <div className="text-label-secondary text-footnote">Mesh resolution</div>
                 <div className="text-label text-title-3 tabular-nums">{stats.cellCount} cells</div>
               </div>
               <div className="border-separator bg-surface rounded-control-sm border p-3">
-                <div className="text-label-secondary text-footnote">Nations Generated</div>
+                <div className="text-label-secondary text-footnote">Nations generated</div>
                 <div className="text-title-3 text-green tabular-nums">{stats.countryCount}</div>
               </div>
               <div className="border-separator bg-surface rounded-control-sm border p-3">
-                <div className="text-label-secondary text-footnote">Cities Placed</div>
+                <div className="text-label-secondary text-footnote">Cities placed</div>
                 <div className="text-title-3 text-cyan tabular-nums">{stats.cityCount}</div>
               </div>
               <div className="border-separator bg-surface rounded-control-sm border p-3">
-                <div className="text-label-secondary text-footnote">Rivers Traced</div>
+                <div className="text-label-secondary text-footnote">Rivers traced</div>
                 <div className="text-title-3 text-blue tabular-nums">{stats.riverCount}</div>
               </div>
               <div className="border-separator bg-surface rounded-control-sm border p-3">
-                <div className="text-label-secondary text-footnote">Shared Vertices</div>
+                <div className="text-label-secondary text-footnote">Shared vertices</div>
                 <div className="text-title-3 text-indigo tabular-nums">
                   {stats.sharedVerticesCount}
                 </div>
@@ -194,7 +194,7 @@ export function MapPipelineTelemetry({
                 </div>
 
                 <div className="border-separator bg-surface rounded-control-sm space-y-2 border p-3">
-                  <div className="text-label text-caption font-semibold">Sim Economy Modifiers</div>
+                  <div className="text-label text-caption font-semibold">Sim economy modifiers</div>
                   <div className="text-footnote grid grid-cols-3 gap-2 text-center tabular-nums">
                     <div className="bg-surface border-separator rounded-control-sm border p-2">
                       <div className="text-label-secondary text-footnote">GDP</div>
@@ -205,7 +205,7 @@ export function MapPipelineTelemetry({
                       <div className="text-cyan font-semibold">{activeProfile.tradeModifier}x</div>
                     </div>
                     <div className="bg-surface border-separator rounded-control-sm border p-2">
-                      <div className="text-label-secondary text-footnote">Infra Cost</div>
+                      <div className="text-label-secondary text-footnote">Infra cost</div>
                       <div className="text-tint font-semibold">
                         {activeProfile.infraCostModifier}x
                       </div>
@@ -215,7 +215,7 @@ export function MapPipelineTelemetry({
 
                 {/* Climate Breakdown */}
                 <div className="border-separator bg-surface rounded-control-sm space-y-2 border p-3">
-                  <div className="text-label text-caption font-semibold">Climate Distribution</div>
+                  <div className="text-label text-caption font-semibold">Climate distribution</div>
                   <div className="text-footnote space-y-2">
                     {activeProfile.climateDistribution.map((c, i) => (
                       <div key={i} className="text-label flex items-center justify-between">

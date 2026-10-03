@@ -67,11 +67,11 @@ export function DiplomaticScenariosHeader({
 
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger size="sm" className="w-44">
-              <SelectValue placeholder="Scenario Type" />
+              <SelectValue placeholder="Scenario type" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all" className="text-footnote">
-                All Types
+                All types
               </SelectItem>
               {SCENARIO_TYPES.map((t) => (
                 <SelectItem key={t.value} value={t.value} className="text-footnote">
@@ -94,7 +94,7 @@ export function DiplomaticScenariosHeader({
 
         <Button onClick={onOpenAddDialog}>
           <Plus className="mr-2 h-3.5 w-3.5" />
-          Create Scenario
+          Create scenario
         </Button>
       </div>
 

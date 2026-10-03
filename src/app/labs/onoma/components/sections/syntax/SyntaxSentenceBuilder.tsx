@@ -157,7 +157,7 @@ export function SyntaxSentenceBuilder({
   return (
     <Card variant="inset" padding="none" className="space-y-4 p-5 text-left">
       <h4 className="text-label text-subhead flex items-center gap-2">
-        <Cpu className="text-indigo h-4 w-4" /> Live Sentence Generator
+        <Cpu className="text-indigo h-4 w-4" /> Live sentence generator
       </h4>
 
       {/* Translation Output Banner */}
@@ -176,7 +176,7 @@ export function SyntaxSentenceBuilder({
       <div className="text-footnote grid grid-cols-1 gap-4 pt-2 md:grid-cols-3">
         {/* Subject */}
         <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
-          <span className="text-label block font-semibold">Subject Noun</span>
+          <span className="text-label block font-semibold">Subject noun</span>
           <Input
             type="text"
             value={subject}
@@ -211,7 +211,7 @@ export function SyntaxSentenceBuilder({
 
         {/* Verb */}
         <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
-          <span className="text-label block font-semibold">Action Verb</span>
+          <span className="text-label block font-semibold">Action verb</span>
           <Input
             type="text"
             value={verb}
@@ -224,16 +224,16 @@ export function SyntaxSentenceBuilder({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="present">Present Tense</SelectItem>
-              <SelectItem value="past">Past Tense</SelectItem>
-              <SelectItem value="future">Future Tense</SelectItem>
+              <SelectItem value="present">Present tense</SelectItem>
+              <SelectItem value="past">Past tense</SelectItem>
+              <SelectItem value="future">Future tense</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Object */}
         <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
-          <span className="text-label block font-semibold">Object Noun</span>
+          <span className="text-label block font-semibold">Object noun</span>
           <Input
             type="text"
             value={object}

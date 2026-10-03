@@ -1,5 +1,4 @@
 "use client";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React from "react";
 import { Refresh as RefreshCw, MagicWand as Wand2 } from "iconoir-react";
@@ -76,7 +75,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
     <div className="text-footnote space-y-4 p-3">
       <Card className="flex items-center justify-between p-3">
         <div className="space-y-0.5">
-          <Eyebrow className="block">Issues / Desyncs</Eyebrow>
+          <span className="text-stat-label text-label-secondary block">Issues / Desyncs</span>
           <span className="text-label text-title-2">{validationData?.issues?.length ?? 0}</span>
         </div>
         <div className="flex gap-1">
@@ -86,7 +85,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
             className="h-7 w-7"
             onClick={() => syncMutation.mutate({ action: "sync_all", realm })}
             disabled={syncMutation.isPending}
-            title="Sync All Linked"
+            title="Sync all linked"
           >
             <RefreshCw className={cn("h-4 w-4", syncMutation.isPending && "animate-spin")} />
           </Button>

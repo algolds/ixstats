@@ -139,7 +139,7 @@ export function DomainControlBar({
 
       {/* 3. Cultural Profile / Seed Selector */}
       <div className="space-y-2">
-        <label className="text-label text-footnote font-semibold">Cultural Seed</label>
+        <label className="text-label text-footnote font-semibold">Cultural seed</label>
         <Select value={gen.culture} onValueChange={gen.setCulture}>
           <SelectTrigger className="text-footnote h-9 w-full">
             <SelectValue placeholder="Select culture family" />
@@ -149,7 +149,7 @@ export function DomainControlBar({
               Any / Mixed Profile
             </SelectItem>
             <SelectGroup>
-              <SelectLabel className="text-label-secondary">Linguistic Families</SelectLabel>
+              <SelectLabel className="text-label-secondary">Linguistic families</SelectLabel>
               <SelectItem value="latin" className="text-footnote">
                 Latin / Romance
               </SelectItem>
@@ -197,7 +197,7 @@ export function DomainControlBar({
       {/* 3. Gender Modifier for People if applicable */}
       {category === "person" && gen.subType !== "generic" && (
         <div className="space-y-1">
-          <label className="text-footnote text-label block font-semibold">Gender Modifier</label>
+          <label className="text-footnote text-label block font-semibold">Gender modifier</label>
           <SegmentedControl
             size="sm"
             fullWidth

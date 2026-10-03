@@ -81,7 +81,7 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
       <div className="space-y-4">
         <div className="flex gap-2">
           <div className="flex-1 space-y-1">
-            <Label>Generator Seed</Label>
+            <Label>Generator seed</Label>
             <Input
               type="number"
               value={seed}
@@ -154,7 +154,7 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label>Select League</Label>
+        <Label>Select league</Label>
         <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
           <SelectTrigger>
             <SelectValue placeholder="Choose league" />
@@ -171,7 +171,7 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
 
       {dbLeague && (
         <div className="space-y-2">
-          <Label>Select Team</Label>
+          <Label>Select team</Label>
           <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
             <SelectTrigger>
               <SelectValue placeholder="Choose team" />
@@ -216,7 +216,7 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
                 <div className="flex gap-2">
                   <Select value={selectedSaint} onValueChange={setSelectedSaint}>
                     <SelectTrigger size="sm">
-                      <SelectValue placeholder="Select Saint" />
+                      <SelectValue placeholder="Select saint" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Saint Rais">Saint Rais (Light Blessing)</SelectItem>

@@ -74,13 +74,13 @@ export function ScriptSettingsPanel({
               <Feather className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-label text-subhead">Script Directory</h3>
+              <h3 className="text-label text-subhead">Script directory</h3>
               <p className="text-label-secondary text-caption">Active & saved conlang scripts</p>
             </div>
           </div>
           <Button variant="secondary" size="sm" onClick={() => onSelectSystem(null)}>
             <Plus className="h-3 w-3" />
-            <span>New Script</span>
+            <span>New script</span>
           </Button>
         </div>
 
@@ -126,7 +126,7 @@ export function ScriptSettingsPanel({
               <Compass className="h-4 w-4" />
             </div>
             <div>
-              <h4 className="text-label text-subhead">Script Settings</h4>
+              <h4 className="text-label text-subhead">Script settings</h4>
               <p className="text-label-secondary text-caption">
                 Typological model & reading direction
               </p>
@@ -150,7 +150,7 @@ export function ScriptSettingsPanel({
         <div className="space-y-4">
           {/* Script Name */}
           <div>
-            <label className="text-label-secondary text-subhead mb-1 block">Script Name</label>
+            <label className="text-label-secondary text-subhead mb-1 block">Script name</label>
             <Input
               type="text"
               required
@@ -167,7 +167,7 @@ export function ScriptSettingsPanel({
               id="script-typology-label"
               className="text-label-secondary text-subhead mb-2 block"
             >
-              Typological Model
+              Typological model
             </label>
             <RadioCardGroup
               aria-labelledby="script-typology-label"
@@ -193,7 +193,7 @@ export function ScriptSettingsPanel({
               id="script-direction-label"
               className="text-label-secondary text-subhead mb-2 block"
             >
-              Writing Direction
+              Writing direction
             </label>
             <SegmentedControl
               size="sm"

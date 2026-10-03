@@ -398,7 +398,7 @@ export const EditorHeader = React.memo(function EditorHeader({
               size="icon"
               className="text-label-secondary h-7 w-7"
               onClick={onShowHelp}
-              title="Map Editor Guide & Onboarding"
+              title="Map editor guide & onboarding"
             >
               <HelpCircle className="h-3.5 w-3.5" />
             </Button>
@@ -499,7 +499,7 @@ export const EditorHeader = React.memo(function EditorHeader({
                         }
                       }}
                       disabled={simplifyAll.isPending || !activeCountryId}
-                      title="Simplify all regions — reduce vertices while preserving shape"
+                      title="Simplify all regions: reduce vertices while preserving shape"
                     >
                       <Minimize2 className="h-3.5 w-3.5 shrink-0" />
                       <span className="font-medium">

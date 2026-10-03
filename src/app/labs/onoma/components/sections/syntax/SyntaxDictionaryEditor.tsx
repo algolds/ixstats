@@ -33,7 +33,7 @@ export function SyntaxDictionaryEditor({
   return (
     <Card variant="inset" padding="none" className="space-y-4 p-5 text-left">
       <h4 className="text-label text-subhead flex items-center gap-2">
-        <FileText className="text-indigo h-4 w-4" /> Vocabulary Dictionary
+        <FileText className="text-indigo h-4 w-4" /> Vocabulary dictionary
       </h4>
 
       {/* Add Word Row */}

@@ -3,8 +3,8 @@
 /**
  * MobileEditorSheet - Bottom sheet for mobile editor panels.
  *
- * The map editor's property panel and feature list on phones, as the Facet bottom `Sheet`
- * (spec §7.3): medium/large detents, grabber and drag-to-dismiss, scrim tap and Escape to
+ * The map editor's property panel and feature list on phones, as a bottom `Sheet`:
+ * medium/large detents, grabber and drag-to-dismiss, scrim tap and Escape to
  * close, safe-area padding. A `SegmentedControl` switches Properties | Features.
  */
 

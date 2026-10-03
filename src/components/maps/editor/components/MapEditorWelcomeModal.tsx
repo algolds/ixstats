@@ -57,7 +57,7 @@ const TIPS = [
     icon: Compass,
     title: "Terrain Awareness",
     description:
-      "Get real-time feedback on climate zone, elevation, and terrain suitability as you click or sketch routes.",
+      "Get feedback on climate zone, elevation, and terrain suitability as you click or sketch routes.",
   },
 ];
 
@@ -80,7 +80,7 @@ const CHANGELOG = [
   {
     version: "v2.3",
     title: "Auto-Derived City Elevation & Region Area",
-    desc: "City elevation now fills in from the terrain zone and region area from the drawn geometry. Click the Auto button to derive a value — manual overrides are still accepted.",
+    desc: "City elevation now fills in from the terrain zone and region area from the drawn geometry. Click the Auto button to derive a value. Manual overrides are still accepted.",
   },
   {
     version: "v2.2",

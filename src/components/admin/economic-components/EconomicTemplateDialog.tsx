@@ -35,7 +35,7 @@ export function EconomicTemplateDialog({
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent size="wide" className="flex flex-col overflow-hidden">
         <SheetHeader>
-          <SheetTitle>Economic Templates</SheetTitle>
+          <SheetTitle>Economic templates</SheetTitle>
           <SheetDescription>
             Preset component sets players can load in the economy builder (defined in code)
           </SheetDescription>

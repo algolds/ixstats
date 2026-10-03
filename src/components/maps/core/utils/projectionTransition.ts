@@ -1,5 +1,5 @@
 /**
- * Projection Transition Utility (Plan 110: Globe-to-2D Projection Blend)
+ * Projection Transition Utility
  *
  * Provides camera-driven smooth linear interpolation between 3D Globe projection
  * and 2D Mercator projection without view juts.

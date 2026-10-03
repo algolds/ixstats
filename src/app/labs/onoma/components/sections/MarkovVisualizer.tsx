@@ -296,7 +296,7 @@ export function MarkovVisualizerInner({
       <div className="border-separator bg-fill-4 flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="bg-tint h-2 w-2 animate-pulse rounded-full" />
-          <h3 className="text-label text-subhead">Markov Path Visualizer</h3>
+          <h3 className="text-label text-subhead">Markov path visualizer</h3>
         </div>
 
         {/* Input box showing active path */}
@@ -331,7 +331,7 @@ export function MarkovVisualizerInner({
             className="justify-center"
             title="Derive remaining path to end"
           >
-            <span>Derive Path</span>
+            <span>Derive path</span>
           </Button>
 
           <Button

@@ -228,7 +228,7 @@ export function CalculationEditor() {
                   ) : (
                     <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
                       <Pencil className="mr-2 h-3.5 w-3.5" />
-                      Edit Formula
+                      Edit formula
                     </Button>
                   )}
                 </div>

@@ -195,7 +195,7 @@ export function MapControls({
         {canEdit && onEditMap && (
           <IconButton
             icon={<PenTool className="h-4 w-4" />}
-            label="Edit Map"
+            label="Edit map"
             isActive={false}
             variant="default"
             onClick={onEditMap}
@@ -206,7 +206,7 @@ export function MapControls({
         {showWorldEditor && onOpenWorldEditor && (
           <IconButton
             icon={<Globe className="h-4 w-4" />}
-            label="World Editor"
+            label="World editor"
             isActive={false}
             variant="default"
             onClick={onOpenWorldEditor}
@@ -217,7 +217,7 @@ export function MapControls({
       {/* Layers panel */}
       {openPanel === "layers" && (
         <DropdownPanel label="Map layers">
-          <PanelSection title="Map Layers">
+          <PanelSection title="Map layers">
             {TOGGLEABLE_LAYERS.map((layer) => (
               <CheckboxRow
                 key={layer}
@@ -247,7 +247,7 @@ export function MapControls({
 
           {/* Climate legend */}
           {visibleLayers.has("climate") && (
-            <PanelSection title="Climate Zones">
+            <PanelSection title="Climate zones">
               <div className="max-h-40 overflow-y-auto">
                 {getClimateLegend().map((entry) => (
                   <div key={entry.code} className="flex items-center gap-2 py-0.5">
@@ -267,7 +267,7 @@ export function MapControls({
       {/* Analytics panel */}
       {openPanel === "analytics" && overlayVisibility && onToggleOverlay && (
         <DropdownPanel label="Analytics overlays">
-          <PanelSection title="Analytics Overlays">
+          <PanelSection title="Analytics overlays">
             {ANALYTICS_OVERLAYS.map((item) => (
               <CheckboxRow
                 key={item.key}

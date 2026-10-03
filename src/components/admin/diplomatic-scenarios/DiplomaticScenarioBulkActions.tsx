@@ -37,11 +37,11 @@ export function DiplomaticScenarioBulkActions({
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" onClick={onBulkActivate}>
             <Check className="text-green mr-1 h-3 w-3" />
-            Activate Selected
+            Activate selected
           </Button>
           <Button size="sm" variant="outline" onClick={onBulkDeactivate}>
             <X className="text-red mr-1 h-3 w-3" />
-            Archive Selected
+            Archive selected
           </Button>
         </div>
       )}

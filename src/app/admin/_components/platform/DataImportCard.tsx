@@ -32,7 +32,7 @@ export function DataImportCard({
           <div className="rounded-control border-teal/20 bg-teal/10 text-teal border p-2">
             <Database className="h-4 w-4" />
           </div>
-          Country Data Import
+          Country data import
         </CardTitle>
         <CardDescription className="text-footnote">
           Import roster data from Excel with preview and change tracking
@@ -41,7 +41,7 @@ export function DataImportCard({
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="space-y-3">
-            <p className="text-label text-label-secondary text-eyebrow">Upload Roster File</p>
+            <p className="text-label text-label-secondary text-eyebrow">Upload roster file</p>
             <FileUpload
               onFileSelect={onFileSelect}
               isUploading={isUploading}
@@ -68,7 +68,7 @@ export function DataImportCard({
           </div>
 
           <div className="space-y-3">
-            <p className="text-label text-label-secondary text-eyebrow">Import Guidelines</p>
+            <p className="text-label text-label-secondary text-eyebrow">Import guidelines</p>
             <div className="border-separator bg-surface rounded-control border p-4">
               <ul className="text-label-secondary text-footnote space-y-2">
                 <li className="flex items-start gap-2">

@@ -25,12 +25,12 @@ interface AlignmentStepProps {
 const MODES: { key: AlignmentMode; label: string; icon: typeof Crosshair; desc: string }[] = [
   {
     key: "reference-points",
-    label: "Reference Points",
+    label: "Reference points",
     icon: Crosshair,
     desc: "Place 3+ matching points",
   },
   { key: "auto-align", label: "Auto-Align", icon: Wand2, desc: "ICP shape matching" },
-  { key: "manual", label: "Manual Adjust", icon: Move, desc: "Fine-tune position" },
+  { key: "manual", label: "Manual adjust", icon: Move, desc: "Fine-tune position" },
 ];
 
 export const AlignmentStep = memo(function AlignmentStep({ importer }: AlignmentStepProps) {
@@ -39,7 +39,7 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-label text-body font-medium">Align to Country Border</h3>
+        <h3 className="text-label text-body font-medium">Align to country border</h3>
         <p className="text-label-secondary text-footnote mt-1">
           {hasAlignment
             ? "Initial alignment applied automatically. Fine-tune below if needed."
@@ -155,7 +155,7 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
             disabled={!importer.countryBorder || importer.isProcessing}
           >
             <Magnet className="h-3.5 w-3.5" />
-            Snap to Country Border
+            Snap to country border
           </Button>
           <p className="text-label-secondary text-footnote">
             Clips provinces to the border, snaps outer vertices, and aligns shared edges. You can
@@ -167,7 +167,7 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
       {importer.alignmentMode === "manual" && (
         <div className="space-y-3">
           <p className="text-label-secondary text-footnote">
-            Fine-tune position, rotation, and scale. Changes preview in real-time.
+            Fine-tune position, rotation, and scale. Changes preview as you adjust.
           </p>
 
           {/* Translate X */}
@@ -293,7 +293,7 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
             className="w-full"
             onClick={() => importer.setManualTransform({ translate: [0, 0], rotate: 0, scale: 1 })}
           >
-            Reset Manual Adjustments
+            Reset manual adjustments
           </Button>
         </div>
       )}

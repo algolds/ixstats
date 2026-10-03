@@ -209,7 +209,7 @@ export function VoicePreferencesPanel({
   return (
     <div className="border-separator bg-fill-4 rounded-row space-y-4 border p-4 text-left">
       <div className="border-separator flex items-center justify-between border-b pb-2">
-        <h4 className="text-label text-subhead">Voice Preferences</h4>
+        <h4 className="text-label text-subhead">Voice preferences</h4>
         <div className="flex items-center gap-2">
           {healthData && (
             <span className="text-caption flex items-center gap-1 font-semibold">
@@ -260,7 +260,7 @@ export function VoicePreferencesPanel({
 
       <div className="space-y-4">
         <div className="space-y-1">
-          <label className="text-label-secondary text-subhead">Personal Default Voice</label>
+          <label className="text-label-secondary text-subhead">Personal default voice</label>
           <Select
             value={personalVoice || "default"}
             onValueChange={(val) => onSavePreferences(val === "default" ? "" : val, personalSpeed)}
@@ -283,7 +283,7 @@ export function VoicePreferencesPanel({
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-label-secondary text-subhead">Personal Speed Override</label>
+            <label className="text-label-secondary text-subhead">Personal speed override</label>
             <span className="text-tint text-footnote font-mono font-semibold">
               {personalSpeed}x
             </span>
@@ -307,7 +307,7 @@ export function VoicePreferencesPanel({
             className="text-label hover:text-tint w-full justify-between px-2"
           >
             <span className="flex items-center gap-2">
-              <Sliders className="text-tint h-3.5 w-3.5" /> Advanced Playback & Inflection
+              <Sliders className="text-tint h-3.5 w-3.5" /> Advanced playback & inflection
             </span>
             {showAdvancedVoice ? (
               <ChevronDown className="text-label-secondary h-3.5 w-3.5" />
@@ -320,7 +320,7 @@ export function VoicePreferencesPanel({
             <div className="text-label-secondary text-caption mt-3 space-y-4 pl-1">
               {/* Preset Selection */}
               <div className="space-y-1">
-                <label className="text-label text-subhead">Species Preset</label>
+                <label className="text-label text-subhead">Species preset</label>
                 <Select value={selectedPreset} onValueChange={(v) => onApplyPreset(v)}>
                   <SelectTrigger size="sm" className="w-full">
                     <SelectValue />
@@ -350,7 +350,7 @@ export function VoicePreferencesPanel({
               {/* Local Playback Volume */}
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-eyebrow">Local Playback Volume</span>
+                  <span className="text-eyebrow">Local playback volume</span>
                   <span className="text-tint text-footnote font-mono font-semibold">
                     {Math.round(personalVolume * 100)}%
                   </span>
@@ -367,7 +367,7 @@ export function VoicePreferencesPanel({
               {/* Browser Pitch Override */}
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-eyebrow">Browser Speech Pitch</span>
+                  <span className="text-eyebrow">Browser speech pitch</span>
                   <span className="text-tint text-footnote font-mono font-semibold">
                     {personalPitch}x
                   </span>
@@ -384,7 +384,7 @@ export function VoicePreferencesPanel({
               {/* Voice Blending Options */}
               <div className="border-separator space-y-2 border-t pt-2">
                 <div className="text-label flex items-center justify-between">
-                  <span className="text-eyebrow">Voice Blending</span>
+                  <span className="text-eyebrow">Voice blending</span>
                   <Checkbox
                     checked={voiceBlendActive}
                     onCheckedChange={(checked) =>
@@ -398,7 +398,7 @@ export function VoicePreferencesPanel({
                 {voiceBlendActive && (
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <label className="text-caption font-semibold">Primary Voice</label>
+                      <label className="text-caption font-semibold">Primary voice</label>
                       <Select
                         value={voiceBlendPrimary}
                         onValueChange={(v) =>
@@ -418,7 +418,7 @@ export function VoicePreferencesPanel({
                       </Select>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-caption font-semibold">Secondary Voice</label>
+                      <label className="text-caption font-semibold">Secondary voice</label>
                       <Select
                         value={voiceBlendSecondary}
                         onValueChange={(v) =>
@@ -443,7 +443,7 @@ export function VoicePreferencesPanel({
 
               {/* Emotional Prosody Inflections */}
               <div className="border-separator space-y-1 border-t pt-2">
-                <label className="text-label text-subhead">Emotional Prosody</label>
+                <label className="text-label text-subhead">Emotional prosody</label>
                 <Select
                   value={personalProsody}
                   onValueChange={(v) => onUpdateAdvanced("onoma-personal-prosody", v)}
@@ -462,7 +462,7 @@ export function VoicePreferencesPanel({
 
               {/* Inflection & Aspiration Tweaks */}
               <div className="border-separator space-y-2 border-t pt-2">
-                <span className="text-label text-eyebrow">Inflection & Phoneme Tweaks</span>
+                <span className="text-label text-eyebrow">Inflection & phoneme tweaks</span>
 
                 <div className="text-label flex items-center justify-between">
                   <span className="font-medium">Anglicize Vowels (Soft/English tones)</span>
@@ -508,7 +508,7 @@ export function VoicePreferencesPanel({
 
                 <div className="space-y-1">
                   <label className="text-label text-caption font-semibold">
-                    Custom Model Override
+                    Custom model override
                   </label>
                   <Input
                     type="text"
@@ -560,7 +560,7 @@ export function VoicePreferencesPanel({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">Inherit Default</SelectItem>
+                      <SelectItem value="__none__">Inherit default</SelectItem>
                       {voiceOptions.map((vId) => (
                         <SelectItem key={vId} value={vId}>
                           {voiceLabel(vId)}
@@ -576,7 +576,7 @@ export function VoicePreferencesPanel({
 
         <div className="pt-2">
           <Button variant="outline" size="sm" onClick={onResetPreferences}>
-            <RotateCcw className="h-3 w-3" /> Reset Preferences
+            <RotateCcw className="h-3 w-3" /> Reset preferences
           </Button>
         </div>
       </div>

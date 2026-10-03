@@ -117,7 +117,7 @@ export function TimeControlCard({
               <div className="rounded-control border-blue/20 bg-blue/10 text-blue border p-2">
                 <Clock className="h-4 w-4" />
               </div>
-              Time Flow Controller
+              Time flow controller
             </CardTitle>
             <CardDescription className="text-footnote">
               Manage system simulation speed, time progression multipliers, and jump benchmarks
@@ -172,7 +172,7 @@ export function TimeControlCard({
         {/* Time Multiplier Slider */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label className="text-label text-caption">Speed Multiplier</Label>
+            <Label className="text-label text-caption">Speed multiplier</Label>
             <Badge variant="info" className="rounded-full px-3 py-0.5 tabular-nums">
               {timeMultiplier}x
             </Badge>
@@ -223,7 +223,7 @@ export function TimeControlCard({
             className="col-span-2 flex items-center justify-center gap-2 sm:col-span-1"
           >
             <RotateCcw className="h-3.5 w-3.5" />
-            <span>Reset Flow</span>
+            <span>Reset flow</span>
           </Button>
         </div>
 
@@ -233,7 +233,7 @@ export function TimeControlCard({
 
             {/* Year Jump Presets */}
             <div className="space-y-2">
-              <Label className="text-label text-caption">Jump to Simulation Era</Label>
+              <Label className="text-label text-caption">Jump to simulation era</Label>
               <div className="grid grid-cols-3 gap-2">
                 {YEAR_JUMP_TARGETS.map((year) => {
                   const isPast = year <= gameYear;
@@ -263,7 +263,7 @@ export function TimeControlCard({
 
             {/* Custom IxTime Setting */}
             <div className="space-y-3">
-              <Label className="text-label text-caption">Set Custom Time Point</Label>
+              <Label className="text-label text-caption">Set custom time point</Label>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label htmlFor="custom-date" className="text-label-secondary text-subhead">

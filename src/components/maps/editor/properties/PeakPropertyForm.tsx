@@ -42,7 +42,7 @@ export const PeakPropertyForm = React.memo(function PeakPropertyForm({
     <div className="space-y-2">
       <input
         type="text"
-        placeholder="Peak Name"
+        placeholder="Peak name"
         value={form.name}
         onChange={(e) => onChange({ ...form, name: e.target.value })}
         className={inputClasses}

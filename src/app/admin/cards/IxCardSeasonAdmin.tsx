@@ -101,7 +101,7 @@ export function IxCardSeasonAdmin() {
             <Layers className="text-yellow h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-label text-title-3">How Season Assignment Works</h3>
+            <h3 className="text-label text-title-3">How season assignment works</h3>
             <ul className="text-label-secondary text-body mt-2 list-disc space-y-1 pl-5">
               <li>
                 <strong className="text-label">NS-imported cards</strong> set both{" "}

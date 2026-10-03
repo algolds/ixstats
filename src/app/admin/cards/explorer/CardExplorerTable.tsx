@@ -78,7 +78,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
     }
 
     if (card.cardType === "COMMONS_IMPORT") {
-      return <Badge variant="info">Commons Import</Badge>;
+      return <Badge variant="info">Commons import</Badge>;
     }
 
     if (
@@ -90,7 +90,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
       return <Badge variant="info">NS Import</Badge>;
     }
 
-    return <Badge variant="info">User Imported</Badge>;
+    return <Badge variant="info">User imported</Badge>;
   };
 
   const columns = useMemo<FacetColumn<any>[]>(
@@ -186,14 +186,14 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
               <Button
                 variant="ghost"
                 size="icon-sm"
-                aria-label="Edit Title"
+                aria-label="Edit title"
                 onClick={(e) => {
                   e.stopPropagation();
                   setEditingTitleId(card.id);
                   setEditingTitleValue(card.title);
                 }}
                 className="opacity-0 group-hover/title:opacity-100"
-                title="Edit Title"
+                title="Edit title"
               >
                 <Edit2 className="h-3 w-3" />
               </Button>
@@ -277,14 +277,14 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
               <Button
                 variant="ghost"
                 size="icon-sm"
-                aria-label="Edit Value"
+                aria-label="Edit value"
                 onClick={(e) => {
                   e.stopPropagation();
                   setEditingValueId(card.id);
                   setEditingValueNum(card.marketValue || 0);
                 }}
                 className="opacity-0 group-hover/val:opacity-100"
-                title="Edit Value"
+                title="Edit value"
               >
                 <Edit2 className="h-3 w-3" />
               </Button>
@@ -341,7 +341,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
           return (
             <Badge variant="success">
               <CheckCircle className="text-green h-3 w-3" />
-              Active Nation
+              Active nation
             </Badge>
           );
         },
@@ -393,7 +393,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
               onOpenEditModal(card);
             }}
           >
-            <Eye className="mr-1 h-3 w-3" /> Edit Studio
+            <Eye className="mr-1 h-3 w-3" /> Edit studio
           </Button>
         ),
       },

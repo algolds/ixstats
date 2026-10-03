@@ -591,7 +591,7 @@ export function MapContainer({
       )}
 
       {/* The country editor only ever edits the viewer's own (active) nation, so it works in that
-          nation's realm — undefined = the viewer's realm — even when opened from /maps?realm=<other> */}
+          nation's realm (undefined = the viewer's realm) even when opened from /maps?realm=<other> */}
       <MapRealmProvider value={undefined}>
         {isEditing && editingCountryId && (
           <MapEditorOverlay

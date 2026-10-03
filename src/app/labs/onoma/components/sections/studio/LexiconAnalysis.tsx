@@ -40,11 +40,11 @@ export function LexiconAnalysis({ selectedTerm, stashedEntry, originLabel }: Lex
 
   return (
     <div className="space-y-2">
-      <h4 className="text-label-secondary text-subhead">Lexical & Phonotactic Analysis</h4>
+      <h4 className="text-label-secondary text-subhead">Lexical & phonotactic analysis</h4>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {/* CV Pattern */}
         <div className="border-separator bg-background rounded-row border p-3 text-center">
-          <span className="text-label-secondary text-eyebrow mb-1 block">Phonotactic Pattern</span>
+          <span className="text-label-secondary text-eyebrow mb-1 block">Phonotactic pattern</span>
           <span className="text-tint text-body font-mono font-semibold">
             {getCvPattern(selectedTerm)}
           </span>
@@ -65,7 +65,7 @@ export function LexiconAnalysis({ selectedTerm, stashedEntry, originLabel }: Lex
           const color = entry.stashColor || "#3b82f6";
           return (
             <div className="border-separator bg-background rounded-row flex flex-col items-center justify-center border p-3 text-center">
-              <span className="text-label-secondary text-eyebrow mb-1 block">Stash Folder</span>
+              <span className="text-label-secondary text-eyebrow mb-1 block">Stash folder</span>
               <span
                 className="rounded-control-sm text-caption inline-flex items-center gap-1 px-2 py-0.5 font-semibold select-none"
                 style={{
