@@ -12,6 +12,7 @@ export function matchExpression(
 ): ExpressionSpecification {
   const seen = new Set<string | number>();
   const unique = pairs.filter(([label]) => !seen.has(label) && seen.add(label));
-  if (unique.length === 0) return ["literal", fallback];
-  return ["match", input, ...unique.flat(), fallback];
+  const [first, ...rest] = unique;
+  if (!first) return ["literal", fallback];
+  return ["match", input, first[0], first[1], ...rest.flat(), fallback];
 }
