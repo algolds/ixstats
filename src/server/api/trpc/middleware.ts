@@ -5,7 +5,7 @@
 
 import { t } from "./init";
 import { rateLimiter } from "~/lib/cache";
-import { db, isDatabaseReadOnly } from "~/server/db";
+import { isDatabaseReadOnly } from "~/server/db";
 import { isSystemOwner } from "~/lib/auth";
 import { hasPremiumTier } from "~/lib/auth/premium";
 import { getRoleName, isPrivilegedCountryWriter } from "~/server/shared/country-authorization";
@@ -349,49 +349,15 @@ export const adminMiddleware = t.middleware(async ({ ctx, next }) => {
     );
   }
 
-  let user = ctx.user;
-  if (!user) {
-    try {
-      user = await db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-        include: {
-          country: true,
-          role: {
-            include: {
-              rolePermissions: {
-                include: {
-                  permission: true,
-                },
-              },
-            },
-          },
-        },
-      });
-    } catch (error) {
-      console.error(`[ADMIN_MIDDLEWARE] Failed to load user:`, error);
-      throw new UnauthorizedError("Failed to load user");
-    }
-  }
+  const user = ctx.user;
 
-  const isSystemOwnerUser = isSystemOwner(ctx.auth.userId);
-
-  if (isSystemOwnerUser) {
+  if (isSystemOwner(ctx.auth.userId)) {
     if (VERBOSE) {
       console.log(
         `[ADMIN_MIDDLEWARE] System owner detected: ${ctx.auth.userId} - bypassing role checks`
       );
     }
-    return next({
-      ctx: {
-        ...ctx,
-        user,
-      },
-    });
-  }
-
-  if (!user) {
-    console.error(`[ADMIN_MIDDLEWARE] User ${ctx.auth.userId} not found in database`);
-    throw new UnauthorizedError("User not found");
+    return next({ ctx: { ...ctx, user } });
   }
 
   if (!(user as any).role) {
