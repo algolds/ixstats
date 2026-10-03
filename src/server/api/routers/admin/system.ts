@@ -319,52 +319,45 @@ export const adminSystemRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      try {
-        const currentEpoch = IxTime.getInGameEpoch();
-        const _currentIxTime = IxTime.getCurrentIxTime();
+      const currentEpoch = IxTime.getInGameEpoch();
+      const _currentIxTime = IxTime.getCurrentIxTime();
 
-        // Calculate the time difference
-        const _timeDifference = input.targetEpoch - currentEpoch;
-        const yearsDifference = IxTime.getYearsElapsed(currentEpoch, input.targetEpoch);
+      // Calculate the time difference
+      const _timeDifference = input.targetEpoch - currentEpoch;
+      const yearsDifference = IxTime.getYearsElapsed(currentEpoch, input.targetEpoch);
 
-        // Update all countries' baseline dates to the new epoch
-        const updateResult = await ctx.db.country.updateMany({
-          data: {
-            baselineDate: new Date(input.targetEpoch),
-            lastCalculated: new Date(input.targetEpoch),
-          },
-        });
+      // Update all countries' baseline dates to the new epoch
+      const updateResult = await ctx.db.country.updateMany({
+        data: {
+          baselineDate: new Date(input.targetEpoch),
+          lastCalculated: new Date(input.targetEpoch),
+        },
+      });
 
-        // Set the bot time override to the new epoch
-        const botResult = await IxTime.setBotTimeOverride(input.targetEpoch);
+      // Set the bot time override to the new epoch
+      const botResult = await IxTime.setBotTimeOverride(input.targetEpoch);
 
-        // Log the epoch sync
-        await ctx.db.calculationLog.create({
-          data: {
-            timestamp: new Date(),
-            ixTimeTimestamp: new Date(input.targetEpoch),
-            countriesUpdated: updateResult.count,
-            executionTimeMs: 0,
-            globalGrowthFactor: (await getEconomicConfigFromDB(ctx.db)).globalGrowthFactor,
-            notes: `Epoch sync: ${yearsDifference.toFixed(1)} years adjustment. ${updateResult.count} countries updated. ${input.reason || "Manual epoch sync"}.`,
-          },
-        });
-
-        return {
-          success: true,
-          message: `Epoch synchronized successfully. Adjusted ${yearsDifference.toFixed(1)} years.`,
-          previousEpoch: currentEpoch,
-          newEpoch: input.targetEpoch,
-          yearsDifference: yearsDifference,
+      // Log the epoch sync
+      await ctx.db.calculationLog.create({
+        data: {
+          timestamp: new Date(),
+          ixTimeTimestamp: new Date(input.targetEpoch),
           countriesUpdated: updateResult.count,
-          botSyncSuccess: botResult.success,
-        };
-      } catch (error) {
-        console.error("Failed to sync epoch:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to sync epoch time", {
-          cause: error,
-        });
-      }
+          executionTimeMs: 0,
+          globalGrowthFactor: (await getEconomicConfigFromDB(ctx.db)).globalGrowthFactor,
+          notes: `Epoch sync: ${yearsDifference.toFixed(1)} years adjustment. ${updateResult.count} countries updated. ${input.reason || "Manual epoch sync"}.`,
+        },
+      });
+
+      return {
+        success: true,
+        message: `Epoch synchronized successfully. Adjusted ${yearsDifference.toFixed(1)} years.`,
+        previousEpoch: currentEpoch,
+        newEpoch: input.targetEpoch,
+        yearsDifference: yearsDifference,
+        countriesUpdated: updateResult.count,
+        botSyncSuccess: botResult.success,
+      };
     }),
 
   // Force recalculation of all countries: the stat-progression job with every country written.

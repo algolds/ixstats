@@ -202,36 +202,28 @@ export const adminUsersRouter = createTRPCRouter({
         });
       }
 
-      try {
-        const { clerkClient } = await import("@clerk/nextjs/server");
-        const client = await clerkClient();
+      const { clerkClient } = await import("@clerk/nextjs/server");
+      const client = await clerkClient();
 
-        await client.invitations.createInvitation({
-          emailAddress: input.emailAddress,
-          redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/sign-up`,
-          publicMetadata: {
-            reservedNationName: input.reservedNationName,
-            isVip: true,
-            role: input.role,
-          },
-          ignoreExisting: true,
-        });
+      await client.invitations.createInvitation({
+        emailAddress: input.emailAddress,
+        redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/sign-up`,
+        publicMetadata: {
+          reservedNationName: input.reservedNationName,
+          isVip: true,
+          role: input.role,
+        },
+        ignoreExisting: true,
+      });
 
-        console.log(
-          `[Admin Clerk Invite] Successfully created invitation for ${input.emailAddress} with nation ${input.reservedNationName}`
-        );
+      console.log(
+        `[Admin Clerk Invite] Successfully created invitation for ${input.emailAddress} with nation ${input.reservedNationName}`
+      );
 
-        return {
-          success: true,
-          message: `Invitation successfully sent to ${input.emailAddress}`,
-        };
-      } catch (error) {
-        console.error("[Admin Clerk Invite] Failed to create invitation:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to invite user via Clerk.",
-        });
-      }
+      return {
+        success: true,
+        message: `Invitation successfully sent to ${input.emailAddress}`,
+      };
     }),
 
   // --- IDENTITY & CROSS-PLATFORM LINKING PROCEDURES ---

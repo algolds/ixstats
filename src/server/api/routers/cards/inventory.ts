@@ -497,16 +497,10 @@ export const cardsInventoryRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[CARDS_ROUTER] Error in junkCards:", error);
-        if (error instanceof TRPCError) {
-          throw error;
-        }
         if (error instanceof LedgerError) {
           throw new TRPCError({ code: "PRECONDITION_FAILED", message: error.message });
         }
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to junk cards",
-        });
+        throw error;
       }
     }),
 });
