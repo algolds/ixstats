@@ -2,15 +2,12 @@
 
 import React from "react";
 import Link from "next/link";
-import {
-  OpenBook as BookOpen,
-  MediaImage as ImageIcon,
-  OpenNewWindow as ExternalLink,
-} from "iconoir-react";
+import { OpenBook as BookOpen, MediaImage as ImageIcon } from "iconoir-react";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { sanitizeWikiContent } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { Button } from "~/components/ui/button";
+import { WikiLinkButton, wikiSiteName } from "~/components/maps/shared/WikiLinkButton";
 import { Eyebrow } from "~/components/ui/eyebrow";
 
 interface CountryInfoTabProps {
@@ -158,24 +155,18 @@ export function CountryInfoTab({
         </div>
       )}
 
-      {/* Wiki link */}
-      {wikiRichIntro?.wikiUrl &&
-        (wikiRichIntro.wikiUrl.startsWith("/") || wikiRichIntro.wikiUrl.includes("/wiki/") ? (
-          <Button asChild variant="outline" size="sm" className="w-full">
-            <Link href={wikiRichIntro.wikiUrl}>
-              <BookOpen aria-hidden />
-              Read full article on IxWiki
-            </Link>
-          </Button>
-        ) : (
-          <Button asChild variant="outline" size="sm" className="w-full">
-            <a href={wikiRichIntro.wikiUrl} target="_blank" rel="noopener noreferrer">
-              <BookOpen aria-hidden />
-              Read full article on {wikiRichIntro.wikiUrl.includes("ixwiki") ? "IxWiki" : "IIWiki"}
-              <ExternalLink aria-hidden />
-            </a>
-          </Button>
-        ))}
+      {wikiRichIntro?.wikiUrl && (
+        <WikiLinkButton
+          url={wikiRichIntro.wikiUrl}
+          externalIcon
+          variant="outline"
+          size="sm"
+          className="w-full"
+        >
+          <BookOpen aria-hidden />
+          Read full article on {wikiSiteName(wikiRichIntro.wikiUrl)}
+        </WikiLinkButton>
+      )}
 
       {!wikiRichIntro && !wikiSections && !wikiImages && (
         <div className="text-label-secondary text-footnote py-8 text-center">

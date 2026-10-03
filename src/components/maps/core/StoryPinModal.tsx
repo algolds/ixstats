@@ -1,7 +1,7 @@
 "use client";
 
 import { Skeleton } from "~/components/ui/skeleton";
-import { memo, type ComponentProps } from "react";
+import { memo } from "react";
 import {
   OpenBook as BookOpen,
   OpenNewWindow as ExternalLink,
@@ -24,6 +24,7 @@ import { RelatedPinCard } from "~/components/maps/core/components/RelatedPinCard
 import { getCategoryIcon, IMPORTANCE_LABELS } from "~/components/maps/core/utils/story-pin-helpers";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { WikiLinkButton } from "~/components/maps/shared/WikiLinkButton";
 import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { FACET_PROSE } from "~/components/maps/shared/facet-prose";
@@ -45,32 +46,6 @@ interface StoryPinModalProps {
 
 const PHOTO_BUTTON_CLASS =
   "border-separator rounded-control shrink-0 overflow-hidden border transition-transform hover:scale-105";
-
-/** Wiki article link: in-app `Link` for internal pages, a new-tab anchor otherwise. */
-function WikiLinkButton({
-  url,
-  internal,
-  externalIcon,
-  children,
-  ...buttonProps
-}: ComponentProps<typeof Button> & {
-  url: string;
-  internal: boolean;
-  externalIcon?: boolean;
-}) {
-  return (
-    <Button asChild {...buttonProps}>
-      {internal ? (
-        <Link href={url}>{children}</Link>
-      ) : (
-        <a href={url} target="_blank" rel="noopener noreferrer">
-          {children}
-          {externalIcon && <ExternalLink aria-hidden />}
-        </a>
-      )}
-    </Button>
-  );
-}
 
 function StoryPinContent({ pin }: { pin: StoryPin }) {
   return (
@@ -183,15 +158,7 @@ function StoryPinHeader({
   );
 }
 
-function WikiIntroCard({
-  intro,
-  wikiUrl,
-  internal,
-}: {
-  intro: string;
-  wikiUrl: string | null | undefined;
-  internal: boolean;
-}) {
+function WikiIntroCard({ intro, wikiUrl }: { intro: string; wikiUrl: string | null | undefined }) {
   return (
     <Card variant="inset" className="p-4">
       <Eyebrow className="mb-2 flex items-center gap-2">
@@ -200,14 +167,7 @@ function WikiIntroCard({
       </Eyebrow>
       <p className="text-label text-footnote leading-relaxed">{intro}</p>
       {wikiUrl && (
-        <WikiLinkButton
-          url={wikiUrl}
-          internal={internal}
-          externalIcon
-          variant="link"
-          size="xs"
-          className="mt-1 px-0"
-        >
+        <WikiLinkButton url={wikiUrl} externalIcon variant="link" size="xs" className="mt-1 px-0">
           Read full article
         </WikiLinkButton>
       )}
@@ -255,7 +215,6 @@ function StoryPinSidebar({
 function StoryPinFooter({
   pin,
   wikiUrl,
-  wikiIsInternal,
   storylineIdx,
   storylineLength,
   onFlyTo,
@@ -263,7 +222,6 @@ function StoryPinFooter({
 }: {
   pin: StoryPin;
   wikiUrl: string | null | undefined;
-  wikiIsInternal: boolean;
   /** Index of this pin within a multi-pin storyline, -1 when it has none. */
   storylineIdx: number;
   /** Pin count of a multi-pin storyline, 0 when it has none. */
@@ -274,7 +232,7 @@ function StoryPinFooter({
   return (
     <div className="border-separator flex shrink-0 flex-wrap items-center gap-2 border-t px-5 py-3">
       {wikiUrl && (
-        <WikiLinkButton url={wikiUrl} internal={wikiIsInternal} variant="outline" size="sm">
+        <WikiLinkButton url={wikiUrl} variant="outline" size="sm">
           <BookOpen aria-hidden />
           Read on IxWiki
         </WikiLinkButton>
@@ -321,7 +279,6 @@ function getStoryPinView(pin: StoryPin, data: StoryPinData) {
     photos,
     wikiImages: wikiEnrichment?.images ?? [],
     wikiUrl,
-    wikiIsInternal: !!wikiUrl && (wikiUrl.startsWith("/") || wikiUrl.includes("/wiki/")),
     heroImage: pin.thumbnailUrl ?? wikiEnrichment?.thumbnailUrl ?? photos[0],
     storyline,
     storylineIdx: storyline ? storyline.pins.findIndex((p) => p.id === pin.id) : -1,
@@ -356,7 +313,7 @@ export const StoryPinModal = memo(function StoryPinModal({
   if (!state.data?.pin) return null;
   const view = getStoryPinView(state.data.pin, state.data);
 
-  const { pin, wikiEnrichment, relatedPins, photos, wikiImages, wikiUrl, wikiIsInternal } = view;
+  const { pin, wikiEnrichment, relatedPins, photos, wikiImages, wikiUrl } = view;
   const { storyline, storylineIdx } = view;
   const goToStorylinePin = (offset: number) =>
     state.handleNavigatePin(storyline!.pins[storylineIdx + offset]!.id);
@@ -381,11 +338,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                 {pin.content && <StoryPinContent pin={pin} />}
 
                 {wikiEnrichment?.intro && (
-                  <WikiIntroCard
-                    intro={wikiEnrichment.intro}
-                    wikiUrl={wikiUrl}
-                    internal={wikiIsInternal}
-                  />
+                  <WikiIntroCard intro={wikiEnrichment.intro} wikiUrl={wikiUrl} />
                 )}
 
                 {(photos.length > 0 || wikiImages.length > 0) && (
@@ -410,7 +363,6 @@ export const StoryPinModal = memo(function StoryPinModal({
           <StoryPinFooter
             pin={pin}
             wikiUrl={wikiUrl}
-            wikiIsInternal={wikiIsInternal}
             storylineIdx={storylineIdx}
             storylineLength={storyline?.pins.length ?? 0}
             onFlyTo={state.handleFlyTo}
