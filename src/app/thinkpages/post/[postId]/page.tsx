@@ -12,6 +12,7 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { extractHashtags, extractMentions } from "~/lib/utils";
 import { Card } from "~/components/ui/card";
+import { getInitials } from "~/components/thinkpages/post/ThinkpagesPostUtils";
 
 interface PostPageProps {
   params: Promise<{
@@ -19,40 +20,127 @@ interface PostPageProps {
   }>;
 }
 
+const BackToFeed = ({ variant = "default" }: { variant?: "default" | "ghost" }) => (
+  <Button asChild variant={variant} size={variant === "ghost" ? "sm" : undefined}>
+    <Link href="/thinkpages">
+      <ArrowLeft aria-hidden="true" />
+      Back to feed
+    </Link>
+  </Button>
+);
+
+function sharePostLink(
+  postId: string,
+  kind: "post" | "reply",
+  notify: ReturnType<typeof useNotify>
+) {
+  const postUrl = `${window.location.origin}/thinkpages/post/${postId}`;
+  if (navigator.share) {
+    void navigator.share({
+      title: `ThinkPages ${kind}`,
+      text: `Check out this ${kind} on ThinkPages`,
+      url: postUrl,
+    });
+  } else {
+    void navigator.clipboard.writeText(postUrl);
+    notify.success("Link copied to clipboard");
+  }
+}
+
+interface ReplyCapsuleProps {
+  account: any;
+  placeholderTarget: string;
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+  isPending: boolean;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+}
+
+/** Floating bottom composer capsule. */
+function ReplyCapsule({
+  account,
+  placeholderTarget,
+  value,
+  onChange,
+  onSubmit,
+  isPending,
+  inputRef,
+}: ReplyCapsuleProps) {
+  return (
+    <div className="z-sticky fixed bottom-[calc(var(--shell-tabbar-height)+1.5rem)] left-[calc(50%+var(--shell-sidebar-width)/2)] w-full max-w-lg -translate-x-1/2 px-4">
+      <div className="material-regular shadow-floating focus-within:outline-tint flex w-full items-center gap-3 rounded-full px-4 py-2 focus-within:outline-2 focus-within:outline-offset-2">
+        <Avatar className="border-separator size-8 shrink-0 border">
+          {account?.profileImageUrl ? <AvatarImage src={account.profileImageUrl} /> : null}
+          <AvatarFallback className="bg-fill-3 text-caption text-label-secondary">
+            {account?.displayName ? getInitials(account.displayName) : "?"}
+          </AvatarFallback>
+        </Avatar>
+
+        <input
+          ref={inputRef}
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              onSubmit();
+            }
+          }}
+          placeholder={
+            account ? `Reply to @${placeholderTarget}...` : "Select or create an account to reply"
+          }
+          disabled={!account || isPending}
+          aria-label="Reply"
+          className="text-body text-label placeholder:text-label-tertiary flex-1 border-none bg-transparent py-2 focus:outline-none disabled:opacity-50"
+        />
+
+        <Button
+          size="icon"
+          onClick={onSubmit}
+          disabled={!value.trim() || !account || isPending}
+          aria-label="Send reply"
+          className="size-8 shrink-0 rounded-full"
+        >
+          {isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <ArrowUp className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function PostPage({ params }: PostPageProps) {
   const { postId } = use(params);
   const { user } = useUser();
   const notify = useNotify();
+  const utils = api.useUtils();
   const replyInputRef = useRef<HTMLInputElement>(null);
   const [replyText, setReplyText] = useState("");
 
-  // Get user profile to determine current account
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
 
-  // Get user's ThinkPages accounts
   const { data: accounts } = api.thinkpages.getAccountsByCountry.useQuery(
     { countryId: userProfile?.countryId || "" },
     { enabled: !!userProfile?.countryId }
   );
-
-  // Use first account if available
   const currentAccount = accounts?.[0];
 
-  // Get the specific post (which includes pre-fetched replies)
+  // The post comes with its replies pre-fetched
   const {
     data: post,
     isLoading,
     error,
   } = api.thinkpages.getPost.useQuery({ postId }, { enabled: !!postId });
 
-  const utils = api.useUtils();
-
-  // Mutation for creating replies
   const createPostMutation = api.thinkpages.createPost.useMutation({
     onSuccess: () => {
       notify.success("Reply posted");
       setReplyText("");
-      // Invalidate the post query to fetch new replies instantly
       void utils.thinkpages.getPost.invalidate({ postId });
       void utils.thinkpages.getFeed.invalidate();
     },
@@ -72,12 +160,11 @@ export default function PostPage({ params }: PostPageProps) {
         hashtags: extractHashtags(replyText),
         mentions: extractMentions(replyText),
       });
-    } catch (_e) {
+    } catch {
       // Handled by onError
     }
   };
 
-  // Source replies directly from the fetched post object
   const replies = (post?.replies || []) as any[];
 
   if (isLoading) {
@@ -97,36 +184,29 @@ export default function PostPage({ params }: PostPageProps) {
           <EmptyState
             title="Post not found"
             message="This post may have been deleted or the link is incorrect."
-            action={
-              <Button asChild>
-                <Link href="/thinkpages">
-                  <ArrowLeft aria-hidden="true" />
-                  Back to feed
-                </Link>
-              </Button>
-            }
+            action={<BackToFeed />}
           />
         </Card>
       </div>
     );
   }
 
+  const postProps = {
+    currentUserAccountId: currentAccount?.id || "",
+    accounts: accounts || [],
+    countryId: userProfile?.countryId || "",
+    onRepost: () => notify.info("Repost shared"),
+  };
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       <div className="relative z-10 container mx-auto max-w-2xl px-4 py-8 pb-32">
-        {/* Back Button */}
         <div className="mb-6">
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/thinkpages">
-              <ArrowLeft aria-hidden="true" />
-              Back to feed
-            </Link>
-          </Button>
+          <BackToFeed variant="ghost" />
         </div>
 
-        {/* Thread Structure Wrapper */}
         <div className="relative space-y-6">
-          {/* Vertical Thread Connector Line */}
+          {/* Vertical thread connector line */}
           {replies.length > 0 && (
             <div
               aria-hidden="true"
@@ -134,67 +214,29 @@ export default function PostPage({ params }: PostPageProps) {
             />
           )}
 
-          {/* Main Hero Post */}
           <div className="relative z-10">
             <ThinkpagesPost
+              {...postProps}
               post={post}
-              currentUserAccountId={currentAccount?.id || ""}
-              accounts={accounts || []}
-              countryId={userProfile?.countryId || ""}
-              onRepost={() => {
-                notify.info("Repost shared");
-              }}
-              onReply={() => {
-                replyInputRef.current?.focus();
-              }}
-              onShare={() => {
-                const postUrl = `${window.location.origin}/thinkpages/post/${post.id}`;
-                if (navigator.share) {
-                  navigator.share({
-                    title: "ThinkPages post",
-                    text: "Check out this post on ThinkPages",
-                    url: postUrl,
-                  });
-                } else {
-                  navigator.clipboard.writeText(postUrl);
-                  notify.success("Link copied to clipboard");
-                }
-              }}
+              onReply={() => replyInputRef.current?.focus()}
+              onShare={() => sharePostLink(post.id, "post", notify)}
               isHero={true}
               showThread={false}
             />
           </div>
 
-          {/* Replies Section */}
           {replies.length > 0 && (
             <div className="relative z-10 ml-5 space-y-4">
-              {replies.map((reply: any) => (
+              {replies.map((reply) => (
                 <div key={reply.id}>
                   <ThinkpagesPost
+                    {...postProps}
                     post={reply}
-                    currentUserAccountId={currentAccount?.id || ""}
-                    accounts={accounts || []}
-                    countryId={userProfile?.countryId || ""}
-                    onRepost={() => {
-                      notify.info("Repost shared");
-                    }}
                     onReply={() => {
                       replyInputRef.current?.focus();
                       setReplyText(`@${reply.account.username} `);
                     }}
-                    onShare={() => {
-                      const postUrl = `${window.location.origin}/thinkpages/post/${reply.id}`;
-                      if (navigator.share) {
-                        navigator.share({
-                          title: "ThinkPages reply",
-                          text: "Check out this reply on ThinkPages",
-                          url: postUrl,
-                        });
-                      } else {
-                        navigator.clipboard.writeText(postUrl);
-                        notify.success("Link copied to clipboard");
-                      }
-                    }}
+                    onShare={() => sharePostLink(reply.id, "reply", notify)}
                     compact={true}
                     showThread={false}
                   />
@@ -205,60 +247,15 @@ export default function PostPage({ params }: PostPageProps) {
         </div>
       </div>
 
-      {/* Floating Bottom Composer Capsule */}
-      <div className="z-sticky fixed bottom-[calc(var(--shell-tabbar-height)+1.5rem)] left-[calc(50%+var(--shell-sidebar-width)/2)] w-full max-w-lg -translate-x-1/2 px-4">
-        <div className="material-regular shadow-floating focus-within:outline-tint flex w-full items-center gap-3 rounded-full px-4 py-2 focus-within:outline-2 focus-within:outline-offset-2">
-          <Avatar className="border-separator size-8 shrink-0 border">
-            {currentAccount?.profileImageUrl ? (
-              <AvatarImage src={currentAccount.profileImageUrl} />
-            ) : null}
-            <AvatarFallback className="bg-fill-3 text-caption text-label-secondary">
-              {currentAccount?.displayName
-                ? currentAccount.displayName
-                    .split(" ")
-                    .map((n: string) => n[0])
-                    .join("")
-                    .toUpperCase()
-                : "?"}
-            </AvatarFallback>
-          </Avatar>
-
-          <input
-            ref={replyInputRef}
-            type="text"
-            value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                void handleSubmitReply();
-              }
-            }}
-            placeholder={
-              currentAccount
-                ? `Reply to @${post.account.username}...`
-                : "Select or create an account to reply"
-            }
-            disabled={!currentAccount || createPostMutation.isPending}
-            aria-label="Reply"
-            className="text-body text-label placeholder:text-label-tertiary flex-1 border-none bg-transparent py-2 focus:outline-none disabled:opacity-50"
-          />
-
-          <Button
-            size="icon"
-            onClick={handleSubmitReply}
-            disabled={!replyText.trim() || !currentAccount || createPostMutation.isPending}
-            aria-label="Send reply"
-            className="size-8 shrink-0 rounded-full"
-          >
-            {createPostMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <ArrowUp className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
-      </div>
+      <ReplyCapsule
+        account={currentAccount}
+        placeholderTarget={post.account.username}
+        value={replyText}
+        onChange={setReplyText}
+        onSubmit={() => void handleSubmitReply()}
+        isPending={createPostMutation.isPending}
+        inputRef={replyInputRef}
+      />
     </div>
   );
 }
