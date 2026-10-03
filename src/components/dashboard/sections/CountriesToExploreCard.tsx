@@ -8,8 +8,7 @@ import { Button } from "~/components/ui/button";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { DATA_FONT, isNumericText } from "~/lib/design/identity";
-import { cn, createUrl } from "~/lib/utils";
+import { createUrl } from "~/lib/utils";
 
 export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId: string }) {
   const [seed, setSeed] = useState(0);
@@ -83,7 +82,7 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
                   </Link>
                   <span className="text-label-secondary text-footnote">
                     Tier{" "}
-                    <span className={cn(isNumericText(c.economicTier) && DATA_FONT)}>
+                    <span className="tabular-nums">
                       {c.economicTier}
                     </span>
                   </span>

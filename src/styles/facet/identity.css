@@ -138,7 +138,7 @@
     filter: blur(1px) brightness(0.6);
   }
   @media (hover: hover) {
-    :is(.group, [data-slot="facet-card"], [data-slot="cutout-card"]):hover
+    :is(.group, [data-slot="card"], [data-slot="cutout-card"]):hover
       .facet-flag-watermark[data-interactive="true"] {
       opacity: 0.25;
       scale: 1.05;
