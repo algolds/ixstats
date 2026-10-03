@@ -8,6 +8,7 @@
 import type { Country } from "@prisma/client";
 import { z } from "zod";
 import { IxTime } from "~/lib/ixtime";
+import { pct, type EconInputs, type NumberKey } from "./shared";
 import { generateSlug } from "~/lib/utils/slug-utils";
 import { protectedProcedure } from "~/server/api/trpc";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
@@ -31,12 +32,9 @@ import {
   syncEconomyBuilderState,
 } from "~/server/shared/country-mutation-helpers";
 
-type EconInputs = NonNullable<z.infer<typeof countryEconomicInputsSchema>>;
-type NumberKey = { [K in keyof Country]: Country[K] extends number | null ? K : never }[keyof Country];
 type NumberOverrides = { [K in NumberKey]?: Country[K] };
-type TextKey = "continent" | "region" | "governmentType" | "religion" | "leader" | "flag" | "coatOfArms";
-
-const pct = (value: number | undefined) => (value === undefined ? undefined : value / 100);
+type TextKey =
+  "continent" | "region" | "governmentType" | "religion" | "leader" | "flag" | "coatOfArms";
 
 /** Text fields: a supplied (non-empty) value wins, otherwise the stored one is kept. */
 const TEXT_SOURCES: ReadonlyArray<

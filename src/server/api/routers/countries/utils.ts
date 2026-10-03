@@ -49,8 +49,11 @@ export function getGrowthRates(arr: any[], key: string): number[] {
   return rates;
 }
 
+export function mean(arr: number[]): number {
+  return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+}
+
 export function stddev(arr: number[]): number {
-  if (!arr.length) return 0;
-  const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
-  return Math.sqrt(arr.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / arr.length);
+  const avg = mean(arr);
+  return Math.sqrt(mean(arr.map((v) => (v - avg) ** 2)));
 }
