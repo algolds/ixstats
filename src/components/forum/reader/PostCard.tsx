@@ -42,6 +42,8 @@ interface PostCardProps {
   authorJoinDate: number;
   postDate: number;
   contentHtml: string;
+  /** The post's raw source (BBCode), what the editor edits and saves back. */
+  message: string;
   isFirstPost: boolean;
   reactionScore: number;
   position: number;
@@ -200,6 +202,7 @@ export function PostCard({
   authorJoinDate,
   postDate,
   contentHtml,
+  message,
   isFirstPost,
   reactionScore,
   position,
@@ -404,7 +407,7 @@ export function PostCard({
                 <ActionPill
                   size="md"
                   onClick={() => {
-                    setEditMessage("");
+                    setEditMessage(message);
                     setIsEditing(true);
                   }}
                   icon={<Pencil />}
