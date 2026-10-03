@@ -17,7 +17,11 @@ import { RepostModal } from "../RepostModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { getQueryKey } from "@trpc/react-query";
 
-import { updateReactionsInCacheData, updatePostReactionsList } from "./ReactionCacheUpdater";
+import {
+  parseReactionCounts,
+  updateReactionsInCacheData,
+  updatePostReactionsList,
+} from "./ReactionCacheUpdater";
 import { ActionPill } from "~/components/ui/action-pill";
 
 interface PostActionsProps {
@@ -30,13 +34,6 @@ interface PostActionsProps {
   onAccountSelect?: (account: any) => void;
   onAccountSettings?: (account: any) => void;
   onCreateAccount?: () => void;
-  isLiked?: boolean;
-  isReposted?: boolean;
-  likeCount?: number;
-  repostCount?: number;
-  replyCount?: number;
-  reactions?: any[];
-  reactionCounts?: Record<string, number>;
   onLike?: (postId: string) => void;
   onRepost?: (postId: string) => void;
   onReply?: (postId: string) => void;
@@ -57,13 +54,6 @@ export function PostActions({
   onAccountSelect,
   onAccountSettings,
   onCreateAccount,
-  isLiked = false,
-  isReposted = false,
-  likeCount = 0,
-  repostCount = 0,
-  replyCount = 0,
-  reactions = [],
-  reactionCounts = {},
   onLike,
   onRepost,
   onReply,
@@ -77,6 +67,16 @@ export function PostActions({
   const [showReactionPopup, setShowReactionPopup] = useState(false);
   const [showRepostModal, setShowRepostModal] = useState(false);
   const reactionButtonRef = useRef<HTMLButtonElement>(null);
+
+  const reactions: any[] = post.reactions ?? [];
+  const isLiked = reactions.some(
+    (r) => r.accountId === currentUserAccountId && r.reactionType === "like"
+  );
+  const isReposted = post.reposts?.some((r: any) => r.accountId === currentUserAccountId) ?? false;
+  const likeCount: number = post.likeCount ?? 0;
+  const repostCount: number = post.repostCount ?? 0;
+  const replyCount: number = post.replyCount ?? 0;
+  const reactionCounts = parseReactionCounts(post.reactionCounts);
 
   const queryClient = useQueryClient();
 

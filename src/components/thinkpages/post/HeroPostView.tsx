@@ -342,24 +342,6 @@ export function HeroPostView({
           onAccountSelect={onAccountSelect}
           onAccountSettings={onAccountSettings}
           onCreateAccount={onCreateAccount}
-          isLiked={post.reactions?.some(
-            (r: any) => r.accountId === currentUserAccountId && r.reactionType === "like"
-          )}
-          isReposted={post.reposts?.some((r: any) => r.accountId === currentUserAccountId) ?? false}
-          likeCount={post.likeCount}
-          repostCount={post.repostCount}
-          replyCount={post.replyCount}
-          reactions={post.reactions || []}
-          reactionCounts={(() => {
-            try {
-              if (typeof post.reactionCounts === "string") {
-                return JSON.parse(post.reactionCounts);
-              }
-              return post.reactionCounts || {};
-            } catch {
-              return {};
-            }
-          })()}
           onLike={onLike}
           onRepost={onRepost}
           onReply={onReply}

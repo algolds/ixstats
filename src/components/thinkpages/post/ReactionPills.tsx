@@ -3,6 +3,7 @@
 import React from "react";
 import { cn } from "~/lib/utils";
 import { REACTION_ICONS, getDiscordEmojiUrl } from "./ThinkpagesPostUtils";
+import { parseReactionCounts } from "../primitives/ReactionCacheUpdater";
 
 interface ReactionPillsProps {
   post: any;
@@ -15,18 +16,9 @@ export function ReactionPills({
   apiDiscordEmojis,
   onOpenReactionsDialog,
 }: ReactionPillsProps) {
-  let reactionCounts: Record<string, number> = {};
-  try {
-    reactionCounts =
-      typeof post.reactionCounts === "string"
-        ? JSON.parse(post.reactionCounts)
-        : post.reactionCounts || {};
-  } catch (error) {
-    console.warn("Failed to parse reactionCounts in ReactionPills:", error);
-    return null;
-  }
+  const reactionCounts = parseReactionCounts(post.reactionCounts);
 
-  if (!reactionCounts || Object.keys(reactionCounts).length === 0) return null;
+  if (Object.keys(reactionCounts).length === 0) return null;
 
   let hasVisible = false;
   for (const count of Object.values(reactionCounts)) {
