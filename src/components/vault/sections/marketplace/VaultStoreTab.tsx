@@ -49,7 +49,6 @@ import {
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { storePrerequisiteMet } from "~/lib/vault/store-purchases";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -60,6 +59,7 @@ import { PackHolographicCard, type PackItem } from "./store/PackHolographicCard"
 import { StoreCategoryHeader } from "./store/StoreCategoryHeader";
 import { StorePurchaseDialog } from "./store/StorePurchaseDialog";
 import { VaultParticleExplosionModal } from "~/components/vault/VaultParticleExplosionModal";
+import { Card } from "~/components/ui/card";
 
 const PackOpeningSequence = dynamic(
   () =>
@@ -291,11 +291,7 @@ export function VaultStoreTab() {
   return (
     <div className="pb-10">
       {/* Large Storefront Showcase Window */}
-      <FacetCard
-        texture="dots"
-        textureOpacity={0.03}
-        className="relative min-h-[380px] w-full overflow-hidden p-6"
-      >
+      <Card className="relative min-h-[380px] w-full overflow-hidden p-6">
         {/* Category Sub-Tabs Selector */}
         <StoreCategoryHeader
           tabs={STORE_TABS}
@@ -479,7 +475,7 @@ export function VaultStoreTab() {
             </motion.div>
           </AnimatePresence>
         )}
-      </FacetCard>
+      </Card>
 
       <StorePurchaseDialog
         item={activeCheckoutItem}

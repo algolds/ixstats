@@ -12,7 +12,6 @@
  */
 
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { useState, useRef, useCallback } from "react";
 import {
@@ -27,6 +26,7 @@ import {
 import { useDebounce } from "~/hooks/useDebounce";
 import { api } from "~/trpc/react";
 import { distanceKm } from "~/lib/maps/geo-math";
+import { Card } from "~/components/ui/card";
 
 export interface WikiImportableFields {
   population?: number;
@@ -181,7 +181,7 @@ export function WikiLinkWizard({
 
         {/* Infobox preview + import */}
         {showInfobox && (
-          <FacetCard className="p-2">
+          <Card className="p-2">
             {infoboxLoading && (
               <div className="text-label-secondary text-footnote flex items-center gap-2 py-2">
                 <Loader2 className="h-3 w-3 animate-spin" /> Parsing infobox...
@@ -228,7 +228,7 @@ export function WikiLinkWizard({
                 )}
               </>
             )}
-          </FacetCard>
+          </Card>
         )}
       </div>
     );
@@ -254,7 +254,7 @@ export function WikiLinkWizard({
 
       {/* Search results dropdown */}
       {searchResults && searchResults.results.length > 0 && searchQuery.length >= 2 && (
-        <FacetCard className="absolute top-full right-0 left-0 z-20 mt-1 max-h-40 overflow-y-auto">
+        <Card className="absolute top-full right-0 left-0 z-20 mt-1 max-h-40 overflow-y-auto">
           {searchResults.results.map((r, i) => (
             <Button
               type="button"
@@ -273,7 +273,7 @@ export function WikiLinkWizard({
               </div>
             </Button>
           ))}
-        </FacetCard>
+        </Card>
       )}
 
       {/* No results */}

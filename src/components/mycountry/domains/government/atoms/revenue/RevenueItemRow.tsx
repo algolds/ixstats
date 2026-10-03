@@ -12,7 +12,6 @@ import {
 } from "~/components/ui/select";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Xmark as X } from "iconoir-react";
 import { formatExactCurrency } from "~/lib/utils";
 import type { RevenueSourceInput, RevenueCategory } from "~/types/government";
@@ -22,6 +21,7 @@ import {
   getCollectionMethodIcon,
   getCollectionMethodsForCategory,
 } from "./revenueConstants";
+import { Card } from "~/components/ui/card";
 
 interface RevenueItemRowProps {
   item: RevenueSourceInput;
@@ -47,7 +47,7 @@ export function RevenueItemRow({
   const Icon = revenueCategoryIcons[item.category];
 
   return (
-    <FacetCard variant="inset" className="p-4">
+    <Card variant="inset" className="p-4">
       {!isReadOnly && (
         <Button
           variant="ghost"
@@ -219,6 +219,6 @@ export function RevenueItemRow({
           </div>
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 }

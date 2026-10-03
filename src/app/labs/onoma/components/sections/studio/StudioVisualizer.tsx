@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { InfoCircle as Info } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import dynamic from "next/dynamic";
 import { LexiconExplorer } from "../LexiconExplorer";
 
@@ -19,6 +18,7 @@ import { type StudioState } from "../../../hooks/useStudioState";
 import { CorpusSelector } from "../../shared/CorpusSelector";
 import { resolveCorpusWords } from "~/lib/onoma/data-bridge";
 import { useNameBank } from "~/hooks/useNameBank";
+import { Card } from "~/components/ui/card";
 
 interface StudioVisualizerProps {
   state: StudioState;
@@ -73,7 +73,7 @@ export function StudioVisualizer({ state }: StudioVisualizerProps) {
             onCompleteName={handleCompleteName}
           />
         ) : (
-          <FacetCard
+          <Card
             variant="inset"
             padding="none"
             className="text-label-secondary text-body flex h-full min-h-[300px] flex-col items-center justify-center border-dashed p-8 text-center"
@@ -83,7 +83,7 @@ export function StudioVisualizer({ state }: StudioVisualizerProps) {
             <p className="text-label-secondary text-footnote mt-1">
               Select a corpus or provide training seeds to build the Markov transition trie.
             </p>
-          </FacetCard>
+          </Card>
         )}
       </div>
 

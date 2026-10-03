@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Map as MapIcon, EditPencil as Edit3 } from "iconoir-react";
-import { FacetCard, FacetCardHeader } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Card, CardHeader } from "~/components/ui/card";
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -32,12 +32,8 @@ export const TerritoryMapWidget = React.memo(function TerritoryMapWidget({
   const router = useRouter();
 
   return (
-    <FacetCard
-      role="region"
-      aria-labelledby="territory-title"
-      className="rounded-card overflow-hidden"
-    >
-      <FacetCardHeader className="flex-row items-start justify-between gap-4 p-4 sm:p-5">
+    <Card role="region" aria-labelledby="territory-title" className="rounded-card overflow-hidden">
+      <CardHeader className="flex-row items-start justify-between gap-4 p-4 sm:p-5">
         <div className="min-w-0">
           <h2 id="territory-title" className="text-label text-title-3">
             Territory
@@ -70,7 +66,7 @@ export const TerritoryMapWidget = React.memo(function TerritoryMapWidget({
             <Edit3 aria-hidden="true" className="text-green" />
           </Button>
         </div>
-      </FacetCardHeader>
+      </CardHeader>
 
       <div className="border-separator relative h-60 w-full overflow-hidden border-t">
         <CountryMapEmbed
@@ -82,6 +78,6 @@ export const TerritoryMapWidget = React.memo(function TerritoryMapWidget({
           interactive={true}
         />
       </div>
-    </FacetCard>
+    </Card>
   );
 });

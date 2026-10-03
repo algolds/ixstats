@@ -378,7 +378,7 @@ export function AccountCreationModal({
                     type="button"
                     onClick={() => setShowAdvanced(!showAdvanced)}
                     aria-expanded={showAdvanced}
-                    className={cn(buttonVariants({ variant: "gray", size: "sm" }))}
+                    className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}
                   >
                     <Sparkles
                       aria-hidden="true"
@@ -478,7 +478,7 @@ export function AccountCreationModal({
 
         {/* Footer */}
         <DialogFooter className="border-separator border-t px-4 py-3 sm:px-6 sm:py-4">
-          <Button variant="gray" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           {step === "type" ? (

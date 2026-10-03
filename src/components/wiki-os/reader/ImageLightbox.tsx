@@ -350,7 +350,7 @@ function ImageLightboxModal({
         {/* Top-right dismiss button (Esc) */}
         <div className="z-raised absolute top-4 right-4 sm:top-5 sm:right-6">
           <Button
-            variant="bordered"
+            variant="outline"
             size="sm"
             onClick={triggerClose}
             className="bg-surface-elevated shadow-card hover:border-red/40 hover:bg-red/15 hover:text-red rounded-full"
@@ -467,7 +467,7 @@ function ImageLightboxModal({
                         {(["thumb", "embed", "raw", "url"] as const).map((fmt) => (
                           <Button
                             key={fmt}
-                            variant="bordered"
+                            variant="outline"
                             size="sm"
                             onClick={() => handleCopyFormat(fmt)}
                             className="bg-fill-4 justify-start gap-1"
@@ -494,7 +494,7 @@ function ImageLightboxModal({
                     {/* Stash Action */}
                     {isAuthenticated && (
                       <Button
-                        variant="tinted"
+                        variant="secondary"
                         size="sm"
                         onClick={handleStash}
                         disabled={stashMutation.isPending || stashMutation.isSuccess}
@@ -596,7 +596,7 @@ function ImageLightboxModal({
           {/* Reset Zoom */}
           {scale !== 1 && (
             <Button
-              variant="gray"
+              variant="secondary"
               size="icon-sm"
               onClick={handleResetZoom}
               className={LIGHTBOX_ACTION}
@@ -612,7 +612,7 @@ function ImageLightboxModal({
           {/* Right Action Icons */}
           <div className="flex items-center gap-1">
             {/* Direct Download */}
-            <Button asChild variant="gray" size="icon-sm" className={LIGHTBOX_ACTION}>
+            <Button asChild variant="secondary" size="icon-sm" className={LIGHTBOX_ACTION}>
               <a
                 href={currentSrc}
                 download={image.filename || "wiki-image"}
@@ -627,7 +627,7 @@ function ImageLightboxModal({
 
             {/* External File Description Page */}
             {image.fileUrl && (
-              <Button asChild variant="gray" size="icon-sm" className={LIGHTBOX_ACTION}>
+              <Button asChild variant="secondary" size="icon-sm" className={LIGHTBOX_ACTION}>
                 <a
                   href={
                     image.fileUrl.startsWith("/")
@@ -646,7 +646,7 @@ function ImageLightboxModal({
 
             {/* Repository Inspector / Info Drawer Toggle */}
             <Button
-              variant={showInspector ? "tinted" : "gray"}
+              variant={showInspector ? "secondary" : "secondary"}
               size="icon-sm"
               aria-pressed={showInspector}
               onClick={() => setShowInspector((prev) => !prev)}

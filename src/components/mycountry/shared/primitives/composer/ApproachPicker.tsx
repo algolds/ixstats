@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import {
@@ -12,6 +11,7 @@ import {
   type IntentPackageView,
   type OfferedTier,
 } from "~/components/mycountry/directives/directive-model";
+import { Card } from "~/components/ui/card";
 
 export interface ApproachPickerProps {
   packages: IntentPackageView[];
@@ -52,7 +52,7 @@ export function ApproachPicker({ packages, selected, onSelect, isLoading }: Appr
           const checked = selected === tier;
           return (
             <label key={tier} className="block cursor-pointer">
-              <FacetCard
+              <Card
                 className={cn(
                   "rounded-row flex h-full flex-col gap-3 p-4 transition-[background-color,border-color,box-shadow,transform] duration-150 active:scale-[0.99]",
                   "has-[:focus-visible]:ring-tint has-[:focus-visible]:ring-2",
@@ -91,7 +91,7 @@ export function ApproachPicker({ packages, selected, onSelect, isLoading }: Appr
                     </dd>
                   </div>
                 </dl>
-              </FacetCard>
+              </Card>
             </label>
           );
         })}

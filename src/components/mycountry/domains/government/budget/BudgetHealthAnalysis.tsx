@@ -1,12 +1,12 @@
 "use client";
 
 import React from "react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { cn } from "~/lib/utils";
 import type { BudgetSummary, RevenueSummary } from "~/types/government";
 import type { BudgetHealthStatus } from "./budgetTypes";
+import { Card } from "~/components/ui/card";
 
 interface BudgetHealthAnalysisProps {
   budgetSummary: BudgetSummary;
@@ -41,7 +41,7 @@ export function BudgetHealthAnalysis({
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <FacetCard className="space-y-1 p-4">
+      <Card className="space-y-1 p-4">
         <h4 className="text-label border-separator text-headline border-b pb-3">
           Budget health indicators
         </h4>
@@ -78,9 +78,9 @@ export function BudgetHealthAnalysis({
             </span>
           </Row>
         </div>
-      </FacetCard>
+      </Card>
 
-      <FacetCard className="space-y-3 p-4">
+      <Card className="space-y-3 p-4">
         <h4 className="text-label border-separator text-headline border-b pb-3">
           Budget efficiency score
         </h4>
@@ -103,7 +103,7 @@ export function BudgetHealthAnalysis({
             </span>
           </Row>
         </div>
-      </FacetCard>
+      </Card>
     </div>
   );
 }

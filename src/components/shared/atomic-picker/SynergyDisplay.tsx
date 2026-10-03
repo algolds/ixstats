@@ -9,13 +9,13 @@
 
 import React from "react";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Flash as Zap,
   WarningTriangle as AlertTriangle,
   StatUp as TrendingUp,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { Card } from "~/components/ui/card";
 
 export interface SynergyItem {
   id?: string;
@@ -43,7 +43,7 @@ export const SynergyDisplay = React.memo(function SynergyDisplay({
 
   if (!hasSynergies && !hasConflicts) {
     return (
-      <FacetCard
+      <Card
         className={cn(
           "rounded-row flex flex-col items-center justify-center border-dashed px-4 py-8 text-center",
           className
@@ -55,7 +55,7 @@ export const SynergyDisplay = React.memo(function SynergyDisplay({
           Select complementary components to unlock compounding synergies, and watch out for
           conflicting doctrines.
         </p>
-      </FacetCard>
+      </Card>
     );
   }
 
@@ -115,7 +115,7 @@ function InteractionSection({
                 : null;
 
           return (
-            <FacetCard key={item.id || idx} className="p-3">
+            <Card key={item.id || idx} className="p-3">
               <div className="flex items-center justify-between gap-2">
                 <h4 className="text-label text-caption truncate font-semibold">
                   {item.comp1Name} {tone.joiner} {item.comp2Name}
@@ -131,7 +131,7 @@ function InteractionSection({
                   {item.description}
                 </p>
               )}
-            </FacetCard>
+            </Card>
           );
         })}
       </div>

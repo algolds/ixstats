@@ -2,12 +2,12 @@
 
 import React, { useRef, useState } from "react";
 import { cn } from "~/lib/utils";
-import { FacetCard } from "~/components/ui/facet-container";
 import { withBasePath } from "~/lib/base-path";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import Link from "next/link";
 import { OpenBook as BookOpen } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 
 export interface MatchEvent {
   id: string;
@@ -86,7 +86,7 @@ export function LatestResults({
 
   return (
     <div className={cn("mx-auto w-full px-2 sm:w-[500px]", className)}>
-      <FacetCard interactive="hover" className="relative overflow-hidden p-5">
+      <Card className="relative overflow-hidden p-5">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-label text-label-secondary text-eyebrow">{title}</h3>
           <span className="text-label-secondary text-eyebrow select-none">Swipe Up/Down</span>
@@ -264,7 +264,7 @@ export function LatestResults({
             ))}
           </div>
         )}
-      </FacetCard>
+      </Card>
     </div>
   );
 }

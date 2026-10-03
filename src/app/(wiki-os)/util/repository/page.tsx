@@ -10,14 +10,7 @@ import { CommonsResultsGrid } from "~/components/wiki-os/commons/CommonsResultsG
 import { CommonsDetailPanel } from "~/components/wiki-os/commons/CommonsDetailPanel";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
-import {
-  Xmark as X,
-  Globe,
-  Database,
-  HelpCircle,
-  Folder,
-  Sparks as Sparkles,
-} from "iconoir-react";
+import { Xmark as X, Globe, Database, HelpCircle, Folder, Sparks as Sparkles } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
@@ -466,7 +459,7 @@ export default function RepositoryPage() {
             </span>
             {STARTER_CATEGORIES.map((cat) => (
               <Button
-                variant="bordered"
+                variant="outline"
                 size="sm"
                 key={cat.category}
                 onClick={() => handleBrowseCategory(cat.category)}
@@ -483,7 +476,7 @@ export default function RepositoryPage() {
           <div className="wikios-commons-chips">
             {activeCategories.map((cat) => (
               <Button
-                variant="tinted"
+                variant="secondary"
                 size="sm"
                 aria-label={`Remove ${cat}`}
                 key={cat}
@@ -500,7 +493,7 @@ export default function RepositoryPage() {
         {/* Browsing category label */}
         {browsingCategory && !isSearchMode && (
           <div className="wikios-commons-chips">
-            <Badge variant="neutral" className="gap-1 py-0 pr-0.5">
+            <Badge variant="default" className="gap-1 py-0 pr-0.5">
               Browsing: {browsingCategory}
               <Button
                 variant="ghost"

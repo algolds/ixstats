@@ -56,7 +56,7 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
         <h1 className="text-title-3 text-label sm:text-title-2">{prompt.title}</h1>
         <p className="text-body text-label-secondary mt-2">{prompt.question}</p>
         <div className="mt-3 flex items-center gap-3">
-          <Badge variant="neutral" className="tabular-nums">
+          <Badge variant="default" className="tabular-nums">
             {prompt._count.responses} {prompt._count.responses === 1 ? "response" : "responses"}
           </Badge>
           {prompt.status === "CLOSED" && <Badge variant="outline">Closed</Badge>}
@@ -114,7 +114,7 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
               >
                 {r.country?.name ?? "Unknown"}
               </Link>
-              {r.featured && <Badge variant="caution">Featured</Badge>}
+              {r.featured && <Badge variant="warning">Featured</Badge>}
             </div>
             <p className="text-body text-label-secondary whitespace-pre-wrap">{r.content}</p>
             {r.linkedArticles &&

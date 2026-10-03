@@ -2,11 +2,11 @@
 
 import React from "react";
 import { cn } from "~/lib/utils";
-import { FacetCard } from "~/components/ui/facet-container";
 import { getPlayerPhotoUrl } from "~/lib/sports/photos";
 import { withBasePath } from "~/lib/base-path";
 import { PositionTooltip } from "~/components/sports/PositionTooltip";
 import type { PlayerRatings } from "~/lib/sports/types";
+import { Card } from "~/components/ui/card";
 
 export interface PlayerCardProps {
   player: {
@@ -47,7 +47,7 @@ export function PlayerCard({ player, team, statistics, className }: PlayerCardPr
   const playerPhoto = getPlayerPhotoUrl(player);
 
   return (
-    <FacetCard interactive="hover" className={cn("rounded-sheet mx-auto w-[340px] p-1", className)}>
+    <Card className={cn("rounded-sheet mx-auto w-[340px] p-1", className)}>
       <div className="bg-surface border-separator rounded-card border p-3">
         <div className="relative overflow-hidden pb-3">
           <div className="overflow-hidden [filter:url('#rounded')]">
@@ -140,7 +140,7 @@ export function PlayerCard({ player, team, statistics, className }: PlayerCardPr
           ))}
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 }
 

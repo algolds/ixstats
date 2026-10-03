@@ -19,7 +19,6 @@ import type { ActiveCountryData } from "~/components/wiki-os/shared/ActiveCountr
 import type { FlagColors } from "~/lib/flags/flag-color-extractor";
 import { EditorialMastheadHeader } from "./headers/EditorialMastheadHeader";
 import { WatchButton } from "./WatchButton";
-import { Refraction } from "~/components/ui/facet";
 import { focusRing } from "~/components/ui/button";
 
 export type ArticleThemeColors =
@@ -328,7 +327,7 @@ export function WikiOSHeader({
             aria-hidden="true"
             className="wikios-hero-veil pointer-events-none absolute inset-0 -z-10 rounded-[inherit]"
           />
-          <Refraction />
+
           {/* Breadcrumb Path */}
           <div className="text-label-secondary text-eyebrow flex items-center gap-1">
             <CategoryBreadcrumb title={title} />

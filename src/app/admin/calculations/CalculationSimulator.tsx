@@ -10,7 +10,7 @@ import {
   WarningTriangle as AlertTriangle,
 } from "iconoir-react";
 import type { CalculationModule, CalculationResult } from "./calculation-types";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 interface CalculationSimulatorProps {
   selectedModule: CalculationModule;
@@ -30,7 +30,7 @@ export function CalculationSimulator({
   onRunSimulation,
 }: CalculationSimulatorProps) {
   return (
-    <FacetCard className="space-y-4 p-5">
+    <Card className="space-y-4 p-5">
       <div className="border-separator flex items-center justify-between border-b pb-3">
         <h4 className="text-label text-caption">Interactive Sandbox</h4>
         <Button onClick={onRunSimulation} disabled={isSimulating} size="sm">
@@ -119,6 +119,6 @@ export function CalculationSimulator({
           </div>
         )}
       </div>
-    </FacetCard>
+    </Card>
   );
 }

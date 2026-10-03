@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo } from "react";
 import { Badge } from "~/components/ui/badge";
-import { FacetTabs } from "~/components/ui/facet";
 import {
   Select,
   SelectContent,
@@ -32,6 +31,7 @@ import {
   BudgetRevenueAnalysis,
   BudgetHealthAnalysis,
 } from "./budget";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface BudgetManagementDashboardProps {
   countryId?: string;
@@ -289,20 +289,20 @@ export function BudgetManagementDashboard({
 
       {/* Main Content Tabs */}
       <div className="space-y-4">
-        <FacetTabs
+        <SegmentedControl
           size="sm"
-          tone="mycountry"
           className="w-full"
-          tabs={[
-            { id: "overview", label: "Overview" },
-            { id: "departments", label: "Departments" },
-            { id: "revenue", label: "Revenue" },
-            { id: "analysis", label: "Analysis" },
+          options={[
+            { value: "overview", label: "Overview" },
+            { value: "departments", label: "Departments" },
+            { value: "revenue", label: "Revenue" },
+            { value: "analysis", label: "Analysis" },
           ]}
-          activeTab={selectedView}
-          onChange={(value) =>
+          value={selectedView}
+          onValueChange={(value) =>
             setSelectedView(value as "overview" | "departments" | "revenue" | "analysis")
           }
+          asTabs
         />
 
         {selectedView === "overview" && (

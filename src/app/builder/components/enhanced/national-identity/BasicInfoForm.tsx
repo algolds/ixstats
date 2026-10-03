@@ -16,7 +16,6 @@ import { GlassSelectBox } from "../../../primitives/enhanced";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Toggle } from "~/components/ui/toggle";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { IdentityAutocomplete } from "./IdentityAutocomplete";
 import { BasicInfoCoreIndicators } from "./BasicInfoCoreIndicators";
 import { soundEffects } from "~/lib/sound/cuelume";
@@ -33,6 +32,7 @@ import { GovernmentStructureForm } from "~/components/mycountry/domains/governme
 import { TemplateFieldIndicator } from "../../../primitives/TemplateFieldIndicator";
 import { AdvancedFieldsDisclosure } from "../../../primitives/AdvancedFieldsDisclosure";
 import { deriveDemonym, formatCeremonialName } from "./identityUtils";
+import { Card, CardContent } from "~/components/ui/card";
 
 interface BasicInfoFormProps {
   identity: NationalIdentityData;
@@ -345,14 +345,14 @@ export const BasicInfoForm = React.memo(
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-6 text-left lg:grid-cols-2">
           {/* Administrative Profile Card */}
-          <FacetCard texture="chevron" textureOpacity={0.04} className="z-10 overflow-visible">
+          <Card className="z-10 overflow-visible">
             <div className="border-separator border-b px-6 py-4">
               <h3 className="text-label text-headline flex items-center gap-2">
                 <Crown className="text-tint h-5 w-5" />
                 Administrative Profile
               </h3>
             </div>
-            <FacetCardContent className="space-y-4 p-6">
+            <CardContent className="space-y-4 p-6">
               {/* 1. Country Name (Primary Sovereign Form) */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -389,7 +389,7 @@ export const BasicInfoForm = React.memo(
                   <Button
                     type="button"
                     size="sm"
-                    variant={isCustomOfficialName ? "tinted" : "plain"}
+                    variant={isCustomOfficialName ? "secondary" : "ghost"}
                     onClick={toggleCustomOfficialName}
                   >
                     {isCustomOfficialName ? (
@@ -486,7 +486,7 @@ export const BasicInfoForm = React.memo(
                           <Button
                             type="button"
                             size="sm"
-                            variant="plain"
+                            variant="ghost"
                             onClick={() => {
                               soundEffects.press();
                               setIsMapPickerOpen(true);
@@ -561,19 +561,19 @@ export const BasicInfoForm = React.memo(
                   />
                 </AdvancedFieldsDisclosure>
               </div>
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
 
           {isEditMode ? (
             /* Edit Mode: Government Structure card replaces Core Indicators */
-            <FacetCard texture="chevron" textureOpacity={0.04}>
+            <Card>
               <div className="border-separator border-b px-6 py-4">
                 <h3 className="text-label text-headline flex items-center gap-2">
                   <Crown className="text-indigo h-5 w-5" />
                   Government Structure
                 </h3>
               </div>
-              <FacetCardContent className="space-y-4 p-6">
+              <CardContent className="space-y-4 p-6">
                 <GovernmentStructureForm
                   data={
                     governmentStructure?.structure || {
@@ -599,8 +599,8 @@ export const BasicInfoForm = React.memo(
                   noWrapper={true}
                   hideGovernmentType={true}
                 />
-              </FacetCardContent>
-            </FacetCard>
+              </CardContent>
+            </Card>
           ) : (
             <BasicInfoCoreIndicators
               inputs={inputs}

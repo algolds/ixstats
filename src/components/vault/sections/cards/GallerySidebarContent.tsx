@@ -206,7 +206,7 @@ export function GallerySidebarContent({
       {/* Clear */}
       {(search || rarity !== "all" || season !== "all") && (
         <Button
-          variant="bordered"
+          variant="outline"
           size="sm"
           onClick={onClearFilters}
           className="text-label-secondary w-full"

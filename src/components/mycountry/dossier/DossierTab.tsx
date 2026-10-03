@@ -12,7 +12,6 @@ import { WikiSectionCard } from "./dossier/WikiSectionCard";
 import { DossierTocSidebar, type TocItem } from "./dossier/DossierTocSidebar";
 import WikiContentModal from "./dossier/WikiContentModal";
 import { Skeleton } from "~/components/ui/skeleton";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import {
   WarningTriangle as AlertTriangle,
@@ -27,6 +26,7 @@ import { resolveImageUrl } from "~/lib/wiki-os/adapters/ixstates/unified-parser"
 import Link from "next/link";
 import { NativeLoreCanvasModal } from "./dossier/NativeLoreCanvasModal";
 import { FileImportDropzone, type ParsedLoreSection } from "./dossier/FileImportDropzone";
+import { Card, CardContent } from "~/components/ui/card";
 
 /**
  * DossierTab Component
@@ -173,8 +173,8 @@ export const DossierTab: React.FC<DossierTabProps> = ({
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <FacetCard className="rounded-card">
-          <FacetCardContent className="p-8">
+        <Card className="rounded-card">
+          <CardContent className="p-8">
             <div className="space-y-4">
               <Skeleton className="rounded-control h-12 w-12" />
               <Skeleton className="h-5 w-48" />
@@ -183,8 +183,8 @@ export const DossierTab: React.FC<DossierTabProps> = ({
               <Skeleton className="h-4 w-3/4" />
               <Skeleton className="h-4 w-1/2" />
             </div>
-          </FacetCardContent>
-        </FacetCard>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -192,8 +192,8 @@ export const DossierTab: React.FC<DossierTabProps> = ({
   // Error state
   if (wikiData.error) {
     return (
-      <FacetCard className="rounded-card">
-        <FacetCardContent className="p-8 text-center">
+      <Card className="rounded-card">
+        <CardContent className="p-8 text-center">
           <AlertTriangle className="text-destructive mx-auto mb-3 h-6 w-6" />
           <h3 className="text-label text-title-3 mb-2">Wiki Intelligence Unavailable</h3>
           <p className="text-label-secondary mb-4">{wikiData.error}</p>
@@ -201,8 +201,8 @@ export const DossierTab: React.FC<DossierTabProps> = ({
             <RefreshCw className="mr-2 h-4 w-4" />
             Retry
           </Button>
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -268,8 +268,8 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                 <div className="space-y-6 lg:col-span-8">
                   {/* Empty state: No sections returned from wiki */}
                   {wikiData.sections.length === 0 && (
-                    <FacetCard className="rounded-card">
-                      <FacetCardContent className="p-8 text-center">
+                    <Card className="rounded-card">
+                      <CardContent className="p-8 text-center">
                         <BookOpen className="text-label-secondary mx-auto mb-3 h-6 w-6" />
                         <h3 className="text-label text-title-3 mb-2">No Wiki Sections Found</h3>
                         <p className="text-label-secondary text-body mx-auto mb-6 max-w-md">
@@ -298,8 +298,8 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                             Create Native Lore Document
                           </Button>
                         </div>
-                      </FacetCardContent>
-                    </FacetCard>
+                      </CardContent>
+                    </Card>
                   )}
 
                   {/* Section Cards */}
@@ -382,8 +382,8 @@ export const DossierTab: React.FC<DossierTabProps> = ({
 
                 {/* Document Grid / Empty State */}
                 {nativeDocs.length === 0 ? (
-                  <FacetCard className="rounded-card">
-                    <FacetCardContent className="p-8 text-center">
+                  <Card className="rounded-card">
+                    <CardContent className="p-8 text-center">
                       <BookOpen className="text-label-secondary mx-auto mb-3 h-6 w-6" />
                       <h3 className="text-label text-title-3 mb-2">No Native Lore Documents</h3>
                       <p className="text-label-secondary text-body mx-auto mb-6 max-w-md">
@@ -398,12 +398,12 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                       >
                         Create First Document
                       </Button>
-                    </FacetCardContent>
-                  </FacetCard>
+                    </CardContent>
+                  </Card>
                 ) : (
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {nativeDocs.map((doc) => (
-                      <FacetCard key={doc.id} className="rounded-card p-5">
+                      <Card key={doc.id} className="rounded-card p-5">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
@@ -448,7 +448,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                             </Button>
                           </div>
                         </div>
-                      </FacetCard>
+                      </Card>
                     ))}
                   </div>
                 )}

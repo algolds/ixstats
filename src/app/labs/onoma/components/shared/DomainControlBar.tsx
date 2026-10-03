@@ -9,7 +9,6 @@ import {
   SystemRestart as Loader2,
   NavArrowDown as ChevronDown,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import {
   Select,
@@ -27,6 +26,7 @@ import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Toggle } from "~/components/ui/toggle";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Card } from "~/components/ui/card";
 
 interface DomainControlBarProps {
   category: NameCategory;
@@ -54,7 +54,7 @@ export function DomainControlBar({
   handleGenerate,
 }: DomainControlBarProps) {
   return (
-    <FacetCard variant="inset" padding="none" className="space-y-4 p-4">
+    <Card variant="inset" padding="none" className="space-y-4 p-4">
       {/* 1. Category / Type Selector (if categories are provided) */}
       {categories.length > 1 && (
         <div className="space-y-2">
@@ -214,7 +214,7 @@ export function DomainControlBar({
       <div className="bg-tint hover:bg-tint-hover active:bg-tint-hover group rounded-row border-separator shadow-card relative flex h-11 w-full items-center overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none">
         {/* Left / Center: Primary Generate Action Trigger */}
         <Button
-          variant="plain"
+          variant="ghost"
           onClick={handleGenerate}
           disabled={gen.isGenerating}
           className="text-on-tint hover:text-on-tint h-full flex-1 gap-2 rounded-none pr-3 pl-4 hover:bg-transparent"
@@ -283,7 +283,7 @@ export function DomainControlBar({
           <AdvancedConlangSettings gen={gen} category={category} />
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 }
 

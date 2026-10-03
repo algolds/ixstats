@@ -174,7 +174,7 @@ export function StashManagerModal({
               <div className="flex justify-end gap-2">
                 <Button
                   size="sm"
-                  variant="gray"
+                  variant="secondary"
                   onClick={() => {
                     setShowCreate(false);
                     setError(null);
@@ -196,7 +196,7 @@ export function StashManagerModal({
             </div>
           ) : (
             <Button
-              variant="plain"
+              variant="ghost"
               onClick={() => setShowCreate(true)}
               className="text-body w-full justify-start px-3 font-normal"
             >
@@ -209,7 +209,7 @@ export function StashManagerModal({
           )}
         </div>
 
-        <Button asChild variant="plain" size="sm" className="justify-start">
+        <Button asChild variant="ghost" size="sm" className="justify-start">
           <Link href={withBasePath("/stashes")} onClick={onClose}>
             <ChevronRight aria-hidden="true" />
             Go to My Stashes

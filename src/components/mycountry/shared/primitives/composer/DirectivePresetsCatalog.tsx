@@ -14,7 +14,6 @@ import {
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Toggle } from "~/components/ui/toggle";
 import {
   DIRECTIVE_DOMAINS,
@@ -22,6 +21,7 @@ import {
   type DirectiveDomain,
   type DirectivePreset,
 } from "./directive-presets";
+import { Card } from "~/components/ui/card";
 
 export const DOMAIN_ICONS: Record<DirectiveDomain, React.ComponentType<{ className?: string }>> = {
   Economy: GraphUp,
@@ -110,14 +110,14 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
       </div>
 
       {groups.length === 0 ? (
-        <FacetCard variant="inset" padding="none" className="px-4 py-8 text-center">
+        <Card variant="inset" padding="none" className="px-4 py-8 text-center">
           <p className="text-label text-body font-medium">No presets match</p>
           <p className="text-label-secondary text-footnote mt-1">
             {query.trim()
               ? "Use your own wording as a custom goal, or clear the search."
               : "Try another domain."}
           </p>
-        </FacetCard>
+        </Card>
       ) : (
         <div className="space-y-6">
           {groups.map(({ domain: d, presets }) => {

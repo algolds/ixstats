@@ -7,9 +7,9 @@ import { notifyFromStore } from "~/hooks/useNotify";
 import { useVexelEditor } from "./VexelEditorProvider";
 import { api } from "~/trpc/react";
 import ExportDialog from "./ExportDialog";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Input } from "~/components/ui/input";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { Card } from "~/components/ui/card";
 
 export default function SaveControls() {
   // oxlint-disable-next-line eslint/no-unused-vars
@@ -126,7 +126,7 @@ export default function SaveControls() {
   };
 
   return (
-    <FacetCard className="mb-6 shrink-0 overflow-hidden">
+    <Card className="mb-6 shrink-0 overflow-hidden">
       <div className="text-label-secondary text-footnote flex flex-wrap items-center justify-between gap-4 p-4">
         <div className="flex flex-1 flex-wrap items-center gap-4">
           {/* Title Input */}
@@ -194,7 +194,7 @@ export default function SaveControls() {
           {/* Publish Button */}
           {achievementId && (
             <Button
-              variant={currentAchievement?.isPublished ? "bordered" : "tinted"}
+              variant={currentAchievement?.isPublished ? "outline" : "secondary"}
               size="sm"
               onClick={handlePublishToggle}
               disabled={isPublishing}
@@ -222,6 +222,6 @@ export default function SaveControls() {
 
         {isExportOpen && <ExportDialog onClose={() => setIsExportOpen(false)} />}
       </div>
-    </FacetCard>
+    </Card>
   );
 }

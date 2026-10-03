@@ -9,9 +9,9 @@ import {
   Xmark as X,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { Card } from "~/components/ui/card";
 
 export interface ParsedLoreSection {
   title: string;
@@ -114,7 +114,7 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
   };
 
   return (
-    <FacetCard className="rounded-card overflow-hidden p-6">
+    <Card className="rounded-card overflow-hidden p-6">
       <div className="border-separator flex items-center justify-between border-b pb-4">
         <div className="flex items-center gap-2">
           <Upload className="text-label-secondary h-4 w-4" />
@@ -248,6 +248,6 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
           </div>
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 }

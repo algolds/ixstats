@@ -159,7 +159,7 @@ export function ComposerLiveDataDrawer({
           {tiles.map(({ type, label, icon: Icon, color, loading, available }) => (
             <Button
               key={type}
-              variant="bordered"
+              variant="outline"
               size="sm"
               onClick={() => addVisualization(type)}
               disabled={isGeneratingVisualization || loading || !available}

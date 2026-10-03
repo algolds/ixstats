@@ -41,7 +41,7 @@ export function ArchetypeConfirmationPanel({
             </div>
 
             <div className="flex gap-3">
-              <Button variant="bordered" onClick={onClearSelection}>
+              <Button variant="outline" onClick={onClearSelection}>
                 Clear Selection
               </Button>
               <Button onClick={onConfirmFaction}>

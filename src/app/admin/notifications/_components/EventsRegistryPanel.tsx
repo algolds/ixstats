@@ -33,6 +33,7 @@ import {
   Bell,
 } from "iconoir-react";
 import { formatDistanceToNow } from "date-fns";
+import { cn } from "~/lib/utils/cn";
 
 const CATEGORY_COLORS: Record<string, string> = {
   economic: "border-green/30 bg-green/10",
@@ -138,7 +139,7 @@ export function EventsRegistryPanel() {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardContent className="flex items-center justify-center p-12">
           <div className="text-label-secondary flex items-center gap-2">
             <Activity aria-hidden className="h-4 w-4" />
@@ -156,7 +157,7 @@ export function EventsRegistryPanel() {
       {/* Stats bar */}
       {data && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Card>
+          <Card className="flex flex-col gap-6 py-6">
             <CardContent className="flex items-center justify-between p-4">
               <div>
                 <p className="text-label-secondary text-caption">Total Events</p>
@@ -165,7 +166,7 @@ export function EventsRegistryPanel() {
               <BarChart3 className="text-label-secondary h-6 w-6" />
             </CardContent>
           </Card>
-          <Card>
+          <Card className="flex flex-col gap-6 py-6">
             <CardContent className="flex items-center justify-between p-4">
               <div>
                 <p className="text-caption text-green">Enabled</p>
@@ -174,7 +175,7 @@ export function EventsRegistryPanel() {
               <Power className="text-green h-6 w-6" />
             </CardContent>
           </Card>
-          <Card>
+          <Card className="flex flex-col gap-6 py-6">
             <CardContent className="flex items-center justify-between p-4">
               <div>
                 <p className="text-caption text-red">Disabled</p>
@@ -183,7 +184,7 @@ export function EventsRegistryPanel() {
               <PowerOff className="text-red h-6 w-6" />
             </CardContent>
           </Card>
-          <Card>
+          <Card className="flex flex-col gap-6 py-6">
             <CardContent className="flex items-center justify-between p-4">
               <div>
                 <p className="text-label-secondary text-caption">Categories</p>
@@ -238,7 +239,7 @@ export function EventsRegistryPanel() {
       {hasConfigs && (
         <>
           {/* Filters */}
-          <Card>
+          <Card className="flex flex-col gap-6 py-6">
             <CardContent className="p-4">
               <div className="flex flex-wrap items-end gap-3">
                 <div className="min-w-[200px] flex-1">
@@ -364,9 +365,12 @@ export function EventsRegistryPanel() {
                   {events.map((event) => (
                     <Card
                       key={event.id}
-                      className={`border ${
-                        CATEGORY_COLORS[event.category] ?? "border-separator bg-surface"
-                      } ${!event.enabled ? "opacity-60" : ""}`}
+                      className={cn(
+                        "flex flex-col gap-6 py-6",
+                        `border ${
+                          CATEGORY_COLORS[event.category] ?? "border-separator bg-surface"
+                        } ${!event.enabled ? "opacity-60" : ""}`
+                      )}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between gap-3">
@@ -374,7 +378,7 @@ export function EventsRegistryPanel() {
                             <div className="flex items-center gap-2">
                               <h4 className="text-body truncate font-medium">{event.name}</h4>
                               <Badge
-                                variant={event.enabled ? "default" : "secondary"}
+                                variant={event.enabled ? "secondary" : "default"}
                                 className="h-5"
                               >
                                 {event.enabled ? "ON" : "OFF"}
@@ -432,7 +436,7 @@ export function EventsRegistryPanel() {
       )}
 
       {!isLoading && !hasConfigs && (
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardContent className="flex flex-col items-center justify-center gap-3 p-12">
             <Bell className="text-label-secondary h-12 w-12" />
             <p className="text-label-secondary text-body">No notification events configured yet.</p>

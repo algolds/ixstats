@@ -9,7 +9,6 @@ import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -20,6 +19,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { CardDisplay } from "../display/CardDisplay";
 import { CraftingAnimation } from "./CraftingAnimation";
 import type { CardInstance } from "~/types/cards-display";
+import { Card } from "~/components/ui/card";
 
 /**
  * Card slot for drag-drop or click to add
@@ -171,15 +171,15 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
 
   if (!recipeId) {
     return (
-      <FacetCard>
+      <Card>
         <EmptyState title="Select a recipe to begin crafting" />
-      </FacetCard>
+      </Card>
     );
   }
 
   if (recipeLoading) {
     return (
-      <FacetCard padding="lg" className="space-y-4" aria-busy="true" aria-label="Loading recipe">
+      <Card padding="lg" className="space-y-4" aria-busy="true" aria-label="Loading recipe">
         <Skeleton className="mx-auto h-7 w-48" />
         <Skeleton className="mx-auto h-4 w-64" />
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
@@ -187,21 +187,21 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
           <Skeleton className="rounded-row h-[300px]" />
           <Skeleton className="rounded-row h-[300px]" />
         </div>
-      </FacetCard>
+      </Card>
     );
   }
 
   if (!recipeData) {
     return (
-      <FacetCard>
+      <Card>
         <EmptyState title="Recipe not found" />
-      </FacetCard>
+      </Card>
     );
   }
 
   return (
     <>
-      <FacetCard padding="lg" className="space-y-6">
+      <Card padding="lg" className="space-y-6">
         {/* Recipe header */}
         <div className="space-y-2 text-center">
           <h2 className="text-title-1 text-label">{recipeData.name}</h2>
@@ -209,8 +209,8 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
             <p className="text-body text-label-secondary">{recipeData.description}</p>
           )}
           <div className="text-body flex items-center justify-center gap-4">
-            <Badge variant="neutral">{recipeData.recipeType}</Badge>
-            <Badge variant="tinted">{recipeData.resultRarity}</Badge>
+            <Badge variant="default">{recipeData.recipeType}</Badge>
+            <Badge variant="secondary">{recipeData.resultRarity}</Badge>
           </div>
         </div>
 
@@ -336,7 +336,7 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
         {allSlotsFilled && !hasEnoughCredits && (
           <div className="text-body text-red text-center">Insufficient IxCredits</div>
         )}
-      </FacetCard>
+      </Card>
 
       {/* Card picker */}
       <Dialog

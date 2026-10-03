@@ -177,7 +177,7 @@ export function InfoboxCountryModal({ isOpen, onClose, onInsert }: BaseModalProp
 
         {/* Footer Actions */}
         <div className="border-separator flex items-center justify-end gap-3 border-t pt-6">
-          <Button variant="gray" type="button" onClick={onClose}>
+          <Button variant="secondary" type="button" onClick={onClose}>
             Cancel
           </Button>
           <Button type="submit">Insert Template</Button>

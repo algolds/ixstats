@@ -1,34 +1,26 @@
-/**
- * Facet 3 primitive gaps closed after the Phase 4 conversions: FacetCard inset + MotionFacetCard,
- * Stat icon slot, Badge system colours, ActionPill, SegmentedControl overflow, ToggleGroup
- * disallowEmpty, PopoverAnchor, FlagWatermark's new home.
- */
+/** Card inset and motion, Stat icon slot, Badge palette, ActionPill, SegmentedControl overflow, ToggleGroup disallowEmpty, PopoverAnchor, FlagWatermark. */
+import { motion } from "motion/react";
 import React, { useState } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
-import {
-  FACET_CARD_SURFACE,
-  FACET_INSET_SURFACE,
-  FacetCard,
-  MotionFacetCard,
-} from "~/components/ui/facet-container";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Stat } from "~/components/ui/stat";
-import { Badge, SYSTEM_TINTED, badgeVariants } from "~/components/ui/badge";
+import { Badge, badgeTones, badgeVariants } from "~/components/ui/badge";
 import { ActionPill } from "~/components/ui/action-pill";
 import { SegmentedControl, MAX_SEGMENTS } from "~/components/ui/segmented-control";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { Popover, PopoverAnchor, PopoverContent } from "~/components/ui/popover";
-import * as LegacyWatermark from "~/components/mycountry/shell/FlagWatermark";
 import * as FacetIdentity from "~/components/ui/facet/identity/FlagWatermark";
-import { SYSTEM_COLORS } from "~/lib/design/tokens";
+import { Card } from "~/components/ui/card";
+
+const MotionCard = motion.create(Card);
 
 const classOf = (el: Element) => el.getAttribute("class") ?? "";
 
-describe('FacetCard variant="inset"', () => {
+describe('Card variant="inset"', () => {
   it("is a surface-secondary rounded-row panel with 16px padding and no hairline or shadow", () => {
     render(
-      <FacetCard data-testid="inset" variant="inset">
+      <Card data-testid="inset" variant="inset">
         Panel
-      </FacetCard>
+      </Card>
     );
     const el = screen.getByTestId("inset");
     const cls = classOf(el);
@@ -38,15 +30,14 @@ describe('FacetCard variant="inset"', () => {
     expect(cls).not.toMatch(
       /\bshadow-card\b|\brounded-card\b|(^|\s)border(\s|$)|\bbg-surface(\s|$)/
     );
-    expect(el).toHaveAttribute("data-slot", "facet-card");
-    expect(el).toHaveAttribute("data-variant", "inset");
+    expect(el).toHaveAttribute("data-slot", "card");
   });
 
   it("takes the padding scale and caller classes", () => {
     render(
       <>
-        <FacetCard data-testid="none" variant="inset" padding="none" />
-        <FacetCard data-testid="sm" variant="inset" padding="sm" className="space-y-2" />
+        <Card data-testid="none" variant="inset" padding="none" />
+        <Card data-testid="sm" variant="inset" padding="sm" className="space-y-2" />
       </>
     );
     expect(classOf(screen.getByTestId("none"))).not.toMatch(/(^|\s)p-\d/);
@@ -57,43 +48,28 @@ describe('FacetCard variant="inset"', () => {
   it("stays pressable with onClick", () => {
     const onClick = jest.fn();
     render(
-      <FacetCard variant="inset" onClick={onClick}>
+      <Card variant="inset" onClick={onClick} interactive>
         Open
-      </FacetCard>
+      </Card>
     );
     const panel = screen.getByRole("button", { name: "Open" });
     fireEvent.keyDown(panel, { key: "Enter" });
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
-  it("leaves the default card and legacy variant names unchanged", () => {
-    render(
-      <>
-        <FacetCard data-testid="default">x</FacetCard>
-        <FacetCard data-testid="legacy" variant="frosted">
-          x
-        </FacetCard>
-      </>
-    );
-    for (const id of ["default", "legacy"]) {
-      const el = screen.getByTestId(id);
-      expect(classOf(el)).toContain("bg-surface");
-      expect(classOf(el)).toContain("shadow-card");
-      expect(classOf(el)).not.toMatch(/(^|\s)p-\d/);
-      expect(el).not.toHaveAttribute("data-variant");
-    }
-  });
-
-  it("exports the surface constants", () => {
-    expect(FACET_CARD_SURFACE).toContain("rounded-card");
-    expect(FACET_INSET_SURFACE).toBe("bg-surface-secondary text-label rounded-row");
+  it("leaves the default card unpadded", () => {
+    render(<Card data-testid="default">x</Card>);
+    const el = screen.getByTestId("default");
+    expect(classOf(el)).toContain("bg-surface");
+    expect(classOf(el)).toContain("shadow-card");
+    expect(classOf(el)).not.toMatch(/(^|\s)p-\d/);
   });
 });
 
-describe("MotionFacetCard", () => {
-  it("renders the FacetCard surface and keeps motion props off the DOM", () => {
+describe("motion.create(Card)", () => {
+  it("renders the Card surface and keeps motion props off the DOM", () => {
     render(
-      <MotionFacetCard
+      <MotionCard
         data-testid="m"
         padding="md"
         initial={{ opacity: 0, y: 12 }}
@@ -101,11 +77,11 @@ describe("MotionFacetCard", () => {
         className="overflow-hidden"
       >
         Body
-      </MotionFacetCard>
+      </MotionCard>
     );
     const el = screen.getByTestId("m");
     const cls = classOf(el);
-    expect(el).toHaveAttribute("data-slot", "facet-card");
+    expect(el).toHaveAttribute("data-slot", "card");
     expect(cls).toContain("bg-surface");
     expect(cls).toContain("rounded-card");
     expect(cls).toContain("p-4");
@@ -117,9 +93,9 @@ describe("MotionFacetCard", () => {
   it("supports the inset variant and forwards its ref", () => {
     const ref = React.createRef<HTMLDivElement>();
     render(
-      <MotionFacetCard ref={ref} variant="inset" data-testid="m">
+      <MotionCard ref={ref} variant="inset" data-testid="m">
         x
-      </MotionFacetCard>
+      </MotionCard>
     );
     expect(ref.current).toBe(screen.getByTestId("m"));
     expect(classOf(ref.current!)).toContain("bg-surface-secondary");
@@ -138,15 +114,13 @@ describe("Stat icon", () => {
       <Stat label="Heart rate" value="62" icon={<svg data-testid="glyph" />} />
     );
     const row = container.querySelector('[data-slot="stat-label-row"]')!;
-    expect(row).toHaveAttribute("data-icon-placement", "leading");
     expect(classOf(row)).not.toContain("flex-row-reverse");
     const icon = container.querySelector('[data-slot="stat-icon"]')!;
     expect(icon).toHaveAttribute("aria-hidden");
     expect(classOf(icon)).toContain("[:where(&)_svg]:size-3.5");
     expect(classOf(icon)).toContain("text-label-secondary");
     expect(row.firstElementChild).toBe(icon);
-    // The label keeps its Eyebrow style.
-    expect(classOf(screen.getByText("Heart rate"))).toContain("text-eyebrow");
+    expect(classOf(screen.getByText("Heart rate"))).toContain("text-stat-label");
   });
 
   it("pins the icon to the end of the label row with iconPlacement=trailing", () => {
@@ -154,31 +128,34 @@ describe("Stat icon", () => {
       <Stat label="Forum" value="12" icon={<svg />} iconPlacement="trailing" />
     );
     const row = container.querySelector('[data-slot="stat-label-row"]')!;
-    expect(row).toHaveAttribute("data-icon-placement", "trailing");
     expect(classOf(row)).toContain("flex-row-reverse");
     expect(classOf(row)).toContain("justify-between");
   });
 });
 
-describe("Badge system colours", () => {
-  const names = Object.keys(SYSTEM_COLORS) as (keyof typeof SYSTEM_COLORS)[];
+describe("Badge palette", () => {
+  const tones = Object.keys(badgeTones) as (keyof typeof badgeTones)[];
 
-  it("has a variant for every system colour", () => {
-    expect(Object.keys(SYSTEM_TINTED).sort()).toEqual([...names].sort());
+  it("has default, secondary and the four status tones, plus outline", () => {
+    expect(tones.sort()).toEqual(
+      ["default", "destructive", "info", "secondary", "success", "warning"].sort()
+    );
   });
 
-  it.each(names)("%s is its -ink on a 15%% fill", (name) => {
-    const cls = badgeVariants({ variant: name });
-    expect(cls).toContain(`bg-${name}/15`);
-    expect(cls).toContain(`text-${name}-ink`);
-    expect(cls).toContain("rounded-full");
-    render(<Badge variant={name}>{name}</Badge>);
-    expect(screen.getByText(name)).toHaveAttribute("data-variant", name);
-  });
+  it.each(["success", "warning", "destructive", "info"] as const)(
+    "%s is its -ink on a 15%% fill",
+    (name) => {
+      const cls = badgeVariants({ variant: name });
+      expect(cls).toContain(`bg-${name}/15`);
+      expect(cls).toContain(`text-${name}-ink`);
+      expect(cls).toContain("rounded-full");
+      render(<Badge variant={name}>{name}</Badge>);
+      expect(screen.getByText(name)).toHaveAttribute("data-variant", name);
+    }
+  );
 
-  it("keeps the existing variants (status text is the AA ink since Phase 4)", () => {
-    expect(badgeVariants({ variant: "success" })).toContain("bg-success/15 text-success-ink");
-    expect(badgeVariants()).toBe(badgeVariants({ variant: "tinted" }));
+  it("defaults to the neutral variant", () => {
+    expect(badgeVariants()).toBe(badgeVariants({ variant: "default" }));
   });
 });
 
@@ -193,7 +170,7 @@ describe("ActionPill", () => {
     expect(pill.querySelector('[data-slot="action-pill-icon"]')).toHaveAttribute("aria-hidden");
   });
 
-  it("toggles aria-pressed and takes the tint when pressed", () => {
+  it("toggles aria-pressed and takes the secondary tone when pressed", () => {
     function Harness() {
       const [on, setOn] = useState(false);
       return (
@@ -210,20 +187,19 @@ describe("ActionPill", () => {
     expect(pill).toHaveAttribute("aria-pressed", "true");
     expect(pill).toHaveAttribute("data-state", "on");
     expect(classOf(pill)).toContain("bg-tint-fill");
-    expect(classOf(pill)).toContain("text-tint");
+    expect(classOf(pill)).toContain("text-tint-ink");
     expect(classOf(pill)).not.toContain("text-label-secondary");
   });
 
-  it("uses a system colour tone when pressed and renders a tabular count", () => {
+  it("uses a status tone when pressed and renders a tabular count", () => {
     render(
-      <ActionPill pressed tone="red" count={3} aria-label="Like">
+      <ActionPill pressed tone="destructive" count={3} aria-label="Like">
         {null}
       </ActionPill>
     );
     const pill = screen.getByRole("button", { name: "Like" });
-    expect(pill).toHaveAttribute("data-tone", "red");
-    expect(classOf(pill)).toContain("bg-red/15");
-    expect(classOf(pill)).toContain("text-red-ink");
+    expect(classOf(pill)).toContain("bg-destructive/15");
+    expect(classOf(pill)).toContain("text-destructive-ink");
     const count = pill.querySelector('[data-slot="action-pill-count"]')!;
     expect(count.textContent).toBe("3");
     expect(classOf(count)).toContain("tabular-nums");
@@ -248,22 +224,21 @@ describe("SegmentedControl overflow", () => {
   it(`does not scroll with up to ${MAX_SEGMENTS} options`, () => {
     render(<SegmentedControl aria-label="Few" options={opts(MAX_SEGMENTS)} defaultValue="o0" />);
     const group = screen.getByRole("radiogroup", { name: "Few" });
-    expect(group).not.toHaveAttribute("data-scrollable");
     expect(classOf(group)).not.toContain("overflow-x-auto");
   });
 
-  it("scrolls horizontally above five options, keeping segment widths", () => {
+  it("scrolls horizontally above five options, keeping segment widths", async () => {
     render(<SegmentedControl aria-label="Many" options={opts(8)} defaultValue="o6" />);
     const group = screen.getByRole("radiogroup", { name: "Many" });
-    expect(group).toHaveAttribute("data-scrollable", "true");
     expect(classOf(group)).toContain("overflow-x-auto");
     expect(classOf(group)).toContain("max-w-full");
     const radios = screen.getAllByRole("radio");
     expect(radios).toHaveLength(8);
     expect(classOf(radios[0]!)).toContain("shrink-0");
-    // Arrow keys still move the selection.
+    // Arrow keys still move focus.
+    radios[6]!.focus();
     fireEvent.keyDown(radios[6]!, { key: "ArrowRight" });
-    expect(radios[7]).toHaveAttribute("aria-checked", "true");
+    await waitFor(() => expect(radios[7]).toHaveFocus());
   });
 
   it("lets scrollable force the behaviour either way", () => {
@@ -273,8 +248,12 @@ describe("SegmentedControl overflow", () => {
         <SegmentedControl aria-label="Off" options={opts(7)} scrollable={false} />
       </>
     );
-    expect(screen.getByRole("radiogroup", { name: "Forced" })).toHaveAttribute("data-scrollable");
-    expect(screen.getByRole("radiogroup", { name: "Off" })).not.toHaveAttribute("data-scrollable");
+    expect(classOf(screen.getByRole("radiogroup", { name: "Forced" }))).toContain(
+      "overflow-x-auto"
+    );
+    expect(classOf(screen.getByRole("radiogroup", { name: "Off" }))).not.toContain(
+      "overflow-x-auto"
+    );
   });
 
   it("draws the small thumb from the radius tokens, not rounded-md", () => {
@@ -287,7 +266,7 @@ describe("SegmentedControl overflow", () => {
 });
 
 describe("ToggleGroup disallowEmpty", () => {
-  function Single(props: { disallowEmpty?: boolean; required?: boolean }) {
+  function Single(props: { disallowEmpty?: boolean }) {
     const [value, setValue] = useState("a");
     return (
       <>
@@ -306,23 +285,20 @@ describe("ToggleGroup disallowEmpty", () => {
     );
   }
 
-  it.each([{ disallowEmpty: true }, { required: true }])(
-    "single with %j keeps the active item pressed",
-    (props) => {
-      render(<Single {...props} />);
-      const a = screen.getByRole("button", { name: "A" });
-      fireEvent.click(a);
-      expect(a).toHaveAttribute("aria-pressed", "true");
-      expect(screen.getByText("a")).toBeInTheDocument();
-      fireEvent.click(screen.getByRole("button", { name: "B" }));
-      expect(screen.getByText("b")).toBeInTheDocument();
-      expect(a).toHaveAttribute("aria-pressed", "false");
-    }
-  );
+  it("single with disallowEmpty keeps the active item pressed", () => {
+    render(<Single disallowEmpty />);
+    const a = screen.getByRole("radio", { name: "A" });
+    fireEvent.click(a);
+    expect(a).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByText("a")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "B" }));
+    expect(screen.getByText("b")).toBeInTheDocument();
+    expect(a).toHaveAttribute("aria-checked", "false");
+  });
 
   it("single without it still clears (unchanged default)", () => {
     render(<Single />);
-    fireEvent.click(screen.getByRole("button", { name: "A" }));
+    fireEvent.click(screen.getByRole("radio", { name: "A" }));
     expect(screen.getByText("(none)")).toBeInTheDocument();
   });
 
@@ -346,7 +322,7 @@ describe("ToggleGroup disallowEmpty", () => {
     expect(onValueChange).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("button", { name: "Y" })).toHaveAttribute("aria-pressed", "true");
     // Not forwarded to the DOM.
-    expect(screen.getByRole("group", { name: "Filters" })).not.toHaveAttribute("required");
+    expect(screen.getByRole("toolbar", { name: "Filters" })).not.toHaveAttribute("required");
   });
 });
 
@@ -369,12 +345,6 @@ describe("PopoverAnchor", () => {
 });
 
 describe("FlagWatermark", () => {
-  it("lives in ui/facet and is re-exported from its old MyCountry path", () => {
-    expect(LegacyWatermark.FlagWatermark).toBe(FacetIdentity.FlagWatermark);
-    expect(LegacyWatermark.TintHairline).toBe(FacetIdentity.TintHairline);
-    expect(LegacyWatermark.WatermarkGlyph).toBe(FacetIdentity.WatermarkGlyph);
-  });
-
   it("is decorative and renders nothing without a source", () => {
     const { container, rerender } = render(<FacetIdentity.FlagWatermark src={null} />);
     expect(container.firstChild).toBeNull();

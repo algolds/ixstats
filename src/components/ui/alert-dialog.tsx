@@ -57,8 +57,8 @@ function AlertDialogContent({
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-sheet grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 p-6 outline-none sm:max-w-lg",
-          "rounded-sheet border border-separator bg-surface-elevated text-label shadow-sheet",
+          "z-sheet fixed top-1/2 left-1/2 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 p-6 outline-none sm:max-w-lg",
+          "rounded-sheet border-separator bg-surface-elevated text-label shadow-sheet border",
           presentMotionClassName,
           className
         )}
@@ -118,11 +118,11 @@ function AlertDialogDescription({
 
 function AlertDialogAction({
   className,
-  variant = "filled",
+  variant = "default",
   onClick,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Action> & {
-  /** Button style; `"destructive"` also plays the destructive-confirm cue (spec §7.3, §9). */
+  /** Button style; `"destructive"` also plays the destructive-confirm cue. */
   variant?: VariantProps<typeof buttonVariants>["variant"];
 }) {
   return (
@@ -138,8 +138,7 @@ function AlertDialogAction({
   );
 }
 
-// Preserves the legacy `AlertDialogClose` export. Radix's Cancel closes the
-// dialog, matching the original Base UI Close behaviour.
+// Radix's Cancel closes the dialog.
 function AlertDialogClose({
   className,
   ...props
@@ -148,7 +147,7 @@ function AlertDialogClose({
     <AlertDialogPrimitive.Cancel
       data-cuelume-press="droplet"
       data-slot="alert-dialog-close"
-      className={cn(buttonVariants({ variant: "gray" }), className)}
+      className={cn(buttonVariants({ variant: "secondary" }), className)}
       {...props}
     />
   );

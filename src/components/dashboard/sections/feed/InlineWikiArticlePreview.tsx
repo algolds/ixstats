@@ -14,8 +14,8 @@ import {
   isNoticeOrUtilityIcon,
 } from "~/lib/wiki-os/transformers/image-url";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { WikiArticleActions } from "./WikiArticleActions";
+import { Card } from "~/components/ui/card";
 
 export { parseWikitextToHtml };
 
@@ -104,7 +104,7 @@ export function InlineWikiArticlePreview({
   const wikiHref = titleToWikiOSRoute(cleanTitle);
 
   return (
-    <FacetCard variant="inset" padding="sm" className="mt-2 sm:p-4">
+    <Card variant="inset" padding="sm" className="mt-2 sm:p-4">
       {/* Content & lead image */}
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1 space-y-1">
@@ -139,7 +139,7 @@ export function InlineWikiArticlePreview({
       <WikiArticleActions
         title={cleanTitle}
         trailing={
-          <Button asChild variant="tinted" size="sm" className="rounded-full">
+          <Button asChild variant="secondary" size="sm" className="rounded-full">
             <Link href={wikiHref}>
               <span>Open in Wiki</span>
               <ExternalLink aria-hidden />
@@ -147,6 +147,6 @@ export function InlineWikiArticlePreview({
           </Button>
         }
       />
-    </FacetCard>
+    </Card>
   );
 }

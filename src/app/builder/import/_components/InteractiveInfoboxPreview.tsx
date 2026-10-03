@@ -193,7 +193,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
   const fieldCount = sections.reduce((sum, s) => sum + s.fields.length, 0);
 
   return (
-    <Card className="relative overflow-hidden">
+    <Card className="relative flex flex-col gap-6 overflow-hidden py-6">
       <FlagWatermark src={data.flagUrl} />
 
       {/* Header */}
@@ -204,7 +204,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
             {onBack && (
               <Button
                 type="button"
-                variant="gray"
+                variant="secondary"
                 size="sm"
                 onClick={onBack}
                 className="mt-0.5 shrink-0"
@@ -356,7 +356,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
                 <div className="flex items-center gap-2">
                   <Icon className="text-blue h-4 w-4" />
                   <span className="text-body font-medium">{section.title}</span>
-                  <Badge variant="neutral" className="tabular-nums">
+                  <Badge variant="default" className="tabular-nums">
                     {section.fields.length}
                   </Badge>
                 </div>

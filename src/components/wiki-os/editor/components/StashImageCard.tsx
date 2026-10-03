@@ -43,7 +43,7 @@ export function StashImageCard({ imgInfo, cleanTitle, filename, onInsert }: Stas
 
       <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
         <Button
-          variant="gray"
+          variant="secondary"
           size="icon-sm"
           aria-label="Copy Wikitext Link"
           onClick={handleCopy}

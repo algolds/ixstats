@@ -6,8 +6,8 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Globe, CheckCircle, InfoCircle as Info } from "iconoir-react";
 import type { EconomicArchetype } from "~/lib/economy/archetypes/types";
-import { FacetCard } from "~/components/ui/facet-container";
 import { getComplexityBadgeVariant, getArchetypeIcon, getArchetypeColors } from "./archetypeTheme";
+import { Card } from "~/components/ui/card";
 
 interface ArchetypeCardProps {
   archetype: EconomicArchetype;
@@ -30,11 +30,7 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
   return (
     // v2 (c5c6b382): emerald selection — border, ring and glow — with a hover lift and accent rim.
     // Selected, the card's accent is green and re-tints its subtree (the "Selected" button).
-    <FacetCard
-      lift
-      glow={isSelected ? "shadow" : false}
-      accent={isSelected ? "green" : undefined}
-      retint={isSelected}
+    <Card
       className={cn(
         "flex h-full flex-col justify-between gap-4 p-5",
         isSelected ? "ring-green/60 ring-2" : "hover:border-green/30"
@@ -49,7 +45,7 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <h4 className="text-headline text-label truncate">{archetype.name}</h4>
-              {isSelected && <Badge variant="green">Active preset</Badge>}
+              {isSelected && <Badge variant="success">Active preset</Badge>}
             </div>
             <div className="text-footnote text-label-secondary mt-0.5 flex items-center gap-1">
               <Globe aria-hidden className="size-3.5 shrink-0" />
@@ -84,7 +80,7 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
               }
             }}
             disabled={isSelected}
-            variant={isSelected ? "tinted" : "filled"}
+            variant={isSelected ? "secondary" : "default"}
             className="flex-1"
             size="sm"
           >
@@ -94,7 +90,7 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
         )}
         <Button
           onClick={() => onOpenDetails(archetype)}
-          variant="bordered"
+          variant="outline"
           className="flex-1"
           size="sm"
         >
@@ -102,6 +98,6 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
           Details
         </Button>
       </div>
-    </FacetCard>
+    </Card>
   );
 });

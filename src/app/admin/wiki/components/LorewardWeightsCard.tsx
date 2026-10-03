@@ -15,7 +15,6 @@ import {
   SystemRestart as Loader2,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Table,
   TableHeader,
@@ -24,6 +23,7 @@ import {
   TableHead,
   TableCell,
 } from "~/components/ui/table";
+import { Card } from "~/components/ui/card";
 
 const WEIGHT_SLIDERS = [
   { key: "lorewardWeight_bytesAdded", label: "Bytes Added Weight" },
@@ -147,7 +147,7 @@ export function LorewardWeightsCard() {
   return (
     <div className="space-y-6">
       {/* Scoring Parameter Weights */}
-      <FacetCard className="space-y-4 p-5">
+      <Card className="space-y-4 p-5">
         <div className="border-separator border-b pb-3">
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="text-blue h-4 w-4" />
@@ -203,10 +203,10 @@ export function LorewardWeightsCard() {
             </div>
           )}
         </div>
-      </FacetCard>
+      </Card>
 
       {/* Weight Tuning Preview Console */}
-      <FacetCard className="space-y-4 p-5">
+      <Card className="space-y-4 p-5">
         <div className="border-separator border-b pb-3">
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="text-indigo h-4 w-4" />
@@ -301,7 +301,7 @@ export function LorewardWeightsCard() {
             </div>
           ) : null}
         </div>
-      </FacetCard>
+      </Card>
     </div>
   );
 }

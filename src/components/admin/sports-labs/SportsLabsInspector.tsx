@@ -60,7 +60,7 @@ export function SportsLabsInspector({
   const HeaderIcon = currentHeader.icon;
 
   return (
-    <Card className={cn("bg-surface flex h-full flex-col", className)}>
+    <Card className={cn("flex flex-col gap-6 py-6", "bg-surface flex h-full flex-col", className)}>
       <CardHeader className="border-separator border-b pb-3">
         <div className="flex items-center gap-2">
           <div className="bg-tint-fill text-tint rounded-control flex h-8 w-8 items-center justify-center">

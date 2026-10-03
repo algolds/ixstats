@@ -183,8 +183,8 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
                     n.priority === "critical"
                       ? "destructive"
                       : n.priority === "high"
-                        ? "default"
-                        : "secondary"
+                        ? "secondary"
+                        : "default"
                   }
                   className="h-4 px-2 py-0 leading-none"
                 >
@@ -432,7 +432,7 @@ export function NotificationBrowser() {
       </div>
 
       {/* List container */}
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader className="py-3">
           <CardTitle className="text-body flex items-center justify-between">
             <span>

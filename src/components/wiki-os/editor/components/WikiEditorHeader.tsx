@@ -130,7 +130,7 @@ export function WikiEditorHeader({
         {extraActions}
 
         <Button
-          variant="bordered"
+          variant="outline"
           size="icon-sm"
           onClick={onCancel}
           title="Cancel"
@@ -143,7 +143,7 @@ export function WikiEditorHeader({
         <Popover open={saveDropdownOpen} onOpenChange={setSaveDropdownOpen}>
           <PopoverTrigger asChild>
             <Button
-              variant="bordered"
+              variant="outline"
               size="icon-sm"
               disabled={saving}
               title="Save options"

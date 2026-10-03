@@ -1054,9 +1054,9 @@ export function CountryInspector() {
               <div className="border-separator flex justify-between border-b pb-1">
                 <span className="text-label-secondary">Status</span>
                 {calculation.gdpGrowth.diminishingReturns.active ? (
-                  <Badge variant="yellow">ACTIVE</Badge>
+                  <Badge variant="warning">ACTIVE</Badge>
                 ) : (
-                  <Badge variant="green">INACTIVE</Badge>
+                  <Badge variant="success">INACTIVE</Badge>
                 )}
               </div>
               <div className="border-separator flex justify-between border-b pb-1">
@@ -1114,9 +1114,9 @@ export function CountryInspector() {
               <div className="flex items-center justify-between">
                 <span className="text-label-secondary">Cap Status</span>
                 {calculation.gdpGrowth.isCapped ? (
-                  <Badge variant="red">CAPPED</Badge>
+                  <Badge variant="destructive">CAPPED</Badge>
                 ) : (
-                  <Badge variant="green">UNCAPPED</Badge>
+                  <Badge variant="success">UNCAPPED</Badge>
                 )}
               </div>
             </div>
@@ -1532,7 +1532,7 @@ export function CountryInspector() {
 
           {/* Fullscreen Button */}
           <Button
-            variant="bordered"
+            variant="outline"
             onClick={() => {
               setIsFullscreen(!isFullscreen);
               setSidebarHidden(!sidebarHidden);
@@ -1649,7 +1649,7 @@ export function CountryInspector() {
                           </span>
                           <Button
                             size="sm"
-                            variant={isDisabled ? "tinted" : "plain"}
+                            variant={isDisabled ? "secondary" : "ghost"}
                             onClick={() => handleToggleDbEffect(eff.id)}
                             className={cn(!isDisabled && "text-destructive")}
                           >

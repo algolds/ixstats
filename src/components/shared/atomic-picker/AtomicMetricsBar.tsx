@@ -17,10 +17,10 @@ import {
   Package,
   Archery as Target,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { cn, formatCurrency } from "~/lib/utils";
 import type { AtomicMetrics } from "./types";
+import { Card } from "~/components/ui/card";
 
 export interface AtomicMetricsBarProps {
   metrics: AtomicMetrics;
@@ -100,7 +100,7 @@ export const AtomicMetricsBar = React.memo(function AtomicMetricsBar({
         const isDestructive = item.tone === "destructive";
 
         return (
-          <FacetCard
+          <Card
             key={item.label}
             onClick={onClick}
             onKeyDown={
@@ -119,6 +119,7 @@ export const AtomicMetricsBar = React.memo(function AtomicMetricsBar({
               onClick &&
                 "hover:border-separator-opaque focus-visible:ring-tint focus-visible:ring-1 focus-visible:outline-none"
             )}
+            interactive
           >
             <Icon
               aria-hidden="true"
@@ -138,7 +139,7 @@ export const AtomicMetricsBar = React.memo(function AtomicMetricsBar({
                 {item.value}
               </div>
             </div>
-          </FacetCard>
+          </Card>
         );
       })}
     </div>

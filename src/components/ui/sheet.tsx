@@ -16,10 +16,10 @@ import {
 } from "~/components/ui/dialog";
 
 /**
- * Facet 3 Sheet (spec §7.3): tasks, detail views and multi-step flows.
+ * Sheet: tasks, detail views and multi-step flows.
  *
  * - `side` omitted (or `"auto"`): a right side sheet at ≥768px, a bottom sheet with detents below.
- * - `side="top" | "right" | "bottom" | "left"`: that edge at every width (the pre-Facet 3 API).
+ * - `side="top" | "right" | "bottom" | "left"`: that edge at every width.
  *   `side="bottom"` gets detents only when `detents` is passed.
  * - `size="wide"`: a ~48rem side sheet (full width below `sm`) for two-column detail views. It only
  *   changes left/right sheets; top and bottom sheets are already full width.

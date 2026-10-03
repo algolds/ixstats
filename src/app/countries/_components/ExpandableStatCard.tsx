@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { HealthRing } from "~/components/ui/health-ring";
@@ -20,6 +19,7 @@ import {
   CheckCircle,
 } from "iconoir-react";
 import { formatCurrency } from "~/lib/utils";
+import { Card, CardContent } from "~/components/ui/card";
 
 interface ExpandableStatCardProps {
   icon: React.ReactNode;
@@ -54,8 +54,8 @@ export function ExpandableStatCard({
   const { countryCount = 0, avgGdpPerCapita = 0, avgPopulationDensity = 0 } = extraStats || {};
 
   return (
-    <FacetCard depth={2} className="rounded-card relative w-full sm:max-w-[220px] sm:min-w-[180px]">
-      <FacetCardContent className="flex flex-col items-start gap-2 p-4">
+    <Card className="rounded-card relative w-full sm:max-w-[220px] sm:min-w-[180px]">
+      <CardContent className="flex flex-col items-start gap-2 p-4">
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
@@ -177,7 +177,7 @@ export function ExpandableStatCard({
             </motion.div>
           )}
         </AnimatePresence>
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 }

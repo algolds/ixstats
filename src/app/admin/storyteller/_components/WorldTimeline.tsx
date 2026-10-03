@@ -167,7 +167,7 @@ export function WorldTimeline() {
                           {(event.severity * 100).toFixed(0)}% severity
                         </Badge>
                         {event.chain && <Badge variant="outline">Chain: {event.chain.name}</Badge>}
-                        {!isActive && <Badge variant="red">Inactive</Badge>}
+                        {!isActive && <Badge variant="destructive">Inactive</Badge>}
                       </div>
                     </div>
                   </div>

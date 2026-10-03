@@ -20,7 +20,7 @@ interface HealthRingProps {
   hideValue?: boolean;
 }
 
-/** Value text sized to the ring (§3 text styles; nothing below 12px). */
+/** Value text sized to the ring (nothing below 12px). */
 function valueTextClass(size: number) {
   if (size >= 96) return "text-title-2";
   if (size >= 64) return "text-title-3";
@@ -28,7 +28,7 @@ function valueTextClass(size: number) {
 }
 
 /**
- * Ring meter (§7.1): a `fill-2` track and a solid indicator arc. No glow, blur or looping
+ * Ring meter: a `fill-2` track and a solid indicator arc. No glow, blur or looping
  * animation; the arc eases to its value (instantly under Reduce Motion).
  */
 export const HealthRing: React.FC<HealthRingProps> = ({
@@ -72,7 +72,7 @@ export const HealthRing: React.FC<HealthRingProps> = ({
       className={cn(
         "relative inline-flex shrink-0 items-center justify-center rounded-full",
         clickable &&
-          "focus-visible:outline-tint cursor-pointer transition-[scale] duration-fast ease-out-facet focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98] motion-reduce:active:scale-100",
+          "focus-visible:outline-tint duration-fast ease-out-facet cursor-pointer transition-[scale] focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98] motion-reduce:active:scale-100",
         className
       )}
       style={{ width: validSize, height: validSize }}
@@ -113,9 +113,7 @@ export const HealthRing: React.FC<HealthRingProps> = ({
             <NumberFlowDisplay value={progress} decimalPlaces={0} />
           </span>
           {safeTarget !== 100 && validSize >= 64 && (
-            <span className="text-footnote text-label-secondary tabular-nums">
-              of {safeTarget}
-            </span>
+            <span className="text-footnote text-label-secondary tabular-nums">of {safeTarget}</span>
           )}
         </div>
       )}

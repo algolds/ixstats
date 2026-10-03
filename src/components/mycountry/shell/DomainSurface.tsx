@@ -3,7 +3,6 @@
 import React from "react";
 import dynamic from "next/dynamic";
 import { KeyCommand as Command, ArrowUpRight } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
@@ -15,6 +14,7 @@ import { DomainContextRail } from "./DomainContextRail";
 import { DOMAIN_META, type V2Domain } from "./domain-meta";
 import { DOMAIN_HUE, HUE_ACCENT, HUE_BADGE } from "./domain-hue";
 import { WatermarkGlyph } from "~/components/ui/facet/identity/FlagWatermark";
+import { Card } from "~/components/ui/card";
 
 const EmbassiesAndRelationsPanel = dynamic(
   () =>
@@ -74,7 +74,7 @@ function DomainSurfaceComponent({
           accent (glass wash, border, glow blob and tinted shadow), and paints the top accent, the
           icon badge and the fine-stroke glyph watermark; the gold primary starts a directive
           with a suggested goal for this domain. */}
-      <FacetCard variant="glass" glow accent={accent} className="group overflow-hidden p-5">
+      <Card variant="hero" className="group overflow-hidden p-5">
         {/* v2 `border-t-2 border-t-<hue>/40` accent (drawn as a bar: the material owns the border) */}
         <span
           aria-hidden="true"
@@ -117,7 +117,7 @@ function DomainSurfaceComponent({
             />
           </Button>
         </div>
-      </FacetCard>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main column — the domain's v2 drill content inline */}

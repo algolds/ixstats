@@ -3,8 +3,8 @@
 import React from "react";
 import { cn } from "~/lib/utils";
 import { type TextureType } from "~/components/ui/texture-overlay";
-import { FacetCard } from "~/components/ui/facet-container";
 import { FACET_ACCENT, type MyCountryAccent } from "./accents";
+import { Card } from "~/components/ui/card";
 
 interface GlassPanelProps {
   /** Section accent: re-tints the glass wash, border and shadow (Facet 3.1 `accent`). */
@@ -18,12 +18,7 @@ interface GlassPanelProps {
   children: React.ReactNode;
 }
 
-/**
- * GlassPanel — the v2 (c5c6b382) frosted MyCountry panel on the Facet 3.1 glass hero tier:
- * `FacetCard variant="glass"` with the section `accent` (spec §16.8) re-tinting the glass wash,
- * tinted border and shadow — v2's `ACCENT_CLASSES` border + gradient tint, without a hand-rolled
- * blur. Inside another glass surface it renders opaque (glass never nests).
- */
+/** The frosted MyCountry panel: a hero `Card`. */
 export function GlassPanel({
   accent = "neutral",
   interactive = false,
@@ -36,16 +31,13 @@ export function GlassPanel({
   const clickable = interactive || Boolean(onClick);
 
   return (
-    <FacetCard
-      variant="glass"
-      accent={FACET_ACCENT[accent]}
-      interactive={clickable ? "hover" : "none"}
+    <Card
+      variant="hero"
+      interactive={clickable}
       onClick={onClick}
-      texture={texture === "none" ? undefined : texture}
-      textureOpacity={textureOpacity}
       className={cn("text-label rounded-row overflow-hidden", className)}
     >
       <div className="relative z-10">{children}</div>
-    </FacetCard>
+    </Card>
   );
 }

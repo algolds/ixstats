@@ -4,14 +4,13 @@ import { CheckCircle, WarningCircle, WarningTriangle } from "iconoir-react";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import React from "react";
 import { useVexelEditor } from "../VexelEditorProvider";
-
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export default function ValidationPanel() {
   const { validationWarnings } = useVexelEditor();
 
   return (
-    <FacetCard className="overflow-hidden">
+    <Card className="overflow-hidden">
       <div className="p-4">
         <Eyebrow className="border-separator mb-3 block border-b pb-2">Rule Audit</Eyebrow>
 
@@ -47,6 +46,6 @@ export default function ValidationPanel() {
           </div>
         )}
       </div>
-    </FacetCard>
+    </Card>
   );
 }

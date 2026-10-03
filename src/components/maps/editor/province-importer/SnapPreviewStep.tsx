@@ -1,12 +1,11 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import React, { memo, useMemo } from "react";
 import { Magnet, Compress as Minimize2 } from "iconoir-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
 import type { Polygon, MultiPolygon, Position } from "geojson";
 import { Slider } from "~/components/ui/slider";
+import { Card } from "~/components/ui/card";
 
 interface SnapPreviewStepProps {
   importer: ReturnType<typeof useProvinceImporter>;
@@ -92,7 +91,7 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
 
       {/* Vertex count stats */}
       {vertexStats.before > 0 && (
-        <FacetCard className="text-footnote px-3 py-2">
+        <Card className="text-footnote px-3 py-2">
           <div className="flex items-center justify-between">
             <span className="text-label-secondary">Original vertices</span>
             <span className="font-medium tabular-nums">{vertexStats.before.toLocaleString()}</span>
@@ -107,7 +106,7 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
               <span className="text-green font-medium tabular-nums">{vertexStats.reduction}%</span>
             </div>
           )}
-        </FacetCard>
+        </Card>
       )}
 
       <Button

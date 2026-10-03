@@ -18,13 +18,13 @@ import {
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard, FACET_INSET_SURFACE } from "~/components/ui/facet-container";
 import { Stat } from "~/components/ui/stat";
 import { FlagWatermark } from "~/components/ui/facet/identity/FlagWatermark";
 import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { getScaledValue } from "~/lib/utils/format-utils";
 import type { RealmItem } from "../types";
+import { Card } from "~/components/ui/card";
 
 interface PassportRealmsTabProps {
   realms: RealmItem[];
@@ -62,7 +62,7 @@ function RealmRoleBadge({ role }: { role: string }) {
     normalizedRole.includes("PRIME_MINISTER")
   ) {
     return (
-      <Badge variant="caution">
+      <Badge variant="warning">
         <Crown aria-hidden />
         <span>{role}</span>
       </Badge>
@@ -75,7 +75,7 @@ function RealmRoleBadge({ role }: { role: string }) {
     normalizedRole.includes("MODERATOR")
   ) {
     return (
-      <Badge variant="tinted">
+      <Badge variant="secondary">
         <Shield aria-hidden />
         <span>{role}</span>
       </Badge>
@@ -83,7 +83,7 @@ function RealmRoleBadge({ role }: { role: string }) {
   }
 
   return (
-    <Badge variant="neutral">
+    <Badge variant="default">
       <User aria-hidden />
       <span>{role}</span>
     </Badge>
@@ -118,13 +118,13 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
 }: PassportRealmsTabProps) {
   if (!realms || realms.length === 0) {
     return (
-      <FacetCard variant="inset" padding="none" className="border-separator border">
+      <Card variant="inset" padding="none" className="border-separator border">
         <EmptyState
           icon={<Globe />}
           title="No Realms Joined"
           message={`@${cleanUsername} is not currently a member of any realms.`}
         />
-      </FacetCard>
+      </Card>
     );
   }
 
@@ -153,7 +153,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
             <article
               key={`${item.id}-${country?.id || "none"}`}
               className={cn(
-                FACET_INSET_SURFACE,
+                "bg-surface-secondary text-label rounded-row",
                 "border-separator relative flex flex-col overflow-hidden border p-4 sm:p-5"
               )}
             >
@@ -193,7 +193,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                       <RealmRoleBadge role={item.role} />
 
                       {item.isFeatured && (
-                        <Badge variant="tinted">
+                        <Badge variant="secondary">
                           <Crown aria-hidden />
                           Primary
                         </Badge>
@@ -224,7 +224,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                     </p>
 
                     <div className="pt-1">
-                      <Button asChild variant="tinted" size="sm">
+                      <Button asChild variant="secondary" size="sm">
                         {country ? (
                           <Link href={`/countries/${country.slug}`}>
                             <span>View Country</span>

@@ -127,7 +127,7 @@ export const HistoryPanel = React.memo(function HistoryPanel({
             </div>
             <div className="flex min-w-0 flex-1 items-center justify-between">
               <span className="truncate">Initial State</span>
-              {position === -1 && <Badge variant="secondary">Current</Badge>}
+              {position === -1 && <Badge variant="default">Current</Badge>}
             </div>
           </button>
 
@@ -170,7 +170,7 @@ export const HistoryPanel = React.memo(function HistoryPanel({
                       {getActionTitle(action)}
                     </span>
                     {isCurrent && (
-                      <Badge variant="secondary" className="shrink-0">
+                      <Badge variant="default" className="shrink-0">
                         Current
                       </Badge>
                     )}

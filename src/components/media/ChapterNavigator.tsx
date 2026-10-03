@@ -3,7 +3,7 @@
 import { cn } from "~/lib/utils";
 import React from "react";
 import { useIxMedia } from "./MediaContext";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export function ChapterNavigator() {
   const { activeTrack, currentTime, seekTrack } = useIxMedia();
@@ -19,13 +19,14 @@ export function ChapterNavigator() {
         {activeTrack.chapters.map((chap, idx) => {
           const isActive = currentTime >= chap.startTime && currentTime < chap.endTime;
           return (
-            <FacetCard
+            <Card
               key={idx}
               className={cn(
                 "rounded-control text-footnote flex cursor-pointer items-center justify-between p-2",
                 isActive ? "border-tint/20 bg-tint-fill text-tint font-medium" : "text-label"
               )}
               onClick={() => seekTrack(chap.startTime)}
+              interactive
             >
               <span>{chap.title}</span>
               <span className="text-label-secondary text-footnote tabular-nums">
@@ -34,7 +35,7 @@ export function ChapterNavigator() {
                   .toString()
                   .padStart(2, "0")}
               </span>
-            </FacetCard>
+            </Card>
           );
         })}
       </div>

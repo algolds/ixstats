@@ -34,7 +34,7 @@ export function AuthenticationGuard({ children, redirectPath }: AuthenticationGu
   if (!isClerkConfigured) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Card className="mx-auto max-w-2xl">
+        <Card className="mx-auto flex max-w-2xl flex-col gap-6 py-6">
           <CardHeader className="text-center">
             <Crown className="text-label-secondary mx-auto mb-4 h-12 w-12" />
             <CardTitle className="text-title-1">Authentication Not Configured</CardTitle>
@@ -80,7 +80,7 @@ export function AuthenticationGuard({ children, redirectPath }: AuthenticationGu
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex min-h-[400px] items-center justify-center">
-          <Card className="mx-auto max-w-md">
+          <Card className="mx-auto flex max-w-md flex-col gap-6 py-6">
             <CardContent className="p-6 text-center">
               <p>Redirecting to sign in...</p>
             </CardContent>

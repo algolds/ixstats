@@ -17,7 +17,6 @@ import {
 } from "iconoir-react";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
 import {
@@ -37,6 +36,7 @@ import { FeedGroupedDrawer } from "./feed/FeedGroupedDrawer";
 import { InlineWikiArticlePreview, parseWikitextToHtml } from "./feed/InlineWikiArticlePreview";
 import { WikiFeedCard } from "./feed/WikiFeedCard";
 import type { ProcessedFeedItem } from "~/types/dashboard-feed";
+import { Card } from "~/components/ui/card";
 
 export { parseWikitextToHtml, InlineWikiArticlePreview, WikiFeedCard };
 
@@ -181,7 +181,7 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
   }
 
   return (
-    <FacetCard padding="md" className="group">
+    <Card padding="md" className="group">
       <div className="flex items-start gap-3">
         {/* Source icon — wiki uses the W logo; v2 domain-tinted chip that grows on card hover */}
         <div
@@ -280,7 +280,7 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
           {isGrouped && <FeedGroupedDrawer subEdits={activity._subEdits} isWiki={isWiki} />}
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 });
 
@@ -312,12 +312,12 @@ export function FeedExternalLink({ url }: { url: string; title?: string }) {
 /** Loading placeholder shaped like a feed card. */
 export function FeedItemSkeleton() {
   return (
-    <FacetCard padding="md" aria-hidden className="flex items-start gap-3">
+    <Card padding="md" aria-hidden className="flex items-start gap-3">
       <Skeleton className="rounded-row size-9 shrink-0" />
       <div className="flex-1 space-y-2">
         <Skeleton className="rounded-control-sm h-4 w-3/4" />
         <Skeleton className="rounded-control-sm h-3 w-1/2" />
       </div>
-    </FacetCard>
+    </Card>
   );
 }

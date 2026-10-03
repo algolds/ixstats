@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Progress } from "~/components/ui/progress";
 import { GlassBarChart, GlassPieChart } from "~/components/shared/charts/RechartsIntegration";
 import { DEFAULT_CHART_COLORS } from "~/lib/themes";
@@ -14,6 +13,7 @@ import {
 import type { LaborConfiguration } from "~/types/economy-builder";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
+import { Card, CardContent } from "~/components/ui/card";
 
 interface LaborVisualizationsProps {
   laborMarket: LaborConfiguration;
@@ -32,8 +32,8 @@ export function LaborVisualizations({
 
   return (
     <div className="space-y-6">
-      <FacetCard>
-        <FacetCardContent className="p-6">
+      <Card>
+        <CardContent className="p-6">
           <div className="border-separator mb-4 flex flex-col gap-2 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
             <h4 className="text-headline text-green flex items-center gap-2">
               {activeChart === "type" ? (
@@ -96,11 +96,11 @@ export function LaborVisualizations({
               valueFormatter={(value) => `${value.toFixed(1)}%`}
             />
           )}
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
 
-      <FacetCard>
-        <FacetCardContent className="p-6">
+      <Card>
+        <CardContent className="p-6">
           <h4 className="text-headline text-green mb-4 flex items-center gap-2">
             <Shield className="h-5 w-5" />
             <span>Worker Protection Scores</span>
@@ -113,11 +113,11 @@ export function LaborVisualizations({
             colors={DEFAULT_CHART_COLORS}
             valueFormatter={(value) => `${value.toFixed(0)}`}
           />
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
 
-      <FacetCard>
-        <FacetCardContent className="p-6">
+      <Card>
+        <CardContent className="p-6">
           <h4 className="text-headline text-green mb-4 flex items-center gap-2">
             <Gauge className="h-5 w-5" />
             <span>Labor Market Health</span>
@@ -147,8 +147,8 @@ export function LaborVisualizations({
               </div>
             ))}
           </div>
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
     </div>
   );
 }

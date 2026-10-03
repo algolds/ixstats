@@ -25,10 +25,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { FacetCard } from "~/components/ui/facet-container";
 import NumberFlow from "~/components/ui/number-flow";
 import type { CardRarity, CardType } from "@prisma/client";
 import type { FilterState, ViewMode } from "./types";
+import { Card } from "~/components/ui/card";
 
 export function InventorySidebarContent({
   totalCards,
@@ -64,7 +64,7 @@ export function InventorySidebarContent({
   return (
     <div className="space-y-3">
       {/* Stats */}
-      <FacetCard className="rounded-row bg-teal/10 p-3">
+      <Card className="rounded-row bg-teal/10 p-3">
         <div className="flex items-center justify-between">
           <span className="text-label-secondary text-eyebrow">My Cards</span>
           <Layers className="text-teal h-3.5 w-3.5" />
@@ -87,7 +87,7 @@ export function InventorySidebarContent({
             <span className="text-indigo font-semibold">0</span>
           </div>
         </div>
-      </FacetCard>
+      </Card>
 
       {/* Search */}
       <div className="relative">
@@ -260,7 +260,7 @@ export function InventorySidebarContent({
         filters.cardType !== "all" ||
         filters.season !== "all") && (
         <Button
-          variant="bordered"
+          variant="outline"
           size="sm"
           onClick={onResetFilters}
           className="text-label-secondary w-full"

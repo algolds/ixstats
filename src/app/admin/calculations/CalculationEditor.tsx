@@ -25,8 +25,8 @@ import {
 } from "./calculation-types";
 import { SYSTEM_FORMULAS } from "./system-formulas";
 import { CalculationSimulator } from "./CalculationSimulator";
-import { FacetCard } from "~/components/ui/facet-container";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { Card } from "~/components/ui/card";
 
 export function CalculationEditor() {
   const notify = useNotify();
@@ -157,7 +157,7 @@ export function CalculationEditor() {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
       {/* Sidebar List */}
-      <FacetCard className="space-y-3 p-4 lg:col-span-1">
+      <Card className="space-y-3 p-4 lg:col-span-1">
         <div className="relative">
           <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
           <Input
@@ -191,13 +191,13 @@ export function CalculationEditor() {
             );
           })}
         </FacetListSection>
-      </FacetCard>
+      </Card>
 
       {/* Main Detail / Editor */}
       <div className="space-y-6 lg:col-span-3">
         {selectedModule ? (
           <>
-            <FacetCard className="space-y-4 p-5">
+            <Card className="space-y-4 p-5">
               <div className="border-separator flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="flex items-center gap-2">
@@ -256,7 +256,7 @@ export function CalculationEditor() {
                   </div>
                 )}
               </div>
-            </FacetCard>
+            </Card>
 
             {/* Interactive Sandbox Simulator */}
             <CalculationSimulator
@@ -269,12 +269,12 @@ export function CalculationEditor() {
             />
           </>
         ) : (
-          <FacetCard className="p-12 text-center">
+          <Card className="p-12 text-center">
             <Calculator className="text-label-secondary mx-auto mb-2 h-8 w-8" />
             <p className="text-label-secondary text-footnote">
               Select a formula module to inspect and simulate.
             </p>
-          </FacetCard>
+          </Card>
         )}
       </div>
     </div>

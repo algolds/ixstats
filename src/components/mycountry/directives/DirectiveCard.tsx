@@ -18,7 +18,6 @@ import {
 import { Badge } from "~/components/ui/badge";
 import { Button, buttonVariants } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Progress } from "~/components/ui/progress";
 import { cn } from "~/lib/utils";
 import { formatIxCountdown } from "~/lib/statecraft/calendar";
@@ -33,6 +32,7 @@ import {
   tierMeta,
   type IntentRow,
 } from "./directive-model";
+import { Card } from "~/components/ui/card";
 
 const RESOLVED_ISSUE = new Set(["responded", "auto_resolved", "dismissed"]);
 const ISSUE_STATUS_LABEL: Record<string, string> = {
@@ -137,7 +137,7 @@ export function DirectiveCard({
       : `${linked.data.resolvedCount} of ${linked.data.totalCount} resolved`;
 
   return (
-    <FacetCard className="rounded-card">
+    <Card className="rounded-card">
       <article>
         <div className="space-y-4 p-4 sm:p-5">
           <div className="text-footnote flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -327,7 +327,7 @@ export function DirectiveCard({
               ) : (linked.data?.issues.length ?? 0) === 0 ? (
                 <p className="text-label-secondary text-body">No resistance issues were raised.</p>
               ) : (
-                <FacetCard variant="inset" padding="none">
+                <Card variant="inset" padding="none">
                   <ul className="divide-separator divide-y">
                     {linked.data!.issues.map((issue) => {
                       const resolved = RESOLVED_ISSUE.has(issue.status);
@@ -361,7 +361,7 @@ export function DirectiveCard({
                       );
                     })}
                   </ul>
-                </FacetCard>
+                </Card>
               )}
             </section>
 
@@ -376,6 +376,6 @@ export function DirectiveCard({
           </div>
         )}
       </article>
-    </FacetCard>
+    </Card>
   );
 }

@@ -4,8 +4,8 @@ import React from "react";
 import { ClockRotateRight as History, ArrowUp, ArrowDown } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
-import { FacetCard } from "~/components/ui/facet-container";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
+import { Card } from "~/components/ui/card";
 
 export interface ActivityEntry {
   id: string;
@@ -23,13 +23,7 @@ export interface VaultRecentActivityCardProps {
 export function VaultRecentActivityCard({ loading, activities }: VaultRecentActivityCardProps) {
   return (
     // A ledger list: opaque (Facet 3.1 dense data), with v2's dot texture and tinted shadow.
-    <FacetCard
-      padding="lg"
-      glow="shadow"
-      texture="dots"
-      textureOpacity={0.03}
-      className="overflow-hidden"
-    >
+    <Card padding="lg" className="overflow-hidden">
       <div className="border-separator mb-4 flex items-center gap-2 border-b pb-4">
         <div className="text-label-secondary rounded-row border-separator bg-fill-3 shadow-card flex h-8 w-8 items-center justify-center border">
           <History aria-hidden className="text-label-secondary h-4.5 w-4.5" />
@@ -95,6 +89,6 @@ export function VaultRecentActivityCard({ loading, activities }: VaultRecentActi
           })}
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 }

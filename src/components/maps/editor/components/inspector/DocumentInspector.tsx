@@ -1,7 +1,6 @@
 "use client";
 
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React, { useMemo } from "react";
@@ -20,6 +19,7 @@ import { api } from "~/trpc/react";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
+import { Card } from "~/components/ui/card";
 
 function formatCountryFallback(nameOrId: string): string {
   const clean = featureIdToDisplayName(nameOrId).trim();
@@ -113,7 +113,7 @@ export const DocumentInspector = React.memo(function DocumentInspector({
   return (
     <div className="space-y-4 select-none">
       {/* Country Header */}
-      <FacetCard className="space-y-2 p-4">
+      <Card className="space-y-2 p-4">
         <div className="flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-2">
             <div className="border-separator rounded-control-sm relative h-7 w-10.5 shrink-0 overflow-hidden border">
@@ -129,7 +129,7 @@ export const DocumentInspector = React.memo(function DocumentInspector({
               <h3 className="text-label text-headline truncate leading-tight">{displayName}</h3>
             </div>
           </div>
-          <Badge variant="green" className="shrink-0">
+          <Badge variant="success" className="shrink-0">
             Active
           </Badge>
         </div>
@@ -145,10 +145,10 @@ export const DocumentInspector = React.memo(function DocumentInspector({
             <span>Center on canvas</span>
           </Button>
         )}
-      </FacetCard>
+      </Card>
 
       {/* Geography Overview */}
-      <FacetCard className="space-y-2 p-3">
+      <Card className="space-y-2 p-3">
         <div className="flex items-center justify-between">
           <Eyebrow>Geography</Eyebrow>
         </div>
@@ -225,13 +225,13 @@ export const DocumentInspector = React.memo(function DocumentInspector({
             </span>
           </div>
         </div>
-      </FacetCard>
+      </Card>
 
       {/* Hydrology System */}
       {(waterCount > 0 ||
         (geoProfile?.hydro &&
           (geoProfile.hydro.riverCount > 0 || geoProfile.hydro.lakeCount > 0))) && (
-        <FacetCard className="space-y-2 p-3">
+        <Card className="space-y-2 p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Waves className="text-label-secondary h-3.5 w-3.5" />
@@ -304,17 +304,17 @@ export const DocumentInspector = React.memo(function DocumentInspector({
               </span>
             </div>
           )}
-        </FacetCard>
+        </Card>
       )}
 
       {/* Quick Add */}
-      <FacetCard className="space-y-2 p-3">
+      <Card className="space-y-2 p-3">
         <Eyebrow>Quick add</Eyebrow>
         <div className="grid grid-cols-3 gap-2">
           <Button
             type="button"
-            variant="bordered"
-            size="md"
+            variant="outline"
+            size="default"
             onClick={() => onModeChange("add-subdivision")}
             className="text-label h-auto flex-col justify-center gap-1 p-2 whitespace-normal"
           >
@@ -327,8 +327,8 @@ export const DocumentInspector = React.memo(function DocumentInspector({
 
           <Button
             type="button"
-            variant="bordered"
-            size="md"
+            variant="outline"
+            size="default"
             onClick={() => onModeChange("add-city")}
             className="text-label h-auto flex-col justify-center gap-1 p-2 whitespace-normal"
           >
@@ -341,8 +341,8 @@ export const DocumentInspector = React.memo(function DocumentInspector({
 
           <Button
             type="button"
-            variant="bordered"
-            size="md"
+            variant="outline"
+            size="default"
             onClick={() => onModeChange("add-route")}
             className="text-label h-auto flex-col justify-center gap-1 p-2 whitespace-normal"
           >
@@ -353,7 +353,7 @@ export const DocumentInspector = React.memo(function DocumentInspector({
             </span>
           </Button>
         </div>
-      </FacetCard>
+      </Card>
 
       {/* Ambient tip */}
       <div className="text-label-secondary text-footnote flex items-center justify-center gap-2 text-center">

@@ -3,7 +3,7 @@
 // Universal Telemetry & Usage Statistics Grid for Atomic Components
 
 import { Component as Layers, CheckCircle, Network, Folder } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 interface AtomicComponentStatsProps {
   totalCount: number;
@@ -21,37 +21,37 @@ export function AtomicComponentStats({
 }: AtomicComponentStatsProps) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <FacetCard className="p-4">
+      <Card className="p-4">
         <div className="flex items-center justify-between">
           <span className="text-label-secondary text-eyebrow">Total Components</span>
           <Layers className="text-label-secondary h-3.5 w-3.5" />
         </div>
         <p className="text-label text-title-2 mt-1 tabular-nums">{totalCount}</p>
-      </FacetCard>
+      </Card>
 
-      <FacetCard className="p-4">
+      <Card className="p-4">
         <div className="flex items-center justify-between">
           <span className="text-label-secondary text-eyebrow">Adopted by Nations</span>
           <CheckCircle className="text-green h-3.5 w-3.5" />
         </div>
         <p className="text-title-2 text-green mt-1 tabular-nums">{adoptionCount ?? "—"}</p>
-      </FacetCard>
+      </Card>
 
-      <FacetCard className="p-4">
+      <Card className="p-4">
         <div className="flex items-center justify-between">
           <span className="text-label-secondary text-eyebrow">Synergy Links</span>
           <Network className="text-teal h-3.5 w-3.5" />
         </div>
         <p className="text-title-2 text-teal mt-1 tabular-nums">{synergyCount}</p>
-      </FacetCard>
+      </Card>
 
-      <FacetCard className="p-4">
+      <Card className="p-4">
         <div className="flex items-center justify-between">
           <span className="text-label-secondary text-eyebrow">Categories</span>
           <Folder className="text-yellow h-3.5 w-3.5" />
         </div>
         <p className="text-title-2 text-yellow mt-1 tabular-nums">{categoryCount}</p>
-      </FacetCard>
+      </Card>
     </div>
   );
 }

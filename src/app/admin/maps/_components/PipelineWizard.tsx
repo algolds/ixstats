@@ -11,7 +11,6 @@
  */
 
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { FacetCard } from "~/components/ui/facet-container";
 import { useState, useRef, useCallback, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
@@ -64,6 +63,7 @@ import {
   TableHead,
   TableCell,
 } from "~/components/ui/table";
+import { Card } from "~/components/ui/card";
 
 // ─── Quick Update Types & Helpers ───────────────────────────────────────────
 
@@ -678,7 +678,7 @@ function FullPipelinePanel() {
   const currentIdx = steps.findIndex((s) => s.id === step);
 
   return (
-    <FacetCard className="rounded-row p-6">
+    <Card className="rounded-row p-6">
       <h3 className="text-label text-title-3 mb-4">Full Pipeline Wizard</h3>
       <p className="text-label-secondary text-footnote mb-4">
         Multi-step wizard for importing SVG/PNG maps with coordinate calibration. For single-layer
@@ -812,7 +812,7 @@ function FullPipelinePanel() {
       )}
 
       {pipelineResult && <PipelineLog log={pipelineResult.metadata.log} />}
-    </FacetCard>
+    </Card>
   );
 }
 
@@ -855,7 +855,7 @@ function PreviewStep({
 }) {
   return (
     <div className="space-y-4">
-      <FacetCard className="rounded-control p-4">
+      <Card className="rounded-control p-4">
         <h4 className="text-label text-body mb-2 font-medium">Pipeline Results</h4>
         <div className="space-y-1">
           {Object.entries(result.metadata.featureCounts).map(([layer, count]) => (
@@ -865,7 +865,7 @@ function PreviewStep({
             </div>
           ))}
         </div>
-      </FacetCard>
+      </Card>
 
       {result.metadata.warnings.length > 0 && (
         <div className="rounded-control border-yellow/30 border p-3">

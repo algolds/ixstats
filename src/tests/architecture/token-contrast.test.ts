@@ -217,7 +217,7 @@ describe("tokens: CSS matches src/lib/design/tokens.ts", () => {
       }
     }
     const badge = sources[0]!;
-    for (const status of Object.keys(STATUS_ALIASES)) {
+    for (const status of ["success", "warning", "destructive", "info"]) {
       expect(badge).toContain(`${status}: "bg-${status}/15 text-${status}-ink`);
     }
   });
@@ -680,11 +680,11 @@ describe("acrylic: vibrant labels over any content", () => {
   });
 });
 
-describe('Badge variant="tinted" (tint-ink on tint-fill)', () => {
-  it("the tinted Badge uses the tint's ink, never the bare tint, on its fill", () => {
+describe('Badge variant="secondary" (tint-ink on tint-fill)', () => {
+  it("the secondary Badge uses the tint's ink, never the bare tint, on its fill", () => {
     const badge = fs.readFileSync(path.join(ROOT, "src/components/ui/badge.tsx"), "utf8");
-    expect(badge).toContain('const tinted = "bg-tint-fill text-tint-ink');
-    expect(badge).not.toMatch(/const tinted = "[^"]*text-tint(?![\w-])/);
+    expect(badge).toContain('secondary: "bg-tint-fill text-tint-ink');
+    expect(badge).not.toMatch(/secondary: "[^"]*text-tint(?![\w-])/);
     const aliases = blocks.find(
       (b) =>
         b.stack.length === 1 && b.stack[0] === "@theme inline static" && b.decls.has("--color-tint")

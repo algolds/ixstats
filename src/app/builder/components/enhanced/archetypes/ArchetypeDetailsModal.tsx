@@ -108,7 +108,7 @@ export function ArchetypeDetailsModal({
             <Button
               onClick={() => onApply(archetype)}
               disabled={isLoading || isGloballySelected}
-              variant={isGloballySelected ? "tinted" : "filled"}
+              variant={isGloballySelected ? "secondary" : "default"}
               size="lg"
               className="w-full shrink-0 sm:w-auto"
             >
@@ -283,7 +283,7 @@ export function ArchetypeDetailsModal({
                 <h4 className="text-subhead text-label">Modern country examples</h4>
                 <div className="flex flex-wrap gap-2">
                   {archetype.modernExamples.map((example, index) => (
-                    <Badge key={index} variant="neutral">
+                    <Badge key={index} variant="default">
                       {example}
                     </Badge>
                   ))}

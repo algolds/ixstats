@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import {
@@ -31,6 +30,7 @@ import { AgeDistributionSection } from "./demographics/AgeDistributionSection";
 import { GeographicSection } from "./demographics/GeographicSection";
 import { SocialIndicatorsSection } from "./demographics/SocialIndicatorsSection";
 import { DemographicsVisualizations } from "./demographics/DemographicsVisualizations";
+import { Card, CardContent } from "~/components/ui/card";
 
 const determineRegionDevelopmentLevel = (
   region: RegionDistribution
@@ -433,7 +433,7 @@ export function DemographicsPopulationTab({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-        <FacetCard>
+        <Card>
           <div className="border-separator border-b px-6 py-4">
             <h3 className="text-label text-headline flex items-center gap-2">
               {activeSection === "population" && "Population Structure"}
@@ -442,7 +442,7 @@ export function DemographicsPopulationTab({
               {activeSection === "social" && "Social Indicators"}
             </h3>
           </div>
-          <FacetCardContent className="space-y-6 p-6">
+          <CardContent className="space-y-6 p-6">
             {activeSection === "population" && (
               <PopulationSection
                 demographics={economyBuilder.demographics}
@@ -474,8 +474,8 @@ export function DemographicsPopulationTab({
                 showAdvanced={showAdvanced}
               />
             )}
-          </FacetCardContent>
-        </FacetCard>
+          </CardContent>
+        </Card>
 
         <DemographicsVisualizations demographics={economyBuilder.demographics} {...chartData} />
       </div>

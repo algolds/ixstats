@@ -116,7 +116,7 @@ export function EditorSaveBar({
           <div className="flex shrink-0 items-center gap-2">
             <Button
               type="button"
-              variant="plain"
+              variant="ghost"
               size="sm"
               onClick={onUndo}
               disabled={!canUndo || isSaving}
@@ -128,7 +128,7 @@ export function EditorSaveBar({
             </Button>
             <Button
               type="button"
-              variant="bordered"
+              variant="outline"
               size="sm"
               onClick={onDiscard}
               disabled={!hasChanges || isSaving}

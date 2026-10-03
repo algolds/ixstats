@@ -3,7 +3,7 @@
 import React from "react";
 import { NavArrowRight as ChevronRight } from "iconoir-react";
 import { Stat } from "~/components/ui/stat";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 interface StatCardProps {
   icon: React.ComponentType<{ className?: string }>;
@@ -18,7 +18,7 @@ interface StatCardProps {
  */
 export function StatCard({ icon: Icon, label, value, onClick }: StatCardProps) {
   return (
-    <FacetCard variant="inset" padding="none" onClick={onClick} className="px-3 py-2">
+    <Card variant="inset" padding="none" onClick={onClick} className="px-3 py-2" interactive>
       <Stat size="sm" label={label} value={value} icon={<Icon className="size-3.5" />} />
       {onClick && (
         <ChevronRight
@@ -26,6 +26,6 @@ export function StatCard({ icon: Icon, label, value, onClick }: StatCardProps) {
           className="text-label-secondary absolute top-2 right-2 size-3.5 opacity-60"
         />
       )}
-    </FacetCard>
+    </Card>
   );
 }

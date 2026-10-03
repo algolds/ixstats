@@ -126,7 +126,6 @@ const ColourRow = memo(function ColourRow({
       </span>
       <div className="min-w-48 flex-1">
         <Autocomplete
-          fieldName={`nation-${colour.hex}`}
           value={nation}
           onChange={(value) => onAssign(colour.hex, value)}
           defaultSuggestions={nationNames}

@@ -12,12 +12,12 @@ import {
   Shield,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import type { ComplianceIssue, ComplianceSeverity } from "~/lib/country-geo";
+import { Card } from "~/components/ui/card";
 
 interface GeoCompliancePanelProps {
   countryId: string;
@@ -43,7 +43,7 @@ export function GeoCompliancePanel({ countryId, onRefresh }: GeoCompliancePanelP
   const summary = query.data?.summary ?? { errors: 0, warnings: 0, info: 0 };
 
   return (
-    <FacetCard className="rounded-card overflow-hidden">
+    <Card className="rounded-card overflow-hidden">
       <Collapsible
         open={open}
         onOpenChange={(next) => {
@@ -129,7 +129,7 @@ export function GeoCompliancePanel({ countryId, onRefresh }: GeoCompliancePanelP
           </div>
         </CollapsibleContent>
       </Collapsible>
-    </FacetCard>
+    </Card>
   );
 }
 
@@ -162,7 +162,7 @@ function ComplianceBadge({
 function ComplianceIssueRow({ issue }: { issue: ComplianceIssue }) {
   const Icon = iconFor(issue.severity);
   return (
-    <FacetCard className="text-footnote flex items-start gap-2 px-3 py-2">
+    <Card className="text-footnote flex items-start gap-2 px-3 py-2">
       <Icon
         aria-hidden="true"
         className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", colorFor(issue.severity))}
@@ -181,7 +181,7 @@ function ComplianceIssueRow({ issue }: { issue: ComplianceIssue }) {
           )}
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 }
 

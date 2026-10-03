@@ -18,9 +18,9 @@ import { api } from "~/trpc/react";
 import { sanitizeHtml } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Stat } from "~/components/ui/stat";
+import { Card } from "~/components/ui/card";
 
 function formatDate(unixTimestamp: number): string {
   return new Date(unixTimestamp * 1000).toLocaleDateString("en-US", {
@@ -68,7 +68,7 @@ export default function MemberProfilePage() {
           </div>
 
           {/* Profile header */}
-          <FacetCard variant="glass" padding="lg" glow className="mb-4">
+          <Card variant="hero" padding="lg" className="mb-4">
             <div className="flex items-start gap-4">
               {member.avatarUrl ? (
                 <img
@@ -86,7 +86,7 @@ export default function MemberProfilePage() {
                 <h1 className="text-large-title text-label">{member.username}</h1>
                 {member.userTitle && <p className="text-body text-tint">{member.userTitle}</p>}
                 {member.isStaff && (
-                  <Badge variant="purple" className="mt-1">
+                  <Badge variant="secondary" className="mt-1">
                     Staff
                   </Badge>
                 )}
@@ -98,7 +98,7 @@ export default function MemberProfilePage() {
                 )}
               </div>
             </div>
-          </FacetCard>
+          </Card>
 
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -118,18 +118,18 @@ export default function MemberProfilePage() {
 
           {/* About */}
           {member.about && (
-            <FacetCard padding="md" className="mt-4">
+            <Card padding="md" className="mt-4">
               <h2 className="text-headline text-label mb-2">About</h2>
               <div
                 className="forum-post-content text-body"
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(member.about) }}
               />
-            </FacetCard>
+            </Card>
           )}
 
           {/* Custom fields (IxStats data) */}
           {member.customFields && Object.keys(member.customFields).length > 0 && (
-            <FacetCard padding="md" className="mt-4">
+            <Card padding="md" className="mt-4">
               <h2 className="text-headline text-label mb-2">IxStats</h2>
               <div className="grid grid-cols-2 gap-2">
                 {Object.entries(member.customFields).map(([key, value]) => (
@@ -141,7 +141,7 @@ export default function MemberProfilePage() {
                   </div>
                 ))}
               </div>
-            </FacetCard>
+            </Card>
           )}
         </div>
       ) : (
@@ -161,7 +161,7 @@ function StatCard({
   value: string;
 }) {
   return (
-    <FacetCard padding="md">
+    <Card padding="md">
       <Stat
         label={
           <span className="flex items-center gap-2">
@@ -171,6 +171,6 @@ function StatCard({
         }
         value={value}
       />
-    </FacetCard>
+    </Card>
   );
 }

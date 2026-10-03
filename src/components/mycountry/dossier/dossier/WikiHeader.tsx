@@ -1,11 +1,10 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import React from "react";
 import Link from "next/link";
 import { OpenBook as BookOpen, Page as FileText, Settings } from "iconoir-react";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Card } from "~/components/ui/card";
 
 interface WikiHeaderProps {
   countryName: string;
@@ -28,7 +27,7 @@ export const WikiHeader: React.FC<WikiHeaderProps> = ({
   ] as const;
 
   return (
-    <FacetCard className="rounded-card overflow-hidden p-4 sm:p-4">
+    <Card className="rounded-card overflow-hidden p-4 sm:p-4">
       {/* Country Flag Subtle Background Overlay */}
       {flagImageUrl && (
         <div className="pointer-events-none absolute inset-0 opacity-[0.04]">
@@ -77,6 +76,6 @@ export const WikiHeader: React.FC<WikiHeaderProps> = ({
           </Link>
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 };

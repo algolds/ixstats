@@ -76,7 +76,7 @@ export function MultiSelect({
             value.map((item) => (
               <Badge
                 key={item}
-                variant="secondary"
+                variant="default"
                 className="mr-1 mb-1 cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();

@@ -25,7 +25,7 @@ export function PlayAsNation({
     onError: (error) => notify.error("Could not switch nation", error.message),
   });
 
-  if (active) return <Badge variant="secondary">Active</Badge>;
+  if (active) return <Badge variant="default">Active</Badge>;
   return (
     <Button
       size="xs"

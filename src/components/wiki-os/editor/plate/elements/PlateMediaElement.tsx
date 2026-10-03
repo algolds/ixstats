@@ -89,7 +89,7 @@ export function PlateMediaElement({
         )}
         {!readOnly && (
           <Button
-            variant="gray"
+            variant="secondary"
             size="sm"
             onClick={handleDelete}
             className="absolute top-2 right-2 z-10 bg-black/60 text-white opacity-0 group-hover:opacity-100 hover:bg-black/80 focus-visible:opacity-100"

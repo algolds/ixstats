@@ -1,6 +1,4 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React, { useState } from "react";
@@ -9,6 +7,7 @@ import { api } from "~/trpc/react";
 import ShieldRenderer from "../renderer/ShieldRenderer";
 import RevisionHistory from "../RevisionHistory";
 import type { HeraldryComposition } from "~/lib/heraldry";
+import { Card } from "~/components/ui/card";
 
 interface AchievementDetailProps {
   achievementId: string;
@@ -72,7 +71,7 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
       {/* Left Column: Canvas & Description */}
       <div className="space-y-6">
         {/* Large Canvas Box */}
-        <FacetCard className="relative flex aspect-video max-h-[450px] items-center justify-center overflow-hidden p-8">
+        <Card className="relative flex aspect-video max-h-[450px] items-center justify-center overflow-hidden p-8">
           <div className="relative flex aspect-square max-h-full max-w-full items-center justify-center">
             {composition.externals?.helm && (
               <div className="absolute -top-12 z-20 flex flex-col items-center">
@@ -94,10 +93,10 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
               </div>
             )}
           </div>
-        </FacetCard>
+        </Card>
 
         {/* Blazon Description Card */}
-        <FacetCard className="space-y-3 p-6">
+        <Card className="space-y-3 p-6">
           <div className="flex items-center justify-between">
             <Eyebrow className="block">Official blazon (heraldic description)</Eyebrow>
             <Button variant="outline" size="xs" onClick={handleCopyBlazon}>
@@ -107,13 +106,13 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
           <p className="text-label border-tint/50 text-body border-l-2 py-1 pl-4 leading-relaxed italic">
             {achievement.generatedBlazon}
           </p>
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Right Column: Metadata & History */}
       <div className="space-y-6">
         {/* Metadata Card */}
-        <FacetCard className="flex flex-col gap-4 p-5">
+        <Card className="flex flex-col gap-4 p-5">
           <div className="border-separator border-b pb-3">
             <Eyebrow className="mb-0.5 block">Title</Eyebrow>
             <h2 className="text-label text-title-3">{achievement.title}</h2>
@@ -144,12 +143,12 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
               Open in studio
             </Button>
           </div>
-        </FacetCard>
+        </Card>
 
         {/* Revision logs */}
-        <FacetCard className="p-5">
+        <Card className="p-5">
           <RevisionHistory achievementId={achievementId} />
-        </FacetCard>
+        </Card>
       </div>
     </div>
   );

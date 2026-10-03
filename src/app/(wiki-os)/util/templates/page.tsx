@@ -184,7 +184,9 @@ export default function WikiTemplatesPage() {
                         <span className="line-clamp-1">{tmpl.description}</span>
                       ) : undefined
                     }
-                    trailing={tmpl.isCanonical ? <Badge variant="tinted">Master</Badge> : undefined}
+                    trailing={
+                      tmpl.isCanonical ? <Badge variant="secondary">Master</Badge> : undefined
+                    }
                   />
                 ))}
               </FacetListSection>
@@ -226,7 +228,7 @@ export default function WikiTemplatesPage() {
                     ]}
                   />
 
-                  <Button variant="gray" size="sm" onClick={handleCopy} aria-label="Copy code">
+                  <Button variant="secondary" size="sm" onClick={handleCopy} aria-label="Copy code">
                     {copied ? (
                       <Check className="text-green size-3.5" />
                     ) : (
@@ -355,7 +357,7 @@ export default function WikiTemplatesPage() {
                               {p.name}
                             </span>
                             {p.type && (
-                              <Badge variant="secondary" className="text-footnote">
+                              <Badge variant="default" className="text-footnote">
                                 {p.type}
                               </Badge>
                             )}

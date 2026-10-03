@@ -125,7 +125,7 @@ export function AnalyticsTab({
   if (error) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
-        <Card className="border-red/30 bg-red/10 w-full max-w-md">
+        <Card className="border-red/30 bg-red/10 flex w-full max-w-md flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle className="text-red">Error Loading Analytics</CardTitle>
             <CardDescription className="text-red">{error.message}</CardDescription>
@@ -205,7 +205,7 @@ export function AnalyticsTab({
 
       {/* Summary Statistics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-red/30 bg-red/10">
+        <Card className="border-red/30 bg-red/10 flex flex-col gap-6 py-6">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-body font-medium">Total Equipment Items</CardTitle>
             <Shield className="text-label-secondary h-4 w-4" />
@@ -216,7 +216,7 @@ export function AnalyticsTab({
           </CardContent>
         </Card>
 
-        <Card className="border-red/30 bg-red/10">
+        <Card className="border-red/30 bg-red/10 flex flex-col gap-6 py-6">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-body font-medium">Active Equipment</CardTitle>
             <Activity className="text-label-secondary h-4 w-4" />
@@ -229,7 +229,7 @@ export function AnalyticsTab({
           </CardContent>
         </Card>
 
-        <Card className="border-red/30 bg-red/10">
+        <Card className="border-red/30 bg-red/10 flex flex-col gap-6 py-6">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-body font-medium">Total Manufacturers</CardTitle>
             <Factory className="text-label-secondary h-4 w-4" />
@@ -240,7 +240,7 @@ export function AnalyticsTab({
           </CardContent>
         </Card>
 
-        <Card className="border-red/30 bg-red/10">
+        <Card className="border-red/30 bg-red/10 flex flex-col gap-6 py-6">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-body font-medium">Average Tech Level</CardTitle>
             <TrendingUp className="text-label-secondary h-4 w-4" />
@@ -255,7 +255,7 @@ export function AnalyticsTab({
       {/* Charts Grid */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Top 10 Most Used Equipment */}
-        <Card className="border-red/30 col-span-2">
+        <Card className="border-red/30 col-span-2 flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle className="text-red">Top 10 Most Used Equipment</CardTitle>
             <CardDescription>Equipment with the highest procurement usage</CardDescription>
@@ -274,7 +274,7 @@ export function AnalyticsTab({
         </Card>
 
         {/* Equipment by Category */}
-        <Card className="border-red/30">
+        <Card className="border-red/30 flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle className="text-red">Equipment by Category</CardTitle>
             <CardDescription>Distribution across equipment categories</CardDescription>
@@ -305,7 +305,7 @@ export function AnalyticsTab({
         </Card>
 
         {/* Equipment by Era */}
-        <Card className="border-red/30">
+        <Card className="border-red/30 flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle className="text-red">Equipment by Era</CardTitle>
             <CardDescription>Distribution across historical eras</CardDescription>
@@ -336,7 +336,7 @@ export function AnalyticsTab({
         </Card>
 
         {/* Equipment Count by Manufacturer */}
-        <Card className="border-red/30 col-span-2">
+        <Card className="border-red/30 col-span-2 flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle className="text-red">Equipment Count by Manufacturer (Top 10)</CardTitle>
             <CardDescription>
@@ -357,7 +357,7 @@ export function AnalyticsTab({
         </Card>
 
         {/* Technology Level Progression by Era */}
-        <Card className="border-red/30 col-span-2">
+        <Card className="border-red/30 col-span-2 flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle className="text-red">Technology Level Progression by Era</CardTitle>
             <CardDescription>Average technology tier across historical eras</CardDescription>
@@ -384,7 +384,7 @@ export function AnalyticsTab({
       </div>
 
       {/* Least Used Equipment Table (Deprecation Candidates) */}
-      <Card className="border-red/30">
+      <Card className="border-red/30 flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="text-red flex items-center gap-2">
             <AlertTriangle className="text-orange h-5 w-5" />

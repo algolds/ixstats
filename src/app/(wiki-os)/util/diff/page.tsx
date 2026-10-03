@@ -94,7 +94,7 @@ export default function DiffPage() {
                   {/* Undo Button */}
                   {!undoConfirm ? (
                     <Button
-                      variant="tinted"
+                      variant="secondary"
                       size="sm"
                       onClick={() => setUndoConfirm(true)}
                       className="bg-yellow/10 text-yellow hover:bg-yellow/20"
@@ -120,7 +120,7 @@ export default function DiffPage() {
                       >
                         {revertMutation.isPending ? "Reverting…" : "Confirm Revert"}
                       </Button>
-                      <Button variant="gray" size="sm" onClick={() => setUndoConfirm(false)}>
+                      <Button variant="secondary" size="sm" onClick={() => setUndoConfirm(false)}>
                         Cancel
                       </Button>
                     </div>

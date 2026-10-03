@@ -35,7 +35,7 @@ export interface PageHeaderProps {
   subtitle?: React.ReactNode;
   /** Back button in the toolbar. */
   back?: { href: string; label?: string };
-  /** Trailing toolbar actions (buttons, a MenuButton). */
+  /** Trailing toolbar actions (buttons, a dropdown menu). */
   actions?: React.ReactNode;
   className?: string;
 }
@@ -105,7 +105,7 @@ export function PageHeader({ title, subtitle, back, actions, className }: PageHe
           />
           <div className="relative flex min-w-0 flex-1 items-center gap-1">
             {back && (
-              <Button asChild variant="plain" size="sm" className="-ml-1 shrink-0">
+              <Button asChild variant="ghost" size="sm" className="-ml-1 shrink-0">
                 <Link href={back.href}>
                   <NavArrowLeft aria-hidden />
                   <span className="max-w-40 truncate">{back.label ?? "Back"}</span>

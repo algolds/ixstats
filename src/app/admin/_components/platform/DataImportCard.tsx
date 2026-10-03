@@ -26,7 +26,7 @@ export function DataImportCard({
   importError,
 }: DataImportCardProps) {
   return (
-    <Card>
+    <Card className="flex flex-col gap-6 py-6">
       <CardHeader className="pb-3">
         <CardTitle className="text-headline flex items-center gap-2">
           <div className="rounded-control border-teal/20 bg-teal/10 text-teal border p-2">

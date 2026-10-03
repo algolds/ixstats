@@ -155,7 +155,7 @@ export function AccountSettingsModal({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="gray" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={updateAccountMutation.isPending}>

@@ -23,7 +23,7 @@ import {
   SystemRestart as Loader2,
 } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export function LogsPanel() {
   return <DedicatedLogsPage />;
@@ -139,28 +139,28 @@ export default function DedicatedLogsPage() {
 
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Fetched Logs</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">{entries.length}</p>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Errors / Warnings</p>
           <p
             className={`text-title-2 mt-1 tabular-nums ${errorCount > 0 ? "text-red" : "text-green"}`}
           >
             {errorCount}
           </p>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Auto-Refresh</p>
           <p className="text-title-2 text-teal mt-1 tabular-nums">
             {autoRefresh ? "8s Live" : "Paused"}
           </p>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Level Scope</p>
           <p className="text-title-2 text-purple mt-1 tabular-nums">{selectedLevel}</p>
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Single-line Filter Rail */}
@@ -281,7 +281,7 @@ export default function DedicatedLogsPage() {
       </div>
 
       {/* Main Terminal Output */}
-      <FacetCard className="overflow-hidden p-3">
+      <Card className="overflow-hidden p-3">
         {isLoading ? (
           <div className="flex h-96 items-center justify-center">
             <div className="space-y-2 text-center">
@@ -299,7 +299,7 @@ export default function DedicatedLogsPage() {
             className="border-separator text-label rounded-row bg-fill-4"
           />
         )}
-      </FacetCard>
+      </Card>
     </div>
   );
 }

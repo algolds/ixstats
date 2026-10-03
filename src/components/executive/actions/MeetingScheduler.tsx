@@ -33,7 +33,7 @@ import type { AgendaItem, MeetingSchedulerProps } from "./meeting-scheduler-type
 import { AGENDA_CATEGORIES, INTENT_TEMPLATES } from "./meeting-scheduler-intents";
 import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export function MeetingScheduler({
   countryId,
@@ -390,7 +390,7 @@ export function MeetingScheduler({
                       <span className="text-label font-medium">
                         {defaultMeeting.prefilledAgenda.title}
                       </span>
-                      <Badge variant="yellow" className="font-semibold">
+                      <Badge variant="warning" className="font-semibold">
                         {defaultMeeting.prefilledAgenda.linkedIssueId
                           ? "CRISIS ISSUE"
                           : "DRAFT POLICY"}
@@ -585,7 +585,7 @@ export function MeetingScheduler({
                   />
 
                   {timePreset === "custom" && (
-                    <FacetCard variant="inset" padding="none" className="mt-2 space-y-2 p-3">
+                    <Card variant="inset" padding="none" className="mt-2 space-y-2 p-3">
                       <Label htmlFor="custom-date" className="text-label-secondary text-eyebrow">
                         Select Date
                       </Label>
@@ -619,7 +619,7 @@ export function MeetingScheduler({
                           (09:00)
                         </span>
                       </div>
-                    </FacetCard>
+                    </Card>
                   )}
                 </div>
 
@@ -789,7 +789,7 @@ export function MeetingScheduler({
                             <span className="text-label text-caption truncate font-semibold">
                               {item.title}
                             </span>
-                            <Badge variant="neutral" className="tabular-nums">
+                            <Badge variant="default" className="tabular-nums">
                               {item.duration}m
                             </Badge>
                           </div>

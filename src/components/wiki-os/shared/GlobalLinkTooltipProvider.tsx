@@ -229,7 +229,7 @@ function WikiTooltipBody({ title, wiki }: { title: string; wiki: "ixwiki" | "iiw
       <div className="flex items-center gap-2">
         <BookOpen className="text-tint size-3.5 shrink-0" aria-hidden="true" />
         <span className="text-label text-headline truncate">{title}</span>
-        <Badge variant="neutral" className="ml-auto">
+        <Badge variant="default" className="ml-auto">
           {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
         </Badge>
       </div>
@@ -282,7 +282,7 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
         <MessageSquare className="text-orange h-3.5 w-3.5 shrink-0" />
         <span className="text-label text-headline truncate">{thread.title}</span>
       </div>
-      {thread.forumName && <Badge variant="orange">{thread.forumName}</Badge>}
+      {thread.forumName && <Badge variant="warning">{thread.forumName}</Badge>}
       {thread.excerpt && (
         <p className="text-label-secondary text-footnote line-clamp-3 leading-relaxed">
           {thread.excerpt.substring(0, 250)}

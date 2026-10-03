@@ -18,7 +18,6 @@ import {
   ArrowRight,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { Refraction } from "~/components/ui/facet";
 
 export default function WhatLinksHereHubPage() {
   const searchParams = useSearchParams();
@@ -53,7 +52,6 @@ export default function WhatLinksHereHubPage() {
           transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
           className="material-hero text-label relative isolate overflow-hidden rounded-3xl p-6 sm:p-8"
         >
-          <Refraction />
           <TextureOverlay texture="paperGrain" opacity={0.05} />
 
           <div className="relative z-10 space-y-4">

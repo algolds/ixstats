@@ -26,7 +26,6 @@ import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Select,
   SelectContent,
@@ -34,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Card } from "~/components/ui/card";
 
 const FAMILIES = [
   { value: "any", label: "All Language Families" },
@@ -176,7 +176,7 @@ export function LanguagePacksSection({
         </Select>
 
         <Button
-          variant="bordered"
+          variant="outline"
           size="sm"
           type="button"
           onClick={() => refetch()}
@@ -196,13 +196,13 @@ export function LanguagePacksSection({
               <RefreshCw className="text-label-secondary text-tint h-6 w-6 animate-spin" />
             </div>
           ) : !marketplaceData?.packs || marketplaceData.packs.length === 0 ? (
-            <FacetCard variant="inset" padding="none" className="p-12 text-center">
+            <Card variant="inset" padding="none" className="p-12 text-center">
               <BookmarkBook className="text-label-secondary text-tint mx-auto mb-3 h-12 w-12 opacity-30" />
               <h4 className="text-label text-body font-semibold">No Language Packs Found</h4>
               <p className="text-label-secondary text-footnote mt-1">
                 Try adjusting your search terms or language family filters.
               </p>
-            </FacetCard>
+            </Card>
           ) : (
             <div
               className={cn(
@@ -251,7 +251,7 @@ export function LanguagePacksSection({
         {/* Detailed Inspection Drawer */}
         {activePack && (
           <div className="sticky top-(--shell-top-offset) space-y-4 lg:col-span-5">
-            <FacetCard variant="inset" padding="none" className="space-y-4 p-5">
+            <Card variant="inset" padding="none" className="space-y-4 p-5">
               {/* Drawer Header */}
               <div className="border-separator flex items-start justify-between border-b pb-3">
                 <div>
@@ -399,7 +399,7 @@ export function LanguagePacksSection({
                   </div>
                 </div>
               )}
-            </FacetCard>
+            </Card>
           </div>
         )}
       </div>

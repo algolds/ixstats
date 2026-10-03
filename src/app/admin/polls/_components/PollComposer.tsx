@@ -156,7 +156,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
-        <Card className="relative overflow-hidden">
+        <Card className="relative flex flex-col gap-6 overflow-hidden py-6">
           <CardHeader className="border-separator border-b">
             <div className="flex items-center justify-between">
               <CardTitle className="text-label text-headline flex items-center gap-2">
@@ -402,7 +402,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
 
       {/* Guide Card */}
       <div className="space-y-4">
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle className="text-label text-headline flex items-center gap-2">
               🗳️ Poll Creation Guide

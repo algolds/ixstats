@@ -29,7 +29,7 @@ export function ForumPagination({ currentPage, lastPage, onPageChange }: Paginat
   return (
     <div className="forum-pagination">
       <Button
-        variant="gray"
+        variant="secondary"
         size="icon"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage <= 1}
@@ -46,7 +46,7 @@ export function ForumPagination({ currentPage, lastPage, onPageChange }: Paginat
         ) : (
           <Button
             key={page}
-            variant={page === currentPage ? "filled" : "gray"}
+            variant={page === currentPage ? "default" : "secondary"}
             onClick={() => onPageChange(page)}
             aria-label={`Page ${page}`}
             aria-current={page === currentPage ? "page" : undefined}
@@ -58,7 +58,7 @@ export function ForumPagination({ currentPage, lastPage, onPageChange }: Paginat
       )}
 
       <Button
-        variant="gray"
+        variant="secondary"
         size="icon"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage >= lastPage}

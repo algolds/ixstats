@@ -6,7 +6,7 @@ import * as SliderPrimitive from "@radix-ui/react-slider";
 import { cn } from "~/lib/utils/cn";
 
 /**
- * Slider (spec §7.2): Radix slider (`role="slider"` thumbs with `aria-valuenow/min/max`). Track
+ * Radix slider (`role="slider"` thumbs with `aria-valuenow/min/max`). Track
  * `fill-2`, range tint, white thumb; 44px hit area on touch. `aria-label` / `aria-labelledby`
  * name the thumb(s) — the element screen readers announce — not the wrapper.
  */
@@ -58,9 +58,9 @@ function Slider({
           aria-label={ariaLabel}
           aria-labelledby={ariaLabelledBy}
           className={cn(
-            "relative block size-5 shrink-0 cursor-grab rounded-full border border-separator bg-white shadow-card active:cursor-grabbing",
-            "transition-[box-shadow,transform] duration-150 ease-out-facet active:scale-[1.08] motion-reduce:active:scale-100",
-            "outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-tint",
+            "border-separator shadow-card relative block size-5 shrink-0 cursor-grab rounded-full border bg-white active:cursor-grabbing",
+            "ease-out-facet transition-[box-shadow,transform] duration-150 active:scale-[1.08] motion-reduce:active:scale-100",
+            "focus-visible:outline-tint outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid",
             "disabled:pointer-events-none disabled:opacity-50",
             "pointer-coarse:after:absolute pointer-coarse:after:top-1/2 pointer-coarse:after:left-1/2 pointer-coarse:after:size-11 pointer-coarse:after:-translate-x-1/2 pointer-coarse:after:-translate-y-1/2"
           )}

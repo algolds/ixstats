@@ -9,7 +9,7 @@ import {
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export interface ImportVerifyStepProps {
   nationName: string;
@@ -41,7 +41,7 @@ export function ImportVerifyStep({
       </div>
 
       {/* Instructions */}
-      <FacetCard className="rounded-row space-y-3 p-5">
+      <Card className="rounded-row space-y-3 p-5">
         <h4 className="text-label text-headline">Instructions</h4>
         <ol className="text-label-secondary text-body list-inside space-y-2">
           <li className="flex items-start gap-2">
@@ -66,7 +66,7 @@ export function ImportVerifyStep({
             Copy that code and paste it in the field below
           </li>
         </ol>
-      </FacetCard>
+      </Card>
 
       {/* NS verification link */}
       {verificationUrl && (
@@ -82,7 +82,7 @@ export function ImportVerifyStep({
       )}
 
       {/* Code input */}
-      <FacetCard rim="tint" className="rounded-row bg-tint-fill space-y-2 p-5">
+      <Card className="rounded-row bg-tint-fill space-y-2 p-5">
         <label className="text-eyebrow text-yellow-ink">
           Paste verification code from NationStates
         </label>
@@ -97,7 +97,7 @@ export function ImportVerifyStep({
           placeholder="Paste the code NationStates gave you..."
           className="bg-background text-body h-12 font-mono"
         />
-      </FacetCard>
+      </Card>
 
       {/* Actions */}
       <div className="flex gap-3">

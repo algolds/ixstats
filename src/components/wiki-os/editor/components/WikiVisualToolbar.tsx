@@ -323,7 +323,7 @@ function VEBtn({
 }) {
   return (
     <Button
-      variant={active ? "tinted" : "ghost"}
+      variant={active ? "secondary" : "ghost"}
       size="icon-sm"
       aria-pressed={active}
       // mousedown (not click) so the editor keeps its selection.

@@ -113,7 +113,7 @@ function SystemBroadcastCard({ item, onDismiss }: { item: any; onDismiss?: () =>
 
         {item.href && (
           <div className="mt-2 flex items-center gap-2">
-            <Button asChild variant="tinted" size="sm">
+            <Button asChild variant="secondary" size="sm">
               <Link href={item.href}>
                 <span>Open Details</span>
                 <ExternalLink aria-hidden="true" />

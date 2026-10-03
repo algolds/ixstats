@@ -42,7 +42,7 @@ export function CollectionHeaderStats({
   onDelete,
 }: CollectionHeaderStatsProps) {
   return (
-    <Card>
+    <Card className="flex flex-col gap-6 py-6">
       <CardHeader>
         <div className="flex flex-col items-start justify-between gap-4 lg:flex-row">
           <div className="flex-1">

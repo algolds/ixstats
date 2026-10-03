@@ -5,8 +5,8 @@ import { type LabConfig, type BgStyleType } from "./types";
 import { LabTemplates } from "./LabTemplates";
 import { useTheme } from "~/context/theme-context";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 
 interface LabSandboxProps {
   config: LabConfig;
@@ -273,7 +273,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
   } as React.CSSProperties;
 
   return (
-    <FacetCard className="flex flex-1 flex-col gap-4 p-6">
+    <Card className="flex flex-1 flex-col gap-4 p-6">
       <div className="border-separator flex items-center justify-between border-b pb-3">
         <div className="flex items-center gap-2">
           <Sparkles className="text-tint h-4 w-4" />
@@ -394,7 +394,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
 
       {/* Debug toggle */}
       <Button
-        variant={showDebug ? "tinted" : "gray"}
+        variant={showDebug ? "secondary" : "secondary"}
         size="sm"
         aria-pressed={showDebug}
         onClick={() => setShowDebug(!showDebug)}
@@ -451,6 +451,6 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
           </div>
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 }

@@ -128,12 +128,12 @@ export function LineupBuilder({
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_400px]">
-      <Card className="h-full">
+      <Card className="flex h-full flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shirt className="text-label-secondary size-5" aria-hidden />
             Starting XI
-            <Badge variant="neutral" className="ml-2 tabular-nums">
+            <Badge variant="default" className="ml-2 tabular-nums">
               {starterCount} selected
             </Badge>
           </CardTitle>
@@ -183,7 +183,7 @@ export function LineupBuilder({
                         </div>
                         <div className="mt-0.5 flex items-center gap-2">
                           <PositionTooltip position={player.position}>
-                            <Badge variant="neutral" className="cursor-help">
+                            <Badge variant="default" className="cursor-help">
                               {player.position}
                             </Badge>
                           </PositionTooltip>
@@ -207,7 +207,7 @@ export function LineupBuilder({
                       <Button
                         type="button"
                         size="icon-sm"
-                        variant="plain"
+                        variant="ghost"
                         onClick={() => setCaptainId(isCaptain ? null : player.id)}
                         className={isCaptain ? "text-yellow" : "text-label-secondary"}
                         title={isCaptain ? "Remove captain" : "Set as captain"}

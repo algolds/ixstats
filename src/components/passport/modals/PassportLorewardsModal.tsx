@@ -24,11 +24,11 @@ import {
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FacetCard, FACET_INSET_SURFACE } from "~/components/ui/facet-container";
 import { Stat } from "~/components/ui/stat";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import type { PassportWiki } from "../types";
+import { Card } from "~/components/ui/card";
 
 interface PassportLorewardsModalProps {
   open: boolean;
@@ -116,12 +116,12 @@ export function PassportLorewardsModal({
             </div>
 
             {stats?.rank ? (
-              <Badge variant="caution" className="tabular-nums">
+              <Badge variant="warning" className="tabular-nums">
                 <Trophy aria-hidden />
                 <span>Global Rank #{stats.rank}</span>
               </Badge>
             ) : (
-              <Badge variant="neutral">Unranked</Badge>
+              <Badge variant="default">Unranked</Badge>
             )}
           </div>
         </SheetHeader>
@@ -178,7 +178,10 @@ export function PassportLorewardsModal({
             {/* Streak calendar */}
             <section
               aria-labelledby="lorewards-calendar-title"
-              className={cn(FACET_INSET_SURFACE, "space-y-3 p-4 md:col-span-5")}
+              className={cn(
+                "bg-surface-secondary text-label rounded-row",
+                "space-y-3 p-4 md:col-span-5"
+              )}
             >
               <div className="border-separator flex items-center justify-between border-b pb-2">
                 <h4
@@ -194,7 +197,7 @@ export function PassportLorewardsModal({
                 <div className="flex items-center gap-1">
                   <Button
                     type="button"
-                    variant="gray"
+                    variant="secondary"
                     size="icon-sm"
                     onClick={prevMonth}
                     title="Previous Month"
@@ -204,7 +207,7 @@ export function PassportLorewardsModal({
                   </Button>
                   <Button
                     type="button"
-                    variant="gray"
+                    variant="secondary"
                     size="icon-sm"
                     onClick={nextMonth}
                     disabled={isCurrentMonth}
@@ -285,7 +288,10 @@ export function PassportLorewardsModal({
             {/* Laurels ledger */}
             <section
               aria-labelledby="lorewards-history-title"
-              className={cn(FACET_INSET_SURFACE, "space-y-3 p-4 md:col-span-7")}
+              className={cn(
+                "bg-surface-secondary text-label rounded-row",
+                "space-y-3 p-4 md:col-span-7"
+              )}
             >
               <div className="border-separator flex items-center justify-between border-b pb-2">
                 <h4
@@ -321,12 +327,12 @@ export function PassportLorewardsModal({
                         <Badge
                           variant={
                             award.type === "daily"
-                              ? "caution"
+                              ? "warning"
                               : award.type === "weekly"
                                 ? "info"
                                 : award.type === "monthly"
-                                  ? "tinted"
-                                  : "neutral"
+                                  ? "secondary"
+                                  : "default"
                           }
                           className="capitalize"
                         >
@@ -382,7 +388,7 @@ export function PassportLorewardsModal({
             <span>View Wiki Contributions</span>
           </Link>
 
-          <Button type="button" variant="gray" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
             Close
           </Button>
         </SheetFooter>
@@ -403,8 +409,8 @@ function MetricCard({
   subtext?: string;
 }) {
   return (
-    <FacetCard variant="inset" padding="sm">
+    <Card variant="inset" padding="sm">
       <Stat label={label} value={value} hint={subtext} icon={icon} iconPlacement="trailing" />
-    </FacetCard>
+    </Card>
   );
 }

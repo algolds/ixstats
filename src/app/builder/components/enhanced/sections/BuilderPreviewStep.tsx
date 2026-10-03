@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState, memo } from "react";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
-import { HUE_ACCENT, HUE_BADGE, type DomainHue } from "~/components/mycountry/shell/domain-hue";
+import { HUE_BADGE, type DomainHue } from "~/components/mycountry/shell/domain-hue";
 import {
   WhiteFlag as Flag,
   City as Building2,
@@ -15,6 +14,7 @@ import {
 } from "iconoir-react";
 import { useBuilderContext } from "../context/BuilderStateContext";
 import { PreviewIdentity, PreviewGovernment, PreviewEconomy } from "./preview";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 /**
  * BuilderPreviewStep - Comprehensive preview of all builder configuration data.
@@ -101,7 +101,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
       </PreviewSection>
 
       {/* ─── Row 3: Ready to Create Strip ─── */}
-      <FacetCard className="rounded-card flex flex-wrap items-center justify-between gap-4 p-4">
+      <Card className="rounded-card flex flex-wrap items-center justify-between gap-4 p-4">
         <div className="flex items-center gap-3">
           <BarChart3 aria-hidden="true" className="text-label-secondary h-5 w-5" />
           <span className="text-label text-headline">
@@ -137,7 +137,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
             Currency
           </span>
         </div>
-      </FacetCard>
+      </Card>
     </div>
   );
 });
@@ -171,13 +171,8 @@ function PreviewSection({
 }: PreviewSectionProps) {
   const contentId = `builder-preview-${id}`;
   return (
-    <FacetCard
-      accent={HUE_ACCENT[hue]}
-      texture="chevron"
-      textureOpacity={0.03}
-      className="rounded-card overflow-hidden"
-    >
-      <FacetCardHeader className="p-0">
+    <Card className="rounded-card overflow-hidden">
+      <CardHeader className="p-0">
         <h2 className="m-0">
           <button
             type="button"
@@ -202,7 +197,7 @@ function PreviewSection({
             </span>
             <span className="flex min-w-0 items-center gap-2">
               <Badge
-                variant={hue}
+                variant="secondary"
                 className="max-w-[180px] truncate sm:max-w-[240px]"
                 title={badge}
               >
@@ -216,13 +211,13 @@ function PreviewSection({
             </span>
           </button>
         </h2>
-      </FacetCardHeader>
+      </CardHeader>
       {!collapsed && (
-        <FacetCardContent id={contentId} className="p-5">
+        <CardContent id={contentId} className="p-5">
           {children}
-        </FacetCardContent>
+        </CardContent>
       )}
-    </FacetCard>
+    </Card>
   );
 }
 

@@ -390,7 +390,7 @@ export function ComparisonCharts({
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <div className="space-y-2">
             <Skeleton className="h-6 w-1/3" />
@@ -405,7 +405,7 @@ export function ComparisonCharts({
   }
 
   return (
-    <Card className="w-full">
+    <Card className="flex w-full flex-col gap-6 py-6">
       <CardHeader>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -426,7 +426,7 @@ export function ComparisonCharts({
             {countries.map((country) => (
               <Badge
                 key={country.id}
-                variant="secondary"
+                variant="default"
                 className="flex items-center gap-1"
                 style={{ backgroundColor: `${country.color}20`, borderColor: country.color }}
               >

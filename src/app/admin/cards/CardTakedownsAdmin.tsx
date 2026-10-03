@@ -7,9 +7,9 @@ import { ShieldAlert, Refresh as RefreshCw, Undo as RotateCcw } from "iconoir-re
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
+import { Card } from "~/components/ui/card";
 
 export function CardTakedownsAdmin() {
   const notify = useNotify();
@@ -38,7 +38,7 @@ export function CardTakedownsAdmin() {
 
   return (
     <div className="space-y-6">
-      <FacetCard className="border-red/30 bg-red/5 space-y-4 p-6">
+      <Card className="border-red/30 bg-red/5 space-y-4 p-6">
         <div className="flex items-center gap-2">
           <div className="rounded-row border-red/30 bg-red/20 border p-2">
             <ShieldAlert className="text-red h-5 w-5" />
@@ -103,9 +103,8 @@ export function CardTakedownsAdmin() {
             </div>
             <div className="space-y-2">
               {hiddenCards.map((card: any) => (
-                <FacetCard
+                <Card
                   key={card.cardId}
-                  interactive="hover"
                   className="rounded-row text-footnote flex items-center justify-between gap-3 p-3"
                 >
                   <div className="min-w-0 truncate">
@@ -116,7 +115,7 @@ export function CardTakedownsAdmin() {
                       NS ID: {card.nsCardId} S{card.nsSeason}
                     </span>
                     {card.selfService && (
-                      <Badge variant="red" className="ml-2">
+                      <Badge variant="destructive" className="ml-2">
                         flag-owner request
                       </Badge>
                     )}
@@ -130,7 +129,7 @@ export function CardTakedownsAdmin() {
                     </span>
                     <Button
                       size="sm"
-                      variant="tinted"
+                      variant="secondary"
                       disabled={restoreNSCardMutation.isPending}
                       onClick={() =>
                         restoreNSCardMutation.mutate({
@@ -142,12 +141,12 @@ export function CardTakedownsAdmin() {
                       <RotateCcw className="mr-1 h-3 w-3" /> Restore
                     </Button>
                   </div>
-                </FacetCard>
+                </Card>
               ))}
             </div>
           </div>
         )}
-      </FacetCard>
+      </Card>
     </div>
   );
 }

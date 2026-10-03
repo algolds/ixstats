@@ -169,13 +169,13 @@ export function AccountDetailsForm({
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <Button type="button" variant="tinted" size="sm" onClick={onOpenImageSearch}>
+            <Button type="button" variant="secondary" size="sm" onClick={onOpenImageSearch}>
               Search Repository
             </Button>
             {formData.profileImageUrl && (
               <Button
                 type="button"
-                variant="plain"
+                variant="ghost"
                 size="sm"
                 onClick={() => setFormData((p: any) => ({ ...p, profileImageUrl: "" }))}
                 className="text-destructive hover:text-destructive"

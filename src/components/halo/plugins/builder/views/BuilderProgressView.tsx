@@ -198,7 +198,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
               </Button>
               <Button
                 type="button"
-                variant="bordered"
+                variant="outline"
                 size="sm"
                 onClick={() => setIsConfirmingRestart(false)}
               >
@@ -208,7 +208,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
           ) : (
             <Button
               type="button"
-              variant="bordered"
+              variant="outline"
               size="sm"
               onClick={() => setIsConfirmingRestart(true)}
               title="Restart Builder"

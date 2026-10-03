@@ -4,10 +4,10 @@ import React, { useState } from "react";
 import { EditPencil as PenSquare, Group as Users } from "iconoir-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { GlassCanvasComposer } from "./GlassCanvasComposer";
 import { EnhancedAccountManager } from "./EnhancedAccountManager";
+import { Card } from "~/components/ui/card";
 
 interface UnifiedComposerContainerProps {
   countryId: string;
@@ -59,20 +59,20 @@ export function UnifiedComposerContainer({
             repostData={repostData}
           />
         ) : (
-          <FacetCard>
+          <Card>
             <EmptyState
               icon={<Users />}
               title="No Account Selected"
               message="Please select an account to start posting"
             />
-          </FacetCard>
+          </Card>
         )}
       </div>
     );
   }
 
   return (
-    <FacetCard>
+    <Card>
       <Tabs
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as "compose" | "accounts")}
@@ -113,7 +113,7 @@ export function UnifiedComposerContainer({
               title="Select an Account to Compose"
               message="Choose an account from the Accounts tab to start posting"
               action={
-                <Button variant="bordered" onClick={() => setActiveTab("accounts")}>
+                <Button variant="outline" onClick={() => setActiveTab("accounts")}>
                   <Users aria-hidden="true" />
                   Manage Accounts
                 </Button>
@@ -134,6 +134,6 @@ export function UnifiedComposerContainer({
           />
         </TabsContent>
       </Tabs>
-    </FacetCard>
+    </Card>
   );
 }

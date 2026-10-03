@@ -2,7 +2,6 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Flash as Zap, Dashboard as Gauge } from "iconoir-react";
@@ -10,6 +9,7 @@ import type { EconomicHealthMetrics } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 import { systemFillClass, systemTextClass } from "~/app/builder/lib/system-color";
+import { Card, CardContent } from "~/components/ui/card";
 
 interface EffectivenessPanelProps {
   componentEffectiveness: number;
@@ -26,8 +26,8 @@ export function EffectivenessPanel({
   return (
     <>
       {/* Economic Health Card */}
-      <FacetCard>
-        <FacetCardContent className="space-y-4 p-6">
+      <Card>
+        <CardContent className="space-y-4 p-6">
           <h3 className="text-headline text-label mb-4 flex items-center gap-2">
             <Gauge aria-hidden className="text-green size-5" />
             <span>Economic Health</span>
@@ -100,12 +100,12 @@ export function EffectivenessPanel({
               </span>
             </div>
           </div>
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
 
       {/* Selected Components Card */}
-      <FacetCard>
-        <FacetCardContent className="p-6">
+      <Card>
+        <CardContent className="p-6">
           <h3 className="text-headline text-label mb-4 flex items-center gap-2">
             <Zap aria-hidden className="text-tint size-5" />
             <span>Selected Atomic Components</span>
@@ -144,8 +144,8 @@ export function EffectivenessPanel({
               );
             })}
           </div>
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
     </>
   );
 }

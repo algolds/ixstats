@@ -13,13 +13,13 @@ import {
   Component as Layers,
   StatsReport as BarChart3,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   getLetterFrequencies,
   getNgramFrequencies,
   calculateEntropy,
   auditLexiconHealth,
 } from "~/lib/onoma/lexicon-analytics";
+import { Card } from "~/components/ui/card";
 
 interface LexiconExplorerProps {
   words: string[];
@@ -104,7 +104,7 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
   const HealthIcon = healthTheme.icon;
 
   return (
-    <FacetCard
+    <Card
       variant="inset"
       padding="none"
       className="flex h-full flex-col justify-between space-y-5 p-4"
@@ -293,6 +293,6 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
           </div>
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 }

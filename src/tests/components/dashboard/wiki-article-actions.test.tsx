@@ -72,14 +72,14 @@ describe("WikiArticleActions", () => {
     expect(screen.getByRole("link", { name: "Open in Wiki" })).toBeInTheDocument();
   });
 
-  it("likes with the red tone and a count", () => {
+  it("likes with the destructive tone and a count", () => {
     render(<WikiArticleActions title="Caphiria" />);
     const like = screen.getByRole("button", { name: /Like/ });
     expect(like).toHaveAttribute("aria-pressed", "false");
     fireEvent.click(like);
     expect(like).toHaveAttribute("aria-pressed", "true");
-    expect(like).toHaveAttribute("data-tone", "red");
-    expect(like.className).toContain("text-red-ink");
+    expect(like.className).toContain("bg-destructive/15");
+    expect(like.className).toContain("text-destructive-ink");
     expect(like.querySelector('[data-slot="action-pill-count"]')?.textContent).toBe("1");
   });
 

@@ -93,7 +93,7 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
       // Default error UI
       return (
         <div className="container mx-auto px-4 py-8">
-          <Card className="mx-auto max-w-2xl">
+          <Card className="mx-auto flex max-w-2xl flex-col gap-6 py-6">
             <CardHeader className="text-center">
               <AlertTriangle className="text-red mx-auto mb-4 h-12 w-12" />
               {/* A heading (CardTitle is a div): the fallback replaces a step's content or the page. */}

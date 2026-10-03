@@ -8,7 +8,6 @@ import { assetUrl } from "~/lib/base-path";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { soundEffects } from "~/lib/sound/cuelume";
 import type { BuilderSection } from "../../lib/builder-theme";
 import type { BuilderAlertResult } from "../../lib/builder-alerts";
@@ -16,6 +15,7 @@ import type { EditorSection } from "../../lib/edit-changes";
 import { BuilderModeToggle } from "../BuilderModeToggle";
 import { useBuilderGuide } from "../builder-guide-context";
 import { EDITOR_NAV, describeSaveStatus, type EditorSaveStatus } from "./editor-sections";
+import { Card } from "~/components/ui/card";
 
 interface EditorHeaderProps {
   countryName: string;
@@ -68,7 +68,7 @@ export const EditorHeader = React.memo(function EditorHeader({
 
   return (
     <header className="mx-auto w-full max-w-6xl px-4 pb-4">
-      <FacetCard className="rounded-card flex flex-col gap-4 p-4 sm:p-6">
+      <Card className="rounded-card flex flex-col gap-4 p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Button asChild variant="ghost" size="sm" className="text-body -ml-2 gap-1">
             <Link href="/mycountry">
@@ -175,7 +175,7 @@ export const EditorHeader = React.memo(function EditorHeader({
             })}
           </ul>
         </nav>
-      </FacetCard>
+      </Card>
     </header>
   );
 });

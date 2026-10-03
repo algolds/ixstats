@@ -7,9 +7,9 @@ import React, { useState } from "react";
 import { useVexelEditor } from "../VexelEditorProvider";
 import { api } from "~/trpc/react";
 import { CHARGE_CATEGORIES } from "~/lib/heraldry";
-import { FacetCard } from "~/components/ui/facet-container";
 import { SearchField } from "~/components/ui/search-field";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { Card } from "~/components/ui/card";
 
 interface ChargeLibraryPanelProps {
   onOpenCommons: () => void;
@@ -52,7 +52,7 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
   };
 
   return (
-    <FacetCard className="h-full overflow-hidden">
+    <Card className="h-full overflow-hidden">
       <div className="flex h-full flex-col p-4">
         <div className="border-separator mb-4 flex items-center justify-between border-b pb-2">
           <h2 className="text-label text-headline">Charge library</h2>
@@ -91,7 +91,7 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
                     <Button
                       key={item.id}
                       type="button"
-                      variant="bordered"
+                      variant="outline"
                       onClick={() => handleAddCharge(item.id)}
                       className="h-auto min-w-0 flex-col gap-1 p-3 whitespace-normal"
                     >
@@ -123,7 +123,7 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
                     <Button
                       key={item.id}
                       type="button"
-                      variant="bordered"
+                      variant="outline"
                       onClick={() => handleAddCharge(item.id)}
                       className="h-auto min-w-0 flex-col gap-1 p-3 whitespace-normal"
                     >
@@ -147,6 +147,6 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
           </div>
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 }

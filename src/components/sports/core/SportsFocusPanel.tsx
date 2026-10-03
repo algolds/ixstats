@@ -421,7 +421,7 @@ export function SportsFocusPanel({
       {/* Header bar with dismiss */}
       <div className="border-separator mb-4 flex items-center justify-between border-b pb-4">
         <div className="flex items-center gap-2">
-          <Badge variant="tinted" className="capitalize">
+          <Badge variant="secondary" className="capitalize">
             {focus.type} Focus
           </Badge>
         </div>

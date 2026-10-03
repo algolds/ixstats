@@ -2,9 +2,9 @@
 
 import React, { Component, type ReactNode } from "react";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { EmptyState } from "~/components/ui/empty-state";
 import { WarningTriangle as AlertTriangle, SystemRestart as RotateCcw } from "iconoir-react";
+import { Card } from "~/components/ui/card";
 
 export interface DashboardErrorBoundaryProps {
   children: ReactNode;
@@ -52,7 +52,7 @@ export class DashboardErrorBoundary extends Component<DashboardErrorBoundaryProp
   public render() {
     if (this.state.hasError) {
       return (
-        <FacetCard role="alert" className="flex min-h-[300px] w-full items-center justify-center">
+        <Card role="alert" className="flex min-h-[300px] w-full items-center justify-center">
           <EmptyState
             icon={<AlertTriangle className="text-destructive" />}
             title={this.props.title || "Something went wrong"}
@@ -62,13 +62,13 @@ export class DashboardErrorBoundary extends Component<DashboardErrorBoundaryProp
               "An unexpected error occurred while loading this view."
             }
             action={
-              <Button type="button" variant="bordered" size="sm" onClick={this.reset}>
+              <Button type="button" variant="outline" size="sm" onClick={this.reset}>
                 <RotateCcw aria-hidden />
                 Try again
               </Button>
             }
           />
-        </FacetCard>
+        </Card>
       );
     }
 

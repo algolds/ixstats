@@ -75,14 +75,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
 
   return (
     // v2 (c5c6b382): a CutoutCard with the cyan header strip, dot texture and coloured link glyphs.
-    <CutoutCard
-      variant="card"
-      accent="cyan"
-      retint
-      className="w-48"
-      trackPointerHover={false}
-      texture="dots"
-    >
+    <CutoutCard variant="card" className="w-48" trackPointerHover={false}>
       <CutoutCardHeader icon={<Compass />} as="h2" cornerSize={16} className="px-3">
         Quick links
       </CutoutCardHeader>
@@ -120,7 +113,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
                 </div>
 
                 {link.label === "ThinkTanks" && thinktankUnreadCount > 0 && (
-                  <Badge variant="success" numeric>
+                  <Badge variant="success">
                     {thinktankUnreadCount > 99 ? "99+" : thinktankUnreadCount}
                     <span className="sr-only"> unread</span>
                   </Badge>

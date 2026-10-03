@@ -118,7 +118,7 @@ export function StashSettingsMenu({
         }}
       >
         <PopoverTrigger asChild>
-          <Button variant="gray" size="sm" title="Collection Settings & Actions">
+          <Button variant="secondary" size="sm" title="Collection Settings & Actions">
             <span
               className="size-2.5 shrink-0 rounded-full"
               style={{ backgroundColor: stash.color }}
@@ -201,7 +201,7 @@ export function StashSettingsMenu({
                   }}
                 />
                 <div className="flex items-center justify-end gap-2">
-                  <Button variant="gray" size="sm" onClick={() => setIsRenaming(false)}>
+                  <Button variant="secondary" size="sm" onClick={() => setIsRenaming(false)}>
                     Cancel
                   </Button>
                   <Button

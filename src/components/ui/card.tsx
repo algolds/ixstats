@@ -1,34 +1,86 @@
+"use client";
+
 import * as React from "react";
 
 import { cn } from "~/lib/utils/cn";
-import { FACET_CARD_SURFACE } from "~/components/ui/facet-container";
 
-/**
- * shadcn-shaped card on Facet 3 roles (§7.1): renders exactly `FacetCard`'s opaque surface
- * (`FACET_CARD_SURFACE`: `bg-surface`, `separator` hairline, `rounded-card`, `shadow-card`) with
- * the shadcn layout (24px vertical rhythm, `CardHeader/Title/Description/Action/Content/Footer`).
- *
- * @deprecated Duplicates `FacetCard`. New code uses `FacetCard` (+ `FacetCardHeader/Content/
- * Footer`) from `~/components/ui/facet-container`; existing `Card` call sites keep working.
- */
-function Card({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card"
-      className={cn(FACET_CARD_SURFACE, "flex flex-col gap-6 py-6", className)}
-      {...props}
-    />
-  );
+export type CardVariant = "default" | "inset" | "hero";
+export type CardPadding = "none" | "sm" | "md" | "lg";
+
+const VARIANT: Record<CardVariant, string> = {
+  default: "bg-surface text-label border-separator rounded-card shadow-card border",
+  inset: "bg-surface-secondary text-label rounded-row",
+  hero: "material-hero text-label rounded-card",
+};
+
+const PADDING: Record<CardPadding, string> = {
+  none: "",
+  sm: "p-3",
+  md: "p-4 md:p-5",
+  lg: "p-5 md:p-6",
+};
+
+const INSET_PADDING: Record<CardPadding, string> = {
+  none: "",
+  sm: "p-3",
+  md: "p-4",
+  lg: "p-4 md:p-5",
+};
+
+const INTERACTIVE =
+  "facet-press facet-lift pointer-coarse:min-h-11 cursor-pointer select-none focus-visible:outline-tint focus-visible:outline-2 focus-visible:outline-offset-2";
+
+export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** `default` is the opaque card, `inset` a panel inside one, `hero` the glass hero. */
+  variant?: CardVariant;
+  /** Default: none. Inset: `md`. */
+  padding?: CardPadding;
+  /** Pressable: press and lift feedback; with `onClick` it is also a keyboard-operable button. */
+  interactive?: boolean;
 }
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  (
+    { variant = "default", padding, interactive = false, className, onClick, onKeyDown, ...props },
+    ref
+  ) => {
+    const isButton = interactive && Boolean(onClick);
+    const handleKeyDown: React.KeyboardEventHandler<HTMLDivElement> | undefined = isButton
+      ? (event) => {
+          onKeyDown?.(event);
+          if (event.defaultPrevented || event.target !== event.currentTarget) return;
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            event.currentTarget.click();
+          }
+        }
+      : onKeyDown;
+    return (
+      <div
+        ref={ref}
+        data-slot="card"
+        {...(isButton ? { role: "button", tabIndex: 0 } : {})}
+        className={cn(
+          "relative",
+          VARIANT[variant],
+          variant === "inset" ? INSET_PADDING[padding ?? "md"] : PADDING[padding ?? "none"],
+          interactive && INTERACTIVE,
+          className
+        )}
+        onClick={onClick}
+        onKeyDown={handleKeyDown}
+        {...props}
+      />
+    );
+  }
+);
+Card.displayName = "Card";
 
 function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-header"
-      className={cn(
-        "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6",
-        className
-      )}
+      className={cn("flex flex-col gap-1 px-6 [.border-b]:pb-6", className)}
       {...props}
     />
   );
@@ -54,16 +106,6 @@ function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function CardAction({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card-action"
-      className={cn("col-start-2 row-span-2 row-start-1 self-start justify-self-end", className)}
-      {...props}
-    />
-  );
-}
-
 function CardContent({ className, ...props }: React.ComponentProps<"div">) {
   return <div data-slot="card-content" className={cn("px-6", className)} {...props} />;
 }
@@ -78,4 +120,4 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-export { Card, CardHeader, CardFooter, CardTitle, CardAction, CardDescription, CardContent };
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };

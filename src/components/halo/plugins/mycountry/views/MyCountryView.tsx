@@ -126,7 +126,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
             <>
               <Button
                 type="button"
-                variant="gray"
+                variant="secondary"
                 size="sm"
                 onClick={() => {
                   const slug = country.slug || country.name.replace(/\s+/g, "_");
@@ -139,7 +139,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               </Button>
               <Button
                 type="button"
-                variant="gray"
+                variant="secondary"
                 size="sm"
                 onClick={() => {
                   window.location.href = createAbsoluteUrl("/mycountry/editor");
@@ -182,9 +182,9 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               </div>
               {/* Membership badge */}
               {userProfile.membershipTier === "mycountry_premium" ? (
-                <Badge variant="yellow">Premium</Badge>
+                <Badge variant="warning">Premium</Badge>
               ) : (
-                <Badge variant="neutral">Basic</Badge>
+                <Badge variant="default">Basic</Badge>
               )}
             </div>
 
@@ -210,13 +210,13 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               (userProfile.role?.level !== undefined && userProfile.role.level <= 20)) && (
               <div className="mt-1 mb-2 flex flex-wrap gap-1">
                 {userProfile.role && (
-                  <Badge variant="indigo">
+                  <Badge variant="secondary">
                     <Shield aria-hidden />
                     {userProfile.role.displayName}
                   </Badge>
                 )}
                 {userProfile.role?.level !== undefined && userProfile.role.level <= 20 && (
-                  <Badge variant="yellow">
+                  <Badge variant="warning">
                     <Crown aria-hidden />
                     Founding Member
                   </Badge>
@@ -345,7 +345,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
             <div className="grid grid-cols-2 gap-2">
               <Button
                 type="button"
-                variant="gray"
+                variant="secondary"
                 onClick={() => handleNavigate("/mycountry/editor")}
                 className={ACTION_BUTTON}
               >
@@ -355,7 +355,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
 
               <Button
                 type="button"
-                variant="gray"
+                variant="secondary"
                 onClick={() => handleNavigate("/mycountry/map-editor")}
                 className={ACTION_BUTTON}
               >
@@ -365,7 +365,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
 
               <Button
                 type="button"
-                variant="gray"
+                variant="secondary"
                 onClick={() => handleNavigate("/mycountry/politics")}
                 className={ACTION_BUTTON}
               >
@@ -375,7 +375,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
 
               <Button
                 type="button"
-                variant="gray"
+                variant="secondary"
                 onClick={() => handleNavigate("/messages")}
                 className={ACTION_BUTTON}
               >
@@ -385,7 +385,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
 
               <Button
                 type="button"
-                variant="gray"
+                variant="secondary"
                 onClick={() => handleNavigate("/mycountry/diplomacy")}
                 className={ACTION_BUTTON}
               >
@@ -395,7 +395,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
 
               <Button
                 type="button"
-                variant="gray"
+                variant="secondary"
                 onClick={() => {
                   const wikiPath = userProfile?.country?.name
                     ? `/wiki/${encodeURIComponent(userProfile.country.name.replace(/ /g, "_"))}`
@@ -453,7 +453,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
             </PreText>
             <Button
               type="button"
-              variant="filled"
+              variant="default"
               size="sm"
               onClick={() =>
                 (window.location.href =

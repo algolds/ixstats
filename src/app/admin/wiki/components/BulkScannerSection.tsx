@@ -17,7 +17,6 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { ScanResult } from "./types";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Table,
   TableHeader,
@@ -26,6 +25,7 @@ import {
   TableHead,
   TableCell,
 } from "~/components/ui/table";
+import { Card } from "~/components/ui/card";
 
 export function BulkScannerSection({ countriesData }: { countriesData: any }) {
   const [isScanning, setIsScanning] = useState(false);
@@ -141,7 +141,7 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
   const selectedCount = scanResults.filter((r) => r.selected).length;
 
   return (
-    <FacetCard className="space-y-4 p-5">
+    <Card className="space-y-4 p-5">
       <div className="border-separator flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <RefreshCw className="text-yellow h-4 w-4" />
@@ -268,6 +268,6 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
           </Table>
         )}
       </div>
-    </FacetCard>
+    </Card>
   );
 }

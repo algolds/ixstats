@@ -126,14 +126,14 @@ export function CountryAdminPanel() {
   // Loading state
   if (isLoading) {
     return (
-      <Card className="p-8">
+      <Card className="flex flex-col gap-6 p-8 py-6">
         <div className="mb-6 flex items-center gap-3">
           <Users className="text-tint h-6 w-6" />
           <h2 className="text-title-1">Country Admin</h2>
         </div>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i} className="p-6">
+            <Card key={i} className="flex flex-col gap-6 p-6 py-6">
               <Skeleton className="mb-2 h-6 w-3/4" />
               <Skeleton className="mb-4 h-4 w-1/2" />
               <div className="space-y-2">
@@ -149,7 +149,7 @@ export function CountryAdminPanel() {
   }
   if (error) {
     return (
-      <Card className="p-8">
+      <Card className="flex flex-col gap-6 p-8 py-6">
         <div className="mb-6 flex items-center gap-3">
           <AlertCircle className="text-red h-6 w-6" />
           <h2 className="text-title-1 text-red">Country Admin</h2>
@@ -160,7 +160,7 @@ export function CountryAdminPanel() {
   }
 
   return (
-    <Card className="p-8">
+    <Card className="flex flex-col gap-6 p-8 py-6">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
           <Users className="text-tint h-6 w-6" />
@@ -294,7 +294,7 @@ export function CountryAdminPanel() {
                   )}
                 </TableCell>
                 <TableCell className="p-2 text-center">
-                  <Badge variant="secondary">{country.economicTier || "—"}</Badge>
+                  <Badge variant="default">{country.economicTier || "—"}</Badge>
                 </TableCell>
                 <TableCell className="p-2 text-center">
                   <Checkbox

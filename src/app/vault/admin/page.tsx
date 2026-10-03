@@ -22,7 +22,7 @@ export default function VaultAdminPage() {
   if (!isAdmin) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Card className="mx-auto max-w-md">
+        <Card className="mx-auto flex max-w-md flex-col gap-6 py-6">
           <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
             <Shield className="text-label-secondary h-10 w-10" />
             <h2 className="text-title-3 font-semibold">Admin Access Required</h2>
@@ -42,7 +42,7 @@ export default function VaultAdminPage() {
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
-      <Card className="mx-auto max-w-md">
+      <Card className="mx-auto flex max-w-md flex-col gap-6 py-6">
         <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
           <Shield className="text-yellow h-10 w-10" />
           <h2 className="text-title-3 font-semibold">Vault Admin</h2>

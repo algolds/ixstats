@@ -207,7 +207,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
         </div>
 
         <div className="flex gap-2">
-          <Button size="sm" variant="bordered" onClick={handleCopy} className="flex-1">
+          <Button size="sm" variant="outline" onClick={handleCopy} className="flex-1">
             {copied ? (
               <Check className="text-green" aria-hidden="true" />
             ) : (
@@ -217,7 +217,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
           </Button>
           <Button
             size="icon-sm"
-            variant="bordered"
+            variant="outline"
             onClick={handleCopyImage}
             title="Copy image to clipboard"
             aria-label="Copy image to clipboard"
@@ -230,7 +230,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
           </Button>
           <Button
             size="icon-sm"
-            variant="bordered"
+            variant="outline"
             onClick={() => window.open(image.url, "_blank")}
             title="Download original file"
             aria-label="Download original file"
@@ -240,7 +240,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
           {isAuthenticated && (
             <Button
               size="icon-sm"
-              variant={stashMutation.isSuccess ? "tinted" : "bordered"}
+              variant={stashMutation.isSuccess ? "secondary" : "outline"}
               onClick={handleStash}
               disabled={stashMutation.isPending || stashMutation.isSuccess}
               title="Stash to library"
@@ -289,7 +289,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
             </p>
           </div>
         )}
-        <Button asChild size="sm" variant="gray">
+        <Button asChild size="sm" variant="secondary">
           <a href={image.descriptionUrl} target="_blank" rel="noopener noreferrer">
             <ExternalLink aria-hidden="true" />
             {viewSourceLabel}

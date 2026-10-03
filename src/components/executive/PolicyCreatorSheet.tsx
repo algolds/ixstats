@@ -44,7 +44,7 @@ import {
 import { PolicyTargetMetrics, type TargetMetric } from "./policies/PolicyTargetMetrics";
 import { PolicyTemplateSliders } from "./policies/PolicyTemplateSliders";
 import { PolicyReconBanner } from "./policies/PolicyReconBanner";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 interface PolicyCreatorSheetProps {
   countryId: string;
@@ -86,7 +86,7 @@ function CollapsibleSection({
           <Icon className="text-label-secondary h-4 w-4" />
           <span>{title}</span>
           {badge && (
-            <Badge variant="secondary" className="text-footnote px-2 py-0">
+            <Badge variant="default" className="text-footnote px-2 py-0">
               {badge}
             </Badge>
           )}
@@ -309,12 +309,12 @@ export function PolicyCreatorSheet({
               )}
 
               {selectedTemplateKey !== "custom" && currentTemplate && (
-                <FacetCard variant="inset" padding="none" className="p-3">
+                <Card variant="inset" padding="none" className="p-3">
                   <h4 className="text-headline">{currentTemplate.name}</h4>
                   <p className="text-label-secondary text-footnote mt-1 leading-relaxed">
                     {currentTemplate.description}
                   </p>
-                </FacetCard>
+                </Card>
               )}
 
               <div className="grid grid-cols-3 gap-2">

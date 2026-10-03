@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ChatBubble as MessageSquare, Clock } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { timeAgo } from "~/lib/format/compact";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 interface ForumCategoryCardProps {
   nodeId: number;
@@ -46,7 +46,7 @@ export function ForumCategoryCard({
             <p className="text-footnote text-label-secondary mt-0.5">{description}</p>
           )}
         </div>
-        <FacetCard className="divide-separator divide-y overflow-hidden">{children}</FacetCard>
+        <Card className="divide-separator divide-y overflow-hidden">{children}</Card>
       </section>
     );
   }

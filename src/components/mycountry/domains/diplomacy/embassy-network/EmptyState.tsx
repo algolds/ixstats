@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { City as Building2 } from "iconoir-react";
+import { Card } from "~/components/ui/card";
 
 /**
  * Props for EmptyState component
@@ -43,7 +43,7 @@ export const EmptyState = React.memo(function EmptyState({
   onEstablishEmbassy,
 }: EmptyStateProps) {
   return (
-    <FacetCard className="rounded-card px-6 py-12">
+    <Card className="rounded-card px-6 py-12">
       <div className="space-y-4 text-center">
         <Building2 className="text-label-secondary mx-auto h-8 w-8" />
         <div>
@@ -60,6 +60,6 @@ export const EmptyState = React.memo(function EmptyState({
           </Button>
         )}
       </div>
-    </FacetCard>
+    </Card>
   );
 });

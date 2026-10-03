@@ -51,7 +51,7 @@ export function RevenueCollector({
   const matchesWaiting = pending ? pending.homeMatches : 0;
 
   return (
-    <Card>
+    <Card className="flex flex-col gap-6 py-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Coins className="text-label-secondary size-5" aria-hidden />

@@ -405,7 +405,7 @@ export const ImportSection = React.memo(function ImportSection({
       <div className="mt-4 space-y-6">
         {/* Loading State Back Button */}
         {selectedResult && !parsedData && (
-          <Button type="button" variant="bordered" size="sm" onClick={handleBackFromSelection}>
+          <Button type="button" variant="outline" size="sm" onClick={handleBackFromSelection}>
             <ArrowLeft aria-hidden />
             Back to Search
           </Button>
@@ -417,7 +417,7 @@ export const ImportSection = React.memo(function ImportSection({
               <div className="mb-2 flex items-center justify-between">
                 <Button
                   type="button"
-                  variant="gray"
+                  variant="secondary"
                   size="sm"
                   onClick={() => onNavigate("foundation")}
                 >

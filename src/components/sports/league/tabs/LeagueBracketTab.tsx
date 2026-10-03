@@ -4,8 +4,8 @@ import React from "react";
 import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tournament as Swords } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { BracketView } from "~/components/sports/league/BracketView";
+import { Card } from "~/components/ui/card";
 
 export interface LeagueBracketTabProps {
   leagueId: string;
@@ -28,35 +28,35 @@ export function LeagueBracketTab({
 
   if (!seasonId) {
     return (
-      <FacetCard className="space-y-3 p-12 text-center">
+      <Card className="space-y-3 p-12 text-center">
         <Swords className="text-label-tertiary mx-auto h-12 w-12" />
         <h4 className="text-headline text-label">No Season Initialized</h4>
         <p className="text-footnote text-label-secondary">
           Start a season in the Command overview to generate the championship tournament bracket.
         </p>
-      </FacetCard>
+      </Card>
     );
   }
 
   if (isLoading) {
     return (
-      <FacetCard className="space-y-4 p-8">
+      <Card className="space-y-4 p-8">
         {Array.from({ length: 3 }).map((_, i) => (
           <Skeleton key={i} className="rounded-card h-16 w-full" />
         ))}
-      </FacetCard>
+      </Card>
     );
   }
 
   if (!brackets || brackets.length === 0) {
     return (
-      <FacetCard className="space-y-3 p-12 text-center">
+      <Card className="space-y-3 p-12 text-center">
         <Swords className="text-label-tertiary mx-auto h-12 w-12" />
         <h4 className="text-headline text-label">No Bracket Matches Generated</h4>
         <p className="text-footnote text-label-secondary">
           Tournament brackets will display once qualifying matches are seeded.
         </p>
-      </FacetCard>
+      </Card>
     );
   }
 

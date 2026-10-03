@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { memo } from "react";
 import { WarningTriangle as AlertTriangle, Check, MapPin } from "iconoir-react";
 import {
@@ -12,6 +11,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "~/components/ui/dialog";
+import { Card } from "~/components/ui/card";
 
 interface BorderConformanceModalProps {
   open: boolean;
@@ -48,7 +48,7 @@ export const BorderConformanceModal = memo(function BorderConformanceModal({
             All borders must conform to the country shape. The following subdivisions were adjusted:
           </p>
 
-          <FacetCard variant="inset" padding="none" className="max-h-[200px] overflow-y-auto">
+          <Card variant="inset" padding="none" className="max-h-[200px] overflow-y-auto">
             {clippedNames.map((name) => (
               <div
                 key={name}
@@ -58,7 +58,7 @@ export const BorderConformanceModal = memo(function BorderConformanceModal({
                 <span className="text-label text-body">{name}</span>
               </div>
             ))}
-          </FacetCard>
+          </Card>
 
           <p className="text-label-secondary text-footnote">
             These borders may need manual adjustment for accuracy. You can edit individual

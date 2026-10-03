@@ -1,11 +1,11 @@
 import React, { useMemo } from "react";
 import { Toggle } from "~/components/ui/toggle";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Plus, Xmark as X, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { ComponentType } from "@prisma/client";
 import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 import { checkGovernmentConflict } from "~/lib/government/atomic-utils";
 import type { DepartmentInput } from "~/types/government";
+import { Card } from "~/components/ui/card";
 
 interface DepartmentAtomicSelectorProps {
   data: DepartmentInput;
@@ -55,7 +55,7 @@ export const DepartmentAtomicSelector = React.memo(function DepartmentAtomicSele
   if (!onGovernmentComponentsChange) return null;
 
   return (
-    <FacetCard variant="inset" className="space-y-3 p-4">
+    <Card variant="inset" className="space-y-3 p-4">
       <div className="flex items-center justify-between gap-2">
         <h4 className="text-label text-headline">Contextual policy components ({data.category})</h4>
         <span className="text-label-secondary text-footnote">
@@ -98,6 +98,6 @@ export const DepartmentAtomicSelector = React.memo(function DepartmentAtomicSele
           </p>
         )}
       </div>
-    </FacetCard>
+    </Card>
   );
 });

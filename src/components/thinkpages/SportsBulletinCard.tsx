@@ -6,10 +6,10 @@ import { Trophy, NavArrowRight as ChevronRight, Shield, Flash as Zap } from "ico
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { cn } from "~/lib/utils";
 import type { SportsBulletinData } from "~/lib/sports/feed-bulletins";
+import { Card } from "~/components/ui/card";
 
 interface SportsBulletinCardProps {
   data: SportsBulletinData;
@@ -49,7 +49,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
   ];
 
   return (
-    <FacetCard className={cn("group my-3 overflow-hidden", className)}>
+    <Card className={cn("group my-3 overflow-hidden", className)}>
       {/* Header */}
       <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
         <div className="flex items-center gap-3">
@@ -63,7 +63,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
           <div>
             <div className="flex items-center gap-2">
               <h4 className="text-headline text-label">{league.name}</h4>
-              {isChampionBulletin && <Badge variant="caution">Champion crowned</Badge>}
+              {isChampionBulletin && <Badge variant="warning">Champion crowned</Badge>}
             </div>
             <p className="text-footnote text-label-secondary flex items-center gap-2 tabular-nums">
               {isChampionBulletin ? (
@@ -103,7 +103,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
             </div>
           </div>
           {championId && (
-            <Button asChild variant="tinted" size="sm">
+            <Button asChild variant="secondary" size="sm">
               <Link href={`/myclub/${championId}`}>
                 <span>View Club</span>
                 <ChevronRight aria-hidden="true" />
@@ -132,7 +132,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
 
                   <div className="flex shrink-0 items-center gap-2">
                     {res.isUpset && (
-                      <Badge variant="caution">
+                      <Badge variant="warning">
                         <Zap aria-hidden="true" />
                         Upset
                       </Badge>
@@ -167,7 +167,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
                     </div>
 
                     <Badge
-                      variant={isUp ? "success" : isDown ? "destructive" : "neutral"}
+                      variant={isUp ? "success" : isDown ? "destructive" : "default"}
                       className="tabular-nums"
                     >
                       {isUp ? `▲${jump}` : isDown ? `▼${Math.abs(jump)}` : "—"}
@@ -203,7 +203,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
 
       {leagueHref && (
         <div className="border-separator flex items-center justify-end border-t px-4 py-2">
-          <Button asChild variant="gray" size="sm">
+          <Button asChild variant="secondary" size="sm">
             <Link href={leagueHref}>
               <span>Open League</span>
               <ChevronRight aria-hidden="true" />
@@ -211,7 +211,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
           </Button>
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 }
 

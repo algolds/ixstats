@@ -31,10 +31,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { FacetCard } from "~/components/ui/facet-container";
 import { IxTime } from "~/lib/ixtime";
 import { IXWORLD_VERSION } from "~/lib/buildVersion";
 import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
+import { Card } from "~/components/ui/card";
 
 const STORAGE_KEY = "ixworld-welcome-seen";
 
@@ -151,7 +151,7 @@ export function MapWelcomeModal({
               </DialogDescription>
             </div>
           </div>
-          <Badge variant="secondary" className="tabular-nums">
+          <Badge variant="default" className="tabular-nums">
             v{IXWORLD_VERSION}
           </Badge>
         </DialogHeader>
@@ -171,7 +171,7 @@ export function MapWelcomeModal({
                 {TIPS.map((tip) => {
                   const Icon = tip.icon;
                   return (
-                    <FacetCard variant="inset" key={tip.title} className="p-3">
+                    <Card variant="inset" key={tip.title} className="p-3">
                       <div className="mb-2 flex items-center gap-2">
                         <Icon className="text-blue h-4 w-4" aria-hidden />
                         <h3 className="text-label text-headline">{tip.title}</h3>
@@ -179,7 +179,7 @@ export function MapWelcomeModal({
                       <p className="text-label-secondary text-footnote leading-relaxed">
                         {tip.description}
                       </p>
-                    </FacetCard>
+                    </Card>
                   );
                 })}
               </motion.div>
@@ -218,7 +218,7 @@ export function MapWelcomeModal({
                   ))}
                 </div>
 
-                <FacetCard variant="inset" className="mt-4 p-3">
+                <Card variant="inset" className="mt-4 p-3">
                   <div className="mb-1 flex items-center gap-2">
                     <Compass className="text-blue h-4 w-4" aria-hidden />
                     <h4 className="text-label text-headline">Tip</h4>
@@ -227,7 +227,7 @@ export function MapWelcomeModal({
                     Everything on this map connects to a living wiki. Hover any country or place
                     name for an instant preview, or click through to read the full article.
                   </p>
-                </FacetCard>
+                </Card>
               </motion.div>
             )}
           </AnimatePresence>

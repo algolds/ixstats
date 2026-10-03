@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { springGentle } from "~/lib/design/motion";
 import {
   Play,
@@ -16,6 +15,7 @@ import {
 } from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
+import { Card } from "~/components/ui/card";
 
 interface MatchTickerSimProps {
   homeTeam: { name: string; color: string; shortName?: string | null };
@@ -90,7 +90,7 @@ export function MatchTickerSim({
   const currentMinute = currentStep ? currentStep.t : 90;
 
   return (
-    <FacetCard padding="lg" className="space-y-6 overflow-hidden">
+    <Card padding="lg" className="space-y-6 overflow-hidden">
       {/* Header Live / Sim control panel */}
       <div className="flex items-center justify-between">
         <Badge variant="destructive">
@@ -170,7 +170,7 @@ export function MatchTickerSim({
             <span className="text-label-tertiary">:</span>
             <span>{awayScore}</span>
           </div>
-          <Badge variant="neutral" className="tabular-nums">
+          <Badge variant="default" className="tabular-nums">
             {currentMinute}' min
           </Badge>
         </div>
@@ -209,6 +209,6 @@ export function MatchTickerSim({
           </AnimatePresence>
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 }

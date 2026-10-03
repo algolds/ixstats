@@ -1,6 +1,6 @@
 "use client";
 // src/app/labs/onoma/components/nav/OnomaFooter.tsx
-// ⟨ONOMA⟩ footer: an opaque FacetCard with a corner symbol watermark, sitemap and legal links.
+// ⟨ONOMA⟩ footer: an opaque Card with a corner symbol watermark, sitemap and legal links.
 
 import React from "react";
 import Link from "next/link";
@@ -10,7 +10,7 @@ import { OnomaGlyph } from "../glyphs/OnomaGlyph";
 import type { OnomaSection, StudioSubTab, ExploreSubTab } from "~/lib/onoma/types";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 interface OnomaFooterProps {
   onNavigate: (section: OnomaSection) => void;
@@ -71,7 +71,7 @@ export function OnomaFooter({
 
   return (
     <footer>
-      <FacetCard padding="lg" className="relative space-y-5 overflow-hidden">
+      <Card padding="lg" className="relative space-y-5 overflow-hidden">
         {/* Identity watermark: a small corner Onoma symbol behind the content (no image wash). */}
         <div
           aria-hidden="true"
@@ -122,7 +122,7 @@ export function OnomaFooter({
           </div>
 
           <Button
-            variant="gray"
+            variant="secondary"
             size="sm"
             onClick={scrollToTop}
             title="Scroll back to top"
@@ -138,7 +138,7 @@ export function OnomaFooter({
           {SITEMAP_PAGES.map((page) => (
             <Button
               key={page.id}
-              variant="gray"
+              variant="secondary"
               size="sm"
               onClick={() => {
                 page.onClick();
@@ -147,7 +147,7 @@ export function OnomaFooter({
             >
               <OnomaGlyph name={page.glyph} size="xs" />
               <span>{page.label}</span>
-              {page.isPro && <Badge variant="caution">Premium</Badge>}
+              {page.isPro && <Badge variant="warning">Premium</Badge>}
             </Button>
           ))}
         </nav>
@@ -186,7 +186,7 @@ export function OnomaFooter({
             </Link>
           </div>
         </div>
-      </FacetCard>
+      </Card>
     </footer>
   );
 }

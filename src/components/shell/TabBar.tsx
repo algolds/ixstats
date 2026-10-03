@@ -103,7 +103,6 @@ export function TabBar({ pathname, searchParams, apps, className }: TabBarProps)
       >
         <FacetMaterial
           material="acrylic"
-          glow
           data-slot="tab-bar-panel"
           className="rounded-sheet mx-auto max-w-lg"
         >

@@ -24,7 +24,7 @@ interface CreateStashPopoverProps {
   existingNames?: string[];
   triggerClassName?: string;
   triggerLabel?: string;
-  /** Button style of the default trigger. @default "filled" */
+  /** Button style of the default trigger. @default "default" */
   triggerVariant?: React.ComponentProps<typeof Button>["variant"];
   children?: React.ReactNode;
 }
@@ -178,7 +178,7 @@ export function CreateStashPopover({
 
           {/* Footer */}
           <div className="flex items-center justify-end gap-2 pt-1">
-            <Button type="button" variant="gray" size="sm" onClick={handleClose}>
+            <Button type="button" variant="secondary" size="sm" onClick={handleClose}>
               Cancel
             </Button>
             <Button type="submit" size="sm" disabled={!name.trim() || isCreating}>

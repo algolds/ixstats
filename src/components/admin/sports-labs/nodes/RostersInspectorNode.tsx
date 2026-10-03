@@ -201,17 +201,17 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
             )}
             {(dbTeam as any).patronSaint && (
               <p className="text-yellow mt-2 flex items-center gap-1 font-semibold">
-                🙏 Patron Saint: <Badge variant="yellow">{(dbTeam as any).patronSaint}</Badge>
+                🙏 Patron Saint: <Badge variant="warning">{(dbTeam as any).patronSaint}</Badge>
               </p>
             )}
           </div>
 
           {isOwner && (
-            <Card className="border-yellow/20 bg-yellow/5">
+            <Card className="border-yellow/20 bg-yellow/5 flex flex-col gap-6 py-6">
               <CardContent className="space-y-2 p-3">
                 <div className="flex items-center justify-between">
                   <p className="text-eyebrow text-yellow">Patron Saint Ritual (Cost: ₷100)</p>
-                  <Badge variant="yellow">BLESSING BOOST: +5 ELO</Badge>
+                  <Badge variant="warning">BLESSING BOOST: +5 ELO</Badge>
                 </div>
                 <div className="flex gap-2">
                   <Select value={selectedSaint} onValueChange={setSelectedSaint}>

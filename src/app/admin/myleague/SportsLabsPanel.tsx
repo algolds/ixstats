@@ -367,7 +367,7 @@ export default function SportsLabsPanel() {
           <div>
             <h1 className="text-label text-title-1 flex items-center gap-2">
               MatchResolver
-              <Badge variant="yellow" className="text-eyebrow">
+              <Badge variant="warning" className="text-eyebrow">
                 Simulation Kernel Layer
               </Badge>
             </h1>
@@ -399,7 +399,7 @@ export default function SportsLabsPanel() {
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
         {/* Canvas Section */}
         <div className="relative flex h-[650px] flex-col lg:col-span-7">
-          <Card className="rounded-row relative flex-1 overflow-hidden">
+          <Card className="rounded-row relative flex flex-1 flex-col gap-6 overflow-hidden py-6">
             <ReactFlow
               nodes={nodes.map((n) => ({
                 ...n,

@@ -1,13 +1,13 @@
 "use client";
 
 import React from "react";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { cn } from "~/lib/utils";
 import type { V2Domain } from "../domain-meta";
 import { timeAgo } from "~/lib/format/compact";
 import { STATUS_TEXT as SHELL_STATUS_TEXT } from "../status-tone";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 /** Legacy per-domain text accent (re-exported by DomainContextRail; not used by the rails). */
 export const DOMAIN_ACCENT: Record<V2Domain, string> = {
@@ -71,18 +71,16 @@ export function RailCard({
   children: React.ReactNode;
 }) {
   return (
-    <FacetCard className={cn("rounded-card", className)}>
-      <FacetCardHeader className="flex-row items-center justify-between gap-2 p-4 pb-3">
+    <Card className={cn("rounded-card", className)}>
+      <CardHeader className="flex-row items-center justify-between gap-2 p-4 pb-3">
         <div className="flex min-w-0 items-center gap-2">
           {Icon && <Icon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />}
           <h3 className="text-label text-headline truncate">{title}</h3>
         </div>
         {accessory ? <div className="flex shrink-0 items-center gap-2">{accessory}</div> : null}
-      </FacetCardHeader>
-      <FacetCardContent className={cn("space-y-2 px-4 pb-4", contentClassName)}>
-        {children}
-      </FacetCardContent>
-    </FacetCard>
+      </CardHeader>
+      <CardContent className={cn("space-y-2 px-4 pb-4", contentClassName)}>{children}</CardContent>
+    </Card>
   );
 }
 
@@ -94,9 +92,7 @@ export function RailRow({
   className?: string;
   children: React.ReactNode;
 }) {
-  return (
-    <FacetCard className={cn("rounded-row text-footnote p-2", className)}>{children}</FacetCard>
-  );
+  return <Card className={cn("rounded-row text-footnote p-2", className)}>{children}</Card>;
 }
 
 /** Thin level bar (0–100). */
@@ -119,7 +115,7 @@ export function RailEmpty({ children }: { children: React.ReactNode }) {
 /** Count accessory for a rail card header. */
 export function RailCount({ children }: { children: React.ReactNode }) {
   return (
-    <Badge variant="secondary" className="tabular-nums">
+    <Badge variant="default" className="tabular-nums">
       {children}
     </Badge>
   );
@@ -129,11 +125,11 @@ export function DomainKpiGrid({ items }: { items: Kpi[] }) {
   return (
     <div className="grid grid-cols-3 gap-2">
       {items.map((item) => (
-        <FacetCard key={item.label} className="p-2">
+        <Card key={item.label} className="p-2">
           <Eyebrow className="block truncate">{item.label}</Eyebrow>
           <p className="text-label text-title-3 mt-0.5 tabular-nums">{item.value}</p>
           {item.sub && <p className="text-label-secondary text-footnote mt-0.5">{item.sub}</p>}
-        </FacetCard>
+        </Card>
       ))}
     </div>
   );

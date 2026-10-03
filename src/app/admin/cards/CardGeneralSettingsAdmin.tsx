@@ -15,8 +15,8 @@ import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
 import { useNotify } from "~/hooks/useNotify";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Input } from "~/components/ui/input";
+import { Card } from "~/components/ui/card";
 
 export function CardGeneralSettingsAdmin() {
   const notify = useNotify();
@@ -44,7 +44,7 @@ export function CardGeneralSettingsAdmin() {
   };
 
   return (
-    <FacetCard className="space-y-6">
+    <Card className="space-y-6">
       {/* Header bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -68,7 +68,7 @@ export function CardGeneralSettingsAdmin() {
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Marketplace & Trading Policies */}
-        <FacetCard className="space-y-4 p-6">
+        <Card className="space-y-4 p-6">
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <ShoppingBag className="text-green h-4 w-4" />
             <h3 className="text-label text-headline">Marketplace & Trading</h3>
@@ -115,10 +115,10 @@ export function CardGeneralSettingsAdmin() {
               </div>
             </div>
           </div>
-        </FacetCard>
+        </Card>
 
         {/* Daily Claims & Allowance */}
-        <FacetCard className="space-y-4 p-6">
+        <Card className="space-y-4 p-6">
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <Gift className="text-purple h-4 w-4" />
             <h3 className="text-label text-headline">Daily Free Packs & Cooldowns</h3>
@@ -167,10 +167,10 @@ export function CardGeneralSettingsAdmin() {
               </div>
             </div>
           </div>
-        </FacetCard>
+        </Card>
 
         {/* Player Minting & Lore Permissions */}
-        <FacetCard className="space-y-4 p-6">
+        <Card className="space-y-4 p-6">
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <Sparkles className="text-yellow h-4 w-4" />
             <h3 className="text-label text-headline">Lore Creation & Permissions</h3>
@@ -211,10 +211,10 @@ export function CardGeneralSettingsAdmin() {
               />
             </div>
           </div>
-        </FacetCard>
+        </Card>
 
         {/* Binder & Recycler Limits */}
-        <FacetCard className="space-y-4 p-6">
+        <Card className="space-y-4 p-6">
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <Layers className="text-teal h-4 w-4" />
             <h3 className="text-label text-headline">Inventory & Recycler Limits</h3>
@@ -267,8 +267,8 @@ export function CardGeneralSettingsAdmin() {
               </div>
             </div>
           </div>
-        </FacetCard>
+        </Card>
       </div>
-    </FacetCard>
+    </Card>
   );
 }

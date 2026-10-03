@@ -135,7 +135,7 @@ export function ClubTacticsSection({
     <div className="grid gap-6 lg:grid-cols-3">
       {/* Tactical Shapes / Presets */}
       <div className="lg:col-span-2">
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle>Team Tactics & Strategy</CardTitle>
             <CardDescription className="text-label-secondary">
@@ -169,7 +169,7 @@ export function ClubTacticsSection({
                 >
                   <div className="flex items-center justify-between">
                     <h4 className="text-headline text-label">{tactic.name}</h4>
-                    {isActive && <Badge variant="tinted">Active</Badge>}
+                    {isActive && <Badge variant="secondary">Active</Badge>}
                   </div>
                   <p className="text-label-secondary text-callout mt-2">{tactic.description}</p>
                 </button>
@@ -181,7 +181,7 @@ export function ClubTacticsSection({
 
       {/* Strategic Weighting & Sliders */}
       <div>
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle>Strategic Weighting</CardTitle>
           </CardHeader>

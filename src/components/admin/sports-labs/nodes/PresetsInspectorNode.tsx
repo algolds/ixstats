@@ -48,7 +48,7 @@ export const PresetsInspectorNode = React.memo(function PresetsInspectorNode({
           </Select>
         </div>
 
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader className="pb-2">
             <CardTitle className="text-headline flex items-center gap-2">
               <Trophy className="text-yellow h-4 w-4" />
@@ -84,7 +84,7 @@ export const PresetsInspectorNode = React.memo(function PresetsInspectorNode({
               <span className="text-label-secondary">Rating Vectors</span>
               <div className="mt-1 flex flex-wrap gap-1">
                 {activePreset.ratingVector.map((v) => (
-                  <Badge key={v} variant="secondary">
+                  <Badge key={v} variant="default">
                     {v}
                   </Badge>
                 ))}

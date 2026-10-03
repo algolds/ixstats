@@ -3,7 +3,7 @@
 import { cn } from "~/lib/utils";
 import React, { useRef, useEffect } from "react";
 import { useIxMedia } from "./MediaContext";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export function TranscriptViewer() {
   const { activeTrack, currentTime, seekTrack } = useIxMedia();
@@ -37,7 +37,7 @@ export function TranscriptViewer() {
         {transcript.map((seg, idx) => {
           const isActive = idx === activeIndex;
           return (
-            <FacetCard
+            <Card
               key={idx}
               ref={isActive ? activeRef : null}
               onClick={() => seekTrack(seg.startTime)}
@@ -47,9 +47,10 @@ export function TranscriptViewer() {
                   ? "border-tint/20 bg-tint-fill text-tint pl-2 font-medium"
                   : "text-label-secondary hover:bg-fill-4 hover:text-label border-transparent"
               )}
+              interactive
             >
               {seg.text}
-            </FacetCard>
+            </Card>
           );
         })}
       </div>

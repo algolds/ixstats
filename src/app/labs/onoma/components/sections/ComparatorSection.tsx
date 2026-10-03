@@ -16,8 +16,8 @@ import {
   compareDynamicWordLists,
   type DynamicComparisonResult,
 } from "~/lib/onoma/data-bridge";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 
 interface ComparatorSectionProps {
   hideHeader?: boolean;
@@ -167,7 +167,7 @@ export default function ComparatorSection({
       {/* Linguistic Distance Dashboard */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {/* Composite distance card */}
-        <FacetCard
+        <Card
           variant="inset"
           padding="none"
           className={`flex flex-col items-center justify-center p-4 text-center ${getDistanceColor(
@@ -186,10 +186,10 @@ export default function ComparatorSection({
                 ? "Divergent (Distinct Dialects)"
                 : "Cognate / Close Cousins"}
           </span>
-        </FacetCard>
+        </Card>
 
         {/* Phoneme overlap card */}
-        <FacetCard variant="inset" padding="none" className="p-4 text-center">
+        <Card variant="inset" padding="none" className="p-4 text-center">
           <span className="text-label text-large-title font-mono font-bold">
             {comparison.phonemeOverlap}%
           </span>
@@ -199,10 +199,10 @@ export default function ComparatorSection({
           <span className="text-label-secondary text-caption mt-1 block">
             Jaccard overlap coefficient of sound charts
           </span>
-        </FacetCard>
+        </Card>
 
         {/* Bigram similarity card */}
-        <FacetCard variant="inset" padding="none" className="p-4 text-center">
+        <Card variant="inset" padding="none" className="p-4 text-center">
           <GitCompare className="text-indigo mx-auto mb-2 h-6 w-6 opacity-80" />
           <span className="text-label text-large-title font-mono font-bold">
             {comparison.bigramSimilarity}%
@@ -213,13 +213,13 @@ export default function ComparatorSection({
           <span className="text-label-secondary text-caption mt-1 block">
             Phonotactic structure vector correlation
           </span>
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Phoneme Inventories compare */}
       <div className="space-y-3">
         <h3 className="text-label-secondary text-subhead">Phoneme Inventory Overlap Analysis</h3>
-        <FacetCard variant="inset" padding="none" className="space-y-4 p-4">
+        <Card variant="inset" padding="none" className="space-y-4 p-4">
           {/* Shared sounds */}
           <div className="space-y-2">
             <span className="text-caption text-green font-semibold">
@@ -281,13 +281,13 @@ export default function ComparatorSection({
               </div>
             </div>
           </div>
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Phonetic Diversity / Shannon Entropy comparison */}
       <div className="space-y-3">
         <h3 className="text-label-secondary text-subhead">Phonetic Diversity & Entropy</h3>
-        <FacetCard variant="inset" padding="none" className="p-4">
+        <Card variant="inset" padding="none" className="p-4">
           <div className="space-y-3">
             <div className="text-label-secondary text-footnote flex items-center justify-between">
               <span>Entropy Difference</span>
@@ -328,7 +328,7 @@ export default function ComparatorSection({
               </div>
             </div>
           </div>
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Sample outputs Side-by-Side */}
@@ -397,8 +397,8 @@ export default function ComparatorSection({
             Linguistic Hybridization (Blend Preview)
           </h3>
           <Button
-            variant="filled"
-            size="md"
+            variant="default"
+            size="default"
             onClick={handleBlendPreview}
             className="justify-center"
           >

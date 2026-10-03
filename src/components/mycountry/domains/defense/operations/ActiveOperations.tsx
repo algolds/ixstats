@@ -14,7 +14,6 @@ import {
   NavArrowUp as ChevronUp,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import {
@@ -29,6 +28,7 @@ import {
 } from "~/components/ui/alert-dialog";
 import { api } from "~/trpc/react";
 import { formatCurrency } from "~/lib/utils/format-utils";
+import { Card } from "~/components/ui/card";
 
 interface ActiveOperationsProps {
   countryId: string;
@@ -53,7 +53,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const SUCCESS_RATING_BADGE: Record<string, BadgeVariant> = {
   success: "success",
-  partial: "caution",
+  partial: "warning",
 };
 
 export function ActiveOperations({ countryId }: ActiveOperationsProps) {
@@ -109,7 +109,7 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
         const isActive = op.status === "active" || op.status === "planned";
 
         return (
-          <FacetCard variant="inset" key={op.id} className={cn("p-3", !isActive && "opacity-60")}>
+          <Card variant="inset" key={op.id} className={cn("p-3", !isActive && "opacity-60")}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3">
                 <Icon aria-hidden="true" className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />
@@ -218,7 +218,7 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
                 {op.successRating}
               </Badge>
             )}
-          </FacetCard>
+          </Card>
         );
       })}
     </div>

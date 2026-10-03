@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import { EditPencil } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import type { BuilderSection } from "../../lib/builder-theme";
 import {
   EDITOR_SECTIONS,
@@ -14,6 +13,7 @@ import {
   type FieldChange,
 } from "../../lib/edit-changes";
 import { EDITOR_SECTION_LABELS } from "./editor-sections";
+import { Card } from "~/components/ui/card";
 
 const MAX_LISTED = 8;
 
@@ -47,7 +47,7 @@ export function EditorChangeSummary({ changes, onNavigate }: EditorChangeSummary
   }, [changes]);
 
   return (
-    <FacetCard
+    <Card
       role="region"
       aria-labelledby="editor-change-summary-title"
       className="rounded-card space-y-4 p-4 sm:p-6"
@@ -74,7 +74,7 @@ export function EditorChangeSummary({ changes, onNavigate }: EditorChangeSummary
                 <h3 className="text-label text-headline">{EDITOR_SECTION_LABELS[section]}</h3>
                 <Button
                   type="button"
-                  variant="plain"
+                  variant="ghost"
                   size="sm"
                   onClick={() => onNavigate(section)}
                   aria-label={`Edit ${EDITOR_SECTION_LABELS[section]}`}
@@ -112,6 +112,6 @@ export function EditorChangeSummary({ changes, onNavigate }: EditorChangeSummary
           ))}
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 }

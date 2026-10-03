@@ -140,7 +140,7 @@ export default function FacetMaterialsLabPage() {
               onChange={(color) => handleConfigChange({ customAccent: color })}
             />
             <Button
-              variant="gray"
+              variant="secondary"
               size="sm"
               onClick={handleReset}
               title="Reset all settings to defaults"
@@ -150,7 +150,7 @@ export default function FacetMaterialsLabPage() {
               <span className="hidden sm:inline">Reset</span>
             </Button>
             <Button
-              variant="gray"
+              variant="secondary"
               size="sm"
               aria-pressed={config.fullscreen}
               onClick={() => {

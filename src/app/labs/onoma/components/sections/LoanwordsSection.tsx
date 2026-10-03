@@ -28,7 +28,6 @@ import {
   type SourceWord,
 } from "~/lib/onoma/loanwords-presets";
 import { Input } from "~/components/ui/input";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
@@ -43,6 +42,7 @@ import {
 } from "~/components/ui/select";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Slider } from "~/components/ui/slider";
+import { Card } from "~/components/ui/card";
 
 export default function LoanwordsSection() {
   const notify = useNotify();
@@ -282,7 +282,7 @@ export default function LoanwordsSection() {
             transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
             className="overflow-hidden"
           >
-            <FacetCard variant="inset" padding="none" className="space-y-2 p-4">
+            <Card variant="inset" padding="none" className="space-y-2 p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <BookOpen className="text-tint h-4 w-4" />
@@ -323,7 +323,7 @@ export default function LoanwordsSection() {
                   </p>
                 </div>
               </div>
-            </FacetCard>
+            </Card>
           </motion.div>
         )}
       </AnimatePresence>
@@ -333,7 +333,7 @@ export default function LoanwordsSection() {
         {/* Left Column: Contact Links & Configuration (5 cols) */}
         <div className="space-y-4 lg:col-span-5">
           {/* Contact Registry List */}
-          <FacetCard variant="inset" padding="none" className="space-y-3 p-4">
+          <Card variant="inset" padding="none" className="space-y-3 p-4">
             <div className="border-separator flex items-center justify-between border-b pb-2">
               <div className="flex items-center gap-2">
                 <div className="bg-tint/10 text-tint rounded-control flex h-6 w-6 items-center justify-center">
@@ -352,7 +352,7 @@ export default function LoanwordsSection() {
                 >
                   <HelpCircle className="h-3.5 w-3.5" />
                 </Toggle>
-                <Button variant="tinted" size="sm" onClick={handleNewChannel}>
+                <Button variant="secondary" size="sm" onClick={handleNewChannel}>
                   <Plus className="h-3 w-3" />
                   <span>New Channel</span>
                 </Button>
@@ -390,7 +390,7 @@ export default function LoanwordsSection() {
                       </span>
                     }
                     trailing={
-                      <Badge variant="neutral" className="font-mono capitalize">
+                      <Badge variant="default" className="font-mono capitalize">
                         {c.domain}
                       </Badge>
                     }
@@ -398,10 +398,10 @@ export default function LoanwordsSection() {
                 ))}
               </FacetListSection>
             )}
-          </FacetCard>
+          </Card>
 
           {/* Form to configure Contact Registry */}
-          <FacetCard variant="inset" padding="none" className="space-y-4 p-4">
+          <Card variant="inset" padding="none" className="space-y-4 p-4">
             <form onSubmit={handleSaveContact} className="space-y-4">
               <div className="border-separator flex items-center justify-between border-b pb-2">
                 <div className="flex items-center gap-2">
@@ -511,7 +511,7 @@ export default function LoanwordsSection() {
                   <div className="flex items-center gap-1">
                     {PHONETIC_LAW_PRESETS.map((law) => (
                       <Button
-                        variant="bordered"
+                        variant="outline"
                         size="sm"
                         key={law.name}
                         onClick={() => handleApplyPhoneticLaw(law)}
@@ -575,7 +575,7 @@ export default function LoanwordsSection() {
                       className="text-footnote flex-1 font-mono"
                     />
                     <Button
-                      variant="bordered"
+                      variant="outline"
                       size="sm"
                       type="button"
                       onClick={handleAddShift}
@@ -626,12 +626,12 @@ export default function LoanwordsSection() {
                 </span>
               </Button>
             </form>
-          </FacetCard>
+          </Card>
         </div>
 
         {/* Right Column: Loanword Adaptation Simulator Sandbox (7 cols) */}
         <div className="space-y-4 lg:col-span-7">
-          <FacetCard variant="inset" padding="none" className="space-y-4 p-4">
+          <Card variant="inset" padding="none" className="space-y-4 p-4">
             {/* Simulator Header & Action Toolbar */}
             <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-b pb-3">
               <div className="flex items-center gap-2">
@@ -650,7 +650,7 @@ export default function LoanwordsSection() {
               <div className="flex items-center gap-2">
                 {sourcePack && (
                   <Button
-                    variant="tinted"
+                    variant="secondary"
                     size="sm"
                     onClick={handleSyncSourceLexicon}
                     title={`Sync lexicon words from ${sourcePack.name}`}
@@ -804,13 +804,13 @@ export default function LoanwordsSection() {
                   onChange={(e) => setNewTestMeaning(e.target.value)}
                   className="text-footnote flex-1"
                 />
-                <Button variant="bordered" size="sm" type="submit" className="shrink-0">
+                <Button variant="outline" size="sm" type="submit" className="shrink-0">
                   <Plus className="text-tint mr-1 inline h-3.5 w-3.5" />
                   <span>Add Word</span>
                 </Button>
               </div>
             </form>
-          </FacetCard>
+          </Card>
         </div>
       </div>
     </div>

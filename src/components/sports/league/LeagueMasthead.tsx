@@ -15,7 +15,6 @@ import { Badge } from "~/components/ui/badge";
 import { withBasePath } from "~/lib/base-path";
 import type { SportThemeConfig as SportTheme } from "~/lib/sports/theming";
 import { cn } from "~/lib/utils";
-import { Refraction } from "~/components/ui/facet";
 
 export interface LeagueMastheadProps {
   league: {
@@ -82,7 +81,6 @@ export function LeagueMasthead({
         className
       )}
     >
-      <Refraction />
       {/* ─── Breadcrumbs & Utilities ─── */}
       <div className="border-separator mb-5 flex flex-wrap items-center justify-between gap-3 border-b pb-4">
         <div className="text-footnote text-label-secondary flex items-center gap-2 font-semibold">

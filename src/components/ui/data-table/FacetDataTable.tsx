@@ -12,12 +12,12 @@ import {
 } from "~/components/ui/table";
 import { Skeleton } from "~/components/ui/skeleton";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils/cn";
 import { FacetMobileCard } from "./FacetMobileCard";
 import { FacetTableToolbar } from "./FacetTableToolbar";
 import { FacetTablePagination } from "./FacetTablePagination";
 import type { FacetDataTableProps, FacetColumn, SortState } from "./types";
+import { Card } from "~/components/ui/card";
 
 export function FacetDataTable<T extends Record<string, any>>({
   data,
@@ -323,7 +323,7 @@ export function FacetDataTable<T extends Record<string, any>>({
       {loading ? (
         <div aria-busy="true" aria-label="Loading" className="flex flex-col gap-3">
           {/* Desktop Table Skeleton: shaped like the Table (header row + body rows) */}
-          <FacetCard
+          <Card
             className={cn(
               layoutMode === "auto" ? "hidden sm:flex" : layoutMode === "table" ? "flex" : "hidden",
               "flex-col gap-3 overflow-hidden p-4"
@@ -341,7 +341,7 @@ export function FacetDataTable<T extends Record<string, any>>({
                 ))}
               </div>
             ))}
-          </FacetCard>
+          </Card>
 
           {/* Mobile Card Skeleton */}
           <div
@@ -360,7 +360,7 @@ export function FacetDataTable<T extends Record<string, any>>({
         </div>
       ) : isEmpty ? (
         /* ─── Empty State View ──────────────────────────────────────── */
-        <FacetCard>
+        <Card>
           <EmptyState
             icon={emptyIcon || <Database />}
             title={emptyMessage}
@@ -368,7 +368,7 @@ export function FacetDataTable<T extends Record<string, any>>({
               searchTerm ? "Try adjusting your search terms or clearing active filters." : undefined
             }
           />
-        </FacetCard>
+        </Card>
       ) : (
         <>
           {/* ─── Desktop Table Mode (sm: and up) ────────────────────── */}

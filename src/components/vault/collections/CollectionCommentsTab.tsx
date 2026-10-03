@@ -31,7 +31,7 @@ export function CollectionCommentsTab({
   return (
     <div className="space-y-4">
       {/* Add comment */}
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardContent className="p-4">
           <h3 className="text-title-3 text-label mb-3 font-semibold">Add a Comment</h3>
           <div className="flex gap-2">
@@ -60,7 +60,7 @@ export function CollectionCommentsTab({
       {comments && comments.length > 0 ? (
         <div className="space-y-3">
           {comments.map((comment) => (
-            <Card key={comment.id}>
+            <Card key={comment.id} className="flex flex-col gap-6 py-6">
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
                   <div className="flex-1">
@@ -78,7 +78,7 @@ export function CollectionCommentsTab({
           ))}
         </div>
       ) : (
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardContent className="p-12 text-center">
             <MessageCircle className="text-label-tertiary mx-auto mb-3 h-12 w-12" />
             <p className="text-label-secondary">No comments yet</p>

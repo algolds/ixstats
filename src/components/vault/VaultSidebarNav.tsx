@@ -227,7 +227,6 @@ export function VaultSidebarNav({
       aria-label="Vault sections"
       className="w-48"
       trackPointerHover={false}
-      texture="dots"
     >
       <CutoutCardHeader icon={<Grid3x3 />} as="h2" cornerSize={16} className="px-3 pt-2 pb-4">
         Vault sections

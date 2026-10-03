@@ -4,8 +4,8 @@ import React from "react";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { Medal, Tournament as Swords, Trophy } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 
 interface BracketViewProps {
   brackets: Array<{
@@ -88,7 +88,7 @@ function BracketRounds({
   onTeamClick?: (teamId: string) => void;
 }) {
   return (
-    <FacetCard
+    <Card
       className={cn(
         "rounded-sheet border-separator bg-surface shadow-card relative space-y-6 overflow-hidden border p-6 md:p-8",
         className
@@ -119,7 +119,10 @@ function BracketRounds({
             <div key={round} className="space-y-3">
               <div className="flex items-center gap-2">
                 {isFinalRound ? (
-                  <Badge className="border-yellow/40 bg-yellow/20 text-eyebrow text-yellow px-3 py-0.5">
+                  <Badge
+                    className="border-yellow/40 bg-yellow/20 text-eyebrow text-yellow px-3 py-0.5"
+                    variant="secondary"
+                  >
                     <Trophy className="mr-1 h-3.5 w-3.5" />
                     Championship Final
                   </Badge>
@@ -236,7 +239,7 @@ function BracketRounds({
           );
         })}
       </div>
-    </FacetCard>
+    </Card>
   );
 }
 

@@ -454,7 +454,7 @@ export function EditorPanel({
                     <tabDef.Icon className="h-3.5 w-3.5" aria-hidden />
                     <span className="hidden sm:inline">{tabDef.label}</span>
                     {tabId === "features" && featureCount !== undefined && featureCount > 0 && (
-                      <Badge variant="neutral" className="px-1 tabular-nums">
+                      <Badge variant="default" className="px-1 tabular-nums">
                         {featureCount}
                       </Badge>
                     )}

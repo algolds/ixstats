@@ -31,9 +31,9 @@ import { ForumAccountVerify } from "~/components/settings/ForumAccountVerify";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { formatMembershipTier } from "~/lib/tier-utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
+import { Card } from "~/components/ui/card";
 
 interface AccountIdentityPanelProps {
   user: UserResource | null | undefined;
@@ -108,7 +108,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
         category="Profile & Identity"
         description="Public passport presentation and connected community accounts."
         actions={
-          <Button asChild variant="tinted" size="sm">
+          <Button asChild variant="secondary" size="sm">
             <Link href={passportUrl}>
               <ExternalLink aria-hidden />
               <span>View public passport</span>
@@ -118,7 +118,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
       />
 
       {/* Identity card: v2's glass passport card with the tint wash (Facet 3.1 glass hero) */}
-      <FacetCard variant="glass" glow="shadow" padding="md">
+      <Card variant="hero" padding="md">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <div className="border-separator bg-fill-3 rounded-row relative size-14 shrink-0 overflow-hidden border">
@@ -142,7 +142,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
             <div className="min-w-0 flex-1 space-y-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-label text-title-3">@{passportHandle}</span>
-                <Badge variant="tinted">
+                <Badge variant="secondary">
                   <ShieldCheck aria-hidden />
                   Verified
                 </Badge>
@@ -175,7 +175,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                   (() => {
                     const tierInfo = formatMembershipTier(userProfile.membershipTier);
                     return (
-                      <Badge variant={tierInfo.isPremium ? "caution" : "neutral"}>
+                      <Badge variant={tierInfo.isPremium ? "warning" : "default"}>
                         {tierInfo.isPremium && <Crown aria-hidden />}
                         {tierInfo.label}
                       </Badge>
@@ -186,7 +186,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            <Button type="button" variant="gray" size="sm" onClick={handleCopyPassport}>
+            <Button type="button" variant="secondary" size="sm" onClick={handleCopyPassport}>
               {copiedHandle ? (
                 <>
                   <Check aria-hidden className="text-success" />
@@ -210,7 +210,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
             </div>
           </div>
         </div>
-      </FacetCard>
+      </Card>
 
       {/* Account credentials & linked accounts */}
       <SettingsGroup
@@ -219,7 +219,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
         action={
           <Button
             type="button"
-            variant="gray"
+            variant="secondary"
             size="sm"
             aria-pressed={showSensitive}
             onClick={() => setShowSensitive((prev) => !prev)}
@@ -275,7 +275,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
         >
           <Button
             type="button"
-            variant="gray"
+            variant="secondary"
             size="sm"
             aria-expanded={showLinkedAccounts}
             onClick={() => setShowLinkedAccounts((prev) => !prev)}
@@ -310,7 +310,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                   <Badge variant="success">Connected</Badge>
                   <Button
                     type="button"
-                    variant="plain"
+                    variant="ghost"
                     size="sm"
                     className="text-destructive"
                     onClick={() => unlinkForum.mutate()}
@@ -322,7 +322,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
               ) : (
                 <Button
                   type="button"
-                  variant="gray"
+                  variant="secondary"
                   size="sm"
                   aria-expanded={showForumInput}
                   onClick={() => setShowForumInput((prev) => !prev)}
@@ -372,7 +372,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                   <Badge variant="success">Connected</Badge>
                   <Button
                     type="button"
-                    variant="plain"
+                    variant="ghost"
                     size="sm"
                     className="text-destructive"
                     onClick={() => unlinkDiscord.mutate()}

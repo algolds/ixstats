@@ -4,7 +4,6 @@ import { useState } from "react";
 import { api } from "~/trpc/react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
@@ -18,6 +17,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "~/lib/utils";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Card } from "~/components/ui/card";
 
 interface AutosaveHistoryPanelProps {
   countryId: string;
@@ -68,7 +68,7 @@ function AutosaveItem({ autosave }: AutosaveItemProps) {
   }
 
   return (
-    <FacetCard className={cn("rounded-control p-4", !isSuccess && "border-destructive/40")}>
+    <Card className={cn("rounded-control p-4", !isSuccess && "border-destructive/40")}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {isSuccess ? (
@@ -108,7 +108,7 @@ function AutosaveItem({ autosave }: AutosaveItemProps) {
           )}
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 }
 
@@ -189,7 +189,7 @@ export function AutosaveHistoryPanel({
         </SheetHeader>
 
         {/* Summary stats */}
-        <FacetCard
+        <Card
           variant="inset"
           padding="none"
           className="divide-separator grid grid-cols-1 divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0"
@@ -212,7 +212,7 @@ export function AutosaveHistoryPanel({
             }
           />
           <Stat label="Last save" value={lastSaveText} icon={<Clock className="h-5 w-5" />} />
-        </FacetCard>
+        </Card>
 
         {/* Section breakdown */}
         {stats && stats.totalAutosaves > 0 && (

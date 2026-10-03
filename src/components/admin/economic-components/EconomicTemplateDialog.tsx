@@ -44,7 +44,7 @@ export function EconomicTemplateDialog({
         <div className="flex-1 overflow-auto p-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {templates.map((template) => (
-              <Card key={template.id} className="p-4">
+              <Card key={template.id} className="flex flex-col gap-6 p-4 py-6">
                 <div className="mb-3 flex items-center gap-2">
                   <FileText className="text-yellow h-5 w-5" />
                   <h3 className="text-label font-semibold">{template.name}</h3>
@@ -61,12 +61,12 @@ export function EconomicTemplateDialog({
 
                 <div className="mb-3 flex flex-wrap gap-1">
                   {template.components.slice(0, 4).map((comp) => (
-                    <Badge key={comp} variant="gray">
+                    <Badge key={comp} variant="default">
                       {comp.split("_").slice(0, 2).join(" ")}...
                     </Badge>
                   ))}
                   {template.components.length > 4 && (
-                    <Badge variant="gray">+{template.components.length - 4} more</Badge>
+                    <Badge variant="default">+{template.components.length - 4} more</Badge>
                   )}
                 </div>
               </Card>

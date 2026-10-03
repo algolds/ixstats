@@ -81,13 +81,13 @@ export function ThinktankRosterTab({
     switch (role.toLowerCase()) {
       case "owner":
         return (
-          <Badge variant="caution">
+          <Badge variant="warning">
             <Crown /> Owner
           </Badge>
         );
       case "admin":
         return (
-          <Badge variant="tinted">
+          <Badge variant="secondary">
             <Shield /> Admin
           </Badge>
         );

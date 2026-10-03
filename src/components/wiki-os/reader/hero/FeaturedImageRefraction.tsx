@@ -4,8 +4,8 @@ import type React from "react";
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
-import { FacetCard } from "~/components/ui/facet-container";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { Card } from "~/components/ui/card";
 
 export type RefractionMode = "ambient-underglow" | "facet-lens";
 
@@ -112,8 +112,8 @@ export function FeaturedArticleRefractionCard({
         </div>
       )}
 
-      <FacetCard
-        variant="glass"
+      <Card
+        variant="hero"
         className={cn("overflow-hidden rounded-2xl p-4 sm:rounded-3xl sm:p-5 lg:p-6", className)}
       >
         {/* The halo shows through the frost; the veil keeps the labels AA over it (spec §16.8). */}
@@ -150,7 +150,7 @@ export function FeaturedArticleRefractionCard({
         <TextureOverlay texture="paperGrain" opacity={0.05} className="rounded-[inherit]" />
 
         <div className="relative">{children}</div>
-      </FacetCard>
+      </Card>
     </div>
   );
 }

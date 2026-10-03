@@ -14,7 +14,6 @@ import {
   HelpCircle,
   InfoCircle as Info,
 } from "iconoir-react";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Input } from "~/components/ui/input";
@@ -25,6 +24,7 @@ import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/components/ui/sheet";
 import { cn } from "~/lib/utils";
 import { type BudgetData, BUDGET_CATEGORIES } from "~/hooks/useDefenseBudget";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 /** Map icon name strings to iconoir components */
 const ICON_MAP = {
@@ -58,8 +58,8 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
   currentYear,
 }: BudgetManagementCardProps) {
   return (
-    <FacetCard>
-      <FacetCardHeader className="p-5 pb-4">
+    <Card>
+      <CardHeader className="p-5 pb-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
@@ -164,8 +164,8 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
             </Button>
           )}
         </div>
-      </FacetCardHeader>
-      <FacetCardContent className="space-y-6 px-5 pb-5">
+      </CardHeader>
+      <CardContent className="space-y-6 px-5 pb-5">
         {/* Total Budget */}
         <div className="border-separator rounded-control border p-4">
           <div className="grid grid-cols-2 gap-4">
@@ -263,7 +263,7 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
             );
           })}
         </div>
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 });

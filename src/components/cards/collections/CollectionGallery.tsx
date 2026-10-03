@@ -243,7 +243,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                 transition={{ ...springSmooth, delay: index * 0.05 }}
               >
                 <Link href={`/vault/collections/${collection.id}`}>
-                  <Card className="h-full cursor-pointer transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
+                  <Card className="flex h-full cursor-pointer flex-col gap-6 py-6 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
                     <CardContent className="space-y-3 p-4">
                       {/* Header */}
                       <div className="flex items-start justify-between">

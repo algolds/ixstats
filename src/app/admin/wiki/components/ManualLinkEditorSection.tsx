@@ -18,7 +18,7 @@ import {
   FloppyDisk as Save,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export function ManualLinkEditorSection({ countriesData }: { countriesData: any }) {
   const [countrySearch, setCountrySearch] = useState("");
@@ -85,7 +85,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
   }, [selectedCountryId, wikiPageTitle, wikiSource, setWikiLinkMutation]);
 
   return (
-    <FacetCard className="space-y-4 p-5">
+    <Card className="space-y-4 p-5">
       <div className="border-separator flex items-center gap-2 border-b pb-3">
         <Globe className="text-blue h-4 w-4" />
         <h3 className="text-label text-caption">Manual Link Editor</h3>
@@ -220,6 +220,6 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
           </div>
         )}
       </div>
-    </FacetCard>
+    </Card>
   );
 }

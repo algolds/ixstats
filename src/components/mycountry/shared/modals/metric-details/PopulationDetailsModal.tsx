@@ -16,7 +16,6 @@ import {
   InfoCircle as Info,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { FacetCard, FacetCardHeader, FacetCardContent } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -46,6 +45,7 @@ import { MetricModalLayout } from "./MetricModalLayout";
 import { filterAndSortHistory } from "./hooks/useMetricHistoryFilter";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "~/components/ui/hover-card";
 import { Button } from "~/components/ui/button";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 interface PopulationChartDataPoint {
   year: number;
@@ -394,8 +394,8 @@ export function PopulationDetailsModal({
       <MetricModalLayout variant="social">
         <MetricModalLayout.MainArea>
           {performanceMetrics && globalStats && (
-            <FacetCard className="flex flex-1 flex-col justify-between p-6">
-              <FacetCardHeader className="mb-4 p-0">
+            <Card className="flex flex-1 flex-col justify-between p-6">
+              <CardHeader className="mb-4 p-0">
                 <h3 className="text-label text-title-3 flex items-center gap-2">
                   <BarChart3 className="text-label-secondary h-5 w-5" />
                   Demographics Performance Summary
@@ -403,10 +403,10 @@ export function PopulationDetailsModal({
                 <p className="text-label-secondary text-body">
                   Key growth metrics and global ranking statistics.
                 </p>
-              </FacetCardHeader>
-              <FacetCardContent className="flex flex-1 flex-col justify-center p-0">
+              </CardHeader>
+              <CardContent className="flex flex-1 flex-col justify-center p-0">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                  <FacetCard
+                  <Card
                     variant="inset"
                     padding="none"
                     className="flex flex-col justify-center p-4 text-center"
@@ -433,9 +433,9 @@ export function PopulationDetailsModal({
                       {performanceMetrics.growth > 0 ? "+" : ""}
                       {performanceMetrics.growth.toFixed(3)}%
                     </span>
-                  </FacetCard>
+                  </Card>
 
-                  <FacetCard
+                  <Card
                     variant="inset"
                     padding="none"
                     className="flex flex-col justify-center p-4 text-center"
@@ -452,9 +452,9 @@ export function PopulationDetailsModal({
                     <span className="text-label-secondary text-footnote mt-0.5">
                       Avg: {formatPopulation(performanceMetrics.globalAverage)}
                     </span>
-                  </FacetCard>
+                  </Card>
 
-                  <FacetCard
+                  <Card
                     variant="inset"
                     padding="none"
                     className="flex flex-col justify-center p-4 text-center"
@@ -464,10 +464,10 @@ export function PopulationDetailsModal({
                     <span className="text-label-secondary text-footnote mt-0.5">
                       of {performanceMetrics.totalCountries} countries
                     </span>
-                  </FacetCard>
+                  </Card>
                 </div>
-              </FacetCardContent>
-            </FacetCard>
+              </CardContent>
+            </Card>
           )}
         </MetricModalLayout.MainArea>
 
@@ -507,7 +507,7 @@ export function PopulationDetailsModal({
                     <HoverCardTrigger asChild>
                       <Button
                         type="button"
-                        variant="gray"
+                        variant="secondary"
                         size="icon-sm"
                         aria-label="About population tiers"
                         className="text-label-secondary hover:text-label size-5 rounded-full"
@@ -542,7 +542,7 @@ export function PopulationDetailsModal({
                               {tier.description}
                             </span>
                             {idx === populationTierInfo.currentIndex && (
-                              <Badge variant="secondary" className="ml-1">
+                              <Badge variant="default" className="ml-1">
                                 Current
                               </Badge>
                             )}
@@ -554,7 +554,7 @@ export function PopulationDetailsModal({
                 )}
               </div>
               <div className="mt-2">
-                <Badge variant="secondary" className="text-headline">
+                <Badge variant="default" className="text-headline">
                   {populationTierInfo?.currentTier?.name || "Unknown"}
                 </Badge>
               </div>
@@ -587,12 +587,12 @@ export function PopulationDetailsModal({
 
     if (chartData.length === 0) {
       return (
-        <FacetCard>
-          <FacetCardContent className="py-12 text-center">
+        <Card>
+          <CardContent className="py-12 text-center">
             <Activity className="text-label-secondary mx-auto mb-4 h-12 w-12 opacity-50" />
             <p className="text-label-secondary">No historical data available</p>
-          </FacetCardContent>
-        </FacetCard>
+          </CardContent>
+        </Card>
       );
     }
 
@@ -819,8 +819,8 @@ export function PopulationDetailsModal({
     return (
       <MetricModalLayout variant="social">
         <MetricModalLayout.MainArea>
-          <FacetCard className="p-6">
-            <FacetCardHeader className="mb-4 p-0">
+          <Card className="p-6">
+            <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 flex items-center gap-2">
                 <Activity className="text-label-secondary h-5 w-5" />
                 Population Growth Trends
@@ -835,15 +835,15 @@ export function PopulationDetailsModal({
                 Population development over time with {chartData.length} data points · Live rate
                 from sim · Trailing from last interval delta
               </p>
-            </FacetCardHeader>
-            <FacetCardContent className="p-0">
+            </CardHeader>
+            <CardContent className="p-0">
               <div className="h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   {renderChartByFormat()}
                 </ResponsiveContainer>
               </div>
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
@@ -872,14 +872,14 @@ export function PopulationDetailsModal({
     return (
       <MetricModalLayout variant="social">
         <MetricModalLayout.MainArea>
-          <FacetCard className="flex flex-1 flex-col p-6">
-            <FacetCardHeader className="mb-4 p-0">
+          <Card className="flex flex-1 flex-col p-6">
+            <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 flex items-center gap-2">
                 <Globe className="text-label-secondary h-5 w-5" />
                 Global Population Rankings
               </h3>
-            </FacetCardHeader>
-            <FacetCardContent className="flex flex-1 flex-col justify-center p-0">
+            </CardHeader>
+            <CardContent className="flex flex-1 flex-col justify-center p-0">
               {isTopCountriesLoading ? (
                 <Skeleton className="h-64 w-full" />
               ) : comparisonData.length > 0 ? (
@@ -920,16 +920,16 @@ export function PopulationDetailsModal({
                   No comparison data available
                 </div>
               )}
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <FacetCard className="flex flex-1 flex-col justify-between p-4">
-            <FacetCardHeader className="mb-3 p-0">
+          <Card className="flex flex-1 flex-col justify-between p-4">
+            <CardHeader className="mb-3 p-0">
               <h3 className="text-label text-title-3 text-headline">Demographics Breakdown</h3>
-            </FacetCardHeader>
-            <FacetCardContent className="space-y-3 p-0">
+            </CardHeader>
+            <CardContent className="space-y-3 p-0">
               <div className="flex h-44 w-full items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -978,8 +978,8 @@ export function PopulationDetailsModal({
                   </div>
                 ))}
               </div>
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
         </MetricModalLayout.Sidebar>
       </MetricModalLayout>
     );

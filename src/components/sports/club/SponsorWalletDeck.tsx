@@ -139,7 +139,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
             />
             <Button
               size="sm"
-              variant="tinted"
+              variant="secondary"
               onClick={() => upgradeStadium.mutate({ teamId: team.id })}
               disabled={upgradeStadium.isPending}
             >
@@ -162,7 +162,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
         <div className="space-y-4 pt-2">
           {currentSponsor ? (
             <div className="bg-surface rounded-row mb-2 p-4">
-              <Badge variant="tinted" className="mb-1">
+              <Badge variant="secondary" className="mb-1">
                 Active Partner
               </Badge>
               <h5 className="text-headline text-label">{currentSponsor.name}</h5>
@@ -224,7 +224,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                   <p className="text-headline text-label">{s.name}</p>
                   <p className="text-label-secondary text-footnote">{s.desc}</p>
                 </div>
-                <Badge variant="neutral" className="shrink-0 tabular-nums">
+                <Badge variant="default" className="shrink-0 tabular-nums">
                   {s.payout}
                 </Badge>
               </button>
@@ -236,7 +236,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
   ];
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="flex flex-col gap-6 overflow-hidden py-6">
       <CardHeader>
         <CardTitle className="text-title-2 flex items-center gap-2">
           <Sparkles className="text-tint size-5" aria-hidden />
@@ -287,7 +287,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                   {isExpanded && (
                     <Button
                       size="icon-sm"
-                      variant="plain"
+                      variant="ghost"
                       aria-label="Close"
                       className="text-label-secondary"
                       onClick={() => setActiveCard(null)}

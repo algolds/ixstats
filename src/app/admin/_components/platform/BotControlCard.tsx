@@ -320,7 +320,7 @@ export function BotControlCard({
   const isAvailable = botStatus?.botHealth?.available;
 
   return (
-    <Card className="flex h-full flex-col">
+    <Card className="flex h-full flex-col gap-6 py-6">
       <CardHeader className="shrink-0 pb-3">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
@@ -339,7 +339,7 @@ export function BotControlCard({
               <Loader2 className="text-label-secondary h-3.5 w-3.5 animate-spin" />
             )}
             {isAvailable ? (
-              <Badge variant="green" className="text-eyebrow">
+              <Badge variant="success" className="text-eyebrow">
                 <span className="bg-green mr-2 h-1.5 w-1.5 rounded-full" />
                 Daemon Active
               </Badge>
@@ -409,7 +409,7 @@ export function BotControlCard({
                           {proc.name}
                         </span>
                         <Badge
-                          variant={isOnline ? "default" : "destructive"}
+                          variant={isOnline ? "secondary" : "destructive"}
                           className={cn(
                             "text-eyebrow px-2 py-0",
                             isOnline
@@ -560,7 +560,7 @@ export function BotControlCard({
                     Pause
                   </Button>
                   <Button
-                    variant="tinted"
+                    variant="secondary"
                     size="sm"
                     onClick={onResumeBot}
                     disabled={resumePending || !isAvailable}
@@ -595,7 +595,7 @@ export function BotControlCard({
                 </span>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
-                    variant="tinted"
+                    variant="secondary"
                     size="sm"
                     onClick={onSyncFromBot}
                     disabled={autoSyncPending || !isAvailable}
@@ -991,7 +991,7 @@ export function BotControlCard({
                         </TableCell>
                         <TableCell className="px-4">
                           {isAdm ? (
-                            <Badge variant="yellow" className="text-eyebrow px-2 py-0">
+                            <Badge variant="warning" className="text-eyebrow px-2 py-0">
                               Admin Permit
                             </Badge>
                           ) : (

@@ -145,7 +145,7 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
             </div>
             <h3 className="text-title-2 text-destructive">Error Opening Pack</h3>
             <p className="text-body text-label-secondary mt-2">{error}</p>
-            <Button variant="gray" className="mt-6" onClick={onCancel}>
+            <Button variant="secondary" className="mt-6" onClick={onCancel}>
               Close
             </Button>
           </motion.div>

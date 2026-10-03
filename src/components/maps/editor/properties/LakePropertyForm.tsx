@@ -1,10 +1,9 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import React, { useMemo } from "react";
 import type { NamedLakeFormData, EditorFeature } from "~/hooks/map-editor/editor-types";
 import { geometryAreaSqKm } from "~/lib/maps/geo-math";
 import { WikiLinkWizard } from "../WikiLinkWizard";
+import { Card } from "~/components/ui/card";
 
 const inputClasses =
   "w-full rounded-control border border-separator bg-surface px-3 py-2 sm:py-2 text-body sm:text-body text-label placeholder:text-label-secondary transition-colors focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
@@ -71,7 +70,7 @@ export const LakePropertyForm = React.memo(function LakePropertyForm({
         />
       </div>
 
-      <FacetCard className="text-footnote px-3 py-2">
+      <Card className="text-footnote px-3 py-2">
         <div className="text-label-secondary text-left font-medium">
           Polygon Geometry:{" "}
           {hasGeom ? (
@@ -87,7 +86,7 @@ export const LakePropertyForm = React.memo(function LakePropertyForm({
             Use the polygon drawing tool in the map controls to trace the contours of the lake.
           </div>
         )}
-      </FacetCard>
+      </Card>
 
       <WikiLinkWizard
         value={form.wikiPageTitle}

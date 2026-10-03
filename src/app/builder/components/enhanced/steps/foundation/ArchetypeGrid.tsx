@@ -13,7 +13,6 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { EmptyState } from "~/components/ui/empty-state";
 import { CutoutCard } from "~/components/ui/cutout-card";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Progress } from "~/components/ui/progress";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
@@ -32,6 +31,7 @@ import {
   getComplexityBadgeVariant,
   getArchetypeColorClass,
 } from "./foundationUtils";
+import { Card } from "~/components/ui/card";
 
 interface ArchetypeGridProps {
   transitionDirection: number;
@@ -128,7 +128,7 @@ export function ArchetypeGrid({
       <div className="border-separator flex flex-col justify-between gap-4 border-b pb-4 md:flex-row md:items-center">
         <div className="space-y-2">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-            <Button variant="bordered" size="sm" onClick={onBackToBenchmark}>
+            <Button variant="outline" size="sm" onClick={onBackToBenchmark}>
               <ArrowLeft aria-hidden /> Back to Benchmark Country
               {selectedTemplate?.name ? ` (${selectedTemplate.name})` : ""}
             </Button>
@@ -205,8 +205,8 @@ export function ArchetypeGrid({
       {/* Active Benchmark Overview Card or Benchmark Skipped Banner */}
       {selectedTemplate ? (
         // v2: the benchmark banner sits on a gold wash (the glass hero in the builder tint).
-        <FacetCard
-          variant="glass"
+        <Card
+          variant="hero"
           className="flex flex-col items-start justify-between gap-4 p-4 sm:flex-row sm:items-center"
         >
           <div className="flex items-center gap-3">
@@ -239,16 +239,16 @@ export function ArchetypeGrid({
           </div>
 
           <div className="flex items-center gap-2 self-stretch sm:self-center">
-            <Button variant="bordered" size="sm" onClick={onBackToBenchmark}>
+            <Button variant="outline" size="sm" onClick={onBackToBenchmark}>
               Change Benchmark Country
             </Button>
             <Button size="sm" onClick={onSkipArchetype}>
               Keep Real Baseline →
             </Button>
           </div>
-        </FacetCard>
+        </Card>
       ) : (
-        <FacetCard className="flex flex-col items-start justify-between gap-4 p-4 sm:flex-row sm:items-center">
+        <Card className="flex flex-col items-start justify-between gap-4 p-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
             <div className="border-tint/30 bg-tint/10 text-tint rounded-control flex size-10 shrink-0 items-center justify-center border">
               <Sparkles aria-hidden className="size-5" />
@@ -270,15 +270,15 @@ export function ArchetypeGrid({
           </div>
 
           <div className="flex items-center gap-2 self-stretch sm:self-center">
-            <Button variant="tinted" size="sm" onClick={onBackToBenchmark}>
+            <Button variant="secondary" size="sm" onClick={onBackToBenchmark}>
               + Add Benchmark Country
             </Button>
           </div>
-        </FacetCard>
+        </Card>
       )}
 
       {/* Search & Complexity Filter Bar */}
-      <FacetCard className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
+      <Card className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
         <SearchField
           size="sm"
           containerClassName="flex-1"
@@ -307,7 +307,7 @@ export function ArchetypeGrid({
             {activeEra === "modern" ? "Modern" : "Historical"} Presets
           </div>
         </div>
-      </FacetCard>
+      </Card>
 
       {isLoadingArchetypes ? (
         <div className="flex flex-col items-center justify-center space-y-4 py-20">
@@ -315,14 +315,14 @@ export function ArchetypeGrid({
           <p className="text-body text-label-secondary">Decoding faction templates...</p>
         </div>
       ) : filteredArchetypes.length === 0 ? (
-        <FacetCard>
+        <Card>
           <EmptyState
             title="No matching archetypes found"
             message="Try adjusting your search query or complexity filter."
             action={
               <Button
                 type="button"
-                variant="bordered"
+                variant="outline"
                 size="sm"
                 onClick={() => {
                   setSearchQuery("");
@@ -333,7 +333,7 @@ export function ArchetypeGrid({
               </Button>
             }
           />
-        </FacetCard>
+        </Card>
       ) : (
         <motion.div
           variants={containerVariants}
@@ -356,9 +356,6 @@ export function ArchetypeGrid({
                 <CutoutCard
                   variant="card"
                   interactive
-                  glow={isSelected}
-                  texture="dots"
-                  textureOpacity={isSelected ? 0.05 : 0.03}
                   className={cn(
                     "flex h-full flex-col justify-between gap-4 p-5",
                     isSelected && "border-tint ring-tint/50 ring-1"
@@ -373,7 +370,7 @@ export function ArchetypeGrid({
                       <div className="relative z-10 flex items-center gap-2">
                         <Button
                           type="button"
-                          variant="gray"
+                          variant="secondary"
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -406,7 +403,7 @@ export function ArchetypeGrid({
                         </button>
                       </h2>
                       <div className="mt-1 flex flex-wrap gap-2">
-                        <Badge variant="neutral">{arch.region}</Badge>
+                        <Badge variant="default">{arch.region}</Badge>
                         <Badge variant={getComplexityBadgeVariant(arch.implementationComplexity)}>
                           Complexity: {arch.implementationComplexity || "Medium"}
                         </Badge>
@@ -496,7 +493,7 @@ export function ArchetypeGrid({
                         onConfirmFaction(arch);
                       }}
                       size="sm"
-                      variant={isSelected ? "tinted" : "filled"}
+                      variant={isSelected ? "secondary" : "default"}
                       className="flex-1"
                     >
                       <Check aria-hidden />
@@ -508,7 +505,7 @@ export function ArchetypeGrid({
                         e.stopPropagation();
                         onOpenDetailsModal(arch);
                       }}
-                      variant="bordered"
+                      variant="outline"
                       size="sm"
                     >
                       <Info aria-hidden />

@@ -185,7 +185,7 @@ export function OnomaHelpModal({
 
             {/* Walkthrough Navigation Bar */}
             <div className="border-separator mx-auto mt-6 flex w-full max-w-lg items-center justify-between border-t pt-4">
-              <Button variant="plain" size="sm" onClick={handleDismissWalkthrough}>
+              <Button variant="ghost" size="sm" onClick={handleDismissWalkthrough}>
                 Don&apos;t show on startup
               </Button>
 
@@ -218,7 +218,7 @@ export function OnomaHelpModal({
               <div className="flex items-center gap-2">
                 {activeWalkthroughStep > 0 && (
                   <Button
-                    variant="gray"
+                    variant="secondary"
                     size="sm"
                     onClick={() => setActiveWalkthroughStep((prev) => prev - 1)}
                   >

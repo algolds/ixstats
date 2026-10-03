@@ -14,7 +14,6 @@ import { api } from "~/trpc/react";
 import type { RouterOutputs } from "~/trpc/react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
@@ -41,6 +40,7 @@ import { StepSection } from "./composer/StepSection";
 import { ApproachPicker } from "./composer/ApproachPicker";
 import { ImpactPreview } from "./composer/ImpactPreview";
 import { DeclarePanel } from "./composer/DeclarePanel";
+import { Card } from "~/components/ui/card";
 
 export type IntentCommitResult = RouterOutputs["intent"]["commit"];
 
@@ -185,7 +185,7 @@ export const IntentComposer = React.memo(function IntentComposer({
     const changes = parseChangeLines(res.intent.changesJson);
     const meta = tierMeta(res.intent.tier);
     return (
-      <FacetCard
+      <Card
         role="region"
         aria-label="Directive declared"
         aria-live="polite"
@@ -239,7 +239,7 @@ export const IntentComposer = React.memo(function IntentComposer({
             Declare another
           </Button>
         </div>
-      </FacetCard>
+      </Card>
     );
   }
 
@@ -260,7 +260,7 @@ export const IntentComposer = React.memo(function IntentComposer({
       >
         <div className="space-y-4">
           {followUpOf && (
-            <FacetCard
+            <Card
               variant="inset"
               padding="none"
               className="text-footnote flex items-center gap-2 py-1 pr-1 pl-3"
@@ -278,7 +278,7 @@ export const IntentComposer = React.memo(function IntentComposer({
               >
                 <Xmark />
               </Button>
-            </FacetCard>
+            </Card>
           )}
 
           <form

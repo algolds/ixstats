@@ -169,7 +169,7 @@ export function MyCountryLogo({
             </span>
           )}
           {showVersion && (
-            <Badge variant="yellow" className="px-1 tabular-nums">
+            <Badge variant="warning" className="px-1 tabular-nums">
               v{BUILDER_VERSION}
             </Badge>
           )}

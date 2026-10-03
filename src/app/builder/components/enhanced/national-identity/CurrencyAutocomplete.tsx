@@ -69,7 +69,7 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
         </label>
         <Button
           type="button"
-          variant="plain"
+          variant="ghost"
           size="sm"
           onClick={() => {
             soundEffects.toggle();
@@ -120,7 +120,7 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
                     <Button
                       key={suggestion.id}
                       type="button"
-                      variant="gray"
+                      variant="secondary"
                       size="sm"
                       onClick={() => handleValueChange(suggestion.value)}
                     >
@@ -142,7 +142,7 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
                 <span>Standard ISO</span>
               </Badge>
             ) : (
-              <Badge variant="neutral">Custom Sovereign Currency</Badge>
+              <Badge variant="default">Custom Sovereign Currency</Badge>
             )}
             {currencyInfo.symbol && (
               <span className="text-label-secondary text-footnote inline-flex items-center gap-2">

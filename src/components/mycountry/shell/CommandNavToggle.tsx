@@ -10,13 +10,13 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { withBasePath, stripBasePath } from "~/lib/base-path";
 import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
 import { useTheme } from "~/context/theme-context";
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import type { CountryWithEconomicData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
+import { Card } from "~/components/ui/card";
 
 export type CommandNavMode = "home" | "executive";
 export type V2Mode = CommandNavMode;
@@ -44,7 +44,7 @@ export function CommandNavToggle({
     rawPath === "/mycountry" || rawPath === "/mycountry/v2" || rawPath === "/mycountry/";
 
   return (
-    <FacetCard className="flex w-fit flex-wrap items-center gap-2 p-1">
+    <Card className="flex w-fit flex-wrap items-center gap-2 p-1">
       {/* Official MyCountry Brand Logo Pill */}
       <div className="border-separator flex shrink-0 items-center gap-2 border-r px-2 py-0.5">
         <MyCountryLogo size="sm" variant="full" animated={true} />
@@ -81,7 +81,7 @@ export function CommandNavToggle({
           </Button>
         );
       })}
-    </FacetCard>
+    </Card>
   );
 }
 
@@ -127,7 +127,7 @@ export function CommandRightPillNav({
   ];
 
   return (
-    <FacetCard className="flex w-fit shrink-0 items-center gap-2 p-1">
+    <Card className="flex w-fit shrink-0 items-center gap-2 p-1">
       {navItems.map(({ id, href, label, icon: Icon }, idx) => {
         const active =
           rawPath.startsWith(href) ||
@@ -163,7 +163,7 @@ export function CommandRightPillNav({
           </React.Fragment>
         );
       })}
-    </FacetCard>
+    </Card>
   );
 }
 

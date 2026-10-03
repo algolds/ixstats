@@ -109,7 +109,7 @@ export function TimeControlCard({
   };
 
   return (
-    <Card>
+    <Card className="flex flex-col gap-6 py-6">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">
@@ -173,7 +173,7 @@ export function TimeControlCard({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-label text-caption">Speed Multiplier</Label>
-            <Badge variant="blue" className="rounded-full px-3 py-0.5 tabular-nums">
+            <Badge variant="info" className="rounded-full px-3 py-0.5 tabular-nums">
               {timeMultiplier}x
             </Badge>
           </div>

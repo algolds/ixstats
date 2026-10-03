@@ -8,7 +8,6 @@ import { Label } from "~/components/ui/label";
 import { Trophy as Award } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -20,6 +19,7 @@ import { useFlag } from "~/hooks/useUnifiedFlags";
 // Subcomponents
 import { AllAchievementsTab } from "~/components/achievements/tabs/AllAchievementsTab";
 import { ShowcaseTab } from "~/components/achievements/tabs/ShowcaseTab";
+import { Card } from "~/components/ui/card";
 
 export default function AchievementsPage() {
   useEffect(() => {
@@ -109,27 +109,20 @@ export default function AchievementsPage() {
         {/* Country profile header card */}
         {isMounted && userProfile && (
           // v2 (c5c6b382): the glass hero with the dot texture and the flag watermark.
-          <FacetCard
-            variant="glass"
-            glow
-            padding="lg"
-            texture="dots"
-            textureOpacity={0.03}
-            className="overflow-hidden"
-          >
+          <Card variant="hero" padding="lg" className="overflow-hidden">
             <FlagWatermark src={countryFlagUrl} />
 
             <div className="relative space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <h1 className="text-label text-title-1 flex flex-wrap items-center gap-3">
                   <span>Achievements</span>
-                  <Badge variant="yellow">
+                  <Badge variant="warning">
                     <span className="font-data tabular-nums">{completionPercent}%</span> mastered
                   </Badge>
                 </h1>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button asChild variant="gray" size="sm" className="rounded-full">
+                  <Button asChild variant="secondary" size="sm" className="rounded-full">
                     <Link href="/leaderboards">
                       <Award aria-hidden className="text-yellow" />
                       <span>Global leaderboards</span>
@@ -181,7 +174,7 @@ export default function AchievementsPage() {
                 />
               </div>
             </div>
-          </FacetCard>
+          </Card>
         )}
 
         {/* Showcase Cabinet */}

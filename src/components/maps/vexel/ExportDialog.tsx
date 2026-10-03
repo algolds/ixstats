@@ -95,7 +95,7 @@ export default function ExportDialog({ onClose }: ExportDialogProps) {
             <FacetListSection header="Download vectors">
               <FacetRow
                 title="Download vector SVG"
-                trailing={<Badge variant="neutral">SVG</Badge>}
+                trailing={<Badge variant="default">SVG</Badge>}
                 onClick={handleDownloadSvg}
               />
             </FacetListSection>

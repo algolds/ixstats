@@ -33,7 +33,7 @@ import { DEFAULT_FLAVOR_SYSTEM_PROMPT } from "~/lib/narrator/constants";
 import { NarratorPlaygroundTab } from "./_components/NarratorPlaygroundTab";
 import { NarratorCacheTab } from "./_components/NarratorCacheTab";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export function NarratorPanel() {
   usePageTitle({ title: "Admin - AI Narrator & Flavor" });
@@ -167,7 +167,7 @@ export function NarratorPanel() {
 
         {/* Tab 1: Configuration */}
         <TabsContent value="config" className="mt-4 focus-visible:outline-none">
-          <FacetCard className="space-y-5 p-5">
+          <Card className="space-y-5 p-5">
             <div className="border-separator flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="flex items-center gap-2">
@@ -324,7 +324,7 @@ export function NarratorPanel() {
                 />
               </div>
             </div>
-          </FacetCard>
+          </Card>
         </TabsContent>
 
         {/* Tab 2: Playground */}

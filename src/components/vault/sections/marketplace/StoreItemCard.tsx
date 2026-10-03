@@ -179,7 +179,7 @@ export function StoreItemCard({
           <Button
             onClick={() => onPurchase(item)}
             disabled={isPurchasing || isOwned}
-            variant={isOwned || isPurchasing ? "gray" : "filled"}
+            variant={isOwned || isPurchasing ? "secondary" : "default"}
             className={cn("w-full", isPurchasing && "cursor-wait")}
             size="sm"
           >

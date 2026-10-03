@@ -282,7 +282,7 @@ export const AtomicFilterBar = React.memo(function AtomicFilterBar<TType extends
     >
       <Icon aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
       <span className="capitalize">{label}</span>
-      <Badge variant="secondary" className="px-2 tabular-nums">
+      <Badge variant="default" className="px-2 tabular-nums">
         {count}
       </Badge>
     </Toggle>

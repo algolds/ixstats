@@ -51,7 +51,7 @@ export function ActiveInterventions() {
         <div className="flex items-center gap-2">
           <Zap className="text-yellow h-5 w-5" />
           <h3 className="text-label text-title-3">Active Interventions</h3>
-          <Badge variant="yellow">
+          <Badge variant="warning">
             {countriesWithInterventions.reduce((sum, c) => sum + c.activeInterventions, 0)} total
           </Badge>
         </div>
@@ -105,7 +105,7 @@ function CountryInterventionRow({
             <span className="text-label-secondary text-footnote ml-2">{country.economicTier}</span>
           </div>
         </div>
-        <Badge variant="yellow">
+        <Badge variant="warning">
           <AlertTriangle className="mr-1 h-3 w-3" />
           {country.activeInterventions} active
         </Badge>
@@ -135,7 +135,7 @@ function CountryInterventionRow({
                         {dm.value >= 0 ? "+" : ""}
                         {(dm.value * 100).toFixed(1)}%
                       </span>
-                      {dm.worldEventId && <Badge variant="blue">World Event</Badge>}
+                      {dm.worldEventId && <Badge variant="info">World Event</Badge>}
                     </div>
                     {dm.description && (
                       <p className="text-label-secondary text-footnote mt-0.5 truncate">

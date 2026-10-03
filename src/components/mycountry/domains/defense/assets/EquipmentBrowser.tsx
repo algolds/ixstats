@@ -16,7 +16,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { MILITARY_ERAS } from "~/lib/military/equipment";
 import type { CatalogManufacturer } from "~/lib/military/player-catalog";
 import type { EquipmentPreset } from "./asset-config";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 interface EquipmentBrowserProps {
   equipment: EquipmentPreset[];
@@ -44,11 +44,12 @@ function EquipmentRow({
   const imageUrl = equipment.imageUrl;
 
   return (
-    <FacetCard
+    <Card
       variant="inset"
       padding="sm"
       onClick={() => onSelect(equipment)}
       className="flex w-full items-start gap-3 text-left"
+      interactive
     >
       {imageUrl && (
         <img
@@ -64,7 +65,7 @@ function EquipmentRow({
         <div className="mb-1 flex flex-wrap items-center gap-2">
           <h5 className="text-label text-body font-medium">{equipment.name}</h5>
           <Badge variant="outline">{equipment.category}</Badge>
-          <Badge variant="secondary">{era?.label.split(" ")[0]}</Badge>
+          <Badge variant="default">{era?.label.split(" ")[0]}</Badge>
         </div>
         <p className="text-label-secondary text-footnote">
           {manufacturer ? `${manufacturer.name} • ${manufacturer.country}` : equipment.manufacturer}
@@ -84,7 +85,7 @@ function EquipmentRow({
       <span className="text-label border-separator rounded-control-sm text-caption shrink-0 border px-3 py-2">
         Select
       </span>
-    </FacetCard>
+    </Card>
   );
 }
 

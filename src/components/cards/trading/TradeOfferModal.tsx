@@ -327,7 +327,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                               </span>
                             }
                             subtitle={<span className="block truncate">{user.leader}</span>}
-                            trailing={<Badge variant="caution">{user.economicTier}</Badge>}
+                            trailing={<Badge variant="warning">{user.economicTier}</Badge>}
                           />
                         ))}
                       </FacetListSection>

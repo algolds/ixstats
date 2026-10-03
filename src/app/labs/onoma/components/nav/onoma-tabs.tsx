@@ -54,13 +54,6 @@ export const exploreSubTabLabel = (t: ExploreSubTab): string => {
   }
 };
 
-/** Active tab styling: every Onoma tab marks selection with the Labs tint (Facet 3 §2.2). */
-const TINT_TAB = {
-  activeIndicatorClassName: "bg-tint-fill border-tint/30",
-  activeTextClassName: "text-tint",
-  activeIconClassName: "text-tint",
-} as const;
-
 // Onoma Glyph Adapter Helper
 const createGlyphAdapter = (name: OnomaGlyphName) => {
   return function GlyphIcon(props: { className?: string }) {
@@ -81,26 +74,23 @@ export const DiplomacyGameIcon = createGlyphAdapter("sound-acoustic");
 export const NationGameIcon = createGlyphAdapter("compose-lexicon");
 
 /**
- * Master Product Pillar tabs (CREATE · STUDIO · EXPLORE) for FacetTabs
+ * Master Product Pillar tabs (CREATE · STUDIO · EXPLORE)
  */
 export const ONOMA_PILLAR_TABS = [
   {
     id: "create",
     label: "Create",
     icon: createGlyphAdapter("emerge-synthesis"),
-    ...TINT_TAB,
   },
   {
     id: "studio",
     label: "Studio",
     icon: createGlyphAdapter("emerge-branch"),
-    ...TINT_TAB,
   },
   {
     id: "explore",
     label: "Explore",
     icon: createGlyphAdapter("sound-acoustic"),
-    ...TINT_TAB,
   },
 ];
 
@@ -113,28 +103,24 @@ export const CREATE_DOMAIN_TABS = [
     label: "Places",
     notation: "Geography",
     icon: createGlyphAdapter("sound-vowel-quad"),
-    ...TINT_TAB,
   },
   {
     id: "people",
     label: "People",
     notation: "Characters",
     icon: createGlyphAdapter("sound-articulation"),
-    ...TINT_TAB,
   },
   {
     id: "organizations",
     label: "Factions",
     notation: "Organizations",
     icon: createGlyphAdapter("struct-syntax"),
-    ...TINT_TAB,
   },
   {
     id: "culture",
     label: "Culture",
     notation: "Traditions",
     icon: createGlyphAdapter("compose-morphology"),
-    ...TINT_TAB,
   },
 ];
 
@@ -145,7 +131,6 @@ export const ONOMA_TABS = [
     notation: "Freeform",
     className: "whitespace-nowrap font-medium",
     icon: createGlyphAdapter("emerge-engine"),
-    ...TINT_TAB,
   },
   ...CREATE_DOMAIN_TABS,
 ];
@@ -159,28 +144,24 @@ export const getStudioTabs = () => [
     label: "Workshop",
     notation: "Model",
     icon: createGlyphAdapter("emerge-branch"),
-    ...TINT_TAB,
   },
   {
     id: "visualizer",
     label: "Path Visualizer",
     notation: "Graph",
     icon: createGlyphAdapter("struct-syntax"),
-    ...TINT_TAB,
   },
   {
     id: "namesets",
     label: "Name Sets",
     notation: "Sets",
     icon: createGlyphAdapter("memory-dataset"),
-    ...TINT_TAB,
   },
   {
     id: "shifts",
     label: "Sound Shifts",
     notation: "Rules",
     icon: createGlyphAdapter("transform-shift"),
-    ...TINT_TAB,
   },
 ];
 
@@ -193,27 +174,23 @@ export const getExploreTabs = () => [
     label: "Acoustics & IPA",
     notation: "Phonetics",
     icon: createGlyphAdapter("sound-acoustic"),
-    ...TINT_TAB,
   },
   {
     id: "grammar",
     label: "Grammar & Roots",
     notation: "Grammar",
     icon: createGlyphAdapter("struct-syntax"),
-    ...TINT_TAB,
   },
   {
     id: "writing",
     label: "Writing Systems",
     notation: "Glyphs",
     icon: createGlyphAdapter("system-writing"),
-    ...TINT_TAB,
   },
   {
     id: "packs",
     label: "Community Packs",
     notation: "Packs",
     icon: createGlyphAdapter("system-pack"),
-    ...TINT_TAB,
   },
 ];

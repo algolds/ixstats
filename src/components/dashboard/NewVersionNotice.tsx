@@ -51,7 +51,7 @@ export function NewVersionNotice() {
         </p>
       </div>
       <div className="flex items-center gap-2">
-        <Button asChild variant="tinted" size="sm">
+        <Button asChild variant="secondary" size="sm">
           <Link href="/changelog">
             <span>What&apos;s new</span>
             <ArrowRight aria-hidden />

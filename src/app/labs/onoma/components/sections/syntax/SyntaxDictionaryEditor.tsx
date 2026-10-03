@@ -6,8 +6,8 @@
 import React, { useState } from "react";
 import { Page as FileText, Trash as Trash2, Plus } from "iconoir-react";
 import { Input } from "~/components/ui/input";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 
 interface SyntaxDictionaryEditorProps {
   dictionary: Record<string, string>;
@@ -31,7 +31,7 @@ export function SyntaxDictionaryEditor({
   };
 
   return (
-    <FacetCard variant="inset" padding="none" className="space-y-4 p-5 text-left">
+    <Card variant="inset" padding="none" className="space-y-4 p-5 text-left">
       <h4 className="text-label text-subhead flex items-center gap-2">
         <FileText className="text-indigo h-4 w-4" /> Vocabulary Dictionary
       </h4>
@@ -52,7 +52,7 @@ export function SyntaxDictionaryEditor({
           onChange={(e) => setNewDictVal(e.target.value)}
           className="flex-1"
         />
-        <Button variant="filled" size="sm" onClick={handleAdd}>
+        <Button variant="default" size="sm" onClick={handleAdd}>
           <Plus className="h-3.5 w-3.5" /> Add
         </Button>
       </div>
@@ -79,6 +79,6 @@ export function SyntaxDictionaryEditor({
           </div>
         ))}
       </div>
-    </FacetCard>
+    </Card>
   );
 }

@@ -76,7 +76,7 @@ export function HeroHelpModal({
             </div>
             <Button
               type="button"
-              variant="plain"
+              variant="ghost"
               size="icon-sm"
               onClick={() => handleOpenChange(false)}
               aria-label="Close"
@@ -105,7 +105,7 @@ export function HeroHelpModal({
             </div>
             <div className="flex items-center gap-2">
               <Button
-                variant="bordered"
+                variant="outline"
                 size="sm"
                 disabled={isFirst}
                 onClick={() => setIndex((i) => Math.max(0, i - 1))}

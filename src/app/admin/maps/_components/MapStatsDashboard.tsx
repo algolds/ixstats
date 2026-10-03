@@ -1,16 +1,8 @@
 "use client";
-
-/**
- * MapStatsDashboard - Map coverage metrics and statistics.
- *
- * Shows layer-by-layer feature counts, linkage breakdown,
- * and a list of unlinked political features.
- */
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Card } from "~/components/ui/card";
 
 export function MapStatsDashboard() {
   const { data: stats, isLoading: statsLoading } = api.geoCore.getMapStats.useQuery();
@@ -33,7 +25,7 @@ export function MapStatsDashboard() {
   return (
     <div className="space-y-6">
       {/* Layer breakdown */}
-      <FacetCard className="rounded-row p-6">
+      <Card className="rounded-row p-6">
         <Eyebrow className="text-label text-body mb-4 block">Layer Breakdown</Eyebrow>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {layerInfo?.map((layer) => (
@@ -50,10 +42,10 @@ export function MapStatsDashboard() {
             </div>
           ))}
         </div>
-      </FacetCard>
+      </Card>
 
       {/* Linkage overview */}
-      <FacetCard className="rounded-row p-6">
+      <Card className="rounded-row p-6">
         <Eyebrow className="text-label text-body mb-4 block">Country Linkage</Eyebrow>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Progress bar */}
@@ -108,12 +100,12 @@ export function MapStatsDashboard() {
             </div>
           </div>
         </div>
-      </FacetCard>
+      </Card>
 
       {/* Linked features list */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Linked */}
-        <FacetCard className="rounded-row p-6">
+        <Card className="rounded-row p-6">
           <Eyebrow className="text-body mb-3 block">
             Linked Features ({linkedFeatures.length})
           </Eyebrow>
@@ -136,10 +128,10 @@ export function MapStatsDashboard() {
               </div>
             ))}
           </div>
-        </FacetCard>
+        </Card>
 
         {/* Unlinked */}
-        <FacetCard className="rounded-row p-6">
+        <Card className="rounded-row p-6">
           <Eyebrow className="text-body mb-3 block">
             Unlinked Features ({unlinkedFeatures.length})
           </Eyebrow>
@@ -160,7 +152,7 @@ export function MapStatsDashboard() {
               </div>
             ))}
           </div>
-        </FacetCard>
+        </Card>
       </div>
     </div>
   );

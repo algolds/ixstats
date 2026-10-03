@@ -26,7 +26,6 @@ import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { TemplateEditorSheet } from "./TemplateEditorSheet";
 import { AdminHeader } from "../_components/AdminHeader";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Table,
   TableHeader,
@@ -35,6 +34,7 @@ import {
   TableHead,
   TableCell,
 } from "~/components/ui/table";
+import { Card } from "~/components/ui/card";
 
 const DOMAIN_COLORS: Record<string, string> = {
   economic: "bg-green/20 text-green border-green/20",
@@ -165,32 +165,32 @@ export function NationalIssuesPanel() {
 
       {/* Global Stat Bar */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Total Evaluations</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">
             {stats?.totalEvaluations ?? "—"}
           </p>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Generated (7d)</p>
           <p className="text-title-2 text-teal mt-1 tabular-nums">
             {stats?.totalIssuesGenerated ?? "—"}
           </p>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Avg Exec Time</p>
           <p className="text-title-2 text-green mt-1 tabular-nums">
             {stats?.avgExecutionTime ? `${stats.avgExecutionTime}ms` : "—"}
           </p>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Top Domain</p>
           <p className="text-title-2 text-purple mt-1 tabular-nums">
             {stats?.domainStats?.[0]?.domain
               ? String(stats.domainStats[0].domain).toUpperCase()
               : "—"}
           </p>
-        </FacetCard>
+        </Card>
       </div>
 
       <Tabs
@@ -280,13 +280,13 @@ export function NationalIssuesPanel() {
               Loading templates...
             </div>
           ) : templatesData?.templates?.length === 0 ? (
-            <FacetCard className="p-12 text-center">
+            <Card className="p-12 text-center">
               <p className="text-label-secondary text-footnote">
                 No issue templates matching criteria.
               </p>
-            </FacetCard>
+            </Card>
           ) : (
-            <FacetCard>
+            <Card>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -357,7 +357,7 @@ export function NationalIssuesPanel() {
                   ))}
                 </TableBody>
               </Table>
-            </FacetCard>
+            </Card>
           )}
         </TabsContent>
 
@@ -368,13 +368,13 @@ export function NationalIssuesPanel() {
               Loading active instances...
             </div>
           ) : issuesData?.issues?.length === 0 ? (
-            <FacetCard className="p-12 text-center">
+            <Card className="p-12 text-center">
               <p className="text-label-secondary text-footnote">
                 No active national issue instances recorded.
               </p>
-            </FacetCard>
+            </Card>
           ) : (
-            <FacetCard>
+            <Card>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -406,14 +406,14 @@ export function NationalIssuesPanel() {
                   ))}
                 </TableBody>
               </Table>
-            </FacetCard>
+            </Card>
           )}
         </TabsContent>
 
         {/* Engine Configuration Tab */}
         <TabsContent value="engine" className="mt-4 focus-visible:outline-none">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <FacetCard className="space-y-4 p-5">
+            <Card className="space-y-4 p-5">
               <h3 className="text-label text-subhead flex items-center gap-2">
                 <Sliders className="text-yellow h-4 w-4" />
                 Issue Generation Engine Limits
@@ -449,9 +449,9 @@ export function NationalIssuesPanel() {
                   {updateEngineConfig.isPending ? "Saving..." : "Save Engine Config"}
                 </Button>
               </div>
-            </FacetCard>
+            </Card>
 
-            <FacetCard className="space-y-4 p-5">
+            <Card className="space-y-4 p-5">
               <h3 className="text-label text-subhead flex items-center gap-2">
                 <Play className="text-green h-4 w-4" />
                 Live Criteria Evaluation Test
@@ -483,7 +483,7 @@ export function NationalIssuesPanel() {
                   {evaluateIssues.isPending ? "Evaluating..." : "Evaluate Criteria"}
                 </Button>
               </div>
-            </FacetCard>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>

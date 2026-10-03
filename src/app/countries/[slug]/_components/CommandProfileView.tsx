@@ -14,7 +14,6 @@ import {
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard } from "~/components/ui/facet-container";
 import { FacetMaterial } from "~/components/ui/facet";
 import { FacetList } from "~/components/ui/facet-list";
 import {
@@ -61,6 +60,7 @@ import { censusRealmName, scrollBehavior } from "~/components/country-profile/la
 import { useCountryProfileLayer, type CountryProfileLayer } from "../_hooks/useCountryProfileLayer";
 import type { LoreChapter } from "../_utils/profileLayer";
 import { CountryTabs } from "./CountryTabs";
+import { Card } from "~/components/ui/card";
 
 /** The dock: one entry per domain (the Sovereign Command OS dock, on real data). */
 const DOCK_ITEMS = [
@@ -336,7 +336,7 @@ function CommandBody({
               className="md:col-span-6 xl:col-span-5"
               action={
                 lore.prologue.length > 0 || loreChapters.length > 0 ? (
-                  <Button variant="tinted" size="sm" onClick={() => setStoryOpen(true)}>
+                  <Button variant="secondary" size="sm" onClick={() => setStoryOpen(true)}>
                     <OpenBook aria-hidden />
                     Read the story
                   </Button>
@@ -477,7 +477,7 @@ function CommandBody({
               className="md:col-span-6 xl:col-span-12"
               action={
                 chronicle.length > 6 ? (
-                  <Button variant="gray" size="sm" onClick={() => setChronicleOpen(true)}>
+                  <Button variant="secondary" size="sm" onClick={() => setChronicleOpen(true)}>
                     Full chronicle
                   </Button>
                 ) : undefined
@@ -505,7 +505,6 @@ function CommandBody({
           <FacetMaterial
             as="nav"
             material="acrylic"
-            glow
             aria-label="Domains"
             className="shadow-floating z-sticky sticky bottom-[calc(var(--shell-tabbar-height,0px)+1rem)] mx-auto w-fit max-w-full overflow-x-auto rounded-full p-1 lg:hidden"
           >
@@ -595,10 +594,9 @@ function Tile({
       aria-labelledby={titleId}
       className={cn("min-w-0", SCROLL_MARGIN, className)}
     >
-      <FacetCard
+      <Card
         padding="md"
-        variant={feature ? "glass" : undefined}
-        glow={feature ? true : "shadow"}
+        variant={feature ? "hero" : undefined}
         className="flex h-full flex-col gap-5"
       >
         <header className="flex items-start justify-between gap-3">
@@ -621,7 +619,7 @@ function Tile({
           {action}
         </header>
         {children}
-      </FacetCard>
+      </Card>
     </section>
   );
 }

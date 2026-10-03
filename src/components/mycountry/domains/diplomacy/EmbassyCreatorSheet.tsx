@@ -24,7 +24,7 @@ import {
   Dollar as DollarSign,
   NavArrowDown as ChevronDown,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 interface EmbassyCreatorSheetProps {
   countryId: string;
@@ -229,7 +229,7 @@ export function EmbassyCreatorSheet({
                 {costLoading ? (
                   <Skeleton className="rounded-control h-16" aria-label="Calculating cost" />
                 ) : costData ? (
-                  <FacetCard variant="inset" padding="none" className="p-3">
+                  <Card variant="inset" padding="none" className="p-3">
                     <div className="flex items-center justify-between">
                       <span className="text-body font-medium">Total</span>
                       <span className="text-label text-title-3 tabular-nums">
@@ -278,21 +278,17 @@ export function EmbassyCreatorSheet({
                         </ul>
                       </div>
                     )}
-                  </FacetCard>
+                  </Card>
                 ) : null}
               </div>
             </>
           )}
 
           {/* Info notice */}
-          <FacetCard
-            variant="inset"
-            padding="none"
-            className="text-label-secondary text-footnote p-2"
-          >
+          <Card variant="inset" padding="none" className="text-label-secondary text-footnote p-2">
             Both countries will be notified of the embassy establishment. The host country can view
             your embassy details.
-          </FacetCard>
+          </Card>
         </div>
 
         <SheetFooter className="border-separator border-t px-6 py-4">

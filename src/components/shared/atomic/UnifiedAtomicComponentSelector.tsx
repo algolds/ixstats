@@ -14,7 +14,6 @@ import type { UnifiedAtomicComponentSelectorProps } from "./types";
 import { UnifiedAtomicCard } from "./UnifiedAtomicCard";
 import { getThemeColorClasses } from "./themes";
 import { useAtomicSelectorState } from "~/hooks/useAtomicSelectorState";
-import { FacetCard } from "~/components/ui/facet-container";
 
 export function UnifiedAtomicComponentSelector<T extends string>({
   components,
@@ -103,7 +102,7 @@ export function UnifiedAtomicComponentSelector<T extends string>({
   }, [currentCategory, searchQuery, categories, components]);
 
   return (
-    <Card className="w-full">
+    <Card className="flex w-full flex-col gap-6 py-6">
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -226,7 +225,7 @@ export function UnifiedAtomicComponentSelector<T extends string>({
 
         {/* Selected Components Summary */}
         {selectedComponents.length > 0 && (
-          <FacetCard variant="inset" padding="none" className="space-y-4 p-4">
+          <Card variant="inset" padding="none" className="space-y-4 p-4">
             <h4 className="text-label flex items-center gap-2 font-semibold">
               <CheckCircle className={cn("h-4 w-4", `text-${themeClasses.primary}`)} />
               Selected Components ({selectedComponents.length})
@@ -240,7 +239,7 @@ export function UnifiedAtomicComponentSelector<T extends string>({
                 return (
                   <Badge
                     key={componentId}
-                    variant="default"
+                    variant="secondary"
                     className={cn(
                       "flex items-center gap-1",
                       `text-${themeClasses.primary}-ink`,
@@ -296,7 +295,7 @@ export function UnifiedAtomicComponentSelector<T extends string>({
                 <div className="text-label-secondary text-footnote">Annual Cost</div>
               </div>
             </div>
-          </FacetCard>
+          </Card>
         )}
 
         {/* System Analysis */}

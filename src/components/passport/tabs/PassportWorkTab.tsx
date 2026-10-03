@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { OpenBook as BookOpen } from "iconoir-react";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard } from "~/components/ui/facet-container";
 import type { PassportWiki, WorkPayload } from "../types";
 import { WorkActivityFeed } from "./work/WorkActivityFeed";
 import {
@@ -12,6 +11,7 @@ import {
   type WorkCategoryFilterValue,
 } from "./work/WorkCategoryFilter";
 import { WorkArticleCards, WorkCreationCards } from "./work/WorkCreationCards";
+import { Card } from "~/components/ui/card";
 
 interface PassportWorkTabProps {
   work: WorkPayload;
@@ -45,13 +45,13 @@ export const PassportWorkTab = React.memo(function PassportWorkTab({
 
   if (total === 0 && !wiki.linked) {
     return (
-      <FacetCard variant="inset" padding="none" className="border-separator border">
+      <Card variant="inset" padding="none" className="border-separator border">
         <EmptyState
           icon={<BookOpen />}
           title="No Published Work Found"
           message={`@${cleanUsername} has not yet published any WikiOS articles, revisions, language packs, or simulation directives.`}
         />
-      </FacetCard>
+      </Card>
     );
   }
 

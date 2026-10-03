@@ -3,8 +3,8 @@
 import React from "react";
 import { SystemRestart } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Card } from "~/components/ui/card";
 
 interface GlobalBuilderLoadingProps {
   message?: string;
@@ -49,11 +49,11 @@ export function GlobalBuilderLoading({
   if (variant === "compact") {
     return (
       <div role="status" className={cn("flex items-center justify-center p-6", className)}>
-        <FacetCard className="rounded-card w-full max-w-sm space-y-3 p-5">
+        <Card className="rounded-card w-full max-w-sm space-y-3 p-5">
           <Skeleton className="h-5 w-40" />
           <Skeleton className="h-3 w-full" />
           <LoadingLabel message={message} />
-        </FacetCard>
+        </Card>
       </div>
     );
   }
@@ -65,7 +65,7 @@ export function GlobalBuilderLoading({
       className={cn("flex min-h-screen w-full flex-col pt-24 sm:pt-28 lg:pt-32", className)}
     >
       <div className="mx-auto w-full max-w-6xl space-y-4 px-4 pb-8">
-        <FacetCard className="rounded-card flex items-center justify-between gap-3 p-3">
+        <Card className="rounded-card flex items-center justify-between gap-3 p-3">
           <Skeleton className="h-8 w-24" />
           <div className="hidden gap-2 sm:flex">
             {Array.from({ length: 5 }, (_, i) => (
@@ -73,8 +73,8 @@ export function GlobalBuilderLoading({
             ))}
           </div>
           <Skeleton className="h-8 w-28" />
-        </FacetCard>
-        <FacetCard className="rounded-card space-y-6 p-6 sm:p-8">
+        </Card>
+        <Card className="rounded-card space-y-6 p-6 sm:p-8">
           <Skeleton className="h-6 w-56" />
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {Array.from({ length: 4 }, (_, i) => (
@@ -85,7 +85,7 @@ export function GlobalBuilderLoading({
             ))}
           </div>
           <LoadingLabel message={message} size="md" />
-        </FacetCard>
+        </Card>
       </div>
     </div>
   );

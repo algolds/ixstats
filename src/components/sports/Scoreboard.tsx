@@ -2,8 +2,8 @@
 
 import React from "react";
 import { cn } from "~/lib/utils";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 
 export interface TeamInfo {
   id: string;
@@ -41,8 +41,7 @@ export function Scoreboard({
   const awayColor = awayTeam.color ?? "#ef4444";
 
   return (
-    <FacetCard
-      interactive="hover"
+    <Card
       className={cn(
         "border-separator bg-surface rounded-sheet shadow-card mx-auto w-full max-w-[360px] overflow-hidden border",
         className
@@ -156,7 +155,7 @@ export function Scoreboard({
           </div>
         )}
       </div>
-    </FacetCard>
+    </Card>
   );
 }
 

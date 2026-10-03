@@ -7,7 +7,6 @@ import {
   CheckCircle,
   InfoCircle as Info,
 } from "iconoir-react";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Alert, AlertDescription } from "~/components/ui/alert";
@@ -26,6 +25,7 @@ import { validateEconomy } from "./utils/validation";
 import type { EconomyBuilderState, SectorConfiguration } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
+import { Card, CardContent } from "~/components/ui/card";
 
 interface EconomySectorsTabProps {
   economyBuilder: EconomyBuilderState;
@@ -260,8 +260,8 @@ export function EconomySectorsTab({
       />
 
       {/* 3. Search & Grid Selector (Component UX style) */}
-      <FacetCard>
-        <FacetCardContent className="space-y-5 p-6">
+      <Card>
+        <CardContent className="space-y-5 p-6">
           <div className="border-separator flex flex-col gap-4 border-b pb-4 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-wrap items-center gap-4">
               <Tabs
@@ -361,8 +361,8 @@ export function EconomySectorsTab({
               );
             })}
           </div>
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
 
       {/* 4. Active Configuration Area & Visualizations (Two Columns layout) */}
       {economyBuilder.sectors.length > 0 && (

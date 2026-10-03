@@ -7,9 +7,9 @@ import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Shield, Search, ArrowRight, User, City, Star } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
+import { Card } from "~/components/ui/card";
 
 export interface LeagueTeamItem {
   id: string;
@@ -57,7 +57,7 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <h3 className="text-title-2 text-label">Franchise Directorate</h3>
-            <Badge variant="neutral" className="tabular-nums">
+            <Badge variant="default" className="tabular-nums">
               {teams.length} Registered
             </Badge>
           </div>
@@ -94,24 +94,25 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
 
       {/* ─── FRANCHISE CARDS SHOWCASE ─── */}
       {filteredTeams.length === 0 ? (
-        <FacetCard>
+        <Card>
           <EmptyState
             icon={<Shield />}
             title="No Franchises Match Filter"
             message="Try clearing search terms or status filters."
           />
-        </FacetCard>
+        </Card>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filteredTeams.map((team) => {
             const teamColor = team.color || "#3b82f6";
 
             return (
-              <FacetCard
+              <Card
                 key={team.id}
                 onClick={() => onTeamClick(team.id)}
                 aria-label={`Open ${team.name}`}
                 className="group flex flex-col justify-between overflow-hidden"
+                interactive
               >
                 {/* Club colour hairline (data colour) */}
                 <div aria-hidden className="h-1" style={{ backgroundColor: teamColor }} />
@@ -137,9 +138,9 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
                   {/* Status Badge */}
                   <div>
                     {team.ownerUserId ? (
-                      <Badge variant="tinted">Managed</Badge>
+                      <Badge variant="secondary">Managed</Badge>
                     ) : (
-                      <Badge variant="caution">Unclaimed</Badge>
+                      <Badge variant="warning">Unclaimed</Badge>
                     )}
                   </div>
                 </div>
@@ -167,7 +168,7 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
                     />
                   </div>
                 </div>
-              </FacetCard>
+              </Card>
             );
           })}
         </div>

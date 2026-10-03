@@ -3,8 +3,8 @@
 import React from "react";
 import type { BudgetSummary, RevenueSummary } from "~/types/government";
 import { formatNumber } from "~/lib/utils/format-utils";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
+import { Card } from "~/components/ui/card";
 
 interface BudgetKeyMetricsProps {
   budgetSummary: BudgetSummary;
@@ -50,7 +50,7 @@ export function BudgetKeyMetrics({
   ];
 
   return (
-    <FacetCard>
+    <Card>
       <dl className="divide-separator grid grid-cols-2 divide-y lg:grid-cols-4 lg:divide-x lg:divide-y-0">
         {metrics.map((m) => (
           <div key={m.label} className="min-w-0 p-4">
@@ -64,6 +64,6 @@ export function BudgetKeyMetrics({
           </div>
         ))}
       </dl>
-    </FacetCard>
+    </Card>
   );
 }

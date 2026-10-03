@@ -548,7 +548,7 @@ export default function OnomaGlyphsDevPage() {
                   </p>
 
                   <Button
-                    variant="bordered"
+                    variant="outline"
                     size="sm"
                     onClick={() => copyCode(glyph.name, jsxCode)}
                     className={cn(

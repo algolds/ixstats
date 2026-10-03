@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 interface StorylineTimelineProps {
   pins: Array<{
@@ -30,7 +30,7 @@ export function StorylineTimeline({
   const currentIdx = pins.findIndex((p) => p.id === currentPinId);
 
   return (
-    <FacetCard className="p-4">
+    <Card className="p-4">
       <Eyebrow className="mb-3 block">{storylineTitle}</Eyebrow>
       <div className="relative space-y-0">
         {pins.map((pin, i) => {
@@ -84,6 +84,6 @@ export function StorylineTimeline({
           Event {currentIdx + 1} of {pins.length}
         </p>
       )}
-    </FacetCard>
+    </Card>
   );
 }

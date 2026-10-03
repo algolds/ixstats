@@ -1,11 +1,10 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Pin as Crosshair } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils/cn";
+import { Card } from "~/components/ui/card";
 
 interface ScrubbableCoordinateInputProps {
   coordinates?: [number, number] | null;
@@ -127,7 +126,7 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
 
       <div className="flex items-center gap-2">
         {/* Longitude */}
-        <FacetCard className="focus-within:border-tint focus-within:ring-tint flex flex-1 items-center px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-within:ring-1">
+        <Card className="focus-within:border-tint focus-within:ring-tint flex flex-1 items-center px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-within:ring-1">
           <span
             onPointerDown={(e) => handlePointerDown("lng", e)}
             onPointerMove={(e) => handlePointerMove("lng", e)}
@@ -150,10 +149,10 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
             className="text-label text-footnote w-full bg-transparent text-right tabular-nums focus:outline-none"
           />
           <span className="text-label-secondary text-footnote ml-0.5">&deg;</span>
-        </FacetCard>
+        </Card>
 
         {/* Latitude */}
-        <FacetCard className="focus-within:border-tint focus-within:ring-tint flex flex-1 items-center px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-within:ring-1">
+        <Card className="focus-within:border-tint focus-within:ring-tint flex flex-1 items-center px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-within:ring-1">
           <span
             onPointerDown={(e) => handlePointerDown("lat", e)}
             onPointerMove={(e) => handlePointerMove("lat", e)}
@@ -176,7 +175,7 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
             className="text-label text-footnote w-full bg-transparent text-right tabular-nums focus:outline-none"
           />
           <span className="text-label-secondary text-footnote ml-0.5">&deg;</span>
-        </FacetCard>
+        </Card>
 
         {/* Crosshair Picker */}
         {onTogglePickLocation && (

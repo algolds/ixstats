@@ -9,7 +9,6 @@ import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { useNotify } from "~/hooks/useNotify";
-import { FacetCard } from "~/components/ui/facet-container";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import {
   Dialog,
@@ -69,6 +68,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Card } from "~/components/ui/card";
 
 export { CATEGORY_PRESETS };
 
@@ -811,7 +811,7 @@ export function LoreCardBatchAdmin() {
   };
 
   return (
-    <FacetCard className="space-y-6 p-6">
+    <Card className="space-y-6 p-6">
       {/* ─── Header & Sub-Tab Navigation Bar ────────────────────────── */}
       <div className="border-separator flex flex-col gap-4 border-b pb-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
@@ -852,7 +852,7 @@ export function LoreCardBatchAdmin() {
       {activeTab === "generator" && (
         <div className="space-y-6">
           {/* Global Parameter Controls */}
-          <FacetCard className="space-y-4 p-4">
+          <Card className="space-y-4 p-4">
             <div className="text-label text-caption flex items-center gap-2">
               <Sliders className="text-purple h-4 w-4" />
               <span>Batch Generation Parameters</span>
@@ -922,7 +922,7 @@ export function LoreCardBatchAdmin() {
                 </Select>
               </div>
             </div>
-          </FacetCard>
+          </Card>
 
           {/* Quick Category Presets & Bulk Import Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -949,7 +949,7 @@ export function LoreCardBatchAdmin() {
                 return (
                   <Button
                     key={preset.name}
-                    variant="bordered"
+                    variant="outline"
                     size="sm"
                     disabled={Boolean(crawlingPresetName)}
                     onClick={() => handleApplyPreset(preset)}
@@ -961,7 +961,7 @@ export function LoreCardBatchAdmin() {
                       <Icon className="text-purple h-3.5 w-3.5" />
                     )}
                     <span>{preset.name}</span>
-                    <Badge variant="neutral" className="tabular-nums">
+                    <Badge variant="default" className="tabular-nums">
                       {isPresetCrawling ? "Crawling..." : liveCount.toLocaleString()}
                     </Badge>
                   </Button>
@@ -989,7 +989,7 @@ export function LoreCardBatchAdmin() {
           </div>
 
           {/* Live Wiki Category Search & Namespace 0 Crawlers */}
-          <FacetCard className="space-y-3 p-4">
+          <Card className="space-y-3 p-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               {/* Category Search Input with Autocomplete Dropdown */}
               <div className="relative flex-1">
@@ -1007,7 +1007,7 @@ export function LoreCardBatchAdmin() {
                   />
                   {categorySearchQuery.trim() && (
                     <Button
-                      variant="tinted"
+                      variant="secondary"
                       size="sm"
                       disabled={isCrawlingCategory}
                       onClick={() => handleCrawlCategory(categorySearchQuery)}
@@ -1063,7 +1063,7 @@ export function LoreCardBatchAdmin() {
               {/* Crawl All Namespace 0 (Main Pages) Action Button */}
               <Button
                 size="sm"
-                variant="tinted"
+                variant="secondary"
                 disabled={isCrawlingAllPages}
                 onClick={handleCrawlAllMainPages}
                 title={`Fetch all articles in the main namespace (namespace 0) on ${globalWikiSource.toUpperCase()}`}
@@ -1077,17 +1077,17 @@ export function LoreCardBatchAdmin() {
                 Parse All {globalWikiSource.toUpperCase()} Main Pages (Namespace 0)
               </Button>
             </div>
-          </FacetCard>
+          </Card>
 
           {/* Manual Input Box */}
-          <FacetCard className="space-y-3 p-4">
+          <Card className="space-y-3 p-4">
             <div className="flex items-center justify-between">
               <label className="text-label text-caption flex items-center gap-2">
                 <FileText className="text-tint h-4 w-4" />
                 Add Articles & Categories to Queue (Comma or Newline Separated)
               </label>
               <Button
-                variant="tinted"
+                variant="secondary"
                 size="sm"
                 onClick={handleAddArticlesFromText}
                 disabled={!articleInput.trim()}
@@ -1108,11 +1108,11 @@ export function LoreCardBatchAdmin() {
               </code>{" "}
               to automatically crawl and load all member pages.
             </p>
-          </FacetCard>
+          </Card>
 
           {/* Batch Candidate Queue Table */}
           {candidates.length > 0 && (
-            <FacetCard className="space-y-3 overflow-hidden p-4">
+            <Card className="space-y-3 overflow-hidden p-4">
               <div className="border-separator flex flex-col gap-2 border-b pb-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                   <Layers className="text-purple h-4 w-4" />
@@ -1149,7 +1149,7 @@ export function LoreCardBatchAdmin() {
                   {/* Backfill Authors Button */}
                   <Button
                     size="sm"
-                    variant="tinted"
+                    variant="secondary"
                     onClick={() => setIsBackfillDialogOpen(true)}
                     disabled={isProcessingBatch}
 
@@ -1161,7 +1161,7 @@ export function LoreCardBatchAdmin() {
                   {/* Re-Catalog Categories Button */}
                   <Button
                     size="sm"
-                    variant="tinted"
+                    variant="secondary"
                     onClick={() => setIsReclassifyDialogOpen(true)}
                     disabled={isProcessingBatch}
 
@@ -1181,7 +1181,7 @@ export function LoreCardBatchAdmin() {
                   </Button>
 
                   <Button
-                    variant="tinted"
+                    variant="secondary"
                     size="sm"
                     onClick={handleProcessBatch}
                     disabled={isProcessingBatch || candidates.every((c) => c.status !== "idle")}
@@ -1280,7 +1280,7 @@ export function LoreCardBatchAdmin() {
                         <TableCell className="px-3 text-center">
                           {artworkToShow ? (
                             <Button
-                              variant="gray"
+                              variant="secondary"
                               size="icon-lg"
                               aria-label={`Inspect artwork for ${c.articleTitle}`}
                               onClick={() =>
@@ -1311,7 +1311,7 @@ export function LoreCardBatchAdmin() {
                             </Button>
                           ) : (
                             <Button
-                              variant="gray"
+                              variant="secondary"
                               size="icon-lg"
                               aria-label={`Inspect details for ${c.articleTitle} (no image)`}
                               onClick={() =>
@@ -1337,7 +1337,7 @@ export function LoreCardBatchAdmin() {
                           <div className="flex flex-col">
                             <div className="flex items-center gap-2">
                               <span>{c.articleTitle}</span>
-                              {c.category && <Badge variant="tinted">{c.category}</Badge>}
+                              {c.category && <Badge variant="secondary">{c.category}</Badge>}
                             </div>
                             {c.author &&
                               c.author !== "Unknown" &&
@@ -1360,11 +1360,11 @@ export function LoreCardBatchAdmin() {
                           {c.wikiSource === "iiwiki" ? (
                             <IIWikiBadge size="xs" />
                           ) : (
-                            <Badge variant="neutral">{c.wikiSource}</Badge>
+                            <Badge variant="default">{c.wikiSource}</Badge>
                           )}
                         </TableCell>
                         <TableCell className="px-4">
-                          <Badge variant="purple">{c.targetRarity}</Badge>
+                          <Badge variant="secondary">{c.targetRarity}</Badge>
                         </TableCell>
                         <TableCell className="text-label-secondary px-4">S{c.season}</TableCell>
                         <TableCell className="px-4 whitespace-normal">
@@ -1382,7 +1382,7 @@ export function LoreCardBatchAdmin() {
                           {c.status === "error" && (
                             <div className="flex flex-col gap-1">
                               <Button
-                                variant="plain"
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => setSelectedErrorCandidate(c)}
                                 className="bg-red/15 text-red-ink hover:bg-red/25 self-start rounded-full px-2"
@@ -1467,7 +1467,7 @@ export function LoreCardBatchAdmin() {
                   })}
                 </TableBody>
               </Table>
-            </FacetCard>
+            </Card>
           )}
         </div>
       )}
@@ -1478,28 +1478,22 @@ export function LoreCardBatchAdmin() {
           {/* Stats Bar */}
           {requestStats.data && (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <FacetCard interactive="hover" className="rounded-row p-3">
+              <Card className="rounded-row p-3">
                 <div className="text-label-secondary text-footnote">Total Requests</div>
                 <div className="text-label text-title-3 mt-0.5">{requestStats.data.total}</div>
-              </FacetCard>
-              <FacetCard
-                interactive="hover"
-                className="rounded-row border-yellow/30 bg-yellow/10 p-3"
-              >
+              </Card>
+              <Card className="rounded-row border-yellow/30 bg-yellow/10 p-3">
                 <div className="text-label-secondary text-footnote">Pending Approval</div>
                 <div className="text-title-3 text-yellow mt-0.5">{requestStats.data.pending}</div>
-              </FacetCard>
-              <FacetCard
-                interactive="hover"
-                className="rounded-row border-green/30 bg-green/10 p-3"
-              >
+              </Card>
+              <Card className="rounded-row border-green/30 bg-green/10 p-3">
                 <div className="text-label-secondary text-footnote">Generated Cards</div>
                 <div className="text-title-3 text-green mt-0.5">{requestStats.data.generated}</div>
-              </FacetCard>
-              <FacetCard interactive="hover" className="rounded-row border-red/30 bg-red/10 p-3">
+              </Card>
+              <Card className="rounded-row border-red/30 bg-red/10 p-3">
                 <div className="text-label-secondary text-footnote">Rejected</div>
                 <div className="text-title-3 text-red mt-0.5">{requestStats.data.rejected}</div>
-              </FacetCard>
+              </Card>
             </div>
           )}
 
@@ -1533,7 +1527,7 @@ export function LoreCardBatchAdmin() {
               <p className="text-label text-headline">No requests found in queue</p>
             </div>
           ) : (
-            <FacetCard className="overflow-hidden">
+            <Card className="overflow-hidden">
               <Table containerClassName="max-h-[500px]">
                 <TableHeader sticky>
                   <TableRow>
@@ -1561,11 +1555,11 @@ export function LoreCardBatchAdmin() {
                           {request.wikiSource === "iiwiki" ? (
                             <IIWikiBadge size="xs" />
                           ) : (
-                            <Badge variant="neutral">{request.wikiSource}</Badge>
+                            <Badge variant="default">{request.wikiSource}</Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-label px-4 font-medium">
-                          <Badge variant="tinted" className="gap-2">
+                          <Badge variant="secondary" className="gap-2">
                             <UserCheck className="h-3 w-3" />
                             {request.requesterName || request.userId}
                           </Badge>
@@ -1574,17 +1568,17 @@ export function LoreCardBatchAdmin() {
                           {new Date(request.requestedAt).toLocaleDateString()}
                         </TableCell>
                         <TableCell className="px-4">
-                          {isPending && <Badge variant="yellow">Pending</Badge>}
-                          {isApproved && <Badge variant="blue">Approved</Badge>}
-                          {isGenerated && <Badge variant="green">Generated</Badge>}
-                          {isRejected && <Badge variant="red">Rejected</Badge>}
+                          {isPending && <Badge variant="warning">Pending</Badge>}
+                          {isApproved && <Badge variant="info">Approved</Badge>}
+                          {isGenerated && <Badge variant="success">Generated</Badge>}
+                          {isRejected && <Badge variant="destructive">Rejected</Badge>}
                         </TableCell>
                         <TableCell className="px-4 text-right">
                           <div className="flex justify-end gap-2">
                             {isPending && (
                               <>
                                 <Button
-                                  variant="tinted"
+                                  variant="secondary"
                                   size="sm"
                                   onClick={() => approveMutation.mutate({ requestId: request.id })}
                                   disabled={approveMutation.isPending}
@@ -1602,7 +1596,7 @@ export function LoreCardBatchAdmin() {
                             )}
                             {(isPending || isApproved) && (
                               <Button
-                                variant="tinted"
+                                variant="secondary"
                                 size="sm"
                                 onClick={() =>
                                   generateRequestedMutation.mutate({ requestId: request.id })
@@ -1619,7 +1613,7 @@ export function LoreCardBatchAdmin() {
                   })}
                 </TableBody>
               </Table>
-            </FacetCard>
+            </Card>
           )}
         </div>
       )}
@@ -1686,11 +1680,11 @@ export function LoreCardBatchAdmin() {
                 </div>
                 <div className="flex items-center gap-2">
                   {previewImage.wikiSource && (
-                    <Badge variant="neutral" className="tabular-nums">
+                    <Badge variant="default" className="tabular-nums">
                       {previewImage.wikiSource}
                     </Badge>
                   )}
-                  {previewImage.rarity && <Badge variant="purple">{previewImage.rarity}</Badge>}
+                  {previewImage.rarity && <Badge variant="secondary">{previewImage.rarity}</Badge>}
                 </div>
               </div>
 
@@ -1831,7 +1825,7 @@ export function LoreCardBatchAdmin() {
                             {g.wikiSource}
                           </span>
                         </div>
-                        <Badge variant="red">
+                        <Badge variant="destructive">
                           {g.count} copies (+{g.redundantCount} redundant)
                         </Badge>
                       </div>
@@ -2166,6 +2160,6 @@ export function LoreCardBatchAdmin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </FacetCard>
+    </Card>
   );
 }

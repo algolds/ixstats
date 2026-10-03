@@ -25,7 +25,7 @@ interface GlobalStatsOverviewProps {
 export function GlobalStatsOverview({ globalStats, isLoading }: GlobalStatsOverviewProps) {
   if (isLoading) {
     return (
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Globe className="h-5 w-5" />
@@ -83,12 +83,12 @@ export function GlobalStatsOverview({ globalStats, isLoading }: GlobalStatsOverv
   ];
 
   return (
-    <Card>
+    <Card className="flex flex-col gap-6 py-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Globe className="h-5 w-5" />
           Global Statistics
-          <Badge variant="secondary" className="ml-auto">
+          <Badge variant="default" className="ml-auto">
             Live Data
           </Badge>
         </CardTitle>

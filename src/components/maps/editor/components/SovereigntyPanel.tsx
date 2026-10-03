@@ -1,6 +1,4 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React from "react";
@@ -13,6 +11,7 @@ import type {
 } from "../types/editor-state";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { Slider } from "~/components/ui/slider";
+import { Card } from "~/components/ui/card";
 
 interface SovereigntyPanelProps {
   filteredRelations: SovereigntyRelation[];
@@ -81,7 +80,7 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
       </div>
 
       {showSovereigntyForm && (
-        <FacetCard className="space-y-2 p-3">
+        <Card className="space-y-2 p-3">
           <Eyebrow className="border-separator block border-b pb-1">
             {editingSovereigntyId ? "Edit Sovereignty" : "New Sovereignty Relation"}
           </Eyebrow>
@@ -196,7 +195,7 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
               Cancel
             </Button>
           </div>
-        </FacetCard>
+        </Card>
       )}
 
       <div className="flex gap-2">

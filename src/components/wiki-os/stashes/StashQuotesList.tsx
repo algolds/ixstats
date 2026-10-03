@@ -66,7 +66,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
 
               <div className="flex shrink-0 items-center gap-1">
                 <Button
-                  variant="bordered"
+                  variant="outline"
                   size="sm"
                   onClick={(e) => handleCopyQuote(e, q.id, q.selectedText)}
                   title="Copy quote"

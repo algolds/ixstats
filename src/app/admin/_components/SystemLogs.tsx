@@ -66,7 +66,7 @@ export function SystemLogs() {
   });
 
   return (
-    <Card>
+    <Card className="flex flex-col gap-6 py-6">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div className="space-y-0.5">
           <CardTitle className="text-headline flex items-center gap-2">

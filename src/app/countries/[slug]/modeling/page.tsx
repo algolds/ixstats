@@ -73,7 +73,7 @@ export default function ModelingPage({ params }: ModelingPageProps) {
               &larr; Back to {country.name}
             </Link>
           </div>
-          <Card>
+          <Card className="flex flex-col gap-6 py-6">
             <CardHeader>
               <CardTitle>Economic Modeling for {country.name}</CardTitle>
             </CardHeader>

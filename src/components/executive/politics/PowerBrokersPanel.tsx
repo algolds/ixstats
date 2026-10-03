@@ -2,7 +2,6 @@
 
 import React from "react";
 import { api } from "~/trpc/react";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Shield,
   Bank as Landmark,
@@ -11,6 +10,7 @@ import {
   Compass,
   WarningCircle as AlertCircle,
 } from "iconoir-react";
+import { Card } from "~/components/ui/card";
 
 interface PowerBrokersPanelProps {
   countryId: string;
@@ -77,7 +77,7 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
                 : 100;
 
             return (
-              <FacetCard
+              <Card
                 key={broker.id}
                 className={`hover:border-separator flex flex-col justify-between border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                   broker.satisfied ? "border-green/25 bg-green/5" : "border-separator"
@@ -141,7 +141,7 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
                     </p>
                   </div>
                 </div>
-              </FacetCard>
+              </Card>
             );
           })}
         </div>

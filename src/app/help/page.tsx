@@ -2,10 +2,10 @@ import React from "react";
 import Link from "next/link";
 import { type Metadata } from "next";
 import { Book, Archery as Target, Crown, Coins, Globe, NavArrowRight } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { HelpExplorer } from "./_components/HelpExplorer";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { ShellGate } from "~/components/shell/ShellGate";
+import { Card } from "~/components/ui/card";
 
 export const metadata: Metadata = {
   title: "Help Center - IxStats",
@@ -89,10 +89,7 @@ export default function HelpPage() {
               data-cuelume-hover="tick"
               className="group focus-visible:ring-ring rounded-xl focus-visible:ring-2 focus-visible:outline-none"
             >
-              <FacetCard
-                depth={2}
-                className="group-hover:border-foreground/20 flex min-h-11 items-center gap-3 rounded-xl p-4 transition-[border-color,transform] duration-150 group-active:scale-[0.99]"
-              >
+              <Card className="group-hover:border-foreground/20 flex min-h-11 items-center gap-3 rounded-xl p-4 transition-[border-color,transform] duration-150 group-active:scale-[0.99]">
                 <Icon aria-hidden="true" className="text-muted-foreground h-6 w-6 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="text-foreground text-sm font-semibold">{title}</div>
@@ -102,7 +99,7 @@ export default function HelpPage() {
                   aria-hidden="true"
                   className="text-muted-foreground h-4 w-4 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5"
                 />
-              </FacetCard>
+              </Card>
             </Link>
           ))}
         </nav>

@@ -84,7 +84,6 @@ export const IdentityAutocomplete = React.memo(function IdentityAutocomplete({
       </label>
       <Autocomplete
         id={inputId}
-        fieldName={fieldName}
         value={value}
         onChange={onChange}
         onBlur={handleBlur}

@@ -3,8 +3,8 @@
 import React from "react";
 import { Trophy, Trophy as Award } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { FacetCard } from "~/components/ui/facet-container";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
+import { Card } from "~/components/ui/card";
 
 export interface VaultMilestonesCardProps {
   myAchievements?: Array<{ points?: number }>;
@@ -65,13 +65,7 @@ export function VaultMilestonesCard({
 
   return (
     // v2 (c5c6b382): a glass showcase card with the dot texture.
-    <FacetCard
-      variant="glass"
-      padding="lg"
-      texture="dots"
-      textureOpacity={0.03}
-      className="overflow-hidden"
-    >
+    <Card variant="hero" padding="lg" className="overflow-hidden">
       <div className="border-separator mb-4 flex items-center justify-between border-b pb-3">
         <div className="flex items-center gap-2">
           <div className="rounded-row bg-tint-fill text-tint shadow-card flex h-8 w-8 items-center justify-center border font-medium">
@@ -118,6 +112,6 @@ export function VaultMilestonesCard({
           );
         })}
       </div>
-    </FacetCard>
+    </Card>
   );
 }

@@ -1,16 +1,4 @@
 "use client";
-
-/**
- * IxWorldMap - Core MapLibre GL JS component for the IxEarth fictional world.
- *
- * Features:
- * - Globe projection at low zoom, transitions to mercator at higher zoom
- * - Renders all map layers from GeoJSON data
- * - Country click/hover interactions
- * - Clean, minimal Google Maps-like visual style
- */
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { useRef, useEffect, forwardRef, useImperativeHandle, useState, memo } from "react";
 import type { FeatureCollection } from "geojson";
 import type { MapLayerType } from "~/lib/maps/map-config";
@@ -28,6 +16,7 @@ import { useWorldMapLayers } from "./hooks/useWorldMapLayers";
 import { useWorldMapInteractions } from "./hooks/useWorldMapInteractions";
 import { useWorldMapOverlayFeatures } from "./hooks/useWorldMapOverlayFeatures";
 import { useWorldMapDataOverlays } from "./hooks/useWorldMapDataOverlays";
+import { Card } from "~/components/ui/card";
 
 // MapLibre types imported dynamically since the module requires browser APIs
 type MapLibreMap = import("maplibre-gl").Map;
@@ -339,10 +328,10 @@ const IxWorldMap = memo(
             role="alert"
             className="bg-surface absolute inset-0 flex items-center justify-center p-4"
           >
-            <FacetCard className="max-w-lg p-4">
+            <Card className="max-w-lg p-4">
               <p className="text-destructive font-semibold">The map engine failed to start</p>
               <pre className="text-label text-footnote mt-2 whitespace-pre-wrap">{debugError}</pre>
-            </FacetCard>
+            </Card>
           </div>
         )}
         {!isLoaded && !debugError && (

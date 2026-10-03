@@ -29,7 +29,7 @@ interface EmbassyNetworkChartProps {
 export const EmbassyNetworkChart = React.memo<EmbassyNetworkChartProps>(
   ({ data, GlassTooltip }) => {
     return (
-      <Card className="facet-hierarchy-child">
+      <Card className="facet-hierarchy-child flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building className="h-5 w-5 text-orange-600" />

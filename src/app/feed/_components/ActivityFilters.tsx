@@ -8,9 +8,9 @@ import {
   ChatBubble as MessageSquare,
   Activity,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import { Card } from "~/components/ui/card";
 
 type ActivityFilter = "all" | "achievements" | "diplomatic" | "economic" | "social" | "meta";
 type ActivityCategory = "all" | "game" | "platform" | "social";
@@ -47,7 +47,7 @@ export function ActivityFilters({
   onCategoryChange,
 }: ActivityFiltersProps) {
   return (
-    <FacetCard padding="md" className="space-y-4">
+    <Card padding="md" className="space-y-4">
       {/* Activity Type Filters */}
       <div>
         <h3 id="activity-type-label" className="text-subhead text-label mb-2">
@@ -87,6 +87,6 @@ export function ActivityFilters({
           options={categoryOptions}
         />
       </div>
-    </FacetCard>
+    </Card>
   );
 }

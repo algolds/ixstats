@@ -10,9 +10,9 @@
 
 import React, { useMemo } from "react";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Bank as Landmark, Flash as Zap } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { Card } from "~/components/ui/card";
 
 export interface InstitutionalFoundationRibbonProps {
   /** Array of active Government component keys or names from Step 3 */
@@ -106,7 +106,7 @@ export const InstitutionalFoundationRibbon = React.memo(function InstitutionalFo
   }
 
   return (
-    <FacetCard className={cn("rounded-card p-4", className)}>
+    <Card className={cn("rounded-card p-4", className)}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* Left: institutional foundations from Step 3 */}
         <div className="flex min-w-0 items-start gap-3">
@@ -120,7 +120,7 @@ export const InstitutionalFoundationRibbon = React.memo(function InstitutionalFo
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {governmentComponents.slice(0, 5).map((comp) => (
-                <Badge key={comp} variant="secondary">
+                <Badge key={comp} variant="default">
                   {formatGovName(comp)}
                 </Badge>
               ))}
@@ -137,7 +137,7 @@ export const InstitutionalFoundationRibbon = React.memo(function InstitutionalFo
         <div className="border-separator flex shrink-0 items-center gap-2 border-t pt-2 sm:border-t-0 sm:pt-0">
           {activeSynergies.length > 0 ? (
             <>
-              <Badge variant="green">
+              <Badge variant="success">
                 <Zap aria-hidden="true" />
                 {activeSynergies.length} cross-
                 {activeSynergies.length === 1 ? "synergy" : "synergies"} active
@@ -155,6 +155,6 @@ export const InstitutionalFoundationRibbon = React.memo(function InstitutionalFo
           )}
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 });

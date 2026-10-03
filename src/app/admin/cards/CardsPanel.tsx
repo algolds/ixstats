@@ -26,7 +26,6 @@ import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
 import { useVisibleRefetch } from "~/hooks/useVisibleRefetch";
 import { LoreCategory } from "~/lib/cards/category-enums";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Stat } from "~/components/ui/stat";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
@@ -42,6 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Card } from "~/components/ui/card";
 
 type AdminTab = "overview" | "designer" | "explorer" | "imports" | "settings";
 
@@ -155,7 +155,7 @@ export default function CardAdminDashboardPage() {
 
       <div className="space-y-6">
         {/* ─── Facet Navigation Top Header ─────────────────────────── */}
-        <FacetCard padding="lg" className="space-y-6">
+        <Card padding="lg" className="space-y-6">
           {/* Embedded Library Overview / NS Sync Health Metrics (Switches dynamically per active tab) */}
           {(() => {
             const isNSTab = activeTab === "imports" && importSubtab === "ns";
@@ -165,7 +165,7 @@ export default function CardAdminDashboardPage() {
                 <div className="border-separator space-y-2 border-t pt-2">
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                     {/* Total Sync Operations */}
-                    <FacetCard padding="sm">
+                    <Card padding="sm">
                       <Stat
                         size="sm"
                         label="Total Sync Operations"
@@ -180,10 +180,10 @@ export default function CardAdminDashboardPage() {
                           </>
                         }
                       />
-                    </FacetCard>
+                    </Card>
 
                     {/* Success Rate */}
-                    <FacetCard padding="sm">
+                    <Card padding="sm">
                       <Stat
                         size="sm"
                         label="Success Rate"
@@ -197,10 +197,10 @@ export default function CardAdminDashboardPage() {
                           </>
                         }
                       />
-                    </FacetCard>
+                    </Card>
 
                     {/* Failure / Error Rate */}
-                    <FacetCard padding="sm">
+                    <Card padding="sm">
                       <Stat
                         size="sm"
                         label="Failure Rate"
@@ -214,10 +214,10 @@ export default function CardAdminDashboardPage() {
                           </>
                         }
                       />
-                    </FacetCard>
+                    </Card>
 
                     {/* Avg Cards / Sync */}
-                    <FacetCard padding="sm">
+                    <Card padding="sm">
                       <Stat
                         size="sm"
                         label="Avg Cards / Sync"
@@ -226,7 +226,7 @@ export default function CardAdminDashboardPage() {
                         value={<>{(healthStats?.overall.avgCardsProcessed ?? 0).toFixed(0)}</>}
                         hint={<>Average throughput per batch</>}
                       />
-                    </FacetCard>
+                    </Card>
                   </div>
                 </div>
               );
@@ -237,7 +237,7 @@ export default function CardAdminDashboardPage() {
                 {/* 4 Hero Stat Cards */}
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                   {/* Active Cards */}
-                  <FacetCard padding="sm">
+                  <Card padding="sm">
                     <Stat
                       size="sm"
                       label="Active Cards"
@@ -246,10 +246,10 @@ export default function CardAdminDashboardPage() {
                       value={<>{(loreStats?.totalLoreCards ?? 0).toLocaleString()}</>}
                       hint={<>Cards in circulation</>}
                     />
-                  </FacetCard>
+                  </Card>
 
                   {/* Active Categories */}
-                  <FacetCard padding="sm">
+                  <Card padding="sm">
                     <Stat
                       size="sm"
                       label="Lore Categories"
@@ -258,10 +258,10 @@ export default function CardAdminDashboardPage() {
                       value={<>{Object.keys(loreStats?.categoryBreakdown ?? {}).length} / 13</>}
                       hint={<>Super-categories in active circulation</>}
                     />
-                  </FacetCard>
+                  </Card>
 
                   {/* Pending Requests */}
-                  <FacetCard padding="sm">
+                  <Card padding="sm">
                     <Stat
                       size="sm"
                       label="Pending Requests"
@@ -270,10 +270,10 @@ export default function CardAdminDashboardPage() {
                       value={<>{(loreStats?.pendingRequests ?? 0).toLocaleString()}</>}
                       hint={<>User requests awaiting approval</>}
                     />
-                  </FacetCard>
+                  </Card>
 
                   {/* NS Cards */}
-                  <FacetCard padding="sm">
+                  <Card padding="sm">
                     <Stat
                       size="sm"
                       label="NS Cards"
@@ -282,7 +282,7 @@ export default function CardAdminDashboardPage() {
                       value={<>{(loreStats?.totalNSCards ?? 0).toLocaleString()}</>}
                       hint={<>NationStates imports</>}
                     />
-                  </FacetCard>
+                  </Card>
                 </div>
               </div>
             );
@@ -302,7 +302,7 @@ export default function CardAdminDashboardPage() {
               { value: "settings", label: "Settings", icon: <Sliders /> },
             ]}
           />
-        </FacetCard>
+        </Card>
 
         {/* ─── TAB: 3D CARD DESIGNER STUDIO ─────────────────────── */}
         {activeTab === "designer" && <CardDesignerStudio />}
@@ -311,7 +311,7 @@ export default function CardAdminDashboardPage() {
         {activeTab === "overview" && (
           <div className="space-y-6">
             {/* Operations Log & Audit Trail Card inside Overview */}
-            <FacetCard className="space-y-4 p-6">
+            <Card className="space-y-4 p-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                   <div className="border-tint/20 bg-tint-fill text-tint rounded-row border p-2">
@@ -430,7 +430,7 @@ export default function CardAdminDashboardPage() {
                 maxHeight={460}
                 className="border-separator bg-surface border"
               />
-            </FacetCard>
+            </Card>
           </div>
         )}
 

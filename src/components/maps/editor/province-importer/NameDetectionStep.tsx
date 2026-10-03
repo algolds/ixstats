@@ -1,6 +1,4 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React, { memo } from "react";
@@ -17,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
+import { Card } from "~/components/ui/card";
 
 interface NameDetectionStepProps {
   importer: ReturnType<typeof useProvinceImporter>;
@@ -83,7 +82,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
                     province.confidence >= 0.8
                       ? "success"
                       : province.confidence >= 0.5
-                        ? "caution"
+                        ? "warning"
                         : "destructive"
                   }
                   className="tabular-nums"
@@ -127,7 +126,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
       </div>
 
       {importer.hasCities && (
-        <FacetCard className="mt-3 space-y-3 p-3">
+        <Card className="mt-3 space-y-3 p-3">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <span className="text-label text-caption font-semibold">Import Cities</span>
@@ -212,7 +211,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
               )}
             </div>
           )}
-        </FacetCard>
+        </Card>
       )}
     </div>
   );

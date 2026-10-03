@@ -64,7 +64,7 @@ export function SandboxMode() {
       <div className="flex items-center gap-2">
         <FlaskConical className="text-indigo h-5 w-5" />
         <h3 className="text-label text-title-3">Sandbox Mode</h3>
-        <Badge variant="indigo">No changes applied</Badge>
+        <Badge variant="secondary">No changes applied</Badge>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

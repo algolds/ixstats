@@ -189,7 +189,7 @@ export default function ChangelogPage() {
       <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Top Navigation */}
         <div className="mb-8 flex items-center justify-between">
-          <Button asChild variant="bordered" size="sm">
+          <Button asChild variant="outline" size="sm">
             <Link href="/dashboard">
               <ArrowLeft aria-hidden />
               <span>Back to Dashboard</span>
@@ -212,7 +212,7 @@ export default function ChangelogPage() {
 
         {/* Hero Header */}
         <div className="mb-12 text-center sm:text-left">
-          <Badge variant="tinted">
+          <Badge variant="secondary">
             <Flame aria-hidden />
             <span>Public Release Notes & Changelog</span>
           </Badge>

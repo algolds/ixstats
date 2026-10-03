@@ -1,8 +1,6 @@
 "use client";
 // src/app/admin/wiki/components/WikiLinkStatusSection.tsx
 // Wiki Link Status table & filtering overview.
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { useState, useMemo } from "react";
 import { Badge } from "~/components/ui/badge";
@@ -18,6 +16,7 @@ import {
   TableHead,
   TableCell,
 } from "~/components/ui/table";
+import { Card } from "~/components/ui/card";
 
 export function WikiLinkStatusSection({
   countriesData,
@@ -72,7 +71,7 @@ export function WikiLinkStatusSection({
   ];
 
   return (
-    <FacetCard className="space-y-4 p-5">
+    <Card className="space-y-4 p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <Link2 className="text-green h-4 w-4" />
@@ -158,6 +157,6 @@ export function WikiLinkStatusSection({
       <p className="text-label-secondary text-footnote">
         {linkedCount} of {countries.length} countries linked to wiki pages
       </p>
-    </FacetCard>
+    </Card>
   );
 }

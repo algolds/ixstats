@@ -5,10 +5,10 @@ import { Component as Layers, ArrowRight, Download } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { CardDisplay } from "~/components/cards/display/CardDisplay";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 import type { CardInstance } from "~/types/cards-display";
+import { Card } from "~/components/ui/card";
 
 export interface VaultCardHoldingsCardProps {
   featuredCards: CardInstance[];
@@ -29,13 +29,7 @@ export function VaultCardHoldingsCard({
 }: VaultCardHoldingsCardProps) {
   return (
     // v2 (c5c6b382): a glass showcase card with the dot texture.
-    <FacetCard
-      variant="glass"
-      padding="lg"
-      texture="dots"
-      textureOpacity={0.04}
-      className="overflow-hidden"
-    >
+    <Card variant="hero" padding="lg" className="overflow-hidden">
       <div className="border-separator mb-4 flex items-center justify-between border-b pb-3">
         <div className="flex items-center gap-2">
           <div className="rounded-row bg-tint-fill text-tint shadow-card flex h-8 w-8 items-center justify-center border font-medium">
@@ -113,6 +107,6 @@ export function VaultCardHoldingsCard({
           )}
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 }

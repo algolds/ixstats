@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * FacetList / FacetListSection / FacetRow — the inset grouped list (Facet 3 §0 decision 12, §7.1).
+ * FacetList / FacetListSection / FacetRow: the inset grouped list.
  *
  *   <FacetList>
  *     <FacetListSection header="Account" footer="Shown on your public profile.">
@@ -20,7 +20,6 @@ import * as React from "react";
 import Link from "next/link";
 import { Check, NavArrowRight } from "iconoir-react";
 import { cn } from "~/lib/utils/cn";
-import { isNumericText } from "~/lib/design/identity";
 import { SwipeableRow, SwipeActionButton } from "~/components/ui/facet/swipeable/SwipeableRow";
 import type { SwipeAction, SwipeCommitAction } from "~/components/ui/facet/swipeable/types";
 
@@ -28,7 +27,7 @@ import type { SwipeAction, SwipeCommitAction } from "~/components/ui/facet/swipe
 
 /**
  * `"inset"` (default): each section is an opaque rounded group — for grouped pages and sheets.
- * `"plain"`: no group background or radius — for a list inside a `FacetCard`.
+ * `"plain"`: no group background or radius — for a list inside a `Card`.
  */
 export type FacetListVariant = "inset" | "plain";
 
@@ -42,7 +41,12 @@ export interface FacetListProps extends React.HTMLAttributes<HTMLDivElement> {
 export const FacetList = React.forwardRef<HTMLDivElement, FacetListProps>(
   ({ variant = "inset", className, ...props }, ref) => (
     <ListVariantContext.Provider value={variant}>
-      <div ref={ref} data-slot="facet-list" className={cn("flex flex-col gap-6", className)} {...props} />
+      <div
+        ref={ref}
+        data-slot="facet-list"
+        className={cn("flex flex-col gap-6", className)}
+        {...props}
+      />
     </ListVariantContext.Provider>
   )
 );
@@ -85,7 +89,12 @@ export const FacetListSection = React.forwardRef<HTMLElement, FacetListSectionPr
     const inset = variant === "inset";
 
     return (
-      <section ref={ref} data-slot="facet-list-section" className={cn("flex flex-col", className)} {...props}>
+      <section
+        ref={ref}
+        data-slot="facet-list-section"
+        className={cn("flex flex-col", className)}
+        {...props}
+      >
         {header != null && header !== false && (
           <Header
             id={headerId}
@@ -197,7 +206,7 @@ export interface FacetRowButtonProps extends FacetRowBaseProps {
 
 export type FacetRowProps = FacetRowLinkProps | FacetRowButtonProps;
 
-/** Pressable rows: fill washes, the focus ring and the Facet 3.1 subtle press (scale .99). */
+/** Pressable rows: fill washes, the focus ring and a subtle press. */
 const ROW_INTERACTIVE =
   "hover:bg-fill-4 active:bg-fill-3 focus-visible:outline-tint cursor-pointer facet-press facet-press-subtle focus-visible:outline-2 focus-visible:-outline-offset-2";
 
@@ -251,15 +260,7 @@ export const FacetRow = React.forwardRef<HTMLElement, FacetRowProps>((props, ref
 
   const trailingNode =
     typeof trailing === "string" || typeof trailing === "number" ? (
-      <span
-        className={cn(
-          "text-body text-label-secondary truncate tabular-nums",
-          // Facet 3.1: figures (a number, or a string that is one) are in the data face.
-          (typeof trailing === "number" || isNumericText(trailing)) && "font-data"
-        )}
-      >
-        {trailing}
-      </span>
+      <span className="text-body text-label-secondary truncate tabular-nums">{trailing}</span>
     ) : (
       trailing
     );
@@ -280,7 +281,7 @@ export const FacetRow = React.forwardRef<HTMLElement, FacetRowProps>((props, ref
       {/* The text column carries the hairline, so separators are inset to the text start. */}
       <span
         data-slot="facet-row-body"
-        className="border-separator group-first/row:border-t-0 flex min-h-11 min-w-0 flex-1 items-center gap-3 border-t py-3 pr-4"
+        className="border-separator flex min-h-11 min-w-0 flex-1 items-center gap-3 border-t py-3 pr-4 group-first/row:border-t-0"
       >
         <span className="flex min-w-0 flex-1 flex-col">
           <span
@@ -332,7 +333,9 @@ export const FacetRow = React.forwardRef<HTMLElement, FacetRowProps>((props, ref
         scroll={scroll}
         replace={replace}
         aria-label={ariaLabel}
-        aria-current={ariaCurrentProp !== undefined ? ariaCurrentProp : selected ? "page" : undefined}
+        aria-current={
+          ariaCurrentProp !== undefined ? ariaCurrentProp : selected ? "page" : undefined
+        }
         data-slot="facet-row"
         className={rowClass}
       >
@@ -380,7 +383,8 @@ export const FacetRow = React.forwardRef<HTMLElement, FacetRowProps>((props, ref
   }
 
   const hasSwipe =
-    !!swipeActions && ((swipeActions.leading?.length ?? 0) > 0 || (swipeActions.trailing?.length ?? 0) > 0);
+    !!swipeActions &&
+    ((swipeActions.leading?.length ?? 0) > 0 || (swipeActions.trailing?.length ?? 0) > 0);
 
   return (
     <li
@@ -405,7 +409,9 @@ export const FacetRow = React.forwardRef<HTMLElement, FacetRowProps>((props, ref
               ))}
             </SwipeableRow.Trailing>
           )}
-          <SwipeableRow.Content className="cursor-auto active:cursor-auto">{row}</SwipeableRow.Content>
+          <SwipeableRow.Content className="cursor-auto active:cursor-auto">
+            {row}
+          </SwipeableRow.Content>
         </SwipeableRow>
       ) : (
         row

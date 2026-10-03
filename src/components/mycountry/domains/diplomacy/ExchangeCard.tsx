@@ -6,9 +6,9 @@ import React from "react";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import type { CulturalExchange } from "./cultural-exchange-types";
 import { EXCHANGE_TYPES, STATUS_STYLES } from "./cultural-exchange-types";
+import { Card } from "~/components/ui/card";
 
 interface ExchangeCardProps {
   exchange: CulturalExchange;
@@ -58,7 +58,7 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
     const firstParticipant = exchange.participatingCountries[0];
 
     return (
-      <FacetCard
+      <Card
         onClick={onClick}
         onKeyDown={(e) => {
           if (e.target !== e.currentTarget) return;
@@ -70,6 +70,7 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
         aria-label={`${exchange.title}, ${typeConfig.label}, ${statusConfig.label}`}
         aria-pressed={isSelected}
         className={cn("rounded-card overflow-hidden", isSelected && "ring-tint ring-2")}
+        interactive
       >
         {/* Host → exchange type → participants */}
         <div className="border-separator bg-fill-3 flex items-center justify-between gap-3 border-b px-4 py-3">
@@ -183,7 +184,7 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
             )}
           </div>
         </div>
-      </FacetCard>
+      </Card>
     );
   }
 );

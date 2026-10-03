@@ -13,7 +13,7 @@ import {
   SystemRestart as Loader2,
 } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export function NarratorCacheTab() {
   const notify = useNotify();
@@ -44,7 +44,7 @@ export function NarratorCacheTab() {
     <div className="space-y-5">
       {/* Metric Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Total Cached Cards</p>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-16" />
@@ -53,9 +53,9 @@ export function NarratorCacheTab() {
               {(cacheStats?.total ?? 0).toLocaleString()}
             </p>
           )}
-        </FacetCard>
+        </Card>
 
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Total Cache Hits</p>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-16" />
@@ -64,9 +64,9 @@ export function NarratorCacheTab() {
               {(cacheStats?.totalHits ?? 0).toLocaleString()}
             </p>
           )}
-        </FacetCard>
+        </Card>
 
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Avg Hits per Card</p>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-16" />
@@ -75,11 +75,11 @@ export function NarratorCacheTab() {
               {cacheStats?.averageHitCount ?? 0}x
             </p>
           )}
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Cache Control Card */}
-      <FacetCard className="space-y-4 p-5">
+      <Card className="space-y-4 p-5">
         <div className="border-separator border-b pb-3">
           <div className="flex items-center gap-2">
             <Database className="text-yellow h-4 w-4" />
@@ -123,7 +123,7 @@ export function NarratorCacheTab() {
             )}
           </Button>
         </div>
-      </FacetCard>
+      </Card>
     </div>
   );
 }

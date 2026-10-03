@@ -12,7 +12,7 @@ export function DatabaseExplorer() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -26,7 +26,7 @@ export function DatabaseExplorer() {
                 </CardDescription>
               </div>
             </div>
-            <Badge variant="green">
+            <Badge variant="success">
               <CheckCircle className="mr-1 h-3.5 w-3.5" />
               Connected (Port 5433)
             </Badge>

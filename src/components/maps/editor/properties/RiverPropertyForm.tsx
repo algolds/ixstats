@@ -1,10 +1,9 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import React, { useMemo } from "react";
 import type { NamedRiverFormData, EditorFeature } from "~/hooks/useMapEditor";
 import { polylineLengthKm } from "~/lib/maps/geo-math";
 import { WikiLinkWizard } from "../WikiLinkWizard";
+import { Card } from "~/components/ui/card";
 
 const inputClasses =
   "w-full rounded-control border border-separator bg-surface px-3 py-2 sm:py-2 text-body sm:text-body text-label placeholder:text-label-secondary transition-colors focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
@@ -58,7 +57,7 @@ export const RiverPropertyForm = React.memo(function RiverPropertyForm({
         autoFocus
       />
 
-      <FacetCard className="text-footnote px-3 py-2">
+      <Card className="text-footnote px-3 py-2">
         <div className="text-label-secondary text-left font-medium">
           Line Geometry:{" "}
           {hasGeom ? (
@@ -74,7 +73,7 @@ export const RiverPropertyForm = React.memo(function RiverPropertyForm({
             Use the line drawing tool in the map controls to draw the path of the river.
           </div>
         )}
-      </FacetCard>
+      </Card>
 
       <WikiLinkWizard
         value={form.wikiPageTitle}

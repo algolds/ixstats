@@ -154,7 +154,7 @@ export function ScrubbableRevisionTimeline({
             {/* Rollback Latest Author */}
             {revisions.length >= 2 && revisions[0]?.author === revisions[1]?.author && (
               <Button
-                variant="tinted"
+                variant="secondary"
                 size="sm"
                 onClick={() => rollbackMutation.mutate({ title })}
                 disabled={rollbackMutation.isPending}
@@ -294,7 +294,7 @@ export function ScrubbableRevisionTimeline({
               Comparing <strong>r{targetRev.id}</strong> against <strong>r{compareRev.id}</strong>
             </span>
             <Button
-              variant="tinted"
+              variant="secondary"
               size="sm"
               onClick={() => setUndoTarget(compareRev)}
               className="bg-yellow/10 text-yellow hover:bg-yellow/20"
@@ -332,7 +332,7 @@ export function ScrubbableRevisionTimeline({
               >
                 {revertMutation.isPending ? "Reverting…" : "Confirm Revert"}
               </Button>
-              <Button variant="gray" size="sm" onClick={() => setUndoTarget(null)}>
+              <Button variant="secondary" size="sm" onClick={() => setUndoTarget(null)}>
                 Cancel
               </Button>
             </div>

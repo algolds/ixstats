@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { FacetCard, FacetCardHeader, FacetCardContent } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -18,6 +17,7 @@ import Link from "next/link";
 import { getStandingBand, getSynergyBand } from "~/lib/diplomacy/relation-bands";
 import { calculateRelativeDevelopment } from "~/lib/diplomacy/relative-development";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 /**
  * Embassy data with calculated synergies
@@ -112,7 +112,7 @@ export const EmbassyCard = React.memo(function EmbassyCard({
   ];
 
   return (
-    <FacetCard
+    <Card
       className="rounded-card overflow-hidden"
       onClick={isOwner ? onClick : undefined}
       onKeyDown={
@@ -127,6 +127,7 @@ export const EmbassyCard = React.memo(function EmbassyCard({
           : undefined
       }
       aria-label={isOwner ? `Open ${embassy.name}` : undefined}
+      interactive
     >
       {/* Paired flag header: host left, guest right */}
       <div className="border-separator relative flex h-20 overflow-hidden border-b">
@@ -152,7 +153,7 @@ export const EmbassyCard = React.memo(function EmbassyCard({
         </div>
       </div>
 
-      <FacetCardHeader className="p-4 pb-3">
+      <CardHeader className="p-4 pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <h3 className="text-label text-title-3 truncate">{embassy.name}</h3>
@@ -176,9 +177,9 @@ export const EmbassyCard = React.memo(function EmbassyCard({
             </Badge>
           </div>
         </div>
-      </FacetCardHeader>
+      </CardHeader>
 
-      <FacetCardContent className="space-y-3 px-4 pb-4">
+      <CardContent className="space-y-3 px-4 pb-4">
         <div className="space-y-2">
           <div className="text-footnote flex items-center justify-between">
             <Eyebrow>Standing tier</Eyebrow>
@@ -215,7 +216,7 @@ export const EmbassyCard = React.memo(function EmbassyCard({
             </p>
           </div>
         )}
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 });

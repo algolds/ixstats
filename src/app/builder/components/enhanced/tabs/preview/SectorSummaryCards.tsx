@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Reports as PieChart, StatsReport as BarChart3, Group as Users } from "iconoir-react";
 import { GlassBarChart, GlassPieChart } from "~/components/shared/charts/RechartsIntegration";
 import { DEFAULT_CHART_COLORS } from "~/lib/themes";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import { getSectorColor, getEmploymentTypeColor } from "../utils/previewCalculations";
+import { Card, CardContent } from "~/components/ui/card";
 
 interface SectorSummaryCardsProps {
   economyBuilder: EconomyBuilderState;
@@ -42,8 +42,8 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       {/* Sector Composition */}
-      <FacetCard>
-        <FacetCardContent className="p-6">
+      <Card>
+        <CardContent className="p-6">
           <h3 className="text-headline text-green mb-4 flex items-center space-x-2">
             <PieChart className="h-5 w-5" />
             <span>Sector Composition</span>
@@ -55,12 +55,12 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
             height={250}
             colors={DEFAULT_CHART_COLORS}
           />
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
 
       {/* Employment Types */}
-      <FacetCard>
-        <FacetCardContent className="p-6">
+      <Card>
+        <CardContent className="p-6">
           <h3 className="text-headline text-green mb-4 flex items-center space-x-2">
             <BarChart3 className="h-5 w-5" />
             <span>Employment Types</span>
@@ -73,12 +73,12 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
             valueFormatter={(value) => `${value.toFixed(1)}%`}
             colors={DEFAULT_CHART_COLORS}
           />
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
 
       {/* Age Distribution */}
-      <FacetCard>
-        <FacetCardContent className="p-6">
+      <Card>
+        <CardContent className="p-6">
           <h3 className="text-headline text-green mb-4 flex items-center space-x-2">
             <Users className="h-5 w-5" />
             <span>Age Distribution</span>
@@ -90,8 +90,8 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
             height={250}
             colors={DEFAULT_CHART_COLORS}
           />
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -3,7 +3,6 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { Button } from "~/components/ui/button";
 import { Plus, InfoCircle, Globe } from "iconoir-react";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
@@ -23,6 +22,7 @@ import { TradePartnersManager } from "./trade-commerce/TradePartnersManager";
 import { TradeImpactSummary } from "./trade-commerce/TradeImpactSummary";
 import { CustomSectorDialog } from "./trade-commerce/CustomSectorDialog";
 import { RailCard, RailCount, RailRow } from "./rails/shared";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 export { type CustomSector, type AccentColor } from "./trade-commerce/trade-commerce-types";
 
@@ -143,12 +143,12 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
       />
 
       {/* Sector Tariff Planner (not saved) */}
-      <FacetCard className="rounded-card">
-        <FacetCardHeader className="flex-row flex-wrap items-start justify-between gap-3 p-4 pb-3">
+      <Card className="rounded-card">
+        <CardHeader className="flex-row flex-wrap items-start justify-between gap-3 p-4 pb-3">
           <div className="min-w-0 space-y-0.5">
             <h3 className="text-label text-headline flex flex-wrap items-center gap-2">
               Sector Tariff Planner
-              <Badge variant="orange">Not saved</Badge>
+              <Badge variant="warning">Not saved</Badge>
             </h3>
             <p className="text-label-secondary text-footnote">
               Try out tariffs by sector. Changes here reset when you leave the page and don&apos;t
@@ -165,9 +165,9 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
             <Plus aria-hidden="true" />
             Add sector
           </Button>
-        </FacetCardHeader>
+        </CardHeader>
 
-        <FacetCardContent className="space-y-4 px-4 pb-4">
+        <CardContent className="space-y-4 px-4 pb-4">
           <p className="text-label-secondary text-footnote flex items-start gap-2">
             <InfoCircle aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>
@@ -198,8 +198,8 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
               ))}
             </div>
           )}
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
 
       {/* Bilateral Trade Partners Section */}
       <TradePartnersManager partners={tradePartners} currencySymbol={currencySymbol} />

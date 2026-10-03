@@ -2,7 +2,6 @@
 
 import React, { useId, useMemo, useState } from "react";
 import { StatsReport } from "iconoir-react";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -12,6 +11,7 @@ import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
 import type { Ranking, RankingCategory } from "~/types/mycountry";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 /** Format a census value for display, in the category's own units. */
 export function formatCensusValue(ranking: Pick<Ranking, "category" | "value">): string {
@@ -148,8 +148,7 @@ export function WorldCensusList({
                   </span>
                   {/* A top-three rank is the one meaningful status here: it takes the v2 gold. */}
                   <Badge
-                    numeric
-                    variant={r.global.position <= 3 ? "yellow" : "neutral"}
+                    variant={r.global.position <= 3 ? "warning" : "default"}
                     className={cn(
                       "min-w-14 font-semibold",
                       r.global.position <= 3 && "border-yellow/30"
@@ -168,7 +167,7 @@ export function WorldCensusList({
       {hiddenCount > 0 ? (
         <Button
           type="button"
-          variant="plain"
+          variant="ghost"
           size="sm"
           aria-expanded={expanded}
           aria-controls={listId}
@@ -197,8 +196,8 @@ export function WorldCensusCard({ countryId }: WorldCensusCardProps) {
   );
 
   return (
-    <FacetCard role="region" aria-labelledby="world-census-title" className="rounded-card">
-      <FacetCardHeader className="flex-row items-center gap-3 px-4 pt-4 pb-0">
+    <Card role="region" aria-labelledby="world-census-title" className="rounded-card">
+      <CardHeader className="flex-row items-center gap-3 px-4 pt-4 pb-0">
         {/* v2 rail card header, with the census glyph in the MyCountry gold */}
         <span
           aria-hidden="true"
@@ -212,10 +211,10 @@ export function WorldCensusCard({ countryId }: WorldCensusCardProps) {
           </h2>
           <p className="text-footnote text-label-secondary">Where you stand out in your realm</p>
         </div>
-      </FacetCardHeader>
-      <FacetCardContent className="px-4 pt-1 pb-3">
+      </CardHeader>
+      <CardContent className="px-4 pt-1 pb-3">
         <WorldCensusList rankings={data} isLoading={isLoading} />
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 }

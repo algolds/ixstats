@@ -250,7 +250,7 @@ export function ActiveCountryUnifiedWidget({
           {/* Actions Button */}
           <div className="mt-3">
             <Button
-              variant="tinted"
+              variant="secondary"
               size="sm"
               onClick={() => {
                 setPopoverOpen(false);

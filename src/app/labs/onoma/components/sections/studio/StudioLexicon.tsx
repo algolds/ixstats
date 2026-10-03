@@ -10,7 +10,6 @@ import {
   Xmark as X,
   Undo as RotateCcw,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { type StudioState } from "../../../hooks/useStudioState";
 import { api } from "~/trpc/react";
@@ -30,6 +29,7 @@ import { LexiconDefinitionForm } from "./LexiconDefinitionForm";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { ActionPill } from "~/components/ui/action-pill";
+import { Card } from "~/components/ui/card";
 
 interface StudioLexiconProps {
   state: StudioState;
@@ -142,7 +142,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
     <div className="animate-in fade-in grid items-start gap-6 duration-300 lg:grid-cols-12">
       {/* Left Column: Terms List (4/12) */}
       <div className="space-y-4 lg:col-span-4">
-        <FacetCard variant="inset" padding="none" className="space-y-4 p-4">
+        <Card variant="inset" padding="none" className="space-y-4 p-4">
           <div className="space-y-1">
             <h3 className="text-label text-body font-semibold">Lexicon Terms</h3>
             <p className="text-label-secondary text-footnote">
@@ -224,13 +224,13 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
               })
             )}
           </div>
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Right Column: Selected Term Details (8/12) */}
       <div className="lg:col-span-8">
         {selectedTerm ? (
-          <FacetCard
+          <Card
             variant="inset"
             padding="none"
             className="animate-in fade-in space-y-6 p-5 duration-300"
@@ -318,7 +318,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
               </div>
 
               <Button
-                variant="bordered"
+                variant="outline"
                 size="sm"
                 onClick={() => {
                   if (confirm(`Are you sure you want to delete "${selectedTerm}"?`)) {
@@ -425,16 +425,11 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                 </div>
 
                 <div className="flex items-center justify-between gap-2 pt-0.5">
-                  <Button
-                    variant="bordered"
-                    size="sm"
-                    onClick={resetPron}
-                    title="Reset to defaults"
-                  >
+                  <Button variant="outline" size="sm" onClick={resetPron} title="Reset to defaults">
                     <RotateCcw className="h-3 w-3" /> Reset
                   </Button>
                   <div className="flex gap-2">
-                    <Button variant="bordered" size="sm" onClick={previewPron}>
+                    <Button variant="outline" size="sm" onClick={previewPron}>
                       <Volume2 className="h-3 w-3" /> Preview
                     </Button>
                     <Button size="sm" onClick={savePron}>
@@ -450,7 +445,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
               <h4 className="text-label-secondary text-subhead">Orthographic Transcriptions</h4>
               <div className="grid gap-3 sm:grid-cols-3">
                 <Button
-                  variant="bordered"
+                  variant="outline"
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(selectedTermCyrillic);
@@ -473,7 +468,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                 </Button>
 
                 <Button
-                  variant="bordered"
+                  variant="outline"
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(selectedTermGreek);
@@ -496,7 +491,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                 </Button>
 
                 <Button
-                  variant="bordered"
+                  variant="outline"
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(selectedTermArabic);
@@ -590,9 +585,9 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
               setLexEditOrigin={setLexEditOrigin}
               onSubmit={handleSaveLexiconDefinition}
             />
-          </FacetCard>
+          </Card>
         ) : (
-          <FacetCard
+          <Card
             variant="inset"
             padding="none"
             className="text-label-secondary text-body flex min-h-[400px] flex-col items-center justify-center border-dashed p-8 text-center"
@@ -603,7 +598,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
               Select a conlang vocabulary term from the left list to view script transcriptions,
               noun case declensions, and edit its lexical definition.
             </p>
-          </FacetCard>
+          </Card>
         )}
       </div>
     </div>

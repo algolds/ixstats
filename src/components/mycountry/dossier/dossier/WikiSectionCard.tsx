@@ -7,7 +7,6 @@ import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { cn } from "~/lib/utils";
 import { Button, focusRing } from "~/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import {
@@ -23,6 +22,7 @@ import type { WikiSection } from "~/lib/builder";
 import { resolveImageUrl } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import { type WikiSource } from "~/lib/wiki-os/config";
 import { FACET_PROSE } from "~/components/maps/shared/facet-prose";
+import { Card } from "~/components/ui/card";
 
 /** Classification is a sensitivity scale, so it keeps a status colour (text only). */
 const CLASSIFICATION_STYLES = {
@@ -72,7 +72,7 @@ export function WikiSectionCard({
 
   return (
     <Collapsible open={isOpen} onOpenChange={onToggle} id={section.id}>
-      <FacetCard className="rounded-card overflow-hidden">
+      <Card className="rounded-card overflow-hidden">
         {/* Section Header Accordion Trigger */}
         <CollapsibleTrigger asChild>
           <Button
@@ -266,7 +266,7 @@ export function WikiSectionCard({
             </div>
           </div>
         </CollapsibleContent>
-      </FacetCard>
+      </Card>
     </Collapsible>
   );
 }

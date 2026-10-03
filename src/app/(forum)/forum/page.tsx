@@ -16,8 +16,8 @@ import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
 import { api } from "~/trpc/react";
 import { buttonVariants } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Card } from "~/components/ui/card";
 
 type ViewMode = "categories" | "trending" | "new";
 
@@ -111,7 +111,7 @@ export default function ForumIndexPage() {
             href={withBasePath("/forum?sort=trending")}
             aria-current={viewMode === "trending" ? "page" : undefined}
             className={buttonVariants({
-              variant: viewMode === "trending" ? "tinted" : "ghost",
+              variant: viewMode === "trending" ? "secondary" : "ghost",
               size: "sm",
             })}
           >
@@ -122,7 +122,7 @@ export default function ForumIndexPage() {
             href={withBasePath("/forum?sort=new")}
             aria-current={viewMode === "new" ? "page" : undefined}
             className={buttonVariants({
-              variant: viewMode === "new" ? "tinted" : "ghost",
+              variant: viewMode === "new" ? "secondary" : "ghost",
               size: "sm",
             })}
           >
@@ -178,7 +178,7 @@ export default function ForumIndexPage() {
           })}
 
           {orphanForums.length > 0 && (
-            <FacetCard className="overflow-hidden">
+            <Card className="overflow-hidden">
               {orphanForums.map((forum: any) => (
                 <ForumCategoryCard
                   key={forum.nodeId}
@@ -193,7 +193,7 @@ export default function ForumIndexPage() {
                   lastThreadId={forum.lastThreadId}
                 />
               ))}
-            </FacetCard>
+            </Card>
           )}
 
           {forums.length === 0 && <EmptyState title="No forums available" />}
@@ -201,7 +201,7 @@ export default function ForumIndexPage() {
       ) : (
         /* ─── Thread Feed View (Trending / New) ─── */
         <div>
-          <FacetCard className="overflow-hidden">
+          <Card className="overflow-hidden">
             {(threadsData?.threads ?? []).map((thread: any) => (
               <ThreadListItem key={thread.threadId} {...thread} />
             ))}
@@ -209,7 +209,7 @@ export default function ForumIndexPage() {
             {(threadsData?.threads ?? []).length === 0 && (
               <EmptyState compact title="No threads found" />
             )}
-          </FacetCard>
+          </Card>
 
           {threadsData?.pagination && threadsData.pagination.last_page > 1 && (
             <ForumPagination

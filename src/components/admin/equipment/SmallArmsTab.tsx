@@ -38,23 +38,23 @@ export function SmallArmsTab({
           {/* Statistics */}
           {smallArmsStats && (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-              <Card className="p-4">
+              <Card className="flex flex-col gap-6 p-4 py-6">
                 <p className="text-label-secondary text-body">Total Equipment</p>
                 <p className="text-label text-large-title mt-2">{smallArmsStats.totalEquipment}</p>
               </Card>
-              <Card className="p-4">
+              <Card className="flex flex-col gap-6 p-4 py-6">
                 <p className="text-label-secondary text-body">Equipment Types</p>
                 <p className="text-large-title text-blue mt-2">
                   {smallArmsStats.equipmentByType.length}
                 </p>
               </Card>
-              <Card className="p-4">
+              <Card className="flex flex-col gap-6 p-4 py-6">
                 <p className="text-label-secondary text-body">Manufacturers</p>
                 <p className="text-large-title text-green mt-2">
                   {smallArmsStats.totalManufacturers}
                 </p>
               </Card>
-              <Card className="p-4">
+              <Card className="flex flex-col gap-6 p-4 py-6">
                 <p className="text-label-secondary text-body">Eras</p>
                 <p className="text-large-title text-indigo mt-2">
                   {smallArmsStats.equipmentByEra.length}
@@ -73,7 +73,7 @@ export function SmallArmsTab({
               </p>
             </div>
           ) : (
-            <Card className="p-12 text-center">
+            <Card className="flex flex-col gap-6 p-12 py-6 text-center">
               <Filter className="text-label-secondary mx-auto mb-4 h-12 w-12" />
               <p className="text-label-secondary">No small arms equipment found</p>
             </Card>

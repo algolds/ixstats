@@ -165,11 +165,11 @@ export function EditorStatusBar({
 
       {/* Mode + hint (takes remaining space) */}
       <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-        <Badge variant="secondary" className="shrink-0">
+        <Badge variant="default" className="shrink-0">
           {modeInfo.label}
         </Badge>
         {selectedCount > 0 && (
-          <Badge variant="blue" className="shrink-0">
+          <Badge variant="info" className="shrink-0">
             {selectedCount} selected
           </Badge>
         )}

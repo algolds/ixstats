@@ -176,7 +176,7 @@ export function HaloTourTooltip() {
 
                   <div className="flex gap-2">
                     {currentStep > 1 && (
-                      <Button variant="bordered" size="sm" onClick={prevStep}>
+                      <Button variant="outline" size="sm" onClick={prevStep}>
                         <ChevronLeft />
                         Back
                       </Button>

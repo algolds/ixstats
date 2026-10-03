@@ -18,7 +18,7 @@ interface VolatilityMetricsCardProps {
 
 export const VolatilityMetricsCard = React.memo<VolatilityMetricsCardProps>(({ metrics }) => {
   return (
-    <Card className="facet-hierarchy-child">
+    <Card className="facet-hierarchy-child flex flex-col gap-6 py-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Activity className="h-5 w-5 text-orange-600" />
@@ -36,7 +36,7 @@ export const VolatilityMetricsCard = React.memo<VolatilityMetricsCardProps>(({ m
               <p className="text-muted-foreground mb-2 text-sm">{metric.label}</p>
               <div className="flex items-center justify-between">
                 <p className="text-2xl font-bold">{(metric.value * 100).toFixed(2)}%</p>
-                <Badge variant={metric.status === "low" ? "default" : "secondary"}>
+                <Badge variant={metric.status === "low" ? "secondary" : "default"}>
                   {metric.status}
                 </Badge>
               </div>

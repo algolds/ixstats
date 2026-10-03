@@ -8,7 +8,6 @@ import {
   Trophy,
   Community as HandshakeIcon,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -31,6 +30,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { api } from "~/trpc/react";
+import { Card } from "~/components/ui/card";
 
 interface PvPConflictPanelProps {
   countryId: string;
@@ -281,7 +281,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
         <div className="space-y-2">
           <Eyebrow className="block">Incoming challenges</Eyebrow>
           {pendingForMe.map((c) => (
-            <FacetCard variant="inset" key={c.id} className="border-yellow/40 border p-3">
+            <Card variant="inset" key={c.id} className="border-yellow/40 border p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <span className="text-label text-body font-medium">
@@ -312,7 +312,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                   </Button>
                 </div>
               </div>
-            </FacetCard>
+            </Card>
           ))}
         </div>
       )}
@@ -327,7 +327,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
               const isInitiator = c.initiatorId === countryId;
               const opponent = isInitiator ? c.defender : c.initiator;
               return (
-                <FacetCard variant="inset" key={c.id} className="text-body p-3">
+                <Card variant="inset" key={c.id} className="text-body p-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <Swords aria-hidden="true" className="text-red h-3.5 w-3.5" />
                     <span>
@@ -338,7 +338,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                       {c.status}
                     </Badge>
                   </div>
-                </FacetCard>
+                </Card>
               );
             })}
         </div>
@@ -369,7 +369,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                       <X aria-hidden="true" className="text-destructive h-3.5 w-3.5" />
                     )}
                     <span>vs {opponent?.name ?? "Unknown"}</span>
-                    <Badge variant={draw ? "neutral" : won ? "success" : "destructive"}>
+                    <Badge variant={draw ? "default" : won ? "success" : "destructive"}>
                       {draw
                         ? c.winner === "declined"
                           ? "Declined"

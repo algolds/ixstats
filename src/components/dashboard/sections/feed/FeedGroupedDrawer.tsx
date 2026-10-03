@@ -21,7 +21,7 @@ export function FeedGroupedDrawer({ subEdits, isWiki, className }: FeedGroupedDr
     <div className={cn("pt-1", className)}>
       <Button
         type="button"
-        variant="gray"
+        variant="secondary"
         size="sm"
         aria-expanded={expanded}
         onClick={() => setExpanded(!expanded)}

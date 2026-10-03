@@ -6,7 +6,7 @@ import { cn } from "~/lib/utils/cn";
 import { Input } from "~/components/ui/input";
 
 /**
- * SearchField (spec §7.2): a `type="search"` Input with a leading search icon and a clear button.
+ * A `type="search"` Input with a leading search icon and a clear button.
  * Escape clears a non-empty field (and is swallowed so it does not also close a surrounding sheet
  * or dialog); on an empty field Escape propagates as usual.
  *
@@ -96,7 +96,7 @@ export const SearchField = React.forwardRef<HTMLInputElement, SearchFieldProps>(
         <Search
           aria-hidden
           className={cn(
-            "pointer-events-none absolute top-1/2 -translate-y-1/2 text-label-secondary",
+            "text-label-secondary pointer-events-none absolute top-1/2 -translate-y-1/2",
             metrics.icon
           )}
         />
@@ -136,9 +136,9 @@ export const SearchField = React.forwardRef<HTMLInputElement, SearchFieldProps>(
             onClick={clear}
             data-slot="search-field-clear"
             className={cn(
-              "absolute top-1/2 inline-flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-label-tertiary",
-              "transition-colors duration-150 hover:text-label-secondary",
-              "outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-tint",
+              "text-label-tertiary absolute top-1/2 inline-flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-full",
+              "hover:text-label-secondary transition-colors duration-150",
+              "focus-visible:outline-tint outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid",
               "[&_svg]:pointer-events-none [:where(&)_svg]:size-4",
               metrics.clear
             )}

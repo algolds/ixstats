@@ -14,7 +14,6 @@ import {
   Check,
 } from "iconoir-react";
 import { Input } from "~/components/ui/input";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
@@ -24,6 +23,7 @@ import { MapPickerModal } from "~/components/maps/core/MapPickerModal";
 import { deriveIsoCode, deriveInternetTld, deriveCallingCode } from "./identityUtils";
 import { RightDriveIcon, LeftDriveIcon } from "./DrivingSideIcons";
 import type { NationalIdentityData } from "~/app/builder/lib/economy-data-service";
+import { Card, CardContent } from "~/components/ui/card";
 
 interface GeographyFormProps {
   identity: NationalIdentityData;
@@ -141,7 +141,7 @@ export const GeographyForm = React.memo(
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-6 text-left lg:grid-cols-2">
           {/* Country Codes & Domain Card */}
-          <FacetCard texture="chevron" textureOpacity={0.04} className="overflow-hidden">
+          <Card className="overflow-hidden">
             <div className="border-separator border-b px-6 py-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -156,7 +156,7 @@ export const GeographyForm = React.memo(
 
                 <Button
                   type="button"
-                  variant="tinted"
+                  variant="secondary"
                   size="sm"
                   onClick={handleSuggestCodes}
                   title="Fill codes from country name"
@@ -167,7 +167,7 @@ export const GeographyForm = React.memo(
               </div>
             </div>
 
-            <FacetCardContent className="space-y-4 p-6">
+            <CardContent className="space-y-4 p-6">
               <div className="grid grid-cols-3 gap-3">
                 {/* ISO Code */}
                 <div className="space-y-2">
@@ -215,11 +215,11 @@ export const GeographyForm = React.memo(
                   <p className="text-label-secondary text-footnote text-center">+1, +44</p>
                 </div>
               </div>
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
 
           {/* Civic Standards Card */}
-          <FacetCard texture="chevron" textureOpacity={0.04} className="z-10 overflow-visible">
+          <Card className="z-10 overflow-visible">
             <div className="border-separator border-b px-6 py-4">
               <h3 className="text-label text-headline flex items-center gap-2">
                 <Calendar className="text-teal h-5 w-5" />
@@ -230,7 +230,7 @@ export const GeographyForm = React.memo(
               </p>
             </div>
 
-            <FacetCardContent className="space-y-4 p-6">
+            <CardContent className="space-y-4 p-6">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-label text-caption flex items-center gap-1">
@@ -321,12 +321,12 @@ export const GeographyForm = React.memo(
                   />
                 </div>
               </div>
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Geographic Center Card */}
-        <FacetCard texture="chevron" textureOpacity={0.04} className="overflow-hidden">
+        <Card className="overflow-hidden">
           <div className="border-separator border-b px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
@@ -344,7 +344,7 @@ export const GeographyForm = React.memo(
                 {capitalCity?.coordinates && (
                   <Button
                     type="button"
-                    variant="tinted"
+                    variant="secondary"
                     size="sm"
                     onClick={handleSyncWithCapital}
                     title={`Use capital coordinates (${capitalCity.name || "Capital"})`}
@@ -357,7 +357,7 @@ export const GeographyForm = React.memo(
                 {countryId && (
                   <Button
                     type="button"
-                    variant="gray"
+                    variant="secondary"
                     size="sm"
                     onClick={() => {
                       soundEffects.press();
@@ -373,7 +373,7 @@ export const GeographyForm = React.memo(
             </div>
           </div>
 
-          <FacetCardContent className="space-y-4 p-6">
+          <CardContent className="space-y-4 p-6">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <label className="text-label text-caption flex items-center gap-1">
@@ -415,8 +415,8 @@ export const GeographyForm = React.memo(
                 </span>
               )}
             </div>
-          </FacetCardContent>
-        </FacetCard>
+          </CardContent>
+        </Card>
 
         {/* Map Picker Modal */}
         {countryId && isMapPickerOpen && (

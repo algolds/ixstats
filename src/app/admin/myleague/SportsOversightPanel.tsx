@@ -460,7 +460,7 @@ function AINarratorLab() {
   };
 
   return (
-    <Card className="relative overflow-hidden p-6">
+    <Card className="relative flex flex-col gap-6 overflow-hidden p-6 py-6">
       {/* Background radial glow */}
 
       <div className="space-y-6">
@@ -639,7 +639,7 @@ function AINarratorLab() {
                     </Button>
                     <Button
                       type="button"
-                      variant="filled"
+                      variant="default"
                       onClick={() => {
                         saveGlobalSettingsMutation.mutate(
                           {
@@ -738,7 +738,7 @@ function AINarratorLab() {
                 Generated Broadcast Output
               </label>
               {latency != null && (
-                <Badge variant="teal">Latency: {latency.toLocaleString()}ms</Badge>
+                <Badge variant="info">Latency: {latency.toLocaleString()}ms</Badge>
               )}
             </div>
 
@@ -767,7 +767,7 @@ function AINarratorLab() {
                       className="border-separator text-footnote border-b pb-3 leading-relaxed last:border-b-0 last:pb-0"
                     >
                       <div className="mb-2 flex items-center gap-2">
-                        <Badge variant="yellow" className="tabular-nums">
+                        <Badge variant="warning" className="tabular-nums">
                           {idx * 10}' Event
                         </Badge>
                         <span className="text-footnote text-label max-w-[200px] truncate italic">
@@ -841,7 +841,7 @@ function NotificationSettingsCard() {
   };
 
   return (
-    <Card>
+    <Card className="flex flex-col gap-6 py-6">
       <CardHeader className="pb-3">
         <CardTitle className="text-body">Auto-Notifications</CardTitle>
         <p className="text-label-secondary text-footnote">
@@ -1037,7 +1037,7 @@ export default function SportsOversightPanel() {
                 </TableCell>
                 <TableCell>
                   {league.isCanonical ? (
-                    <Badge variant="purple">
+                    <Badge variant="secondary">
                       <Shield className="mr-1 h-3 w-3" />
                       Canonical
                     </Badge>
@@ -1135,7 +1135,7 @@ export default function SportsOversightPanel() {
 
       {managedLeagueId && managedLeague ? (
         /* Expanded Drill-down League Manage Panel */
-        <Card className="relative p-6">
+        <Card className="relative flex flex-col gap-6 p-6 py-6">
           <Button
             variant="ghost"
             onClick={() => setManagedLeagueId(null)}
@@ -1151,9 +1151,9 @@ export default function SportsOversightPanel() {
                   {getSportIcon(managedLeague.sportPreset)} {managedLeague.sportPreset}
                 </Badge>
                 {managedLeague.isCanonical ? (
-                  <Badge variant="purple">Canonical League</Badge>
+                  <Badge variant="secondary">Canonical League</Badge>
                 ) : (
-                  <Badge variant="secondary">User Created</Badge>
+                  <Badge variant="default">User Created</Badge>
                 )}
               </div>
               <h2 className="text-label text-title-1 mt-2">{managedLeague.name}</h2>
@@ -1275,7 +1275,7 @@ export default function SportsOversightPanel() {
           </TabsList>
 
           <TabsContent value="all">
-            <Card>
+            <Card className="flex flex-col gap-6 py-6">
               <CardHeader className="pb-2">
                 <CardTitle className="text-body">All Leagues</CardTitle>
               </CardHeader>
@@ -1284,7 +1284,7 @@ export default function SportsOversightPanel() {
           </TabsContent>
 
           <TabsContent value="canonical">
-            <Card>
+            <Card className="flex flex-col gap-6 py-6">
               <CardHeader className="pb-2">
                 <CardTitle className="text-body">Canonical Leagues</CardTitle>
               </CardHeader>
@@ -1293,7 +1293,7 @@ export default function SportsOversightPanel() {
           </TabsContent>
 
           <TabsContent value="create">
-            <Card>
+            <Card className="flex flex-col gap-6 py-6">
               <CardHeader className="pb-2">
                 <CardTitle className="text-body">Create Canonical League</CardTitle>
               </CardHeader>

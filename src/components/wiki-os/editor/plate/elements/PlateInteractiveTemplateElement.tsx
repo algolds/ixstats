@@ -190,7 +190,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
           {!readOnly && (
             <>
               <Button
-                variant="tinted"
+                variant="secondary"
                 size="sm"
                 onClick={() => {
                   setIsModalOpen(true);
@@ -368,7 +368,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                         <Button size="sm" type="submit">
                           Add
                         </Button>
-                        <Button variant="gray" size="sm" onClick={() => setShowAddParam(false)}>
+                        <Button variant="secondary" size="sm" onClick={() => setShowAddParam(false)}>
                           Cancel
                         </Button>
                       </form>
@@ -457,7 +457,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
           {/* Footer Actions */}
           <DialogFooter className="border-separator bg-fill-4 flex items-center justify-between border-t p-4 sm:justify-between">
             <Button
-              variant="plain"
+              variant="ghost"
               size="sm"
               onClick={handleDelete}
               className="text-red hover:bg-red/10"
@@ -467,7 +467,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
             </Button>
 
             <div className="flex items-center gap-2">
-              <Button variant="gray" onClick={() => setIsModalOpen(false)}>
+              <Button variant="secondary" onClick={() => setIsModalOpen(false)}>
                 Close
               </Button>
               <Button

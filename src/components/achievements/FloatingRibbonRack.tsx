@@ -105,7 +105,7 @@ export function RibbonBar({ ribbon, size = "sm" }: RibbonBarProps) {
             {ribbon.category}
             {unlocked ? ` · ${unlocked}` : ""}
           </span>
-          <Badge variant="caution">{ribbon.rarity}</Badge>
+          <Badge variant="warning">{ribbon.rarity}</Badge>
         </div>
       </TooltipContent>
     </Tooltip>

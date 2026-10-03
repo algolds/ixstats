@@ -166,7 +166,7 @@ function HoldToResolveButton({
   if (isResolved) {
     return (
       <Button
-        variant="tinted"
+        variant="secondary"
         size="sm"
         onClick={() => onResolveToggle(false)}
         className="bg-green/10 text-green hover:bg-green/20"
@@ -181,7 +181,7 @@ function HoldToResolveButton({
   return (
     <div className="relative inline-flex select-none">
       <Button
-        variant="bordered"
+        variant="outline"
         size="sm"
         onMouseDown={startHold}
         onMouseUp={cancelHold}
@@ -484,7 +484,7 @@ function ThreadCard({
                         </span>
 
                         <Button
-                          variant="bordered"
+                          variant="outline"
                           size="sm"
                           onClick={() => handleCopyReplacement(comment.id, comment.suggestedEdit!)}
                           className="border-margin-border bg-margin-bg hover:bg-margin-bg/80 text-(--margin-accent-text)"
@@ -567,7 +567,7 @@ function ThreadCard({
             <form onSubmit={handleReplySubmit} className="space-y-2 pt-2">
               <div className="flex items-center justify-between">
                 <Button
-                  variant="bordered"
+                  variant="outline"
                   size="sm"
                   aria-pressed={showSuggestEdit}
                   onClick={() => setShowSuggestEdit((prev) => !prev)}
@@ -873,7 +873,7 @@ export function MarginThreadsTab({
           {/* Toggle Propose Suggested Edit Diff */}
           <div className="space-y-2">
             <Button
-              variant="bordered"
+              variant="outline"
               size="sm"
               aria-pressed={showNewSuggestEdit}
               onClick={() => setShowNewSuggestEdit((prev) => !prev)}

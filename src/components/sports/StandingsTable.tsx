@@ -2,7 +2,6 @@
 
 import React from "react";
 import { cn } from "~/lib/utils";
-import { FacetCard } from "~/components/ui/facet-container";
 import { withBasePath } from "~/lib/base-path";
 import Link from "next/link";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
@@ -14,6 +13,7 @@ import {
 } from "iconoir-react";
 import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 
 export interface StandingsRow {
   id: string;
@@ -133,7 +133,7 @@ export function StandingsTable({
   };
 
   return (
-    <FacetCard
+    <Card
       className={cn(
         "border-separator bg-surface rounded-sheet shadow-card mx-auto w-full overflow-hidden border p-6",
         className
@@ -149,7 +149,7 @@ export function StandingsTable({
         </div>
 
         <Button
-          variant="bordered"
+          variant="outline"
           size="sm"
           onClick={() => exportStandingsCsv(title, standings)}
           title="Export CSV"
@@ -322,7 +322,7 @@ export function StandingsTable({
           </div>
         </div>
       ))}
-    </FacetCard>
+    </Card>
   );
 }
 

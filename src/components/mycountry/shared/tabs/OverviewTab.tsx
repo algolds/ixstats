@@ -11,7 +11,6 @@ import {
 } from "iconoir-react";
 import Link from "next/link";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
 import { assetUrl } from "~/lib/base-path";
@@ -25,6 +24,7 @@ import {
 } from "~/lib/wiki-os/adapters/ixstates/integration";
 import type { CountryWithEconomicData } from "../primitives/CountryDataProvider";
 import type { MyCountryMetricView } from "~/hooks/useMyCountryMetrics";
+import { Card, CardContent } from "~/components/ui/card";
 
 type MetricView = {
   gdp: "perCapita" | "total";
@@ -52,13 +52,13 @@ export function OverviewTab({
   setMetricViewAction: React.Dispatch<React.SetStateAction<MyCountryMetricView>>;
 }) {
   return (
-    <FacetCard className="rounded-card overflow-hidden">
-      <FacetCardContent className="space-y-4 pt-4 pb-4">
+    <Card className="rounded-card overflow-hidden">
+      <CardContent className="space-y-4 pt-4 pb-4">
         {/* ── Metrics Grid (GDP / Population / Land Area) ── */}
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="grid grid-cols-3 gap-2">
-              <FacetCard
+              <Card
                 variant="inset"
                 padding="sm"
                 className="text-left"
@@ -68,6 +68,7 @@ export function OverviewTab({
                     gdp: v.gdp === "perCapita" ? "total" : "perCapita",
                   }))
                 }
+                interactive
               >
                 <Eyebrow className="block">
                   {metricView.gdp === "perCapita" ? "GDP per Capita" : "Total GDP"}
@@ -110,8 +111,8 @@ export function OverviewTab({
                     ? `${country.economicTier || "Developing"} · $${Math.round(country.currentTotalGdp ?? 0).toLocaleString("en-US")} total`
                     : `Per capita: $${Math.round(country.currentGdpPerCapita ?? 0).toLocaleString("en-US")}`}
                 </p>
-              </FacetCard>
-              <FacetCard
+              </Card>
+              <Card
                 variant="inset"
                 padding="sm"
                 className="text-left"
@@ -121,6 +122,7 @@ export function OverviewTab({
                     population: v.population === "total" ? "density" : "total",
                   }))
                 }
+                interactive
               >
                 <Eyebrow className="block">
                   {metricView.population === "total" ? "Population" : "Pop. Density"}
@@ -161,8 +163,8 @@ export function OverviewTab({
                     ? `Tier ${country.populationTier || "N/A"}${country.populationDensity ? ` · ${Math.round(country.populationDensity).toLocaleString()}/km²` : ""}`
                     : `Total: ${Math.round(country.currentPopulation ?? 0).toLocaleString("en-US")}`}
                 </p>
-              </FacetCard>
-              <FacetCard
+              </Card>
+              <Card
                 variant="inset"
                 padding="sm"
                 className="text-left"
@@ -175,6 +177,7 @@ export function OverviewTab({
                         }))
                     : undefined
                 }
+                interactive
               >
                 <Eyebrow className="block">Land Area</Eyebrow>
                 <p className="text-label text-title-3 mt-0.5">
@@ -195,7 +198,7 @@ export function OverviewTab({
                       ? `${Math.round(country.landArea).toLocaleString()} km²`
                       : ""}
                 </p>
-              </FacetCard>
+              </Card>
             </div>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="text-footnote">
@@ -324,7 +327,7 @@ export function OverviewTab({
               );
             })()}
         </div>
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 }

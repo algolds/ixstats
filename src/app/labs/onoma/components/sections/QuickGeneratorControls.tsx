@@ -277,7 +277,7 @@ export function QuickGeneratorControls({
                 {/* Update changes to this custom lexicon */}
                 {isWordsModified && (
                   <Button
-                    variant="tinted"
+                    variant="secondary"
                     size="sm"
                     onClick={handleUpdateCurrentDict}
                     title="Save changes to this dictionary"
@@ -290,7 +290,7 @@ export function QuickGeneratorControls({
 
                 {/* Rename custom dictionary */}
                 <Button
-                  variant="bordered"
+                  variant="outline"
                   size="sm"
                   type="button"
                   onClick={() => {
@@ -321,7 +321,7 @@ export function QuickGeneratorControls({
             {/* New Dictionary / Save As — visible only when seed words are modified */}
             {isWordsModified && (
               <Button
-                variant="tinted"
+                variant="secondary"
                 size="sm"
                 onClick={() => {
                   setIsCreatingNew(true);
@@ -360,7 +360,7 @@ export function QuickGeneratorControls({
               <Check className="h-3 w-3" />
             </Button>
             <Button
-              variant="gray"
+              variant="secondary"
               size="icon-sm"
               aria-label="Cancel"
               type="button"
@@ -395,7 +395,7 @@ export function QuickGeneratorControls({
               <Check className="h-3 w-3" />
             </Button>
             <Button
-              variant="gray"
+              variant="secondary"
               size="icon-sm"
               aria-label="Cancel"
               type="button"
@@ -452,7 +452,7 @@ export function QuickGeneratorControls({
           <div className="flex items-center justify-end gap-2 pb-0.5">
             {hasDuplicates && (
               <Button
-                variant="tinted"
+                variant="secondary"
                 size="sm"
                 onClick={handleCleanWords}
                 title={`Remove ${duplicateCount} duplicate word${duplicateCount === 1 ? "" : "s"}`}
@@ -464,7 +464,7 @@ export function QuickGeneratorControls({
             )}
             {isWordsModified && (
               <Button
-                variant="plain"
+                variant="ghost"
                 size="sm"
                 onClick={handleResetToDefault}
                 title="Revert to original dictionary"
@@ -506,7 +506,7 @@ export function QuickGeneratorControls({
       <div className="bg-tint hover:bg-tint-hover active:bg-tint-hover group rounded-row border-separator shadow-card relative flex h-11 w-full items-center overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none">
         {/* Left / Center: Primary Generate Action Trigger */}
         <Button
-          variant="plain"
+          variant="ghost"
           onClick={handleGenerate}
           disabled={isGenerating || !selectedDictId}
           className="text-on-tint hover:text-on-tint h-full flex-1 gap-2 rounded-none pr-3 pl-4 hover:bg-transparent"

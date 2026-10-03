@@ -8,11 +8,11 @@ import { AdminNavigationProvider } from "./_components";
 import { SignInButton, useUser, useAuth } from "~/context/auth-context";
 import { isSystemOwner } from "~/lib/auth";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { usePermissions } from "~/hooks/usePermissions";
 import { PortalTintSync } from "~/components/providers/PortalTintSync";
+import { Card } from "~/components/ui/card";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -22,14 +22,14 @@ function AccessDeniedScreen() {
   const { signOut } = useAuth();
   return (
     <div className="bg-grouped text-label flex min-h-screen flex-col items-center justify-center p-4">
-      <FacetCard padding="lg" className="w-full max-w-sm text-center">
+      <Card padding="lg" className="w-full max-w-sm text-center">
         <h1 className="text-destructive text-title-1 mb-4">Access Denied</h1>
         <p className="text-label-secondary text-body mb-6">
           You do not have permission to view the Administration console.
         </p>
         <div className="flex justify-center gap-3">
           <Button
-            variant="bordered"
+            variant="outline"
             onClick={() => {
               void signOut();
             }}
@@ -40,7 +40,7 @@ function AccessDeniedScreen() {
             <Link href="/">Go to Home</Link>
           </Button>
         </div>
-      </FacetCard>
+      </Card>
     </div>
   );
 }

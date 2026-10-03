@@ -4,7 +4,6 @@ import React, { useRef, useCallback } from "react";
 import { formatExactCurrency } from "~/lib/utils";
 import { usePendingLocks } from "~/hooks/usePendingLocks";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Coins } from "iconoir-react";
 import type { RevenueSourceInput, RevenueCategory } from "~/types/government";
 import {
@@ -18,6 +17,7 @@ import {
   RevenueItemRow,
   RevenueAddSection,
 } from "./revenue";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 export {
   revenueCategories,
@@ -124,8 +124,8 @@ export function RevenueSourceForm({
   );
 
   return (
-    <FacetCard>
-      <FacetCardHeader className="border-separator flex-row flex-wrap items-center justify-between gap-2 border-b px-6 py-4">
+    <Card>
+      <CardHeader className="border-separator flex-row flex-wrap items-center justify-between gap-2 border-b px-6 py-4">
         <h2 className="text-label text-title-3 flex items-center gap-2">
           <Coins aria-hidden="true" className="text-label-secondary h-5 w-5" />
           Revenue Channels
@@ -134,13 +134,13 @@ export function RevenueSourceForm({
           <Badge variant={totalPercent > 100 ? "destructive" : "outline"}>
             {data.length} Channels
           </Badge>
-          <Badge variant="secondary" className="tabular-nums">
+          <Badge variant="default" className="tabular-nums">
             {formatExactCurrency(totalCalculated, currency)}
           </Badge>
         </div>
-      </FacetCardHeader>
+      </CardHeader>
 
-      <FacetCardContent className="space-y-6 p-6">
+      <CardContent className="space-y-6 p-6">
         {/* KPI Summary Cards & Category Breakdown */}
         <RevenueSummaryKpis data={data} totalCalculated={totalCalculated} />
 
@@ -169,7 +169,7 @@ export function RevenueSourceForm({
             availableDepartments={availableDepartments}
           />
         )}
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 }

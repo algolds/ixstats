@@ -100,10 +100,16 @@ export function LegislativePolicies({ countryId }: LegislativePoliciesProps) {
                 <span className="text-label-secondary text-footnote hidden capitalize sm:inline">
                   {policy.category}
                 </span>
-                <Badge className={`text-footnote px-2 py-0 ${priorityMeta.className}`}>
+                <Badge
+                  className={`text-footnote px-2 py-0 ${priorityMeta.className}`}
+                  variant="secondary"
+                >
                   {priorityMeta.label}
                 </Badge>
-                <Badge className={`text-footnote px-2 py-0 ${statusMeta.className}`}>
+                <Badge
+                  className={`text-footnote px-2 py-0 ${statusMeta.className}`}
+                  variant="secondary"
+                >
                   {statusMeta.label}
                 </Badge>
               </div>

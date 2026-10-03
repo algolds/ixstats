@@ -55,7 +55,7 @@ function CategoryFilterComponent({
               <Icon className="h-4 w-4" />
               {cat.name}
               {count > 0 && (
-                <Badge variant="secondary" className="ml-1">
+                <Badge variant="default" className="ml-1">
                   {count}
                 </Badge>
               )}

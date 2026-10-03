@@ -7,11 +7,11 @@ import { useSearchParams } from "next/navigation";
 import { OpenBook as BookOpen, Globe, WhiteFlag as Flag, Component as Layers } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { LoreCardBatchAdmin } from "./LoreCardBatchAdmin";
 import { NSImportSuiteAdmin } from "./NSImportSuiteAdmin";
 import { CommonsFlagImporterAdmin } from "./CommonsFlagImporterAdmin";
+import { Card } from "~/components/ui/card";
 
 export type ImportSubtab = "wiki" | "ns" | "flags";
 
@@ -69,7 +69,7 @@ export function CardImportStudio({
       description: "Batch generate & scrape lore cards from IxWiki, IIWiki & WikiOS",
       icon: BookOpen,
       badge: pendingRequestsCount > 0 ? `${pendingRequestsCount} requests` : undefined,
-      badgeVariant: "secondary" as const,
+      badgeVariant: "default" as const,
     },
     {
       id: "ns" as ImportSubtab,
@@ -77,7 +77,7 @@ export function CardImportStudio({
       description: "Region scrapers, sync daemons & active/CTE nation compatibility",
       icon: Globe,
       badge: activeJobsCount > 0 ? `${activeJobsCount} active` : undefined,
-      badgeVariant: "default" as const,
+      badgeVariant: "secondary" as const,
     },
     {
       id: "flags" as ImportSubtab,
@@ -90,7 +90,7 @@ export function CardImportStudio({
   return (
     <div className="space-y-6">
       {/* ─── Import Studio Subnavigation Header ───────────────────── */}
-      <FacetCard className="p-4">
+      <Card className="p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-tint-fill text-tint rounded-row flex size-10 items-center justify-center">
@@ -120,7 +120,7 @@ export function CardImportStudio({
                   <>
                     {tab.label}
                     {tab.badge && (
-                      <Badge variant={tab.badgeVariant || "secondary"} className="tabular-nums">
+                      <Badge variant={tab.badgeVariant || "default"} className="tabular-nums">
                         {tab.badge}
                       </Badge>
                     )}
@@ -131,7 +131,7 @@ export function CardImportStudio({
             })}
           />
         </div>
-      </FacetCard>
+      </Card>
 
       {/* ─── Active Subtab Content ───────────────────────────────── */}
       <div className="duration-fast transition-opacity">

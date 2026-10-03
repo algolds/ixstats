@@ -2,7 +2,7 @@ import * as React from "react";
 import { cn } from "~/lib/utils/cn";
 
 /**
- * EmptyState (Facet 3 §7.1): an icon, a `text-title-3` title, a `text-callout` message and at
+ * An icon, a `text-title-3` title, a `text-callout` message and at
  * most one action, centred. `compact` fits inside a card or list group.
  *
  *   <EmptyState icon={<Page />} title="No drafts" message="Drafts you save appear here."
@@ -49,7 +49,9 @@ export const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
           <p className="text-callout text-label-secondary">{message}</p>
         )}
       </div>
-      {action != null && action !== false && <div className={compact ? "pt-1" : "pt-2"}>{action}</div>}
+      {action != null && action !== false && (
+        <div className={compact ? "pt-1" : "pt-2"}>{action}</div>
+      )}
     </div>
   )
 );

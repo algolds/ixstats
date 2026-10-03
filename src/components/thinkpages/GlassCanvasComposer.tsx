@@ -10,7 +10,6 @@ import {
   CheckSquare as Vote,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { springSmooth } from "~/lib/design/motion";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -23,6 +22,7 @@ import { ComposerLiveDataDrawer } from "./composer/ComposerLiveDataDrawer";
 import { ComposerActionBar } from "./composer/ComposerActionBar";
 import { ComposerPollModal } from "./composer/ComposerPollModal";
 import { usePostAsYourself, isPersonalAccount } from "./composer/usePostAsYourself";
+import { Card } from "~/components/ui/card";
 
 const MediaSearchModal = dynamic(
   () =>
@@ -152,7 +152,7 @@ export function GlassCanvasComposer({
 
   if (accounts.length === 0) {
     return (
-      <FacetCard padding="lg">
+      <Card padding="lg">
         <div className="flex items-start justify-between gap-5">
           <div className="flex items-start gap-3">
             <div className="bg-tint-fill text-tint rounded-control flex size-9 shrink-0 items-center justify-center">
@@ -173,20 +173,20 @@ export function GlassCanvasComposer({
               {isPostAsYourselfPending ? "Setting up..." : "Post as yourself"}
             </Button>
             {hasCountry && (
-              <Button size="sm" variant="bordered" onClick={onCreateAccount}>
+              <Button size="sm" variant="outline" onClick={onCreateAccount}>
                 Create Account
               </Button>
             )}
           </div>
         </div>
-      </FacetCard>
+      </Card>
     );
   }
 
   // A personal persona needs no country, so only a missing selection blocks the composer.
   if (!account) {
     return (
-      <FacetCard padding="md" aria-busy="true">
+      <Card padding="md" aria-busy="true">
         <div className="mb-4 flex items-center gap-3">
           <Skeleton className="size-8 rounded-full" />
           <div className="flex-1 space-y-2">
@@ -203,7 +203,7 @@ export function GlassCanvasComposer({
           </div>
           <Skeleton className="h-7 w-16" />
         </div>
-      </FacetCard>
+      </Card>
     );
   }
 
@@ -349,7 +349,7 @@ export function GlassCanvasComposer({
               <div className="flex shrink-0 items-center gap-2">
                 <Button
                   type="button"
-                  variant="tinted"
+                  variant="secondary"
                   size="sm"
                   onClick={() => setShowPollModal(true)}
                 >

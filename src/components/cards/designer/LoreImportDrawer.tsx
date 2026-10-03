@@ -341,7 +341,7 @@ export function LoreImportDrawer({
                       subtitle={<span className="line-clamp-2">{item.snippet}</span>}
                       trailing={
                         "stashName" in item && Boolean((item as any).stashName) ? (
-                          <Badge variant="secondary" className="text-footnote shrink-0 px-2 py-0">
+                          <Badge variant="default" className="text-footnote shrink-0 px-2 py-0">
                             {(item as any).stashName}
                           </Badge>
                         ) : undefined
@@ -380,7 +380,7 @@ export function LoreImportDrawer({
                         <Badge variant="outline" className="text-footnote font-semibold">
                           {activeMetadata.rarity}
                         </Badge>
-                        <Badge variant="secondary" className="text-footnote font-medium">
+                        <Badge variant="default" className="text-footnote font-medium">
                           {activeMetadata.category}
                         </Badge>
                       </div>
@@ -440,7 +440,7 @@ export function LoreImportDrawer({
                       <div className="min-w-0 flex-1">
                         <div className="text-label text-footnote flex items-center gap-2 font-semibold">
                           <span>Wiki Article Image Detected</span>
-                          <Badge variant="secondary" className="text-footnote px-2 py-0">
+                          <Badge variant="default" className="text-footnote px-2 py-0">
                             Auto-Import
                           </Badge>
                         </div>

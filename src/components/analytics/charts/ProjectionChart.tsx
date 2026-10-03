@@ -54,7 +54,7 @@ export const ProjectionChart = React.memo<ProjectionChartProps>(
             : "1 year";
 
     return (
-      <Card className="facet-hierarchy-child" id="gdp-projections-chart">
+      <Card className="facet-hierarchy-child flex flex-col gap-6 py-6" id="gdp-projections-chart">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">

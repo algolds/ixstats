@@ -19,7 +19,6 @@ import {
   SystemRestart as Loader2,
 } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
-import { FacetCard } from "~/components/ui/facet-container";
 
 interface PollManagerProps {
   onCreateNew: () => void;
@@ -95,7 +94,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
 
   if (!polls || polls.length === 0) {
     return (
-      <Card className="flex flex-col items-center justify-center border-dashed p-10 text-center">
+      <Card className="flex flex-col items-center justify-center gap-6 border-dashed p-10 py-6 text-center">
         <div className="bg-poll/10 mb-4 rounded-full p-4">
           <BarChart3 className="text-poll h-8 w-8" />
         </div>
@@ -115,20 +114,20 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
     <div className="space-y-6">
       {/* Stats Overview */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Ballots Configured</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">{polls.length}</p>
-        </FacetCard>
+        </Card>
 
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Active Ballots</p>
           <p className="text-title-2 text-green mt-1 tabular-nums">{activePollsCount}</p>
-        </FacetCard>
+        </Card>
 
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Responses Collected</p>
           <p className="text-title-2 text-teal mt-1 tabular-nums">{totalVotesCast}</p>
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Poll Cards List */}
@@ -141,7 +140,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
           const votesCount = poll._count?.votes ?? 0;
 
           return (
-            <FacetCard key={poll.id} className="space-y-3 p-4">
+            <Card key={poll.id} className="space-y-3 p-4">
               <div className="border-separator border-b pb-3">
                 <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
                   <div className="space-y-1">
@@ -162,6 +161,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                               ? "border-red/35 bg-red/10 text-red hover:bg-red/20"
                               : "border-separator bg-fill-3 text-label-secondary hover:bg-fill-4"
                         }`}
+                        variant="secondary"
                       >
                         {poll.isActive && !isExpired
                           ? "Active"
@@ -298,7 +298,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                   {poll.multiple && <span className="text-poll">Multiple selection enabled</span>}
                 </div>
               </div>
-            </FacetCard>
+            </Card>
           );
         })}
       </div>

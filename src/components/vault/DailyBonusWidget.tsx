@@ -10,7 +10,6 @@ import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Progress } from "~/components/ui/progress";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
@@ -18,6 +17,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "~/compone
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Card } from "~/components/ui/card";
 
 const IxCardIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg
@@ -117,7 +117,7 @@ function ChoiceCard({
       )}
     >
       {/* Interactive row (depth 3) inside the dialog: solid, so blur never stacks. */}
-      <FacetCard className="duration-fast group-enabled:group-hover:border-tint/50 flex h-full min-h-[148px] flex-col items-center justify-center gap-3 p-4 text-center transition-[border-color]">
+      <Card className="duration-fast group-enabled:group-hover:border-tint/50 flex h-full min-h-[148px] flex-col items-center justify-center gap-3 p-4 text-center transition-[border-color]">
         <span aria-hidden="true" className="grid h-8 place-items-center">
           {loading ? <Loader className="text-label-secondary h-6 w-6 animate-spin" /> : icon}
         </span>
@@ -127,7 +127,7 @@ function ChoiceCard({
             {description}
           </span>
         </span>
-      </FacetCard>
+      </Card>
     </button>
   );
 }
@@ -348,7 +348,7 @@ export const DailyBonusWidget: React.FC = () => {
                         {claimResult.cardAwarded.title}
                       </p>
                       <div className="flex items-center justify-center gap-2">
-                        <Badge variant="secondary" className="capitalize">
+                        <Badge variant="default" className="capitalize">
                           {claimResult.cardAwarded.rarity.toLowerCase().replace(/_/g, " ")}
                         </Badge>
                         <span className="text-label-secondary text-body">

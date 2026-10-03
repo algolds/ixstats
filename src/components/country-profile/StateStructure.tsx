@@ -37,7 +37,7 @@ export function StateStructure({
       {system && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-subhead text-label-secondary">System</span>
-          <Badge variant="tinted">{system}</Badge>
+          <Badge variant="secondary">{system}</Badge>
         </div>
       )}
       <ul className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -75,7 +75,7 @@ export function StateStructure({
           <ul className="flex flex-wrap gap-2">
             {ministries.map((m) => (
               <li key={m}>
-                <Badge variant="neutral">{m}</Badge>
+                <Badge variant="default">{m}</Badge>
               </li>
             ))}
           </ul>

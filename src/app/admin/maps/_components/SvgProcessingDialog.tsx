@@ -7,7 +7,6 @@
  */
 
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "~/components/ui/sheet";
@@ -24,6 +23,7 @@ import {
 } from "iconoir-react";
 import { SvgPreviewMap } from "./SvgPreviewMap";
 import type { FeatureCollection } from "geojson";
+import { Card } from "~/components/ui/card";
 
 interface ProcessingDialogProps {
   uploadId: string | null;
@@ -154,24 +154,24 @@ export function SvgProcessingDialog({
             <>
               {/* Summary */}
               <div className="grid grid-cols-3 gap-3">
-                <FacetCard className="rounded-control p-3">
+                <Card className="rounded-control p-3">
                   <Eyebrow className="block">Features</Eyebrow>
                   <div className="text-label text-title-3 tabular-nums">
                     {processResult.featureCount}
                   </div>
-                </FacetCard>
-                <FacetCard className="rounded-control p-3">
+                </Card>
+                <Card className="rounded-control p-3">
                   <Eyebrow className="block">Matched</Eyebrow>
                   <div className="text-label text-title-3 tabular-nums">
                     {Object.keys(processResult.countryMatches).length}
                   </div>
-                </FacetCard>
-                <FacetCard className="rounded-control p-3">
+                </Card>
+                <Card className="rounded-control p-3">
                   <Eyebrow className="block">Unmatched</Eyebrow>
                   <div className="text-label text-title-3 tabular-nums">
                     {processResult.featureCount - Object.keys(processResult.countryMatches).length}
                   </div>
-                </FacetCard>
+                </Card>
               </div>
 
               {/* Feature list */}
@@ -192,7 +192,7 @@ export function SvgProcessingDialog({
                       </div>
                       <div className="text-label-secondary text-footnote flex items-center gap-3">
                         {f.countryMatch && (
-                          <Badge variant="secondary">
+                          <Badge variant="default">
                             {f.countryMatch.matchType === "exact" ? "exact" : "fuzzy"} →{" "}
                             {f.countryMatch.countryName}
                           </Badge>

@@ -1,6 +1,4 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
@@ -36,6 +34,7 @@ import { api } from "~/trpc/react";
 import { Checkbox } from "~/components/ui/checkbox";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import { Card } from "~/components/ui/card";
 
 export interface FeaturePropertyUpdates {
   name?: string;
@@ -315,7 +314,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
   return (
     <div className="text-footnote space-y-3 select-none">
       {/* Top Header Bar */}
-      <FacetCard className="flex items-center justify-between p-3">
+      <Card className="flex items-center justify-between p-3">
         <div className="flex min-w-0 items-center gap-2">
           <div className="bg-tint-fill text-tint ring-tint/20 rounded-control flex h-8 w-8 shrink-0 items-center justify-center ring-1">
             <Icon className="h-4 w-4" />
@@ -357,10 +356,10 @@ export const FeatureInspector = React.memo(function FeatureInspector({
             </Button>
           )}
         </div>
-      </FacetCard>
+      </Card>
 
       {/* Accordion Card 1: Details */}
-      <FacetCard className="overflow-hidden">
+      <Card className="overflow-hidden">
         <Button
           type="button"
           variant="ghost"
@@ -642,10 +641,10 @@ export const FeatureInspector = React.memo(function FeatureInspector({
             )}
           </div>
         )}
-      </FacetCard>
+      </Card>
 
       {/* Accordion Card 2: Location & Hydrology */}
-      <FacetCard className="overflow-hidden">
+      <Card className="overflow-hidden">
         <Button
           type="button"
           variant="ghost"
@@ -730,10 +729,10 @@ export const FeatureInspector = React.memo(function FeatureInspector({
             )}
           </div>
         )}
-      </FacetCard>
+      </Card>
 
       {/* Accordion Card 3: Wiki */}
-      <FacetCard className="overflow-hidden">
+      <Card className="overflow-hidden">
         <Button
           type="button"
           variant="ghost"
@@ -775,10 +774,10 @@ export const FeatureInspector = React.memo(function FeatureInspector({
             )}
           </div>
         )}
-      </FacetCard>
+      </Card>
 
       {/* Accordion Card 4: Actions */}
-      <FacetCard className="overflow-hidden">
+      <Card className="overflow-hidden">
         <Button
           type="button"
           variant="ghost"
@@ -810,7 +809,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
             />
           </div>
         )}
-      </FacetCard>
+      </Card>
     </div>
   );
 });

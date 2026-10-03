@@ -13,11 +13,11 @@ import { CountryInfoTab } from "./components/CountryInfoTab";
 import { UnclaimedTerritoryView } from "./components/UnclaimedTerritoryView";
 import { formatCompactCurrency, formatCompactNumber } from "~/lib/utils/format-utils";
 import { Skeleton } from "~/components/ui/skeleton";
-import { FacetTabs } from "~/components/ui/facet";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 const COUNTRY_TABS = [
-  { id: "overview", label: "Overview" },
-  { id: "info", label: "Info" },
+  { value: "overview", label: "Overview" },
+  { value: "info", label: "Info" },
 ];
 
 const GeoProfileContent = dynamic(
@@ -53,18 +53,17 @@ export function CountryInfoContent({
     <>
       {/* Tab bar */}
       <div className="border-separator shrink-0 border-b px-4 py-2">
-        <FacetTabs
-          tabs={
+        <SegmentedControl
+          options={
             state.hasGeoTab
-              ? [...COUNTRY_TABS, { id: "geography", label: "Geography" }]
+              ? [...COUNTRY_TABS, { value: "geography", label: "Geography" }]
               : COUNTRY_TABS
           }
-          activeTab={state.activeTab}
-          onChange={(id) => state.setActiveTab(id as PanelState["activeTab"])}
+          value={state.activeTab}
+          onValueChange={(id) => state.setActiveTab(id as PanelState["activeTab"])}
           size="sm"
-          tone="neutral"
-          showTexture={false}
           className="w-full"
+          asTabs
         />
       </div>
 

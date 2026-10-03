@@ -130,7 +130,7 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
 
           {/* Bulk mode toggle */}
           <div className="mt-4 flex items-center gap-4">
-            <Button variant="gray" aria-pressed={bulkMode} onClick={() => setBulkMode(!bulkMode)}>
+            <Button variant="secondary" aria-pressed={bulkMode} onClick={() => setBulkMode(!bulkMode)}>
               {bulkMode ? "Exit Bulk Mode" : "Bulk Select"}
             </Button>
 
@@ -141,7 +141,7 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
                 className="flex gap-2"
               >
                 <Button
-                  variant="tinted"
+                  variant="secondary"
                   size="sm"
                   onClick={() => handleBulkAction("junk")}
                   className="bg-red/15 text-red hover:bg-red/25"
@@ -149,7 +149,7 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
                   Junk ({selectedCards.size})
                 </Button>
                 <Button
-                  variant="tinted"
+                  variant="secondary"
                   size="sm"
                   onClick={() => handleBulkAction("keep")}
                   className="bg-green/15 text-green hover:bg-green/25"
@@ -157,7 +157,7 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
                   Keep ({selectedCards.size})
                 </Button>
                 <Button
-                  variant="tinted"
+                  variant="secondary"
                   size="sm"
                   onClick={() => handleBulkAction("list")}
                   className="bg-blue/15 text-blue hover:bg-blue/25"
@@ -203,7 +203,7 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
 
             <div className="flex gap-3">
               <Button
-                variant="tinted"
+                variant="secondary"
                 size="lg"
                 onClick={handleCollectAll}
                 className="bg-green/15 text-green hover:bg-green/25"
@@ -349,7 +349,7 @@ const CardActionItem = React.memo<CardActionItemProps>(
             className="mt-2 flex gap-1"
           >
             <Button
-              variant="tinted"
+              variant="secondary"
               size="sm"
               onClick={() => onAction(card.id, "junk")}
               title="Junk for credits"
@@ -358,7 +358,7 @@ const CardActionItem = React.memo<CardActionItemProps>(
               Junk
             </Button>
             <Button
-              variant="tinted"
+              variant="secondary"
               size="sm"
               onClick={() => onAction(card.id, "keep")}
               title="Keep in collection"
@@ -367,7 +367,7 @@ const CardActionItem = React.memo<CardActionItemProps>(
               Keep
             </Button>
             <Button
-              variant="tinted"
+              variant="secondary"
               size="sm"
               onClick={() => onAction(card.id, "list")}
               title="List on marketplace"

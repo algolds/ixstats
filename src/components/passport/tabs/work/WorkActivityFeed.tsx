@@ -14,7 +14,6 @@ import {
 } from "iconoir-react";
 import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FACET_INSET_SURFACE } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils/cn";
 import type { WorkPayload } from "../../types";
 
@@ -25,16 +24,16 @@ const FEED_STYLE: Record<
   { icon: typeof BookOpen; badge: BadgeVariant; label: string }
 > = {
   publish: { icon: BookOpen, badge: "info", label: "Created page" },
-  revision: { icon: EditPencil, badge: "tinted", label: "Revised page" },
-  minor_edit: { icon: EditPencil, badge: "neutral", label: "Copyedit" },
-  discussion: { icon: ChatBubble, badge: "neutral", label: "Discussion" },
-  laurel: { icon: Medal, badge: "caution", label: "Laurel" },
+  revision: { icon: EditPencil, badge: "secondary", label: "Revised page" },
+  minor_edit: { icon: EditPencil, badge: "default", label: "Copyedit" },
+  discussion: { icon: ChatBubble, badge: "default", label: "Discussion" },
+  laurel: { icon: Medal, badge: "warning", label: "Laurel" },
 };
 
 function ByteDiff({ bytes }: { bytes: number }) {
   return (
     <Badge
-      variant={bytes > 0 ? "success" : bytes < 0 ? "destructive" : "neutral"}
+      variant={bytes > 0 ? "success" : bytes < 0 ? "destructive" : "default"}
       className="tabular-nums"
     >
       {bytes > 0 && <ArrowUpRight aria-hidden />}
@@ -82,7 +81,7 @@ export const WorkActivityFeed = React.memo(function WorkActivityFeed({
             <li
               key={`${item.id}-${idx}`}
               className={cn(
-                FACET_INSET_SURFACE,
+                "bg-surface-secondary text-label rounded-row",
                 "flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center"
               )}
             >
@@ -119,7 +118,7 @@ export const WorkActivityFeed = React.memo(function WorkActivityFeed({
               </div>
 
               <div className="flex shrink-0 items-center justify-end pt-1 sm:pt-0">
-                <Button asChild variant="gray" size="sm">
+                <Button asChild variant="secondary" size="sm">
                   <Link href={item.url}>
                     <span>View in WikiOS</span>
                     <ArrowRight aria-hidden />

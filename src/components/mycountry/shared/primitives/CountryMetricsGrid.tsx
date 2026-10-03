@@ -1,7 +1,6 @@
 "use client";
-
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
+import { Card, CardContent } from "~/components/ui/card";
 
 interface CountryMetric {
   label: string;
@@ -30,8 +29,8 @@ export function CountryMetricsGrid({ metrics, variant = "standard" }: CountryMet
   const labelSize = variant === "compact" ? "text-footnote" : "text-body";
 
   return (
-    <FacetCard className="rounded-card">
-      <FacetCardContent className={variant === "executive" ? "p-6" : "p-4"}>
+    <Card className="rounded-card">
+      <CardContent className={variant === "executive" ? "p-6" : "p-4"}>
         <div className={`flex flex-wrap justify-center gap-4`}>
           {metrics.map((metric, index) => (
             <Tooltip key={index}>
@@ -60,7 +59,7 @@ export function CountryMetricsGrid({ metrics, variant = "standard" }: CountryMet
             </Tooltip>
           ))}
         </div>
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 }

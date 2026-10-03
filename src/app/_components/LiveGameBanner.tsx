@@ -204,7 +204,7 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
       <div className="container mx-auto px-4 py-4 sm:px-6 lg:px-8">
         {/* GlassCard overlay for main info/time block */}
         <div className="relative z-10 mx-auto mb-6 max-w-2xl">
-          <Card className="flex flex-col items-center justify-between gap-4 p-6 lg:flex-row">
+          <Card className="flex flex-col items-center justify-between gap-4 gap-6 p-6 py-6 lg:flex-row">
             {/* Game Time Section */}
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-3">
@@ -220,7 +220,7 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
             </div>
             {/* Refresh Button with glass effect */}
             <div className="flex items-center gap-4">
-              <Button onClick={handleRefresh} disabled={isLoading} size="sm" variant="gray">
+              <Button onClick={handleRefresh} disabled={isLoading} size="sm" variant="secondary">
                 <RefreshCw aria-hidden className={isLoading ? "animate-spin" : ""} />
                 Refresh All
               </Button>
@@ -232,7 +232,7 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
         <div className="mt-3 flex items-center justify-between md:hidden">
           <div className="flex items-center gap-2">
             <Badge
-              variant={botStatus.available ? "default" : "destructive"}
+              variant={botStatus.available ? "secondary" : "destructive"}
               className={botStatus.available ? "bg-green" : "bg-red"}
             ></Badge>
           </div>

@@ -3,7 +3,7 @@
  * RadioCardGroup/RadioCard, StepIndicator, the Facet 3 Table and Slider thumb naming.
  */
 import React, { useState } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 import { StepIndicator } from "~/components/ui/step-indicator";
@@ -90,22 +90,19 @@ describe("RadioCardGroup / RadioCard", () => {
     );
   }
 
-  it("is a named radiogroup of radios with one roving tab stop on the checked card", () => {
+  it("is a named radiogroup of radios; focusing the group lands on the checked card", () => {
     render(<Harness />);
-    expect(screen.getByRole("radiogroup", { name: "Mode" })).toBeInTheDocument();
-    const radios = screen.getAllByRole("radio");
-    expect(radios).toHaveLength(4);
+    const group = screen.getByRole("radiogroup", { name: "Mode" });
+    expect(screen.getAllByRole("radio")).toHaveLength(4);
     const checked = screen.getByRole("radio", { name: /System/ });
     expect(checked).toHaveAttribute("aria-checked", "true");
-    expect(checked).toHaveAttribute("tabindex", "0");
-    expect(screen.getByRole("radio", { name: /Alert/ })).toHaveAttribute("tabindex", "-1");
-    // Tint selection ring + fill on the checked card only.
-    expect(classOf(checked)).toContain("bg-tint-fill");
-    expect(classOf(checked)).toContain("ring-tint");
-    expect(classOf(screen.getByRole("radio", { name: /Alert/ }))).not.toContain("ring-tint");
+    expect(checked).toHaveAttribute("data-state", "checked");
+    expect(screen.getByRole("radio", { name: /Alert/ })).toHaveAttribute("data-state", "unchecked");
+    fireEvent.focus(group);
+    expect(checked).toHaveFocus();
   });
 
-  it("selects on click and moves selection with the arrow keys, skipping disabled cards", () => {
+  it("selects on click and moves selection with the arrow keys, skipping disabled cards", async () => {
     render(<Harness />);
     fireEvent.click(screen.getByRole("radio", { name: /Alert/ }));
     expect(screen.getByTestId("value")).toHaveTextContent("a");
@@ -113,19 +110,13 @@ describe("RadioCardGroup / RadioCard", () => {
     const alert = screen.getByRole("radio", { name: /Alert/ });
     alert.focus();
     fireEvent.keyDown(alert, { key: "ArrowRight" });
-    expect(screen.getByTestId("value")).toHaveTextContent("b");
+    await waitFor(() => expect(screen.getByTestId("value")).toHaveTextContent("b"));
     const system = screen.getByRole("radio", { name: /System/ });
     expect(system).toHaveFocus();
 
     fireEvent.keyDown(system, { key: "ArrowDown" });
     // "Direct" is disabled, so the next radio is "Digest".
-    expect(screen.getByTestId("value")).toHaveTextContent("d");
-
-    fireEvent.keyDown(screen.getByRole("radio", { name: /Digest/ }), { key: "ArrowRight" });
-    expect(screen.getByTestId("value")).toHaveTextContent("a"); // wraps
-
-    fireEvent.keyDown(screen.getByRole("radio", { name: /Alert/ }), { key: "End" });
-    expect(screen.getByTestId("value")).toHaveTextContent("d");
+    await waitFor(() => expect(screen.getByTestId("value")).toHaveTextContent("d"));
   });
 
   it("stays controlled with nothing checked when value is null", () => {
@@ -133,8 +124,6 @@ describe("RadioCardGroup / RadioCard", () => {
     for (const radio of screen.getAllByRole("radio")) {
       expect(radio).toHaveAttribute("aria-checked", "false");
     }
-    // The first enabled card is the tab stop.
-    expect(screen.getByRole("radio", { name: /Alert/ })).toHaveAttribute("tabindex", "0");
   });
 });
 
@@ -228,13 +217,13 @@ describe("Table (Facet 3)", () => {
 
   it("drops its own surface inside a card (the card is the surface)", () => {
     const { container } = render(
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <Example />
       </Card>
     );
     const cls = classOf(container.querySelector('[data-slot="table-container"]'));
     expect(cls).toContain("in-data-[slot=card]:border-0");
-    expect(cls).toContain("in-data-[slot=facet-card]:bg-transparent");
+    expect(cls).toContain("in-data-[slot=card]:bg-transparent");
   });
 });
 

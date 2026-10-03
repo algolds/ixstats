@@ -102,7 +102,7 @@ export function ClubTransfersSection({
     <div className="grid gap-6 lg:grid-cols-3">
       {/* Left Column: search and active listings */}
       <div className="space-y-6 lg:col-span-2">
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle>Transfer Marketplace Search</CardTitle>
             <CardDescription className="text-label-secondary">
@@ -161,7 +161,7 @@ export function ClubTransfersSection({
                             />
                             <Button
                               size="sm"
-                              variant="tinted"
+                              variant="secondary"
                               onClick={() => {
                                 const inputEl = document.getElementById(
                                   `search-bid-${p.id}`
@@ -181,7 +181,7 @@ export function ClubTransfersSection({
                             </Button>
                           </>
                         ) : (
-                          <Badge variant="neutral">Not Listed</Badge>
+                          <Badge variant="default">Not Listed</Badge>
                         )}
                       </div>
                     </div>
@@ -198,7 +198,7 @@ export function ClubTransfersSection({
         </Card>
 
         {/* Active Marketplace Listings */}
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle>Active Transfer Listings</CardTitle>
             <CardDescription className="text-label-secondary">
@@ -230,7 +230,7 @@ export function ClubTransfersSection({
                     <div className="flex items-center gap-2">
                       <Button
                         size="sm"
-                        variant="gray"
+                        variant="secondary"
                         onClick={() => setComparePlayer(l.player as unknown as ComparePlayerItem)}
                       >
                         Compare
@@ -244,7 +244,7 @@ export function ClubTransfersSection({
                       />
                       <Button
                         size="sm"
-                        variant="tinted"
+                        variant="secondary"
                         onClick={() => {
                           const inputVal = (
                             document.getElementById(`bid-amount-${l.id}`) as HTMLInputElement
@@ -262,7 +262,7 @@ export function ClubTransfersSection({
                       </Button>
                     </div>
                   ) : (
-                    <Badge variant="neutral">My Player</Badge>
+                    <Badge variant="default">My Player</Badge>
                   )}
                 </div>
               ))
@@ -278,10 +278,10 @@ export function ClubTransfersSection({
       {/* Right Column: Inbound/Outbound bid list & Comparison */}
       <div className="space-y-6">
         {comparePlayer && squadComparePlayer && (
-          <Card>
+          <Card className="flex flex-col gap-6 py-6">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-headline text-label">Comparison Detail</CardTitle>
-              <Button size="sm" variant="plain" onClick={() => setComparePlayer(null)}>
+              <Button size="sm" variant="ghost" onClick={() => setComparePlayer(null)}>
                 Clear
               </Button>
             </CardHeader>
@@ -314,7 +314,7 @@ export function ClubTransfersSection({
         )}
 
         {/* Inbound Bids */}
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ArrowLeftRight className="text-green h-4 w-4" />
@@ -332,14 +332,14 @@ export function ClubTransfersSection({
                       </p>
                       <p className="text-label-secondary text-footnote">Bid amount: ₷{b.amount}</p>
                     </div>
-                    <Badge variant="caution" className="capitalize">
+                    <Badge variant="warning" className="capitalize">
                       {b.status}
                     </Badge>
                   </div>
                   <div className="flex gap-2 pt-1">
                     <Button
                       size="sm"
-                      variant="tinted"
+                      variant="secondary"
                       className="flex-1"
                       onClick={() => respondToBid.mutate({ bidId: b.id, action: "accept" })}
                       disabled={respondToBid.isPending}
@@ -348,7 +348,7 @@ export function ClubTransfersSection({
                     </Button>
                     <Button
                       size="sm"
-                      variant="plain"
+                      variant="ghost"
                       className="text-destructive hover:bg-destructive/10 flex-1"
                       onClick={() => respondToBid.mutate({ bidId: b.id, action: "reject" })}
                       disabled={respondToBid.isPending}
@@ -367,7 +367,7 @@ export function ClubTransfersSection({
         </Card>
 
         {/* Outbound Bids */}
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ArrowLeftRight className="text-teal h-4 w-4" />
@@ -395,7 +395,7 @@ export function ClubTransfersSection({
                         : b.status === "rejected"
                           ? "destructive"
                           : b.status === "pending"
-                            ? "caution"
+                            ? "warning"
                             : "outline"
                     }
                   >

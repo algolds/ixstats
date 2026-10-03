@@ -223,7 +223,7 @@ export default function CommonsBrowserPanel({
                         className="max-h-full max-w-full object-contain brightness-95 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:brightness-100"
                         loading="lazy"
                       />
-                      <Badge variant="green" className="absolute right-1 bottom-1">
+                      <Badge variant="success" className="absolute right-1 bottom-1">
                         SVG
                       </Badge>
                     </div>

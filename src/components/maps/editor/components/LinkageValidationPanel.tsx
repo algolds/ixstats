@@ -1,6 +1,4 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React from "react";
@@ -17,6 +15,7 @@ import type {
   LinkageUnlinkedItem,
 } from "../types/editor-state";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Card } from "~/components/ui/card";
 
 const VALIDATION_TABS = [
   { value: "issues", label: "Issues" },
@@ -75,7 +74,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
   const realm = useMapRealm();
   return (
     <div className="text-footnote space-y-4 p-3">
-      <FacetCard className="flex items-center justify-between p-3">
+      <Card className="flex items-center justify-between p-3">
         <div className="space-y-0.5">
           <Eyebrow className="block">Issues / Desyncs</Eyebrow>
           <span className="text-label text-title-2">{validationData?.issues?.length ?? 0}</span>
@@ -102,9 +101,9 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
             <Wand2 className="h-4 w-4" />
           </Button>
         </div>
-      </FacetCard>
+      </Card>
 
-      <FacetCard className="overflow-hidden">
+      <Card className="overflow-hidden">
         <div className="border-separator border-b p-2">
           <SegmentedControl
             aria-label="Validation view"
@@ -301,7 +300,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
             </div>
           )}
         </div>
-      </FacetCard>
+      </Card>
     </div>
   );
 });

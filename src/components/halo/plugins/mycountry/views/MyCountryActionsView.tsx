@@ -112,14 +112,14 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
             <Button
               key={idx}
               type="button"
-              variant="gray"
+              variant="secondary"
               onClick={item.action}
               className={cn("w-full justify-start", isLast && "col-span-2")}
             >
               <Icon aria-hidden className={item.iconClass} />
               <span className="flex-1 truncate text-left">{item.label}</span>
               {item.isPremium && (
-                <Badge variant="yellow">
+                <Badge variant="warning">
                   <Crown aria-hidden />
                   Premium
                 </Badge>

@@ -9,9 +9,9 @@ import { api } from "~/trpc/react";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
 import { UnifiedFeedItem, FeedItemSkeleton, getActivityLabel } from "./UnifiedFeedItem";
-import { FacetCard } from "~/components/ui/facet-container";
 import { EmptyState } from "~/components/ui/empty-state";
 import { springSmooth } from "~/lib/design/motion";
+import { Card } from "~/components/ui/card";
 
 type FeedTab = "all" | "following" | "community";
 
@@ -266,13 +266,13 @@ export function UnifiedFeedContent({
   if (filteredFeed.length === 0) {
     const label = activeTab === "community" ? "community updates" : "activity";
     return (
-      <FacetCard>
+      <Card>
         <EmptyState
           icon={<Rss />}
           title={`No recent ${label}`}
           message="Check back later for updates."
         />
-      </FacetCard>
+      </Card>
     );
   }
 
@@ -365,30 +365,30 @@ export function FollowingFeedContent({
 
   if (followingCount === 0) {
     return (
-      <FacetCard>
+      <Card>
         <EmptyState
           icon={<Users />}
           title="Not following anyone yet"
           message="Follow countries or ThinkPages accounts to see their activity here."
           action={
-            <Button asChild size="sm" variant="bordered">
+            <Button asChild size="sm" variant="outline">
               <Link href={"/countries"}>Explore countries</Link>
             </Button>
           }
         />
-      </FacetCard>
+      </Card>
     );
   }
 
   if (processedActivities.length === 0) {
     return (
-      <FacetCard>
+      <Card>
         <EmptyState
           icon={<Users />}
           title="No recent activity"
           message="Countries and accounts you follow haven't posted yet."
         />
-      </FacetCard>
+      </Card>
     );
   }
 

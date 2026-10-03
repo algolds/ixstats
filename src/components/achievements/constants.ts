@@ -187,7 +187,7 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
   Economic: {
     name: "Economic",
     icon: TrendingUp,
-    badgeVariant: "green",
+    badgeVariant: "success",
     badge: "bg-green/15 text-green",
     pedestal: "bg-green/15 text-green",
     cardBorderHover: "hover:border-green/40",
@@ -200,7 +200,7 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
   Military: {
     name: "Military",
     icon: Shield,
-    badgeVariant: "red",
+    badgeVariant: "destructive",
     badge: "bg-red/15 text-red",
     pedestal: "bg-red/15 text-red",
     cardBorderHover: "hover:border-red/40",
@@ -213,7 +213,7 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
   Diplomatic: {
     name: "Diplomatic",
     icon: Globe,
-    badgeVariant: "teal",
+    badgeVariant: "info",
     badge: "bg-teal/15 text-teal",
     pedestal: "bg-teal/15 text-teal",
     cardBorderHover: "hover:border-teal/40",
@@ -226,7 +226,7 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
   Government: {
     name: "Government",
     icon: Landmark,
-    badgeVariant: "indigo",
+    badgeVariant: "secondary",
     badge: "bg-indigo/15 text-indigo",
     pedestal: "bg-indigo/15 text-indigo",
     cardBorderHover: "hover:border-indigo/40",
@@ -239,7 +239,7 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
   Social: {
     name: "Social",
     icon: BookOpen,
-    badgeVariant: "blue",
+    badgeVariant: "info",
     badge: "bg-blue/15 text-blue",
     pedestal: "bg-blue/15 text-blue",
     cardBorderHover: "hover:border-blue/40",
@@ -252,7 +252,7 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
   General: {
     name: "General",
     icon: Trophy,
-    badgeVariant: "yellow",
+    badgeVariant: "warning",
     badge: "bg-yellow/15 text-yellow",
     pedestal: "bg-yellow/15 text-yellow",
     cardBorderHover: "hover:border-yellow/40",
@@ -304,21 +304,21 @@ export const getRarityColor = (rarity: string) => {
 
 /** Rarity chip as a `Badge` variant; locked achievements are neutral. */
 export const getRarityBadgeVariant = (rarity: string, isUnlocked = true): BadgeVariant => {
-  if (!isUnlocked) return "neutral";
+  if (!isUnlocked) return "default";
   switch (rarity) {
     case "Legendary":
-      return "yellow";
+      return "warning";
     case "Epic":
-      return "purple";
+      return "secondary";
     case "Ultra Rare":
     case "ULTRA_RARE":
-      return "teal";
+      return "info";
     case "Rare":
-      return "blue";
+      return "info";
     case "Uncommon":
-      return "green";
+      return "success";
     default:
-      return "neutral";
+      return "default";
   }
 };
 

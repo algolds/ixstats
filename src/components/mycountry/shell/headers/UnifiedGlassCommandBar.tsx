@@ -10,9 +10,7 @@ import {
   User,
   ClockRotateRight as FileClock,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
-import { FacetTabs } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
@@ -24,6 +22,8 @@ import { CooldownTimer } from "../ExecutiveHome";
 import type { CommandNavMode } from "../CommandNavToggle";
 import { useDiplomacyInboxCount } from "~/components/mycountry/domains/diplomacy/inbox/useDiplomacyInbox";
 import { InboxCountPill } from "~/components/mycountry/domains/diplomacy/inbox/InboxCountPill";
+import { Card } from "~/components/ui/card";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface UnifiedGlassCommandBarProps {
   mode: CommandNavMode;
@@ -112,12 +112,7 @@ export function UnifiedGlassCommandBar({
   const activeTab = isExecutiveMode ? "" : activeSection;
 
   return (
-    <FacetCard
-      variant="glass"
-      glow
-      rim="gold"
-      className="flex w-full flex-col gap-4 p-4 sm:gap-5 sm:p-5"
-    >
+    <Card variant="hero" className="flex w-full flex-col gap-4 p-4 sm:gap-5 sm:p-5">
       {/* Top row (v2): the MyCountry logo, then the tools and the one gold primary action */}
       <div className="relative flex flex-wrap items-center justify-between gap-3">
         <MyCountryLogo size="md" variant="full" animated />
@@ -220,28 +215,27 @@ export function UnifiedGlassCommandBar({
           aria-label="MyCountry sections"
           className="relative -mx-1 scrollbar-none overflow-x-auto px-1"
         >
-          <FacetTabs
+          <SegmentedControl
             size="md"
-            tone="mycountry"
             className="w-max min-w-full"
-            activeTab={activeTab}
+            value={activeTab}
             aria-label="MyCountry sections"
-            onChange={(id) => {
+            onValueChange={(id) => {
               if (isExecutiveMode) onChangeMode("home");
               onNavigate?.(id);
             }}
-            tabs={sectionTabs.map(({ id, title, icon }) => ({
-              id,
-              icon,
-              className: "flex-1 min-h-11 sm:min-h-9",
+            options={sectionTabs.map(({ id, title, icon: Icon }) => ({
+              value: id,
+              icon: <Icon />,
               label: title,
               ...(id === "diplomacy" && diplomacyInboxCount > 0
                 ? { badge: diplomacyInboxCount }
                 : {}),
             }))}
+            asTabs
           />
         </nav>
       )}
-    </FacetCard>
+    </Card>
   );
 }

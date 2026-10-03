@@ -128,11 +128,7 @@ export function DocumentLayout({ meta, sections, back, children }: DocumentLayou
           transition={{ type: "spring", bounce: 0, duration: 0.4 }}
           className="mb-8"
         >
-          <CutoutCard
-            texture="triangular"
-            textureOpacity={0.02}
-            className="border-border bg-card/75 shadow-xs backdrop-blur-xl"
-          >
+          <CutoutCard className="border-border bg-card/75 shadow-xs backdrop-blur-xl">
             <CutoutCardContent className="space-y-4 p-6 sm:p-10">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
@@ -164,7 +160,7 @@ export function DocumentLayout({ meta, sections, back, children }: DocumentLayou
               </div>
 
               <div>
-                <h1 className="text-foreground text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl">
+                <h1 className="text-foreground text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
                   {meta.title}
                 </h1>
                 <p className="text-muted-foreground mt-3 max-w-3xl text-sm leading-relaxed sm:text-base">
@@ -257,11 +253,7 @@ export function DocumentLayout({ meta, sections, back, children }: DocumentLayou
           </div>
 
           <main className="lg:col-span-8">
-            <CutoutCard
-              texture="triangular"
-              textureOpacity={0.02}
-              className="border-border bg-card/60 shadow-xs backdrop-blur-xl"
-            >
+            <CutoutCard className="border-border bg-card/60 shadow-xs backdrop-blur-xl">
               <CutoutCardContent className="p-6 sm:p-8">{children}</CutoutCardContent>
             </CutoutCard>
 

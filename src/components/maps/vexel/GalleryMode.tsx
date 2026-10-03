@@ -1,7 +1,6 @@
 "use client";
 
 import { Refresh } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
@@ -12,6 +11,7 @@ import { generateRandomComposition } from "~/lib/heraldry/generator";
 import { generateBlazon } from "~/lib/heraldry/blazon";
 import type { HeraldryComposition } from "~/lib/heraldry";
 import { api } from "~/trpc/react";
+import { Card } from "~/components/ui/card";
 
 export default function GalleryMode() {
   const router = useRouter();
@@ -73,7 +73,7 @@ export default function GalleryMode() {
   return (
     <div className="space-y-6">
       {/* Filters Toolbar */}
-      <FacetCard className="text-label-secondary text-footnote grid grid-cols-1 gap-3 p-4 md:grid-cols-4">
+      <Card className="text-label-secondary text-footnote grid grid-cols-1 gap-3 p-4 md:grid-cols-4">
         <div className="space-y-1">
           <Eyebrow id="vexel-gallery-culture" className="block">
             Culture influence
@@ -135,7 +135,7 @@ export default function GalleryMode() {
             Roll all
           </Button>
         </div>
-      </FacetCard>
+      </Card>
 
       {/* Grid view */}
       {isLoading ? (
@@ -153,7 +153,7 @@ export default function GalleryMode() {
             const blazon = generateBlazon(comp);
 
             return (
-              <FacetCard key={idx} className="group overflow-hidden">
+              <Card key={idx} className="group overflow-hidden">
                 <div className="flex flex-col items-center gap-4 p-4">
                   {/* Shield box */}
                   <div
@@ -195,7 +195,7 @@ export default function GalleryMode() {
                     </div>
                   </div>
                 </div>
-              </FacetCard>
+              </Card>
             );
           })}
         </div>

@@ -19,15 +19,19 @@ import {
   GitFork,
   Sparks as Sparkles,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { api } from "~/trpc/react";
 import { useNameBank } from "~/hooks/useNameBank";
 import type { NameCategory, ExploreSubTab, StudioSubTab } from "~/lib/onoma/types";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { MenuButton } from "~/components/ui/menu-button";
-import { DropdownMenuItem } from "~/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import { Card } from "~/components/ui/card";
 
 interface SavedDictionaryCardProps {
   dict: {
@@ -104,7 +108,7 @@ export function SavedDictionaryCard({
   const previewWords = dict.values.slice(0, 12).join(", ");
 
   return (
-    <FacetCard
+    <Card
       variant="inset"
       padding="none"
       className="p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
@@ -126,7 +130,7 @@ export function SavedDictionaryCard({
           </div>
 
           <div className="text-caption flex flex-wrap items-center gap-2">
-            <Badge variant={dict.isPublic ? "success" : "neutral"}>
+            <Badge variant={dict.isPublic ? "success" : "default"}>
               {dict.isPublic ? (
                 <>
                   <Globe />
@@ -140,12 +144,12 @@ export function SavedDictionaryCard({
               )}
             </Badge>
             {dict.role && (
-              <Badge variant="tinted" className="capitalize">
+              <Badge variant="secondary" className="capitalize">
                 {dict.role}
                 {dict.gender && dict.gender !== "any" ? ` · ${dict.gender}` : ""}
               </Badge>
             )}
-            {dict.setName && <Badge variant="neutral">⚇ {dict.setName}</Badge>}
+            {dict.setName && <Badge variant="default">⚇ {dict.setName}</Badge>}
             {dict.clonedFromId && (
               <>
                 <span>•</span>
@@ -175,7 +179,7 @@ export function SavedDictionaryCard({
           <div className="flex flex-wrap items-center gap-2">
             {/* Expand Button */}
             <Button
-              variant="gray"
+              variant="secondary"
               size="sm"
               onClick={onToggleExpand}
 
@@ -192,7 +196,7 @@ export function SavedDictionaryCard({
             {/* Load to Studio / Generate */}
             {onLoadToStudio && (
               <Button
-                variant="tinted"
+                variant="secondary"
                 size="sm"
                 onClick={() => onLoadToStudio(dict.values, dict.title)}
 
@@ -206,7 +210,7 @@ export function SavedDictionaryCard({
             {/* Quick Cross-System Actions */}
             {onNavigateExplore && (
               <Button
-                variant="tinted"
+                variant="secondary"
                 size="sm"
                 onClick={() => onNavigateExplore("phonology", dict.values, dict.title)}
                 title="Inspect IPA acoustics & compare profile"
@@ -218,7 +222,7 @@ export function SavedDictionaryCard({
 
             {onNavigateStudio && (
               <Button
-                variant="tinted"
+                variant="secondary"
                 size="sm"
                 onClick={() => onNavigateStudio("shifts", dict.values, dict.title)}
 
@@ -231,7 +235,7 @@ export function SavedDictionaryCard({
 
             {onNavigateExplore && (
               <Button
-                variant="tinted"
+                variant="secondary"
                 size="sm"
                 onClick={() => onNavigateExplore("writing", dict.values, dict.title)}
                 title="Typeset words in Writing Systems"
@@ -245,7 +249,7 @@ export function SavedDictionaryCard({
             <Popover open={isStashingThis} onOpenChange={setIsStashingThis}>
               <PopoverTrigger asChild>
                 <Button
-                  variant={isStashingThis ? "tinted" : "gray"}
+                  variant={isStashingThis ? "secondary" : "secondary"}
                   size="sm"
                   title="Move dictionary to another stash folder"
                 >
@@ -256,7 +260,7 @@ export function SavedDictionaryCard({
               <PopoverContent align="start" className="w-56 p-2">
                 <div className="border-separator mb-1 flex items-center justify-between border-b px-2 py-2">
                   <span className="text-subhead text-label-secondary">Stash folders</span>
-                  <Badge variant="tinted">Global</Badge>
+                  <Badge variant="secondary">Global</Badge>
                 </div>
                 {stashesQuery.isLoading && (
                   <div className="text-label-secondary text-footnote flex items-center gap-2 px-2 py-2">
@@ -305,7 +309,7 @@ export function SavedDictionaryCard({
           <div className="flex items-center gap-2">
             {/* Edit (rename / re-tag) */}
             <Button
-              variant="gray"
+              variant="secondary"
               size="icon-sm"
               onClick={() => onEdit(dict)}
               aria-label="Edit dictionary"
@@ -315,26 +319,32 @@ export function SavedDictionaryCard({
             </Button>
 
             {/* Export */}
-            <MenuButton
-              size="icon-sm"
-              label={<Download />}
-              aria-label="Export dictionary"
-              title="Export dictionary"
-              align="end"
-            >
-              {(["txt", "csv", "json"] as const).map((fmt) => (
-                <DropdownMenuItem
-                  key={fmt}
-                  onSelect={() => handleExport(dict.title, dict.values, fmt)}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon-sm"
+                  variant="secondary"
+                  aria-label="Export dictionary"
+                  title="Export dictionary"
                 >
-                  {fmt.toUpperCase()}
-                </DropdownMenuItem>
-              ))}
-            </MenuButton>
+                  <Download />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {(["txt", "csv", "json"] as const).map((fmt) => (
+                  <DropdownMenuItem
+                    key={fmt}
+                    onSelect={() => handleExport(dict.title, dict.values, fmt)}
+                  >
+                    {fmt.toUpperCase()}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Delete */}
             <Button
-              variant="gray"
+              variant="secondary"
               size="icon-sm"
               onClick={() => onDelete(dict.id)}
               aria-label="Delete dictionary"
@@ -355,7 +365,7 @@ export function SavedDictionaryCard({
           </p>
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 }
 

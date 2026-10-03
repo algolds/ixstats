@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { FacetCard } from "~/components/ui/facet-container";
 import type { RevenueSummary } from "~/types/government";
+import { Card } from "~/components/ui/card";
 
 interface BudgetRevenueAnalysisProps {
   revenueSummary: RevenueSummary;
@@ -40,7 +40,7 @@ export function BudgetRevenueAnalysis({
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <FacetCard className="space-y-3 p-4">
+      <Card className="space-y-3 p-4">
         <h4 className="text-label border-separator text-headline border-b pb-3">
           Tax vs non-tax revenue
         </h4>
@@ -58,9 +58,9 @@ export function BudgetRevenueAnalysis({
             </div>
           ))}
         </div>
-      </FacetCard>
+      </Card>
 
-      <FacetCard className="space-y-3 p-4">
+      <Card className="space-y-3 p-4">
         <h4 className="text-label border-separator text-headline border-b pb-3">
           Top revenue sources
         </h4>
@@ -87,7 +87,7 @@ export function BudgetRevenueAnalysis({
             </li>
           ))}
         </ol>
-      </FacetCard>
+      </Card>
     </div>
   );
 }

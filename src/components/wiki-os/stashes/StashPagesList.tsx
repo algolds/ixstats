@@ -115,7 +115,7 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
                 </Link>
 
                 <Button
-                  variant="bordered"
+                  variant="outline"
                   size="icon-sm"
                   aria-label="Remove from collection"
                   onClick={(e) => {

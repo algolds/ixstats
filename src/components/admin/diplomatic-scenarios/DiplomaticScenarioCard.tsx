@@ -41,7 +41,7 @@ export function DiplomaticScenarioCard({
     : 0;
 
   return (
-    <Card className="hover:border-yellow/50 flex flex-col justify-between p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+    <Card className="hover:border-yellow/50 flex flex-col justify-between gap-6 p-4 py-6 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
       <div>
         {/* Header */}
         <div className="mb-3 flex items-start justify-between">
@@ -53,18 +53,18 @@ export function DiplomaticScenarioCard({
                 <h3 className="text-label line-clamp-1 font-semibold">{scenario.title}</h3>
               </div>
               <div className="flex flex-wrap gap-1">
-                <Badge variant="gray">{typeConfig?.label || scenario.type}</Badge>
+                <Badge variant="default">{typeConfig?.label || scenario.type}</Badge>
                 <span
                   className={`rounded-control-sm bg-fill-4 text-footnote px-2 py-0.5 ${relConfig?.color || ""}`}
                 >
                   {relConfig?.label || scenario.relationshipState}
                 </span>
-                {difficulty && <Badge variant="yellow">{difficulty}</Badge>}
-                {timeFrame && <Badge variant="teal">{timeFrame.replace("_", " ")}</Badge>}
+                {difficulty && <Badge variant="warning">{difficulty}</Badge>}
+                {timeFrame && <Badge variant="info">{timeFrame.replace("_", " ")}</Badge>}
               </div>
             </div>
           </div>
-          {scenario.status !== "active" && <Badge variant="red">{scenario.status}</Badge>}
+          {scenario.status !== "active" && <Badge variant="destructive">{scenario.status}</Badge>}
         </div>
 
         {/* Narrative */}

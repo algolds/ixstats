@@ -3,7 +3,6 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Stat } from "~/components/ui/stat";
 import { Switch } from "~/components/ui/switch";
 import { MatchTickerSim } from "~/components/sports/league/MatchTickerSim";
@@ -106,7 +105,7 @@ export function ClubOverviewSection({
             )}
 
             {/* Match notifications toggle */}
-            <FacetCard padding="md" className="flex items-center justify-between">
+            <Card padding="md" className="flex items-center justify-between">
               <div className="min-w-0 pr-4">
                 <p className="text-headline text-label">Match Notifications</p>
                 <p className="text-label-secondary text-footnote">
@@ -119,12 +118,12 @@ export function ClubOverviewSection({
                 onCheckedChange={onUpdateNotifications}
                 aria-label="Match notifications"
               />
-            </FacetCard>
+            </Card>
 
             {/* Record widgets */}
             {currentStandings && (
               <div className="grid gap-4 sm:grid-cols-3">
-                <FacetCard padding="md">
+                <Card padding="md">
                   <Stat
                     label="Record"
                     value={
@@ -134,11 +133,11 @@ export function ClubOverviewSection({
                       </>
                     }
                   />
-                </FacetCard>
-                <FacetCard padding="md">
+                </Card>
+                <Card padding="md">
                   <Stat label="League Points" value={<>{currentStandings.points}</>} />
-                </FacetCard>
-                <FacetCard padding="md">
+                </Card>
+                <Card padding="md">
                   <Stat
                     label="Scored / Conceded"
                     value={
@@ -147,13 +146,13 @@ export function ClubOverviewSection({
                       </>
                     }
                   />
-                </FacetCard>
+                </Card>
               </div>
             )}
           </>
         ) : (
           <>
-            <Card>
+            <Card className="flex flex-col gap-6 py-6">
               <CardHeader className="pb-4">
                 <div className="flex items-center gap-3">
                   <div className="bg-tint-fill text-tint rounded-row flex size-12 items-center justify-center">
@@ -217,10 +216,10 @@ export function ClubOverviewSection({
 
             {/* Club Statistics Grid */}
             <div className="grid gap-4 sm:grid-cols-3">
-              <FacetCard padding="md">
+              <Card padding="md">
                 <Stat label="Squad Members" value={<>{team.players?.length ?? 0}</>} />
-              </FacetCard>
-              <FacetCard padding="md">
+              </Card>
+              <Card padding="md">
                 <Stat
                   label="Avg Roster OVR"
                   value={
@@ -238,10 +237,10 @@ export function ClubOverviewSection({
                     </>
                   }
                 />
-              </FacetCard>
-              <FacetCard padding="md">
+              </Card>
+              <Card padding="md">
                 <Stat label="Available Budget" value={<>₷{team.budget ?? 0}</>} />
-              </FacetCard>
+              </Card>
             </div>
           </>
         )}
@@ -255,7 +254,7 @@ export function ClubOverviewSection({
           onTrained={onTrained}
         />
         {upcomingMatches && upcomingMatches.length > 0 && (
-          <Card>
+          <Card className="flex flex-col gap-6 py-6">
             <CardHeader>
               <CardTitle className="text-label flex items-center gap-2">
                 <Calendar className="text-label-secondary size-4" aria-hidden />

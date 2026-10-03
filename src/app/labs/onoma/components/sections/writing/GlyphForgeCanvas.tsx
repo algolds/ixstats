@@ -19,10 +19,10 @@ import { cn } from "~/lib/utils";
 import type { Glyph, CanvasGuideSettings, InkColorPreset } from "./types";
 import { SHAPE_STAMPS, QUICK_IPA_PHONEMES, type ShapeStamp } from "./glyph-primitives";
 import { Input } from "~/components/ui/input";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { Toggle } from "~/components/ui/toggle";
+import { Card } from "~/components/ui/card";
 
 const CANVAS_DRAFT_KEY = "onoma_glyph_canvas_draft_v2";
 
@@ -343,7 +343,7 @@ export function GlyphForgeCanvas({
   );
 
   return (
-    <FacetCard variant="inset" padding="none" className="relative flex flex-col space-y-3 p-4">
+    <Card variant="inset" padding="none" className="relative flex flex-col space-y-3 p-4">
       {/* 1. Apple-Style Header: Studio Badge & History Tools */}
       <div className="border-separator flex items-center justify-between gap-2 border-b pb-2">
         <div className="flex items-center gap-2">
@@ -416,7 +416,7 @@ export function GlyphForgeCanvas({
 
           {/* Guide Overlay Toggle */}
           <Button
-            variant={guides.guideLevel !== "none" ? "tinted" : "bordered"}
+            variant={guides.guideLevel !== "none" ? "secondary" : "outline"}
             size="sm"
             onClick={() =>
               setGuides((g) => ({
@@ -752,7 +752,7 @@ export function GlyphForgeCanvas({
               {SHAPE_STAMPS.map((stamp) => (
                 <Button
                   key={stamp.id}
-                  variant="bordered"
+                  variant="outline"
                   onClick={() => handleApplyStamp(stamp)}
                   title={stamp.description}
                   className="group hover:border-tint/50 hover:bg-tint/5 h-auto flex-col gap-0 p-2 font-normal"
@@ -851,7 +851,7 @@ export function GlyphForgeCanvas({
               <span className="text-label-secondary text-caption mr-1 font-medium">IPA:</span>
               {QUICK_IPA_PHONEMES.map((item) => (
                 <Button
-                  variant="bordered"
+                  variant="outline"
                   size="sm"
                   key={item.symbol}
                   onClick={() => {
@@ -868,6 +868,6 @@ export function GlyphForgeCanvas({
           )}
         </AnimatePresence>
       </form>
-    </FacetCard>
+    </Card>
   );
 }

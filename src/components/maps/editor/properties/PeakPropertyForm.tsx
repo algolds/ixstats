@@ -1,12 +1,11 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import React from "react";
 import type { PeakFormData, EditorFeature } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 import { MapPin } from "iconoir-react";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 
 const inputClasses =
   "w-full rounded-control border border-separator bg-surface px-3 py-2 sm:py-2 text-body sm:text-body text-label placeholder:text-label-secondary transition-colors focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
@@ -89,7 +88,7 @@ export const PeakPropertyForm = React.memo(function PeakPropertyForm({
 
       {/* Coordinate Picker Block */}
       {countryId && (
-        <FacetCard className="text-footnote flex items-center justify-between px-3 py-2">
+        <Card className="text-footnote flex items-center justify-between px-3 py-2">
           <div className="text-label-secondary text-left font-medium">
             Coordinates:{" "}
             {activeCoords ? (
@@ -102,7 +101,7 @@ export const PeakPropertyForm = React.memo(function PeakPropertyForm({
           </div>
           <Button
             type="button"
-            variant={isPickingLocation ? "tinted" : "plain"}
+            variant={isPickingLocation ? "secondary" : "ghost"}
             size="sm"
             aria-pressed={isPickingLocation}
             onClick={() => setIsPickingLocation?.(!isPickingLocation)}
@@ -111,7 +110,7 @@ export const PeakPropertyForm = React.memo(function PeakPropertyForm({
             <MapPin className="size-3.5" aria-hidden />
             <span>{isPickingLocation ? "Click on Map..." : "Pick on Map"}</span>
           </Button>
-        </FacetCard>
+        </Card>
       )}
 
       <WikiLinkWizard

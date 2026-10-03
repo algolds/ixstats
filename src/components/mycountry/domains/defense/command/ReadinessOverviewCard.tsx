@@ -3,7 +3,6 @@
 
 import React from "react";
 import { Archery as Target, HelpCircle, InfoCircle as Info } from "iconoir-react";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
@@ -11,6 +10,7 @@ import { Toggle } from "~/components/ui/toggle";
 import { Progress } from "~/components/ui/progress";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/components/ui/sheet";
 import { cn } from "~/lib/utils";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 export interface DefconLevelInfo {
   level: number;
@@ -112,8 +112,8 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
   ];
 
   return (
-    <FacetCard className="rounded-card">
-      <FacetCardHeader className="p-4 pb-3">
+    <Card className="rounded-card">
+      <CardHeader className="p-4 pb-3">
         <div className="flex min-w-0 items-center gap-2">
           <Target aria-hidden="true" className="text-red h-4 w-4 shrink-0" />
           <h3 className="text-label text-headline min-w-0">Strategic readiness overview</h3>
@@ -176,8 +176,8 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
         <p className="text-label-secondary text-footnote">
           Aggregate readiness metrics across all branches
         </p>
-      </FacetCardHeader>
-      <FacetCardContent className="space-y-4 px-4 pb-4">
+      </CardHeader>
+      <CardContent className="space-y-4 px-4 pb-4">
         <div className="grid grid-cols-3 gap-3">
           {metrics.map((m) => {
             const pct = toPercent(m.value);
@@ -263,7 +263,7 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
             </div>
           </div>
         </div>
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 });

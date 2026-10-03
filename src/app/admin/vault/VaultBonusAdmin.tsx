@@ -15,9 +15,9 @@ import {
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
+import { Card } from "~/components/ui/card";
 
 interface BonusField {
   key: string;
@@ -125,7 +125,7 @@ export function VaultBonusAdmin() {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <FacetCard className="border-green/30 bg-green/10 p-6">
+      <Card className="border-green/30 bg-green/10 p-6">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
             <div className="rounded-row border-green/40 bg-green/20 border p-3">
@@ -153,14 +153,14 @@ export function VaultBonusAdmin() {
             </label>
           </div>
         </div>
-      </FacetCard>
+      </Card>
 
       {/* Group Sections Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {GROUPS.map((group) => {
           const GroupIcon = group.icon;
           return (
-            <FacetCard key={group.title} className="space-y-4 p-5">
+            <Card key={group.title} className="space-y-4 p-5">
               <div className="border-separator flex items-center gap-2 border-b pb-2">
                 <GroupIcon className={`h-4 w-4 ${group.accentColor}`} />
                 <div>
@@ -199,7 +199,7 @@ export function VaultBonusAdmin() {
                   </div>
                 ))}
               </div>
-            </FacetCard>
+            </Card>
           );
         })}
       </div>
@@ -207,7 +207,7 @@ export function VaultBonusAdmin() {
       {/* Save Button Bar */}
       <div className="flex justify-end pt-2">
         <Button
-          variant="tinted"
+          variant="secondary"
           onClick={() => saveMutation.mutate(form)}
           disabled={saveMutation.isPending}
           className="h-10"

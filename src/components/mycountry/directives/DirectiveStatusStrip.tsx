@@ -4,11 +4,11 @@ import React from "react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { formatIxCountdown } from "~/lib/statecraft/calendar";
 import { TONE_CLASSES } from "./directive-model";
+import { Card } from "~/components/ui/card";
 
 export interface DirectiveStatusStripProps {
   countryId: string;
@@ -81,7 +81,7 @@ export function DirectiveStatusStrip({
   const civCapKnown = !!cc && Number.isFinite(cc.capacity) && cc.capacity > 0;
 
   return (
-    <FacetCard className="divide-separator rounded-card grid grid-cols-1 divide-y overflow-hidden sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+    <Card className="divide-separator rounded-card grid grid-cols-1 divide-y overflow-hidden sm:grid-cols-3 sm:divide-x sm:divide-y-0">
       <Tile
         label="Weekly slots"
         value={
@@ -139,6 +139,6 @@ export function DirectiveStatusStrip({
               : `${executingCount ?? 0} executing this week`
         }
       />
-    </FacetCard>
+    </Card>
   );
 }

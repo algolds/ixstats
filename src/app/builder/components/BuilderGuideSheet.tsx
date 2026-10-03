@@ -152,7 +152,7 @@ export function BuilderGuideSheet({
                         <div className="min-w-0 flex-1 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <h3 className="text-label text-headline">{rule.title}</h3>
-                            {rule.badge && <Badge variant="secondary">{rule.badge}</Badge>}
+                            {rule.badge && <Badge variant="default">{rule.badge}</Badge>}
                           </div>
                           <p className="text-footnote text-label-secondary">{rule.description}</p>
                         </div>

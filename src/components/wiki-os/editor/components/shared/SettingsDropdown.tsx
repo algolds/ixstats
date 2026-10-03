@@ -6,7 +6,7 @@
 import React, { memo } from "react";
 import { Settings } from "iconoir-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import { AppleSwitch } from "~/components/ui/apple-switch";
+import { Switch } from "~/components/ui/switch";
 import { useEditorModalContext } from "../../context/EditorModalContext";
 import { Button } from "~/components/ui/button";
 
@@ -43,11 +43,10 @@ export const SettingsDropdown = memo(function SettingsDropdown({
           {showLineNumbersOption && (
             <div className="flex items-center justify-between select-none">
               <span className="font-medium">Line Numbers</span>
-              <AppleSwitch
+              <Switch
                 checked={modal.showLineNumbers}
                 onCheckedChange={modal.handleToggleLineNumbers}
                 size="sm"
-                tone="neutral"
               />
             </div>
           )}
@@ -55,22 +54,20 @@ export const SettingsDropdown = memo(function SettingsDropdown({
           {showWordWrapOption && (
             <div className="flex items-center justify-between select-none">
               <span className="font-medium">Word Wrap</span>
-              <AppleSwitch
+              <Switch
                 checked={modal.enableWordWrap}
                 onCheckedChange={modal.handleToggleWordWrap}
                 size="sm"
-                tone="neutral"
               />
             </div>
           )}
 
           <div className="flex items-center justify-between select-none">
             <span className="font-medium">Autocomplete</span>
-            <AppleSwitch
+            <Switch
               checked={modal.enableAutocomplete}
               onCheckedChange={modal.handleToggleAutocomplete}
               size="sm"
-              tone="neutral"
             />
           </div>
         </div>

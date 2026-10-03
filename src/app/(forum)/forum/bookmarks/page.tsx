@@ -15,9 +15,9 @@ import { api } from "~/trpc/react";
 import { timeAgo as formatTimeAgo } from "~/lib/format/compact";
 import { buttonVariants } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard } from "~/components/ui/facet-container";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Card } from "~/components/ui/card";
 
 export default function ForumStashesPage() {
   const { data, isLoading, error } = api.forum.getStashedThreads.useQuery(
@@ -40,7 +40,7 @@ export default function ForumStashesPage() {
           <Link
             href={withBasePath("/stashes")}
             prefetch={false}
-            className={buttonVariants({ variant: "gray", size: "sm" })}
+            className={buttonVariants({ variant: "secondary", size: "sm" })}
           >
             All stashes
             <ExternalLink />
@@ -88,13 +88,13 @@ export default function ForumStashesPage() {
           </FacetListSection>
         </FacetList>
       ) : (
-        <FacetCard>
+        <Card>
           <EmptyState
             icon={<Bookmark />}
             title="No stashed threads yet"
             message="Click the bookmark icon on any forum post to save the thread to your stash for later."
           />
-        </FacetCard>
+        </Card>
       )}
     </ForumLayout>
   );

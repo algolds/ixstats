@@ -77,7 +77,7 @@ export function FacetShell() {
 
   const signIn = (
     <SignInButton mode="modal">
-      <Button variant="tinted" size="sm" className="sidebar-collapsed:w-auto w-full">
+      <Button variant="secondary" size="sm" className="sidebar-collapsed:w-auto w-full">
         Sign in
       </Button>
     </SignInButton>

@@ -120,7 +120,7 @@ export function MessagesFolderNav({
                 {settings.notificationSounds && (
                   <Button
                     type="button"
-                    variant="plain"
+                    variant="ghost"
                     size="sm"
                     onClick={(e) => {
                       e.preventDefault();

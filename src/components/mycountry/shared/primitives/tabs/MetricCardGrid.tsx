@@ -5,7 +5,6 @@ import { motion } from "motion/react";
 
 import { MetricCard } from "./MetricCard";
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { GlassPanel, PanelCard } from "~/components/mycountry/cards";
 import type { MyCountryAccent } from "~/components/mycountry/shared/cards/accents";
 import { Button } from "~/components/ui/button";
@@ -20,6 +19,7 @@ import { getCardImagePreset, type CardImageType } from "~/lib/cards/image-preset
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import type { CountryImageData } from "~/lib/media";
 import { cn } from "~/lib/utils";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 // Theme color configurations
 const themeColors = {
@@ -269,14 +269,14 @@ export function MetricCardGrid({
 
       {/* Content */}
       <div className="relative z-[5]">
-        <FacetCardHeader className="p-4 pb-2">
+        <CardHeader className="p-4 pb-2">
           <h3 className="text-label text-headline">{title}</h3>
           {subtitle && <p className="text-label-secondary text-footnote">{subtitle}</p>}
-        </FacetCardHeader>
-        <FacetCardContent className="px-4 pb-4">
+        </CardHeader>
+        <CardContent className="px-4 pb-4">
           {metricsGrid}
           {cardFooter}
-        </FacetCardContent>
+        </CardContent>
       </div>
     </>
   );
@@ -298,9 +298,7 @@ export function MetricCardGrid({
   }
 
   return (
-    <FacetCard className={cn("rounded-card relative overflow-hidden", className)}>
-      {cardContent}
-    </FacetCard>
+    <Card className={cn("rounded-card relative overflow-hidden", className)}>{cardContent}</Card>
   );
 }
 

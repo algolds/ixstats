@@ -15,11 +15,11 @@ import {
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Tooltip } from "~/components/ui/tooltip";
 import { usePremium } from "~/hooks/usePremium";
 import { stripBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
+import { Card } from "~/components/ui/card";
 
 /** Renders the standard Iconoir icon for a section */
 function NavIcon({
@@ -103,7 +103,7 @@ interface MyCountrySidebarNavProps {
 /** The small MyCountry-accent "Premium" chip. */
 function PremiumBadge() {
   return (
-    <Badge variant="tinted" className="px-2 py-0">
+    <Badge variant="secondary" className="px-2 py-0">
       Premium
     </Badge>
   );
@@ -180,7 +180,7 @@ export function MyCountrySidebarNav({
   /* ── Mobile: horizontal pill bar ── */
   if (variant === "mobile") {
     return (
-      <FacetCard className="overflow-hidden p-2">
+      <Card className="overflow-hidden p-2">
         <nav
           aria-label="MyCountry sections"
           className="hide-scrollbar flex items-center gap-2 overflow-x-auto"
@@ -229,14 +229,14 @@ export function MyCountrySidebarNav({
             );
           })}
         </nav>
-      </FacetCard>
+      </Card>
     );
   }
 
   /* ── Expanded desktop: icon + label sidebar ── */
   if (variant === "expanded") {
     return (
-      <FacetCard className="flex w-full flex-col gap-1 p-2">
+      <Card className="flex w-full flex-col gap-1 p-2">
         <nav aria-label="MyCountry sections" className="flex w-full flex-col gap-1">
           <div className="border-separator mb-2 flex w-full items-center justify-between border-b px-1 pb-1">
             {renderItem(
@@ -272,10 +272,7 @@ export function MyCountrySidebarNav({
                 <span className="truncate">{item.title}</span>
                 {isLocked && <Lock aria-label="Premium" className="ml-auto size-3.5 shrink-0" />}
                 {!isLocked && noteCount > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className="ml-auto rounded-full px-2 py-0 tabular-nums"
-                  >
+                  <Badge variant="default" className="ml-auto rounded-full px-2 py-0 tabular-nums">
                     {noteCount}
                   </Badge>
                 )}
@@ -284,13 +281,13 @@ export function MyCountrySidebarNav({
             );
           })}
         </nav>
-      </FacetCard>
+      </Card>
     );
   }
 
   /* ── Desktop: icon rail with tooltip labels ── */
   return (
-    <FacetCard className="p-2">
+    <Card className="p-2">
       <nav aria-label="MyCountry sections" className="flex flex-col items-center gap-2">
         <Tooltip content={isPremium ? "Overview · Premium" : "Overview"} side="right">
           {renderItem(
@@ -339,6 +336,6 @@ export function MyCountrySidebarNav({
           );
         })}
       </nav>
-    </FacetCard>
+    </Card>
   );
 }

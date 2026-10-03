@@ -333,7 +333,7 @@ export function RelationsRail({ countryId }: { countryId: string }) {
                   {ally.memberCount ?? ally.members?.length ?? 1} nations
                 </p>
               </div>
-              <Badge variant="secondary" className="shrink-0 capitalize">
+              <Badge variant="default" className="shrink-0 capitalize">
                 {ally.myRole ?? "Member"}
               </Badge>
             </RailRow>

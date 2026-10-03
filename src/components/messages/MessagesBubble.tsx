@@ -287,7 +287,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
             >
               {message.classification && (
                 <div className="mb-1 flex items-center gap-1">
-                  <Badge variant="caution" className="uppercase">
+                  <Badge variant="warning" className="uppercase">
                     <Shield aria-hidden="true" />
                     {message.classification}
                   </Badge>

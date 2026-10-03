@@ -185,7 +185,7 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
 
         {/* Footer Actions */}
         <div className="border-separator flex items-center justify-end gap-3 border-t pt-4">
-          <Button variant="gray" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button onClick={handleInsertStat} disabled={!selectedCountry}>

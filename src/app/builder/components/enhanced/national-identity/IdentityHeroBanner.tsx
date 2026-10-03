@@ -16,8 +16,7 @@ import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FlagWatermark, Refraction, TintGlow } from "~/components/ui/facet";
-import { FACET_GLASS_SURFACE } from "~/components/ui/facet-container";
+import { FlagWatermark } from "~/components/ui/facet";
 import { springSmooth } from "~/lib/design/motion";
 import { getHighResFlagUrl } from "./identityUtils";
 import { useNotify } from "~/hooks/useNotify";
@@ -186,7 +185,11 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={springSmooth}
-      className={cn("group relative isolate overflow-hidden p-5", FACET_GLASS_SURFACE, className)}
+      className={cn(
+        "group relative isolate overflow-hidden p-5",
+        "material-hero text-label rounded-card",
+        className
+      )}
     >
       {/* Hidden file inputs */}
       <input
@@ -208,15 +211,8 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
 
       {/* v2 hero (c5c6b382) on the Facet 3.1 glass hero: refraction hairline, the flag watermark
           from National Standing, and the warm gold / teal glows. */}
-      <Refraction />
+
       <FlagWatermark src={displayFlag} className="-top-10 -right-10 size-56" />
-      <TintGlow position="top-right" size="lg" className="-z-10" />
-      <TintGlow
-        position="bottom-left"
-        size="lg"
-        color="var(--color-teal)"
-        className="-z-10 opacity-10"
-      />
 
       <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         {/* Left Side: National Symbols & Insignia */}
@@ -250,7 +246,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
               >
                 <Button
                   type="button"
-                  variant="plain"
+                  variant="ghost"
                   size="icon"
                   onClick={() => {
                     soundEffects.press();
@@ -264,7 +260,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
                 </Button>
                 <Button
                   type="button"
-                  variant="plain"
+                  variant="ghost"
                   size="icon"
                   onClick={() => {
                     soundEffects.press();
@@ -322,20 +318,20 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
           <div className="min-w-0 flex-1 space-y-2">
             {/* Meta Pill Badges */}
             <div className="text-footnote flex flex-wrap items-center gap-2">
-              <Badge variant="tinted">
+              <Badge variant="secondary">
                 <Crown aria-hidden />
                 <span>{governmentType || "Republic"}</span>
               </Badge>
 
               {demonym && (
-                <Badge variant="neutral">
+                <Badge variant="default">
                   <Users aria-hidden />
                   <span>{demonym}</span>
                 </Badge>
               )}
 
               {capitalCity && (
-                <Badge variant="neutral">
+                <Badge variant="default">
                   <MapPin aria-hidden />
                   <span>{capitalCity}</span>
                 </Badge>
@@ -368,7 +364,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
         <div className="flex shrink-0 flex-wrap items-center gap-2 self-start sm:flex-nowrap lg:self-center">
           <Button
             type="button"
-            variant="bordered"
+            variant="outline"
             size="sm"
             onClick={() => {
               soundEffects.press();
@@ -381,7 +377,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
 
           <Button
             type="button"
-            variant="bordered"
+            variant="outline"
             size="sm"
             onClick={() => {
               soundEffects.press();

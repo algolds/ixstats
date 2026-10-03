@@ -205,7 +205,7 @@ export function SquadRosterTable({
 
                 {/* Position */}
                 <td className="px-3 py-3 text-center">
-                  <Badge variant="neutral">{player.position}</Badge>
+                  <Badge variant="default">{player.position}</Badge>
                 </td>
 
                 {/* Age */}
@@ -275,11 +275,11 @@ export function SquadRosterTable({
                     onClick={(e) => e.stopPropagation()}
                   >
                     {onListPlayer && (
-                      <Button size="sm" variant="plain" onClick={() => onListPlayer(player)}>
+                      <Button size="sm" variant="ghost" onClick={() => onListPlayer(player)}>
                         Listing
                       </Button>
                     )}
-                    <Button size="sm" variant="gray" onClick={() => focusAthlete(player.id)}>
+                    <Button size="sm" variant="secondary" onClick={() => focusAthlete(player.id)}>
                       Focus
                     </Button>
                   </div>

@@ -213,7 +213,7 @@ export function AwardsManagerSection() {
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="flex flex-col gap-6 lg:col-span-1">
         {/* Creation form */}
-        <Card className="h-fit">
+        <Card className="flex h-fit flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle className="text-title-3 flex items-center gap-2">
               <AwardIcon className="text-yellow h-5 w-5" />
@@ -404,7 +404,7 @@ export function AwardsManagerSection() {
         </Card>
 
         {/* Automated Milestones Panel */}
-        <Card className="h-fit">
+        <Card className="flex h-fit flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle className="text-title-3 flex items-center gap-2">
               <Sparkles className="text-pink h-5 w-5" />
@@ -459,7 +459,7 @@ export function AwardsManagerSection() {
 
       <div className="flex flex-col gap-6 lg:col-span-2">
         {/* Recent Winners Log */}
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -577,7 +577,7 @@ export function AwardsManagerSection() {
         </Card>
 
         {/* Active Awards List */}
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -661,7 +661,7 @@ export function AwardsManagerSection() {
                           {recipients.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
                               {recipients.map((user) => (
-                                <Badge key={user} variant="secondary" className="px-2 py-0">
+                                <Badge key={user} variant="default" className="px-2 py-0">
                                   {user}
                                 </Badge>
                               ))}

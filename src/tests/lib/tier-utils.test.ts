@@ -8,11 +8,11 @@ import {
 import { EconomicTier, PopulationTier } from "~/types/ixstats";
 
 describe("formatMembershipTier", () => {
-  it("formats mycountry_premium as Premium with the caution badge role", () => {
+  it("formats mycountry_premium as Premium with the warning badge role", () => {
     const res = formatMembershipTier("mycountry_premium");
     expect(res.label).toBe("Premium");
     expect(res.isPremium).toBe(true);
-    expect(res.badgeVariant).toBe("caution");
+    expect(res.badgeVariant).toBe("warning");
     expect(res).not.toHaveProperty("badgeClass");
   });
 
@@ -26,7 +26,7 @@ describe("formatMembershipTier", () => {
     const res = formatMembershipTier("basic");
     expect(res.label).toBe("Citizen");
     expect(res.isPremium).toBe(false);
-    expect(res.badgeVariant).toBe("neutral");
+    expect(res.badgeVariant).toBe("default");
   });
 
   it("handles undefined or null gracefully", () => {

@@ -1,5 +1,5 @@
-import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Card } from "~/components/ui/card";
 
 /**
  * Loading placeholder shaped like the country editor: the header card (back
@@ -13,7 +13,7 @@ export function EditorSkeleton() {
       className="flex w-full flex-1 flex-col pt-24 sm:pt-28 lg:pt-32"
     >
       <div className="mx-auto w-full max-w-6xl px-4 pb-4">
-        <FacetCard className="rounded-card flex flex-col gap-4 p-4 sm:p-6">
+        <Card className="rounded-card flex flex-col gap-4 p-4 sm:p-6">
           <div className="flex items-center justify-between gap-2">
             <Skeleton className="h-8 w-28" />
             <Skeleton className="h-8 w-40" />
@@ -31,10 +31,10 @@ export function EditorSkeleton() {
               <Skeleton key={i} className="rounded-row h-16" />
             ))}
           </div>
-        </FacetCard>
+        </Card>
       </div>
       <div className="mx-auto w-full max-w-6xl px-4 pb-8">
-        <FacetCard className="rounded-card space-y-6 p-6 sm:p-8">
+        <Card className="rounded-card space-y-6 p-6 sm:p-8">
           <Skeleton className="h-6 w-56" />
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {Array.from({ length: 6 }, (_, i) => (
@@ -44,7 +44,7 @@ export function EditorSkeleton() {
               </div>
             ))}
           </div>
-        </FacetCard>
+        </Card>
       </div>
       <span className="sr-only">Loading…</span>
     </div>

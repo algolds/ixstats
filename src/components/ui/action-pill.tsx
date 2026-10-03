@@ -3,47 +3,24 @@
 import * as React from "react";
 import { cn } from "~/lib/utils/cn";
 import { focusRing, hitSlop } from "~/components/ui/button";
-import { SYSTEM_TINTED, type SystemTintedColor } from "~/components/ui/badge";
+import { badgeTones, type BadgeTone } from "~/components/ui/badge";
 
 /**
- * ActionPill (spec §7.2): a compact, pill-shaped action for social toolbars — like, repost,
- * save/stash, comment, share. Neutral (`label-secondary`, a `fill-4` hover wash) until pressed;
- * pressed it takes a tinted fill in its `tone` (`tint` by default, or a system colour such as
- * `red` for a like), the same AA-checked fill/ink pairs as the colour `Badge`s.
+ * A compact pill action for social toolbars (like, repost, save, comment, share): neutral until
+ * pressed, then tinted in its `tone` (the Badge palette).
  *
  * - Pass `pressed` for a toggle (`aria-pressed` is set); omit it for a one-shot action (share).
- * - `icon` is the leading glyph (14px, `aria-hidden`); children are the visible label.
- * - `count` renders after the label in the data face (`font-data`: mono, tabular, slashed zero;
- *   hidden when `null`/`undefined`/`false`).
- * - Presses with the Facet 3.1 small-control physics (`facet-press-sm`).
+ * - `icon` is the leading glyph (decorative); children are the visible label; `count` follows it.
  * - An icon-only pill (no children) needs an `aria-label`.
- * - It forwards its ref and props, so it works as a `PopoverTrigger asChild` / `MenuButton` child.
  *
  * ```tsx
- * <ActionPill pressed={liked} tone="red" icon={<Heart />} count={likes} onClick={toggleLike}>
+ * <ActionPill pressed={liked} tone="destructive" icon={<Heart />} count={likes} onClick={toggleLike}>
  *   Like
  * </ActionPill>
  * ```
  */
 
-export type ActionPillTone = "tint" | SystemTintedColor;
-
-const TONE_PRESSED: Record<ActionPillTone, string> = {
-  tint: "bg-tint-fill text-tint-ink hover:bg-tint/20 hover:text-tint-ink",
-  red: `${SYSTEM_TINTED.red} hover:bg-red/25 hover:text-red-ink`,
-  orange: `${SYSTEM_TINTED.orange} hover:bg-orange/25 hover:text-orange-ink`,
-  yellow: `${SYSTEM_TINTED.yellow} hover:bg-yellow/25 hover:text-yellow-ink`,
-  green: `${SYSTEM_TINTED.green} hover:bg-green/25 hover:text-green-ink`,
-  mint: `${SYSTEM_TINTED.mint} hover:bg-mint/25 hover:text-mint-ink`,
-  teal: `${SYSTEM_TINTED.teal} hover:bg-teal/25 hover:text-teal-ink`,
-  cyan: `${SYSTEM_TINTED.cyan} hover:bg-cyan/25 hover:text-cyan-ink`,
-  blue: `${SYSTEM_TINTED.blue} hover:bg-blue/25 hover:text-blue-ink`,
-  indigo: `${SYSTEM_TINTED.indigo} hover:bg-indigo/25 hover:text-indigo-ink`,
-  purple: `${SYSTEM_TINTED.purple} hover:bg-purple/25 hover:text-purple-ink`,
-  pink: `${SYSTEM_TINTED.pink} hover:bg-pink/25 hover:text-pink-ink`,
-  brown: `${SYSTEM_TINTED.brown} hover:bg-brown/25 hover:text-brown-ink`,
-  gray: `${SYSTEM_TINTED.gray} hover:bg-gray/25 hover:text-gray-ink`,
-};
+export type ActionPillTone = Exclude<BadgeTone, "default">;
 
 const SIZE = {
   /** 24px tall, caption text: toolbars under a feed card. */
@@ -55,11 +32,11 @@ const SIZE = {
 export interface ActionPillProps extends Omit<React.ComponentProps<"button">, "children"> {
   /** Toggle state. Omit for a one-shot action (no `aria-pressed`). */
   pressed?: boolean;
-  /** Pressed colour. @default "tint" */
+  /** Pressed colour. @default "secondary" */
   tone?: ActionPillTone;
   /** Leading glyph (decorative). */
   icon?: React.ReactNode;
-  /** Count after the label, in tabular numerals. */
+  /** Count after the label. */
   count?: React.ReactNode;
   /** @default "sm" */
   size?: keyof typeof SIZE;
@@ -68,7 +45,7 @@ export interface ActionPillProps extends Omit<React.ComponentProps<"button">, "c
 
 export const ActionPill = React.forwardRef<HTMLButtonElement, ActionPillProps>(
   (
-    { pressed, tone = "tint", icon, count, size = "sm", className, children, type, ...props },
+    { pressed, tone = "secondary", icon, count, size = "sm", className, children, type, ...props },
     ref
   ) => {
     const isPressed = pressed === true;
@@ -88,19 +65,16 @@ export const ActionPill = React.forwardRef<HTMLButtonElement, ActionPillProps>(
               ? "on"
               : "off"
         }
-        data-tone={tone}
         aria-pressed={pressed === undefined ? props["aria-pressed"] : isPressed}
         className={cn(
           "relative inline-flex shrink-0 cursor-pointer items-center rounded-full whitespace-nowrap select-none",
-          "text-label-secondary hover:bg-fill-4 hover:text-label",
-          // Facet 3.1 press physics (small-control scale .95, off under Reduce Motion).
           "facet-press facet-press-sm",
           focusRing,
           hitSlop,
           "disabled:cursor-not-allowed disabled:opacity-50",
           "[&_svg]:pointer-events-none [&_svg]:shrink-0",
           SIZE[size],
-          isPressed && TONE_PRESSED[tone],
+          isPressed ? badgeTones[tone] : "text-label-secondary hover:bg-fill-4 hover:text-label",
           className
         )}
       >
@@ -111,7 +85,7 @@ export const ActionPill = React.forwardRef<HTMLButtonElement, ActionPillProps>(
         )}
         {children}
         {hasCount && (
-          <span data-slot="action-pill-count" className="font-data tabular-nums">
+          <span data-slot="action-pill-count" className="tabular-nums">
             {count}
           </span>
         )}

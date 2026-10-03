@@ -96,7 +96,7 @@ export function MapPipelineControls({
             <div className="space-y-2">
               <div className="text-label text-caption flex items-center justify-between">
                 <label htmlFor="pipeline-seed">World seed</label>
-                <Button type="button" variant="plain" size="sm" onClick={handleRandomizeSeed}>
+                <Button type="button" variant="ghost" size="sm" onClick={handleRandomizeSeed}>
                   <RefreshCw className="size-3.5" aria-hidden /> Randomize
                 </Button>
               </div>

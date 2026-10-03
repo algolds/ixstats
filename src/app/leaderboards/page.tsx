@@ -17,13 +17,7 @@ export default function LeaderboardsPage() {
         {/* Page Hero Header */}
         {/* v2 (c5c6b382): a hero CutoutCard over a fine grid texture — now the glass hero tier
             with the domain glow. */}
-        <CutoutCard
-          variant="glass"
-          glow
-          texture="grid"
-          textureOpacity={0.04}
-          trackPointerHover={false}
-        >
+        <CutoutCard variant="glass" trackPointerHover={false}>
           <div className="relative flex items-center gap-4 p-6">
             <div className="border-yellow/30 bg-yellow/10 text-yellow rounded-card flex size-12 items-center justify-center border">
               <Trophy aria-hidden className="size-6" />

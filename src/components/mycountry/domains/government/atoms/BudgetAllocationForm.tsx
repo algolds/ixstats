@@ -10,7 +10,6 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { currentBudgetYear } from "~/lib/government/budget-year";
 import { cn } from "~/lib/utils";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Progress } from "~/components/ui/progress";
 import { Textarea } from "~/components/ui/textarea";
@@ -26,6 +25,7 @@ import {
 } from "iconoir-react";
 import { BUDGET_YEAR_MAX, BUDGET_YEAR_MIN } from "~/types/government";
 import type { BudgetAllocationInput, BudgetStatus } from "~/types/government";
+import { Card } from "~/components/ui/card";
 
 interface BudgetAllocationFormProps {
   data: BudgetAllocationInput;
@@ -127,7 +127,7 @@ export function BudgetAllocationForm({
   const StatusIcon = statusConfig.icon;
 
   const cardElement = (
-    <FacetCard className={cn("overflow-hidden", !isCollapsed && "border-separator-opaque")}>
+    <Card className={cn("overflow-hidden", !isCollapsed && "border-separator-opaque")}>
       {/* Header row: always visible */}
       <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
@@ -364,7 +364,7 @@ export function BudgetAllocationForm({
           </div>
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 
   // Sub-departments are indented under their parent with a connector line.

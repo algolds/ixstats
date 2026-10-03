@@ -9,7 +9,7 @@ import { soundCues } from "~/lib/sound/cuelume";
 
 /**
  * The one scrim for modal presentation (Dialog, AlertDialog, Sheet): black at 25% (light) /
- * 40% (dark), no blur — the sheet or dialog above it carries the elevation (spec §5, §7.3).
+ * 40% (dark), no blur; the sheet or dialog above it carries the elevation.
  */
 export const overlayScrimClassName = "fixed inset-0 z-backdrop bg-scrim";
 
@@ -23,7 +23,7 @@ export const presentMotionClassName =
 
 /**
  * Dismiss button for dialogs and sheets: a 28px fill circle with a 44px hit area on touch. It
- * keeps the `droplet` cue — dismissal is one of the §9 sound moments.
+ * keeps the `droplet` cue.
  */
 export const dismissButtonClassName =
   "absolute top-4 right-4 inline-flex size-7 items-center justify-center rounded-full bg-fill-3 text-label-secondary transition-colors duration-fast ease-out-facet before:absolute before:-inset-2 hover:bg-fill-2 hover:text-label outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-tint disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [:where(&)_svg]:size-4";
@@ -62,7 +62,7 @@ interface DialogContentProps extends React.ComponentProps<typeof DialogPrimitive
   /**
    * `"animated"` (default): centred scale .96 + fade in 200ms, out in 120ms.
    * `"instant"`: appears and leaves in 0ms with no present cue — for keyboard-invoked UI such as
-   * the command palette (spec §8).
+   * the command palette.
    */
   presentation?: "animated" | "instant";
 }
@@ -76,7 +76,7 @@ function DialogContent({
 }: DialogContentProps) {
   const animated = presentation === "animated";
 
-  // Present cue (§9). Keyboard-invoked, instant presentations (the command palette) stay silent.
+  // Present cue. Keyboard-invoked, instant presentations (the command palette) stay silent.
   React.useEffect(() => {
     // Optional calls: many tests mock ~/lib/sound/cuelume with only `soundEffects`.
     if (animated) soundCues?.present?.();
@@ -89,9 +89,9 @@ function DialogContent({
         data-slot="dialog-content"
         data-presentation={presentation}
         className={cn(
-          "fixed top-1/2 left-1/2 z-sheet grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 p-6 outline-none",
+          "z-sheet fixed top-1/2 left-1/2 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 p-6 outline-none",
           !className?.includes("max-w-") && "sm:max-w-lg",
-          "rounded-sheet border border-separator bg-surface-elevated text-label shadow-sheet",
+          "rounded-sheet border-separator bg-surface-elevated text-label shadow-sheet border",
           animated && presentMotionClassName,
           className
         )}

@@ -40,7 +40,6 @@ import {
   formDataToArchetypeInput,
 } from "./_components/archetype-form-types";
 import { Skeleton } from "~/components/ui/skeleton";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Table,
   TableHeader,
@@ -49,6 +48,7 @@ import {
   TableHead,
   TableCell,
 } from "~/components/ui/table";
+import { Card } from "~/components/ui/card";
 
 const COMPLEXITY_COLORS: Record<string, string> = {
   low: "text-green",
@@ -203,28 +203,28 @@ export function EconomicArchetypesPanel() {
 
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <div className="text-label-secondary text-eyebrow">Total Archetypes</div>
           <div className="text-label text-title-2 mt-1 tabular-nums">{archetypes?.length ?? 0}</div>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <div className="text-label-secondary text-eyebrow">Modern Policy</div>
           <div className="text-title-2 text-blue mt-1 tabular-nums">
             {archetypes?.filter((a: any) => a.era === "modern").length ?? 0}
           </div>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <div className="text-label-secondary text-eyebrow">Historical Models</div>
           <div className="text-title-2 text-yellow mt-1 tabular-nums">
             {archetypes?.filter((a: any) => a.era === "historical").length ?? 0}
           </div>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <div className="text-label-secondary text-eyebrow">Filtered Roster</div>
           <div className="text-title-2 text-purple mt-1 tabular-nums">
             {filteredArchetypes.length}
           </div>
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Filter & Action Rail */}
@@ -309,13 +309,13 @@ export function EconomicArchetypesPanel() {
           ))}
         </div>
       ) : filteredArchetypes.length === 0 ? (
-        <FacetCard className="p-12 text-center">
+        <Card className="p-12 text-center">
           <p className="text-label-secondary text-footnote">
             No archetypes found matching criteria.
           </p>
-        </FacetCard>
+        </Card>
       ) : (
-        <FacetCard>
+        <Card>
           <Table>
             <TableHeader>
               <TableRow>
@@ -400,7 +400,7 @@ export function EconomicArchetypesPanel() {
               ))}
             </TableBody>
           </Table>
-        </FacetCard>
+        </Card>
       )}
 
       {/* Editor Dialog */}

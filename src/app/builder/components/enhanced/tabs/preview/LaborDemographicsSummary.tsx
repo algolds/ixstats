@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Progress } from "~/components/ui/progress";
 import { Group as Users, Heart } from "iconoir-react";
 import type { LaborSummary, DemographicsSummary } from "../utils/previewCalculations";
+import { Card, CardContent } from "~/components/ui/card";
 
 interface LaborDemographicsSummaryProps {
   laborSummary: LaborSummary;
@@ -18,8 +18,8 @@ export function LaborDemographicsSummary({
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {/* Labor Market */}
-      <FacetCard>
-        <FacetCardContent className="space-y-4 p-6">
+      <Card>
+        <CardContent className="space-y-4 p-6">
           <h3 className="text-headline text-green mb-4 flex items-center space-x-2">
             <Users className="h-5 w-5" />
             <span>Labor Market</span>
@@ -69,12 +69,12 @@ export function LaborDemographicsSummary({
               <span className="ml-1 font-medium">{laborSummary.averageHours}/week</span>
             </div>
           </div>
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
 
       {/* Demographics */}
-      <FacetCard>
-        <FacetCardContent className="space-y-4 p-6">
+      <Card>
+        <CardContent className="space-y-4 p-6">
           <h3 className="text-headline text-green mb-4 flex items-center space-x-2">
             <Heart className="h-5 w-5" />
             <span>Demographics</span>
@@ -138,8 +138,8 @@ export function LaborDemographicsSummary({
               </span>
             </div>
           </div>
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
     </div>
   );
 }

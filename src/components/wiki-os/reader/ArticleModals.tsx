@@ -74,7 +74,7 @@ export function QuickHistoryModal({
       title="Recent History"
       onClose={onClose}
       footer={
-        <Button asChild variant="plain" size="sm">
+        <Button asChild variant="ghost" size="sm">
           <Link href={withBasePath(`/wiki/history/${slug}`)} onClick={onClose}>
             <ExternalLink aria-hidden="true" />
             View full history
@@ -149,7 +149,7 @@ export function QuickBacklinksModal({
       title="What Links Here"
       onClose={onClose}
       footer={
-        <Button asChild variant="plain" size="sm">
+        <Button asChild variant="ghost" size="sm">
           <Link href={withBasePath(`/wiki/whatlinkshere/${slug}`)} onClick={onClose}>
             <ExternalLink aria-hidden="true" />
             View all backlinks

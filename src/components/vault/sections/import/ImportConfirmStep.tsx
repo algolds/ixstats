@@ -14,10 +14,10 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import NumberFlow from "~/components/ui/number-flow";
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
+import { Card } from "~/components/ui/card";
 
 export interface ImportResult {
   cardsImported: number;
@@ -59,7 +59,7 @@ export function ImportConfirmStep({
         </p>
       </div>
 
-      <FacetCard className="rounded-row border-green/30 bg-green/10 p-5">
+      <Card className="rounded-row border-green/30 bg-green/10 p-5">
         <div className="flex items-start gap-3">
           <Info className="text-green mt-0.5 h-4 w-4 shrink-0" />
           <div className="text-label-secondary text-body">
@@ -70,7 +70,7 @@ export function ImportConfirmStep({
             </p>
           </div>
         </div>
-      </FacetCard>
+      </Card>
 
       <div className="flex gap-3">
         <Button variant="outline" onClick={onBack}>

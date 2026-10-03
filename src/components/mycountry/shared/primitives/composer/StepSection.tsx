@@ -1,7 +1,7 @@
 import React from "react";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 /** The composer always has four steps: goal, approach, projected impact, review and declare. */
 const STEP_COUNT = 4;
@@ -30,8 +30,8 @@ export function StepSection({
 }: StepSectionProps) {
   const headingId = `directive-step-${step}`;
   return (
-    <FacetCard role="region" aria-labelledby={headingId} className={cn("rounded-card", className)}>
-      <FacetCardHeader className="flex-row items-start gap-3 p-4 sm:p-6">
+    <Card role="region" aria-labelledby={headingId} className={cn("rounded-card", className)}>
+      <CardHeader className="flex-row items-start gap-3 p-4 sm:p-6">
         <div className="min-w-0 flex-1">
           <Eyebrow className="block">
             Step {step} of {STEP_COUNT}
@@ -42,10 +42,8 @@ export function StepSection({
           {description && <p className="text-label-secondary text-body mt-0.5">{description}</p>}
         </div>
         {action && <div className="shrink-0">{action}</div>}
-      </FacetCardHeader>
-      {children && (
-        <FacetCardContent className="px-4 pb-4 sm:px-6 sm:pb-6">{children}</FacetCardContent>
-      )}
-    </FacetCard>
+      </CardHeader>
+      {children && <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">{children}</CardContent>}
+    </Card>
   );
 }

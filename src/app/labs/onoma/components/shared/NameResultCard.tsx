@@ -16,7 +16,6 @@ import {
   EditPencil as Pencil,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { FacetCard } from "~/components/ui/facet-container";
 import { translateToIPA } from "~/lib/onoma/phonology";
 import {
   resolveIpa,
@@ -34,6 +33,7 @@ import { LinguisticProfile } from "./LinguisticProfile";
 import { Button } from "~/components/ui/button";
 import { ActionPill } from "~/components/ui/action-pill";
 import { Toggle } from "~/components/ui/toggle";
+import { Card } from "~/components/ui/card";
 
 interface NameResultCardProps {
   name: string;
@@ -228,10 +228,9 @@ export function NameResultCard({
       : null;
 
   return (
-    <FacetCard
+    <Card
       variant="inset"
       padding="none"
-      depth={showDetailsModal ? 2 : 1}
       onClick={expandOnCardClick ? () => setShowDetailsModal(!showDetailsModal) : undefined}
       className={cn(
         "group rounded-card relative flex flex-col justify-start gap-4 overflow-hidden border px-4 py-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-out",
@@ -258,6 +257,7 @@ export function NameResultCard({
               !fitColor && "hover:border-tint/40 hover:shadow-card"
             )
       )}
+      interactive
     >
       {/* Main Top Row */}
       <div className="relative z-10 flex w-full min-w-0 items-start justify-between gap-3">
@@ -416,7 +416,7 @@ export function NameResultCard({
           </motion.div>
         )}
       </AnimatePresence>
-    </FacetCard>
+    </Card>
   );
 }
 

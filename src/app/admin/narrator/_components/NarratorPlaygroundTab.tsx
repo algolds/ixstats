@@ -25,7 +25,7 @@ import {
 } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export function NarratorPlaygroundTab() {
   const notify = useNotify();
@@ -122,7 +122,7 @@ export function NarratorPlaygroundTab() {
     <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12">
       {/* Input Config Panel (Left) */}
       <div className="space-y-4 xl:col-span-7">
-        <FacetCard className="space-y-4 p-5">
+        <Card className="space-y-4 p-5">
           <div className="border-separator border-b pb-3">
             <div className="flex items-center gap-2">
               <FileCode2 className="text-yellow h-4 w-4" />
@@ -287,7 +287,7 @@ export function NarratorPlaygroundTab() {
               </>
             )}
           </Button>
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Preview Card Panel (Right) */}
@@ -295,7 +295,7 @@ export function NarratorPlaygroundTab() {
         <div className="flex items-center justify-between">
           <Label className="text-label-secondary text-subhead">Chronicle Card Mockup Preview</Label>
           {playgroundLatency !== null && (
-            <Badge variant="teal" className="tabular-nums">
+            <Badge variant="info" className="tabular-nums">
               {playgroundLatency}ms
             </Badge>
           )}
@@ -329,21 +329,21 @@ export function NarratorPlaygroundTab() {
             </span>
           </div>
         ) : (
-          <FacetCard className="text-label-secondary text-footnote flex min-h-[160px] flex-col items-center justify-center border-dashed p-8 text-center italic">
+          <Card className="text-label-secondary text-footnote flex min-h-[160px] flex-col items-center justify-center border-dashed p-8 text-center italic">
             <ScrollText className="text-label-tertiary mb-2 h-8 w-8" />
             Configure the parameters on the left and run test to view the Paradox-style narrative
             wrapper.
-          </FacetCard>
+          </Card>
         )}
 
-        <FacetCard className="text-footnote space-y-2 p-4">
+        <Card className="text-footnote space-y-2 p-4">
           <h4 className="text-label text-subhead">Immersion Snapshots</h4>
           <p className="text-label-secondary text-footnote leading-relaxed">
             During live simulation, when a player views an Issue, Policy, or Cabinet Decision, a
             contextual snapshot of live national metrics (GDP, stability, approval, government type)
             is passed alongside details to generate immersion flavor text.
           </p>
-        </FacetCard>
+        </Card>
       </div>
     </div>
   );

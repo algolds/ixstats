@@ -280,7 +280,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
               <div className="text-title-2">
                 {teamAName} {singleResult.homeScore} - {singleResult.awayScore} {teamBName}
               </div>
-              <Badge variant={singleResult.upset ? "destructive" : "secondary"} className="mt-1">
+              <Badge variant={singleResult.upset ? "destructive" : "default"} className="mt-1">
                 {singleResult.upset ? "Upset!" : "Expected Outcome"}
               </Badge>
               <p className="text-label-secondary text-footnote mt-1">

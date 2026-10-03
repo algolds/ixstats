@@ -41,7 +41,7 @@ export function WikiZoomDialog({
       >
         <DialogTitle className="sr-only">{alt}</DialogTitle>
         <Button
-          variant="gray"
+          variant="secondary"
           size="icon"
           onClick={() => onOpenChange(false)}
           aria-label="Close"

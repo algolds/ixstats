@@ -54,14 +54,14 @@ export function DepartmentsList({
 
   return (
     <Collapsible open={isOpen} onOpenChange={onOpenChange}>
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CollapsibleTrigger asChild>
           <CardHeader className="hover:bg-fill-3 cursor-pointer transition-colors">
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
                 Government Departments
-                <Badge variant="secondary" className="ml-2">
+                <Badge variant="default" className="ml-2">
                   {departments.length}
                 </Badge>
               </div>

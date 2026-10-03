@@ -4,7 +4,6 @@ import { Check } from "iconoir-react";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import React from "react";
 import { useVexelEditor } from "../VexelEditorProvider";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Input } from "~/components/ui/input";
 import { Slider } from "~/components/ui/slider";
 import { Switch } from "~/components/ui/switch";
@@ -28,6 +27,7 @@ import type {
   Attitude,
   HelmType,
 } from "~/lib/heraldry";
+import { Card } from "~/components/ui/card";
 
 export default function PropertiesPanel() {
   const {
@@ -98,18 +98,18 @@ export default function PropertiesPanel() {
   // Render properties based on active selection
   if (!selectedLayerPath) {
     return (
-      <FacetCard className="h-full overflow-hidden">
+      <Card className="h-full overflow-hidden">
         <div className="text-label-secondary text-footnote flex h-full items-center justify-center p-6 text-center italic">
           Select a layer from the tree to edit properties
         </div>
-      </FacetCard>
+      </Card>
     );
   }
 
   // 1. Root Shield properties
   if (selectedLayerPath === "shield") {
     return (
-      <FacetCard className="overflow-hidden">
+      <Card className="overflow-hidden">
         <div className="text-footnote flex flex-col gap-4 p-4">
           <Eyebrow className="border-separator block border-b pb-2">Shield properties</Eyebrow>
 
@@ -128,7 +128,7 @@ export default function PropertiesPanel() {
             />
           </div>
         </div>
-      </FacetCard>
+      </Card>
     );
   }
 
@@ -164,7 +164,7 @@ export default function PropertiesPanel() {
     };
 
     return (
-      <FacetCard className="overflow-hidden">
+      <Card className="overflow-hidden">
         <div className="text-footnote flex max-h-[400px] flex-col gap-4 overflow-y-auto p-4">
           <Eyebrow className="border-separator block border-b pb-2">Field properties</Eyebrow>
 
@@ -204,7 +204,7 @@ export default function PropertiesPanel() {
             ))}
           </div>
         </div>
-      </FacetCard>
+      </Card>
     );
   }
 
@@ -217,7 +217,7 @@ export default function PropertiesPanel() {
     if (!ord) return null;
 
     return (
-      <FacetCard className="overflow-hidden">
+      <Card className="overflow-hidden">
         <div className="text-footnote flex flex-col gap-4 p-4">
           <Eyebrow className="border-separator block border-b pb-2">
             Ordinary properties ({idx + 1})
@@ -251,7 +251,7 @@ export default function PropertiesPanel() {
             />
           </div>
         </div>
-      </FacetCard>
+      </Card>
     );
   }
 
@@ -264,7 +264,7 @@ export default function PropertiesPanel() {
     if (!charge) return null;
 
     return (
-      <FacetCard className="overflow-hidden">
+      <Card className="overflow-hidden">
         <div className="text-footnote flex flex-col gap-4 p-4">
           <Eyebrow className="border-separator block truncate border-b pb-2">
             Charge properties: {charge.chargeId}
@@ -329,7 +329,7 @@ export default function PropertiesPanel() {
             />
           </div>
         </div>
-      </FacetCard>
+      </Card>
     );
   }
 
@@ -361,7 +361,7 @@ export default function PropertiesPanel() {
     };
 
     return (
-      <FacetCard className="overflow-hidden">
+      <Card className="overflow-hidden">
         <div className="text-footnote flex max-h-[80vh] flex-col gap-4 overflow-y-auto p-4">
           <Eyebrow className="border-separator block border-b pb-2">Ornament properties</Eyebrow>
 
@@ -426,7 +426,7 @@ export default function PropertiesPanel() {
             )}
           </div>
         </div>
-      </FacetCard>
+      </Card>
     );
   }
 

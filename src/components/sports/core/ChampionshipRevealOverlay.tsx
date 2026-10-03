@@ -52,7 +52,7 @@ export function ChampionshipRevealOverlay({
 
         {/* Header Badge */}
         <div className="flex justify-center">
-          <Badge variant="caution">
+          <Badge variant="warning">
             <span>{leagueName}</span>
             <span aria-hidden>•</span>
             <span>Season {seasonNumber} Champion</span>

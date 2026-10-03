@@ -18,8 +18,8 @@ import { Badge } from "~/components/ui/badge";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { formatDistanceToNow } from "date-fns";
 import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 
 interface ActivityData {
   id: string;
@@ -92,7 +92,7 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
   const IconComponent = config.icon;
 
   return (
-    <FacetCard className="group p-4 sm:p-6">
+    <Card className="group p-4 sm:p-6">
       {/* Header */}
       <div className="mb-3 flex items-start gap-3 sm:mb-4 sm:gap-4">
         {/* Icon */}
@@ -154,7 +154,7 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
               {/* Expand Button */}
               {activity.content.description.length > 150 && (
                 <Button
-                  variant="plain"
+                  variant="ghost"
                   size="sm"
                   onClick={() => setExpanded(!expanded)}
                   className="mt-1 px-0"
@@ -221,6 +221,6 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
           </Badge>
         ) : null}
       </div>
-    </FacetCard>
+    </Card>
   );
 }

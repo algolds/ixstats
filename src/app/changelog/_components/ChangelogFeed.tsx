@@ -16,11 +16,11 @@ import {
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
-import { FacetCard } from "~/components/ui/facet-container";
 import { EmptyState } from "~/components/ui/empty-state";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 
 export type ReleaseCategory = "all" | "feature" | "improvement" | "engine" | "fix";
 
@@ -110,7 +110,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
   return (
     <>
       {/* Search & Category Filter Controls */}
-      <FacetCard className="mb-10 p-4">
+      <Card className="mb-10 p-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           {/* Search Input */}
           <SearchField
@@ -134,11 +134,11 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
             })}
           />
         </div>
-      </FacetCard>
+      </Card>
 
       {/* Release Timeline */}
       {filteredReleases.length === 0 ? (
-        <FacetCard>
+        <Card>
           <EmptyState
             icon={<Search />}
             title="No matching updates found"
@@ -155,7 +155,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
               </Button>
             }
           />
-        </FacetCard>
+        </Card>
       ) : (
         <div className="space-y-12">
           {filteredReleases.map((release) => (

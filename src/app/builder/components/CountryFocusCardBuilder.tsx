@@ -117,13 +117,13 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
                 >
                   <div className="bg-surface-elevated border-tint rounded-row shadow-floating flex h-full flex-col justify-between border p-3 text-center select-none">
                     <div className="flex items-center justify-between">
-                      <Badge variant="tinted">
+                      <Badge variant="secondary">
                         <Check aria-hidden="true" className="stroke-[3]" />
                         Confirm
                       </Badge>
                       <Button
                         type="button"
-                        variant="plain"
+                        variant="ghost"
                         size="icon-sm"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -167,7 +167,7 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
                     <div className="flex items-center gap-2 pt-2">
                       <Button
                         type="button"
-                        variant="bordered"
+                        variant="outline"
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();

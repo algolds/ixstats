@@ -19,7 +19,6 @@ import {
   FloppyDisk as Save,
 } from "iconoir-react";
 import { LorewardWeightsCard } from "./LorewardWeightsCard";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Table,
   TableHeader,
@@ -28,6 +27,7 @@ import {
   TableHead,
   TableCell,
 } from "~/components/ui/table";
+import { Card } from "~/components/ui/card";
 
 export function SystemTuningSection() {
   const notify = useNotify();
@@ -157,7 +157,7 @@ export function SystemTuningSection() {
       {/* Right Column: Cache, Templates, Cron */}
       <div className="space-y-6">
         {/* Cache Utilities */}
-        <FacetCard className="space-y-4 p-5">
+        <Card className="space-y-4 p-5">
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <Database className="text-green h-4 w-4" />
             <div>
@@ -208,10 +208,10 @@ export function SystemTuningSection() {
               </Button>
             </div>
           </div>
-        </FacetCard>
+        </Card>
 
         {/* Wiki Templates Synchronization */}
-        <FacetCard className="space-y-4 p-5">
+        <Card className="space-y-4 p-5">
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <SlidersHorizontal className="text-indigo h-4 w-4" />
             <div>
@@ -339,10 +339,10 @@ export function SystemTuningSection() {
               </Table>
             )}
           </div>
-        </FacetCard>
+        </Card>
 
         {/* Cron Schedules Editor */}
-        <FacetCard className="space-y-4 p-5">
+        <Card className="space-y-4 p-5">
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <Sliders className="text-green h-4 w-4" />
             <div>
@@ -405,7 +405,7 @@ export function SystemTuningSection() {
               </Button>
             </form>
           </div>
-        </FacetCard>
+        </Card>
       </div>
     </div>
   );

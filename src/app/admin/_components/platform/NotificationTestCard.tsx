@@ -163,7 +163,7 @@ export function NotificationTestCard() {
   };
 
   return (
-    <Card>
+    <Card className="flex flex-col gap-6 py-6">
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
@@ -205,7 +205,7 @@ export function NotificationTestCard() {
               <span className="text-caption">Crisis Alert</span>
             </Button>
             <Button
-              variant="tinted"
+              variant="secondary"
               onClick={() => triggerPreset("achievement")}
               className="flex h-16 flex-col items-center justify-center gap-1"
             >
@@ -213,7 +213,7 @@ export function NotificationTestCard() {
               <span className="text-caption">Achievement</span>
             </Button>
             <Button
-              variant="tinted"
+              variant="secondary"
               onClick={() => triggerPreset("security")}
               className="flex h-16 flex-col items-center justify-center gap-1"
             >
@@ -221,7 +221,7 @@ export function NotificationTestCard() {
               <span className="text-caption">Security Intel</span>
             </Button>
             <Button
-              variant="tinted"
+              variant="secondary"
               onClick={() => triggerPreset("trade")}
               className="flex h-16 flex-col items-center justify-center gap-1"
             >

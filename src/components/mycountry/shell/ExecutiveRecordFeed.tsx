@@ -12,7 +12,6 @@ import {
 import { cn, createUrl } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { timeAgo } from "~/lib/format/compact";
 import { consequenceFieldLabel } from "~/lib/intent/consequence-labels";
 import type { V2Drill } from "~/components/mycountry/shell/DrillSheets";
@@ -20,6 +19,7 @@ import { CATEGORY_STYLE } from "./ExecutiveActionCards";
 import { STATUS_TEXT } from "./status-tone";
 import { HUE_BADGE, hueAccentStyle } from "./domain-hue";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Card } from "~/components/ui/card";
 
 type FeedFilter = "all" | "diplomatic" | "military" | "economic" | "political";
 
@@ -227,13 +227,13 @@ export function ExecutiveRecordFeed({
 
   if (items.length === 0) {
     return (
-      <FacetCard className="rounded-card flex flex-col items-center px-6 py-8 text-center">
+      <Card className="rounded-card flex flex-col items-center px-6 py-8 text-center">
         <p className="text-label text-headline">No activity recorded yet</p>
         <p className="text-label-secondary text-footnote mt-1 max-w-sm leading-relaxed">
           Decisions, directive outcomes and issue consequences are logged here as they change your
           nation.
         </p>
-      </FacetCard>
+      </Card>
     );
   }
 
@@ -256,11 +256,11 @@ export function ExecutiveRecordFeed({
         className="scrollbar-thumb-muted max-h-[520px] scrollbar-thin scrollbar-track-transparent overflow-y-auto"
       >
         {visibleItems.length === 0 ? (
-          <FacetCard className="text-label-secondary rounded-card text-footnote px-4 py-6 text-center">
+          <Card className="text-label-secondary rounded-card text-footnote px-4 py-6 text-center">
             Nothing in this category yet.
-          </FacetCard>
+          </Card>
         ) : (
-          <FacetCard className="rounded-card overflow-hidden">
+          <Card className="rounded-card overflow-hidden">
             <ul className="divide-separator divide-y">
               {visibleItems.map((item) => {
                 const meta =
@@ -396,7 +396,7 @@ export function ExecutiveRecordFeed({
                 );
               })}
             </ul>
-          </FacetCard>
+          </Card>
         )}
 
         {visibleCount < filteredItems.length && (

@@ -70,7 +70,7 @@ export function StashImagesGrid({ items, resolvedImagesMap, onUnstash }: StashIm
 
                 {/* Remove button */}
                 <Button
-                  variant="gray"
+                  variant="secondary"
                   size="icon-sm"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -293,7 +293,7 @@ export function StashedImageModal({
               {copied ? "Copied" : format === "url" ? "Copy URL" : "Copy Wikitext"}
             </Button>
             <Button
-              variant="bordered"
+              variant="outline"
               onClick={handleCopyImage}
               disabled={isCopyingImage}
               title="Copy Image to Clipboard"
@@ -310,7 +310,7 @@ export function StashedImageModal({
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <Button variant="bordered" onClick={() => window.open(image.url, "_blank")}>
+            <Button variant="outline" onClick={() => window.open(image.url, "_blank")}>
               <Download aria-hidden="true" /> Download
             </Button>
             <Button variant="destructive" onClick={onUnstash}>

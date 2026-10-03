@@ -3,18 +3,11 @@
 import React, { useState, useEffect, useMemo, useCallback, useId } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Globe, EditPencil as Edit3, ArrowRight, ClockRotateRight, Trash } from "iconoir-react";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
-import { TintGlow } from "~/components/ui/facet/identity/Glow";
-import {
-  HUE_ACCENT,
-  HUE_BADGE,
-  hueAccentStyle,
-  type DomainHue,
-} from "~/components/mycountry/shell/domain-hue";
+import { HUE_BADGE, hueAccentStyle } from "~/components/mycountry/shell/domain-hue";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
@@ -22,6 +15,7 @@ import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { safeGetItemSync } from "~/lib/system/local-storage-mutex";
 import { getHighResFlagUrl, getStepLabel } from "./enhanced/steps/foundation/foundationUtils";
 import type { BuilderStep } from "./enhanced/builderConfig";
+import { Card, CardContent } from "~/components/ui/card";
 
 export type FoundationPath = "template" | "archetype" | "country" | "scratch" | "import";
 
@@ -35,8 +29,6 @@ interface PathCardProps {
   description: string;
   icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" }>;
   iconClassName?: string;
-  /** v2 path accent (amber/emerald/indigo): icon badge, hover rim and badge colour. */
-  hue: DomainHue;
   onClick: () => void;
   badge?: string;
 }
@@ -65,7 +57,6 @@ function PathCard({
   description,
   icon: Icon,
   iconClassName,
-  hue,
   onClick,
   badge,
 }: PathCardProps) {
@@ -73,17 +64,15 @@ function PathCard({
   const descriptionId = useId();
   const badgeId = useId();
   return (
-    <FacetCard
+    <Card
       onClick={onClick}
-      accent={HUE_ACCENT[hue]}
-      texture="chevron"
-      textureOpacity={0.05}
       aria-labelledby={badge ? `${titleId} ${badgeId}` : titleId}
       aria-describedby={descriptionId}
       data-cuelume-press
       className="group hover:border-facet-accent/40 focus-visible:border-facet-accent/40 h-full overflow-hidden p-6 text-left"
+      interactive
     >
-      <FacetCardContent className="relative flex h-full flex-col justify-between p-0">
+      <CardContent className="relative flex h-full flex-col justify-between p-0">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span
@@ -125,8 +114,8 @@ function PathCard({
           <span>Continue</span>
           <ArrowRight className="h-3.5 w-3.5 transition-[translate] duration-200 motion-safe:group-hover:translate-x-1 motion-safe:group-focus-visible:translate-x-1" />
         </div>
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -259,7 +248,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
           className="group relative isolate select-none"
         >
           {/* v2 ambient warm glow halo behind the logo (the gold tint glow) */}
-          <TintGlow position="center" size="lg" className="-z-10 opacity-60" />
+
           <MyCountryLogo
             size="xl"
             variant="full"
@@ -305,7 +294,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                   transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <FacetCard
+                  <Card
                     role="alertdialog"
                     aria-labelledby="foundation-discard-title"
                     className="border-destructive/40 rounded-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
@@ -352,7 +341,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                         Discard draft
                       </Button>
                     </div>
-                  </FacetCard>
+                  </Card>
                 </motion.div>
               ) : (
                 <motion.div
@@ -366,15 +355,12 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                       gold Resume action. The whole banner resumes on a pointer press through a
                       stretched target under the content (a pressable card may not hold the
                       Discard / Resume buttons); keyboard and assistive tech use the buttons. */}
-                  <FacetCard
-                    as="section"
-                    variant="glass"
-                    glow
-                    interactive="hover"
+                  <Card
+                    role="region"
+                    variant="hero"
                     aria-labelledby="foundation-resume-title"
                     className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
                   >
-                    <TintGlow position="bottom-left" className="-z-10 opacity-40" />
                     <button
                       type="button"
                       tabIndex={-1}
@@ -416,7 +402,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
 
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex items-center gap-2">
-                          <Badge variant="yellow">Draft in progress</Badge>
+                          <Badge variant="warning">Draft in progress</Badge>
                           <span className="text-label-secondary text-caption">
                             {inProgressData.stepLabel}
                           </span>
@@ -460,7 +446,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                         <ArrowRight aria-hidden="true" className="h-4 w-4" />
                       </Button>
                     </div>
-                  </FacetCard>
+                  </Card>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -474,7 +460,6 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
           title="Start with a Template"
           description="Select a real country or archetype to use as a template. We'll do the heavy lifting to get you started."
           icon={Globe}
-          hue="yellow"
           badge="Recommended"
           onClick={() => onSelectPath("template")}
         />
@@ -483,7 +468,6 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
           title="Start from Scratch"
           description="Customize every aspect of your country from the ground up. Only for the most dedicated worldbuilders."
           icon={Edit3}
-          hue="green"
           onClick={() => onSelectPath("scratch")}
         />
 
@@ -492,7 +476,6 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
           description="Use your existing country data from IIWiki to build your country. Core stats, flag, and relevant lore are automatically parsed."
           icon={IIWikiLogoIcon}
           iconClassName="h-7 w-7"
-          hue="indigo"
           onClick={() => onSelectPath("import")}
         />
       </div>

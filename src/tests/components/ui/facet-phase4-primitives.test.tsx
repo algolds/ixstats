@@ -1,7 +1,6 @@
 /**
- * Facet 3 Phase 4 primitive work: status Badge/Alert inks and roles, the ShellPageHeader page-title
- * hook, SegmentedControl option badges, FacetCard `as`, virtual-anchor Popover/HoverCard, FacetTabs
- * colour roles, the FacetDataTable family on Facet 3, and Card on the FacetCard surface.
+ * Status Badge/Alert inks and roles, the ShellPageHeader page-title hook, SegmentedControl option
+ * badges, virtual-anchor Popover/HoverCard, the FacetDataTable family and the Card parts.
  */
 import fs from "fs";
 import path from "path";
@@ -16,7 +15,6 @@ import {
   shellPageTitleProps,
 } from "~/components/shell/ShellPageHeader";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { FACET_CARD_SURFACE, FacetCard } from "~/components/ui/facet-container";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
   PopoverVirtualAnchor,
@@ -26,7 +24,6 @@ import {
   toMeasurable,
 } from "~/components/ui/popover";
 import { VirtualAnchorHoverCard } from "~/components/ui/hover-card";
-import { FacetTabs } from "~/components/ui/facet";
 import { FacetDataTable } from "~/components/ui/data-table/FacetDataTable";
 import { FacetTablePagination } from "~/components/ui/data-table/FacetTablePagination";
 import { STATUS_ALIASES } from "~/lib/design/tokens";
@@ -35,6 +32,8 @@ const ROOT = path.resolve(__dirname, "../../../..");
 const read = (file: string) => fs.readFileSync(path.join(ROOT, file), "utf8");
 const classOf = (el: Element) => el.getAttribute("class") ?? "";
 const STATUSES = Object.keys(STATUS_ALIASES) as (keyof typeof STATUS_ALIASES)[];
+const BADGE_STATUSES = ["success", "warning", "destructive", "info"] as const;
+const CARD_SURFACE = ["bg-surface", "border-separator", "rounded-card", "shadow-card"];
 
 beforeAll(() => {
   globalThis.ResizeObserver ??= class {
@@ -53,7 +52,7 @@ beforeAll(() => {
 });
 
 describe("Status Badge contrast", () => {
-  it.each(STATUSES)("%s badge uses the status ink on a 15%% fill", (status) => {
+  it.each(BADGE_STATUSES)("%s badge uses the status ink on a 15%% fill", (status) => {
     const cls = badgeVariants({ variant: status });
     expect(cls).toContain(`bg-${status}/15`);
     expect(cls).toContain(`text-${status}-ink`);
@@ -201,45 +200,8 @@ describe("SegmentedControl option badges", () => {
   });
 });
 
-describe("FacetCard as", () => {
-  it.each(["section", "article", "li", "aside", "footer"] as const)(
-    "renders a %s with the card surface and forwards the ref",
-    (as) => {
-      const ref = React.createRef<HTMLElement>();
-      const Wrapper = as === "li" ? "ul" : React.Fragment;
-      render(
-        <Wrapper>
-          <FacetCard as={as} ref={ref} data-testid="card" aria-label="Card">
-            Body
-          </FacetCard>
-        </Wrapper>
-      );
-      const el = screen.getByTestId("card");
-      expect(el.tagName.toLowerCase()).toBe(as);
-      expect(ref.current).toBe(el);
-      expect(el).toHaveAttribute("data-slot", "facet-card");
-      for (const token of FACET_CARD_SURFACE.split(" ")) expect(el).toHaveClass(token);
-    }
-  );
-
-  it("defaults to a div and keeps pressable behaviour on any element", () => {
-    const onClick = jest.fn();
-    render(
-      <>
-        <FacetCard data-testid="div" />
-        <FacetCard as="article" data-testid="press" onClick={onClick} />
-      </>
-    );
-    expect(screen.getByTestId("div").tagName).toBe("DIV");
-    const press = screen.getByTestId("press");
-    expect(press).toHaveAttribute("role", "button");
-    fireEvent.keyDown(press, { key: "Enter" });
-    expect(onClick).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe("Card (deprecated)", () => {
-  it("renders FacetCard's surface and keeps its parts", () => {
+describe("Card parts", () => {
+  it("keeps the surface and its slotted parts", () => {
     render(
       <Card data-testid="card">
         <CardHeader>
@@ -249,10 +211,10 @@ describe("Card (deprecated)", () => {
       </Card>
     );
     const card = screen.getByTestId("card");
-    for (const token of FACET_CARD_SURFACE.split(" ")) expect(card).toHaveClass(token);
+    for (const token of CARD_SURFACE) expect(card).toHaveClass(token);
     expect(card).toHaveAttribute("data-slot", "card");
     expect(screen.getByText("Content")).toHaveAttribute("data-slot", "card-content");
-    expect(read("src/components/ui/card.tsx")).toMatch(/@deprecated/);
+    expect(screen.getByText("Title")).toHaveAttribute("data-slot", "card-title");
   });
 });
 
@@ -364,30 +326,6 @@ describe("Virtual-anchor Popover / HoverCard", () => {
   });
 });
 
-describe("FacetTabs colour roles", () => {
-  const TABS = [
-    { id: "a", label: "Alpha", themeColor: "#ff0000" },
-    { id: "b", label: "Beta", themeColor: "var(--color-blue)", badge: 4 },
-  ];
-
-  it("keeps the API and renders tabs (themeColor via color-mix)", () => {
-    render(<FacetTabs tabs={TABS} activeTab="a" onChange={() => {}} aria-label="Sections" />);
-    expect(screen.getByRole("tablist", { name: "Sections" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /Beta/ })).toHaveTextContent("4");
-  });
-
-  it("has no hex blending, hex defaults, dark: pairs or legacy classes", () => {
-    const tabs = read("src/components/ui/facet/tabs/FacetTabs.tsx");
-    const constants = read("src/components/ui/facet/tabs/constants.ts");
-    for (const source of [tabs, constants]) {
-      expect(source).not.toMatch(
-        /parseInt\(|#[0-9a-fA-F]{6}\b|\bdark:|muted-foreground|text-foreground/
-      );
-    }
-    expect(tabs).toContain("color-mix(in srgb");
-  });
-});
-
 describe("FacetDataTable family on Facet 3", () => {
   const rows = [
     { id: "1", name: "Alice", salary: 10 },
@@ -426,7 +364,7 @@ describe("FacetDataTable family on Facet 3", () => {
       <FacetDataTable data={rows} columns={columns} layoutMode="cards" onRowClick={onRowClick} />
     );
     const card = container.querySelector('[data-slot="facet-mobile-card"]')!;
-    for (const token of FACET_CARD_SURFACE.split(" ")) expect(card).toHaveClass(token);
+    for (const token of CARD_SURFACE) expect(card).toHaveClass(token);
     fireEvent.keyDown(card, { key: "Enter" });
     expect(onRowClick).toHaveBeenCalledWith(rows[0]);
   });

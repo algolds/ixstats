@@ -3,7 +3,7 @@
  * Facet 3.1 HIG pass leftovers (docs/specs/2026-09-30-facet-3-design-system.md §16.8): pins the
  * closed items so they cannot regrow — touch-visible builder image actions, the builder heading
  * outline, the passport ribbon's tabs pattern, the always-present achievements h1, the map island
- * popovers' inset focus rings and GlassPanel's live `accent`.
+ * popovers' inset focus rings and GlassPanel's hero card.
  */
 import fs from "fs";
 import path from "path";
@@ -62,9 +62,7 @@ describe("Facet 3.1 HIG leftovers", () => {
     expect(ribbon).toMatch(/role="tablist"/);
     expect(ribbon).toMatch(/role="tab"/);
     expect(ribbon).toMatch(/aria-selected=/);
-    expect(read("components/passport/MidRibbonPassportDocument.tsx")).toMatch(
-      /role="tabpanel"/
-    );
+    expect(read("components/passport/MidRibbonPassportDocument.tsx")).toMatch(/role="tabpanel"/);
   });
 
   it("always renders an h1 on /achievements, not only with a profile", () => {
@@ -84,9 +82,8 @@ describe("Facet 3.1 HIG leftovers", () => {
     }
   });
 
-  it("passes GlassPanel's accent to the Facet 3.1 accent API", () => {
+  it("renders GlassPanel on the hero card", () => {
     const panel = read("components/mycountry/shared/cards/GlassPanel.tsx");
-    expect(panel).not.toMatch(/accent:\s*_accent/);
-    expect(panel).toMatch(/accent=\{FACET_ACCENT\[accent\]\}/);
+    expect(panel).toContain('variant="hero"');
   });
 });

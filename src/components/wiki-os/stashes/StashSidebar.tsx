@@ -142,7 +142,7 @@ export function StashSidebar({
 
                   {/* Actions */}
                   <div className="flex items-center justify-end gap-2 pt-1">
-                    <Button variant="gray" size="sm" onClick={() => setEditingStash(null)}>
+                    <Button variant="secondary" size="sm" onClick={() => setEditingStash(null)}>
                       Cancel
                     </Button>
                     <Button
@@ -196,7 +196,7 @@ export function StashSidebar({
                     {/* Action buttons */}
                     <div className="absolute right-2 flex items-center gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
                       <Button
-                        variant="bordered"
+                        variant="outline"
                         size="icon-sm"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -246,7 +246,7 @@ export function StashSidebar({
                           </div>
                         ) : (
                           <Button
-                            variant="bordered"
+                            variant="outline"
                             size="icon-sm"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -273,7 +273,7 @@ export function StashSidebar({
         onCreate={onCreateStash}
         isCreating={isCreating}
         existingNames={stashes.map((s) => s.name)}
-        triggerVariant="bordered"
+        triggerVariant="outline"
         triggerClassName="w-full justify-center border-dashed text-label-secondary"
       />
     </aside>

@@ -37,10 +37,10 @@ import {
 } from "~/lib/worldgen/climate-system";
 import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
 import { Stat } from "~/components/ui/stat";
+import { Card } from "~/components/ui/card";
 
 /** Climate zone colours keyed by "<Name> (<code>)", derived from the canonical Trewartha scheme. */
 const CLIMATE_COLORS: Record<string, string> = Object.fromEntries(
@@ -167,7 +167,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
     <div className="space-y-4">
       {/* ── Key Stats ── */}
       <div className="grid grid-cols-2 gap-2">
-        <FacetCard className="px-3 py-2">
+        <Card className="px-3 py-2">
           <Eyebrow className="flex items-center gap-2">
             <Wheat className="h-3 w-3" />
             Arable Land
@@ -183,9 +183,9 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
           >
             {profile.derived.arableLandPercent}%
           </div>
-        </FacetCard>
+        </Card>
 
-        <FacetCard className="px-3 py-2">
+        <Card className="px-3 py-2">
           <Eyebrow className="flex items-center gap-2">
             <Anchor className="h-3 w-3" />
             {profile.derived.isIsland
@@ -201,25 +201,25 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
               <span className="text-yellow">{profile.neighbors?.length ?? 0} neighbors</span>
             )}
           </div>
-        </FacetCard>
+        </Card>
 
-        <FacetCard className="px-3 py-2">
+        <Card className="px-3 py-2">
           <Stat
             size="sm"
             label="Mean Temp"
             value={<>{profile.climate.estMeanTempC}°C</>}
             icon={<Thermometer className="size-3.5" />}
           />
-        </FacetCard>
+        </Card>
 
-        <FacetCard className="px-3 py-2">
+        <Card className="px-3 py-2">
           <Stat
             size="sm"
             label="Mean Elev"
             value={<>{profile.elevation.meanElev}m</>}
             icon={<Mountain className="size-3.5" />}
           />
-        </FacetCard>
+        </Card>
       </div>
 
       {/* ── Neighbors ── */}
@@ -232,7 +232,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
           <div className="mt-1 flex flex-wrap gap-1">
             {profile.neighbors.map(
               (n: { id: string; name: string; slug: string | null; sharedBorderKm: number }) => (
-                <Badge key={n.id} variant="secondary">
+                <Badge key={n.id} variant="default">
                   {n.name}
                   {n.sharedBorderKm > 0 && (
                     <span className="text-label-secondary">

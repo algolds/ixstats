@@ -82,7 +82,7 @@ export function VaultSystemConfig() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="text-label text-title-3">Vault Config</CardTitle>

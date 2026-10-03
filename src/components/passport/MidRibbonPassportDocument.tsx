@@ -7,21 +7,19 @@ import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard, MotionFacetCard } from "~/components/ui/facet-container";
 import { Stat } from "~/components/ui/stat";
 import { REDUCED_MOTION_FADE, springSmooth, tweenFast } from "~/lib/design/motion";
 import { GuillochePattern } from "./cards/GuillochePattern";
 import { PassportBackFace } from "./document/PassportBackFace";
 import { PassportMasthead } from "./document/PassportMasthead";
 import { PassportStatGrid } from "./document/PassportStatGrid";
-import {
-  PassportTabRibbon,
-  passportTabId,
-  passportTabPanelId,
-} from "./document/PassportTabRibbon";
+import { PassportTabRibbon, passportTabId, passportTabPanelId } from "./document/PassportTabRibbon";
 import { PassportLorewardsModal } from "./modals/PassportLorewardsModal";
 import { PassportTabBody } from "./PassportTabPanels";
 import type { PassportPayload, PassportTabType } from "./types";
+import { Card } from "~/components/ui/card";
+
+const MotionCard = motion.create(Card);
 
 interface MidRibbonPassportDocumentProps {
   cleanUsername: string;
@@ -126,11 +124,10 @@ export function MidRibbonPassportDocument({
         {/* ========================================================================= */}
         {/* FRONT FACE OF THE PASSPORT                                               */}
         {/* ========================================================================= */}
-        <MotionFacetCard
+        <MotionCard
           // v2 document: the translucent glass page (Facet 3.1 glass hero + tinted shadow; no
           // clipping blob); the panels inside stay opaque (glass never nests).
-          variant="glass"
-          glow="shadow"
+          variant="hero"
           className={cn(
             "relative w-full [backface-visibility:hidden]",
             isFlipped ? "pointer-events-none opacity-0" : "opacity-100"
@@ -188,7 +185,7 @@ export function MidRibbonPassportDocument({
                       <h2 className="text-label text-title-1">{displayName}</h2>
                       <Button
                         type="button"
-                        variant="gray"
+                        variant="secondary"
                         size="sm"
                         onClick={handleCopyHandle}
                         aria-label={
@@ -233,7 +230,7 @@ export function MidRibbonPassportDocument({
 
                   {/* ThinkPages Voice Bio (if available) */}
                   {data.thinkpages.bio && (
-                    <FacetCard variant="inset" padding="sm" className="space-y-1">
+                    <Card variant="inset" padding="sm" className="space-y-1">
                       <div className="text-label-secondary text-subhead flex items-center gap-2">
                         <Sparkles aria-hidden className="size-3.5" />
                         <span>ThinkPages bio</span>
@@ -241,7 +238,7 @@ export function MidRibbonPassportDocument({
                       <p className="text-label-secondary text-callout italic">
                         "{data.thinkpages.bio}"
                       </p>
-                    </FacetCard>
+                    </Card>
                   )}
                 </div>
               </div>
@@ -284,7 +281,7 @@ export function MidRibbonPassportDocument({
               </AnimatePresence>
             </div>
           </div>
-        </MotionFacetCard>
+        </MotionCard>
 
         {/* ========================================================================= */}
         {/* BACK FACE OF THE PASSPORT (CONFIGURATION & PRIVACY CONTROLS)               */}

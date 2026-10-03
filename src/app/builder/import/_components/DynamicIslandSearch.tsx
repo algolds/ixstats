@@ -11,13 +11,16 @@ import {
   Group as Users,
   Dollar as DollarSign,
   FilterList,
+  NavArrowDown,
 } from "iconoir-react";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { MenuButton } from "~/components/ui/menu-button";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
@@ -233,43 +236,47 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
               {/* Left Group: Wiki Source Selector + Search Input */}
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 {/* Wiki source menu */}
-                <MenuButton
-                  size="sm"
-                  variant="gray"
-                  className="shrink-0"
-                  title="Switch Wiki Source"
-                  icon={
-                    <img
-                      src={withBasePath(logoMap[selectedSite.name]!)}
-                      alt=""
-                      className="size-4 object-contain"
-                    />
-                  }
-                  label={selectedSite.displayName}
-                  contentClassName="w-48"
-                >
-                  <DropdownMenuLabel>Wiki source</DropdownMenuLabel>
-                  <DropdownMenuRadioGroup
-                    value={selectedSite.name}
-                    onValueChange={(name) => {
-                      const site = wikiSites.find((w) => w.name === name);
-                      if (!site) return;
-                      soundEffects.press();
-                      onSelectSite(site);
-                    }}
-                  >
-                    {wikiSites.map((site) => (
-                      <DropdownMenuRadioItem key={site.name} value={site.name}>
-                        <img
-                          src={withBasePath(logoMap[site.name]!)}
-                          alt=""
-                          className="size-4 object-contain"
-                        />
-                        <span>{site.displayName}</span>
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
-                </MenuButton>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="shrink-0"
+                      title="Switch Wiki Source"
+                    >
+                      <img
+                        src={withBasePath(logoMap[selectedSite.name]!)}
+                        alt=""
+                        className="size-4 object-contain"
+                      />
+                      {selectedSite.displayName}
+                      <NavArrowDown aria-hidden className="-mr-1 size-3.5 opacity-60" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-48">
+                    <DropdownMenuLabel>Wiki source</DropdownMenuLabel>
+                    <DropdownMenuRadioGroup
+                      value={selectedSite.name}
+                      onValueChange={(name) => {
+                        const site = wikiSites.find((w) => w.name === name);
+                        if (!site) return;
+                        soundEffects.press();
+                        onSelectSite(site);
+                      }}
+                    >
+                      {wikiSites.map((site) => (
+                        <DropdownMenuRadioItem key={site.name} value={site.name}>
+                          <img
+                            src={withBasePath(logoMap[site.name]!)}
+                            alt=""
+                            className="size-4 object-contain"
+                          />
+                          <span>{site.displayName}</span>
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
                 <div aria-hidden className="bg-separator-opaque h-4 w-px shrink-0" />
 
@@ -340,37 +347,40 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                 />
 
                 {/* Sort menu */}
-                <MenuButton
-                  size="sm"
-                  variant={sortOption !== "default" ? "tinted" : "gray"}
-                  icon={<FilterList aria-hidden />}
-                  aria-label="Sort nations"
-                  label={
-                    <span className="hidden whitespace-nowrap sm:inline">
-                      {SORT_OPTIONS.find((s) => s.id === sortOption)?.label ?? "Sort"}
-                    </span>
-                  }
-                  align="end"
-                  contentClassName="w-48"
-                >
-                  <DropdownMenuLabel>Sort nations</DropdownMenuLabel>
-                  <DropdownMenuRadioGroup
-                    value={sortOption}
-                    onValueChange={(id) => {
-                      soundEffects.press();
-                      onSelectSort(id);
-                    }}
-                  >
-                    {SORT_OPTIONS.map((opt) => (
-                      <DropdownMenuRadioItem key={opt.id} value={opt.id}>
-                        {opt.label}
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
-                </MenuButton>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant={sortOption !== "default" ? "secondary" : "outline"}
+                      aria-label="Sort nations"
+                    >
+                      <FilterList aria-hidden />
+                      <span className="hidden whitespace-nowrap sm:inline">
+                        {SORT_OPTIONS.find((s) => s.id === sortOption)?.label ?? "Sort"}
+                      </span>
+                      <NavArrowDown aria-hidden className="-mr-1 size-3.5 opacity-60" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuLabel>Sort nations</DropdownMenuLabel>
+                    <DropdownMenuRadioGroup
+                      value={sortOption}
+                      onValueChange={(id) => {
+                        soundEffects.press();
+                        onSelectSort(id);
+                      }}
+                    >
+                      {SORT_OPTIONS.map((opt) => (
+                        <DropdownMenuRadioItem key={opt.id} value={opt.id}>
+                          {opt.label}
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
                 {/* Nation Count Badge */}
-                <Badge variant="neutral" className="tabular-nums">
+                <Badge variant="default" className="tabular-nums">
                   {nationCount} {nationCount === 1 ? "nation" : "nations"}
                 </Badge>
 
@@ -378,7 +388,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                 {hasActiveFilters && (
                   <Button
                     type="button"
-                    variant="plain"
+                    variant="ghost"
                     size="sm"
                     onClick={() => {
                       soundEffects.press();

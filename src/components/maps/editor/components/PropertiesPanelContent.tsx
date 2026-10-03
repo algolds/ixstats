@@ -1,6 +1,4 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React, { useCallback, useMemo, memo } from "react";
@@ -24,6 +22,7 @@ import type {
   PropertiesPanelCountry,
   FeatureType,
 } from "../types/editor-state";
+import { Card } from "~/components/ui/card";
 
 interface PropertiesPanelContentProps {
   isWorldMode: boolean;
@@ -315,7 +314,7 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
         </div>
 
         {selectedSubdivisions.length > 1 && (
-          <FacetCard className="space-y-3 p-3">
+          <Card className="space-y-3 p-3">
             <div className="flex flex-col gap-1">
               <span className="text-label text-caption font-semibold">Combine regions</span>
               <span className="text-label-secondary text-footnote">
@@ -347,10 +346,10 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
                 Intersect
               </Button>
             </div>
-          </FacetCard>
+          </Card>
         )}
 
-        <FacetCard className="space-y-2 p-3">
+        <Card className="space-y-2 p-3">
           <Eyebrow className="block">Selected items</Eyebrow>
           <div className="max-h-48 space-y-1 overflow-y-auto">
             {editor.allFeatures
@@ -364,7 +363,7 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
                 </div>
               ))}
           </div>
-        </FacetCard>
+        </Card>
       </div>
     );
   }

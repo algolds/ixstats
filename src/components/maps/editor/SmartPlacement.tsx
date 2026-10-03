@@ -1,15 +1,4 @@
 "use client";
-
-/**
- * SmartPlacement — Contextual suggestions when placing a city or POI.
- *
- * Based on terrain info at the clicked point, suggests:
- * - City type (port for coast, trade city for river valley, etc)
- * - Relevant characteristics based on elevation/climate
- * - Nearby wiki-mentioned places not yet on the map
- */
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import {
@@ -21,6 +10,7 @@ import {
   Shield,
   Droplet as Droplets,
 } from "iconoir-react";
+import { Card } from "~/components/ui/card";
 
 interface SmartPlacementProps {
   /** Terrain at the clicked point */
@@ -164,7 +154,7 @@ export function SmartPlacement(props: SmartPlacementProps) {
   const metrics = computeCivCapMetrics(elev, climate, props.isCoastal);
 
   return (
-    <FacetCard className="space-y-2 p-2">
+    <Card className="space-y-2 p-2">
       {/* CivCap Intelligence Header */}
       <div className="flex items-center justify-between">
         <Eyebrow className="flex items-center gap-2">
@@ -243,6 +233,6 @@ export function SmartPlacement(props: SmartPlacementProps) {
           })}
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 }

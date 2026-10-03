@@ -306,7 +306,7 @@ export function StashSection({
                             >
                               <PopoverTrigger asChild>
                                 <Button
-                                  variant={isStashingThis ? "tinted" : "plain"}
+                                  variant={isStashingThis ? "secondary" : "ghost"}
                                   size="icon-sm"
                                   onClick={(ev) => ev.stopPropagation()}
                                   title="Move to another stash folder"
@@ -324,7 +324,7 @@ export function StashSection({
                                   <span className="text-subhead text-label-secondary">
                                     Stash folders
                                   </span>
-                                  <Badge variant="tinted">Global</Badge>
+                                  <Badge variant="secondary">Global</Badge>
                                 </div>
                                 {stashesQuery.isLoading && (
                                   <div className="text-label-secondary text-footnote flex items-center gap-2 px-2 py-2">
@@ -372,7 +372,7 @@ export function StashSection({
 
                             {/* Delete */}
                             <Button
-                              variant="plain"
+                              variant="ghost"
                               size="icon-sm"
                               onClick={(ev) => {
                                 ev.stopPropagation();

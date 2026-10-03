@@ -9,12 +9,12 @@ import {
   WarningTriangle as AlertTriangle,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
+import { Card } from "~/components/ui/card";
 
 /** Network condition → semantic status colour (badge text, figure text, funding bar). */
 const CONDITION_THEMES = {
@@ -84,7 +84,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
   const StatusIcon = isCritical ? AlertTriangle : Shield;
 
   return (
-    <FacetCard className={cn("p-5", isCritical && "border-yellow/40")}>
+    <Card className={cn("p-5", isCritical && "border-yellow/40")}>
       {/* Header */}
       <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-b pb-3">
         <div className="flex min-w-0 items-center gap-2">
@@ -194,6 +194,6 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
           </Button>
         )}
       </div>
-    </FacetCard>
+    </Card>
   );
 });

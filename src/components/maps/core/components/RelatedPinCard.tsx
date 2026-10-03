@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { STORY_PIN_COLORS } from "~/lib/maps/story-pin-icons";
 import { getCategoryIcon } from "~/components/maps/core/utils/story-pin-helpers";
+import { Card } from "~/components/ui/card";
 
 interface RelatedPinCardProps {
   pin: {
@@ -21,11 +21,12 @@ export function RelatedPinCard({ pin, onNavigate }: RelatedPinCardProps) {
   const color = STORY_PIN_COLORS[pin.category];
   const Icon = getCategoryIcon(pin.category);
   return (
-    <FacetCard
+    <Card
       variant="inset"
       padding="sm"
       onClick={() => onNavigate?.(pin.id)}
       className="flex w-full items-center gap-2 p-2 text-left"
+      interactive
     >
       <Icon
         className="text-label-secondary h-4 w-4 shrink-0"
@@ -38,6 +39,6 @@ export function RelatedPinCard({ pin, onNavigate }: RelatedPinCardProps) {
           <p className="text-label-secondary text-footnote">Year {pin.ixTimeYear}</p>
         )}
       </div>
-    </FacetCard>
+    </Card>
   );
 }

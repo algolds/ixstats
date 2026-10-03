@@ -135,7 +135,7 @@ export function WikiUtilitiesRibbon({
       <div className="border-separator flex shrink-0 items-center gap-2 border-t pt-2 sm:border-t-0 sm:pt-0 sm:pl-2">
         {onSearchClick && (
           <Button
-            variant="gray"
+            variant="secondary"
             size="sm"
             onClick={onSearchClick}
             title="Spotlight Search (⌘K)"
@@ -150,7 +150,7 @@ export function WikiUtilitiesRibbon({
         )}
 
         {onCreatePageClick && (
-          <Button variant="tinted" size="sm" onClick={onCreatePageClick} title="Create New Page">
+          <Button variant="secondary" size="sm" onClick={onCreatePageClick} title="Create New Page">
             <Plus className="h-3.5 w-3.5" />
             <span>New Page</span>
           </Button>

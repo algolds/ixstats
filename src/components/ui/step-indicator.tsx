@@ -5,8 +5,8 @@ import { Check } from "iconoir-react";
 import { cn } from "~/lib/utils/cn";
 
 /**
- * StepIndicator (spec §7.3 multi-step flows): the progress row of a wizard — numbered steps, the
- * current one tinted, completed ones checked. Not a numeric `Stepper`.
+ * The progress row of a wizard — numbered steps, the
+ * current one tinted, completed ones checked.
  *
  * Semantics: a `<nav>` (name it with `aria-label`, default "Progress") around an ordered list.
  * The current step carries `aria-current="step"`; completed steps say so to screen readers. With

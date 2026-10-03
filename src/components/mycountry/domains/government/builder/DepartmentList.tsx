@@ -25,11 +25,11 @@ import {
 import { Badge } from "~/components/ui/badge";
 import type { DepartmentInput, ComponentType } from "~/types/government";
 import type { ValidationErrors } from "~/lib/government/builder-validation";
-import { FacetCard, FacetCardContent, FacetCardFooter } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Progress } from "~/components/ui/progress";
 import { cn } from "~/lib/utils";
 import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
+import { Card, CardContent, CardFooter } from "~/components/ui/card";
 
 export interface DepartmentListProps {
   departments: DepartmentInput[];
@@ -146,15 +146,15 @@ export const DepartmentList = React.memo(function DepartmentList({
 
           return (
             <div key={index} className="h-full">
-              <FacetCard
-                interactive="hover"
+              <Card
+                interactive
                 className={cn(
                   "flex h-full flex-col justify-between",
                   hasError && "border-destructive/40"
                 )}
                 onClick={() => handleEditRow(index)}
               >
-                <FacetCardContent className="flex h-full flex-col justify-between space-y-4 p-5">
+                <CardContent className="flex h-full flex-col justify-between space-y-4 p-5">
                   {/* Header: title, acronym, category glyph */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
@@ -232,7 +232,7 @@ export const DepartmentList = React.memo(function DepartmentList({
                       </span>
                       <span className="text-label flex items-center gap-2 font-medium tabular-nums">
                         Priority {priorityLevel}/10
-                        <Badge variant="secondary">{getPriorityLabel(department.priority)}</Badge>
+                        <Badge variant="default">{getPriorityLabel(department.priority)}</Badge>
                       </span>
                     </div>
 
@@ -253,10 +253,10 @@ export const DepartmentList = React.memo(function DepartmentList({
                       </div>
                     )}
                   </div>
-                </FacetCardContent>
+                </CardContent>
 
                 {/* Footer: linked infrastructure */}
-                <FacetCardFooter className="border-separator mt-auto border-t px-5 py-3">
+                <CardFooter className="border-separator mt-auto border-t px-5 py-3">
                   <div className="space-y-2">
                     <Eyebrow className="block">
                       Linked infrastructure ({activeLinkedComponents.length})
@@ -283,8 +283,8 @@ export const DepartmentList = React.memo(function DepartmentList({
                       </span>
                     )}
                   </div>
-                </FacetCardFooter>
-              </FacetCard>
+                </CardFooter>
+              </Card>
             </div>
           );
         })}

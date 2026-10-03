@@ -34,7 +34,6 @@ import {
 } from "./_components/NPCPersonalityFormDialog";
 import { NPCPersonalityAssignDialog } from "./_components/NPCPersonalityAssignDialog";
 import { Skeleton } from "~/components/ui/skeleton";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Table,
   TableHeader,
@@ -43,6 +42,7 @@ import {
   TableHead,
   TableCell,
 } from "~/components/ui/table";
+import { Card } from "~/components/ui/card";
 
 export function NPCPersonalitiesPanel() {
   usePageTitle({ title: "Admin - NPC Personalities" });
@@ -284,30 +284,30 @@ export function NPCPersonalitiesPanel() {
 
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <div className="text-label-secondary text-eyebrow">Total Archetypes</div>
           <div className="text-label text-title-2 mt-1 tabular-nums">
             {personalities?.length ?? 0}
           </div>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <div className="text-label-secondary text-eyebrow">Active Profiles</div>
           <div className="text-title-2 text-green mt-1 tabular-nums">
             {personalities?.filter((p: any) => p.isActive).length ?? 0}
           </div>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <div className="text-label-secondary text-eyebrow">Total Assignments</div>
           <div className="text-title-2 text-teal mt-1 tabular-nums">
             {personalities?.reduce((acc: number, p: any) => acc + (p.usageCount || 0), 0) ?? 0}
           </div>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <div className="text-label-secondary text-eyebrow">Filtered Roster</div>
           <div className="text-title-2 text-purple mt-1 tabular-nums">
             {filteredPersonalities.length}
           </div>
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Filter & Action Rail */}
@@ -367,11 +367,11 @@ export function NPCPersonalitiesPanel() {
           ))}
         </div>
       ) : filteredPersonalities.length === 0 ? (
-        <FacetCard className="p-12 text-center">
+        <Card className="p-12 text-center">
           <p className="text-label-secondary text-footnote">No personalities matching criteria.</p>
-        </FacetCard>
+        </Card>
       ) : (
-        <FacetCard>
+        <Card>
           <Table>
             <TableHeader>
               <TableRow>
@@ -395,7 +395,7 @@ export function NPCPersonalitiesPanel() {
                     )}
                   </TableCell>
                   <TableCell className="px-4">
-                    <Badge variant="teal" className="capitalize">
+                    <Badge variant="info" className="capitalize">
                       {p.archetype.replace(/_/g, " ")}
                     </Badge>
                   </TableCell>
@@ -419,9 +419,12 @@ export function NPCPersonalitiesPanel() {
                   </TableCell>
                   <TableCell className="px-4">
                     {p.isActive ? (
-                      <Badge variant="green">Active</Badge>
+                      <Badge variant="success">Active</Badge>
                     ) : (
-                      <Badge className="bg-fill-3 text-label-secondary border-separator">
+                      <Badge
+                        className="bg-fill-3 text-label-secondary border-separator"
+                        variant="secondary"
+                      >
                         Inactive
                       </Badge>
                     )}
@@ -477,7 +480,7 @@ export function NPCPersonalitiesPanel() {
               ))}
             </TableBody>
           </Table>
-        </FacetCard>
+        </Card>
       )}
 
       {/* Form Dialog */}

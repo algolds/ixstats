@@ -17,7 +17,6 @@ import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
 import { Badge } from "~/components/ui/badge";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -32,6 +31,7 @@ import { CardPacksAdmin } from "./CardPacksAdmin";
 import { IxCardSeasonAdmin } from "./IxCardSeasonAdmin";
 import { ValuationAdmin } from "./ValuationAdmin";
 import { CardTakedownsAdmin } from "./CardTakedownsAdmin";
+import { Card } from "~/components/ui/card";
 
 export type SettingsSubtab = "general" | "packs" | "seasons" | "valuation" | "takedowns";
 
@@ -57,10 +57,7 @@ function SeedDemoAuctionsButton() {
 
   return (
     <>
-      <FacetCard
-        interactive="hover"
-        className="border-yellow/20 bg-yellow/5 flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"
-      >
+      <Card className="border-yellow/20 bg-yellow/5 flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="rounded-row border-yellow/30 bg-yellow/20 border p-3">
             <Gavel className="text-yellow h-5 w-5" />
@@ -73,13 +70,13 @@ function SeedDemoAuctionsButton() {
           </div>
         </div>
         <Button
-          variant="tinted"
+          variant="secondary"
           onClick={() => setConfirmOpen(true)}
           disabled={seedMutation.isPending}
         >
           {seedMutation.isPending ? "Seeding..." : "Seed Demo Auctions"}
         </Button>
-      </FacetCard>
+      </Card>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
@@ -203,7 +200,7 @@ export function CardSettingsAdmin({
                 {subtab.label}
                 {subtab.badge && (
                   <Badge
-                    variant={subtab.badgeVariant === "destructive" ? "destructive" : "neutral"}
+                    variant={subtab.badgeVariant === "destructive" ? "destructive" : "default"}
                     className="tabular-nums"
                   >
                     {subtab.badge}

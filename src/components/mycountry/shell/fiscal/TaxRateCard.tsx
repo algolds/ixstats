@@ -5,11 +5,11 @@ import { Lock, LockSlash as Unlock } from "iconoir-react";
 import { Slider } from "~/components/ui/slider";
 import { CurrencyFlow, PercentageFlow } from "~/components/ui/number-flow";
 import { cn } from "~/lib/utils";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { type TaxChannel, ACCENT_BG } from "./taxChannels";
+import { Card } from "~/components/ui/card";
 
 interface TaxRateCardProps {
   channel: TaxChannel;
@@ -51,7 +51,7 @@ function TaxRateCardComponent({
   };
 
   return (
-    <FacetCard className={cn("rounded-row space-y-2 p-3", !isLocked && "ring-yellow/50 ring-1")}>
+    <Card className={cn("rounded-row space-y-2 p-3", !isLocked && "ring-yellow/50 ring-1")}>
       {/* Header: lock toggle + label + rate */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
@@ -98,7 +98,7 @@ function TaxRateCardComponent({
               <PercentageFlow value={rate} decimalPlaces={1} />
             </span>
           ) : (
-            <Badge variant="orange">Not set</Badge>
+            <Badge variant="warning">Not set</Badge>
           )}
         </div>
       </div>
@@ -135,7 +135,7 @@ function TaxRateCardComponent({
           {yieldValue != null ? <CurrencyFlow value={yieldValue} decimalPlaces={1} /> : "—"}
         </span>
       </div>
-    </FacetCard>
+    </Card>
   );
 }
 

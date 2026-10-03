@@ -172,7 +172,7 @@ export function CountryDataProvider({
   if (!isPublicReadOnly && !isLoading && userProfile && !userProfile.countryId && !viewCountryId) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Card className="mx-auto max-w-2xl">
+        <Card className="mx-auto flex max-w-2xl flex-col gap-6 py-6">
           <CardHeader className="text-center">
             <Crown className="text-label-secondary mx-auto mb-4 h-12 w-12" />
             <CardTitle className="text-title-1">No Country Assigned</CardTitle>

@@ -11,7 +11,6 @@ import {
 } from "~/components/ui/select";
 import { City as Building2 } from "iconoir-react";
 import { safeFormatCurrency, cn } from "~/lib/utils";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { EnhancedNumberInput } from "~/app/builder/primitives/enhanced/EnhancedNumberInput";
 import { FieldHelpTooltip } from "~/app/builder/components/help/FieldHelpTooltip";
@@ -27,6 +26,7 @@ import {
   reserveDetails,
   debtDetails,
 } from "./governmentStructureConstants";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 /** Values used when fiscalYear does not name them; also the "untouched" baseline for the disclosure. */
 const ADVANCED_BUDGET_DEFAULTS = {
@@ -281,15 +281,15 @@ export function BudgetConfigurationSection({
 
   if (asGlassCard) {
     return (
-      <FacetCard>
-        <FacetCardHeader className="border-separator border-b px-6 py-4">
+      <Card>
+        <CardHeader className="border-separator border-b px-6 py-4">
           <h2 className="text-label text-title-3 flex items-center gap-2">
             <Building2 aria-hidden="true" className="text-label-secondary h-5 w-5" />
             Budget Configuration
           </h2>
-        </FacetCardHeader>
-        <FacetCardContent className="p-6">{content}</FacetCardContent>
-      </FacetCard>
+        </CardHeader>
+        <CardContent className="p-6">{content}</CardContent>
+      </Card>
     );
   }
 
