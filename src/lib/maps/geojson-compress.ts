@@ -25,17 +25,9 @@ function truncPosition(p: Position, factor: number): Position {
 
 function truncPositions(coords: Position[], factor: number): Position[] {
   if (!Array.isArray(coords)) return [];
-  const len = coords.length;
-  const result: Position[] = new Array(len);
-  let count = 0;
-  for (let i = 0; i < len; i++) {
-    const p = coords[i];
-    if (p && typeof p[0] === "number" && typeof p[1] === "number") {
-      result[count++] = truncPosition(p, factor);
-    }
-  }
-  if (count < len) result.length = count;
-  return result;
+  return coords
+    .filter((p) => p && typeof p[0] === "number" && typeof p[1] === "number")
+    .map((p) => truncPosition(p, factor));
 }
 
 export function truncateGeometry(geom: Geometry, decimals: number): Geometry {

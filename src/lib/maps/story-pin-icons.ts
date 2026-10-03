@@ -390,7 +390,7 @@ const drawUpheaval: ShapeDrawer = (ctx, cx, cy, r) => {
   ctx.lineTo(cx + s * 0.05, cy - s * 0.05);
   ctx.lineTo(cx - s * 0.15, cy + s);
   ctx.lineTo(cx + s * 0.35, cy + s * 0.05);
-  ctx.lineTo(cx + s * 0.0, cy + s * 0.05);
+  ctx.lineTo(cx, cy + s * 0.05);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
