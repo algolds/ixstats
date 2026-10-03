@@ -37,7 +37,7 @@ export function SettingsRow({
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <div className="text-foreground text-sm font-semibold tracking-tight">{label}</div>
+          <div className="text-foreground text-sm font-semibold">{label}</div>
           {description && (
             <div className="text-muted-foreground mt-0.5 text-xs leading-relaxed font-medium">
               {description}

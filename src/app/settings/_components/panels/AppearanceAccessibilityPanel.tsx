@@ -25,7 +25,6 @@ import {
   Component,
   Compress,
   CursorPointer,
-  SidebarExpand,
 } from "iconoir-react";
 import { useTheme, type Theme } from "~/context/theme-context";
 import { useSoundSettings } from "~/hooks/useSoundSettings";
@@ -35,7 +34,6 @@ import { Switch } from "~/components/ui/switch";
 import { Slider } from "~/components/ui/slider";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { TEXT_SCALE_MAX, TEXT_SCALE_MIN } from "~/lib/design/appearance";
-import { useFacetNav } from "~/lib/navigation/use-facet-nav";
 import { SettingsHeader } from "../SettingsHeader";
 
 const THEME_OPTIONS = [
@@ -92,7 +90,6 @@ export function AppearanceAccessibilityPanel() {
     setInteractiveHover,
   } = useTheme();
   const sound = useSoundSettings();
-  const facetNav = useFacetNav();
   const textSizeLabelId = useId();
   const volumeLabelId = useId();
 
@@ -103,7 +100,7 @@ export function AppearanceAccessibilityPanel() {
     <div className="flex flex-col gap-6">
       <SettingsHeader
         title="Appearance & accessibility"
-        category="Platform & Preferences"
+        category="Platform & preferences"
         description="Theme, density, text size, contrast, transparency, motion and sound. Changes apply immediately on this device."
       />
 
@@ -134,18 +131,6 @@ export function AppearanceAccessibilityPanel() {
                 value={compactMode ? "compact" : "regular"}
                 onValueChange={(value) => setCompactMode(value === "compact")}
                 options={DENSITY_OPTIONS}
-              />
-            }
-          />
-          <FacetRow
-            leading={<SidebarExpand className="size-5" />}
-            title="New navigation (preview)"
-            subtitle="A sidebar on large screens and a tab bar on phones replace the top bar. Halo stays for search and notifications."
-            trailing={
-              <PreferenceSwitch
-                label="New navigation (preview)"
-                checked={facetNav.enabled}
-                onCheckedChange={facetNav.setEnabled}
               />
             }
           />
@@ -182,7 +167,7 @@ export function AppearanceAccessibilityPanel() {
                   A
                 </span>
               </div>
-              {/* Live preview — text styles scale with --text-scale, so this tracks the slider. */}
+              {/* Live preview: text styles scale with --text-scale, so this tracks the slider. */}
               <div className="rounded-row bg-surface-secondary flex flex-col gap-1 p-3">
                 <Eyebrow>Preview</Eyebrow>
                 <span className="text-title-3 text-label">Quarterly budget</span>
@@ -215,7 +200,7 @@ export function AppearanceAccessibilityPanel() {
             title="Reduce transparency"
             subtitle={
               reduceTransparency
-                ? "On — solid surfaces instead of blurred glass"
+                ? "On: solid surfaces instead of blurred glass"
                 : "Follows your system setting"
             }
             trailing={
@@ -231,7 +216,7 @@ export function AppearanceAccessibilityPanel() {
             title="Reduce motion"
             subtitle={
               reduceAnimations
-                ? "On — springs become short fades and sound effects are muted"
+                ? "On: springs become short fades and sound effects are muted"
                 : followSystem(false)
             }
             trailing={

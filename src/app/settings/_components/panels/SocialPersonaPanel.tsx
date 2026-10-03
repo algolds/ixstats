@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "~/components/ui/button";
 import { useState, useEffect } from "react";
 import { User, FloppyDisk as Save, Xmark as X, Clock, Globe, Compass } from "iconoir-react";
 import { api } from "~/trpc/react";
@@ -73,60 +74,63 @@ export function SocialPersonaPanel({ userId: _userId }: SocialPersonaPanelProps)
   return (
     <div className="space-y-6">
       <SettingsHeader
-        title="Social & Thinkpages"
-        category="Platform & Preferences"
-        description="Configure autonomous social broadcasting rules, publishing cadence, and editorial style."
+        title="Social & ThinkPages"
+        category="Platform & preferences"
+        description="Rules for automatic posts: how often, in what tone and from what political lean."
         actions={
           primaryAccount && (
             <div className="flex items-center gap-2">
               {isEditing ? (
                 <>
-                  <button
+                  <Button
                     type="button"
                     onClick={handleSave}
                     disabled={updateAccountMutation.isPending}
                     data-cuelume-press="soft"
-                    className="facet-interactive flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-50"
+                    variant="default"
+                    size="sm"
                   >
                     <Save className="h-3.5 w-3.5" />
-                    <span>{updateAccountMutation.isPending ? "Saving..." : "Save Changes"}</span>
-                  </button>
-                  <button
+                    <span>{updateAccountMutation.isPending ? "Saving..." : "Save changes"}</span>
+                  </Button>
+                  <Button
                     type="button"
                     onClick={handleCancel}
                     data-cuelume-press="soft"
-                    className="facet-interactive border-border/60 bg-card text-foreground hover:bg-muted flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-bold active:scale-[0.98]"
+                    variant="secondary"
+                    size="sm"
                   >
                     <X className="h-3.5 w-3.5" />
                     <span>Cancel</span>
-                  </button>
+                  </Button>
                 </>
               ) : (
-                <button
+                <Button
                   type="button"
                   onClick={() => setIsEditing(true)}
                   data-cuelume-press="soft"
-                  className="facet-interactive border-border/60 bg-card text-foreground hover:bg-muted rounded-xl border px-3.5 py-1.5 text-xs font-bold active:scale-[0.98]"
+                  variant="secondary"
+                  size="sm"
                 >
                   Configure
-                </button>
+                </Button>
               )}
             </div>
           )
         }
       />
 
-      {/* Account Overview */}
+      {/* Account overview */}
       <SettingsGroup
-        title="Persona Status"
-        description="Active social broadcaster handle registered to your diplomat profile."
+        title="Persona status"
+        description="The ThinkPages account that posts for you."
       >
         <SettingsRow
-          label="Broadcaster Handle"
+          label="Handle"
           description={
             primaryAccount
               ? `Posting autonomously as @${primaryAccount.username}`
-              : "No active Thinkpages persona registered yet"
+              : "No ThinkPages persona yet"
           }
           icon={User}
           glyphClass="bg-purple-500/15 text-purple-500"
@@ -137,7 +141,7 @@ export function SocialPersonaPanel({ userId: _userId }: SocialPersonaPanelProps)
             </span>
           ) : (
             <span className="text-muted-foreground text-xs font-medium">
-              Visit Thinkpages to initialize
+              Create one in ThinkPages
             </span>
           )}
         </SettingsRow>
@@ -145,14 +149,11 @@ export function SocialPersonaPanel({ userId: _userId }: SocialPersonaPanelProps)
 
       {/* Rules */}
       {primaryAccount && (
-        <SettingsGroup
-          title="Autonomous Rules"
-          description="Dictate how autonomous simulation engines generate content on your behalf."
-        >
+        <SettingsGroup title="Posting rules" description="How posts are generated on your behalf.">
           <SettingsSelectRow
             id="post-frequency"
-            label="Post Frequency"
-            description="How often your persona generates autonomous status updates"
+            label="Post frequency"
+            description="How often your persona posts"
             icon={Clock}
             glyphClass="bg-blue-500/15 text-blue-500"
             value={postingFrequency}
@@ -163,22 +164,22 @@ export function SocialPersonaPanel({ userId: _userId }: SocialPersonaPanelProps)
             options={[
               {
                 value: "active",
-                label: "High Output",
-                description: "Frequent updates throughout the simulation day",
+                label: "High",
+                description: "Frequent updates through the day",
               },
               { value: "moderate", label: "Balanced", description: "Standard periodic commentary" },
               {
                 value: "low",
-                label: "Subtle",
-                description: "Infrequent milestone announcements only",
+                label: "Low",
+                description: "Milestone announcements only",
               },
             ]}
           />
 
           <SettingsSelectRow
             id="political-lean"
-            label="Political Lean"
-            description="Ideological leaning applied when commenting on global affairs"
+            label="Political lean"
+            description="Leaning applied when commenting on world affairs"
             icon={Globe}
             glyphClass="bg-indigo-500/15 text-indigo-500"
             value={politicalLean}
@@ -190,21 +191,21 @@ export function SocialPersonaPanel({ userId: _userId }: SocialPersonaPanelProps)
               {
                 value: "left",
                 label: "Progressive",
-                description: "Focus on social equity and public investment",
+                description: "Social equity and public investment",
               },
-              { value: "center", label: "Neutral", description: "Balanced pragmatic evaluation" },
+              { value: "center", label: "Neutral", description: "Balanced, pragmatic" },
               {
                 value: "right",
                 label: "Traditional",
-                description: "Focus on sovereignty and traditional values",
+                description: "Sovereignty and traditional values",
               },
             ]}
           />
 
           <SettingsSelectRow
             id="writing-tone"
-            label="Writing Tone"
-            description="Voice and temperament used in generated broadcasts"
+            label="Writing tone"
+            description="Voice used in generated posts"
             icon={Compass}
             glyphClass="bg-cyan-500/15 text-cyan-500"
             value={personality}
@@ -213,16 +214,16 @@ export function SocialPersonaPanel({ userId: _userId }: SocialPersonaPanelProps)
               setIsEditing(true);
             }}
             options={[
-              { value: "serious", label: "Analytic", description: "Formal diplomatic statements" },
+              { value: "serious", label: "Analytic", description: "Formal statements" },
               {
                 value: "casual",
                 label: "Conversational",
-                description: "Approachable civilian tone",
+                description: "Approachable, everyday tone",
               },
               {
                 value: "satirical",
                 label: "Provocative",
-                description: "Witty and opinionated commentary",
+                description: "Witty and opinionated",
               },
             ]}
           />

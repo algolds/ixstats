@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import React, { useState } from "react";
 import Link from "next/link";
 import {
@@ -40,7 +42,6 @@ import {
   SelectContent,
   SelectItem,
 } from "~/components/ui/select";
-import { cn } from "~/lib/utils";
 import type { PrivacyConfig } from "~/server/api/routers/users/preferences";
 
 type FilterTab = "blocked" | "muted" | "keywords";
@@ -194,7 +195,7 @@ export function PrivacySecurityPanel() {
       const dataToExport = res.data;
 
       if (!dataToExport) {
-        throw new Error("No data returned from export service");
+        throw new Error("The export returned no data");
       }
 
       const jsonBlob = new Blob([JSON.stringify(dataToExport, null, 2)], {
@@ -210,7 +211,7 @@ export function PrivacySecurityPanel() {
       URL.revokeObjectURL(url);
 
       soundEffects.bloom();
-      notify.success("Account data archive downloaded successfully");
+      notify.success("Data archive downloaded");
     } catch (err: any) {
       soundEffects.error();
       notify.error(err.message || "Failed to generate data archive");
@@ -228,69 +229,35 @@ export function PrivacySecurityPanel() {
     <div className="space-y-6">
       <SettingsHeader
         title="Privacy & Security"
-        category="Platform & Preferences"
-        description="Manage account blocking, interaction safety, discovery visibility, telemetry, and data governance."
+        category="Platform & preferences"
+        description="Blocking, who can contact you, discoverability, diagnostics and your data."
       />
 
-      {/* 1. Blocked, Muted & Content Filtering */}
+      {/* Blocking and filtering */}
       <SettingsGroup
-        title="Blocking & Content Filtering"
-        description="Prevent unwanted accounts from messaging, tagging, or appearing in your Thinkpages feeds."
+        title="Blocking and filtering"
+        description="Stop accounts from messaging or tagging you, or appearing in your ThinkPages feeds."
       >
         <div className="space-y-4 p-4">
-          {/* Segmented Sub-Tab Switcher */}
-          <div className="border-border/60 bg-muted/40 flex items-center gap-1 rounded-xl border p-1">
-            <button
-              type="button"
-              onClick={() => {
-                soundEffects.press();
-                setActiveFilterTab("blocked");
-              }}
-              className={cn(
-                "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
-                activeFilterTab === "blocked"
-                  ? "bg-card text-foreground font-bold shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Blocked Accounts ({blockedAccounts.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                soundEffects.press();
-                setActiveFilterTab("muted");
-              }}
-              className={cn(
-                "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
-                activeFilterTab === "muted"
-                  ? "bg-card text-foreground font-bold shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Muted Accounts ({mutedAccounts.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                soundEffects.press();
-                setActiveFilterTab("keywords");
-              }}
-              className={cn(
-                "flex-1 rounded-lg py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
-                activeFilterTab === "keywords"
-                  ? "bg-card text-foreground font-bold shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Muted Words ({mutedKeywords.length})
-            </button>
-          </div>
+          <SegmentedControl
+            aria-label="Filter list"
+            size="sm"
+            fullWidth
+            value={activeFilterTab}
+            onValueChange={(tab) => {
+              soundEffects.press();
+              setActiveFilterTab(tab);
+            }}
+            options={[
+              { value: "blocked", label: `Blocked accounts (${blockedAccounts.length})` },
+              { value: "muted", label: `Muted accounts (${mutedAccounts.length})` },
+              { value: "keywords", label: `Muted words (${mutedKeywords.length})` },
+            ]}
+          />
 
-          {/* Blocked Accounts Tab Content */}
+          {/* Blocked accounts */}
           {activeFilterTab === "blocked" && (
             <div className="space-y-3">
-              {/* Inline Block Input */}
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -306,15 +273,16 @@ export function PrivacySecurityPanel() {
                   <Input
                     value={blockInput}
                     onChange={(e) => setBlockInput(e.target.value)}
-                    placeholder="Enter username or country name to block..."
+                    placeholder="Username or country name to block"
                     className="bg-muted/20 border-border/60 h-8 pl-8 text-xs"
                   />
                 </div>
-                <button
+                <Button
                   type="submit"
                   disabled={!blockInput.trim() || blockMutation.isPending}
                   data-cuelume-press="soft"
-                  className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-semibold active:scale-[0.98] disabled:opacity-50"
+                  variant="secondary"
+                  size="sm"
                 >
                   {blockMutation.isPending ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -322,17 +290,16 @@ export function PrivacySecurityPanel() {
                     <UserXmark className="h-3.5 w-3.5 text-rose-500" />
                   )}
                   <span>Block</span>
-                </button>
+                </Button>
               </form>
 
-              {/* Blocked List */}
               {blockedAccounts.length === 0 ? (
-                <div className="border-border/40 bg-card/20 rounded-xl border p-6 text-center">
+                <div className="border-separator rounded-row border p-6 text-center">
                   <UserXmark className="text-muted-foreground/40 mx-auto mb-1.5 h-6 w-6" />
                   <p className="text-muted-foreground text-xs font-semibold">No blocked accounts</p>
                   <p className="text-muted-foreground/70 mx-auto mt-0.5 max-w-sm text-xs">
-                    Blocked accounts cannot send you direct messages, invite you to thinktanks, or
-                    tag you in Thinkpages.
+                    Blocked accounts cannot message you, invite you to ThinkTanks or tag you in
+                    ThinkPages.
                   </p>
                 </div>
               ) : (
@@ -340,7 +307,7 @@ export function PrivacySecurityPanel() {
                   {blockedAccounts.map((account) => (
                     <div
                       key={account.id}
-                      className="border-border/40 bg-card/40 flex items-center justify-between gap-3 rounded-xl border p-2.5 shadow-2xs"
+                      className="border-separator bg-surface-secondary rounded-row flex items-center justify-between gap-3 border p-2.5"
                     >
                       <div className="flex min-w-0 items-center gap-2.5">
                         <div className="bg-muted text-muted-foreground border-border/60 flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg border text-xs font-bold">
@@ -362,7 +329,7 @@ export function PrivacySecurityPanel() {
                         </div>
                       </div>
 
-                      <button
+                      <Button
                         type="button"
                         onClick={() => {
                           soundEffects.press();
@@ -370,10 +337,11 @@ export function PrivacySecurityPanel() {
                         }}
                         disabled={unblockMutation.isPending}
                         data-cuelume-press="soft"
-                        className="facet-interactive border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground rounded-lg border px-2.5 py-1 text-xs font-semibold active:scale-[0.98]"
+                        variant="secondary"
+                        size="sm"
                       >
                         Unblock
-                      </button>
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -381,7 +349,7 @@ export function PrivacySecurityPanel() {
             </div>
           )}
 
-          {/* Muted Accounts Tab Content */}
+          {/* Muted accounts */}
           {activeFilterTab === "muted" && (
             <div className="space-y-3">
               <form
@@ -399,15 +367,16 @@ export function PrivacySecurityPanel() {
                   <Input
                     value={muteInput}
                     onChange={(e) => setMuteInput(e.target.value)}
-                    placeholder="Enter username to mute..."
+                    placeholder="Username to mute"
                     className="bg-muted/20 border-border/60 h-8 pl-8 text-xs"
                   />
                 </div>
-                <button
+                <Button
                   type="submit"
                   disabled={!muteInput.trim() || muteMutation.isPending}
                   data-cuelume-press="soft"
-                  className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-semibold active:scale-[0.98] disabled:opacity-50"
+                  variant="secondary"
+                  size="sm"
                 >
                   {muteMutation.isPending ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -415,16 +384,16 @@ export function PrivacySecurityPanel() {
                     <EyeOff className="text-muted-foreground h-3.5 w-3.5" />
                   )}
                   <span>Mute</span>
-                </button>
+                </Button>
               </form>
 
               {mutedAccounts.length === 0 ? (
-                <div className="border-border/40 bg-card/20 rounded-xl border p-6 text-center">
+                <div className="border-separator rounded-row border p-6 text-center">
                   <EyeOff className="text-muted-foreground/40 mx-auto mb-1.5 h-6 w-6" />
                   <p className="text-muted-foreground text-xs font-semibold">No muted accounts</p>
                   <p className="text-muted-foreground/70 mx-auto mt-0.5 max-w-sm text-xs">
-                    Muted accounts will not appear in your feeds or notification streams without
-                    them knowing.
+                    Muted accounts are hidden from your feeds and notifications, and they are not
+                    told.
                   </p>
                 </div>
               ) : (
@@ -432,7 +401,7 @@ export function PrivacySecurityPanel() {
                   {mutedAccounts.map((account) => (
                     <div
                       key={account.id}
-                      className="border-border/40 bg-card/40 flex items-center justify-between gap-3 rounded-xl border p-2.5 shadow-2xs"
+                      className="border-separator bg-surface-secondary rounded-row flex items-center justify-between gap-3 border p-2.5"
                     >
                       <div className="min-w-0">
                         <p className="text-foreground truncate text-xs font-bold">
@@ -441,7 +410,7 @@ export function PrivacySecurityPanel() {
                         <p className="text-muted-foreground text-xs">{account.subtitle}</p>
                       </div>
 
-                      <button
+                      <Button
                         type="button"
                         onClick={() => {
                           soundEffects.press();
@@ -449,10 +418,11 @@ export function PrivacySecurityPanel() {
                         }}
                         disabled={unmuteMutation.isPending}
                         data-cuelume-press="soft"
-                        className="facet-interactive border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground rounded-lg border px-2.5 py-1 text-xs font-semibold active:scale-[0.98]"
+                        variant="secondary"
+                        size="sm"
                       >
                         Unmute
-                      </button>
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -460,7 +430,7 @@ export function PrivacySecurityPanel() {
             </div>
           )}
 
-          {/* Muted Keywords Tab Content */}
+          {/* Muted words */}
           {activeFilterTab === "keywords" && (
             <div className="space-y-3">
               <form
@@ -478,28 +448,28 @@ export function PrivacySecurityPanel() {
                   <Input
                     value={keywordInput}
                     onChange={(e) => setKeywordInput(e.target.value)}
-                    placeholder="Enter word, phrase, or hashtag to filter..."
+                    placeholder="Word, phrase or hashtag to filter"
                     className="bg-muted/20 border-border/60 h-8 pl-8 text-xs"
                   />
                 </div>
-                <button
+                <Button
                   type="submit"
                   disabled={!keywordInput.trim() || addKeywordMutation.isPending}
                   data-cuelume-press="soft"
-                  className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-semibold active:scale-[0.98] disabled:opacity-50"
+                  variant="secondary"
+                  size="sm"
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  <span>Add Word</span>
-                </button>
+                  <span>Add word</span>
+                </Button>
               </form>
 
               {mutedKeywords.length === 0 ? (
-                <div className="border-border/40 bg-card/20 rounded-xl border p-6 text-center">
+                <div className="border-separator rounded-row border p-6 text-center">
                   <Filter className="text-muted-foreground/40 mx-auto mb-1.5 h-6 w-6" />
-                  <p className="text-muted-foreground text-xs font-semibold">No muted keywords</p>
+                  <p className="text-muted-foreground text-xs font-semibold">No muted words</p>
                   <p className="text-muted-foreground/70 mx-auto mt-0.5 max-w-sm text-xs">
-                    Posts and notifications containing these keywords will be filtered from your
-                    feed.
+                    Posts and notifications containing these words are hidden from your feed.
                   </p>
                 </div>
               ) : (
@@ -507,7 +477,7 @@ export function PrivacySecurityPanel() {
                   {mutedKeywords.map((item) => (
                     <span
                       key={item.id}
-                      className="border-border/60 bg-card/60 text-foreground inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium shadow-2xs"
+                      className="border-separator bg-surface-secondary text-foreground rounded-control-sm inline-flex items-center gap-1.5 border px-2.5 py-1 text-xs font-medium"
                     >
                       <span>{item.keyword}</span>
                       <button
@@ -517,7 +487,7 @@ export function PrivacySecurityPanel() {
                           removeKeywordMutation.mutate({ connectionId: item.id });
                         }}
                         className="text-muted-foreground hover:text-foreground cursor-pointer"
-                        title="Remove keyword filter"
+                        title="Remove word"
                       >
                         <Xmark className="h-3 w-3" />
                       </button>
@@ -530,14 +500,14 @@ export function PrivacySecurityPanel() {
         </div>
       </SettingsGroup>
 
-      {/* 2. Interaction & Communication Safety */}
+      {/* Interactions */}
       <SettingsGroup
-        title="Interactions & Messaging Safety"
-        description="Configure who can send you direct messages, tag your profile, and initiate trades."
+        title="Interactions"
+        description="Who can message you, tag you and send you trades."
       >
         <SettingsRow
-          label="Direct Messages"
-          description="Control who is permitted to send you direct messages in ThinkShare"
+          label="Direct messages"
+          description="Who can send you direct messages in ThinkShare"
           icon={MessageCircle}
           glyphClass="bg-muted/60 text-foreground"
         >
@@ -558,8 +528,8 @@ export function PrivacySecurityPanel() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="everyone">Everyone</SelectItem>
-              <SelectItem value="followers">Followers Only</SelectItem>
-              <SelectItem value="verified">Verified Accounts Only</SelectItem>
+              <SelectItem value="followers">Followers only</SelectItem>
+              <SelectItem value="verified">Verified accounts only</SelectItem>
               <SelectItem value="nobody">Nobody</SelectItem>
             </SelectContent>
           </Select>
@@ -567,8 +537,8 @@ export function PrivacySecurityPanel() {
 
         <SettingsSwitchRow
           id="dm-filtering"
-          label="Message Request Filtering"
-          description="Route incoming messages from accounts you do not follow into a separate requests folder"
+          label="Message request filtering"
+          description="Move messages from accounts you do not follow to a requests folder"
           icon={Filter}
           glyphClass="bg-muted/60 text-foreground"
           checked={config?.messageRequestFiltering ?? true}
@@ -578,8 +548,8 @@ export function PrivacySecurityPanel() {
         />
 
         <SettingsRow
-          label="Mentions & Tagging"
-          description="Choose who can tag or mention your profile in Thinkpages posts and comments"
+          label="Mentions and tags"
+          description="Who can tag or mention you in ThinkPages posts and comments"
           icon={Sparkles}
           glyphClass="bg-muted/60 text-foreground"
         >
@@ -600,15 +570,15 @@ export function PrivacySecurityPanel() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="everyone">Everyone</SelectItem>
-              <SelectItem value="followers">People You Follow</SelectItem>
+              <SelectItem value="followers">People you follow</SelectItem>
               <SelectItem value="nobody">Nobody</SelectItem>
             </SelectContent>
           </Select>
         </SettingsRow>
 
         <SettingsRow
-          label="Trade & Vault Offers"
-          description="Control who can send you card trade requests or vault gift transfers"
+          label="Trade and gift offers"
+          description="Who can send you card trades or Vault gifts"
           icon={Coins}
           glyphClass="bg-muted/60 text-foreground"
         >
@@ -629,15 +599,15 @@ export function PrivacySecurityPanel() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="everyone">Everyone</SelectItem>
-              <SelectItem value="followers">Followers Only</SelectItem>
+              <SelectItem value="followers">Followers only</SelectItem>
               <SelectItem value="nobody">Disabled</SelectItem>
             </SelectContent>
           </Select>
         </SettingsRow>
 
         <SettingsRow
-          label="Thinktank & Group Invites"
-          description="Choose who is allowed to invite you to private policy thinktanks and coalitions"
+          label="ThinkTank invites"
+          description="Who can invite you to private ThinkTanks"
           icon={Users}
           glyphClass="bg-muted/60 text-foreground"
         >
@@ -658,22 +628,22 @@ export function PrivacySecurityPanel() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="everyone">Everyone</SelectItem>
-              <SelectItem value="followers">Followers Only</SelectItem>
+              <SelectItem value="followers">Followers only</SelectItem>
               <SelectItem value="nobody">Nobody</SelectItem>
             </SelectContent>
           </Select>
         </SettingsRow>
       </SettingsGroup>
 
-      {/* 3. Discovery & Profile Privacy */}
+      {/* Discovery */}
       <SettingsGroup
-        title="Profile Discovery & Visibility"
-        description="Manage your appearance in search directories, online presence, and read indicators."
+        title="Discovery and visibility"
+        description="Where you appear in search, whether you show as online and read receipts."
       >
         <SettingsSwitchRow
           id="search-discoverable"
-          label="Search & Directory Discoverability"
-          description="Allow your diplomat profile and national registry to appear in global search and leaderboards"
+          label="Appear in search and directories"
+          description="Let your profile and country appear in global search and leaderboards"
           icon={Search}
           glyphClass="bg-muted/60 text-foreground"
           checked={config?.searchDiscoverable ?? true}
@@ -684,8 +654,8 @@ export function PrivacySecurityPanel() {
 
         <SettingsSwitchRow
           id="search-engine-indexing"
-          label="Search Engine Indexing"
-          description="Request search engines (Google, Bing) not to index your public diplomat profile page"
+          label="Search engine indexing"
+          description="Let search engines such as Google and Bing index your public profile"
           icon={Globe}
           glyphClass="bg-muted/60 text-foreground"
           checked={config?.searchEngineIndexing ?? true}
@@ -696,8 +666,8 @@ export function PrivacySecurityPanel() {
 
         <SettingsSwitchRow
           id="online-status"
-          label="Live Online Presence"
-          description="Display when you are active on Thinkpages and browsing the interactive map"
+          label="Online status"
+          description="Show when you are active on ThinkPages or browsing the map"
           icon={Activity}
           glyphClass="bg-muted/60 text-foreground"
           checked={config?.showOnlineStatus ?? true}
@@ -708,8 +678,8 @@ export function PrivacySecurityPanel() {
 
         <SettingsSwitchRow
           id="read-receipts"
-          label="Direct Message Read Receipts"
-          description="Send read indicators when you view incoming ThinkShare chat messages"
+          label="Read receipts"
+          description="Tell senders when you have read their ThinkShare messages"
           icon={Check}
           glyphClass="bg-muted/60 text-foreground"
           checked={config?.dmReadReceipts ?? true}
@@ -719,44 +689,44 @@ export function PrivacySecurityPanel() {
         />
       </SettingsGroup>
 
-      {/* 4. Connected Services & Third-Party Sync */}
+      {/* Connected services */}
       <SettingsGroup
-        title="Connected Services & Sync"
-        description="Manage trading card indexing and linked third-party handles."
+        title="Connected services"
+        description="Trading card indexing and linked accounts."
       >
         <SettingsRow
-          label="NationStates Card Deck Indexing"
-          description="Remove your trading card metadata from public search indexes or unlink your deck"
+          label="NationStates card deck"
+          description="Remove your card data from public search or unlink your deck"
           icon={NationStatesLogo}
           glyphClass="bg-muted/60 text-foreground"
         >
           <div className="flex items-center gap-2">
-            <Link
-              href="/settings?tab=cards"
-              data-cuelume-press="soft"
-              className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-            >
-              Manage Deck
-            </Link>
-            <button
+            <Button asChild variant="secondary" size="sm">
+              <Link href="/settings?tab=cards" data-cuelume-press="soft">
+                Manage deck
+              </Link>
+            </Button>
+            <Button
               type="button"
               onClick={() => {
                 soundEffects.press();
                 setShowTakedownModal(true);
               }}
               data-cuelume-press="soft"
-              className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-500 active:scale-[0.98]"
+              variant="secondary"
+              size="sm"
+              className="hover:text-destructive"
             >
               <ShieldAlert className="h-3.5 w-3.5" />
-              <span>Takedown / Opt-Out</span>
-            </button>
+              <span>Takedown and opt-out</span>
+            </Button>
           </div>
         </SettingsRow>
 
         <SettingsSwitchRow
           id="show-discord-tag"
-          label="Display Discord Tag on Profile"
-          description="Show your connected Discord username on your public diplomat badge"
+          label="Show Discord tag on profile"
+          description="Show your connected Discord username on your public profile"
           icon={Users}
           glyphClass="bg-muted/60 text-foreground"
           checked={config?.showDiscordTag ?? true}
@@ -767,8 +737,8 @@ export function PrivacySecurityPanel() {
 
         <SettingsSwitchRow
           id="show-wiki-attribution"
-          label="MediaWiki Author Attribution"
-          description="Link your user profile to wiki articles and community lore contributions"
+          label="Wiki author attribution"
+          description="Link your profile to wiki articles and lore you contributed"
           icon={Globe}
           glyphClass="bg-muted/60 text-foreground"
           checked={config?.showWikiAttribution ?? true}
@@ -778,15 +748,15 @@ export function PrivacySecurityPanel() {
         />
       </SettingsGroup>
 
-      {/* 5. Platform Telemetry & Personalization */}
+      {/* Diagnostics and personalization */}
       <SettingsGroup
-        title="Platform Telemetry & Personalization"
-        description="Manage diagnostic telemetry, recommendation feeds, and recent search history."
+        title="Diagnostics and personalization"
+        description="Diagnostics, recommendations and recent search history."
       >
         <SettingsSwitchRow
           id="diagnostic-telemetry"
-          label="Anonymous Diagnostics & Performance Telemetry"
-          description="Help improve IxStates stability by sending anonymous error reports and load metrics"
+          label="Anonymous diagnostics"
+          description="Send anonymous error reports and load metrics to help improve IxStats"
           icon={Activity}
           glyphClass="bg-muted/60 text-foreground"
           checked={config?.diagnosticTelemetry ?? true}
@@ -797,8 +767,8 @@ export function PrivacySecurityPanel() {
 
         <SettingsSwitchRow
           id="personalized-recommendations"
-          label="Personalized Recommendations"
-          description="Allow your collection, viewing history, and topic engagement to tailor trending recommendations"
+          label="Personalized recommendations"
+          description="Use your collection, viewing history and topics to tailor recommendations"
           icon={Sparkles}
           glyphClass="bg-muted/60 text-foreground"
           checked={config?.personalizedRecommendations ?? true}
@@ -808,12 +778,12 @@ export function PrivacySecurityPanel() {
         />
 
         <SettingsRow
-          label="Search & Browsing History"
-          description="Clear your locally cached search suggestions and recently visited nation profiles"
+          label="Search and browsing history"
+          description="Clear cached search suggestions and recently visited countries"
           icon={Trash}
           glyphClass="bg-muted/60 text-foreground"
         >
-          <button
+          <Button
             type="button"
             onClick={() => {
               soundEffects.press();
@@ -821,63 +791,66 @@ export function PrivacySecurityPanel() {
             }}
             disabled={clearHistoryMutation.isPending}
             data-cuelume-press="soft"
-            className="facet-interactive border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground rounded-xl border px-3 py-1.5 text-xs font-semibold active:scale-[0.98]"
+            variant="secondary"
+            size="sm"
           >
-            Clear History
-          </button>
+            Clear history
+          </Button>
         </SettingsRow>
       </SettingsGroup>
 
-      {/* 6. Security & Data Governance */}
+      {/* Security and data */}
       <SettingsGroup
-        title="Security & Data Governance"
-        description="Export personal archives, manage active sign-in sessions, and configure security credentials."
+        title="Security and data"
+        description="Export your data and manage sessions and credentials."
       >
         <SettingsRow
-          label="Export Account Data Archive"
-          description="Download a complete JSON export of your country data, card collection, and account records"
+          label="Export your data"
+          description="Download a JSON export of your country data, card collection and account records"
           icon={Download}
           glyphClass="bg-muted/60 text-foreground"
         >
-          <button
+          <Button
             type="button"
             onClick={handleExportData}
             disabled={isExporting}
             data-cuelume-press="soft"
-            className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-50"
+            variant="secondary"
+            size="sm"
           >
             {isExporting ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
               <Download className="h-3.5 w-3.5" />
             )}
-            <span>{isExporting ? "Generating..." : "Download Archive"}</span>
-          </button>
+            <span>{isExporting ? "Generating..." : "Download archive"}</span>
+          </Button>
         </SettingsRow>
 
         <SettingsRow
-          label="Active Sessions & Two-Factor Authentication"
-          description="Manage signed-in devices, active web sessions, and passkeys via your security profile"
+          label="Sessions and two-step verification"
+          description="Manage signed-in devices, sessions and passkeys in your security profile"
           icon={Lock}
           glyphClass="bg-muted/60 text-foreground"
         >
-          <button
+          <Button
             type="button"
             onClick={() => {
               soundEffects.press();
               clerk.openUserProfile();
             }}
             data-cuelume-press="soft"
-            className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+            variant="secondary"
+            size="sm"
           >
             <KeyIcon className="text-muted-foreground h-3.5 w-3.5" />
-            <span>Security Profile</span>
+            <span>Security profile</span>
             <ExternalLink className="h-3 w-3 opacity-60" />
-          </button>
+          </Button>
         </SettingsRow>
       </SettingsGroup>
 
-      {/* NationStates Card Takedown & Opt-Out Modal */}
+      {/* NationStates card takedown */}
       <NSTakedownModal
         isOpen={showTakedownModal}
         onClose={() => setShowTakedownModal(false)}
