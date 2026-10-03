@@ -87,6 +87,7 @@ export function runHockeyMatch(ctx: SportResolverContext): SportMatchOutcome {
   );
 
   const minorPenalty = (t: number, period: number) => {
+    if (!(rng() < 0.06 && home.powerPlayMins === 0 && away.powerPlayMins === 0)) return;
     const penalized = byName[rng() < 0.5 ? "home" : "away"];
     const infraction = INFRACTIONS[Math.floor(rng() * INFRACTIONS.length)] ?? "tripping";
     const beneficiary = byName[otherSide(penalized.side)];
@@ -101,7 +102,13 @@ export function runHockeyMatch(ctx: SportResolverContext): SportMatchOutcome {
     );
   };
 
-  const fightMajor = (t: number) => {
+  const fightMajor = (t: number, period: number) => {
+    if (
+      period !== 2 ||
+      !(rng() < 0.035 && home.majorPenaltyMins === 0 && away.majorPenaltyMins === 0)
+    ) {
+      return;
+    }
     const playerH = getCardPlayerWeight(home.roster, rng);
     const playerA = getCardPlayerWeight(away.roster, rng);
     home.majorPenaltyMins = 5;
@@ -132,6 +139,51 @@ export function runHockeyMatch(ctx: SportResolverContext): SportMatchOutcome {
     }
   };
 
+  /** Per-side offense/defense for the active lines: long-change fatigue, power plays, goalie pull/goalie. */
+  const shiftRatings = (period: number, activeLine: Record<Side, "line1" | "line2">) => {
+    const shift = {
+      home: { off: home.lines[activeLine.home].offense, def: home.lines[activeLine.home].defense },
+      away: { off: away.lines[activeLine.away].offense, def: away.lines[activeLine.away].defense },
+    };
+    if (period === 2) {
+      for (const side of SIDES) shift[side].def = Math.max(20, shift[side].def * 0.92);
+    }
+    for (const team of teams) {
+      if (team.powerPlayMins > 0) {
+        shift[team.side].off += 14;
+        shift[otherSide(team.side)].def -= 10;
+      }
+    }
+    for (const team of teams) {
+      const s = shift[team.side];
+      if (team.goaliePulled) s.off += 22;
+      else s.def = s.def * 0.6 + team.lines.goalie.defense * 0.4;
+    }
+    return shift;
+  };
+
+  const scoreGoals = (t: number, period: number, goalProb: Record<Side, number>) => {
+    for (const team of teams) {
+      if (rng() >= goalProb[team.side]) continue;
+      team.score++;
+      const scorer = getRosterPlayerByRoleWeight(
+        team.roster,
+        `${sideLabel(team.side)} Attacker`,
+        rng
+      );
+      const text = GOAL_TEXT[team.side];
+      const where = `(P${period} ${t}m) ${scorer.name}`;
+      let description = `GOAL! ${where} ${text.goal}`;
+      if (byName[otherSide(team.side)].goaliePulled) {
+        description = `EMPTY NET GOAL! ${where} ${text.emptyNet}`;
+      } else if (team.powerPlayMins > 0) {
+        description = `POWER PLAY GOAL! ${where} ${text.powerPlay}`;
+        team.powerPlayMins = 0; // minor penalty ends on a power-play goal
+      }
+      push(t, "goal", description, team.side, scorer);
+    }
+  };
+
   const tick = (t: number) => {
     const period = t <= 20 ? 1 : t <= 40 ? 2 : 3;
 
@@ -155,38 +207,11 @@ export function runHockeyMatch(ctx: SportResolverContext): SportMatchOutcome {
       away: rng() < 0.55 ? "line1" : "line2",
     } as const;
 
-    if (rng() < 0.06 && home.powerPlayMins === 0 && away.powerPlayMins === 0)
-      minorPenalty(t, period);
-    if (
-      period === 2 &&
-      rng() < 0.035 &&
-      home.majorPenaltyMins === 0 &&
-      away.majorPenaltyMins === 0
-    ) {
-      fightMajor(t);
-    }
+    minorPenalty(t, period);
+    fightMajor(t, period);
     if (period === 3 && t >= 56) maybePullGoalie(t);
 
-    // Shift ratings: period-2 long change fatigue, power plays, then goalie pull / goalie contribution
-    const shift = {
-      home: { off: home.lines[activeLine.home].offense, def: home.lines[activeLine.home].defense },
-      away: { off: away.lines[activeLine.away].offense, def: away.lines[activeLine.away].defense },
-    };
-    if (period === 2) {
-      for (const side of SIDES) shift[side].def = Math.max(20, shift[side].def * 0.92);
-    }
-    for (const team of teams) {
-      if (team.powerPlayMins > 0) {
-        shift[team.side].off += 14;
-        shift[otherSide(team.side)].def -= 10;
-      }
-    }
-    for (const team of teams) {
-      const s = shift[team.side];
-      if (team.goaliePulled) s.off += 22;
-      else s.def = s.def * 0.6 + team.lines.goalie.defense * 0.4;
-    }
-
+    const shift = shiftRatings(period, activeLine);
     const baseShotRate = 0.085;
     const goalProb = {
       home:
@@ -197,25 +222,7 @@ export function runHockeyMatch(ctx: SportResolverContext): SportMatchOutcome {
         (home.goaliePulled ? 0.09 : 0),
     };
 
-    for (const team of teams) {
-      if (rng() >= goalProb[team.side]) continue;
-      team.score++;
-      const scorer = getRosterPlayerByRoleWeight(
-        team.roster,
-        `${sideLabel(team.side)} Attacker`,
-        rng
-      );
-      const text = GOAL_TEXT[team.side];
-      const where = `(P${period} ${t}m) ${scorer.name}`;
-      let description = `GOAL! ${where} ${text.goal}`;
-      if (byName[otherSide(team.side)].goaliePulled) {
-        description = `EMPTY NET GOAL! ${where} ${text.emptyNet}`;
-      } else if (team.powerPlayMins > 0) {
-        description = `POWER PLAY GOAL! ${where} ${text.powerPlay}`;
-        team.powerPlayMins = 0; // minor penalty ends on a power-play goal
-      }
-      push(t, "goal", description, team.side, scorer);
-    }
+    scoreGoals(t, period, goalProb);
   };
 
   for (let t = 2; t <= 60; t += 2) tick(t);
