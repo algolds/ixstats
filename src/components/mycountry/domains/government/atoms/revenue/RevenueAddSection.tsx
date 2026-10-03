@@ -6,21 +6,13 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
 import type { RevenueSourceInput, RevenueCategory } from "~/types/government";
+import { revenueCategories, revenueCategoryIcons, commonRevenueSources } from "./revenueConstants";
 import {
-  revenueCategories,
-  revenueCategoryIcons,
-  commonRevenueSources,
-  getCollectionMethodIcon,
-  getCollectionMethodsForCategory,
-} from "./revenueConstants";
+  AdministeredBySelect,
+  CollectionMethodSelect,
+  RevenueCategorySelect,
+} from "./RevenueSelects";
 import { Card } from "~/components/ui/card";
 
 interface RevenueAddSectionProps {
@@ -29,34 +21,28 @@ interface RevenueAddSectionProps {
   availableDepartments?: { id: string; name: string }[];
 }
 
+const EMPTY_REVENUE: RevenueSourceInput = {
+  name: "",
+  category: "Direct Tax",
+  description: "",
+  rate: 0,
+  revenueAmount: 0,
+  collectionMethod: "",
+  administeredBy: "",
+};
+
 export function RevenueAddSection({
   onAddCustom,
   onAddPreset,
   availableDepartments = [],
 }: RevenueAddSectionProps) {
   const [isAddingNew, setIsAddingNew] = useState(false);
-  const [newRevenue, setNewRevenue] = useState<RevenueSourceInput>({
-    name: "",
-    category: "Direct Tax",
-    description: "",
-    rate: 0,
-    revenueAmount: 0,
-    collectionMethod: "",
-    administeredBy: "",
-  });
+  const [newRevenue, setNewRevenue] = useState<RevenueSourceInput>(EMPTY_REVENUE);
 
   const handleAdd = () => {
     if (newRevenue.name.trim()) {
       onAddCustom(newRevenue);
-      setNewRevenue({
-        name: "",
-        category: "Direct Tax",
-        description: "",
-        rate: 0,
-        revenueAmount: 0,
-        collectionMethod: "",
-        administeredBy: "",
-      });
+      setNewRevenue(EMPTY_REVENUE);
       setIsAddingNew(false);
     }
   };
@@ -117,29 +103,10 @@ export function RevenueAddSection({
             placeholder="Revenue channel name (e.g. Carbon Levy)"
           />
 
-          <Select
+          <RevenueCategorySelect
             value={newRevenue.category}
-            onValueChange={(value: RevenueCategory) =>
-              setNewRevenue((prev) => ({ ...prev, category: value }))
-            }
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {revenueCategories.map((category) => {
-                const CategoryIcon = revenueCategoryIcons[category];
-                return (
-                  <SelectItem key={category} value={category}>
-                    <div className="flex items-center">
-                      <CategoryIcon className="text-label-secondary mr-2 h-4 w-4" />
-                      {category}
-                    </div>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+            onChange={(category) => setNewRevenue((prev) => ({ ...prev, category }))}
+          />
         </div>
 
         <div className="space-y-3">
@@ -179,67 +146,23 @@ export function RevenueAddSection({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label className="text-label text-caption font-semibold">Collection method</Label>
-          <Select
+          <CollectionMethodSelect
+            category={newRevenue.category}
             value={newRevenue.collectionMethod || ""}
-            onValueChange={(value) =>
-              setNewRevenue((prev) => ({ ...prev, collectionMethod: value }))
+            onChange={(collectionMethod) =>
+              setNewRevenue((prev) => ({ ...prev, collectionMethod }))
             }
-          >
-            <SelectTrigger className="text-footnote">
-              <SelectValue placeholder="Select collection method" />
-            </SelectTrigger>
-            <SelectContent>
-              {getCollectionMethodsForCategory(newRevenue.category).map((method) => {
-                const IconComponent = getCollectionMethodIcon(method.icon);
-                return (
-                  <SelectItem key={method.id} value={method.id}>
-                    <div className="flex items-center gap-2">
-                      <IconComponent className="text-label-secondary h-4 w-4 shrink-0" />
-                      <div className="flex flex-col text-left">
-                        <span className="text-caption font-semibold">{method.name}</span>
-                        <span className="text-label-secondary text-footnote">
-                          {method.description}
-                        </span>
-                      </div>
-                    </div>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+          />
         </div>
 
         <div className="space-y-2">
           <Label className="text-label text-caption font-semibold">Administrative authority</Label>
-          {availableDepartments.length > 0 ? (
-            <Select
-              value={newRevenue.administeredBy || ""}
-              onValueChange={(value) =>
-                setNewRevenue((prev) => ({ ...prev, administeredBy: value }))
-              }
-            >
-              <SelectTrigger className="text-footnote">
-                <SelectValue placeholder="Select department" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableDepartments
-                  .filter((dept) => dept.name && dept.name.trim() !== "")
-                  .map((dept) => (
-                    <SelectItem key={dept.id} value={dept.name}>
-                      {dept.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <Input
-              value={newRevenue.administeredBy || ""}
-              onChange={(e) =>
-                setNewRevenue((prev) => ({ ...prev, administeredBy: e.target.value }))
-              }
-              placeholder="Department or agency name"
-            />
-          )}
+          <AdministeredBySelect
+            value={newRevenue.administeredBy || ""}
+            onChange={(administeredBy) => setNewRevenue((prev) => ({ ...prev, administeredBy }))}
+            departments={availableDepartments}
+            placeholder="Department or agency name"
+          />
         </div>
       </div>
 
