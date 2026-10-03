@@ -219,75 +219,42 @@ export const geoAdminProvincesRouter = createTRPCRouter({
         for (const { province, existingId } of plan) {
           const repairedGeom = await repairGeometryGeoJSON(tx as any, province.geometry);
 
-          if (existingId) {
-            const subdivision = await tx.subdivision.update({
-              where: { id: existingId },
-              data: {
-                type: province.type,
-                level: province.level,
-                geometry: repairedGeom as any,
-                capital: province.capital,
-                population: province.population,
-                color: province.color,
-                status: "approved",
-              },
-            });
-            updatedCount++;
-            created.push({ id: subdivision.id, name: subdivision.name });
+          const fields = {
+            type: province.type,
+            level: province.level,
+            geometry: repairedGeom as any,
+            capital: province.capital,
+            population: province.population,
+            color: province.color,
+            status: "approved",
+          };
+          const subdivision = existingId
+            ? await tx.subdivision.update({ where: { id: existingId }, data: fields })
+            : await tx.subdivision.create({
+                data: {
+                  ...fields,
+                  name: province.name,
+                  countryId: input.countryId,
+                  submittedBy: userId,
+                },
+              });
+          if (existingId) updatedCount++;
+          else createdCount++;
+          created.push({ id: subdivision.id, name: subdivision.name });
 
-            if (
-              repairedGeom &&
-              (repairedGeom as any).coordinates &&
-              (repairedGeom as any).coordinates.length > 0
-            ) {
-              try {
-                await tx.$executeRawUnsafe(
-                  `UPDATE subdivisions SET geom_postgis = ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON($1), 4326)) WHERE id = $2`,
-                  JSON.stringify(repairedGeom),
-                  subdivision.id
-                );
-              } catch (err) {
-                console.warn(
-                  `[commitProvinceImport] Failed to manually sync PostGIS geometry for updated subdivision ${subdivision.name}:`,
-                  err
-                );
-              }
-            }
-          } else {
-            const subdivision = await tx.subdivision.create({
-              data: {
-                name: province.name,
-                countryId: input.countryId,
-                type: province.type,
-                level: province.level,
-                geometry: repairedGeom as any,
-                capital: province.capital,
-                population: province.population,
-                color: province.color,
-                status: "approved",
-                submittedBy: userId,
-              },
-            });
-            createdCount++;
-            created.push({ id: subdivision.id, name: subdivision.name });
-
-            if (
-              repairedGeom &&
-              (repairedGeom as any).coordinates &&
-              (repairedGeom as any).coordinates.length > 0
-            ) {
-              try {
-                await tx.$executeRawUnsafe(
-                  `UPDATE subdivisions SET geom_postgis = ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON($1), 4326)) WHERE id = $2`,
-                  JSON.stringify(repairedGeom),
-                  subdivision.id
-                );
-              } catch (err) {
-                console.warn(
-                  `[commitProvinceImport] Failed to manually sync PostGIS geometry for created subdivision ${subdivision.name}:`,
-                  err
-                );
-              }
+          const coordinates = (repairedGeom as any)?.coordinates;
+          if (coordinates && coordinates.length > 0) {
+            try {
+              await tx.$executeRawUnsafe(
+                `UPDATE subdivisions SET geom_postgis = ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON($1), 4326)) WHERE id = $2`,
+                JSON.stringify(repairedGeom),
+                subdivision.id
+              );
+            } catch (err) {
+              console.warn(
+                `[commitProvinceImport] Failed to manually sync PostGIS geometry for ${existingId ? "updated" : "created"} subdivision ${subdivision.name}:`,
+                err
+              );
             }
           }
         }
