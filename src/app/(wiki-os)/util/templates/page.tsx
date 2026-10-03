@@ -2,8 +2,7 @@
 // WikiOS Master Template Registry & Interactive Visual Infobox Suite
 
 import React, { useState, useMemo } from "react";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { ViewGrid, Search, Code, Check, Spark, Packages, Copy, Eye, List } from "iconoir-react";
+import { ViewGrid, Code, Check, Spark, Copy, Eye, List } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { Badge } from "~/components/ui/badge";

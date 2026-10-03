@@ -24,7 +24,6 @@ export function getInitials(name: string): string {
 interface MarginUserAvatarProps {
   author: CommentAuthor;
   size?: "xs" | "sm" | "md";
-  primaryColor?: string;
   liveAvatar?: string | null;
   className?: string;
 }
@@ -32,8 +31,6 @@ interface MarginUserAvatarProps {
 export const MarginUserAvatar = memo(function MarginUserAvatar({
   author,
   size = "sm",
-  // oxlint-disable-next-line eslint/no-unused-vars
-  primaryColor = "var(--margin-accent-text, #fef036)",
   liveAvatar,
   className,
 }: MarginUserAvatarProps) {

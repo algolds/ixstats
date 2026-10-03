@@ -105,12 +105,6 @@ interface ThreadItem {
   }>;
 }
 
-interface ThemeColors {
-  primary: string;
-  secondary: string;
-  accent: string;
-}
-
 interface MarginThreadsTabProps {
   articleTitle: string;
   threads: ThreadItem[];
@@ -122,7 +116,6 @@ interface MarginThreadsTabProps {
   onSelectThread: (threadId: string | null) => void;
   isAuthenticated: boolean;
   onRefetch: () => void;
-  themeColors?: ThemeColors | null;
 }
 
 function HoldToResolveButton({
@@ -206,7 +199,6 @@ function ThreadCard({
   onToggleExpand,
   isAuthenticated,
   onRefetch,
-  themeColors,
   currentUserAvatar,
   currentUsername,
   currentUserId,
@@ -216,7 +208,6 @@ function ThreadCard({
   onToggleExpand: () => void;
   isAuthenticated: boolean;
   onRefetch: () => void;
-  themeColors?: ThemeColors | null;
   currentUserAvatar?: string | null;
   currentUsername?: string | null;
   currentUserId?: string | null;
@@ -228,8 +219,6 @@ function ThreadCard({
 
   const replyInputRef = useRef<HTMLInputElement>(null);
   const notify = useNotify();
-  const primaryColor = themeColors?.primary || "#fef036";
-
   const isCreatorMatch =
     (currentUserId && thread.createdBy.id === currentUserId) ||
     (currentUsername && thread.createdBy.username.toLowerCase() === currentUsername.toLowerCase());
@@ -326,12 +315,7 @@ function ThreadCard({
         onClick={onToggleExpand}
         className="group hover:bg-fill-4 flex cursor-pointer items-start justify-between gap-2 p-3 transition-colors select-none"
       >
-        <MarginUserAvatar
-          author={thread.createdBy}
-          size="sm"
-          primaryColor={primaryColor}
-          liveAvatar={creatorLiveAvatar}
-        />
+        <MarginUserAvatar author={thread.createdBy} size="sm" liveAvatar={creatorLiveAvatar} />
 
         <div className="min-w-0 flex-1">
           {/* Top metadata: Lore Dimension, Author, Country, Anchor */}
@@ -426,7 +410,6 @@ function ThreadCard({
                       <MarginUserAvatar
                         author={comment.author}
                         size="xs"
-                        primaryColor={primaryColor}
                         liveAvatar={commentLiveAvatar}
                       />
                       <span className="text-footnote">{comment.author.username}</span>
@@ -634,7 +617,6 @@ export function MarginThreadsTab({
   onSelectThread,
   isAuthenticated,
   onRefetch,
-  themeColors,
 }: MarginThreadsTabProps) {
   const { user: currentWikiUser } = useWikiAuth();
   const ixnayStatus = api.ixnayid.getStatus.useQuery(undefined, {
@@ -644,8 +626,6 @@ export function MarginThreadsTab({
   const currentUsername = ixnayStatus.data?.wiki.username || currentWikiUser?.username;
   const currentUserAvatar = currentWikiUser?.imageUrl;
   const currentUserId = currentWikiUser?.id;
-  const primaryColor = themeColors?.primary || "#fef036";
-
   const [filter, setFilter] = useState<"OPEN" | "ALL">("OPEN");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDimension, setSelectedDimension] = useState<string>("WHY");
@@ -777,7 +757,6 @@ export function MarginThreadsTab({
                 country: null,
               }}
               size="xs"
-              primaryColor={primaryColor}
               liveAvatar={currentUserAvatar}
             />
             <span className="text-footnote text-label-secondary">
@@ -952,7 +931,6 @@ export function MarginThreadsTab({
               }
               isAuthenticated={isAuthenticated}
               onRefetch={onRefetch}
-              themeColors={themeColors}
               currentUserAvatar={currentUserAvatar}
               currentUsername={currentUsername}
               currentUserId={currentUserId}
@@ -965,7 +943,6 @@ export function MarginThreadsTab({
       <MarginCategoryHelpModal
         isOpen={showCategoryHelp}
         onClose={() => setShowCategoryHelp(false)}
-        themeColors={themeColors}
       />
     </div>
   );

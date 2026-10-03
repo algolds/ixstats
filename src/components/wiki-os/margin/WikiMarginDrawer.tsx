@@ -79,8 +79,6 @@ export function WikiMarginDrawer({
   const dragStartX = useRef(0);
   const dragStartTime = useRef(0);
 
-  const _primaryColor = themeColors?.primary || "var(--wikios-accent, #fef036)";
-
   useEffect(() => {
     // oxlint-disable-next-line
     setMounted(true);
@@ -296,7 +294,6 @@ export function WikiMarginDrawer({
                   onSelectThread={onSelectThread}
                   isAuthenticated={isAuthenticated}
                   onRefetch={refetch}
-                  themeColors={themeColors}
                 />
               )}
 
@@ -307,7 +304,6 @@ export function WikiMarginDrawer({
                   isAuthenticated={isAuthenticated}
                   selectedAnnotationId={selectedAnnotationId}
                   onSelectAnnotation={onSelectAnnotation}
-                  themeColors={themeColors}
                 />
               )}
 

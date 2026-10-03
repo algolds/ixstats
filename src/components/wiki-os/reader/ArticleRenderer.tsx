@@ -8,7 +8,6 @@ import dynamic from "next/dynamic";
 import { addSectionEditLinks, type TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 import { AppleBooksTocDrawer } from "~/components/wiki-os/reader/AppleBooksTocDrawer";
 import { StickyToc } from "~/components/wiki-os/reader/StickyToc";
-import { useWikiSetting } from "~/components/wiki-os/shared/useWikiSetting";
 import { InfoboxWithMap } from "~/components/wiki-os/reader/InfoboxWithMap";
 import { useImageLightbox } from "~/components/wiki-os/reader/ImageLightbox";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -94,12 +93,6 @@ interface ArticleRendererProps {
   authorInfo?: ArticleAuthorInfo | null;
 }
 
-// oxlint-disable-next-line eslint/no-unused-vars
-const WIKI_SOURCE_LABELS: Record<string, { label: string; url: string }> = {
-  iiwiki: { label: "iiwiki.com", url: "https://iiwiki.com/wiki/" },
-  althistory: { label: "althistory.fandom.com", url: "https://althistory.fandom.com/wiki/" },
-};
-
 const EMPTY_STATS_DATA: Record<string, DynamicStatData> = {};
 
 type PortalTarget =
@@ -158,8 +151,6 @@ export function ArticleRenderer({
   const marginOpen = isMarginOpen && !readOnly;
   const marginEnabled = !!title && !readOnly;
   const [tocOpen, setTocOpen] = useState(false);
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const showWikiToc = useWikiSetting("wikios:showWikiToc", true);
   const [companionCollapsed, setCompanionCollapsed] = useState(false);
 
   // Persist companion collapsed preference (xl only)
@@ -189,8 +180,7 @@ export function ArticleRenderer({
   const slug = useMemo(() => encodeURIComponent(title.replace(/ /g, "_")), [title]);
 
   // Query discussions for Gutter Pins & counts
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { data: marginData, refetch: refetchMargin } = api.wikios.getArticleMarginData.useQuery(
+  const { data: marginData } = api.wikios.getArticleMarginData.useQuery(
     { articleTitle: title, status: "ALL" },
     { enabled: marginEnabled, staleTime: 15_000 }
   );
@@ -705,7 +695,6 @@ export function ArticleRenderer({
               contentRef={contentRef}
               threads={(marginData?.threads as any) || []}
               annotations={(annotationsData as any) || []}
-              themeColors={themeColors}
               isMarginOpen={marginOpen}
               onSelectAnchor={(anchor, id, tab) => {
                 setActiveAnchor(anchor);

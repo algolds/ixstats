@@ -23,7 +23,6 @@ jest.mock("~/components/wiki-os/shared/WikiContext", () => ({
     toggleMargin: mockToggleMargin,
   }),
 }));
-jest.mock("~/components/wiki-os/shared/useWikiSetting", () => ({ useWikiSetting: () => true }));
 jest.mock("~/components/wiki-os/reader/ImageLightbox", () => ({ useImageLightbox: () => null }));
 jest.mock("~/components/wiki-os/reader/AnnotationOverlay", () => ({
   useAnnotationOverlay: () => undefined,
