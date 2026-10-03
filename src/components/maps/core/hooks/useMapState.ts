@@ -5,6 +5,7 @@ import type {
   SelectedCountry,
   SelectedFeature,
   HoveredCountry,
+  IxWorldMapRef,
   NeighborTarget,
   OverlayVisibility,
 } from "../IxWorldMap";
@@ -26,6 +27,45 @@ interface UseMapStateProps {
   dropPin: (lng: number, lat: number, layerDataMap: any) => void;
   clearPin: () => void;
 }
+
+const DEFAULT_COUNTRY_FILL = "#e8e5da";
+
+const SEARCH_RESULT_ZOOM: Record<string, number> = { country: 4, subdivision: 6 };
+
+const toSelectedCountry = (
+  featureId: string,
+  displayName: string,
+  countryId: string | null,
+  centroidLng: number,
+  centroidLat: number
+): SelectedCountry => ({
+  featureId,
+  displayName,
+  fillColor: DEFAULT_COUNTRY_FILL,
+  centroidLng,
+  centroidLat,
+  countryId,
+});
+
+/** Warm the query cache for a hovered country so its panel opens instantly. */
+function prefetchCountry(utils: ReturnType<typeof api.useUtils>, country: HoveredCountry) {
+  const { displayName, countryId } = country;
+  if (!displayName) return;
+  void utils.countries.getWikiRichIntro.prefetch(
+    { countryName: displayName },
+    { staleTime: 24 * 60 * 60_000 }
+  );
+  if (!countryId) return;
+  const opts = { staleTime: 10 * 60_000 };
+  void utils.countries.getMapSummary.prefetch({ countryId }, opts);
+  void utils.geoCore.getNeighbors.prefetch({ countryId }, opts);
+  void utils.geoSovereignty.getCountrySovereignty.prefetch({ countryId }, opts);
+}
+
+/** Fly to a country, zooming in to at least level 4 but never out. */
+const flyToCountry = (map: IxWorldMapRef, lng: number, lat: number) => {
+  map.flyTo(lng, lat, Math.max(map.getMap()?.getZoom() ?? 1.8, 4));
+};
 
 export function useMapState({
   userCountryId,
@@ -77,25 +117,17 @@ export function useMapState({
     setOverlayVisibility((prev) => applyOverlayToggle(prev, key as string));
   }, []);
 
-  // WebGL Error listeners
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const handleWebGLErrorEvent = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      setWebglError(customEvent.detail?.error || "WebGL Error detected");
-    };
-
-    const handleContextLostEvent = () => {
+    const onWebglError = (e: Event) =>
+      setWebglError((e as CustomEvent).detail?.error || "WebGL Error detected");
+    const onContextLost = () =>
       setWebglError("WebGL context lost. Hardware acceleration might be disabled or overloaded.");
-    };
 
-    window.addEventListener("webgl-error" as any, handleWebGLErrorEvent);
-    window.addEventListener("webgl-context-lost" as any, handleContextLostEvent);
-
+    window.addEventListener("webgl-error", onWebglError);
+    window.addEventListener("webgl-context-lost", onContextLost);
     return () => {
-      window.removeEventListener("webgl-error" as any, handleWebGLErrorEvent);
-      window.removeEventListener("webgl-context-lost" as any, handleContextLostEvent);
+      window.removeEventListener("webgl-error", onWebglError);
+      window.removeEventListener("webgl-context-lost", onContextLost);
     };
   }, []);
 
@@ -128,9 +160,7 @@ export function useMapState({
       onCountrySelect?.(country);
 
       if (country && mapRef.current) {
-        const currentZoom = mapRef.current.getMap()?.getZoom() ?? 1.8;
-        const targetZoom = currentZoom >= 4 ? Math.max(currentZoom, 4) : 4;
-        mapRef.current.flyTo(country.centroidLng, country.centroidLat, targetZoom);
+        flyToCountry(mapRef.current, country.centroidLng, country.centroidLat);
       }
     },
     [onCountrySelect, mapRef]
@@ -146,24 +176,7 @@ export function useMapState({
         hoverDebounceRef.current = undefined;
       }
       if (!country) return;
-      hoverDebounceRef.current = setTimeout(() => {
-        if (country.displayName) {
-          const wikiOpts = { staleTime: 24 * 60 * 60_000 };
-          void utils.countries.getWikiRichIntro.prefetch(
-            { countryName: country.displayName },
-            wikiOpts
-          );
-          const opts = { staleTime: 10 * 60_000 };
-          if (country.countryId) {
-            void utils.countries.getMapSummary.prefetch({ countryId: country.countryId }, opts);
-            void utils.geoCore.getNeighbors.prefetch({ countryId: country.countryId }, opts);
-            void utils.geoSovereignty.getCountrySovereignty.prefetch(
-              { countryId: country.countryId },
-              opts
-            );
-          }
-        }
-      }, 200);
+      hoverDebounceRef.current = setTimeout(() => prefetchCountry(utils, country), 200);
     },
     [utils]
   );
@@ -232,18 +245,17 @@ export function useMapState({
       centroidLng: number;
       centroidLat: number;
     }) => {
-      const zoom = result.type === "country" ? 4 : result.type === "subdivision" ? 6 : 8;
+      const zoom = SEARCH_RESULT_ZOOM[result.type] ?? 8;
       mapRef.current?.flyTo(result.centroidLng, result.centroidLat, zoom);
 
       if (result.type === "country") {
-        const country: SelectedCountry = {
-          featureId: result.id,
-          displayName: result.name,
-          fillColor: "#e8e5da",
-          centroidLng: result.centroidLng,
-          centroidLat: result.centroidLat,
-          countryId: result.countryId,
-        };
+        const country = toSelectedCountry(
+          result.id,
+          result.name,
+          result.countryId,
+          result.centroidLng,
+          result.centroidLat
+        );
         setSelectedCountry(country);
         onCountrySelect?.(country);
       }
@@ -257,37 +269,29 @@ export function useMapState({
       let lat = neighbor.centroidLat ?? 0;
 
       if (lng === 0 && lat === 0) {
-        const politicalLayer = getMapLayers().find((l) => l.type === "political");
-        if (politicalLayer?.data) {
-          const match = politicalLayer.data.features.find(
+        const match = getMapLayers()
+          .find((l) => l.type === "political")
+          ?.data?.features.find(
             (f: any) =>
               f.properties?._id === neighbor.featureId ||
               f.properties?._displayName === neighbor.displayName
           );
-          if (match?.properties) {
-            lng = match.properties._centroidLng ?? 0;
-            lat = match.properties._centroidLat ?? 0;
-          }
-        }
+        lng = match?.properties?._centroidLng ?? 0;
+        lat = match?.properties?._centroidLat ?? 0;
       }
 
-      const country: SelectedCountry = {
-        featureId: neighbor.featureId,
-        displayName: neighbor.displayName,
-        fillColor: "#e8e5da",
-        centroidLng: lng,
-        centroidLat: lat,
-        countryId: neighbor.countryId,
-      };
+      const country = toSelectedCountry(
+        neighbor.featureId,
+        neighbor.displayName,
+        neighbor.countryId,
+        lng,
+        lat
+      );
       setSelectedCountry(country);
       setGeographyFilter(null);
       onCountrySelect?.(country);
 
-      if (mapRef.current && (lng !== 0 || lat !== 0)) {
-        const currentZoom = mapRef.current.getMap()?.getZoom() ?? 1.8;
-        const targetZoom = currentZoom >= 4 ? Math.max(currentZoom, 4) : 4;
-        mapRef.current.flyTo(lng, lat, targetZoom);
-      }
+      if (mapRef.current && (lng !== 0 || lat !== 0)) flyToCountry(mapRef.current, lng, lat);
     },
     [onCountrySelect, getMapLayers, mapRef]
   );
