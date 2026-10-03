@@ -42,7 +42,7 @@ export function FoundationStep({
   onCreateFromScratch,
   onNavigate,
 }: FoundationStepProps) {
-  const { builderState, setBuilderState, updateStep, updateArchetypeId } = useBuilderContext();
+  const { builderState, setBuilderState, updateArchetypeId } = useBuilderContext();
   const { selectedTemplate, setSelectedTemplate } = useBuilderFilter();
   const notify = useNotify();
 
