@@ -265,7 +265,7 @@ export interface ExportNameItem {
   name: string;
   ipa: string;
   syllables: number;
-  perplexity: number;
+  perplexity: number | null;
   length: number;
 }
 

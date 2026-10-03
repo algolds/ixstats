@@ -6,6 +6,7 @@ import { Button } from "~/components/ui/button";
 import { type BuilderSection } from "../lib/builder-theme";
 import { useBuilderStepNav, SECTION_LABELS } from "../hooks/useBuilderStepNav";
 import { BuilderRealmPicker } from "./BuilderRealmPicker";
+import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
 
 interface BuilderStepFooterProps {
   activeSection: BuilderSection;
@@ -28,6 +29,7 @@ export const BuilderStepFooter = React.memo(function BuilderStepFooter({
   isSubmitting = false,
   onReset,
 }: BuilderStepFooterProps) {
+  const { builderState, setBuilderState } = useBuilderContext();
   const { handleReset, steps, currentIndex, isBackDisabled, isOnPreview } = useBuilderStepNav({
     activeSection,
     mode,
