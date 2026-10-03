@@ -20,17 +20,37 @@ import {
 } from "./agenda";
 import { STATUS_TEXT } from "./status-tone";
 
+const doneKey = (countryId: string) => `ixstats:agenda-done:${countryId}`;
+
+function readDone(key: string): ReadonlySet<string> {
+  try {
+    const raw = JSON.parse(window.localStorage.getItem(key) ?? "[]") as string[];
+    return new Set(Array.isArray(raw) ? raw.filter((v) => typeof v === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function writeDone(key: string, ids: ReadonlySet<string>) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify([...ids]));
+  } catch {
+    // storage unavailable: the item stays hidden for this session only
+  }
+}
+
 /**
  * The executive agenda: open national issues, active directives and upcoming elections, most
- * pressing first. Everything comes from live game state. "Done" hides an item until the page is
- * reloaded; it does not resolve anything.
+ * pressing first. Everything comes from live game state. "Done" hides an item on this device; it
+ * does not resolve anything.
  */
 function ExecutiveAgendaComponent({
   countryId,
   onOpenDrill,
   onOpenIntent,
 }: ExecutiveAgendaProps): React.JSX.Element {
-  const [doneIds, setDoneIds] = useState<ReadonlySet<string>>(new Set());
+  const storageKey = doneKey(countryId);
+  const [doneIds, setDoneIds] = useState<ReadonlySet<string>>(() => readDone(storageKey));
 
   // IxTime "now", quantised so derivation does not re-run every tick.
   const nowIxTime = useIxTimeStore((s) => Math.floor(s.ixTimeTimestamp / 60_000) * 60_000);
@@ -61,6 +81,13 @@ function ExecutiveAgendaComponent({
 
   const visible = items.filter((item) => !doneIds.has(item.id));
   const nowMs = useMemo(() => Date.now(), [items]);
+
+  const markDone = (id: string) => {
+    const next = new Set([...doneIds].filter((d) => items.some((i) => i.id === d)));
+    next.add(id);
+    setDoneIds(next);
+    writeDone(storageKey, next);
+  };
 
   const open = (item: AgendaItem) => {
     if (item.drillKind) onOpenDrill?.(item.drillKind);
@@ -99,7 +126,7 @@ function ExecutiveAgendaComponent({
                 item={item}
                 nowMs={nowMs}
                 onOpen={() => open(item)}
-                onDone={() => setDoneIds((prev) => new Set(prev).add(item.id))}
+                onDone={() => markDone(item.id)}
               />
             ))}
           </ul>
