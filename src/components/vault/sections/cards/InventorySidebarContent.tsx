@@ -3,8 +3,6 @@
 import React from "react";
 import {
   Component as Layers,
-  Search,
-  Xmark as X,
   Sparks as Sparkles,
   Page as FileText,
   Calendar,
@@ -12,21 +10,20 @@ import {
   List,
   Expand as Maximize2,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
-import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import type { CardRarity, CardType } from "@prisma/client";
 import type { FilterState, ViewMode } from "./types";
+import {
+  ClearFiltersButton,
+  RARITY_OPTIONS,
+  SEASON_OPTIONS,
+  SidebarSearch,
+  SidebarSelect,
+  SidebarSort,
+} from "./SidebarFilterControls";
 import { Card } from "~/components/ui/card";
 
 export function InventorySidebarContent({
@@ -84,119 +81,61 @@ export function InventorySidebarContent({
         </div>
       </Card>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="text-label-secondary pointer-events-none absolute top-1/2 left-2 h-3 w-3 -translate-y-1/2" />
-        <Input
-          value={filters.search}
-          onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
-          placeholder="Search cards..."
-          className="border-separator placeholder:text-label-tertiary bg-fill-4 focus:bg-background text-footnote h-7 pr-6 pl-6"
-        />
-        {filters.search && (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Clear search"
-            onClick={() => setFilters((prev) => ({ ...prev, search: "" }))}
-            className="text-label-secondary absolute top-1/2 right-1 size-5 -translate-y-1/2"
-          >
-            <X className="text-label-secondary hover:text-label h-3 w-3 transition-colors" />
-          </Button>
-        )}
-      </div>
+      <SidebarSearch
+        value={filters.search}
+        onChange={(search) => setFilters((prev) => ({ ...prev, search }))}
+      />
 
-      {/* Rarity */}
-      <Select
+      <SidebarSelect
         value={filters.rarity}
         onValueChange={(val) =>
           setFilters((prev) => ({ ...prev, rarity: val as CardRarity | "all" }))
         }
-      >
-        <SelectTrigger
-          className={cn(
-            "text-footnote h-7 w-full px-2",
-            filters.rarity !== "all" && "bg-tint-fill text-tint font-medium"
-          )}
-        >
-          <Sparkles className="mr-2 h-3 w-3 shrink-0" />
-          <SelectValue placeholder="Rarity" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All rarities</SelectItem>
-          <SelectItem value="COMMON">Common</SelectItem>
-          <SelectItem value="UNCOMMON">Uncommon</SelectItem>
-          <SelectItem value="RARE">Rare</SelectItem>
-          <SelectItem value="ULTRA_RARE">Ultra rare</SelectItem>
-          <SelectItem value="EPIC">Epic</SelectItem>
-          <SelectItem value="LEGENDARY">Legendary</SelectItem>
-        </SelectContent>
-      </Select>
+        options={RARITY_OPTIONS}
+        placeholder="Rarity"
+        icon={Sparkles}
+        active={filters.rarity !== "all"}
+      />
 
-      {/* Card Type */}
-      <Select
+      <SidebarSelect
         value={filters.cardType}
         onValueChange={(val) =>
           setFilters((prev) => ({ ...prev, cardType: val as CardType | "all" }))
         }
-      >
-        <SelectTrigger
-          className={cn(
-            "text-footnote h-7 w-full px-2",
-            filters.cardType !== "all" && "border-teal/30 bg-teal/20 text-teal font-semibold"
-          )}
-        >
-          <FileText className="mr-2 h-3 w-3 shrink-0" />
-          <SelectValue placeholder="Type" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All types</SelectItem>
-          <SelectItem value="NS_IMPORT">NationStates import</SelectItem>
-          <SelectItem value="LORE_CARD">Lore card</SelectItem>
-          <SelectItem value="EVENT_CARD">Event card</SelectItem>
-        </SelectContent>
-      </Select>
+        options={[
+          ["all", "All types"],
+          ["NS_IMPORT", "NationStates import"],
+          ["LORE_CARD", "Lore card"],
+          ["EVENT_CARD", "Event card"],
+        ]}
+        placeholder="Type"
+        icon={FileText}
+        active={filters.cardType !== "all"}
+        activeClass="border-teal/30 bg-teal/20 text-teal font-semibold"
+      />
 
-      {/* Season */}
-      <Select
+      <SidebarSelect
         value={filters.season.toString()}
         onValueChange={(val) =>
           setFilters((prev) => ({ ...prev, season: val === "all" ? "all" : parseInt(val) }))
         }
-      >
-        <SelectTrigger
-          className={cn(
-            "text-footnote h-7 w-full px-2",
-            filters.season !== "all" && "bg-tint-fill text-tint font-medium"
-          )}
-        >
-          <Calendar className="mr-2 h-3 w-3 shrink-0" />
-          <SelectValue placeholder="Season" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All seasons</SelectItem>
-          <SelectItem value="1">Season 1</SelectItem>
-          <SelectItem value="2">Season 2</SelectItem>
-          <SelectItem value="3">Season 3</SelectItem>
-        </SelectContent>
-      </Select>
+        options={SEASON_OPTIONS}
+        placeholder="Season"
+        icon={Calendar}
+        active={filters.season !== "all"}
+      />
 
       <div className="border-separator space-y-3 border-t pt-3">
-        {/* Sort */}
-        <div>
-          <p className="text-label-secondary text-eyebrow mb-1">Sort by</p>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="text-footnote h-7 w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="acquired">Recently acquired</SelectItem>
-              <SelectItem value="rarity">Rarity (High to Low)</SelectItem>
-              <SelectItem value="value">Market Value (High to Low)</SelectItem>
-              <SelectItem value="name">Alphabetical</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <SidebarSort
+          value={sortBy}
+          onValueChange={setSortBy}
+          options={[
+            ["acquired", "Recently acquired"],
+            ["rarity", "Rarity (High to Low)"],
+            ["value", "Market Value (High to Low)"],
+            ["name", "Alphabetical"],
+          ]}
+        />
 
         {/* View Mode */}
         <div>
@@ -249,20 +188,10 @@ export function InventorySidebarContent({
         </div>
       </div>
 
-      {/* Clear Filters */}
       {(filters.search ||
         filters.rarity !== "all" ||
         filters.cardType !== "all" ||
-        filters.season !== "all") && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onResetFilters}
-          className="text-label-secondary w-full"
-        >
-          <X className="h-3 w-3" /> Clear Filters
-        </Button>
-      )}
+        filters.season !== "all") && <ClearFiltersButton onClick={onResetFilters} />}
     </div>
   );
 }

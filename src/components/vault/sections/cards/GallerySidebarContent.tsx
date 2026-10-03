@@ -1,28 +1,21 @@
 "use client";
 
 import React from "react";
-import {
-  Search,
-  Xmark as X,
-  Calendar,
-  Sparks as Sparkles,
-  OpenBook as BookOpen,
-} from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { Calendar, Sparks as Sparkles, OpenBook as BookOpen } from "iconoir-react";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 import { NationStatesLogo } from "~/components/cards/display/NationStatesLogo";
-import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
 import type { CardRarity } from "@prisma/client";
 import type { GallerySource } from "./types";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import {
+  ClearFiltersButton,
+  RARITY_OPTIONS,
+  SEASON_OPTIONS,
+  SidebarSearch,
+  SidebarSelect,
+  SidebarSort,
+} from "./SidebarFilterControls";
 
 export function GallerySidebarContent({
   source,
@@ -83,109 +76,51 @@ export function GallerySidebarContent({
         />
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="text-label-secondary pointer-events-none absolute top-1/2 left-2 h-3 w-3 -translate-y-1/2" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search cards..."
-          className="border-separator placeholder:text-label-tertiary bg-fill-4 focus:bg-background text-footnote h-7 pr-6 pl-6"
-        />
-        {search && (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Clear search"
-            onClick={() => setSearch("")}
-            className="text-label-secondary absolute top-1/2 right-1 size-5 -translate-y-1/2"
-          >
-            <X className="text-label-secondary hover:text-label h-3 w-3 transition-colors" />
-          </Button>
-        )}
-      </div>
+      <SidebarSearch value={search} onChange={setSearch} />
 
-      {/* Season */}
-      <Select
+      <SidebarSelect
         value={season.toString()}
         onValueChange={(v) => setSeason(v === "all" ? "all" : parseInt(v))}
-      >
-        <SelectTrigger
-          className={cn(
-            "text-footnote h-7 w-full px-2",
-            season !== "all" && "bg-tint-fill text-tint font-medium"
-          )}
-        >
-          <Calendar className="mr-2 h-3 w-3 shrink-0" />
-          <SelectValue placeholder="Season" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All seasons</SelectItem>
-          <SelectItem value="1">Season 1</SelectItem>
-          <SelectItem value="2">Season 2</SelectItem>
-          <SelectItem value="3">Season 3</SelectItem>
-        </SelectContent>
-      </Select>
+        options={SEASON_OPTIONS}
+        placeholder="Season"
+        icon={Calendar}
+        active={season !== "all"}
+      />
 
-      {/* Rarity */}
-      <Select value={rarity} onValueChange={(v) => setRarity(v as CardRarity | "all")}>
-        <SelectTrigger
-          className={cn(
-            "text-footnote h-7 w-full px-2",
-            rarity !== "all" && "bg-tint-fill text-tint font-medium"
-          )}
-        >
-          <Sparkles className="mr-2 h-3 w-3 shrink-0" />
-          <SelectValue placeholder="Rarity" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All rarities</SelectItem>
-          <SelectItem value="COMMON">Common</SelectItem>
-          <SelectItem value="UNCOMMON">Uncommon</SelectItem>
-          <SelectItem value="RARE">Rare</SelectItem>
-          <SelectItem value="ULTRA_RARE">Ultra rare</SelectItem>
-          <SelectItem value="EPIC">Epic</SelectItem>
-          <SelectItem value="LEGENDARY">Legendary</SelectItem>
-        </SelectContent>
-      </Select>
+      <SidebarSelect
+        value={rarity}
+        onValueChange={(v) => setRarity(v as CardRarity | "all")}
+        options={RARITY_OPTIONS}
+        placeholder="Rarity"
+        icon={Sparkles}
+        active={rarity !== "all"}
+      />
 
-      {/* Nation Status (CTE vs Active) */}
+      {/* Nation status (CTE vs active) */}
       {setCteFilter && (source === "all" || source === "ns") && (
-        <Select
+        <SidebarSelect
           value={cteFilter || "all"}
           onValueChange={(v) => setCteFilter(v as "all" | "cte_only" | "active_only")}
-        >
-          <SelectTrigger
-            className={cn(
-              "text-footnote h-7 w-full px-2",
-              cteFilter && cteFilter !== "all" && "bg-tint-fill text-tint font-medium"
-            )}
-          >
-            <SelectValue placeholder="Nation status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All nations</SelectItem>
-            <SelectItem value="cte_only">CTE nations only</SelectItem>
-            <SelectItem value="active_only">Active nations only</SelectItem>
-          </SelectContent>
-        </Select>
+          options={[
+            ["all", "All nations"],
+            ["cte_only", "CTE nations only"],
+            ["active_only", "Active nations only"],
+          ]}
+          placeholder="Nation status"
+          active={Boolean(cteFilter && cteFilter !== "all")}
+        />
       )}
 
-      {/* Sort */}
-      <div>
-        <p className="text-label-secondary text-eyebrow mb-1">Sort by</p>
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="text-footnote h-7 w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="rarity">Rarity</SelectItem>
-            <SelectItem value="marketValue">Market value</SelectItem>
-            <SelectItem value="recent">Recent</SelectItem>
-            <SelectItem value="name">Name</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <SidebarSort
+        value={sortBy}
+        onValueChange={setSortBy}
+        options={[
+          ["rarity", "Rarity"],
+          ["marketValue", "Market value"],
+          ["recent", "Recent"],
+          ["name", "Name"],
+        ]}
+      />
 
       {/* Request Lore Card */}
       {(source === "all" || source === "lore") && (
@@ -203,16 +138,8 @@ export function GallerySidebarContent({
         </Button>
       )}
 
-      {/* Clear */}
       {(search || rarity !== "all" || season !== "all") && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onClearFilters}
-          className="text-label-secondary w-full"
-        >
-          <X className="h-3 w-3" /> Clear Filters
-        </Button>
+        <ClearFiltersButton onClick={onClearFilters} />
       )}
     </div>
   );
