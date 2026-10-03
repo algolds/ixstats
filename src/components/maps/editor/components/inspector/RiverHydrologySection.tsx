@@ -5,6 +5,8 @@ import { SeaWaves as Waves, Compass } from "iconoir-react";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import { polylineLengthKm, polylineLengthMi, bearing, compassDirection } from "~/lib/maps/geo-math";
 import { api } from "~/trpc/react";
+import type { Geometry } from "geojson";
+import { routeVertices } from "~/components/maps/editor/utils/map-helpers";
 import { Card } from "~/components/ui/card";
 import { MetricCard, ReadoutRow, ReadoutTile } from "./InspectorPrimitives";
 
@@ -20,17 +22,6 @@ const FLOW_REGIMES = [
   { minGradient: 1.5, label: "Valley / Moderate Run", tone: "text-blue" },
   { minGradient: -Infinity, label: "Lowland / Meandering", tone: "text-green" },
 ];
-
-function extractLineCoordinates(geom: unknown): Coord[] {
-  const g = geom as { type?: string; coordinates?: unknown } | null | undefined;
-  const coordinates = g?.coordinates;
-  if (!Array.isArray(coordinates)) return [];
-  if (g?.type === "LineString") return coordinates as Coord[];
-  if (g?.type === "MultiLineString" && Array.isArray(coordinates[0])) {
-    return (coordinates as Coord[][]).flat();
-  }
-  return [];
-}
 
 function lengthStats(coords: Coord[], storedLengthKm: unknown) {
   const hasPath = coords.length >= 2;
@@ -106,7 +97,7 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
   feature,
 }: RiverHydrologySectionProps) {
   const coords = useMemo(() => {
-    const fromGeom = extractLineCoordinates(feature.geometry);
+    const fromGeom = routeVertices(feature.geometry as Geometry | undefined);
     if (fromGeom.length > 0) return fromGeom;
     return feature.coordinates && feature.coordinates[0] !== 0 ? [feature.coordinates] : [];
   }, [feature.geometry, feature.coordinates]);

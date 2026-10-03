@@ -22,6 +22,8 @@ import { calculateRouteTravelTime, resolveRouteBaseSpeed } from "~/lib/economy/t
 import { Checkbox } from "~/components/ui/checkbox";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { Card } from "~/components/ui/card";
+import type { Geometry } from "geojson";
+import { routeVertices } from "~/components/maps/editor/utils/map-helpers";
 
 type Coord = [number, number];
 type RouteStatus = "planned" | "under_construction" | "operational" | "abandoned";
@@ -70,14 +72,6 @@ function toForm(route: RouteRecord): RouteForm {
     isInternational: Boolean(route.isInternational),
     speedKmh: typeof speed === "number" ? speed : undefined,
   };
-}
-
-function toVertices(geometry: unknown): Coord[] {
-  const geo = geometry as { type?: string; coordinates?: unknown } | null | undefined;
-  const coordinates = geo?.coordinates;
-  if (!Array.isArray(coordinates)) return [];
-  if (geo?.type === "LineString") return coordinates as Coord[];
-  return geo?.type === "MultiLineString" ? (coordinates as Coord[][]).flat() : [];
 }
 
 function MetricCard({
@@ -348,7 +342,7 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
     () =>
       editingRouteVertices && editingRouteVertices.length > 0
         ? editingRouteVertices
-        : toVertices(route?.geometry),
+        : routeVertices(route?.geometry as unknown as Geometry | null | undefined),
     [editingRouteVertices, route?.geometry]
   );
 

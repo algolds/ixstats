@@ -10,6 +10,8 @@ import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { ROUTE_STYLES, ROUTE_TYPE_KEYS } from "~/lib/maps/map-config";
 import { calculateRouteTravelTime, getSpeedPresets } from "~/lib/economy/travel-time";
 import { ReadoutRow } from "./InspectorPrimitives";
+import type { Geometry } from "geojson";
+import { routeVertices } from "~/components/maps/editor/utils/map-helpers";
 
 const ROUTE_TYPE_OPTIONS = ROUTE_TYPE_KEYS.map((key) => ({
   value: key,
@@ -24,16 +26,6 @@ const ROUTE_STATUS_OPTIONS = [
 ];
 
 const MAX_LISTED_NODES = 10;
-
-type Coord = [number, number];
-
-function routeVertices(geometry: object | undefined): Coord[] {
-  const geo = geometry as { type?: string; coordinates?: unknown } | undefined;
-  const coordinates = geo?.coordinates;
-  if (!Array.isArray(coordinates)) return [];
-  if (geo?.type === "LineString") return coordinates as Coord[];
-  return geo?.type === "MultiLineString" ? (coordinates as Coord[][]).flat() : [];
-}
 
 function nodeSuffix(index: number, count: number) {
   if (index === 0) return "(Start)";
@@ -170,7 +162,10 @@ function PathNodes({
   feature: EditorFeature;
   onEditRoute?: (routeId: string) => void;
 }) {
-  const vertices = useMemo(() => routeVertices(feature.geometry), [feature.geometry]);
+  const vertices = useMemo(
+    () => routeVertices(feature.geometry as Geometry | undefined),
+    [feature.geometry]
+  );
   return (
     <div className="space-y-2 pt-1">
       <div className="flex items-center justify-between">

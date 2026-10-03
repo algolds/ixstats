@@ -51,6 +51,7 @@ type ProfilePassthroughProps = Pick<
   | "createCountryFromShapeAction"
   | "createCountryFromShapePending"
   | "enterBorderEdit"
+  | "updatePropertiesMutation"
 >;
 
 interface PropertiesPanelContentProps extends ProfilePassthroughProps {
@@ -63,17 +64,6 @@ interface PropertiesPanelContentProps extends ProfilePassthroughProps {
   editor: MapEditorInstance;
   countryInfo?: { name?: string; flag?: string | null; flagUrl?: string | null } | null;
   featureDetails?: EditorFeatureDetails | null;
-  updatePropertiesMutation: {
-    isPending: boolean;
-    mutateAsync: (args: {
-      featureId: string;
-      displayName?: string;
-      countryId?: string | null;
-      properties?: Record<string, string | number | boolean | null>;
-      wikiPageTitle?: string | null;
-      realm?: string;
-    }) => Promise<{ ok?: boolean; success?: boolean } | void>;
-  };
   selectedRouteId: string | null;
   setSelectedRouteId: (id: string | null) => void;
   handleSubmit: () => void;

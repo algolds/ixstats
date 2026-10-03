@@ -38,6 +38,7 @@ export interface WorldCountryProfileProps {
       countryId?: string | null;
       properties?: Record<string, string | number | boolean | null>;
       wikiPageTitle?: string | null;
+      realm?: string;
     }) => Promise<{ ok?: boolean; success?: boolean } | void>;
   };
   isEditingJson: boolean;
