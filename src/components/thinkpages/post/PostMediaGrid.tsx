@@ -12,57 +12,73 @@ interface PostMediaItem {
   filename?: string;
 }
 
+const VARIANTS = {
+  post: {
+    outer: "rounded-row mb-3",
+    single: "max-w-xl",
+    singleCell: "max-h-[420px]",
+    idPrefix: "",
+    altLabel: "Attachment",
+  },
+  repost: {
+    outer: "rounded-control mt-2",
+    single: "max-w-md",
+    singleCell: "max-h-[220px]",
+    idPrefix: "repost-",
+    altLabel: "Image",
+  },
+};
+
 interface PostMediaGridProps {
   mediaAttachments?: PostMediaItem[];
   postId: string;
   onOpenLightbox: (media: { url: string; id: string }) => void;
+  variant?: keyof typeof VARIANTS;
 }
 
 export function PostMediaGrid({
   mediaAttachments = [],
   postId,
   onOpenLightbox,
+  variant = "post",
 }: PostMediaGridProps) {
-  if (!mediaAttachments || mediaAttachments.length === 0) return null;
+  if (mediaAttachments.length === 0) return null;
+  const { outer, single, singleCell, idPrefix, altLabel } = VARIANTS[variant];
+  const count = mediaAttachments.length;
 
   return (
     <div
       className={cn(
-        "border-separator rounded-row mb-3 overflow-hidden border",
-        mediaAttachments.length === 1 && "max-w-xl",
-        mediaAttachments.length > 1 && "grid grid-cols-2 gap-0.5"
+        "border-separator overflow-hidden border",
+        outer,
+        count === 1 && single,
+        count > 1 && "grid grid-cols-2 gap-0.5"
       )}
     >
       {mediaAttachments.map((media, index) => {
-        const isSingle = mediaAttachments.length === 1;
-        const layoutId = `${postId}-${media.id || index}`;
+        const layoutId = `${idPrefix}${postId}-${media.id || index}`;
 
         return (
           <div
             key={media.id || index}
             className={cn(
               "bg-fill-3 relative flex items-center justify-center overflow-hidden",
-              isSingle && "aspect-[16/10] max-h-[420px] w-full",
-              mediaAttachments.length === 2 && "aspect-square",
-              mediaAttachments.length === 3 && index === 0
-                ? "col-span-2 aspect-[16/10]"
-                : "aspect-square",
-              mediaAttachments.length === 4 && "aspect-square"
+              count === 1 && cn("aspect-[16/10] w-full", singleCell),
+              count === 2 && "aspect-square",
+              count === 3 && index === 0 ? "col-span-2 aspect-[16/10]" : "aspect-square",
+              count === 4 && "aspect-square"
             )}
           >
             <motion.img
               layoutId={layoutId}
               src={proxyDiscordUrl(media.url)}
-              alt={media.filename || `Attachment ${index + 1}`}
+              alt={media.filename || `${altLabel} ${index + 1}`}
               className="h-full w-full cursor-pointer object-cover"
               whileHover={{ scale: 1.02, opacity: 0.95 }}
               transition={springSnappy}
               onClick={(e) => {
                 e.stopPropagation();
-                onOpenLightbox({
-                  url: media.url,
-                  id: layoutId,
-                });
+                onOpenLightbox({ url: media.url, id: layoutId });
               }}
             />
           </div>

@@ -107,8 +107,8 @@ export function RelativeTimestamp({ timestamp }: { timestamp: Date | string | nu
   );
 }
 
-export const accountTypeColor = (type?: string) =>
-  ACCOUNT_TYPE_COLORS[type ?? ""] || "bg-fill-2 text-label-secondary";
+export const accountTypeColor = (type?: string, fallback = "bg-fill-2 text-label-secondary") =>
+  ACCOUNT_TYPE_COLORS[type ?? ""] || fallback;
 
 export function AccountTypeIcon({ type, className }: { type?: string; className?: string }) {
   const Icon = ACCOUNT_TYPE_ICONS[type ?? ""] || Users;

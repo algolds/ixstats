@@ -1,15 +1,14 @@
 "use client";
-// src/components/wiki-os/shared/ActiveCountryUnifiedWidget.tsx
-// Active Country context widget displaying flag, status, and detail popovers.
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useCallback, type ReactNode } from "react";
 import { cn, formatCurrency } from "~/lib/utils";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { useSidebar } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { CountryActionsMenu } from "~/components/mycountry/dossier/CountryActionsMenu";
 import { Button } from "~/components/ui/button";
+import { useOutsideClick } from "~/hooks/use-outside-click";
 
 export interface ActiveCountryData {
   id?: string;
@@ -26,10 +25,134 @@ export interface ActiveCountryData {
   [key: string]: unknown;
 }
 
+/** Numeric stat from the country itself, else its calculatedStats, else a legacy top-level key. */
+function readStat(country: ActiveCountryData, key: string, legacyKey?: string): number | null {
+  const calculated = country.calculatedStats as Record<string, unknown> | undefined;
+  const value = country[key] ?? calculated?.[key] ?? (legacyKey ? country[legacyKey] : undefined);
+  return value != null ? Number(value) : null;
+}
+
+function StatRow({
+  label,
+  value,
+  valueClass = "text-label",
+}: {
+  label: string;
+  value: ReactNode;
+  valueClass?: string;
+}) {
+  return (
+    <div className="flex justify-between">
+      <span className="text-label-secondary">{label}</span>
+      <span className={cn("font-semibold", valueClass)}>{value}</span>
+    </div>
+  );
+}
+
 interface ActiveCountryUnifiedWidgetProps {
   country: ActiveCountryData | null | undefined;
   transitionStyle?: React.CSSProperties;
   isLocalHoverExpanded?: boolean;
+}
+
+function CountryDetailsPopover({
+  country,
+  countryName,
+  isOwnCountry,
+  rings,
+  onOpenActions,
+}: {
+  country: ActiveCountryData;
+  countryName: string;
+  isOwnCountry: boolean;
+  rings: RouterOutputs["countries"]["getActivityRingsData"] | undefined;
+  onOpenActions: () => void;
+}) {
+  const popVal = readStat(country, "currentPopulation", "population");
+  const gdpCapVal = readStat(country, "currentGdpPerCapita");
+  const totalGdpVal = readStat(country, "currentTotalGdp", "gdp");
+
+  return (
+    <div className="animate-in fade-in slide-in-from-left-2 rounded-row border-yellow/20 bg-surface shadow-floating absolute bottom-0 left-[calc(100%+12px)] z-50 w-60 border p-4 duration-150">
+      <div className="border-separator mb-2 flex items-center gap-2 border-b pb-3">
+        <div className="rounded-control-sm relative flex shrink-0 items-center justify-center overflow-hidden">
+          <UnifiedCountryFlag countryName={countryName} size="sm" showTooltip={false} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h4 className="text-label text-caption truncate leading-tight font-semibold">
+            {countryName}
+          </h4>
+          <p className="text-label-secondary text-footnote leading-tight">
+            {country.continent ? String(country.continent) : ""}{" "}
+            {isOwnCountry ? "(MyCountry)" : "(MyCountry Actions)"}
+          </p>
+        </div>
+      </div>
+
+      <div className="text-footnote space-y-2">
+        <StatRow
+          label="Population:"
+          value={popVal != null ? Math.round(popVal).toLocaleString() : "..."}
+        />
+        <StatRow
+          label="GDP per Capita:"
+          value={gdpCapVal != null ? `$${Math.round(gdpCapVal).toLocaleString()}` : "..."}
+        />
+        <StatRow
+          label="Total GDP:"
+          value={totalGdpVal != null ? formatCurrency(totalGdpVal) : "..."}
+        />
+
+        {rings && (
+          <>
+            <StatRow
+              label="GDP Growth:"
+              value={rings.economicMetrics.growthRate}
+              valueClass={
+                parseFloat(rings.economicMetrics.growthRate) >= 0 ? "text-green" : "text-red"
+              }
+            />
+            <StatRow label="Govt Approval:" value={rings.governmentMetrics.approval} />
+          </>
+        )}
+      </div>
+
+      {rings && (
+        <div className="border-separator mt-2 border-t pt-3">
+          <div className="text-subhead text-label-secondary mb-2">Vitality indices</div>
+          <div className="text-footnote grid grid-cols-2 gap-2">
+            {(
+              [
+                ["Econ:", rings.economicVitality, "text-green"],
+                ["Well:", rings.populationWellbeing, "text-tint"],
+                ["Diplo:", rings.diplomaticStanding ?? "—", "text-teal"],
+                ["Gov:", rings.governmentalEfficiency ?? "—", "text-indigo"],
+              ] as const
+            ).map(([label, value, color]) => (
+              <div
+                key={label}
+                className="bg-fill-4 rounded-control-sm flex justify-between px-2 py-1"
+              >
+                <span className="text-label-secondary">{label}</span>
+                <span className={`${color} font-semibold`}>{value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-3">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onOpenActions}
+          className="bg-yellow/10 text-yellow hover:bg-yellow/20 w-full"
+        >
+          {isOwnCountry ? "Manage country" : "Country actions"}
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 export function ActiveCountryUnifiedWidget({
@@ -47,17 +170,8 @@ export function ActiveCountryUnifiedWidget({
 
   const activeCountry = country || myCountry;
 
-  // Click outside handler
-  useEffect(() => {
-    if (!popoverOpen) return;
-    const handleOutside = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        setPopoverOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleOutside);
-    return () => document.removeEventListener("mousedown", handleOutside);
-  }, [popoverOpen]);
+  const closePopover = useCallback(() => setPopoverOpen(false), []);
+  useOutsideClick(popoverRef, closePopover);
 
   // Query activity rings to fetch live stats & vitality
   const { data: rings } = api.countries.getActivityRingsData.useQuery(
@@ -70,47 +184,6 @@ export function ActiveCountryUnifiedWidget({
   const viewerCountryId = userProfile?.countryId ?? undefined;
   const isOwnCountry = myCountry?.id === activeCountry.id;
   const countryName = activeCountry.name ?? "Active Country";
-
-  const popVal =
-    "currentPopulation" in activeCountry && activeCountry.currentPopulation != null
-      ? Number(activeCountry.currentPopulation)
-      : "calculatedStats" in activeCountry &&
-          (activeCountry as { calculatedStats?: { currentPopulation?: number } }).calculatedStats
-            ?.currentPopulation != null
-        ? Number(
-            (activeCountry as { calculatedStats?: { currentPopulation?: number } }).calculatedStats
-              ?.currentPopulation
-          )
-        : "population" in activeCountry &&
-            (activeCountry as { population?: number }).population != null
-          ? Number((activeCountry as { population?: number }).population)
-          : null;
-
-  const gdpCapVal =
-    "currentGdpPerCapita" in activeCountry && activeCountry.currentGdpPerCapita != null
-      ? Number(activeCountry.currentGdpPerCapita)
-      : "calculatedStats" in activeCountry &&
-          (activeCountry as { calculatedStats?: { currentGdpPerCapita?: number } }).calculatedStats
-            ?.currentGdpPerCapita != null
-        ? Number(
-            (activeCountry as { calculatedStats?: { currentGdpPerCapita?: number } })
-              .calculatedStats?.currentGdpPerCapita
-          )
-        : null;
-
-  const totalGdpVal =
-    "currentTotalGdp" in activeCountry && activeCountry.currentTotalGdp != null
-      ? Number(activeCountry.currentTotalGdp)
-      : "calculatedStats" in activeCountry &&
-          (activeCountry as { calculatedStats?: { currentTotalGdp?: number } }).calculatedStats
-            ?.currentTotalGdp != null
-        ? Number(
-            (activeCountry as { calculatedStats?: { currentTotalGdp?: number } }).calculatedStats
-              ?.currentTotalGdp
-          )
-        : "gdp" in activeCountry && (activeCountry as { gdp?: number }).gdp != null
-          ? Number((activeCountry as { gdp?: number }).gdp)
-          : null;
 
   return (
     <div className="relative w-full" ref={popoverRef}>
@@ -159,109 +232,16 @@ export function ActiveCountryUnifiedWidget({
       </div>
 
       {isCollapsed && popoverOpen && (
-        <div className="animate-in fade-in slide-in-from-left-2 rounded-row border-yellow/20 bg-surface shadow-floating absolute bottom-0 left-[calc(100%+12px)] z-50 w-60 border p-4 duration-150">
-          {/* Header */}
-          <div className="border-separator mb-2 flex items-center gap-2 border-b pb-3">
-            <div className="rounded-control-sm relative flex shrink-0 items-center justify-center overflow-hidden">
-              <UnifiedCountryFlag countryName={countryName} size="sm" showTooltip={false} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h4 className="text-label text-caption truncate leading-tight font-semibold">
-                {countryName}
-              </h4>
-              <p className="text-label-secondary text-footnote leading-tight">
-                {activeCountry.continent ? String(activeCountry.continent) : ""}{" "}
-                {isOwnCountry ? "(MyCountry)" : "(MyCountry Actions)"}
-              </p>
-            </div>
-          </div>
-
-          {/* Base Stats */}
-          <div className="text-footnote space-y-2">
-            <div className="flex justify-between">
-              <span className="text-label-secondary">Population:</span>
-              <span className="text-label font-semibold">
-                {popVal != null ? Math.round(popVal).toLocaleString() : "..."}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-label-secondary">GDP per Capita:</span>
-              <span className="text-label font-semibold">
-                {gdpCapVal != null ? `$${Math.round(gdpCapVal).toLocaleString()}` : "..."}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-label-secondary">Total GDP:</span>
-              <span className="text-label font-semibold">
-                {totalGdpVal != null ? formatCurrency(totalGdpVal) : "..."}
-              </span>
-            </div>
-
-            {rings && (
-              <>
-                <div className="flex justify-between">
-                  <span className="text-label-secondary">GDP Growth:</span>
-                  <span
-                    className={cn(
-                      "font-semibold",
-                      parseFloat(rings.economicMetrics.growthRate) >= 0 ? "text-green" : "text-red"
-                    )}
-                  >
-                    {rings.economicMetrics.growthRate}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-label-secondary">Govt Approval:</span>
-                  <span className="text-label font-semibold">
-                    {rings.governmentMetrics.approval}
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Vitality Summary */}
-          {rings && (
-            <div className="border-separator mt-2 border-t pt-3">
-              <div className="text-subhead text-label-secondary mb-2">Vitality indices</div>
-              <div className="text-footnote grid grid-cols-2 gap-2">
-                <div className="bg-fill-4 rounded-control-sm flex justify-between px-2 py-1">
-                  <span className="text-label-secondary">Econ:</span>
-                  <span className="text-green font-semibold">{rings.economicVitality}</span>
-                </div>
-                <div className="bg-fill-4 rounded-control-sm flex justify-between px-2 py-1">
-                  <span className="text-label-secondary">Well:</span>
-                  <span className="text-tint font-semibold">{rings.populationWellbeing}</span>
-                </div>
-                <div className="bg-fill-4 rounded-control-sm flex justify-between px-2 py-1">
-                  <span className="text-label-secondary">Diplo:</span>
-                  <span className="text-teal font-semibold">{rings.diplomaticStanding ?? "—"}</span>
-                </div>
-                <div className="bg-fill-4 rounded-control-sm flex justify-between px-2 py-1">
-                  <span className="text-label-secondary">Gov:</span>
-                  <span className="text-indigo font-semibold">
-                    {rings.governmentalEfficiency ?? "—"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Actions Button */}
-          <div className="mt-3">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                setPopoverOpen(false);
-                setActionsMenuOpen(true);
-              }}
-              className="bg-yellow/10 text-yellow hover:bg-yellow/20 w-full"
-            >
-              {isOwnCountry ? "Manage country" : "Country actions"}
-            </Button>
-          </div>
-        </div>
+        <CountryDetailsPopover
+          country={activeCountry as ActiveCountryData}
+          countryName={countryName}
+          isOwnCountry={isOwnCountry}
+          rings={rings}
+          onOpenActions={() => {
+            setPopoverOpen(false);
+            setActionsMenuOpen(true);
+          }}
+        />
       )}
 
       <CountryActionsMenu
