@@ -69,7 +69,8 @@ export const wikiosUserTalkRouter = createTRPCRouter({
       const lore = loreStats ?? NO_LORE_STATS;
       const rank =
         lore.totalScore > 0
-          ? (await db.lorewardUserStats.count({ where: { totalScore: { gt: lore.totalScore } } })) + 1
+          ? (await db.lorewardUserStats.count({ where: { totalScore: { gt: lore.totalScore } } })) +
+            1
           : null;
 
       return {

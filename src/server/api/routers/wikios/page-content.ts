@@ -6,7 +6,12 @@ import {
   getArticleHtml,
   renderArticleViaMediaWiki,
 } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
-import { getArticleWikitext, resolveRedirect, getInfobox, getImageMeta } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import {
+  getArticleWikitext,
+  resolveRedirect,
+  getInfobox,
+  getImageMeta,
+} from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import {
   transformArticleHtml,
   stripConflictingStyles,
@@ -170,7 +175,8 @@ async function renderNativeArticleHtml(
   const hasCorruptedMarkup =
     Boolean(rawHtml) &&
     (/\|\d+px\|/i.test(rawHtml) || /\|\s*(?:center|left|right|thumb)\]\]/i.test(rawHtml));
-  const wikitextHasInfobox = nativeArticle.wikitext && /\{\{[Ii]nfobox/i.test(nativeArticle.wikitext);
+  const wikitextHasInfobox =
+    nativeArticle.wikitext && /\{\{[Ii]nfobox/i.test(nativeArticle.wikitext);
   const htmlHasInfobox =
     rawHtml && !hasCorruptedMarkup && (rawHtml.includes("infobox") || rawHtml.includes("aside"));
 
@@ -269,8 +275,12 @@ export const wikiosPageContentRouter = createTRPCRouter({
         return articleResponse(
           {
             contentHtml: sanitizeWikiArticleHtml(html.contentHtml),
-            infoboxHtml: html.infoboxHtml ? sanitizeWikiArticleHtml(html.infoboxHtml) : html.infoboxHtml,
-            noticesHtml: html.noticesHtml ? sanitizeWikiArticleHtml(html.noticesHtml) : html.noticesHtml,
+            infoboxHtml: html.infoboxHtml
+              ? sanitizeWikiArticleHtml(html.infoboxHtml)
+              : html.infoboxHtml,
+            noticesHtml: html.noticesHtml
+              ? sanitizeWikiArticleHtml(html.noticesHtml)
+              : html.noticesHtml,
           },
           transformed.toc,
           {
@@ -289,7 +299,11 @@ export const wikiosPageContentRouter = createTRPCRouter({
         getArticleAuthors(resolvedTitle, "ixwiki"),
       ]);
       if (shadowHtml) {
-        const transformed = transformArticleHtml(stripConflictingStyles(shadowHtml.html), "", "ixwiki");
+        const transformed = transformArticleHtml(
+          stripConflictingStyles(shadowHtml.html),
+          "",
+          "ixwiki"
+        );
         return articleResponse(await resolveArticleTemplates(ctx, transformed), transformed.toc, {
           title: resolvedTitle.replace(/_/g, " "),
           lastModified: shadowHtml.timestamp,

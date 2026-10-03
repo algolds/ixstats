@@ -39,15 +39,20 @@ async function requireThread(threadId: string) {
   return thread;
 }
 
-type Person = {
-  wikiUsername?: string | null;
-  discordUsername?: string | null;
-  country?: { name: string } | null;
-} | null | undefined;
+type Person =
+  | {
+      wikiUsername?: string | null;
+      discordUsername?: string | null;
+      country?: { name: string } | null;
+    }
+  | null
+  | undefined;
 
 function displayName(person: Person, rawId: string | null) {
   const fallback = rawId?.startsWith("user_") ? rawId.slice(0, 12) : rawId;
-  return person?.wikiUsername || person?.discordUsername || person?.country?.name || fallback || "User";
+  return (
+    person?.wikiUsername || person?.discordUsername || person?.country?.name || fallback || "User"
+  );
 }
 
 const normalizeTitle = (title: string) => title.trim().replace(/ /g, "_");
