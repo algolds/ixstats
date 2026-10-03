@@ -63,6 +63,29 @@ const DEFAULT_PRIVACY_CONFIG: PrivacyConfig = {
   showWikiAttribution: true,
 };
 
+/** Deletes the caller's own connection record; anything else reads as not found. */
+async function deleteOwnConnection(
+  db: PrismaClient,
+  userId: string,
+  connectionId: string,
+  label: string
+) {
+  const record = await db.userConnection.findUnique({ where: { id: connectionId } });
+  if (!record || record.userId !== userId) {
+    throw new Error(`${label} record not found`);
+  }
+  return db.userConnection.delete({ where: { id: connectionId } });
+}
+
+/** The existing connection for (user, target, type), else a newly created one. */
+async function findOrCreateConnection(
+  db: PrismaClient,
+  data: { userId: string; targetUserId: string; connectionType: string; status: string }
+) {
+  const { status: _status, ...key } = data;
+  return (await db.userConnection.findFirst({ where: key })) ?? db.userConnection.create({ data });
+}
+
 export const usersPreferencesRouter = createTRPCRouter({
   // ─── Wiki Preferences ────────────────────────────────────────────────
 
@@ -349,20 +372,9 @@ export const usersPreferencesRouter = createTRPCRouter({
 
   unblockAccount: protectedProcedure
     .input(z.object({ connectionId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
-      const record = await ctx.db.userConnection.findUnique({
-        where: { id: input.connectionId },
-      });
-
-      if (!record || record.userId !== userId) {
-        throw new Error("Blocked connection record not found");
-      }
-
-      return ctx.db.userConnection.delete({
-        where: { id: input.connectionId },
-      });
-    }),
+    .mutation(({ ctx, input }) =>
+      deleteOwnConnection(ctx.db, ctx.auth.userId, input.connectionId, "Blocked connection")
+    ),
 
   muteAccount: protectedProcedure
     .input(z.object({ identifier: z.string().min(1).max(100) }))
@@ -389,42 +401,19 @@ export const usersPreferencesRouter = createTRPCRouter({
         throw new Error("You cannot mute your own account");
       }
 
-      const existing = await ctx.db.userConnection.findFirst({
-        where: {
-          userId,
-          targetUserId: targetUser.id,
-          connectionType: "muted",
-        },
-      });
-
-      if (existing) return existing;
-
-      return ctx.db.userConnection.create({
-        data: {
-          userId,
-          targetUserId: targetUser.id,
-          connectionType: "muted",
-          status: "active",
-        },
+      return findOrCreateConnection(ctx.db, {
+        userId,
+        targetUserId: targetUser.id,
+        connectionType: "muted",
+        status: "active",
       });
     }),
 
   unmuteAccount: protectedProcedure
     .input(z.object({ connectionId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
-      const record = await ctx.db.userConnection.findUnique({
-        where: { id: input.connectionId },
-      });
-
-      if (!record || record.userId !== userId) {
-        throw new Error("Muted connection record not found");
-      }
-
-      return ctx.db.userConnection.delete({
-        where: { id: input.connectionId },
-      });
-    }),
+    .mutation(({ ctx, input }) =>
+      deleteOwnConnection(ctx.db, ctx.auth.userId, input.connectionId, "Muted connection")
+    ),
 
   addMutedKeyword: protectedProcedure
     .input(z.object({ keyword: z.string().min(1).max(50) }))
@@ -432,42 +421,19 @@ export const usersPreferencesRouter = createTRPCRouter({
       const userId = ctx.auth.userId;
       const clean = input.keyword.trim().toLowerCase();
 
-      const existing = await ctx.db.userConnection.findFirst({
-        where: {
-          userId,
-          targetUserId: clean,
-          connectionType: "keyword",
-        },
-      });
-
-      if (existing) return existing;
-
-      return ctx.db.userConnection.create({
-        data: {
-          userId,
-          targetUserId: clean,
-          connectionType: "keyword",
-          status: input.keyword.trim(),
-        },
+      return findOrCreateConnection(ctx.db, {
+        userId,
+        targetUserId: clean,
+        connectionType: "keyword",
+        status: input.keyword.trim(),
       });
     }),
 
   removeMutedKeyword: protectedProcedure
     .input(z.object({ connectionId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
-      const record = await ctx.db.userConnection.findUnique({
-        where: { id: input.connectionId },
-      });
-
-      if (!record || record.userId !== userId) {
-        throw new Error("Keyword filter record not found");
-      }
-
-      return ctx.db.userConnection.delete({
-        where: { id: input.connectionId },
-      });
-    }),
+    .mutation(({ ctx, input }) =>
+      deleteOwnConnection(ctx.db, ctx.auth.userId, input.connectionId, "Keyword filter")
+    ),
 
   clearSearchHistory: protectedProcedure.mutation(async () => {
     return { success: true, timestamp: new Date().toISOString() };
