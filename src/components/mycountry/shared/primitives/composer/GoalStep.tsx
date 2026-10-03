@@ -1,12 +1,12 @@
 "use client";
 
 import React from "react";
-import { ArrowRight, DiceSix, GitFork, Search, Xmark } from "iconoir-react";
+import { ArrowRight, DiceSix, Search, Xmark } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { DirectivePresetsCatalog } from "./DirectivePresetsCatalog";
 import type { DirectiveDomain } from "./directive-presets";
+import { FollowUpChip } from "./FollowUpChip";
 import { StepSection } from "./StepSection";
 
 export const MIN_GOAL = 2;
@@ -48,33 +48,13 @@ export function GoalStep({
       }
     >
       <div className="space-y-4">
-        {followUpOf && (
-          <Card
-            variant="inset"
-            padding="none"
-            className="text-footnote flex items-center gap-2 py-1 pr-1 pl-3"
-          >
-            <GitFork className="text-label-secondary h-4 w-4 shrink-0" aria-hidden />
-            <span className="text-label-secondary min-w-0 flex-1 truncate">
-              Follow-up to <span className="text-label font-medium">{followUpOf.goal}</span>
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClearFollowUp}
-              aria-label="Remove follow-up link"
-              className="text-label-secondary max-sm:h-11 max-sm:w-11"
-            >
-              <Xmark />
-            </Button>
-          </Card>
-        )}
+        {followUpOf && <FollowUpChip goal={followUpOf.goal} onClear={onClearFollowUp} />}
 
         <form
           role="search"
           onSubmit={(e) => {
             e.preventDefault();
-            chooseGoal(query);
+            onChooseGoal(query);
           }}
           className="space-y-2"
         >
