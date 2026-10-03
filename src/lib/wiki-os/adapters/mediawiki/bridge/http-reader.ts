@@ -89,6 +89,19 @@ function wikiApiUrl(wiki: WikiSource): URL {
   return new URL(base.endsWith("api.php") ? base : `${base}/api.php`);
 }
 
+/** GET a JSON `action=query` from the live ixwiki API; null on a non-OK response, throws on network errors. */
+export async function fetchIxwikiLive<T>(
+  params: Record<string, string>,
+  timeoutMs: number
+): Promise<T | null> {
+  const query = new URLSearchParams({ ...params, format: "json" });
+  const res = await fetch(`${DEFAULT_MEDIAWIKI_URL.replace(/\/+$/, "")}/api.php?${query}`, {
+    headers: { "User-Agent": USER_AGENT },
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  return res.ok ? ((await res.json()) as T) : null;
+}
+
 /** MediaWiki returns `pages` as an array (formatversion 2) or an id-keyed object. */
 export function pagesOf<T>(raw: T[] | Record<string, T> | undefined): T[] {
   return Array.isArray(raw) ? raw : Object.values(raw ?? {});
