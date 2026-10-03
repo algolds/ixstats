@@ -99,24 +99,23 @@ const TYPE_META: Record<string, { icon: typeof Train; label: string }> = {
   military_naval: { icon: Shield, label: "Mil. Naval" },
 };
 
-/** Semantic status tint for the outline status badge. */
-const STATUS_BADGE: Record<string, BadgeVariant> = {
-  planned: "default",
-  under_construction: "warning",
-  operational: "success",
-  abandoned: "destructive",
-};
+/** Route statuses with their label and the semantic tint of the outline status badge. */
+const ROUTE_STATUSES = {
+  planned: { label: "Planned", badge: "default" },
+  under_construction: { label: "Under construction", badge: "warning" },
+  operational: { label: "Operational", badge: "success" },
+  abandoned: { label: "Abandoned", badge: "destructive" },
+} satisfies Record<string, { label: string; badge: BadgeVariant }>;
 
-const ROUTE_STATUS_OPTIONS = [
-  { value: "planned", label: "Planned" },
-  { value: "under_construction", label: "Under construction" },
-  { value: "operational", label: "Operational" },
-  { value: "abandoned", label: "Abandoned" },
-];
+type RouteStatus = keyof typeof ROUTE_STATUSES;
+
+const ROUTE_STATUS_OPTIONS = Object.entries(ROUTE_STATUSES).map(([value, { label }]) => ({
+  value,
+  label,
+}));
 
 type RouteData = NonNullable<RouterOutputs["transport"]["getRouteById"]>;
 type TravelTime = ReturnType<typeof calculateRouteTravelTime>;
-type RouteStatus = "planned" | "under_construction" | "operational" | "abandoned";
 
 const routeSpeedKmh = (route: RouteData) => (route as { speedKmh?: number | null }).speedKmh;
 
@@ -293,7 +292,7 @@ function RouteHeader({
             />
           ) : (
             <Badge
-              variant={STATUS_BADGE[route.status] ?? STATUS_BADGE.operational!}
+              variant={ROUTE_STATUSES[route.status as RouteStatus]?.badge ?? "success"}
               className="capitalize"
             >
               {route.status.replace("_", " ")}
