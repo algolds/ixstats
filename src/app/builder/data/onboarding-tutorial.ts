@@ -16,42 +16,42 @@ interface Step {
 
 export const builderTutorialSteps: Step[] = [
   {
-    title: "Welcome to MyCountry Builder",
-    short_description: "The world's most advanced nation creation platform",
+    title: "MyCountry Builder",
+    short_description: "Create a country in four steps",
     full_description:
-      "Create a fully functional country with atomic government systems, real-time economic calculations, and comprehensive diplomatic frameworks. This tutorial will guide you through the key features.",
+      "You choose a foundation, set your national identity, build a government from components and tune the economy. The figures update as you edit.",
   },
   {
-    title: "Choose Your Foundation",
-    short_description: "Select from 180+ real countries as your starting point",
+    title: "Foundation",
+    short_description: "Choose a starting point",
     full_description:
-      "Browse our database of real countries and choose one that matches your vision. Each foundation provides authentic economic data including GDP, population, and growth rates.\n\n**Pro Tip:** Choose countries with similar economic structures to save time in customization.",
+      "Start from a real country, an archetype, a blank country or an IIWiki import. A real country supplies its GDP, population and growth rate.\n\nTip: pick a country with an economy similar to the one you want, so you have less to change.",
   },
   {
-    title: "Core Identity & Economic Indicators",
-    short_description: "Set your nation's identity and fundamental economic metrics",
+    title: "Identity and core indicators",
+    short_description: "Name, symbols and the basic numbers",
     full_description:
-      "Configure your country name, national symbols, population, GDP per capita, and growth rates. The system uses a tier-based economic engine that automatically calculates related metrics.\n\n**Key Features:** Real-time calculations and economic projections.\n**Pro Tip:** Start with realistic numbers - the system provides validation ranges.",
+      "Set the country name, symbols, population, GDP per capita and growth rate. Related figures are calculated from these.\n\nTip: start with realistic numbers. The fields show the valid range.",
   },
   {
-    title: "Atomic Government System",
-    short_description: "Build your government with 24 components",
+    title: "Government",
+    short_description: "Build the government from components",
     full_description:
-      "Choose from 24 government components across 5 categories: Executive, Legislative, Judicial, Administrative, and Specialized. Each component has unique effects and synergies.\n\n**Pro Tip:** Start with core components (Executive, Legislature, Judiciary) then add specialized ones.",
+      "Pick up to 15 components. Each has its own effects, costs and synergies.\n\nTip: set how power is distributed and how decisions are made first, then add institutions.",
   },
   {
-    title: "Economic Systems & Policies",
-    short_description: "Configure your nation's economic framework",
+    title: "Economics",
+    short_description: "Sectors, taxes, labor and demographics",
     full_description:
-      "Set up sector distributions, trade relationships, tax policies, and demographic settings. The system provides real-time feedback on economic health and government spending allocations.\n\n**Pro Tip:** Balance your sectors carefully - too much focus on one sector can create vulnerabilities.",
+      "Set the sector mix, trade, tax policy and demographics. The economic health indicators update as you change them.\n\nTip: a mix of sectors is more resilient than a single dominant one.",
   },
   {
-    title: "Preview & Launch Your Nation",
-    short_description: "Review your nation and launch into MyCountry",
+    title: "Preview and create",
+    short_description: "Review the nation and create it",
     full_description:
-      "Review all your choices in the comprehensive preview system. Check economic indicators, government structure, and overall nation health.\n\n**What's Next:** You'll gain access to the MyCountry Executive Dashboard with diplomatic systems and intelligence operations.",
+      "Check the economic indicators, government structure and overall health. When you create the nation, it appears in MyCountry.",
     action: {
-      label: "Launch MyCountry",
+      label: "Done",
       onClick: () => {}, // Will be set by parent component
     },
   },
@@ -59,50 +59,31 @@ export const builderTutorialSteps: Step[] = [
 
 export const quickStartSteps: Step[] = [
   {
-    title: "Quick Start Guide",
-    short_description: "Get building in 4 simple steps",
+    title: "Quick start",
+    short_description: "Three steps to a working country",
     full_description:
-      "This quick guide will get you up and running in minutes. We'll focus on the essentials: core economic setup and basic government configuration.\n\n**Pro Tip:** You can always explore advanced features later - start simple and build complexity over time.",
+      "This covers the essentials: core indicators and a basic government. You can add detail later.",
   },
   {
-    title: "Step 1: Core Economic Indicators",
-    short_description: "Set your country name and key economic metrics",
+    title: "Step 1: Core indicators",
+    short_description: "Country name and key figures",
     full_description:
-      "Configure your country name and adjust the basics: population size, GDP per capita, and growth rate. The system automatically calculates related metrics.\n\n**Pro Tip:** Start with realistic numbers - the system provides validation ranges.",
+      "Set the country name, population, GDP per capita and growth rate. Related figures are calculated from these.\n\nTip: the fields show the valid range.",
   },
   {
-    title: "Step 2: Basic Government Setup",
-    short_description: "Choose essential government components",
+    title: "Step 2: Basic government",
+    short_description: "Choose the main components",
     full_description:
-      "Select core government components: Executive (President/Prime Minister), Legislature (Parliament/Congress), and Judiciary (Supreme Court). These provide the foundation for your government.\n\n**Pro Tip:** Start with these three core components - you can add specialized components later.",
+      "Pick components for how power is distributed, how decisions are made and the judiciary. You can add more later.",
   },
   {
-    title: "Step 3: Preview & Launch",
-    short_description: "Review your nation and launch into MyCountry",
+    title: "Step 3: Preview and create",
+    short_description: "Review the nation and create it",
     full_description:
-      "Check the vitality rings to ensure your economy is healthy (aim for green rings). Review the economic summary, then create your nation to begin the full MyCountry simulation experience.\n\n**Pro Tip:** You can always return to the builder later to make adjustments - don't worry about perfection on your first try.",
+      "Check that the economic health indicators are green, review the summary, then create the nation. You can come back to the builder and change it at any time.",
     action: {
-      label: "Begin Quick Start",
+      label: "Start building",
       onClick: () => {}, // Will be set by parent component
-    },
-  },
-];
-
-export const importGuideSteps: Step[] = [
-  {
-    title: "Import Your Data",
-    short_description: "Already have country data? Import it directly",
-    full_description:
-      "If you have existing country data in a spreadsheet or from another source, you can import it directly to get started quickly.",
-  },
-  {
-    title: "Supported Data Formats",
-    short_description: "CSV, Excel, or direct copy-paste from your source",
-    full_description:
-      "Upload CSV/Excel files with your country data, or copy-paste directly from spreadsheets. The system will intelligently map your data to the appropriate fields.",
-    action: {
-      label: "Go to Import Page",
-      href: "/builder/import",
     },
   },
 ];

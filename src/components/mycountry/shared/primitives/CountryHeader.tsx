@@ -21,7 +21,7 @@ export function CountryHeader({ countryName, countryId, countrySlug }: CountryHe
         <Crown className="text-yellow h-6 w-6 shrink-0" />
         <div>
           <h1 className="text-label text-title-1">{countryName}</h1>
-          <p className="text-label-secondary">National Overview & Vitality Dashboard</p>
+          <p className="text-label-secondary">National overview & vitality dashboard</p>
         </div>
       </div>
 
@@ -29,13 +29,13 @@ export function CountryHeader({ countryName, countryId, countrySlug }: CountryHe
         <Button variant="outline" size="sm" asChild>
           <Link href={createUrl(`/countries/${countrySlug || countryId}`)}>
             <BarChart3 className="h-4 w-4" />
-            Public View
+            Public view
           </Link>
         </Button>
         <Button variant="outline" size="sm" asChild>
           <Link href={createUrl("/mycountry/editor")}>
             <Edit className="h-4 w-4" />
-            Edit Data
+            Edit data
           </Link>
         </Button>
       </div>

@@ -31,10 +31,10 @@ export interface Asset {
 /** Asset types share one quiet icon colour; type is carried by the icon and label, not hue. */
 export const ASSET_TYPE_CONFIG = {
   aircraft: { icon: Plane, color: "text-label-secondary", label: "Aircraft" },
-  ship: { icon: Ship, color: "text-label-secondary", label: "Naval Vessel" },
+  ship: { icon: Ship, color: "text-label-secondary", label: "Naval vessel" },
   vehicle: { icon: Truck, color: "text-label-secondary", label: "Vehicle" },
   installation: { icon: Target, color: "text-label-secondary", label: "Installation" },
-  weapon_system: { icon: Radio, color: "text-label-secondary", label: "Weapon System" },
+  weapon_system: { icon: Radio, color: "text-label-secondary", label: "Weapon system" },
 } as const satisfies Record<AssetTypeKey, unknown>;
 
 /** `color` is the outline-badge status colour (semantic: ready / degraded / idle). */

@@ -78,51 +78,51 @@ interface DiplomaticEventsHubProps {
 const EVENT_TYPE_CONFIG: Record<string, { icon: React.ReactNode; label: string }> = {
   border_dispute: {
     icon: <AlertCircle className="h-4 w-4" />,
-    label: "Border Dispute",
+    label: "Border dispute",
   },
   trade_renegotiation: {
     icon: <TrendingUp className="h-4 w-4" />,
-    label: "Trade Negotiation",
+    label: "Trade negotiation",
   },
   cultural_misunderstanding: {
     icon: <MessageSquare className="h-4 w-4" />,
-    label: "Cultural Issue",
+    label: "Cultural issue",
   },
   intelligence_breach: {
     icon: <Eye className="h-4 w-4" />,
-    label: "Intelligence Breach",
+    label: "Intelligence breach",
   },
   humanitarian_crisis: {
     icon: <AlertCircle className="h-4 w-4" />,
-    label: "Humanitarian Crisis",
+    label: "Humanitarian crisis",
   },
   alliance_pressure: {
     icon: <Community className="h-4 w-4" />,
-    label: "Alliance Pressure",
+    label: "Alliance pressure",
   },
   economic_sanctions_debate: {
     icon: <TrendingDown className="h-4 w-4" />,
-    label: "Sanctions Debate",
+    label: "Sanctions debate",
   },
   technology_transfer_request: {
     icon: <Cpu className="h-4 w-4" />,
-    label: "Tech Transfer",
+    label: "Tech transfer",
   },
   diplomatic_incident: {
     icon: <AlertCircle className="h-4 w-4" />,
-    label: "Diplomatic Incident",
+    label: "Diplomatic incident",
   },
   mediation_opportunity: {
     icon: <CheckCircle className="h-4 w-4" />,
-    label: "Mediation Opportunity",
+    label: "Mediation opportunity",
   },
   embassy_security_threat: {
     icon: <AlertCircle className="h-4 w-4" />,
-    label: "Security Threat",
+    label: "Security threat",
   },
   treaty_renewal: {
     icon: <FileText className="h-4 w-4" />,
-    label: "Treaty Renewal",
+    label: "Treaty renewal",
   },
 };
 
@@ -209,7 +209,7 @@ function ImpactPreview({
               {item.suffix}
             </dd>
             <dt>
-              <Eyebrow>{item.label}</Eyebrow>
+              <span className="text-stat-label text-label-secondary">{item.label}</span>
             </dt>
           </div>
         );
@@ -361,7 +361,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
           </TabsTrigger>
           <TabsTrigger value="history" className="flex items-center gap-2">
             <History className="h-4 w-4" />
-            Event History
+            Event history
           </TabsTrigger>
         </TabsList>
 
@@ -424,7 +424,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                           onClick={() => openResponseDialog(event)}
                         >
                           <Eye className="h-4 w-4" />
-                          View & Respond
+                          View & respond
                         </Button>
                       </div>
                     </CardContent>
@@ -439,7 +439,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                 <div>
                   <h3 className="text-label text-title-3">No active events</h3>
                   <p className="text-label-secondary text-body mt-1">
-                    You&apos;re all caught up. New diplomatic events will appear here.
+                    There are no diplomatic events to respond to.
                   </p>
                 </div>
               </div>
@@ -457,12 +457,12 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                 <SelectValue placeholder="Filter by type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Events</SelectItem>
-                <SelectItem value="border_dispute">Border Disputes</SelectItem>
-                <SelectItem value="trade_renegotiation">Trade Negotiations</SelectItem>
-                <SelectItem value="cultural_misunderstanding">Cultural Issues</SelectItem>
-                <SelectItem value="alliance_pressure">Alliance Pressure</SelectItem>
-                <SelectItem value="treaty_renewal">Treaty Renewals</SelectItem>
+                <SelectItem value="all">All events</SelectItem>
+                <SelectItem value="border_dispute">Border disputes</SelectItem>
+                <SelectItem value="trade_renegotiation">Trade negotiations</SelectItem>
+                <SelectItem value="cultural_misunderstanding">Cultural issues</SelectItem>
+                <SelectItem value="alliance_pressure">Alliance pressure</SelectItem>
+                <SelectItem value="treaty_renewal">Treaty renewals</SelectItem>
               </SelectContent>
             </Select>
             <Badge variant="outline">{filteredHistory.length} events</Badge>
@@ -545,7 +545,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
               {/* Response Options */}
               {selectedEvent.responseOptions && selectedEvent.responseOptions.length > 0 && (
                 <div>
-                  <h4 className="text-label text-headline mb-3">Response Options</h4>
+                  <h4 className="text-label text-headline mb-3">Response options</h4>
                   <div className="space-y-3">
                     {selectedEvent.responseOptions.map((option, idx) => (
                       <Card variant="inset" key={idx} className="p-4">

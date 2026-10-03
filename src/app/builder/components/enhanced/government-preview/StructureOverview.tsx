@@ -16,7 +16,7 @@ export function StructureOverview({ structure, getGovernmentTypeIcon }: Structur
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Crown className="h-5 w-5" />
-          Government Overview
+          Government overview
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -27,7 +27,7 @@ export function StructureOverview({ structure, getGovernmentTypeIcon }: Structur
               <div className="mb-2 flex items-center gap-2">
                 {getGovernmentTypeIcon(structure.governmentType)}
                 <span className="text-label-secondary text-body font-medium">
-                  Government Details
+                  Government details
                 </span>
               </div>
               <div className="space-y-2">
@@ -40,7 +40,7 @@ export function StructureOverview({ structure, getGovernmentTypeIcon }: Structur
                   <p className="font-semibold">{structure.governmentType}</p>
                 </div>
                 <div>
-                  <span className="text-label-secondary text-body">Fiscal Year:</span>
+                  <span className="text-label-secondary text-body">Fiscal year:</span>
                   <p className="font-semibold">{structure.fiscalYear}</p>
                 </div>
               </div>
@@ -57,13 +57,13 @@ export function StructureOverview({ structure, getGovernmentTypeIcon }: Structur
               <div className="space-y-2">
                 {structure.headOfState && (
                   <div>
-                    <span className="text-label-secondary text-body">Head of State:</span>
+                    <span className="text-label-secondary text-body">Head of state:</span>
                     <p className="font-semibold">{structure.headOfState}</p>
                   </div>
                 )}
                 {structure.headOfGovernment && (
                   <div>
-                    <span className="text-label-secondary text-body">Head of Government:</span>
+                    <span className="text-label-secondary text-body">Head of government:</span>
                     <p className="font-semibold">{structure.headOfGovernment}</p>
                   </div>
                 )}

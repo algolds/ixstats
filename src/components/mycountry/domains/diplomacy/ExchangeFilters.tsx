@@ -36,7 +36,7 @@ export const ExchangeFilters = React.memo<ExchangeFiltersProps>(
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="all">All types</SelectItem>
             {Object.entries(exchangeTypes).map(([type, config]) => (
               <SelectItem key={type} value={type}>
                 {config.label}
@@ -51,7 +51,7 @@ export const ExchangeFilters = React.memo<ExchangeFiltersProps>(
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="all">All status</SelectItem>
             {Object.entries(statusStyles).map(([status, config]) => (
               <SelectItem key={status} value={status}>
                 {config.label}

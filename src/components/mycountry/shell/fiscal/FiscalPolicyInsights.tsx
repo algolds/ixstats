@@ -20,7 +20,6 @@ import {
   computeTaxYields,
   deriveSectorWeights,
 } from "./taxChannels";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { RailCard, RailRow, STATUS_FILL, STATUS_TEXT } from "../rails/shared";
 
 /** Fiscal Policy sidebar — reads the saved rates from the country record; "—" where unknown. */
@@ -137,7 +136,7 @@ export function FiscalPolicyInsights({ countryId: _countryId }: { countryId: str
       <RailCard title="Revenue composition" icon={Activity} contentClassName="space-y-3">
         {revenueComposition.length === 0 ? (
           <p className="text-label-secondary text-footnote">
-            No revenue projection yet — set your tax rates in National Tax Rate Controls.
+            No revenue projection yet. Set your tax rates in the national tax rate controls.
           </p>
         ) : (
           <>
@@ -186,7 +185,7 @@ export function FiscalPolicyInsights({ countryId: _countryId }: { countryId: str
       <RailCard title="Fiscal health" icon={ShieldCheck}>
         <div className="grid grid-cols-3 gap-2">
           <RailRow className="p-2">
-            <Eyebrow className="block">Efficiency</Eyebrow>
+            <span className="text-stat-label text-label-secondary block">Efficiency</span>
             <p className="text-label text-title-3 mt-0.5 tabular-nums">
               {collectionEfficiency != null ? (
                 <PercentageFlow value={collectionEfficiency} decimalPlaces={0} />
@@ -196,7 +195,7 @@ export function FiscalPolicyInsights({ countryId: _countryId }: { countryId: str
             </p>
           </RailRow>
           <RailRow className="p-2">
-            <Eyebrow className="block">Budget Δ</Eyebrow>
+            <span className="text-stat-label text-label-secondary block">Budget Δ</span>
             <p
               className={cn(
                 "text-title-3 mt-0.5 tabular-nums",
@@ -222,7 +221,7 @@ export function FiscalPolicyInsights({ countryId: _countryId }: { countryId: str
             </p>
           </RailRow>
           <RailRow className="p-2">
-            <Eyebrow className="block">Burden</Eyebrow>
+            <span className="text-stat-label text-label-secondary block">Burden</span>
             <p
               className={cn(
                 "text-headline mt-0.5",

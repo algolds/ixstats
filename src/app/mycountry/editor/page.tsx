@@ -12,7 +12,7 @@ import { EditorSkeleton } from "~/app/builder/components/editor/EditorSkeleton";
 export const dynamic = "force-dynamic";
 
 export default function MyCountryEditor() {
-  usePageTitle({ title: "Country Editor" });
+  usePageTitle({ title: "Country editor" });
 
   const { user, isLoaded } = useUser();
   const router = useRouter();

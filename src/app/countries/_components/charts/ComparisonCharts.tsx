@@ -28,7 +28,7 @@ import {
   Component as Layers,
   Minus,
 } from "iconoir-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -225,8 +225,7 @@ export function ComparisonCharts({
   const getChartConfig = (type: ComparisonChartType) => {
     const configs = {
       population: {
-        title: "Population Comparison",
-        description: "Compare population sizes across countries",
+        title: "Population comparison",
         component: (
           <BarChart data={chartData as any} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
@@ -251,8 +250,7 @@ export function ComparisonCharts({
         ),
       },
       gdp: {
-        title: "Economic Comparison",
-        description: "Compare GDP metrics across countries",
+        title: "Economic comparison",
         component: (
           <BarChart data={chartData as any} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
@@ -283,8 +281,7 @@ export function ComparisonCharts({
         ),
       },
       growth: {
-        title: "Growth Rate Comparison",
-        description: "Compare population and economic growth rates",
+        title: "Growth rate comparison",
         component: (
           <BarChart data={chartData as any} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
@@ -297,7 +294,7 @@ export function ComparisonCharts({
             />
             <YAxis
               tick={{ fontSize: 12, fill: chartTheme.text }}
-              label={{ value: "Growth Rate (%)", angle: -90, style: { fontSize: 10 } }}
+              label={{ value: "Growth rate (%)", angle: -90, style: { fontSize: 10 } }}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend wrapperStyle={{ fontSize: "11px" }} />
@@ -307,8 +304,7 @@ export function ComparisonCharts({
         ),
       },
       scatter: {
-        title: "GDP vs Population",
-        description: "Scatter plot of GDP per capita vs population",
+        title: "GDP vs population",
         component: (
           <ScatterChart
             data={chartData as any}
@@ -335,8 +331,7 @@ export function ComparisonCharts({
         ),
       },
       radar: {
-        title: "Multi-Metric Radar",
-        description: "Comprehensive comparison across multiple metrics",
+        title: "Multi-metric radar",
         component: (
           <RadarChart data={chartData as any} margin={{ top: 20, right: 60, bottom: 20, left: 60 }}>
             <PolarGrid />
@@ -409,19 +404,13 @@ export function ComparisonCharts({
       <CardHeader>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <Layers className="text-tint h-5 w-5" />
-              {currentConfig.title}
-            </CardTitle>
-            <CardDescription>{currentConfig.description}</CardDescription>
+            <CardTitle className="flex items-center gap-2">{currentConfig.title}</CardTitle>
           </div>
         </div>
 
-        {/* Controls */}
         <div className="space-y-4">
-          {/* Country Selection */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-body font-medium">Countries:</span>
+            <span className="text-body font-medium">Countries</span>
 
             {countries.map((country) => (
               <Badge
@@ -444,9 +433,8 @@ export function ComparisonCharts({
             ))}
           </div>
 
-          {/* Chart Type Selection */}
           <div className="flex items-center gap-2">
-            <span className="text-body font-medium">Chart Type:</span>
+            <span className="text-body font-medium">Chart type</span>
             <Select
               value={selectedChartType}
               onValueChange={(value) => setSelectedChartType(value as ComparisonChartType)}
@@ -470,19 +458,19 @@ export function ComparisonCharts({
                 <SelectItem value="growth">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="h-4 w-4" />
-                    Growth Rates
+                    Growth rates
                   </div>
                 </SelectItem>
                 <SelectItem value="scatter">
                   <div className="flex items-center gap-2">
                     <Target className="h-4 w-4" />
-                    GDP vs Population
+                    GDP vs population
                   </div>
                 </SelectItem>
                 <SelectItem value="radar">
                   <div className="flex items-center gap-2">
                     <BarChart3 className="h-4 w-4" />
-                    Multi-Metric
+                    Multi-metric
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -497,7 +485,7 @@ export function ComparisonCharts({
             <div className="text-center">
               <Layers className="mx-auto mb-4 h-12 w-12 opacity-50" />
               <p className="text-title-3">No countries selected</p>
-              <p className="text-body">Add countries to start comparing metrics</p>
+              <p className="text-body">Add countries to compare them</p>
             </div>
           </div>
         ) : (
@@ -517,7 +505,7 @@ export function ComparisonCharts({
                 <p className="text-title-3">{countries.length}</p>
               </div>
               <div>
-                <p className="text-label-secondary text-body">Total Population</p>
+                <p className="text-label-secondary text-body">Total population</p>
                 <p className="text-title-3">
                   {formatPopulation(countries.reduce((sum, c) => sum + c.currentPopulation, 0))}
                 </p>
@@ -529,7 +517,7 @@ export function ComparisonCharts({
                 </p>
               </div>
               <div>
-                <p className="text-label-secondary text-body">Avg GDP/Capita</p>
+                <p className="text-label-secondary text-body">Avg GDP per capita</p>
                 <p className="text-title-3">
                   {formatCurrency(
                     countries.reduce((sum, c) => sum + c.currentGdpPerCapita, 0) / countries.length

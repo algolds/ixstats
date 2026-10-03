@@ -8,123 +8,117 @@ interface HelpStep {
 export const contextualHelp: Record<BuilderSection, HelpStep[]> = {
   foundation: [
     {
-      title: "Choose a Country",
+      title: "Choose a country",
       description:
-        "Select a real country to use as your baseline. The country's population, GDP, and basic data will be used as your nation's starting data.",
+        "Pick a real country as your baseline. Its population, GDP and basic data become your starting values.",
     },
     {
       title: "Start from scratch",
       description:
-        "Prefer a blank slate? Configure your country from the ground up. You'll start with a population of 100,000 and a GDP of $1B, with all other stats at default.",
+        "Start from a blank country with default values: 10 million people and a $250 billion GDP.",
     },
     {
       title: "Import from IIWiki",
       description:
-        "Already have a nation on IIWiki? Import your nation's data and lore into the builder. You can edit any values after import.",
-    },
-    {
-      title: "Need more help?",
-      description: "Check out the full Beginner's Guide for more information.",
+        "Import an existing nation's data and lore from IIWiki. You can edit any value after the import.",
     },
   ],
   identity: [
     {
-      title: "Name Your Nation",
+      title: "Name your nation",
       description:
-        "Building on your foundation country, give your nation a unique name. This identity carries through every section — government, economy, diplomacy — and appears across the platform.",
+        "Set the country name. It is used in the government, economy and diplomacy sections and across the platform.",
     },
     {
-      title: "National Symbols",
+      title: "National symbols",
       description:
-        "Configure your flag, coat of arms, and visual identity. Upload images or describe them. These symbols represent your nation in the MyCountry dashboard, maps, and diplomatic interfaces.",
+        "Set the flag and coat of arms by uploading images or picking them from the IxWiki repository. They appear on your dashboard and on the map.",
     },
     {
-      title: "Government Type",
+      title: "Government type",
       description:
-        "Choose your form of government — democracy, monarchy, republic, etc. This choice directly determines which atomic components are available in the Government section.",
+        "Choose a form of government, such as a republic or a monarchy. It is shown on your country profile.",
     },
     {
-      title: "National Description",
-      description:
-        "Write your nation's story: history, culture, values, and aspirations. This narrative informs your nation's diplomatic positioning and how other players perceive your country.",
+      title: "National description",
+      description: "Write the history, culture and values of your nation.",
     },
   ],
   government: [
     {
-      title: "Atomic Components System",
+      title: "Pick components",
       description:
-        "Your government is built from 24 modular atomic components across 5 categories: Executive, Legislative, Judicial, Administrative, and Specialized. Each component is a self-contained unit with unique effects, costs, and synergies.",
+        "Your government is built from components grouped by what they do: power distribution, decision process, legitimacy, institutions, control mechanisms, administration and social policy. You can pick up to 15.",
     },
     {
-      title: "Core Branches First",
+      title: "Start with the basics",
       description:
-        "Start with the three essential branches: Executive (President/Prime Minister/Council), Legislature (Parliament/Congress/Assembly), and Judiciary (Supreme Court/Constitutional Court). These form the backbone that all other components connect to.",
+        "Start with how power is distributed and how decisions are made, then add institutions such as the judiciary and the bureaucracy.",
     },
     {
-      title: "Component Synergies",
+      title: "Synergies and conflicts",
       description:
-        "Components interact dynamically. Some combinations create powerful synergies (e.g., Parliamentary Executive + Bicameral Legislature), while others may conflict. The system shows real-time compatibility feedback and effect previews.",
+        "Some components reinforce each other and some conflict. The compatibility feedback shows the effect of each pick as you make it.",
     },
     {
-      title: "Specialized Components",
+      title: "Costs",
       description:
-        "Once your core branches are set, add specialized agencies: Intelligence Services, Central Banks, Electoral Commissions, Regulatory Bodies, and more. Each adds capabilities and affects your economic calculations.",
+        "Each component has a setup cost and yearly upkeep. The metrics bar shows the running totals.",
     },
   ],
   economics: [
     {
-      title: "Sector Distribution",
+      title: "Sector distribution",
       description:
-        "Configure your economy's sector breakdown: Agriculture, Industry, Services, and Technology. Your government components influence which sectors are most efficient. Balance is key — over-concentration creates vulnerabilities.",
+        "Set the share of agriculture, industry, services and technology. Concentrating on one sector leaves the economy exposed to shocks in it.",
     },
     {
-      title: "Tax & Fiscal Policy",
+      title: "Tax and fiscal policy",
       description:
-        "Set tax rates (income, corporate, consumption), government spending allocations, and fiscal priorities. Your government structure determines available policy options — a welfare state component unlocks social spending sliders, for example.",
+        "Set tax rates, spending allocations and fiscal priorities. Your government components determine which policy options are available.",
     },
     {
-      title: "Trade & Currency",
+      title: "Labor and demographics",
       description:
-        "Establish your currency, trade relationships, and economic partnerships. Configure import/export ratios, trade agreements, and monetary policy. Real-time calculations show projected impact on GDP and growth rates.",
+        "Set workforce participation, wages, unionization and the age and population profile.",
     },
     {
-      title: "Economic Health Monitoring",
+      title: "Economic health",
       description:
-        "Watch the vitality rings and economic indicators throughout. Green rings indicate healthy metrics, amber signals caution, and red requires attention. The system provides suggestions based on your government and sector configuration.",
+        "Watch the indicators as you edit. Green is healthy, amber needs attention and red is a problem.",
     },
   ],
   preview: [
     {
-      title: "Review Your Nation",
+      title: "Review your nation",
       description:
-        "A comprehensive synthesis of everything you've built: Identity, Government structure, and Economic systems. Review each section's choices and make final adjustments before launch.",
+        "Check the identity, government and economy sections. Go back to any step to change it.",
     },
     {
-      title: "Verify Economic Indicators",
+      title: "Check the numbers",
       description:
-        "Check GDP, population, growth rates, sector distributions, and tax revenue projections. Ensure all metrics are within realistic ranges. The system flags any inconsistencies from your configuration.",
+        "Check GDP, population, growth, sector shares and tax revenue. Inconsistent values are flagged.",
     },
     {
-      title: "Launch Your Nation",
-      description:
-        "Once satisfied, create your nation. You'll gain access to the MyCountry Executive Dashboard with diplomatic systems, intelligence operations, and the full simulation experience.",
+      title: "Create your nation",
+      description: "When you are done, create the nation. It then appears in MyCountry.",
     },
   ],
   import: [
     {
-      title: "Choose Wiki Source",
+      title: "Choose a wiki",
       description:
-        "Select from IxWiki, IIWiki, or AltHistory Wiki as your data source. Each wiki has different article formats and data availability.",
+        "Pick IxWiki, IIWiki or AltHistory Wiki. Each wiki formats its articles differently, so the data you get varies.",
     },
     {
-      title: "Search for Your Nation",
+      title: "Find your nation",
       description:
-        "Use the search bar and category filters to find your existing nation page. Click the filter icon in the sidebar to expand category filtering options.",
+        "Search by name and filter by category. The filter button in the sidebar expands the category options.",
     },
     {
-      title: "Review & Import Data",
+      title: "Review and import",
       description:
-        "Preview the parsed infobox data before importing. The system extracts population, GDP, government type, and other metrics. You can edit any field after import in the builder.",
+        "Preview the parsed infobox before importing. Population, GDP, government type and other values are extracted, and you can edit any of them afterward.",
     },
   ],
 };

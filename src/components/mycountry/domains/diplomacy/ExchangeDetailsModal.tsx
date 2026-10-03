@@ -190,9 +190,9 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               <Globe className="text-label-secondary h-5 w-5" />
-              Exchange Details
+              Exchange details
             </SheetTitle>
-            <SheetDescription>Comprehensive view of cultural exchange program</SheetDescription>
+            <SheetDescription>Cultural exchange program details</SheetDescription>
           </SheetHeader>
 
           <div className="space-y-6">
@@ -209,7 +209,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
               </div>
 
               {exchange.narrative && (
-                <DetailSection icon={EditPencil} title="Exchange Narrative">
+                <DetailSection icon={EditPencil} title="Exchange narrative">
                   <p className="text-label-secondary text-body leading-relaxed">
                     {exchange.narrative}
                   </p>
@@ -217,7 +217,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
               )}
 
               {objectives.length > 0 && (
-                <DetailSection icon={WhiteFlag} title="Program Objectives">
+                <DetailSection icon={WhiteFlag} title="Program objectives">
                   <ul className="space-y-2">
                     {objectives.map((objective, idx) => (
                       <li key={idx} className="flex items-start gap-2">
@@ -229,7 +229,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                 </DetailSection>
               )}
 
-              <DetailSection icon={Brain} title="Diplomatic Outlook">
+              <DetailSection icon={Brain} title="Diplomatic outlook">
                 <p className="text-label-secondary text-body italic">
                   This {typeConfig.label.toLowerCase()} between {exchange.hostCountry.name} and
                   participating nations shows potential for cultural bridge-building and long-term
@@ -246,13 +246,13 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                   <div key={m.label} className="bg-fill-3 rounded-row p-3 text-center">
                     <dd className="text-label text-title-3 tabular-nums">{m.value}</dd>
                     <dt>
-                      <Eyebrow>{m.label}</Eyebrow>
+                      <span className="text-stat-label text-label-secondary">{m.label}</span>
                     </dt>
                   </div>
                 ))}
               </dl>
 
-              <DetailSection icon={Settings} title="Program Details">
+              <DetailSection icon={Settings} title="Program details">
                 <div className="space-y-2">
                   <div className="text-body flex items-center justify-between">
                     <span className="text-label-secondary">Duration</span>
@@ -280,7 +280,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                   </div>
                   {exchange.maxParticipants && (
                     <div className="text-body flex items-center justify-between">
-                      <span className="text-label-secondary">Max Participants</span>
+                      <span className="text-label-secondary">Max participants</span>
                       <span className="text-label tabular-nums">{exchange.maxParticipants}</span>
                     </div>
                   )}
@@ -340,7 +340,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                               />
 
                               <div className="text-footnote flex items-center justify-between">
-                                <span className="text-label-secondary">Resource Commitment</span>
+                                <span className="text-label-secondary">Resource commitment</span>
                                 <span className="text-label font-medium tabular-nums">
                                   {Math.round(response.resourceCommitment)}%
                                 </span>
@@ -400,7 +400,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
               )}
 
               {exchange.status === "active" && (
-                <DetailSection icon={Flash} title="Generate Scenario">
+                <DetailSection icon={Flash} title="Generate scenario">
                   <p className="text-label-secondary text-footnote mb-3">
                     Create a dynamic cultural exchange scenario with narrative choices and predicted
                     outcomes
@@ -462,11 +462,11 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                       onClick={() => onJoin(exchange.id, "observer")}
                     >
                       <Eye className="h-4 w-4" />
-                      Observe Exchange
+                      Observe exchange
                     </Button>
                     <Button variant="outline" className="flex-1" onClick={onUploadArtifact}>
                       <Camera className="h-4 w-4" />
-                      Upload Artifact
+                      Upload artifact
                     </Button>
                   </>
                 )}

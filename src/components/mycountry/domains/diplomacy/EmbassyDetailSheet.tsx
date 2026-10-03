@@ -19,7 +19,6 @@ import {
   Flash as Zap,
   Clock,
   CheckCircle,
-  ArrowUpCircle,
   XmarkCircle as XCircle,
 } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
@@ -185,12 +184,12 @@ export function EmbassyDetailSheet({
               {/* Countries Info */}
               <div className="space-y-2">
                 <InfoRow
-                  label="Host Country"
+                  label="Host country"
                   value={embassy.hostCountryName ?? embassy.hostCountryId}
                   icon={MapPin}
                 />
                 <InfoRow
-                  label="Guest Country"
+                  label="Guest country"
                   value={embassy.guestCountryName ?? embassy.guestCountryId}
                   icon={Building2}
                 />
@@ -287,10 +286,6 @@ export function EmbassyDetailSheet({
               </Button>
               {embassy.status === "active" && (
                 <>
-                  <Button size="sm" variant="outline" className="gap-2" disabled>
-                    <ArrowUpCircle className="h-3 w-3" />
-                    Upgrade (Coming Soon)
-                  </Button>
                   <Button
                     size="sm"
                     variant="destructive"

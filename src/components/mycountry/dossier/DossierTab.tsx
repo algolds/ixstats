@@ -195,7 +195,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
       <Card className="rounded-card">
         <CardContent className="p-8 text-center">
           <AlertTriangle className="text-destructive mx-auto mb-3 h-6 w-6" />
-          <h3 className="text-label text-title-3 mb-2">Wiki Intelligence Unavailable</h3>
+          <h3 className="text-label text-title-3 mb-2">Wiki intelligence unavailable</h3>
           <p className="text-label-secondary mb-4">{wikiData.error}</p>
           <Button onClick={handleRefresh} variant="outline">
             <RefreshCw className="mr-2 h-4 w-4" />
@@ -271,7 +271,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                     <Card className="rounded-card">
                       <CardContent className="p-8 text-center">
                         <BookOpen className="text-label-secondary mx-auto mb-3 h-6 w-6" />
-                        <h3 className="text-label text-title-3 mb-2">No Wiki Sections Found</h3>
+                        <h3 className="text-label text-title-3 mb-2">No wiki sections found</h3>
                         <p className="text-label-secondary text-body mx-auto mb-6 max-w-md">
                           There is no active WikiOS database entry for{" "}
                           <strong>{countryName}</strong>.
@@ -281,7 +281,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                             <Link
                               href={`/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}/edit`}
                             >
-                              Create Page on WikiOS
+                              Create page on WikiOS
                             </Link>
                           </Button>
                           <Button
@@ -295,7 +295,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                               setIsCanvasModalOpen(true);
                             }}
                           >
-                            Create Native Lore Document
+                            Create native lore document
                           </Button>
                         </div>
                       </CardContent>
@@ -343,7 +343,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                 {/* Action Bar */}
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <h3 className="text-label text-headline">Native Lore Documents</h3>
+                    <h3 className="text-label text-headline">Native lore documents</h3>
                     <p className="text-label-secondary text-footnote">
                       Custom dossier documents created via the WikiOS Canvas Editor or file import.
                     </p>
@@ -367,7 +367,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                       className="text-footnote gap-2"
                     >
                       <Plus className="h-3.5 w-3.5" />
-                      New Document
+                      New document
                     </Button>
                   </div>
                 </div>
@@ -385,7 +385,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                   <Card className="rounded-card">
                     <CardContent className="p-8 text-center">
                       <BookOpen className="text-label-secondary mx-auto mb-3 h-6 w-6" />
-                      <h3 className="text-label text-title-3 mb-2">No Native Lore Documents</h3>
+                      <h3 className="text-label text-title-3 mb-2">No native lore documents</h3>
                       <p className="text-label-secondary text-body mx-auto mb-6 max-w-md">
                         Create custom dossier documents directly using the WikiOS Canvas Editor or
                         import existing markdown/text files.
@@ -396,7 +396,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                           setIsCanvasModalOpen(true);
                         }}
                       >
-                        Create First Document
+                        Create first document
                       </Button>
                     </CardContent>
                   </Card>
@@ -431,7 +431,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                                 setEditingLoreDoc(doc);
                                 setIsCanvasModalOpen(true);
                               }}
-                              title="Edit Document"
+                              title="Edit document"
                               aria-label={`Edit ${doc.title}`}
                             >
                               <Edit3 className="h-3.5 w-3.5" />
@@ -441,7 +441,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                               size="icon"
                               className="hover:text-destructive h-8 w-8"
                               onClick={() => handleDeleteNativeDoc(doc.id)}
-                              title="Delete Document"
+                              title="Delete document"
                               aria-label={`Delete ${doc.title}`}
                             >
                               <Trash2 className="h-3.5 w-3.5" />

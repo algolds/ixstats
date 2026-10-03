@@ -1,8 +1,8 @@
 export const METRIC_OPTIONS = [
   { value: "gdpGrowth", label: "GDP Growth", unit: "%", lowerIsBetter: false },
-  { value: "unemploymentRate", label: "Unemployment Rate", unit: "%", lowerIsBetter: true },
+  { value: "unemploymentRate", label: "Unemployment rate", unit: "%", lowerIsBetter: true },
   { value: "stability", label: "Stability", unit: "%", lowerIsBetter: false },
-  { value: "taxRevenue", label: "Tax Revenue", unit: "%", lowerIsBetter: false },
+  { value: "taxRevenue", label: "Tax revenue", unit: "%", lowerIsBetter: false },
   { value: "population", label: "Population", unit: "", lowerIsBetter: false },
   { value: "inflation", label: "Inflation", unit: "%", lowerIsBetter: true },
 ] as const;

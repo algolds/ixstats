@@ -166,7 +166,7 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
           void incomingProposals.refetch();
           void incomingInvites.refetch();
         }}
-        emptyText="Nothing awaiting your answer. Free trade and military alliance proposals and alliance invitations from other nations will appear here."
+        emptyText="No proposals or invitations are waiting for an answer."
         count={incoming.length}
       >
         {incoming.map((row) => (

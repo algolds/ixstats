@@ -30,12 +30,12 @@ export function EffectivenessPanel({
         <CardContent className="space-y-4 p-6">
           <h3 className="text-headline text-label mb-4 flex items-center gap-2">
             <Gauge aria-hidden className="text-green size-5" />
-            <span>Economic Health</span>
+            <span>Economic health</span>
           </h3>
           <div className="space-y-3">
             <div className="space-y-2">
               <div className="text-body flex justify-between">
-                <span>Overall Health</span>
+                <span>Overall health</span>
                 <span className="font-medium tabular-nums">
                   {(economicHealthMetrics?.economicHealthScore ?? 0).toFixed(0)}/100
                 </span>
@@ -76,7 +76,7 @@ export function EffectivenessPanel({
 
           <div className="text-body grid grid-cols-2 gap-4 pt-2">
             <div>
-              <span className="text-label-secondary">GDP Growth:</span>
+              <span className="text-label-secondary">GDP growth:</span>
               <span className="ml-1 font-medium">
                 {(economicHealthMetrics?.gdpGrowthRate ?? 0).toFixed(1)}%
               </span>
@@ -88,7 +88,7 @@ export function EffectivenessPanel({
               </span>
             </div>
             <div>
-              <span className="text-label-secondary">Risk Level:</span>
+              <span className="text-label-secondary">Risk level:</span>
               <Badge variant="outline" className="text-footnote ml-1">
                 {economicHealthMetrics?.economicRiskLevel ?? "Unknown"}
               </Badge>
@@ -108,7 +108,7 @@ export function EffectivenessPanel({
         <CardContent className="p-6">
           <h3 className="text-headline text-label mb-4 flex items-center gap-2">
             <Zap aria-hidden className="text-tint size-5" />
-            <span>Selected Atomic Components</span>
+            <span>Selected atomic components</span>
           </h3>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {selectedComponents.map((componentType, index) => {

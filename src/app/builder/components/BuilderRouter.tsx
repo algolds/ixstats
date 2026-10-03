@@ -7,7 +7,6 @@ import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { Lock, LockSlash as UnlockIcon, ArrowRight } from "iconoir-react";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Button } from "~/components/ui/button";
 import { createUrl } from "~/lib/utils";
 import { BuilderErrorBoundary } from "./BuilderErrorBoundary";
@@ -82,11 +81,11 @@ const AtomicBuilderInner = dynamic(
 
 const SECTION_TITLES: Record<BuilderSection, string> = {
   foundation: "Foundation",
-  identity: "National Identity",
+  identity: "National identity",
   government: "Government",
   economics: "Economics",
-  preview: "Preview & Create",
-  import: "Import from Wiki",
+  preview: "Preview and create",
+  import: "Import from wiki",
 };
 
 /** Section names in the page title; the editor's final section reviews rather than creates. */
@@ -484,7 +483,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       : null,
   });
 
-  // Auth guard - using MyCountry gold theme
+  // Auth guard
   if (!user) {
     return (
       <div className="flex h-full items-center justify-center p-4">
@@ -494,16 +493,14 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
           transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
         >
           <Card className="rounded-card mx-auto max-w-md space-y-6 p-8 text-center">
-            <Lock aria-hidden="true" className="text-tint mx-auto h-10 w-10" />
+            <Lock aria-hidden="true" className="text-label-secondary mx-auto h-10 w-10" />
             <div className="space-y-2">
-              <h1 className="text-label text-title-1">Authentication Required</h1>
-              <p className="text-label-secondary">
-                Sign in to access the MyCountry Builder and create your custom nation
-              </p>
+              <h1 className="text-label text-title-1">Authentication required</h1>
+              <p className="text-label-secondary">Sign in to use the MyCountry builder.</p>
             </div>
             <Button onClick={() => router.push(createUrl("/sign-in"))} size="lg" className="w-full">
               <UnlockIcon aria-hidden="true" className="h-4 w-4" />
-              Sign In to Continue
+              Sign in
             </Button>
           </Card>
         </motion.div>
@@ -584,8 +581,6 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       <WelcomeModalWrapper />
       <BuilderGuideSheet />
       <div className="relative flex min-h-screen w-full flex-1 flex-col">
-        {/* Facet paper-grain canvas behind the builder/editor */}
-        <TextureOverlay texture="paperGrain" opacity={0.05} className="fixed z-0 select-none" />
         <BuilderSidebarLayout
           activeSection={activeSection}
           onNavigate={handleNavigate}

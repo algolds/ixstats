@@ -4,7 +4,6 @@ import React from "react";
 import { cn } from "~/lib/utils/cn";
 import { ArrowUpRight, ArrowDownRight } from "iconoir-react";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
-import { Eyebrow } from "~/components/ui/eyebrow";
 
 export type MetricThemeVariant = "economy" | "social" | "demographics" | "labor" | "default";
 
@@ -119,7 +118,7 @@ MetricModalLayout.StatCard = function MetricModalStatCard({
   return (
     <div className={cn("rounded-row relative overflow-hidden p-4", theme.cardClass, className)}>
       <div className="flex items-center justify-between">
-        <Eyebrow>{label}</Eyebrow>
+        <span className="text-stat-label text-label-secondary">{label}</span>
         <Icon className={cn("h-4 w-4", theme.textHighlight)} />
       </div>
       <div className="mt-2 flex items-baseline gap-2">

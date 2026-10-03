@@ -97,7 +97,7 @@ export const EditorHeader = React.memo(function EditorHeader({
         <div className="flex min-w-0 items-center gap-4">
           <CountryFlag url={flagUrl} name={displayName} />
           <div className="min-w-0">
-            <Eyebrow className="block">Country Editor</Eyebrow>
+            <Eyebrow className="block">Country editor</Eyebrow>
             <h1 className="text-label text-title-2 sm:text-title-1 truncate">{displayName}</h1>
             <p
               className={cn(
@@ -134,7 +134,6 @@ export const EditorHeader = React.memo(function EditorHeader({
                     data-cuelume-press="tick"
                     data-cuelume-hover="tick"
                     className={cn(
-                      // Interactive row (depth 3) nested in the header card: a solid surface, no stacked blur.
                       "rounded-row flex h-full min-h-11 w-full items-start gap-3 border p-3 text-left transition-[background-color,border-color,transform] duration-150 active:scale-[0.98]",
                       "focus-visible:ring-tint focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                       isActive

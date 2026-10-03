@@ -11,7 +11,6 @@ import {
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { Card } from "~/components/ui/card";
@@ -137,7 +136,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
         <div className="py-3 sm:pr-3">
           <dt className="flex items-center gap-1">
             <Gauge aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
-            <Eyebrow>Network speed factor</Eyebrow>
+            <span className="text-stat-label text-label-secondary">Network speed factor</span>
           </dt>
           <dd className="mt-2 flex items-baseline gap-2">
             <span className={cn("text-title-2 tabular-nums", theme.text)}>
@@ -158,7 +157,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
 
         <div className="py-3 sm:px-3">
           <dt>
-            <Eyebrow>GDP modifier impact</Eyebrow>
+            <span className="text-stat-label text-label-secondary">GDP modifier impact</span>
           </dt>
           <dd className="mt-2">
             <Delta value={degradation.gdpModifierDelta} />
@@ -168,7 +167,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
 
         <div className="py-3 sm:pl-3">
           <dt>
-            <Eyebrow>Trade efficiency</Eyebrow>
+            <span className="text-stat-label text-label-secondary">Trade efficiency</span>
           </dt>
           <dd className="mt-2">
             <Delta value={degradation.tradeModifierDelta} />

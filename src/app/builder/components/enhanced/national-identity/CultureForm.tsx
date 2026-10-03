@@ -63,7 +63,7 @@ interface HeritageItem {
 const CORE_HERITAGE_SYMBOLS: HeritageItem[] = [
   {
     key: "nationalAnimal",
-    label: "National Animal",
+    label: "National animal",
     shortLabel: "Animal",
     icon: Rabbit,
     placeholder: "e.g. Bald Eagle, Lion, Panda...",
@@ -71,7 +71,7 @@ const CORE_HERITAGE_SYMBOLS: HeritageItem[] = [
   },
   {
     key: "nationalFlower",
-    label: "National Flora / Flower",
+    label: "National flora / flower",
     shortLabel: "Flora",
     icon: Flower2,
     placeholder: "e.g. Rose, Lotus, Cherry Blossom...",
@@ -79,7 +79,7 @@ const CORE_HERITAGE_SYMBOLS: HeritageItem[] = [
   },
   {
     key: "nationalDish",
-    label: "National Dish",
+    label: "National dish",
     shortLabel: "Dish",
     icon: UtensilsCrossed,
     placeholder: "e.g. Roast, Paella, Pho...",
@@ -87,7 +87,7 @@ const CORE_HERITAGE_SYMBOLS: HeritageItem[] = [
   },
   {
     key: "founders",
-    label: "Founding Figure(s)",
+    label: "Founding figure(s)",
     shortLabel: "Founders",
     icon: Users,
     placeholder: "e.g. Founding fathers, monarchs...",
@@ -98,7 +98,7 @@ const CORE_HERITAGE_SYMBOLS: HeritageItem[] = [
 const ADDITIONAL_HERITAGE_SYMBOLS: HeritageItem[] = [
   {
     key: "nationalBird",
-    label: "National Bird",
+    label: "National bird",
     shortLabel: "Bird",
     icon: Bird,
     placeholder: "e.g. Phoenix, Robin, Falcon...",
@@ -106,7 +106,7 @@ const ADDITIONAL_HERITAGE_SYMBOLS: HeritageItem[] = [
   },
   {
     key: "nationalFish",
-    label: "National Aquatic Symbol",
+    label: "National aquatic symbol",
     shortLabel: "Aquatic",
     icon: Fish,
     placeholder: "e.g. Salmon, Koi, Dolphin...",
@@ -114,7 +114,7 @@ const ADDITIONAL_HERITAGE_SYMBOLS: HeritageItem[] = [
   },
   {
     key: "nationalFruit",
-    label: "National Fruit / Produce",
+    label: "National fruit / produce",
     shortLabel: "Produce",
     icon: Apple,
     placeholder: "e.g. Mango, Olive, Apple...",
@@ -122,7 +122,7 @@ const ADDITIONAL_HERITAGE_SYMBOLS: HeritageItem[] = [
   },
   {
     key: "nationalDrink",
-    label: "National Beverage",
+    label: "National beverage",
     shortLabel: "Beverage",
     icon: Wine,
     placeholder: "e.g. Green Tea, Coffee, Wine...",
@@ -130,7 +130,7 @@ const ADDITIONAL_HERITAGE_SYMBOLS: HeritageItem[] = [
   },
   {
     key: "nationalInstrument",
-    label: "National Instrument",
+    label: "National instrument",
     shortLabel: "Instrument",
     icon: Guitar,
     placeholder: "e.g. Sitar, Bagpipes, Lute...",
@@ -138,7 +138,7 @@ const ADDITIONAL_HERITAGE_SYMBOLS: HeritageItem[] = [
   },
   {
     key: "nationalSymbol",
-    label: "Custom Heritage Emblem",
+    label: "Custom heritage emblem",
     shortLabel: "Custom Emblem",
     icon: Star,
     placeholder: "Any other national motif...",
@@ -302,7 +302,7 @@ export const CultureForm = React.memo(
             <div className="border-separator border-b px-6 py-4">
               <h3 className="text-label text-headline flex items-center gap-2">
                 <Sparkles className="text-tint h-5 w-5" />
-                National Motto & Expressions
+                National motto & expressions
               </h3>
             </div>
             <CardContent className="space-y-4 p-6">
@@ -313,7 +313,7 @@ export const CultureForm = React.memo(
                   className="text-label text-body flex items-center gap-2 font-medium"
                 >
                   <Sparkles className="text-label-secondary h-4 w-4" />
-                  National Motto
+                  National motto
                 </label>
                 <p className="text-label-secondary text-footnote leading-tight">
                   The primary rallying cry or constitutional motto of your people
@@ -333,7 +333,7 @@ export const CultureForm = React.memo(
                   className="text-caption text-label flex items-center gap-2"
                 >
                   <Globe className="h-3.5 w-3.5" />
-                  <span>Native / Historical Language Motto (Optional)</span>
+                  <span>Native / historical language motto (optional)</span>
                 </label>
                 <Input
                   id={`${fieldId}-mottoNative`}
@@ -351,7 +351,7 @@ export const CultureForm = React.memo(
                   className="text-label text-body flex items-center gap-2 font-medium"
                 >
                   <Music className="text-label-secondary h-4 w-4" />
-                  National Anthem
+                  National anthem
                 </label>
                 <p className="text-label-secondary text-footnote leading-tight">
                   Title of the solemn or celebratory state anthem
@@ -371,7 +371,7 @@ export const CultureForm = React.memo(
                   className="text-label text-body flex items-center gap-2 font-medium"
                 >
                   <Heart className="text-label-secondary h-4 w-4" />
-                  Primary / State Religion
+                  Primary / state religion
                 </label>
                 <p className="text-label-secondary text-footnote leading-tight">
                   Major religious tradition or secular constitutional designation
@@ -391,7 +391,7 @@ export const CultureForm = React.memo(
                     htmlFor={`${fieldId}-nationalDay`}
                     className="text-label text-body flex items-center gap-2 font-medium"
                   >
-                    <span>National Day</span>
+                    <span>National day</span>
                   </label>
                   <Input
                     id={`${fieldId}-nationalDay`}
@@ -407,7 +407,7 @@ export const CultureForm = React.memo(
                     className="text-label text-body flex items-center gap-2 font-medium"
                   >
                     <Trophy className="text-label-secondary h-3.5 w-3.5" />
-                    <span>National Sport</span>
+                    <span>National sport</span>
                   </label>
                   <Input
                     id={`${fieldId}-nationalSport`}
@@ -425,7 +425,7 @@ export const CultureForm = React.memo(
             <div className="border-separator border-b px-6 py-4">
               <h3 className="text-label text-headline flex items-center gap-2">
                 <Languages className="text-indigo h-5 w-5" />
-                Languages & Currency
+                Languages & currency
               </h3>
               <p className="text-label-secondary text-footnote mt-0.5 leading-tight">
                 Official languages, lingua franca, and national currency.
@@ -435,7 +435,7 @@ export const CultureForm = React.memo(
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <IdentityAutocomplete
                   fieldName="officialLanguages"
-                  label="Primary Official Language"
+                  label="Primary official language"
                   value={String(identity.officialLanguages || "")}
                   onChange={(val) => onIdentityChange("officialLanguages", val)}
                   placeholder="e.g. English, French, Eldorian"
@@ -448,7 +448,7 @@ export const CultureForm = React.memo(
 
                 <IdentityAutocomplete
                   fieldName="nationalLanguage"
-                  label="National / Lingua Franca"
+                  label="National / lingua franca"
                   value={String(identity.nationalLanguage || "")}
                   onChange={(val) => onIdentityChange("nationalLanguage", val)}
                   placeholder="e.g. Regional tongue or dialect"
@@ -483,7 +483,7 @@ export const CultureForm = React.memo(
                           htmlFor={`${fieldId}-currencySymbol`}
                           className="text-caption text-label font-semibold"
                         >
-                          Custom Currency Symbol
+                          Custom currency symbol
                         </label>
                       </div>
                       <p className="text-label-secondary text-footnote">
@@ -511,7 +511,7 @@ export const CultureForm = React.memo(
               <div>
                 <h3 className="text-label text-headline flex items-center gap-2">
                   <Star className="text-teal h-5 w-5" />
-                  Cultural Heritage & National Emblems
+                  Cultural heritage & national emblems
                 </h3>
                 <p className="text-label-secondary text-footnote mt-0.5 leading-tight">
                   Fauna, flora, founding figures, and cherished national motifs
@@ -536,7 +536,7 @@ export const CultureForm = React.memo(
               <div className="border-separator space-y-2 border-t pt-3">
                 <div className="flex items-center justify-between">
                   <span className="text-label-secondary text-caption">
-                    Add More Cultural Motifs:
+                    Add more cultural motifs:
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-2">

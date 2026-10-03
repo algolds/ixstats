@@ -76,7 +76,7 @@ function componentLabel(comp: unknown): string {
   return c?.name || c?.componentType || "";
 }
 
-/** Economic archetype details: a detail view, so a Sheet (Facet 3 §7.3). */
+/** Economic archetype details: a detail view, so a Sheet. */
 export function ArchetypeDetailsModal({
   isOpen,
   onOpenChange,
@@ -120,12 +120,12 @@ export function ArchetypeDetailsModal({
               ) : isGloballySelected ? (
                 <>
                   <CheckCircle aria-hidden />
-                  <span>Preset Applied</span>
+                  <span>Preset applied</span>
                 </>
               ) : (
                 <>
                   <ArrowRight aria-hidden />
-                  <span>Apply Archetype Preset</span>
+                  <span>Apply archetype preset</span>
                 </>
               )}
             </Button>
@@ -134,12 +134,12 @@ export function ArchetypeDetailsModal({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <DetailSection icon={icon(TrendingUp, "text-green")} title="Growth metrics">
               <MetricBar
-                label="GDP Growth"
+                label="GDP growth"
                 display={`${archetype.growthMetrics.gdpGrowth}%`}
                 value={archetype.growthMetrics.gdpGrowth * 10}
               />
               <MetricBar
-                label="Innovation Index"
+                label="Innovation index"
                 display={`${archetype.growthMetrics.innovationIndex}`}
                 value={archetype.growthMetrics.innovationIndex}
               />
@@ -157,17 +157,17 @@ export function ArchetypeDetailsModal({
 
             <DetailSection icon={icon(Users, "text-blue")} title="Employment profile">
               <MetricBar
-                label="Unemployment Rate"
+                label="Unemployment rate"
                 display={`${archetype.employmentProfile.unemploymentRate}%`}
                 value={100 - archetype.employmentProfile.unemploymentRate * 10}
               />
               <MetricBar
-                label="Labor Participation"
+                label="Labor participation"
                 display={`${archetype.employmentProfile.laborParticipation}%`}
                 value={archetype.employmentProfile.laborParticipation}
               />
               <MetricBar
-                label="Wage Growth"
+                label="Wage growth"
                 display={`${archetype.employmentProfile.wageGrowth}%`}
                 value={archetype.employmentProfile.wageGrowth * 20}
               />
@@ -180,22 +180,22 @@ export function ArchetypeDetailsModal({
             >
               <div className="grid gap-3 sm:grid-cols-2">
                 <MetricBar
-                  label="Corporate Tax"
+                  label="Corporate tax"
                   display={`${archetype.taxProfile.corporateRate}%`}
                   value={archetype.taxProfile.corporateRate * 2}
                 />
                 <MetricBar
-                  label="Income Tax"
+                  label="Income tax"
                   display={`${archetype.taxProfile.incomeRate}%`}
                   value={archetype.taxProfile.incomeRate * 1.5}
                 />
                 <MetricBar
-                  label="Consumption Tax"
+                  label="Consumption tax"
                   display={`${archetype.taxProfile.consumptionRate}%`}
                   value={archetype.taxProfile.consumptionRate * 3}
                 />
                 <MetricBar
-                  label="Revenue Efficiency"
+                  label="Revenue efficiency"
                   display={`${Math.round(archetype.taxProfile.revenueEfficiency * 100)}%`}
                   value={archetype.taxProfile.revenueEfficiency * 100}
                 />

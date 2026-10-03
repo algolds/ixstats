@@ -189,7 +189,7 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
                             }
                             disabled={endMutation.isPending}
                           >
-                            End Operation
+                            End operation
                           </Button>
                         </AlertDialogClose>
                       </AlertDialogFooter>

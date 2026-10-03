@@ -64,7 +64,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   // Create exchange mutation
   const createExchangeMutation = api.diplomaticCultural.createCulturalExchange.useMutation({
     onSuccess: () => {
-      notify.success("Cultural exchange created successfully!");
+      notify.success("Cultural exchange created");
       setShowCreateModal(false);
       refetchExchanges();
     },
@@ -76,7 +76,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   // Join exchange mutation
   const joinExchangeMutation = api.diplomaticCultural.joinCulturalExchange.useMutation({
     onSuccess: () => {
-      notify.success("Successfully joined cultural exchange!");
+      notify.success("Joined cultural exchange");
       refetchExchanges();
     },
     onError: (error) => {
@@ -87,7 +87,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   // Vote on exchange mutation
   const voteExchangeMutation = api.diplomaticCultural.voteOnExchange.useMutation({
     onSuccess: () => {
-      notify.success("Vote recorded!");
+      notify.success("Vote recorded");
       refetchExchanges();
     },
     onError: (error) => {
@@ -98,7 +98,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   // Upload artifact mutation
   const uploadArtifactMutation = api.diplomaticCultural.uploadCulturalArtifact.useMutation({
     onSuccess: () => {
-      notify.success("Cultural artifact uploaded successfully!");
+      notify.success("Artifact uploaded");
       setShowArtifactUpload(false);
       refetchExchanges();
     },
@@ -116,7 +116,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
         responseOptions: data.responseOptions,
       });
       setShowScenarioModal(true);
-      notify.success("Cultural scenario generated!");
+      notify.success("Scenario generated");
     },
     onError: (error) => {
       notify.error(`Failed to generate scenario: ${error.message}`);
@@ -127,7 +127,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   const calculateImpactMutation = api.diplomaticCultural.calculateExchangeImpact.useMutation({
     onSuccess: () => {
       setShowImpactVisualization(true);
-      notify.success("Impact calculated successfully!");
+      notify.success("Impact calculated");
       refetchExchanges();
     },
     onError: (error) => {
@@ -149,7 +149,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   // Update exchange mutation
   const updateExchangeMutation = api.diplomaticCultural.updateCulturalExchange.useMutation({
     onSuccess: () => {
-      notify.success("Exchange updated successfully!");
+      notify.success("Exchange updated");
       setShowEditModal(false);
       refetchExchanges();
     },
@@ -590,7 +590,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
           </p>
           <Button variant="outline" onClick={() => setShowCreateModal(true)}>
             <Plus className="h-4 w-4" />
-            Create Your First Exchange
+            Create your first exchange
           </Button>
         </Card>
       )}
@@ -599,7 +599,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
       <Sheet open={showCreateModal} onOpenChange={setShowCreateModal}>
         <SheetContent size="wide" className="flex flex-col overflow-hidden p-0">
           <SheetHeader className="sr-only">
-            <SheetTitle>Create Cultural Exchange</SheetTitle>
+            <SheetTitle>Create cultural exchange</SheetTitle>
           </SheetHeader>
           <CulturalExchangeWizard
             hostCountry={primaryCountry}

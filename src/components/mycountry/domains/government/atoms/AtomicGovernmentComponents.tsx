@@ -280,7 +280,7 @@ export function AtomicGovernmentComponents({
                 <Blocks aria-hidden="true" className="text-yellow h-6 w-6 shrink-0" />
                 <div className="min-w-0">
                   <h2 className="text-label text-title-2 flex flex-wrap items-center gap-2">
-                    Atomic Government Builder
+                    Atomic government builder
                     <Button
                       variant="ghost"
                       size="icon"
@@ -311,7 +311,7 @@ export function AtomicGovernmentComponents({
                   </Button>
                   <Button size="sm" onClick={handleSave} disabled={!builder.validation.isValid}>
                     <Save className="h-4 w-4" />
-                    Save Configuration
+                    Save configuration
                   </Button>
                 </div>
               )}

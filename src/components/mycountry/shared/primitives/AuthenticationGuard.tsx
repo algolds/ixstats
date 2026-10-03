@@ -37,7 +37,7 @@ export function AuthenticationGuard({ children, redirectPath }: AuthenticationGu
         <Card className="mx-auto flex max-w-2xl flex-col gap-6 py-6">
           <CardHeader className="text-center">
             <Crown className="text-label-secondary mx-auto mb-4 h-12 w-12" />
-            <CardTitle className="text-title-1">Authentication Not Configured</CardTitle>
+            <CardTitle className="text-title-1">Authentication not configured</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-label-secondary mb-6">
@@ -47,14 +47,14 @@ export function AuthenticationGuard({ children, redirectPath }: AuthenticationGu
             <div className="flex justify-center gap-4">
               <Button onClick={() => (window.location.href = createAbsoluteUrl("/countries"))}>
                 <Globe className="mr-2 h-4 w-4" />
-                Browse Countries
+                Browse countries
               </Button>
               <Button
                 variant="outline"
                 onClick={() => (window.location.href = createAbsoluteUrl("/dashboard"))}
               >
                 <Activity className="mr-2 h-4 w-4" />
-                View Dashboard
+                View dashboard
               </Button>
             </div>
           </CardContent>

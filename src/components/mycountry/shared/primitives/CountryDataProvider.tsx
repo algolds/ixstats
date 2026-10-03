@@ -175,7 +175,7 @@ export function CountryDataProvider({
         <Card className="mx-auto flex max-w-2xl flex-col gap-6 py-6">
           <CardHeader className="text-center">
             <Crown className="text-label-secondary mx-auto mb-4 h-12 w-12" />
-            <CardTitle className="text-title-1">No Country Assigned</CardTitle>
+            <CardTitle className="text-title-1">No country assigned</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-label-secondary mb-6">
@@ -184,13 +184,13 @@ export function CountryDataProvider({
             </p>
             <div className="flex justify-center gap-4">
               <Button onClick={() => (window.location.href = createAbsoluteUrl("/countries"))}>
-                Browse Countries
+                Browse countries
               </Button>
               <Button
                 variant="outline"
                 onClick={() => (window.location.href = createAbsoluteUrl("/admin"))}
               >
-                Contact Admin
+                Contact admin
               </Button>
             </div>
           </CardContent>

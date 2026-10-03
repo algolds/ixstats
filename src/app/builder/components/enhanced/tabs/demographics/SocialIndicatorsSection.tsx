@@ -30,7 +30,7 @@ export function SocialIndicatorsSection({
   return (
     <div className="space-y-4">
       <SliderWithDirectInput
-        label="Life Expectancy"
+        label="Life expectancy"
         description="Average life expectancy at birth"
         value={demographics.lifeExpectancy}
         onChange={(value) => onChange("lifeExpectancy", value)}
@@ -45,7 +45,7 @@ export function SocialIndicatorsSection({
       />
 
       <SliderWithDirectInput
-        label="Literacy Rate"
+        label="Literacy rate"
         description="Percentage of literate adults"
         value={demographics.literacyRate}
         onChange={(value) => onChange("literacyRate", value)}
@@ -60,9 +60,9 @@ export function SocialIndicatorsSection({
       />
 
       <div className="space-y-3">
-        <h4 className="font-medium">Education Levels</h4>
+        <h4 className="font-medium">Education levels</h4>
         <SliderWithDirectInput
-          label="No Education"
+          label="No education"
           value={demographics.educationLevels.noEducation}
           onChange={(value) => onNestedChange("educationLevels", "noEducation", value)}
           min={0}
@@ -75,7 +75,7 @@ export function SocialIndicatorsSection({
           defaultMode="slider"
         />
         <SliderWithDirectInput
-          label="Primary Education"
+          label="Primary education"
           value={demographics.educationLevels.primary}
           onChange={(value) => onNestedChange("educationLevels", "primary", value)}
           min={0}
@@ -88,7 +88,7 @@ export function SocialIndicatorsSection({
           defaultMode="slider"
         />
         <SliderWithDirectInput
-          label="Secondary Education"
+          label="Secondary education"
           value={demographics.educationLevels.secondary}
           onChange={(value) => onNestedChange("educationLevels", "secondary", value)}
           min={0}
@@ -101,7 +101,7 @@ export function SocialIndicatorsSection({
           defaultMode="slider"
         />
         <SliderWithDirectInput
-          label="Tertiary Education"
+          label="Tertiary education"
           value={demographics.educationLevels.tertiary}
           onChange={(value) => onNestedChange("educationLevels", "tertiary", value)}
           min={0}
@@ -128,7 +128,7 @@ export function SocialIndicatorsSection({
         className="border-t pt-4"
       >
         <EnhancedNumberInput
-          label="Infant Mortality Rate"
+          label="Infant mortality rate"
           description="Deaths per 1000 live births"
           value={demographics.infantMortalityRate}
           onChange={(value) => onChange("infantMortalityRate", Number(value) || 0)}
@@ -141,7 +141,7 @@ export function SocialIndicatorsSection({
         />
 
         <EnhancedNumberInput
-          label="Maternal Mortality Rate"
+          label="Maternal mortality rate"
           description="Deaths per 100,000 live births"
           value={demographics.maternalMortalityRate}
           onChange={(value) => onChange("maternalMortalityRate", Number(value) || 0)}
@@ -154,7 +154,7 @@ export function SocialIndicatorsSection({
         />
 
         <SliderWithDirectInput
-          label="Health Expenditure (GDP %)"
+          label="Health expenditure (GDP %)"
           description="Health spending as percentage of GDP"
           value={demographics.healthExpenditureGDP}
           onChange={(value) => onChange("healthExpenditureGDP", value)}

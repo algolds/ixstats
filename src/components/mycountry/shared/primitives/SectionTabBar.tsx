@@ -42,7 +42,7 @@ function iconAccent(classes: string | undefined): string {
 
 /**
  * The sub-tab bar shared by the MyCountry domain sections (Economy, Politics, Diplomacy,
- * Defense): a Facet `SegmentedControl` exposed as a tablist (spec §7.2). More than five sections
+ * Defense): a Facet `SegmentedControl` exposed as a tablist. More than five sections
  * scroll horizontally; the active section's icon takes the domain accent and counts sit in the
  * segment's badge slot.
  */

@@ -120,7 +120,7 @@ export function DebtAnalysisModal({
   } => {
     if (debtToGdp < 40)
       return {
-        label: "Low Risk",
+        label: "Low risk",
         color: "text-green",
         bg: "bg-fill-3",
         border: "border-separator",
@@ -143,7 +143,7 @@ export function DebtAnalysisModal({
         variant: "secondary",
       };
     return {
-      label: "High Risk",
+      label: "High risk",
       color: "text-destructive",
       bg: "bg-fill-3",
       border: "border-separator",
@@ -215,7 +215,7 @@ export function DebtAnalysisModal({
             <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 flex items-center gap-2">
                 <Scale className="text-label-secondary h-5 w-5" />
-                Fiscal Position
+                Fiscal position
               </h3>
               <p className="text-label-secondary text-body">
                 Debt sustainability and interest burden indicators.
@@ -227,7 +227,9 @@ export function DebtAnalysisModal({
                   <div className="text-label text-title-3">
                     ${((fiscal?.debtServiceCosts || 0) / 1e9).toFixed(1)}B
                   </div>
-                  <Eyebrow className="mt-1 block">Annual Interest</Eyebrow>
+                  <span className="text-stat-label text-label-secondary mt-1 block">
+                    Annual interest
+                  </span>
                 </Card>
                 <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3">
@@ -237,7 +239,9 @@ export function DebtAnalysisModal({
                     ).toFixed(2)}
                     %
                   </div>
-                  <Eyebrow className="mt-1 block">Interest/GDP</Eyebrow>
+                  <span className="text-stat-label text-label-secondary mt-1 block">
+                    Interest/GDP
+                  </span>
                 </Card>
                 <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-title-3 text-green">
@@ -247,7 +251,9 @@ export function DebtAnalysisModal({
                     ).toFixed(1)}
                     %
                   </div>
-                  <Eyebrow className="mt-1 block">Interest/Rev</Eyebrow>
+                  <span className="text-stat-label text-label-secondary mt-1 block">
+                    Interest/Rev
+                  </span>
                 </Card>
                 <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className={cn("text-title-3", riskLevel.color)}>{riskLevel.label}</div>
@@ -274,7 +280,7 @@ export function DebtAnalysisModal({
 
         <MetricModalLayout.Sidebar>
           <MetricModalLayout.StatCard
-            label="Public Debt"
+            label="Public debt"
             value={publicDebt / 1e12}
             prefix="$"
             suffix=" T"
@@ -291,7 +297,7 @@ export function DebtAnalysisModal({
             variant="economy"
           />
           <MetricModalLayout.StatCard
-            label="Debt per Capita"
+            label="Debt per capita"
             value={publicDebt / population}
             prefix="$"
             decimalPlaces={0}
@@ -303,7 +309,9 @@ export function DebtAnalysisModal({
             className={`rounded-row relative flex min-h-[100px] flex-1 flex-col justify-between overflow-hidden border p-4 ${riskLevel.bg} ${riskLevel.border}`}
           >
             <div>
-              <Eyebrow className="block">Risk Classification</Eyebrow>
+              <span className="text-stat-label text-label-secondary block">
+                Risk classification
+              </span>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className={`text-title-3 ${riskLevel.color}`}>{riskLevel.label}</span>
               </div>
@@ -353,7 +361,7 @@ export function DebtAnalysisModal({
         <MetricModalLayout.MainArea>
           <Card className="p-6">
             <CardHeader className="mb-4 p-0">
-              <h3 className="text-label text-title-3">Debt Trends</h3>
+              <h3 className="text-label text-title-3">Debt trends</h3>
               <p className="text-label-secondary text-body">
                 Historical public debt and debt-to-GDP ratio
               </p>
@@ -419,19 +427,23 @@ export function DebtAnalysisModal({
         <MetricModalLayout.Sidebar>
           <div className="flex flex-1 flex-col gap-4">
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Peak Debt-to-GDP</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                Peak debt-to-GDP
+              </span>
               <span className="text-label text-title-2">
                 {debtStats?.maxRatio ? `${debtStats.maxRatio.toFixed(1)}%` : "N/A"}
               </span>
             </div>
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Minimum Public Debt</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                Minimum public debt
+              </span>
               <span className="text-title-2 text-green">
                 {debtStats?.minDebt ? `$${debtStats.minDebt.toFixed(3)} T` : "N/A"}
               </span>
             </div>
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Data Points</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">Data points</span>
               <span className="text-label text-title-2">{debtStats?.dataPoints || 0}</span>
             </div>
           </div>
@@ -475,7 +487,7 @@ export function DebtAnalysisModal({
             <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 flex items-center gap-2">
                 <Globe className="text-label-secondary h-5 w-5" />
-                Global Fiscal Benchmark
+                Global fiscal benchmark
               </h3>
               <p className="text-label-secondary text-body">
                 Compare public debt accumulation levels against global baselines.
@@ -516,7 +528,9 @@ export function DebtAnalysisModal({
         <MetricModalLayout.Sidebar>
           <div className="flex h-full flex-col justify-between gap-4">
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">vs Global Average</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                vs Global Average
+              </span>
               <span className="text-label text-title-2">
                 {debtToGdp < globalAvgDebt ? "Below Average" : "Above Average"}
               </span>
@@ -525,7 +539,9 @@ export function DebtAnalysisModal({
               </span>
             </div>
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Estimated Rating</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                Estimated rating
+              </span>
               <span className="text-title-2 text-green flex items-center gap-2">
                 <CreditCard className="h-4 w-4" />
                 {debtToGdp < 40
@@ -543,7 +559,9 @@ export function DebtAnalysisModal({
               </span>
             </div>
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Sustainability Status</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                Sustainability status
+              </span>
               <span
                 className={cn(
                   "text-title-2",
@@ -592,18 +610,18 @@ export function DebtAnalysisModal({
         <MetricModalLayout.MainArea>
           <Card className="flex flex-1 flex-col justify-between p-6">
             <CardHeader className="mb-4 p-0">
-              <h3 className="text-label text-title-3">Debt Composition</h3>
+              <h3 className="text-label text-title-3">Debt composition</h3>
               <p className="text-label-secondary text-body">Breakdown of public debt by category</p>
             </CardHeader>
             <CardContent className="flex-1 p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                 <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3">{domesticShare.toFixed(0)}%</div>
-                  <div className="text-label-secondary text-footnote mt-1">Domestic Debt</div>
+                  <div className="text-label-secondary text-footnote mt-1">Domestic debt</div>
                 </Card>
                 <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3">{externalShare.toFixed(0)}%</div>
-                  <div className="text-label-secondary text-footnote mt-1">External Debt</div>
+                  <div className="text-label-secondary text-footnote mt-1">External debt</div>
                 </Card>
                 <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-title-3 text-green">25%</div>
@@ -634,28 +652,28 @@ export function DebtAnalysisModal({
         <MetricModalLayout.Sidebar>
           <Card className="flex flex-1 flex-col justify-between p-4">
             <CardHeader className="mb-4 p-0">
-              <h3 className="text-label text-title-3 text-headline">Debt Servicing</h3>
+              <h3 className="text-label text-title-3 text-headline">Debt servicing</h3>
               <p className="text-label-secondary text-footnote">
                 Annual interest costs and durations
               </p>
             </CardHeader>
             <CardContent className="space-y-4 p-0">
               <Card variant="inset" padding="none" className="p-3">
-                <Eyebrow>Annual Interest</Eyebrow>
+                <span className="text-stat-label text-label-secondary">Annual interest</span>
                 <div className="text-destructive text-title-3 mt-1">
                   ${((fiscal?.debtServiceCosts || 0) / 1e9).toFixed(1)}B
                 </div>
               </Card>
 
               <Card variant="inset" padding="none" className="p-3">
-                <Eyebrow>Average Interest Rate</Eyebrow>
+                <span className="text-stat-label text-label-secondary">Average interest rate</span>
                 <div className="text-label text-title-3 mt-1">
                   {(fiscal?.interestRates || 3.5).toFixed(2)}%
                 </div>
               </Card>
 
               <Card variant="inset" padding="none" className="p-3">
-                <Eyebrow>Average Maturity</Eyebrow>
+                <span className="text-stat-label text-label-secondary">Average maturity</span>
                 <div className="text-label text-title-3 mt-1">8.5 Years</div>
               </Card>
             </CardContent>
@@ -671,7 +689,7 @@ export function DebtAnalysisModal({
       onClose={onClose}
       countryId={countryId}
       countryName={countryName}
-      title="Public Debt Analysis"
+      title="Public debt analysis"
       description="Debt sustainability and fiscal health metrics"
       icon={Landmark}
       iconColor="text-yellow"

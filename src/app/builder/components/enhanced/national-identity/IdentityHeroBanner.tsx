@@ -16,7 +16,6 @@ import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FlagWatermark } from "~/components/ui/facet";
 import { springSmooth } from "~/lib/design/motion";
 import { getHighResFlagUrl } from "./identityUtils";
 import { useNotify } from "~/hooks/useNotify";
@@ -73,7 +72,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
   const [isUploadingFlag, setIsUploadingFlag] = React.useState(false);
   const [isUploadingCoA, setIsUploadingCoA] = React.useState(false);
 
-  const displayCountryName = countryName.trim() || "Untitled Nation";
+  const displayCountryName = countryName.trim() || "Untitled nation";
   const displayOfficialName = officialName?.trim();
   const displayFlag = getHighResFlagUrl(flagUrl || foundationCountry?.flagUrl || "");
   const displayCoa = coatOfArmsUrl || foundationCountry?.coatOfArmsUrl || "";
@@ -187,7 +186,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
       transition={springSmooth}
       className={cn(
         "group relative isolate overflow-hidden p-5",
-        "material-hero text-label rounded-card",
+        "bg-surface text-label border-separator rounded-card shadow-card border",
         className
       )}
     >
@@ -208,11 +207,6 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
         className="hidden"
         disabled={isUploadingCoA}
       />
-
-      {/* v2 hero (c5c6b382) on the Facet 3.1 glass hero: refraction hairline, the flag watermark
-          from National Standing, and the warm gold / teal glows. */}
-
-      <FlagWatermark src={displayFlag} className="-top-10 -right-10 size-56" />
 
       <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         {/* Left Side: National Symbols & Insignia */}
@@ -352,7 +346,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
 
             {/* National Motto Quote */}
             {motto && (
-              <div className="text-footnote text-tint flex items-center gap-2 pt-0.5 italic">
+              <div className="text-footnote text-label-secondary flex items-center gap-2 pt-0.5 italic">
                 <Quote aria-hidden="true" className="h-3 w-3 shrink-0 opacity-70" />
                 <span className="truncate">“{motto}”</span>
               </div>
@@ -371,7 +365,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
               onSelectFlag();
             }}
           >
-            <Flag aria-hidden className="text-tint" />
+            <Flag aria-hidden />
             <span>Select flag</span>
           </Button>
 
@@ -384,7 +378,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
               onSelectCoatOfArms();
             }}
           >
-            <Shield aria-hidden className="text-teal" />
+            <Shield aria-hidden />
             <span>Select emblem</span>
           </Button>
         </div>

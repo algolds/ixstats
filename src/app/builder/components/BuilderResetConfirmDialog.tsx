@@ -34,26 +34,24 @@ export function BuilderResetConfirmDialog({
       <AlertDialogContent className="sm:max-w-md">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-label">
-            {isEdit ? "Discard Changes & Exit?" : "Reset Builder Progress?"}
+            {isEdit ? "Discard changes and exit?" : "Restart the builder?"}
           </AlertDialogTitle>
           <AlertDialogDescription className="leading-relaxed">
             {isEdit
-              ? "Are you sure you want to discard your current edits and exit the editor? Any unsaved changes will be lost."
-              : "Are you sure you want to restart the builder? This will clear all current progress and return you to the beginning."}
+              ? "Your unsaved edits will be lost."
+              : "This clears your progress and returns you to the first step."}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="mt-4 gap-2 sm:gap-2">
-          <AlertDialogCancel onClick={() => soundEffects.press()} className="active:scale-[0.98]">
-            Cancel
-          </AlertDialogCancel>
+          <AlertDialogCancel onClick={() => soundEffects.press()}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={() => {
               soundEffects.press();
               onConfirm();
             }}
-            className={buttonVariants({ variant: "destructive", className: "active:scale-[0.98]" })}
+            className={buttonVariants({ variant: "destructive" })}
           >
-            {isEdit ? "Discard & Exit" : "Reset Everything"}
+            {isEdit ? "Discard and exit" : "Reset"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
@@ -91,9 +91,9 @@ export default function CountriesPage() {
       <div className="bg-background text-label flex min-h-screen items-center justify-center px-4">
         <EmptyState
           icon={<WarningTriangle className="text-destructive" />}
-          title="Error Loading Countries"
+          title="Could not load countries"
           message={error.message}
-          action={<Button onClick={() => window.location.reload()}>Reload Page</Button>}
+          action={<Button onClick={() => window.location.reload()}>Reload page</Button>}
         />
       </div>
     );

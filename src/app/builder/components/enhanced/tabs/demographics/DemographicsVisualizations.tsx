@@ -39,23 +39,23 @@ export function DemographicsVisualizations({
       <Card>
         <CardContent className="p-6">
           <div className="border-separator mb-4 flex flex-col gap-2 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
-            <h4 className="text-headline text-green flex items-center gap-2">
+            <h4 className="text-headline text-label flex items-center gap-2">
               {activeChart === "age" && (
                 <>
                   <PieChart className="h-5 w-5" />
-                  <span>Age Distribution</span>
+                  <span>Age distribution</span>
                 </>
               )}
               {activeChart === "urbanRural" && (
                 <>
                   <BarChart3 className="h-5 w-5" />
-                  <span>Urban-Rural Distribution</span>
+                  <span>Urban-rural distribution</span>
                 </>
               )}
               {activeChart === "regional" && (
                 <>
                   <MapPin className="h-5 w-5" />
-                  <span>Regional Distribution</span>
+                  <span>Regional distribution</span>
                 </>
               )}
             </h4>
@@ -143,9 +143,9 @@ export function DemographicsVisualizations({
       {/* Education Levels */}
       <Card>
         <CardContent className="p-6">
-          <h4 className="text-headline text-green mb-4 flex items-center gap-2">
+          <h4 className="text-headline text-label mb-4 flex items-center gap-2">
             <GraduationCap className="h-5 w-5" />
-            <span>Education Levels</span>
+            <span>Education levels</span>
           </h4>
           <GlassBarChart
             data={educationLevelData}
@@ -161,14 +161,14 @@ export function DemographicsVisualizations({
       {/* Demographics Health */}
       <Card>
         <CardContent className="p-6">
-          <h4 className="text-headline text-green mb-4 flex items-center gap-2">
+          <h4 className="text-headline text-label mb-4 flex items-center gap-2">
             <Gauge className="h-5 w-5" />
-            <span>Demographics Health</span>
+            <span>Demographics health</span>
           </h4>
           <div className="space-y-4">
             <div className="space-y-2">
               <div className="text-body flex justify-between">
-                <span>Life Expectancy</span>
+                <span>Life expectancy</span>
                 <span className="font-medium">{demographics.lifeExpectancy.toFixed(1)} years</span>
               </div>
               <Progress value={demographics.lifeExpectancy} className="h-2" />
@@ -176,7 +176,7 @@ export function DemographicsVisualizations({
 
             <div className="space-y-2">
               <div className="text-body flex justify-between">
-                <span>Literacy Rate</span>
+                <span>Literacy rate</span>
                 <span className="font-medium">{demographics.literacyRate.toFixed(1)}%</span>
               </div>
               <Progress value={demographics.literacyRate} className="h-2" />
@@ -194,7 +194,7 @@ export function DemographicsVisualizations({
 
             <div className="space-y-2">
               <div className="text-body flex justify-between">
-                <span>Working Age Share</span>
+                <span>Working age share</span>
                 <span className="font-medium">
                   {demographics.ageDistribution.age15to64.toFixed(1)}%
                 </span>

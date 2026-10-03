@@ -137,7 +137,7 @@ export function BuilderConfirmModal({
             }
             aria-busy={isSubmitting}
           >
-            {isSubmitting ? "Processing..." : isEditMode ? "Save Changes" : "Create Nation"}
+            {isSubmitting ? "Processing..." : isEditMode ? "Save Changes" : "Create nation"}
           </Button>
         </DialogFooter>
       </DialogContent>

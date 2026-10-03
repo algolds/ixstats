@@ -35,7 +35,7 @@ export function SectorMetrics({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-title-1">Economic Sectors Configuration</h2>
+          <h2 className="text-title-1">Economic sectors configuration</h2>
           <p className="text-label-secondary">
             Configure your economy's sector composition and characteristics
           </p>
@@ -68,48 +68,40 @@ export function SectorMetrics({
       {/* Overview Metrics */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <MetricCard
-          label="GDP Distribution"
+          label="GDP distribution"
           value={totalGDP}
           unit="%"
           precision={1}
           icon={PieChart}
           sectionId="sectors"
           trend={gdpValid ? "up" : "down"}
-          texture="dots"
-          textureOpacity={0.04}
           tooltip="Total gross domestic product contributed by active sectors. Must sum to 100%."
         />
         <MetricCard
-          label="Employment Distribution"
+          label="Employment distribution"
           value={totalEmployment}
           unit="%"
           precision={1}
           icon={Users}
           sectionId="sectors"
           trend={employmentValid ? "up" : "down"}
-          texture="dots"
-          textureOpacity={0.04}
           tooltip="Total share of the active labor force employed across active sectors. Must sum to 100%."
         />
         <MetricCard
-          label="Active Sectors"
+          label="Active sectors"
           value={`${sectors.length - zeroCount} / ${sectors.length}`}
           icon={Factory}
           sectionId="sectors"
           trend={zeroCount > 0 ? "down" : "neutral"}
-          texture="dots"
-          textureOpacity={0.04}
           tooltip="Sectors that have non-zero contribution to GDP or Employment. A balanced economy typically has at least 3 active sectors."
         />
         <MetricCard
-          label="Avg Productivity"
+          label="Avg productivity"
           value={averageProductivity}
           precision={0}
           icon={TrendingUp}
           sectionId="sectors"
           trend="neutral"
-          texture="dots"
-          textureOpacity={0.04}
           tooltip="Weighted average productivity index across all active sectors, reflecting automation, technology levels, and workforce efficiency."
         />
       </div>

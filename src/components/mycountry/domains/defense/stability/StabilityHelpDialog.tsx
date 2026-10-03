@@ -40,7 +40,7 @@ export const StabilityHelpDialog = React.memo(function StabilityHelpDialog() {
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Info aria-hidden="true" className="text-label-secondary h-5 w-5" />
-            Understanding Internal Stability Metrics
+            Understanding internal stability metrics
           </SheetTitle>
           <SheetDescription>
             How stability metrics are calculated and what they mean for your country
@@ -84,7 +84,7 @@ export const StabilityHelpDialog = React.memo(function StabilityHelpDialog() {
           <div className="space-y-2">
             <h4 className="flex items-center gap-2 font-semibold">
               <Shield className="h-4 w-4" />
-              Crime & Law Enforcement
+              Crime & law enforcement
             </h4>
             <div className="space-y-3 pl-4">
               <div>
@@ -119,7 +119,7 @@ export const StabilityHelpDialog = React.memo(function StabilityHelpDialog() {
           <div className="space-y-2">
             <h4 className="flex items-center gap-2 font-semibold">
               <Activity className="h-4 w-4" />
-              Public Order
+              Public order
             </h4>
             <div className="space-y-3 pl-4">
               <div>
@@ -147,7 +147,7 @@ export const StabilityHelpDialog = React.memo(function StabilityHelpDialog() {
           <div className="space-y-2">
             <h4 className="flex items-center gap-2 font-semibold">
               <Heart className="h-4 w-4" />
-              Social Cohesion
+              Social cohesion
             </h4>
             <div className="space-y-3 pl-4">
               <div>
@@ -175,7 +175,7 @@ export const StabilityHelpDialog = React.memo(function StabilityHelpDialog() {
           <div className="space-y-2">
             <h4 className="flex items-center gap-2 font-semibold">
               <Eye className="h-4 w-4" />
-              Public Confidence
+              Public confidence
             </h4>
             <div className="space-y-3 pl-4">
               <div>
@@ -202,7 +202,7 @@ export const StabilityHelpDialog = React.memo(function StabilityHelpDialog() {
           <div className="space-y-2">
             <h4 className="flex items-center gap-2 font-semibold">
               <AlertTriangle className="h-4 w-4" />
-              Automatic Security Event System
+              Automatic security event system
             </h4>
             <p className="text-label-secondary">
               <strong>Events are generated automatically</strong> based on your country's actual
@@ -252,7 +252,7 @@ export const StabilityHelpDialog = React.memo(function StabilityHelpDialog() {
 
           {/* Improvement Tips */}
           <div className="space-y-2">
-            <h4 className="text-label font-semibold">How to Improve Stability</h4>
+            <h4 className="text-label font-semibold">How to improve stability</h4>
             <div className="text-footnote space-y-2 pl-4">
               <p>
                 <strong>Reduce unemployment</strong> - Biggest factor in crime and unrest

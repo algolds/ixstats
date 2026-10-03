@@ -10,10 +10,7 @@ import type { LaborBounds } from "../utils/laborCalculations";
 
 interface IncomeSectionProps {
   laborMarket: LaborConfiguration;
-  onChange: <K extends keyof LaborConfiguration>(
-    field: K,
-    value: LaborConfiguration[K]
-  ) => void;
+  onChange: <K extends keyof LaborConfiguration>(field: K, value: LaborConfiguration[K]) => void;
   showAdvanced: boolean;
   componentBounds?: LaborBounds;
 }
@@ -27,7 +24,7 @@ export function IncomeSection({
   return (
     <div className="space-y-4">
       <EnhancedNumberInput
-        label="Minimum Wage (Hourly)"
+        label="Minimum wage (hourly)"
         description="Minimum hourly wage rate"
         value={laborMarket.minimumWageHourly}
         onChange={(value) => onChange("minimumWageHourly", Number(value) || 0)}
@@ -41,7 +38,7 @@ export function IncomeSection({
       />
 
       <EnhancedNumberInput
-        label="Living Wage (Hourly)"
+        label="Living wage (hourly)"
         description="Living wage for basic needs"
         value={laborMarket.livingWageHourly}
         onChange={(value) => onChange("livingWageHourly", Number(value) || 0)}
@@ -66,7 +63,7 @@ export function IncomeSection({
         className="border-t pt-4"
       >
         <SliderWithDirectInput
-          label="Unionization Rate"
+          label="Unionization rate"
           description="Percentage of workers in unions"
           value={laborMarket.unionizationRate}
           onChange={(value) => onChange("unionizationRate", value)}
@@ -81,7 +78,7 @@ export function IncomeSection({
         />
 
         <SliderWithDirectInput
-          label="Collective Bargaining Coverage"
+          label="Collective bargaining coverage"
           description="Percentage covered by collective agreements"
           value={laborMarket.collectiveBargainingCoverage}
           onChange={(value) => onChange("collectiveBargainingCoverage", value)}

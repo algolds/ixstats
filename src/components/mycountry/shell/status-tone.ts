@@ -1,5 +1,5 @@
 /**
- * Colour on the MyCountry overview only ever carries meaning (Facet §11): destructive for a
+ * Colour on the MyCountry overview only ever carries meaning : destructive for a
  * critical item, orange for a warning, the MyCountry gold for directives, and nothing for the
  * rest. Domains are told apart by their glyph and label, never by a per-domain palette.
  */
@@ -13,5 +13,5 @@ export const STATUS_TEXT: Record<StatusTone, string> = {
   neutral: "text-label-secondary",
 };
 
-// The MyCountry gold primary is the plain `<Button>` inside `data-app="mycountry"` (Facet 3.1 §16.3):
+// The MyCountry gold primary is the plain `<Button>` inside `data-app="mycountry"`:
 // no class needed.

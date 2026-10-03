@@ -227,10 +227,10 @@ export function WikiSectionCard({
                     variant="outline"
                     size="sm"
                     asChild
-                    className="text-label-secondary hover:text-label border-separator bg-fill-3 hover:bg-fill-3 rounded-row text-caption h-8 gap-2 border font-semibold transition-[background-color,border-color,transform] duration-150 active:scale-[0.98]"
+                    className="text-label-secondary hover:text-label border-separator bg-fill-3 hover:bg-fill-3 rounded-row text-caption h-8 gap-2 border font-semibold transition-[background-color,border-color,transform] duration-150"
                   >
                     <Link href={titleToWikiOSPath(section.sourcePage || section.title)}>
-                      <ExternalLink className="h-3.5 w-3.5" /> View WikiOS Source
+                      <ExternalLink className="h-3.5 w-3.5" /> View WikiOS source
                     </Link>
                   </Button>
                 ) : (
@@ -238,14 +238,14 @@ export function WikiSectionCard({
                     variant="outline"
                     size="sm"
                     asChild
-                    className="text-label-secondary hover:text-label border-separator bg-fill-3 hover:bg-fill-3 rounded-row text-caption h-8 gap-2 border font-semibold transition-[background-color,border-color,transform] duration-150 active:scale-[0.98]"
+                    className="text-label-secondary hover:text-label border-separator bg-fill-3 hover:bg-fill-3 rounded-row text-caption h-8 gap-2 border font-semibold transition-[background-color,border-color,transform] duration-150"
                   >
                     <a
                       href={`${wikiSource === "iiwiki" ? "https://iiwiki.com/wiki/" : "https://althistory.fandom.com/wiki/"}${encodeURIComponent(section.sourcePage || section.title)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <ExternalLink className="h-3.5 w-3.5" /> View External Wiki Source
+                      <ExternalLink className="h-3.5 w-3.5" /> View external wiki source
                     </a>
                   </Button>
                 )}

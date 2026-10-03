@@ -90,15 +90,15 @@ export function CountriesSearch({
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const sortOptions = [
-    { value: "name", label: "Country Name" },
+    { value: "name", label: "Country name" },
     { value: "population", label: "Population" },
-    { value: "gdpPerCapita", label: "GDP per Capita" },
+    { value: "gdpPerCapita", label: "GDP per capita" },
     { value: "totalGdp", label: "Total GDP" },
-    { value: "economicTier", label: "Economic Tier" },
+    { value: "economicTier", label: "Economic tier" },
     { value: "continent", label: "Continent" },
     { value: "region", label: "Region" },
-    { value: "landArea", label: "Land Area" },
-    { value: "populationDensity", label: "Population Density" },
+    { value: "landArea", label: "Land area" },
+    { value: "populationDensity", label: "Population density" },
   ] as const;
 
   const handleClear = () => {
@@ -128,7 +128,7 @@ export function CountriesSearch({
           <Search className="text-label-secondary pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <Input
             type="text"
-            placeholder="Search by country name..."
+            placeholder="Search by country name"
             value={searchTerm}
             onChange={(e) => onSearchChangeAction(e.target.value)}
             className="bg-background text-label hover:border/80 hover:bg-fill-4 focus:bg-background focus:border-tint placeholder:text-label-secondary w-full border pr-10 pl-10 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 focus:scale-100"
@@ -162,7 +162,7 @@ export function CountriesSearch({
             <DropdownMenuContent align="end">
               <DropdownMenuGroup>
                 <DropdownMenuGroupLabel className="text-label-secondary">
-                  Sort By
+                  Sort by
                 </DropdownMenuGroupLabel>
                 <DropdownMenuSeparator className="bg-separator-opaque" />
                 {sortOptions.map((opt) => (
@@ -216,7 +216,7 @@ export function CountriesSearch({
                 htmlFor="tierFilter"
                 className="text-label-secondary text-body mb-1 block font-medium"
               >
-                Economic Tier
+                Economic tier
               </label>
               <Select
                 value={tierFilter}
@@ -254,7 +254,7 @@ export function CountriesSearch({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all" className="text-label hover:bg-fill-3 hover:text-label">
-                    All Continents
+                    All continents
                   </SelectItem>
                   {availableContinents.map((c) => (
                     <SelectItem
@@ -286,7 +286,7 @@ export function CountriesSearch({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all" className="text-label hover:bg-fill-3 hover:text-label">
-                    All Regions
+                    All regions
                   </SelectItem>
                   {availableRegions.map((r) => (
                     <SelectItem
@@ -303,7 +303,7 @@ export function CountriesSearch({
 
             <div>
               <label className="text-label-secondary text-body mb-1 block font-medium">
-                Population Range
+                Population range
               </label>
               <div className="flex space-x-2">
                 <Input
@@ -340,7 +340,7 @@ export function CountriesSearch({
         Showing {filteredResults.toLocaleString()} of {totalResults.toLocaleString()} countries
         {hasFilters && (
           <div className="mt-2 flex flex-wrap items-center gap-1">
-            <span className="mr-1 font-medium">Active Filters:</span>
+            <span className="mr-1 font-medium">Active filters:</span>
             {searchTerm && (
               <Badge variant="default">
                 Search: "

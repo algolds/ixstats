@@ -30,7 +30,7 @@ describe("LaborEmploymentTab", () => {
     it("renders the labor tab with header", () => {
       render(<LaborEmploymentTab {...defaultProps} />);
 
-      expect(screen.getByText("Labor & Employment Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Labor & employment configuration")).toBeInTheDocument();
       expect(screen.getByText(/Configure workforce dynamics/i)).toBeInTheDocument();
     });
 
@@ -47,7 +47,7 @@ describe("LaborEmploymentTab", () => {
       render(<LaborEmploymentTab {...defaultProps} />);
 
       // Should show workforce-related content
-      expect(screen.getByText("Labor & Employment Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Labor & employment configuration")).toBeInTheDocument();
     });
   });
 
@@ -60,7 +60,7 @@ describe("LaborEmploymentTab", () => {
         fireEvent.click(employmentTab);
       }
 
-      expect(screen.getByText("Labor & Employment Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Labor & employment configuration")).toBeInTheDocument();
     });
 
     it("switches to income section when clicked", () => {
@@ -71,7 +71,7 @@ describe("LaborEmploymentTab", () => {
         fireEvent.click(incomeTab);
       }
 
-      expect(screen.getByText("Labor & Employment Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Labor & employment configuration")).toBeInTheDocument();
     });
 
     it("switches to protections section when clicked", () => {
@@ -82,7 +82,7 @@ describe("LaborEmploymentTab", () => {
         fireEvent.click(protectionsTab);
       }
 
-      expect(screen.getByText("Labor & Employment Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Labor & employment configuration")).toBeInTheDocument();
     });
   });
 
@@ -91,7 +91,7 @@ describe("LaborEmploymentTab", () => {
       render(<LaborEmploymentTab {...defaultProps} />);
 
       // The workforce value should be displayed somewhere
-      expect(screen.getByText("Labor & Employment Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Labor & employment configuration")).toBeInTheDocument();
     });
 
     it("calculates labor force participation rate correctly", () => {
@@ -114,7 +114,7 @@ describe("LaborEmploymentTab", () => {
 
       rerender(<LaborEmploymentTab {...defaultProps} economyBuilder={updatedBuilder} />);
 
-      expect(screen.getByText("Labor & Employment Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Labor & employment configuration")).toBeInTheDocument();
     });
   });
 
@@ -208,14 +208,14 @@ describe("LaborEmploymentTab", () => {
       render(<LaborEmploymentTab {...defaultProps} />);
 
       // The component should calculate impacts
-      expect(screen.getByText("Labor & Employment Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Labor & employment configuration")).toBeInTheDocument();
     });
 
     it("shows impact alert when components affect employment", () => {
       render(<LaborEmploymentTab {...defaultProps} />);
 
       // Would show alert if actual impact logic is implemented
-      expect(screen.getByText("Labor & Employment Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Labor & employment configuration")).toBeInTheDocument();
     });
 
     it("hides impact alert when no significant impact", () => {
@@ -269,20 +269,20 @@ describe("LaborEmploymentTab", () => {
     it("renders labor visualizations component", () => {
       render(<LaborEmploymentTab {...defaultProps} />);
 
-      expect(screen.getByText("Labor & Employment Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Labor & employment configuration")).toBeInTheDocument();
     });
 
     it("generates chart data for employment types", () => {
       render(<LaborEmploymentTab {...defaultProps} />);
 
       // Chart generation happens in useMemo
-      expect(screen.getByText("Labor & Employment Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Labor & employment configuration")).toBeInTheDocument();
     });
 
     it("generates chart data for sector distribution", () => {
       render(<LaborEmploymentTab {...defaultProps} />);
 
-      expect(screen.getByText("Labor & Employment Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Labor & employment configuration")).toBeInTheDocument();
     });
   });
 
@@ -311,7 +311,7 @@ describe("LaborEmploymentTab", () => {
 
       rerender(<LaborEmploymentTab {...defaultProps} economyBuilder={updatedBuilder} />);
 
-      expect(screen.getByText("Labor & Employment Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Labor & employment configuration")).toBeInTheDocument();
     });
   });
 
@@ -336,7 +336,7 @@ describe("LaborEmploymentTab", () => {
       render(<LaborEmploymentTab {...defaultProps} economyBuilder={invalidBuilder} />);
 
       // Should still render
-      expect(screen.getByText("Labor & Employment Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Labor & employment configuration")).toBeInTheDocument();
     });
 
     it("validates sector distribution totals", () => {
@@ -354,7 +354,7 @@ describe("LaborEmploymentTab", () => {
 
       render(<LaborEmploymentTab {...defaultProps} economyBuilder={invalidBuilder} />);
 
-      expect(screen.getByText("Labor & Employment Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Labor & employment configuration")).toBeInTheDocument();
     });
   });
 
@@ -364,7 +364,7 @@ describe("LaborEmploymentTab", () => {
 
       rerender(<LaborEmploymentTab {...defaultProps} />);
 
-      expect(screen.getByText("Labor & Employment Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Labor & employment configuration")).toBeInTheDocument();
     });
 
     it("memoizes chart data", () => {
@@ -372,7 +372,7 @@ describe("LaborEmploymentTab", () => {
 
       rerender(<LaborEmploymentTab {...defaultProps} />);
 
-      expect(screen.getByText("Labor & Employment Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Labor & employment configuration")).toBeInTheDocument();
     });
 
     it("memoizes employment impacts", () => {
@@ -380,7 +380,7 @@ describe("LaborEmploymentTab", () => {
 
       rerender(<LaborEmploymentTab {...defaultProps} />);
 
-      expect(screen.getByText("Labor & Employment Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Labor & employment configuration")).toBeInTheDocument();
     });
   });
 
@@ -388,7 +388,7 @@ describe("LaborEmploymentTab", () => {
     it("has proper heading hierarchy", () => {
       render(<LaborEmploymentTab {...defaultProps} />);
 
-      const heading = screen.getByText("Labor & Employment Configuration");
+      const heading = screen.getByText("Labor & employment configuration");
       expect(heading.tagName).toBe("H2");
     });
 

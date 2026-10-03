@@ -22,7 +22,6 @@ import { api } from "~/trpc/react";
 import { formatCompact } from "~/lib/format/compact";
 import { cn } from "~/lib/utils";
 import { assetUrl } from "~/lib/base-path";
-import { FlagWatermark } from "~/components/ui/facet/identity/FlagWatermark";
 import { Card } from "~/components/ui/card";
 
 type RatingLabel = "Optimal" | "Strong" | "Moderate" | "Strained";
@@ -191,17 +190,11 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
 
   return (
     <>
-      {/* The v2 National Standing rail card (c5c6b382) on the Facet 3.1 glass hero: the flag
-          watermark at v2 strength, the country chip and the vitality pill, one opaque telemetry
-          panel (population/GDP, approval/stability/CivCap) and the 2×2 vitality rings. */}
       <Card
-        variant="hero"
         className="group flex flex-col gap-3 p-4"
         aria-labelledby="national-standing-title"
         role="region"
       >
-        <FlagWatermark src={flagUrl} className="-top-10 -right-10 size-56" />
-
         {/* Header: title + country chip, and the vitality pill */}
         <div className="relative flex flex-wrap items-start justify-between gap-2">
           <div className="flex min-w-0 flex-col">
@@ -233,15 +226,15 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
             className="bg-surface h-9 gap-2 rounded-full sm:h-8"
             title="Open the vitality breakdown"
           >
-            <Activity aria-hidden="true" className="text-tint" />
+            <Activity aria-hidden="true" />
             <span>{knownRings.length > 0 ? ratingLabelText : "Vitality"}</span>
             {knownRings.length > 0 && (
-              <span className="text-label-secondary font-data tabular-nums">{compositeScore}</span>
+              <span className="text-label-secondary tabular-nums">{compositeScore}</span>
             )}
           </Button>
         </div>
 
-        {/* One opaque telemetry panel (v2 "unified telemetry"): glass never nests */}
+        {/* Population, GDP, approval, stability and CivCap */}
         {country && (
           <Card variant="inset" padding="none" className="relative flex flex-col gap-2 p-3">
             <div className="border-separator flex items-center justify-between gap-2 border-b pb-2">
@@ -251,20 +244,20 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                 aria-pressed={showExactPop}
                 title={showExactPop ? "Show compact population" : "Show exact population"}
                 className={cn(
-                  "group/pop text-footnote rounded-control-sm facet-press facet-press-sm flex cursor-pointer items-center gap-2 pointer-coarse:min-h-11",
+                  "group/pop text-footnote rounded-control-sm flex cursor-pointer items-center gap-2 pointer-coarse:min-h-11",
                   focusRing
                 )}
               >
                 <Users aria-hidden="true" className="text-label-secondary size-3.5" />
                 <span className="text-label-secondary">Population</span>
-                <strong className="text-label font-data font-semibold tabular-nums group-hover/pop:underline group-focus-visible/pop:underline">
+                <strong className="text-label font-semibold tabular-nums group-hover/pop:underline group-focus-visible/pop:underline">
                   {formattedPop}
                 </strong>
               </button>
               <span className="text-footnote flex items-center gap-2">
                 <DollarSign aria-hidden="true" className="text-label-secondary size-3.5" />
                 <span className="text-label-secondary">GDP</span>
-                <strong className="text-label font-data font-semibold tabular-nums">
+                <strong className="text-label font-semibold tabular-nums">
                   ${formatCompact(totalGdp)}
                 </strong>
               </span>
@@ -306,7 +299,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                     <div
                       className={cn(
                         "h-full rounded-full",
-                        civCapData?.overCapacity ? "bg-destructive" : "facet-gold"
+                        civCapData?.overCapacity ? "bg-destructive" : "bg-tint"
                       )}
                       style={{ width: `${civCapPct}%` }}
                     />
@@ -317,7 +310,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
           </Card>
         )}
 
-        {/* The four vitality rings (2×2, v2) */}
+        {/* The four vitality rings */}
         <div className="relative grid grid-cols-2 gap-2">
           {rings.map((ring) => {
             const known = ringScores[RING_KEYS[ring.id]!] !== null;
@@ -344,10 +337,9 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                     {ring.label}
                   </span>
                   {known ? (
-                    // The ring's hue as text, pulled halfway to the label so it reads ≥ 4.5:1
-                    // (a raw amber/cyan ring colour is < 3:1 on the light surface).
+                    // The ring hue mixed toward the label colour so it stays readable on light surfaces.
                     <span
-                      className="text-headline font-data font-semibold tabular-nums"
+                      className="text-headline font-semibold tabular-nums"
                       style={{ color: `color-mix(in srgb, ${ring.color} 50%, var(--color-label))` }}
                     >
                       {ring.value}
@@ -407,7 +399,7 @@ function VitalCell({
         <span className="text-label-secondary text-caption leading-tight">{label}</span>
         <span
           className={cn(
-            "text-label text-footnote font-data truncate leading-tight font-semibold tabular-nums",
+            "text-label text-footnote truncate leading-tight font-semibold tabular-nums",
             valueClassName
           )}
         >

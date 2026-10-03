@@ -97,7 +97,7 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
             {/* Selected Checkmark Badge */}
             {isSelected && (
               <span
-                className="facet-gold shadow-card absolute top-3 right-3 z-30 flex size-6 items-center justify-center rounded-full"
+                className="bg-primary-fill text-on-primary shadow-card absolute top-3 right-3 z-30 flex size-6 items-center justify-center rounded-full"
                 aria-hidden="true"
               >
                 <Check className="size-3.5 stroke-[3]" />

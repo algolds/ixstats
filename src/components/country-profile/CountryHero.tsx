@@ -6,7 +6,7 @@ import { Camera, MediaImage, Sparks, WhiteFlag, Xmark } from "iconoir-react";
 import { CountryOwnerRibbonRack } from "~/components/achievements/FloatingRibbonRack";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetMaterial, FlagWatermark } from "~/components/ui/facet";
+import { FacetMaterial } from "~/components/ui/facet";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Stat } from "~/components/ui/stat";
@@ -23,7 +23,7 @@ const MediaSearchModal = dynamic(
   { ssr: false }
 );
 
-/** The cover image above the hero (the original profile header's banner). */
+/** The cover image above the hero. */
 export interface HeroCover {
   mode: BannerMode;
   /** The image for the mode, or null for no cover band. */
@@ -163,11 +163,10 @@ export interface CountryHeroProps {
 }
 
 /**
- * CountryHero — the original profile header's identity (cover banner, flag, name, ribbons, realm
- * and IxnayID strip, headline figures) rebuilt in Facet 3 for the Command profile and the
- * Factbook: the Facet 3.1 glass hero, the cover as a photo band above the content (never a wash
- * under text), the flag tile lifted onto it, and the flag again as the v2 watermark behind the
- * content (FlagWatermark). The motto, capital and anthem join as an identity strip.
+ * CountryHero — a country's identity for the Command profile and the Factbook: the cover as a
+ * photo band above the content (never a wash under text), the flag tile lifted onto it, the name
+ * with the owner's ribbons, the realm and IxnayID strip, the motto and identity facts, and the
+ * headline figures.
  */
 export function CountryHero({
   name,
@@ -193,9 +192,7 @@ export function CountryHero({
   const shownFacts = facts.filter((f): f is { label: string; value: string } => !!f.value);
 
   return (
-    // Facet 3.1 glass hero (spec §16.1): the v2 hero glass with the tint glow and the v2-strength
-    // flag watermark, which brightens and grows while the hero is hovered.
-    <Card id={id} variant="hero" className={cn("overflow-hidden", className)}>
+    <Card id={id} className={cn("overflow-hidden", className)}>
       {showCover && (
         <div className="bg-surface-secondary relative h-32 sm:h-44 lg:h-52">
           {/* oxlint-disable-next-line nextjs/no-img-element -- remote cover photo */}
@@ -214,10 +211,6 @@ export function CountryHero({
       )}
 
       <div className="relative p-5 sm:p-6">
-        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-          <FlagWatermark src={resolveSrc(flagUrl)} />
-        </div>
-
         <div className="relative flex flex-col gap-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             <FlagTile src={flagUrl} name={name} lifted={showCover} />

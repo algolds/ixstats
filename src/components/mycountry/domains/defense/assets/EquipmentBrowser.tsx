@@ -124,10 +124,10 @@ export const EquipmentBrowser = React.memo(function EquipmentBrowser({
         </div>
         <Select value={selectedEra} onValueChange={onSelectedEraChange}>
           <SelectTrigger>
-            <SelectValue placeholder="All Eras" />
+            <SelectValue placeholder="All eras" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Eras</SelectItem>
+            <SelectItem value="all">All eras</SelectItem>
             {Object.entries(MILITARY_ERAS).map(([key, era]) => (
               <SelectItem key={key} value={key}>
                 {era.label}
@@ -137,10 +137,10 @@ export const EquipmentBrowser = React.memo(function EquipmentBrowser({
         </Select>
         <Select value={selectedManufacturer} onValueChange={onSelectedManufacturerChange}>
           <SelectTrigger>
-            <SelectValue placeholder="All Manufacturers" />
+            <SelectValue placeholder="All manufacturers" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Manufacturers</SelectItem>
+            <SelectItem value="all">All manufacturers</SelectItem>
             {manufacturers.map((mfg) => (
               <SelectItem key={mfg.key} value={mfg.key}>
                 {mfg.name} ({mfg.country})

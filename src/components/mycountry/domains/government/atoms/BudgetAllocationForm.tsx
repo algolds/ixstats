@@ -44,7 +44,7 @@ interface BudgetAllocationFormProps {
 /** Budget status → semantic outline-badge colour. */
 const budgetStatusConfig = {
   Allocated: { color: "text-label-secondary", icon: Clock, label: "Allocated" },
-  "In Use": { color: "border-green/30 text-green", icon: TrendingUp, label: "In Use" },
+  "In Use": { color: "border-green/30 text-green", icon: TrendingUp, label: "In use" },
   Overspent: {
     color: "border-destructive/30 text-destructive",
     icon: AlertTriangle,
@@ -234,7 +234,7 @@ export function BudgetAllocationForm({
             <div className="text-label text-caption font-semibold tabular-nums">
               {formatCurrency(data.allocatedAmount)}
             </div>
-            <Eyebrow>Calculated outflow</Eyebrow>
+            <span className="text-stat-label text-label-secondary">Calculated outflow</span>
           </div>
         </div>
       </div>
@@ -250,7 +250,7 @@ export function BudgetAllocationForm({
                   htmlFor={`budgetYear-${data.departmentId}`}
                   className="text-label text-caption font-semibold"
                 >
-                  Budget Cycle Year
+                  Budget cycle year
                 </Label>
                 <Input
                   id={`budgetYear-${data.departmentId}`}
@@ -271,7 +271,7 @@ export function BudgetAllocationForm({
                   htmlFor={`notes-${data.departmentId}`}
                   className="text-label text-caption font-semibold"
                 >
-                  Allocation Directives & Guidelines
+                  Allocation Directives & guidelines
                 </Label>
                 <Textarea
                   id={`notes-${data.departmentId}`}
@@ -323,7 +323,7 @@ export function BudgetAllocationForm({
                         {formatNumber(item.value)}
                       </dd>
                       <dt>
-                        <Eyebrow>{item.label}</Eyebrow>
+                        <span className="text-stat-label text-label-secondary">{item.label}</span>
                       </dt>
                     </div>
                   ))}
@@ -338,7 +338,7 @@ export function BudgetAllocationForm({
                 <dl className="border-separator divide-separator rounded-control grid grid-cols-2 divide-x border">
                   <div className="flex flex-col justify-between p-3">
                     <dt>
-                      <Eyebrow>Share of budget</Eyebrow>
+                      <span className="text-stat-label text-label-secondary">Share of budget</span>
                     </dt>
                     <dd className="text-label text-title-3 mt-2 tabular-nums">
                       {data.allocatedPercent.toFixed(1)}%
@@ -349,7 +349,7 @@ export function BudgetAllocationForm({
                   </div>
                   <div className="flex flex-col justify-between p-3">
                     <dt>
-                      <Eyebrow>Per capita cost</Eyebrow>
+                      <span className="text-stat-label text-label-secondary">Per capita cost</span>
                     </dt>
                     <dd className="text-label text-title-3 mt-2 tabular-nums">
                       {formatNumber(data.allocatedAmount / 100000)}

@@ -180,7 +180,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
           {/* Header */}
           <FadeIn direction="up" delay={0.1}>
             <div className="flex flex-wrap items-center gap-2">
-              <Eyebrow>Country Actions</Eyebrow>
+              <Eyebrow>Country actions</Eyebrow>
               {country.continent && <Badge variant="default">{country.continent}</Badge>}
               {country.region && <Badge variant="outline">{country.region}</Badge>}
             </div>
@@ -197,7 +197,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                 className={actionClass}
               >
                 <Crown className="h-4 w-4" />
-                Go to MyCountry Dashboard
+                Go to MyCountry dashboard
               </Button>
             </FadeIn>
           )}
@@ -277,7 +277,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                     className={actionClass}
                   >
                     <Calendar className="text-label-secondary h-3.5 w-3.5" />
-                    Request Meeting
+                    Request meeting
                   </Button>
 
                   <div className="grid grid-cols-2 gap-2">
@@ -290,7 +290,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                       className={actionClass}
                     >
                       <Handshake className="text-label-secondary h-3.5 w-3.5" />
-                      Free Trade
+                      Free trade
                     </Button>
 
                     <Button
@@ -310,7 +310,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
               {/* Foreign Policy (Sanctions & Embargo) */}
               <div className="space-y-2">
-                <Eyebrow className="block px-1">Foreign Policy</Eyebrow>
+                <Eyebrow className="block px-1">Foreign policy</Eyebrow>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     type="button"
@@ -340,7 +340,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
               {/* Quick Links */}
               <div className="space-y-2">
-                <Eyebrow className="block px-1">Quick Links</Eyebrow>
+                <Eyebrow className="block px-1">Quick links</Eyebrow>
                 <Button asChild variant="outline" size="lg" className={actionClass}>
                   <a
                     href={`/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`}

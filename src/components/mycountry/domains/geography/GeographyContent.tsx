@@ -121,7 +121,7 @@ export function GeographyContent() {
           <Card key={label} className="rounded-card p-3">
             <div className="flex items-center gap-2">
               <Icon aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
-              <Eyebrow>{label}</Eyebrow>
+              <span className="text-stat-label text-label-secondary">{label}</span>
             </div>
             <p className="text-label text-title-3 mt-1 tabular-nums">{value}</p>
           </Card>
@@ -198,7 +198,7 @@ export function GeographyContent() {
 
       {/* Points of Interest (read-only) */}
       <SearchableList
-        title="Points of Interest"
+        title="Points of interest"
         icon={<Pin className="text-label-secondary h-3.5 w-3.5" />}
         items={pois}
         searchKeys={["name", "category", "description"]}
@@ -315,12 +315,12 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
             onChange={(v) => setPopulation(parseInt(v) || 0)}
           />
           <FieldInput
-            label="GDP Contribution"
+            label="GDP contribution"
             type="number"
             value={gdpContribution}
             onChange={(v) => setGdpContribution(parseFloat(v) || 0)}
           />
-          <FieldInput label="Mayor Name" type="text" value={mayorName} onChange={setMayorName} />
+          <FieldInput label="Mayor name" type="text" value={mayorName} onChange={setMayorName} />
           <FieldInput
             label="Specialization"
             type="text"
@@ -331,13 +331,13 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
       ) : (
         <div className="text-label-secondary text-footnote grid grid-cols-2 gap-2">
           <div>
-            <Eyebrow className="block">Pop</Eyebrow>
+            <span className="text-stat-label text-label-secondary block">Pop</span>
             <div className="text-label-secondary text-footnote">
               {(city.population ?? 0).toLocaleString()}
             </div>
           </div>
           <div>
-            <Eyebrow className="block">GDP</Eyebrow>
+            <span className="text-stat-label text-label-secondary block">GDP</span>
             <div className="text-label-secondary text-footnote">
               {Math.round(city.gdpContribution ?? 0).toLocaleString()}
             </div>
@@ -452,19 +452,19 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
             onChange={(v) => setPopulation(parseInt(v) || 0)}
           />
           <FieldInput
-            label="GDP Contribution"
+            label="GDP contribution"
             type="number"
             value={gdpContribution}
             onChange={(v) => setGdpContribution(parseFloat(v) || 0)}
           />
           <FieldInput
-            label="Governor Name"
+            label="Governor name"
             type="text"
             value={governorName}
             onChange={setGovernorName}
           />
           <FieldInput
-            label="Government Type"
+            label="Government type"
             type="text"
             value={governmentType}
             onChange={setGovernmentType}
@@ -473,13 +473,13 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
       ) : (
         <div className="text-label-secondary text-footnote grid grid-cols-2 gap-2">
           <div>
-            <Eyebrow className="block">Pop</Eyebrow>
+            <span className="text-stat-label text-label-secondary block">Pop</span>
             <div className="text-label-secondary text-footnote">
               {(subdivision.population ?? 0).toLocaleString()}
             </div>
           </div>
           <div>
-            <Eyebrow className="block">GDP</Eyebrow>
+            <span className="text-stat-label text-label-secondary block">GDP</span>
             <div className="text-label-secondary text-footnote">
               {Math.round(subdivision.gdpContribution ?? 0).toLocaleString()}
             </div>
@@ -575,7 +575,7 @@ function ProfileStat({
 }) {
   return (
     <Card className="p-2">
-      <Eyebrow className="block">{label}</Eyebrow>
+      <span className="text-stat-label text-label-secondary block">{label}</span>
       <p
         className={cn(
           "text-label text-caption mt-0.5 truncate font-semibold",

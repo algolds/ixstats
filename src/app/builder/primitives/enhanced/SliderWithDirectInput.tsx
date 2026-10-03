@@ -72,7 +72,7 @@ export function SliderWithDirectInput({
   const [isDragging, setIsDragging] = useState(false);
 
   // oxlint-disable-next-line eslint/no-unused-vars
-  const { theme: resolvedTheme, colors, cssVars } = useSectionTheme(sectionId, theme);
+  const { colors, cssVars } = useSectionTheme(sectionId, theme);
 
   // Ensure all numeric values are safe for calculations
   const safeMin = typeof min === "number" && !isNaN(min) ? min : 0;
@@ -314,7 +314,7 @@ export function SliderWithDirectInput({
             <div
               className={cn(
                 "absolute inset-0 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
-                getGlassClasses("base", resolvedTheme, sectionId)
+                getGlassClasses("base")
               )}
             />
 

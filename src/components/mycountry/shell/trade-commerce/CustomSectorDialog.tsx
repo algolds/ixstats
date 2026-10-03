@@ -69,7 +69,7 @@ export const CustomSectorDialog = React.memo(function CustomSectorDialog({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add Sector to Tariff Planner</DialogTitle>
+          <DialogTitle>Add sector to tariff planner</DialogTitle>
           <DialogDescription>
             Planner sectors aren&apos;t saved. To record a sector for your nation, use the Country
             Editor.
@@ -89,7 +89,7 @@ export const CustomSectorDialog = React.memo(function CustomSectorDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="sec-short">Short Label</Label>
+            <Label htmlFor="sec-short">Short label</Label>
             <Input
               id="sec-short"
               value={shortLabel}
@@ -129,7 +129,7 @@ export const CustomSectorDialog = React.memo(function CustomSectorDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Accent Color</Label>
+            <Label>Accent color</Label>
             <Select value={accent} onValueChange={(val) => setAccent(val as AccentColor)}>
               <SelectTrigger>
                 <SelectValue placeholder="Color" />
@@ -149,7 +149,7 @@ export const CustomSectorDialog = React.memo(function CustomSectorDialog({
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">Add to Planner</Button>
+            <Button type="submit">Add to planner</Button>
           </DialogFooter>
         </form>
       </DialogContent>

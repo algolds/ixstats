@@ -35,17 +35,17 @@ export function ArchetypeConfirmationPanel({
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <Award aria-hidden className="text-tint h-4 w-4" />
-                <span className="text-footnote text-label-secondary">Selected Archetype</span>
+                <span className="text-footnote text-label-secondary">Selected archetype</span>
               </div>
               <h2 className="text-headline text-label">{selectedArchetype.name}</h2>
             </div>
 
             <div className="flex gap-3">
               <Button variant="outline" onClick={onClearSelection}>
-                Clear Selection
+                Clear selection
               </Button>
               <Button onClick={onConfirmFaction}>
-                <UserCheck aria-hidden /> Apply Model & Continue
+                <UserCheck aria-hidden /> Apply model & continue
               </Button>
             </div>
           </FacetMaterial>

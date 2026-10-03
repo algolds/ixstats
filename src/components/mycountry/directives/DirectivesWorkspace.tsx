@@ -147,7 +147,7 @@ export function DirectivesWorkspace({
   const panelId = (v: DirectivesView) => `${tabsId}-panel-${v}`;
 
   const views: { id: DirectivesView; label: string; count?: number }[] = [
-    { id: "new", label: "New directive" },
+    { id: "new", label: "Declare Directive" },
     { id: "active", label: "In force", count: tree.data ? active.length : undefined },
     { id: "history", label: "History", count: tree.data ? history.length : undefined },
   ];
@@ -288,11 +288,11 @@ export function DirectivesWorkspace({
             <EmptyState
               icon={KeyCommand}
               title="No directives in force"
-              body="Declare a directive to start moving your nation. It will appear here while it executes."
+              body="Declare a Directive to start moving your nation."
               action={
                 !readOnly && (
                   <Button className="max-sm:h-11" onClick={() => setView("new")}>
-                    <Plus aria-hidden="true" /> Declare a directive
+                    <Plus aria-hidden="true" /> Declare Directive
                   </Button>
                 )
               }
@@ -339,7 +339,7 @@ export function DirectivesWorkspace({
             <EmptyState
               icon={Archive}
               title="No past directives yet"
-              body="Completed and abandoned directives appear here, with the effects they recorded."
+              body="Directives you complete or abandon are listed here with the effects they recorded."
             />
           ) : (
             <div className="space-y-4">

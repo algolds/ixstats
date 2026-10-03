@@ -152,7 +152,7 @@ export function CardImageUploadModal({
   // Mutation to save the image
   const upsertMutation = api.cardImages.upsert.useMutation({
     onSuccess: () => {
-      notify.success("Image saved successfully");
+      notify.success("Image saved");
       utils.cardImages.getByCountryAndType.invalidate({ countryId, cardType });
       utils.cardImages.getAllByCountry.invalidate({ countryId });
       onSuccess?.();
@@ -262,7 +262,7 @@ export function CardImageUploadModal({
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="presets" className="gap-2">
                 <ImageIcon className="h-4 w-4" />
-                Preset Images
+                Preset images
               </TabsTrigger>
               <TabsTrigger value="search" className="gap-2">
                 <ImageIcon className="h-4 w-4" />
@@ -331,7 +331,7 @@ export function CardImageUploadModal({
               >
                 <div className="flex flex-col items-center gap-2">
                   <ImageIcon className="text-label-secondary h-8 w-8" />
-                  <span>Open Image Repository</span>
+                  <span>Open image Repository</span>
                   <span className="text-label-secondary text-footnote">
                     Unsplash, Wiki Commons, IxWiki, or Upload
                   </span>
@@ -375,7 +375,7 @@ export function CardImageUploadModal({
                 ) : (
                   <>
                     <Check className="mr-2 h-4 w-4" />
-                    Save Image
+                    Save image
                   </>
                 )}
               </Button>

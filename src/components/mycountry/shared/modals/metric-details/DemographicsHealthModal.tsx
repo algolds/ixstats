@@ -1,6 +1,5 @@
 "use client";
 
-import { Eyebrow } from "~/components/ui/eyebrow";
 import React, { useMemo } from "react";
 import {
   Heart,
@@ -102,10 +101,10 @@ export function DemographicsHealthModal({
   };
 
   const chartConfig = {
-    lifeExpectancy: { label: "Life Expectancy", color: "var(--chart-2)" },
-    birthRate: { label: "Birth Rate", color: "var(--color-blue-500)" },
-    deathRate: { label: "Death Rate", color: "var(--color-destructive)" },
-    medianAge: { label: "Median Age", color: "var(--chart-1)" },
+    lifeExpectancy: { label: "Life expectancy", color: "var(--chart-2)" },
+    birthRate: { label: "Birth rate", color: "var(--color-blue-500)" },
+    deathRate: { label: "Death rate", color: "var(--color-destructive)" },
+    medianAge: { label: "Median age", color: "var(--chart-1)" },
     population: { label: "Population (M)", color: "var(--color-amber-500)" },
   };
 
@@ -143,7 +142,7 @@ export function DemographicsHealthModal({
         variant: "secondary",
       };
     return {
-      label: "Below Average",
+      label: "Below average",
       color: "text-destructive",
       bg: "bg-fill-3",
       border: "border-separator",
@@ -213,7 +212,7 @@ export function DemographicsHealthModal({
             <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 flex items-center gap-2">
                 <Activity className="text-label-secondary h-5 w-5" />
-                Health & Vitality
+                Health & vitality
               </h3>
               <p className="text-label-secondary text-body">
                 Population health indicators and quality of life metrics.
@@ -225,26 +224,34 @@ export function DemographicsHealthModal({
                   <div className="text-destructive text-title-3 tabular-nums">
                     {(demographics?.deathRate || 0).toFixed(1)}/1k
                   </div>
-                  <Eyebrow className="mt-1 block">Death Rate</Eyebrow>
+                  <span className="text-stat-label text-label-secondary mt-1 block">
+                    Death rate
+                  </span>
                 </Card>
                 <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-title-3 text-green tabular-nums">
                     {((demographics?.birthRate || 0) - (demographics?.deathRate || 0)).toFixed(1)}
                     /1k
                   </div>
-                  <Eyebrow className="mt-1 block">Natural Growth</Eyebrow>
+                  <span className="text-stat-label text-label-secondary mt-1 block">
+                    Natural growth
+                  </span>
                 </Card>
                 <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3 tabular-nums">
                     {(demographics?.migrationRate || 0).toFixed(1)}/1k
                   </div>
-                  <Eyebrow className="mt-1 block">Migration Rate</Eyebrow>
+                  <span className="text-stat-label text-label-secondary mt-1 block">
+                    Migration rate
+                  </span>
                 </Card>
                 <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3 tabular-nums">
                     {(demographics?.dependencyRatio || 50).toFixed(0)}%
                   </div>
-                  <Eyebrow className="mt-1 block">Dependency Ratio</Eyebrow>
+                  <span className="text-stat-label text-label-secondary mt-1 block">
+                    Dependency ratio
+                  </span>
                 </Card>
               </div>
 
@@ -266,7 +273,7 @@ export function DemographicsHealthModal({
 
         <MetricModalLayout.Sidebar>
           <MetricModalLayout.StatCard
-            label="Life Expectancy"
+            label="Life expectancy"
             value={lifeExpectancy}
             suffix=" yrs"
             decimalPlaces={1}
@@ -274,7 +281,7 @@ export function DemographicsHealthModal({
             variant="demographics"
           />
           <MetricModalLayout.StatCard
-            label="Birth Rate"
+            label="Birth rate"
             value={demographics?.birthRate || 0}
             suffix=" /1k"
             decimalPlaces={1}
@@ -282,7 +289,7 @@ export function DemographicsHealthModal({
             variant="demographics"
           />
           <MetricModalLayout.StatCard
-            label="Median Age"
+            label="Median age"
             value={demographics?.medianAge || countryData?.medianAge || 0}
             suffix=" yrs"
             decimalPlaces={1}
@@ -294,7 +301,7 @@ export function DemographicsHealthModal({
             className={`rounded-row relative flex min-h-[100px] flex-1 flex-col justify-between overflow-hidden border p-4 ${healthLevel.bg} ${healthLevel.border}`}
           >
             <div>
-              <Eyebrow className="block">Health Status</Eyebrow>
+              <span className="text-stat-label text-label-secondary block">Health status</span>
               <div className="mt-2">
                 <span className={`text-title-3 ${healthLevel.color}`}>{healthLevel.label}</span>
               </div>
@@ -344,7 +351,7 @@ export function DemographicsHealthModal({
         <MetricModalLayout.MainArea>
           <Card className="p-6">
             <CardHeader className="mb-4 p-0">
-              <h3 className="text-label text-title-3">Demographics Trends</h3>
+              <h3 className="text-label text-title-3">Demographics trends</h3>
               <p className="text-label-secondary text-body">
                 Historical population and vital statistics
               </p>
@@ -414,13 +421,17 @@ export function DemographicsHealthModal({
         <MetricModalLayout.Sidebar>
           <div className="flex flex-1 flex-col gap-4">
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Peak Population</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                Peak population
+              </span>
               <span className="text-label text-title-2">
                 {trendStats?.maxPopulation ? `${trendStats.maxPopulation.toFixed(2)} M` : "N/A"}
               </span>
             </div>
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Avg Life Expectancy</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                Avg life expectancy
+              </span>
               <span className="text-label text-title-2">
                 {trendStats?.avgLifeExpectancy
                   ? `${trendStats.avgLifeExpectancy.toFixed(1)} yrs`
@@ -428,7 +439,7 @@ export function DemographicsHealthModal({
               </span>
             </div>
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Data Points</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">Data points</span>
               <span className="text-label text-title-2">{trendStats?.dataPoints || 0}</span>
             </div>
           </div>
@@ -480,7 +491,7 @@ export function DemographicsHealthModal({
             <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 flex items-center gap-2">
                 <Globe className="text-label-secondary h-5 w-5" />
-                Global Health Benchmark
+                Global health benchmark
               </h3>
               <p className="text-label-secondary text-body">
                 Compare demographic vitality indicators against standard global indexes.
@@ -517,7 +528,9 @@ export function DemographicsHealthModal({
         <MetricModalLayout.Sidebar>
           <div className="flex h-full flex-col justify-between gap-4">
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">vs Global Avg Life</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                vs Global Avg Life
+              </span>
               <span className="text-label text-title-2">
                 {lifeExpectancy >= globalAvgLife ? "Above Average" : "Below Average"}
               </span>
@@ -526,7 +539,9 @@ export function DemographicsHealthModal({
               </span>
             </div>
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Natural Growth</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                Natural growth
+              </span>
               <span className="text-title-2 text-green">
                 {(demographics?.birthRate || 0) > (demographics?.deathRate || 0)
                   ? "Positive"
@@ -538,7 +553,7 @@ export function DemographicsHealthModal({
               </span>
             </div>
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Age Structure</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">Age structure</span>
               <span className="text-label text-title-2">
                 {(demographics?.medianAge || 0) < 25
                   ? "Young"
@@ -594,7 +609,7 @@ export function DemographicsHealthModal({
         <MetricModalLayout.MainArea>
           <Card className="flex flex-1 flex-col justify-between p-6">
             <CardHeader className="mb-4 p-0">
-              <h3 className="text-label text-title-3">Age Distribution</h3>
+              <h3 className="text-label text-title-3">Age distribution</h3>
               <p className="text-label-secondary text-body">Population breakdown by age group</p>
             </CardHeader>
             <CardContent className="flex-1 p-0">
@@ -615,7 +630,7 @@ export function DemographicsHealthModal({
                   <div className="text-label text-title-3">
                     {(demographics?.dependencyRatio || 50).toFixed(0)}%
                   </div>
-                  <div className="text-label-secondary text-footnote mt-1">Dependency Ratio</div>
+                  <div className="text-label-secondary text-footnote mt-1">Dependency ratio</div>
                 </Card>
               </div>
 
@@ -623,7 +638,7 @@ export function DemographicsHealthModal({
                 Array.isArray(demographics.educationLevels) &&
                 demographics.educationLevels.length > 0 && (
                   <div className="mt-8">
-                    <h4 className="text-label text-headline mb-3">Education Attainment</h4>
+                    <h4 className="text-label text-headline mb-3">Education attainment</h4>
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                       {(
                         demographics.educationLevels as Array<{
@@ -660,28 +675,28 @@ export function DemographicsHealthModal({
         <MetricModalLayout.Sidebar>
           <Card className="flex flex-1 flex-col justify-between p-4">
             <CardHeader className="mb-4 p-0">
-              <h3 className="text-label text-title-3 text-headline">Societal Structure</h3>
+              <h3 className="text-label text-title-3 text-headline">Societal structure</h3>
               <p className="text-label-secondary text-footnote">
-                Education & Urbanization benchmarks
+                Education & urbanization benchmarks
               </p>
             </CardHeader>
             <CardContent className="space-y-4 p-0">
               <Card variant="inset" padding="none" className="p-3">
-                <Eyebrow>Literacy Rate</Eyebrow>
+                <span className="text-stat-label text-label-secondary">Literacy rate</span>
                 <div className="text-title-3 text-green mt-1">
                   {(demographics?.literacyRate || 95).toFixed(1)}%
                 </div>
               </Card>
 
               <Card variant="inset" padding="none" className="p-3">
-                <Eyebrow>Urban Population</Eyebrow>
+                <span className="text-stat-label text-label-secondary">Urban population</span>
                 <div className="text-label text-title-3 mt-1">
                   {(demographics?.urbanRuralSplit?.urban || 60).toFixed(1)}%
                 </div>
               </Card>
 
               <Card variant="inset" padding="none" className="p-3">
-                <Eyebrow>Rural Population</Eyebrow>
+                <span className="text-stat-label text-label-secondary">Rural population</span>
                 <div className="text-title-3 text-green mt-1">
                   {(demographics?.urbanRuralSplit?.rural || 40).toFixed(1)}%
                 </div>
@@ -699,7 +714,7 @@ export function DemographicsHealthModal({
       onClose={onClose}
       countryId={countryId}
       countryName={countryName}
-      title="Demographics & Health"
+      title="Demographics & health"
       description="Population health and quality of life metrics"
       icon={Heart}
       iconColor="text-green"

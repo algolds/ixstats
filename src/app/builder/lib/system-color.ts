@@ -1,6 +1,6 @@
 /**
  * Maps the Tailwind palette names stored in builder data (`"emerald"`, `"amber"`, `"rose"`…) onto
- * Facet 3 system colours (spec §2.1). Classes are spelled out in full so Tailwind generates them.
+ * system colours. Classes are spelled out in full so Tailwind generates them.
  */
 
 export type SystemColor =

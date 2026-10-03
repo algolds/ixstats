@@ -84,7 +84,7 @@ export function CardBackgroundImage({
     <div
       className={cn(
         "rounded-row relative overflow-hidden",
-        // No image: a flat inset surface (Facet 3 — no decorative gradient washes).
+        // No image: a flat inset surface.
         !hasImage && "bg-surface-secondary",
         className
       )}

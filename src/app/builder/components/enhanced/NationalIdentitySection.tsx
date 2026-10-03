@@ -122,9 +122,9 @@ export function NationalIdentitySection({
 
   const tabs: TabDefinition[] = useMemo(() => {
     return [
-      { id: "basic", label: "Basic Info", icon: Globe },
+      { id: "basic", label: "Basic info", icon: Globe },
       { id: "culture", label: "Culture", icon: Heart },
-      { id: "technical", label: "Civic Standards", icon: Landmark },
+      { id: "technical", label: "Civic standards", icon: Landmark },
     ];
   }, []);
 
@@ -169,12 +169,7 @@ export function NationalIdentitySection({
         />
 
         {/* Sub-tab Navigation and Form Cards */}
-        <BuilderTabCard
-          tabs={tabs}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          sectionTheme="identity"
-        >
+        <BuilderTabCard tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab}>
           {activeTab === "basic" && (
             <BasicInfoForm
               identity={identity as NationalIdentityData}

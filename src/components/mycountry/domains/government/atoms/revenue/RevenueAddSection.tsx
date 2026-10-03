@@ -70,7 +70,7 @@ export function RevenueAddSection({
           className="h-11 w-full border-dashed"
         >
           <Plus className="h-4 w-4" />
-          Add Custom Revenue Source
+          Add custom revenue source
         </Button>
 
         {/* Quick Add Presets badges */}
@@ -178,7 +178,7 @@ export function RevenueAddSection({
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <Label className="text-label text-caption font-semibold">Collection Method</Label>
+          <Label className="text-label text-caption font-semibold">Collection method</Label>
           <Select
             value={newRevenue.collectionMethod || ""}
             onValueChange={(value) =>
@@ -210,7 +210,7 @@ export function RevenueAddSection({
         </div>
 
         <div className="space-y-2">
-          <Label className="text-label text-caption font-semibold">Administrative Authority</Label>
+          <Label className="text-label text-caption font-semibold">Administrative authority</Label>
           {availableDepartments.length > 0 ? (
             <Select
               value={newRevenue.administeredBy || ""}
@@ -255,7 +255,7 @@ export function RevenueAddSection({
       <div className="flex gap-2">
         <Button onClick={handleAdd} size="sm">
           <Plus className="h-4 w-4" />
-          Add Channel
+          Add channel
         </Button>
         <Button variant="outline" onClick={() => setIsAddingNew(false)} size="sm">
           Cancel

@@ -62,14 +62,14 @@ export const OVERVIEW_IDENTITY_FIELDS: Array<{
   },
   {
     key: "callingCode",
-    label: "Calling Code",
+    label: "Calling code",
     icon: Globe,
     color: "text-label-secondary",
     getValue: (ni) => ni.callingCode,
   },
   {
     key: "timeZone",
-    label: "Time Zone",
+    label: "Time zone",
     icon: Clock,
     color: "text-label-secondary",
     getValue: (ni) => ni.timeZone,

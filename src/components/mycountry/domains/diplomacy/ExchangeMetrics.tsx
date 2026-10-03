@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Card } from "~/components/ui/card";
 
 interface ExchangeMetricsProps {
@@ -28,7 +27,7 @@ export const ExchangeMetrics = React.memo<ExchangeMetricsProps>(({ metrics }) =>
         {items.map((item) => (
           <div key={item.label} className="space-y-1">
             <dt>
-              <Eyebrow>{item.label}</Eyebrow>
+              <span className="text-stat-label text-label-secondary">{item.label}</span>
             </dt>
             <dd className="text-label text-title-1 tabular-nums">{item.value}</dd>
           </div>

@@ -13,15 +13,15 @@ import {
 import { SortUp as SortAsc, SortDown as SortDesc, CheckCircle, Search } from "iconoir-react";
 
 const sortOptions = [
-  { value: "name", label: "Country Name" },
+  { value: "name", label: "Country name" },
   { value: "population", label: "Population" },
-  { value: "gdpPerCapita", label: "GDP per Capita" },
+  { value: "gdpPerCapita", label: "GDP per capita" },
   { value: "totalGdp", label: "Total GDP" },
-  { value: "economicTier", label: "Economic Tier" },
+  { value: "economicTier", label: "Economic tier" },
   { value: "continent", label: "Continent" },
   { value: "region", label: "Region" },
-  { value: "landArea", label: "Land Area" },
-  { value: "populationDensity", label: "Population Density" },
+  { value: "landArea", label: "Land area" },
+  { value: "populationDensity", label: "Population density" },
 ];
 
 export default function CountriesSortBar({
@@ -76,7 +76,7 @@ export default function CountriesSortBar({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             <DropdownMenuGroup>
-              <DropdownMenuGroupLabel>Sort By</DropdownMenuGroupLabel>
+              <DropdownMenuGroupLabel>Sort by</DropdownMenuGroupLabel>
               <DropdownMenuSeparator />
               {sortOptions.map((opt) => (
                 <DropdownMenuItem
@@ -108,7 +108,7 @@ export default function CountriesSortBar({
               className="text-label-secondary pointer-events-none absolute top-1/2 left-3 z-10 h-4 w-4 -translate-y-1/2"
             />
             <Input
-              placeholder="Search countries..."
+              placeholder="Search countries"
               aria-label="Search countries"
               value={searchTerm || ""}
               onChange={(e) => onSearchChange(e.target.value)}
@@ -119,7 +119,7 @@ export default function CountriesSortBar({
         )}
       </div>
       <Button className="ml-auto" onClick={onCompare}>
-        Compare Countries
+        Compare countries
       </Button>
     </div>
   );

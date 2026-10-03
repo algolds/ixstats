@@ -95,8 +95,8 @@ export function AssetDialog({ open, onOpenChange, asset, onCreate, onUpdate }: A
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="browse">Browse Equipment</TabsTrigger>
-            <TabsTrigger value="manual">Manual Entry</TabsTrigger>
+            <TabsTrigger value="browse">Browse equipment</TabsTrigger>
+            <TabsTrigger value="manual">Manual entry</TabsTrigger>
           </TabsList>
 
           <TabsContent value="browse" className="space-y-4">

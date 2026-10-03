@@ -69,7 +69,7 @@ export const PreviewCoreIndicators = memo(function PreviewCoreIndicators({
       value: coreIndicators.gdpPerCapita
         ? `${symbol} ${Math.round(coreIndicators.gdpPerCapita).toLocaleString()}`
         : "N/A",
-      label: "GDP per Capita",
+      label: "GDP per capita",
     },
     {
       icon: BarChart3,
@@ -77,7 +77,7 @@ export const PreviewCoreIndicators = memo(function PreviewCoreIndicators({
         coreIndicators.realGDPGrowthRate !== undefined
           ? `${coreIndicators.realGDPGrowthRate > 0 ? "+" : ""}${coreIndicators.realGDPGrowthRate}%`
           : "N/A",
-      label: "GDP Growth",
+      label: "GDP growth",
     },
     {
       icon: TrendingUp,
@@ -89,7 +89,7 @@ export const PreviewCoreIndicators = memo(function PreviewCoreIndicators({
       icon: Globe,
       value: coreIndicators.currencyExchangeRate?.toString() || "1.00",
       subValue: `${symbol} / USD`,
-      label: "Exchange Rate",
+      label: "Exchange rate",
     },
   ];
 

@@ -45,7 +45,7 @@ export function GeographicSection({
   return (
     <div className="space-y-4">
       <SliderWithDirectInput
-        label="Urban Population"
+        label="Urban population"
         description="Percentage living in urban areas"
         value={demographics.urbanRuralSplit.urban}
         onChange={(value) => onChange("urbanRuralSplit", "urban", value)}
@@ -60,7 +60,7 @@ export function GeographicSection({
       />
 
       <SliderWithDirectInput
-        label="Rural Population"
+        label="Rural population"
         description="Percentage living in rural areas"
         value={demographics.urbanRuralSplit.rural}
         onChange={(value) => onChange("urbanRuralSplit", "rural", value)}
@@ -76,10 +76,10 @@ export function GeographicSection({
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h4 className="font-medium">Regional Distribution</h4>
+          <h4 className="font-medium">Regional distribution</h4>
           <Button size="sm" variant="outline" onClick={onAddRegion}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Region
+            Add region
           </Button>
         </div>
 
@@ -132,7 +132,7 @@ export function GeographicSection({
                 <div className="space-y-1">
                   <label className="text-body flex items-center gap-2 font-medium">
                     <MapPin className="h-4 w-4" />
-                    Region Name
+                    Region name
                   </label>
                   <Input
                     type="text"
@@ -143,7 +143,7 @@ export function GeographicSection({
                 </div>
 
                 <SliderWithDirectInput
-                  label="Population Percent"
+                  label="Population percent"
                   value={region.populationPercent}
                   onChange={(value) => onRegionChange(index, "populationPercent", value)}
                   min={1}
@@ -156,7 +156,7 @@ export function GeographicSection({
                   defaultMode="slider"
                 />
                 <SliderWithDirectInput
-                  label="Urban Percent"
+                  label="Urban percent"
                   value={region.urbanPercent}
                   onChange={(value) => onRegionChange(index, "urbanPercent", value)}
                   min={0}
@@ -169,7 +169,7 @@ export function GeographicSection({
                   defaultMode="slider"
                 />
                 <SliderWithDirectInput
-                  label="Economic Activity"
+                  label="Economic activity"
                   value={region.economicActivity}
                   onChange={(value) => onRegionChange(index, "economicActivity", value)}
                   min={1}

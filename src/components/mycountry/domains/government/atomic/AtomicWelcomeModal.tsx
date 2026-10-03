@@ -33,21 +33,21 @@ const GOVERNMENT_TIPS: DomainTip[] = [
     icon: Zap,
     title: "Combine components",
     description:
-      "Components that reinforce each other unlock synergy bonuses to your total effectiveness score. For example, pairing Rule of Law with an Independent Judiciary creates mutual stability.",
+      "Components that reinforce each other add synergy bonuses to your total effectiveness score. For example, pairing Rule of Law with an Independent Judiciary creates mutual stability.",
     badge: "Synergies",
   },
   {
     icon: Shield,
     title: "Navigate conflicts",
     description:
-      "Opposing choices introduce political friction and lower net effectiveness, but you are free to keep them. Whether you want a harmonious consensus or an unstable, contradictory regime is entirely up to you.",
+      "Opposing choices introduce political friction and lower net effectiveness, but you are free to keep them. You can build a stable consensus or an unstable regime.",
     badge: "Conflicts",
   },
   {
     icon: TrendingUp,
     title: "Track costs and upkeep",
     description:
-      "The top metrics bar recalculates live as you pick components. It tracks your net effectiveness, upfront setup spend, and ongoing annual upkeep in real time so you can manage institutional power on your own terms.",
+      "The metrics bar updates as you pick components. It shows your net effectiveness, upfront setup spend and annual upkeep.",
     badge: "Metrics",
   },
 ];

@@ -104,7 +104,7 @@ export function getArchetypeIcon(key: string): ComponentType<{ className?: strin
   return Landmark;
 }
 
-/** Badge variant for an archetype's implementation complexity (status roles, Facet 3 §7.1). */
+/** Badge variant for an archetype's implementation complexity (status roles). */
 export function getComplexityBadgeVariant(complexity: string): "destructive" | "success" | "info" {
   const comp = (complexity || "medium").toLowerCase();
   if (comp === "high") return "destructive";
@@ -138,15 +138,15 @@ export function getStepLabel(step: string): string {
   switch (step) {
     case "core":
     case "identity":
-      return "National Identity Phase";
+      return "National identity";
     case "government":
-      return "Government Phase";
+      return "Government";
     case "economics":
-      return "Economics Phase";
+      return "Economics";
     case "preview":
-      return "Preview & Create Phase";
+      return "Preview and create";
     case "foundation":
     default:
-      return "Foundation Phase";
+      return "Foundation";
   }
 }

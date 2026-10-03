@@ -1,8 +1,4 @@
-import {
-  KeyCommand as Command,
-  WarningCircle as AlertCircle,
-  Megaphone,
-} from "iconoir-react";
+import { KeyCommand as Command, WarningCircle as AlertCircle, Megaphone } from "iconoir-react";
 import type { AgendaItem, AgendaUrgency } from "./agendaTypes";
 import { getSeverityRank } from "./agendaTypes";
 
@@ -73,17 +69,16 @@ function capitalize(text: string): string {
 
 const URGENCY_RANK: Record<AgendaUrgency, number> = { overdue: 3, "due-soon": 2, upcoming: 0 };
 
-/** Inbox order: overdue, then due soon, then flagged, then newest first. */
+/** Agenda order: overdue, then due soon, then flagged, then newest first. */
 export function compareAgendaItems(a: AgendaItem, b: AgendaItem): number {
   const rank = (i: AgendaItem) => (i.urgency ? URGENCY_RANK[i.urgency] : 0) || (i.flagged ? 1 : 0);
   return rank(b) - rank(a) || (b.receivedAt ?? 0) - (a.receivedAt ?? 0);
 }
 
 /**
- * The agenda inbox's items — only real game state: open national issues (with their deadline
+ * The agenda's items, from real game state only: open national issues (with their deadline
  * pressure folded in), active directives and upcoming elections. Pure: the caller passes the
- * query data and IxTime "now". No calendar dates are produced; timing is relative (see
- * `formatInboxTime`).
+ * query data and IxTime "now". Timing is relative (see `formatAgendaTime`), never a date.
  */
 export function deriveAgendaItems({
   issues = [],
@@ -113,18 +108,17 @@ export function deriveAgendaItems({
       kind: "issue",
       title: iss.title,
       preview: firstLine(iss.description) || "Waiting for your decision.",
-      description:
-        iss.description ||
-        "This national issue is waiting for your decision. Open the brief to weigh the options.",
       statusLabel: urgent ? "Priority issue" : "Open issue",
       icon: AlertCircle,
-      tone: urgent || urgency === "overdue" ? "critical" : urgency === "due-soon" ? "warning" : "neutral",
+      tone:
+        urgent || urgency === "overdue"
+          ? "critical"
+          : urgency === "due-soon"
+            ? "warning"
+            : "neutral",
       receivedAt: toMs(iss.createdAt),
       urgency,
       flagged: urgent || urgency !== null,
-      version: `${sev}|${deadline ?? ""}`,
-      seen: String(iss.status ?? "").toLowerCase() === "viewed",
-      directiveGoal: `Resolve national policy issue: ${iss.title}`,
       drillKind: { kind: "issue", issueId: iss.id },
     });
   }
@@ -143,17 +137,12 @@ export function deriveAgendaItems({
       preview: ["In progress", progress, it.category ? capitalize(it.category) : null]
         .filter(Boolean)
         .join(" · "),
-      description: `Your government is carrying out this directive${it.category ? ` in ${it.category}` : ""}.`,
       statusLabel: tier,
       icon: Command,
       tone: "accent",
       receivedAt: toMs(it.createdAt),
       urgency: null,
       flagged: false,
-      version: `${it.tier ?? ""}`,
-      // You declared it yourself, so it never arrives unread.
-      seen: true,
-      directiveGoal: `Accelerate directive rollout: ${it.goal}`,
       intentId: it.id,
     });
   }
@@ -165,7 +154,11 @@ export function deriveAgendaItems({
     const soon = el.scheduledIxTime - nowIxTime <= ELECTION_DUE_SOON_IX_MS;
     const type = String(el.electionType ?? "general").toLowerCase();
     const label =
-      type === "referendum" ? "Referendum" : type === "special" ? "Special election" : "General election";
+      type === "referendum"
+        ? "Referendum"
+        : type === "special"
+          ? "Special election"
+          : "General election";
     const phase =
       status === "voting"
         ? "Polls are open"
@@ -177,16 +170,12 @@ export function deriveAgendaItems({
       kind: "election",
       title: el.name || "Election",
       preview: phase,
-      description: `${label}: ${phase.toLowerCase()}. Open Politics to review parties and seats, or set a directive for the campaign.`,
       statusLabel: label,
       icon: Megaphone,
       tone: soon ? "warning" : "neutral",
       receivedAt: toMs(el.createdAt),
       urgency: soon ? "due-soon" : "upcoming",
       flagged: soon,
-      version: `${status}|${el.scheduledIxTime}`,
-      seen: false,
-      directiveGoal: `Prepare for the upcoming vote: ${el.name || "election"}`,
       drillKind: { kind: "politics" },
     });
   }
@@ -195,11 +184,11 @@ export function deriveAgendaItems({
 }
 
 /**
- * The trailing time label for an inbox row: deadline pressure ("Overdue", "Due soon",
+ * The trailing time label for an agenda row: deadline pressure ("Overdue", "Due soon",
  * "Upcoming") when there is one, otherwise how long ago the item arrived ("Just now", "5m ago",
  * "2h ago", "3d ago", "2w ago", "4mo ago", "1y ago"). Never a calendar date or weekday.
  */
-export function formatInboxTime(
+export function formatAgendaTime(
   item: Pick<AgendaItem, "urgency" | "receivedAt">,
   nowMs: number
 ): string {

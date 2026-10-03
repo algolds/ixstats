@@ -6,7 +6,7 @@ The MyCountry Builder (`/builder`) is a standalone core system that lets a signe
 
 ## Builder flow
 
-Sections are defined in `lib/builder-theme.ts` (`BuilderSection` / `BUILD_STEPS`); the header stepper (`HEADER_NAV_STEPS`) shows four steps — Foundation (foundation + identity), Government, Economics, Preview & Create. The build flow proceeds in order; once foundation is complete, the remaining sections are freely accessible. The foundation step is skipped in edit mode and when starting from scratch or an import.
+Sections are defined in `lib/builder-theme.ts` (`BuilderSection` / `BUILD_STEPS`); the header stepper shows the steps for the current mode. The build flow proceeds in order; once foundation is complete, the remaining sections are freely accessible. The foundation step is skipped in edit mode and when starting from scratch or an import.
 
 | Section | Purpose | Notable sub-tabs |
 | --- | --- | --- |
@@ -42,12 +42,12 @@ On commit, `api.countries.createCountry` (create mode) or `api.countries.updateC
 | `import/_components/` | `EligibleCountryGrid`, `WikiDeepScanPanel`, and related import UI |
 | `components/` | Sidebar layout, studio header/stepper, step footer, guide sheet + context, mode toggle, welcome modal, editor save bar |
 | `hooks/` | `useBuilderState`, `useBuilderActions`, `useBuilderAlerts`, `useBuilderPersistence`, `useBuilderSync`, `useBuilderEditMode`, `useEditChanges`, `useStepCompletion`, `useBuilderKeyboardShortcuts` |
-| `lib/builder-theme.ts` | Section/step definitions, theming, section↔legacy-step mapping |
+| `lib/builder-theme.ts` | Section and step definitions, section↔legacy-step mapping |
 | `data/` | Guide content (`contextual-help.ts`, `guide-rules.ts`, `onboarding-tutorial.ts`) |
 | `lib/` | Theme, wiki parsers/assembler, economy defaults, field importance, edit-change diffing |
 | `primitives/` | `CountryGrid`, field indicators, advanced-fields disclosure |
 
-State is provided by `BuilderStateProvider` (`components/enhanced/context/`) with `BuilderFilterProvider` and `BuilderGuideProvider` layered on top; theming follows the MyCountry amber/gold identity with per-section accents.
+State is provided by `BuilderStateProvider` (`components/enhanced/context/`) with `BuilderFilterProvider` and `BuilderGuideProvider` layered on top; the builder wears the MyCountry gold tint through its `data-app` scope.
 
 ## Data sources (verified `api.*` calls)
 
@@ -77,5 +77,5 @@ All routers are registered in `src/server/api/root.ts`.
 - Update `docs/systems/builder.md` and `src/content/help/getting-started/*` after changing steps or data contracts.
 - Keep section definitions in `lib/builder-theme.ts` in sync with router/sidebar UI.
 - Ensure new fields persist to Prisma and surface in MyCountry; include backfill logic for required fields.
-- Keep the heading outline: one h1 per page (`FoundationHero`, the Archetype sub-step's title, the visually hidden h1 in `BuilderStudioHeader` / `FoundationPathSelector` / `ImportSection`, or `EditorHeader` in edit mode); step content starts at h2 and never skips a level (Facet spec §16.8, pinned by `src/tests/architecture/facet-hig-leftovers.test.ts`).
+- Keep the heading outline: one h1 per page (`FoundationHero`, the Archetype sub-step's title, the visually hidden h1 in `BuilderStudioHeader` / `FoundationPathSelector` / `ImportSection`, or `EditorHeader` in edit mode); step content starts at h2 and never skips a level (pinned by `src/tests/architecture/facet-hig-leftovers.test.ts`).
 - Image actions revealed on hover must stay usable on touch screens: add `IMAGE_SCRIM_TOUCH_CLUSTER` / `IMAGE_SCRIM_TOUCH_ACTION` or `IMAGE_SCRIM_TOUCH_BAND` from `lib/image-scrim.ts`, and keep each action a labelled button with a 44pt target.

@@ -14,11 +14,8 @@ export interface BuilderModeToggleProps {
 }
 
 /**
- * Apple Design & Emil Kowalski-crafted Mode Toggle for Builder & Editor:
- * - Facet SegmentedControl (Standard vs Advanced; spring-snappy thumb, radiogroup ARIA)
- * - Audio-tactile binding (`soundEffects.toggle()`)
- * - Bidirectional synchronization of `showAdvancedMode` & `viewMode`
- * - Keyboard shortcut cue: ⌘⇧A / Ctrl+Shift+A
+ * Standard / Advanced mode toggle for the builder and editor: a SegmentedControl that keeps
+ * `showAdvancedMode` and `viewMode` in sync. Keyboard shortcut: ⌘⇧A / Ctrl+Shift+A.
  */
 export const BuilderModeToggle = React.memo(function BuilderModeToggle({
   className,
@@ -54,7 +51,7 @@ export const BuilderModeToggle = React.memo(function BuilderModeToggle({
       <TooltipTrigger asChild>
         <div className={cn("inline-flex", className)}>
           <SegmentedControl
-            aria-label="Editor View Mode"
+            aria-label="Editor view mode"
             size="sm"
             value={isAdvanced ? "expert" : "standard"}
             onValueChange={handleSelectMode}
@@ -73,8 +70,8 @@ export const BuilderModeToggle = React.memo(function BuilderModeToggle({
       <TooltipContent side="bottom" className="text-caption max-w-64 text-center">
         <p>
           {isAdvanced
-            ? "Advanced Mode active: deep simulation tabs (Sectors, Workforce, Departments) unlocked."
-            : "Switch to Advanced Mode for deep economic levers & department hierarchy."}
+            ? "Advanced mode is on. The Sectors, Workforce and Departments tabs are available."
+            : "Advanced mode adds detailed economic controls and the department hierarchy."}
         </p>
         <span className="text-footnote mt-1 inline-block opacity-80">
           Shortcut: {shortcutLabel}

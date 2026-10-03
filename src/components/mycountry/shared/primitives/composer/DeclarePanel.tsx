@@ -151,7 +151,7 @@ export function DeclarePanel({
         disabled={isPending || !!blockedReason || disabled}
         className="w-full px-4 max-sm:h-11"
       >
-        {isPending ? "Declaring…" : "Declare directive"}
+        {isPending ? "Declaring…" : "Declare Directive"}
       </Button>
       {blockedReason && (
         <p className="text-label-secondary text-footnote flex items-start gap-2">

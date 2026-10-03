@@ -50,7 +50,7 @@ export const TIME_RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
   { value: "4y", label: "4 Years" },
   { value: "5y", label: "5 Years" },
   { value: "20y", label: "20 Years" },
-  { value: "all", label: "All Time" },
+  { value: "all", label: "All time" },
 ];
 
 /**

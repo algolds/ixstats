@@ -5,7 +5,6 @@ import { Bank as Landmark } from "iconoir-react";
 import { CurrencyFlow, PercentageFlow } from "~/components/ui/number-flow";
 import { cn } from "~/lib/utils";
 import { TAX_CHANNELS, ACCENT_BG, type TaxYields } from "./taxChannels";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 interface TaxRevenueProjectionsProps {
@@ -19,7 +18,7 @@ export function TaxRevenueProjections({ yields }: TaxRevenueProjectionsProps) {
     <Card className="rounded-card">
       <CardHeader className="flex-row items-center gap-2 p-4 pb-3">
         <Landmark aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
-        <h3 className="text-label text-headline">Tax Revenue Projections</h3>
+        <h3 className="text-label text-headline">Tax revenue projections</h3>
       </CardHeader>
 
       <CardContent className="grid grid-cols-2 gap-3 px-4 pb-4 sm:grid-cols-3 md:grid-cols-6">
@@ -32,7 +31,9 @@ export function TaxRevenueProjections({ yields }: TaxRevenueProjectionsProps) {
                   aria-hidden="true"
                   className={cn("h-2 w-2 shrink-0 rounded-full", ACCENT_BG[ch.accent])}
                 />
-                <Eyebrow className="truncate">{ch.shortLabel}</Eyebrow>
+                <span className="text-stat-label text-label-secondary truncate">
+                  {ch.shortLabel}
+                </span>
               </div>
               <p className="text-label text-title-3 tabular-nums">
                 {value != null ? <CurrencyFlow value={value} decimalPlaces={2} /> : "—"}

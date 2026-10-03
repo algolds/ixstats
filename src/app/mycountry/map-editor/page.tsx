@@ -26,7 +26,7 @@ const MapEditorOverlay = dynamicImport(() => import("~/components/maps/editor/Ma
 });
 
 export default function MyCountryMapEditorPage() {
-  usePageTitle({ title: "Map Editor" });
+  usePageTitle({ title: "Map editor" });
 
   const { user, isLoaded } = useUser();
   const router = useRouter();

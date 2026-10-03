@@ -37,7 +37,6 @@ export function MyCountryTabsList({
   activeTab,
   onChangeAction,
   govComponentCount,
-  v2 = false,
   baseHref,
   showGovSetupBadge = true,
   variant = "boxed",
@@ -45,7 +44,6 @@ export function MyCountryTabsList({
   activeTab: string;
   onChangeAction: (value: string) => void;
   govComponentCount: number;
-  v2?: boolean;
   baseHref?: string;
   showGovSetupBadge?: boolean;
   variant?: "boxed" | "rail" | "underline";
@@ -58,12 +56,7 @@ export function MyCountryTabsList({
     {
       value: "overview",
       icon: <BarChart3 />,
-      label: (
-        <>
-          <span className="hidden sm:inline">At a Glance</span>
-          <span className="sm:hidden">Glance</span>
-        </>
-      ),
+      label: "Overview",
     },
     {
       value: "economy",
@@ -108,8 +101,6 @@ export function MyCountryTabsList({
     },
   ];
 
-  const resolvedTabs = v2 ? tabs.filter((t) => t.value !== "overview") : tabs;
-
   const handleChange = (value: string) => {
     if (baseHref) {
       // `overview` is the factbook index itself (`<baseHref>`, not `/overview`).
@@ -136,7 +127,7 @@ export function MyCountryTabsList({
   if (variant === "underline") {
     return (
       <div className="border-separator relative flex [scrollbar-width:none] items-center gap-1 overflow-x-auto overflow-y-hidden border-b pb-0.5 select-none [-ms-overflow-style:none] sm:gap-2 [&::-webkit-scrollbar]:hidden">
-        {resolvedTabs.map((tab) => {
+        {tabs.map((tab) => {
           const isActive = resolvedActiveTab === tab.value;
           return (
             <button
@@ -145,7 +136,7 @@ export function MyCountryTabsList({
               aria-current={isActive ? "page" : undefined}
               onClick={() => handleChange(tab.value)}
               className={cn(
-                "focus-visible:ring-tint rounded-control text-caption sm:text-body relative flex min-h-9 items-center gap-2 px-3 py-2 transition-[color,background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]",
+                "focus-visible:ring-tint rounded-control text-caption sm:text-body relative flex min-h-9 items-center gap-2 px-3 py-2 transition-[color,background-color,transform] duration-150 outline-none focus-visible:ring-2",
                 isActive
                   ? "text-label font-semibold"
                   : "text-label-secondary hover:text-label hover:bg-fill-3"
@@ -187,7 +178,7 @@ export function MyCountryTabsList({
   return (
     <div className="[scrollbar-width:none] overflow-x-auto p-0.5 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       <SegmentedControl
-        options={resolvedTabs}
+        options={tabs}
         value={resolvedActiveTab}
         onValueChange={handleChange}
         size="sm"

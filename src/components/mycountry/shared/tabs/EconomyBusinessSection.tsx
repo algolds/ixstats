@@ -1,10 +1,8 @@
 "use client";
 
-import { Eyebrow } from "~/components/ui/eyebrow";
 import React from "react";
 import { motion } from "motion/react";
 import { Suitcase as Briefcase, NavArrowRight as ChevronRight } from "iconoir-react";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { SectorBreakdownCard } from "~/components/mycountry/shared/primitives";
 
 interface EconomyBusinessSectionProps {
@@ -32,7 +30,7 @@ export function EconomyBusinessSection({
           <Briefcase
             className={`h-3.5 w-3.5 ${isExpanded ? "text-label" : "text-label-secondary"}`}
           />
-          <span>Business & Innovation Climate</span>
+          <span>Business & innovation climate</span>
           <motion.div
             animate={{ rotate: isExpanded ? 90 : 0 }}
             transition={{ type: "spring", bounce: 0, duration: 0.25 }}
@@ -50,30 +48,25 @@ export function EconomyBusinessSection({
           isExpanded ? "border-separator border" : "border border-transparent"
         }`}
       >
-        <TextureOverlay
-          texture="paperGrain"
-          opacity={0.06}
-          className="pointer-events-none absolute inset-0 z-0"
-        />
         <div className="relative z-10 space-y-4 p-4">
           <div className="bg-fill-3 rounded-row grid grid-cols-2 gap-4 p-3 md:grid-cols-4">
             <div className="min-w-0">
-              <Eyebrow className="block">Doing Business</Eyebrow>
+              <span className="text-stat-label text-label-secondary block">Doing business</span>
               <p className="text-label text-headline mt-0.5">Rank #45</p>
               <p className="text-label-secondary text-footnote mt-0.5">Out of 190 countries</p>
             </div>
             <div className="min-w-0">
-              <Eyebrow className="block">Startup Formation</Eyebrow>
+              <span className="text-stat-label text-label-secondary block">Startup formation</span>
               <p className="text-label text-headline mt-0.5">12.5</p>
               <p className="text-label-secondary text-footnote mt-0.5">Per 1,000 citizens</p>
             </div>
             <div className="min-w-0">
-              <Eyebrow className="block">R&D Investment</Eyebrow>
+              <span className="text-stat-label text-label-secondary block">R&D investment</span>
               <p className="text-label text-headline mt-0.5">2.8%</p>
               <p className="text-label-secondary text-footnote mt-0.5">Share of GDP</p>
             </div>
             <div className="min-w-0">
-              <Eyebrow className="block">FDI Inflow</Eyebrow>
+              <span className="text-stat-label text-label-secondary block">FDI inflow</span>
               <p className="text-label text-headline mt-0.5">2.5%</p>
               <p className="text-label-secondary text-footnote mt-0.5">Of nominal GDP</p>
             </div>
@@ -81,12 +74,10 @@ export function EconomyBusinessSection({
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <SectorBreakdownCard
-              title="Regulatory Environment"
+              title="Regulatory environment"
               subtitle="Key regulatory and startup ease metrics"
               layout="list"
               showProgressBars={true}
-              cardWrapper="panel"
-              accent="emerald"
               sectors={[
                 {
                   id: "time",
@@ -106,7 +97,7 @@ export function EconomyBusinessSection({
                 },
                 {
                   id: "regulatory",
-                  name: "Regulatory Quality",
+                  name: "Regulatory quality",
                   value: 0,
                   percentage: 72,
                   color: "purple",
@@ -115,7 +106,7 @@ export function EconomyBusinessSection({
                 },
                 {
                   id: "finance",
-                  name: "Access to Finance",
+                  name: "Access to finance",
                   value: 0,
                   percentage: 68,
                   color: "amber",
@@ -125,12 +116,10 @@ export function EconomyBusinessSection({
               ]}
             />
             <SectorBreakdownCard
-              title="Business Size Composition"
+              title="Business size composition"
               subtitle="Distribution of business by personnel size"
               layout="list"
               showProgressBars={true}
-              cardWrapper="panel"
-              accent="emerald"
               sectors={[
                 {
                   id: "small",
@@ -155,7 +144,7 @@ export function EconomyBusinessSection({
                 },
                 {
                   id: "entrepreneurship",
-                  name: "Entrepreneurship Rate",
+                  name: "Entrepreneurship rate",
                   value: 0,
                   percentage: 15.2,
                   color: "amber",

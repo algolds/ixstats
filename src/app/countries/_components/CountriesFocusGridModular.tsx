@@ -25,8 +25,6 @@ interface CountriesFocusGridModularProps {
   isLoading?: boolean;
   hasMore?: boolean;
   onLoadMore?: () => void;
-  searchInput: string;
-  filterBy: string;
   onClearFilters: () => void;
   viewerCountryId?: string;
 }
@@ -42,8 +40,6 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
   isLoading = false,
   hasMore = false,
   onLoadMore,
-  searchInput,
-  filterBy,
   onClearFilters,
   viewerCountryId,
 }) => {
@@ -74,7 +70,6 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
 
   return (
     <div className="space-y-12">
-      {/* Countries Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {visibleCountries.map((country, index) => {
           const isHovered = hovered === index;
@@ -114,7 +109,7 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
         })}
       </div>
 
-      {/* Loading State with Progressive Blur */}
+      {/* Loading placeholders */}
       {(isLoading || visibleCount < countries.length) && (
         <div className="mt-12">
           <ProgressiveBlur>
@@ -136,35 +131,32 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
         </div>
       )}
 
-      {/* Load More Button */}
       {!isLoading && visibleCount < countries.length && (
         <div className="mt-12 text-center">
           <Button type="button" size="lg" onClick={loadMore}>
-            Load More Countries
+            Load more countries
           </Button>
         </div>
       )}
 
-      {/* End Message */}
       {!isLoading && !hasMore && visibleCount >= countries.length && countries.length > 0 && (
         <div className="mt-12 text-center">
           <p className="text-label-secondary text-body font-medium">
-            You've viewed all {countries.length} countries
+            All {countries.length} countries shown
           </p>
         </div>
       )}
 
-      {/* Empty State */}
       {countries.length === 0 && !isLoading && (
         <div className="mt-12 text-center">
           <Card className="rounded-card mx-auto max-w-md p-12">
             <Globe aria-hidden="true" className="text-label-secondary mx-auto mb-4 h-12 w-12" />
-            <h3 className="text-label text-title-2 mb-2">No Countries Found</h3>
+            <h3 className="text-label text-title-2 mb-2">No countries match</h3>
             <p className="text-label-secondary text-body mb-6">
-              Try adjusting your search or filter criteria
+              Change the search or clear the filters to see more countries.
             </p>
             <Button type="button" onClick={onClearFilters}>
-              Clear Filters
+              Clear filters
             </Button>
           </Card>
         </div>

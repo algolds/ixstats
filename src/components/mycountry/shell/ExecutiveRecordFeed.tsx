@@ -14,10 +14,9 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { timeAgo } from "~/lib/format/compact";
 import { consequenceFieldLabel } from "~/lib/intent/consequence-labels";
-import type { V2Drill } from "~/components/mycountry/shell/DrillSheets";
+import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import { CATEGORY_STYLE } from "./ExecutiveActionCards";
 import { STATUS_TEXT } from "./status-tone";
-import { HUE_BADGE, hueAccentStyle } from "./domain-hue";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Card } from "~/components/ui/card";
 
@@ -172,7 +171,7 @@ function getUniqueDiagnosticNarrative(
   }
 
   return {
-    narrative: `Canon event '${item.title}' recorded under the ${metaLabel.toLowerCase()} domain. System state updated successfully.`,
+    narrative: `Canon event '${item.title}' recorded under the ${metaLabel.toLowerCase()} domain.`,
     badge: { text: "Canon record", cls: NEUTRAL },
   };
 }
@@ -184,7 +183,7 @@ export function ExecutiveRecordFeed({
 }: {
   items: CanonFeedItem[];
   countrySlug?: string;
-  onOpenDrill?: (drill: Exclude<V2Drill, { kind: "intent" } | null>) => void;
+  onOpenDrill?: (drill: Exclude<DrillSheetKind, { kind: "intent" } | null>) => void;
 }) {
   const [visibleCount, setVisibleCount] = useState(5);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -218,7 +217,7 @@ export function ExecutiveRecordFeed({
     }
   };
 
-  const getDrillForCategory = (cat: string): Exclude<V2Drill, { kind: "intent" } | null> => {
+  const getDrillForCategory = (cat: string): Exclude<DrillSheetKind, { kind: "intent" } | null> => {
     if (cat === "diplomatic" || cat === "diplomacy") return { kind: "relations" };
     if (cat === "military" || cat === "defense" || cat === "security") return { kind: "defense" };
     if (cat === "economic" || cat === "ledger") return { kind: "economy" };
@@ -279,18 +278,13 @@ export function ExecutiveRecordFeed({
                       aria-controls={panelId}
                       onClick={() => setExpandedId((prev) => (prev === item.id ? null : item.id))}
                       className={cn(
-                        "group h-auto w-full items-start justify-start gap-3 rounded-none px-3 py-3 text-left font-normal whitespace-normal focus-visible:ring-inset active:scale-100",
+                        "group h-auto w-full items-start justify-start gap-3 rounded-none px-3 py-3 text-left font-normal whitespace-normal focus-visible:ring-inset",
                         isExpanded && "bg-fill-3"
                       )}
                     >
-                      {/* v2 category badge: the category glyph in its domain hue. */}
                       <span
                         aria-hidden="true"
-                        style={hueAccentStyle(meta.hue)}
-                        className={cn(
-                          "flex size-7 shrink-0 items-center justify-center rounded-lg border",
-                          HUE_BADGE
-                        )}
+                        className="bg-fill-3 text-label-secondary flex size-7 shrink-0 items-center justify-center rounded-lg"
                       >
                         <meta.icon className="size-3.5" />
                       </span>

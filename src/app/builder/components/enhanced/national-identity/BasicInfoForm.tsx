@@ -349,7 +349,7 @@ export const BasicInfoForm = React.memo(
             <div className="border-separator border-b px-6 py-4">
               <h3 className="text-label text-headline flex items-center gap-2">
                 <Crown className="text-tint h-5 w-5" />
-                Administrative Profile
+                Administrative profile
               </h3>
             </div>
             <CardContent className="space-y-4 p-6">
@@ -358,7 +358,7 @@ export const BasicInfoForm = React.memo(
                 <div className="flex items-center justify-between">
                   <label className="text-label text-body flex items-center gap-2 font-medium">
                     <Globe className="text-label-secondary h-4 w-4" />
-                    <span>Country Name</span>
+                    <span>Country name</span>
                     <span
                       className="bg-tint inline-block h-1.5 w-1.5 rounded-full"
                       title="Required primary field"
@@ -384,7 +384,7 @@ export const BasicInfoForm = React.memo(
                 <div className="flex items-center justify-between">
                   <label className="text-label text-caption flex items-center gap-2 font-semibold">
                     <Crown className="text-tint h-3.5 w-3.5" />
-                    <span>Constitutional Form & Ceremonial Title</span>
+                    <span>Constitutional form & ceremonial title</span>
                   </label>
                   <Button
                     type="button"
@@ -395,12 +395,12 @@ export const BasicInfoForm = React.memo(
                     {isCustomOfficialName ? (
                       <>
                         <Lock aria-hidden />
-                        <span>Reset to Auto</span>
+                        <span>Reset to auto</span>
                       </>
                     ) : (
                       <>
                         <Edit3 aria-hidden />
-                        <span>Customize Title</span>
+                        <span>Customize title</span>
                       </>
                     )}
                   </Button>
@@ -408,7 +408,7 @@ export const BasicInfoForm = React.memo(
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
-                    <span className="text-label-secondary text-caption block">Government Type</span>
+                    <span className="text-label-secondary text-caption block">Government type</span>
                     <GlassSelectBox
                       label=""
                       icon={Crown}
@@ -424,7 +424,7 @@ export const BasicInfoForm = React.memo(
 
                   <div className="space-y-1">
                     <span className="text-label-secondary text-caption block">
-                      Ceremonial Official Name
+                      Ceremonial official name
                     </span>
                     {isCustomOfficialName ? (
                       <Input
@@ -436,7 +436,7 @@ export const BasicInfoForm = React.memo(
                     ) : (
                       <div
                         className="rounded-control border-separator bg-fill-4 text-caption text-label/90 flex h-9 items-center border px-3 select-none"
-                        title="Auto-formatted based on Country Name and Government Type"
+                        title="Auto-formatted based on country name and government type"
                       >
                         <span className="truncate">{displayedCeremonialName}</span>
                       </div>
@@ -463,7 +463,7 @@ export const BasicInfoForm = React.memo(
                 <div className="flex items-center justify-between">
                   <label className="text-label text-caption flex items-center gap-2 font-semibold">
                     <Building className="text-teal h-3.5 w-3.5" />
-                    <span>Civic Geography & Demonym</span>
+                    <span>Civic geography & demonym</span>
                   </label>
                   {isLargestLocked && (
                     <span className="text-caption text-teal/80">Largest City = Capital</span>
@@ -473,7 +473,7 @@ export const BasicInfoForm = React.memo(
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <IdentityAutocomplete
                     fieldName="capitalCity"
-                    label="Capital City"
+                    label="Capital city"
                     value={String(identity.capitalCity || "")}
                     onChange={handleCapitalCityChange}
                     placeholder="Capital city name"
@@ -491,10 +491,10 @@ export const BasicInfoForm = React.memo(
                               soundEffects.press();
                               setIsMapPickerOpen(true);
                             }}
-                            title="Select Capital location on map"
+                            title="Select capital location on map"
                           >
                             <MapPin aria-hidden />
-                            <span>Pick on Map</span>
+                            <span>Pick on map</span>
                           </Button>
                         )}
                         <Toggle
@@ -546,7 +546,7 @@ export const BasicInfoForm = React.memo(
                 >
                   <IdentityAutocomplete
                     fieldName="largestCity"
-                    label="Largest City"
+                    label="Largest city"
                     value={
                       isLargestLocked
                         ? String(identity.capitalCity || "")
@@ -570,7 +570,7 @@ export const BasicInfoForm = React.memo(
               <div className="border-separator border-b px-6 py-4">
                 <h3 className="text-label text-headline flex items-center gap-2">
                   <Crown className="text-indigo h-5 w-5" />
-                  Government Structure
+                  Government structure
                 </h3>
               </div>
               <CardContent className="space-y-4 p-6">
@@ -616,7 +616,7 @@ export const BasicInfoForm = React.memo(
             onClose={() => setIsMapPickerOpen(false)}
             onConfirm={handleConfirmMapPicker}
             countryId={countryId}
-            title="Place Capital on Map"
+            title="Place capital on map"
           />
         )}
       </div>

@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 
-import { Calendar, Plus, Xmark as X, Component as Layers } from "iconoir-react";
+import { Calendar, Plus, Xmark as X } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 
 import type { AgendaItem, MeetingSchedulerProps } from "./meeting-scheduler-types";
@@ -338,10 +338,10 @@ export function MeetingScheduler({
 
       const successMsg =
         meetingType === "bilateral"
-          ? "Summit request sent to the guest country!"
+          ? "Summit request sent to the guest country."
           : `${title} has been added to your calendar.`;
       notify.success(
-        meetingType === "bilateral" ? "Summit Requested" : "Meeting Scheduled",
+        meetingType === "bilateral" ? "Summit requested" : "Meeting scheduled",
         successMsg
       );
       onOpenChange(false);
@@ -370,13 +370,9 @@ export function MeetingScheduler({
           {/* Card 1: Setup Details */}
           <div className="bg-surface border-separator rounded-row shadow-floating flex h-[85vh] max-h-[85vh] min-w-[320px] flex-1 flex-col overflow-hidden md:min-w-[450px]">
             <DialogHeader className="border-separator shrink-0 border-b px-6 pt-6 pb-4">
-              <DialogTitle className="flex items-center gap-2">
-                <Calendar className="text-yellow h-5 w-5" />
-                Schedule Meeting
-              </DialogTitle>
+              <DialogTitle className="flex items-center gap-2">Schedule meeting</DialogTitle>
               <DialogDescription>
-                Assemble your cabinet and foreign delegates to deliberate on national crises, draft
-                policy reforms, or coordinate diplomatic summits.
+                Invite your cabinet or foreign delegates to discuss a crisis, a policy or a summit.
               </DialogDescription>
             </DialogHeader>
 
@@ -384,16 +380,18 @@ export function MeetingScheduler({
               <div className="flex-1 space-y-5 overflow-y-auto px-6 py-4">
                 {/* Linked Prefill Indicator */}
                 {defaultMeeting?.prefilledAgenda && (
-                  <div className="rounded-control border-yellow/20 bg-yellow/5 text-footnote text-yellow/90 border p-3">
-                    <span className="text-eyebrow text-yellow mb-0.5 block">Linked Reference</span>
+                  <div className="bg-surface-secondary rounded-row text-footnote p-3">
+                    <span className="text-eyebrow text-label-secondary mb-0.5 block">
+                      Linked reference
+                    </span>
                     <div className="flex items-center gap-2">
                       <span className="text-label font-medium">
                         {defaultMeeting.prefilledAgenda.title}
                       </span>
-                      <Badge variant="warning" className="font-semibold">
+                      <Badge variant="warning">
                         {defaultMeeting.prefilledAgenda.linkedIssueId
-                          ? "CRISIS ISSUE"
-                          : "DRAFT POLICY"}
+                          ? "Crisis issue"
+                          : "Draft policy"}
                       </Badge>
                     </div>
                   </div>
@@ -402,17 +400,15 @@ export function MeetingScheduler({
                 {/* Intent Selector */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-label-secondary text-eyebrow">
-                      Select Agenda Intent
-                    </Label>
+                    <Label className="text-label-secondary text-eyebrow">Agenda intent</Label>
                     {!isChangingIntent && (
                       <Button
                         type="button"
                         variant="ghost"
                         onClick={() => setIsChangingIntent(true)}
-                        className="text-caption text-yellow hover:bg-yellow/10 hover:text-yellow h-5 cursor-pointer px-2 font-semibold"
+                        className="text-caption h-5 px-2"
                       >
-                        Change Intent
+                        Change intent
                       </Button>
                     )}
                   </div>
@@ -461,7 +457,7 @@ export function MeetingScheduler({
                 {meetingType === "bilateral" && (
                   <div>
                     <Label htmlFor="targetCountry" className="text-footnote">
-                      Foreign Guest Country *
+                      Guest country *
                     </Label>
                     <Select
                       value={targetCountryId}
@@ -469,7 +465,7 @@ export function MeetingScheduler({
                       disabled={!!defaultTargetCountryId}
                     >
                       <SelectTrigger id="targetCountry" className="text-footnote mt-1 h-9">
-                        <SelectValue placeholder="Select invited country..." />
+                        <SelectValue placeholder="Select a country" />
                       </SelectTrigger>
                       <SelectContent>
                         {selectCountries
@@ -497,26 +493,26 @@ export function MeetingScheduler({
                 <div className="space-y-3">
                   <div>
                     <Label htmlFor="title" className="text-footnote">
-                      Session Title *
+                      Session title *
                     </Label>
                     <Input
                       id="title"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      placeholder="E.g., Emergency Cabinet Session"
+                      placeholder="e.g. Emergency cabinet session"
                       required
                     />
                   </div>
 
                   <div>
                     <Label htmlFor="description" className="text-footnote">
-                      Context Notes
+                      Context notes
                     </Label>
                     <Textarea
                       id="description"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Optional brief notes about the session objectives..."
+                      placeholder="Goals for the session (optional)"
                       rows={2}
                     />
                   </div>
@@ -524,7 +520,7 @@ export function MeetingScheduler({
                   {proposedIntents.length > 0 && (
                     <div>
                       <Label htmlFor="intent-select" className="text-footnote">
-                        Link to Proposed Intent
+                        Linked intent
                       </Label>
                       <Select
                         value={linkedIntentId}
@@ -536,7 +532,7 @@ export function MeetingScheduler({
                           } else {
                             const selected = proposedIntents.find((i: any) => i.id === val);
                             if (selected) {
-                              setTitle(`Deliberate Intent: ${selected.goal}`);
+                              setTitle(`Deliberate: ${selected.goal}`);
                               setAgendaItems([
                                 {
                                   title: `Deliberate: ${selected.goal}`,
@@ -553,10 +549,10 @@ export function MeetingScheduler({
                         }}
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select proposed intent to deliberate..." />
+                          <SelectValue placeholder="Select a proposed intent" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">None (Routine Session)</SelectItem>
+                          <SelectItem value="none">None (routine session)</SelectItem>
                           {proposedIntents.map((intent: any) => (
                             <SelectItem key={intent.id} value={intent.id}>
                               {intent.goal} ({intent.category})
@@ -570,7 +566,9 @@ export function MeetingScheduler({
 
                 {/* Scheduling Date presets */}
                 <div className="space-y-2">
-                  <Label className="text-label-secondary text-eyebrow">Scheduled Date & Time</Label>
+                  <Label className="text-label-secondary text-eyebrow">
+                    Scheduled date and time
+                  </Label>
                   <SegmentedControl
                     aria-label="Scheduled date and time"
                     fullWidth
@@ -580,14 +578,14 @@ export function MeetingScheduler({
                     options={[
                       { value: "immediately", label: "Immediately" },
                       { value: "tomorrow", label: "Tomorrow" },
-                      { value: "custom", label: "Custom Date..." },
+                      { value: "custom", label: "Custom date" },
                     ]}
                   />
 
                   {timePreset === "custom" && (
                     <Card variant="inset" padding="none" className="mt-2 space-y-2 p-3">
                       <Label htmlFor="custom-date" className="text-label-secondary text-eyebrow">
-                        Select Date
+                        Date
                       </Label>
                       <Input
                         id="custom-date"
@@ -607,11 +605,11 @@ export function MeetingScheduler({
                           setScheduledIxTime(newTime);
                         }}
                         required
-                        className="bg-surface border-separator text-footnote focus:border-yellow/50 max-w-[180px] py-2"
+                        className="bg-surface border-separator text-footnote max-w-[180px] py-2"
                       />
-                      <div className="border-yellow/10 bg-yellow/5 text-caption text-yellow/90 rounded-control-sm flex items-center gap-2 border px-3 py-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        <span>Scheduled Date:</span>
+                      <div className="bg-fill-4 text-caption text-label-secondary rounded-control-sm flex items-center gap-2 px-3 py-1">
+                        <Calendar aria-hidden className="h-3.5 w-3.5" />
+                        <span>Scheduled date</span>
                         <span className="text-label">
                           {IxTime.formatIxTime(scheduledIxTime, false).replace(" (ILT)", "")}
                         </span>
@@ -622,8 +620,6 @@ export function MeetingScheduler({
                     </Card>
                   )}
                 </div>
-
-                {/* Attendees Smart Badges removed from Card 1 */}
               </div>
 
               <DialogFooter className="border-separator mt-auto shrink-0 border-t px-6 py-4">
@@ -639,14 +635,14 @@ export function MeetingScheduler({
                 <Button
                   type="submit"
                   size="sm"
-                  className="cursor-pointer font-semibold"
+                  className="font-semibold"
                   disabled={
                     isSubmitting ||
                     agendaItems.length === 0 ||
                     (allOfficials.length > 0 && selectedOfficials.length === 0)
                   }
                 >
-                  {isSubmitting ? "Scheduling..." : "Schedule Meeting"}
+                  {isSubmitting ? "Scheduling" : "Schedule meeting"}
                 </Button>
               </DialogFooter>
             </form>
@@ -656,8 +652,7 @@ export function MeetingScheduler({
           <div className="bg-surface border-separator animate-in fade-in slide-in-from-right-2 rounded-row shadow-floating flex max-h-[85vh] w-full flex-col overflow-hidden duration-300 md:w-[350px]">
             <div className="border-separator shrink-0 border-b px-5 pt-5 pb-3">
               <h3 className="text-label text-headline flex items-center gap-2">
-                <Layers className="text-yellow h-4 w-4" />
-                Roster & Agenda
+                Roster and agenda
               </h3>
               <p className="text-label-secondary text-footnote mt-0.5">
                 {selectedOfficials.length} invited · {agendaItems.length} topics
@@ -668,12 +663,12 @@ export function MeetingScheduler({
               {/* Section 1: Attendees */}
               <div className="space-y-2">
                 <Label className="text-label-secondary text-eyebrow">
-                  Ministers & Attendees ({selectedOfficials.length} invited)
+                  Attendees ({selectedOfficials.length} invited)
                 </Label>
 
                 {officialsLoading || (meetingType === "bilateral" && targetOfficialsLoading) ? (
                   <div className="text-label-secondary text-footnote animate-pulse py-2">
-                    Loading officials...
+                    Loading officials
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -696,7 +691,7 @@ export function MeetingScheduler({
                             className={cn(
                               "text-footnote flex items-center gap-2 rounded-full border px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                               isRecommended
-                                ? "border-yellow/20 bg-yellow/10 text-yellow/90"
+                                ? "border-separator bg-fill-3 text-label"
                                 : "border-separator bg-fill-4 text-label-tertiary"
                             )}
                           >
@@ -739,7 +734,7 @@ export function MeetingScheduler({
                         >
                           <SelectTrigger className="border-separator bg-fill-4 text-footnote h-7 w-fit min-w-[150px] cursor-pointer py-1">
                             <Plus className="text-label-secondary mr-1 h-3.5 w-3.5" />
-                            <span>Add Invitees...</span>
+                            <span>Add invitees</span>
                           </SelectTrigger>
                           <SelectContent>
                             {allOfficials
@@ -762,7 +757,7 @@ export function MeetingScheduler({
               {/* Section 2: Agenda Topics */}
               <div className="space-y-3">
                 <Label className="text-label-secondary text-eyebrow">
-                  Agenda Topics ({agendaItems.length} items · {totalAgendaDuration} min)
+                  Agenda topics ({agendaItems.length} items · {totalAgendaDuration} min)
                 </Label>
 
                 <div className="space-y-2">
@@ -814,7 +809,7 @@ export function MeetingScheduler({
                           <div className="border-separator bg-fill-4 text-footnote space-y-3 border-t p-3">
                             <div>
                               <Label className="text-label-secondary text-eyebrow">
-                                Topic Title
+                                Topic title
                               </Label>
                               <Input
                                 value={item.title}
@@ -830,7 +825,7 @@ export function MeetingScheduler({
                             <div className="grid grid-cols-2 gap-2">
                               <div>
                                 <Label className="text-label-secondary text-eyebrow">
-                                  Duration (mins)
+                                  Duration (min)
                                 </Label>
                                 <Input
                                   type="number"
@@ -880,7 +875,7 @@ export function MeetingScheduler({
                                   newItems[index]!.description = e.target.value;
                                   setAgendaItems(newItems);
                                 }}
-                                placeholder="Describe this agenda topic's purpose..."
+                                placeholder="What this topic covers"
                                 rows={2}
                                 className="text-footnote mt-1"
                               />
@@ -895,7 +890,7 @@ export function MeetingScheduler({
                 {/* Add Quick Agenda Topic input */}
                 <div className="flex items-center gap-2">
                   <Input
-                    placeholder="Type a new topic and press Enter..."
+                    placeholder="New topic, then press Enter"
                     value={newAgendaTitle}
                     onChange={(e) => setNewAgendaTitle(e.target.value)}
                     className="border-separator bg-fill-4 text-footnote h-8 flex-1"

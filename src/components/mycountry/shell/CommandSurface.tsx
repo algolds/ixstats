@@ -11,7 +11,7 @@ import { ExecutiveConsole } from "./ExecutiveConsole";
 import { DomainSurface } from "./DomainSurface";
 import { DrillSheets, type DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import { DOMAIN_SECTIONS } from "./domain-meta";
-import type { CommandNavMode } from "./CommandNavToggle";
+import type { CommandNavMode } from "./command-nav-mode";
 
 export interface CommandSurfaceProps {
   section?: string;
@@ -107,7 +107,6 @@ function CommandSurfaceComponent({
           onDeclare={declare}
           onOpenIntent={openIntent}
           onOpenDrill={openDrill}
-          onNavigate={onNavigate}
         />
       )}
 

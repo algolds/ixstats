@@ -39,7 +39,6 @@ export interface WikiSite {
   description: string;
   categoryFilter?: string;
   theme: "blue" | "indigo";
-  gradient: string;
 }
 
 export interface SearchResult {
@@ -242,7 +241,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                       size="sm"
                       variant="secondary"
                       className="shrink-0"
-                      title="Switch Wiki Source"
+                      title="Switch wiki source"
                     >
                       <img
                         src={withBasePath(logoMap[selectedSite.name]!)}

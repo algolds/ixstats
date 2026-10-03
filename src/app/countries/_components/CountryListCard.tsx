@@ -99,31 +99,17 @@ export function CountryListCard({
   const detailHref = `/countries/${country.slug}`;
 
   return (
-    // A pressable card holds no other control (spec §16.8), so the card is a stretched link on the
-    // name (its ::after covers the card) and the IxWiki button sits above it; the card draws the
-    // focus ring when the link has keyboard focus.
+    // The card is a stretched link on the name (its ::after covers the card) and the IxWiki button
+    // sits above it; the card draws the focus ring when the link has keyboard focus.
     <Card
       className={cn(
-        "group hover:border-label-tertiary rounded-card relative isolate flex h-full flex-col overflow-hidden",
+        "group hover:border-label-tertiary rounded-card relative flex h-full flex-col overflow-hidden",
         "has-[a[data-card-link]:focus-visible]:outline-tint has-[a[data-card-link]:focus-visible]:outline-2 has-[a[data-card-link]:focus-visible]:outline-offset-2",
         dominantColor && "border-l-2"
       )}
       // The flag's dominant colour is data, not decoration: a thin identity edge.
       style={dominantColor ? { borderLeftColor: dominantColor } : undefined}
     >
-      {/* v2 (c5c6b382): the flag as a soft blurred accent along the card's top edge, fading out
-          toward the content. Decorative only. */}
-      {flagUrl && (
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-16 bg-cover bg-center opacity-30 blur-[8px] saturate-110 transition-opacity duration-200 group-focus-within:opacity-40 group-hover:opacity-40 print:hidden"
-          style={{
-            backgroundImage: `url(${flagUrl})`,
-            maskImage: "linear-gradient(to bottom, black, transparent)",
-            WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
-          }}
-        />
-      )}
       <CardContent className="min-h-0 grow p-3">
         <div className="mb-2 flex items-start justify-between gap-2">
           <div className="flex min-w-0 flex-1 items-center gap-2">

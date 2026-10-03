@@ -150,7 +150,7 @@ export function EmbassyCreatorSheet({
         <SheetHeader className="px-6 pt-6 pb-0">
           <SheetTitle className="flex items-center gap-2">
             <Building2 className="text-label-secondary h-5 w-5 shrink-0" />
-            Establish New Embassy
+            Establish new embassy
           </SheetTitle>
           <p className="text-label-secondary text-body">
             Establish diplomatic presence in another nation.
@@ -160,7 +160,7 @@ export function EmbassyCreatorSheet({
         <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
           {/* Host Country */}
           <div>
-            <Label className="text-caption mb-2 block">Host Country</Label>
+            <Label className="text-caption mb-2 block">Host country</Label>
             <CountrySelector
               onSelect={handleCountrySelect}
               excludeCountryId={countryId}
@@ -178,7 +178,7 @@ export function EmbassyCreatorSheet({
           {/* Embassy Details */}
           <div>
             <Label className="text-caption mb-2 block">
-              Embassy Name <span className="text-destructive">*</span>
+              Embassy name <span className="text-destructive">*</span>
             </Label>
             <div className="relative">
               <Building2 className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />

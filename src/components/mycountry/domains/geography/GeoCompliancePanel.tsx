@@ -59,7 +59,7 @@ export function GeoCompliancePanel({ countryId, onRefresh }: GeoCompliancePanelP
               <ChevronRight aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
             )}
             <Shield aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
-            Geographic Data Compliance
+            Geographic data compliance
           </span>
           <span className="flex items-center gap-2">
             <ComplianceBadge count={summary.errors} tone="critical" label="errors" />

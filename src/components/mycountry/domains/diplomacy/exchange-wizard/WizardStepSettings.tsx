@@ -33,7 +33,7 @@ export const WizardStepSettings = React.memo(function WizardStepSettings({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-label text-title-3 mb-2">Configuration & Settings</h3>
+        <h3 className="text-label text-title-3 mb-2">Configuration & settings</h3>
         <p className="text-label-secondary text-body">
           Set the schedule, capacity, and visibility of your exchange.
         </p>

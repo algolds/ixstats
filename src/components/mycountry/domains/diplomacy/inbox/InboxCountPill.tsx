@@ -8,7 +8,7 @@ export function InboxCountPill({ count, className }: { count: number; className?
   return (
     <span
       className={cn(
-        "facet-gold text-caption font-data inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 leading-none font-semibold tabular-nums",
+        "bg-primary-fill text-on-primary text-caption inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 leading-none font-semibold tabular-nums",
         className
       )}
       aria-label={`${count} diplomatic item${count === 1 ? "" : "s"} awaiting your answer`}

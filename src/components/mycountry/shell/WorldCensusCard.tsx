@@ -143,10 +143,10 @@ export function WorldCensusList({
               title={<span className="text-body text-label font-normal">{r.category}</span>}
               trailing={
                 <span className="flex items-center gap-2" title={describeRank(r)}>
-                  <span className="text-footnote text-label font-data tabular-nums">
+                  <span className="text-footnote text-label tabular-nums">
                     {formatCensusValue(r)}
                   </span>
-                  {/* A top-three rank is the one meaningful status here: it takes the v2 gold. */}
+                  {/* A top-three rank is the one meaningful status here: it takes the gold. */}
                   <Badge
                     variant={r.global.position <= 3 ? "warning" : "default"}
                     className={cn(
@@ -198,10 +198,10 @@ export function WorldCensusCard({ countryId }: WorldCensusCardProps) {
   return (
     <Card role="region" aria-labelledby="world-census-title" className="rounded-card">
       <CardHeader className="flex-row items-center gap-3 px-4 pt-4 pb-0">
-        {/* v2 rail card header, with the census glyph in the MyCountry gold */}
+        {/* Header with the census glyph in the MyCountry gold */}
         <span
           aria-hidden="true"
-          className="border-tint/30 bg-tint/10 text-tint flex size-8 shrink-0 items-center justify-center rounded-lg border"
+          className="bg-fill-3 text-label-secondary flex size-8 shrink-0 items-center justify-center rounded-lg"
         >
           <StatsReport className="size-4" />
         </span>

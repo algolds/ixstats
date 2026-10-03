@@ -67,7 +67,6 @@ export const regionArchetypes: ArchetypeSeed[] = [
       ];
       return europeanCountries.includes(country.name);
     },
-    gradient: "bg-blue/10",
     categoryId: "geographical-regions",
     priority: 8,
   },
@@ -125,7 +124,6 @@ export const regionArchetypes: ArchetypeSeed[] = [
       ];
       return asianCountries.includes(country.name);
     },
-    gradient: "bg-red/10",
     categoryId: "geographical-regions",
     priority: 9,
   },
@@ -175,7 +173,6 @@ export const regionArchetypes: ArchetypeSeed[] = [
       ];
       return americanCountries.includes(country.name);
     },
-    gradient: "bg-green/10",
     categoryId: "geographical-regions",
     priority: 10,
   },
@@ -244,7 +241,6 @@ export const regionArchetypes: ArchetypeSeed[] = [
       ];
       return africanCountries.includes(country.name);
     },
-    gradient: "bg-orange/10",
     categoryId: "geographical-regions",
     priority: 11,
   },
@@ -276,7 +272,6 @@ export const regionArchetypes: ArchetypeSeed[] = [
         (country.continent || "").toLowerCase().includes("oceania")
       );
     },
-    gradient: "bg-teal/10",
     categoryId: "geographical-regions",
     priority: 12,
   },

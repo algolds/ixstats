@@ -16,8 +16,6 @@ export interface ExecutiveConsoleProps {
   onOpenDrill?: (drill: DrillSheetKind) => void;
 }
 
-export type V2ConsoleProps = ExecutiveConsoleProps;
-
 export function ExecutiveConsole({
   countryId,
   initialGoal,
@@ -40,5 +38,3 @@ export function ExecutiveConsole({
     />
   );
 }
-
-export const V2Console = ExecutiveConsole;

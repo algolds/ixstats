@@ -18,7 +18,7 @@ export interface TaxChannel {
 export const TAX_CHANNELS: TaxChannel[] = [
   {
     key: "corporate",
-    label: "Corporate Tax",
+    label: "Corporate tax",
     shortLabel: "Corp",
     dbField: "corporateTaxRates",
     defaultRate: 21,
@@ -31,7 +31,7 @@ export const TAX_CHANNELS: TaxChannel[] = [
   },
   {
     key: "income",
-    label: "Income Tax",
+    label: "Income tax",
     shortLabel: "Income",
     dbField: "personalIncomeTaxRates",
     defaultRate: 24,
@@ -57,7 +57,7 @@ export const TAX_CHANNELS: TaxChannel[] = [
   },
   {
     key: "tariff",
-    label: "Tariff Rate",
+    label: "Tariff rate",
     shortLabel: "Tariff",
     dbField: "exciseTaxRates",
     defaultRate: 4.5,
@@ -70,7 +70,7 @@ export const TAX_CHANNELS: TaxChannel[] = [
   },
   {
     key: "wealth",
-    label: "Wealth Tax",
+    label: "Wealth tax",
     shortLabel: "Wealth",
     dbField: "wealthTaxRate",
     defaultRate: 1.5,
@@ -83,7 +83,7 @@ export const TAX_CHANNELS: TaxChannel[] = [
   },
   {
     key: "capGains",
-    label: "Capital Gains Tax",
+    label: "Capital gains tax",
     shortLabel: "Cap Gains",
     dbField: "capitalGainsTax",
     defaultRate: 15,

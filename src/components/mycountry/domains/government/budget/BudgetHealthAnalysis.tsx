@@ -2,7 +2,6 @@
 
 import React from "react";
 import { Badge } from "~/components/ui/badge";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { cn } from "~/lib/utils";
 import type { BudgetSummary, RevenueSummary } from "~/types/government";
 import type { BudgetHealthStatus } from "./budgetTypes";
@@ -46,12 +45,12 @@ export function BudgetHealthAnalysis({
           Budget health indicators
         </h4>
         <div className="divide-separator text-footnote divide-y">
-          <Row label="Fiscal Balance">
+          <Row label="Fiscal balance">
             <Badge variant="outline" className={budgetHealth.color}>
               {budgetHealth.label}
             </Badge>
           </Row>
-          <Row label="Budget Utilization">
+          <Row label="Budget utilization">
             <span
               className={cn(
                 "font-semibold tabular-nums",
@@ -65,7 +64,7 @@ export function BudgetHealthAnalysis({
               {budgetSummary.utilizationRate.toFixed(1)}%
             </span>
           </Row>
-          <Row label="Revenue Adequacy">
+          <Row label="Revenue adequacy">
             <span
               className={cn("font-semibold", revenueAdequate ? "text-green" : "text-destructive")}
             >
@@ -86,18 +85,20 @@ export function BudgetHealthAnalysis({
         </h4>
         <div className="py-2 text-center">
           <div className="text-label text-large-title tabular-nums">{efficiencyScore}</div>
-          <Eyebrow className="mt-1 block">Overall administrative efficiency</Eyebrow>
+          <span className="text-stat-label text-label-secondary mt-1 block">
+            Overall administrative efficiency
+          </span>
         </div>
         <div className="divide-separator text-footnote divide-y">
-          <Row label="Utilization Rate">
+          <Row label="Utilization rate">
             <span className="text-label font-semibold tabular-nums">
               {budgetSummary.utilizationRate.toFixed(1)}%
             </span>
           </Row>
-          <Row label="Fiscal Health">
+          <Row label="Fiscal health">
             <span className="text-label font-semibold">{budgetHealth.label}</span>
           </Row>
-          <Row label="Department Coverage">
+          <Row label="Department coverage">
             <span className="text-label font-semibold tabular-nums">
               {budgetSummary.departmentCount} depts
             </span>

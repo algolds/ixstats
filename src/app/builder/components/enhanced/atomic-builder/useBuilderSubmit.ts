@@ -52,10 +52,7 @@ export function useBuilderSubmit({
 
       console.log("[Builder] Country created successfully:", country.name);
 
-      notify.success(
-        "Nation Created Successfully!",
-        `Welcome to ${country.name}! Redirecting to your country dashboard...`
-      );
+      notify.success("Nation created", `${country.name} is ready. Opening MyCountry...`);
 
       setTimeout(() => {
         router.push(createUrl(`/mycountry`));
@@ -68,16 +65,13 @@ export function useBuilderSubmit({
 
       if (errorMessage.includes("already exists")) {
         notify.error(
-          "Country Already Exists",
-          "A country with this name already exists. Please choose a different name."
+          "Name already taken",
+          "A country with this name already exists. Choose a different name."
         );
       } else if (errorMessage.includes("no assigned role")) {
-        notify.error(
-          "Account Setup Required",
-          "Your account needs to be configured. Please sign out and sign in again, or contact support."
-        );
+        notify.error("Account not set up", "Sign out and sign in again, or contact support.");
       } else {
-        notify.error("Failed to Create Nation", errorMessage);
+        notify.error("Could not create nation", errorMessage);
       }
 
       submissionLockRef.current = false;
@@ -101,10 +95,7 @@ export function useBuilderSubmit({
 
       console.log("[Builder] Country updated successfully:", country.name);
 
-      notify.success(
-        "Country Updated Successfully!",
-        `${country.name} has been updated. Taking you back to MyCountry…`
-      );
+      notify.success("Country updated", `${country.name} was saved. Opening MyCountry...`);
 
       setTimeout(() => {
         router.push(createUrl(`/mycountry`));
@@ -114,7 +105,7 @@ export function useBuilderSubmit({
       const errorMessage = err?.message ?? "Failed to update country";
       setError(errorMessage);
       console.error("[Builder] Country update failed:", errorMessage);
-      notify.error("Failed to Update Country", errorMessage);
+      notify.error("Could not update country", errorMessage);
 
       submissionLockRef.current = false;
       setIsSubmitting(false);
@@ -128,7 +119,7 @@ export function useBuilderSubmit({
 
     const { economicInputs } = builderState;
     if (!economicInputs) {
-      notify.error("Incomplete Data", "Missing required economic inputs.");
+      notify.error("Incomplete data", "Missing required economic inputs.");
       return;
     }
 
@@ -147,10 +138,7 @@ export function useBuilderSubmit({
 
         console.log("[Builder] Updating country:", economicInputs.countryName);
 
-        notify.info(
-          "Updating Your Country",
-          "Applying your changes to the country, government, and economic systems..."
-        );
+        notify.info("Updating country", "Applying your changes to the government and economy...");
 
         await updateCountryMutation.mutateAsync(
           asJsonPayload<RouterInputs["countries"]["updateCountry"]>({
@@ -166,10 +154,7 @@ export function useBuilderSubmit({
       } else {
         console.log("[Builder] Creating country:", economicInputs.countryName);
 
-        notify.info(
-          "Creating Your Nation",
-          "Setting up your country, government, and economic systems..."
-        );
+        notify.info("Creating nation", "Setting up the country, government and economy...");
 
         await createCountryMutation.mutateAsync(
           asJsonPayload<RouterInputs["countries"]["createCountry"]>({
@@ -211,10 +196,8 @@ export function useBuilderSubmit({
           : "[Builder] Country creation already in progress, ignoring duplicate request"
       );
       notify.warning(
-        isEditMode ? "Update In Progress" : "Creation In Progress",
-        isEditMode
-          ? "Please wait while your country is being updated..."
-          : "Please wait while your nation is being created..."
+        isEditMode ? "Update in progress" : "Creation in progress",
+        isEditMode ? "Your country is being updated." : "Your nation is being created."
       );
       return;
     }
@@ -223,10 +206,10 @@ export function useBuilderSubmit({
       const errorMsg = "Missing required data for country " + (isEditMode ? "update" : "creation");
       setError(errorMsg);
       notify.error(
-        "Incomplete Data",
+        "Incomplete data",
         isEditMode
-          ? "Please complete all required fields before updating your country."
-          : "Please complete all required fields before creating your nation."
+          ? "Complete all required fields before updating your country."
+          : "Complete all required fields before creating your nation."
       );
       return;
     }

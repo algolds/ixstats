@@ -14,7 +14,6 @@ import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 interface BorderThreatPanelProps {
@@ -184,7 +183,7 @@ function MetricItem({
     <div className="flex items-center gap-2 py-1">
       <Icon aria-hidden="true" className="text-label-secondary h-3.5 w-3.5 shrink-0" />
       <div className="min-w-0">
-        <Eyebrow className="block truncate">{label}</Eyebrow>
+        <span className="text-stat-label text-label-secondary block truncate">{label}</span>
         <div className="text-label text-headline tabular-nums">{value ?? 0}</div>
       </div>
     </div>
@@ -224,7 +223,7 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
           <CardHeader className="p-5 pb-3">
             <h4 className="text-label text-headline flex items-center gap-2">
               <Shield aria-hidden="true" className="text-red h-4 w-4" />
-              Border Security Overview
+              Border security overview
             </h4>
             <p className="text-label-secondary text-footnote">
               Current frontier posture and coverage
@@ -232,7 +231,7 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
           </CardHeader>
           <CardContent className="space-y-4 px-5 pb-5">
             <div className="border-separator flex items-center justify-between border-b pb-4">
-              <Eyebrow>Security level</Eyebrow>
+              <span className="text-stat-label text-label-secondary">Security level</span>
               <div className="text-right">
                 <div className="text-label text-title-1 tabular-nums">
                   {border?.overallSecurityLevel ?? 0}
@@ -273,7 +272,7 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
           <CardHeader className="p-5 pb-3">
             <h4 className="text-label text-headline flex items-center gap-2">
               <AlertTriangle aria-hidden="true" className="text-red h-4 w-4" />
-              Neighbor Threats
+              Neighbor threats
             </h4>
             <p className="text-label-secondary text-footnote">
               {threats.length === 0
@@ -289,8 +288,7 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
                   No neighbor threat assessments recorded yet.
                 </p>
                 <p className="text-label-secondary text-footnote mt-1 max-w-xs">
-                  Threat assessments will appear here once intelligence evaluates neighboring
-                  borders.
+                  Intelligence has not assessed any neighboring borders yet.
                 </p>
               </div>
             ) : (

@@ -15,7 +15,6 @@ import {
   ArrowRight,
   ArrowLeft,
 } from "iconoir-react";
-import { FlagWatermark } from "~/components/ui/facet";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -65,19 +64,19 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
   const sections: InfoboxSection[] = [
     {
       id: "keyinfo",
-      title: "Key Information",
+      title: "Key information",
       icon: InfoCircle,
       fields: [
         { label: "Population", value: data.population ? formatNumber(data.population) : undefined },
-        { label: "GDP (Nominal)", value: data.GDP_nominal },
-        { label: "GDP per Capita", value: data.GDP_nominal_per_capita },
+        { label: "GDP (nominal)", value: data.GDP_nominal },
+        { label: "GDP per capita", value: data.GDP_nominal_per_capita },
         { label: "Capital", value: data.capital },
-        { label: "Largest City", value: data.largest_city },
-        { label: "Government Type", value: data.government_type },
-        { label: "Head of State", value: data.head_of_state },
-        { label: "Head of Government", value: data.head_of_government },
+        { label: "Largest city", value: data.largest_city },
+        { label: "Government type", value: data.government_type },
+        { label: "Head of state", value: data.head_of_state },
+        { label: "Head of government", value: data.head_of_government },
         { label: "Currency", value: data.currency },
-        { label: "Official Languages", value: data.official_languages || data.languages },
+        { label: "Official languages", value: data.official_languages || data.languages },
         {
           label: "Area",
           value:
@@ -90,20 +89,20 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
     },
     {
       id: "basic",
-      title: "Basic Information",
+      title: "Basic information",
       icon: Globe,
       fields: [
-        { label: "Conventional Long Name", value: data.conventional_long_name },
-        { label: "Official Name", value: data.official_name },
-        { label: "Native Name", value: data.native_name },
+        { label: "Conventional long name", value: data.conventional_long_name },
+        { label: "Official name", value: data.official_name },
+        { label: "Native name", value: data.native_name },
         { label: "Demonym", value: data.demonym },
         { label: "Motto", value: data.motto },
         {
-          label: "Population Estimate",
+          label: "Population estimate",
           value: data.population_estimate ? formatNumber(data.population_estimate) : undefined,
         },
         {
-          label: "Population Census",
+          label: "Population census",
           value: data.population_census ? formatNumber(data.population_census) : undefined,
         },
       ].filter((f) => f.value),
@@ -114,7 +113,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
       icon: MapPin,
       fields: [
         { label: "Capital", value: data.capital },
-        { label: "Largest City", value: data.largest_city },
+        { label: "Largest city", value: data.largest_city },
         { label: "Continent", value: data.continent },
         {
           label: "Area",
@@ -130,12 +129,12 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
       title: "Government",
       icon: Building2,
       fields: [
-        { label: "Government Type", value: data.government_type },
-        { label: "Head of State", value: data.head_of_state },
-        { label: "Head of Government", value: data.head_of_government },
+        { label: "Government type", value: data.government_type },
+        { label: "Head of state", value: data.head_of_state },
+        { label: "Head of government", value: data.head_of_government },
         { label: "Legislature", value: data.legislature },
-        { label: "Upper House", value: data.upper_house },
-        { label: "Lower House", value: data.lower_house },
+        { label: "Upper house", value: data.upper_house },
+        { label: "Lower house", value: data.lower_house },
         {
           label: data.leader_title3 || "Leader",
           value: data.leader_name3,
@@ -153,24 +152,24 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
       title: "Economy",
       icon: TrendingUp,
       fields: [
-        { label: "GDP (Nominal)", value: data.GDP_nominal },
+        { label: "GDP (nominal)", value: data.GDP_nominal },
         { label: "GDP (PPP)", value: data.GDP_PPP },
-        { label: "GDP per Capita (Nominal)", value: data.GDP_nominal_per_capita },
-        { label: "GDP per Capita (PPP)", value: data.GDP_PPP_per_capita },
+        { label: "GDP per capita (nominal)", value: data.GDP_nominal_per_capita },
+        { label: "GDP per capita (PPP)", value: data.GDP_PPP_per_capita },
         { label: "Currency", value: data.currency },
-        { label: "Currency Code", value: data.currency_code },
+        { label: "Currency code", value: data.currency_code },
         { label: "HDI", value: data.hdi },
       ].filter((f) => f.value),
     },
     {
       id: "culture",
-      title: "Culture & Society",
+      title: "Culture & society",
       icon: Users,
       fields: [
-        { label: "Official Languages", value: data.official_languages || data.languages },
-        { label: "Ethnic Groups", value: data.ethnic_groups },
+        { label: "Official languages", value: data.official_languages || data.languages },
+        { label: "Ethnic groups", value: data.ethnic_groups },
         { label: "Religion", value: data.religion },
-        { label: "National Anthem", value: data.national_anthem },
+        { label: "National anthem", value: data.national_anthem },
         { label: "Demonym", value: data.demonym },
         { label: "Motto", value: data.motto },
       ].filter((f) => f.value),
@@ -180,11 +179,11 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
       title: "Technical",
       icon: Clock,
       fields: [
-        { label: "Time Zone", value: data.time_zone },
+        { label: "Time zone", value: data.time_zone },
         { label: "Drives on", value: data.drives_on ? `${data.drives_on} side` : undefined },
-        { label: "Calling Code", value: data.calling_code },
+        { label: "Calling code", value: data.calling_code },
         { label: "Internet TLD", value: data.internet_tld },
-        { label: "ISO Code", value: data.iso_code },
+        { label: "ISO code", value: data.iso_code },
         { label: "Electricity", value: data.electricity },
       ].filter((f) => f.value),
     },
@@ -194,8 +193,6 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
 
   return (
     <Card className="relative flex flex-col gap-6 overflow-hidden py-6">
-      <FlagWatermark src={data.flagUrl} />
-
       {/* Header */}
       <CardHeader className="relative z-10 pb-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -239,7 +236,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
                 <div className="border-separator rounded-control shadow-card overflow-hidden border">
                   <img
                     src={data.coatOfArmsUrl}
-                    alt={`Coat of Arms of ${data.name}`}
+                    alt={`Coat of arms of ${data.name}`}
                     className="h-10 w-10 object-contain sm:h-12 sm:w-12"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
@@ -305,7 +302,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
           <div className="flex shrink-0 sm:self-start">
             <Button
               size="default"
-              className="group rounded-row bg-blue text-headline text-on-blue shadow-card hover:bg-blue h-10 w-full cursor-pointer justify-center gap-2 px-5 sm:w-auto"
+              className="group w-full justify-center gap-2 sm:w-auto"
               onClick={onContinue}
               disabled={isLoading}
             >
@@ -331,7 +328,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
         {data.wikiIntro && (
           <div className="border-separator rounded-control border p-4">
             <div className="mb-2 flex items-center gap-2">
-              <Globe className="text-blue h-4 w-4" />
+              <Globe className="text-label-secondary h-4 w-4" />
               <span className="text-body font-medium">Description</span>
             </div>
             <p className="text-label-secondary text-body leading-relaxed">{data.wikiIntro}</p>
@@ -354,7 +351,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
                 className="hover:bg-fill-4 focus-visible:outline-tint flex w-full items-center justify-between p-3 text-left transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2"
               >
                 <div className="flex items-center gap-2">
-                  <Icon className="text-blue h-4 w-4" />
+                  <Icon className="text-label-secondary h-4 w-4" />
                   <span className="text-body font-medium">{section.title}</span>
                   <Badge variant="default" className="tabular-nums">
                     {section.fields.length}
@@ -401,13 +398,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
         {/* Bottom Actions: Back & Continue */}
         <div className="border-separator flex items-center justify-between gap-4 border-t pt-4">
           {onBack ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="rounded-row border-separator bg-fill-4 text-body text-label hover:bg-fill-3 h-12 cursor-pointer gap-2 px-6 font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-              onClick={onBack}
-            >
+            <Button type="button" variant="outline" size="lg" className="gap-2" onClick={onBack}>
               <ArrowLeft className="h-4 w-4" />
               <span>Back</span>
             </Button>
@@ -415,12 +406,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
             <div />
           )}
 
-          <Button
-            size="lg"
-            className="group rounded-row bg-blue text-headline text-on-blue shadow-floating hover:bg-blue h-12 cursor-pointer gap-2 px-8"
-            onClick={onContinue}
-            disabled={isLoading}
-          >
+          <Button size="lg" className="group gap-2" onClick={onContinue} disabled={isLoading}>
             {isLoading ? (
               <div className="border-separator border-t-separator h-5 w-5 animate-spin rounded-full border-2" />
             ) : (

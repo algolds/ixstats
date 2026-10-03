@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Badge } from "~/components/ui/badge";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import {
   Package,
   Flash as Zap,
@@ -102,9 +101,9 @@ export function GovernmentMetricModals({
       icon: Package,
       label: `Selected Components (${selectedComponentObjects.length})`,
     },
-    interactions: { icon: Zap, label: "Component Interactions" },
-    effectiveness: { icon: Target, label: "Effectiveness Breakdown" },
-    costs: { icon: DollarSign, label: "Financial Impact & Costs" },
+    interactions: { icon: Zap, label: "Component interactions" },
+    effectiveness: { icon: Target, label: "Effectiveness breakdown" },
+    costs: { icon: DollarSign, label: "Financial impact & costs" },
   };
   const TitleIcon = TITLES[activeTab].icon;
 
@@ -229,7 +228,7 @@ export function GovernmentMetricModals({
                 </h4>
                 {directives.length === 0 ? (
                   <p className="text-label-secondary text-footnote">
-                    No policy directives active. Select components to unlock state directives.
+                    No policy directives are active. Select components to enable state directives.
                   </p>
                 ) : (
                   <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -256,7 +255,7 @@ export function GovernmentMetricModals({
               <dl className="border-separator rounded-control grid grid-cols-2 gap-4 border p-4 text-center">
                 <div className="space-y-1">
                   <dt>
-                    <Eyebrow>Base score</Eyebrow>
+                    <span className="text-stat-label text-label-secondary">Base score</span>
                   </dt>
                   <dd className="text-label text-title-2 tabular-nums">
                     {effectiveness.baseEffectiveness.toFixed(1)}%
@@ -264,7 +263,7 @@ export function GovernmentMetricModals({
                 </div>
                 <div className="space-y-1">
                   <dt>
-                    <Eyebrow>Synergy bonus</Eyebrow>
+                    <span className="text-stat-label text-label-secondary">Synergy bonus</span>
                   </dt>
                   <dd className="text-title-2 text-green tabular-nums">
                     +{effectiveness.synergyBonus.toFixed(1)}%
@@ -272,7 +271,7 @@ export function GovernmentMetricModals({
                 </div>
                 <div className="space-y-1">
                   <dt>
-                    <Eyebrow>Conflict penalty</Eyebrow>
+                    <span className="text-stat-label text-label-secondary">Conflict penalty</span>
                   </dt>
                   <dd className="text-destructive text-title-2 tabular-nums">
                     -{effectiveness.conflictPenalty.toFixed(1)}%
@@ -280,7 +279,7 @@ export function GovernmentMetricModals({
                 </div>
                 <div className="space-y-1">
                   <dt>
-                    <Eyebrow>Total score</Eyebrow>
+                    <span className="text-stat-label text-label-secondary">Total score</span>
                   </dt>
                   <dd className="text-label text-title-2 tabular-nums">
                     {effectiveness.totalEffectiveness.toFixed(1)}%
@@ -317,7 +316,7 @@ export function GovernmentMetricModals({
               <dl className="border-separator divide-separator rounded-control grid grid-cols-2 divide-x border text-center">
                 <div className="p-4">
                   <dt>
-                    <Eyebrow>Total setup cost</Eyebrow>
+                    <span className="text-stat-label text-label-secondary">Total setup cost</span>
                   </dt>
                   <dd className="text-label text-title-2 mt-1 tabular-nums">
                     ${implementationCost.toLocaleString()}
@@ -325,7 +324,7 @@ export function GovernmentMetricModals({
                 </div>
                 <div className="p-4">
                   <dt>
-                    <Eyebrow>Annual maintenance</Eyebrow>
+                    <span className="text-stat-label text-label-secondary">Annual maintenance</span>
                   </dt>
                   <dd className="text-label text-title-2 mt-1 tabular-nums">
                     ${maintenanceCost.toLocaleString()}/yr

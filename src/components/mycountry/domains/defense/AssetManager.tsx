@@ -55,7 +55,7 @@ export function AssetManager({
 
   const createAsset = api.security.createMilitaryAsset.useMutation({
     onSuccess: () => {
-      notify.success("Asset created successfully");
+      notify.success("Asset created");
       setShowDialog(false);
       setEditingAsset(null);
       onRefetch();
@@ -67,7 +67,7 @@ export function AssetManager({
 
   const updateAsset = api.security.updateMilitaryAsset.useMutation({
     onSuccess: () => {
-      notify.success("Asset updated successfully");
+      notify.success("Asset updated");
       setShowDialog(false);
       setEditingAsset(null);
       onRefetch();
@@ -79,7 +79,7 @@ export function AssetManager({
 
   const deleteAsset = api.security.deleteMilitaryAsset.useMutation({
     onSuccess: () => {
-      notify.success("Asset deleted successfully");
+      notify.success("Asset deleted");
       onRefetch();
     },
     onError: (error) => {
@@ -130,7 +130,7 @@ export function AssetManager({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="all">All types</SelectItem>
               {Object.entries(ASSET_TYPE_CONFIG).map(([key, config]) => (
                 <SelectItem key={key} value={key}>
                   {config.label}
@@ -141,7 +141,7 @@ export function AssetManager({
         </div>
         <Button size="sm" onClick={handleCreate}>
           <Plus className="h-4 w-4" />
-          Add Asset
+          Add asset
         </Button>
       </div>
 

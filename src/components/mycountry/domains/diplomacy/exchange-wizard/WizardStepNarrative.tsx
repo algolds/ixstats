@@ -26,7 +26,7 @@ export const WizardStepNarrative = React.memo(function WizardStepNarrative({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-label text-title-3 mb-2">Exchange Narrative & Objectives</h3>
+        <h3 className="text-label text-title-3 mb-2">Exchange narrative & objectives</h3>
         <p className="text-label-secondary text-body">
           Craft the story and goals of this cultural exchange.
         </p>

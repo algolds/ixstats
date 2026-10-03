@@ -35,20 +35,20 @@ interface AllianceCreatorSheetProps {
 const ALLIANCE_TYPES = [
   {
     value: "military",
-    label: "Military Alliance",
+    label: "Military alliance",
     icon: Shield,
     description: "Mutual defense pact",
   },
-  { value: "economic", label: "Economic Bloc", icon: DollarSign, description: "Trade cooperation" },
+  { value: "economic", label: "Economic bloc", icon: DollarSign, description: "Trade cooperation" },
   {
     value: "political",
-    label: "Political Union",
+    label: "Political union",
     icon: Landmark,
     description: "Governance alignment",
   },
   {
     value: "regional",
-    label: "Regional Bloc",
+    label: "Regional bloc",
     icon: MapPin,
     description: "Geographic cooperation",
   },
@@ -76,7 +76,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
 
   const createAlliance = api.diplomaticPolicies.createAlliance.useMutation({
     onSuccess: () => {
-      notify.success("Alliance founded!", `${name} is now active. Invite nations to join.`);
+      notify.success("Alliance founded", `${name} is now active. Invite nations to join.`);
       onOpenChange(false);
       resetForm();
       onCreated?.();
@@ -97,7 +97,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
 
   const handleSubmit = () => {
     if (name.trim().length < 2) {
-      notify.error("Invalid Alliance Name", "Alliance name must be at least 2 characters long.");
+      notify.error("Invalid alliance name", "Alliance name must be at least 2 characters long.");
       return;
     }
     createAlliance.mutate({
@@ -117,7 +117,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
         <SheetHeader className="px-6 pt-6 pb-0">
           <SheetTitle className="flex items-center gap-2">
             <Users className="text-label-secondary h-5 w-5 shrink-0" />
-            Create New Alliance
+            Create new alliance
           </SheetTitle>
           <p className="text-label-secondary text-body">
             Found a new alliance and invite other nations to join.
@@ -128,7 +128,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
           {/* Name fields */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-caption mb-2 block">Alliance Name</Label>
+              <Label className="text-caption mb-2 block">Alliance name</Label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -136,7 +136,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
               />
             </div>
             <div>
-              <Label className="text-caption mb-2 block">Short Name</Label>
+              <Label className="text-caption mb-2 block">Short name</Label>
               <Input
                 value={shortName}
                 onChange={(e) => setShortName(e.target.value)}
@@ -150,7 +150,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
 
           {/* Type */}
           <div>
-            <Label className="text-caption mb-2 block">Alliance Type</Label>
+            <Label className="text-caption mb-2 block">Alliance type</Label>
             <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
               <SelectTrigger>
                 <SelectValue />
@@ -205,7 +205,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
               </Select>
             </div>
             <div>
-              <Label className="text-caption mb-2 block">Join Policy</Label>
+              <Label className="text-caption mb-2 block">Join policy</Label>
               <Select
                 value={joinPolicy}
                 onValueChange={(v) => setJoinPolicy(v as typeof joinPolicy)}
@@ -215,7 +215,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="invite">Invite Only</SelectItem>
+                  <SelectItem value="invite">Invite only</SelectItem>
                   <SelectItem value="application">Application</SelectItem>
                 </SelectContent>
               </Select>

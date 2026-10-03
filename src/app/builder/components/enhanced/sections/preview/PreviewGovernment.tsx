@@ -56,12 +56,12 @@ export const PreviewGovernment = memo(function PreviewGovernment({
 
         <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-0.5">
-            <dt className="text-eyebrow text-label-secondary">Government Type</dt>
+            <dt className="text-eyebrow text-label-secondary">Government type</dt>
             <dd className="text-caption text-label font-semibold break-words">{govType}</dd>
           </div>
 
           <div className="space-y-0.5">
-            <dt className="text-eyebrow text-label-secondary">Fiscal Year</dt>
+            <dt className="text-eyebrow text-label-secondary">Fiscal year</dt>
             <dd className="text-caption text-label">{fiscalYear}</dd>
           </div>
 
@@ -69,7 +69,7 @@ export const PreviewGovernment = memo(function PreviewGovernment({
             <div className="space-y-0.5">
               <dt className="text-eyebrow text-label-secondary flex items-center gap-1">
                 <Crown className="text-tint h-3 w-3" />
-                Head of State
+                Head of state
               </dt>
               <dd className="text-caption text-label break-words">{headOfState}</dd>
             </div>
@@ -79,7 +79,7 @@ export const PreviewGovernment = memo(function PreviewGovernment({
             <div className="space-y-0.5">
               <dt className="text-eyebrow text-label-secondary flex items-center gap-1">
                 <User className="text-tint h-3 w-3" />
-                Head of Government
+                Head of government
               </dt>
               <dd className="text-caption text-label break-words">{headOfGovernment}</dd>
             </div>
@@ -104,7 +104,7 @@ export const PreviewGovernment = memo(function PreviewGovernment({
 
           {totalBudget && totalBudget > 0 ? (
             <div className="space-y-0.5">
-              <dt className="text-eyebrow text-label-secondary">Total Budget</dt>
+              <dt className="text-eyebrow text-label-secondary">Total budget</dt>
               <dd className="text-caption text-label">{formatCurrency(totalBudget, currency)}</dd>
             </div>
           ) : null}

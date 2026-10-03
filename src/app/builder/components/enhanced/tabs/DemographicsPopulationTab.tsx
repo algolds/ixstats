@@ -357,7 +357,7 @@ export function DemographicsPopulationTab({
 
   return (
     <div className="space-y-6">
-      <h2 className="sr-only">Demographics & Population Configuration</h2>
+      <h2 className="sr-only">Demographics & population configuration</h2>
       <p className="sr-only">
         Configure population structure, regional population shares, urban-rural distribution, and
         education/health indicators.
@@ -365,40 +365,32 @@ export function DemographicsPopulationTab({
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          label="Total Population"
+          label="Total population"
           value={derivedMetrics.workingAge + derivedMetrics.youthPop + derivedMetrics.elderlyPop}
           icon={Users}
           sectionId="demographics"
           trend="neutral"
-          texture="dots"
-          textureOpacity={0.04}
         />
         <MetricCard
-          label="Working Age (15-64)"
+          label="Working age (15-64)"
           value={`${derivedMetrics.workingAgeShare.toFixed(1)}%`}
           icon={UserCheck}
           sectionId="demographics"
           trend={derivedMetrics.workingAgeShare > 65 ? "up" : "neutral"}
-          texture="dots"
-          textureOpacity={0.04}
         />
         <MetricCard
-          label="Life Expectancy"
+          label="Life expectancy"
           value={`${economyBuilder.demographics.lifeExpectancy.toFixed(1)} years`}
           icon={Heart}
           sectionId="demographics"
           trend={economyBuilder.demographics.lifeExpectancy > 75 ? "up" : "neutral"}
-          texture="dots"
-          textureOpacity={0.04}
         />
         <MetricCard
-          label="Urban Population"
+          label="Urban population"
           value={`${derivedMetrics.urbanShare.toFixed(1)}%`}
           icon={Building2}
           sectionId="demographics"
           trend={derivedMetrics.urbanShare > 70 ? "up" : "neutral"}
-          texture="dots"
-          textureOpacity={0.04}
         />
       </div>
 
@@ -406,9 +398,9 @@ export function DemographicsPopulationTab({
         {(
           [
             { id: "population", label: "Population", icon: Users },
-            { id: "age", label: "Age Structure", icon: Baby },
+            { id: "age", label: "Age structure", icon: Baby },
             { id: "geographic", label: "Geographic", icon: MapPin },
-            { id: "social", label: "Social Indicators", icon: GraduationCap },
+            { id: "social", label: "Social indicators", icon: GraduationCap },
           ] as const
         ).map((section) => {
           const Icon = section.icon;

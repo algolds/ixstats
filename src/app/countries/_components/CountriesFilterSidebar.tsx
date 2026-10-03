@@ -68,7 +68,7 @@ export default function CountriesFilterSidebar({
             </Badge>
           )}
           <Button size="sm" variant="outline" onClick={onClearAll} className="ml-auto">
-            Clear All
+            Clear all
           </Button>
         </div>
       )}
@@ -81,7 +81,7 @@ export default function CountriesFilterSidebar({
           />
           <Input
             type="text"
-            placeholder="Search by country name..."
+            placeholder="Search by country name"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             className="h-10 w-full pl-9"
@@ -90,7 +90,7 @@ export default function CountriesFilterSidebar({
         </div>
       </div>
       <div>
-        <label className="text-label-secondary text-caption mb-1 block">Economic Tier</label>
+        <label className="text-label-secondary text-caption mb-1 block">Economic tier</label>
         <Select
           value={tierFilter}
           onValueChange={(value) => {
@@ -116,7 +116,7 @@ export default function CountriesFilterSidebar({
             <SelectValue placeholder="Select continent" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Continents</SelectItem>
+            <SelectItem value="all">All continents</SelectItem>
             {availableContinents.map((c) => (
               <SelectItem key={c} value={c}>
                 {c}
@@ -136,7 +136,7 @@ export default function CountriesFilterSidebar({
             <SelectValue placeholder="Select region" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Regions</SelectItem>
+            <SelectItem value="all">All regions</SelectItem>
             {availableRegions.map((r) => (
               <SelectItem key={r} value={r}>
                 {r}
@@ -146,7 +146,7 @@ export default function CountriesFilterSidebar({
         </Select>
       </div>
       <div>
-        <label className="text-label-secondary text-caption mb-1 block">Population Range</label>
+        <label className="text-label-secondary text-caption mb-1 block">Population range</label>
         <div className="flex space-x-2">
           <Input
             type="number"

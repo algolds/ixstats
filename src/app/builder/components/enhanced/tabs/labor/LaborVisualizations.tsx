@@ -35,16 +35,16 @@ export function LaborVisualizations({
       <Card>
         <CardContent className="p-6">
           <div className="border-separator mb-4 flex flex-col gap-2 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
-            <h4 className="text-headline text-green flex items-center gap-2">
+            <h4 className="text-headline text-label flex items-center gap-2">
               {activeChart === "type" ? (
                 <>
                   <PieChart className="h-5 w-5" />
-                  <span>Employment Type Distribution</span>
+                  <span>Employment type distribution</span>
                 </>
               ) : (
                 <>
                   <BarChart3 className="h-5 w-5" />
-                  <span>Employment by Sector</span>
+                  <span>Employment by sector</span>
                 </>
               )}
             </h4>
@@ -60,7 +60,7 @@ export function LaborVisualizations({
                     : "text-label-secondary hover:bg-fill-4 hover:text-label"
                 )}
               >
-                Employment Type
+                Employment type
               </Button>
               <Button
                 size="sm"
@@ -73,7 +73,7 @@ export function LaborVisualizations({
                     : "text-label-secondary hover:bg-fill-4 hover:text-label"
                 )}
               >
-                Employment by Sector
+                Employment by sector
               </Button>
             </div>
           </div>
@@ -101,9 +101,9 @@ export function LaborVisualizations({
 
       <Card>
         <CardContent className="p-6">
-          <h4 className="text-headline text-green mb-4 flex items-center gap-2">
+          <h4 className="text-headline text-label mb-4 flex items-center gap-2">
             <Shield className="h-5 w-5" />
-            <span>Worker Protection Scores</span>
+            <span>Worker protection scores</span>
           </h4>
           <GlassBarChart
             data={workerProtectionsData}
@@ -118,19 +118,19 @@ export function LaborVisualizations({
 
       <Card>
         <CardContent className="p-6">
-          <h4 className="text-headline text-green mb-4 flex items-center gap-2">
+          <h4 className="text-headline text-label mb-4 flex items-center gap-2">
             <Gauge className="h-5 w-5" />
-            <span>Labor Market Health</span>
+            <span>Labor market health</span>
           </h4>
           <div className="space-y-4">
             {[
-              { label: "Employment Rate", value: laborMarket.employmentRate },
+              { label: "Employment rate", value: laborMarket.employmentRate },
               {
-                label: "Labor Force Participation",
+                label: "Labor force participation",
                 value: laborMarket.laborForceParticipationRate,
               },
-              { label: "Workplace Safety", value: laborMarket.workplaceSafetyIndex },
-              { label: "Labor Rights Score", value: laborMarket.laborRightsScore },
+              { label: "Workplace safety", value: laborMarket.workplaceSafetyIndex },
+              { label: "Labor rights score", value: laborMarket.laborRightsScore },
             ].map(({ label, value }) => (
               <div key={label} className="space-y-2">
                 <div className="text-body flex justify-between">

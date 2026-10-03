@@ -29,18 +29,18 @@ interface BillsPanelProps {
 }
 
 const IDEOLOGIES = [
-  { value: "far_left", label: "Far Left" },
+  { value: "far_left", label: "Far left" },
   { value: "left", label: "Left" },
-  { value: "center_left", label: "Centre-Left" },
-  { value: "center", label: "Centre" },
-  { value: "center_right", label: "Centre-Right" },
+  { value: "center_left", label: "Center-left" },
+  { value: "center", label: "Center" },
+  { value: "center_right", label: "Center-right" },
   { value: "right", label: "Right" },
-  { value: "far_right", label: "Far Right" },
+  { value: "far_right", label: "Far right" },
 ] as const;
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   in_committee: {
-    label: "In Committee",
+    label: "In committee",
     className: "bg-yellow/10 text-yellow-ink border-0",
   },
   active: {
@@ -59,7 +59,7 @@ const VOTE_ICON = {
   abstain: <Minus className="text-label-secondary h-3 w-3" />,
 } as const;
 
-// S3.A: a fogged vote projection before calling the floor. Precision gated by standing.
+// A fogged vote projection before calling the floor; precision depends on standing.
 function WhipCount({ billId }: { billId: string }) {
   const { data } = api.legislation.previewBillVote.useQuery({ billId }, { staleTime: 30_000 });
   if (!data) return null;
@@ -76,9 +76,9 @@ function WhipCount({ billId }: { billId: string }) {
           ? "text-yellow"
           : "text-red";
   return (
-    <div className="rounded-control-sm border-yellow/15 bg-yellow/5 border p-2">
+    <div className="rounded-control-sm bg-surface-secondary p-2">
       <p className="text-caption flex items-center gap-2 font-semibold">
-        <Gavel className="text-yellow h-3 w-3" /> Whip Count
+        <Gavel aria-hidden className="text-label-secondary h-3 w-3" /> Whip count
         <span className="text-label-tertiary ml-auto font-normal">standing {data.standing}%</span>
       </p>
       <p className={`text-footnote mt-1 ${color}`}>
@@ -121,7 +121,6 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
 
   return (
     <>
-      {/* Trigger Card - Facet Compliant */}
       <Button
         type="button"
         variant="ghost"
@@ -130,44 +129,40 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
         className="h-auto min-h-(--control-height-sm) w-full justify-between justify-start py-2 text-left whitespace-normal"
       >
         <div className="flex items-center gap-3">
-          <div className="rounded-control bg-indigo/10 p-2">
-            <Gavel className="text-indigo h-5 w-5" />
-          </div>
           <div>
-            <h4 className="text-headline">Bills on the Floor</h4>
+            <h4 className="text-headline">Bills before the legislature</h4>
             <p className="text-label-secondary text-footnote mt-0.5">
               {bills && bills.length > 0
-                ? `${committeeCount} pending, ${activeCount} passed laws`
-                : "No legislative bills proposed yet"}
+                ? `${committeeCount} pending, ${activeCount} passed`
+                : "No bills proposed"}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {committeeCount > 0 && (
             <Badge variant="warning" className="font-semibold">
-              {committeeCount} Pending
+              {committeeCount} pending
             </Badge>
           )}
           <ChevronRight className="text-label-secondary h-4 w-4" />
         </div>
       </Button>
 
-      {/* Floor Vote Modal */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent size="wide" className="overflow-y-auto">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
-              <Gavel className="text-indigo h-5 w-5" />
-              <span>Legislative Floor</span>
+              <Gavel aria-hidden className="text-label-secondary h-5 w-5" />
+              <span>Legislative floor</span>
             </SheetTitle>
             <SheetDescription>
-              Propose new laws, view the voting alignment of seated parties, and call floor votes.
+              Propose bills, see how the seated parties lean, and call floor votes.
             </SheetDescription>
           </SheetHeader>
 
           <div className="space-y-4 pt-2">
             <div className="flex items-center justify-between">
-              <span className="text-headline">Bills list</span>
+              <span className="text-headline">Bills</span>
               {canManage && (
                 <Button
                   size="sm"
@@ -176,7 +171,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                   onClick={() => setShowForm((v) => !v)}
                 >
                   <Plus className="h-3 w-3" />
-                  {showForm ? "Cancel" : "Draft Bill"}
+                  {showForm ? "Cancel" : "Draft bill"}
                 </Button>
               )}
             </div>
@@ -184,15 +179,15 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
             {showForm && canManage && (
               <Card variant="inset" padding="none" className="space-y-2 p-3">
                 <input
-                  className="bg-surface border-separator rounded-control-sm text-body focus:ring-indigo w-full border px-2 py-2 focus:ring-1 focus:outline-none"
+                  className="bg-surface border-separator rounded-control-sm text-body focus:ring-tint w-full border px-2 py-2 focus:ring-1 focus:outline-none"
                   placeholder="Bill name (e.g. Healthcare Reform Act)"
                   value={name}
                   maxLength={120}
                   onChange={(e) => setName(e.target.value)}
                 />
                 <textarea
-                  className="bg-surface border-separator rounded-control-sm text-body focus:ring-indigo w-full border px-2 py-2 focus:ring-1 focus:outline-none"
-                  placeholder="What the bill does…"
+                  className="bg-surface border-separator rounded-control-sm text-body focus:ring-tint w-full border px-2 py-2 focus:ring-1 focus:outline-none"
+                  placeholder="What the bill does"
                   rows={2}
                   value={description}
                   maxLength={1000}
@@ -231,7 +226,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                     propose.mutate({ countryId, name, description, ideology, gdpEffect })
                   }
                 >
-                  {propose.isPending ? "Submitting…" : "Submit to Committee"}
+                  {propose.isPending ? "Submitting" : "Submit to committee"}
                 </Button>
               </Card>
             )}
@@ -272,11 +267,11 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="border-indigo/20 bg-indigo/5 text-footnote text-indigo-ink hover:bg-indigo/10 h-6 px-3"
+                              className="text-footnote h-6 px-3"
                               disabled={holdVote.isPending}
                               onClick={() => holdVote.mutate({ billId: bill.id })}
                             >
-                              Call Vote
+                              Call vote
                             </Button>
                           )}
                         </div>
@@ -285,15 +280,15 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                         <div className="text-label-secondary border-separator text-footnote mt-2 space-y-2 border-t pt-2">
                           <p>{bill.description}</p>
                           {bill.gdpEffect !== 0 && (
-                            <p className="text-indigo/90 font-semibold">
-                              Projected Growth Effect: {bill.gdpEffect > 0 ? "+" : ""}
+                            <p className="font-semibold">
+                              Projected growth effect: {bill.gdpEffect > 0 ? "+" : ""}
                               {bill.gdpEffect}% GDP
                             </p>
                           )}
                           {bill.status === "in_committee" && <WhipCount billId={bill.id} />}
                           {result && (
                             <Card variant="inset" padding="none" className="space-y-1 p-2">
-                              <p className="text-label text-caption mb-1">Floor Vote Breakdown</p>
+                              <p className="text-label text-caption mb-1">Floor vote breakdown</p>
                               {result.breakdown.map((pv) => (
                                 <div
                                   key={pv.partyId}
@@ -320,7 +315,6 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
               </div>
             ) : (
               <div className="text-label-secondary flex flex-col items-center justify-center gap-2 py-8 text-center">
-                <Gavel className="h-8 w-8 opacity-30" />
                 <p className="text-body">No bills before the legislature</p>
                 {canManage && <p className="text-footnote">Draft a bill and call it to a vote.</p>}
               </div>

@@ -127,7 +127,7 @@ export function CountryActionsMenu({
 
   const congratulateMutation = api.thinkpages.createPost.useMutation({
     onSuccess: () => {
-      notify.success(`Congratulations sent to ${targetCountryName}!`);
+      notify.success(`Congratulations sent to ${targetCountryName}`);
       setSelectedAchievement("");
       onClose();
     },
@@ -197,7 +197,8 @@ export function CountryActionsMenu({
 
     congratulateMutation.mutate({
       accountId: viewerCountryId,
-      content: `🎉 Congratulations to ${targetCountryName} on achieving: ${achievement.title}! ${achievement.description || "A remarkable accomplishment!"}`,
+      content:
+        `Congratulations to ${targetCountryName} on ${achievement.title}. ${achievement.description ?? ""}`.trim(),
       visibility: "public" as const,
       hashtags: ["achievement", targetCountryName.replace(/\s/g, "")],
     });
@@ -242,7 +243,7 @@ export function CountryActionsMenu({
               <ActionGroup label="Management">
                 <ActionRow
                   icon={Building2}
-                  label="MyCountry Dashboard"
+                  label="MyCountry dashboard"
                   onClick={() => {
                     router.push(createUrl("/mycountry"));
                     onClose();
@@ -250,7 +251,7 @@ export function CountryActionsMenu({
                 />
                 <ActionRow
                   icon={ScrollText}
-                  label="Executive Actions"
+                  label="Executive actions"
                   onClick={() => {
                     router.push(createUrl("/mycountry/executive"));
                     onClose();
@@ -258,7 +259,7 @@ export function CountryActionsMenu({
                 />
                 <ActionRow
                   icon={Handshake}
-                  label="Manage Diplomacy"
+                  label="Manage diplomacy"
                   onClick={() => {
                     router.push(createUrl("/mycountry/diplomacy"));
                     onClose();
@@ -266,7 +267,7 @@ export function CountryActionsMenu({
                 />
                 <ActionRow
                   icon={Map}
-                  label="Map & Territory Editor"
+                  label="Map & territory editor"
                   onClick={() => {
                     router.push(createUrl("/mycountry/editor"));
                     onClose();
@@ -274,7 +275,7 @@ export function CountryActionsMenu({
                 />
                 <ActionRow
                   icon={Wallet}
-                  label="IxVault Cards & Market"
+                  label="IxVault cards & market"
                   onClick={() => {
                     router.push(createUrl("/vault"));
                     onClose();
@@ -282,7 +283,7 @@ export function CountryActionsMenu({
                 />
                 <ActionRow
                   icon={Scale}
-                  label="Politics & Elections"
+                  label="Politics & elections"
                   onClick={() => {
                     router.push(createUrl("/mycountry/politics"));
                     onClose();
@@ -311,7 +312,7 @@ export function CountryActionsMenu({
                   />
                   <ActionRow
                     icon={MessageSquare}
-                    label="Secure Message"
+                    label="Secure message"
                     onClick={handleDiplomaticMessage}
                     disabled={!viewerCountryId}
                   />
@@ -364,7 +365,7 @@ export function CountryActionsMenu({
                   />
                   <ActionRow
                     icon={Calendar}
-                    label="Request Meeting"
+                    label="Request meeting"
                     onClick={() => {
                       if (!viewerCountryId) {
                         notify.error("You must be logged in to request a meeting");
@@ -376,29 +377,29 @@ export function CountryActionsMenu({
                   />
                   <ActionRow
                     icon={Handshake}
-                    label="Propose Free Trade"
+                    label="Propose free trade"
                     onClick={() => handleForeignPolicy("free_trade")}
                     disabled={!viewerCountryId || isLoading}
                   />
                   <ActionRow
                     icon={Shield}
-                    label="Propose Military Alliance"
+                    label="Propose military alliance"
                     onClick={() => handleForeignPolicy("military_alliance")}
                     disabled={!viewerCountryId || isLoading}
                   />
                 </ActionGroup>
 
-                <ActionGroup label="Foreign Policy">
+                <ActionGroup label="Foreign policy">
                   <ActionRow
                     icon={Scale}
-                    label="Impose Sanctions"
+                    label="Impose sanctions"
                     onClick={() => handleForeignPolicy("sanction")}
                     disabled={!viewerCountryId || isLoading}
                     destructive
                   />
                   <ActionRow
                     icon={Swords}
-                    label="Declare Embargo"
+                    label="Declare embargo"
                     onClick={() => handleForeignPolicy("embargo")}
                     disabled={!viewerCountryId || isLoading}
                     destructive
@@ -408,10 +409,10 @@ export function CountryActionsMenu({
             )}
 
             {/* Quick Links (always shown) */}
-            <ActionGroup label="Quick Links">
+            <ActionGroup label="Quick links">
               <ActionRow
                 icon={Trophy}
-                label="Global Leaderboard"
+                label="Global leaderboard"
                 onClick={() => {
                   router.push(createUrl("/leaderboards"));
                   onClose();
@@ -438,7 +439,7 @@ export function CountryActionsMenu({
               />
               <ActionRow
                 icon={Share2}
-                label="Share Profile"
+                label="Share profile"
                 onClick={() => {
                   const slug = targetCountryName.replace(/\s/g, "_");
                   const url = `${window.location.origin}${createUrl(`/countries/${slug}`)}`;

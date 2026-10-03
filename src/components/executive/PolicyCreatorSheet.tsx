@@ -189,7 +189,7 @@ export function PolicyCreatorSheet({
   const utils = api.useUtils();
   const createPolicyMutation = api.policies.createPolicy.useMutation({
     onSuccess: () => {
-      notify.success("Policy draft created successfully");
+      notify.success("Policy draft created");
       utils.policies.invalidate();
       onOpenChange(false);
       onCreated?.();
@@ -245,23 +245,23 @@ export function PolicyCreatorSheet({
         <form onSubmit={handleSubmit}>
           <SheetHeader className="border-separator border-b px-6 pt-6 pb-4">
             <SheetTitle className="text-title-3 flex items-center gap-2">
-              <FileText className="text-indigo h-5 w-5" />
-              Declare New Executive Policy
+              <FileText aria-hidden className="text-label-secondary h-5 w-5" />
+              New executive policy
             </SheetTitle>
             <SheetDescription className="text-label-secondary text-footnote">
-              Establish a national decretal, allocate budget, and project macro impacts.
+              Set the policy, its budget and its expected effects.
             </SheetDescription>
           </SheetHeader>
 
           <div className="space-y-5 px-6 py-4">
             <div>
-              <Label className="text-caption font-semibold">Policy Template / Blueprint</Label>
+              <Label className="text-caption font-semibold">Policy template</Label>
               <Select value={selectedTemplateKey} onValueChange={setSelectedTemplateKey}>
                 <SelectTrigger className="mt-1 h-9">
-                  <SelectValue placeholder="Select template..." />
+                  <SelectValue placeholder="Select a template" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="custom">Custom Decretal (Scratch Design)</SelectItem>
+                  <SelectItem value="custom">Custom (start from scratch)</SelectItem>
                   {Object.entries(PREDEFINED_DECRETALS).map(([key, tmpl]) => (
                     <SelectItem key={key} value={key}>
                       {tmpl.name} ({tmpl.category})
@@ -288,7 +288,7 @@ export function PolicyCreatorSheet({
                       id="policy-title"
                       value={formTitle}
                       onChange={(e) => setFormTitle(e.target.value)}
-                      placeholder="e.g., National Infrastructure Investment Act"
+                      placeholder="e.g. National Infrastructure Investment Act"
                       required
                     />
                   </div>
@@ -301,7 +301,7 @@ export function PolicyCreatorSheet({
                       id="policy-desc"
                       value={formDescription}
                       onChange={(e) => setFormDescription(e.target.value)}
-                      placeholder="Describe the policy's purpose and expected impact..."
+                      placeholder="What the policy does and what you expect from it"
                       rows={3}
                     />
                   </div>
@@ -386,26 +386,26 @@ export function PolicyCreatorSheet({
             />
 
             {selectedTemplateKey !== "custom" && calculatedEffects && (
-              <div className="rounded-control border-green/20 bg-green/5 space-y-3 border p-4">
-                <h4 className="text-eyebrow text-green flex items-center gap-2">
-                  <Sliders className="h-3.5 w-3.5" />
-                  Calculated Simulation Projections
+              <div className="bg-surface-secondary rounded-row space-y-3 p-4">
+                <h4 className="text-eyebrow text-label-secondary flex items-center gap-2">
+                  <Sliders aria-hidden className="h-3.5 w-3.5" />
+                  Projected effects
                 </h4>
                 <div className="text-footnote grid grid-cols-2 gap-2">
                   <div className="border-separator flex justify-between border-b pb-1">
-                    <span className="text-label-secondary">Setup Cost:</span>
+                    <span className="text-label-secondary">Setup cost</span>
                     <span className="font-semibold">
                       {formatCurrency(calculatedEffects.implementationCost)}
                     </span>
                   </div>
                   <div className="border-separator flex justify-between border-b pb-1">
-                    <span className="text-label-secondary">Annual Maint:</span>
+                    <span className="text-label-secondary">Annual maintenance</span>
                     <span className="font-semibold">
                       {formatCurrency(calculatedEffects.maintenanceCost)}
                     </span>
                   </div>
                   <div className="border-separator flex justify-between border-b pb-1">
-                    <span className="text-label-secondary">GDP growth:</span>
+                    <span className="text-label-secondary">GDP growth</span>
                     <span
                       className={`font-semibold ${calculatedEffects.gdpEffect >= 0 ? "text-green" : "text-red"}`}
                     >
@@ -414,7 +414,7 @@ export function PolicyCreatorSheet({
                     </span>
                   </div>
                   <div className="border-separator flex justify-between border-b pb-1">
-                    <span className="text-label-secondary">Employment:</span>
+                    <span className="text-label-secondary">Employment</span>
                     <span
                       className={`font-semibold ${calculatedEffects.employmentEffect >= 0 ? "text-green" : "text-red"}`}
                     >
@@ -423,7 +423,7 @@ export function PolicyCreatorSheet({
                     </span>
                   </div>
                   <div className="border-separator flex justify-between border-b pb-1">
-                    <span className="text-label-secondary">Inflation:</span>
+                    <span className="text-label-secondary">Inflation</span>
                     <span
                       className={`font-semibold ${calculatedEffects.inflationEffect <= 2 ? "text-green" : "text-yellow"}`}
                     >
@@ -432,8 +432,8 @@ export function PolicyCreatorSheet({
                     </span>
                   </div>
                   <div className="border-separator flex justify-between border-b pb-1">
-                    <span className="text-label-secondary">Tax Revenue:</span>
-                    <span className="text-indigo font-semibold">
+                    <span className="text-label-secondary">Tax revenue</span>
+                    <span className="font-semibold">
                       {calculatedEffects.taxRevenueEffect >= 0 ? "+" : ""}
                       {calculatedEffects.taxRevenueEffect.toFixed(2)}%
                     </span>
@@ -444,17 +444,17 @@ export function PolicyCreatorSheet({
 
             {selectedTemplateKey === "custom" && (
               <>
-                <div className="rounded-control border-indigo/20 bg-indigo/5 space-y-2 border p-4">
-                  <p className="text-eyebrow text-indigo">Estimated Cost Projections</p>
+                <div className="bg-surface-secondary rounded-row space-y-2 p-4">
+                  <p className="text-eyebrow text-label-secondary">Estimated costs</p>
                   <div className="text-footnote grid grid-cols-2 gap-3">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-label-secondary">Setup Cost (Implementation):</span>
+                      <span className="text-label-secondary">Setup cost</span>
                       <span className="text-headline text-label">
                         {formatCurrency(parseFloat(formImplCost) || 0)}
                       </span>
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-label-secondary">Annual Maintenance:</span>
+                      <span className="text-label-secondary">Annual maintenance</span>
                       <span className="text-headline text-label">
                         {formatCurrency(parseFloat(formMaintCost) || 0)}
                       </span>
@@ -464,14 +464,14 @@ export function PolicyCreatorSheet({
 
                 <PolicyTargetMetrics metrics={targetMetrics} onChange={setTargetMetrics} />
 
-                <CollapsibleSection title="Advanced Options" icon={Settings2} defaultOpen={false}>
+                <CollapsibleSection title="Advanced options" icon={Settings2} defaultOpen={false}>
                   <div className="space-y-3">
                     <div>
                       <Label className="text-footnote">Objectives</Label>
                       <Textarea
                         value={formObjectives}
                         onChange={(e) => setFormObjectives(e.target.value)}
-                        placeholder="Key objectives and goals..."
+                        placeholder="What the policy should achieve"
                         rows={2}
                         className="text-body"
                       />
@@ -492,7 +492,7 @@ export function PolicyCreatorSheet({
               size="sm"
               disabled={isPending || !formTitle.trim() || !formDescription.trim() || !hasDepartment}
             >
-              {isPending ? "Creating..." : "Save Draft"}
+              {isPending ? "Creating" : "Save draft"}
             </Button>
             <Button
               type="button"
@@ -500,9 +500,8 @@ export function PolicyCreatorSheet({
               size="sm"
               disabled={isPending || !formTitle.trim() || !formDescription.trim() || !hasDepartment}
               onClick={handleCreateAndLaunch}
-              className="bg-indigo text-on-indigo hover:bg-indigo"
             >
-              {isPending ? "Launching..." : "Create & Launch"}
+              {isPending ? "Launching" : "Create and launch"}
             </Button>
           </SheetFooter>
         </form>

@@ -2,8 +2,6 @@
 
 import React, { useState, memo } from "react";
 import { Badge } from "~/components/ui/badge";
-import { cn } from "~/lib/utils";
-import { HUE_BADGE, type DomainHue } from "~/components/mycountry/shell/domain-hue";
 import {
   WhiteFlag as Flag,
   City as Building2,
@@ -56,13 +54,12 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
 
   return (
     <div className="space-y-6">
-      {/* ─── Row 1: Identity & Government (2-Col) ─── */}
+      {/* Identity and government */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <PreviewSection
           id="identity"
           title="National identity"
           icon={Flag}
-          hue="yellow"
           badge={nationalIdentity?.countryName || "Unspecified"}
           collapsed={Boolean(collapsedSections.identity)}
           onToggle={toggleSection}
@@ -74,7 +71,6 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
           id="government"
           title="Government"
           icon={Building2}
-          hue="cyan"
           badge={`${governmentComponents.length} institutions`}
           collapsed={Boolean(collapsedSections.government)}
           onToggle={toggleSection}
@@ -87,12 +83,11 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
         </PreviewSection>
       </div>
 
-      {/* ─── Row 2: Economy (Full Width) ─── */}
+      {/* Economy */}
       <PreviewSection
         id="economy"
         title="Economy"
         icon={Factory}
-        hue="green"
         badge={coreIndicators ? "Configured" : "Default"}
         collapsed={Boolean(collapsedSections.economy)}
         onToggle={toggleSection}
@@ -100,7 +95,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
         <PreviewEconomy economicInputs={economicInputs} currency={currency} />
       </PreviewSection>
 
-      {/* ─── Row 3: Ready to Create Strip ─── */}
+      {/* Readiness strip */}
       <Card className="rounded-card flex flex-wrap items-center justify-between gap-4 p-4">
         <div className="flex items-center gap-3">
           <BarChart3 aria-hidden="true" className="text-label-secondary h-5 w-5" />
@@ -109,32 +104,28 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
           </span>
           <Badge
             variant="outline"
-            className={
-              readinessScore >= 80 ? "border-green/40 text-green-ink" : "border-tint/40 text-tint"
-            }
+            className={readinessScore >= 80 ? "border-green/40 text-green-ink" : undefined}
           >
-            <span className="font-data tabular-nums">{readinessScore}%</span> complete
+            <span className="tabular-nums">{readinessScore}%</span> complete
           </Badge>
         </div>
 
         <div className="text-label-secondary text-footnote flex flex-wrap items-center gap-x-5 gap-y-1">
           <span className="flex items-baseline gap-2">
-            <span className="text-label font-data font-semibold tabular-nums">
+            <span className="text-label font-semibold tabular-nums">
               {governmentComponents.length}
             </span>
-            Institutions
+            institutions
           </span>
           {populationLabel ? (
             <span className="flex items-baseline gap-2">
-              <span className="text-label font-data font-semibold tabular-nums">
-                {populationLabel}
-              </span>
-              Population
+              <span className="text-label font-semibold tabular-nums">{populationLabel}</span>
+              population
             </span>
           ) : null}
           <span className="flex items-baseline gap-2">
             <span className="text-label font-semibold">{currency}</span>
-            Currency
+            currency
           </span>
         </div>
       </Card>
@@ -146,24 +137,17 @@ interface PreviewSectionProps {
   id: string;
   title: string;
   icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" }>;
-  /** v2 section accent (gold identity, cyan government, emerald economy). */
-  hue: DomainHue;
   badge: string;
   collapsed: boolean;
   onToggle: (id: string) => void;
   children: React.ReactNode;
 }
 
-/**
- * A collapsible preview card (v2, c5c6b382): the builder's chevron texture, the section glyph in
- * its accent badge and an accent count badge, with a header button that shows/hides the content.
- * The section hue is the card's Facet accent.
- */
+/** A collapsible preview card: a header button shows or hides the content. */
 function PreviewSection({
   id,
   title,
   icon: Icon,
-  hue,
   badge,
   collapsed,
   onToggle,
@@ -186,10 +170,7 @@ function PreviewSection({
             <span className="flex min-w-0 items-center gap-2">
               <span
                 aria-hidden="true"
-                className={cn(
-                  "flex size-7 shrink-0 items-center justify-center rounded-lg border",
-                  HUE_BADGE
-                )}
+                className="bg-fill-3 text-label-secondary flex size-7 shrink-0 items-center justify-center rounded-lg"
               >
                 <Icon aria-hidden="true" className="h-4 w-4" />
               </span>

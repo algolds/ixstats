@@ -46,7 +46,7 @@ const categoryMapping: Record<string, string> = {
   "legal-systems": "government",
 };
 
-// ─── Legacy Categories (kept for backwards compatibility) ───
+// ─── Legacy categories ───
 
 // Define ArchetypeCategory type to match Prisma schema
 export interface ArchetypeCategory {
@@ -63,7 +63,6 @@ export interface CategorizedCountryArchetype extends CountryArchetype {
   priority: number;
   categoryId: string;
   consolidatedCategoryId: string; // New consolidated category
-  gradient: string; // Ensure gradient is always present
 }
 
 /** An archetype as authored in ./archetype-data, before its consolidated category is derived. */

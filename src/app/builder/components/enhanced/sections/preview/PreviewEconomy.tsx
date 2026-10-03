@@ -96,7 +96,7 @@ export const PreviewEconomy = memo(function PreviewEconomy({
               <div className="text-headline text-label">
                 {laborEmployment.averageWorkweekHours} hrs
               </div>
-              <div className="text-footnote text-label-secondary mt-0.5">Work Week</div>
+              <div className="text-footnote text-label-secondary mt-0.5">Work week</div>
             </div>
             <div className="rounded-row border-separator bg-surface border p-3 text-center">
               <div className="text-headline text-label truncate">
@@ -104,7 +104,7 @@ export const PreviewEconomy = memo(function PreviewEconomy({
                   ? formatCurrencyLocal(laborEmployment.averageAnnualIncome)
                   : "N/A"}
               </div>
-              <div className="text-footnote text-label-secondary mt-0.5">Average Income</div>
+              <div className="text-footnote text-label-secondary mt-0.5">Average income</div>
             </div>
           </div>
         </div>
@@ -126,7 +126,7 @@ export const PreviewEconomy = memo(function PreviewEconomy({
                   >
                     <div className="text-headline text-label">{item.percent ?? 0}%</div>
                     <div className="text-footnote text-label-secondary mt-0.5">
-                      {item.group || (i === 0 ? "Youth" : i === 1 ? "Working Age" : "Elderly")}
+                      {item.group || (i === 0 ? "Youth" : i === 1 ? "Working age" : "Elderly")}
                     </div>
                   </div>
                 ))
@@ -136,14 +136,14 @@ export const PreviewEconomy = memo(function PreviewEconomy({
                 <div className="text-headline text-label">
                   {demographics.urbanRuralSplit.urban}%
                 </div>
-                <div className="text-footnote text-label-secondary mt-0.5">Urban Population</div>
+                <div className="text-footnote text-label-secondary mt-0.5">Urban population</div>
               </div>
             )}
             <div className="rounded-row border-separator bg-surface border p-3 text-center">
               <div className="text-headline text-label">
                 {demographics.lifeExpectancy ? `${demographics.lifeExpectancy} yrs` : "N/A"}
               </div>
-              <div className="text-footnote text-label-secondary mt-0.5">Life Expectancy</div>
+              <div className="text-footnote text-label-secondary mt-0.5">Life expectancy</div>
             </div>
             <div className="rounded-row border-separator bg-surface border p-3 text-center">
               <div className="text-headline text-label">
@@ -151,7 +151,7 @@ export const PreviewEconomy = memo(function PreviewEconomy({
                   ? `${demographics.populationGrowthRate}%`
                   : "N/A"}
               </div>
-              <div className="text-footnote text-label-secondary mt-0.5">Population Growth</div>
+              <div className="text-footnote text-label-secondary mt-0.5">Population growth</div>
             </div>
           </div>
         </div>

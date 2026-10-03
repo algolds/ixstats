@@ -139,9 +139,9 @@ describe("CommandProfileView", () => {
     expect(screen.queryByText(/Readiness/)).toBeNull();
   });
 
-  it("links the Factbook deep-dive and economic modeling", () => {
+  it("links the Factbook and economic modeling", () => {
     render(<CommandProfileView {...base} />);
-    const factbook = screen.getAllByRole("link", { name: /Factbook deep-dive/ })[0]!;
+    const factbook = screen.getAllByRole("link", { name: /^Factbook$/ })[0]!;
     expect(factbook.getAttribute("href")).toMatch(/\/countries\/testland\/factbook$/);
     const tabs = screen.getByRole("navigation", { name: "Country sections" });
     expect(

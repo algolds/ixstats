@@ -1,28 +1,26 @@
-// src/components/quickactions/meeting-scheduler-intents.ts
-
 import type { IntentTemplate } from "./meeting-scheduler-types";
 
 export const AGENDA_CATEGORIES = [
-  { value: "economic", label: "Economic Affairs", color: "bg-green" },
-  { value: "social", label: "Social Policy", color: "bg-blue" },
+  { value: "economic", label: "Economic affairs", color: "bg-green" },
+  { value: "social", label: "Social policy", color: "bg-blue" },
   { value: "infrastructure", label: "Infrastructure", color: "bg-yellow" },
-  { value: "diplomatic", label: "Diplomatic Relations", color: "bg-cyan" },
-  { value: "governance", label: "Governance & Administration", color: "bg-indigo" },
+  { value: "diplomatic", label: "Diplomatic relations", color: "bg-cyan" },
+  { value: "governance", label: "Governance and administration", color: "bg-indigo" },
   { value: "other", label: "Other", color: "bg-fill" },
 ];
 
 export const INTENT_TEMPLATES: IntentTemplate[] = [
   {
     id: "crisis",
-    name: "Resolve Crisis",
+    name: "Resolve crisis",
     description: "Convene to address an urgent national issue or emergency.",
     meetingType: "cabinet",
-    defaultTitle: "Emergency Cabinet Session",
+    defaultTitle: "Emergency cabinet session",
     defaultDuration: 45,
     recommendedRoles: ["chief", "security", "defense", "interior", "prime"],
     agenda: [
       {
-        title: "Situation Briefing",
+        title: "Situation briefing",
         description: "Assess the immediate threat and core parameters of the crisis.",
         duration: 15,
         category: "governance",
@@ -30,7 +28,7 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
         presenter: "Ruler",
       },
       {
-        title: "Mitigation Options Evaluation",
+        title: "Mitigation options evaluation",
         description: "Review proposed response strategies and public impact projections.",
         duration: 20,
         category: "governance",
@@ -38,7 +36,7 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
         presenter: "Cabinet Chief",
       },
       {
-        title: "Executive Action Declaration",
+        title: "Executive action declaration",
         description: "Final vote on crisis response and communication strategy.",
         duration: 10,
         category: "governance",
@@ -49,15 +47,15 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
   },
   {
     id: "economic",
-    name: "Economic Policy Briefing",
+    name: "Economic policy briefing",
     description: "Draft policies, review budget status, and tax reform proposals.",
     meetingType: "cabinet",
-    defaultTitle: "Economic Planning Summit",
+    defaultTitle: "Economic planning summit",
     defaultDuration: 60,
     recommendedRoles: ["finance", "treasury", "commerce", "economy"],
     agenda: [
       {
-        title: "Treasury & Reserves Audit",
+        title: "Treasury and reserves audit",
         description: "Review active policy maintenance costs and national liquidity.",
         duration: 20,
         category: "economic",
@@ -65,7 +63,7 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
         presenter: "Finance Minister",
       },
       {
-        title: "Reform Proposal Review",
+        title: "Reform proposal review",
         description: "Evaluate target economic sector indicators and draft policies.",
         duration: 30,
         category: "economic",
@@ -73,7 +71,7 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
         presenter: "Commerce Minister",
       },
       {
-        title: "Implementation Timeline",
+        title: "Implementation timeline",
         description: "Authorize next-step resource disbursements.",
         duration: 10,
         category: "economic",
@@ -84,15 +82,15 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
   },
   {
     id: "social",
-    name: "Social Welfare Policy",
+    name: "Social welfare policy",
     description: "Discuss education, healthcare, and demographic/population growth programs.",
     meetingType: "cabinet",
-    defaultTitle: "Social Policy Review",
+    defaultTitle: "Social policy review",
     defaultDuration: 60,
     recommendedRoles: ["health", "education", "social", "labor"],
     agenda: [
       {
-        title: "Demographic Trends Assessment",
+        title: "Demographic trends assessment",
         description: "Examine birth rates, demographic health stats, and growth programs.",
         duration: 15,
         category: "social",
@@ -100,7 +98,7 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
         presenter: "Health Minister",
       },
       {
-        title: "Welfare & Education Budget Allocation",
+        title: "Welfare and education budget allocation",
         description: "Determine education and healthcare grants and system funding.",
         duration: 25,
         category: "social",
@@ -108,7 +106,7 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
         presenter: "Education Minister",
       },
       {
-        title: "Social Wellbeing Targets",
+        title: "Social wellbeing targets",
         description: "Set timeline for national approval and wellbeing objectives.",
         duration: 10,
         category: "social",
@@ -119,15 +117,15 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
   },
   {
     id: "infrastructure",
-    name: "Infrastructure & Development",
+    name: "Infrastructure and development",
     description: "Plan national transport, energy grids, and environmental preservation.",
     meetingType: "cabinet",
-    defaultTitle: "Infrastructure Council Session",
+    defaultTitle: "Infrastructure council session",
     defaultDuration: 60,
     recommendedRoles: ["infrastructure", "transport", "environment", "energy"],
     agenda: [
       {
-        title: "Capital Project Audits",
+        title: "Capital project audits",
         description: "Evaluate pipeline, transit network, and public utilities efficiency.",
         duration: 20,
         category: "infrastructure",
@@ -135,7 +133,7 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
         presenter: "Infrastructure Minister",
       },
       {
-        title: "Environmental Preservation Initiatives",
+        title: "Environmental preservation initiatives",
         description: "Implement climate compliance guidelines and clean energy transitions.",
         duration: 20,
         category: "infrastructure",
@@ -143,7 +141,7 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
         presenter: "Environment Minister",
       },
       {
-        title: "Treasury Funding Clearances",
+        title: "Treasury funding clearances",
         description: "Approve long-term infrastructural investment funds.",
         duration: 10,
         category: "economic",
@@ -154,15 +152,15 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
   },
   {
     id: "governance",
-    name: "Legislative & Civil Strategy",
+    name: "Legislative and civil strategy",
     description: "Appoint cabinet positions, prepare elections, and review civil efficiency.",
     meetingType: "cabinet",
-    defaultTitle: "Governance Strategy Briefing",
+    defaultTitle: "Governance strategy briefing",
     defaultDuration: 60,
     recommendedRoles: ["chief", "interior", "prime", "justice"],
     agenda: [
       {
-        title: "Ministerial Synergy Review",
+        title: "Ministerial coordination review",
         description: "Review cabinet minister performance metrics and departmental efficiency.",
         duration: 20,
         category: "governance",
@@ -170,7 +168,7 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
         presenter: "Cabinet Chief",
       },
       {
-        title: "Legislative Calendar Alignment",
+        title: "Legislative calendar alignment",
         description: "Plan draft law rollouts and parliament/senate coordination.",
         duration: 15,
         category: "governance",
@@ -178,7 +176,7 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
         presenter: "Interior Minister",
       },
       {
-        title: "Election Security & Prep",
+        title: "Election security and prep",
         description: "Confirm constituency boundaries, voting logs, and security protocols.",
         duration: 15,
         category: "governance",
@@ -189,15 +187,15 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
   },
   {
     id: "bilateral",
-    name: "Bilateral Trade & Diplomacy",
+    name: "Bilateral trade and diplomacy",
     description: "Request a summit with another nation's leadership.",
     meetingType: "bilateral",
-    defaultTitle: "Bilateral Summit",
+    defaultTitle: "Bilateral summit",
     defaultDuration: 90,
     recommendedRoles: ["foreign", "diplomacy", "ambassador"],
     agenda: [
       {
-        title: "Bilateral Alignment Review",
+        title: "Bilateral alignment review",
         description: "Assess diplomatic stance, embassy statuses, and treaty records.",
         duration: 30,
         category: "diplomatic",
@@ -205,7 +203,7 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
         presenter: "Foreign Minister",
       },
       {
-        title: "Joint Venture Proposals",
+        title: "Joint venture proposals",
         description: "Negotiate trade corridors, security pacts, or territorial access.",
         duration: 45,
         category: "diplomatic",
@@ -213,7 +211,7 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
         presenter: "Guest Delegate",
       },
       {
-        title: "Treaty Approvals & Handshakes",
+        title: "Treaty approvals",
         description: "Execute treaty drafts and plan public press releases.",
         duration: 15,
         category: "diplomatic",
@@ -224,15 +222,15 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
   },
   {
     id: "routine",
-    name: "Routine Cabinet Review",
+    name: "Routine cabinet review",
     description: "General administration review and progress synchronization.",
     meetingType: "cabinet",
-    defaultTitle: "Weekly Cabinet Review",
+    defaultTitle: "Weekly cabinet review",
     defaultDuration: 30,
     recommendedRoles: [],
     agenda: [
       {
-        title: "Department Status Reports",
+        title: "Department status reports",
         description: "Brief updates from all active ministries.",
         duration: 15,
         category: "governance",
@@ -240,7 +238,7 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
         presenter: "Cabinet Chief",
       },
       {
-        title: "Agenda Priorities Alignment",
+        title: "Agenda priorities alignment",
         description: "Identify next target issues and schedule future proceedings.",
         duration: 15,
         category: "governance",

@@ -28,7 +28,7 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { SearchField } from "~/components/ui/search-field";
 
 export const ECONOMIC_TIERS = [
-  { id: "all", label: "All Tiers", description: "Any economic level" },
+  { id: "all", label: "All tiers", description: "Any economic level" },
   { id: "tier-advanced", label: "Advanced", description: "GDP/cap >$50k", color: "text-green" },
   {
     id: "tier-developed",
@@ -59,8 +59,8 @@ export const FILTER_PRESETS = [
   { id: "region-oceania", label: "Oceania" },
   { id: "island", label: "Island" },
   { id: "g7", label: "G7" },
-  { id: "pop-very-large", label: "100M+ Pop" },
-  { id: "pop-small", label: "<5M Pop" },
+  { id: "pop-very-large", label: "100M+ pop" },
+  { id: "pop-small", label: "<5M pop" },
   { id: "gov-democratic", label: "Democracy" },
   { id: "gov-monarchy", label: "Monarchy" },
 ] as const;
@@ -244,7 +244,7 @@ export function CountryGrid({
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             {/* Left: Title, Counter, Help Button, and Reset */}
             <div className="flex shrink-0 items-center gap-2">
-              <h2 className="text-headline text-label whitespace-nowrap">Benchmark Templates</h2>
+              <h2 className="text-headline text-label whitespace-nowrap">Benchmark templates</h2>
               <Badge variant="default" className="tabular-nums">
                 {filteredCountries.length}{" "}
                 {filteredCountries.length === 1 ? "country" : "countries"}

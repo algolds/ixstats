@@ -35,7 +35,7 @@ export const WizardStepBasics = React.memo(function WizardStepBasics({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-label text-title-3 mb-2">Exchange Type & Information</h3>
+        <h3 className="text-label text-title-3 mb-2">Exchange type & information</h3>
         <p className="text-label-secondary text-body">
           Define the type and basic details of your cultural exchange.
         </p>

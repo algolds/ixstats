@@ -9,7 +9,6 @@
  */
 
 import React, { useState, useMemo, useCallback } from "react";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
@@ -68,12 +67,7 @@ export interface AtomicEconomicComponentSelectorProps {
 // Main Component - Unified Selector Version
 // ============================================================================
 
-/**
- * Atomic Economic Component Selector (Unified/Modular)
- *
- * Structured with Apple HIG pacing, Institutional Foundation ribbon,
- * interactive metrics, search, category filters, and component library.
- */
+/** Atomic economic component selector: foundation ribbon, metrics, search, filters and the component library. */
 export function AtomicEconomicComponentSelector({
   selectedComponents,
   onComponentChange,
@@ -176,7 +170,9 @@ export function AtomicEconomicComponentSelector({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3>
-                <Eyebrow className="block">Available components</Eyebrow>
+                <span className="text-stat-label text-label-secondary block">
+                  Available components
+                </span>
               </h3>
               <Badge variant="default" className="tabular-nums">
                 {builder.selectedComponents.length} / {maxComponents} selected
@@ -362,7 +358,7 @@ export function AtomicEconomicBuilder({
                   disabled={!builder.validation.valid}
                 >
                   <Save aria-hidden="true" />
-                  Save Configuration
+                  Save configuration
                 </Button>
               </>
             )}
@@ -479,7 +475,7 @@ export function AtomicEconomicBuilder({
                 )}
                 <Button variant="default" onClick={handleSave} disabled={!builder.validation.valid}>
                   <Save aria-hidden="true" />
-                  Save Economic Configuration
+                  Save economic configuration
                 </Button>
               </div>
             </div>

@@ -118,7 +118,7 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
       <div className="border-separator flex items-center justify-between border-b pb-4">
         <div className="flex items-center gap-2">
           <Upload className="text-label-secondary h-4 w-4" />
-          <h3 className="text-label text-headline">Import Document to Dossier</h3>
+          <h3 className="text-label text-headline">Import document to dossier</h3>
         </div>
         {onCancel && (
           <Button
@@ -149,7 +149,7 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
           )}
         >
           <FileText className="text-label-secondary mb-3 h-6 w-6" />
-          <p className="text-label text-headline mb-1">Drag & drop Markdown or Text file</p>
+          <p className="text-label text-headline mb-1">Drag & drop markdown or text file</p>
           <p className="text-label-secondary text-footnote mb-4">
             Supports .md, .txt, .json files (auto-parses headings into sections)
           </p>
@@ -165,7 +165,7 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
               variant="outline"
               className="peer-focus-visible:ring-tint pointer-events-none peer-focus-visible:ring-2"
             >
-              Browse Files
+              Browse files
             </Button>
           </label>
           {error && (

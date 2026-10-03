@@ -46,7 +46,7 @@ export function BudgetAllocationList({
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <PieChart className="h-5 w-5" />
-                Budget Allocations Breakdown
+                Budget allocations breakdown
                 <Badge variant="default" className="ml-2">
                   {allocations.length}
                 </Badge>

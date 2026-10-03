@@ -34,12 +34,12 @@ export function PopulationSection({
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="text-label-secondary h-4 w-4" />
-            <span className="font-medium">Total Population</span>
+            <span className="font-medium">Total population</span>
           </div>
-          <Badge variant="outline">From Core Indicators</Badge>
+          <Badge variant="outline">From core indicators</Badge>
         </div>
         <p className="text-title-1">{demographics.totalPopulation.toLocaleString()}</p>
-        <p className="text-label-secondary text-body mt-1">Set in the National Identity section</p>
+        <p className="text-label-secondary text-body mt-1">Set in the national identity section</p>
       </div>
 
       {/* Population Growth Rate - Read Only */}
@@ -47,7 +47,7 @@ export function PopulationSection({
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <TrendingUp className="text-label-secondary h-4 w-4" />
-            <span className="font-medium">Population Growth Rate</span>
+            <span className="font-medium">Population growth rate</span>
           </div>
           <Badge variant="outline">Calculated</Badge>
         </div>
@@ -70,7 +70,7 @@ export function PopulationSection({
         className="border-t pt-4"
       >
         <SliderWithDirectInput
-          label="Net Migration Rate"
+          label="Net migration rate"
           description="Net migration per 1000 population"
           value={demographics.netMigrationRate}
           onChange={(value) => onChange("netMigrationRate", value)}
@@ -85,7 +85,7 @@ export function PopulationSection({
         />
 
         <SliderWithDirectInput
-          label="Immigration Rate"
+          label="Immigration rate"
           description="Immigration per 1000 population"
           value={demographics.immigrationRate}
           onChange={(value) => onChange("immigrationRate", value)}
@@ -100,7 +100,7 @@ export function PopulationSection({
         />
 
         <SliderWithDirectInput
-          label="Emigration Rate"
+          label="Emigration rate"
           description="Emigration per 1000 population"
           value={demographics.emigrationRate}
           onChange={(value) => onChange("emigrationRate", value)}

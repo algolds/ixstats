@@ -76,7 +76,7 @@ export function CollectiveActionsPanel({ allianceId, myRole }: CollectiveActions
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-label text-headline">Alliance Actions</h4>
+        <h4 className="text-label text-headline">Alliance actions</h4>
         {canPropose && (
           <Dialog open={proposeOpen} onOpenChange={setProposeOpen}>
             <DialogTrigger asChild>
@@ -87,23 +87,23 @@ export function CollectiveActionsPanel({ allianceId, myRole }: CollectiveActions
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Propose Alliance Action</DialogTitle>
+                <DialogTitle>Propose alliance action</DialogTitle>
                 <DialogDescription>
                   Create a proposal for the alliance to vote on.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label>Action Type</Label>
+                  <Label>Action type</Label>
                   <Select value={actionType} onValueChange={setActionType}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="joint_statement">Joint Statement</SelectItem>
-                      <SelectItem value="collective_sanction">Collective Sanction</SelectItem>
-                      <SelectItem value="shared_defense">Shared Defense</SelectItem>
-                      <SelectItem value="trade_bloc">Trade Bloc</SelectItem>
+                      <SelectItem value="joint_statement">Joint statement</SelectItem>
+                      <SelectItem value="collective_sanction">Collective sanction</SelectItem>
+                      <SelectItem value="shared_defense">Shared defense</SelectItem>
+                      <SelectItem value="trade_bloc">Trade bloc</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

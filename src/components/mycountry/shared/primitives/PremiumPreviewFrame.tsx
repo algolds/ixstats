@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { Crown, ArrowRight } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { MyCountryEditModeProvider } from "~/context/MyCountryEditModeContext";
-import { GlassPanel } from "~/components/mycountry/cards";
-import type { MyCountryAccent } from "~/components/mycountry/shared/cards/accents";
+import { Card } from "~/components/ui/card";
 
 interface PremiumPreviewFrameProps {
   feature: "intelligence" | "defense";
@@ -16,24 +15,20 @@ interface PremiumPreviewFrameProps {
   onUpgrade?: () => void;
 }
 
-const FEATURE_META: Record<
-  PremiumPreviewFrameProps["feature"],
-  { label: string; accent: MyCountryAccent; blurb: string }
-> = {
-  intelligence: {
-    label: "Intelligence",
-    accent: "blue",
-    blurb: "You're viewing a live preview. Upgrade to act on briefings and unlock secure tools.",
-  },
-  defense: {
-    label: "Defense",
-    accent: "red",
-    blurb: "You're viewing a live preview. Upgrade to build forces and launch operations.",
-  },
-};
+const FEATURE_META: Record<PremiumPreviewFrameProps["feature"], { label: string; blurb: string }> =
+  {
+    intelligence: {
+      label: "Intelligence",
+      blurb: "Read-only preview. Upgrade to act on briefings.",
+    },
+    defense: {
+      label: "Defense",
+      blurb: "Read-only preview. Upgrade to build forces and launch operations.",
+    },
+  };
 
 /**
- * PremiumPreviewFrame — read-only premium preview.
+ * Read-only premium preview.
  *
  * When `locked`, renders the REAL section content (render-time queries are
  * public/protected, safe for any signed-in user) but provides `canEdit=false`
@@ -59,11 +54,7 @@ export function PremiumPreviewFrame({
   return (
     <MyCountryEditModeProvider canEdit={false} reason="premium">
       <div className="space-y-3 sm:space-y-4">
-        <GlassPanel
-          accent={meta.accent}
-          texture="none"
-          className="sticky top-(--shell-top-offset) z-30 px-3 py-2 sm:px-4"
-        >
+        <Card className="sticky top-(--shell-top-offset) z-30 px-3 py-2 sm:px-4">
           <div className="flex items-center gap-3">
             <Crown aria-hidden="true" className="text-yellow h-4 w-4 shrink-0" />
             <div className="min-w-0 flex-1">
@@ -75,7 +66,7 @@ export function PremiumPreviewFrame({
               <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
             </Button>
           </div>
-        </GlassPanel>
+        </Card>
 
         {children}
       </div>

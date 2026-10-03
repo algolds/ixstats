@@ -8,7 +8,6 @@ import {
   ScaleFrameEnlarge as Scale,
   StatUp as TrendingUp,
   KeyCommand as Command,
-  ArrowUpRight,
   Compass,
   WarningCircle as AlertCircle,
   Xmark as X,
@@ -17,12 +16,10 @@ import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
-import type { DrillSheetKind, V2Drill } from "~/components/mycountry/shell/DrillSheets";
-import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
+import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import { formatGrowthPeek } from "./ExecutiveActionCards";
-import { type StatusTone } from "./status-tone";
-import { HUE_ACCENT, HUE_BADGE, type DomainHue } from "./domain-hue";
-import { FlagWatermark, WatermarkGlyph } from "~/components/ui/facet/identity/FlagWatermark";
+import { type StatusTone, STATUS_TEXT } from "./status-tone";
+import { FlagWatermark } from "~/components/ui/facet/identity/FlagWatermark";
 import { assetUrl } from "~/lib/base-path";
 import { Card } from "~/components/ui/card";
 
@@ -34,13 +31,10 @@ interface Opportunity {
   description: string;
   metricLabel?: string;
   metricValue?: string;
-  directiveGoal: string;
   icon: typeof Shield;
   tone: StatusTone;
-  /** v2 hero hue (`badgeCls`/`borderCls`): the glass wash, border, glow and badge colour. */
-  hue: DomainHue;
   intentId?: string;
-  drillKind?: Exclude<V2Drill, { kind: "intent" } | null>;
+  drillKind?: Exclude<DrillSheetKind, { kind: "intent" } | null>;
 }
 
 interface CountryIssueItem {
@@ -63,16 +57,12 @@ interface CountryIntentItem {
 
 export interface ExecutiveOpportunityHeroProps {
   countryId: string;
-  onDeclare?: (prefilled?: string) => void;
-  onNavigate?: (section: MyCountrySection) => void;
   onOpenDrill?: (drill: Exclude<DrillSheetKind, { kind: "intent" } | null>) => void;
   onOpenIntent?: (intentId: string) => void;
 }
 
 function ExecutiveOpportunityHeroComponent({
   countryId,
-  onDeclare,
-  onNavigate,
   onOpenDrill,
   onOpenIntent,
 }: ExecutiveOpportunityHeroProps): React.JSX.Element | null {
@@ -162,13 +152,9 @@ function ExecutiveOpportunityHeroComponent({
         domain: "politics",
         title: topIssue.title,
         subtitle: isUrgent ? "Priority national issue" : "Open national issue",
-        description:
-          topIssue.description ||
-          "This issue is waiting for your decision. Open the brief to weigh the options.",
-        directiveGoal: `Resolve national policy issue: ${topIssue.title}`,
+        description: topIssue.description || "This issue is waiting for your decision.",
         icon: AlertCircle,
         tone: isUrgent ? "critical" : "warning",
-        hue: "red",
         drillKind: { kind: "issue", issueId: topIssue.id },
       };
     }
@@ -181,13 +167,11 @@ function ExecutiveOpportunityHeroComponent({
         title: "Military readiness is below target",
         subtitle: "Defense warning",
         description:
-          "Armed forces readiness has dropped below optimal operational thresholds. Strategic supply reallocation and defensive posture adjustments are urgently recommended.",
+          "Armed forces readiness is under 85%. Reallocate supplies or adjust your defensive posture.",
         metricLabel: "Readiness",
         metricValue: posture ? `${readiness}% · ${posture}` : `${readiness}%`,
-        directiveGoal: "Rebalance military readiness and reinforce defensive border posture",
         icon: Shield,
         tone: "critical",
-        hue: "red",
         drillKind: { kind: "defense" },
       };
     }
@@ -200,14 +184,11 @@ function ExecutiveOpportunityHeroComponent({
         title: "Civil service bottleneck",
         subtitle: "Governance alert",
         description:
-          "Administrative personnel utilization is over-capacity. Executive policy direction is required to expand operational slots or rebalance staff allocations.",
+          "The civil service is over capacity. Add staff slots or rebalance allocations.",
         metricLabel: "Staff capacity",
         metricValue: `${civilService.data.utilizationPercent}% used`,
-        directiveGoal:
-          "Authorize civil service staffing expansion and administrative restructuring",
         icon: Scale,
         tone: "warning",
-        hue: "indigo",
         drillKind: { kind: "politics" },
       };
     }
@@ -228,17 +209,15 @@ function ExecutiveOpportunityHeroComponent({
         title: topIntent.goal ?? "Active directive",
         subtitle: "Directive in progress",
         description:
-          "Your government is actively executing this strategic directive. Monitor key implementation milestones or issue follow-up policies.",
+          "Your government is carrying out this directive. Check its progress or follow up with another.",
         metricLabel: "Package",
         metricValue:
           [topIntent.tier, topIntent.category]
             .filter((part): part is string => !!part)
             .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
             .join(" · ") || "Active",
-        directiveGoal: `Accelerate implementation of ${topIntent.goal}`,
         icon: Command,
         tone: "accent",
-        hue: "yellow",
         intentId: topIntent.id,
       };
     }
@@ -250,15 +229,11 @@ function ExecutiveOpportunityHeroComponent({
         domain: "diplomacy",
         title: "Bilateral alliance opportunity",
         subtitle: "Diplomatic opportunity",
-        description:
-          "Regional diplomatic conditions favor establishing strategic bilateral accords and expanding international trade pacts across allied nations.",
+        description: "Your embassies could support new bilateral accords and trade pacts.",
         metricLabel: "Embassies",
         metricValue: dipStance ? `${embassies} · ${dipStance}` : `${embassies}`,
-        directiveGoal:
-          "Establish bilateral economic trade agreement and expand diplomatic alliances",
         icon: Handshake,
         tone: "neutral",
-        hue: "cyan",
         drillKind: { kind: "relations" },
       };
     }
@@ -269,15 +244,12 @@ function ExecutiveOpportunityHeroComponent({
         id: "economy-growth",
         domain: "economy",
         title: "Set an economic priority",
-        subtitle: "Suggested next step",
+        subtitle: "Suggested priority",
         description:
-          "Nothing urgent needs you right now. Point your government at growth with targeted investment, tax incentives or fiscal stimulus.",
+          "No urgent issues. A growth Directive could target investment, tax incentives or fiscal stimulus.",
         ...(growth ? { metricLabel: "GDP growth", metricValue: `${growth}${stabilityNote}` } : {}),
-        directiveGoal:
-          "Implement targeted macroeconomic development directive and tax incentive package",
         icon: TrendingUp,
         tone: "neutral",
-        hue: "green",
         drillKind: { kind: "economy" },
       };
     }
@@ -288,27 +260,18 @@ function ExecutiveOpportunityHeroComponent({
   if (!opportunity) return null;
 
   const Icon = opportunity.icon;
-  const isIssue = opportunity.drillKind?.kind === "issue";
-  const secondary: { label: string; onClick: () => void } | null = isIssue
-    ? null
-    : opportunity.intentId
+  const { drillKind, intentId } = opportunity;
+  const action = intentId
+    ? { label: "View directive", run: () => onOpenIntent?.(intentId) }
+    : drillKind
       ? {
-          label: "View directive",
-          onClick: () => onOpenIntent?.(opportunity.intentId!),
+          label:
+            drillKind.kind === "issue"
+              ? "Open issue brief"
+              : `View ${DRILL_LABEL[opportunity.domain]}`,
+          run: () => onOpenDrill?.(drillKind),
         }
-      : opportunity.drillKind
-        ? {
-            label: `View ${DRILL_LABEL[opportunity.domain] ?? "details"}`,
-            onClick: () => onOpenDrill?.(opportunity.drillKind!),
-          }
-        : opportunity.domain !== "intent"
-          ? {
-              label: "Open domain",
-              onClick: () => onNavigate?.(opportunity.domain as MyCountrySection),
-            }
-          : null;
-
-  const accent = HUE_ACCENT[opportunity.hue];
+      : null;
   const flagUrl = assetUrl(country?.flagUrl || country?.flag);
 
   return (
@@ -322,13 +285,8 @@ function ExecutiveOpportunityHeroComponent({
         transition={{ type: "spring", stiffness: 450, damping: 32 }}
         className="w-full"
       >
-        {/* The v2 priority hero (c5c6b382) on the Facet 3.1 glass hero: the priority's hue is the
-            card's accent — the glass wash, border, glow and badge (v2 `borderCls`/`badgeCls`) —
-            the country's flag bleeds off the top-right corner and the priority's glyph sits as a
-            fine watermark. */}
-        <Card variant="hero" className="group p-5 sm:p-6">
+        <Card variant="hero" className="p-5 sm:p-6">
           <FlagWatermark src={flagUrl} />
-          <WatermarkGlyph icon={Icon} className="text-facet-accent opacity-[0.06]" />
           <Button
             type="button"
             variant="ghost"
@@ -343,69 +301,35 @@ function ExecutiveOpportunityHeroComponent({
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl min-w-0 space-y-3 pr-10">
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={cn(
-                    "text-footnote inline-flex items-center gap-2 rounded-full border px-3 py-1 font-semibold",
-                    HUE_BADGE
-                  )}
-                >
-                  <Icon aria-hidden="true" className="size-3.5 shrink-0" />
-                  {opportunity.subtitle}
-                </span>
-                {opportunity.metricLabel && opportunity.metricValue && (
-                  <span className="border-separator bg-surface text-label-secondary text-footnote rounded-full border px-3 py-1">
-                    {opportunity.metricLabel}:{" "}
-                    <span className="text-label font-data font-semibold tabular-nums">
-                      {opportunity.metricValue}
-                    </span>
-                  </span>
-                )}
-              </div>
+              <p className="text-footnote flex items-center gap-2 font-semibold">
+                <Icon
+                  aria-hidden="true"
+                  className={cn("size-4 shrink-0", STATUS_TEXT[opportunity.tone])}
+                />
+                {opportunity.subtitle}
+              </p>
               <h2 id="priority-title" className="text-label text-title-2 sm:text-title-1">
                 {opportunity.title}
               </h2>
               <p className="text-label-secondary text-body line-clamp-3 leading-relaxed">
                 {opportunity.description}
               </p>
+              {opportunity.metricLabel && opportunity.metricValue && (
+                <p className="flex flex-col gap-0.5">
+                  <span className="text-stat-label">{opportunity.metricLabel}</span>
+                  <span className="text-label text-headline tabular-nums">
+                    {opportunity.metricValue}
+                  </span>
+                </p>
+              )}
             </div>
 
-            <div className="flex shrink-0 flex-col gap-3 sm:flex-row lg:flex-col">
-              {isIssue ? (
-                <Button
-                  type="button"
-                  size="lg"
-                  onClick={() => onOpenDrill?.(opportunity.drillKind!)}
-                  className="group/cta h-11 font-semibold"
-                >
-                  <Compass aria-hidden="true" />
-                  <span>Open issue brief</span>
-                  <ArrowUpRight aria-hidden="true" className={CTA_ARROW} />
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  size="lg"
-                  onClick={() => onDeclare?.(opportunity.directiveGoal)}
-                  className="group/cta h-11 font-semibold"
-                >
-                  <Command aria-hidden="true" />
-                  <span>{opportunity.intentId ? "Follow-up Directive" : "Declare Directive"}</span>
-                  <ArrowUpRight aria-hidden="true" className={CTA_ARROW} />
-                </Button>
-              )}
-              {secondary && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={secondary.onClick}
-                  className="bg-surface h-11 sm:h-9"
-                >
-                  <Compass aria-hidden="true" className="text-facet-accent" />
-                  <span>{secondary.label}</span>
-                </Button>
-              )}
-            </div>
+            {action && (
+              <Button type="button" size="lg" onClick={action.run} className="h-11 shrink-0">
+                <Compass aria-hidden="true" />
+                {action.label}
+              </Button>
+            )}
           </div>
         </Card>
       </motion.section>
@@ -413,18 +337,12 @@ function ExecutiveOpportunityHeroComponent({
   );
 }
 
-/**
- * v2 CTA arrow: dimmed at rest, drifting up-right on hover and keyboard focus (no drift under
- * Reduce Motion).
- */
-const CTA_ARROW =
-  "opacity-70 transition-[opacity,translate] duration-150 group-hover/cta:opacity-100 group-focus-visible/cta:opacity-100 motion-safe:group-hover/cta:translate-x-0.5 motion-safe:group-hover/cta:-translate-y-0.5 motion-safe:group-focus-visible/cta:translate-x-0.5 motion-safe:group-focus-visible/cta:-translate-y-0.5";
-
-const DRILL_LABEL: Partial<Record<Opportunity["domain"], string>> = {
+const DRILL_LABEL: Record<Opportunity["domain"], string> = {
   defense: "defense",
   diplomacy: "relations",
   politics: "politics",
   economy: "economy",
+  intent: "details",
 };
 
 export const ExecutiveOpportunityHero = React.memo(ExecutiveOpportunityHeroComponent);

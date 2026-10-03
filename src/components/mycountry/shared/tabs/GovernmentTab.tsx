@@ -7,7 +7,6 @@ import { toTitleCase } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { Building, Crown } from "iconoir-react";
 import { NavArrowRight as ChevronRight } from "iconoir-react";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import {
@@ -65,7 +64,6 @@ export function GovernmentTab({
       {/* Background wash system (desaturated flag wash + radial dot mesh) */}
       <MetricCardGrid
         metrics={[]} // empty metrics to just render background
-        theme="government"
         backgroundImage={{
           countryId: country.id,
           cardType: "government",
@@ -75,7 +73,6 @@ export function GovernmentTab({
           countryImageData: countryImageData ?? undefined,
           countryName: country.name,
         }}
-        cardWrapper="card"
         className="pointer-events-none absolute inset-0 z-0"
       />
 
@@ -84,9 +81,9 @@ export function GovernmentTab({
         <div className="border-separator flex items-center justify-between border-b pb-3">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-label text-headline">Government & Fiscal</h3>
+              <h3 className="text-label text-headline">Government & fiscal</h3>
               <InlineHelpIcon
-                title="Government & Fiscal"
+                title="Government & fiscal"
                 content="View your nation's leadership, official capital and currency metadata, and public budget allocation details. Click values to analyze spending or debt."
               />
             </div>
@@ -98,7 +95,7 @@ export function GovernmentTab({
             <Link href={createUrl("/mycountry/editor")}>
               <Button size="sm" variant="outline" className="text-footnote h-8 gap-2">
                 <Building className="h-3.5 w-3.5" />
-                <span>Open Editor</span>
+                <span>Open editor</span>
               </Button>
             </Link>
           )}
@@ -160,9 +157,9 @@ export function GovernmentTab({
                 }
                 className="h-auto flex-col justify-between gap-1 p-2 whitespace-normal"
               >
-                <Eyebrow className="block">
+                <span className="text-stat-label text-label-secondary block">
                   {metricView.budget === "percentage" ? "Spending % of GDP" : "Total Spending"}
-                </Eyebrow>
+                </span>
                 <div
                   className="flex items-center gap-2"
                   onClick={(e) => {
@@ -209,9 +206,9 @@ export function GovernmentTab({
                 }
                 className="h-auto flex-col justify-between gap-1 p-2 whitespace-normal"
               >
-                <Eyebrow className="block">
+                <span className="text-stat-label text-label-secondary block">
                   {metricView.debt === "ratio" ? "Debt to GDP Ratio" : "Total Public Debt"}
-                </Eyebrow>
+                </span>
                 <div
                   className="mt-0.5 flex items-center gap-2"
                   onClick={(e) => {
@@ -271,7 +268,7 @@ export function GovernmentTab({
                 <Crown
                   className={`h-3.5 w-3.5 ${expandedSection === "structure" ? "text-label" : "text-label-secondary"}`}
                 />
-                <span>State Structure</span>
+                <span>State structure</span>
                 <motion.div
                   animate={{ rotate: expandedSection === "structure" ? 90 : 0 }}
                   transition={{ type: "spring", bounce: 0, duration: 0.25 }}
@@ -291,11 +288,6 @@ export function GovernmentTab({
                   : "border border-transparent"
               }`}
             >
-              <TextureOverlay
-                texture="paperGrain"
-                opacity={0.06}
-                className="pointer-events-none absolute inset-0 z-0"
-              />
               <div className="relative z-10 space-y-4 p-4">
                 <Card
                   variant="inset"
@@ -303,7 +295,7 @@ export function GovernmentTab({
                   className="grid grid-cols-2 gap-4 p-3 md:grid-cols-4"
                 >
                   <div className="min-w-0">
-                    <Eyebrow className="block">Government Type</Eyebrow>
+                    <Eyebrow className="block">Government type</Eyebrow>
                     <p className="text-label text-caption mt-0.5 truncate font-semibold">
                       {toTitleCase(
                         governmentStructure?.governmentType ||
@@ -314,14 +306,14 @@ export function GovernmentTab({
                     <p className="text-label-secondary text-footnote mt-0.5">Constitution base</p>
                   </div>
                   <div className="min-w-0">
-                    <Eyebrow className="block">Capital City</Eyebrow>
+                    <Eyebrow className="block">Capital city</Eyebrow>
                     <p className="text-label text-caption mt-0.5 truncate font-semibold">
                       {country.nationalIdentity?.capitalCity || "N/A"}
                     </p>
                     <p className="text-label-secondary text-footnote mt-0.5">Seat of power</p>
                   </div>
                   <div className="min-w-0">
-                    <Eyebrow className="block">Official Currency</Eyebrow>
+                    <Eyebrow className="block">Official currency</Eyebrow>
                     <p className="text-label text-caption mt-0.5 truncate font-semibold">
                       {country.nationalIdentity?.currency || "N/A"}
                     </p>
@@ -340,12 +332,10 @@ export function GovernmentTab({
 
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                   <SectorBreakdownCard
-                    title="Government Leadership"
+                    title="Government leadership"
                     subtitle="Offices and officeholder names"
                     layout="list"
                     showProgressBars={false}
-                    cardWrapper="panel"
-                    accent="amber"
                     sectors={[
                       {
                         id: "hos",
@@ -366,12 +356,10 @@ export function GovernmentTab({
                     ]}
                   />
                   <SectorBreakdownCard
-                    title="Legislative & Judicial"
+                    title="Legislative & judicial"
                     subtitle="Legislative chambers and high court"
                     layout="list"
                     showProgressBars={false}
-                    cardWrapper="panel"
-                    accent="amber"
                     sectors={[
                       {
                         id: "leg",

@@ -12,8 +12,7 @@ const ICON: Record<BranchKey, typeof Crown> = {
 };
 
 /**
- * StateStructure — the Sovereign Command OS "constitutional state structure" on the real record:
- * one column per branch (executive, legislative, judicial) with its offices and bodies, the
+ * StateStructure — the state structure on the real record: one column per branch (executive, legislative, judicial) with its offices and bodies, the
  * system as a badge, the ministries, and a link to the wiki's government chapter when there is
  * one. Branches without a record are left out; nothing renders without any.
  */

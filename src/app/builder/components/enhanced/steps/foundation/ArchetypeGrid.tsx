@@ -12,7 +12,6 @@ import {
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { EmptyState } from "~/components/ui/empty-state";
-import { CutoutCard } from "~/components/ui/cutout-card";
 import { Progress } from "~/components/ui/progress";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
@@ -57,8 +56,8 @@ interface ArchetypeGridProps {
 }
 
 const ERA_OPTIONS = [
-  { value: "modern", label: "Modern Archetypes" },
-  { value: "historical", label: "Historical Archetypes" },
+  { value: "modern", label: "Modern archetypes" },
+  { value: "historical", label: "Historical archetypes" },
 ] as const;
 
 const COMPLEXITY_OPTIONS = [
@@ -129,7 +128,7 @@ export function ArchetypeGrid({
         <div className="space-y-2">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <Button variant="outline" size="sm" onClick={onBackToBenchmark}>
-              <ArrowLeft aria-hidden /> Back to Benchmark Country
+              <ArrowLeft aria-hidden /> Back to benchmark country
               {selectedTemplate?.name ? ` (${selectedTemplate.name})` : ""}
             </Button>
 
@@ -157,22 +156,21 @@ export function ArchetypeGrid({
                   title="Click to add a benchmark country"
                 >
                   <span aria-hidden className="bg-label-tertiary size-1.5 rounded-full" />
-                  Step 1: Benchmark Country (Skipped)
+                  Step 1: Benchmark country (skipped)
                 </Button>
               )}
               <span aria-hidden className="text-label-tertiary">
                 •
               </span>
-              <span className="text-tint flex items-center gap-1">
-                <span aria-hidden className="bg-tint size-2 rounded-full" />
+              <span className="text-label flex items-center gap-1">
+                <span aria-hidden className="bg-label size-2 rounded-full" />
                 Step 2: Archetype
               </span>
             </div>
           </div>
 
           <div>
-            {/* v2: the step title in the builder gold */}
-            <h1 className="text-title-1 text-tint">Archetype</h1>
+            <h1 className="text-title-1 text-label">Archetype</h1>
             <p className="text-footnote text-label-secondary mt-0.5">
               {selectedTemplate ? (
                 <>
@@ -204,11 +202,7 @@ export function ArchetypeGrid({
 
       {/* Active Benchmark Overview Card or Benchmark Skipped Banner */}
       {selectedTemplate ? (
-        // v2: the benchmark banner sits on a gold wash (the glass hero in the builder tint).
-        <Card
-          variant="hero"
-          className="flex flex-col items-start justify-between gap-4 p-4 sm:flex-row sm:items-center"
-        >
+        <Card className="flex flex-col items-start justify-between gap-4 p-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
             {(selectedTemplate.flag || selectedTemplate.flagUrl) && (
               <img
@@ -221,7 +215,7 @@ export function ArchetypeGrid({
             )}
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-eyebrow text-tint">Benchmark Country</span>
+                <span className="text-eyebrow text-label-secondary">Benchmark country</span>
                 <span aria-hidden className="bg-separator-opaque size-1.5 rounded-full" />
                 <span className="text-caption text-label-secondary">
                   {selectedTemplate.continent || selectedTemplate.region || "Global"}
@@ -240,28 +234,28 @@ export function ArchetypeGrid({
 
           <div className="flex items-center gap-2 self-stretch sm:self-center">
             <Button variant="outline" size="sm" onClick={onBackToBenchmark}>
-              Change Benchmark Country
+              Change benchmark country
             </Button>
             <Button size="sm" onClick={onSkipArchetype}>
-              Keep Real Baseline →
+              Keep real baseline
             </Button>
           </div>
         </Card>
       ) : (
         <Card className="flex flex-col items-start justify-between gap-4 p-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
-            <div className="border-tint/30 bg-tint/10 text-tint rounded-control flex size-10 shrink-0 items-center justify-center border">
+            <div className="bg-fill-3 text-label-secondary rounded-control flex size-10 shrink-0 items-center justify-center">
               <Sparkles aria-hidden className="size-5" />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-eyebrow text-label-secondary">
-                  No Benchmark Country Selected
+                  No benchmark country selected
                 </span>
                 <span aria-hidden className="bg-separator-opaque size-1.5 rounded-full" />
-                <span className="text-caption text-tint">Default Demographic Scale</span>
+                <span className="text-caption text-label-secondary">Default demographic scale</span>
               </div>
-              <h2 className="text-headline text-label">Pure Archetype Foundation</h2>
+              <h2 className="text-headline text-label">Archetype only</h2>
               <p className="text-footnote text-label-secondary">
                 Population: 10 million • Base GDP: $250 billion • Selected archetype sets economic
                 structure and growth
@@ -271,7 +265,7 @@ export function ArchetypeGrid({
 
           <div className="flex items-center gap-2 self-stretch sm:self-center">
             <Button variant="secondary" size="sm" onClick={onBackToBenchmark}>
-              + Add Benchmark Country
+              Add benchmark country
             </Button>
           </div>
         </Card>
@@ -304,7 +298,7 @@ export function ArchetypeGrid({
 
           <div className="text-caption text-label-secondary shrink-0 tabular-nums select-none">
             Showing {filteredArchetypes.length} of {archetypes.length}{" "}
-            {activeEra === "modern" ? "Modern" : "Historical"} Presets
+            {activeEra === "modern" ? "modern" : "historical"} presets
           </div>
         </div>
       </Card>
@@ -312,7 +306,7 @@ export function ArchetypeGrid({
       {isLoadingArchetypes ? (
         <div className="flex flex-col items-center justify-center space-y-4 py-20">
           <div className="border-tint size-8 animate-spin rounded-full border-2 border-t-transparent" />
-          <p className="text-body text-label-secondary">Decoding faction templates...</p>
+          <p className="text-body text-label-secondary">Loading archetypes...</p>
         </div>
       ) : filteredArchetypes.length === 0 ? (
         <Card>
@@ -329,7 +323,7 @@ export function ArchetypeGrid({
                   setComplexityFilter("all");
                 }}
               >
-                Reset Filters
+                Reset filters
               </Button>
             }
           />
@@ -348,13 +342,10 @@ export function ArchetypeGrid({
 
             return (
               <motion.div key={arch.id} variants={itemVariants} className="h-full">
-                {/* v2 (c5c6b382): a CutoutCard with the dot texture; the selected preset takes
-                    the gold border, ring and glow, and the title warms to gold on hover. The
-                    card holds buttons, so it is not itself a button (HIG, spec §16.8): the
-                    title is the toggle, stretched over the card (`after:inset-0`); the other
-                    controls sit above it (`relative z-10`). */}
-                <CutoutCard
-                  variant="card"
+                {/* The card holds buttons, so it is not itself a button: the title is the toggle,
+                    stretched over the card (`after:inset-0`); the other controls sit above it
+                    (`relative z-10`). */}
+                <Card
                   interactive
                   className={cn(
                     "flex h-full flex-col justify-between gap-4 p-5",
@@ -384,7 +375,7 @@ export function ArchetypeGrid({
                         {isSelected && (
                           <span
                             aria-hidden="true"
-                            className="facet-gold flex size-5 items-center justify-center rounded-full"
+                            className="bg-primary-fill text-on-primary flex size-5 items-center justify-center rounded-full"
                           >
                             <Check aria-hidden className="size-3 stroke-[3]" />
                           </span>
@@ -397,7 +388,7 @@ export function ArchetypeGrid({
                           type="button"
                           aria-pressed={isSelected}
                           onClick={() => setLocalSelectedArchetype(arch)}
-                          className="group-hover/cutout:text-tint focus-visible:text-tint focus-visible:after:outline-tint cursor-pointer text-left transition-colors duration-200 select-none after:absolute after:inset-0 after:rounded-[inherit] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2"
+                          className="focus-visible:after:outline-tint cursor-pointer text-left select-none after:absolute after:inset-0 after:rounded-[inherit] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2"
                         >
                           {arch.name}
                         </button>
@@ -431,7 +422,7 @@ export function ArchetypeGrid({
                           .slice(0, 3)
                           .map((trait: string, idx: number) => (
                             <Badge key={idx} variant="outline">
-                              ✦ {trait}
+                              {trait}
                             </Badge>
                           ))}
                       </div>
@@ -453,7 +444,7 @@ export function ArchetypeGrid({
                           <div className="space-y-1">
                             <div className="text-footnote text-label-secondary flex justify-between">
                               <span>Innovation</span>
-                              <span className="font-data tabular-nums">
+                              <span className="tabular-nums">
                                 {arch.growthMetrics.innovationIndex || 50}%
                               </span>
                             </div>
@@ -467,7 +458,7 @@ export function ArchetypeGrid({
                           <div className="space-y-1">
                             <div className="text-footnote text-label-secondary flex justify-between">
                               <span>Stability</span>
-                              <span className="font-data tabular-nums">
+                              <span className="tabular-nums">
                                 {arch.growthMetrics.stability || 50}%
                               </span>
                             </div>
@@ -497,7 +488,7 @@ export function ArchetypeGrid({
                       className="flex-1"
                     >
                       <Check aria-hidden />
-                      {isSelected ? "Model selected" : "Select & apply"}
+                      {isSelected ? "Selected" : "Select and apply"}
                     </Button>
                     <Button
                       type="button"
@@ -512,7 +503,7 @@ export function ArchetypeGrid({
                       Details
                     </Button>
                   </div>
-                </CutoutCard>
+                </Card>
               </motion.div>
             );
           })}

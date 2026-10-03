@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Percentage as Percent } from "iconoir-react";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { CurrencyFlow } from "~/components/ui/number-flow";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { api } from "~/trpc/react";
@@ -137,10 +136,10 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
         <CardHeader className="flex-row flex-wrap items-center justify-between gap-3 p-4 pb-3">
           <div className="flex items-center gap-2">
             <Percent aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
-            <h3 className="text-label text-headline">National Tax Rate Controls</h3>
+            <h3 className="text-label text-headline">National tax rate controls</h3>
           </div>
           <div className="text-right">
-            <Eyebrow className="block">Total revenue</Eyebrow>
+            <span className="text-stat-label text-label-secondary block">Total revenue</span>
             <p className="text-label text-title-3 tabular-nums">
               {yields.total != null ? (
                 <>

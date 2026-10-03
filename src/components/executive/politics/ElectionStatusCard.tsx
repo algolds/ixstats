@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckSquare as Vote, Calendar, WarningTriangle as AlertTriangle } from "iconoir-react";
+import { WarningTriangle as AlertTriangle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
@@ -12,7 +12,7 @@ interface ElectionStatusCardProps {
 }
 
 /**
- * MC-2: where the country stands in the election lifecycle — what setup is missing, when the
+ * Where the country stands in the election lifecycle — what setup is missing, when the
  * (first) election falls due on the IxTime clock, the last result and the seat composition.
  * Every number comes from `elections.getElectionStatus`; nothing is estimated.
  */
@@ -66,15 +66,9 @@ export function ElectionStatusCard({ countryId, canManage = true }: ElectionStat
     <div className="border-separator rounded-row space-y-3 border p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <div className="rounded-control bg-indigo/10 p-2">
-            {upcoming?.isDue || needsParties || !status.hasLegislature ? (
-              <AlertTriangle className="text-yellow h-5 w-5" />
-            ) : upcoming ? (
-              <Calendar className="text-indigo h-5 w-5" />
-            ) : (
-              <Vote className="text-indigo h-5 w-5" />
-            )}
-          </div>
+          {(upcoming?.isDue || needsParties || !status.hasLegislature) && (
+            <AlertTriangle aria-hidden className="text-yellow mt-0.5 h-5 w-5 shrink-0" />
+          )}
           <div className="min-w-0">
             <h4 className="text-headline">{headline}</h4>
             {detail && <p className="text-label-secondary text-footnote mt-0.5">{detail}</p>}
@@ -87,7 +81,7 @@ export function ElectionStatusCard({ countryId, canManage = true }: ElectionStat
             disabled={resolveDue.isPending}
             onClick={() => resolveDue.mutate({ countryId })}
           >
-            {resolveDue.isPending ? "Counting…" : "Count votes"}
+            {resolveDue.isPending ? "Counting" : "Count votes"}
           </Button>
         )}
       </div>

@@ -49,14 +49,13 @@ export const EmptyState = React.memo(function EmptyState({
         <div>
           <h3 className="text-label text-title-3 mb-1">No embassies yet</h3>
           <p className="text-label-secondary text-body mx-auto max-w-md">
-            Establish embassies with other countries to unlock atomic synergies and diplomatic
-            bonuses.
+            Establish an embassy with another country to earn synergies and diplomatic bonuses.
           </p>
         </div>
         {isOwner && (
           <Button onClick={onEstablishEmbassy}>
             <Building2 className="h-4 w-4" />
-            Establish First Embassy
+            Establish first embassy
           </Button>
         )}
       </div>

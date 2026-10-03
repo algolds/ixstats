@@ -109,7 +109,7 @@ export function EconomicDataTab({ data }: { data: SharedEconomicData | undefined
       <CardHeader>
         <h3 className="text-label text-title-3 flex items-center gap-2">
           <TrendingUp className="text-label-secondary h-5 w-5" />
-          Economic Cooperation
+          Economic cooperation
         </h3>
         <p className="text-label-secondary text-body">
           Trade volume, joint ventures, and economic benefits
@@ -118,18 +118,18 @@ export function EconomicDataTab({ data }: { data: SharedEconomicData | undefined
       <CardContent className="space-y-4 p-6 pt-0">
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           <MetricCard
-            label="Trade Volume"
+            label="Trade volume"
             value={`$${(data.tradeVolume || 0).toLocaleString()}M`}
             trend={data.tradeGrowth}
           />
-          <MetricCard label="Joint Ventures" value={data.jointVentures || 0} />
+          <MetricCard label="Joint ventures" value={data.jointVentures || 0} />
           <MetricCard
             label="Investment"
             value={`$${(data.investmentValue || 0).toLocaleString()}M`}
           />
-          <MetricCard label="Tariffs Reduced" value={`${data.tariffsReduced || 0}%`} positive />
+          <MetricCard label="Tariffs reduced" value={`${data.tariffsReduced || 0}%`} positive />
           <MetricCard
-            label="Economic Benefit"
+            label="Economic benefit"
             value={`+${(data.economicBenefit || 0).toFixed(1)}%`}
             positive
           />
@@ -237,27 +237,27 @@ export function CulturalDataTab({ data }: { data: SharedCulturalData | undefined
       <CardHeader>
         <h3 className="text-label text-title-3 flex items-center gap-2">
           <Palette className="text-label-secondary h-5 w-5" />
-          Cultural Exchange
+          Cultural exchange
         </h3>
         <p className="text-label-secondary text-body">Programs, events, and cultural impact</p>
       </CardHeader>
       <CardContent className="space-y-4 p-6 pt-0">
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-          <MetricCard label="Exchange Programs" value={data.exchangePrograms || 0} />
-          <MetricCard label="Cultural Events" value={data.culturalEvents || 0} />
-          <MetricCard label="Artists Exchanged" value={data.artistsExchanged || 0} />
-          <MetricCard label="Students Exchanged" value={data.studentsExchanged || 0} />
+          <MetricCard label="Exchange programs" value={data.exchangePrograms || 0} />
+          <MetricCard label="Cultural events" value={data.culturalEvents || 0} />
+          <MetricCard label="Artists exchanged" value={data.artistsExchanged || 0} />
+          <MetricCard label="Students exchanged" value={data.studentsExchanged || 0} />
         </div>
         <div className="space-y-2 border-t pt-4">
           <div className="text-body flex items-center justify-between">
-            <span className="text-label-secondary">Cultural Impact</span>
+            <span className="text-label-secondary">Cultural impact</span>
             <span className="font-semibold">{data.culturalImpactScore || 0}%</span>
           </div>
           <Progress value={data.culturalImpactScore || 0} className="h-2" />
         </div>
         <div className="space-y-2">
           <div className="text-body flex items-center justify-between">
-            <span className="text-label-secondary">Diplomatic Goodwill</span>
+            <span className="text-label-secondary">Diplomatic goodwill</span>
             <span className="font-semibold">{data.diplomaticGoodwill || 0}%</span>
           </div>
           <Progress value={data.diplomaticGoodwill || 0} className="h-2" />

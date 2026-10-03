@@ -53,7 +53,7 @@ export function GlassSelectBox({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { theme: resolvedTheme, cssVars } = useSectionTheme(sectionId, theme);
+  const { cssVars } = useSectionTheme(sectionId, theme);
 
   const sizeClasses = {
     sm: "text-body px-3 py-2 h-10",
@@ -170,11 +170,9 @@ export function GlassSelectBox({
         onClick={toggleDropdown}
         onKeyDown={handleKeyDown}
         disabled={disabled}
-        whileHover={{ scale: disabled ? 1 : 1.01 }}
-        whileTap={{ scale: disabled ? 1 : 0.99 }}
         className={cn(
           "relative flex w-full items-center justify-between text-left",
-          getGlassClasses("elevated", resolvedTheme, sectionId),
+          getGlassClasses("elevated"),
           "bg-surface border-2",
           "border-separator",
           "hover:border-label-tertiary",
@@ -222,7 +220,7 @@ export function GlassSelectBox({
             transition={tweenFast}
             className={cn(
               "z-popover absolute top-full right-0 left-0 mt-1",
-              getGlassClasses("modal", resolvedTheme, sectionId),
+              getGlassClasses("modal"),
               "material-thick",
               "border-separator border",
               "rounded-control shadow-floating overflow-hidden"

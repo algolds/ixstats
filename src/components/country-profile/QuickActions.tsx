@@ -28,9 +28,9 @@ export interface QuickActionsProps {
 }
 
 /**
- * QuickActions — the Command dock's sovereign tools: Compare (the explore comparison modal,
- * loaded on demand), the Factbook deep-dive, economic modeling, Open on map and the wiki
- * article. Gray buttons: the one filled button on the page is the header's Country Actions.
+ * QuickActions — Compare (the comparison modal, loaded on demand), the Factbook, economic
+ * modeling, Open on map and the wiki article. Gray buttons: the one filled button on the page is
+ * the header's Country Actions.
  */
 export function QuickActions({
   countryId,
@@ -62,7 +62,7 @@ export function QuickActions({
         <Button asChild variant="secondary" size="sm" className={item}>
           <Link href={createUrl(`/countries/${slug}/factbook`)}>
             <Page aria-hidden />
-            Factbook deep-dive
+            Factbook
           </Link>
         </Button>
         <Button asChild variant="secondary" size="sm" className={item}>

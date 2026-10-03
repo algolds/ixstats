@@ -1,8 +1,7 @@
 /**
- * Pure derivations behind the Command profile's restored Sovereign Command OS pieces (the
- * national pulse, country DNA, condition matrix, state structure and diplomatic matrix). Every
- * figure comes from the profile layer; a missing input drops the item instead of defaulting it,
- * so nothing here can invent a number (the sample-data concepts used fixed "85/100"s).
+ * Pure derivations behind the Command profile (the national pulse, country DNA, condition matrix,
+ * state structure and diplomatic matrix). Every figure comes from the profile layer; a missing
+ * input drops the item instead of defaulting it, so nothing here can invent a number.
  */
 import type {
   ProfileIdentity,

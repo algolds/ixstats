@@ -62,9 +62,9 @@ import type { LoreChapter } from "../_utils/profileLayer";
 import { CountryTabs } from "./CountryTabs";
 import { Card } from "~/components/ui/card";
 
-/** The dock: one entry per domain (the Sovereign Command OS dock, on real data). */
+/** The dock: one entry per domain. */
 const DOCK_ITEMS = [
-  { id: "glance", label: "At a glance", icon: Sparks },
+  { id: "glance", label: "Overview", icon: Sparks },
   { id: "dna", label: "Country DNA", icon: Dna },
   { id: "land", label: "Territory", icon: MapIcon },
   { id: "lore", label: "Lore", icon: OpenBook },
@@ -101,12 +101,12 @@ export interface CommandProfileViewProps {
 }
 
 /**
- * CommandProfileView — the country profile (`/countries/[slug]`): the Sovereign Command OS on
- * real data. The original header's hero (cover, flag, identity), the national pulse, then a
- * sticky dock (side rail ≥1024px, bottom bar below) over a stream of domain tiles — country DNA
- * and condition, territory, lore, economy, people, state structure, foreign affairs and the
- * chronicle. Visitors see the public record only (server-enforced); the owner also sees a
- * private strip. The Factbook (`/factbook`) is the deep-dive.
+ * CommandProfileView — the country profile (`/countries/[slug]`): the hero (cover, flag,
+ * identity), the national pulse, then a sticky dock (side rail ≥1024px, bottom bar below) over a
+ * stream of domain tiles: country DNA and condition, territory, lore, economy, people, state
+ * structure, foreign affairs and the chronicle. Visitors see the public record only
+ * (server-enforced); the owner also sees a private strip. The Factbook (`/factbook`) is the
+ * deep-dive.
  */
 export function CommandProfileView({
   slug,
@@ -192,8 +192,7 @@ function CommandBody({
               onClick={() => jump(item.id)}
               aria-current={current ? "location" : undefined}
               className={cn(
-                // Concept dock: the current domain is a tinted pill with a tint ring; items press.
-                "focus-visible:outline-tint facet-press flex items-center gap-2 focus-visible:outline-2 focus-visible:-outline-offset-2",
+                "focus-visible:outline-tint flex items-center gap-2 focus-visible:outline-2 focus-visible:-outline-offset-2",
                 orientation === "vertical"
                   ? "text-body rounded-control-sm w-full px-3 py-2"
                   : "text-caption flex-col justify-center rounded-full px-3 py-1 pointer-coarse:min-h-11",
@@ -215,7 +214,7 @@ function CommandBody({
 
   return (
     <div className="space-y-6">
-      {/* ── Hero: the original profile header, on the profile layer */}
+      {/* ── Hero */}
       <CountryHero
         id={tileId("glance")}
         className={SCROLL_MARGIN}
@@ -240,13 +239,9 @@ function CommandBody({
       <PulseBanner name={identity.name} vitals={vitals} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[13rem_minmax(0,1fr)]">
-        {/* ── Command dock (≥1024px): domains and sovereign tools */}
-        <aside aria-label="Command dock" className="hidden lg:block">
-          {/* Concept "Command Dock": a glass panel with the refraction hairline. */}
-          <FacetMaterial
-            material="hero"
-            className="rounded-card sticky top-[var(--shell-top-offset,5rem)] space-y-4 p-2"
-          >
+        {/* ── Dock (≥1024px): domains and tools */}
+        <aside aria-label="Profile sections" className="hidden lg:block">
+          <Card className="sticky top-[var(--shell-top-offset,5rem)] space-y-4 p-2">
             <nav aria-labelledby="command-dock-domains" className="space-y-1">
               <h2 id="command-dock-domains" className="text-subhead text-label-secondary px-3 pt-1">
                 Domains
@@ -254,7 +249,7 @@ function CommandBody({
               {dock("vertical")}
             </nav>
             <div className="border-separator space-y-2 border-t px-1 pt-3 pb-1">
-              <h2 className="text-subhead text-label-secondary px-2">Sovereign tools</h2>
+              <h2 className="text-subhead text-label-secondary px-2">Tools</h2>
               <QuickActions
                 countryId={layer.countryId}
                 slug={slug}
@@ -262,18 +257,12 @@ function CommandBody({
                 hasGeometry={land.hasGeometry}
               />
             </div>
-          </FacetMaterial>
+          </Card>
         </aside>
 
         <div className="min-w-0 space-y-6">
-          {/* ── Country DNA and national condition: the concept's glass feature card */}
-          <Tile
-            id="dna"
-            icon={Dna}
-            title="Country DNA"
-            subtitle={dnaLine ?? "World Census standing and national condition"}
-            feature
-          >
+          {/* ── Country DNA and national condition */}
+          <Tile id="dna" icon={Dna} title="Country DNA" subtitle={dnaLine ?? undefined}>
             {dna.length > 0 && (
               <div
                 className={cn(
@@ -299,12 +288,7 @@ function CommandBody({
               </section>
             )}
             {dna.length === 0 && pillars.length < 2 && (
-              <EmptyState
-                compact
-                icon={<Dna />}
-                title="No standing on record yet"
-                message="World Census ranks and national readings appear here."
-              />
+              <EmptyState compact icon={<Dna />} title="No standing on record yet" />
             )}
           </Tile>
 
@@ -313,7 +297,6 @@ function CommandBody({
               id="land"
               icon={MapIcon}
               title="Territory"
-              subtitle={land.capital ? `Capital: ${land.capital.name}` : undefined}
               className="md:col-span-6 xl:col-span-7"
             >
               <TerritoryMap
@@ -439,12 +422,7 @@ function CommandBody({
                 state.directives.length === 0 &&
                 state.issueOutcomes.length === 0 &&
                 !state.election && (
-                  <EmptyState
-                    compact
-                    icon={<Bank />}
-                    title="No public record yet"
-                    message="Offices, enacted directives and resolved issues appear here."
-                  />
+                  <EmptyState compact icon={<Bank />} title="No public record yet" />
                 )}
             </Tile>
 
@@ -452,7 +430,6 @@ function CommandBody({
               id="world"
               icon={Globe}
               title="Foreign affairs"
-              subtitle="Relations, treaties and embassies"
               className="md:col-span-6 xl:col-span-12"
             >
               <DiplomaticMatrix world={world} />
@@ -460,12 +437,7 @@ function CommandBody({
                 <EmbassyRows embassies={world.embassies} limit={6} />
               </FacetList>
               {world.relations.length === 0 && world.embassies.length === 0 && (
-                <EmptyState
-                  compact
-                  icon={<Globe />}
-                  title="No foreign relations yet"
-                  message="Relations, treaties and embassies appear here."
-                />
+                <EmptyState compact icon={<Globe />} title="No foreign relations yet" />
               )}
             </Tile>
 
@@ -473,7 +445,6 @@ function CommandBody({
               id="chronicle"
               icon={Clock}
               title="Chronicle"
-              subtitle="Latest in the record"
               className="md:col-span-6 xl:col-span-12"
               action={
                 chronicle.length > 6 ? (
@@ -491,12 +462,7 @@ function CommandBody({
                   </FacetList>
                 </div>
               ) : (
-                <EmptyState
-                  compact
-                  icon={<Clock />}
-                  title="No dated events yet"
-                  message="Founding dates, map stories and the IxTime record appear here."
-                />
+                <EmptyState compact icon={<Clock />} title="No dated events yet" />
               )}
             </Tile>
           </div>
@@ -564,17 +530,13 @@ function CommandBody({
   );
 }
 
-/**
- * A domain tile: a card with an icon, a title (Facet `title-2`) and a subtitle. Data tiles are
- * opaque; a `feature` tile (the DNA) is the concept's glass panel with the tint glow.
- */
+/** A domain tile: an opaque card with an icon, a title and an optional subtitle. */
 function Tile({
   id,
   icon: Icon,
   title,
   subtitle,
   action,
-  feature = false,
   className,
   children,
 }: {
@@ -583,7 +545,6 @@ function Tile({
   title: string;
   subtitle?: string;
   action?: React.ReactNode;
-  feature?: boolean;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -594,16 +555,12 @@ function Tile({
       aria-labelledby={titleId}
       className={cn("min-w-0", SCROLL_MARGIN, className)}
     >
-      <Card
-        padding="md"
-        variant={feature ? "hero" : undefined}
-        className="flex h-full flex-col gap-5"
-      >
+      <Card padding="md" className="flex h-full flex-col gap-5">
         <header className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
             <span
               aria-hidden
-              className="bg-tint-fill text-tint border-tint/20 rounded-control-sm flex size-9 shrink-0 items-center justify-center border"
+              className="bg-fill-3 text-label-secondary rounded-control-sm flex size-9 shrink-0 items-center justify-center"
             >
               <Icon className="size-5" />
             </span>

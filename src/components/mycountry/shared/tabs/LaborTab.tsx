@@ -1,6 +1,5 @@
 "use client";
 
-import { Eyebrow } from "~/components/ui/eyebrow";
 import React from "react";
 import { formatExactCurrency } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
@@ -11,7 +10,6 @@ import {
   Dollar as DollarSign,
 } from "iconoir-react";
 import { NavArrowRight as ChevronRight } from "iconoir-react";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import {
@@ -62,7 +60,6 @@ export function LaborTab({
       {/* Background wash system (desaturated flag wash + radial dot mesh) */}
       <MetricCardGrid
         metrics={[]} // empty metrics to just render background
-        theme="labor"
         backgroundImage={{
           countryId: country.id,
           cardType: "labor",
@@ -72,7 +69,6 @@ export function LaborTab({
           countryImageData: countryImageData ?? undefined,
           countryName: country.name,
         }}
-        cardWrapper="card"
         className="pointer-events-none absolute inset-0 z-0"
       />
 
@@ -81,9 +77,9 @@ export function LaborTab({
         <div className="border-separator flex items-center justify-between border-b pb-3">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-label text-headline">Labor & Workforce</h3>
+              <h3 className="text-label text-headline">Labor & workforce</h3>
               <InlineHelpIcon
-                title="Labor & Workforce"
+                title="Labor & workforce"
                 content="View national employment rates, labor participation, wages, and education levels. Click values to open historical charts and details."
               />
             </div>
@@ -95,7 +91,7 @@ export function LaborTab({
             <Link href={createUrl("/mycountry/editor")}>
               <Button size="sm" variant="outline" className="text-footnote h-8 gap-2">
                 <Briefcase className="h-3.5 w-3.5" />
-                <span>Open Editor</span>
+                <span>Open editor</span>
               </Button>
             </Link>
           )}
@@ -118,11 +114,11 @@ export function LaborTab({
                 }
                 interactive
               >
-                <Eyebrow className="block">
+                <span className="text-stat-label text-label-secondary block">
                   {metricView.workforce === "participation"
                     ? "Participation Rate"
                     : "Total Workforce"}
-                </Eyebrow>
+                </span>
                 <div
                   className="mt-0.5 flex items-center gap-2"
                   onClick={(e) => {
@@ -165,9 +161,9 @@ export function LaborTab({
                 }
                 interactive
               >
-                <Eyebrow className="block">
+                <span className="text-stat-label text-label-secondary block">
                   {metricView.employment === "employed" ? "Employment Rate" : "Unemployment Rate"}
-                </Eyebrow>
+                </span>
                 <div
                   className="mt-0.5 flex items-center gap-2"
                   onClick={(e) => {
@@ -223,9 +219,9 @@ export function LaborTab({
                 }
                 interactive
               >
-                <Eyebrow className="block">
+                <span className="text-stat-label text-label-secondary block">
                   {metricView.compensation === "minimum" ? "Minimum Wage" : "Average Wage"}
-                </Eyebrow>
+                </span>
                 <div
                   className="mt-0.5 flex items-center gap-2"
                   onClick={(e) => {
@@ -281,7 +277,7 @@ export function LaborTab({
                 <Users
                   className={`h-3.5 w-3.5 ${expandedSection === "workforce" ? "text-destructive" : "text-label-tertiary"}`}
                 />
-                <span>Workforce Overview</span>
+                <span>Workforce overview</span>
                 <motion.div
                   animate={{ rotate: expandedSection === "workforce" ? 90 : 0 }}
                   transition={{ type: "spring", bounce: 0, duration: 0.25 }}
@@ -301,11 +297,6 @@ export function LaborTab({
                   : "border border-transparent"
               }`}
             >
-              <TextureOverlay
-                texture="paperGrain"
-                opacity={0.06}
-                className="pointer-events-none absolute inset-0 z-0"
-              />
               <div className="relative z-10 space-y-4 p-4">
                 <Card
                   variant="inset"
@@ -313,28 +304,30 @@ export function LaborTab({
                   className="grid grid-cols-2 gap-4 p-3 md:grid-cols-4"
                 >
                   <div className="min-w-0">
-                    <Eyebrow className="block">Labor Force</Eyebrow>
+                    <span className="text-stat-label text-label-secondary block">Labor force</span>
                     <p className="text-label text-headline mt-0.5">
                       {(economyData?.labor?.totalWorkforce ?? 0).toLocaleString()}
                     </p>
                     <p className="text-label-secondary text-footnote mt-0.5">Active workforce</p>
                   </div>
                   <div className="min-w-0">
-                    <Eyebrow className="block">Participation</Eyebrow>
+                    <span className="text-stat-label text-label-secondary block">
+                      Participation
+                    </span>
                     <p className="text-label text-headline mt-0.5">
                       {`${(economyData?.labor?.laborForceParticipationRate ?? 0).toFixed(1)}%`}
                     </p>
                     <p className="text-label-secondary text-footnote mt-0.5">Working-age share</p>
                   </div>
                   <div className="min-w-0">
-                    <Eyebrow className="block">Employment</Eyebrow>
+                    <span className="text-stat-label text-label-secondary block">Employment</span>
                     <p className="text-label text-headline mt-0.5">
                       {`${(economyData?.labor?.employmentRate ?? 0).toFixed(1)}%`}
                     </p>
                     <p className="text-label-secondary text-footnote mt-0.5">Employed portion</p>
                   </div>
                   <div className="min-w-0">
-                    <Eyebrow className="block">Unemployment</Eyebrow>
+                    <span className="text-stat-label text-label-secondary block">Unemployment</span>
                     <p className="text-label text-headline mt-0.5">
                       {`${(economyData?.labor?.unemploymentRate ?? 0).toFixed(1)}%`}
                     </p>
@@ -343,14 +336,12 @@ export function LaborTab({
                 </Card>
 
                 <SectorBreakdownCard
-                  title="Employment by Sector"
+                  title="Employment by sector"
                   subtitle="Distribution of workforce across economic sectors"
                   layout="grid"
                   showTrends={true}
                   showSectorImages={true}
                   valueAsPeople={true}
-                  cardWrapper="panel"
-                  accent="red"
                   sectors={[
                     {
                       id: "agriculture",
@@ -411,7 +402,7 @@ export function LaborTab({
                 <DollarSign
                   className={`h-3.5 w-3.5 ${expandedSection === "compensation" ? "text-destructive" : "text-label-tertiary"}`}
                 />
-                <span>Compensation & Wages</span>
+                <span>Compensation & wages</span>
                 <motion.div
                   animate={{ rotate: expandedSection === "compensation" ? 90 : 0 }}
                   transition={{ type: "spring", bounce: 0, duration: 0.25 }}
@@ -431,11 +422,6 @@ export function LaborTab({
                   : "border border-transparent"
               }`}
             >
-              <TextureOverlay
-                texture="paperGrain"
-                opacity={0.06}
-                className="pointer-events-none absolute inset-0 z-0"
-              />
               <div className="relative z-10 space-y-4 p-4">
                 <Card
                   variant="inset"
@@ -443,28 +429,34 @@ export function LaborTab({
                   className="grid grid-cols-2 gap-4 p-3 md:grid-cols-4"
                 >
                   <div className="min-w-0">
-                    <Eyebrow className="block">Average Annual Income</Eyebrow>
+                    <span className="text-stat-label text-label-secondary block">
+                      Average annual income
+                    </span>
                     <p className="text-label text-headline mt-0.5">
                       {formatExactCurrency(economyData?.labor?.averageAnnualIncome ?? 0, currency)}
                     </p>
                     <p className="text-label-secondary text-footnote mt-0.5">Mean earnings</p>
                   </div>
                   <div className="min-w-0">
-                    <Eyebrow className="block">Minimum Wage</Eyebrow>
+                    <span className="text-stat-label text-label-secondary block">Minimum wage</span>
                     <p className="text-label text-headline mt-0.5">
                       {formatExactCurrency(economyData?.labor?.minimumWage ?? 0, currency)}
                     </p>
                     <p className="text-label-secondary text-footnote mt-0.5">Per year</p>
                   </div>
                   <div className="min-w-0">
-                    <Eyebrow className="block">Average Work Week</Eyebrow>
+                    <span className="text-stat-label text-label-secondary block">
+                      Average work week
+                    </span>
                     <p className="text-label text-headline mt-0.5">
                       {economyData?.labor?.averageWorkweekHours ?? 0}h
                     </p>
                     <p className="text-label-secondary text-footnote mt-0.5">Hours per week</p>
                   </div>
                   <div className="min-w-0">
-                    <Eyebrow className="block">Productivity Index</Eyebrow>
+                    <span className="text-stat-label text-label-secondary block">
+                      Productivity index
+                    </span>
                     <p className="text-label text-headline mt-0.5">
                       {(
                         economyData?.labor?.skillsAndProductivity?.laborProductivityIndex ?? 0
@@ -475,12 +467,10 @@ export function LaborTab({
                 </Card>
 
                 <SectorBreakdownCard
-                  title="Employment Types"
+                  title="Employment types"
                   subtitle="Breakdown by employment arrangement"
                   layout="list"
                   showProgressBars={true}
-                  cardWrapper="panel"
-                  accent="red"
                   sectors={[
                     {
                       id: "fulltime",
@@ -538,7 +528,7 @@ export function LaborTab({
                 <TrendingUp
                   className={`h-3.5 w-3.5 ${expandedSection === "human-capital" ? "text-destructive" : "text-label-tertiary"}`}
                 />
-                <span>Human Capital & Skills</span>
+                <span>Human capital & skills</span>
                 <motion.div
                   animate={{ rotate: expandedSection === "human-capital" ? 90 : 0 }}
                   transition={{ type: "spring", bounce: 0, duration: 0.25 }}
@@ -558,11 +548,6 @@ export function LaborTab({
                   : "border border-transparent"
               }`}
             >
-              <TextureOverlay
-                texture="paperGrain"
-                opacity={0.06}
-                className="pointer-events-none absolute inset-0 z-0"
-              />
               <div className="relative z-10 space-y-4 p-4">
                 <Card
                   variant="inset"
@@ -570,14 +555,18 @@ export function LaborTab({
                   className="grid grid-cols-2 gap-4 p-3 md:grid-cols-4"
                 >
                   <div className="min-w-0">
-                    <Eyebrow className="block">Education Years</Eyebrow>
+                    <span className="text-stat-label text-label-secondary block">
+                      Education years
+                    </span>
                     <p className="text-label text-headline mt-0.5">
                       {`${(economyData?.labor?.skillsAndProductivity?.averageEducationYears ?? 0).toFixed(1)} years`}
                     </p>
                     <p className="text-label-secondary text-footnote mt-0.5">Schooling duration</p>
                   </div>
                   <div className="min-w-0">
-                    <Eyebrow className="block">Tertiary Ed Rate</Eyebrow>
+                    <span className="text-stat-label text-label-secondary block">
+                      Tertiary ed rate
+                    </span>
                     <p className="text-label text-headline mt-0.5">
                       {`${(economyData?.labor?.skillsAndProductivity?.tertiaryEducationRate ?? 0).toFixed(1)}%`}
                     </p>
@@ -586,14 +575,16 @@ export function LaborTab({
                     </p>
                   </div>
                   <div className="min-w-0">
-                    <Eyebrow className="block">Vocational Rate</Eyebrow>
+                    <span className="text-stat-label text-label-secondary block">
+                      Vocational rate
+                    </span>
                     <p className="text-label text-headline mt-0.5">
                       {`${(economyData?.labor?.skillsAndProductivity?.vocationalTrainingRate ?? 0).toFixed(1)}%`}
                     </p>
                     <p className="text-label-secondary text-footnote mt-0.5">Technical certified</p>
                   </div>
                   <div className="min-w-0">
-                    <Eyebrow className="block">Youth Unemp.</Eyebrow>
+                    <span className="text-stat-label text-label-secondary block">Youth Unemp.</span>
                     <p className="text-label text-headline mt-0.5">
                       {`${(economyData?.labor?.youthUnemploymentRate ?? 0).toFixed(1)}%`}
                     </p>
@@ -604,23 +595,21 @@ export function LaborTab({
                 </Card>
 
                 <SectorBreakdownCard
-                  title="Skills & Capital Metrics"
+                  title="Skills & capital metrics"
                   subtitle="National human capital and education stats"
                   layout="list"
                   showProgressBars={true}
-                  cardWrapper="panel"
-                  accent="red"
                   sectors={[
                     {
                       id: "literacy",
-                      name: "Adult Literacy Rate",
+                      name: "Adult literacy rate",
                       value: 0,
                       percentage: economyData?.demographics?.literacyRate ?? 95,
                       color: "emerald",
                     },
                     {
                       id: "stem",
-                      name: "STEM Graduate Share",
+                      name: "STEM graduate share",
                       value: 0,
                       percentage:
                         economyData?.labor?.skillsAndProductivity?.tertiaryEducationRate ?? 24,
@@ -628,14 +617,14 @@ export function LaborTab({
                     },
                     {
                       id: "brain-drain",
-                      name: "Brain Drain Index",
+                      name: "Brain drain index",
                       value: 0,
                       percentage: economyData?.labor?.skillsAndProductivity?.skillsGapIndex ?? 32,
                       color: "purple",
                     },
                     {
                       id: "digital",
-                      name: "Digital Literacy Rate",
+                      name: "Digital literacy rate",
                       value: 0,
                       percentage: economyData?.demographics?.literacyRate ?? 78,
                       color: "cyan",

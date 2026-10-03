@@ -5,7 +5,6 @@ import { Flash } from "iconoir-react";
 import React from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import {
   Sheet,
   SheetContent,
@@ -55,7 +54,7 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               <Flash className="text-label-secondary h-5 w-5" />
-              Cultural Exchange Scenario
+              Cultural exchange scenario
             </SheetTitle>
             <SheetDescription>
               Interactive scenario with diplomatic choices and outcomes
@@ -114,7 +113,9 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
                             <div key={m.label} className="bg-fill-3 rounded-control p-2">
                               <dd className="text-label text-title-3 tabular-nums">{m.value}</dd>
                               <dt>
-                                <Eyebrow>{m.label}</Eyebrow>
+                                <span className="text-stat-label text-label-secondary">
+                                  {m.label}
+                                </span>
                               </dt>
                             </div>
                           ))}

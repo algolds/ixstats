@@ -54,7 +54,7 @@ export function NativeLoreCanvasModal({
                 {initialTitle ? "Edit Dossier Lore Document" : "New Dossier Lore Document"}
               </DialogTitle>
               <p className="text-label-secondary text-footnote">
-                Author custom nation lore directly via the WikiOS Canvas Editor
+                Author custom nation lore directly via the WikiOS canvas editor
               </p>
             </div>
           </div>
@@ -80,7 +80,7 @@ export function NativeLoreCanvasModal({
               className="text-footnote gap-2"
             >
               <Save className="h-3.5 w-3.5" />
-              Save Document
+              Save document
             </Button>
           </div>
         </DialogHeader>

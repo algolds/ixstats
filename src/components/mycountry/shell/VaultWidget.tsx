@@ -108,7 +108,7 @@ export function VaultWidget() {
             <>
               {/* Balance */}
               <div>
-                <Eyebrow className="block">IxCredits</Eyebrow>
+                <span className="text-stat-label text-label-secondary block">IxCredits</span>
                 <div className="flex items-center gap-2 pt-0.5">
                   <IxCreditsSymbol decorative className="text-yellow size-4 shrink-0" />
                   {balanceLoading ? (
@@ -252,7 +252,7 @@ export function VaultWidget() {
                 {
                   id: "cards" as const,
                   href: "/vault/cards",
-                  title: "My Cards",
+                  title: "My cards",
                   icon: Grid3x3,
                   isActive:
                     pathname.startsWith("/vault/cards") ||
@@ -278,7 +278,7 @@ export function VaultWidget() {
                 {
                   id: "import" as const,
                   href: "/vault/import",
-                  title: "NS Importer",
+                  title: "NS importer",
                   icon: Download,
                   isActive: pathname.startsWith("/vault/import"),
                 },

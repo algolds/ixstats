@@ -1,5 +1,5 @@
 // Enhanced Builder Primitives
-// Standardized components with Facet physics and section theming
+// Standardized inputs with section theming
 
 // Core Input Primitives
 export { EnhancedNumberInput } from "./EnhancedNumberInput";
@@ -14,9 +14,4 @@ export { useSectionTheme, getSectionColors, type SectionTheme } from "./theme-ut
 export { useAnimatedValue, type AnimationConfig } from "./animation-utils";
 
 // Types
-export type {
-  EnhancedInputProps,
-  PrimitiveTheme,
-  SectionColorScheme,
-} from "./types";
-
+export type { EnhancedInputProps, PrimitiveTheme, SectionColorScheme } from "./types";

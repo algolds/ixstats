@@ -3,7 +3,6 @@
 import React from "react";
 import type { BudgetSummary, RevenueSummary } from "~/types/government";
 import { formatNumber } from "~/lib/utils/format-utils";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Card } from "~/components/ui/card";
 
 interface BudgetKeyMetricsProps {
@@ -55,7 +54,7 @@ export function BudgetKeyMetrics({
         {metrics.map((m) => (
           <div key={m.label} className="min-w-0 p-4">
             <dt>
-              <Eyebrow>{m.label}</Eyebrow>
+              <span className="text-stat-label text-label-secondary">{m.label}</span>
             </dt>
             <dd className="text-label text-title-2 mt-1 truncate tabular-nums">{m.value}</dd>
             <dd className="text-label-secondary text-footnote mt-1 truncate tabular-nums">
