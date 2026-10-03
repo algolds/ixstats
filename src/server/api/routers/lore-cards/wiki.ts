@@ -498,7 +498,11 @@ export const loreCardsWikiRouter = createTRPCRouter({
     .query(async ({ input, ctx }) => {
       try {
         if (input.source === "stash") {
-          return searchStash(ctx.db, input, ctx.auth?.userId ? requireWikiUserIds(ctx) : null);
+          return await searchStash(
+            ctx.db,
+            input,
+            ctx.auth?.userId ? requireWikiUserIds(ctx) : null
+          );
         }
 
         if (input.source === "wikios" || input.source === "ixwiki") {
