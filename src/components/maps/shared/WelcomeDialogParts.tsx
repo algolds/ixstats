@@ -12,15 +12,17 @@ export function TipCard({
   title,
   description,
   className = "p-3",
+  headerClassName = "mb-2",
 }: {
   icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
   title: string;
   description: string;
   className?: string;
+  headerClassName?: string;
 }) {
   return (
     <Card variant="inset" className={className}>
-      <div className="mb-2 flex items-center gap-2">
+      <div className={`flex items-center gap-2 ${headerClassName}`}>
         <Icon className="text-blue h-4 w-4" aria-hidden />
         <h3 className="text-label text-headline">{title}</h3>
       </div>

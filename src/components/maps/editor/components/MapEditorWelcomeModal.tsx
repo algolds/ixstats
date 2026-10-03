@@ -1,13 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence } from "motion/react";
 import {
   Map,
   Component as Layers,
   Keyframe as Keyboard,
-  NavArrowRight as ChevronRight,
-  NavArrowLeft as ChevronLeft,
   Check,
   Flash as Zap,
   MapPin,
@@ -24,6 +22,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Card } from "~/components/ui/card";
+import { SlidePage, TipCard, WelcomeFooter } from "~/components/maps/shared/WelcomeDialogParts";
 
 const STORAGE_KEY = "ixworld-editor-welcome-seen";
 
@@ -171,40 +170,25 @@ export function MapEditorWelcomeModal({
         <div className="flex min-h-[290px] flex-col justify-start px-6 pb-4">
           <AnimatePresence mode="wait">
             {currentPage === 0 && (
-              <motion.div
+              <SlidePage
                 key="tips-page"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                transition={{ duration: 0.15 }}
+                from="left"
+                duration={0.15}
                 className="grid grid-cols-2 gap-2"
               >
-                {TIPS.map((tip) => {
-                  const Icon = tip.icon;
-                  return (
-                    <Card variant="inset" key={tip.title} className="flex flex-col gap-1 p-2">
-                      <div className="flex items-center gap-2">
-                        <Icon className="text-blue h-4 w-4" aria-hidden />
-                        <h3 className="text-label text-headline">{tip.title}</h3>
-                      </div>
-                      <p className="text-label-secondary text-footnote leading-relaxed">
-                        {tip.description}
-                      </p>
-                    </Card>
-                  );
-                })}
-              </motion.div>
+                {TIPS.map((tip) => (
+                  <TipCard
+                    key={tip.title}
+                    {...tip}
+                    className="flex flex-col gap-1 p-2"
+                    headerClassName=""
+                  />
+                ))}
+              </SlidePage>
             )}
 
             {currentPage === 1 && (
-              <motion.div
-                key="shortcuts-page"
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.15 }}
-                className="space-y-2"
-              >
+              <SlidePage key="shortcuts-page" from="right" duration={0.15} className="space-y-2">
                 <h3 className="text-label text-headline mb-2 flex items-center gap-2">
                   <Keyboard className="text-label-secondary h-4 w-4" aria-hidden />
                   Editor shortcuts
@@ -222,18 +206,11 @@ export function MapEditorWelcomeModal({
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </SlidePage>
             )}
 
             {currentPage === 2 && (
-              <motion.div
-                key="changelog-page"
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.15 }}
-                className="space-y-2"
-              >
+              <SlidePage key="changelog-page" from="right" duration={0.15} className="space-y-2">
                 <h3 className="text-label text-headline mb-1 flex items-center gap-2">
                   <Zap className="text-label-secondary h-4 w-4" aria-hidden />
                   Changelog & updates
@@ -257,50 +234,23 @@ export function MapEditorWelcomeModal({
                     </Card>
                   ))}
                 </div>
-              </motion.div>
+              </SlidePage>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Footer */}
-        <div className="border-separator flex items-center justify-between border-t px-6 py-4">
-          {/* Dots indicator */}
-          <div className="flex items-center gap-2">
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                aria-label={`Page ${i + 1} of ${totalPages}`}
-                aria-current={i === currentPage ? "step" : undefined}
-                onClick={() => setCurrentPage(i)}
-                className={`h-1.5 rounded-full transition-[background-color,opacity] ${
-                  i === currentPage ? "bg-blue w-4" : "bg-fill-2 hover:bg-fill w-1.5"
-                }`}
-              />
-            ))}
-          </div>
-
-          {/* Nav buttons */}
-          <div className="flex items-center gap-2">
-            {currentPage > 0 && (
-              <Button variant="ghost" size="sm" onClick={() => setCurrentPage((p) => p - 1)}>
-                <ChevronLeft aria-hidden />
-                Back
-              </Button>
-            )}
-            {currentPage < totalPages - 1 ? (
-              <Button variant="secondary" size="sm" onClick={() => setCurrentPage((p) => p + 1)}>
-                Next
-                <ChevronRight aria-hidden />
-              </Button>
-            ) : (
-              <Button size="sm" onClick={handleClose}>
-                Got it
-                <Check aria-hidden />
-              </Button>
-            )}
-          </div>
-        </div>
+        <WelcomeFooter
+          page={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          activeDotClass="w-4"
+          finalActions={
+            <Button size="sm" onClick={handleClose}>
+              Got it
+              <Check aria-hidden />
+            </Button>
+          }
+        />
       </DialogContent>
     </Dialog>
   );
