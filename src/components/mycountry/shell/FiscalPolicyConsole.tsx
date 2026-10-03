@@ -14,10 +14,9 @@ import {
   readSavedRates,
   fiscalUpdateForRate,
   computeTaxYields,
-  deriveSectorWeights,
+  sectorWeightsForProfile,
   type FiscalRateUpdate,
 } from "./fiscal";
-import { parseSectorBreakdown } from "~/lib/economy/sector-breakdown";
 import { economicRelationsOf, finiteOrNull } from "~/lib/economy/country-relations";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
@@ -39,9 +38,7 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
   const gdp = finiteOrNull(country?.currentTotalGdp);
   const taxEfficiency = finiteOrNull(fiscal?.taxEfficiency);
 
-  // ---------------------------------------------------------------------------
   // Rates — the saved fiscal system, overridden by this session's edits
-  // ---------------------------------------------------------------------------
 
   const saved = useMemo(() => readSavedRates(fiscal), [fiscal]);
   const [edits, setEdits] = useState<Record<string, number>>({});
@@ -53,31 +50,16 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
     return result;
   }, [edits, saved]);
 
-  // ---------------------------------------------------------------------------
   // Sector-derived revenue weights and projected yields
-  // ---------------------------------------------------------------------------
 
-  const sectorWeights = useMemo(
-    () =>
-      deriveSectorWeights(
-        parseSectorBreakdown(profile?.sectorBreakdown).map((s) => ({
-          name: s.name,
-          percentage: s.share,
-        })),
-        profile?.exportsGDPPercent,
-        profile?.importsGDPPercent
-      ),
-    [profile?.sectorBreakdown, profile?.exportsGDPPercent, profile?.importsGDPPercent]
-  );
+  const sectorWeights = useMemo(() => sectorWeightsForProfile(profile), [profile]);
 
   const yields = useMemo(
     () => computeTaxYields(rates, gdp, taxEfficiency, sectorWeights),
     [rates, gdp, taxEfficiency, sectorWeights]
   );
 
-  // ---------------------------------------------------------------------------
   // Backend persistence (debounced, only the changed taxes)
-  // ---------------------------------------------------------------------------
 
   const updateMutation = api.economics.updateFiscalSystem.useMutation({
     onSuccess: () => {

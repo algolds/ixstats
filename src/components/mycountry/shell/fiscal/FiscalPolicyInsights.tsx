@@ -11,14 +11,13 @@ import {
 import { PercentageFlow } from "~/components/ui/number-flow";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { cn } from "~/lib/utils";
-import { parseSectorBreakdown } from "~/lib/economy/sector-breakdown";
 import { economicRelationsOf, finiteOrNull } from "~/lib/economy/country-relations";
 import {
   TAX_CHANNELS,
   ACCENT_BG,
   readSavedRates,
   computeTaxYields,
-  deriveSectorWeights,
+  sectorWeightsForProfile,
 } from "./taxChannels";
 import { RailCard, RailRow, STATUS_FILL, STATUS_TEXT } from "../rails/shared";
 
@@ -50,14 +49,7 @@ function deriveFiscalInsights(country: Country) {
   const rates: Record<string, number | null> = {};
   for (const ch of TAX_CHANNELS) rates[ch.key] = saved[ch.key]?.rate ?? null;
 
-  const sectorWeights = deriveSectorWeights(
-    parseSectorBreakdown(profile?.sectorBreakdown).map((s) => ({
-      name: s.name,
-      percentage: s.share,
-    })),
-    profile?.exportsGDPPercent,
-    profile?.importsGDPPercent
-  );
+  const sectorWeights = sectorWeightsForProfile(profile);
   const yields = computeTaxYields(rates, gdp, taxEfficiency, sectorWeights);
   const total = yields.total;
 

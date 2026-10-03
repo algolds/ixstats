@@ -1,3 +1,5 @@
+import { parseSectorBreakdown } from "~/lib/economy/sector-breakdown";
+import type { CountryEconomicRelations } from "~/lib/economy/country-relations";
 export interface TaxChannel {
   key: string;
   label: string;
@@ -272,6 +274,18 @@ export function computeTaxYields(
     total = (total ?? 0) + value;
   }
   return { byChannel, total };
+}
+
+/** Revenue weights derived from a country's economic profile row (sector mix and trade shares). */
+export function sectorWeightsForProfile(profile: CountryEconomicRelations["economicProfile"]) {
+  return deriveSectorWeights(
+    parseSectorBreakdown(profile?.sectorBreakdown).map((s) => ({
+      name: s.name,
+      percentage: s.share,
+    })),
+    profile?.exportsGDPPercent,
+    profile?.importsGDPPercent
+  );
 }
 
 const PRIMARY_KEYWORDS = ["agri", "mining", "extract", "fish", "forestry", "primary"];

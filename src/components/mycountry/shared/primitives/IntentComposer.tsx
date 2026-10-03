@@ -259,7 +259,6 @@ export const IntentComposer = React.memo(function IntentComposer({
     );
   }
 
-  // ── Steps 2–4 ────────────────────────────────────────────────────────────
   const readOnly = !!isViewingOtherCountry || !!isPublicReadOnly;
   const suggestError = suggest.error?.message ?? null;
 
