@@ -4,7 +4,7 @@
 
 import type { Polygon, MultiPolygon } from "geojson";
 
-export type BorderEditAction =
+type BorderEditAction =
   | "move_vertex"
   | "add_vertex"
   | "delete_vertex"
@@ -16,7 +16,7 @@ export type BorderEditAction =
   | "naturalize"
   | "snap";
 
-export interface UndoEntry {
+interface UndoEntry {
   action: BorderEditAction;
   previousGeometry: Polygon | MultiPolygon;
   resultGeometry: Polygon | MultiPolygon;

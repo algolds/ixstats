@@ -1,10 +1,10 @@
 // --- Heraldic primitives ---
 
-export type TinctureMetal = "or" | "argent";
-export type TinctureColour = "gules" | "azure" | "vert" | "purpure" | "sable";
-export type TinctureFur =
+type TinctureMetal = "or" | "argent";
+type TinctureColour = "gules" | "azure" | "vert" | "purpure" | "sable";
+type TinctureFur =
   "ermine" | "vair" | "counter-ermine" | "counter-vair" | "erminois" | "pean";
-export type TinctureStain = "tenne" | "sanguine" | "murrey";
+type TinctureStain = "tenne" | "sanguine" | "murrey";
 export type Tincture = TinctureMetal | TinctureColour | TinctureFur | TinctureStain;
 
 export type TinctureKind = "metal" | "colour" | "fur" | "stain";
@@ -109,35 +109,35 @@ export interface FieldConfig {
   lineStyle: LineStyle;
 }
 
-export interface ShieldConfig {
+interface ShieldConfig {
   shape: ShieldShape;
   field: FieldConfig;
   ordinaries: OrdinaryConfig[];
   charges: ChargeRef[];
 }
 
-export interface HelmConfig {
+interface HelmConfig {
   type: HelmType;
   facing: HelmFacing;
 }
 
-export interface CrestConfig {
+interface CrestConfig {
   chargeId: string;
   wreathTinctures: [Tincture, Tincture];
 }
 
-export interface MantlingConfig {
+interface MantlingConfig {
   exteriorTincture: Tincture;
   interiorTincture: Tincture;
 }
 
-export interface SupporterConfig {
+interface SupporterConfig {
   chargeId: string;
   attitude?: Attitude;
   tincture?: Tincture;
 }
 
-export interface MottoConfig {
+interface MottoConfig {
   text: string;
   position: MottoPosition;
 }
@@ -161,7 +161,7 @@ export interface HeraldryComposition {
 
 // --- Validation ---
 
-export type ValidationSeverity = "info" | "advisory" | "caution";
+type ValidationSeverity = "info" | "advisory" | "caution";
 
 export interface ValidationWarning {
   code: string;

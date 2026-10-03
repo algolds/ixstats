@@ -217,7 +217,7 @@ export function filterAndSearchComponents(
 /**
  * Economic Effectiveness Result
  */
-export interface EconomicEffectivenessResult {
+interface EconomicEffectivenessResult {
   baseEffectiveness: number;
   synergyBonus: number;
   conflictPenalty: number;
@@ -284,7 +284,7 @@ function calculateEconomicEffectiveness(
 /**
  * Sector Balance Analysis
  */
-export interface SectorBalance {
+interface SectorBalance {
   sector: string;
   impact: number;
   percentage: number;

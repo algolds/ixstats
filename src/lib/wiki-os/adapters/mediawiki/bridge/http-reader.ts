@@ -14,7 +14,7 @@ const USER_AGENT = DEFAULT_USER_AGENT;
 
 const offlineExternalHosts = new Map<string, number>();
 
-export function isExternalHostOffline(hostname: string): boolean {
+function isExternalHostOffline(hostname: string): boolean {
   const offlineTime = offlineExternalHosts.get(hostname);
   if (offlineTime) {
     if (Date.now() - offlineTime > 5 * 60 * 1000) {
@@ -26,7 +26,7 @@ export function isExternalHostOffline(hostname: string): boolean {
   return false;
 }
 
-export function markExternalHostOffline(hostname: string) {
+function markExternalHostOffline(hostname: string) {
   if (!offlineExternalHosts.has(hostname)) {
     offlineExternalHosts.set(hostname, Date.now());
     console.warn(
@@ -40,7 +40,7 @@ export function markExternalHostOffline(hostname: string) {
  * Fetch from an external wiki API with circuit breaker resilience for 403/offline errors.
  * Returns null on persistent failures instead of throwing or polling repeatedly.
  */
-export async function fetchExternalWiki(
+async function fetchExternalWiki(
   url: string,
   timeoutMs: number = 12000
 ): Promise<Response | null> {
@@ -90,7 +90,7 @@ export async function fetchExternalWiki(
 // IIWiki HTTP API
 // ──────────────────────────────────────────────
 
-export function getIiwikiApiBaseUrl(): string {
+function getIiwikiApiBaseUrl(): string {
   return "https://iiwiki.com";
 }
 

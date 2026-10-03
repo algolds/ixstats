@@ -29,7 +29,7 @@ export const TRENDING_CONFIG = {
   risingHours: 6,
 } as const;
 
-export type EngagementKind = keyof typeof TRENDING_CONFIG.weights;
+type EngagementKind = keyof typeof TRENDING_CONFIG.weights;
 
 export interface EngagementEvent {
   /** The post that received the engagement. */

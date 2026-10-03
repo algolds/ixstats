@@ -241,7 +241,7 @@ export interface TaxSystemInput {
   collectionEfficiency?: number;
 }
 
-export type CalculationMethodValue = (typeof CALCULATION_METHODS)[keyof typeof CALCULATION_METHODS];
+type CalculationMethodValue = (typeof CALCULATION_METHODS)[keyof typeof CALCULATION_METHODS];
 
 export interface TaxCategoryInput {
   categoryName: string;
@@ -305,7 +305,7 @@ export interface TaxSystemTemplate {
   categories: TaxCategoryTemplate[];
 }
 
-export interface TaxCategoryTemplate {
+interface TaxCategoryTemplate {
   categoryName: string;
   categoryType: string;
   description: string;

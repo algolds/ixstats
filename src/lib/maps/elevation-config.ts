@@ -7,7 +7,7 @@
  * Color key matches the IxWiki topographic legend.
  */
 
-export interface ElevationZoneConfig {
+interface ElevationZoneConfig {
   zoneId: string;
   zoneName: string;
   elevationMin: number; // meters

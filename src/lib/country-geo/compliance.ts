@@ -18,7 +18,7 @@ import { formatNumber } from "~/lib/utils/format-utils";
 
 export type ComplianceSeverity = "error" | "warning" | "info";
 
-export type ComplianceCategory =
+type ComplianceCategory =
   | "population"
   | "gdp"
   | "capital"

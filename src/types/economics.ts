@@ -213,7 +213,7 @@ const FiscalSystemSchema = z.object({
 });
 
 // Extended fiscal with nullable DB-sourced fields
-export const FiscalSystemDataSchema = FiscalSystemSchema.extend({
+const FiscalSystemDataSchema = FiscalSystemSchema.extend({
   taxEfficiency: z.number().nullable().optional(),
   fiscalBalanceGDPPercent: z.number().nullable().optional(),
 });
@@ -340,7 +340,7 @@ const GovernmentSpendingSchema = z.object({
 });
 
 // Extended spending with nullable DB-sourced fields
-export const GovernmentSpendingDataSchema = GovernmentSpendingSchema.extend({
+const GovernmentSpendingDataSchema = GovernmentSpendingSchema.extend({
   spendingEfficiency: z.number().nullable().optional(),
   socialSpendingPercent: z.number().nullable().optional(),
 });
@@ -399,7 +399,7 @@ const DemographicsSchema = z.object({
 });
 
 // Extended demographics with nullable DB-sourced fields
-export const DemographicsDataSchema = DemographicsSchema.extend({
+const DemographicsDataSchema = DemographicsSchema.extend({
   medianAge: z.number().nullable().optional(),
   dependencyRatio: z.number().nullable().optional(),
   birthRate: z.number().nullable().optional(),
@@ -493,7 +493,7 @@ export type StorytellerEffect = {
   countryId: string;
 };
 
-export type SectoralOutput = {
+type SectoralOutput = {
   year: number;
   agriculture: number;
   industry: number;
@@ -502,7 +502,7 @@ export type SectoralOutput = {
   totalGDP: number;
 };
 
-export type PolicyEffect = {
+type PolicyEffect = {
   id: string;
   name: string;
   description: string;

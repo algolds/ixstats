@@ -19,14 +19,14 @@ interface WikiMatch {
   confidence: number; // 0-1 based on name similarity
 }
 
-export interface WikiScanResult {
+interface WikiScanResult {
   featureId: string;
   featureName: string;
   featureType: string;
   suggestions: WikiMatch[];
 }
 
-export interface WikiConflict {
+interface WikiConflict {
   featureId: string;
   featureName: string;
   field: string;

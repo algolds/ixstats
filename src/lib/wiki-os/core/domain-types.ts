@@ -11,7 +11,7 @@
 
 export type ArticleId = string & { readonly __brand: unique symbol };
 export type RevisionId = string & { readonly __brand: unique symbol };
-export type ArticleSlug = string & { readonly __brand: unique symbol };
+type ArticleSlug = string & { readonly __brand: unique symbol };
 export const toArticleSlug = (slug: string): ArticleSlug =>
   slug.trim().toLowerCase().replace(/ /g, "_").replace(/_{2,}/g, "_") as ArticleSlug;
 
@@ -33,7 +33,7 @@ export const parseRevisionRef = (ref: string): { mwRevId: number } | { id: strin
 // Structured Block AST
 // ---------------------------------------------------------------------------
 
-export type WikiBlock =
+type WikiBlock =
   | ParagraphBlock
   | HeadingBlock
   | InfoboxBlock
@@ -135,8 +135,8 @@ interface ExternalLinkInline {
 // Article Payloads & Entities
 // ---------------------------------------------------------------------------
 
-export type WikiContentFormat = "STRUCTURED_JSON" | "MARKDOWN" | "WIKITEXT" | "HTML";
-export type WikiArticleStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED" | "PROTECTED";
+type WikiContentFormat = "STRUCTURED_JSON" | "MARKDOWN" | "WIKITEXT" | "HTML";
+type WikiArticleStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED" | "PROTECTED";
 
 export interface SaveArticleInput {
   slug: string;

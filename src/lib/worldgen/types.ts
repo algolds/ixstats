@@ -24,7 +24,7 @@ export interface PackedGraph {
   burgs: Burg[];
 }
 
-export interface CellData {
+interface CellData {
   /** Number of cells */
   n: number;
   /** Cell center coordinates: flat [x0,y0, x1,y1, ...] in WGS84 [-180,180]×[-90,90] */
@@ -66,7 +66,7 @@ export interface CellData {
 // Entity Types
 // ──────────────────────────────────────────────
 
-export interface Feature {
+interface Feature {
   id: number;
   type: "ocean" | "land" | "lake";
   /** Number of cells in this feature */
@@ -94,7 +94,7 @@ export interface River {
   length: number;
 }
 
-export interface State {
+interface State {
   id: number;
   name: string;
   /** Hex color for map display */
@@ -113,7 +113,7 @@ export interface State {
   continent: string;
 }
 
-export interface Culture {
+interface Culture {
   id: number;
   name: string;
   /** Language family ID from language-families.ts */
@@ -124,7 +124,7 @@ export interface Culture {
   cellCount: number;
 }
 
-export interface Burg {
+interface Burg {
   id: number;
   name: string;
   /** Cell ID where this burg is located */
@@ -209,7 +209,7 @@ export interface GeneratedWorld {
   graph?: PackedGraph;
 }
 
-export interface WorldStats {
+interface WorldStats {
   landPercentage: number;
   countryCount: number;
   riverCount: number;
@@ -224,7 +224,7 @@ export interface WorldStats {
   cellCount: number;
 }
 
-export type GenerationStage =
+type GenerationStage =
   | "mesh"
   | "template"
   | "heightmap"

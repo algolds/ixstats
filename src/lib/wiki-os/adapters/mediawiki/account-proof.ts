@@ -100,7 +100,7 @@ const RevisionsSchema = z.object({
 /** How many user page revisions saved since a code was issued the proof reads; more is a truncated window (F-6). */
 const USER_PAGE_REVISION_WINDOW = 20;
 
-export interface UserPageRevision {
+interface UserPageRevision {
   /** null when the revision's content is hidden (revision-deleted). */
   content: string | null;
   /** Normalised; null when the author is hidden. */

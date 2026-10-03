@@ -175,7 +175,7 @@ export interface BudgetAllocation {
   department: GovernmentDepartment;
 }
 
-export interface SubBudgetCategory {
+interface SubBudgetCategory {
   id: string;
   departmentId: string;
   name: string;
@@ -205,7 +205,7 @@ export interface RevenueSource {
   updatedAt: Date;
 }
 
-export interface KeyPerformanceIndicator {
+interface KeyPerformanceIndicator {
   id: string;
   name: string;
   description?: string;

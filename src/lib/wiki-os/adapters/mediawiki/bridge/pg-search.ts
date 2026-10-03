@@ -25,7 +25,7 @@ export async function ixwikiSearch(query: string, limit: number = 10): Promise<W
   }
 }
 
-export interface FullTextSearchResult {
+interface FullTextSearchResult {
   results: Array<{
     title: string;
     namespace: number;

@@ -32,7 +32,7 @@ type EffectsMap = Map<string, StorytellerEffect[]>;
 
 // ─── Inputs (a Prisma SportMatch loaded with SIM_MATCH_INCLUDE satisfies these) ───
 
-export type SimPlayer = {
+type SimPlayer = {
   id: string;
   firstName: string;
   lastName: string;

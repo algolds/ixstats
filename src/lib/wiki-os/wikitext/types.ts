@@ -52,8 +52,6 @@ export type {
   WikiParameter,
   TemplateClassification,
   Diagnostic,
-  WikiSourceSpan,
-  ParseState,
   WikiHeadingBlock,
   MediaBlock,
   WikiTableBlock,

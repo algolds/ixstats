@@ -184,21 +184,6 @@ export interface EconomicConfig {
 }
 
 // System configuration
-export interface IxStatsConfig {
-  economic: EconomicConfig;
-  timeSettings: {
-    baselineYear: number;
-    currentIxTimeMultiplier: number;
-    updateIntervalSeconds: number;
-  };
-  displaySettings: {
-    defaultCurrency: string;
-    numberFormat: string;
-    showHistoricalData: boolean;
-    chartTimeRange: number;
-  };
-}
-
 // Global economic snapshot
 // Bot time response types
 export interface BotTimeResponse {
@@ -240,7 +225,7 @@ interface DerivedBotDisplayStatus extends BotTimeResponse {
   uptime?: number;
 }
 
-export interface IxTimeState {
+interface IxTimeState {
   currentRealTime: string;
   currentIxTime: string;
   formattedIxTime: string;
@@ -311,7 +296,6 @@ export interface ImportAnalysis {
 // oxlint-disable-next-line typescript/no-unused-vars
 // Theme types
 // Utility types
-export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 // Database model types (matching Prisma schema)
 export interface Country {
   id: string;
@@ -372,7 +356,7 @@ export {
 } from "~/lib/tier-utils";
 
 // Define explicit types for complex fields
-export interface CalculatedStats {
+interface CalculatedStats {
   gdpGrowth: number;
   populationGrowth: number;
   inflation: number;
@@ -381,14 +365,14 @@ export interface CalculatedStats {
   // Add more fields as needed
 }
 
-export interface Projection {
+interface Projection {
   year: number;
   gdp: number;
   population: number;
   // Add more fields as needed
 }
 
-export interface HistoricalData {
+interface HistoricalData {
   year: number;
   gdp: number;
   population: number;
@@ -404,29 +388,29 @@ export interface StorytellerEffectRecord {
   timestamp: Date;
 }
 
-export interface EconomicProfile {
+interface EconomicProfile {
   sectorBreakdown: Record<string, number>;
   // Add more fields as needed
 }
 
-export interface LaborMarket {
+interface LaborMarket {
   employmentRate: number;
   unemploymentRate: number;
   // Add more fields as needed
 }
 
-export interface FiscalSystem {
+interface FiscalSystem {
   taxRates: Record<string, number>;
   // Add more fields as needed
 }
 
-export interface IncomeDistribution {
+interface IncomeDistribution {
   quintiles: number[];
   economicClasses?: string | any[];
   // Add more fields as needed
 }
 
-export interface GovernmentBudget {
+interface GovernmentBudget {
   total: number;
   categories: Record<string, number>;
   spendingCategories?: string | any[];
@@ -434,7 +418,7 @@ export interface GovernmentBudget {
 }
 
 // National Identity (database relation)
-export interface NationalIdentity {
+interface NationalIdentity {
   countryName?: string | null;
   officialName?: string | null;
   governmentType?: string | null;
@@ -484,7 +468,7 @@ export interface NationalIdentity {
   coatOfArmsUrl?: string | null;
 }
 
-export interface Demographics {
+interface Demographics {
   ageDistribution: Record<string, number>;
   regions?: string | any[];
   educationLevels?: string | any[];
@@ -492,7 +476,7 @@ export interface Demographics {
   // Add more fields as needed
 }
 
-export interface TierChangeProjection {
+interface TierChangeProjection {
   year: number;
   newTier: string;
   // Add more fields as needed

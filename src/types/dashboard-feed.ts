@@ -60,10 +60,10 @@ interface ForumFeedItem extends BaseFeedItem {
   content?: ActivityContent;
 }
 
-export type UnifiedFeedItemType =
+type UnifiedFeedItemType =
   ActivityFeedItem | ThinkpagesFeedItem | WikiFeedItem | ForumFeedItem;
 
-export interface GroupedActivityItem extends BaseFeedItem {
+interface GroupedActivityItem extends BaseFeedItem {
   source: "activity";
   content?: ActivityContent;
   _grouped?: boolean;

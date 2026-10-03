@@ -17,7 +17,7 @@ export type ParseState = "complete" | "incomplete";
 
 // ─── Inline Text & Marks ───────────────────────────────────────────────────
 
-export interface WikiTextMark {
+interface WikiTextMark {
   bold?: boolean;
   italic?: boolean;
   underline?: boolean;

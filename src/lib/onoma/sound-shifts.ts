@@ -17,7 +17,7 @@ export interface SoundShiftEpoch {
   rules: SoundShiftRule[];
 }
 
-export interface EvolutionStep {
+interface EvolutionStep {
   epochName: string;
   ruleDescription: string;
   before: string;

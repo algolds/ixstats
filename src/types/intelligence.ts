@@ -11,7 +11,7 @@ export type { Country } from "./ixstats";
 type TrendDirection = StandardTrend;
 // ─── 1. Intelligence Metrics & Base Items ───────────────────────────────────
 
-export interface IntelligenceMetric {
+interface IntelligenceMetric {
   id: string;
   label: string;
   value: number | string;

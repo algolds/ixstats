@@ -50,8 +50,6 @@ export interface CoreEconomicIndicators {
   giniCoefficient?: number;
 }
 
-export type CoreIndicatorsData = CoreEconomicIndicators;
-
 export interface NationalIdentityData {
   countryName: string;
   officialName: string;
@@ -119,7 +117,7 @@ export interface LaborEmploymentData {
   wageGrowthRate?: number;
 }
 
-export interface TaxRates {
+interface TaxRates {
   personalIncomeTaxRates: { bracket: number; rate: number }[];
   corporateTaxRates: { size: string; rate: number }[];
   salesTaxRate: number;
@@ -189,7 +187,7 @@ export interface EducationLevel {
   color: string;
 }
 
-export interface CitizenshipStatus {
+interface CitizenshipStatus {
   status: string;
   percent: number;
   color: string;
@@ -207,7 +205,7 @@ export interface DemographicData {
   populationGrowthRate: number;
 }
 
-export interface GeographyData {
+interface GeographyData {
   continent?: string;
   region?: string;
 }

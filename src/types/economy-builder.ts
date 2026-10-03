@@ -29,7 +29,7 @@ export interface EconomyBuilderState {
   version: string;
 }
 
-export interface EconomyStructure {
+interface EconomyStructure {
   economicModel: string;
   primarySectors: string[];
   secondarySectors: string[];
@@ -41,7 +41,7 @@ export interface EconomyStructure {
   sectors?: SectorConfiguration[];
 }
 
-export interface EconomyBuilderErrors {
+interface EconomyBuilderErrors {
   structure?: string[];
   sectors?: { [key: string]: string[] };
   labor?: string[];

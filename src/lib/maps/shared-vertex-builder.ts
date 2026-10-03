@@ -12,7 +12,7 @@ import type { Position, Polygon, MultiPolygon } from "geojson";
 import { getAllRings } from "./border-editor";
 import { type TopologyRef } from "./topology-engine";
 
-export type FeatureVertexRef = TopologyRef;
+type FeatureVertexRef = TopologyRef;
 
 export interface SharedVertexData {
   lng: number;

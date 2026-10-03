@@ -24,10 +24,10 @@ export type TRPCUtils = ReturnType<typeof import("~/trpc/react").api.useUtils>;
  * - `analytics`— independent data layer drawn by an overlay component;
  *                combinable; usually default-off.
  */
-export type OverlayCategory = "fill" | "feature" | "analytics";
+type OverlayCategory = "fill" | "feature" | "analytics";
 
 /** Context handed to fetchers / availability gates. */
-export interface OverlayFetchCtx {
+interface OverlayFetchCtx {
   focusedCountryId?: string;
   zoom: number;
 }

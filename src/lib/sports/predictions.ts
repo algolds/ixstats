@@ -2,7 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import { IxTime } from "../ixtime";
 import { exchangeService } from "~/lib/vault/exchange-service";
 
-export type PredictionOutcome = "home" | "away" | "draw";
+type PredictionOutcome = "home" | "away" | "draw";
 
 /** Stake bounds (whole Sovereigns) for a single prediction. */
 export const MIN_PREDICTION_STAKE = 1;

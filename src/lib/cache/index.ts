@@ -9,8 +9,6 @@ export * from "./rate-limiter";
 export * from "./advanced-cache-system";
 export {
   type CacheType,
-  type CacheMetadata,
-  CACHE_TTL,
   externalApiCache,
 } from "./external-api-cache";
 export * from "./trpc-cache";

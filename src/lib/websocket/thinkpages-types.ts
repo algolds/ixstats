@@ -31,7 +31,7 @@ export interface MessageUpdate {
   readBy?: string[];
 }
 
-export interface GroupUpdate {
+interface GroupUpdate {
   id: string;
   type: "group:created" | "group:updated" | "group:deleted" | "member:joined" | "member:left";
   groupId: string;
@@ -40,7 +40,7 @@ export interface GroupUpdate {
   timestamp: number;
 }
 
-export interface ConversationUpdate {
+interface ConversationUpdate {
   id: string;
   type: "conversation:created" | "conversation:updated" | "conversation:deleted";
   conversationId: string;

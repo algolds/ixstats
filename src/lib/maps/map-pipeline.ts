@@ -17,7 +17,7 @@ import { getZoneByColor } from "./elevation-config";
 // Types
 // ──────────────────────────────────────────────
 
-export type PipelineSource = "svg" | "png" | "procedural";
+type PipelineSource = "svg" | "png" | "procedural";
 
 export interface PipelineInput {
   source: PipelineSource;

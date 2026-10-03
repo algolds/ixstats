@@ -230,7 +230,6 @@ export {
   type IntentLike,
   type IssueLike,
   type PublicDirective,
-  type PublicDirectiveStatus,
   type PublicIssueOutcome,
 } from "~/lib/country/public-record";
 

@@ -1,14 +1,14 @@
 import { type PrismaClient } from "@prisma/client";
 import { Cache } from "~/lib/cache";
 
-export interface VaultEffectPerks {
+interface VaultEffectPerks {
   cardCapacity?: number;
   yieldBoost?: number;
   loreTokens?: number;
   [key: string]: unknown;
 }
 
-export interface VaultEffectItem {
+interface VaultEffectItem {
   perks?: VaultEffectPerks;
   [key: string]: unknown;
 }

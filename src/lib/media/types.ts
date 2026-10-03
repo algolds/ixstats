@@ -1,13 +1,13 @@
-export type MediaType =
+type MediaType =
   "MUSIC" | "SPEECH" | "LANGUAGE" | "RADIO" | "PODCAST" | "NARRATION" | "AMBIENT";
 
-export interface Chapter {
+interface Chapter {
   title: string;
   startTime: number;
   endTime: number;
 }
 
-export interface TranscriptSegment {
+interface TranscriptSegment {
   startTime: number;
   endTime: number;
   text: string;

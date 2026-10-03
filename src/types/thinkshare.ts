@@ -30,7 +30,7 @@ export interface ThinkShareClientState {
 /**
  * Typing indicator for real-time collaboration
  */
-export interface TypingIndicator {
+interface TypingIndicator {
   /** Unique identifier for this typing indicator */
   id: string;
 
@@ -63,7 +63,7 @@ interface ThinkShareAccount {
 /**
  * ThinkShare conversation participant
  */
-export interface ThinkShareParticipant {
+interface ThinkShareParticipant {
   id: string;
   accountId: string;
   account: ThinkShareAccount;
@@ -77,7 +77,7 @@ export interface ThinkShareParticipant {
 /**
  * ThinkShare message
  */
-export interface ThinkShareMessage {
+interface ThinkShareMessage {
   id: string;
   conversationId: string;
   accountId: string;

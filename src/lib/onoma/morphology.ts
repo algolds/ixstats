@@ -3,7 +3,7 @@
 
 import { MarkovChain } from "./markov-chain";
 
-export type GrammaticalGender = "masculine" | "feminine" | "neuter" | "common";
+type GrammaticalGender = "masculine" | "feminine" | "neuter" | "common";
 
 interface DeclensionCase {
   singular: string;
@@ -12,7 +12,7 @@ interface DeclensionCase {
   descriptionPlural: string;
 }
 
-export interface DeclensionTable {
+interface DeclensionTable {
   nominative: DeclensionCase;
   genitive: DeclensionCase;
   accusative: DeclensionCase;

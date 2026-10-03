@@ -82,10 +82,10 @@ import {
 export type NavIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
 /** `data-app` tint keys (tokens.css). Omitted = the default (indigo) tint. */
-export type AppTint =
+type AppTint =
   "admin" | "mycountry" | "intel" | "maps" | "thinkpages" | "vault" | "forum" | "wiki" | "sports";
 
-export type AppId =
+type AppId =
   | "home"
   | "mycountry"
   | "maps"
@@ -110,7 +110,7 @@ export interface NavigationVisibilitySettings {
   showHelpTab?: boolean;
 }
 
-export interface AppSection {
+interface AppSection {
   id: string;
   label: string;
   /** A real route, optionally with a query (`/settings?tab=appearance`). */

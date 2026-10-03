@@ -21,7 +21,7 @@
 
 // ─── Directives ─────────────────────────────────────────────────────────────
 
-export type PublicDirectiveStatus = "active" | "completed";
+type PublicDirectiveStatus = "active" | "completed";
 
 /** Statuses a visitor may see: declared (in force) and completed. */
 export const PUBLIC_DIRECTIVE_STATUSES: readonly PublicDirectiveStatus[] = ["active", "completed"];

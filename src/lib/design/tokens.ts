@@ -100,7 +100,7 @@ export const SYSTEM_COLORS = {
   gray: { light: "#6b7280", dark: "#9ca3af" },
 } as const satisfies Record<string, Record<Appearance, string>>;
 
-export type SystemColor = keyof typeof SYSTEM_COLORS;
+type SystemColor = keyof typeof SYSTEM_COLORS;
 
 /** `on-<system colour>` text colour, same for every hue. */
 export const ON_SYSTEM_COLOR = { light: "#ffffff", dark: "#0b0c0f" } as const;

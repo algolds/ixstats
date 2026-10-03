@@ -87,7 +87,7 @@ export interface POIFormData {
   storylineId?: string;
 }
 
-export type StoryPinCategory =
+type StoryPinCategory =
   | "battle"
   | "founding"
   | "treaty"
@@ -103,7 +103,7 @@ export type StoryPinCategory =
   | "linguistic"
   | "upheaval";
 
-export type MapLabelType =
+type MapLabelType =
   | "mountain_range"
   | "strait"
   | "bay"

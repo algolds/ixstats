@@ -235,7 +235,7 @@ export function getVehiclePositionAtTime(
   return path[0] ?? null;
 }
 
-export interface GeoJSONFeatureLike {
+interface GeoJSONFeatureLike {
   id?: string | number;
   properties?: {
     id?: string | number;

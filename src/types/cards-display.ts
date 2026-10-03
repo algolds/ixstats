@@ -7,14 +7,14 @@
 import type { CardRarity, CardType } from "@prisma/client";
 import type { CardStatDef } from "~/lib/cards/stat-config";
 
-export interface ArtworkVariants {
+interface ArtworkVariants {
   holographicUrl?: string;
   foilUrl?: string;
   altArtUrl?: string;
   [key: string]: unknown;
 }
 
-export interface CardStatsData {
+interface CardStatsData {
   economic?: number;
   diplomatic?: number;
   military?: number;
@@ -22,7 +22,7 @@ export interface CardStatsData {
   [statKey: string]: number | undefined;
 }
 
-export interface CardEnhancementsData {
+interface CardEnhancementsData {
   level?: number;
   statBoosts?: Record<string, number>;
   customBorder?: string;
@@ -39,7 +39,7 @@ export interface CardAuthorInfo {
   [key: string]: unknown;
 }
 
-export interface LoreCardMetadata {
+interface LoreCardMetadata {
   category?: string;
   subcategory?: string;
   source?: string;
@@ -157,16 +157,6 @@ export interface FormattedStats {
   specials: FormattedSpecialStatEntry[];
   level: number;
   totalBoost: number;
-}
-
-/**
- * Card filter options
- */
-export interface CardFilters {
-  season?: number;
-  rarity?: CardRarity;
-  type?: CardType;
-  search?: string;
 }
 
 /**

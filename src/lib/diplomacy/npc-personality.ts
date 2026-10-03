@@ -32,7 +32,7 @@ import type {
  * 8 core personality traits that define NPC country behavior
  * All traits are measured on a 0-100 scale
  */
-export interface PersonalityTraits {
+interface PersonalityTraits {
   /**
    * ASSERTIVENESS (0-100)
    * Willingness to take strong diplomatic stances and push for national interests
@@ -110,7 +110,7 @@ export interface PersonalityTraits {
  * Personality archetype defining overall strategic approach
  * Each archetype has characteristic trait ranges
  */
-export type PersonalityArchetype =
+type PersonalityArchetype =
   | "aggressive_expansionist"
   | "peaceful_merchant"
   | "cautious_isolationist"

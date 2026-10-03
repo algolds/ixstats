@@ -27,7 +27,7 @@ interface MarketWSStats {
   startedAt: number;
 }
 
-class MarketWebSocketServerInstance {
+export class MarketWebSocketServerInstance {
   private wss: WebSocketServer;
   private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
   private messagesSent = 0;

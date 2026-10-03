@@ -11,7 +11,7 @@ import { getAllRings } from "./border-editor";
 
 // ── Types ──
 
-export type VertexKey = string & { readonly __brand: "VertexKey" };
+type VertexKey = string & { readonly __brand: "VertexKey" };
 
 export interface TopologyRef {
   featureId: string;

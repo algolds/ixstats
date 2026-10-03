@@ -22,9 +22,8 @@ export interface BaseIntelligence extends BaseEntity {
 
 // Standardized enums (replace all variants)
 export type StandardPriority = "critical" | "high" | "medium" | "low";
-export type StandardCategory =
+type StandardCategory =
   "economic" | "diplomatic" | "social" | "governance" | "security" | "infrastructure" | "crisis";
-export type StandardTimeframe = "immediate" | "short" | "medium" | "long";
 export type StandardTrend = "up" | "down" | "stable";
 
 // Icon reference type (standardized across system)

@@ -47,7 +47,7 @@ interface CulturalScenarioTemplate {
   tags: string[];
 }
 
-export interface ScenarioContext {
+interface ScenarioContext {
   exchangeId: string;
   exchangeType: string;
   country1: {
@@ -69,7 +69,7 @@ export interface ScenarioContext {
   economicTies: number; // 0-100
 }
 
-export interface ResponseOption {
+interface ResponseOption {
   id: string;
   label: string;
   description: string;
@@ -100,7 +100,7 @@ type CulturalScenarioRecentAction = Pick<
   "id" | "type" | "targetCountry" | "targetCountryId" | "timestamp" | "ixTimeTimestamp"
 >;
 
-export interface CulturalScenarioMetadata {
+interface CulturalScenarioMetadata {
   triggeredBy: string;
   relevanceScore: number;
   playerReputation?: CumulativeEffects;

@@ -42,7 +42,7 @@ interface CacheOptions {
   revalidationInterval?: number; // How often to check for updates (default: 7 days)
 }
 
-export interface CacheMetadata {
+interface CacheMetadata {
   lastFetched: string;
   contentHash?: string;
   apiCallCount?: number;
@@ -93,7 +93,7 @@ function generateContentHash(content: any): string {
 /**
  * Default cache TTL configurations (in milliseconds)
  */
-export const CACHE_TTL = {
+const CACHE_TTL = {
   // MediaWiki content (mostly static)
   INFOBOX: 7 * 24 * 60 * 60 * 1000, // 7 days
   WIKITEXT: 7 * 24 * 60 * 60 * 1000, // 7 days

@@ -15,7 +15,7 @@ export type { CountryInfobox };
  * Each section corresponds to a distinct topic or category of information
  * about a country (e.g., economy, government, history).
  */
-export interface WikiSection {
+interface WikiSection {
   /** Unique identifier for the section (e.g., 'economy', 'government', 'overview') */
   id: string;
 
