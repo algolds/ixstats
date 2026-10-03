@@ -1,3 +1,4 @@
+import type { LorewardEntry } from "@prisma/client";
 import { z } from "zod/v4";
 import {
   createTRPCRouter,
@@ -45,6 +46,23 @@ async function postToBot<T>(
   }
 }
 
+type WikiOsDaily = Awaited<ReturnType<typeof scoreDailyWikiOS>>;
+
+const botView = (entry: LorewardEntry | null) => ({
+  winner: entry?.winnerUser ?? null,
+  winnerPage: entry?.winnerPage ?? null,
+  score: entry?.winnerScore ?? null,
+  runnerUp: entry?.runnerUpUser ?? null,
+});
+
+const wikiosView = (result: WikiOsDaily) => ({
+  winner: result.winner?.user ?? null,
+  winnerPage: result.winner?.page ?? null,
+  score: result.winner?.finalScore ?? null,
+  runnerUp: result.runnerUp?.user ?? null,
+  breakdown: result.winner?.scoreBreakdown ?? null,
+});
+
 export const lorewardsAdminRouter = createTRPCRouter({
   /** Admin: trigger full sync from state file + OOL page. */
   triggerSync: adminProcedure.mutation(() => fullSync()),
@@ -58,8 +76,10 @@ export const lorewardsAdminRouter = createTRPCRouter({
       });
       const wikios = await scoreDailyWikiOS(input.date);
 
-      const winnersAgree = (botEntry?.winnerUser ?? null) === (wikios.winner?.user ?? null);
-      const runnerUpsAgree = (botEntry?.runnerUpUser ?? null) === (wikios.runnerUp?.user ?? null);
+      const bot = botView(botEntry);
+      const wikiosPick = wikiosView(wikios);
+      const winnersAgree = bot.winner === wikiosPick.winner;
+      const runnerUpsAgree = bot.runnerUp === wikiosPick.runnerUp;
       const candidates = wikios.candidates.map((c) => ({
         user: c.user,
         page: c.page,
@@ -67,10 +87,10 @@ export const lorewardsAdminRouter = createTRPCRouter({
         breakdown: c.scoreBreakdown,
       }));
       const wikiosFields = {
-        wikiosWinner: wikios.winner?.user ?? null,
-        wikiosWinnerPage: wikios.winner?.page ?? null,
-        wikiosWinnerScore: wikios.winner?.finalScore ?? null,
-        wikiosRunnerUp: wikios.runnerUp?.user ?? null,
+        wikiosWinner: wikiosPick.winner,
+        wikiosWinnerPage: wikiosPick.winnerPage,
+        wikiosWinnerScore: wikiosPick.score,
+        wikiosRunnerUp: wikiosPick.runnerUp,
         winnersAgree,
         runnerUpsAgree,
         wikiosCandidates: JSON.stringify(candidates),
@@ -80,10 +100,10 @@ export const lorewardsAdminRouter = createTRPCRouter({
         where: { date: input.date },
         create: {
           date: input.date,
-          botWinner: botEntry?.winnerUser ?? null,
-          botWinnerPage: botEntry?.winnerPage ?? null,
-          botWinnerScore: botEntry?.winnerScore ?? null,
-          botRunnerUp: botEntry?.runnerUpUser ?? null,
+          botWinner: bot.winner,
+          botWinnerPage: bot.winnerPage,
+          botWinnerScore: bot.score,
+          botRunnerUp: bot.runnerUp,
           botCandidates: botEntry?.metadata ?? null,
           ...wikiosFields,
         },
@@ -94,19 +114,8 @@ export const lorewardsAdminRouter = createTRPCRouter({
         date: input.date,
         winnersAgree,
         runnerUpsAgree,
-        bot: {
-          winner: botEntry?.winnerUser ?? null,
-          winnerPage: botEntry?.winnerPage ?? null,
-          score: botEntry?.winnerScore ?? null,
-          runnerUp: botEntry?.runnerUpUser ?? null,
-        },
-        wikios: {
-          winner: wikiosFields.wikiosWinner,
-          winnerPage: wikiosFields.wikiosWinnerPage,
-          score: wikiosFields.wikiosWinnerScore,
-          runnerUp: wikiosFields.wikiosRunnerUp,
-          breakdown: wikios.winner?.scoreBreakdown ?? null,
-        },
+        bot,
+        wikios: wikiosPick,
         candidates: candidates.slice(0, 5),
       };
     }),
