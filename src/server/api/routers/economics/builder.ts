@@ -1,23 +1,9 @@
 // SECURITY: All mutation endpoints validate country ownership
 
 import { z } from "zod";
+import { parseSectorBreakdown, type SectorRow } from "./_shared";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
-
-type SectorRow = Record<string, any>;
-
-function parseSectorBreakdown(json: string | null | undefined): SectorRow[] {
-  if (!json) return [];
-  try {
-    const parsed = JSON.parse(json);
-    return Array.isArray(parsed)
-      ? parsed.filter((x): x is SectorRow => x !== null && typeof x === "object")
-      : [];
-  } catch (e) {
-    console.error("[Economics Builder] Failed to parse sectorBreakdown:", e);
-    return [];
-  }
-}
 
 const sectorView = (s: SectorRow) => ({
   id: s.name.toLowerCase().replace(/\s+/g, "_"),
@@ -107,7 +93,10 @@ const economicsBuilderRouter = createTRPCRouter({
         250000000000;
 
       // Transform database data back to economy builder format
-      const sectorBreakdown = parseSectorBreakdown(country.economicProfile?.sectorBreakdown);
+      const sectorBreakdown = parseSectorBreakdown(
+        country.economicProfile?.sectorBreakdown,
+        "Economics Builder"
+      );
       const sectorNames = (category: string) =>
         sectorBreakdown.filter((s) => s.category === category).map((s) => s.name);
       const urban = country.urbanPopulationPercent || 50;
