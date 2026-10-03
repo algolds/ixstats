@@ -1,14 +1,3 @@
-/**
- * Geographic Map Router
- *
- * tRPC router for the IxEarth world map system.
- * Handles map layer data, country geometry, spatial queries,
- * and country-feature linking.
- *
- * Data source: PostgreSQL + PostGIS (map_layers table),
- * with file-based fallback for initial load.
- */
-
 import { z } from "zod";
 import {
   createTRPCRouter,
@@ -20,6 +9,7 @@ import { TRPCError } from "@trpc/server";
 import { GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { validatePointContainment } from "~/lib/maps/geo-validation";
+import { assertOwnCountry } from "../_owner";
 
 /** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
 const coordinatesSchema = z
@@ -28,15 +18,7 @@ const coordinatesSchema = z
     message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)",
   });
 
-// ──────────────────────────────────────────────
-// Router
-// ──────────────────────────────────────────────
-
 export const geoFeaturesLabelsRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // Map Labels — Custom styled text on the map
-  // ──────────────────────────────────────────────
-
   createMapLabel: standardMutationCountryOwnerProcedure
     .input(
       z.object({
@@ -70,10 +52,7 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
       await validatePointContainment(
         ctx.db as any,
         input.countryId,
@@ -142,10 +121,7 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
       const label = await ctx.db.mapLabel.findFirst({
         where: { id: input.labelId, countryId: input.countryId },
       });
@@ -174,10 +150,7 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
   deleteMapLabel: standardMutationCountryOwnerProcedure
     .input(z.object({ countryId: z.string(), labelId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
       const label = await ctx.db.mapLabel.findFirst({
         where: { id: input.labelId, countryId: input.countryId },
       });

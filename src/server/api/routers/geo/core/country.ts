@@ -239,10 +239,6 @@ export const countryProcedures = {
       };
     }),
 
-  // ──────────────────────────────────────────────
-  // Map Pipeline Endpoints
-  // ──────────────────────────────────────────────
-
   /**
    * Get shared vertices for a specific feature (used by border editor).
    */

@@ -1,29 +1,10 @@
-/**
- * Geographic Map Router
- *
- * tRPC router for the IxEarth world map system.
- * Handles map layer data, country geometry, spatial queries,
- * and country-feature linking.
- *
- * Data source: PostgreSQL + PostGIS (map_layers table),
- * with file-based fallback for initial load.
- */
-
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import type { FeatureCollection } from "geojson";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 
-// ──────────────────────────────────────────────
-// Router
-// ──────────────────────────────────────────────
-
 export const geoAdminUploadsRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // SVG Upload & Processing Pipeline
-  // ──────────────────────────────────────────────
-
   /** Process an uploaded SVG: parse paths, convert to GeoJSON, match countries */
   processSvgUpload: adminProcedure
     .input(z.object({ uploadId: z.string() }))
@@ -119,7 +100,7 @@ export const geoAdminUploadsRouter = createTRPCRouter({
             processingLog: result.log,
             processedAt: new Date(),
             svgMetadata: {
-              ...((upload.svgMetadata as Record<string, unknown>) ?? {}),
+              ...(upload.svgMetadata as Record<string, unknown> | null),
               diffSummary: diff.summary,
               preservedLinkages: diff.preservedLinkages,
             },

@@ -1,14 +1,3 @@
-/**
- * Geographic Map Router
- *
- * tRPC router for the IxEarth world map system.
- * Handles map layer data, country geometry, spatial queries,
- * and country-feature linking.
- *
- * Data source: PostgreSQL + PostGIS (map_layers table),
- * with file-based fallback for initial load.
- */
-
 import { z } from "zod";
 import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
@@ -28,16 +17,9 @@ const coordinatesSchema = z
   });
 
 import { syncGeographicDemographics } from "~/lib/country-geo/sync";
-
-// ──────────────────────────────────────────────
-// Router
-// ──────────────────────────────────────────────
+import { assertOwnCountry } from "../_owner";
 
 export const geoFeaturesCitiesRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // User map editor endpoints (country owners)
-  // ──────────────────────────────────────────────
-
   /**
    * Create a city within the user's country.
    * Auto-approved if the point is inside the country's borders.
@@ -58,10 +40,7 @@ export const geoFeaturesCitiesRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       // Verify ownership
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
       // Validate containment + collision + name uniqueness
       await validatePointContainment(
@@ -136,10 +115,7 @@ export const geoFeaturesCitiesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
       // Verify city belongs to country
       const city = await ctx.db.city.findFirst({
@@ -209,10 +185,7 @@ export const geoFeaturesCitiesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
       const city = await ctx.db.city.findFirst({
         where: { id: input.cityId, countryId: input.countryId },

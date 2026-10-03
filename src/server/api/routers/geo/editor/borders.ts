@@ -1,14 +1,3 @@
-/**
- * Geographic Map Router
- *
- * tRPC router for the IxEarth world map system.
- * Handles map layer data, country geometry, spatial queries,
- * and country-feature linking.
- *
- * Data source: PostgreSQL + PostGIS (map_layers table),
- * with file-based fallback for initial load.
- */
-
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
@@ -20,15 +9,7 @@ import { validateGeometryValid } from "~/lib/maps/geo-validation";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 
-// ──────────────────────────────────────────────
-// Router
-// ──────────────────────────────────────────────
-
 export const geoEditorBordersRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // Border Editor
-  // ──────────────────────────────────────────────
-
   /** Start a border editing session for a feature. Returns geometry + neighbor info. */
   startBorderEditSession: adminProcedure
     .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))

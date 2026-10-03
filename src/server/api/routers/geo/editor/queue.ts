@@ -1,14 +1,3 @@
-/**
- * Geographic Map Router
- *
- * tRPC router for the IxEarth world map system.
- * Handles map layer data, country geometry, spatial queries,
- * and country-feature linking.
- *
- * Data source: PostgreSQL + PostGIS (map_layers table),
- * with file-based fallback for initial load.
- */
-
 import { z } from "zod";
 import type { MapEditRequest, PrismaClient } from "@prisma/client";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";

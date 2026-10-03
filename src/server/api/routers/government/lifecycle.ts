@@ -21,9 +21,6 @@ async function writeGovernmentChildren(
   governmentStructureId: string,
   data: GovernmentBuilderData
 ) {
-  // ============================================================
-  // BATCH DEPARTMENT CREATION
-  // ============================================================
   const departmentIdMap = new Map<number, string>();
 
   if (data.departments.length > 0) {
@@ -88,9 +85,6 @@ async function writeGovernmentChildren(
     }
   }
 
-  // ============================================================
-  // BATCH BUDGET ALLOCATIONS (was N+1, now single createMany)
-  // ============================================================
   const allocationData = data.budgetAllocations
     .map((allocation) => {
       const departmentIndex = parseInt(allocation.departmentId);
@@ -112,9 +106,6 @@ async function writeGovernmentChildren(
     await tx.budgetAllocation.createMany({ data: allocationData });
   }
 
-  // ============================================================
-  // BATCH REVENUE SOURCES (was N+1, now single createMany)
-  // ============================================================
   if (data.revenueSources.length > 0) {
     const revenueData = data.revenueSources.map((revenueSource) => ({
       governmentStructureId,

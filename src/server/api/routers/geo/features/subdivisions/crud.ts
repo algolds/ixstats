@@ -6,6 +6,7 @@ import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { getTerrainForArea } from "~/lib/country-geo";
 import { clipAndValidatePolygon, checkNameUniqueness } from "~/lib/maps/geo-validation";
 import { syncGeographicDemographics } from "~/lib/country-geo/sync";
+import { assertOwnCountry } from "../../_owner";
 
 export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
   /**
@@ -25,10 +26,7 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
       // Validate containment + clip polygon to country borders
       const clippedGeometry = await clipAndValidatePolygon(
@@ -110,10 +108,7 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
       const sub = await ctx.db.subdivision.findFirst({
         where: { id: input.subdivisionId, countryId: input.countryId },
@@ -192,10 +187,7 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
       const sub = await ctx.db.subdivision.findFirst({
         where: { id: input.subdivisionId, countryId: input.countryId },

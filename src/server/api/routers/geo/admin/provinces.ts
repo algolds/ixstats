@@ -10,16 +10,7 @@ import { buildProvinceMergePlan } from "~/lib/maps/province-importer/merge-plan"
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "~/server/shared/layer-cache";
-
-/** Country owners may only import into their own country; admins (no `ctx.country`) may import anywhere. */
-function assertOwnCountry(country: { id: string } | null | undefined, countryId: string) {
-  if (country && country.id !== countryId) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "You can only import provinces for your own country",
-    });
-  }
-}
+import { assertOwnCountry } from "../_owner";
 
 /** SVG markup or base64 PNG for the import, from the upload record or the direct input. */
 async function resolveImportContent(
@@ -91,7 +82,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      assertOwnCountry(ctx.country as { id: string } | null, input.countryId);
+      assertOwnCountry(ctx, input.countryId, "import provinces for");
       const { svgContent, pngBase64 } = await resolveImportContent(ctx, input);
 
       // Get country border geometry (needed for both SVG and PNG paths)
@@ -176,7 +167,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      assertOwnCountry(ctx.country as { id: string } | null, input.countryId);
+      assertOwnCountry(ctx, input.countryId, "import provinces for");
 
       const userId = ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system";
 
@@ -351,13 +342,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
   getProvinceImportPreview: countryOwnerProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only preview your own country",
-        });
-      }
+      assertOwnCountry(ctx, input.countryId, "preview");
 
       const [subdivisions, mapLayer] = await Promise.all([
         ctx.db.subdivision.findMany({

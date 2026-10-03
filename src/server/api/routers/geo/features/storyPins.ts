@@ -1,14 +1,3 @@
-/**
- * Geographic Map Router
- *
- * tRPC router for the IxEarth world map system.
- * Handles map layer data, country geometry, spatial queries,
- * and country-feature linking.
- *
- * Data source: PostgreSQL + PostGIS (map_layers table),
- * with file-based fallback for initial load.
- */
-
 import { z } from "zod";
 import {
   createTRPCRouter,
@@ -20,6 +9,7 @@ import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { validatePointContainment, checkNameUniqueness } from "~/lib/maps/geo-validation";
+import { assertOwnCountry } from "../_owner";
 
 /** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
 const coordinatesSchema = z
@@ -28,15 +18,7 @@ const coordinatesSchema = z
     message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)",
   });
 
-// ──────────────────────────────────────────────
-// Router
-// ──────────────────────────────────────────────
-
 export const geoFeaturesStoryPinsRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // Story Pins — Narrative markers on the map
-  // ──────────────────────────────────────────────
-
   createStoryPin: standardMutationCountryOwnerProcedure
     .input(
       z.object({
@@ -73,10 +55,7 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
       await validatePointContainment(
         ctx.db as any,
         input.countryId,
@@ -172,10 +151,7 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
       const pin = await ctx.db.storyPin.findFirst({
         where: { id: input.pinId, countryId: input.countryId },
       });
@@ -227,10 +203,7 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
   deleteStoryPin: standardMutationCountryOwnerProcedure
     .input(z.object({ countryId: z.string(), pinId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
       const pin = await ctx.db.storyPin.findFirst({
         where: { id: input.pinId, countryId: input.countryId },
       });

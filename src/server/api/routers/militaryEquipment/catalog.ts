@@ -175,10 +175,6 @@ const PLAIN_FIELDS = [
 ] as const;
 
 export const militaryEquipmentCatalogRouter = createTRPCRouter({
-  // ==========================================
-  // PUBLIC ENDPOINTS
-  // ==========================================
-
   /**
    * Active catalog items as player equipment templates, plus the manufacturer list.
    * Falls back to the built-in data if the catalog can't be read.
@@ -211,9 +207,6 @@ export const militaryEquipmentCatalogRouter = createTRPCRouter({
       };
     }
   }),
-  // ==========================================
-  // ADMIN ENDPOINTS
-  // ==========================================
 
   /**
    * Admin: Get all catalog equipment including inactive items
