@@ -1,5 +1,6 @@
 import { MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
 import type { SourcelessLayer } from "./map-helpers";
+import type { ExpressionSpecification } from "maplibre-gl";
 
 type LayerOf<T extends SourcelessLayer["type"]> = Extract<SourcelessLayer, { type: T }>;
 type Filter = NonNullable<LayerOf<"circle">["filter"]>;
@@ -48,7 +49,7 @@ const labelPaint = (
 });
 
 const NO_FEATURE: Filter = ["==", ["get", "id"], ""];
-const featureTypeIs = (type: string): Filter => ["==", ["get", "featureType"], type];
+const featureTypeIs = (type: string): ExpressionSpecification => ["==", ["get", "featureType"], type];
 
 /** Translucent fill plus dashed outline, used by the gap / empty-region / lasso overlays. */
 function fillAndDashedStroke(
