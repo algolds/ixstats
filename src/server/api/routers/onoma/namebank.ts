@@ -3,7 +3,7 @@ import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
-import { requireWikiUserIds, type WikiAuthContext } from "~/lib/wiki-os/auth";
+import { requireWikiUserIds } from "~/lib/wiki-os/auth";
 import { ActivityGenerator } from "~/lib/activity";
 import {
   cleanRawValues,
@@ -11,6 +11,7 @@ import {
   mapStandaloneItemToEntry,
   parseStashItemNote,
 } from "./namebank-helpers";
+import { getOrCreateDefaultStash } from "~/server/shared/default-stash";
 
 const SaveToNameBankSchema = z.object({
   id: z.string().optional(),
@@ -36,8 +37,6 @@ const SaveToNameBankSchema = z.object({
 });
 type SaveToNameBankInput = z.infer<typeof SaveToNameBankSchema>;
 
-type NameBankCtx = { db: PrismaClient } & WikiAuthContext;
-
 const TRAINING_SOURCES = {
   country: {
     take: 100,
@@ -58,20 +57,6 @@ const TRAINING_SOURCES = {
       db.governmentOfficial.findMany({ select: { name: true }, take }),
   },
 };
-
-/** The caller's default stash folder, created on first use. */
-async function getOrCreateDefaultStash(ctx: NameBankCtx, userId: string) {
-  const existing = await ctx.db.stash.findFirst({
-    where: { userId: { in: requireWikiUserIds(ctx) }, isDefault: true },
-    orderBy: { createdAt: "asc" },
-  });
-  return (
-    existing ??
-    ctx.db.stash.create({
-      data: { userId, name: "My Stash", color: "#3b82f6", isDefault: true },
-    })
-  );
-}
 
 function assertOwnsStashItem(item: { stash: { userId: string } }, userId: string) {
   if (item.stash.userId !== userId) {
@@ -279,7 +264,7 @@ export const onomaNameBankRouter = createTRPCRouter({
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this stash" });
         }
       } else {
-        targetStashId = (await getOrCreateDefaultStash(ctx, userId)).id;
+        targetStashId = (await getOrCreateDefaultStash(ctx.db, requireWikiUserIds(ctx), userId)).id;
       }
 
       // 2. Serialize metadata into JSON note
@@ -422,7 +407,7 @@ export const onomaNameBankRouter = createTRPCRouter({
         });
       }
 
-      const defaultStash = await getOrCreateDefaultStash(ctx, userId);
+      const defaultStash = await getOrCreateDefaultStash(ctx.db, requireWikiUserIds(ctx), userId);
 
       const note = JSON.stringify({
         category: source.category,

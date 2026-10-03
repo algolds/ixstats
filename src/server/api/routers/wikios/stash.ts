@@ -10,6 +10,7 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { requireWikiUserId, requireWikiUserIds } from "~/lib/wiki-os/auth";
 
 import { db } from "~/server/db";
+import { getOrCreateDefaultStash } from "~/server/shared/default-stash";
 
 export const wikiosStashRouter = createTRPCRouter({
   /** Get all stashes for the current user with item counts. */
@@ -106,15 +107,7 @@ export const wikiosStashRouter = createTRPCRouter({
       const userIds = requireWikiUserIds(ctx);
       let stashId = input.stashId;
       if (!stashId) {
-        let defaultStash = await db.stash.findFirst({
-          where: { userId: { in: userIds }, isDefault: true },
-          orderBy: { createdAt: "asc" },
-        });
-        if (!defaultStash) {
-          defaultStash = await db.stash.create({
-            data: { userId, name: "My Stash", color: "#3b82f6", isDefault: true },
-          });
-        }
+        const defaultStash = await getOrCreateDefaultStash(db, userIds, userId);
         stashId = defaultStash.id;
       }
       const pageSlug = encodeURIComponent(input.pageTitle.replace(/ /g, "_"));
