@@ -7,6 +7,13 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { getRecentChanges as getWikiBridgeRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getForumActivity } from "~/server/modules/forum";
 import { globalCache } from "~/lib/cache";
+import {
+  activityFeedItem,
+  countryFeedUser,
+  mapFeedPoll,
+  thinkpagesFeedItem,
+  withViewerPollVotes,
+} from "./shared";
 
 // Input schemas
 const activityFilterSchema = z.object({
@@ -329,155 +336,16 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
             country = countryMap.get(activity.countryId);
           }
 
-          combinedActivities.push({
-            id: activity.id,
-            type: activity.type,
-            category: activity.category,
-            source: "activity",
-            user:
-              user ||
-              (country
-                ? {
-                    id: `country-${country.id}`,
-                    name: country.name,
-                    countryName: country.name,
-                    countryId: country.id,
-                    countryFlag: country.flag ?? null,
-                  }
-                : {
-                    id: "system",
-                    name: "IxStats System",
-                    countryFlag: null,
-                  }),
-            content: {
-              title: activity.title,
-              description: activity.description,
-              metadata,
-            },
-            poll: (activity as any).poll
-              ? {
-                  id: (activity as any).poll.id,
-                  question: (activity as any).poll.question,
-                  description: (activity as any).poll.description,
-                  pollType: (activity as any).poll.pollType,
-                  multiple: (activity as any).poll.multiple,
-                  isActive: (activity as any).poll.isActive,
-                  endDate: (activity as any).poll.endDate,
-                  options: (activity as any).poll.options.map((o: any) => ({
-                    id: o.id,
-                    label: o.label,
-                    description: o.description,
-                  })),
-                  votes: (() => {
-                    const v: Record<string, number> = {};
-                    (activity as any).poll.options.forEach((opt: any) => {
-                      v[opt.id] = opt._count.votes;
-                    });
-                    return v;
-                  })(),
-                  totalVotes: (activity as any).poll.options.reduce(
-                    (sum: number, o: any) => sum + o._count.votes,
-                    0
-                  ),
-                  hasVoted: false,
-                  userVotedOptionIds: [],
-                }
-              : null,
-            engagement: {
-              likes: activity.likes,
-              comments: activity.comments,
-              shares: activity.shares,
-              views: activity.views,
-            },
-            timestamp: activity.createdAt,
-            priority: activity.priority.toLowerCase(),
-            visibility: activity.visibility,
-            relatedCountries,
-          });
+          combinedActivities.push(
+            activityFeedItem(activity, user || countryFeedUser(country), metadata, relatedCountries)
+          );
         }
 
         // Transform ThinkPages posts
         for (const post of thinkpagesPosts as any[]) {
-          const cleanContent = post.content.replace(/\s*\[DiscordMsg:\d+\]\s*$/, "");
           combinedActivities.push({
-            id: `thinkpages-${post.id}`,
-            type: "social",
-            category: "social",
-            source: "thinkpages",
-            user: {
-              id: post.accountId,
-              name: `@${post.account.username}`,
-              countryName: post.account.country?.name,
-              countryId: post.account.country?.id,
-              countryFlag: post.account.country?.flag ?? null,
-            },
-            content: {
-              title: (() => {
-                const raw = cleanContent.replace(/\s+/g, " ").trim();
-                return raw.length ? raw : `@${post.account.username} · ThinkPages`;
-              })(),
-              description: cleanContent,
-              mediaAttachments: post.mediaAttachments.map((m: any) => ({
-                id: m.id,
-                url: m.url,
-                filename: m.filename,
-              })),
-              reactionCounts: (() => {
-                try {
-                  if (typeof post.reactionCounts === "string") {
-                    return JSON.parse(post.reactionCounts);
-                  }
-                  return post.reactionCounts || null;
-                } catch {
-                  return null;
-                }
-              })(),
-              metadata: {
-                accountType: post.account.accountType,
-                verified: post.account.verified,
-                trending: post.trending,
-                postType: "thinkpages",
-              },
-            },
-            poll: post.poll
-              ? {
-                  id: post.poll.id,
-                  question: post.poll.question,
-                  description: post.poll.description,
-                  pollType: post.poll.pollType,
-                  multiple: post.poll.multiple,
-                  isActive: post.poll.isActive,
-                  endDate: post.poll.endDate,
-                  options: post.poll.options.map((o: any) => ({
-                    id: o.id,
-                    label: o.label,
-                    description: o.description,
-                  })),
-                  votes: (() => {
-                    const v: Record<string, number> = {};
-                    post.poll.options.forEach((opt: any) => {
-                      v[opt.id] = opt._count?.votes ?? 0;
-                    });
-                    return v;
-                  })(),
-                  totalVotes: post.poll.options.reduce(
-                    (sum: number, o: any) => sum + (o._count?.votes ?? 0),
-                    0
-                  ),
-                  hasVoted: false,
-                  userVotedOptionIds: [],
-                }
-              : null,
-            engagement: {
-              likes: post.likeCount,
-              comments: post.replyCount,
-              shares: post.repostCount,
-              views: post.impressions,
-            },
-            timestamp: post.isAutoGenerated ? post.ixTimeTimestamp : post.createdAt,
-            priority: post.trending ? "high" : "medium",
-            visibility: post.visibility,
-            relatedCountries: post.account.country?.id ? [post.account.country.id] : [],
+            ...thinkpagesFeedItem(post),
+            poll: post.poll ? mapFeedPoll(post.poll) : null,
             rawPost: {
               ...post,
               hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],
@@ -603,39 +471,11 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
       const nextCursor =
         combinedActivities.length > input.limit ? combinedActivities[input.limit]?.id : undefined;
 
-      // Populate user-specific votes dynamically on the paginated slice
-      const pollIds = paginatedActivities
-        .filter((a) => a.poll && a.poll.id)
-        .map((a) => a.poll.id) as string[];
-      const userVotedPollOptionsMap = new Map<string, string[]>();
-      if (ctx.auth?.userId && pollIds.length > 0) {
-        const userVotes = await ctx.db.pollVote.findMany({
-          where: {
-            pollId: { in: pollIds },
-            userId: ctx.auth.userId,
-          },
-          select: { pollId: true, optionId: true },
-        });
-        for (const vote of userVotes) {
-          const list = userVotedPollOptionsMap.get(vote.pollId) || [];
-          list.push(vote.optionId);
-          userVotedPollOptionsMap.set(vote.pollId, list);
-        }
-      }
-
-      const activitiesWithVotes = paginatedActivities.map((act) => {
-        if (act.poll) {
-          return {
-            ...act,
-            poll: {
-              ...act.poll,
-              hasVoted: userVotedPollOptionsMap.has(act.poll.id),
-              userVotedOptionIds: userVotedPollOptionsMap.get(act.poll.id) || [],
-            },
-          };
-        }
-        return act;
-      });
+      const activitiesWithVotes = await withViewerPollVotes(
+        ctx.db,
+        ctx.auth?.userId,
+        paginatedActivities
+      );
 
       return {
         activities: activitiesWithVotes,
