@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Xmark as X, Plus, StatsReport as BarChart3, SystemRestart } from "iconoir-react";
+import { Xmark as X, Plus, SystemRestart } from "iconoir-react";
 import { ComparisonCharts } from "./charts/ComparisonCharts";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -15,7 +15,6 @@ import {
 } from "~/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { IxTime } from "~/lib/ixtime";
-import { formatCurrency, formatPopulation } from "~/lib/utils";
 import { useNotify } from "~/hooks/useNotify";
 import type { CountryWithEconomicData } from "~/types/ixstats";
 
@@ -196,8 +195,7 @@ export function CountryComparisonModal({
       <DialogContent className="max-h-[90vh] max-w-6xl overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-label flex items-center gap-2">
-            <BarChart3 aria-hidden="true" className="text-blue h-5 w-5" />
-            Compare Countries
+            Compare countries
           </DialogTitle>
         </DialogHeader>
 
@@ -208,7 +206,7 @@ export function CountryComparisonModal({
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" disabled={selectedCountries.length >= 8}>
                   <Plus aria-hidden="true" className="h-4 w-4" />
-                  Add Country ({selectedCountries.length}/8)
+                  Add country ({selectedCountries.length}/8)
                 </Button>
               </PopoverTrigger>
               <PopoverContent
@@ -227,7 +225,7 @@ export function CountryComparisonModal({
               >
                 <Command className="text-label bg-transparent">
                   <CommandInput
-                    placeholder="Search countries..."
+                    placeholder="Search countries"
                     value={searchValue}
                     onValueChange={setSearchValue}
                     className="bg-background text-label border-separator focus:border-border-primary"
@@ -271,7 +269,7 @@ export function CountryComparisonModal({
                   notify.success("All countries cleared from comparison");
                 }}
               >
-                Clear All
+                Clear all
               </Button>
             )}
           </div>
@@ -313,43 +311,6 @@ export function CountryComparisonModal({
             />
           </div>
 
-          {/* Summary Statistics */}
-          {selectedCountries.length > 0 && (
-            <div className="border-separator border-t pt-4">
-              <div className="grid grid-cols-2 gap-4 text-center sm:grid-cols-4">
-                <div>
-                  <p className="text-label-secondary text-body">Countries</p>
-                  <p className="text-title-3">{selectedCountries.length}</p>
-                </div>
-                <div>
-                  <p className="text-label-secondary text-body">Total Population</p>
-                  <p className="text-title-3">
-                    {formatPopulation(
-                      selectedCountries.reduce((sum, c) => sum + c.currentPopulation, 0)
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-label-secondary text-body">Total GDP</p>
-                  <p className="text-title-3">
-                    {formatCurrency(
-                      selectedCountries.reduce((sum, c) => sum + c.currentTotalGdp, 0)
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-label-secondary text-body">Avg GDP/Capita</p>
-                  <p className="text-title-3">
-                    {formatCurrency(
-                      selectedCountries.reduce((sum, c) => sum + c.currentGdpPerCapita, 0) /
-                        selectedCountries.length
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Action Buttons */}
           <div className="border-separator flex justify-end gap-2 border-t pt-4">
             <Button
@@ -369,7 +330,7 @@ export function CountryComparisonModal({
                 }}
                 className="bg-tint text-on-tint hover:bg-tint/90"
               >
-                View Details
+                View details
               </Button>
             )}
           </div>

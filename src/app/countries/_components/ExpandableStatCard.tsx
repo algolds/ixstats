@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Skeleton } from "~/components/ui/skeleton";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { HealthRing } from "~/components/ui/health-ring";
@@ -65,7 +64,7 @@ export function ExpandableStatCard({
         >
           <span className="flex w-full items-center gap-2">
             {icon}
-            <Eyebrow>{label}</Eyebrow>
+            <span className="text-stat-label text-label-secondary">{label}</span>
             <span className="text-label-secondary ml-auto" aria-hidden="true">
               {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </span>
@@ -86,7 +85,7 @@ export function ExpandableStatCard({
             >
               {type === "population" && (
                 <div className="text-label-secondary text-body">
-                  <div className="mb-2">Real-time population estimate:</div>
+                  <div className="mb-2">Current population estimate:</div>
                   <div className="text-label text-large-title mb-2 tabular-nums">
                     {typeof value === "number" ? (
                       <NumberFlowDisplay value={value} duration={1500} />
@@ -95,13 +94,13 @@ export function ExpandableStatCard({
                     )}
                   </div>
                   <div className="text-label-secondary text-footnote">
-                    This number updates as new data is imported.
+                    Updates when new data is imported.
                   </div>
                 </div>
               )}
               {type === "gdp" && (
                 <div className="space-y-2">
-                  <div className="text-label-secondary text-body mb-2">Top 3 countries by GDP:</div>
+                  <div className="text-label-secondary text-body mb-2">Top 3 countries by GDP</div>
                   <ol className="mb-2 space-y-1">
                     {topCountries.map((c, i) => (
                       <li key={c.name} className="flex items-center gap-2">
@@ -118,7 +117,7 @@ export function ExpandableStatCard({
                   <div className="mt-2 flex items-center gap-2">
                     <HealthRing value={gdpHealth} size={48} label="GDP Health" />
                     <span className="text-label-secondary text-footnote">
-                      General health based on top GDP
+                      Based on the largest GDP
                     </span>
                   </div>
                   <div className="text-label text-title-3 mt-2 tabular-nums">
@@ -139,7 +138,7 @@ export function ExpandableStatCard({
                 <div className="w-full">
                   <Accordion type="single" collapsible defaultValue="stats">
                     <AccordionItem value="stats">
-                      <AccordionTrigger>More Active Stats</AccordionTrigger>
+                      <AccordionTrigger>More active stats</AccordionTrigger>
                       <AccordionContent>
                         <div className="text-body space-y-2">
                           <div className="flex items-center gap-2">
@@ -162,12 +161,11 @@ export function ExpandableStatCard({
                           </div>
                           <div className="flex items-center gap-2">
                             <Users aria-hidden="true" className="text-label-secondary h-4 w-4" />
-                            <span>Avg Pop. Density: </span>
+                            <span>Avg population density: </span>
                             <span className="ml-auto font-semibold">
                               {Math.round(avgPopulationDensity)}/km²
                             </span>
                           </div>
-                          {/* Add more stats here as desired */}
                         </div>
                       </AccordionContent>
                     </AccordionItem>

@@ -45,8 +45,8 @@ const AREAS = [
   "app/settings/_components/SettingsSidebarNav.tsx",
 ];
 
-// The countries header and the ThinkPages account hub belong to the navigation-shell pass.
-const EXCLUDED = ["CountriesHeader.tsx", "ThinkPagesAccountHub.tsx"];
+// The ThinkPages account hub belongs to the navigation-shell pass.
+const EXCLUDED = ["ThinkPagesAccountHub.tsx"];
 
 function listFiles(target: string): string[] {
   const full = path.join(srcDir, target);

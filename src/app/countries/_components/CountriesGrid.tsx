@@ -76,8 +76,8 @@ export function CountriesGrid({
         <CardContent className="px-6">
           <p className="text-label-secondary text-body mx-auto max-w-md">
             {searchTerm
-              ? `Try adjusting "${searchTerm}" or clear filters.`
-              : "No data. Please upload via Admin Panel."}
+              ? `Nothing matches "${searchTerm}". Change the search or clear the filters.`
+              : "Add countries in the admin panel to list them here."}
           </p>
         </CardContent>
       </Card>

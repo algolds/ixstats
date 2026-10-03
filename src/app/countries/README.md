@@ -8,7 +8,7 @@ Public, read-only nation profiles plus the browse/explore experience. Anyone (si
 
 | Route | File | Purpose |
 | --- | --- | --- |
-| `/countries` | `page.tsx` | Explore grid: searchable/filterable/sortable list of all countries |
+| `/countries` | `page.tsx` | Country grid: searchable/filterable/sortable list of all countries |
 | `/countries/[slug]` | `[slug]/(profile)/page.tsx` | The country profile (`CommandProfileView`); legacy hash links (`#economy`, `#dossier`, …) move to their routes |
 | `/countries/[slug]/factbook` | `[slug]/(profile)/factbook/page.tsx` | Public Factbook overview (overview tab) |
 | `/countries/[slug]/factbook/economy` | `[slug]/(profile)/factbook/economy/page.tsx` | Factbook economy indicators & charts |
@@ -36,15 +36,15 @@ Legacy hash links on the bare profile URL (`#economy`, `#labor`, `#dossier`, `#a
 
 ### The Command view
 
-The Sovereign Command OS layout on real data, in Facet 3 (opaque `FacetCard` content, glass only for the dock):
+Opaque cards on real data; glass only for the bottom dock on phones:
 
-- **Hero** (`CountryHero`, from the original profile header): the cover banner as a photo band (landscape photo, flag, media-library image or none — the owner changes it with **Change cover**; saved per country on the device), the flag tile, the name in the display face with the owner's ribbons, the motto, capital and anthem, the realm and IxnayID strip (`CountryIdentityStrip`) and the headline figures. The hero is the Facet 3.1 glass hero (tint glow, refraction) and the flag also sits as the v2-strength corner watermark (`FlagWatermark`, brightening on hover), never as a full-width wash.
+- **Hero** (`CountryHero`): the cover banner as a photo band (landscape photo, flag, media-library image or none — the owner changes it with **Change cover**; saved per country on the device), the flag tile, the name in the display face with the owner's ribbons, the motto, capital and anthem, the realm and IxnayID strip (`CountryIdentityStrip`) and the headline figures.
 - **National pulse** (`PulseBanner`): a status (rapid expansion, stable and prosperous, consolidating, economic headwinds) from real GDP growth, population growth and stability, with the readings. Hidden without a GDP growth reading.
-- **Dock**: domains with a scroll-spy (side rail `material-regular` ≥1024px, sticky bottom bar below) and the sovereign tools (Compare, Factbook deep-dive, Economic modeling, Open on map, Wiki article).
-- **Country DNA** (`CountryDNA` + `DnaLegend`): a radar of the nation's World Census percentile per category, with the ranks as rows; **National condition** (`ConditionMatrix`): meters for the 0–100 readings the nation has (employment, approval, stability, literacy, urbanisation), each tile in its pillar hue (`facetAccentStyle` + `facet-retint`, so the icon, meter and radiance wash follow it) and named by icon and label, never by colour alone.
+- **Dock**: domains with a scroll-spy (opaque side rail ≥1024px, sticky bottom bar below) and the tools (Compare, Factbook, Economic modeling, Open on map, Wiki article).
+- **Country DNA** (`CountryDNA` + `DnaLegend`): a radar of the nation's World Census percentile per category, with the ranks as rows; **National condition** (`ConditionMatrix`): meters for the 0–100 readings the nation has (employment, approval, stability, literacy, urbanisation), each tile named by icon and label.
 - **Tiles**: territory (map, attributes, principal cities and regions), lore (prologue; "Read the story" opens every chapter), economy (figures + GDP trend), people, state (`StateStructure`: executive, legislative and judicial branches, system, ministries; election; directives and decisions), foreign affairs (`DiplomaticMatrix`: partners vs tensions, relation/treaty/embassy counts; embassies) and the chronicle.
 
-Pure derivations for these pieces live in `src/components/country-profile/derive.ts` (`pulseStatus`, `toDnaAxes`, `conditionPillars`, `stateBranches`, `diplomaticMatrix`) and are tested in `src/tests/app/countries/command-derive.test.ts`. Pieces of the old concept with no real data — defence readiness, trade balance, industrial sectors, peer benchmarks with fixed scores — are not shown.
+Pure derivations for these pieces live in `src/components/country-profile/derive.ts` (`pulseStatus`, `toDnaAxes`, `conditionPillars`, `stateBranches`, `diplomaticMatrix`) and are tested in `src/tests/app/countries/command-derive.test.ts`.
 
 **Reading style.** Lore uses the wiki Reading face (`--wikios-font-reading`, Geist Sans — the token `.wikios-article-content` reads) at a 38rem measure with 1.7 leading and a tinted drop cap in the National display face (`LoreProse`, `READING_STYLE`). Titles use Facet text styles; figures use tabular numerals. The unloaded Baskerville serif is not used (pinned in `facet-guards.test.ts`).
 

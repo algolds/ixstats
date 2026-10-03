@@ -14,8 +14,6 @@ import { tweenFast } from "~/lib/design/motion";
 interface CountriesStatsProps {
   countries: CountryCardData[];
   allCountries: CountryCardData[];
-  searchQuery: string;
-  filterBy: string;
   continentFilter: string | null;
   onContinentFilter: (continent: string | null) => void;
   onCountryClick: (countryId: string, countryName: string) => void;
@@ -24,8 +22,6 @@ interface CountriesStatsProps {
 export const CountriesStats: React.FC<CountriesStatsProps> = ({
   countries,
   allCountries,
-  searchQuery,
-  filterBy,
   continentFilter,
   onContinentFilter,
   onCountryClick,
@@ -108,7 +104,9 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
               <div className="flex items-center gap-3">
                 <Globe aria-hidden="true" className="text-label-secondary h-5 w-5 shrink-0" />
                 <div>
-                  <Eyebrow className="block">{continentFilter || "Countries"}</Eyebrow>
+                  <span className="text-stat-label text-label-secondary block">
+                    {continentFilter || "Countries"}
+                  </span>
                   <p className="text-label text-title-3 tabular-nums">
                     {totalCountries.toLocaleString()}
                   </p>
@@ -119,11 +117,11 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
           </PopoverTrigger>
           <PopoverContent className="w-64 p-0">
             <div className="p-3">
-              <Eyebrow className="mb-2 block">Filter by Continent</Eyebrow>
+              <Eyebrow className="mb-2 block">Filter by continent</Eyebrow>
               <FacetList variant="plain">
                 <FacetListSection aria-label="Continents">
                   <FacetRow
-                    title="All Continents"
+                    title="All continents"
                     accessory="check"
                     selected={!continentFilter}
                     onClick={() => onContinentFilter(null)}
@@ -165,7 +163,9 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
               <div className="flex items-center gap-3">
                 <Group aria-hidden="true" className="text-label-secondary h-5 w-5 shrink-0" />
                 <div>
-                  <Eyebrow className="block">Total Population</Eyebrow>
+                  <span className="text-stat-label text-label-secondary block">
+                    Total population
+                  </span>
                   <p className="text-label text-title-3 tabular-nums">
                     {formatPop(totalPopulation)}
                   </p>
@@ -176,11 +176,11 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
           </PopoverTrigger>
           <PopoverContent className="w-72 p-0">
             <div className="p-3">
-              <p className="text-label text-headline mb-0.5">Total Population</p>
+              <p className="text-label text-headline mb-0.5">Total population</p>
               <p className="text-label-secondary text-title-3 mb-3 tabular-nums">
                 {Math.round(totalPopulation).toLocaleString()}
               </p>
-              <Eyebrow className="mb-2 block">Top 5 by Population</Eyebrow>
+              <Eyebrow className="mb-2 block">Top 5 by population</Eyebrow>
               <FacetList variant="plain">
                 <FacetListSection aria-label="Top five">
                   {topByPopulation.map((c, i) => (
@@ -219,7 +219,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
               <div className="flex items-center gap-3">
                 <StatsReport aria-hidden="true" className="text-label-secondary h-5 w-5 shrink-0" />
                 <div>
-                  <Eyebrow className="block">Combined GDP</Eyebrow>
+                  <span className="text-stat-label text-label-secondary block">Combined GDP</span>
                   <p className="text-label text-title-3 tabular-nums">{formatShort(totalGDP)}</p>
                 </div>
               </div>
@@ -232,7 +232,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
               <p className="text-label-secondary text-title-3 mb-3 tabular-nums">
                 ${Math.round(totalGDP).toLocaleString()}
               </p>
-              <Eyebrow className="mb-2 block">Top 5 by Total GDP</Eyebrow>
+              <Eyebrow className="mb-2 block">Top 5 by total GDP</Eyebrow>
               <FacetList variant="plain">
                 <FacetListSection aria-label="Top five">
                   {topByGDP.map((c, i) => (
@@ -259,7 +259,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
         </Popover>
       </motion.div>
 
-      {/* Avg GDP per Capita — top 5 highest */}
+      {/* Avg GDP per capita — top 5 highest */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -271,7 +271,9 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
               <div className="flex items-center gap-3">
                 <Trophy aria-hidden="true" className="text-label-secondary h-5 w-5 shrink-0" />
                 <div>
-                  <Eyebrow className="block">Avg GDP/Capita</Eyebrow>
+                  <span className="text-stat-label text-label-secondary block">
+                    Avg GDP per capita
+                  </span>
                   <p className="text-label text-title-3 tabular-nums">
                     {formatShort(avgGDPPerCapita)}
                   </p>
@@ -282,11 +284,11 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
           </PopoverTrigger>
           <PopoverContent className="w-72 p-0">
             <div className="p-3">
-              <p className="text-label text-headline mb-0.5">Avg GDP per Capita</p>
+              <p className="text-label text-headline mb-0.5">Avg GDP per capita</p>
               <p className="text-label-secondary text-title-3 mb-3 tabular-nums">
                 ${Math.round(avgGDPPerCapita).toLocaleString()}
               </p>
-              <Eyebrow className="mb-2 block">Top 5 Highest</Eyebrow>
+              <Eyebrow className="mb-2 block">Top 5 highest</Eyebrow>
               <FacetList variant="plain">
                 <FacetListSection aria-label="Top five">
                   {topByGDPPerCapita.map((c, i) => (

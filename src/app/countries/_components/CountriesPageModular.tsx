@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { CountriesHeader } from "./CountriesHeader";
-import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
 import { CountriesFocusGridModular } from "./CountriesFocusGridModular";
 import { CountriesStats } from "./CountriesStats";
 import { type CountryCardData } from "~/components/mycountry/dossier/CountryFocusCard";
@@ -43,11 +42,11 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
 }) => {
   const [hovered, setHovered] = useState<number | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
-  const [sortBy, setSortBy] = useState<SortOption>("random");
+  const [sortBy] = useState<SortOption>("random");
   const [filterBy, setFilterBy] = useState<FilterOption>("all");
   const [visibleCount, setVisibleCount] = useState(12);
   const [searchInput, setSearchInput] = useState(searchQuery);
-  const [randomSeed, setRandomSeed] = useState(Date.now());
+  const [randomSeed] = useState(Date.now());
   const [continentFilter, setContinentFilter] = useState<string | null>(null);
   const [tierFilter, setTierFilter] = useState<TierFilter>("all");
 
@@ -59,12 +58,6 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
 
     return () => clearTimeout(timer);
   }, [searchInput, onSearchChange]);
-
-  // Reshuffle function
-  const handleReshuffle = useCallback(() => {
-    setRandomSeed(Date.now());
-    setSortBy("random");
-  }, []);
 
   const handleCountryClick = useCallback((countryId: string, countryName: string) => {
     const slug = countryName.replace(/\s+/g, "_");
@@ -153,7 +146,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
     return result;
   }, [countries, continentFilter, tierFilter, filterBy, searchQuery, sortBy, randomSeed]);
 
-  // I'm Feeling Lucky function
+  // Feeling lucky: open a random country from the current results
   const handleImFeelingLucky = useCallback(() => {
     if (processedCountries.length > 0) {
       const randomIndex = Math.floor(Math.random() * processedCountries.length);
@@ -219,9 +212,6 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   return (
     <div className="bg-background relative min-h-screen">
       <div className="relative z-10 container mx-auto px-4 pt-16 pb-8 sm:pt-20">
-        {/* Phone title under the new navigation shell (nothing with the flag off). */}
-        <ShellPageHeader title="Countries" className="px-0 pt-0 sm:px-0" />
-        {/* Unified Apple Control Panel with Search Bar & 4 Stat Cards */}
         <CountriesHeader
           searchInput={searchInput}
           onSearchChange={setSearchInput}
@@ -232,8 +222,6 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
           <CountriesStats
             countries={processedCountries}
             allCountries={countries}
-            searchQuery={searchQuery}
-            filterBy={filterBy}
             continentFilter={continentFilter}
             onContinentFilter={setContinentFilter}
             onCountryClick={handleCountryClick}
@@ -252,8 +240,6 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
           isLoading={isLoading}
           hasMore={hasMore}
           onLoadMore={loadMore}
-          searchInput={searchInput}
-          filterBy={filterBy}
           onClearFilters={handleClearFilters}
           viewerCountryId={viewerCountryId}
         />

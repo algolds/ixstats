@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from "react";
 import {
-  Calculator,
   StatUp as TrendingUp,
   StatsReport as BarChart3,
   Flash as Zap,
@@ -19,7 +18,7 @@ import {
   InfoCircle as Info,
   SystemRestart,
 } from "iconoir-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
@@ -167,7 +166,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
             ? "Good"
             : health.status === "fair"
               ? "Fair"
-              : "Needs Attention",
+              : "Needs attention",
       color:
         health.status === "excellent"
           ? "text-green"
@@ -233,18 +232,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-title-3 flex items-center gap-2">
-              <Calculator className="text-tint h-5 w-5" />
-              Economic Modeling Engine
-            </h3>
-            <p className="text-label-secondary text-body">
-              Build and simulate economic scenarios for {country.name}
-            </p>
-          </div>
-
+        <div className="flex items-center justify-end">
           <div className="flex items-center gap-2">
             <Button
               variant={model.editMode ? "default" : "outline"}
@@ -280,12 +268,11 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
               ) : (
                 <PlayCircle className="mr-1 h-4 w-4" />
               )}
-              {model.isSimulating ? "Simulating..." : "Run Simulation"}
+              {model.isSimulating ? "Simulating" : "Run simulation"}
             </Button>
           </div>
         </div>
 
-        {/* Model Health Status */}
         <Alert
           className={`border-l-4 ${
             modelHealthDisplay.color === "text-green"
@@ -300,7 +287,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
           <Activity className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between">
             <span>
-              Model Health:{" "}
+              Model health:{" "}
               <span className={`font-semibold ${modelHealthDisplay.color}`}>
                 {modelHealthDisplay.label}
               </span>
@@ -315,20 +302,19 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
                     : "destructive"
               }
             >
-              {model.projectedData.length} Year Forecast
+              {model.projectedData.length}-year forecast
             </Badge>
           </AlertDescription>
         </Alert>
 
-        {/* Quick Stats */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <Card className="flex flex-col gap-6 py-6">
             <CardContent className="p-4">
               <div className="space-y-1 text-center">
-                <div className="text-title-1 text-green">
+                <div className="text-title-1 text-label">
                   {formatPercentage(model.parameters.gdpGrowthRate)}
                 </div>
-                <div className="text-label-secondary text-footnote">GDP Growth</div>
+                <div className="text-label-secondary text-footnote">GDP growth</div>
               </div>
             </CardContent>
           </Card>
@@ -336,7 +322,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
           <Card className="flex flex-col gap-6 py-6">
             <CardContent className="p-4">
               <div className="space-y-1 text-center">
-                <div className="text-title-1 text-blue">
+                <div className="text-title-1 text-label">
                   {formatPercentage(model.parameters.inflationRate)}
                 </div>
                 <div className="text-label-secondary text-footnote">Inflation</div>
@@ -347,7 +333,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
           <Card className="flex flex-col gap-6 py-6">
             <CardContent className="p-4">
               <div className="space-y-1 text-center">
-                <div className="text-title-1 text-orange">
+                <div className="text-title-1 text-label">
                   {formatPercentage(model.parameters.unemploymentRate)}
                 </div>
                 <div className="text-label-secondary text-footnote">Unemployment</div>
@@ -358,8 +344,8 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
           <Card className="flex flex-col gap-6 py-6">
             <CardContent className="p-4">
               <div className="space-y-1 text-center">
-                <div className="text-title-1 text-purple">{model.parameters.projectionYears}</div>
-                <div className="text-label-secondary text-footnote">Years Forecast</div>
+                <div className="text-title-1 text-label">{model.parameters.projectionYears}</div>
+                <div className="text-label-secondary text-footnote">Years forecast</div>
               </div>
             </CardContent>
           </Card>
@@ -378,62 +364,59 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Settings className="h-5 w-5" />
-                  Core Economic Parameters
+                  Core parameters
                 </CardTitle>
-                <CardDescription>
-                  Set the fundamental economic variables for your model
-                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  {renderParameterInput("Base Year", "baseYear", model.parameters.baseYear)}
+                  {renderParameterInput("Base year", "baseYear", model.parameters.baseYear)}
                   {renderParameterInput(
-                    "Projection Years",
+                    "Projection years",
                     "projectionYears",
                     model.parameters.projectionYears
                   )}
                   {renderParameterInput(
-                    "GDP Growth Rate (%)",
+                    "GDP growth rate (%)",
                     "gdpGrowthRate",
                     model.parameters.gdpGrowthRate
                   )}
                   {renderParameterInput(
-                    "Inflation Rate (%)",
+                    "Inflation rate (%)",
                     "inflationRate",
                     model.parameters.inflationRate
                   )}
                   {renderParameterInput(
-                    "Unemployment Rate (%)",
+                    "Unemployment rate (%)",
                     "unemploymentRate",
                     model.parameters.unemploymentRate
                   )}
                   {renderParameterInput(
-                    "Interest Rate (%)",
+                    "Interest rate (%)",
                     "interestRate",
                     model.parameters.interestRate
                   )}
                   {renderParameterInput(
-                    "Exchange Rate (to USD)",
+                    "Exchange rate (to USD)",
                     "exchangeRate",
                     model.parameters.exchangeRate
                   )}
                   {renderParameterInput(
-                    "Population Growth Rate (%)",
+                    "Population growth rate (%)",
                     "populationGrowthRate",
                     model.parameters.populationGrowthRate
                   )}
                   {renderParameterInput(
-                    "Investment Rate (% of GDP)",
+                    "Investment rate (% of GDP)",
                     "investmentRate",
                     model.parameters.investmentRate
                   )}
                   {renderParameterInput(
-                    "Fiscal Balance (% of GDP)",
+                    "Fiscal balance (% of GDP)",
                     "fiscalBalance",
                     model.parameters.fiscalBalance
                   )}
                   {renderParameterInput(
-                    "Trade Balance (% of GDP)",
+                    "Trade balance (% of GDP)",
                     "tradeBalance",
                     model.parameters.tradeBalance
                   )}
@@ -447,11 +430,8 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
-                  Sectoral GDP Components
+                  Sectoral GDP components
                 </CardTitle>
-                <CardDescription>
-                  Define economic output by sector for baseline years
-                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
@@ -544,7 +524,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
 
                 {model.editMode && (
                   <Button onClick={model.addSectoralOutputYear} variant="outline" className="mt-4">
-                    <Plus className="mr-2 h-4 w-4" /> Add Year
+                    <Plus className="mr-2 h-4 w-4" /> Add year
                   </Button>
                 )}
               </CardContent>
@@ -556,11 +536,8 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Zap className="h-5 w-5" />
-                  Policy Effects Simulation
+                  Policy effects
                 </CardTitle>
-                <CardDescription>
-                  Model the impact of economic policies and external events
-                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {model.policyEffects.map((policy, index) => (
@@ -599,7 +576,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
                       </div>
 
                       <div>
-                        <Label className="text-body font-medium">Year Implemented</Label>
+                        <Label className="text-body font-medium">Year implemented</Label>
                         <Input
                           type="number"
                           value={policy.yearImplemented}
@@ -636,7 +613,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
                       </div>
 
                       <div>
-                        <Label className="text-body font-medium">Inflation Effect (%)</Label>
+                        <Label className="text-body font-medium">Inflation effect (%)</Label>
                         <Input
                           type="number"
                           value={policy.inflationEffectPercentage}
@@ -653,7 +630,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
                       </div>
 
                       <div>
-                        <Label className="text-body font-medium">Employment Effect (%)</Label>
+                        <Label className="text-body font-medium">Employment effect (%)</Label>
                         <Input
                           type="number"
                           value={policy.employmentEffectPercentage}
@@ -674,7 +651,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
 
                 {model.editMode && (
                   <Button onClick={model.addPolicyEffect} variant="outline">
-                    <Plus className="mr-2 h-4 w-4" /> Add Policy Scenario
+                    <Plus className="mr-2 h-4 w-4" /> Add policy scenario
                   </Button>
                 )}
               </CardContent>
@@ -686,11 +663,8 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5" />
-                  Economic Projections
+                  Projections
                 </CardTitle>
-                <CardDescription>
-                  Forecasted economic indicators based on your model parameters
-                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-[400px] w-full">
@@ -740,7 +714,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
                       <TableRow>
                         <TableHead>Year</TableHead>
                         <TableHead>GDP (Total)</TableHead>
-                        <TableHead>GDP per Capita</TableHead>
+                        <TableHead>GDP per capita</TableHead>
                         <TableHead>Inflation (%)</TableHead>
                         <TableHead>Unemployment (%)</TableHead>
                         <TableHead>Population</TableHead>
@@ -765,7 +739,6 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
           </TabsContent>
         </Tabs>
 
-        {/* Save Button */}
         <div className="flex justify-end gap-2">
           <Button onClick={model.saveModel} disabled={model.isLoading} size="lg">
             {model.isLoading ? (
@@ -773,15 +746,14 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
             ) : (
               <Save className="mr-2 h-4 w-4" />
             )}
-            Save Economic Model
+            Save model
           </Button>
         </div>
 
-        {/* Model Summary */}
         <Alert>
           <Info className="h-4 w-4" />
           <AlertDescription>
-            <div className="font-medium">Model Summary</div>
+            <div className="font-medium">Model summary</div>
             <p className="text-body mt-1">
               {model.parameters.projectionYears}-year economic model with{" "}
               {formatPercentage(model.parameters.gdpGrowthRate)} GDP growth,
