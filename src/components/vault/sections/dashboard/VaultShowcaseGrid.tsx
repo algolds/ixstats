@@ -17,8 +17,6 @@ interface VaultShowcaseGridProps {
   myAchievements?: Array<{ points?: number }>;
   leaderboard?: Array<{ countryId?: string }>;
   userCountryId?: string;
-  totalCards: number;
-  creditsBalance: number;
 }
 
 export function VaultShowcaseGrid({
@@ -31,8 +29,6 @@ export function VaultShowcaseGrid({
   myAchievements,
   leaderboard,
   userCountryId,
-  totalCards,
-  creditsBalance,
 }: VaultShowcaseGridProps) {
   return (
     <div className="facet-layout-sidebar-span-1 space-y-6">
@@ -92,13 +88,11 @@ export function VaultShowcaseGrid({
         onNavigate={onNavigate}
       />
 
-      {/* 2. Achievements & Vault Milestones */}
+      {/* 2. Achievements & rank */}
       <VaultMilestonesCard
         myAchievements={myAchievements}
         leaderboard={leaderboard}
         userCountryId={userCountryId}
-        totalCards={totalCards}
-        creditsBalance={creditsBalance}
       />
     </div>
   );

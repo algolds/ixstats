@@ -500,8 +500,8 @@ export function groupAchievements(achievements: any[] = []): GroupedAchievementI
     const currentTierIndex =
       unlockedCount > 0 ? Math.min(unlockedCount - 1, seriesAchievements.length - 1) : 0;
 
-    const totalSeriesPoints = seriesAchievements.reduce((s, a) => s + (a.points || 10), 0);
-    const earnedPoints = unlockedLevels.reduce((s, a) => s + (a.points || 10), 0);
+    const totalSeriesPoints = seriesAchievements.reduce((s, a) => s + (a.points ?? 0), 0);
+    const earnedPoints = unlockedLevels.reduce((s, a) => s + (a.points ?? 0), 0);
 
     results.push({
       isSeries: true,
@@ -536,8 +536,8 @@ export function groupAchievements(achievements: any[] = []): GroupedAchievementI
       activeAchievement: a,
       unlockedCount: a.isUnlocked ? 1 : 0,
       totalLevels: 1,
-      totalSeriesPoints: a.points || 10,
-      earnedPoints: a.isUnlocked ? a.points || 10 : 0,
+      totalSeriesPoints: a.points ?? 0,
+      earnedPoints: a.isUnlocked ? (a.points ?? 0) : 0,
       isComplete: !!a.isUnlocked,
       isUnlocked: !!a.isUnlocked,
     });

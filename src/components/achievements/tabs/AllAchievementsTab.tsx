@@ -122,7 +122,7 @@ function GroupedSeriesCard({
   const tier = getTrophyTier(activeLevel.rarity);
   const tierConfig = ACHIEVEMENT_TIER_CONFIG[tier];
   const TierIcon = tierConfig.icon;
-  const isUltraRare = (activeLevel.globalUnlockPercent || 100) < 5;
+  const isUltraRare = (activeLevel.globalUnlockPercent ?? 100) < 5;
   const categoryTheme = getCategoryTheme(item.category);
   const CategoryIcon = categoryTheme.icon;
   const rawIconPath =
@@ -311,7 +311,7 @@ function GroupedSeriesCard({
             )}
 
             <Badge variant="success" className="select-none">
-              {activeLevel.points || 10} pts
+              {activeLevel.points ?? 0} pts
             </Badge>
           </div>
 
