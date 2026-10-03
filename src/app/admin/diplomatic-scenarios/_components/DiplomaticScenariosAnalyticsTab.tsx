@@ -44,7 +44,7 @@ export function DiplomaticScenariosAnalyticsTab() {
     return <AnalyticsError subject="diplomatic scenarios" />;
   }
 
-  const topScenariosData = usageStats.byType
+  const topScenariosData = [...usageStats.byType]
     .sort((a, b) => b._count.id - a._count.id)
     .slice(0, 10)
     .map((item) => ({
