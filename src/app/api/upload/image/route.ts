@@ -12,14 +12,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
 import path from "path";
 import crypto from "crypto";
 import { rateLimiter } from "~/lib/cache";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-// oxlint-disable-next-line eslint/no-unused-vars
-const UPLOAD_RATE_LIMIT = 10; // Max uploads per minute per user
 
 // SECURITY: Only allow specific image types
 // Note: SVG support is limited due to XSS risks - consider removing if not needed
@@ -65,14 +62,12 @@ function sanitizeSvg(svgContent: string): string {
   return sanitized;
 }
 
-function generateSafeFileName(originalName: string, userId: string, fileType: string): string {
+function generateSafeFileName(originalName: string, userId: string): string {
   // Create a hash combining user ID and timestamp for uniqueness
   const hash = crypto
     .createHash("md5")
     .update(`${userId}-${Date.now()}-${originalName}`)
     .digest("hex");
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const extension = fileType.split("/")[1] || "png";
   const timestamp = Date.now();
   // Sanitize original name
   const safeName = originalName
@@ -94,20 +89,10 @@ export async function POST(request: NextRequest) {
     const rateLimitResult = await rateLimiter.check(userId, "file_upload");
     if (!rateLimitResult.success) {
       console.warn(`[SECURITY] Rate limit exceeded for file upload: userId=${userId}`);
+      const retryAfter = Math.ceil((rateLimitResult.resetAt.getTime() - Date.now()) / 1000);
       return NextResponse.json(
-        {
-          success: false,
-          error: "Rate limit exceeded. Please try again later.",
-          retryAfter: Math.ceil((rateLimitResult.resetAt.getTime() - Date.now()) / 1000),
-        },
-        {
-          status: 429,
-          headers: {
-            "Retry-After": String(
-              Math.ceil((rateLimitResult.resetAt.getTime() - Date.now()) / 1000)
-            ),
-          },
-        }
+        { success: false, error: "Rate limit exceeded. Please try again later.", retryAfter },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
       );
     }
 
@@ -132,25 +117,19 @@ export async function POST(request: NextRequest) {
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "File size exceeds 5MB limit",
-        },
+        { success: false, error: "File size exceeds 5MB limit" },
         { status: 400 }
       );
     }
 
     // Generate safe file name and ensure no directory traversal
-    const fileName = path.basename(generateSafeFileName(file.name, userId, file.type));
+    const fileName = path.basename(generateSafeFileName(file.name, userId));
 
     // Ensure uploads directory exists
     const uploadsDir =
       process.env.UPLOAD_DIR ||
       path.join(/*turbopackIgnore: true*/ process.cwd(), "public", "images", "uploads");
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
-      console.log(`[ImageUpload] Created directory: ${uploadsDir}`);
-    }
+    await mkdir(uploadsDir, { recursive: true });
 
     // Get file content
     const bytes = await file.arrayBuffer();
