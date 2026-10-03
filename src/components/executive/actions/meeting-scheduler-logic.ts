@@ -64,3 +64,15 @@ export function validateMeeting(form: {
   if (!form.signedIn) return "You must be signed in to schedule a meeting";
   return null;
 }
+
+/** Host and guest rosters merged into one list, each official labelled with their side. */
+export function mergeRosters(
+  host: Omit<RosterOfficial, "countryLabel">[] = [],
+  guest: Omit<RosterOfficial, "countryLabel">[] = [],
+  guestName?: string
+): RosterOfficial[] {
+  return [
+    ...host.map((o) => ({ ...o, countryLabel: "Internal" })),
+    ...guest.map((o) => ({ ...o, countryLabel: guestName || "Foreign" })),
+  ];
+}

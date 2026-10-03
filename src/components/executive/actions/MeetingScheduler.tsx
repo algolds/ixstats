@@ -18,10 +18,10 @@ import { useNotify } from "~/hooks/useNotify";
 import type { AgendaItem, MeetingSchedulerProps } from "./meeting-scheduler-types";
 import { INTENT_TEMPLATES } from "./meeting-scheduler-intents";
 import {
+  mergeRosters,
   officialIdsForTemplate,
   validateMeeting,
   presetScheduledTime,
-  type RosterOfficial,
   type TimePreset,
 } from "./meeting-scheduler-logic";
 import {
@@ -159,12 +159,11 @@ export function MeetingScheduler({
     setIsChangingIntent(false);
   }, [open, defaultMeeting, defaultTargetCountryId, handleSelectTemplate]);
 
-  // Host and guest rosters merged into one list.
-  const targetName = selectCountries?.find((c) => c.id === targetCountryId)?.name || "Foreign";
-  const allOfficials: RosterOfficial[] = [
-    ...(officials ?? []).map((o) => ({ ...o, countryLabel: "Internal" })),
-    ...(targetOfficials ?? []).map((o) => ({ ...o, countryLabel: targetName })),
-  ];
+  const allOfficials = mergeRosters(
+    officials,
+    targetOfficials,
+    selectCountries?.find((c) => c.id === targetCountryId)?.name
+  );
   const needsAttendees = allOfficials.length > 0 && selectedOfficials.length === 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
