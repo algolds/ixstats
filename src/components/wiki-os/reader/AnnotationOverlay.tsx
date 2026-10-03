@@ -2,7 +2,7 @@
 // High-performance DOM highlighter for WikiOS article text annotations.
 import { useEffect, useCallback, type RefObject } from "react";
 
-export interface AnnotationItem {
+interface AnnotationItem {
   id: string;
   selectedText: string;
   comment?: string | null;

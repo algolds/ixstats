@@ -13,14 +13,7 @@ import { withBasePath } from "~/lib/base-path";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { getWikiProfilePath } from "~/lib/wiki-os/profile-url";
-
-function getInitials(name: string): string {
-  const cleaned = name.trim().replace(/_/g, " ");
-  const parts = cleaned.split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
-  return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
-}
+import { getInitials } from "~/components/wiki-os/margin/shared/MarginUserAvatar";
 
 export function WikiOSProfileWidget({
   expanded,
