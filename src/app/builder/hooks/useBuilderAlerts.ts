@@ -70,6 +70,91 @@ function countAlerts(alerts: BuilderAlert[]): BuilderAlertCounts {
   return { error, warning, info, total: error + warning + info };
 }
 
+function identityAlerts(identity: NonNullable<UseBuilderAlertsInput["nationalIdentity"]>) {
+  const alerts: BuilderAlert[] = [];
+  if (!identity.countryName?.trim()) {
+    alerts.push({
+      severity: "error",
+      message: "Country name is required",
+      section: "identity",
+      field: "countryName",
+    });
+  }
+  if (!identity.capitalCity?.trim()) {
+    alerts.push({
+      severity: "warning",
+      message: "Capital city is not set",
+      section: "identity",
+      field: "capitalCity",
+    });
+  }
+  return alerts;
+}
+
+function governmentAlerts(
+  governmentStructure: NonNullable<UseBuilderAlertsInput["governmentStructure"]>,
+  nominalGDP: number
+): BuilderAlert[] {
+  // The pure helper for the GDP cap warning (the delta/currency baseline is not in the global
+  // context, so those stay inline-only in GovernmentStep).
+  const { gdpCapWarning } = computeGovernmentWarnings(governmentStructure, nominalGDP, null, null);
+  return gdpCapWarning
+    ? [
+        {
+          severity: "error",
+          message: gdpCapWarning,
+          section: "government",
+          tab: "spending",
+          field: "totalBudget",
+        },
+      ]
+    : [];
+}
+
+function economyAlerts(
+  economyBuilderState: EconomyBuilderState,
+  selectedEconomicComponents: EconomicComponentType[]
+): BuilderAlert[] {
+  const { messages, byTab } = validateEconomy(economyBuilderState, selectedEconomicComponents);
+  // Demographics share the labor tab in the economy UI.
+  const tabOf = (msg: (typeof messages)[number]) =>
+    byTab.sectors.includes(msg)
+      ? "sectors"
+      : byTab.labor.includes(msg) || byTab.demographics.includes(msg)
+        ? "labor"
+        : undefined;
+
+  return messages
+    .filter((msg) => msg.severity !== "success")
+    .map((msg) => ({
+      severity: msg.severity as "error" | "warning" | "info",
+      message: msg.message,
+      section: "economics",
+      tab: tabOf(msg),
+      field: msg.field,
+    }));
+}
+
+/** Tax validation errors, flattened from either a list or a keyed group of lists. */
+function taxAlerts(taxSystemData: TaxBuilderState): BuilderAlert[] {
+  const { isValid, errors } = validateTaxBuilderState(taxSystemData);
+  if (isValid) return [];
+
+  const messages = Object.values(errors).flatMap((value) => {
+    if (Array.isArray(value)) return value;
+    if (typeof value !== "object" || value === null) return [];
+    return Object.values(value as Record<string, unknown>).flatMap((group) =>
+      Array.isArray(group) ? group : [group]
+    );
+  });
+  return messages.map((err) => ({
+    severity: "error",
+    message: String(err),
+    section: "economics",
+    tab: "tax",
+  }));
+}
+
 export function useBuilderAlerts(input: UseBuilderAlertsInput): BuilderAlertResult {
   const {
     economyBuilderState,
@@ -81,104 +166,16 @@ export function useBuilderAlerts(input: UseBuilderAlertsInput): BuilderAlertResu
   } = input;
 
   return useMemo(() => {
-    const alerts: BuilderAlert[] = [];
-
-    if (nationalIdentity) {
-      if (!nationalIdentity.countryName?.trim()) {
-        alerts.push({
-          severity: "error",
-          message: "Country name is required",
-          section: "identity",
-          field: "countryName",
-        });
-      }
-      if (!nationalIdentity.capitalCity?.trim()) {
-        alerts.push({
-          severity: "warning",
-          message: "Capital city is not set",
-          section: "identity",
-          field: "capitalCity",
-        });
-      }
-    }
-
-    if (governmentStructure) {
-      // Use the pure helper for GDP cap warning (delta/currency baseline
-      // not available in global context — those stay inline-only in GovernmentStep)
-      const govWarnings = computeGovernmentWarnings(
-        governmentStructure,
-        nominalGDP,
-        null, // baseline budget not persisted to global state
-        null // baseline currency not persisted to global state
-      );
-
-      if (govWarnings.gdpCapWarning) {
-        alerts.push({
-          severity: "error",
-          message: govWarnings.gdpCapWarning,
-          section: "government",
-          tab: "spending",
-          field: "totalBudget",
-        });
-      }
-    }
-
-    if (economyBuilderState) {
-      const econValidation = validateEconomy(economyBuilderState, selectedEconomicComponents);
-
-      for (const msg of econValidation.messages) {
-        // Skip success messages — they're not alerts
-        if (msg.severity === "success") continue;
-
-        // Map byTab keys to economy sub-tabs
-        let tab: string | undefined;
-        if (econValidation.byTab.sectors.includes(msg)) tab = "sectors";
-        else if (econValidation.byTab.labor.includes(msg)) tab = "labor";
-        else if (econValidation.byTab.demographics.includes(msg)) tab = "labor"; // merged tab
-
-        alerts.push({
-          severity: msg.severity as "error" | "warning" | "info",
-          message: msg.message,
-          section: "economics",
-          tab,
-          field: msg.field,
-        });
-      }
-    }
-
-    if (taxSystemData) {
-      const taxValidation = validateTaxBuilderState(taxSystemData);
-      if (!taxValidation.isValid) {
-        // Flatten all tax errors into alerts
-        for (const [_key, value] of Object.entries(taxValidation.errors)) {
-          if (Array.isArray(value)) {
-            for (const err of value) {
-              alerts.push({
-                severity: "error",
-                message: String(err),
-                section: "economics",
-                tab: "tax",
-              });
-            }
-          } else if (typeof value === "object" && value !== null) {
-            for (const [_subKey, subErrors] of Object.entries(value as Record<string, unknown>)) {
-              const errList = Array.isArray(subErrors) ? subErrors : [subErrors];
-              for (const err of errList) {
-                alerts.push({
-                  severity: "error",
-                  message: String(err),
-                  section: "economics",
-                  tab: "tax",
-                });
-              }
-            }
-          }
-        }
-      }
-    }
+    const alerts: BuilderAlert[] = [
+      ...(nationalIdentity ? identityAlerts(nationalIdentity) : []),
+      ...(governmentStructure ? governmentAlerts(governmentStructure, nominalGDP) : []),
+      ...(economyBuilderState
+        ? economyAlerts(economyBuilderState, selectedEconomicComponents)
+        : []),
+      ...(taxSystemData ? taxAlerts(taxSystemData) : []),
+    ];
 
     const counts = countAlerts(alerts);
-
     const sectionCounts = {} as Record<BuilderSection, BuilderAlertCounts>;
     for (const s of ALL_SECTIONS) {
       const sectionAlerts = alerts.filter((a) => a.section === s);
