@@ -1,8 +1,49 @@
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { publicProcedure, cachedPublicProcedure, cachedStaticProcedure } from "~/server/api/trpc";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { TRPCError } from "@trpc/server";
 import { realmScopeInput, realmWhere, viewerRealmId } from "~/server/api/trpc/realm-scope";
+
+const MAP_SUMMARY_SELECT = {
+  id: true,
+  name: true,
+  slug: true,
+  flag: true,
+  continent: true,
+  region: true,
+  economicTier: true,
+  populationTier: true,
+  currentPopulation: true,
+  currentGdpPerCapita: true,
+  currentTotalGdp: true,
+  adjustedGdpGrowth: true,
+  landArea: true,
+  leader: true,
+  governmentType: true,
+  nationalIdentity: { select: { capitalCity: true } },
+} satisfies Prisma.CountrySelect;
+
+function mapSummary(c: Prisma.CountryGetPayload<{ select: typeof MAP_SUMMARY_SELECT }>) {
+  return {
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    flagUrl: normalizeFlagUrl(c.flag),
+    continent: c.continent,
+    region: c.region,
+    economicTier: c.economicTier,
+    populationTier: c.populationTier,
+    population: c.currentPopulation,
+    gdpPerCapita: c.currentGdpPerCapita,
+    totalGdp: c.currentTotalGdp,
+    gdpGrowth: c.adjustedGdpGrowth,
+    landArea: c.landArea,
+    leader: c.leader,
+    governmentType: c.governmentType,
+    capitalCity: c.nationalIdentity?.capitalCity ?? null,
+  };
+}
 
 export const listProcedures = {
   // Get simple list of countries for dropdowns
@@ -203,48 +244,10 @@ export const listProcedures = {
     .query(async ({ ctx, input }) => {
       const c = await ctx.db.country.findUnique({
         where: { id: input.countryId },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          flag: true,
-          continent: true,
-          region: true,
-          economicTier: true,
-          populationTier: true,
-          currentPopulation: true,
-          currentGdpPerCapita: true,
-          currentTotalGdp: true,
-          adjustedGdpGrowth: true,
-          landArea: true,
-          leader: true,
-          governmentType: true,
-          nationalIdentity: {
-            select: {
-              capitalCity: true,
-            },
-          },
-        },
+        select: MAP_SUMMARY_SELECT,
       });
       if (!c) throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
-      return {
-        id: c.id,
-        name: c.name,
-        slug: c.slug,
-        flagUrl: normalizeFlagUrl(c.flag),
-        continent: c.continent,
-        region: c.region,
-        economicTier: c.economicTier,
-        populationTier: c.populationTier,
-        population: c.currentPopulation,
-        gdpPerCapita: c.currentGdpPerCapita,
-        totalGdp: c.currentTotalGdp,
-        gdpGrowth: c.adjustedGdpGrowth,
-        landArea: c.landArea,
-        leader: c.leader,
-        governmentType: c.governmentType,
-        capitalCity: c.nationalIdentity?.capitalCity ?? null,
-      };
+      return mapSummary(c);
     }),
 
   /**
@@ -255,54 +258,14 @@ export const listProcedures = {
     .input(z.object({ countryIds: z.array(z.string()).max(200) }))
     .query(async ({ ctx, input }) => {
       const ids = input.countryIds.filter(Boolean);
-      if (ids.length === 0) return {};
-      const countries = await ctx.db.country.findMany({
-        where: { id: { in: ids } },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          flag: true,
-          continent: true,
-          region: true,
-          economicTier: true,
-          populationTier: true,
-          currentPopulation: true,
-          currentGdpPerCapita: true,
-          currentTotalGdp: true,
-          adjustedGdpGrowth: true,
-          landArea: true,
-          leader: true,
-          governmentType: true,
-          nationalIdentity: {
-            select: {
-              capitalCity: true,
-            },
-          },
-        },
-      });
-      const result: Record<string, any> = {};
-      for (const c of countries) {
-        result[c.id] = {
-          id: c.id,
-          name: c.name,
-          slug: c.slug,
-          flagUrl: normalizeFlagUrl(c.flag),
-          continent: c.continent,
-          region: c.region,
-          economicTier: c.economicTier,
-          populationTier: c.populationTier,
-          population: c.currentPopulation,
-          gdpPerCapita: c.currentGdpPerCapita,
-          totalGdp: c.currentTotalGdp,
-          gdpGrowth: c.adjustedGdpGrowth,
-          landArea: c.landArea,
-          leader: c.leader,
-          governmentType: c.governmentType,
-          capitalCity: c.nationalIdentity?.capitalCity ?? null,
-        };
-      }
-      return result;
+      const countries =
+        ids.length === 0
+          ? []
+          : await ctx.db.country.findMany({
+              where: { id: { in: ids } },
+              select: MAP_SUMMARY_SELECT,
+            });
+      return Object.fromEntries(countries.map((c) => [c.id, mapSummary(c)]));
     }),
 
   /**
