@@ -1,10 +1,5 @@
 "use client";
 
-/**
- * CountryInfoContent — Shared content between desktop panel and mobile sheet.
- * Renders the tab bar and tab bodies (Overview, Info, Geography).
- */
-
 import dynamic from "next/dynamic";
 import type { SelectedCountry } from "./IxWorldMap";
 import type { useCountryInfoPanelState } from "./hooks/useCountryInfoPanelState";
@@ -13,6 +8,7 @@ import { CountryInfoTab } from "./components/CountryInfoTab";
 import { UnclaimedTerritoryView } from "./components/UnclaimedTerritoryView";
 import { formatCompactCurrency, formatCompactNumber } from "~/lib/utils/format-utils";
 import { Skeleton } from "~/components/ui/skeleton";
+import { GeoProfileSkeleton } from "./components/GeoProfileSkeleton";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 
 const COUNTRY_TABS = [
@@ -22,16 +18,7 @@ const COUNTRY_TABS = [
 
 const GeoProfileContent = dynamic(
   () => import("./GeoProfileContent").then((m) => ({ default: m.GeoProfileContent })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="space-y-3 py-2" aria-busy="true" aria-label="Loading geography">
-        <Skeleton className="rounded-control h-24 w-full" />
-        <Skeleton className="h-4 w-2/3 rounded-xs" />
-        <Skeleton className="h-4 w-1/2 rounded-xs" />
-      </div>
-    ),
-  }
+  { ssr: false, loading: () => <GeoProfileSkeleton /> }
 );
 
 type PanelState = ReturnType<typeof useCountryInfoPanelState>;
@@ -51,7 +38,6 @@ export function CountryInfoContent({
 }: CountryInfoContentProps) {
   return (
     <>
-      {/* Tab bar */}
       <div className="border-separator shrink-0 border-b px-4 py-2">
         <SegmentedControl
           options={
@@ -67,7 +53,6 @@ export function CountryInfoContent({
         />
       </div>
 
-      {/* Body */}
       <div role="tabpanel" className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
         {state.activeTab === "info" ? (
           <CountryInfoTab
@@ -124,7 +109,6 @@ export function CountryInfoContent({
 export function CountryPeekContent({ state }: { state: PanelState }) {
   return (
     <div className="flex items-center gap-3">
-      {/* Flag */}
       {state.flagUrl ? (
         <img
           src={state.flagUrl}
@@ -135,7 +119,6 @@ export function CountryPeekContent({ state }: { state: PanelState }) {
         <div className="border-separator bg-fill-3 rounded-control-sm h-8 w-12 border" />
       )}
 
-      {/* Name + stats */}
       <div className="min-w-0 flex-1">
         <h3 className="text-label text-headline truncate">{state.displayName}</h3>
         {state.summary && (

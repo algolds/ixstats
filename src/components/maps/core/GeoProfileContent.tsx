@@ -30,7 +30,7 @@ import {
 } from "~/lib/worldgen/climate-system";
 import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { Skeleton } from "~/components/ui/skeleton";
+import { GeoProfileSkeleton } from "./components/GeoProfileSkeleton";
 import { Button } from "~/components/ui/button";
 import { Stat } from "~/components/ui/stat";
 import { Card } from "~/components/ui/card";
@@ -233,13 +233,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
   );
 
   if (isLoading) {
-    return (
-      <div className="space-y-3 py-2" aria-busy="true" aria-label="Loading geography">
-        <Skeleton className="rounded-control h-24 w-full" />
-        <Skeleton className="h-4 w-2/3 rounded-xs" />
-        <Skeleton className="h-4 w-1/2 rounded-xs" />
-      </div>
-    );
+    return <GeoProfileSkeleton />;
   }
 
   if (!profile) {
