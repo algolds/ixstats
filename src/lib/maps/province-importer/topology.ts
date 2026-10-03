@@ -18,10 +18,7 @@ import { kinks } from "@turf/kinks";
 import { union } from "@turf/union";
 import type { Feature, Polygon, MultiPolygon, Position } from "geojson";
 import type { ProvinceFeature, TopologyReport, GapReport, OverlapReport } from "./types";
-
-// ──────────────────────────────────────────────
-// Main Validation Entry Point
-// ──────────────────────────────────────────────
+import { boxDistanceSq, distanceDeg } from "./planar";
 
 /**
  * Validate the topology of imported provinces against a country border.
@@ -80,10 +77,6 @@ export function validateTopology(
   };
 }
 
-// ──────────────────────────────────────────────
-// Gap Detection
-// ──────────────────────────────────────────────
-
 /**
  * Detect gaps between provinces and the country border.
  * A gap is an area within the country that is not covered by any province.
@@ -98,8 +91,7 @@ function detectGaps(
     // Union all provinces
     const provincePolygons = provinces
       .filter((p) => p.included)
-      .map((p) => toTurfFeature(p.geometry))
-      .filter((f): f is Feature<Polygon | MultiPolygon> => f !== null);
+      .map((p) => makeFeature(p.geometry));
 
     if (provincePolygons.length === 0) return [];
 
@@ -116,8 +108,7 @@ function detectGaps(
     if (!unionGeom) return [];
 
     // Difference: country border minus province union = gaps
-    const countryFeature = toTurfFeature(countryBorder);
-    if (!countryFeature) return [];
+    const countryFeature = makeFeature(countryBorder);
 
     const diff = difference(featureCollection([countryFeature, unionGeom]));
 
@@ -148,10 +139,6 @@ function detectGaps(
   return gaps;
 }
 
-// ──────────────────────────────────────────────
-// Overlap Detection
-// ──────────────────────────────────────────────
-
 /**
  * Detect overlaps between pairs of provinces.
  * Pre-filters by bounding box for performance.
@@ -169,11 +156,9 @@ function detectOverlaps(provinces: ProvinceFeature[]): OverlapReport[] {
       if (!bboxOverlap(a.bbox, b.bbox)) continue;
 
       try {
-        const featA = toTurfFeature(a.geometry);
-        const featB = toTurfFeature(b.geometry);
-        if (!featA || !featB) continue;
-
-        const intersection = intersect(featureCollection([featA, featB]));
+        const intersection = intersect(
+          featureCollection([makeFeature(a.geometry), makeFeature(b.geometry)])
+        );
         if (!intersection || !intersection.geometry) continue;
 
         const areaSqKm = computeAreaSqKm(intersection.geometry as Polygon | MultiPolygon);
@@ -199,13 +184,6 @@ function detectOverlaps(provinces: ProvinceFeature[]): OverlapReport[] {
   return overlaps;
 }
 
-// ──────────────────────────────────────────────
-// Coverage Calculation
-// ──────────────────────────────────────────────
-// ──────────────────────────────────────────────
-// Auto-Fix Operations
-// ──────────────────────────────────────────────
-
 /**
  * Auto-fill small gaps by expanding the nearest province.
  * Only fills gaps below `maxGapAreaPercent` of the country area.
@@ -227,7 +205,7 @@ export function autoFillGaps(
     if (areaPercent >= 0.01) continue; // Skip gaps > 1% of country
 
     // Find nearest included province
-    const gapCentroid = centroid(toTurfFeature(gap.geometry)!);
+    const gapCentroid = centroid(makeFeature(gap.geometry));
     const gapCenter = gapCentroid.geometry.coordinates as Position;
 
     let nearestIdx = -1;
@@ -245,16 +223,11 @@ export function autoFillGaps(
     if (nearestIdx >= 0) {
       try {
         const province = result[nearestIdx]!;
-        const provFeat = toTurfFeature(province.geometry);
-        const gapFeat = toTurfFeature(gap.geometry);
-        if (provFeat && gapFeat) {
-          const merged = union(featureCollection([provFeat, gapFeat]));
-          if (merged && merged.geometry) {
-            result[nearestIdx] = {
-              ...province,
-              geometry: merged.geometry as Polygon | MultiPolygon,
-            };
-          }
+        const merged = union(
+          featureCollection([makeFeature(province.geometry), makeFeature(gap.geometry)])
+        );
+        if (merged?.geometry) {
+          result[nearestIdx] = { ...province, geometry: merged.geometry as Polygon | MultiPolygon };
         }
       } catch {
         // Skip if merge fails
@@ -290,16 +263,14 @@ export function resolveOverlaps(
     const loserIdx = areaA <= areaB ? idxA : idxB;
 
     try {
-      const loserFeat = toTurfFeature(result[loserIdx]!.geometry);
-      const overlapFeat = toTurfFeature(overlap.geometry);
-      if (loserFeat && overlapFeat) {
-        const diff = difference(featureCollection([loserFeat, overlapFeat]));
-        if (diff && diff.geometry) {
-          result[loserIdx] = {
-            ...result[loserIdx]!,
-            geometry: diff.geometry as Polygon | MultiPolygon,
-          };
-        }
+      const diff = difference(
+        featureCollection([makeFeature(result[loserIdx]!.geometry), makeFeature(overlap.geometry)])
+      );
+      if (diff?.geometry) {
+        result[loserIdx] = {
+          ...result[loserIdx]!,
+          geometry: diff.geometry as Polygon | MultiPolygon,
+        };
       }
     } catch {
       // Skip if difference fails
@@ -308,10 +279,6 @@ export function resolveOverlaps(
 
   return result;
 }
-
-// ──────────────────────────────────────────────
-// Simplification
-// ──────────────────────────────────────────────
 
 /**
  * Simplify province geometries using topology-preserving batch simplification.
@@ -346,18 +313,10 @@ export function simplifyProvinces(
   let simplifiedIdx = 0;
   return provinces.map((p) => {
     if (!p.included || !p.geometry) return p;
-    const simplified = result.features[simplifiedIdx];
-    simplifiedIdx++;
-    if (simplified?.geometry) {
-      return { ...p, geometry: simplified.geometry as Polygon | MultiPolygon };
-    }
-    return p;
+    const simplified = result.features[simplifiedIdx++];
+    return simplified?.geometry ? { ...p, geometry: simplified.geometry } : p;
   });
 }
-
-// ──────────────────────────────────────────────
-// Individual Feature Validation
-// ──────────────────────────────────────────────
 
 function validateIndividualFeatures(provinces: ProvinceFeature[]): TopologyReport["featureIssues"] {
   const issues: TopologyReport["featureIssues"] = [];
@@ -397,12 +356,9 @@ function validateIndividualFeatures(provinces: ProvinceFeature[]): TopologyRepor
 
     // Check self-intersection (basic check via turf)
     try {
-      const feature = toTurfFeature(p.geometry);
-      if (feature) {
-        const kinkResult = kinks(feature);
-        if (kinkResult.features.length > 0) {
-          featureIssues.push(`Self-intersecting geometry (${kinkResult.features.length} kinks)`);
-        }
+      const kinkCount = kinks(makeFeature(p.geometry)).features.length;
+      if (kinkCount > 0) {
+        featureIssues.push(`Self-intersecting geometry (${kinkCount} kinks)`);
       }
     } catch {
       // Skip kinks check if it fails
@@ -420,28 +376,14 @@ function validateIndividualFeatures(provinces: ProvinceFeature[]): TopologyRepor
   return issues;
 }
 
-// ──────────────────────────────────────────────
-// Internal Helpers
-// ──────────────────────────────────────────────
-
 /** Build a GeoJSON Feature wrapper — avoids reliance on turf.feature which can be tree-shaken away. */
 function makeFeature<G extends Polygon | MultiPolygon>(geometry: G): Feature<G> {
   return { type: "Feature", properties: {}, geometry };
 }
 
-function toTurfFeature(geometry: Polygon | MultiPolygon): Feature<Polygon | MultiPolygon> | null {
-  try {
-    return makeFeature(geometry);
-  } catch {
-    return null;
-  }
-}
-
 function computeAreaSqKm(geometry: Polygon | MultiPolygon): number {
   try {
-    const feat = toTurfFeature(geometry);
-    if (!feat) return 0;
-    return area(feat) / 1_000_000; // m² to km²
+    return area(makeFeature(geometry)) / 1_000_000; // m² to km²
   } catch {
     return 0;
   }
@@ -471,15 +413,10 @@ function findAdjacentProvinces(gapGeom: Polygon, provinces: ProvinceFeature[]): 
     if (!bboxOverlap(gapBbox, p.bbox)) continue;
 
     try {
-      const gapFeat = makeFeature(gapGeom);
-      const provFeat = toTurfFeature(p.geometry);
-      if (!provFeat) continue;
-
       // Check if they share any boundary (buffered check)
-      const buffered = buffer(gapFeat, 0.001, { units: "degrees" });
-      if (buffered) {
-        const intersection = intersect(featureCollection([buffered, provFeat]));
-        if (intersection) adjacent.push(p.name);
+      const buffered = buffer(makeFeature(gapGeom), 0.001, { units: "degrees" });
+      if (buffered && intersect(featureCollection([buffered, makeFeature(p.geometry)]))) {
+        adjacent.push(p.name);
       }
     } catch {
       // Skip
@@ -488,16 +425,6 @@ function findAdjacentProvinces(gapGeom: Polygon, provinces: ProvinceFeature[]): 
 
   return adjacent;
 }
-
-function distanceDeg(a: Position, b: Position): number {
-  const dx = a[0]! - b[0]!;
-  const dy = a[1]! - b[1]!;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
-// ──────────────────────────────────────────────
-// Border Conformance / Clipping
-// ──────────────────────────────────────────────
 
 export interface ConformanceResult {
   provinces: ProvinceFeature[];
@@ -636,69 +563,35 @@ export function clipGeometryToBorder(
   }
 }
 
-// ──────────────────────────────────────────────
-// Point Snapping & Boundary Constraints
-// ──────────────────────────────────────────────
+const polygonsOf = (polygon: Polygon | MultiPolygon): Position[][][] =>
+  polygon.type === "Polygon" ? [polygon.coordinates] : polygon.coordinates;
+
+const isValidPoint = (p: ArrayLike<number> | null | undefined): p is ArrayLike<number> =>
+  !!p && !isNaN(p[0]!) && !isNaN(p[1]!);
+
+/** Ray-casting test of a point against one ring; ring vertices with NaN coordinates are skipped. */
+function ringContains(ring: Position[], lng: number, lat: number): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const pi = ring[i];
+    const pj = ring[j];
+    if (!isValidPoint(pi) || !isValidPoint(pj)) continue;
+    const [xi, yi] = pi as [number, number];
+    const [xj, yj] = pj as [number, number];
+    if (yi > lat !== yj > lat && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
 
 /** Ray-casting point-in-polygon algorithm. Handles Polygons, MultiPolygons, and holes. */
 function isPointInPolygon(point: [number, number], polygon: Polygon | MultiPolygon): boolean {
-  if (!point || isNaN(point[0]) || isNaN(point[1])) return false;
+  if (!isValidPoint(point)) return false;
   const [lng, lat] = point;
-  const polys = polygon.type === "Polygon" ? [polygon.coordinates] : polygon.coordinates;
-
-  let inside = false;
-  for (const poly of polys) {
-    const ring = poly[0];
-    if (!ring) continue;
-
-    let ringInside = false;
-    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-      const pi = ring[i];
-      const pj = ring[j];
-      if (!pi || !pj || isNaN(pi[0]) || isNaN(pi[1]) || isNaN(pj[0]) || isNaN(pj[1])) continue;
-
-      const xi = pi[0],
-        yi = pi[1];
-      const xj = pj[0],
-        yj = pj[1];
-
-      // oxlint-disable-next-line eslint/no-shadow -- shadowed 'intersect' is intentional in this scope
-      const intersect = yi > lat !== yj > lat && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi;
-      if (intersect) ringInside = !ringInside;
-    }
-
-    if (ringInside) {
-      let insideHole = false;
-      for (let h = 1; h < poly.length; h++) {
-        const hole = poly[h];
-        if (!hole) continue;
-        let holeInside = false;
-        for (let i = 0, j = hole.length - 1; i < hole.length; j = i++) {
-          const pi = hole[i];
-          const pj = hole[j];
-          if (!pi || !pj || isNaN(pi[0]) || isNaN(pi[1]) || isNaN(pj[0]) || isNaN(pj[1])) continue;
-
-          const xi = pi[0],
-            yi = pi[1];
-          const xj = pj[0],
-            yj = pj[1];
-
-          // oxlint-disable-next-line eslint/no-shadow -- shadowed 'intersect' is intentional in this scope
-          const intersect =
-            yi > lat !== yj > lat && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi;
-          if (intersect) holeInside = !holeInside;
-        }
-        if (holeInside) {
-          insideHole = true;
-          break;
-        }
-      }
-      if (!insideHole) {
-        inside = true;
-      }
-    }
-  }
-  return inside;
+  return polygonsOf(polygon).some(([outer, ...holes]) => {
+    return (
+      !!outer && ringContains(outer, lng, lat) && !holes.some((h) => ringContains(h, lng, lat))
+    );
+  });
 }
 
 function closestPointOnSegment(
@@ -706,72 +599,41 @@ function closestPointOnSegment(
   a: [number, number],
   b: [number, number]
 ): [number, number] {
-  const [px, py] = p;
-  const [ax, ay] = a;
-  const [bx, by] = b;
-
-  const abx = bx - ax;
-  const aby = by - ay;
-  const apx = px - ax;
-  const apy = py - ay;
-
+  const abx = b[0] - a[0];
+  const aby = b[1] - a[1];
   const abLen2 = abx * abx + aby * aby;
   if (abLen2 === 0 || isNaN(abLen2)) return a;
 
-  let t = (apx * abx + apy * aby) / abLen2;
+  const t = ((p[0] - a[0]) * abx + (p[1] - a[1]) * aby) / abLen2;
   if (isNaN(t)) return a;
-  t = Math.max(0, Math.min(1, t));
+  const clamped = Math.max(0, Math.min(1, t));
 
-  return [ax + t * abx, ay + t * aby];
+  return [a[0] + clamped * abx, a[1] + clamped * aby];
 }
 
 export function findClosestPointOnBoundary(
   point: [number, number],
   polygon: Polygon | MultiPolygon
 ): [number, number] {
-  const polys = polygon.type === "Polygon" ? [polygon.coordinates] : polygon.coordinates;
-
   let closestPoint: [number, number] = point;
   let minDistance2 = Infinity;
+  const [px, py] = point;
 
-  const px = point[0];
-  const py = point[1];
-
-  for (const poly of polys) {
-    const ring = poly[0];
+  for (const [ring] of polygonsOf(polygon)) {
     if (!ring || ring.length < 2) continue;
 
     for (let i = 0; i < ring.length - 1; i++) {
       const a = ring[i];
       const b = ring[i + 1];
-      if (!a || !b || isNaN(a[0]) || isNaN(a[1]) || isNaN(b[0]) || isNaN(b[1])) continue;
+      if (!isValidPoint(a) || !isValidPoint(b)) continue;
 
-      // ponytail: bounding box filter to prune segment projection checks
-      const minX = Math.min(a[0], b[0]);
-      const maxX = Math.max(a[0], b[0]);
-      const minY = Math.min(a[1], b[1]);
-      const maxY = Math.max(a[1], b[1]);
-
-      let boxDx = 0;
-      if (px < minX) boxDx = minX - px;
-      else if (px > maxX) boxDx = px - maxX;
-
-      let boxDy = 0;
-      if (py < minY) boxDy = minY - py;
-      else if (py > maxY) boxDy = py - maxY;
-
-      const boxD2 = boxDx * boxDx + boxDy * boxDy;
-      if (boxD2 >= minDistance2) {
-        continue;
-      }
+      // Skip segments whose bounding box is already farther than the best so far
+      if (boxDistanceSq(px, py, a, b) >= minDistance2) continue;
 
       const cp = closestPointOnSegment(point, a as [number, number], b as [number, number]);
-      if (!cp || isNaN(cp[0]) || isNaN(cp[1])) continue;
+      if (!isValidPoint(cp)) continue;
 
-      const dx = px - cp[0];
-      const dy = py - cp[1];
-      const d2 = dx * dx + dy * dy;
-
+      const d2 = (px - cp[0]) ** 2 + (py - cp[1]) ** 2;
       if (!isNaN(d2) && d2 < minDistance2) {
         minDistance2 = d2;
         closestPoint = cp;
@@ -782,83 +644,61 @@ export function findClosestPointOnBoundary(
   return closestPoint;
 }
 
+/** Mean of the outer-ring vertices of every polygon. */
 function getCentroid(polygon: Polygon | MultiPolygon): [number, number] {
-  const polys = polygon.type === "Polygon" ? [polygon.coordinates] : polygon.coordinates;
-  let sumX = 0,
-    sumY = 0,
-    count = 0;
-  for (const poly of polys) {
-    const ring = poly[0];
-    if (!ring) continue;
-    for (const pt of ring) {
-      if (!pt || isNaN(pt[0]) || isNaN(pt[1])) continue;
-      sumX += pt[0]!;
-      sumY += pt[1]!;
-      count++;
-    }
-  }
-  return count > 0 ? [sumX / count, sumY / count] : [0, 0];
+  const pts = polygonsOf(polygon).flatMap(([ring]) => (ring ?? []).filter(isValidPoint));
+  if (pts.length === 0) return [0, 0];
+  return [
+    pts.reduce((sum, pt) => sum + pt[0]!, 0) / pts.length,
+    pts.reduce((sum, pt) => sum + pt[1]!, 0) / pts.length,
+  ];
 }
 
+const NUDGE_STEPS_DEG = [0.0001, 0.0002, 0.0005, 0.001];
+
+/**
+ * Snap a point into the country polygon: points already inside stay put; others move to the
+ * closest boundary point, nudged inward toward the nearest included province centroid.
+ */
 export function snapPointToCountryBorderJS(
   point: [number, number],
   polygon: Polygon | MultiPolygon,
   provinces: ProvinceFeature[],
   maxDistanceMeters = 10000
 ): [number, number] {
-  if (!point || isNaN(point[0]) || isNaN(point[1])) {
-    return point;
-  }
-
-  if (isPointInPolygon(point, polygon)) {
-    return point;
-  }
+  if (!isValidPoint(point) || isPointInPolygon(point, polygon)) return point;
 
   const closestPoint = findClosestPointOnBoundary(point, polygon);
-  if (!closestPoint || isNaN(closestPoint[0]) || isNaN(closestPoint[1])) {
-    return point;
-  }
+  if (!isValidPoint(closestPoint)) return point;
 
-  const dx = point[0] - closestPoint[0];
-  const dy = point[1] - closestPoint[1];
-  const distanceDegrees = Math.hypot(dx, dy);
-  const distanceMeters = distanceDegrees * 111000;
+  const distanceMeters =
+    Math.hypot(point[0] - closestPoint[0], point[1] - closestPoint[1]) * 111000;
+  if (distanceMeters > maxDistanceMeters) return closestPoint;
 
-  if (distanceMeters > maxDistanceMeters) {
-    return closestPoint;
-  }
-
-  let targetCentroid: [number, number] = closestPoint;
+  let targetCentroid: [number, number] | undefined;
   let minCentroidDist = Infinity;
   for (const p of provinces) {
-    if (!p.included || !p.centroid || isNaN(p.centroid[0]) || isNaN(p.centroid[1])) continue;
+    if (!p.included || !isValidPoint(p.centroid)) continue;
     const dist = Math.hypot(closestPoint[0] - p.centroid[0], closestPoint[1] - p.centroid[1]);
     if (dist < minCentroidDist) {
       minCentroidDist = dist;
       targetCentroid = p.centroid;
     }
   }
+  const target = targetCentroid ?? getCentroid(polygon);
+  if (!isValidPoint(target)) return closestPoint;
 
-  if (minCentroidDist === Infinity) {
-    targetCentroid = getCentroid(polygon);
-  }
-
-  if (!targetCentroid || isNaN(targetCentroid[0]) || isNaN(targetCentroid[1])) {
-    return closestPoint;
-  }
-
-  const vx = targetCentroid[0] - closestPoint[0];
-  const vy = targetCentroid[1] - closestPoint[1];
+  const vx = target[0] - closestPoint[0];
+  const vy = target[1] - closestPoint[1];
   const len = Math.hypot(vx, vy);
 
   if (len > 0 && !isNaN(len)) {
-    for (const nudgeAmount of [0.0001, 0.0002, 0.0005, 0.001]) {
-      const nx = closestPoint[0] + (vx / len) * nudgeAmount;
-      const ny = closestPoint[1] + (vy / len) * nudgeAmount;
-      const candidate: [number, number] = [nx, ny];
-      if (isPointInPolygon(candidate, polygon)) {
-        return candidate;
-      }
+    for (const nudgeAmount of NUDGE_STEPS_DEG) {
+      const candidate: [number, number] = [
+        closestPoint[0] + (vx / len) * nudgeAmount,
+        closestPoint[1] + (vy / len) * nudgeAmount,
+      ];
+      if (isPointInPolygon(candidate, polygon)) return candidate;
     }
   }
 
