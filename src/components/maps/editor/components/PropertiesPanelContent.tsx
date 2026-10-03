@@ -422,9 +422,7 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
     return (
       <FeatureInspector
         feature={editor.selectedFeature}
-        countryId={activeCountryId ?? undefined}
         allFeatures={editor.allFeatures}
-        countries={countries || availableCountries || []}
         onClose={() => {
           editor.setSelectedFeature(null);
           editor.setMode("view");

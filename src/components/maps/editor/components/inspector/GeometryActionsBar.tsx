@@ -9,8 +9,6 @@ import {
   Crown,
   SeaWaves as Waves,
   RefreshDouble as Reverse,
-  Magnet,
-  Maximize,
 } from "iconoir-react";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import { Card } from "~/components/ui/card";

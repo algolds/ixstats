@@ -1,13 +1,14 @@
 "use client";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import React, { useMemo, useState, useCallback, useEffect } from "react";
-import { Droplet, SeaWaves as Waves } from "iconoir-react";
+import React, { useMemo, useState, useEffect } from "react";
+import { Droplet } from "iconoir-react";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import { geometryAreaSqKm, geometryAreaSqMi, ringPerimeterKm } from "~/lib/maps/geo-math";
 import { calculateSimpleCentroid } from "~/lib/maps/map-utils";
 import { api } from "~/trpc/react";
 import type { Geometry } from "geojson";
 import { Card } from "~/components/ui/card";
+import { MetricCard, ReadoutRow, ReadoutTile } from "./InspectorPrimitives";
 
 interface LakeHydrologySectionProps {
   feature: EditorFeature;
@@ -16,16 +17,104 @@ interface LakeHydrologySectionProps {
   ) => Promise<void> | void;
 }
 
-function extractPolygonGeometry(geom: unknown): {
-  type: string;
-  coordinates: number[][][] | number[][][][];
-} | null {
-  if (!geom || typeof geom !== "object") return null;
-  const g = geom as { type?: string; coordinates?: unknown };
-  if ((g.type === "Polygon" || g.type === "MultiPolygon") && Array.isArray(g.coordinates)) {
-    return g as { type: string; coordinates: number[][][] | number[][][][] };
+type PolygonGeometry = { type: string; coordinates: number[][][] | number[][][][] };
+
+type Ring = [number, number][];
+
+const MORPHOLOGIES = [
+  { minSdi: 2.5, label: "Fjord / High Dendritic", tone: "text-yellow" },
+  { minSdi: 1.6, label: "Embayed / Irregular", tone: "text-cyan" },
+  { minSdi: -Infinity, label: "Sub-circular / Compact", tone: "text-green" },
+];
+
+function extractPolygonGeometry(geom: unknown): PolygonGeometry | null {
+  const g = geom as { type?: string; coordinates?: unknown } | null | undefined;
+  if (g && (g.type === "Polygon" || g.type === "MultiPolygon") && Array.isArray(g.coordinates)) {
+    return g as PolygonGeometry;
   }
   return null;
+}
+
+function shorelinePerimeterKm(geom: PolygonGeometry | null): number | null {
+  if (geom?.type === "Polygon") {
+    const [outer] = geom.coordinates as Ring[];
+    return outer ? ringPerimeterKm(outer) : null;
+  }
+  if (geom?.type === "MultiPolygon") {
+    return (geom.coordinates as Ring[][]).reduce(
+      (acc, [outer]) => acc + (outer ? ringPerimeterKm(outer) : 0),
+      0
+    );
+  }
+  return null;
+}
+
+/** Shoreline Development Index: L / (2 * sqrt(pi * A)). 1.0 is a perfect circle; above 2.0 is dendritic or fjord-like. */
+function shorelineDevelopmentIndex(perimeterKm: number | null, areaKm2: number | null) {
+  if (!perimeterKm || !areaKm2 || areaKm2 <= 0) return null;
+  const circularPerimeter = 2 * Math.sqrt(Math.PI * areaKm2);
+  return circularPerimeter > 0 ? perimeterKm / circularPerimeter : null;
+}
+
+function lakeGeometryStats(polyGeom: PolygonGeometry | null, storedAreaKm2: unknown) {
+  const areaKm2 = polyGeom
+    ? geometryAreaSqKm(polyGeom)
+    : typeof storedAreaKm2 === "number"
+      ? storedAreaKm2
+      : null;
+  const areaSqMi =
+    areaKm2 == null ? null : polyGeom ? geometryAreaSqMi(polyGeom) : areaKm2 / 2.58999;
+  const perimeterKm = shorelinePerimeterKm(polyGeom);
+  const sdi = shorelineDevelopmentIndex(perimeterKm, areaKm2);
+  const morphology = sdi == null ? null : MORPHOLOGIES.find((m) => sdi >= m.minSdi);
+  return { areaKm2, areaSqMi, perimeterKm, sdi, morphology };
+}
+
+/** Editable max-depth text buffer that re-syncs when the stored depth changes and commits on blur. */
+function useMaxDepthInput(
+  feature: EditorFeature,
+  onUpdateFeature: LakeHydrologySectionProps["onUpdateFeature"]
+) {
+  const rawDepth = feature.properties?.maxDepthM;
+  const currentDepth = typeof rawDepth === "number" ? rawDepth : null;
+  const [depthInput, setDepthInput] = useState(currentDepth == null ? "" : String(currentDepth));
+  useEffect(() => {
+    setDepthInput(currentDepth == null ? "" : String(currentDepth));
+  }, [currentDepth]);
+
+  const handleDepthBlur = () => {
+    const parsed = parseFloat(depthInput);
+    const valid = parsed > 0 ? parsed : null;
+    if (valid !== currentDepth) void onUpdateFeature?.({ maxDepthM: valid });
+  };
+
+  return {
+    depthInput,
+    setDepthInput,
+    handleDepthBlur,
+    parsedDepthM: parseFloat(depthInput) || currentDepth,
+  };
+}
+
+function useSurfaceSample(
+  polyGeom: PolygonGeometry | null,
+  fallback: [number, number] | undefined
+) {
+  const centroid = polyGeom ? calculateSimpleCentroid(polyGeom as unknown as Geometry) : fallback;
+  return api.countryGeo.sampleTerrainAt.useQuery(
+    { lng: centroid?.[0] ?? 0, lat: centroid?.[1] ?? 0 },
+    { enabled: !!centroid && (centroid[0] !== 0 || centroid[1] !== 0) }
+  );
+}
+
+/** Mean depth is roughly 0.4 * max depth for natural lakes. */
+function estimateVolumeKm3(areaKm2: number | null, maxDepthM: number | null) {
+  return areaKm2 && maxDepthM && maxDepthM > 0 ? areaKm2 * ((maxDepthM * 0.4) / 1000) : null;
+}
+
+function formatVolume(volumeKm3: number | null) {
+  if (volumeKm3 == null) return "—";
+  return volumeKm3 >= 1 ? `${volumeKm3.toFixed(2)} km³` : `${(volumeKm3 * 1000).toFixed(1)} M m³`;
 }
 
 export const LakeHydrologySection = React.memo(function LakeHydrologySection({
@@ -34,136 +123,49 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
 }: LakeHydrologySectionProps) {
   const polyGeom = useMemo(() => extractPolygonGeometry(feature.geometry), [feature.geometry]);
 
-  // Surface Area
-  const areaKm2 = useMemo(() => {
-    if (polyGeom) return geometryAreaSqKm(polyGeom);
-    if (typeof feature.properties?.areaSqKm === "number") return feature.properties.areaSqKm;
-    return null;
-  }, [polyGeom, feature.properties?.areaSqKm]);
-
-  const areaSqMi =
-    areaKm2 != null ? (polyGeom ? geometryAreaSqMi(polyGeom) : areaKm2 / 2.58999) : null;
-
-  // Shoreline Perimeter
-  const perimeterKm = useMemo(() => {
-    if (!polyGeom) return null;
-    if (polyGeom.type === "Polygon") {
-      const rings = polyGeom.coordinates as [number, number][][];
-      return rings[0] ? ringPerimeterKm(rings[0]) : null;
-    }
-    if (polyGeom.type === "MultiPolygon") {
-      const polys = polyGeom.coordinates as [number, number][][][];
-      return polys.reduce((acc, poly) => acc + (poly[0] ? ringPerimeterKm(poly[0]) : 0), 0);
-    }
-    return null;
-  }, [polyGeom]);
-
-  // Shoreline Development Index (SDI, Dl = L / (2 * sqrt(pi * A)))
-  // Dl = 1.0 is a perfect circle. > 2.0 indicates complex dendritic or fjord morphology.
-  const sdi = useMemo(() => {
-    if (!perimeterKm || !areaKm2 || areaKm2 <= 0) return null;
-    const circularPerimeter = 2 * Math.sqrt(Math.PI * areaKm2);
-    return circularPerimeter > 0 ? perimeterKm / circularPerimeter : null;
-  }, [perimeterKm, areaKm2]);
-
-  const morphologyLabel = useMemo(() => {
-    if (sdi == null) return null;
-    if (sdi >= 2.5) return { label: "Fjord / High Dendritic", tone: "text-yellow" };
-    if (sdi >= 1.6) return { label: "Embayed / Irregular", tone: "text-cyan" };
-    return { label: "Sub-circular / Compact", tone: "text-green" };
-  }, [sdi]);
-
-  // Centroid & Surface Elevation
-  const centroid = useMemo(() => {
-    if (polyGeom) return calculateSimpleCentroid(polyGeom as unknown as Geometry);
-    return feature.coordinates ?? null;
-  }, [polyGeom, feature.coordinates]);
-
-  const surfaceSample = api.countryGeo.sampleTerrainAt.useQuery(
-    { lng: centroid?.[0] ?? 0, lat: centroid?.[1] ?? 0 },
-    { enabled: !!centroid && (centroid[0] !== 0 || centroid[1] !== 0) }
+  const storedAreaKm2 = feature.properties?.areaSqKm;
+  const { areaKm2, areaSqMi, perimeterKm, sdi, morphology } = useMemo(
+    () => lakeGeometryStats(polyGeom, storedAreaKm2),
+    [polyGeom, storedAreaKm2]
   );
 
+  const surfaceSample = useSurfaceSample(polyGeom, feature.coordinates);
   const surfaceElev = surfaceSample.data?.midpoint ?? null;
 
-  // Max Depth and Volume
-  const rawDepth = feature.properties?.maxDepthM;
-  const initialDepth = typeof rawDepth === "number" ? String(rawDepth) : "";
-  const [depthInput, setDepthInput] = useState(initialDepth);
-
-  useEffect(() => {
-    const current =
-      typeof feature.properties?.maxDepthM === "number" ? String(feature.properties.maxDepthM) : "";
-    setDepthInput(current);
-  }, [feature.properties?.maxDepthM]);
-
-  const handleDepthBlur = useCallback(() => {
-    const parsed = parseFloat(depthInput);
-    const valid = !isNaN(parsed) && parsed > 0 ? parsed : null;
-    const current =
-      typeof feature.properties?.maxDepthM === "number" ? feature.properties.maxDepthM : null;
-    if (valid !== current && onUpdateFeature) {
-      void onUpdateFeature({ maxDepthM: valid });
-    }
-  }, [depthInput, feature.properties?.maxDepthM, onUpdateFeature]);
-
-  const parsedDepthM =
-    parseFloat(depthInput) ||
-    (typeof feature.properties?.maxDepthM === "number" ? feature.properties.maxDepthM : null);
-
-  // Volume estimate: Mean depth ≈ 0.4 * Max depth (canonical for natural lakes)
-  const volumeKm3 = useMemo(() => {
-    if (!areaKm2 || !parsedDepthM || parsedDepthM <= 0) return null;
-    const meanDepthKm = (parsedDepthM * 0.4) / 1000;
-    return areaKm2 * meanDepthKm;
-  }, [areaKm2, parsedDepthM]);
+  const { depthInput, setDepthInput, handleDepthBlur, parsedDepthM } = useMaxDepthInput(
+    feature,
+    onUpdateFeature
+  );
+  const volumeKm3 = estimateVolumeKm3(areaKm2, parsedDepthM);
 
   return (
     <div className="space-y-2">
-      {/* Primary Lake Surface Metrics */}
       <div className="grid grid-cols-2 gap-2">
-        <Card className="min-w-0 p-2">
-          <span className="text-stat-label text-label-secondary block truncate">Surface area</span>
-          <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
-            <span className="text-label text-headline truncate tabular-nums">
-              {areaKm2 != null ? Math.round(areaKm2).toLocaleString() : "—"}
-            </span>
-            {areaKm2 != null && (
-              <span className="text-label-secondary text-footnote shrink-0 font-sans font-normal">
-                km²
-              </span>
-            )}
-          </div>
+        <MetricCard
+          label="Surface area"
+          value={areaKm2 != null ? Math.round(areaKm2).toLocaleString() : "—"}
+          unit={areaKm2 != null && "km²"}
+        >
           {areaSqMi != null && (
             <span className="text-label-secondary text-footnote mt-0.5 block tabular-nums">
               ~{Math.round(areaSqMi).toLocaleString()} sq mi
             </span>
           )}
-        </Card>
+        </MetricCard>
 
-        <Card className="min-w-0 p-2">
-          <span className="text-stat-label text-label-secondary block truncate">
-            Shoreline perimeter
-          </span>
-          <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
-            <span className="text-label text-headline truncate tabular-nums">
-              {perimeterKm != null ? Math.round(perimeterKm).toLocaleString() : "—"}
-            </span>
-            {perimeterKm != null && (
-              <span className="text-label-secondary text-footnote shrink-0 font-sans font-normal">
-                km
-              </span>
-            )}
-          </div>
+        <MetricCard
+          label="Shoreline perimeter"
+          value={perimeterKm != null ? Math.round(perimeterKm).toLocaleString() : "—"}
+          unit={perimeterKm != null && "km"}
+        >
           {sdi != null && (
             <span className="text-label-secondary text-footnote mt-0.5 block tabular-nums">
               SDI: {sdi.toFixed(2)}
             </span>
           )}
-        </Card>
+        </MetricCard>
       </div>
 
-      {/* Limnology & Bathymetry */}
       <Card className="space-y-2 p-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -176,15 +178,14 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
         </div>
 
         <div className="text-footnote grid grid-cols-2 gap-2">
-          <div className="border-separator bg-fill-4 rounded-control-sm min-w-0 space-y-1 p-2">
-            <span className="text-stat-label text-label-secondary block">Surface elevation</span>
-            <p className="text-label text-caption font-semibold tabular-nums">
-              {surfaceElev != null ? `${surfaceElev.toLocaleString()} m` : "—"}
-            </p>
+          <ReadoutTile
+            label="Surface elevation"
+            value={surfaceElev != null ? `${surfaceElev.toLocaleString()} m` : "—"}
+          >
             <span className="text-label-secondary text-footnote block truncate">
               {surfaceSample.data?.zoneName || "Inland water"}
             </span>
-          </div>
+          </ReadoutTile>
 
           <div className="border-separator bg-fill-4 rounded-control-sm min-w-0 space-y-1 p-2">
             <span className="text-stat-label text-label-secondary block">Max depth</span>
@@ -205,24 +206,15 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
           </div>
         </div>
 
-        {/* Volume & Morphology */}
         <div className="border-separator bg-fill-4 rounded-control-sm space-y-2 p-2">
-          <div className="text-footnote flex items-center justify-between">
-            <span className="text-label-secondary">Est. water volume</span>
-            <span className="text-label font-medium tabular-nums">
-              {volumeKm3 != null
-                ? volumeKm3 >= 1.0
-                  ? `${volumeKm3.toFixed(2)} km³`
-                  : `${(volumeKm3 * 1000).toFixed(1)} M m³`
-                : "—"}
-            </span>
-          </div>
-
-          {morphologyLabel && (
-            <div className="border-separator text-footnote flex items-center justify-between border-t pt-0.5">
-              <span className="text-label-secondary">Shore morphology</span>
-              <span className={`font-medium ${morphologyLabel.tone}`}>{morphologyLabel.label}</span>
-            </div>
+          <ReadoutRow label="Est. water volume" value={formatVolume(volumeKm3)} />
+          {morphology && (
+            <ReadoutRow
+              className="border-separator border-t pt-0.5"
+              label="Shore morphology"
+              value={morphology.label}
+              valueClassName={`font-medium ${morphology.tone}`}
+            />
           )}
         </div>
       </Card>

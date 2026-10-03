@@ -4,47 +4,17 @@ import { Badge } from "~/components/ui/badge";
 import React from "react";
 import {
   ClockRotateRight as History,
-  Undo,
-  Redo,
   Map,
-  MapPin,
-  Hexagon,
-  Bank as Landmark,
-  ModernTv as Mountain,
-  SeaWaves as Waves,
-  Droplet,
-  PathArrow as Route,
   KeyCommand,
 } from "iconoir-react";
 import type { EditorAction, EditorHistory } from "~/hooks/map-editor/useMapHistory";
 import { timeAgo } from "~/lib/format/compact";
+import { getFeatureIcon } from "./featureTypeIcons";
 
 interface HistoryPanelProps {
   history: EditorHistory;
   jumpToHistoryPosition: (pos: number) => Promise<void>;
   isMutating?: boolean;
-}
-
-function getFeatureIcon(type: string) {
-  switch (type) {
-    case "city":
-      return MapPin;
-    case "subdivision":
-      return Hexagon;
-    case "poi":
-    case "storyPin":
-      return Landmark;
-    case "peak":
-      return Mountain;
-    case "river":
-      return Waves;
-    case "lake":
-      return Droplet;
-    case "route":
-      return Route;
-    default:
-      return Map;
-  }
 }
 
 export const HistoryPanel = React.memo(function HistoryPanel({
@@ -134,7 +104,7 @@ export const HistoryPanel = React.memo(function HistoryPanel({
           {actions.map((action, idx) => {
             const isActive = idx <= position;
             const isCurrent = idx === position;
-            const Icon = getFeatureIcon(action.featureType);
+            const Icon = getFeatureIcon(action.featureType, Map);
             const timeStr = timeAgo(action.timestamp);
 
             return (

@@ -1,6 +1,6 @@
 "use client";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Pin as Crosshair } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils/cn";

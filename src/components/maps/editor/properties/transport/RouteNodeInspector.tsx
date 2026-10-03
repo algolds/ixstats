@@ -14,7 +14,6 @@ import {
   MapPin,
   PathArrow as RouteIcon,
   Clock,
-  Dashboard as Gauge,
 } from "iconoir-react";
 import { ROUTE_STYLES, ROUTE_TYPE_KEYS } from "~/lib/maps/map-config";
 import { polylineLengthKm } from "~/lib/maps/geo-math";
