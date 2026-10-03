@@ -48,13 +48,13 @@ const CATEGORY_META: Record<
   { label: string; icon: typeof Zap; color: string; badgeBg: string }
 > = {
   all: {
-    label: "All Updates",
+    label: "All updates",
     icon: Layers,
     color: "text-label",
     badgeBg: "bg-fill-3 text-label",
   },
   feature: {
-    label: "New Features",
+    label: "New features",
     icon: Flame,
     color: "text-green",
     badgeBg: "bg-green/15 border-green/30 text-green",
@@ -66,13 +66,13 @@ const CATEGORY_META: Record<
     badgeBg: "bg-blue/15 border-blue/30 text-blue",
   },
   engine: {
-    label: "Platform & Engine",
+    label: "Platform and engine",
     icon: Cpu,
     color: "text-purple",
     badgeBg: "bg-purple/15 border-purple/30 text-purple",
   },
   fix: {
-    label: "Fixes & Polish",
+    label: "Fixes",
     icon: ShieldCheck,
     color: "text-yellow",
     badgeBg: "bg-yellow/15 border-yellow/30 text-yellow",
@@ -109,14 +109,14 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
 
   return (
     <>
-      {/* Search & Category Filter Controls */}
+      {/* Search and category filter */}
       <Card className="mb-10 p-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           {/* Search Input */}
           <SearchField
             containerClassName="flex-1"
             aria-label="Search the changelog"
-            placeholder="Search features, fixes, or engines…"
+            placeholder="Search the changelog"
             value={searchQuery}
             onValueChange={setSearchQuery}
           />
@@ -141,8 +141,8 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
         <Card>
           <EmptyState
             icon={<Search />}
-            title="No matching updates found"
-            message="Try adjusting your search keywords or switching category filters."
+            title="No matching updates"
+            message="Change the search or pick another category."
             action={
               <Button
                 size="sm"
@@ -151,7 +151,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
                   setSelectedCategory("all");
                 }}
               >
-                Reset Filters
+                Reset filters
               </Button>
             }
           />
@@ -170,7 +170,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
                         "{release.releaseName}"
                       </span>
                     </h2>
-                    {release.isCurrent && <Badge variant="info">Latest Release</Badge>}
+                    {release.isCurrent && <Badge variant="info">Latest release</Badge>}
                   </div>
                   <p className="text-label-secondary text-footnote max-w-3xl leading-relaxed">
                     {release.tagline}
@@ -181,7 +181,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
                   <Calendar className="h-3.5 w-3.5" />
                   <span>{release.date}</span>
                   <span className="text-label-tertiary">·</span>
-                  <span className="text-footnote font-mono">Channel: {release.channel}</span>
+                  <span className="text-footnote">Channel: {release.channel}</span>
                 </div>
               </div>
 
@@ -223,9 +223,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
                         {/* Bullet Highlights */}
                         {item.highlights && item.highlights.length > 0 && (
                           <div className="border-separator bg-fill-4 rounded-row space-y-2 border p-3">
-                            <span className="text-label-secondary text-eyebrow">
-                              Key Highlights
-                            </span>
+                            <span className="text-label-secondary text-eyebrow">Highlights</span>
                             <ul className="space-y-1">
                               {item.highlights.map((highlight, idx) => (
                                 <li

@@ -5,7 +5,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 
-/** A nation the viewer owns: "Play as" makes it their active nation; "Active" when it already is (ruling F-1). */
+/** A nation the viewer owns: "Play as" makes it their active nation; "Active" when it already is. */
 export function PlayAsNation({
   countryId,
   countryName,

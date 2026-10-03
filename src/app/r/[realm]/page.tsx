@@ -3,15 +3,16 @@
 import { use } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Globe, OpenBook } from "iconoir-react";
+import { OpenBook } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { createUrl } from "~/lib/utils";
 import { parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
 import { ClaimableNations } from "./_components/ClaimableNations";
 import { PlayAsNation } from "./_components/PlayAsNation";
+import { PageHeader } from "~/components/shell/PageHeader";
 
-/** The realm's lore lives on its wiki (ruling E-a); WikiOS renders the portal live from that wiki. */
+/** The realm's lore lives on its wiki; WikiOS renders the portal live from that wiki. */
 function LoreSection({
   realmName,
   count,
@@ -51,21 +52,7 @@ export default function RealmPage({ params }: { params: Promise<{ realm: string 
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-8">
-      <header className="material-hero text-label flex items-center gap-4 rounded-2xl p-6">
-        <div className="border-separator bg-fill-3 rounded-card flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden border">
-          {realm.thumbnail ? (
-            <img src={realm.thumbnail} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <Globe className="h-7 w-7" />
-          )}
-        </div>
-        <div>
-          <h1 className="text-label text-title-1">{realm.name}</h1>
-          {realm.description && (
-            <p className="text-label-secondary text-body mt-1">{realm.description}</p>
-          )}
-        </div>
-      </header>
+      <PageHeader title={realm.name} subtitle={realm.description} />
 
       <section className="border-separator bg-surface rounded-card border p-6">
         <div className="mb-3 flex items-center justify-between gap-2">

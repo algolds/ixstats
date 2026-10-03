@@ -45,7 +45,7 @@ function IxnayIdPassportCanvas({ cleanUsername }: { cleanUsername: string }) {
 
   const isOwner = Boolean(data?.account.isOwner);
 
-  // Authoritatively sync Display Name & Avatar exclusively from Clerk
+  // Display name and avatar come from Clerk
   const displayName =
     (isOwner && currentClerkUser ? currentClerkUser.fullName || currentClerkUser.username : null) ||
     data?.account.clerkDisplayName ||
@@ -58,7 +58,7 @@ function IxnayIdPassportCanvas({ cleanUsername }: { cleanUsername: string }) {
     null;
 
   usePageTitle({
-    title: `${displayName} (@${cleanUsername}) · Identity Passport`,
+    title: `${displayName} (@${cleanUsername}) · Identity passport`,
   });
 
   const handleSelectTab = useCallback((tab: PassportTabType) => {
@@ -103,8 +103,8 @@ function IxnayIdPassportCanvas({ cleanUsername }: { cleanUsername: string }) {
           <Card>
             <EmptyState
               icon={<AlertTriangle className="text-caution" />}
-              title="Identity Not Found"
-              message={`Could not resolve a public passport or registered identity for @${cleanUsername}.`}
+              title="Identity not found"
+              message={`No public passport or registered identity exists for @${cleanUsername}.`}
             />
           </Card>
         </div>
@@ -115,7 +115,6 @@ function IxnayIdPassportCanvas({ cleanUsername }: { cleanUsername: string }) {
   return (
     <DashboardSidebarLayout disableCollapse={true}>
       <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
-        {/* Mid-Ribbon Integrated Polycarbonate Passport Document */}
         <MidRibbonPassportDocument
           cleanUsername={cleanUsername}
           displayName={displayName}

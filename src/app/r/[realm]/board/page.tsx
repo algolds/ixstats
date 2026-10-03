@@ -11,6 +11,7 @@ import { ThinktankFeedTab } from "~/components/thinktanks/ThinktankFeedTab";
 import { ThinktankChatTab } from "~/components/thinktanks/ThinktankChatTab";
 import { RealmFeed } from "../_components/RealmFeed";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { PageHeader } from "~/components/shell/PageHeader";
 
 type BoardTab = "board" | "chat" | "feed";
 
@@ -71,35 +72,32 @@ export default function RealmBoardPage({ params }: { params: Promise<{ realm: st
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 md:p-8">
-      <header className="material-hero text-label flex flex-wrap items-center justify-between gap-3 rounded-2xl p-5">
-        <div>
-          <Link href={realmHref} className="text-label-secondary hover:text-label text-footnote">
-            ← {board.realm.name}
-          </Link>
-          <h1 className="text-label text-title-2">{board.realm.name} Board</h1>
-          <p className="text-label-secondary text-footnote">
-            {group ? `${group.memberCount.toLocaleString()} members · ` : ""}
-            {board.canModerate
-              ? "You moderate this board"
-              : board.canPost
-                ? "You can post here"
-                : "Read-only"}
-          </p>
-        </div>
-        <SegmentedControl
-          aria-label="Board sections"
-          size="sm"
-          value={tab}
-          onValueChange={setTab}
-          options={visibleTabs.map((t) => ({ value: t.id, label: t.label }))}
-        />
-      </header>
+      <PageHeader
+        title={`${board.realm.name} board`}
+        subtitle={`${group ? `${group.memberCount.toLocaleString()} members · ` : ""}${
+          board.canModerate
+            ? "You moderate this board"
+            : board.canPost
+              ? "You can post here"
+              : "Read-only"
+        }`}
+        back={{ href: realmHref, label: board.realm.name }}
+        actions={
+          <SegmentedControl
+            aria-label="Board sections"
+            size="sm"
+            value={tab}
+            onValueChange={setTab}
+            options={visibleTabs.map((t) => ({ value: t.id, label: t.label }))}
+          />
+        }
+      />
 
       <section className="border-separator bg-surface rounded-card overflow-hidden border">
         {tab === "board" && (
           <ThinktankFeedTab
             groupId={board.groupId}
-            groupName={`${board.realm.name} Board`}
+            groupName={`${board.realm.name} board`}
             isMember={board.canPost}
             canReadFeed
             allowPersonaPosting={board.ownedCountryIds.length > 0}
@@ -112,7 +110,7 @@ export default function RealmBoardPage({ params }: { params: Promise<{ realm: st
         {tab === "chat" && board.canPost && (
           <ThinktankChatTab
             conversationId={group?.conversationId}
-            groupName={`${board.realm.name} Board`}
+            groupName={`${board.realm.name} board`}
             currentUserId={currentUserId}
           />
         )}
