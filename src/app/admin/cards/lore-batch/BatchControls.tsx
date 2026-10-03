@@ -77,18 +77,39 @@ function ParamSelect<T extends string>({ label, value, onChange, options }: Para
   );
 }
 
-interface BatchControlsProps {
-  queue: ReturnType<typeof useLoreBatchQueue>;
-  loaders: ReturnType<typeof useLoreBatchLoaders>;
-}
-
-export function BatchControls({ queue, loaders }: BatchControlsProps) {
-  const { wikiSource } = queue;
-  const sourceLabel = wikiSource.toUpperCase();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+/** Typed-but-unsent input; held by the parent so it survives switching tabs. */
+export function useBatchControlsInputs() {
   const [articleInput, setArticleInput] = useState("");
   const [categoryQuery, setCategoryQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  return {
+    articleInput,
+    setArticleInput,
+    categoryQuery,
+    setCategoryQuery,
+    isDropdownOpen,
+    setIsDropdownOpen,
+  };
+}
+
+interface BatchControlsProps {
+  queue: ReturnType<typeof useLoreBatchQueue>;
+  loaders: ReturnType<typeof useLoreBatchLoaders>;
+  inputs: ReturnType<typeof useBatchControlsInputs>;
+}
+
+export function BatchControls({ queue, loaders, inputs }: BatchControlsProps) {
+  const { wikiSource } = queue;
+  const sourceLabel = wikiSource.toUpperCase();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const {
+    articleInput,
+    setArticleInput,
+    categoryQuery,
+    setCategoryQuery,
+    isDropdownOpen,
+    setIsDropdownOpen,
+  } = inputs;
   const trimmedQuery = categoryQuery.trim();
 
   const { data: searchData } = api.loreCards.searchWikiCategories.useQuery(

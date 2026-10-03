@@ -5,7 +5,7 @@ import { OpenBook as BookOpen, UserBadgeCheck as UserCheck } from "iconoir-react
 import { api } from "~/trpc/react";
 import { Card } from "~/components/ui/card";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { BatchControls } from "./lore-batch/BatchControls";
+import { BatchControls, useBatchControlsInputs } from "./lore-batch/BatchControls";
 import { CandidateQueueCard, type StatusFilter } from "./lore-batch/CandidateQueueCard";
 import { CATEGORY_PRESETS } from "./lore-batch/category-presets";
 import {
@@ -32,6 +32,7 @@ export function LoreCardBatchAdmin() {
   const [isReclassifyOpen, setIsReclassifyOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
 
+  const controlInputs = useBatchControlsInputs();
   const queue = useLoreBatchQueue();
   const loaders = useLoreBatchLoaders(queue);
   const { data: duplicateStats, refetch: refetchDuplicates } =
@@ -78,7 +79,7 @@ export function LoreCardBatchAdmin() {
 
       {activeTab === "generator" && (
         <div className="space-y-6">
-          <BatchControls queue={queue} loaders={loaders} />
+          <BatchControls queue={queue} loaders={loaders} inputs={controlInputs} />
           {queue.candidates.length > 0 && (
             <CandidateQueueCard
               queue={queue}
