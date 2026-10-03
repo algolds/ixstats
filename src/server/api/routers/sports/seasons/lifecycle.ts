@@ -15,6 +15,7 @@ import {
 } from "~/server/api/routers/sports/league-access";
 import { IxTime } from "~/lib/ixtime";
 import { computeMatchRevenue } from "~/lib/sports/match-revenue";
+import { TEAM_BADGE } from "~/server/api/routers/sports/_shared";
 import { persistSeasonSchedule, transitionSeasonAction } from "~/lib/sports";
 
 /** Completed matches of `teamId` whose revenue that side hasn't collected yet. */
@@ -33,10 +34,6 @@ function uncollectedMatches(
     select: { id: true, homeTeamId: true, awayTeamId: true, homeScore: true, awayScore: true },
   });
 }
-
-const TEAM_BADGE = {
-  select: { id: true, name: true, shortName: true, color: true, logo: true, wikiSlug: true },
-} as const;
 
 type TraceEvent = { actorId?: string; actorName?: string; type?: string; description?: unknown };
 

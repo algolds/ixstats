@@ -14,7 +14,7 @@ import {
 } from "~/lib/sports";
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { isSystemOwner } from "~/lib/auth";
-import { viewerCanManageLeague } from "~/server/api/routers/sports/league-access";
+import { viewerCanManageLeague, assertOwnsLeague } from "~/server/api/routers/sports/league-access";
 
 export const leaguesCrudRouter = createTRPCRouter({
   getLeagues: publicProcedure
@@ -280,9 +280,7 @@ export const leaguesCrudRouter = createTRPCRouter({
         if (!league) {
           throw new TRPCError({ code: "NOT_FOUND", message: "League not found" });
         }
-        if (league.createdByUserId !== ctx.user.id && !isSystemOwner(ctx.auth.userId)) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this league" });
-        }
+        assertOwnsLeague(ctx, league);
 
         // Only system owners can modify isCanonical
         const isCanonical =
@@ -321,9 +319,7 @@ export const leaguesCrudRouter = createTRPCRouter({
         if (!league) {
           throw new TRPCError({ code: "NOT_FOUND", message: "League not found" });
         }
-        if (league.createdByUserId !== ctx.user.id && !isSystemOwner(ctx.auth.userId)) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this league" });
-        }
+        assertOwnsLeague(ctx, league);
 
         if (league.seasons.length > 0) {
           throw new TRPCError({
