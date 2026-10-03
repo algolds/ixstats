@@ -4,7 +4,8 @@ import { useState, useDeferredValue } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { api } from "~/trpc/react";
-import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/admin/log-viewer";
+import { LogViewerFilterable, type LogEntry } from "~/components/admin/log-viewer";
+import { toLogLevel, useClearSystemLogs } from "../_hooks/useSystemLogs";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
 import { Input } from "~/components/ui/input";
@@ -15,11 +16,9 @@ import {
   Search,
   SystemRestart as Loader2,
 } from "iconoir-react";
-import { useNotify } from "~/hooks/useNotify";
 import { Card } from "~/components/ui/card";
 
 export default function DedicatedLogsPage() {
-  const notify = useNotify();
   usePageTitle({ title: "Admin - System Logs" });
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -57,21 +56,10 @@ export default function DedicatedLogsPage() {
     }
   );
 
-  const clearLogsMutation = api.admin.clearSystemLogs.useMutation({
-    onSuccess: () => {
-      notify.success("System logs cleared successfully");
-      void refetch();
-    },
-    onError: (err) => {
-      notify.error(err.message || "Failed to clear logs");
-    },
-  });
-
-  const handleClearLogs = () => {
-    if (confirm("Are you sure you want to purge all system logs? This action cannot be undone.")) {
-      clearLogsMutation.mutate();
-    }
-  };
+  const handleClearLogs = useClearSystemLogs(
+    refetch,
+    "Are you sure you want to purge all system logs? This action cannot be undone."
+  );
 
   // Categories from the logger configuration
   const LOG_CATEGORIES = [
@@ -91,12 +79,6 @@ export default function DedicatedLogsPage() {
 
   // Convert DB SystemLog entries to LogViewer entries
   const entries: LogEntry[] = (logsData?.logs ?? []).map((log) => {
-    let level: LogLevel = "info";
-    const dbLevel = log.level?.toUpperCase();
-    if (dbLevel === "DEBUG") level = "debug";
-    else if (dbLevel === "WARN" || dbLevel === "WARNING") level = "warn";
-    else if (dbLevel === "ERROR" || dbLevel === "CRITICAL" || dbLevel === "FATAL") level = "error";
-
     let msg = `[${log.category}] ${log.message}`;
     if (log.userId) {
       const uMatch = usersData?.find((u) => u.id === log.userId);
@@ -110,7 +92,7 @@ export default function DedicatedLogsPage() {
     if (log.metadata) msg += `\nMetadata: ${log.metadata}`;
 
     return {
-      level,
+      level: toLogLevel(log.level),
       message: msg,
       timestamp: log.timestamp ? new Date(log.timestamp).toISOString() : undefined,
     };
