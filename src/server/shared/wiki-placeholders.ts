@@ -42,13 +42,27 @@ function realmRankLabel(sorted: readonly RankRow[], country: RankRow): string | 
   return index !== -1 ? `Ranked #${index + 1} globally` : undefined;
 }
 
-function hashCode(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return Math.abs(hash);
-}
+/** BusinessData placeholder fields: the point-of-interest metadata key each one reads. */
+const BUSINESS_FIELDS: Record<
+  string,
+  { key: string; label: string; timed?: boolean; format: (v: number | string) => string }
+> = {
+  revenue: {
+    key: "revenue",
+    label: "Annual Revenue",
+    timed: true,
+    format: (v) => formatCurrency(Number(v)),
+  },
+  employees: {
+    key: "employees",
+    label: "Employees",
+    timed: true,
+    format: (v) => Number(v).toLocaleString(),
+  },
+  sector: { key: "sector", label: "Industry Sector", format: String },
+  industry: { key: "sector", label: "Industry Sector", format: String },
+  founded: { key: "founded", label: "Year Founded", format: String },
+};
 
 export async function resolveWikiPlaceholderValues(
   placeholders: readonly string[],
@@ -181,100 +195,42 @@ export async function resolveWikiPlaceholderValues(
         continue;
       }
 
-      const parentCountry = countries.find((c: any) => c.id === poi.countryId) ||
-        poi.country || {
-          name: "Unknown",
-          economicTier: "B",
-          lastCalculated: new Date(),
-          id: poi.countryId,
-        };
-
-      const hash = hashCode(companyName);
-      let tierScale = 1.0;
-      if (parentCountry.economicTier === "S") tierScale = 2.5;
-      else if (parentCountry.economicTier === "A") tierScale = 1.5;
-      else if (parentCountry.economicTier === "B") tierScale = 1.0;
-      else if (parentCountry.economicTier === "C") tierScale = 0.6;
-      else tierScale = 0.3;
-
-      const baseRevenue = 50_000_000 + (hash % 95) * 50_000_000;
-      const revenueVal = baseRevenue * tierScale;
-      const employeesVal = Math.round((200 + (hash % 48) * 100) * tierScale);
-      const sectors = [
-        "Manufacturing",
-        "Technology",
-        "Finance",
-        "Energy",
-        "Logistics",
-        "Consumer Goods",
-        "Heavy Industry",
-      ];
-      const sectorVal = sectors[hash % sectors.length]!;
-      const foundedVal = 1950 + (hash % 76);
-
+      const parentCountry = countries.find((c: any) => c.id === poi.countryId) || poi.country;
       const fLower = field.toLowerCase();
-      const lastCalcStr =
-        parentCountry.lastCalculated instanceof Date
-          ? parentCountry.lastCalculated.toISOString()
-          : new Date().toISOString();
-
-      if (fLower === "revenue") {
-        results.push({
-          key: p,
-          value: formatCurrency(revenueVal),
-          rawVal: revenueVal,
-          status: "resolved",
-          metadata: {
-            label: "Annual Revenue",
-            companyName,
-            countryName: parentCountry.name,
-            lastCalculated: lastCalcStr,
-            detailsUrl: `/countries/${parentCountry.id}`,
-          },
-        });
-      } else if (fLower === "employees") {
-        results.push({
-          key: p,
-          value: employeesVal.toLocaleString(),
-          rawVal: employeesVal,
-          status: "resolved",
-          metadata: {
-            label: "Employees",
-            companyName,
-            countryName: parentCountry.name,
-            lastCalculated: lastCalcStr,
-            detailsUrl: `/countries/${parentCountry.id}`,
-          },
-        });
-      } else if (fLower === "sector" || fLower === "industry") {
-        results.push({
-          key: p,
-          value: sectorVal,
-          rawVal: sectorVal,
-          status: "resolved",
-          metadata: {
-            label: "Industry Sector",
-            companyName,
-            countryName: parentCountry.name,
-            detailsUrl: `/countries/${parentCountry.id}`,
-          },
-        });
-      } else if (fLower === "founded") {
-        results.push({
-          key: p,
-          value: String(foundedVal),
-          rawVal: foundedVal,
-          status: "resolved",
-          metadata: {
-            label: "Year Founded",
-            companyName,
-            countryName: parentCountry.name,
-            detailsUrl: `/countries/${parentCountry.id}`,
-          },
-        });
-      } else {
+      const spec = BUSINESS_FIELDS[fLower];
+      if (!spec) {
         results.push({ key: p, value: "Unknown Field", rawVal: null, status: "unknown-field" });
+        continue;
       }
+
+      // Business figures exist only when recorded on the point of interest; none are derived.
+      const recorded = (poi.metadata as Record<string, unknown> | null)?.[spec.key];
+      const rawVal =
+        typeof recorded === "number" || (typeof recorded === "string" && recorded.trim() !== "")
+          ? recorded
+          : null;
+      if (rawVal === null) {
+        results.push({ key: p, value: "—", rawVal: null, status: "not-found" });
+        continue;
+      }
+
+      const lastCalculated =
+        parentCountry?.lastCalculated instanceof Date
+          ? parentCountry.lastCalculated.toISOString()
+          : undefined;
+      results.push({
+        key: p,
+        value: spec.format(rawVal),
+        rawVal,
+        status: "resolved",
+        metadata: {
+          label: spec.label,
+          companyName,
+          countryName: parentCountry?.name,
+          ...(spec.timed && lastCalculated ? { lastCalculated } : {}),
+          detailsUrl: `/countries/${poi.countryId}`,
+        },
+      });
     } else {
       results.push({ key: p, value: "Unknown Field", rawVal: null, status: "malformed" });
     }
