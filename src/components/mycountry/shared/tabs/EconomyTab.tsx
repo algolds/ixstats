@@ -25,7 +25,6 @@ import type { extractCountryImageData } from "~/lib/media";
 import type { MyCountryMetricView } from "~/hooks/useMyCountryMetrics";
 import type { MetricType } from "~/hooks/useMetricDetailsModal";
 import { EconomyTradeSection } from "./EconomyTradeSection";
-import { EconomyBusinessSection } from "./EconomyBusinessSection";
 import { Card, CardContent } from "~/components/ui/card";
 
 export function EconomyTab({
@@ -376,12 +375,6 @@ export function EconomyTab({
             onToggle={() => toggleSection("trade")}
             economyData={economyData}
             currency={currency}
-          />
-
-          {/* Dossier Section 3: Business & Innovation */}
-          <EconomyBusinessSection
-            isExpanded={expandedSection === "business"}
-            onToggle={() => toggleSection("business")}
           />
         </div>
       </CardContent>

@@ -3,7 +3,6 @@
 import React from "react";
 import { motion } from "motion/react";
 import { Globe, NavArrowRight as ChevronRight } from "iconoir-react";
-import { SectorBreakdownCard } from "~/components/mycountry/shared/primitives";
 import { formatCompactCurrency } from "~/lib/utils";
 import type { MappedEconomyData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
 
@@ -14,12 +13,49 @@ interface EconomyTradeSectionProps {
   currency: string;
 }
 
+function TradeFigure({
+  label,
+  amount,
+  detail,
+  currency,
+  tone = "text-label",
+}: {
+  label: string;
+  amount: number | null;
+  detail: string;
+  currency: string;
+  tone?: string;
+}) {
+  return (
+    <div className="min-w-0">
+      <span className="text-stat-label text-label-secondary block">{label}</span>
+      <p className={`${tone} text-headline mt-0.5`}>
+        {amount == null ? (
+          <span role="img" aria-label="Not recorded">
+            —
+          </span>
+        ) : (
+          formatCompactCurrency(amount, "N/A", currency)
+        )}
+      </p>
+      <p className="text-label-secondary text-footnote mt-0.5">{detail}</p>
+    </div>
+  );
+}
+
 export function EconomyTradeSection({
   isExpanded,
   onToggle,
   economyData,
   currency,
 }: EconomyTradeSectionProps): React.JSX.Element {
+  const gdp = economyData?.core.nominalGDP ?? 0;
+  const exportsPct = economyData?.core.exportsGDPPercent ?? null;
+  const importsPct = economyData?.core.importsGDPPercent ?? null;
+  const exports = gdp > 0 && exportsPct != null ? (gdp * exportsPct) / 100 : null;
+  const imports = gdp > 0 && importsPct != null ? (gdp * importsPct) / 100 : null;
+  const balance = exports != null && imports != null ? exports - imports : null;
+
   return (
     <div className="flex flex-col">
       <div className="flex">
@@ -52,135 +88,26 @@ export function EconomyTradeSection({
           isExpanded ? "border-separator border" : "border border-transparent"
         }`}
       >
-        <div className="relative z-10 space-y-4 p-4">
+        <div className="relative z-10 p-4">
           <div className="bg-fill-3 rounded-row grid grid-cols-3 gap-4 p-3">
-            <div className="min-w-0">
-              <span className="text-stat-label text-label-secondary block">Total exports</span>
-              <p className="text-label text-headline mt-0.5">
-                {formatCompactCurrency((economyData?.core.nominalGDP ?? 0) * 0.35, "N/A", currency)}
-              </p>
-              <p className="text-label-secondary text-footnote mt-0.5">35.0% of GDP</p>
-            </div>
-            <div className="min-w-0">
-              <span className="text-stat-label text-label-secondary block">Total imports</span>
-              <p className="text-label text-headline mt-0.5">
-                {formatCompactCurrency((economyData?.core.nominalGDP ?? 0) * 0.32, "N/A", currency)}
-              </p>
-              <p className="text-label-secondary text-footnote mt-0.5">32.0% of GDP</p>
-            </div>
-            <div className="min-w-0">
-              <span className="text-stat-label text-label-secondary block">Trade balance</span>
-              <p className="text-headline text-green mt-0.5">
-                {formatCompactCurrency((economyData?.core.nominalGDP ?? 0) * 0.03, "N/A", currency)}
-              </p>
-              <p className="text-label-secondary text-footnote mt-0.5">Surplus (+3.0%)</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <SectorBreakdownCard
-              title="Export composition"
-              subtitle="Distribution of goods and services exported"
-              layout="list"
-              showProgressBars={true}
+            <TradeFigure
+              label="Total exports"
+              amount={exports}
+              detail={exportsPct != null ? `${exportsPct.toFixed(1)}% of GDP` : "Not recorded"}
               currency={currency}
-              sectors={[
-                {
-                  id: "manufactured",
-                  name: "Manufactured goods",
-                  value: 0,
-                  percentage: 45,
-                  color: "blue",
-                  trend: "up",
-                  trendValue: 1.5,
-                },
-                {
-                  id: "tech",
-                  name: "Technology products",
-                  value: 0,
-                  percentage: 25,
-                  color: "cyan",
-                  trend: "up",
-                  trendValue: 3.2,
-                },
-                {
-                  id: "services",
-                  name: "Services",
-                  value: 0,
-                  percentage: 15,
-                  color: "purple",
-                  trend: "stable",
-                },
-                {
-                  id: "agri",
-                  name: "Agricultural products",
-                  value: 0,
-                  percentage: 10,
-                  color: "green",
-                  trend: "down",
-                  trendValue: -0.8,
-                },
-                {
-                  id: "raw",
-                  name: "Raw materials",
-                  value: 0,
-                  percentage: 5,
-                  color: "amber",
-                  trend: "stable",
-                },
-              ]}
             />
-            <SectorBreakdownCard
-              title="Import composition"
-              subtitle="Distribution of goods and services imported"
-              layout="list"
-              showProgressBars={true}
+            <TradeFigure
+              label="Total imports"
+              amount={imports}
+              detail={importsPct != null ? `${importsPct.toFixed(1)}% of GDP` : "Not recorded"}
               currency={currency}
-              sectors={[
-                {
-                  id: "energy",
-                  name: "Energy & fuels",
-                  value: (economyData?.core.nominalGDP ?? 0) * 0.32 * 0.3,
-                  percentage: 30,
-                  color: "red",
-                  trend: "down",
-                  trendValue: -2.1,
-                },
-                {
-                  id: "manufactured",
-                  name: "Manufactured goods",
-                  value: 0,
-                  percentage: 25,
-                  color: "blue",
-                  trend: "stable",
-                },
-                {
-                  id: "tech",
-                  name: "Technology products",
-                  value: 0,
-                  percentage: 20,
-                  color: "cyan",
-                  trend: "up",
-                  trendValue: 1.8,
-                },
-                {
-                  id: "raw",
-                  name: "Raw materials",
-                  value: 0,
-                  percentage: 15,
-                  color: "amber",
-                  trend: "stable",
-                },
-                {
-                  id: "food",
-                  name: "Food & agricultural",
-                  value: 0,
-                  percentage: 10,
-                  color: "green",
-                  trend: "up",
-                  trendValue: 0.5,
-                },
-              ]}
+            />
+            <TradeFigure
+              label="Trade balance"
+              amount={balance}
+              detail={balance == null ? "Not recorded" : balance >= 0 ? "Surplus" : "Deficit"}
+              currency={currency}
+              tone={balance == null ? undefined : balance >= 0 ? "text-green" : "text-destructive"}
             />
           </div>
         </div>
