@@ -14,7 +14,6 @@ import { tradeFigures } from "~/lib/economy/trade-figures";
 import { getEconomicTierFromGdpPerCapita } from "~/types/ixstats";
 import { loadVitalityExtras, scoreGovernmentalEfficiency } from "~/server/shared/mycountry-helpers";
 import {
-  safelyIncludeRelations,
   prepareBaseCountryData,
   getGrowthRates,
   stddev,
@@ -61,8 +60,6 @@ export const economyProcedures = {
       const FIVE_YEARS_MS = 5 * 365 * 24 * 60 * 60 * 1000;
       const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
-      const availableRelations = await safelyIncludeRelations(ctx.db);
-
       const includeObject: any = {
         storytellerEffects: {
           where: { isActive: true },
@@ -74,15 +71,14 @@ export const economyProcedures = {
         stabilityMetrics: {
           select: { stabilityScore: true, trustInGovernment: true, socialCohesion: true },
         },
+        economicProfile: true,
+        laborMarket: true,
+        fiscalSystem: true,
+        incomeDistribution: true,
+        governmentBudget: true,
+        demographics: true,
+        nationalIdentity: true,
       };
-
-      if (availableRelations.economicProfile) includeObject.economicProfile = true;
-      if (availableRelations.laborMarket) includeObject.laborMarket = true;
-      if (availableRelations.fiscalSystem) includeObject.fiscalSystem = true;
-      if (availableRelations.incomeDistribution) includeObject.incomeDistribution = true;
-      if (availableRelations.governmentBudget) includeObject.governmentBudget = true;
-      if (availableRelations.demographics) includeObject.demographics = true;
-      if (availableRelations.nationalIdentity) includeObject.nationalIdentity = true;
 
       let country;
       try {

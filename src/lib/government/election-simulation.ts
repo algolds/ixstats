@@ -51,16 +51,23 @@ export function fptpAllocation(
 }
 
 // Lore-first: how a chamber's members are chosen (not every legislature is party-elected).
-// Stored as the 4th positional field of the serialized chamberType blob. Keep in sync with
-// the copy in routers/elections/legislature.ts. See plans/mycountry-lore-alignment*.md.
+// Stored as the 4th positional field of the serialized chamberType blob.
+// See plans/mycountry-lore-alignment*.md.
 export type SelectionMethod =
   "elected" | "appointed" | "sortition" | "hereditary" | "ex-officio" | "corporatist";
+
+type ElectoralSystem = "proportional" | "fptp" | "mixed";
 
 export interface ChamberConfig {
   name: string;
   seats: number;
-  electoralSystem: "proportional" | "fptp" | "mixed";
+  electoralSystem: ElectoralSystem;
   selectionMethod: SelectionMethod;
+}
+
+function toElectoralSystem(val?: string): ElectoralSystem {
+  if (val === "fptp" || val === "mixed" || val === "proportional") return val;
+  return "proportional";
 }
 
 export function parseChambers(
@@ -78,13 +85,13 @@ export function parseChambers(
         return {
           name: name || "Chamber",
           seats: Number(seatsStr) || 100,
-          electoralSystem: (system || globalElectoralSystem || "proportional") as any,
+          electoralSystem: toElectoralSystem(system || globalElectoralSystem),
           selectionMethod: (selection || "elected") as SelectionMethod,
         };
       });
     }
   }
-  const system = (globalElectoralSystem || "proportional") as any;
+  const system = toElectoralSystem(globalElectoralSystem);
   if (chamberType === "bicameral") {
     const senateSeats = Math.max(10, Math.floor(totalSeats * 0.4));
     const houseSeats = Math.max(10, totalSeats - senateSeats);

@@ -3,16 +3,10 @@ import { IxTime } from "~/lib/ixtime";
 import { assertPersistableStats, IxStatsCalculator } from "~/lib/economy/calculations";
 import type { BaseCountryData, CountryStats, EconomicConfig } from "~/types/ixstats";
 
-export const validateGrowthRate = (value: number | null | undefined): number => {
+const validateGrowthRate = (value: number | null | undefined): number => {
   const numValue = Number(value);
   if (!isFinite(numValue) || isNaN(numValue)) return 0;
   return Math.min(Math.max(numValue, -0.5), 0.5);
-};
-
-export const validateNumber = (value: number | null | undefined, max = 1e18, min = 0): number => {
-  const numValue = Number(value);
-  if (!isFinite(numValue) || isNaN(numValue)) return min > 0 ? min : 0;
-  return Math.min(Math.max(numValue, min), max);
 };
 
 export const prepareBaseCountryData = (country: any, componentsData?: any): BaseCountryData => ({

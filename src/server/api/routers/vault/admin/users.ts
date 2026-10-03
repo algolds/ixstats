@@ -3,22 +3,7 @@ import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
 import { notificationAPI } from "~/lib/notifications/api";
 import { type VaultTransactionType } from "@prisma/client";
-
-/**
- * Vault transaction type enum for validation
- */
-export const vaultTransactionTypeEnum = z.enum([
-  "EARN_PASSIVE",
-  "EARN_ACTIVE",
-  "EARN_CARDS",
-  "EARN_SOCIAL",
-  "SPEND_PACKS",
-  "SPEND_MARKET",
-  "SPEND_CRAFT",
-  "SPEND_BOOST",
-  "SPEND_COSMETIC",
-  "ADMIN_ADJUSTMENT",
-]);
+import { vaultTransactionTypeEnum } from "../_transactionType";
 
 export const vaultAdminUsersRouter = createTRPCRouter({
   /**

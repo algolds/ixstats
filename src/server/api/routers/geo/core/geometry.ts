@@ -163,7 +163,7 @@ export function estimateBboxOverlap(
 }
 
 /** Extract all coordinate pairs from a GeoJSON geometry (first 200 for performance). */
-export function extractCoords(geometry: import("geojson").Geometry): [number, number][] {
+function extractCoords(geometry: import("geojson").Geometry): [number, number][] {
   const result: [number, number][] = [];
   const limit = 200;
 

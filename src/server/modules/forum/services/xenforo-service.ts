@@ -112,31 +112,6 @@ export interface XFForum {
   node_type_id: string;
 }
 
-export interface XFConversation {
-  conversation_id: number;
-  title: string;
-  user_id: number;
-  username: string;
-  start_date: number;
-  reply_count: number;
-  last_message_date: number;
-  last_message_user_id: number;
-  last_message_username: string;
-  is_unread: boolean;
-  recipients?: XFUser[];
-}
-
-export interface XFConversationMessage {
-  message_id: number;
-  conversation_id: number;
-  user_id: number;
-  username: string;
-  message_date: number;
-  message: string;
-  User?: XFUser;
-  Attachments?: XFAttachment[];
-}
-
 // Response wrappers
 export interface XFThreadsResponse {
   threads: XFThread[];
@@ -154,11 +129,6 @@ export interface XFPostsResponse {
 
 export interface XFForumsResponse {
   nodes: XFForum[];
-}
-
-export interface XFConversationsResponse {
-  conversations: XFConversation[];
-  pagination?: XFPagination;
 }
 
 export interface XFPagination {

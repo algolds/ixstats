@@ -6,8 +6,6 @@ import { vaultAdminUsersRouter } from "./users";
 import { vaultAdminStoreRouter } from "./store";
 import { vaultAdminItemsRouter } from "./items";
 
-export { vaultTransactionTypeEnum } from "./users";
-
 export const vaultAdminRouter = mergeRouters(
   vaultAdminUsersRouter,
   vaultAdminStoreRouter,

@@ -18,13 +18,9 @@ import { nsApiClient } from "~/lib/nationstates/api-client";
 import { processCTENationFilter } from "~/lib/nationstates/sync-processor";
 import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
 import { Prisma } from "@prisma/client";
+import { normalizeNationName } from "~/lib/vault/exploit-corrections";
 
 // ─── Background Processing Functions ──────────────────────────────
-
-/** Normalize an NS nation name for comparison: case, underscores and spacing don't matter. */
-export function normalizeNationName(name: string): string {
-  return name.toLowerCase().replace(/_/g, " ").replace(/\s+/g, " ").trim();
-}
 
 export function nationNamesMatch(a: string, b: string): boolean {
   const left = normalizeNationName(a);
