@@ -172,8 +172,6 @@ const IxWorldMap = memo(
       map: mapRef.current,
       isLoaded,
       layers,
-      overlayVisibility,
-      labelsVisible,
       geographyFilter,
       topCountryNames,
       selectedCountryId,
