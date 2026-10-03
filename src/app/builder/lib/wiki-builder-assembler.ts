@@ -37,7 +37,7 @@ import { parseDepartments } from "./wiki-department-parser";
 import { parseRevenueSources } from "./wiki-revenue-parser";
 import { matchComponents } from "./wiki-attribute-matcher";
 import { detectWikiImportConflicts } from "./wiki-conflict-detector";
-import { parseWikiNumericValue, normalizeGovernmentType } from "./builder-parsers";
+import { parseWikiNumericValue, normalizeGovernmentType, firstPlainText } from "./builder-parsers";
 
 interface WikiImportResult {
   economicInputs: EconomicInputs;
@@ -74,27 +74,27 @@ function createDefaultNationalIdentity(
 ): NationalIdentityData {
   return {
     countryName: name,
-    officialName: infobox.official_name || infobox.conventional_long_name || name,
+    officialName: firstPlainText(infobox.official_name, infobox.conventional_long_name, name),
     governmentType: infobox.government_type
       ? normalizeGovernmentType(infobox.government_type)
       : "Republic",
-    motto: infobox.motto || infobox.national_motto || "",
+    motto: firstPlainText(infobox.motto, infobox.national_motto),
     mottoNative: "",
-    capitalCity: infobox.capital || "",
-    largestCity: infobox.largest_city || "",
-    demonym: infobox.demonym || "",
-    currency: infobox.currency || "",
-    officialLanguages: infobox.official_languages || infobox.languages || "",
+    capitalCity: firstPlainText(infobox.capital),
+    largestCity: firstPlainText(infobox.largest_city),
+    demonym: firstPlainText(infobox.demonym),
+    currency: firstPlainText(infobox.currency),
+    officialLanguages: firstPlainText(infobox.official_languages, infobox.languages),
     nationalLanguage: "",
-    nationalAnthem: infobox.national_anthem || "",
-    nationalReligion: infobox.religion,
+    nationalAnthem: firstPlainText(infobox.national_anthem),
+    nationalReligion: firstPlainText(infobox.religion),
     nationalDay: "",
-    callingCode: infobox.calling_code || "",
-    internetTLD: infobox.internet_tld || "",
+    callingCode: firstPlainText(infobox.calling_code),
+    internetTLD: firstPlainText(infobox.internet_tld),
     drivingSide: infobox.drives_on?.toLowerCase().includes("left") ? "left" : "right",
-    currencySymbol: infobox.currency_code,
-    isoCode: infobox.iso_code,
-    timeZone: infobox.time_zone,
+    currencySymbol: firstPlainText(infobox.currency_code),
+    isoCode: firstPlainText(infobox.iso_code),
+    timeZone: firstPlainText(infobox.time_zone),
     coordinatesLatitude: infobox.coordinates?.[0]?.toString(),
     coordinatesLongitude: infobox.coordinates?.[1]?.toString(),
   };
@@ -437,9 +437,9 @@ function createGovernmentStructure(
     structure: {
       governmentName: `Government of ${name}`,
       governmentType: govType as GovernmentType,
-      headOfState: infobox.head_of_state || "",
-      headOfGovernment: infobox.head_of_government || "",
-      legislatureName: infobox.legislature || infobox.upper_house || "",
+      headOfState: firstPlainText(infobox.head_of_state),
+      headOfGovernment: firstPlainText(infobox.head_of_government),
+      legislatureName: firstPlainText(infobox.legislature, infobox.upper_house),
       executiveName: "",
       judicialName: "",
       totalBudget,
