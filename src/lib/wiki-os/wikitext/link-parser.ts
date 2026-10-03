@@ -313,6 +313,8 @@ const SPECIAL_SYNTAX = ["[[", "[", "<ref", "{{", "'''", "''"];
 
 export function parseInlineLinksAndFormatting(text: string): WikiInlineNode[] {
   const nodes: WikiInlineNode[] = [];
+  // Open bold/italic carries across the links, templates and citations between text chunks.
+  const marks = { bold: false, italic: false };
   let i = 0;
 
   while (i < text.length) {
@@ -332,7 +334,7 @@ export function parseInlineLinksAndFormatting(text: string): WikiInlineNode[] {
       (pos) => pos > i
     );
     const nextSpecial = candidates.length > 0 ? Math.min(...candidates) : text.length;
-    parseFormattedText(text.slice(i, nextSpecial), nodes);
+    parseFormattedText(text.slice(i, nextSpecial), nodes, marks);
     i = nextSpecial;
   }
 
@@ -340,16 +342,22 @@ export function parseInlineLinksAndFormatting(text: string): WikiInlineNode[] {
 }
 
 /** Pushes text nodes for `text`, toggling bold (''') and italic ('') at each mark. */
-function parseFormattedText(text: string, nodes: WikiInlineNode[]): void {
-  let bold = false;
-  let italic = false;
+function parseFormattedText(
+  text: string,
+  nodes: WikiInlineNode[],
+  marks: { bold: boolean; italic: boolean }
+): void {
   // The capture group makes split() keep the marks, so odd indexes are marks and even are text.
   text.split(/('''''|'''|'')/).forEach((piece, idx) => {
     if (idx % 2 === 1) {
-      if (piece !== "''") bold = !bold;
-      if (piece !== "'''") italic = !italic;
+      if (piece !== "''") marks.bold = !marks.bold;
+      if (piece !== "'''") marks.italic = !marks.italic;
     } else if (piece) {
-      nodes.push({ text: piece, ...(bold && { bold: true }), ...(italic && { italic: true }) });
+      nodes.push({
+        text: piece,
+        ...(marks.bold && { bold: true }),
+        ...(marks.italic && { italic: true }),
+      });
     }
   });
 }
