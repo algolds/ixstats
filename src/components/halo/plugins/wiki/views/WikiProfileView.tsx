@@ -124,7 +124,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   onValueChange={setActiveTab}
                   options={[
                     { value: "workspace", label: "Workspace", icon: <FileText aria-hidden /> },
-                    { value: "profile", label: "Wiki Profile", icon: <User aria-hidden /> },
+                    { value: "profile", label: "Wiki profile", icon: <User aria-hidden /> },
                   ]}
                 />
               </div>
@@ -147,7 +147,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                 <div className="space-y-3">
                   <div className="text-label-secondary text-eyebrow flex items-center gap-2">
                     <History className="h-3 w-3" />
-                    <span>Saved & Paused Sessions</span>
+                    <span>Saved and paused sessions</span>
                   </div>
 
                   {pausedSessions.length === 0 ? (
@@ -202,7 +202,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                 <div className="flex flex-col space-y-2">
                   <div className="text-label-secondary text-eyebrow flex items-center gap-2">
                     <FileText className="h-3 w-3" />
-                    <span>Wiki Scratchpad</span>
+                    <span>Wiki scratchpad</span>
                   </div>
                   <div className="relative flex-1">
                     <textarea
@@ -244,7 +244,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                     </AvatarGlow>
                     <div>
                       <div className="text-label text-headline flex items-center gap-2">
-                        <span>{wikiUsername || "Wiki Profile"}</span>
+                        <span>{wikiUsername || "Wiki profile"}</span>
                         {chatBadge.enabled && (
                           <CrownIcon
                             className="h-3.5 w-3.5 shrink-0"
@@ -252,7 +252,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                           />
                         )}
                       </div>
-                      <div className="text-label-secondary text-footnote">Worldbuilding Editor</div>
+                      <div className="text-label-secondary text-footnote">Worldbuilding editor</div>
                     </div>
                   </div>
 
@@ -280,10 +280,10 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   )}
                 </div>
 
-                {/* Quick Actions & Recent */}
+                {/* Quick actions & Recent */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <div className="text-subhead text-label-secondary">Quick Actions</div>
+                    <div className="text-subhead text-label-secondary">Quick actions</div>
                     <div className="space-y-1">
                       {wikiUsername && (
                         <Button
@@ -297,7 +297,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                         >
                           <div className="flex items-center gap-2">
                             <User className="text-blue h-3.5 w-3.5" />
-                            <span>My Contributions</span>
+                            <span>My contributions</span>
                           </div>
                           <ChevronRight className="text-label-tertiary h-3.5 w-3.5" />
                         </Button>
@@ -311,7 +311,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                         >
                           <div className="flex items-center gap-2">
                             <Crown className="text-yellow h-3.5 w-3.5" />
-                            <span>Country Actions</span>
+                            <span>Country actions</span>
                           </div>
                           <ChevronRight className="text-label-tertiary h-3.5 w-3.5" />
                         </Button>
@@ -320,7 +320,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   </div>
 
                   <div className="space-y-2">
-                    <div className="text-subhead text-label-secondary">Recent Pages Visited</div>
+                    <div className="text-subhead text-label-secondary">Recently visited pages</div>
                     {recentArticles.length === 0 ? (
                       <div className="border-separator text-label-secondary rounded-control text-footnote border py-4 text-center">
                         No pages visited recently
@@ -357,7 +357,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
             exit={{ opacity: 0, y: -4 }}
             transition={tweenFast}
           >
-            {/* Country Actions Header */}
+            {/* Country actions Header */}
             <div className="border-separator mb-4 flex items-center justify-between border-b pb-3">
               <div className="flex items-center gap-2">
                 <Button
@@ -415,7 +415,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                 className="h-auto w-full flex-col gap-2 p-4 text-center"
               >
                 <ScrollText className="text-indigo h-5 w-5" />
-                <span>Executive Actions</span>
+                <span>Executive actions</span>
               </Button>
 
               <Button
@@ -428,7 +428,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                 className="h-auto w-full flex-col gap-2 p-4 text-center"
               >
                 <Handshake className="text-teal h-5 w-5" />
-                <span>Manage Diplomacy</span>
+                <span>Manage diplomacy</span>
               </Button>
 
               <Button
@@ -441,7 +441,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                 className="h-auto w-full flex-col gap-2 p-4 text-center"
               >
                 <Map className="text-blue h-5 w-5" />
-                <span>Map & Editor</span>
+                <span>Map and editor</span>
               </Button>
 
               <Button
@@ -467,7 +467,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                 className="h-auto w-full flex-col gap-2 p-4 text-center"
               >
                 <Scale className="text-indigo h-5 w-5" />
-                <span>Politics & Elections</span>
+                <span>Politics and elections</span>
               </Button>
             </div>
           </motion.div>

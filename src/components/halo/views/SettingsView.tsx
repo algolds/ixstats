@@ -179,7 +179,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
           <SettingsRow
             icon={<Layout className="text-indigo h-3.5 w-3.5" />}
             iconBg="bg-indigo/15"
-            label="Compact Mode"
+            label="Compact mode"
             description="Denser UI layout"
           >
             <ToggleSwitch
@@ -221,8 +221,8 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                 )
               }
               iconBg={mediaThemeMode === "plinth" ? "bg-green/15" : "bg-teal/15"}
-              label="Image Appearance"
-              description={mediaThemeMode === "plinth" ? "Light Backplate" : "Adaptive Dark"}
+              label="Image appearance"
+              description={mediaThemeMode === "plinth" ? "Light backplate" : "Adaptive dark"}
             >
               <Switch
                 checked={mediaThemeMode === "plinth"}
@@ -252,8 +252,8 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                       <BookOpen className="text-blue size-3.5" />
                     </span>
                   }
-                  title={morePrefsExpanded ? "Reader Preferences" : "More Preferences"}
-                  subtitle={morePrefsExpanded ? undefined : "Citations, TOC, search, & links"}
+                  title={morePrefsExpanded ? "Reader preferences" : "More preferences"}
+                  subtitle={morePrefsExpanded ? undefined : "Citations, contents, search and links"}
                   accessory={
                     <ChevronRight
                       aria-hidden
@@ -281,8 +281,8 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                         <User className="text-blue size-3.5" />
                       </span>
                     }
-                    title="Account Settings"
-                    subtitle="Profile, preferences, & security"
+                    title="Account settings"
+                    subtitle="Profile, preferences and security"
                     accessory="chevron"
                   />
                 </FacetListSection>
@@ -318,7 +318,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                     <div className="flex cursor-pointer items-center gap-2">
                       <LogOut className="h-3 w-3" />
                       <PreText className="text-footnote" whiteSpace="nowrap">
-                        Sign Out
+                        Sign out
                       </PreText>
                     </div>
                   </SignOutButton>
@@ -335,7 +335,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                 }
                 className="w-full"
               >
-                Sign In
+                Sign in
               </Button>
             </div>
           )}
@@ -344,13 +344,13 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
         {/* ── Additive 2nd Column (Smoothly reveals alongside on More Preferences) ── */}
         {morePrefsExpanded && (
           <div className="animate-in fade-in slide-in-from-right-4 border-separator min-w-0 space-y-1 border-t pt-2 duration-200 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4">
-            <SectionLabel>Reader Preferences</SectionLabel>
+            <SectionLabel>Reader preferences</SectionLabel>
 
             {/* Citations */}
             <SettingsRow
               icon={<MessageSquare className="text-wiki h-3.5 w-3.5" />}
               iconBg="bg-wiki/15"
-              label="Citation Tooltips"
+              label="Citation tooltips"
               description="Hover source preview cards"
             >
               <ToggleSwitch
@@ -380,7 +380,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
             <SettingsRow
               icon={<Search className="text-blue h-3.5 w-3.5" />}
               iconBg="bg-blue/15"
-              label="Quick Search"
+              label="Quick search"
               description="Index wiki articles in search"
             >
               <ToggleSwitch
@@ -420,8 +420,8 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                         <BookOpen className="text-indigo size-3.5" />
                       </span>
                     }
-                    title="Wiki System Settings"
-                    subtitle="Autonomous lore scanner & sources"
+                    title="Wiki system settings"
+                    subtitle="Lore scanner and sources"
                     accessory="chevron"
                   />
                 </FacetListSection>
@@ -455,7 +455,7 @@ function SettingsHeader({
         ) : (
           <Settings className="text-blue h-4 w-4" />
         )}
-        <PreText whiteSpace="nowrap">{isOnWikiPage ? "Wiki Settings" : "Settings"}</PreText>
+        <PreText whiteSpace="nowrap">{isOnWikiPage ? "Wiki settings" : "Settings"}</PreText>
       </div>
       <div className="flex items-center gap-1">
         {onRefresh && (
@@ -525,7 +525,7 @@ function SettingsRow({
           title={iconTitle}
           aria-label={iconTitle}
           className={cn(
-            "rounded-control-sm focus-visible:outline-tint shrink-0 cursor-pointer p-2 transition-colors focus-visible:outline-2 active:scale-[0.98]",
+            "rounded-control-sm focus-visible:outline-tint shrink-0 cursor-pointer p-2 transition-colors focus-visible:outline-2",
             iconBg
           )}
         >

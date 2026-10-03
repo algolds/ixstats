@@ -394,8 +394,8 @@ function CompactViewComponent({
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
                       {totalUnreadCount > 0
-                        ? `Alert Center (${totalUnreadCount} unread)`
-                        : "Alert Center"}
+                        ? `Notifications (${totalUnreadCount} unread)`
+                        : "Notifications"}
                     </TooltipContent>
                   </Tooltip>
                 )}

@@ -161,8 +161,8 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     const grps: { label: string; items: NotificationItem[] }[] = [];
     const buckets = {
       Recent: [] as NotificationItem[],
-      "Earlier Today": [] as NotificationItem[],
-      "This Week": [] as NotificationItem[],
+      "Earlier today": [] as NotificationItem[],
+      "This week": [] as NotificationItem[],
       Earlier: [] as NotificationItem[],
     };
 
@@ -170,8 +170,8 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
       // oxlint-disable-next-line
       const hrs = (Date.now() - new Date(n.timestamp ?? n.createdAt ?? 0).getTime()) / 3600000;
       if (hrs < 1) buckets.Recent.push(n);
-      else if (hrs < 24) buckets["Earlier Today"].push(n);
-      else if (hrs < 168) buckets["This Week"].push(n);
+      else if (hrs < 24) buckets["Earlier today"].push(n);
+      else if (hrs < 168) buckets["This week"].push(n);
       else buckets.Earlier.push(n);
     }
 
@@ -275,7 +275,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
         <div className="text-label text-headline flex items-center gap-2">
           <BellRing className="text-yellow h-4 w-4" />
           <PreText className="text-inherit" whiteSpace="nowrap">
-            {isExecutiveMode ? "Intelligence Hub" : "Alert Center"}
+            {isExecutiveMode ? "Intelligence" : "Notifications"}
           </PreText>
           {totalUnreadCount > 0 && (
             <PreText
@@ -375,7 +375,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                   href="/messages"
                   className="text-tint text-caption mt-2 inline-block font-semibold hover:underline"
                 >
-                  Start a diplomatic conversation →
+                  Start a conversation
                 </Link>
               </div>
             )}
@@ -459,10 +459,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
               <div className="py-10 text-center">
                 <Bell className="text-label-tertiary mx-auto mb-3 h-8 w-8" />
                 <PreText className="text-label-secondary text-body font-medium" whiteSpace="nowrap">
-                  {isExecutiveMode ? "Situation stable" : "All caught up"}
-                </PreText>
-                <PreText className="text-label-secondary text-footnote mt-1" whiteSpace="nowrap">
-                  No notifications right now
+                  {isExecutiveMode ? "No alerts" : "No notifications"}
                 </PreText>
               </div>
             )}
@@ -480,8 +477,8 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
             setSize(isUltra ? SIZE_PRESETS.TALL : SIZE_PRESETS.ULTRA);
           }}
           className="text-label-secondary hover:text-label rounded-full"
-          title={isUltra ? "Standard View" : "Expanded View"}
-          aria-label={isUltra ? "Standard View" : "Expanded View"}
+          title={isUltra ? "Standard view" : "Expanded view"}
+          aria-label={isUltra ? "Standard view" : "Expanded view"}
         >
           {isUltra ? <Minimize2 aria-hidden /> : <Maximize2 aria-hidden />}
         </Button>

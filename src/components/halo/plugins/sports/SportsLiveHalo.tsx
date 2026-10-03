@@ -61,7 +61,7 @@ function LivePill({ match }: { match: LiveActivityMatch }) {
       <PreText className="text-label text-caption font-semibold tabular-nums" whiteSpace="nowrap">
         {shortFor(match.homeTeam)} {state.homeScore}–{state.awayScore} {shortFor(match.awayTeam)}
       </PreText>
-      <PreText className="text-label-secondary text-footnote font-mono" whiteSpace="nowrap">
+      <PreText className="text-label-secondary text-footnote tabular-nums" whiteSpace="nowrap">
         {state.isFinal ? "FT" : `${state.minute}'`}
       </PreText>
     </span>
@@ -100,7 +100,7 @@ function SportsLiveView({ context }: DIViewProps) {
               <span className="text-label-secondary">:</span>
               <span>{state.awayScore}</span>
             </div>
-            <div className="text-label-secondary text-footnote font-mono">
+            <div className="text-label-secondary text-footnote tabular-nums">
               {state.isFinal ? "FT" : `${state.minute}'`}
             </div>
           </div>

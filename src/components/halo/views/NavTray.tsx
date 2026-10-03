@@ -19,7 +19,7 @@ import { springSmooth, tweenExit } from "~/lib/design/motion";
 import { FacetMaterial } from "~/components/ui/facet";
 import { focusRing } from "~/components/ui/button";
 
-// ─── Section color mapping (system colour roles, spec §2.1) ─────────────────────
+// ─── Section color mapping ─────────────────────
 export const SECTION_COLORS: Record<string, { accent: string; bg: string; label: string }> = {
   "/dashboard": { accent: "var(--color-green)", bg: "bg-green/15", label: "Dashboard" },
   "/mycountry": { accent: "var(--color-yellow)", bg: "bg-yellow/15", label: "MyCountry" },
@@ -84,7 +84,7 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
   const normalized = stripBasePath(pathname || "/");
   const trayRef = React.useRef<HTMLDivElement>(null);
 
-  // Close on an outside press or Escape (no full-screen click-catcher overlay, spec §7.3).
+  // Close on an outside press or Escape.
   React.useEffect(() => {
     if (!isOpen) return;
     const onPointerDown = (event: PointerEvent) => {
@@ -120,7 +120,7 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
           exit={{ opacity: 0, y: -8, scale: 0.96, transition: tweenExit }}
           transition={springSmooth}
         >
-          {/* v2: the island's expanded acrylic sheet with its refraction edges. */}
+          {/* The island's expanded acrylic sheet. */}
           <FacetMaterial
             material="acrylic"
             data-expanded="true"

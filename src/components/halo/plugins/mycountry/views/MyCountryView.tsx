@@ -99,7 +99,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               type="button"
               onClick={() => (window.location.href = createAbsoluteUrl("/settings"))}
               className="group focus-visible:outline-tint relative flex-shrink-0 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
-              title="Account Settings"
+              title="Account settings"
               aria-label="Account settings"
             >
               {user?.imageUrl ? (
@@ -117,7 +117,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
           )}
           <div>
             <PreText className="text-label text-caption font-semibold" whiteSpace="nowrap">
-              {user?.firstName ? user.firstName : "My Account"}
+              {user?.firstName ? user.firstName : "My account"}
             </PreText>
           </div>
         </div>
@@ -132,7 +132,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                   const slug = country.slug || country.name.replace(/\s+/g, "_");
                   window.location.href = createAbsoluteUrl(`/countries/${slug}`);
                 }}
-                title="Public Country Profile"
+                title="Public country profile"
               >
                 <User aria-hidden className="text-blue size-3.5" />
                 <span>Profile</span>
@@ -144,7 +144,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                 onClick={() => {
                   window.location.href = createAbsoluteUrl("/mycountry/editor");
                 }}
-                title="Open MyCountry Map Editor"
+                title="Open MyCountry map editor"
               >
                 <Edit3 aria-hidden className="text-yellow size-3.5" />
                 <span>Editor</span>
@@ -200,7 +200,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                 </PreText>
               ) : (
                 <PreText className="text-label-secondary text-caption" whiteSpace="nowrap">
-                  Basic Membership
+                  Basic membership
                 </PreText>
               )}
             </div>
@@ -218,7 +218,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                 {userProfile.role?.level !== undefined && userProfile.role.level <= 20 && (
                   <Badge variant="warning">
                     <Crown aria-hidden />
-                    Founding Member
+                    Founding member
                   </Badge>
                 )}
               </div>
@@ -267,7 +267,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                           className="rounded-control bg-fill-4 hover:bg-fill-2 focus-visible:outline-tint duration-fast ease-out-facet p-2 text-center transition-[background-color,scale] focus-visible:outline-2 active:scale-[0.98]"
                         >
                           <PreText
-                            className="text-label-secondary text-eyebrow"
+                            className="text-label-secondary text-stat-label"
                             whiteSpace="nowrap"
                           >
                             {metricView.gdp === "perCapita" ? "GDP/Cap" : "Total GDP"}
@@ -303,7 +303,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                           className="rounded-control bg-fill-4 hover:bg-fill-2 focus-visible:outline-tint duration-fast ease-out-facet p-2 text-center transition-[background-color,scale] focus-visible:outline-2 active:scale-[0.98]"
                         >
                           <PreText
-                            className="text-label-secondary text-eyebrow"
+                            className="text-label-secondary text-stat-label"
                             whiteSpace="nowrap"
                           >
                             {metricView.population === "total" ? "Population" : "Density"}
@@ -339,9 +339,9 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
             </div>
           </div>
 
-          {/* ── Country Actions Grid ──────────────────────────── */}
+          {/* ── Country actions Grid ──────────────────────────── */}
           <div className="px-3 py-2">
-            <p className="text-subhead text-label-secondary px-1 pb-2">Country Actions</p>
+            <p className="text-subhead text-label-secondary px-1 pb-2">Country actions</p>
             <div className="grid grid-cols-2 gap-2">
               <Button
                 type="button"
@@ -350,7 +350,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                 className={ACTION_BUTTON}
               >
                 <Edit3 aria-hidden className="text-yellow" />
-                <span className="truncate">Country Editor</span>
+                <span className="truncate">Country editor</span>
               </Button>
 
               <Button
@@ -360,7 +360,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                 className={ACTION_BUTTON}
               >
                 <Map aria-hidden className="text-teal" />
-                <span className="truncate">Map Editor</span>
+                <span className="truncate">Map editor</span>
               </Button>
 
               <Button
@@ -405,12 +405,12 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                 className={ACTION_BUTTON}
               >
                 <BookOpen aria-hidden className="text-indigo" />
-                <span className="truncate">Wiki Page</span>
+                <span className="truncate">Wiki page</span>
               </Button>
             </div>
           </div>
 
-          {/* ── Bottom Actions (Sign Out & View Profile) ────── */}
+          {/* ── Bottom Actions (Sign Out & View profile) ────── */}
           <div className="border-separator flex items-center justify-between border-t px-3 py-2">
             <SignOutButton>
               <Button
@@ -421,7 +421,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               >
                 <LogOut aria-hidden />
                 <PreText className="text-inherit" whiteSpace="nowrap">
-                  Sign Out
+                  Sign out
                 </PreText>
               </Button>
             </SignOutButton>
@@ -438,7 +438,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
             >
               <Globe aria-hidden />
               <PreText className="text-inherit" whiteSpace="nowrap">
-                View Profile
+                View profile
               </PreText>
             </Button>
           </div>
@@ -462,7 +462,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               className="w-full"
             >
               <PreText className="text-inherit" whiteSpace="nowrap">
-                Sign In
+                Sign in
               </PreText>
             </Button>
           </div>

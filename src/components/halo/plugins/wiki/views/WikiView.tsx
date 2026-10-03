@@ -183,7 +183,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
             />
           )}
           <PreText className="text-label text-headline max-w-[200px] truncate" whiteSpace="nowrap">
-            {articleTitle || "IxWiki Workspace"}
+            {articleTitle || "IxWiki workspace"}
           </PreText>
         </div>
 
@@ -197,8 +197,8 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
                 type="button"
                 onClick={() => onSwitchMode("search")}
                 className="text-label-secondary hover:text-label"
-                title="Global Search"
-                aria-label="Global Search"
+                title="Search"
+                aria-label="Search"
               >
                 <Search aria-hidden />
               </Button>

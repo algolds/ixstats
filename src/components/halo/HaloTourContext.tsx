@@ -15,41 +15,40 @@ export interface TourStepDetails {
 export const TOUR_STEPS: TourStepDetails[] = [
   {
     id: 1,
-    title: "Meet the Halo.",
+    title: "Meet the Halo",
     description:
-      "An intelligent control center. It adapts to what you're doing, keeping notifications, actions, and commands just a glance away.",
+      "The Halo holds your notifications, actions and commands. It changes to match the page you're on.",
     targetElementSelector: "#command-palette",
     placement: "bottom",
   },
   {
     id: 2,
-    title: "Your cockpit. Personal.",
+    title: "Your country status",
     description:
-      "Get a direct, live status feed of your country. It adapts dynamically depending on which system you are currently viewing—bringing you relevant metrics, policies, and actions in one seamless view.",
+      "See live status for your country. The metrics, policies and actions shown depend on the page you're viewing.",
     targetElementSelector: "#command-palette",
     placement: "bottom",
   },
   {
     id: 3,
-    title: "Live alerts.",
+    title: "Live alerts",
     description:
-      "When something happens on the platform, the Halo will pulse with an alert. Without stopping what you're doing, you can tap on it to see what's happening.",
+      "When something happens, the Halo shows an alert. Tap it to see what changed without leaving the page.",
     targetElementSelector: "#command-palette",
     placement: "bottom",
   },
   {
     id: 4,
-    title: "Your control center. Unified.",
+    title: "Notifications and actions",
     description:
-      "Keep track of live notifications, quick actions, and executive context in one elegant view. Tap or glance at the Halo to stay ahead of what matters next.",
+      "Open the Halo to see live notifications, quick actions and executive context in one place.",
     targetElementSelector: "#command-palette",
     placement: "bottom",
   },
   {
     id: 5,
-    title: "Control your experience.",
-    description:
-      "Tailor the Halo settings. Configure layout behavior, interface preferences, and notifications to match your style.",
+    title: "Settings",
+    description: "Change layout, interface preferences and notifications from the Halo settings.",
     targetElementSelector: "#command-palette",
     placement: "bottom",
   },
@@ -108,13 +107,13 @@ export function HaloTourProvider({
             .then(({ notifyFromStore }) => {
               notifyFromStore({
                 title: "New to the Halo?",
-                message: "Take a 1-minute guided tour of your intelligent control center.",
+                message: "Take a one-minute tour of the Halo.",
                 type: "info",
                 priority: "high",
                 duration: 15000,
                 actions: [
                   {
-                    label: "Take Tour",
+                    label: "Take the tour",
                     onClick: () => {
                       // Start the tour directly on the active page
                       setIsActive(true);
@@ -122,7 +121,7 @@ export function HaloTourProvider({
                     },
                   },
                   {
-                    label: "Maybe Later",
+                    label: "Maybe later",
                     onClick: () => {},
                   },
                 ],

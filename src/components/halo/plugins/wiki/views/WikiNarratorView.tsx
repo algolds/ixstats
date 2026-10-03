@@ -46,7 +46,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ShieldAlert className="text-yellow h-4 w-4" />
-            <span className="text-label text-caption font-semibold">Early Access Feature</span>
+            <span className="text-label text-caption font-semibold">Early access feature</span>
           </div>
           <Button
             size="sm"
@@ -58,8 +58,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
           </Button>
         </div>
         <p className="text-label-secondary text-footnote">
-          WikiOS Audio Narrator is currently restricted to system owners, administrators, and beta
-          testers.
+          The WikiOS audio narrator is limited to system owners, administrators and beta testers.
         </p>
         {onSwitchMode && (
           <Button
@@ -97,9 +96,9 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
             <Headphones className="h-3.5 w-3.5" />
           </div>
           <div className="flex min-w-0 flex-col">
-            <span className="text-label-secondary text-eyebrow">Now Playing · Narrator</span>
+            <span className="text-label-secondary text-eyebrow">Now playing · Narrator</span>
             <span className="text-headline truncate" style={{ color: accentColor }}>
-              {articleTitle || "Wiki Article"}
+              {articleTitle || "Wiki article"}
             </span>
           </div>
         </div>
@@ -107,7 +106,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
         <div className="flex shrink-0 items-center gap-2">
           {/* Progress Reading Pill */}
           {narratorState && narratorState.totalBlocks > 0 && (
-            <div className="text-label-secondary bg-fill-4 border-separator rounded-control-sm text-footnote flex items-center gap-1 border px-2 py-0.5 font-mono tabular-nums">
+            <div className="text-label-secondary bg-fill-4 border-separator rounded-control-sm text-footnote flex items-center gap-1 border px-2 py-0.5 tabular-nums">
               <span>
                 {narratorState.activeBlockIndex + 1}/{narratorState.totalBlocks}
               </span>
