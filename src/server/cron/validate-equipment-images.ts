@@ -1,4 +1,3 @@
-// src/server/cron/validate-equipment-images.ts
 /**
  * Cron Job: Validate Equipment Images
  *
@@ -22,7 +21,7 @@ interface ValidationJobResult {
   errors: string[];
 }
 
-export interface ValidationStats {
+interface ValidationStats {
   total: number;
   withImages: number;
   withoutImages: number;
@@ -68,45 +67,13 @@ export async function validateEquipmentImagesJob(): Promise<ValidationJobResult>
     result.total = equipment.length;
     console.log(`[CRON] Found ${equipment.length} equipment items with images`);
 
-    // Process in batches of 10
+    // Process in batches of 10, pausing between batches to rate limit
     const batchSize = 10;
     for (let i = 0; i < equipment.length; i += batchSize) {
-      const batch = equipment.slice(i, i + batchSize);
-
-      for (const item of batch) {
-        try {
-          // Validate image URL
-          const isValid = await validateImageUrl(item.imageUrl!);
-
-          if (isValid) {
-            result.validated++;
-            console.log(`[CRON] ✅ Valid: ${item.name}`);
-          } else {
-            result.broken++;
-            console.log(`[CRON] ❌ Broken: ${item.name} - ${item.imageUrl}`);
-
-            // Attempt auto-resolution
-            console.log(`[CRON] 🔧 Attempting auto-fix for: ${item.name}`);
-            const resolved = await resolveEquipmentImage(item.id);
-
-            if (resolved.success && resolved.imageUrl) {
-              result.fixed++;
-              console.log(`[CRON] ✅ Auto-fixed: ${item.name} -> ${resolved.imageUrl}`);
-            } else {
-              result.failed++;
-              console.log(`[CRON] ❌ Auto-fix failed: ${item.name}`);
-              result.errors.push(`Failed to resolve: ${item.name} (${item.id})`);
-            }
-          }
-        } catch (error) {
-          result.errors.push(
-            `Error validating ${item.name}: ${error instanceof Error ? error.message : "Unknown error"}`
-          );
-          console.error(`[CRON] Error validating ${item.name}:`, error);
-        }
+      for (const item of equipment.slice(i, i + batchSize)) {
+        await validateEquipmentItem(item, result);
       }
 
-      // Rate limit: wait 2 seconds between batches
       if (i + batchSize < equipment.length) {
         await new Promise((resolve) => setTimeout(resolve, 2000));
       }
@@ -131,6 +98,38 @@ export async function validateEquipmentImagesJob(): Promise<ValidationJobResult>
     return result;
   } finally {
     await prisma.$disconnect();
+  }
+}
+
+async function validateEquipmentItem(
+  item: { id: string; name: string; imageUrl: string | null },
+  result: ValidationJobResult
+): Promise<void> {
+  try {
+    if (await validateImageUrl(item.imageUrl!)) {
+      result.validated++;
+      console.log(`[CRON] ✅ Valid: ${item.name}`);
+      return;
+    }
+
+    result.broken++;
+    console.log(`[CRON] ❌ Broken: ${item.name} - ${item.imageUrl}`);
+    console.log(`[CRON] 🔧 Attempting auto-fix for: ${item.name}`);
+    const resolved = await resolveEquipmentImage(item.id);
+
+    if (resolved.success && resolved.imageUrl) {
+      result.fixed++;
+      console.log(`[CRON] ✅ Auto-fixed: ${item.name} -> ${resolved.imageUrl}`);
+    } else {
+      result.failed++;
+      console.log(`[CRON] ❌ Auto-fix failed: ${item.name}`);
+      result.errors.push(`Failed to resolve: ${item.name} (${item.id})`);
+    }
+  } catch (error) {
+    result.errors.push(
+      `Error validating ${item.name}: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
+    console.error(`[CRON] Error validating ${item.name}:`, error);
   }
 }
 
