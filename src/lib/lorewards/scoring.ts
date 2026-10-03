@@ -9,10 +9,6 @@
 import { db } from "~/server/db";
 import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
 
-// ---------------------------------------------------------------------------
-// Config
-// ---------------------------------------------------------------------------
-
 export interface ScoringWeights {
   proseWeight: number; // Weight in prose multiplier formula (default 0.7)
   collaborativeBonus: number; // Multiplier for cross-country edits (default 1.3)
@@ -68,9 +64,138 @@ interface WikiOSScoringResult {
   weights: ScoringWeights;
 }
 
-// ---------------------------------------------------------------------------
-// Main scoring function (PostgreSQL Native)
-// ---------------------------------------------------------------------------
+const LIST_PAGE = /^Lists? of /i;
+const ENRICHED_COUNT = 10;
+/** Standard high prose heuristic for substantive edits. */
+const PROSE_RATIO = 0.85;
+
+/** A user's edits to one page over the day. */
+interface Candidate {
+  user: string;
+  page: string;
+  articleId: string;
+  bytesAdded: number;
+  largestEdit: number;
+  editCount: number;
+  isMinorOnly: boolean;
+  hasNewArticle: boolean;
+}
+
+function aggregateCandidates(revRows: any[]): Candidate[] {
+  const byUserPage = new Map<string, Candidate>();
+
+  for (const row of revRows) {
+    const user = String(row.author || "Anonymous");
+    if (/bot$/i.test(user)) continue;
+
+    const page = String(row.article?.title || "Untitled").replace(/_/g, " ");
+    const diff = Number(row.byteDelta || 0);
+    const key = `${user}|${page}`;
+    let entry = byUserPage.get(key);
+    if (!entry) {
+      entry = {
+        user,
+        page,
+        articleId: String(row.articleId),
+        bytesAdded: 0,
+        largestEdit: 0,
+        editCount: 0,
+        isMinorOnly: true,
+        hasNewArticle: diff > 500 && row.byteSize === diff,
+      };
+      byUserPage.set(key, entry);
+    }
+
+    if (diff > 0) entry.bytesAdded += diff;
+    entry.largestEdit = Math.max(entry.largestEdit, diff);
+    entry.editCount++;
+    if (!row.minor) entry.isMinorOnly = false;
+  }
+
+  // Drop trivial entries, biggest first
+  return Array.from(byUserPage.values())
+    .filter((e) => e.bytesAdded >= 100)
+    .sort((a, b) => b.bytesAdded - a.bytesAdded);
+}
+
+const applyPenalties = (score: number, c: Candidate, weights: ScoringWeights) => {
+  let result = score;
+  if (LIST_PAGE.test(c.page)) result *= weights.listPenalty;
+  if (c.isMinorOnly && c.largestEdit < weights.minSingleEdit) result *= weights.minorOnlyPenalty;
+  return result;
+};
+
+const candidateBase = (c: Candidate) => ({
+  user: c.user,
+  page: c.page,
+  pageId: c.articleId,
+  bytesAdded: c.bytesAdded,
+  largestEdit: c.largestEdit,
+  editCount: c.editCount,
+  isMinorOnly: c.isMinorOnly,
+  isCollaborative: false,
+  collaborativeMultiplier: 1,
+});
+
+/** Full quality-signal scoring (prose, edit depth, novelty, inlink importance) for a top candidate. */
+async function enrichCandidate(c: Candidate, weights: ScoringWeights): Promise<CandidateScore> {
+  const inlinks: number = await (db as any).wikiLink
+    .count({ where: { targetSlug: toArticleSlug(c.page) } })
+    .catch(() => 0);
+  const depth: number = await (db as any).wikiRevision
+    .count({ where: { articleId: c.articleId, author: c.user } })
+    .catch(() => 1);
+
+  const proseMultiplier = 1 - weights.proseWeight + PROSE_RATIO * weights.proseWeight;
+  const depthMultiplier = 1 + Math.min(depth / 10, 1) * weights.depthMaxBonus;
+  const noveltyMultiplier = c.hasNewArticle ? weights.noveltyBonus : 1.0;
+  const importanceMultiplier = 1 + Math.min(inlinks / 50, 1) * weights.importanceMaxBonus;
+
+  const raw =
+    c.bytesAdded *
+    proseMultiplier *
+    1.0 *
+    depthMultiplier *
+    noveltyMultiplier *
+    importanceMultiplier;
+  const finalScore = Math.round(applyPenalties(raw, c, weights));
+
+  const parts = [`base:${c.bytesAdded}`];
+  if (proseMultiplier < 0.95) parts.push(`prose:${proseMultiplier.toFixed(2)}x`);
+  if (depth > 0) parts.push(`depth:${depthMultiplier.toFixed(2)}x(${depth}revs)`);
+  if (c.hasNewArticle) parts.push(`new:${noveltyMultiplier}x`);
+  if (inlinks > 10) parts.push(`imp:${importanceMultiplier.toFixed(2)}x(${inlinks}links)`);
+  if (LIST_PAGE.test(c.page)) parts.push(`list:${weights.listPenalty}x`);
+
+  return {
+    ...candidateBase(c),
+    proseRatio: PROSE_RATIO,
+    proseMultiplier,
+    editDepth: depth,
+    depthMultiplier,
+    isNewArticle: c.hasNewArticle,
+    noveltyMultiplier,
+    inlinkCount: inlinks,
+    importanceMultiplier,
+    finalScore,
+    scoreBreakdown: parts.join(" · "),
+  };
+}
+
+/** Candidates below the top ten are scored on bytes alone. */
+const unenrichedScore = (c: Candidate, weights: ScoringWeights): CandidateScore => ({
+  ...candidateBase(c),
+  proseRatio: -1,
+  proseMultiplier: 1,
+  editDepth: 0,
+  depthMultiplier: 1,
+  isNewArticle: false,
+  noveltyMultiplier: 1,
+  inlinkCount: 0,
+  importanceMultiplier: 1,
+  finalScore: Math.round(applyPenalties(c.bytesAdded, c, weights)),
+  scoreBreakdown: `base:${c.bytesAdded} (unenriched)`,
+});
 
 export async function scoreDailyWikiOS(
   dateStr: string,
@@ -79,20 +204,12 @@ export async function scoreDailyWikiOS(
   const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
   const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
 
-  // 1. Fetch all revisions for the day from PostgreSQL
-  const revRows = await (db as any).wikiRevision
+  const revRows: any[] = await (db as any).wikiRevision
     .findMany({
       where: {
-        createdAt: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
-        author: {
-          not: null,
-        },
-        article: {
-          namespace: 0,
-        },
+        createdAt: { gte: startOfDay, lte: endOfDay },
+        author: { not: null },
+        article: { namespace: 0 },
       },
       select: {
         id: true,
@@ -103,181 +220,26 @@ export async function scoreDailyWikiOS(
         minor: true,
         createdAt: true,
         wikitext: true,
-        article: {
-          select: {
-            id: true,
-            title: true,
-            slug: true,
-          },
-        },
+        article: { select: { id: true, title: true, slug: true } },
       },
       orderBy: { createdAt: "asc" },
     })
     .catch(() => []);
 
-  const editCount = revRows.length;
-
-  // 2. Aggregate by user|page
-  const aggMap = new Map<
-    string,
-    {
-      user: string;
-      page: string;
-      articleId: string;
-      bytesAdded: number;
-      largestEdit: number;
-      editCount: number;
-      isMinorOnly: boolean;
-      revIds: string[];
-      hasNewArticle: boolean;
-    }
-  >();
-
-  for (const row of revRows) {
-    const user = String(row.author || "Anonymous");
-    if (/bot$/i.test(user)) continue;
-
-    const page = String(row.article?.title || "Untitled").replace(/_/g, " ");
-    const articleId = String(row.articleId);
-    const key = `${user}|${page}`;
-    const diff = Number(row.byteDelta || 0);
-
-    if (!aggMap.has(key)) {
-      aggMap.set(key, {
-        user,
-        page,
-        articleId,
-        bytesAdded: 0,
-        largestEdit: 0,
-        editCount: 0,
-        isMinorOnly: true,
-        revIds: [],
-        hasNewArticle: diff > 500 && row.byteSize === diff,
-      });
-    }
-
-    const entry = aggMap.get(key)!;
-    if (diff > 0) entry.bytesAdded += diff;
-    if (diff > entry.largestEdit) entry.largestEdit = diff;
-    entry.editCount++;
-    entry.revIds.push(row.id);
-    if (!row.minor) entry.isMinorOnly = false;
-  }
-
-  // Filter trivial entries
-  const candidates = Array.from(aggMap.values()).filter((e) => e.bytesAdded >= 100);
-  candidates.sort((a, b) => b.bytesAdded - a.bytesAdded);
-
-  // 3. Enrich top 10 with quality signals
-  const top = candidates.slice(0, 10);
-  const enriched: CandidateScore[] = [];
-
-  for (const c of top) {
-    const inlinks = await (db as any).wikiLink
-      .count({
-        where: { targetSlug: toArticleSlug(c.page) },
-      })
-      .catch(() => 0);
-
-    const depth = await (db as any).wikiRevision
-      .count({
-        where: { articleId: c.articleId, author: c.user },
-      })
-      .catch(() => 1);
-
-    const prose = 0.85; // Standard high prose heuristic for substantive edits
-    const proseMultiplier = 1 - weights.proseWeight + prose * weights.proseWeight;
-    const collaborativeMultiplier = 1.0;
-    const depthMultiplier = 1 + Math.min(depth / 10, 1) * weights.depthMaxBonus;
-    const noveltyMultiplier = c.hasNewArticle ? weights.noveltyBonus : 1.0;
-    const inlinksCap = Math.min(inlinks / 50, 1);
-    const importanceMultiplier = 1 + inlinksCap * weights.importanceMaxBonus;
-
-    let score =
-      c.bytesAdded *
-      proseMultiplier *
-      collaborativeMultiplier *
-      depthMultiplier *
-      noveltyMultiplier *
-      importanceMultiplier;
-
-    const isList = /^Lists? of /i.test(c.page);
-    if (isList) score *= weights.listPenalty;
-    if (c.isMinorOnly && c.largestEdit < weights.minSingleEdit) score *= weights.minorOnlyPenalty;
-
-    score = Math.round(score);
-
-    const parts = [`base:${c.bytesAdded}`];
-    if (proseMultiplier < 0.95) parts.push(`prose:${proseMultiplier.toFixed(2)}x`);
-    if (depth > 0) parts.push(`depth:${depthMultiplier.toFixed(2)}x(${depth}revs)`);
-    if (c.hasNewArticle) parts.push(`new:${noveltyMultiplier}x`);
-    if (inlinks > 10) parts.push(`imp:${importanceMultiplier.toFixed(2)}x(${inlinks}links)`);
-    if (isList) parts.push(`list:${weights.listPenalty}x`);
-
-    enriched.push({
-      user: c.user,
-      page: c.page,
-      pageId: c.articleId,
-      bytesAdded: c.bytesAdded,
-      largestEdit: c.largestEdit,
-      editCount: c.editCount,
-      isMinorOnly: c.isMinorOnly,
-      proseRatio: prose,
-      proseMultiplier,
-      isCollaborative: false,
-      collaborativeMultiplier,
-      editDepth: depth,
-      depthMultiplier,
-      isNewArticle: c.hasNewArticle,
-      noveltyMultiplier,
-      inlinkCount: inlinks,
-      importanceMultiplier,
-      finalScore: score,
-      scoreBreakdown: parts.join(" · "),
-    });
-  }
-
-  // Add remaining candidates with base scoring only
-  for (const c of candidates.slice(10)) {
-    let score = c.bytesAdded;
-    if (/^Lists? of /i.test(c.page)) score *= weights.listPenalty;
-    if (c.isMinorOnly && c.largestEdit < weights.minSingleEdit) score *= weights.minorOnlyPenalty;
-
-    enriched.push({
-      user: c.user,
-      page: c.page,
-      pageId: c.articleId,
-      bytesAdded: c.bytesAdded,
-      largestEdit: c.largestEdit,
-      editCount: c.editCount,
-      isMinorOnly: c.isMinorOnly,
-      proseRatio: -1,
-      proseMultiplier: 1,
-      isCollaborative: false,
-      collaborativeMultiplier: 1,
-      editDepth: 0,
-      depthMultiplier: 1,
-      isNewArticle: false,
-      noveltyMultiplier: 1,
-      inlinkCount: 0,
-      importanceMultiplier: 1,
-      finalScore: Math.round(score),
-      scoreBreakdown: `base:${c.bytesAdded} (unenriched)`,
-    });
-  }
-
-  enriched.sort((a, b) => b.finalScore - a.finalScore);
+  const candidates = aggregateCandidates(revRows);
+  const scored: CandidateScore[] = [];
+  for (const c of candidates.slice(0, ENRICHED_COUNT))
+    scored.push(await enrichCandidate(c, weights));
+  for (const c of candidates.slice(ENRICHED_COUNT)) scored.push(unenrichedScore(c, weights));
+  scored.sort((a, b) => b.finalScore - a.finalScore);
 
   let winner: CandidateScore | null = null;
   let runnerUp: CandidateScore | null = null;
-
-  for (const c of enriched) {
+  for (const c of scored) {
     if (c.finalScore <= 0) continue;
-    if (!winner && c.largestEdit >= weights.minSingleEdit && !/^Lists? of /i.test(c.page)) {
+    if (!winner && c.largestEdit >= weights.minSingleEdit && !LIST_PAGE.test(c.page)) {
       winner = c;
-      continue;
-    }
-    if (!runnerUp && (!winner || c.user !== winner.user)) {
+    } else if (!runnerUp && (!winner || c.user !== winner.user)) {
       runnerUp = c;
       break;
     }
@@ -287,8 +249,8 @@ export async function scoreDailyWikiOS(
     date: dateStr,
     winner,
     runnerUp,
-    candidates: enriched.slice(0, 10),
-    editCount,
+    candidates: scored.slice(0, ENRICHED_COUNT),
+    editCount: revRows.length,
     weights,
   };
 }
