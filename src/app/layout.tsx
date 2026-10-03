@@ -124,7 +124,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       className="dark"
       data-theme="dark"
       // Constant: two WikiOS rules still select on it.
-      data-nav="facet"
       suppressHydrationWarning
     >
       <head>

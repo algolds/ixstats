@@ -43,13 +43,6 @@
     color: var(--color-tier-developing);
     border-color: rgba(245, 158, 11, 0.2);
   }
-
-  /* ─── Compact density ─────────────────────────────────────────────────── */
-
-  html.compact-mode .navigation-bar,
-  [data-density="compact"] .navigation-bar {
-    height: 3rem;
-  }
 }
 
 @utility animate-fade-in {

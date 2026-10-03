@@ -82,19 +82,6 @@
 }
 
 @layer components {
-  /* GPU promotion for the fixed navigation bar (position/z come from its utilities) */
-  .navigation-bar {
-    transform: translateZ(0);
-    will-change: transform, opacity;
-    backface-visibility: hidden;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .navigation-bar {
-      transition: opacity 0.15s ease;
-    }
-  }
-
   /* Hidden scrollbars. Tailwind's `scrollbar-none` sets scrollbar-width;
      these add the WebKit half. */
   .hide-scrollbar {

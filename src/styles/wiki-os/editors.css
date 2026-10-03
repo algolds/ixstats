@@ -207,8 +207,8 @@
     overflow: hidden;
   }
 
-  /* New navigation shell: clear the Halo band instead of the legacy nav bar. */
-  :root[data-nav="facet"] .wikios-imgs-detail {
+  /* Clear the Halo band. */
+  .wikios-imgs-detail {
     top: var(--shell-top-offset);
   }
 
