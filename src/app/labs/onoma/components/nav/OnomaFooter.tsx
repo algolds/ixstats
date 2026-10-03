@@ -5,7 +5,7 @@
 import React from "react";
 import Link from "next/link";
 import { ArrowUp } from "iconoir-react";
-import { OnomaBrandLogo } from "../shared/OnomaBrandLogo";
+import { OnomaBrandLogo } from "~/components/onoma/OnomaBrandLogo";
 import { OnomaGlyph } from "../glyphs/OnomaGlyph";
 import type { OnomaSection, StudioSubTab, ExploreSubTab } from "~/lib/onoma/types";
 import { Button } from "~/components/ui/button";

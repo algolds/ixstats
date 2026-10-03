@@ -9,7 +9,7 @@ import {
   NavArrowLeft as ChevronLeft,
   OpenBook as BookOpen,
 } from "iconoir-react";
-import { OnomaBrandLogo } from "./OnomaBrandLogo";
+import { OnomaBrandLogo } from "~/components/onoma/OnomaBrandLogo";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "~/components/ui/dialog";

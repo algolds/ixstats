@@ -13,7 +13,7 @@ import { FacetMaterial } from "~/components/ui/facet";
 import { Button, buttonVariants } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { tweenFast } from "~/lib/design/motion";
-import { OnomaBrandLogo } from "../shared/OnomaBrandLogo";
+import { OnomaBrandLogo } from "~/components/onoma/OnomaBrandLogo";
 import type {
   OnomaSection,
   StudioSubTab,

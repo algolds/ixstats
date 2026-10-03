@@ -12,7 +12,7 @@ interface LineupPlayer {
   lastName: string;
   position: string;
   number?: number | null;
-  overallRating: number;
+  overallRating?: number;
   x?: number; // percentage (0-100)
   y?: number; // percentage (0-100)
 }
@@ -159,7 +159,7 @@ export function TeamLineup({
 
                         {/* Rating Overlay Badge */}
                         <div className="border-separator bg-surface text-caption text-label absolute -top-2 -right-2 flex min-h-5 min-w-5 items-center justify-center rounded-full border px-0.5 font-semibold tabular-nums">
-                          {player.overallRating}
+                          {player.overallRating ?? "—"}
                         </div>
                       </div>
 
@@ -181,7 +181,7 @@ export function TeamLineup({
                     <div className="border-separator text-footnote mt-2 flex items-center justify-between border-t pt-2">
                       <span className="text-label-secondary font-semibold">RATING:</span>
                       <span className="text-green font-semibold tabular-nums">
-                        {player.overallRating} Overall
+                        {player.overallRating ?? "—"} overall
                       </span>
                     </div>
                   </TooltipContent>
