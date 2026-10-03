@@ -11,7 +11,7 @@ The editor stack provides a Plate-based visual editor (WikiAST ↔ wikitext), a 
 
 ## 1. Routes (`(wiki-os)` group → `/wiki/*` and `/util/*`)
 
-Utility pages live under `/util/*`. The matching `/wiki/<utility>` index routes are thin redirects to `/util/*`; the dynamic `history/[slug]`, `whatlinkshere/[slug]`, `categories/[...slug]` and `contributions/[user]` pages are currently duplicated under both prefixes.
+Utility pages live under `/util/*`. The matching `/wiki/<utility>` index routes are thin redirects to `/util/*`; the dynamic `history/[slug]`, `whatlinkshere/[slug]`, `categories/[...slug]` and `contributions/[user]` pages under `/wiki/*` re-export the `/util/*` implementations.
 
 | Route | File | Purpose |
 |-------|------|---------|

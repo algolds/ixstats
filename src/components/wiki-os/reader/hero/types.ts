@@ -36,7 +36,6 @@ export interface WikiHeroProps {
     timestamp: string;
     comment?: string;
   } | null;
-  totalNations?: number;
   featuredArticleHtml?: string | null;
   featuredArticleData?: FeaturedArticleData | null;
   variant?: WikiHeroVariant;
