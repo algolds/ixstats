@@ -1,4 +1,3 @@
-// src/app/api/admin/init-flags/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { api } from "~/trpc/server";
 import { requireAdminSession } from "~/server/shared/route-auth";

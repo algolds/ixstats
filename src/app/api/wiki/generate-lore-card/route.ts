@@ -1,4 +1,3 @@
-// src/app/api/wiki/generate-lore-card/route.ts
 // API endpoint to generate and save a lore card from a wiki article
 
 import { NextResponse } from "next/server";

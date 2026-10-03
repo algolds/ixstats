@@ -1,4 +1,3 @@
-// src/app/api/ixtime/set-natural/route.ts
 import { NextResponse } from "next/server";
 import { IxTime } from "~/lib/ixtime";
 import { requireAdminSession } from "~/server/shared/route-auth";

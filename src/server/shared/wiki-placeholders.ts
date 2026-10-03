@@ -1,4 +1,3 @@
-// src/server/shared/wiki-placeholders.ts
 // Authoritative canonical resolver for CountryData/BusinessData/MyCountry placeholders across reads, previews, and writes.
 
 import type { Prisma } from "@prisma/client";

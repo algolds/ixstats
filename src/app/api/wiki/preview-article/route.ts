@@ -1,4 +1,3 @@
-// src/app/api/wiki/preview-article/route.ts
 // API endpoint to preview article quality and estimated rarity
 
 import { NextResponse } from "next/server";

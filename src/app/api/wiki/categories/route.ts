@@ -1,4 +1,3 @@
-// src/app/api/wiki/categories/route.ts
 // Search live wiki categories by prefix — feeds the admin lore-card category picker.
 
 import { NextResponse } from "next/server";
