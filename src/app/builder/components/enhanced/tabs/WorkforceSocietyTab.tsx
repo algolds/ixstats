@@ -36,7 +36,7 @@ export function WorkforceSocietyTab({
               <Globe className="text-green h-5 w-5" />
             )}
             <h2 className="text-headline text-label">
-              {subTab === "labor" ? "Labor Market & Employment" : "Demographics & Population"}
+              {subTab === "labor" ? "Labor market and employment" : "Demographics and population"}
             </h2>
           </div>
 
@@ -49,10 +49,10 @@ export function WorkforceSocietyTab({
               setSubTab(next);
             }}
             options={[
-              { value: "labor", label: "Labor & Wages", icon: <Users aria-hidden /> },
+              { value: "labor", label: "Labor & wages", icon: <Users aria-hidden /> },
               {
                 value: "demographics",
-                label: "Demographics & Society",
+                label: "Demographics & society",
                 icon: <Globe aria-hidden />,
               },
             ]}

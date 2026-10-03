@@ -44,9 +44,9 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
       {/* GDP Composition */}
       <Card>
         <CardContent className="p-6">
-          <h3 className="text-headline text-green mb-4 flex items-center gap-2">
+          <h3 className="text-headline text-label mb-4 flex items-center gap-2">
             <PieChart className="h-5 w-5" />
-            <span>GDP Composition</span>
+            <span>GDP composition</span>
           </h3>
           {sectorChartData.length === 0 ? (
             <div className="text-label-secondary flex h-[300px] items-center justify-center">
@@ -67,9 +67,9 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
       {/* Employment Distribution */}
       <Card>
         <CardContent className="p-6">
-          <h3 className="text-headline text-green mb-4 flex items-center gap-2">
+          <h3 className="text-headline text-label mb-4 flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
-            <span>Employment Distribution</span>
+            <span>Employment distribution</span>
           </h3>
           {employmentChartData.length === 0 ? (
             <div className="text-label-secondary flex h-[250px] items-center justify-center">
@@ -91,9 +91,9 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
       {/* Component Impact Summary */}
       <Card>
         <CardContent className="p-6">
-          <h3 className="text-headline text-green mb-4 flex items-center gap-2">
+          <h3 className="text-headline text-label mb-4 flex items-center gap-2">
             <Zap className="h-5 w-5" />
-            <span>Atomic Component Impact</span>
+            <span>Atomic component impact</span>
           </h3>
           <div className="space-y-3">
             {Object.entries(sectorImpacts).map(([sectorId, impact]) => {

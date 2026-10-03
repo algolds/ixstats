@@ -17,7 +17,7 @@ export function ValidationResults({ validationStatus }: ValidationResultsProps) 
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             <div className="space-y-1">
-              <div className="font-medium">Configuration Errors:</div>
+              <div className="font-medium">Configuration errors:</div>
               {validationStatus.errors.map((error, index) => (
                 <div key={index} className="text-body">
                   • {error}
@@ -33,7 +33,7 @@ export function ValidationResults({ validationStatus }: ValidationResultsProps) 
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             <div className="space-y-1">
-              <div className="font-medium">Configuration Warnings:</div>
+              <div className="font-medium">Configuration warnings:</div>
               {validationStatus.warnings.map((warning, index) => (
                 <div key={index} className="text-body">
                   • {warning}

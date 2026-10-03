@@ -104,13 +104,13 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
             value="modern"
             className="text-label-secondary rounded-control text-body data-[state=active]:bg-green/10 data-[state=active]:text-green cursor-pointer font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] data-[state=active]:font-semibold"
           >
-            Modern Archetypes
+            Modern archetypes
           </TabsTrigger>
           <TabsTrigger
             value="historical"
             className="text-label-secondary rounded-control text-body data-[state=active]:bg-green/10 data-[state=active]:text-green cursor-pointer font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] data-[state=active]:font-semibold"
           >
-            Historical Archetypes
+            Historical archetypes
           </TabsTrigger>
         </TabsList>
 
@@ -132,13 +132,13 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
                 {/* Complexity Filter */}
                 <Select value={complexityFilter} onValueChange={setComplexityFilter}>
                   <SelectTrigger className="bg-fill-4 border-separator w-full sm:w-44">
-                    <SelectValue placeholder="Select Complexity" />
+                    <SelectValue placeholder="Select complexity" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Complexities</SelectItem>
-                    <SelectItem value="low">Low Complexity</SelectItem>
-                    <SelectItem value="medium">Medium Complexity</SelectItem>
-                    <SelectItem value="high">High Complexity</SelectItem>
+                    <SelectItem value="all">All complexities</SelectItem>
+                    <SelectItem value="low">Low complexity</SelectItem>
+                    <SelectItem value="medium">Medium complexity</SelectItem>
+                    <SelectItem value="high">High complexity</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -157,7 +157,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
                 <div className="bg-fill-3 border-separator mx-auto w-fit rounded-full border p-4">
                   <Target className="text-label-secondary h-8 w-8" />
                 </div>
-                <h3 className="text-label text-title-3">No Archetypes Available</h3>
+                <h3 className="text-label text-title-3">No archetypes available</h3>
                 <p className="text-label-secondary text-body mx-auto max-w-md">
                   Economic archetypes are being loaded. If this persists, contact the administrator.
                 </p>
@@ -169,7 +169,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
                 <div className="bg-fill-3 border-separator mx-auto w-fit rounded-full border p-4">
                   <Target className="text-label-secondary h-8 w-8" />
                 </div>
-                <h3 className="text-label text-title-3">No Matching Archetypes</h3>
+                <h3 className="text-label text-title-3">No matching archetypes</h3>
                 <p className="text-label-secondary text-body mx-auto max-w-md">
                   No archetypes match your current search and filter settings. Try clearing them.
                 </p>

@@ -21,30 +21,26 @@ export function ConfigurationSummary({
 
   return (
     <>
-      {/* Header */}
-      <div className="text-center">
-        <h2 className="text-large-title mb-2">Economy Configuration Preview</h2>
-        <p className="text-label-secondary">Review your complete economic system configuration</p>
-      </div>
+      <h2 className="text-title-1">Economy configuration preview</h2>
 
       {/* Economic Structure Card */}
       <Card>
         <CardContent className="space-y-4 p-6">
-          <h3 className="text-headline text-green mb-4 flex items-center space-x-2">
+          <h3 className="text-headline text-label mb-4 flex items-center space-x-2">
             <Building2 className="h-5 w-5" />
-            <span>Economic Structure</span>
+            <span>Economic structure</span>
           </h3>
           <div className="space-y-3">
             <div className="flex justify-between">
-              <span className="text-body font-medium">Economic Model:</span>
+              <span className="text-body font-medium">Economic model:</span>
               <Badge variant="outline">{structure.economicModel}</Badge>
             </div>
             <div className="flex justify-between">
-              <span className="text-body font-medium">Growth Strategy:</span>
+              <span className="text-body font-medium">Growth strategy:</span>
               <Badge variant="outline">{structure.growthStrategy}</Badge>
             </div>
             <div className="flex justify-between">
-              <span className="text-body font-medium">Economic Tier:</span>
+              <span className="text-body font-medium">Economic tier:</span>
               <Badge variant="outline">{structure.economicTier}</Badge>
             </div>
             <div className="flex justify-between">
@@ -54,7 +50,7 @@ export function ConfigurationSummary({
           </div>
 
           <div className="space-y-2">
-            <h4 className="text-body font-medium">Primary Sectors:</h4>
+            <h4 className="text-body font-medium">Primary sectors:</h4>
             <div className="flex flex-wrap gap-1">
               {structure.primarySectors.map((sector, index) => (
                 <Badge key={index} variant="default">
@@ -65,7 +61,7 @@ export function ConfigurationSummary({
           </div>
 
           <div className="space-y-2">
-            <h4 className="text-body font-medium">Secondary Sectors:</h4>
+            <h4 className="text-body font-medium">Secondary sectors:</h4>
             <div className="flex flex-wrap gap-1">
               {structure.secondarySectors.map((sector, index) => (
                 <Badge key={index} variant="default">
@@ -76,7 +72,7 @@ export function ConfigurationSummary({
           </div>
 
           <div className="space-y-2">
-            <h4 className="text-body font-medium">Tertiary Sectors:</h4>
+            <h4 className="text-body font-medium">Tertiary sectors:</h4>
             <div className="flex flex-wrap gap-1">
               {structure.tertiarySectors.map((sector, index) => (
                 <Badge key={index} variant="default">

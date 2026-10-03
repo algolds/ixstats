@@ -4,9 +4,6 @@ import React, { memo } from "react";
 import {
   WhiteFlag as Flag,
   Globe,
-  Crown,
-  Calendar,
-  Phone,
   Translate as Languages,
 } from "iconoir-react";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
@@ -68,18 +65,18 @@ export const PreviewIdentity = memo(function PreviewIdentity({
         <div className="rounded-row border-separator bg-surface border p-4">
           <h3 className="text-eyebrow text-label-secondary flex items-center gap-2">
             <Globe className="text-tint h-3.5 w-3.5" />
-            Basic Info
+            Basic info
           </h3>
           <dl className="mt-3 space-y-2">
             <div className="space-y-0.5">
-              <dt className="text-eyebrow text-label-secondary">Common Name</dt>
+              <dt className="text-eyebrow text-label-secondary">Common name</dt>
               <dd className="text-caption text-label font-semibold break-words">
                 {nationalIdentity.countryName}
               </dd>
             </div>
             {nationalIdentity.officialName && (
               <div className="space-y-0.5">
-                <dt className="text-eyebrow text-label-secondary">Official Title</dt>
+                <dt className="text-eyebrow text-label-secondary">Official title</dt>
                 <dd className="text-caption text-label break-words">
                   {nationalIdentity.officialName}
                 </dd>
@@ -93,7 +90,7 @@ export const PreviewIdentity = memo(function PreviewIdentity({
                 </dd>
               </div>
               <div className="space-y-0.5">
-                <dt className="text-eyebrow text-label-secondary">Largest City</dt>
+                <dt className="text-eyebrow text-label-secondary">Largest city</dt>
                 <dd className="text-caption text-label truncate">
                   {nationalIdentity.largestCity || nationalIdentity.capitalCity || "Unspecified"}
                 </dd>
@@ -101,7 +98,7 @@ export const PreviewIdentity = memo(function PreviewIdentity({
             </div>
             {nationalIdentity.callingCode && (
               <div className="space-y-0.5 pt-0.5">
-                <dt className="text-eyebrow text-label-secondary">Calling Code</dt>
+                <dt className="text-eyebrow text-label-secondary">Calling code</dt>
                 <dd className="text-caption text-label">{nationalIdentity.callingCode}</dd>
               </div>
             )}
@@ -159,7 +156,7 @@ export const PreviewIdentity = memo(function PreviewIdentity({
 
             {nationalIdentity.nationalDay && (
               <div className="space-y-0.5">
-                <dt className="text-eyebrow text-label-secondary">National Day</dt>
+                <dt className="text-eyebrow text-label-secondary">National day</dt>
                 <dd className="text-caption text-label">{nationalIdentity.nationalDay}</dd>
               </div>
             )}

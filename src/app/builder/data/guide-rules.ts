@@ -24,8 +24,6 @@ export interface GuideRuleItem {
   title: string;
   description: string;
   badge?: string;
-  color?: string;
-  bg?: string;
 }
 
 export const GUIDE_RULES: Record<BuilderSection, GuideRuleItem[]> = {
@@ -34,182 +32,144 @@ export const GUIDE_RULES: Record<BuilderSection, GuideRuleItem[]> = {
       icon: Globe,
       title: "Real starting numbers",
       description:
-        "Your starting population and GDP per capita originate from real economic data, giving your state realistic numbers from day one.",
-      badge: "Real Baseline",
-      color: "text-yellow",
-      bg: "bg-yellow/10 border-yellow/20",
+        "A real country's population and GDP per capita become your starting values, so the numbers are realistic from day one.",
+      badge: "Real baseline",
     },
     {
       icon: Sparks,
-      title: "Scale first, model second",
+      title: "Pick the scale first",
       description:
-        "First pick a territory whose physical or demographic scale matches your idea. In subsequent steps, layer on any government or economic model.",
-      badge: "Scale First",
-      color: "text-teal",
-      bg: "bg-teal/10 border-teal/20",
+        "Choose a country whose size and population are close to what you want, then adjust the government and economy in the later steps.",
+      badge: "Scale",
     },
     {
       icon: Shield,
       title: "Everything can change later",
       description:
-        "Templates are just a foundation. All parameters, from tax structures and institutional blocks to lore and flag imagery, can be edited anytime.",
-      badge: "Full Agency",
-      color: "text-green",
-      bg: "bg-green/10 border-green/20",
+        "A template is only a starting point. Tax rates, government components, lore and the flag can all be edited afterward.",
+      badge: "Editable",
     },
   ],
   identity: [
     {
       icon: Bookmark,
-      title: "Name & formal nomenclature",
+      title: "Names",
       description:
-        "Define your state's conventional and constitutional names. These names appear across global treaties, passbooks, and administrative reports.",
-      badge: "Nomenclature",
-      color: "text-indigo",
-      bg: "bg-indigo/10 border-indigo/20",
+        "Set the common name and the official name. They appear on treaties, passports and reports.",
+      badge: "Names",
     },
     {
       icon: Flag,
-      title: "National heraldry & vexillology",
+      title: "Flag and coat of arms",
       description:
-        "Upload or select your sovereign flag and coat of arms. These emblems represent your nation across the interactive map and passport manifests.",
+        "Upload or select a flag and coat of arms. They appear on the map and on passports.",
       badge: "Symbols",
-      color: "text-yellow",
-      bg: "bg-yellow/10 border-yellow/20",
     },
     {
       icon: Compass,
-      title: "Ideological alignment profile",
+      title: "Ideological alignment",
       description:
-        "Set your nation's foundational alignment along civil, economic, and sovereign axes to determine default diplomatic standing.",
-      badge: "Ideology",
-      color: "text-teal",
-      bg: "bg-teal/10 border-teal/20",
+        "Set your nation's position on the civil, economic and sovereignty axes. It sets your default diplomatic standing.",
+      badge: "Alignment",
     },
   ],
   government: [
     {
       icon: Blocks,
-      title: "Select up to 15 components",
+      title: "Pick up to 15 components",
       description:
-        "Choose building blocks that define your state, from supreme authority and court systems to public services. There are no mandatory picks. Build the exact system of government you envision.",
-      badge: "Capacity: 15",
-      color: "text-yellow",
-      bg: "bg-yellow/10 border-yellow/20",
+        "Components cover power structures, courts, public services and more. None is mandatory, so build the system you want.",
+      badge: "Max 15",
     },
     {
       icon: Crown,
-      title: "Shape your priorities",
+      title: "Set your priorities",
       description:
-        "Components span power structures, legitimacy, legal systems, security, and administration. Distribute authority broadly or concentrate heavily in a few areas to match your nation's identity.",
+        "Spread authority across many components or concentrate it in a few, depending on the kind of state you want.",
       badge: "Branches",
-      color: "text-blue",
-      bg: "bg-blue/10 border-blue/20",
     },
     {
       icon: Zap,
       title: "Combine components",
       description:
-        "Components that reinforce each other unlock synergy bonuses to your total effectiveness score. For example, pairing Rule of Law with an Independent Judiciary creates mutual stability.",
+        "Components that reinforce each other add a synergy bonus to your effectiveness score. Rule of law and an independent judiciary are one example.",
       badge: "Synergies",
-      color: "text-green",
-      bg: "bg-green/10 border-green/20",
     },
     {
       icon: Shield,
-      title: "Navigate conflicts",
+      title: "Conflicts",
       description:
-        "Opposing choices introduce political friction and lower net effectiveness, but you are free to keep them. Whether you want a harmonious consensus or an unstable, contradictory regime is entirely up to you.",
+        "Opposing components add friction and lower your net effectiveness. You can still keep them.",
       badge: "Friction",
-      color: "text-red",
-      bg: "bg-red/10 border-red/20",
     },
     {
       icon: TrendingUp,
-      title: "Track costs and upkeep",
+      title: "Costs and upkeep",
       description:
-        "The top metrics bar recalculates live as you pick components. It tracks your net effectiveness, upfront setup spend, and ongoing annual upkeep in real time so you can manage institutional power on your own terms.",
-      badge: "Budget & Upkeep",
-      color: "text-purple",
-      bg: "bg-purple/10 border-purple/20",
+        "The metrics bar updates as you pick components. It shows net effectiveness, setup cost and yearly upkeep.",
+      badge: "Budget",
     },
   ],
   economics: [
     {
       icon: Industry,
-      title: "Sector distribution & balance",
+      title: "Sector distribution",
       description:
-        "Configure economic weights across Agriculture, Industrial Manufacturing, Commercial Services, and High Technology. Diversification builds resilience against trade shocks.",
+        "Set the weight of agriculture, industry, services and technology. A diverse mix is more resilient to trade shocks.",
       badge: "Sectors",
-      color: "text-yellow",
-      bg: "bg-yellow/10 border-yellow/20",
     },
     {
       icon: Calculator,
-      title: "Tax brackets & revenue model",
+      title: "Taxes and revenue",
       description:
-        "Establish sovereign tax rates on personal income, corporate enterprise, and natural resource extraction to balance fiscal spending.",
+        "Set tax rates on personal income, corporate profit and resource extraction to balance government spending.",
       badge: "Fiscal",
-      color: "text-green",
-      bg: "bg-green/10 border-green/20",
     },
     {
       icon: Users,
-      title: "Workforce & labor standards",
+      title: "Labor",
       description:
-        "Regulate workforce participation, minimum living wages, and unionization laws to support productivity and consumer purchasing power.",
+        "Set workforce participation, minimum wage and unionization. They affect productivity and consumer spending.",
       badge: "Labor",
-      color: "text-teal",
-      bg: "bg-teal/10 border-teal/20",
     },
     {
       icon: Coins,
-      title: "Currency & sovereign reserves",
+      title: "Currency and reserves",
       description:
-        "Establish your monetary backing, currency denomination, and reserve composition to safeguard exchange rate stability.",
+        "Set the currency, its backing and the reserve composition. They affect exchange rate stability.",
       badge: "Monetary",
-      color: "text-purple",
-      bg: "bg-purple/10 border-purple/20",
     },
   ],
   preview: [
     {
       icon: Eye,
-      title: "Synthesis validation",
+      title: "Check your choices",
       description:
-        "Inspect all institutional choices, sector outputs, and budget reconciliations before publishing your nation into the live simulation.",
-      badge: "Integrity",
-      color: "text-yellow",
-      bg: "bg-yellow/10 border-yellow/20",
+        "Review the government components, sector outputs and budget before you create the nation.",
+      badge: "Review",
     },
     {
       icon: Zap,
-      title: "Simulation readiness",
+      title: "Basic institutions",
       description:
-        "Confirm that essential executive and judicial authorities are established to handle incoming policy directives and diplomatic events.",
+        "Make sure you have executive and judicial authorities so your nation can handle policy directives and diplomatic events.",
       badge: "Readiness",
-      color: "text-green",
-      bg: "bg-green/10 border-green/20",
     },
   ],
   import: [
     {
       icon: Globe,
-      title: "Wiki infobox extraction",
+      title: "Infobox extraction",
       description:
-        "Import national lore, demographic records, and economic indicators directly from recognized wiki encyclopedias.",
-      badge: "Lore Import",
-      color: "text-blue",
-      bg: "bg-blue/10 border-blue/20",
+        "Lore, demographics and economic indicators are read from the country's wiki infobox.",
+      badge: "Import",
     },
     {
       icon: Check,
-      title: "Data reconciliation",
+      title: "Review the data",
       description:
-        "Review extracted statistics and map them onto the builder's atomic components and economic sectors. You can edit all fields freely.",
-      badge: "Reconciliation",
-      color: "text-green",
-      bg: "bg-green/10 border-green/20",
+        "Check the extracted statistics against the builder's components and sectors. Every field can be edited.",
+      badge: "Review",
     },
   ],
 };

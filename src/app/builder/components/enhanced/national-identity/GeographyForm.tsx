@@ -147,7 +147,7 @@ export const GeographyForm = React.memo(
                 <div>
                   <h3 className="text-label text-headline flex items-center gap-2">
                     <Wifi className="text-blue h-5 w-5" />
-                    Country Codes & Domain
+                    Country codes & domain
                   </h3>
                   <p className="text-label-secondary text-footnote mt-0.5 leading-tight">
                     ISO code, web domain, and international calling code.
@@ -173,7 +173,7 @@ export const GeographyForm = React.memo(
                 <div className="space-y-2">
                   <label className="text-label text-caption flex items-center gap-1">
                     <MapIcon className="text-label-secondary size-3.5" />
-                    <span>ISO Code</span>
+                    <span>ISO code</span>
                   </label>
                   <Input
                     value={identity.isoCode || ""}
@@ -189,7 +189,7 @@ export const GeographyForm = React.memo(
                 <div className="space-y-2">
                   <label className="text-label text-caption flex items-center gap-1">
                     <Wifi className="text-label-secondary size-3.5" />
-                    <span>Web Domain</span>
+                    <span>Web domain</span>
                   </label>
                   <Input
                     value={identity.internetTLD || ""}
@@ -204,7 +204,7 @@ export const GeographyForm = React.memo(
                 <div className="space-y-2">
                   <label className="text-label text-caption flex items-center gap-1">
                     <Phone className="text-label-secondary size-3.5" />
-                    <span>Calling Code</span>
+                    <span>Calling code</span>
                   </label>
                   <Input
                     value={identity.callingCode || ""}
@@ -223,7 +223,7 @@ export const GeographyForm = React.memo(
             <div className="border-separator border-b px-6 py-4">
               <h3 className="text-label text-headline flex items-center gap-2">
                 <Calendar className="text-teal h-5 w-5" />
-                Civic Standards
+                Civic standards
               </h3>
               <p className="text-label-secondary text-footnote mt-0.5 leading-tight">
                 Time zone, emergency number, and road rules.
@@ -235,7 +235,7 @@ export const GeographyForm = React.memo(
                 <div className="space-y-2">
                   <label className="text-label text-caption flex items-center gap-1">
                     <Clock className="text-label-secondary h-3.5 w-3.5" />
-                    <span>Time Zone</span>
+                    <span>Time zone</span>
                   </label>
                   <Input
                     value={identity.timeZone || ""}
@@ -248,7 +248,7 @@ export const GeographyForm = React.memo(
                 <div className="space-y-2">
                   <label className="text-label text-caption flex items-center gap-1">
                     <Phone className="text-label-secondary h-3.5 w-3.5" />
-                    <span>Emergency Number</span>
+                    <span>Emergency number</span>
                   </label>
                   <Input
                     value={identity.emergencyNumber || ""}
@@ -262,7 +262,7 @@ export const GeographyForm = React.memo(
               <div className="space-y-2">
                 <label className="text-label text-caption flex items-center gap-1">
                   <MapIcon className="text-label-secondary h-3.5 w-3.5" />
-                  <span>Postal Code Format</span>
+                  <span>Postal code format</span>
                 </label>
                 <Input
                   value={identity.postalCodeFormat || ""}
@@ -278,7 +278,7 @@ export const GeographyForm = React.memo(
                 <div className="space-y-2">
                   <label className="text-label text-caption flex items-center gap-1">
                     <Car className="text-label-secondary h-3.5 w-3.5" />
-                    <span>Driving Side</span>
+                    <span>Driving side</span>
                   </label>
                   <SegmentedControl
                     aria-label="Driving side"
@@ -305,7 +305,7 @@ export const GeographyForm = React.memo(
                 <div className="space-y-2">
                   <label className="text-label text-caption flex items-center gap-1">
                     <Calendar className="text-label-secondary h-3.5 w-3.5" />
-                    <span>Week Starts On</span>
+                    <span>Week starts on</span>
                   </label>
                   <SegmentedControl
                     aria-label="Week starts on"
@@ -332,7 +332,7 @@ export const GeographyForm = React.memo(
               <div>
                 <h3 className="text-label text-headline flex items-center gap-2">
                   <Compass className="text-tint h-5 w-5" />
-                  Geographic Center
+                  Geographic center
                 </h3>
                 <p className="text-label-secondary text-footnote mt-0.5 leading-tight">
                   Coordinates used to center your country on the map.
@@ -350,7 +350,7 @@ export const GeographyForm = React.memo(
                     title={`Use capital coordinates (${capitalCity.name || "Capital"})`}
                   >
                     <MapPin aria-hidden />
-                    <span>Use Capital Location</span>
+                    <span>Use capital location</span>
                   </Button>
                 )}
 
@@ -366,7 +366,7 @@ export const GeographyForm = React.memo(
                     title="Pick coordinates on map"
                   >
                     <Compass aria-hidden />
-                    <span>Pick on Map</span>
+                    <span>Pick on map</span>
                   </Button>
                 )}
               </div>
@@ -425,7 +425,7 @@ export const GeographyForm = React.memo(
             onClose={() => setIsMapPickerOpen(false)}
             onConfirm={handleConfirmCentroidPick}
             countryId={countryId}
-            title="Pick Geographic Center"
+            title="Pick geographic center"
             initialCoordinates={
               identity.coordinatesLongitude && identity.coordinatesLatitude
                 ? [

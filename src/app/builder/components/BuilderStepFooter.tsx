@@ -21,8 +21,8 @@ const SECTION_LABELS: Record<BuilderSection, string> = {
   identity: "Identity",
   government: "Government",
   economics: "Economics",
-  preview: "Preview & Finalize",
-  import: "Wiki Import",
+  preview: "Preview and finalize",
+  import: "Wiki import",
 };
 
 export interface BuilderStepFooterProps {
@@ -108,7 +108,7 @@ export const BuilderStepFooter = React.memo(function BuilderStepFooter({
           onClick={handleReset}
           className="text-label-secondary hover:text-destructive"
         >
-          {mode === "edit" ? "Discard changes & exit" : "Restart builder"}
+          {mode === "edit" ? "Discard changes and exit" : "Restart builder"}
         </Button>
       </div>
 
@@ -125,12 +125,12 @@ export const BuilderStepFooter = React.memo(function BuilderStepFooter({
             {isSubmitting ? (
               <>
                 <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
-                <span>{mode === "edit" ? "Saving..." : "Creating Nation..."}</span>
+                <span>{mode === "edit" ? "Saving..." : "Creating nation..."}</span>
               </>
             ) : (
               <>
                 <CheckCircle aria-hidden="true" className="h-3.5 w-3.5" />
-                <span>{mode === "edit" ? "Save Nation" : "Create Nation"}</span>
+                <span>{mode === "edit" ? "Save nation" : "Create nation"}</span>
               </>
             )}
           </Button>

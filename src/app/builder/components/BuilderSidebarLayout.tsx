@@ -100,7 +100,7 @@ export function BuilderSidebarLayout({
         </div>
       )}
 
-      {/* Main Studio Canvas — Seamlessly Centered Across All Steps */}
+      {/* Main canvas */}
       <main
         className={cn(
           "mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col px-4 pb-8",
@@ -110,7 +110,7 @@ export function BuilderSidebarLayout({
         <div className="flex h-full min-h-0 w-full flex-1 flex-col space-y-4">
           {children}
 
-          {/* Dedicated Step Footer Navigation */}
+          {/* Step footer */}
           {stepFooter}
 
           {/* Fallback Footer Reset Action (only when stepFooter not provided) */}
@@ -125,12 +125,12 @@ export function BuilderSidebarLayout({
                 {mode === "edit" ? (
                   <>
                     <XCircle className="mr-2 h-3.5 w-3.5" />
-                    Discard Changes & Exit Editor
+                    Discard changes and exit
                   </>
                 ) : (
                   <>
                     <RefreshCw className="mr-2 h-3.5 w-3.5" />
-                    Restart Builder from Scratch
+                    Restart builder
                   </>
                 )}
               </Button>

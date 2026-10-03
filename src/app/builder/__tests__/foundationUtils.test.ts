@@ -100,13 +100,13 @@ describe("foundationUtils", () => {
 
   describe("getStepLabel", () => {
     it("returns correct phase labels for builder steps", () => {
-      expect(getStepLabel("core")).toBe("National Identity Phase");
-      expect(getStepLabel("identity")).toBe("National Identity Phase");
-      expect(getStepLabel("government")).toBe("Government Phase");
-      expect(getStepLabel("economics")).toBe("Economics Phase");
-      expect(getStepLabel("preview")).toBe("Preview & Create Phase");
-      expect(getStepLabel("foundation")).toBe("Foundation Phase");
-      expect(getStepLabel("unknown")).toBe("Foundation Phase");
+      expect(getStepLabel("core")).toBe("National identity");
+      expect(getStepLabel("identity")).toBe("National identity");
+      expect(getStepLabel("government")).toBe("Government");
+      expect(getStepLabel("economics")).toBe("Economics");
+      expect(getStepLabel("preview")).toBe("Preview and create");
+      expect(getStepLabel("foundation")).toBe("Foundation");
+      expect(getStepLabel("unknown")).toBe("Foundation");
     });
   });
 });

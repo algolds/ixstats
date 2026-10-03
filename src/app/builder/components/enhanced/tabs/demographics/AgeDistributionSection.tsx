@@ -24,7 +24,7 @@ export function AgeDistributionSection({
   return (
     <div className="space-y-4">
       <SliderWithDirectInput
-        label="Under 15 Years"
+        label="Under 15 years"
         description="Percentage of population under 15"
         value={demographics.ageDistribution.under15}
         onChange={(value) => onChange("ageDistribution", "under15", value)}
@@ -39,7 +39,7 @@ export function AgeDistributionSection({
       />
 
       <SliderWithDirectInput
-        label="Working Age (15-64)"
+        label="Working age (15-64)"
         description="Percentage of population aged 15-64"
         value={demographics.ageDistribution.age15to64}
         onChange={(value) => onChange("ageDistribution", "age15to64", value)}
@@ -54,7 +54,7 @@ export function AgeDistributionSection({
       />
 
       <SliderWithDirectInput
-        label="Over 65 Years"
+        label="Over 65 years"
         description="Percentage of population over 65"
         value={demographics.ageDistribution.over65}
         onChange={(value) => onChange("ageDistribution", "over65", value)}
@@ -73,7 +73,7 @@ export function AgeDistributionSection({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <div className="text-body flex justify-between">
-                <span>Youth Dependency Ratio</span>
+                <span>Youth dependency ratio</span>
                 <span className="font-medium">{demographics.youthDependencyRatio.toFixed(1)}</span>
               </div>
               <Progress value={demographics.youthDependencyRatio / 100} className="h-2" />
@@ -81,7 +81,7 @@ export function AgeDistributionSection({
 
             <div className="space-y-2">
               <div className="text-body flex justify-between">
-                <span>Elderly Dependency Ratio</span>
+                <span>Elderly dependency ratio</span>
                 <span className="font-medium">
                   {demographics.elderlyDependencyRatio.toFixed(1)}
                 </span>

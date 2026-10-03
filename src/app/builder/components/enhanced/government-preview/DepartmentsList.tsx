@@ -60,7 +60,7 @@ export function DepartmentsList({
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                Government Departments
+                Government departments
                 <Badge variant="default" className="ml-2">
                   {departments.length}
                 </Badge>
@@ -179,7 +179,7 @@ export function DepartmentsList({
                           {budgetAmount > 0 && (
                             <div className="space-y-2">
                               <div className="text-body flex justify-between">
-                                <span>Budget Allocation</span>
+                                <span>Budget allocation</span>
                                 <span>
                                   {((budgetAmount / totalBudget) * 100).toFixed(1)}% of total budget
                                 </span>

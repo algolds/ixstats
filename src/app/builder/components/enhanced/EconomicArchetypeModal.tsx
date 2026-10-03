@@ -70,7 +70,7 @@ export function EconomicArchetypeModal({
                 <Sparkles className="text-green h-5 w-5" />
               </div>
               <div className="min-w-0 space-y-1">
-                <DialogTitle className="text-label text-title-1">Economic Presets</DialogTitle>
+                <DialogTitle className="text-label text-title-1">Economic presets</DialogTitle>
                 <DialogDescription className="text-label-secondary text-body leading-relaxed">
                   Quick-start templates based on successful real-world economies
                 </DialogDescription>

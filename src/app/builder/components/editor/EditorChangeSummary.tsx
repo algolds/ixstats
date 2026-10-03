@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { EditPencil } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import type { BuilderSection } from "../../lib/builder-theme";
 import {
   EDITOR_SECTIONS,
@@ -53,7 +52,6 @@ export function EditorChangeSummary({ changes, onNavigate }: EditorChangeSummary
       className="rounded-card space-y-4 p-4 sm:p-6"
     >
       <div>
-        <Eyebrow className="block">Review</Eyebrow>
         <h2 id="editor-change-summary-title" className="text-label text-title-3">
           {changes.length === 0
             ? "No changes yet"

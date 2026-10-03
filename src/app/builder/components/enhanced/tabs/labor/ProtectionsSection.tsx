@@ -10,10 +10,7 @@ import type { LaborBounds } from "../utils/laborCalculations";
 
 interface ProtectionsSectionProps {
   laborMarket: LaborConfiguration;
-  onChange: <K extends keyof LaborConfiguration>(
-    field: K,
-    value: LaborConfiguration[K]
-  ) => void;
+  onChange: <K extends keyof LaborConfiguration>(field: K, value: LaborConfiguration[K]) => void;
   onNestedChange: (
     parentField: keyof LaborConfiguration,
     field: string,
@@ -32,7 +29,7 @@ export function ProtectionsSection({
   return (
     <div className="space-y-4">
       <div className="space-y-3">
-        <h4 className="font-medium">Worker Protection Scores</h4>
+        <h4 className="font-medium">Worker protection scores</h4>
         {Object.entries(laborMarket.workerProtections).map(([protection, value]) => (
           <SliderWithDirectInput
             key={protection}
@@ -53,7 +50,7 @@ export function ProtectionsSection({
       </div>
 
       <SliderWithDirectInput
-        label="Workplace Safety Index"
+        label="Workplace safety index"
         description="Overall workplace safety rating"
         value={laborMarket.workplaceSafetyIndex}
         onChange={(value) => onChange("workplaceSafetyIndex", value)}
@@ -69,7 +66,7 @@ export function ProtectionsSection({
       />
 
       <SliderWithDirectInput
-        label="Labor Rights Score"
+        label="Labor rights score"
         description="Overall labor rights and freedoms rating"
         value={laborMarket.laborRightsScore}
         onChange={(value) => onChange("laborRightsScore", value)}
@@ -97,7 +94,7 @@ export function ProtectionsSection({
         className="border-t pt-4"
       >
         <EnhancedNumberInput
-          label="Paid Vacation Days"
+          label="Paid vacation days"
           description="Average annual paid vacation days"
           value={laborMarket.paidVacationDays}
           onChange={(value) => onChange("paidVacationDays", Number(value) || 0)}
@@ -110,7 +107,7 @@ export function ProtectionsSection({
         />
 
         <EnhancedNumberInput
-          label="Paid Sick Leave Days"
+          label="Paid sick leave days"
           description="Average annual paid sick leave days"
           value={laborMarket.paidSickLeaveDays}
           onChange={(value) => onChange("paidSickLeaveDays", Number(value) || 0)}
@@ -123,7 +120,7 @@ export function ProtectionsSection({
         />
 
         <EnhancedNumberInput
-          label="Parental Leave Weeks"
+          label="Parental leave weeks"
           description="Paid parental leave duration"
           value={laborMarket.parentalLeaveWeeks}
           onChange={(value) => onChange("parentalLeaveWeeks", Number(value) || 0)}

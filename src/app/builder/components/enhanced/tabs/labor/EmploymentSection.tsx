@@ -8,10 +8,7 @@ import type { LaborBounds } from "../utils/laborCalculations";
 
 interface EmploymentSectionProps {
   laborMarket: LaborConfiguration;
-  onChange: <K extends keyof LaborConfiguration>(
-    field: K,
-    value: LaborConfiguration[K]
-  ) => void;
+  onChange: <K extends keyof LaborConfiguration>(field: K, value: LaborConfiguration[K]) => void;
   onNestedChange: (
     parentField: keyof LaborConfiguration,
     field: string,
@@ -31,7 +28,7 @@ export function EmploymentSection({
   return (
     <div className="space-y-4">
       <SliderWithDirectInput
-        label="Unemployment Rate"
+        label="Unemployment rate"
         description="Overall unemployment rate"
         value={laborMarket.unemploymentRate}
         onChange={(value) => onChange("unemploymentRate", value)}
@@ -47,7 +44,7 @@ export function EmploymentSection({
       />
 
       <SliderWithDirectInput
-        label="Underemployment Rate"
+        label="Underemployment rate"
         description="Rate of underemployed workers"
         value={laborMarket.underemploymentRate}
         onChange={(value) => onChange("underemploymentRate", value)}
@@ -62,7 +59,7 @@ export function EmploymentSection({
       />
 
       <SliderWithDirectInput
-        label="Average Workweek Hours"
+        label="Average workweek hours"
         description="Average hours worked per week"
         value={laborMarket.averageWorkweekHours}
         onChange={(value) => onChange("averageWorkweekHours", value)}
@@ -77,7 +74,7 @@ export function EmploymentSection({
       />
 
       <SliderWithDirectInput
-        label="Average Overtime Hours"
+        label="Average overtime hours"
         description="Average overtime hours per week"
         value={laborMarket.averageOvertimeHours}
         onChange={(value) => onChange("averageOvertimeHours", value)}
@@ -94,7 +91,7 @@ export function EmploymentSection({
       {showAdvanced && (
         <div className="space-y-4 border-t pt-4">
           <div className="space-y-3">
-            <h4 className="font-medium">Employment Type Distribution</h4>
+            <h4 className="font-medium">Employment type distribution</h4>
             {Object.entries(laborMarket.employmentType).map(([type, value]) => (
               <SliderWithDirectInput
                 key={type}

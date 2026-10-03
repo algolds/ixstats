@@ -44,7 +44,7 @@ export function RevenueSourcesList({
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Receipt className="h-5 w-5" />
-                Revenue Sources
+                Revenue sources
                 <Badge variant="default" className="ml-2">
                   {sources.length}
                 </Badge>
@@ -112,13 +112,13 @@ export function RevenueSourcesList({
                                   <p className="font-medium">{percentage.toFixed(2)}%</p>
                                 </div>
                                 <div>
-                                  <span className="text-label-secondary">Revenue Amount:</span>
+                                  <span className="text-label-secondary">Revenue amount:</span>
                                   <p className="font-medium">
                                     {formatCurrencyLocal(source.revenueAmount)}
                                   </p>
                                 </div>
                                 <div>
-                                  <span className="text-label-secondary">Source Type:</span>
+                                  <span className="text-label-secondary">Source type:</span>
                                   <p className="font-medium capitalize">
                                     {source.name.split(" ")[0]}
                                   </p>

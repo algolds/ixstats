@@ -44,9 +44,9 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
       {/* Sector Composition */}
       <Card>
         <CardContent className="p-6">
-          <h3 className="text-headline text-green mb-4 flex items-center space-x-2">
+          <h3 className="text-headline text-label mb-4 flex items-center space-x-2">
             <PieChart className="h-5 w-5" />
-            <span>Sector Composition</span>
+            <span>Sector composition</span>
           </h3>
           <GlassPieChart
             data={sectorChartData}
@@ -61,9 +61,9 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
       {/* Employment Types */}
       <Card>
         <CardContent className="p-6">
-          <h3 className="text-headline text-green mb-4 flex items-center space-x-2">
+          <h3 className="text-headline text-label mb-4 flex items-center space-x-2">
             <BarChart3 className="h-5 w-5" />
-            <span>Employment Types</span>
+            <span>Employment types</span>
           </h3>
           <GlassBarChart
             data={employmentTypeData}
@@ -79,9 +79,9 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
       {/* Age Distribution */}
       <Card>
         <CardContent className="p-6">
-          <h3 className="text-headline text-green mb-4 flex items-center space-x-2">
+          <h3 className="text-headline text-label mb-4 flex items-center space-x-2">
             <Users className="h-5 w-5" />
-            <span>Age Distribution</span>
+            <span>Age distribution</span>
           </h3>
           <GlassPieChart
             data={ageDistributionData}

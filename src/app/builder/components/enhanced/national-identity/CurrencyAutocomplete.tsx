@@ -65,7 +65,7 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
       <div className="flex items-center justify-between">
         <label id={labelId} className="text-label text-body flex items-center gap-2 font-medium">
           <Coins aria-hidden className="text-label-secondary h-4 w-4" />
-          <span>National Currency</span>
+          <span>National currency</span>
         </label>
         <Button
           type="button"
@@ -79,12 +79,12 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
           {inputMode === "selector" ? (
             <>
               <Edit2 aria-hidden />
-              <span>Type Custom Currency</span>
+              <span>Type custom currency</span>
             </>
           ) : (
             <>
               <List aria-hidden />
-              <span>Select from Standard List</span>
+              <span>Select from standard list</span>
             </>
           )}
         </Button>
@@ -142,7 +142,7 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
                 <span>Standard ISO</span>
               </Badge>
             ) : (
-              <Badge variant="default">Custom Sovereign Currency</Badge>
+              <Badge variant="default">Custom sovereign currency</Badge>
             )}
             {currencyInfo.symbol && (
               <span className="text-label-secondary text-footnote inline-flex items-center gap-2">

@@ -55,7 +55,7 @@ export function WikiDeepScanPanel({
           </motion.div>
           <h3 className="text-title-2 mb-2">LoreScanner is analyzing your nation's lore ...</h3>
           <p className="text-label-secondary text-body mx-auto mb-4 max-w-md">
-            LoreScanner is searching for related pages (Economy, Politics, Demographics) to extract
+            LoreScanner is searching for related pages (economy, politics, demographics) to extract
             richer data for your nation.
           </p>
         </CardContent>
@@ -70,7 +70,7 @@ export function WikiDeepScanPanel({
           <div className="bg-tint/20 text-tint mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full">
             <Settings2 className="h-6 w-6" />
           </div>
-          <h3 className="text-title-2 mb-2">LoreScanner Unavailable</h3>
+          <h3 className="text-title-2 mb-2">LoreScanner unavailable</h3>
           <p className="text-label-secondary text-body mx-auto mb-6 max-w-md">
             LoreScanner encountered an error! You can still proceed with the basic infobox data for
             now and we'll try again later.
@@ -95,16 +95,16 @@ export function WikiDeepScanPanel({
           <div className="bg-green/20 text-green mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full">
             <CheckCircle2 className="h-6 w-6" />
           </div>
-          <h3 className="text-title-2 mb-2">Scan Complete</h3>
+          <h3 className="text-title-2 mb-2">Scan complete</h3>
           <p className="text-label-secondary text-body mx-auto mb-6 max-w-md">
             Scanned {foundVariants.length} pages, but didn't find any additional structured data.
             We'll proceed with the infobox data.
           </p>
           <Button
             onClick={() => onDataExtracted(undefined, data.pages)}
-            className="bg-green hover:bg-green transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+            className="bg-green hover:bg-green transition-[color,background-color,border-color,box-shadow,opacity,transform]"
           >
-            Continue to Builder <ChevronRight className="ml-2 h-4 w-4" />
+            Continue to builder <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
         </CardContent>
       </Card>
@@ -119,7 +119,7 @@ export function WikiDeepScanPanel({
             <Database className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-title-2">Deep Scan Results</h3>
+            <h3 className="text-title-2">Deep scan results</h3>
             <p className="text-label-secondary text-body">
               Analyzed {foundVariants.length} pages. We found additional data we can pre-fill!
             </p>
@@ -129,7 +129,7 @@ export function WikiDeepScanPanel({
         <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {hasGov && (
             <div className="border-separator bg-fill-4 rounded-control border p-4">
-              <h4 className="text-blue mb-3 flex items-center gap-2 font-medium">
+              <h4 className="text-label mb-3 flex items-center gap-2 font-medium">
                 <FileText className="h-4 w-4" /> Government
               </h4>
               <ul className="text-body space-y-2">
@@ -153,7 +153,7 @@ export function WikiDeepScanPanel({
 
           {hasEcon && (
             <div className="border-separator bg-fill-4 rounded-control border p-4">
-              <h4 className="text-green mb-3 flex items-center gap-2 font-medium">
+              <h4 className="text-label mb-3 flex items-center gap-2 font-medium">
                 <FileText className="h-4 w-4" /> Economy
               </h4>
               <ul className="text-body space-y-2">
@@ -167,7 +167,7 @@ export function WikiDeepScanPanel({
                 )}
                 {extractedData.economy?.gdpPerCapita && (
                   <li className="flex justify-between">
-                    <span className="text-label-secondary">Per Capita</span>
+                    <span className="text-label-secondary">Per capita</span>
                     <span className="font-medium">
                       ${extractedData.economy.gdpPerCapita.toLocaleString()}
                     </span>
@@ -179,7 +179,7 @@ export function WikiDeepScanPanel({
 
           {hasDemo && (
             <div className="border-separator bg-fill-4 rounded-control border p-4">
-              <h4 className="text-tint mb-3 flex items-center gap-2 font-medium">
+              <h4 className="text-label mb-3 flex items-center gap-2 font-medium">
                 <FileText className="h-4 w-4" /> Demographics
               </h4>
               <ul className="text-body space-y-2">
@@ -208,15 +208,15 @@ export function WikiDeepScanPanel({
           <Button
             variant="outline"
             onClick={() => onDataExtracted(undefined, data.pages)}
-            className="transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+            className="transition-[color,background-color,border-color,box-shadow,opacity,transform]"
           >
-            Skip Deep Data
+            Skip deep data
           </Button>
           <Button
-            className="bg-green text-on-green hover:bg-green transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+            className="bg-green text-on-green hover:bg-green transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             onClick={() => onDataExtracted(extractedData, data.pages)}
           >
-            Import Enhanced Data <ChevronRight className="ml-2 h-4 w-4" />
+            Import enhanced data <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
       </CardContent>

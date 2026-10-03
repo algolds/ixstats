@@ -98,7 +98,7 @@ export function CurrencySelector({
             "focus-visible:border-ring focus-visible:ring-tint/50 aria-invalid:ring-destructive/20",
             "aria-invalid:border-destructive flex w-full items-center justify-between gap-2",
             "rounded-control-sm text-body shadow-card border bg-transparent px-3 py-2 whitespace-nowrap transition-[color,box-shadow,border-color]",
-            "h-9 outline-none select-none focus-visible:ring-[3px] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50",
+            "h-9 outline-none select-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
             className
           )}
         >
@@ -129,7 +129,7 @@ export function CurrencySelector({
       </PopoverTrigger>
 
       <PopoverContent className="w-80 overflow-hidden p-0 sm:w-96" align="start" sideOffset={4}>
-        {/* Combobox (spec §7.2): our own filtering over 400+ currencies, cmdk for the listbox
+        {/* Combobox: our own filtering over 400+ currencies, cmdk for the listbox
             semantics and arrow/Enter navigation (Enter picks the highlighted, first by default). */}
         <Command shouldFilter={false} className="rounded-none bg-transparent">
           <div className="border-separator border-b p-2">

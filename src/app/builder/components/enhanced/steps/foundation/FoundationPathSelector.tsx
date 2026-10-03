@@ -44,7 +44,7 @@ export function FoundationPathSelector({
           variant="ghost"
           size="sm"
           onClick={onBackToHero}
-          className="text-footnote text-label-secondary hover:text-label flex items-center gap-2 active:scale-[0.98]"
+          className="text-footnote text-label-secondary hover:text-label flex items-center gap-2"
           data-cuelume-press
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Back to starting options

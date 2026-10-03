@@ -21,7 +21,7 @@ import {
   City as Building2,
 } from "iconoir-react";
 
-/** Badge variant for an implementation complexity (status roles, Facet 3 §7.1). */
+/** Badge variant for an implementation complexity (status roles). */
 export function getComplexityBadgeVariant(
   complexity: string | undefined
 ): "success" | "warning" | "destructive" | "default" {

@@ -1,5 +1,5 @@
 /**
- * On-image roles for the builder (Facet 3 has no on-image colour role yet, spec §2.1).
+ * On-image roles for the builder.
  *
  * Text and actions laid over arbitrary photos, flags and emblems cannot use the label roles —
  * those flip with the theme while the image does not. A fixed white-on-black scrim stays legible
@@ -7,7 +7,7 @@
  * else spells `text-white` / `bg-black/*` by hand.
  */
 
-/** A flat scrim band or full overlay over an image, with its text colour (≥ 4.5:1 over any image). */
+/** A flat scrim band or full overlay over an image, with its text colour. */
 export const IMAGE_SCRIM = "bg-black/60 text-white";
 
 /** A lighter hover scrim for small thumbnails (an icon only, no body text). */

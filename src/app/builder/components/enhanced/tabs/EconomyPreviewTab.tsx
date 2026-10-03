@@ -127,7 +127,7 @@ export function EconomyPreviewTab({
       {/* Key Metrics Overview */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <MetricCard
-          label="Economic Health"
+          label="Economic health"
           value={`${(economicHealthMetrics?.economicHealthScore ?? 0).toFixed(0)}/100`}
           icon={
             (economicHealthMetrics?.economicHealthScore ?? 0) >= 80 ? CheckCircle : AlertTriangle
@@ -136,14 +136,14 @@ export function EconomyPreviewTab({
           trend={(economicHealthMetrics?.economicHealthScore ?? 0) >= 80 ? "up" : "neutral"}
         />
         <MetricCard
-          label="Component Effectiveness"
+          label="Component effectiveness"
           value={`${componentEffectiveness.toFixed(0)}%`}
           icon={Zap}
           sectionId="preview"
           trend={componentEffectiveness >= 80 ? "up" : "neutral"}
         />
         <MetricCard
-          label="GDP Per Capita"
+          label="GDP per capita"
           value={`$${Math.round(
             economicInputs?.coreIndicators?.gdpPerCapita ??
               (economyBuilder.structure?.totalGDP && economyBuilder.demographics?.totalPopulation

@@ -10,10 +10,7 @@ import type { LaborBounds } from "../utils/laborCalculations";
 
 interface WorkforceSectionProps {
   laborMarket: LaborConfiguration;
-  onChange: <K extends keyof LaborConfiguration>(
-    field: K,
-    value: LaborConfiguration[K]
-  ) => void;
+  onChange: <K extends keyof LaborConfiguration>(field: K, value: LaborConfiguration[K]) => void;
   showAdvanced: boolean;
   componentBounds?: LaborBounds;
 }
@@ -27,7 +24,7 @@ export function WorkforceSection({
   return (
     <div className="space-y-4">
       <SliderWithDirectInput
-        label="Labor Force Participation Rate"
+        label="Labor force participation rate"
         description="Percentage of working-age population in the labor force"
         value={laborMarket.laborForceParticipationRate}
         onChange={(value) => onChange("laborForceParticipationRate", value)}
@@ -43,7 +40,7 @@ export function WorkforceSection({
       />
 
       <SliderWithDirectInput
-        label="Female Participation Rate"
+        label="Female participation rate"
         description="Female labor force participation rate"
         value={laborMarket.femaleParticipationRate}
         onChange={(value) => onChange("femaleParticipationRate", value)}
@@ -58,7 +55,7 @@ export function WorkforceSection({
       />
 
       <SliderWithDirectInput
-        label="Male Participation Rate"
+        label="Male participation rate"
         description="Male labor force participation rate"
         value={laborMarket.maleParticipationRate}
         onChange={(value) => onChange("maleParticipationRate", value)}
@@ -84,7 +81,7 @@ export function WorkforceSection({
         className="border-t pt-4"
       >
         <SliderWithDirectInput
-          label="Youth Unemployment Rate"
+          label="Youth unemployment rate"
           description="Unemployment rate for ages 15-24"
           value={laborMarket.youthUnemploymentRate}
           onChange={(value) => onChange("youthUnemploymentRate", value)}
@@ -99,7 +96,7 @@ export function WorkforceSection({
         />
 
         <SliderWithDirectInput
-          label="Senior Employment Rate"
+          label="Senior employment rate"
           description="Employment rate for ages 55+"
           value={laborMarket.seniorEmploymentRate}
           onChange={(value) => onChange("seniorEmploymentRate", value)}

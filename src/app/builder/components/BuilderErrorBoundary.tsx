@@ -98,7 +98,7 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
               <AlertTriangle className="text-red mx-auto mb-4 h-12 w-12" />
               {/* A heading (CardTitle is a div): the fallback replaces a step's content or the page. */}
               <h2 data-slot="card-title" className="text-title-1 text-red leading-none">
-                Builder Error
+                Builder error
               </h2>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -114,14 +114,14 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
               {/* Error details (development only) */}
               {process.env.NODE_ENV === "development" && this.state.error && (
                 <div className="bg-surface-secondary rounded-row mt-4 p-4">
-                  <h3 className="text-headline text-label mb-2">Error Details:</h3>
+                  <h3 className="text-headline text-label mb-2">Error details:</h3>
                   <pre className="text-footnote text-label-secondary max-h-32 overflow-auto">
                     {this.state.error.message}
                   </pre>
                   {this.state.errorInfo && (
                     <details className="mt-2">
                       <summary className="text-footnote text-label-secondary cursor-pointer">
-                        Component Stack
+                        Component stack
                       </summary>
                       <pre className="text-footnote text-label-secondary mt-1 max-h-32 overflow-auto">
                         {this.state.errorInfo.componentStack}
@@ -138,7 +138,7 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
                   className="flex w-full items-center justify-center gap-2"
                 >
                   <RefreshCw className="h-4 w-4" />
-                  Try Again
+                  Try again
                 </Button>
 
                 <Button
@@ -147,7 +147,7 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
                   className="flex w-full items-center justify-center gap-2"
                 >
                   <AlertTriangle className="h-4 w-4" />
-                  Clear Draft & Retry
+                  Clear draft & retry
                 </Button>
 
                 <div className="flex w-full gap-3">
@@ -157,7 +157,7 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
                     className="flex flex-1 items-center justify-center gap-2"
                   >
                     <ArrowLeft className="h-4 w-4" />
-                    Import Page
+                    Import page
                   </Button>
 
                   <Button

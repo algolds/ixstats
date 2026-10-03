@@ -169,7 +169,7 @@ export function SectorCard({
                   onToggle();
                 }}
                 className="text-label-secondary hover:bg-red/10 hover:text-red h-7 w-7 rounded-full p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-                title="Deactivate Sector"
+                title="Deactivate sector"
               >
                 <Minus className="text-red/80 h-4 w-4" />
               </Button>
@@ -231,7 +231,7 @@ export function SectorCard({
                 </div>
                 {effectiveGDP !== undefined && activeConfig.gdpContribution !== effectiveGDP && (
                   <div className="text-footnote flex items-center justify-between">
-                    <span className="text-label-secondary">Effective GDP Contribution:</span>
+                    <span className="text-label-secondary">Effective GDP contribution:</span>
                     <span className="text-green font-semibold">
                       {activeConfig.gdpContribution.toFixed(1)}% → {effectiveGDP.toFixed(1)}%
                     </span>
@@ -240,7 +240,7 @@ export function SectorCard({
                 {effectiveEmployment !== undefined &&
                   activeConfig.employmentShare !== effectiveEmployment && (
                     <div className="text-footnote flex items-center justify-between">
-                      <span className="text-label-secondary">Effective Employment Share:</span>
+                      <span className="text-label-secondary">Effective employment share:</span>
                       <span className="text-green font-semibold">
                         {activeConfig.employmentShare.toFixed(1)}% →{" "}
                         {effectiveEmployment.toFixed(1)}%
@@ -253,7 +253,7 @@ export function SectorCard({
             {/* Core Sliders */}
             <div className="space-y-3">
               <SliderWithDirectInput
-                label="GDP Contribution"
+                label="GDP contribution"
                 value={activeConfig.gdpContribution}
                 onChange={(value: number) => onChange?.("gdpContribution", value)}
                 onCommit={(value: number) => onCommit?.("gdpContribution", value)}
@@ -269,7 +269,7 @@ export function SectorCard({
               />
 
               <SliderWithDirectInput
-                label="Employment Share"
+                label="Employment share"
                 value={activeConfig.employmentShare}
                 onChange={(value: number) => onChange?.("employmentShare", value)}
                 onCommit={(value: number) => onCommit?.("employmentShare", value)}
@@ -308,7 +308,7 @@ export function SectorCard({
                   />
 
                   <SliderWithDirectInput
-                    label="Growth Rate"
+                    label="Growth rate"
                     value={activeConfig.growthRate}
                     onChange={(value: number) => onChange?.("growthRate", value)}
                     min={constraint?.minGrowthRate ?? -5}

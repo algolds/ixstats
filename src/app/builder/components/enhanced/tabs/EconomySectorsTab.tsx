@@ -1,10 +1,8 @@
 import React, { useState, useMemo } from "react";
 // oxlint-disable-next-line eslint/no-unused-vars
 import {
-  Settings,
   Search,
   Refresh as RefreshCw,
-  CheckCircle,
   InfoCircle as Info,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
@@ -272,7 +270,7 @@ export function EconomySectorsTab({
               >
                 <TabsList className="border-separator bg-fill-4 border p-0.5">
                   <TabsTrigger value="all" className="text-footnote">
-                    All Sectors
+                    All sectors
                   </TabsTrigger>
                   <TabsTrigger value="primary" className="text-footnote">
                     Primary
@@ -293,7 +291,7 @@ export function EconomySectorsTab({
                   onChange={(e) => setLocalShowAdvanced(e.target.checked)}
                   className="border-separator bg-fill-4 text-green focus:ring-green/20 rounded"
                 />
-                Show Advanced Settings
+                Show advanced settings
               </label>
 
               {economyBuilder.sectors.length > 0 && (
@@ -304,7 +302,7 @@ export function EconomySectorsTab({
                   className="border-green/20 text-caption text-green hover:bg-green/10 hover:text-green h-8 py-1 font-semibold"
                 >
                   <RefreshCw className="mr-2 h-3.5 w-3.5" />
-                  Normalize Ratios
+                  Normalize ratios
                 </Button>
               )}
             </div>
@@ -373,7 +371,7 @@ export function EconomySectorsTab({
               <Info className="text-green h-4 w-4" />
               <AlertDescription>
                 <div className="space-y-2">
-                  <p className="text-label text-caption">Sectors Analysis & Rationale:</p>
+                  <p className="text-label text-caption">Sectors analysis & rationale:</p>
                   <ul className="text-footnote text-label-secondary list-inside list-disc space-y-1">
                     {gdpValid && employmentValid ? (
                       <li className="text-green">

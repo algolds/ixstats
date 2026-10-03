@@ -30,7 +30,7 @@ describe("DemographicsPopulationTab", () => {
     it("renders the demographics tab with all sections", () => {
       render(<DemographicsPopulationTab {...defaultProps} />);
 
-      expect(screen.getByText("Demographics & Population Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Demographics & population configuration")).toBeInTheDocument();
       expect(screen.getByText(/Configure population structure/i)).toBeInTheDocument();
     });
 
@@ -38,18 +38,18 @@ describe("DemographicsPopulationTab", () => {
       render(<DemographicsPopulationTab {...defaultProps} />);
 
       // Check for metric cards (values may be formatted)
-      expect(screen.getAllByText("Total Population")[0]).toBeInTheDocument();
-      expect(screen.getAllByText("Life Expectancy")[0]).toBeInTheDocument();
-      expect(screen.getAllByText("Urban Population")[0]).toBeInTheDocument();
+      expect(screen.getAllByText("Total population")[0]).toBeInTheDocument();
+      expect(screen.getAllByText("Life expectancy")[0]).toBeInTheDocument();
+      expect(screen.getAllByText("Urban population")[0]).toBeInTheDocument();
     });
 
     it("renders all section tabs", () => {
       render(<DemographicsPopulationTab {...defaultProps} />);
 
       expect(screen.getByText("Population")).toBeInTheDocument();
-      expect(screen.getByText("Age Structure")).toBeInTheDocument();
+      expect(screen.getByText("Age structure")).toBeInTheDocument();
       expect(screen.getByText("Geographic")).toBeInTheDocument();
-      expect(screen.getByText("Social Indicators")).toBeInTheDocument();
+      expect(screen.getByText("Social indicators")).toBeInTheDocument();
     });
 
     it("renders population section by default", () => {
@@ -63,7 +63,7 @@ describe("DemographicsPopulationTab", () => {
     it("switches to age distribution section when clicked", () => {
       render(<DemographicsPopulationTab {...defaultProps} />);
 
-      const ageTab = screen.getByText("Age Structure");
+      const ageTab = screen.getByText("Age structure");
       fireEvent.click(ageTab);
 
       expect(screen.getAllByText("Age Distribution")[0]).toBeInTheDocument();
@@ -81,10 +81,10 @@ describe("DemographicsPopulationTab", () => {
     it("switches to social indicators section when clicked", () => {
       render(<DemographicsPopulationTab {...defaultProps} />);
 
-      const socialTab = screen.getByText("Social Indicators");
+      const socialTab = screen.getByText("Social indicators");
       fireEvent.click(socialTab);
 
-      expect(screen.getAllByText("Social Indicators")[0]).toBeInTheDocument();
+      expect(screen.getAllByText("Social indicators")[0]).toBeInTheDocument();
     });
   });
 
@@ -113,7 +113,7 @@ describe("DemographicsPopulationTab", () => {
       rerender(<DemographicsPopulationTab {...defaultProps} economyBuilder={updatedBuilder} />);
 
       // Verify the component re-renders with new data
-      expect(screen.getByText("Demographics & Population Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Demographics & population configuration")).toBeInTheDocument();
     });
   });
 
@@ -182,7 +182,7 @@ describe("DemographicsPopulationTab", () => {
       rerender(<DemographicsPopulationTab {...defaultProps} economyBuilder={updatedBuilder} />);
 
       // Metrics should update accordingly
-      expect(screen.getAllByText("Total Population")[0]).toBeInTheDocument();
+      expect(screen.getAllByText("Total population")[0]).toBeInTheDocument();
     });
   });
 
@@ -192,7 +192,7 @@ describe("DemographicsPopulationTab", () => {
 
       // The visualization component should be rendered
       // Exact test depends on DemographicsVisualizations implementation
-      expect(screen.getByText("Demographics & Population Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Demographics & population configuration")).toBeInTheDocument();
     });
 
     it("generates correct chart data for age distribution", () => {
@@ -200,7 +200,7 @@ describe("DemographicsPopulationTab", () => {
 
       // Chart data structure is created in useMemo
       // Test by verifying component renders without errors
-      expect(screen.getByText("Demographics & Population Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Demographics & population configuration")).toBeInTheDocument();
     });
   });
 
@@ -253,7 +253,7 @@ describe("DemographicsPopulationTab", () => {
       render(<DemographicsPopulationTab {...defaultProps} economyBuilder={invalidBuilder} />);
 
       // Component should still render
-      expect(screen.getByText("Demographics & Population Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Demographics & population configuration")).toBeInTheDocument();
     });
 
     it("validates urban/rural split sums to 100%", () => {
@@ -270,7 +270,7 @@ describe("DemographicsPopulationTab", () => {
 
       render(<DemographicsPopulationTab {...defaultProps} economyBuilder={invalidBuilder} />);
 
-      expect(screen.getByText("Demographics & Population Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Demographics & population configuration")).toBeInTheDocument();
     });
   });
 
@@ -278,14 +278,14 @@ describe("DemographicsPopulationTab", () => {
     it("has proper heading hierarchy", () => {
       render(<DemographicsPopulationTab {...defaultProps} />);
 
-      const heading = screen.getByText("Demographics & Population Configuration");
+      const heading = screen.getByText("Demographics & population configuration");
       expect(heading.tagName).toBe("H2");
     });
 
     it("section tabs are keyboard navigable", () => {
       render(<DemographicsPopulationTab {...defaultProps} />);
 
-      const ageTab = screen.getByText("Age Structure");
+      const ageTab = screen.getByText("Age structure");
       ageTab.focus();
 
       expect(document.activeElement).toBe(ageTab);
@@ -301,7 +301,7 @@ describe("DemographicsPopulationTab", () => {
 
       // useMemo should prevent recalculation
       // This is hard to test directly but ensures no errors
-      expect(screen.getByText("Demographics & Population Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Demographics & population configuration")).toBeInTheDocument();
     });
 
     it("memoizes chart data to avoid unnecessary recalculations", () => {
@@ -309,7 +309,7 @@ describe("DemographicsPopulationTab", () => {
 
       rerender(<DemographicsPopulationTab {...defaultProps} />);
 
-      expect(screen.getByText("Demographics & Population Configuration")).toBeInTheDocument();
+      expect(screen.getByText("Demographics & population configuration")).toBeInTheDocument();
     });
   });
 });
