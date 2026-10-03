@@ -14,7 +14,6 @@ import {
   CommandItem,
 } from "~/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
-import { IxTime } from "~/lib/ixtime";
 import { useNotify } from "~/hooks/useNotify";
 import type { CountryWithEconomicData } from "~/types/ixstats";
 
@@ -289,8 +288,6 @@ export function CountryComparisonModal({
             <ComparisonCharts
               countries={selectedCountries}
               onCountriesChangeAction={setSelectedCountries}
-              availableCountries={availableCountries}
-              currentIxTime={IxTime.getCurrentIxTime()}
               isLoading={false}
             />
           </div>
