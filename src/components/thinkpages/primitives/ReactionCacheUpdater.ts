@@ -8,7 +8,11 @@ export function parseReactionCounts(
 ): Record<string, number> {
   if (typeof raw !== "string") return raw ?? {};
   try {
-    return JSON.parse(raw) as Record<string, number>;
+    const parsed: unknown = JSON.parse(raw);
+    // "null", numbers, strings and arrays are valid JSON but not a counts map.
+    return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+      ? (parsed as Record<string, number>)
+      : {};
   } catch {
     return {};
   }
