@@ -1,8 +1,5 @@
-export interface PatternMatch {
-  pattern: RegExp;
-  value: string;
-  confidence: number;
-}
+/** `[value, confidence, pattern]`: the pattern's presence suggests `value` with that confidence. */
+export type PatternMatch<T extends string = string> = readonly [T, number, RegExp];
 
 /** Text surrounding a regex match, flattened to one line and ellipsised where cut. */
 export function extractEvidence(
@@ -28,7 +25,7 @@ export function findBestMatch(
   let bestValue: string | null = null;
   let bestConfidence = 0;
 
-  for (const { pattern, value, confidence } of patterns) {
+  for (const [value, confidence, pattern] of patterns) {
     pattern.lastIndex = 0;
     const match = pattern.exec(content);
     if (match && confidence > bestConfidence) {
@@ -42,4 +39,20 @@ export function findBestMatch(
   }
 
   return { value: bestValue, confidence: bestConfidence };
+}
+
+/** Calls `onMatch` for every match of the global `pattern`, recording each one's evidence once. */
+export function scanMatches(
+  content: string,
+  pattern: RegExp,
+  evidence: string[],
+  onMatch: (match: RegExpExecArray) => void
+): void {
+  pattern.lastIndex = 0;
+  let match;
+  while ((match = pattern.exec(content)) !== null) {
+    onMatch(match);
+    const snippet = extractEvidence(content, match.index, match[0].length);
+    if (!evidence.includes(snippet)) evidence.push(snippet);
+  }
 }
