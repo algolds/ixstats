@@ -42,7 +42,7 @@ ThinkTanks is built as a direct sister interface to `/messages`, adhering to App
 
 - **Dual Floating `CutoutCard` Panels** ([`ThinktankLayout.tsx`](../../src/components/thinktanks/ThinktankLayout.tsx)):
   - **Directory (Left Column, 1/3)**: Grain-textured panel hosting search, group tabs, dynamic category pills, and group list items.
-  - **Workspace (Right Column, 2/3)**: Refraction-textured panel hosting the group identity header and active pillar canvas.
+  - **Workspace (Right Column, 2/3)**: Opaque panel hosting the group identity header and active pillar canvas.
 - **Desktop Sidebar Collapse / Focus Mode**:
   - The collapse toggle (`SidebarCollapse` / `SidebarExpand`) allows users to hide the left directory to focus entirely on writing long-form docs or reading group timelines.
 - **Spring Physics Animations (`motion/react`)**:

@@ -2,7 +2,7 @@
 
 > **Quick Reference for IxStates UI Engineering**  
 > **Stack**: Next.js 16 App Router · React 19 · Tailwind CSS v4 · TypeScript 7.0 · Radix UI · Iconoir · Cuelume Haptics  
-> **Design Language**: **Facet** (Depth, Materials, Refraction, Apple Physics)
+> **Design Language**: **Facet** (opaque cards, glass only for floating chrome; see [facet-design-system.md](facet-design-system.md))
 
 ---
 
@@ -12,9 +12,9 @@
 2. **Encapsulated Primitives**: Never import `@radix-ui/*` directly in domain features. Always import from [`src/components/ui/`](../../src/components/ui/).
 3. **Icons Standard**: Use `iconoir-react` exclusively. `lucide-react` is blocked.
 4. **Polymorphic Triggers (`asChild`)**: Always pass `asChild` to Radix triggers (`<DialogTrigger asChild>`, `<DropdownMenuTrigger asChild>`) when wrapping buttons or custom elements to avoid nested `<button>` errors.
-5. **Tactile Physics**: Add mechanical compression on press (`active:scale-[0.98] transition-transform duration-140`). Keep motion under 250ms.
-6. **Audio Haptics (Cuelume)**: Attach declarative attributes (`data-cuelume-press="press"`, `data-cuelume-hover="tick"`, `data-cuelume-toggle`) or call `soundEffects.bloom()`.
-7. **Desktop Sticky Clearance**: Sidebars and sticky rails must strictly use `lg:sticky lg:top-20` (80px) to clear the floating navbar with a 16px buffer.
+5. **Press feedback**: Controls change colour on press. Only pressable cards and tiles scale (`facet-press`, or `<Card interactive>`). Keep motion under 250ms.
+6. **Sound (Cuelume)**: Play only the `soundCues` moments (present, dismiss, success, error, destructive, arrival, reveal, notify). No hover ticks or per-control `data-cuelume-*` attributes.
+7. **Sticky clearance**: Sticky rails use `top-(--shell-top-offset)` so they clear the Halo band.
 
 ---
 
@@ -44,24 +44,20 @@ import { Plus, Trash } from "iconoir-react";
 
 ---
 
-### 2. Tactile Facet Card with Z-Depth
+### 2. Pressable card
 ```tsx
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "~/components/ui/card";
 import { Spark } from "iconoir-react";
 
-export function FeatureCard({ title, desc }: { title: string; desc: string }) {
+export function FeatureCard({ title, desc, onOpen }: { title: string; desc: string; onOpen: () => void }) {
   return (
-    <Card 
-      className="p-5 transition-all duration-150 hover:border-border/80 cursor-pointer active:scale-[0.98]"
-      data-cuelume-press="press"
-      data-cuelume-hover="tick"
-    >
-      <CardHeader className="p-0 flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-semibold text-foreground">{title}</CardTitle>
-        <Spark className="size-4 text-amber-500" />
+    <Card interactive padding="md" onClick={onOpen}>
+      <CardHeader className="flex flex-row items-center justify-between p-0 pb-2">
+        <CardTitle>{title}</CardTitle>
+        <Spark className="size-4 text-label-secondary" />
       </CardHeader>
       <CardContent className="p-0">
-        <CardDescription className="text-xs text-muted-foreground">{desc}</CardDescription>
+        <CardDescription>{desc}</CardDescription>
       </CardContent>
     </Card>
   );

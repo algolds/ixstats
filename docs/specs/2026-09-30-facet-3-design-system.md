@@ -1,3 +1,6 @@
+> **Superseded** by [`docs/reference/facet-design-system.md`](../reference/facet-design-system.md) (2026-10-02 design reset).
+> Kept for history only; do not follow it for new work.
+
 # Facet 3 — Unified Design System Specification
 
 **Status:** 📐 Specification, decided 2026-09-30; Phases 1–2 shipped; **amended by Facet 3.1 — identity (2026-10-01, §16)** ·

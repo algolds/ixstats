@@ -1,7 +1,7 @@
 # Frontend Architecture
 
 **Framework**: Next.js 16.3.6 App Router · React 19.2.8 · Tailwind CSS 4.3.3 · TypeScript 7.0.2  
-**Design System**: **Facet** (Refraction, Depth Hierarchy, Tactile Feedback)  
+**Design System**: **Facet** (opaque cards, glass only for floating chrome)  
 **Location**: `src/app/` (180+ page routes, 40+ API route handlers) · `src/components/` (900+ `.tsx` components) · `src/hooks/` (90+ custom hooks)
 
 ---
@@ -36,12 +36,12 @@ src/
 ### Root Layout Providers (`src/app/layout.tsx`)
 1. **`ClerkProvider`**: Authentication context. Required — the root layout throws at render if the Clerk keys are not configured.
 2. **`TRPCReactProvider`**: Client-side query client and cache manager wrapping tRPC hooks (`src/trpc/react.tsx`).
-3. **`ThemeProvider`** (`src/context/theme-context.tsx`): Theme and preference context (light / dark / system — default system; density, contrast, transparency, motion, text size), wrapped in a `MotionConfig reducedMotion="user"`. The same attributes are applied pre-paint by the inline script in the root layout (see [Tokens](#tokens-facet-3)).
+3. **`ThemeProvider`** (`src/context/theme-context.tsx`): Theme and preference context (light / dark / system — default system; density, contrast, transparency, motion, text size), wrapped in a `MotionConfig reducedMotion="user"`. The same attributes are applied pre-paint by the inline script in the root layout (see [Tokens](#tokens)).
 4. **`AbilityProvider` → `IxTimeProvider` → `ExecutiveNotificationProvider` → `WikiContextProvider` → `LazyGameProviders`**: Permissions, IxTime clock, executive notifications, wiki context, and lazily loaded gameplay providers.
 5. **`CuelumeSoundProvider`**: Bootstraps the **Cuelume** audio-tactile engine, delegates declarative `data-cuelume-*` listeners globally to the `document`, and plays subtle route transition cues (`soundEffects.arrival()`).
 6. **`<Navigation />`** (`src/app/_components/navigation.tsx`): Global navigation bar, which hosts the Halo `CommandPalette` (`src/components/halo/`).
 
-> See the **[Facet 3 reference](../reference/facet-design-system.md)** for colour roles and app tints, text styles, radii, materials, z-index, motion, the primitives (FacetCard, FacetList, controls, Sheet, dialogs), sound, appearance and accessibility preferences, and the guard tests.
+> See the **[Facet design system reference](../reference/facet-design-system.md)** for colour roles and app tints, text styles, radii, materials, z-index, motion, the primitives (Card, FacetList, controls, Sheet, dialogs), sound, appearance and accessibility preferences, and the guard tests.
 
 ---
 
@@ -121,29 +121,18 @@ export function MyCountryRouter() {
 
 ## 4. Facet Design System & Styling Rules
 
-The platform UI is built on **Facet** — a tactile, refraction-based design language:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    FACET DEPTH HIERARCHY                    │
-├─────────┬───────────────────┬───────────────────────────────┤
-│ Depth 1 │ Surface Base      │ Flat cards, subtle borders    │
-│ Depth 2 │ Raised Widget     │ Interactive cards, metrics    │
-│ Depth 3 │ Floated Overlay   │ Dropdowns, tooltips, popovers │
-│ Depth 4 │ Modal / Dialog    │ High blur, prominent shadow   │
-└─────────┴───────────────────┴───────────────────────────────┘
-```
+The platform UI is built on **Facet**. Plain opaque cards are the default; glass is for floating chrome only (sidebar, tab bar, sheets, map overlays). Read [facet-design-system.md](../reference/facet-design-system.md) before changing UI.
 
 ### Key UI Primitives:
-- **`FacetCard`** (`src/components/ui/facet-container.tsx`): Container with depth levels (`depth={1..4}`), subtle refraction borders, and optional flag ambient glow.
-- **`FacetTabs`** (`src/components/ui/facet/tabs/FacetTabs.tsx`): Spring-physics tab bar with sliding sheen indicator (`tone: "neutral" | "accent" | "mycountry" | "forum" | "sdi"`).
+- **`Card`** (`src/components/ui/card.tsx`): `variant` `default | inset | hero`, `interactive`, `padding`. The hero variant is glass and is limited to the dashboard and MyCountry heroes.
+- **`SegmentedControl`, `Tabs`, `ToggleGroup`, `RadioCard`** (`src/components/ui/`): Radix-based choice controls.
 - **`BaseMetricDetailsModal`** (`src/components/mycountry/shared/modals/metric-details/BaseMetricDetailsModal.tsx`): Universal 4-tab drilldown modal (Overview, Trends, Comparison, Details).
 
-### Tokens (Facet 3)
+### Tokens
 
 All design tokens live in one file, **`src/styles/facet/tokens.css`** (imported first by `globals.css`), mirrored in
 TypeScript by `src/lib/design/tokens.ts` (values) and `src/lib/design/motion.ts` (springs). Every token is a CSS
-variable and a Tailwind utility — see the [Facet 3 specification](../specs/2026-09-30-facet-3-design-system.md):
+variable and a Tailwind utility — see the [Facet design system reference](../reference/facet-design-system.md):
 
 - **Colour roles** — `text-label`, `text-label-secondary|tertiary|quaternary`, `bg-background`, `bg-grouped`,
   `bg-surface`, `bg-surface-secondary|elevated`, `bg-fill` … `bg-fill-4`, `border-separator(-opaque)`; system colours
