@@ -34,7 +34,7 @@ export const INTENT_CATEGORY_TO_TEMPLATE: Record<Category, string[]> = {
   security: ["political", "governance"],
 };
 
-export interface SpawnIntentResistanceParams {
+interface SpawnIntentResistanceParams {
   db: PrismaClient;
   countryId: string;
   intent: {
@@ -44,7 +44,7 @@ export interface SpawnIntentResistanceParams {
   };
 }
 
-export interface SpawnResistanceForIntentParams extends SpawnIntentResistanceParams {
+interface SpawnResistanceForIntentParams extends SpawnIntentResistanceParams {
   /** Explicit template domain/category tokens to match (cron passes its own policy mapping). */
   tokens: string[];
 }

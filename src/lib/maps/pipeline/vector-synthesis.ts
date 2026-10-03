@@ -29,7 +29,7 @@ import path from "node:path";
  * loads and typechecks where the files are absent (CI, fresh clones); a missing seed file
  * yields an empty collection.
  */
-export const VECTOR_SEED_DIR = path.join(process.cwd(), "public", "data", "vector-seeds");
+const VECTOR_SEED_DIR = path.join(process.cwd(), "public", "data", "vector-seeds");
 
 export function vectorSeedsAvailable(): boolean {
   return ["continents", "elevation-contours", "rivers", "lakes"].every((name) =>
@@ -130,7 +130,7 @@ function morphGeometry(geom: Geometry, seed: number): Geometry {
   return geom;
 }
 
-export interface HybridVectorWorld {
+interface HybridVectorWorld {
   background: FeatureCollection;
   altitudes: FeatureCollection;
   climate: FeatureCollection;

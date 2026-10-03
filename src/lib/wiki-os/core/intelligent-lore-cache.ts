@@ -15,7 +15,7 @@ import { db } from "~/server/db";
 import { type WikiSource } from "~/lib/wiki-os/config";
 import { type ExtractedBuilderData } from "~/lib/builder/wiki-data-extractor";
 
-export interface LoreScanCachedResult {
+interface LoreScanCachedResult {
   pagesScanned: number;
   foundVariants: string[];
   categoryUsed: string | null;
@@ -24,7 +24,7 @@ export interface LoreScanCachedResult {
   cachedAt: number;
 }
 
-export interface CategoryMemberItem {
+interface CategoryMemberItem {
   title: string;
 }
 

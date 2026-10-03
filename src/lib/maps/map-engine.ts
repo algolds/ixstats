@@ -25,9 +25,9 @@ import { buildBaseStyle, type ProjectionMode } from "./map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
 
-export type MapRole = "world" | "editor";
+type MapRole = "world" | "editor";
 
-export interface AcquireOpts {
+interface AcquireOpts {
   container: HTMLElement;
   /** Applied only at instance CREATION (persisted view survives re-acquire on purpose). */
   initialCenter?: [number, number];
@@ -43,7 +43,7 @@ export interface AcquireOpts {
   onReady?: (map: any) => void;
 }
 
-export interface SurfaceHandle {
+interface SurfaceHandle {
   ready: Promise<any>;
   getMap: () => any | null;
   release: () => void;
@@ -214,13 +214,13 @@ export function acquireSurface(role: MapRole, opts: AcquireOpts): SurfaceHandle 
   };
 }
 
-export interface MapEngineStats {
+interface MapEngineStats {
   liveContexts: number;
   roles: Array<{ role: MapRole; created: boolean; active: boolean; createdMs: number }>;
 }
 
 /** Dev instrumentation (P0): live WebGL context count + per-role init timing. */
-export function getMapEngineStats(): MapEngineStats {
+function getMapEngineStats(): MapEngineStats {
   return {
     liveContexts,
     roles: Array.from(roles.entries()).map(([role, st]) => ({
@@ -233,7 +233,7 @@ export function getMapEngineStats(): MapEngineStats {
 }
 
 /** Tear down every persistent instance (used on HMR dispose to avoid orphaned canvases). */
-export function destroyAllSurfaces() {
+function destroyAllSurfaces() {
   for (const st of roles.values()) {
     try {
       st.map?.remove();

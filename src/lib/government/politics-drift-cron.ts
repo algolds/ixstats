@@ -18,7 +18,7 @@ import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 import { loadEffectiveBudget } from "./budget-allocations";
 
-export interface PoliticsDriftResult {
+interface PoliticsDriftResult {
   countriesProcessed: number;
   partiesUpdated: number;
   metricsRecomputed: number;

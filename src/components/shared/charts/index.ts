@@ -14,12 +14,4 @@ export type ChartBlur = "light" | "medium" | "heavy";
 export type ControlSize = "sm" | "md" | "lg";
 
 // Re-export theme utilities
-export {
-  chartColorPalette,
-  getChartColor,
-  generateChartColors,
-  getButtonColors,
-  getTextColors,
-  getBackgroundColors,
-  getBorderColors,
-} from "~/lib/builder";
+export { chartColorPalette, generateChartColors } from "~/lib/builder";

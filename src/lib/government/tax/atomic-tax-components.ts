@@ -1,7 +1,7 @@
 // src/lib/government/tax/atomic-tax-components.ts
 // Domain catalog and calculation utilities for Atomic Tax Components.
 
-export interface AtomicTaxComponent {
+interface AtomicTaxComponent {
   id: string;
   name: string;
   category: TaxComponentCategory;
@@ -30,7 +30,7 @@ export interface EffectivenessMetrics {
   conflictCount: number;
 }
 
-export type TaxComponentCategory =
+type TaxComponentCategory =
   | "Collection Methods"
   | "Revenue Strategies"
   | "Compliance Systems"
@@ -874,7 +874,7 @@ export const ATOMIC_TAX_COMPONENTS: Record<string, AtomicTaxComponent> = {
   },
 };
 
-export const TAX_SYNERGIES: Record<string, Record<string, number>> = {
+const TAX_SYNERGIES: Record<string, Record<string, number>> = {
   digital_filing: {
     e_filing_infrastructure: 15,
     taxpayer_portal: 12,
@@ -992,19 +992,19 @@ export const TAX_SYNERGIES: Record<string, Record<string, number>> = {
   },
 };
 
-export const TAX_CONFLICTS: Record<string, string[]> = {
+const TAX_CONFLICTS: Record<string, string[]> = {
   progressive_tax: ["flat_tax"],
   flat_tax: ["progressive_tax", "wealth_tax"],
   wealth_tax: ["flat_tax"],
 };
 
-export function checkTaxSynergy(component1Id: string, component2Id: string): number {
+function checkTaxSynergy(component1Id: string, component2Id: string): number {
   const synergy1 = TAX_SYNERGIES[component1Id]?.[component2Id] || 0;
   const synergy2 = TAX_SYNERGIES[component2Id]?.[component1Id] || 0;
   return Math.max(synergy1, synergy2);
 }
 
-export function checkTaxConflicts(component1Id: string, component2Id: string): boolean {
+function checkTaxConflicts(component1Id: string, component2Id: string): boolean {
   const conflicts1 = TAX_CONFLICTS[component1Id] || [];
   const conflicts2 = TAX_CONFLICTS[component2Id] || [];
   return conflicts1.includes(component2Id) || conflicts2.includes(component1Id);

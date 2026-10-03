@@ -4,7 +4,7 @@
 import { sanitizeUserContent, escapeHtml } from "./sanitize-html";
 
 /** Convert Discord custom emoji markup <:name:id> and <a:name:id> to <img> tags. */
-export function renderDiscordEmojis(html: string): string {
+function renderDiscordEmojis(html: string): string {
   return html.replace(
     /<(a)?:([a-zA-Z0-9_]+):(\d{17,20})>/g,
     (_match: string, animated: string, name: string, id: string) => {
@@ -15,7 +15,7 @@ export function renderDiscordEmojis(html: string): string {
 }
 
 // Enhanced text formatting with better mention and hashtag styling
-export function formatContentEnhanced(content: string): string {
+function formatContentEnhanced(content: string): string {
   if (!content) return "";
 
   // Extract Discord emoji markup BEFORE escaping HTML
@@ -170,16 +170,4 @@ export function extractMentions(text: string): string[] {
 }
 
 // Validate if text contains valid URLs
-export function containsUrls(text: string): boolean {
-  if (!text) return false;
-  const urlRegex = /https?:\/\/[^\s]+/g;
-  return urlRegex.test(text);
-}
-
 // Extract URLs from text
-export function extractUrls(text: string): string[] {
-  if (!text) return [];
-  const urlRegex = /https?:\/\/[^\s]+/g;
-  const matches = text.match(urlRegex);
-  return matches || [];
-}

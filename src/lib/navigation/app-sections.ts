@@ -590,7 +590,7 @@ function splitHref(href: string): { path: string; query: URLSearchParams } {
 }
 
 /** `/a/b/` → `/a/b`; empty → `/`. */
-export function normalizePath(pathname: string): string {
+function normalizePath(pathname: string): string {
   const path = pathname.split("?")[0]?.split("#")[0] ?? "/";
   if (path === "" || path === "/") return "/";
   return path.endsWith("/") ? path.slice(0, -1) : path;
@@ -687,7 +687,7 @@ export function groupSections(
   return runs;
 }
 
-export interface AppVisibilityContext {
+interface AppVisibilityContext {
   signedIn: boolean;
   isAdmin: boolean;
   /** Holds the `labs.access` permission (sees Labs even when `showLabsTab` is off). */

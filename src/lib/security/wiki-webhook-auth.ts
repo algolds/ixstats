@@ -1,8 +1,6 @@
 import { safeEqual } from "./safe-equal";
 
-export { safeEqual };
-
-export interface WebhookAuthFailure {
+interface WebhookAuthFailure {
   status: 401 | 503;
   error: string;
 }

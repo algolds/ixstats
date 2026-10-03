@@ -26,7 +26,7 @@ export interface CardGeneralSettings {
   autoGenerateLoreThumbnails: number;
 }
 
-export const CARD_GENERAL_DEFAULTS: CardGeneralSettings = {
+const CARD_GENERAL_DEFAULTS: CardGeneralSettings = {
   tradingEnabled: 1,
   auctionHouseRakePct: 5,
   dailyFreePacks: 1,

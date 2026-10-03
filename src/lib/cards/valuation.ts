@@ -136,7 +136,7 @@ export function junkValue(cfg: CardValuationConfig, rarity: string): number {
 }
 
 /** Odds columns of a pack, as stored on CardPack (percent per card, remainder falls to COMMON). */
-export interface PackOddsForValuation {
+interface PackOddsForValuation {
   cardCount: number;
   commonOdds: number;
   uncommonOdds: number;

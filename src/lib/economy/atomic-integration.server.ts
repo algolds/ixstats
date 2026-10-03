@@ -9,7 +9,7 @@ import type {
   CountryWithAtomicComponents,
 } from "./atomic-integration";
 
-export async function calculateAtomicEconomicImpactServer(
+async function calculateAtomicEconomicImpactServer(
   components: ComponentType[],
   _baseGdpPerCapita: number,
   _baseTaxRevenue: number = 0

@@ -44,7 +44,7 @@ const STORY_CATEGORIES = [
   "linguistic",
   "upheaval",
 ] as const;
-export type StoryCategory = (typeof STORY_CATEGORIES)[number];
+type StoryCategory = (typeof STORY_CATEGORIES)[number];
 
 const LABEL_TYPES = [
   "mountain_range",
@@ -58,7 +58,7 @@ const LABEL_TYPES = [
   "region",
   "historical",
 ] as const;
-export type LabelType = (typeof LABEL_TYPES)[number];
+type LabelType = (typeof LABEL_TYPES)[number];
 
 export function storyCategory(v: unknown): StoryCategory | undefined {
   return STORY_CATEGORIES.includes(v as StoryCategory) ? (v as StoryCategory) : undefined;
@@ -71,7 +71,7 @@ export function hexColor(v: unknown): string | undefined {
 }
 
 export type GeometryInput = Record<string, unknown>;
-export type LineStringInput = { type: "LineString"; coordinates: [number, number][] };
+type LineStringInput = { type: "LineString"; coordinates: [number, number][] };
 
 export function geometry(v: unknown): GeometryInput | undefined {
   return v && typeof v === "object" && "type" in v ? (v as GeometryInput) : undefined;

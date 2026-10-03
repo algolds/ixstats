@@ -21,13 +21,13 @@ export interface ChangeLine {
   deptCategory?: string; // budget kind: which GovernmentDepartment.category to move
   deltaPercent?: number; // budget kind: allocatedPercent delta to apply (bounded)
 }
-export interface IntentConsequence {
+interface IntentConsequence {
   targetModel: "Country" | "GovernmentStructure" | "InternalStabilityMetrics";
   targetField: string;
   operation: "add" | "subtract";
   value: number;
 }
-export interface IntentPackage {
+interface IntentPackage {
   tier: Tier;
   title: string;
   blurb: string;
@@ -50,7 +50,7 @@ export interface IntentPackage {
 }
 
 // Core stats an Intent may never move — Editor-only (locked levers).
-export const FORBIDDEN_FIELDS = new Set([
+const FORBIDDEN_FIELDS = new Set([
   "currentTotalGdp",
   "currentGdpPerCapita",
   "currentPopulation",
@@ -63,7 +63,7 @@ export const FORBIDDEN_FIELDS = new Set([
   "landArea",
 ]);
 
-export function forbiddenFieldsUsed(pkgs: IntentPackage[]): string[] {
+function forbiddenFieldsUsed(pkgs: IntentPackage[]): string[] {
   const hits: string[] = [];
   for (const p of pkgs)
     for (const c of p.consequences)
@@ -176,7 +176,7 @@ const KEYWORDS: Record<Category, string[]> = {
 };
 
 // category → real GovernmentDepartment.category (for budget writes)
-export const CATEGORY_TO_DEPT: Record<Category, string> = {
+const CATEGORY_TO_DEPT: Record<Category, string> = {
   defense: "Defense",
   fiscal: "Finance",
   economy: "Commerce",
@@ -193,7 +193,7 @@ export const CATEGORY_TO_BROKER: Record<Category, string | null> = {
   infrastructure: "magnates",
   security: "party",
 };
-export const NOTCH_PERCENT = 1.5; // one budget "notch" = +1.5 allocatedPercent
+const NOTCH_PERCENT = 1.5; // one budget "notch" = +1.5 allocatedPercent
 
 /** Nudge base acceptance by the aligned broker's disposition. Pure + testable. */
 export function weightAcceptance(
@@ -503,39 +503,3 @@ export function assemblePackages(goal: string): {
 }
 
 // ── self-check ──────────────────────────────────────────────────────────────
-export function demo() {
-  const assert = (c: boolean, m: string) => {
-    if (!c) throw new Error("assemble demo failed: " + m);
-  };
-  const def = assemblePackages("Build military defenses");
-  assert(def.category === "defense", "defense classification");
-  assert(def.packages.length === 5, "5 packages");
-  for (const p of def.packages) assert(p.changes.length <= 4, "≤4 changes");
-  assert(
-    def.packages[0]!.acceptance === "good" && def.packages[2]!.acceptance === "bad",
-    "acceptance ordering"
-  );
-  assert(forbiddenFieldsUsed(def.packages).length === 0, "no core-stat fields");
-
-  let threw = false;
-  try {
-    assemblePackages("Prepare for war with Burgundie");
-  } catch {
-    threw = true;
-  }
-  assert(threw, "foreign policy is blocked");
-
-  const house = assemblePackages("Make housing affordable");
-  assert(house.category === "economy", "housing→economy");
-  // budget change carries structured dept + delta
-  const b = def.packages[1]!.changes.find((c) => c.kind === "budget")!;
-  assert(b.deptCategory === "Defense" && (b.deltaPercent ?? 0) > 0, "budget change is structured");
-  // acceptance weighting: aligned unlocked broker bumps a hard-sell toward contested
-  assert(
-    weightAcceptance("bad", { brokerUnlocked: true }) === "mid",
-    "broker unlock bumps acceptance"
-  );
-  assert(weightAcceptance("good", { brokerUnlocked: true }) === "good", "acceptance caps at good");
-  assert(weightAcceptance("mid", {}) === "mid", "no broker = unchanged");
-  return "ok";
-}

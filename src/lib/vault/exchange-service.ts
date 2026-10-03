@@ -21,7 +21,7 @@ import { IxTime } from "~/lib/ixtime";
 import { getExchangeConfig } from "./exchange-config";
 
 /** Sovereign ledger transaction types (stored as String, matching VaultTransaction.type). */
-export type ExchangeTxType =
+type ExchangeTxType =
   | "CONVERT_IN"
   | "CONVERT_OUT"
   | "CHARTER_FEE"
@@ -37,13 +37,13 @@ export type ExchangeTxType =
   | "PREDICTION_STAKE"
   | "PREDICTION_PAYOUT";
 
-export interface ExchangeMutationResult {
+interface ExchangeMutationResult {
   success: boolean;
   newBalance: number;
   message?: string;
 }
 
-export class ExchangeService {
+class ExchangeService {
   /**
    * Get or create a user's Sovereign wallet. Accepts a database User.id or a Clerk id.
    * Seeds the wallet with the configured starter balance on first creation.

@@ -57,7 +57,7 @@ export interface ExtractedBuilderData {
 /**
  * Extracts numeric values with multipliers (e.g., "1.2 trillion", "500 million")
  */
-export function parseNumericValue(text: string): number | undefined {
+function parseNumericValue(text: string): number | undefined {
   const match = text.match(/([\d,.]+)\s*(trillion|billion|million|thousand|k|m|b|t)?/i);
   if (!match) return undefined;
 

@@ -859,13 +859,3 @@ export function getLanguageFamilies(): LanguageFamily[] {
 
   return _compiledFamilies;
 }
-
-/** Get a specific language family by ID */
-export function getLanguageFamily(id: string): LanguageFamily | undefined {
-  return getLanguageFamilies().find((f) => f.id === id);
-}
-
-/** Get all family IDs */
-export function getLanguageFamilyIds(): string[] {
-  return getLanguageFamilies().map((f) => f.id);
-}

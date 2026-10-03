@@ -116,9 +116,6 @@ export const ELEVATION_ZONES: ElevationZoneConfig[] = [
   },
 ];
 
-/** Maximum world elevation in meters (used for normalization) */
-export const MAX_WORLD_ELEVATION = 6000;
-
 /** Look up elevation zone by its hex color (for SVG import color matching) */
 export function getZoneByColor(hexColor: string): ElevationZoneConfig | null {
   const normalized = hexColor.toLowerCase().replace(/^#/, "");
@@ -129,56 +126,4 @@ export function getZoneByColor(hexColor: string): ElevationZoneConfig | null {
       return zColor === normalized || zColor.slice(0, 6) === normalized.slice(0, 6);
     }) ?? null
   );
-}
-
-/** Look up elevation zone for a given elevation in meters */
-export function getZoneForElevation(meters: number): ElevationZoneConfig | null {
-  return ELEVATION_ZONES.find((z) => meters >= z.elevationMin && meters <= z.elevationMax) ?? null;
-}
-
-/**
- * Convert a normalized [0-1] elevation value to meters.
- * Uses a non-linear curve that allocates more of the 0-1 range
- * to lower elevations (more common) and compresses high elevations.
- */
-export function normalizeToMeters(
-  value: number,
-  maxElevation: number = MAX_WORLD_ELEVATION
-): number {
-  // Power curve: most terrain is low elevation
-  const curved = Math.pow(Math.max(0, Math.min(1, value)), 1.5);
-  return Math.round(curved * maxElevation);
-}
-
-/**
- * Get the elevation zone for a normalized [0-1] value.
- * Maps procedural generator output directly to the 9-zone system.
- */
-export function getZoneForNormalizedValue(value: number): ElevationZoneConfig | null {
-  const meters = normalizeToMeters(value);
-  return getZoneForElevation(meters);
-}
-
-/**
- * Get the AltitudeZone format expected by the terrain generator.
- * Bridges between the canonical config and the generator's internal format.
- */
-export function getGeneratorZones(): Array<{
-  id: string;
-  name: string;
-  minElev: number;
-  maxElev: number;
-  color: string;
-  elevationMin: number;
-  elevationMax: number;
-}> {
-  return ELEVATION_ZONES.map((z) => ({
-    id: z.zoneId,
-    name: z.zoneName,
-    minElev: z.normalizedMin,
-    maxElev: z.normalizedMax,
-    color: z.color,
-    elevationMin: z.elevationMin,
-    elevationMax: z.elevationMax,
-  }));
 }

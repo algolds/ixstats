@@ -38,17 +38,11 @@ import {
   getLoreTokensBalance as perksGetLoreTokensBalance,
   getVaultConfig,
   invalidateVaultConfigCache,
-  type VaultEffectPerks,
-  type VaultEffectItem,
-  type VaultConfig,
 } from "./vault-perks";
-
-export type { VaultEffectPerks, VaultEffectItem, VaultConfig };
 export { getVaultConfig, invalidateVaultConfigCache };
 export { LedgerError };
-export type { LedgerEarnInput, LedgerSpendInput };
 
-export interface EarnOnceResult {
+interface EarnOnceResult {
   success: boolean;
   alreadyApplied: boolean;
   newBalance: number;

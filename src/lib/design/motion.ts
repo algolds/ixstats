@@ -20,14 +20,6 @@ export const springSmooth = { type: "spring", stiffness: 320, damping: 32 } as c
 
 /** Emphasis: success states, reveals. */
 export const springGentle = { type: "spring", stiffness: 180, damping: 24 } as const satisfies Transition;
-
-export const SPRINGS = {
-  snappy: springSnappy,
-  smooth: springSmooth,
-  gentle: springGentle,
-} as const;
-export type SpringName = keyof typeof SPRINGS;
-
 /** `cubic-bezier(.23, 1, .32, 1)` — colour and opacity changes. */
 export const EASE_OUT_FACET = [0.23, 1, 0.32, 1] as const;
 

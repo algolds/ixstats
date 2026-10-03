@@ -100,26 +100,3 @@ export const STANDARD_CULTURES = [
   "uralic",
   "constructed",
 ] as const;
-
-export type StandardCulture = (typeof STANDARD_CULTURES)[number];
-
-export const PHONOTACTIC_PRESETS: Record<
-  string,
-  {
-    maxConsonantCluster?: number;
-    maxVowelCluster?: number;
-    allowDoubleLetters?: boolean;
-    vowelHarmony?: "none" | "front" | "back";
-  }
-> = {
-  austronesian: { maxConsonantCluster: 1, maxVowelCluster: 2 },
-  "east-asian": { maxConsonantCluster: 1, maxVowelCluster: 2 },
-  arabic: { maxConsonantCluster: 2, maxVowelCluster: 2 },
-  persian: { maxConsonantCluster: 2, maxVowelCluster: 2 },
-  turkic: { maxConsonantCluster: 2, maxVowelCluster: 2, vowelHarmony: "back" },
-  indic: { maxConsonantCluster: 2, maxVowelCluster: 2 },
-  african: { maxConsonantCluster: 2, maxVowelCluster: 2 },
-  uralic: { maxConsonantCluster: 2, maxVowelCluster: 2, vowelHarmony: "front" },
-  germanic: { maxConsonantCluster: 3, maxVowelCluster: 2 },
-  slavic: { maxConsonantCluster: 4, maxVowelCluster: 2 },
-};

@@ -4,30 +4,14 @@
  */
 
 // Core entity properties
-export interface BaseEntity {
+interface BaseEntity {
   id: string;
   createdAt: number; // Unix timestamp - standardized across all entities
   updatedAt?: number;
 }
 
 // Base for all actionable entities
-export interface BaseAction extends BaseEntity {
-  title: string;
-  description: string;
-  enabled: boolean;
-  priority: StandardPriority;
-  category: StandardCategory;
-}
-
 // Base for all notification-like entities
-export interface BaseNotification extends BaseEntity {
-  title: string;
-  message: string;
-  type: string;
-  severity: StandardPriority; // Aligned with priority for consistency
-  read?: boolean;
-}
-
 // Base for all intelligence/insight entities
 export interface BaseIntelligence extends BaseEntity {
   category: StandardCategory;
@@ -44,24 +28,5 @@ export type StandardTimeframe = "immediate" | "short" | "medium" | "long";
 export type StandardTrend = "up" | "down" | "stable";
 
 // Icon reference type (standardized across system)
-export interface IconReference {
-  name: string; // Lucide icon name
-  variant?: "solid" | "outline";
-  color?: string;
-}
-
 // Standardized impact metrics
-export interface ImpactMetrics {
-  economic?: string;
-  social?: string;
-  diplomatic?: string;
-  timeframe: string;
-  magnitude: StandardPriority;
-}
-
 // Standardized cost structure
-export interface CostStructure {
-  economic: number;
-  political: number;
-  time: number;
-}

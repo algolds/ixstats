@@ -6,7 +6,7 @@
  */
 
 /** Store items that can only be bought after owning N of another item. */
-export const STORE_ITEM_PREREQUISITES: Record<string, { itemId: string; count: number }> = {
+const STORE_ITEM_PREREQUISITES: Record<string, { itemId: string; count: number }> = {
   upgrade_card_capacity_mega: { itemId: "upgrade_card_capacity", count: 5 },
 };
 

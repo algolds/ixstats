@@ -1,24 +1,3 @@
-/**
- * geo-analytics.ts — Pure geographic analytics functions.
- *
- * Computes derived gameplay metrics from geographic data:
- * - Arable land percentage from climate distribution
- * - Landlocked / island classification
- * - Climate diversity index (Shannon)
- * - Terrain roughness
- * - NPC personality modifiers (geography → trait drift)
- * - Economic modifiers (geography → GDP/trade/infrastructure)
- * - Crisis risk factors (geography → natural disaster probabilities)
- *
- * All functions are pure (no DB, no React, no side effects) and can be
- * used server-side in tRPC endpoints or client-side in components.
- *
- * Constants ported from scripts/country-geo-report.ts and
- * src/lib/procedural/climate-system.ts.
- */
-
-import { distanceKm as haversineKm } from "~/lib/maps/geo-math";
-
 // ─────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────
@@ -44,7 +23,7 @@ export interface ElevationZoneEntry {
 }
 
 /** Full geographic profile for a country */
-export interface GeoProfile {
+interface GeoProfile {
   arableLandPercent: number;
   coastlineKm: number;
   isLandlocked: boolean;
@@ -63,7 +42,7 @@ export interface GeoProfile {
 }
 
 /** NPC personality trait names (matches diplomatic-npc-personality.ts) */
-export interface PersonalityTraits {
+interface PersonalityTraits {
   assertiveness: number;
   cooperativeness: number;
   economicFocus: number;
@@ -75,7 +54,7 @@ export interface PersonalityTraits {
 }
 
 /** Economic modifiers derived from geography */
-export interface EconomicGeoModifiers {
+interface EconomicGeoModifiers {
   /** Multiplier on GDP growth rate (e.g. 1.05 = +5%) */
   gdpModifier: number;
   /** Multiplier on trade efficiency */
@@ -85,7 +64,7 @@ export interface EconomicGeoModifiers {
 }
 
 /** Crisis risk scores by type (0–1 probability weight) */
-export interface CrisisRiskFactors {
+interface CrisisRiskFactors {
   hurricane: number;
   earthquake: number;
   drought: number;
@@ -100,7 +79,7 @@ export interface CrisisRiskFactors {
 // ─────────────────────────────────────────────────────────────────
 
 /** Climate metadata — agriculture factors, temperature, precipitation per Trewartha zone */
-export const CLIMATE_METADATA: Record<
+const CLIMATE_METADATA: Record<
   string,
   {
     tempModifier: number;
@@ -223,7 +202,7 @@ export const CLIMATE_METADATA: Record<
 };
 
 /** Short code → full climate name lookup */
-export const CLIMATE_CODE_TO_NAME: Record<string, string> = {
+const CLIMATE_CODE_TO_NAME: Record<string, string> = {
   Ar: "Tropical Wet (Ar)",
   Aw: "Tropical Wet-And-Dry (Aw)",
   Bw: "Desert or Arid (Bw)",
@@ -360,7 +339,7 @@ export const ELEVATION_ZONES = [
  * Compute arable land percentage from climate zone distribution.
  * Weighted average of agriculture factors by area share.
  */
-export function computeArableLandPercent(zones: ClimateZoneEntry[]): number {
+function computeArableLandPercent(zones: ClimateZoneEntry[]): number {
   const totalArea = zones.reduce((s, z) => s + z.areaSqKm, 0);
   if (totalArea <= 0) return 0;
 
@@ -376,7 +355,7 @@ export function computeArableLandPercent(zones: ClimateZoneEntry[]): number {
 /**
  * Determine if a country is landlocked (no coastline).
  */
-export function computeIsLandlocked(coastlineKm: number): boolean {
+function computeIsLandlocked(coastlineKm: number): boolean {
   return coastlineKm < 1;
 }
 
@@ -384,11 +363,7 @@ export function computeIsLandlocked(coastlineKm: number): boolean {
  * Determine if a country is an island nation.
  * Island = has coastline + no land neighbors (or very small land area with high coast-to-area ratio).
  */
-export function computeIsIsland(
-  neighborCount: number,
-  coastlineKm: number,
-  landAreaKm2: number
-): boolean {
+function computeIsIsland(neighborCount: number, coastlineKm: number, landAreaKm2: number): boolean {
   if (coastlineKm < 1) return false;
   if (neighborCount === 0) return true;
   // High coast-to-area ratio suggests island archipelago even with a neighbor
@@ -400,7 +375,7 @@ export function computeIsIsland(
  * Shannon diversity index for climate zones.
  * Higher = more diverse climate. Range: 0 (monoculture) to ~2.5 (very diverse).
  */
-export function computeClimateDiversity(zones: ClimateZoneEntry[]): number {
+function computeClimateDiversity(zones: ClimateZoneEntry[]): number {
   const totalArea = zones.reduce((s, z) => s + z.areaSqKm, 0);
   if (totalArea <= 0) return 0;
 
@@ -418,7 +393,7 @@ export function computeClimateDiversity(zones: ClimateZoneEntry[]): number {
  * Standard deviation of the elevation zone distribution, weighted by area.
  * Higher = more varied terrain.
  */
-export function computeTerrainRoughness(zones: ElevationZoneEntry[]): number {
+function computeTerrainRoughness(zones: ElevationZoneEntry[]): number {
   const totalArea = zones.reduce((s, z) => s + z.areaSqKm, 0);
   if (totalArea <= 0) return 0;
 
@@ -445,7 +420,7 @@ export function computeTerrainRoughness(zones: ElevationZoneEntry[]): number {
 /**
  * Compute mean elevation from elevation profile (area-weighted).
  */
-export function computeMeanElevation(zones: ElevationZoneEntry[]): number {
+function computeMeanElevation(zones: ElevationZoneEntry[]): number {
   const totalArea = zones.reduce((s, z) => s + z.areaSqKm, 0);
   if (totalArea <= 0) return 0;
 
@@ -518,7 +493,7 @@ export function estimatePrecipitation(zones: ClimateZoneEntry[], meanElevation: 
 /**
  * Compute drainage density (river length per area).
  */
-export function computeDrainageDensity(totalRiverLengthKm: number, areaKm2: number): number {
+function computeDrainageDensity(totalRiverLengthKm: number, areaKm2: number): number {
   if (areaKm2 <= 0) return 0;
   return Math.round((totalRiverLengthKm / areaKm2) * 1000) / 1000;
 }
@@ -816,23 +791,6 @@ export function buildGeoProfile(raw: {
 // ─────────────────────────────────────────────────────────────────
 // Centralized Measurement Math & Distance Formatting (Plan 146)
 // ─────────────────────────────────────────────────────────────────
-
-/**
- * Calculates Great-Circle distance between two [lng, lat] coordinates in kilometers using Haversine formula.
- */
-export const calculateHaversineDistance = haversineKm;
-
-/**
- * Calculates total cumulative distance for a series of polyline coordinates in kilometers.
- */
-export function calculatePolylineDistance(points: [number, number][]): number {
-  if (!points || points.length < 2) return 0;
-  let totalKm = 0;
-  for (let i = 0; i < points.length - 1; i++) {
-    totalKm += calculateHaversineDistance(points[i]!, points[i + 1]!);
-  }
-  return totalKm;
-}
 
 /**
  * Formats a distance in kilometers into metric, imperial, and nautical strings.

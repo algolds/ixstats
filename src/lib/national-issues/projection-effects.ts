@@ -27,14 +27,14 @@ export const MAX_ISSUE_GDP_LEVEL_SHIFT = 0.03;
 export const MAX_ISSUE_POPULATION_LEVEL_SHIFT = 0.01;
 
 /** Country fields the projection owns; issue consequences on them become effects. */
-export const PROJECTION_FIELDS = new Set([
+const PROJECTION_FIELDS = new Set([
   "actualGdpGrowth",
   "currentTotalGdp",
   "currentGdpPerCapita",
   "currentPopulation",
 ]);
 
-export interface IssueEffectSpec {
+interface IssueEffectSpec {
   inputType: StorytellerEffectType;
   /** Level shift as a decimal (0.01 = +1%). */
   value: number;

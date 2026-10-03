@@ -14,7 +14,7 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 
-export interface UseAtomicSelectorStateProps<T extends string> {
+interface UseAtomicSelectorStateProps<T extends string> {
   /** Uncontrolled initial selection (synced by value) */
   initialSelection?: T[];
   /** Controlled selection (takes precedence over internal state if provided) */
@@ -29,7 +29,7 @@ export interface UseAtomicSelectorStateProps<T extends string> {
   defaultCategory?: string | null;
 }
 
-export interface UseAtomicSelectorStateReturn<T extends string> {
+interface UseAtomicSelectorStateReturn<T extends string> {
   // Selection state
   selectedComponents: T[];
   selectedIds: Set<string>;

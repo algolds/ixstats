@@ -14,7 +14,7 @@ import type { LoreCategory } from "./category-enums";
 
 // ─── Types ──────────────────────────────────────────────────────
 
-export interface CategoryTheme {
+interface CategoryTheme {
   /** Human-readable label */
   label: string;
   /** Tailwind gradient classes for card background (from → via → to) */
@@ -35,7 +35,7 @@ export interface CategoryTheme {
 
 // ─── Theme Definitions ──────────────────────────────────────────
 
-export const CATEGORY_THEMES: Record<LoreCategory, CategoryTheme> = {
+const CATEGORY_THEMES: Record<LoreCategory, CategoryTheme> = {
   MILITARY: {
     label: "Military",
     gradient: "from-red-950 via-rose-950 to-slate-950",
@@ -306,8 +306,4 @@ export function getCategoryTheme(category: LoreCategory): CategoryTheme {
 
 export function getCategoryLabel(category: LoreCategory): string {
   return CATEGORY_THEMES[category].label;
-}
-
-export function getCategoryAccentColor(category: LoreCategory): string {
-  return CATEGORY_THEMES[category].accentColor;
 }

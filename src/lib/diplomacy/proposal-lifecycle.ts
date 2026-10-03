@@ -11,7 +11,7 @@
 
 /** Real (not IxTime) days a pending proposal or invite stays answerable. */
 export const PROPOSAL_TTL_DAYS = 14;
-export const PROPOSAL_TTL_MS = PROPOSAL_TTL_DAYS * 24 * 60 * 60 * 1000;
+const PROPOSAL_TTL_MS = PROPOSAL_TTL_DAYS * 24 * 60 * 60 * 1000;
 
 /** Foreign-policy actions that need the target's consent before they take effect. */
 export const COOPERATIVE_FP_TYPES = ["free_trade", "military_alliance"] as const;
@@ -51,7 +51,7 @@ export function inviteIssuedAt(invite: { invitedAt?: Date | null; updatedAt: Dat
 }
 
 /** Prisma filter for alliance invites issued before `cutoff` (legacy rows fall back to updatedAt). */
-export function staleInviteWhere(cutoff: Date) {
+function staleInviteWhere(cutoff: Date) {
   return {
     OR: [{ invitedAt: { lt: cutoff } }, { invitedAt: null, updatedAt: { lt: cutoff } }],
   };
@@ -62,7 +62,7 @@ interface ExpiryDb {
   allianceMember: { updateMany: (args: any) => Promise<{ count: number }> };
 }
 
-export interface ProposalExpiryResult {
+interface ProposalExpiryResult {
   proposalsExpired: number;
   invitesExpired: number;
 }

@@ -15,7 +15,7 @@ import {
   type EngagementEvent,
 } from "./trending";
 
-export interface ThinkPagesTrendingResult {
+interface ThinkPagesTrendingResult {
   eventsConsidered: number;
   postsScored: number;
   trendingPosts: number;

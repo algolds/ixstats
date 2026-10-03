@@ -2,12 +2,12 @@
 // Card pack service for IxCards system
 
 import type { PrismaClient } from "@prisma/client";
-import type { PackType, CardRarity } from "@prisma/client";
+import type { CardRarity } from "@prisma/client";
 import { getVaultConfig, vaultService } from "~/lib/vault/vault-service";
 import { spendCreditsTx } from "~/lib/vault/vault-ledger";
 import { grantCardXp } from "./xp-utils";
 
-export interface PackOdds {
+interface PackOdds {
   commonOdds: number;
   uncommonOdds: number;
   rareOdds: number;
@@ -26,25 +26,9 @@ const RARITY_DISTRIBUTION: readonly [CardRarity, keyof PackOdds][] = [
 ] as const;
 
 /**
- * Pack odds validation - ensures all rarity odds sum to 100%
- */
-export function validatePackOdds(odds: PackOdds): boolean {
-  const total =
-    odds.commonOdds +
-    odds.uncommonOdds +
-    odds.rareOdds +
-    odds.ultraRareOdds +
-    odds.epicOdds +
-    odds.legendaryOdds;
-
-  // Allow for small floating point errors (within 0.01%)
-  return Math.abs(total - 100) < 0.01;
-}
-
-/**
  * Weighted random selection based on rarity odds
  */
-export function selectRarityByOdds(odds: PackOdds): CardRarity {
+function selectRarityByOdds(odds: PackOdds): CardRarity {
   const random = Math.random() * 100;
   let cumulative = 0;
 
@@ -54,74 +38,6 @@ export function selectRarityByOdds(odds: PackOdds): CardRarity {
   }
 
   return "COMMON";
-}
-
-/**
- * Create new pack configuration (admin only)
- */
-export async function createPack(
-  db: PrismaClient,
-  packData: {
-    name: string;
-    description?: string;
-    artwork: string;
-    cardCount?: number;
-    packType: PackType;
-    priceCredits: number;
-    commonOdds?: number;
-    uncommonOdds?: number;
-    rareOdds?: number;
-    ultraRareOdds?: number;
-    epicOdds?: number;
-    legendaryOdds?: number;
-    season?: number;
-    cardType?: string;
-    themeFilter?: object;
-    isAvailable?: boolean;
-    limitedQuantity?: number;
-    purchaseLimit?: number;
-    expiresAt?: Date;
-  }
-) {
-  // Validate odds if provided
-  const odds = {
-    commonOdds: packData.commonOdds ?? 65,
-    uncommonOdds: packData.uncommonOdds ?? 25,
-    rareOdds: packData.rareOdds ?? 7,
-    ultraRareOdds: packData.ultraRareOdds ?? 2,
-    epicOdds: packData.epicOdds ?? 0.9,
-    legendaryOdds: packData.legendaryOdds ?? 0.1,
-  };
-
-  if (!validatePackOdds(odds)) {
-    throw new Error(
-      "Pack odds validation failed: odds must sum to 100%. " +
-        `Current sum: ${Object.values(odds)
-          .reduce((a, b) => a + b, 0)
-          .toFixed(2)}%`
-    );
-  }
-
-  // Create pack with validated odds
-  return db.cardPack.create({
-    data: {
-      id: `pack_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-      name: packData.name,
-      description: packData.description,
-      artwork: packData.artwork,
-      cardCount: packData.cardCount ?? 5,
-      packType: packData.packType,
-      priceCredits: packData.priceCredits,
-      ...odds,
-      season: packData.season,
-      cardType: packData.cardType,
-      themeFilter: packData.themeFilter,
-      isActive: packData.isAvailable ?? true,
-      limitedQuantity: packData.limitedQuantity,
-      purchaseLimit: packData.purchaseLimit,
-      expiresAt: packData.expiresAt,
-    },
-  });
 }
 
 /**
@@ -208,7 +124,7 @@ export async function purchasePack(db: PrismaClient, userId: string, packId: str
  * Generate cards for pack based on rarity distribution
  * Returns array of card rarities to be pulled from card pool
  */
-export function generatePackCards(pack: {
+function generatePackCards(pack: {
   cardCount: number;
   commonOdds: number;
   uncommonOdds: number;

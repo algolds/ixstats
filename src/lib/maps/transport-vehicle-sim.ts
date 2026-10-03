@@ -1,15 +1,6 @@
-/**
- * transport-vehicle-sim.ts — Procedural vehicle traffic simulation along transport segments.
- *
- * Generates continuous vehicle trip trajectories with timestamps suitable for:
- * 1. deck.gl TripsLayer (hardware-accelerated GPU trails)
- * 2. MapLibre GeoJSON Point layer animation (pure native MapLibre fallback)
- */
-
-import { ROUTE_STYLES } from "~/lib/maps/map-config";
 import { distanceKm } from "~/lib/maps/geo-math";
 
-export interface RouteEconomicContext {
+interface RouteEconomicContext {
   totalGdp?: number | null;
   gdpPerCapita?: number | null;
   economicTier?: string | null;
@@ -46,7 +37,7 @@ export interface VehicleTrip {
   economicCoeff?: number;
 }
 
-export const VEHICLE_COLORS_RGB: Record<string, [number, number, number]> = {
+const VEHICLE_COLORS_RGB: Record<string, [number, number, number]> = {
   rail: [148, 163, 184],
   high_speed_rail: [14, 165, 233],
   freight_rail: [100, 116, 139],

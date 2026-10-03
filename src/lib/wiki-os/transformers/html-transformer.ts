@@ -9,7 +9,7 @@ import { DEFAULT_MEDIAWIKI_URL, getWikiBaseUrl, type WikiSource } from "~/lib/wi
 // Types
 // ---------------------------------------------------------------------------
 
-export interface TransformedArticle {
+interface TransformedArticle {
   /** Main article body HTML (infobox and notices removed) */
   contentHtml: string;
   /** Extracted infobox HTML (null if no infobox) */

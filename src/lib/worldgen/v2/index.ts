@@ -130,10 +130,4 @@ export function generateWorld(
 }
 
 // Re-export core types
-export type {
-  WorldGraph,
-  WorldGenParams,
-  GeneratedWorld,
-  WorldStats,
-  ProgressCallback,
-} from "./types";
+export type { WorldGenParams, GeneratedWorld, ProgressCallback } from "./types";

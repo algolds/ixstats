@@ -1,6 +1,6 @@
-export type DashboardFeedSource = "activity" | "thinkpages" | "wiki" | "forum";
+type DashboardFeedSource = "activity" | "thinkpages" | "wiki" | "forum";
 
-export interface FeedUser {
+interface FeedUser {
   id?: string;
   name?: string;
   countryId?: string;
@@ -10,7 +10,7 @@ export interface FeedUser {
   avatarUrl?: string;
 }
 
-export interface ActivityMetadata {
+interface ActivityMetadata {
   category?: string;
   pageTitle?: string;
   countryId?: string;
@@ -18,33 +18,33 @@ export interface ActivityMetadata {
   [key: string]: unknown;
 }
 
-export interface ActivityContent {
+interface ActivityContent {
   title?: string;
   description?: string;
   link?: string;
   metadata?: ActivityMetadata;
 }
 
-export interface BaseFeedItem {
+interface BaseFeedItem {
   id: string;
   timestamp: string | Date;
   source: DashboardFeedSource;
   user?: FeedUser;
 }
 
-export interface ActivityFeedItem extends BaseFeedItem {
+interface ActivityFeedItem extends BaseFeedItem {
   source: "activity";
   category?: string;
   content?: ActivityContent;
 }
 
-export interface ThinkpagesFeedItem extends BaseFeedItem {
+interface ThinkpagesFeedItem extends BaseFeedItem {
   source: "thinkpages";
   post?: Record<string, unknown>;
   content?: ActivityContent;
 }
 
-export interface WikiFeedItem extends BaseFeedItem {
+interface WikiFeedItem extends BaseFeedItem {
   source: "wiki";
   content?: ActivityContent;
   _grouped?: boolean;
@@ -55,7 +55,7 @@ export interface WikiFeedItem extends BaseFeedItem {
   _isNew?: boolean;
 }
 
-export interface ForumFeedItem extends BaseFeedItem {
+interface ForumFeedItem extends BaseFeedItem {
   source: "forum";
   content?: ActivityContent;
 }

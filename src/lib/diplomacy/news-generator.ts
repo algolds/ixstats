@@ -233,7 +233,7 @@ export async function generateDiplomaticNews(
  * @param articleTitle - Wiki article title that was edited
  * @param editSummary - Optional edit summary from the wiki
  */
-export async function generateWikiUpdateNews(
+async function generateWikiUpdateNews(
   db: PrismaClient,
   countryId: string,
   articleTitle: string,

@@ -10,7 +10,7 @@ import crypto from "crypto";
 import { DEFAULT_MEDIAWIKI_URL } from "../config";
 import { BlurHashService } from "./blurhash-service";
 
-export interface MediaAssetRecord {
+interface MediaAssetRecord {
   id: string;
   title: string;
   slug: string;
@@ -27,7 +27,7 @@ export interface MediaAssetRecord {
   updatedAt: Date;
 }
 
-export interface RegisterAssetInput {
+interface RegisterAssetInput {
   filename: string;
   title?: string;
   mimeType?: string;

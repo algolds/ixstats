@@ -22,7 +22,7 @@ export enum EconomicTier {
   EXTRAVAGANT = "Extravagant", // $65,000+ (0.50% max growth)
 }
 
-export enum PopulationTier {
+enum PopulationTier {
   TIER_1 = "1", // 0-9,999,999
   TIER_2 = "2", // 10,000,000-29,999,999
   TIER_3 = "3", // 30,000,000-49,999,999
@@ -65,7 +65,7 @@ export function levelPhaseIn(
 }
 
 /** Growth rate a relative growth modifier is sized against when it becomes a level effect. */
-export const REFERENCE_GDP_GROWTH = 0.03;
+const REFERENCE_GDP_GROWTH = 0.03;
 
 /**
  * GDP level shift equivalent to multiplying a `referenceGrowth` growth rate by `1 + modifier`
@@ -102,7 +102,7 @@ export function assertPersistableStats(
   }
 }
 
-export interface StatsCalculationResult {
+interface StatsCalculationResult {
   country: string;
   oldStats: Partial<CountryStats>;
   newStats: CountryStats;

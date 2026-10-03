@@ -32,7 +32,7 @@ const IXEARTH_REFERENCE = {
   planetRatio: 352_800_000 / 196_940_000, // ~1.7914
 } as const;
 
-export interface WorldScale {
+interface WorldScale {
   /** Area multiplier applied after PostGIS/haversine calculations. Default: 1.0 (scale is baked in). */
   areaScale: number;
   /** Distance multiplier. Derived: √areaScale. Default: 1.0. */
@@ -51,37 +51,6 @@ let activeScale: WorldScale = {
   distanceScale: 1.0,
   radiusKm: IXEARTH_REFERENCE.earthRadiusKm,
 };
-
-/**
- * Get the current world scale configuration.
- */
-export function getWorldScale(): Readonly<WorldScale> {
-  return activeScale;
-}
-
-/**
- * Set a custom world scale. Use for licensing to other communities.
- * @param areaScale — Area multiplier (e.g., 1.0 for Earth-sized, 2.0 for 2× Earth surface)
- */
-export function setWorldScale(areaScale: number): void {
-  activeScale = {
-    areaScale,
-    distanceScale: Math.sqrt(areaScale),
-    radiusKm: IXEARTH_REFERENCE.earthRadiusKm * Math.sqrt(areaScale),
-  };
-}
-
-/**
- * Reset to default IxEarth scale (1.0 — baked into map geometry).
- */
-export function resetWorldScale(): void {
-  activeScale = {
-    areaScale: 1.0,
-    distanceScale: 1.0,
-    radiusKm: IXEARTH_REFERENCE.earthRadiusKm,
-  };
-}
-
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const DEG2RAD = Math.PI / 180;
@@ -104,13 +73,6 @@ export function distanceKm(a: [number, number], b: [number, number]): number {
 }
 
 /**
- * Haversine distance in IxEarth miles.
- */
-export function distanceMi(a: [number, number], b: [number, number]): number {
-  return distanceKm(a, b) / KM_PER_MI;
-}
-
-/**
  * Haversine distance using raw lat/lng numbers (for backward compat with transport router).
  */
 export function distanceKmLatLng(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -123,7 +85,7 @@ export function distanceKmLatLng(lat1: number, lng1: number, lat2: number, lng2:
  * Compute polygon area in IxEarth sq km from a coordinate ring [[lng,lat], ...].
  * Uses the spherical excess formula for accuracy.
  */
-export function ringAreaSqKm(ring: [number, number][]): number {
+function ringAreaSqKm(ring: [number, number][]): number {
   if (ring.length < 3) return 0;
   // Shoelace in coordinate space, then scale by latitude
   let area = 0;
@@ -142,13 +104,6 @@ export function ringAreaSqKm(ring: [number, number][]): number {
 
   // Apply IxEarth scale
   return areaSqKmEarth * activeScale.areaScale;
-}
-
-/**
- * Compute polygon area in IxEarth sq mi.
- */
-export function ringAreaSqMi(ring: [number, number][]): number {
-  return ringAreaSqKm(ring) / SQKM_PER_SQMI;
 }
 
 /**
@@ -265,49 +220,7 @@ export function formatDistance(km: number, unit: "km" | "mi" = "km"): string {
   return `${Math.round(value).toLocaleString()} ${unit}`;
 }
 
-/**
- * Format area with appropriate unit.
- */
-export function formatArea(sqKm: number, unit: "km²" | "mi²" = "km²"): string {
-  const value = unit === "mi²" ? sqKm / SQKM_PER_SQMI : sqKm;
-  if (value < 1) return `${(value * 1e6).toFixed(0)} ${unit === "mi²" ? "sq ft" : "m²"}`;
-  if (value < 100) return `${value.toFixed(1)} ${unit}`;
-  return `${Math.round(value).toLocaleString()} ${unit}`;
-}
-
 // ─── Coordinate utilities ────────────────────────────────────────────────────
-
-/**
- * Centroid of a coordinate ring.
- */
-export function ringCentroid(ring: [number, number][]): [number, number] {
-  if (ring.length === 0) return [0, 0];
-  let lng = 0,
-    lat = 0;
-  for (const p of ring) {
-    lng += p[0];
-    lat += p[1];
-  }
-  return [lng / ring.length, lat / ring.length];
-}
-
-/**
- * Bounding box of a coordinate ring: [minLng, minLat, maxLng, maxLat].
- */
-export function ringBbox(ring: [number, number][]): [number, number, number, number] {
-  let minX = Infinity,
-    minY = Infinity,
-    maxX = -Infinity,
-    maxY = -Infinity;
-  for (const [x, y] of ring) {
-    if (x < minX) minX = x;
-    if (y < minY) minY = y;
-    if (x > maxX) maxX = x;
-    if (y > maxY) maxY = y;
-  }
-  return [minX, minY, maxX, maxY];
-}
-
 // ─── Terrain Difficulty ──────────────────────────────────────────────────────
 
 /**

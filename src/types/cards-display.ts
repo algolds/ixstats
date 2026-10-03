@@ -7,12 +7,6 @@
 import type { CardRarity, CardType } from "@prisma/client";
 import type { CardStatDef } from "~/lib/cards/stat-config";
 
-export type Brand<K, T extends string> = K & { readonly __brand: T };
-export type UserId = Brand<string, "UserId">;
-export type CardId = Brand<string, "CardId">;
-export type AuctionId = Brand<string, "AuctionId">;
-export type OwnershipId = Brand<string, "OwnershipId">;
-
 export interface ArtworkVariants {
   holographicUrl?: string;
   foilUrl?: string;
@@ -64,17 +58,6 @@ export interface LoreCardMetadata {
     economicPower?: number;
   };
   isCTE?: boolean;
-  [key: string]: unknown;
-}
-
-export interface NSCardData {
-  badges?: string[];
-  flag?: string;
-  category?: string;
-  region?: string;
-  wa?: string;
-  type?: string;
-  slogan?: string;
   [key: string]: unknown;
 }
 
@@ -153,37 +136,6 @@ export interface CardInstance {
 }
 
 /**
- * Discriminated Sub-types for type narrowing
- */
-export interface LoreCardInstance extends CardInstance {
-  cardType: "LORE" | "LORE_BATCH" | string;
-  wikiSource: "ixwiki" | "iiwiki";
-  wikiArticleTitle: string;
-  metadata?: LoreCardMetadata | null;
-}
-
-export interface NSCardInstance extends CardInstance {
-  cardType: "NS_IMPORT";
-  nsCardId: number;
-  nsSeason: number;
-  nsData: NSCardData | null;
-}
-
-export interface NationCardInstance extends CardInstance {
-  cardType: "NATION";
-  countryId: string;
-  country?: {
-    id: string;
-    name: string;
-    continent: string | null;
-    region: string | null;
-    flag: string | null;
-  } | null;
-}
-
-export type DiscriminatedCardInstance = LoreCardInstance | NSCardInstance | NationCardInstance;
-
-/**
  * Formatted card stats for display
  */
 export interface FormattedStatEntry {
@@ -208,15 +160,6 @@ export interface FormattedStats {
 }
 
 /**
- * Card market history data point
- */
-export interface MarketHistoryPoint {
-  date: Date;
-  value: number;
-  volume: number;
-}
-
-/**
  * Card filter options
  */
 export interface CardFilters {
@@ -225,11 +168,6 @@ export interface CardFilters {
   type?: CardType;
   search?: string;
 }
-
-/**
- * Card sort options
- */
-export type CardSort = "rarity" | "value" | "acquired" | "name" | "season";
 
 /**
  * Rarity configuration for display

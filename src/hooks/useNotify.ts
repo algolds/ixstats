@@ -18,11 +18,11 @@
 
 import { notifyFromStore, type NotifyStoreOptions } from "~/lib/notifications/notify-store";
 
-export type NotifyOptions = NotifyStoreOptions;
+type NotifyOptions = NotifyStoreOptions;
 
 type NotifyShortcut = (title: string, message?: string, opts?: Partial<NotifyOptions>) => void;
 
-export interface NotifyAPI {
+interface NotifyAPI {
   success: NotifyShortcut;
   error: NotifyShortcut;
   warning: NotifyShortcut;
@@ -47,4 +47,4 @@ export function useNotify(): NotifyAPI {
   return notifyApi;
 }
 
-export { notifyFromStore, type NotifyStoreOptions };
+export { notifyFromStore };

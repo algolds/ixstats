@@ -7,7 +7,7 @@ import {
 import type { Prisma } from "@prisma/client";
 import { type db } from "~/server/db";
 
-export interface WikiWriteContext extends WikiAuthContext {
+interface WikiWriteContext extends WikiAuthContext {
   user?: {
     id?: string | null;
     clerkUserId?: string | null;
@@ -22,7 +22,7 @@ export interface WikiWriteContext extends WikiAuthContext {
   db?: Prisma.TransactionClient | typeof db;
 }
 
-export interface MediaWikiWriteResult {
+interface MediaWikiWriteResult {
   success: boolean;
   pageId?: number;
   title?: string;

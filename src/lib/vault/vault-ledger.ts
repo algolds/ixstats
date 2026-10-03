@@ -3,7 +3,7 @@ import { syncUserToForum } from "~/server/modules/forum";
 import { getVaultConfig, type VaultConfig } from "~/lib/vault/vault-perks";
 import { catchUpPassiveIncome } from "~/lib/vault/vault-passive-income";
 
-export type LedgerErrorCode =
+type LedgerErrorCode =
   | "MAINTENANCE"
   | "EARNING_DISABLED"
   | "STORE_DISABLED"
@@ -41,7 +41,7 @@ export interface LedgerEarnInput {
 
 export type LedgerSpendInput = Omit<LedgerEarnInput, "createdAt">;
 
-export interface LedgerTxResult {
+interface LedgerTxResult {
   newBalance: number;
   amount: number;
 }
@@ -87,7 +87,7 @@ export async function getOrCreateVault(userIdOrClerkId: string, db: Prisma.Trans
 /**
  * Reset daily earning totals if it's a new day
  */
-export async function checkAndResetDailyEarnings(
+async function checkAndResetDailyEarnings(
   vault: { id: string; lastDailyReset: Date },
   db: Prisma.TransactionClient
 ) {

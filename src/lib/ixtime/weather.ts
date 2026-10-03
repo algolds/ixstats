@@ -1,11 +1,11 @@
 // src/lib/ixtime/weather.ts
 // In-Universe Meteorological Engine for the Prime Meridian of IxWorld (0° Longitude)
 
-export type Season = "Spring" | "Summer" | "Autumn" | "Winter";
+type Season = "Spring" | "Summer" | "Autumn" | "Winter";
 
 export type WeatherIconType = "Sun" | "CloudSun" | "Cloud" | "CloudRain" | "Moon" | "Snowflake";
 
-export interface PrimeMeridianWeather {
+interface PrimeMeridianWeather {
   tempC: number;
   tempF: number;
   season: Season;

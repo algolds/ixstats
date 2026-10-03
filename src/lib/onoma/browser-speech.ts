@@ -5,7 +5,7 @@ import { ipaToSpeechSpelling } from "./branding-utils";
 import { withBasePath } from "~/lib/base-path";
 
 // Map Onoma naming cultures to BCP-47 language codes
-export const CULTURE_LANG: Record<string, string> = {
+const CULTURE_LANG: Record<string, string> = {
   latin: "la",
   germanic: "de-DE",
   celtic: "en-GB",

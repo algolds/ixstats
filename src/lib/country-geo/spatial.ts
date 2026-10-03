@@ -1,23 +1,4 @@
 /**
- * Validate a point is within a country's borders using PostGIS.
- * Returns true if inside, false if outside or query fails.
- */
-export async function checkPointInCountryTerritory(
-  db: any,
-  countryId: string,
-  lng: number,
-  lat: number
-): Promise<boolean> {
-  const { validatePointContainment } = await import("~/lib/maps/geo-validation");
-  try {
-    await validatePointContainment(db, countryId, lng, lat);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
  * Find Subdivision at coordinate point using PostGIS contains check.
  */
 export async function findSubdivisionAtPoint(

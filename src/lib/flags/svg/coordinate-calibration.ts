@@ -11,7 +11,7 @@ import { createConfigFromBounds, createConfigFromCalibration } from "../svg-coor
 import { buildReferenceCentroids } from "./reference-geometry";
 import { SVG_NS, parseAbsolutePath, type XmlElement } from "./xml";
 
-export interface ViewBoxSize {
+interface ViewBoxSize {
   width: number;
   height: number;
 }

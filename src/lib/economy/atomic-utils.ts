@@ -30,7 +30,7 @@ import {
  * @param component2Id Second component type
  * @returns Synergy bonus value (0-10)
  */
-export function checkEconomicSynergy(component1Id: string, component2Id: string): number {
+function checkEconomicSynergy(component1Id: string, component2Id: string): number {
   const component1 = ATOMIC_ECONOMIC_COMPONENTS[component1Id as EconomicComponentType];
   const component2 = ATOMIC_ECONOMIC_COMPONENTS[component2Id as EconomicComponentType];
 
@@ -48,7 +48,7 @@ export function checkEconomicSynergy(component1Id: string, component2Id: string)
  * @param component2Id Second component type
  * @returns True if components conflict
  */
-export function checkEconomicConflict(component1Id: string, component2Id: string): boolean {
+function checkEconomicConflict(component1Id: string, component2Id: string): boolean {
   const component1 = ATOMIC_ECONOMIC_COMPONENTS[component1Id as EconomicComponentType];
   const component2 = ATOMIC_ECONOMIC_COMPONENTS[component2Id as EconomicComponentType];
 
@@ -155,7 +155,7 @@ export function detectEconomicConflicts(selectedComponents: EconomicComponentTyp
  * @param category Category to filter by (null for all)
  * @returns Filtered array of components
  */
-export function filterEconomicComponents(
+function filterEconomicComponents(
   components: EconomicComponentType[],
   category: EconomicCategory | null
 ): EconomicComponentType[] {
@@ -173,7 +173,7 @@ export function filterEconomicComponents(
  * @param query Search query
  * @returns Filtered array of components matching query
  */
-export function searchEconomicComponents(
+function searchEconomicComponents(
   components: EconomicComponentType[],
   query: string
 ): EconomicComponentType[] {
@@ -231,7 +231,7 @@ export interface EconomicEffectivenessResult {
  * @param selectedComponents Array of selected component types
  * @returns Economic effectiveness metrics
  */
-export function calculateEconomicEffectiveness(
+function calculateEconomicEffectiveness(
   selectedComponents: EconomicComponentType[]
 ): EconomicEffectivenessResult {
   const components = selectedComponents
@@ -282,16 +282,6 @@ export function calculateEconomicEffectiveness(
 }
 
 /**
- * Calculate economic score from selected components
- * @param selectedComponents Array of selected component types
- * @returns Economic output score
- */
-export function calculateEconomicScore(selectedComponents: EconomicComponentType[]): number {
-  const effectiveness = calculateEconomicEffectiveness(selectedComponents);
-  return effectiveness.totalEffectiveness;
-}
-
-/**
  * Sector Balance Analysis
  */
 export interface SectorBalance {
@@ -305,9 +295,7 @@ export interface SectorBalance {
  * @param selectedComponents Array of selected component types
  * @returns Array of sector impact percentages
  */
-export function calculateSectorBalance(
-  selectedComponents: EconomicComponentType[]
-): SectorBalance[] {
+function calculateSectorBalance(selectedComponents: EconomicComponentType[]): SectorBalance[] {
   const components = selectedComponents
     .map((id) => ATOMIC_ECONOMIC_COMPONENTS[id])
     .filter((comp): comp is AtomicEconomicComponent => comp !== undefined);
@@ -475,45 +463,7 @@ export function validateEconomicSelection(
 // ============================================================================
 // Color and Formatting Utilities
 // ============================================================================
-
-/**
- * Get color class for component category
- * @param category Economic category
- * @returns Tailwind color class
- */
-export function getCategoryColor(category: EconomicCategory): string {
-  const colorMap: Record<EconomicCategory, string> = {
-    "Economic Model": "emerald",
-    "Sector Focus": "blue",
-    "Labor System": "purple",
-    "Trade Policy": "indigo",
-    Innovation: "amber",
-    "Resource Management": "green",
-  };
-
-  return colorMap[category] || "gray";
-}
-
-/**
- * Get effectiveness color based on score
- * @param effectiveness Effectiveness score (0-100)
- * @returns Tailwind color class
- */
-export function getEffectivenessColor(effectiveness: number): string {
-  if (effectiveness >= 90) return "emerald";
-  if (effectiveness >= 80) return "green";
-  if (effectiveness >= 70) return "lime";
-  if (effectiveness >= 60) return "yellow";
-  if (effectiveness >= 50) return "amber";
-  if (effectiveness >= 40) return "orange";
-  return "red";
-}
-
-export {
-  formatWholeNumber as formatNumber,
-  formatCurrency,
-  formatPercentage,
-} from "~/lib/utils/format-utils";
+export { formatCurrency } from "~/lib/utils/format-utils";
 
 // ============================================================================
 // Component Utility Functions
@@ -525,64 +475,4 @@ export {
  */
 export function getAllComponents(): EconomicComponentType[] {
   return Object.keys(ATOMIC_ECONOMIC_COMPONENTS) as EconomicComponentType[];
-}
-
-/**
- * Get component by type
- * @param type Component type
- * @returns Component definition or undefined
- */
-export function getComponent(type: EconomicComponentType): AtomicEconomicComponent | undefined {
-  return ATOMIC_ECONOMIC_COMPONENTS[type];
-}
-
-/**
- * Get components by category
- * @param category Economic category
- * @returns Array of component types in category
- */
-export function getComponentsByCategory(category: EconomicCategory): EconomicComponentType[] {
-  return getAllComponents().filter((type) => {
-    const component = ATOMIC_ECONOMIC_COMPONENTS[type];
-    return component?.category === category;
-  });
-}
-
-/**
- * Check if component is selected
- * @param component Component type to check
- * @param selectedComponents Array of selected component types
- * @returns True if component is selected
- */
-export function isComponentSelected(
-  component: EconomicComponentType,
-  selectedComponents: EconomicComponentType[]
-): boolean {
-  return selectedComponents.includes(component);
-}
-
-/**
- * Calculate total implementation cost
- * @param selectedComponents Array of selected component types
- * @returns Total implementation cost
- */
-export function calculateTotalCost(selectedComponents: EconomicComponentType[]): number {
-  const components = selectedComponents
-    .map((id) => ATOMIC_ECONOMIC_COMPONENTS[id])
-    .filter((comp): comp is AtomicEconomicComponent => comp !== undefined);
-
-  return components.reduce((sum, comp) => sum + comp.implementationCost, 0);
-}
-
-/**
- * Calculate total maintenance cost
- * @param selectedComponents Array of selected component types
- * @returns Total annual maintenance cost
- */
-export function calculateMaintenanceCost(selectedComponents: EconomicComponentType[]): number {
-  const components = selectedComponents
-    .map((id) => ATOMIC_ECONOMIC_COMPONENTS[id])
-    .filter((comp): comp is AtomicEconomicComponent => comp !== undefined);
-
-  return components.reduce((sum, comp) => sum + comp.maintenanceCost, 0);
 }

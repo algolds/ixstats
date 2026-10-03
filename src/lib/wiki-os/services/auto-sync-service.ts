@@ -21,7 +21,7 @@ function sanitize(str: string | null | undefined): string {
   return str.replace(/\0/g, "").replace(/\u0000/g, "");
 }
 
-export function isIrlOrMaintenanceCategory(name: string): boolean {
+function isIrlOrMaintenanceCategory(name: string): boolean {
   if (!name) return true;
   const lower = name.toLowerCase().replace(/_/g, " ").trim();
 
@@ -145,7 +145,7 @@ export function isIrlOrMaintenanceCategory(name: string): boolean {
 
 let isSyncing = false;
 
-export interface AutoSyncStats {
+interface AutoSyncStats {
   pagesChecked: number;
   pagesUpdated: number;
   revisionsCreated: number;

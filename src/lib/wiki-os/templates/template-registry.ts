@@ -28,7 +28,7 @@ export interface TemplateParam {
   variantOnly?: string[]; // palette presets filter by variant
 }
 
-export interface TemplateDataInfo {
+interface TemplateDataInfo {
   title: string;
   description?: string;
   params: Record<string, TemplateParam>;
@@ -136,46 +136,6 @@ export async function fetchTemplateData(titles: string[]): Promise<Map<string, T
   }
 
   return result;
-}
-
-/**
- * Search for templates by name prefix using MediaWiki's prefix search.
- */
-export async function searchTemplatesFromWiki(
-  query: string,
-  limit = 20
-): Promise<Array<{ title: string; ns: number }>> {
-  const params = new URLSearchParams({
-    action: "query",
-    list: "prefixsearch",
-    pssearch: query,
-    psnamespace: "10", // Template namespace
-    pslimit: String(limit),
-    formatversion: "2",
-    format: "json",
-  });
-
-  try {
-    const mwApi = getMediaWikiApiUrl("ixwiki");
-    const res = await fetch(`${mwApi}?${params}`, {
-      headers: {
-        "User-Agent": DEFAULT_USER_AGENT,
-        "Api-User-Agent": DEFAULT_USER_AGENT,
-      },
-      signal: AbortSignal.timeout(10000),
-    });
-    const data = (await res.json()) as {
-      query?: {
-        prefixsearch?: Array<{ ns: number; title: string; pageid: number }>;
-      };
-    };
-    return (data.query?.prefixsearch ?? []).map((p) => ({
-      title: p.title.replace(/^Template:/, ""),
-      ns: p.ns,
-    }));
-  } catch {
-    return [];
-  }
 }
 
 /**

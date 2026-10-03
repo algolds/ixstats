@@ -8,7 +8,7 @@
  * interactive metrics dashboard, and responsive component library.
  */
 
-import React, { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
@@ -19,7 +19,6 @@ import {
   WarningTriangle as AlertTriangle,
   FloppyDisk as Save,
   Undo as RotateCcw,
-  HelpCircle,
 } from "iconoir-react";
 
 // Data imports
@@ -495,11 +494,4 @@ export {
   EconomicComponentType,
   EconomicCategory,
 } from "~/lib/economy/atomic-data";
-
-export {
-  calculateEconomicEffectiveness,
-  checkEconomicSynergy,
-  checkEconomicConflict,
-} from "~/lib/economy/atomic-utils";
-
 export default AtomicEconomicBuilder;

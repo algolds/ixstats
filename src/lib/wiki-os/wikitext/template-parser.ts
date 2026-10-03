@@ -9,7 +9,7 @@ import { splitBalancedPipes, parseParameterList } from "./parameter-parser";
 import { classifyTemplate } from "./resolver";
 import type { ParsedTemplate, Diagnostic } from "./types";
 
-export interface ScanTemplatesResult {
+interface ScanTemplatesResult {
   templates: ParsedTemplate[];
   diagnostics: Diagnostic[];
 }

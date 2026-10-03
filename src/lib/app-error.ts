@@ -1,4 +1,4 @@
-export type ErrorCode =
+type ErrorCode =
   | "NOT_FOUND"
   | "BAD_REQUEST"
   | "UNAUTHORIZED"
@@ -89,12 +89,6 @@ export class ConflictError extends AppError {
   }
 }
 
-export class PreconditionFailedError extends AppError {
-  constructor(message: string) {
-    super("PRECONDITION_FAILED", message);
-  }
-}
-
 export class RateLimitError extends AppError {
   readonly resetAt: Date;
 
@@ -108,8 +102,4 @@ export class InternalError extends AppError {
   constructor(message = "Internal server error") {
     super("INTERNAL_SERVER_ERROR", message);
   }
-}
-
-export function isAppError(error: Error | undefined): error is AppError {
-  return error instanceof AppError;
 }

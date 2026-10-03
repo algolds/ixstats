@@ -58,34 +58,6 @@ export interface ReadReceipt {
   readAt: number;
 }
 
-export interface ThinkPagesWebSocketEvent {
-  type:
-    | "presence:update"
-    | "typing:update"
-    | "message:update"
-    | "group:update"
-    | "conversation:update"
-    | "read:receipt";
-  data:
-    | PresenceUpdate
-    | TypingIndicator
-    | MessageUpdate
-    | GroupUpdate
-    | ConversationUpdate
-    | ReadReceipt;
-  timestamp: number;
-  channel: string;
-  accountId?: string;
-}
-
-export interface ThinkPagesSubscription {
-  type: "presence" | "conversations" | "groups" | "account";
-  channel: string;
-  accountId?: string;
-  conversationId?: string;
-  groupId?: string;
-}
-
 export interface ThinkPagesClientState {
   connected: boolean;
   authenticated: boolean;

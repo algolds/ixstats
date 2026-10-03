@@ -22,7 +22,7 @@ export interface InfoboxField {
   fieldType: "text" | "number" | "coordinates" | "date" | "unknown";
 }
 
-export interface ParsedInfobox {
+interface ParsedInfobox {
   templateName: string;
   fields: InfoboxField[];
 }
@@ -344,7 +344,7 @@ export function extractCoordsFromFields(fields: InfoboxField[]): [number, number
 /**
  * Renders a parsed infobox into a clean, styled MediaWiki-compatible HTML table.
  */
-export function renderInfoboxHtml(parsed: ParsedInfobox): string {
+function renderInfoboxHtml(parsed: ParsedInfobox): string {
   if (!parsed || parsed.fields.length === 0) return "";
 
   const titleField = parsed.fields.find(

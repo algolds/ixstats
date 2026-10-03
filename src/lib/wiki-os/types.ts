@@ -1,22 +1,6 @@
 // src/lib/wiki-os/types.ts
 // Canonical type definitions and branded types for the standalone WikiOS engine.
-
-export type Brand<T, B extends string> = T & { readonly __brand: B };
-
-export type WikiSlug = Brand<string, "WikiSlug">;
-export type MediaWikiTitle = Brand<string, "MediaWikiTitle">;
 export type ArticleMode = "reading" | "source" | "visual";
-
-export interface CachedArticleData {
-  title: string;
-  contentHtml: string;
-  infoboxHtml: string | null;
-  noticesHtml: string | null;
-  toc: Array<{ id: string; text: string; level: number }>;
-  categories: string[];
-  lastModified?: string | null;
-  fetchedAt: number;
-}
 
 export interface MediaWikiImageInfoItem {
   url?: string;
@@ -59,7 +43,7 @@ export interface MediaWikiCategoryItem {
   timestamp?: string;
 }
 
-export interface MediaWikiCategoryMemberItem {
+interface MediaWikiCategoryMemberItem {
   pageid: number;
   ns: number;
   title: string;
@@ -67,7 +51,7 @@ export interface MediaWikiCategoryMemberItem {
   timestamp?: string;
 }
 
-export interface MediaWikiSearchItem {
+interface MediaWikiSearchItem {
   ns?: number;
   title: string;
   pageid?: number;
@@ -77,7 +61,7 @@ export interface MediaWikiSearchItem {
   timestamp?: string;
 }
 
-export interface MediaWikiAllImagesItem {
+interface MediaWikiAllImagesItem {
   name?: string;
   title?: string;
   timestamp?: string;
@@ -155,52 +139,4 @@ export interface MediaWikiQueryResponse<TPages = Record<string, MediaWikiPageIte
       sizediff?: number;
     }>;
   };
-}
-
-export interface MediaWikiParseResponse {
-  parse?: {
-    title: string;
-    pageid: number;
-    text: {
-      "*": string;
-    };
-    wikitext?: {
-      "*": string;
-    };
-    categories?: Array<{
-      sortkey: string;
-      "*": string;
-      hidden?: boolean;
-    }>;
-    sections?: Array<{
-      toclevel: number;
-      level: string;
-      line: string;
-      number: string;
-      index: string;
-      fromtitle: string;
-      byteoffset: number;
-      anchor: string;
-    }>;
-    images?: string[];
-    externallinks?: string[];
-    displaytitle?: string;
-    revid?: number;
-  };
-  error?: {
-    code: string;
-    info: string;
-  };
-}
-
-export interface WikiFileSearchResult {
-  name: string;
-  title: string;
-  url: string;
-  pageUrl: string;
-  size: number;
-  width: number;
-  height: number;
-  mime: string;
-  mediaType: string;
 }

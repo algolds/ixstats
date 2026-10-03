@@ -73,7 +73,7 @@ startMemoryCacheCleanup();
 /**
  * Cache options for the middleware
  */
-export interface TrpcCacheOptions {
+interface TrpcCacheOptions {
   /** Time to live in seconds */
   ttlSeconds: number;
   /** Cache namespace (optional, defaults to 'default') */
@@ -125,7 +125,7 @@ function generateCacheKey(
   return `trpc:${namespace}:${path}${userPart}${realmPart}:${inputHash}`;
 }
 
-export type TrpcProcedureType = "query" | "mutation" | "subscription";
+type TrpcProcedureType = "query" | "mutation" | "subscription";
 
 /**
  * Only queries are cached; custom skip patterns can exclude specific query paths.

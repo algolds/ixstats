@@ -3,7 +3,7 @@
  * The API key is sent as a Bearer token to whatever URL is configured, so only
  * known LLM provider hosts over https are allowed.
  */
-export const ALLOWED_LLM_HOSTS = ["integrate.api.nvidia.com", "openrouter.ai", "api.openai.com"];
+const ALLOWED_LLM_HOSTS = ["integrate.api.nvidia.com", "openrouter.ai", "api.openai.com"];
 
 export function isAllowedLlmApiUrl(apiUrl: string): boolean {
   try {

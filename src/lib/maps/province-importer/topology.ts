@@ -88,7 +88,7 @@ export function validateTopology(
  * Detect gaps between provinces and the country border.
  * A gap is an area within the country that is not covered by any province.
  */
-export function detectGaps(
+function detectGaps(
   provinces: ProvinceFeature[],
   countryBorder: Polygon | MultiPolygon
 ): GapReport[] {
@@ -156,7 +156,7 @@ export function detectGaps(
  * Detect overlaps between pairs of provinces.
  * Pre-filters by bounding box for performance.
  */
-export function detectOverlaps(provinces: ProvinceFeature[]): OverlapReport[] {
+function detectOverlaps(provinces: ProvinceFeature[]): OverlapReport[] {
   const overlaps: OverlapReport[] = [];
   const included = provinces.filter((p) => p.included);
 
@@ -202,24 +202,6 @@ export function detectOverlaps(provinces: ProvinceFeature[]): OverlapReport[] {
 // ──────────────────────────────────────────────
 // Coverage Calculation
 // ──────────────────────────────────────────────
-
-/**
- * Calculate the percentage of country area covered by provinces.
- */
-export function computeCoverage(
-  provinces: ProvinceFeature[],
-  countryBorder: Polygon | MultiPolygon
-): number {
-  const countryArea = computeAreaSqKm(countryBorder);
-  if (countryArea === 0) return 0;
-
-  const totalArea = provinces
-    .filter((p) => p.included)
-    .reduce((sum, p) => sum + computeAreaSqKm(p.geometry), 0);
-
-  return Math.min(100, (totalArea / countryArea) * 100);
-}
-
 // ──────────────────────────────────────────────
 // Auto-Fix Operations
 // ──────────────────────────────────────────────
@@ -530,7 +512,7 @@ export interface ConformanceResult {
  * Polygon/MultiPolygon components. Returns a clean Polygon or MultiPolygon,
  * or null if no polygon component exists.
  */
-export function cleanToPolygonOrMultiPolygon(geometry: any): Polygon | MultiPolygon | null {
+function cleanToPolygonOrMultiPolygon(geometry: any): Polygon | MultiPolygon | null {
   if (!geometry) return null;
 
   if (geometry.type === "Polygon" || geometry.type === "MultiPolygon") {
@@ -659,10 +641,7 @@ export function clipGeometryToBorder(
 // ──────────────────────────────────────────────
 
 /** Ray-casting point-in-polygon algorithm. Handles Polygons, MultiPolygons, and holes. */
-export function isPointInPolygon(
-  point: [number, number],
-  polygon: Polygon | MultiPolygon
-): boolean {
+function isPointInPolygon(point: [number, number], polygon: Polygon | MultiPolygon): boolean {
   if (!point || isNaN(point[0]) || isNaN(point[1])) return false;
   const [lng, lat] = point;
   const polys = polygon.type === "Polygon" ? [polygon.coordinates] : polygon.coordinates;

@@ -840,7 +840,7 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
   }
 }
 
-export async function simulateWorldCup(tx: any, seasonNumber: number) {
+async function simulateWorldCup(tx: any, seasonNumber: number) {
   // 1. Get all unique nationIds from sportTeam table
   const teams = await tx.sportTeam.findMany({
     where: { NOT: { nationId: null } },

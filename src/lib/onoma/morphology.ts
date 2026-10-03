@@ -5,7 +5,7 @@ import { MarkovChain } from "./markov-chain";
 
 export type GrammaticalGender = "masculine" | "feminine" | "neuter" | "common";
 
-export interface DeclensionCase {
+interface DeclensionCase {
   singular: string;
   plural: string;
   descriptionSingular: string;

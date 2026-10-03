@@ -32,7 +32,7 @@ async function triggerAchievementCheck(countryId: string, eventName: string, use
 /**
  * Activity hooks for diplomatic operations
  */
-export class DiplomaticActivityHooks {
+class DiplomaticActivityHooks {
   /**
    * Embassy established between two countries
    */
@@ -222,7 +222,7 @@ export class DiplomaticActivityHooks {
 /**
  * Activity hooks for government operations
  */
-export class GovernmentActivityHooks {
+class GovernmentActivityHooks {
   /**
    * Government component added to country
    */
@@ -360,7 +360,7 @@ export class GovernmentActivityHooks {
 /**
  * Activity hooks for economic operations
  */
-export class EconomicActivityHooks {
+class EconomicActivityHooks {
   /**
    * Budget approved/changed
    */
@@ -500,7 +500,7 @@ export class EconomicActivityHooks {
 /**
  * Activity hooks for defense/security operations
  */
-export class SecurityActivityHooks {
+class SecurityActivityHooks {
   /**
    * Military branch created/upgraded
    */
@@ -596,7 +596,7 @@ export class SecurityActivityHooks {
 /**
  * Activity hooks for social/ThinkPages operations
  */
-export class SocialActivityHooks {
+class SocialActivityHooks {
   /**
    * ThinkPage post created
    */
@@ -726,7 +726,7 @@ export class SocialActivityHooks {
 /**
  * Activity hooks for user operations
  */
-export class UserActivityHooks {
+class UserActivityHooks {
   /**
    * User links to country
    */

@@ -89,7 +89,6 @@ import { rateLimiter, globalCache } from "~/lib/cache";
 import { ArticleRepository, LinkGraphService } from "~/lib/wiki-os";
 
 // ✅ Also fine: packages without a barrel are imported by file
-import { logger } from "~/lib/system/logger";
 import { memoryConfig } from "~/lib/system/dev-memory-config";
 import { IxStatsCalculator } from "~/lib/economy/calculations";
 

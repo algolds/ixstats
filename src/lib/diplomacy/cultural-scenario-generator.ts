@@ -31,12 +31,12 @@ export type CulturalScenarioType =
   | "festival_security"
   | "artistic_freedom";
 
-export type ResponseRequirement = {
+type ResponseRequirement = {
   skill: "negotiation" | "cultural_sensitivity" | "economic" | "legal" | "security";
   level: number; // 0-100
 };
 
-export interface CulturalScenarioTemplate {
+interface CulturalScenarioTemplate {
   type: CulturalScenarioType;
   name: string;
   description: string;
@@ -95,7 +95,7 @@ export interface ResponseOption {
   npcsLikelyToChoose: string[]; // Personality archetypes
 }
 
-export type CulturalScenarioRecentAction = Pick<
+type CulturalScenarioRecentAction = Pick<
   DiplomaticChoice,
   "id" | "type" | "targetCountry" | "targetCountryId" | "timestamp" | "ixTimeTimestamp"
 >;

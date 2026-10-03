@@ -8,7 +8,7 @@
 import { db } from "~/server/db";
 import { toArticleSlug } from "./domain-types";
 
-export interface MovePageResult {
+interface MovePageResult {
   success: boolean;
   oldSlug: string;
   newSlug: string;
@@ -17,7 +17,7 @@ export interface MovePageResult {
   linksUpdated: number;
 }
 
-export interface MediaUsageItem {
+interface MediaUsageItem {
   articleId: string;
   articleSlug: string;
   articleTitle: string;

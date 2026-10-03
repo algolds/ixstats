@@ -5,9 +5,9 @@
 import type { EconomicTier, PopulationTier } from "~/types/ixstats";
 
 /** The `Badge` variant a membership tier renders with. */
-export type TierBadgeVariant = "warning" | "default";
+type TierBadgeVariant = "warning" | "default";
 
-export interface TierInfo {
+interface TierInfo {
   label: string;
   isPremium: boolean;
   /** Render with `<Badge variant={badgeVariant}>`. */
@@ -60,7 +60,7 @@ export const ECONOMIC_TIER_INFO: Record<
   Extravagant: { min: 65000, max: Infinity, maxGrowth: 0.005 },
 };
 
-export const POPULATION_TIER_INFO: Record<PopulationTier, { min: number; max: number }> = {
+const POPULATION_TIER_INFO: Record<PopulationTier, { min: number; max: number }> = {
   "1": { min: 0, max: 9_999_999 },
   "2": { min: 10_000_000, max: 29_999_999 },
   "3": { min: 30_000_000, max: 49_999_999 },

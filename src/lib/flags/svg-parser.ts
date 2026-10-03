@@ -12,14 +12,7 @@
 
 import { DOMParser } from "@xmldom/xmldom";
 
-import {
-  type SvgPathCommand,
-  pathCommandsToRings,
-  cubicBezier,
-  quadraticBezier,
-  adaptiveCubicSegments,
-  adaptiveQuadSegments,
-} from "./svg/command-evaluator";
+import { type SvgPathCommand, pathCommandsToRings } from "./svg/command-evaluator";
 import {
   ringArea,
   calculateCentroid,
@@ -40,10 +33,6 @@ import { extractFeatures, featureIdToDisplayName } from "./svg/feature-extractio
 export type { SvgPathCommand };
 export {
   pathCommandsToRings,
-  cubicBezier,
-  quadraticBezier,
-  adaptiveCubicSegments,
-  adaptiveQuadSegments,
   ringArea,
   calculateCentroid,
   calculateBoundingBox,
@@ -52,7 +41,6 @@ export {
   extractStrokeColor,
   featureIdToDisplayName,
 };
-export type { FeatureDiffEntry, LayerDiff } from "./svg/layer-diff";
 export { computeLayerDiff } from "./svg/layer-diff";
 
 // ──────────────────────────────────────────────
@@ -87,7 +75,7 @@ export interface ParsedFeature {
   areaSqKm: number;
 }
 
-export interface SvgParseResult {
+interface SvgParseResult {
   features: ParsedFeature[];
   featureCollection: FeatureCollection;
   layersFound: string[];
@@ -179,7 +167,7 @@ export function parseSvgToGeoJson(
  * Normalize a name for fuzzy matching.
  * Removes common prefixes/suffixes, lowercases, strips non-alpha.
  */
-export function normalizeForMatching(name: string): string {
+function normalizeForMatching(name: string): string {
   return name
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "")
@@ -259,54 +247,6 @@ export function matchFeaturesToCountries(
 // ---------------------------------------------------------------------------
 // Layer type auto-detection
 // ---------------------------------------------------------------------------
-
-const LAYER_KEYWORDS: Record<string, string[]> = {
-  political: ["political", "countries", "borders", "nations", "states"],
-  altitudes: ["altitude", "altitudes", "elevation", "topograph", "terrain", "height"],
-  climate: ["climate", "biome", "temperature", "weather"],
-  rivers: ["river", "rivers", "waterway", "stream"],
-  lakes: ["lake", "lakes", "waterbodies", "water_bodies"],
-  icecaps: ["icecap", "icecaps", "ice_cap", "ice", "glacier", "polar"],
-  background: ["background", "base", "outline", "coastline", "landmass"],
-};
-
-/**
- * Auto-detect layer type from filename and optionally SVG content.
- * Matches filenames like "political.svg", "altitudes_v3.svg", "IxEarth-rivers-feb2026.svg".
- * Falls back to examining SVG layer group IDs/labels if filename is ambiguous.
- */
-export function detectLayerType(
-  fileName: string,
-  svgContent?: string
-): { layerType: string; confidence: "high" | "medium" } | null {
-  const normalized = fileName.toLowerCase().replace(/[_\-\s.]+/g, " ");
-
-  // Strategy 1: filename keyword match (high confidence)
-  for (const [layerType, keywords] of Object.entries(LAYER_KEYWORDS)) {
-    if (keywords.some((kw) => normalized.includes(kw))) {
-      return { layerType, confidence: "high" };
-    }
-  }
-
-  // Strategy 2: SVG group IDs/labels (medium confidence)
-  if (svgContent) {
-    try {
-      const metadata = extractSvgMetadata(svgContent);
-      for (const layer of metadata.layers) {
-        const groupId = (layer.id + " " + layer.label).toLowerCase().replace(/[-_]/g, "");
-        for (const [layerType, keywords] of Object.entries(LAYER_KEYWORDS)) {
-          if (keywords.some((kw) => groupId.includes(kw.replace(/[-_]/g, "")))) {
-            return { layerType, confidence: "medium" };
-          }
-        }
-      }
-    } catch {
-      // SVG metadata extraction failed — skip
-    }
-  }
-
-  return null;
-}
 
 /**
  * Extract SVG metadata (viewBox, dimensions, layer list).

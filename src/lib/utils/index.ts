@@ -4,7 +4,6 @@
 
 export * from "./cn";
 export * from "./format-utils";
-export * from "./chart-utils";
 export * from "./analytics-data-transformers";
 export * from "./sanitize-html";
 export * from "./text-formatter";

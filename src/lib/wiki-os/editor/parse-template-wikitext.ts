@@ -1,6 +1,6 @@
 import { splitBalancedPipes, parseParameterList } from "~/lib/wiki-os/wikitext/parameter-parser";
 
-export interface ParsedTemplate {
+interface ParsedTemplate {
   name: string;
   params: Record<string, string>;
   positional?: string[];

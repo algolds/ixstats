@@ -7,37 +7,6 @@
 import type { WorldGraph } from "../types";
 
 /**
- * Flood-fill from a starting cell, visiting all connected cells that
- * satisfy the predicate. Returns the list of visited cell IDs.
- */
-export function floodFill(
-  graph: WorldGraph,
-  startCell: number,
-  predicate: (cellId: number) => boolean
-): number[] {
-  const { cells } = graph;
-  const visited = new Uint8Array(cells.n);
-  const component: number[] = [];
-  const queue: number[] = [startCell];
-  visited[startCell] = 1;
-
-  while (queue.length > 0) {
-    const cell = queue.pop()!;
-    if (!predicate(cell)) continue;
-    component.push(cell);
-
-    for (const nb of cells.neighbors[cell]!) {
-      if (!visited[nb]) {
-        visited[nb] = 1;
-        queue.push(nb);
-      }
-    }
-  }
-
-  return component;
-}
-
-/**
  * Multi-source BFS spread from seed cells.
  * Assigns every reachable cell the ID of the nearest seed (by hop distance).
  * Returns per-cell assignment and per-cell distance.
@@ -77,40 +46,6 @@ export function bfsAssign(
   }
 
   return { assignment, distance };
-}
-
-/**
- * Find all connected components within a set of cell IDs.
- * Returns an array of components, each being an array of cell IDs.
- */
-export function findConnectedComponents(graph: WorldGraph, cellSet: Set<number>): number[][] {
-  const { cells } = graph;
-  const visited = new Set<number>();
-  const components: number[][] = [];
-
-  for (const cell of cellSet) {
-    if (visited.has(cell)) continue;
-
-    const component: number[] = [];
-    const queue = [cell];
-    visited.add(cell);
-
-    while (queue.length > 0) {
-      const c = queue.pop()!;
-      component.push(c);
-
-      for (const nb of cells.neighbors[c]!) {
-        if (!visited.has(nb) && cellSet.has(nb)) {
-          visited.add(nb);
-          queue.push(nb);
-        }
-      }
-    }
-
-    components.push(component);
-  }
-
-  return components;
 }
 
 /**

@@ -64,7 +64,7 @@ const TITLE_INVISIBLES = /[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g;
 /** MediaWiki decodes HTML character references in titles (`Template&#58;Foo` is `Template:Foo`). */
 const CHARACTER_REFERENCE = /&(?:#\d+|#x[0-9a-f]+|[a-z][a-z0-9]*);/i;
 
-export interface ParsedWikiTitle {
+interface ParsedWikiTitle {
   /** Namespace id (0 = main). */
   namespaceId: number;
   /** Title without its namespace prefix, spaces not underscores. */
@@ -104,13 +104,13 @@ function normalizeUserName(name: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
-export interface EditPolicyIdentity {
+interface EditPolicyIdentity {
   isAdmin: boolean;
   /** Verified linked MediaWiki account name, or null when the user has no linked account. */
   linkedWikiUsername: string | null;
 }
 
-export type EditPolicyResult = { allowed: true } | { allowed: false; reason: string };
+type EditPolicyResult = { allowed: true } | { allowed: false; reason: string };
 
 /** Whether `identity` may save `rawTitle` through WikiOS. */
 export function checkEditPolicy(rawTitle: string, identity: EditPolicyIdentity): EditPolicyResult {

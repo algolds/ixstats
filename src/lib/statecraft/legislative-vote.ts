@@ -29,7 +29,7 @@ export interface VotingBloc {
   seats: number;
 }
 
-export type Vote = "yes" | "no" | "abstain";
+type Vote = "yes" | "no" | "abstain";
 
 export interface PartyVote extends VotingBloc {
   vote: Vote;

@@ -273,4 +273,3 @@ export class RateLimiter {
 export const rateLimiter = new RateLimiter();
 
 // Export types
-export type { RateLimitResult, RateLimitConfig };

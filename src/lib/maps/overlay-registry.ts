@@ -217,7 +217,7 @@ function choroplethRenderProps(
 
 // ── Registry ────────────────────────────────────────────────────────────────
 
-export const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
+const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
   // ── Feature overlays (managed by IxWorldMap's own layers; default-on) ──
   // No component/fetcher: their visibility is driven by IxWorldMap's overlay
   // visibility effect. Registered so the controls panel is fully data-driven.
@@ -436,11 +436,6 @@ export const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
 
 /** Ordered list view of the registry (insertion order = display order). */
 export const OVERLAY_LIST: OverlayPluginDefinition[] = Object.values(OVERLAY_REGISTRY);
-
-/** Ids of fill-category overlays (mutually exclusive group). */
-export const FILL_OVERLAY_IDS: string[] = OVERLAY_LIST.filter((o) => o.category === "fill").map(
-  (o) => o.id
-);
 
 /** Build the default visibility map from `defaultVisible` flags. */
 export function buildDefaultVisibility(): Record<string, boolean> {

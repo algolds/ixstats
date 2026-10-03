@@ -59,18 +59,3 @@ export function proxyCardArtwork(artworkUrl: string | null | undefined): string 
 export function proxyNSImage(nsImageUrl: string | null | undefined): string {
   return proxyCardArtwork(nsImageUrl);
 }
-
-/**
- * Checks if a URL is from NationStates and needs proxying
- */
-export function isNSImageUrl(url: string | null | undefined): boolean {
-  if (!url) return false;
-  return url.includes("nationstates.net/images/") || url.includes("nationstates.net/uploads/");
-}
-
-/**
- * Batch convert multiple NS URLs to proxied URLs
- */
-export function proxyNSImages(urls: (string | null | undefined)[]): string[] {
-  return urls.map(proxyNSImage);
-}

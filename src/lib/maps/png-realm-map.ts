@@ -23,7 +23,7 @@ export class PngDecodeError extends Error {
   }
 }
 
-export interface DetectedColour {
+interface DetectedColour {
   hex: string;
   pixelCount: number;
 }

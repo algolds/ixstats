@@ -4,18 +4,9 @@
 
 import { splitBalancedPipes, parseParameterList } from "./parameter-parser";
 import { classifyTemplate } from "./resolver";
-import type {
-  WikiInlineNode,
-  // oxlint-disable-next-line typescript/no-unused-vars
-  WikiExternalLinkInline,
-  // oxlint-disable-next-line typescript/no-unused-vars
-  EngineDataChipInline,
-  // oxlint-disable-next-line typescript/no-unused-vars
-  MediaBlock,
-  WikiInlineTemplateNode,
-} from "./types";
+import type { WikiInlineNode } from "./types";
 
-export interface ParsedMediaLink {
+interface ParsedMediaLink {
   filename: string;
   caption?: string;
   align?: "left" | "center" | "right" | "thumb" | "frameless";

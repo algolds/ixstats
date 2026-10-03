@@ -28,7 +28,7 @@ const RULE_VERSION = "1.0.0";
 const MORALE_SWING = 5;
 
 type Db = Prisma.TransactionClient;
-export type EffectsMap = Map<string, StorytellerEffect[]>;
+type EffectsMap = Map<string, StorytellerEffect[]>;
 
 // ─── Inputs (a Prisma SportMatch loaded with SIM_MATCH_INCLUDE satisfies these) ───
 
@@ -64,7 +64,7 @@ export type SimMatch = {
   awayTeam: SimTeam;
 };
 
-export type SimLeague = { sportPreset: string; archetype: string };
+type SimLeague = { sportPreset: string; archetype: string };
 
 /** Prisma `include` that loads a SportTeam as a SimTeam (active roster + coaches). */
 export const SIM_TEAM_INCLUDE = {
@@ -82,7 +82,7 @@ export const SIM_MATCH_INCLUDE = {
 
 // ─── Snapshot contract (stored at SportMatch.matchStats.simulationSnapshot) ───
 
-export type RatingSnapshot = {
+type RatingSnapshot = {
   overall: number;
   offense: number;
   defense: number;
@@ -91,7 +91,7 @@ export type RatingSnapshot = {
   coaching: number;
 };
 
-export type RosterSnapshot = {
+type RosterSnapshot = {
   id: string;
   firstName: string;
   lastName: string;
@@ -99,7 +99,7 @@ export type RosterSnapshot = {
   ratings: Record<string, number>;
 };
 
-export type TeamSnapshot = {
+type TeamSnapshot = {
   id: string;
   ratingVector: RatingSnapshot;
   /** Mean morale of the active roster before kick-off. */
@@ -110,7 +110,7 @@ export type TeamSnapshot = {
   worldModifiers: { saintName?: string; saintBlessing?: number; countryScandal?: number } | null;
 };
 
-export type SimulationSnapshot = {
+type SimulationSnapshot = {
   seed: number;
   resolverVersion: string;
   ruleVersion: string;
@@ -501,7 +501,7 @@ export async function simulateAndPersistMatch(
 
 // ─── Knockout bouts (SportBracket rows) ───
 
-export type SimBout = {
+type SimBout = {
   id: string;
   seasonId: string;
   round: number;

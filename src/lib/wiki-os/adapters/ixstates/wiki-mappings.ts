@@ -5,7 +5,7 @@
  * Single source of truth for identity reconciliation and admin overview.
  */
 
-export interface MediaWikiAccountMapping {
+interface MediaWikiAccountMapping {
   primaryCountry: string; // Country name or slug in IxStates DB
   isAltFor?: string; // If this account is an alt of another user / nation
   notes?: string;

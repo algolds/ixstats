@@ -33,8 +33,8 @@ function resolveHref(href?: string | null): string | null {
   return withBasePath(href);
 }
 
-export type NotificationPriority = "critical" | "high" | "medium" | "low";
-export type NotificationCategory =
+type NotificationPriority = "critical" | "high" | "medium" | "low";
+type NotificationCategory =
   | "economic"
   | "diplomatic"
   | "governance"
@@ -50,10 +50,10 @@ export type NotificationCategory =
   | "global"
   | "military";
 export type NotificationType = "info" | "success" | "warning" | "error" | "alert" | "update";
-export type NotificationSeverity = "urgent" | "important" | "informational";
-export type DeliveryMethod = "toast" | "dynamic-island" | "modal" | "command-palette";
+type NotificationSeverity = "urgent" | "important" | "informational";
+type DeliveryMethod = "toast" | "dynamic-island" | "modal" | "command-palette";
 
-export interface CreateNotificationInput {
+interface CreateNotificationInput {
   // Required fields
   title: string;
 
@@ -74,7 +74,7 @@ export interface CreateNotificationInput {
   relevanceScore?: number;
 }
 
-export interface NotificationTriggerOptions {
+interface NotificationTriggerOptions {
   // Thinkpages notifications
   thinkpage?: {
     id: string;

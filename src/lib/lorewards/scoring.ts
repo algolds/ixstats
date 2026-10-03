@@ -35,7 +35,7 @@ const DEFAULT_WEIGHTS: ScoringWeights = {
   minSingleEdit: 1000,
 };
 
-export interface CandidateScore {
+interface CandidateScore {
   user: string;
   page: string;
   pageId: string | number;
@@ -59,7 +59,7 @@ export interface CandidateScore {
   scoreBreakdown: string;
 }
 
-export interface WikiOSScoringResult {
+interface WikiOSScoringResult {
   date: string;
   winner: CandidateScore | null;
   runnerUp: CandidateScore | null;

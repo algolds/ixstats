@@ -8,15 +8,7 @@
 import { db } from "~/server/db";
 import { toArticleSlug } from "./domain-types";
 
-export interface SearchOptions {
-  query: string;
-  source?: string;
-  limit?: number;
-  offset?: number;
-  mode?: "spotlight" | "fulltext";
-}
-
-export interface SearchResultItem {
+interface SearchResultItem {
   id: string;
   slug: string;
   title: string;

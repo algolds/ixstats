@@ -33,10 +33,7 @@ function loadSystemOwnerIds(): readonly string[] {
 export const SYSTEM_OWNER_IDS: readonly string[] = loadSystemOwnerIds();
 
 // System owner role name
-export const SYSTEM_OWNER_ROLE = "owner" as const;
-
 // System owner role level (0 = highest privilege)
-export const SYSTEM_OWNER_ROLE_LEVEL = 0 as const;
 
 /**
  * Check if a Clerk user ID is a system owner

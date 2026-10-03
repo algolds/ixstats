@@ -14,9 +14,9 @@ import { db as defaultDb } from "~/server/db";
 import { notificationAPI } from "~/lib/notifications";
 import { currentBudgetYear } from "./budget-year";
 
-export const BUDGET_YEAR_NOTIFICATION_SOURCE = "budgetYear";
+const BUDGET_YEAR_NOTIFICATION_SOURCE = "budgetYear";
 
-export interface BudgetYearRolloverResult {
+interface BudgetYearRolloverResult {
   budgetYear: number;
   countriesBehind: number;
   notified: number;
@@ -25,7 +25,7 @@ export interface BudgetYearRolloverResult {
 }
 
 /** Countries (with an owner) whose latest budget year is before `budgetYear`. */
-export async function findCountriesNeedingBudget(
+async function findCountriesNeedingBudget(
   db: Pick<PrismaClient, "budgetAllocation" | "governmentStructure">,
   budgetYear: number
 ): Promise<Array<{ countryId: string; latestYear: number }>> {

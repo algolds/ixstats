@@ -35,7 +35,6 @@ import { classifyLoreArticle } from "./category-classifier";
 
 // Re-export for backwards compatibility
 export { LORE_CATEGORIES };
-export type { CardAuthorInfo };
 
 /**
  * Article quality metrics for scoring
@@ -80,7 +79,7 @@ interface LoreCardCandidate {
 /**
  * Lightweight article metadata for discovery/preview (no full generateCard fetch).
  */
-export interface ArticleMetadataPreview {
+interface ArticleMetadataPreview {
   title: string;
   hasImage: boolean;
   imageUrl: string | null;
@@ -99,13 +98,13 @@ export interface ArticleMetadataPreview {
 // ponytail: lone knob — raise to be pickier, lower to generate from shorter pages.
 const MIN_ARTICLE_LENGTH = 600;
 
-export const BOT_REGEX =
+const BOT_REGEX =
   /^(.*bot|mediawiki default|maintenance script|adminimport|importbot|uploadwizard|system|anonymous)$/i;
 
 /**
  * Clean a wiki username by stripping import prefixes, namespaces, and brackets
  */
-export function cleanWikiUsername(username: string | null | undefined): string {
+function cleanWikiUsername(username: string | null | undefined): string {
   if (!username) return "";
   let clean = String(username).trim();
   // Strip MediaWiki XML import dump prefixes: "imported>", "Imported>", "import>", "Import>"
@@ -145,7 +144,7 @@ const CATEGORY_STAT_WEIGHTS: Record<
 /**
  * Wiki Lore Card Generator Service
  */
-export class WikiLoreCardGenerator {
+class WikiLoreCardGenerator {
   /**
    * Generate a lore card from a wiki article
    */

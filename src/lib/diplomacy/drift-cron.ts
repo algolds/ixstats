@@ -1,7 +1,7 @@
 import { db } from "~/server/db";
 import { expireStaleDiplomaticProposals } from "~/lib/diplomacy/proposal-lifecycle";
 
-export interface DiplomaticDriftResult {
+interface DiplomaticDriftResult {
   relationsProcessed: number;
   relationsUpdated: number;
   proposalsExpired: number;

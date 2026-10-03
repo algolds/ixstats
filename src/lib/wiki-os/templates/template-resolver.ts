@@ -59,7 +59,7 @@ export function registerTemplateProvider(provider: TemplateDataProvider): () => 
   };
 }
 
-export function getRegisteredProviders(): readonly TemplateDataProvider[] {
+function getRegisteredProviders(): readonly TemplateDataProvider[] {
   return Array.from(registeredProviders);
 }
 

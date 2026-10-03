@@ -155,14 +155,14 @@ class RedisCache {
   }
 }
 
-export interface AdvancedCacheOptions {
+interface AdvancedCacheOptions {
   ttl?: number; // Time to live in seconds
   tier?: "critical" | "standard" | "background"; // Cache tier
   tags?: string[]; // For invalidation
   skipRedis?: boolean; // Skip Redis for this item
 }
 
-export interface AdvancedCacheStats {
+interface AdvancedCacheStats {
   memory: {
     size: number;
     hits: number;
@@ -185,7 +185,7 @@ const L1_MAX_TTL_MS = 30_000;
 /**
  * Advanced multi-tier caching system
  */
-export class AdvancedCacheSystem {
+class AdvancedCacheSystem {
   // Exposed for synchronous access by intelligence-cache facade
   readonly memoryCache = new InMemoryCache();
   private redisCache = new RedisCache();
@@ -410,62 +410,5 @@ export class CacheUtils {
    */
   static async invalidatePattern(pattern: string): Promise<void> {
     await globalCache.deleteByPattern(pattern);
-  }
-}
-
-/**
- * Specialized cache decorators for different data types
- */
-export class CacheDecorators {
-  /**
-   * Cache country data
-   */
-  static async cacheCountryData<T>(
-    countryId: string,
-    dataType: string,
-    fetcher: () => Promise<T>,
-    ttl = 600 // 10 minutes
-  ): Promise<T> {
-    const key = CacheUtils.generateKey("country", countryId, dataType);
-    return CacheUtils.cache(() => key, fetcher, { ttl, tier: "standard" });
-  }
-
-  /**
-   * Cache user data
-   */
-  static async cacheUserData<T>(
-    userId: string,
-    dataType: string,
-    fetcher: () => Promise<T>,
-    ttl = 300 // 5 minutes
-  ): Promise<T> {
-    const key = CacheUtils.generateKey("user", userId, dataType);
-    return CacheUtils.cache(() => key, fetcher, { ttl, tier: "critical" });
-  }
-
-  /**
-   * Cache intelligence data
-   */
-  static async cacheIntelligenceData<T>(
-    countryId: string,
-    dataType: string,
-    fetcher: () => Promise<T>,
-    ttl = 180 // 3 minutes
-  ): Promise<T> {
-    const key = CacheUtils.generateKey("intelligence", countryId, dataType);
-    return CacheUtils.cache(() => key, fetcher, { ttl, tier: "critical" });
-  }
-
-  /**
-   * Cache ThinkPages data
-   */
-  static async cacheThinkPagesData<T>(
-    dataType: string,
-    params: Record<string, any>,
-    fetcher: () => Promise<T>,
-    ttl = 120 // 2 minutes
-  ): Promise<T> {
-    const key = CacheUtils.generateKey("thinkpages", dataType, JSON.stringify(params));
-    return CacheUtils.cache(() => key, fetcher, { ttl, tier: "background" });
   }
 }

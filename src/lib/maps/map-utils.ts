@@ -129,7 +129,7 @@ function splitPolygonRings(rings: Position[][]): Position[][][] {
  * Polygons that cross 180° are split into MultiPolygons with
  * one part on each side. This prevents rendering artifacts in MapLibre.
  */
-export function splitFeatureAtAntimeridian(feature: Feature): Feature[] {
+function splitFeatureAtAntimeridian(feature: Feature): Feature[] {
   const geom = feature.geometry;
 
   if (geom.type === "Polygon") {
@@ -179,14 +179,6 @@ export function featureIdToDisplayName(id: string): string {
 }
 
 /**
- * Convert a display name to feature ID format.
- * "New Harren" -> "New_Harren"
- */
-export function displayNameToFeatureId(name: string): string {
-  return name.replace(/ /g, "_");
-}
-
-/**
  * Calculate the centroid of a GeoJSON feature geometry.
  * Simple average of all coordinates (sufficient for display purposes).
  */
@@ -215,41 +207,11 @@ export function calculateSimpleCentroid(geometry: Geometry): [number, number] | 
 }
 
 /**
- * Calculate bounding box of a geometry.
- * Returns [minLng, minLat, maxLng, maxLat].
- */
-export function calculateBBox(geometry: Geometry): [number, number, number, number] | null {
-  let minLng = Infinity;
-  let minLat = Infinity;
-  let maxLng = -Infinity;
-  let maxLat = -Infinity;
-
-  function scan(c: unknown): void {
-    if (!Array.isArray(c)) return;
-    if (c.length >= 2 && typeof c[0] === "number" && typeof c[1] === "number") {
-      minLng = Math.min(minLng, c[0] as number);
-      minLat = Math.min(minLat, c[1] as number);
-      maxLng = Math.max(maxLng, c[0] as number);
-      maxLat = Math.max(maxLat, c[1] as number);
-      return;
-    }
-    for (const item of c) {
-      scan(item);
-    }
-  }
-
-  scan((geometry as Geometry & { coordinates: unknown }).coordinates);
-
-  if (minLng === Infinity) return null;
-  return [minLng, minLat, maxLng, maxLat];
-}
-
-/**
  * Assign a stable color to each political feature based on its ID.
  * Uses the fill property from GeoJSON if available, otherwise generates
  * a pastel color from a predefined palette.
  */
-export function getFeatureFillColor(feature: Feature, fallbackPalette: string[]): string {
+function getFeatureFillColor(feature: Feature, fallbackPalette: string[]): string {
   const fill = feature.properties?.fill;
   if (fill && fill !== "#ffffff") {
     return fill;

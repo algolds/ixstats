@@ -7,14 +7,14 @@ import { z } from "zod";
 
 export type WikiQuery = <T>(params: Record<string, string>, schema: z.ZodType<T>) => Promise<T>;
 
-export interface CrawlOptions {
+interface CrawlOptions {
   rootCategory: string; // "Category:Eurth"
   keyword: string; // "Eurth" — only subcategories containing it are followed
   maxDepth?: number; // default 5
   maxPages?: number; // default 5000
 }
 
-export interface CrawlResult {
+interface CrawlResult {
   pages: string[];
   categoriesVisited: string[];
   /** True when the page cap or the depth cap stopped the crawl before the tree was exhausted. */
@@ -181,7 +181,7 @@ export async function listRosterNations(query: WikiQuery, rosterCategory: string
   return [...titles].sort();
 }
 
-export type NationMethod = { kind: "infobox" } | { kind: "roster"; roster: string };
+type NationMethod = { kind: "infobox" } | { kind: "roster"; roster: string };
 
 const RETIRED_ROSTER = /retired/i;
 

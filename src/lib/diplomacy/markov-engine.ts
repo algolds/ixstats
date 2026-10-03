@@ -38,19 +38,6 @@ const STATE_RANK: Record<RelationshipState, number> = {
   friendly: 3,
   allied: 4,
 };
-
-/**
- * Reverse mapping for state lookup
- */
-// oxlint-disable-next-line typescript/no-unused-vars
-const RANK_TO_STATE: Record<number, RelationshipState> = {
-  0: "hostile",
-  1: "tense",
-  2: "neutral",
-  3: "friendly",
-  4: "allied",
-};
-
 // ==================== CONTEXT FACTORS ====================
 
 /**
@@ -101,7 +88,7 @@ export interface TransitionContext {
 /**
  * Predicted relationship state with confidence metrics
  */
-export interface RelationshipPrediction {
+interface RelationshipPrediction {
   currentState: RelationshipState;
   predictedState: RelationshipState;
   probability: number; // 0-1 (probability of this prediction)
@@ -119,7 +106,7 @@ export interface RelationshipPrediction {
 /**
  * State transition event for diplomatic system
  */
-export interface StateTransitionEvent {
+interface StateTransitionEvent {
   id: string;
   fromState: RelationshipState;
   toState: RelationshipState;
@@ -799,73 +786,3 @@ export class MarkovDiplomacyEngine {
 }
 
 // ==================== HELPER FUNCTIONS ====================
-
-/**
- * Create default transition context for testing or initial states
- */
-export function createDefaultContext(): TransitionContext {
-  return {
-    recentActions: [],
-    actionHistory: {
-      cooperativeActions: 50,
-      aggressiveActions: 50,
-      consistencyScore: 50,
-    },
-    economic: {
-      tradeVolume: 1000000,
-      tradeGrowth: 3,
-      hasTradeTreaty: false,
-      economicTierSimilarity: 50,
-    },
-    cultural: {
-      culturalExchangeLevel: "low",
-      culturalAffinityScore: 50,
-      sharedLanguage: false,
-      historicalTies: false,
-    },
-    geographic: {
-      adjacency: false,
-      sameRegion: false,
-      sameContinent: false,
-      distance: 50,
-    },
-    alliances: {
-      mutualAllies: 0,
-      mutualRivals: 0,
-      inCompetingBlocs: false,
-      thirdPartyMediation: false,
-    },
-  };
-}
-
-/**
- * Map database relationship string to RelationshipState
- */
-export function mapToRelationshipState(dbRelationship: string): RelationshipState {
-  const mapping: Record<string, RelationshipState> = {
-    hostile: "hostile",
-    tension: "tense",
-    strained: "tense",
-    cool: "tense",
-    neutral: "neutral",
-    cooperative: "neutral",
-    friendly: "friendly",
-    alliance: "allied",
-  };
-
-  return mapping[dbRelationship.toLowerCase()] || "neutral";
-}
-
-/**
- * Get all possible relationship states
- */
-export function getAllRelationshipStates(): RelationshipState[] {
-  return ["hostile", "tense", "neutral", "friendly", "allied"];
-}
-
-/**
- * Calculate state distance (how many steps apart two states are)
- */
-export function getStateDistance(state1: RelationshipState, state2: RelationshipState): number {
-  return Math.abs(STATE_RANK[state1] - STATE_RANK[state2]);
-}

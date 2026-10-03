@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 
-export interface NavigationScrollOptions {
+interface NavigationScrollOptions {
   /** If true, locks the navigation bar in visible state (e.g. while drawer or modal is open) */
   isLocked?: boolean;
   /** Navigation mode: 'default' (standard scroll-hide) or 'hidden' (starts hidden for canvas/immersion) */
@@ -16,7 +16,7 @@ export interface NavigationScrollOptions {
   autoHideDelay?: number;
 }
 
-export interface NavigationScrollState {
+interface NavigationScrollState {
   scrollY: number;
   isSticky: boolean;
   isNavVisible: boolean;

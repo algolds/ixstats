@@ -45,24 +45,3 @@ export interface EconomicArchetype {
   modernExamples: string[];
   recommendations: string[];
 }
-
-export interface ArchetypeComparison {
-  archetypes: EconomicArchetype[];
-  comparisonMetrics: {
-    gdpGrowth: Record<string, number>;
-    innovationIndex: Record<string, number>;
-    competitiveness: Record<string, number>;
-    stability: Record<string, number>;
-    taxEfficiency: Record<string, number>;
-  };
-  recommendations: string[];
-}
-
-export enum ArchetypeCategory {
-  MODERN = "MODERN",
-  HISTORICAL = "HISTORICAL",
-  REGIONAL = "REGIONAL",
-  EXPERIMENTAL = "EXPERIMENTAL",
-  EMERGING = "EMERGING",
-  TRADITIONAL = "TRADITIONAL",
-}

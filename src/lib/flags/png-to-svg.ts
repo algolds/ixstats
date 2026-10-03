@@ -177,7 +177,7 @@ function traceMask(potrace: PotraceModule, mask: Buffer, config: PngToSvgConfig)
   });
 }
 
-export interface PoliticalSvgPath {
+interface PoliticalSvgPath {
   featureId: string;
   d: string;
   fill: string;
@@ -302,7 +302,7 @@ export async function convertPngToSvg(
 // Direct PNG → ProvinceFeature[] Pipeline
 // ──────────────────────────────────────────────
 
-export interface PngProvinceResult {
+interface PngProvinceResult {
   provinces: Array<{
     sourceId: string;
     name: string;
@@ -319,7 +319,7 @@ export interface PngProvinceResult {
   log: string[];
 }
 
-export interface PngProvinceConfig {
+interface PngProvinceConfig {
   /** Brightness threshold (0-255) — pixels darker than this are boundary/ocean. Default 130 */
   boundaryThreshold?: number;
   /** Minimum region area in pixels to keep. Default 500 */

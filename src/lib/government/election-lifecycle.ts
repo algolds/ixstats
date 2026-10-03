@@ -159,7 +159,7 @@ export async function syncElectionCandidates(db: Db, electionId: string): Promis
   return parties.length;
 }
 
-export type ResolveElectionOutcome = "resolved" | "insufficient_candidates" | "not_claimed";
+type ResolveElectionOutcome = "resolved" | "insufficient_candidates" | "not_claimed";
 
 /**
  * Resolve one due election: claim it (so the cron and the owner's button can't both count

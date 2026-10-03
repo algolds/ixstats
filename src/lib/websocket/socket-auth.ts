@@ -4,7 +4,7 @@ import { verifyToken } from "@clerk/backend";
 import type { Socket } from "socket.io";
 import { db } from "~/server/db";
 
-export interface SocketPrincipal {
+interface SocketPrincipal {
   clerkUserId: string;
 }
 

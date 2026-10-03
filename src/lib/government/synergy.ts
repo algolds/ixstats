@@ -7,7 +7,7 @@
 
 import { ComponentType } from "@prisma/client";
 
-export interface SynergyData {
+interface SynergyData {
   type: "ADDITIVE" | "MULTIPLICATIVE" | "CONFLICTING";
   multiplier: number;
   description: string;
@@ -502,62 +502,4 @@ export function checkComponentSynergy(
   const key2 = `${type2}+${type1}`;
 
   return SYNERGY_MAP[key1] ?? SYNERGY_MAP[key2] ?? null;
-}
-
-/**
- * Calculate total government effectiveness from components and synergies
- *
- * @param components - Array of government components with effectiveness scores
- * @param synergies - Array of component synergies
- * @returns Total government effectiveness (0-100)
- */
-export function calculateGovernmentEffectiveness(
-  components: Array<{ effectivenessScore: number }>,
-  synergies: Array<{ synergyType: string; effectMultiplier: number }>
-): number {
-  if (components.length === 0) return 50; // Default neutral effectiveness
-
-  // Calculate base effectiveness from components
-  const baseEffectiveness =
-    components.reduce((sum, comp) => sum + comp.effectivenessScore, 0) / components.length;
-
-  // Calculate synergy bonuses and conflict penalties
-  let totalSynergyBonus = 0;
-  let conflictPenalty = 0;
-
-  for (const synergy of synergies) {
-    if (synergy.synergyType === "CONFLICTING") {
-      conflictPenalty += 15; // Standard conflict penalty
-    } else if (synergy.synergyType === "ADDITIVE") {
-      totalSynergyBonus += 10; // Standard synergy bonus
-    } else if (synergy.synergyType === "MULTIPLICATIVE") {
-      totalSynergyBonus += synergy.effectMultiplier * 10;
-    }
-  }
-
-  // Calculate final effectiveness (clamped to 0-100 range)
-  return Math.max(0, Math.min(100, baseEffectiveness + totalSynergyBonus - conflictPenalty));
-}
-
-/**
- * Get a summary of all synergies in the system
- *
- * @returns Object with synergy counts by type
- */
-export function getSynergySummary() {
-  const summary = {
-    totalSynergies: 0,
-    additive: 0,
-    multiplicative: 0,
-    conflicting: 0,
-  };
-
-  for (const synergy of Object.values(SYNERGY_MAP)) {
-    summary.totalSynergies++;
-    if (synergy.type === "ADDITIVE") summary.additive++;
-    else if (synergy.type === "MULTIPLICATIVE") summary.multiplicative++;
-    else if (synergy.type === "CONFLICTING") summary.conflicting++;
-  }
-
-  return summary;
 }

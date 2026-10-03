@@ -21,7 +21,7 @@ import { SVG_NS, inkscapeLabel, parseAbsolutePath, type XmlElement } from "./xml
 
 type Ring = [number, number][];
 
-export interface FeatureExtractionOptions {
+interface FeatureExtractionOptions {
   coordConfig: SvgCoordinateConfig;
   bezierSegments: number;
   minRingSize: number;

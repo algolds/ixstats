@@ -62,16 +62,6 @@ export interface CellData {
   boundary: Uint8Array;
 }
 
-/** Water/land threshold. Cells with h < this are water, >= are land. */
-export const WATER_THRESHOLD = 51;
-
-/** Map 0-255 elevation to meters (max ~6000m) */
-export function elevToMeters(h: number): number {
-  if (h < WATER_THRESHOLD) return 0;
-  const landH = (h - WATER_THRESHOLD) / (255 - WATER_THRESHOLD); // 0-1
-  return Math.round(landH * landH * 6000); // quadratic curve favoring low elevations
-}
-
 // ──────────────────────────────────────────────
 // Entity Types
 // ──────────────────────────────────────────────

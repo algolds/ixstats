@@ -120,7 +120,7 @@ export function sanitizeUserContent(html: string): string {
 /**
  * Config for sanitizeWikiContent(): wiki HTML with allowed styling.
  */
-export const WIKI_CONTENT_SANITIZE_CONFIG = {
+const WIKI_CONTENT_SANITIZE_CONFIG = {
   ALLOWED_TAGS: [
     "p",
     "br",

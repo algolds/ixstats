@@ -7,8 +7,6 @@ import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import type { CountryFlag } from "./useCountryFlags";
 
-export type { CountryFlag };
-
 /**
  * Hook for a single country flag with route-aware service selection
  * - Uses Commons-only service on main builder page (/builder)

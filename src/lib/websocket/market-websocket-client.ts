@@ -17,7 +17,7 @@ interface Subscription {
  * WebSocket client for marketplace real-time updates
  * Handles reconnection, subscriptions, and message routing
  */
-export class MarketWebSocketClient {
+class MarketWebSocketClient {
   private ws: WebSocket | null = null;
   private subscriptions: Map<string, Subscription> = new Map();
   private reconnect = withReconnect(() => this.connect(), {
@@ -308,11 +308,4 @@ export function getMarketWebSocketClient(): MarketWebSocketClient {
     marketWsClient = new MarketWebSocketClient();
   }
   return marketWsClient;
-}
-
-/**
- * Hook-friendly client factory
- */
-export function createMarketWebSocketClient(): MarketWebSocketClient {
-  return new MarketWebSocketClient();
 }

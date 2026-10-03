@@ -46,15 +46,6 @@ export function createAbsoluteUrl(path: string): string {
 }
 
 /**
- * Creates a properly prefixed asset URL for the current environment
- * @param assetPath - The asset path (should start with /)
- * @returns The full asset path with base path prefix in production
- */
-export function createAssetUrl(assetPath: string): string {
-  return createUrl(assetPath);
-}
-
-/**
  * Helper for Next.js router.push() calls to use correct base path
  * @param router - Next.js router instance
  * @param path - The path to navigate to (should start with /)

@@ -10,7 +10,7 @@
 
 type MapUpdateListener = (event: MapUpdateEvent) => void;
 
-export interface MapUpdateEvent {
+interface MapUpdateEvent {
   type: "map_data_changed";
   /** What changed: city, subdivision, poi, storyPin, mapLabel, sovereignty, linkage, bulk */
   changeType: string;

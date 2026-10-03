@@ -174,8 +174,6 @@ export interface DossierTabProps {
   };
 }
 
-export type WikiIntelligenceTabProps = DossierTabProps;
-
 /**
  * Configuration settings for wiki intelligence gathering.
  *

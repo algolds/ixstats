@@ -6,7 +6,7 @@
 import { db } from "~/server/db";
 import { queryMonitor } from "./query-monitor";
 
-export interface OptimizedQueryOptions {
+interface OptimizedQueryOptions {
   cache?: boolean;
   timeout?: number;
   retries?: number;

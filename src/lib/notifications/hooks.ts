@@ -11,7 +11,7 @@ import { withBasePath } from "~/lib/base-path";
  * Economic Data Change Hook
  * Monitors economic metrics and triggers notifications on significant changes
  */
-export async function onEconomicDataChange(params: {
+async function onEconomicDataChange(params: {
   countryId: string;
   metric: string;
   currentValue: number;
@@ -160,7 +160,7 @@ export async function onAchievementUnlock(params: {
  * Crisis Detection Hook
  * Triggers notifications for crisis situations
  */
-export async function onCrisisDetected(params: {
+async function onCrisisDetected(params: {
   countryId: string;
   crisisType: string;
   severity: "low" | "medium" | "high" | "critical";
@@ -189,7 +189,7 @@ export async function onCrisisDetected(params: {
  * Policy Change Hook
  * Triggers notifications when government policies change
  */
-export async function onPolicyChange(params: {
+async function onPolicyChange(params: {
   countryId: string;
   policyName: string;
   changeType: "enacted" | "modified" | "repealed";
@@ -213,7 +213,7 @@ export async function onPolicyChange(params: {
  * Budget Alert Hook
  * Triggers notifications for budget-related events
  */
-export async function onBudgetAlert(params: {
+async function onBudgetAlert(params: {
   countryId: string;
   alertType: "deficit" | "surplus" | "overspending" | "underspending";
   amount: number;
@@ -247,7 +247,7 @@ export async function onBudgetAlert(params: {
  * Defense/Military Event Hook
  * Triggers notifications for defense-related events
  */
-export async function onDefenseEvent(params: {
+async function onDefenseEvent(params: {
   countryId: string;
   eventType: "unit_created" | "unit_lost" | "readiness_change" | "doctrine_change";
   title: string;
@@ -314,7 +314,7 @@ export async function onSocialActivity(params: {
  * Intelligence Alert Hook
  * Triggers notifications for intelligence alerts
  */
-export async function onIntelligenceAlert(params: {
+async function onIntelligenceAlert(params: {
   userId?: string;
   countryId?: string;
   alertType: "threat" | "opportunity" | "trend" | "anomaly";
@@ -356,7 +356,7 @@ export async function onIntelligenceAlert(params: {
  * Trade Event Hook
  * Triggers notifications for trade-related events
  */
-export async function onTradeEvent(params: {
+async function onTradeEvent(params: {
   countryId: string;
   eventType: "new_partner" | "trade_increase" | "trade_decrease" | "embargo" | "agreement_signed";
   partnerCountry: string;
@@ -759,7 +759,7 @@ export async function onUserAccountChange(params: {
  * Admin Action Hook
  * Triggers notifications for administrative interventions
  */
-export async function onAdminAction(params: {
+async function onAdminAction(params: {
   actionType:
     | "global_announcement"
     | "user_intervention"
@@ -875,7 +875,7 @@ export async function onAdminAction(params: {
  * Economic Calculation Hook
  * Triggers notifications when major economic calculations complete
  */
-export async function onEconomicCalculation(params: {
+async function onEconomicCalculation(params: {
   countryId: string;
   userId?: string;
   calculationType: "gdp" | "growth" | "tier" | "forecast";
@@ -1042,7 +1042,7 @@ export async function onVitalityScoreChange(params: {
  * Tier Transition Hook
  * Triggers notifications when a country transitions between economic tiers
  */
-export async function onTierTransition(params: {
+async function onTierTransition(params: {
   countryId: string;
   userId?: string;
   tierType: "economic" | "population";
@@ -1094,7 +1094,7 @@ export async function onTierTransition(params: {
  * Activity Ring Goal Hook
  * Triggers notifications when activity ring goals are completed
  */
-export async function onActivityRingGoal(params: {
+async function onActivityRingGoal(params: {
   userId: string;
   countryId: string;
   ringType: "economic" | "diplomatic" | "governance" | "social";
@@ -1145,7 +1145,7 @@ export async function onActivityRingGoal(params: {
  * Security Event Hook
  * Triggers notifications when security events occur (automatically or manually)
  */
-export async function onSecurityEvent(params: {
+async function onSecurityEvent(params: {
   countryId: string;
   userId?: string;
   eventType:

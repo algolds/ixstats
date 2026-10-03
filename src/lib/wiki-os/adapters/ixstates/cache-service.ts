@@ -15,7 +15,7 @@ export function cleanWikitextForDisplay(raw: string): string {
   return cleanWikiMarkup(raw);
 }
 
-export interface WikiProfileSection {
+interface WikiProfileSection {
   id: string;
   title: string;
   sourcePage?: string;
@@ -30,7 +30,7 @@ export interface WikiProfileSection {
   linkCount?: number;
 }
 
-export interface WikiCountryProfile {
+interface WikiCountryProfile {
   countryName: string;
   infobox: UnifiedInfoboxData | null;
   sections: WikiProfileSection[];

@@ -14,7 +14,7 @@ import type { EditorFeature } from "~/hooks/useMapEditor";
 
 // ── Types ──
 
-export interface WikiMatch {
+interface WikiMatch {
   title: string;
   confidence: number; // 0-1 based on name similarity
 }

@@ -16,7 +16,7 @@ export type CardImageType =
   | "defense"
   | "diplomacy";
 
-export interface CardImagePreset {
+interface CardImagePreset {
   type: CardImageType;
   label: string;
   description: string;
@@ -39,7 +39,7 @@ const gradientClasses = {
 } as const;
 
 // Preset configurations for each card type
-export const cardImagePresets: Record<CardImageType, CardImagePreset> = {
+const cardImagePresets: Record<CardImageType, CardImagePreset> = {
   national_identity: {
     type: "national_identity",
     label: "National Identity",
@@ -195,12 +195,6 @@ export function getCardImagePreset(type: CardImageType): CardImagePreset {
 }
 
 // Get Unsplash search URL for a card type
-export function getUnsplashSearchUrl(type: CardImageType): string {
-  const preset = getCardImagePreset(type);
-  const query = encodeURIComponent(preset.unsplashKeywords[0] || "abstract background");
-  return `https://api.unsplash.com/search/photos?query=${query}&per_page=20&orientation=landscape`;
-}
-
 // Get fallback gradient class for a card type
 export function getFallbackGradient(type: CardImageType): string {
   const preset = getCardImagePreset(type);
@@ -214,15 +208,4 @@ export function allowsCustomUpload(type: CardImageType): boolean {
 }
 
 // Get all card types that allow custom uploads
-export function getCustomUploadableTypes(): CardImageType[] {
-  return Object.values(cardImagePresets)
-    .filter((preset) => preset.allowCustomUpload)
-    .map((preset) => preset.type);
-}
-
 // Validate that a card image type is valid
-export function isValidCardImageType(type: string): type is CardImageType {
-  return type in cardImagePresets;
-}
-
-export const isValidCardType = isValidCardImageType;

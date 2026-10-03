@@ -44,7 +44,7 @@ export interface ComplianceIssue {
   context?: Record<string, number | string>;
 }
 
-export interface ComplianceInput {
+interface ComplianceInput {
   cities: Array<{
     id: string;
     name: string;

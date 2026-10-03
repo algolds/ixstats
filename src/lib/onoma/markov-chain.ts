@@ -19,7 +19,7 @@ export function tokenizeIntoSyllables(word: string): string[] {
   return word.match(regex) || [word];
 }
 
-export class MarkovNode {
+class MarkovNode {
   token: string;
   neighbors: (MarkovNode | null)[];
 

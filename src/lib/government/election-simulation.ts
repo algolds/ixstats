@@ -11,7 +11,7 @@ import { notificationAPI } from "~/lib/notifications";
 // ── Seat-allocation helpers (single source of truth) ──
 
 /** D'Hondt method for proportional seat allocation. */
-export function dHondtAllocation(
+function dHondtAllocation(
   partyVotes: { partyId: string; votes: number }[],
   totalSeats: number
 ): Map<string, number> {
@@ -35,7 +35,7 @@ export function dHondtAllocation(
 }
 
 /** FPTP allocation: winner takes all (single-district). */
-export function fptpAllocation(
+function fptpAllocation(
   partyVotes: { partyId: string; votes: number }[],
   totalSeats: number
 ): Map<string, number> {
@@ -53,10 +53,10 @@ export function fptpAllocation(
 // Lore-first: how a chamber's members are chosen (not every legislature is party-elected).
 // Stored as the 4th positional field of the serialized chamberType blob. Keep in sync with
 // the copy in routers/elections/legislature.ts. See plans/mycountry-lore-alignment*.md.
-export type SelectionMethod =
+type SelectionMethod =
   "elected" | "appointed" | "sortition" | "hereditary" | "ex-officio" | "corporatist";
 
-export interface ChamberConfig {
+interface ChamberConfig {
   name: string;
   seats: number;
   electoralSystem: "proportional" | "fptp" | "mixed";
@@ -108,7 +108,7 @@ export function parseChambers(
   ];
 }
 
-export type SimulateElectionResult =
+type SimulateElectionResult =
   { ok: true; election: any } | { ok: false; reason: "not_found" | "insufficient_candidates" };
 
 /**

@@ -12,15 +12,15 @@
  * Pure: no DB, no React. Caller passes the two countries' stats + bilateral trade.
  */
 
-export type FPActionType = "embargo" | "sanction" | "free_trade" | "military_alliance" | "blockade";
-export type FPSeverity = "light" | "moderate" | "severe";
+type FPActionType = "embargo" | "sanction" | "free_trade" | "military_alliance" | "blockade";
+type FPSeverity = "light" | "moderate" | "severe";
 
 export interface FPParty {
   gdpPerCapita: number;
   population: number;
 }
 
-export interface FPImpact {
+interface FPImpact {
   initiatorGdpImpact: number; // fractional GDP delta, e.g. 0.003 = +0.3%
   targetGdpImpact: number;
   relationshipDelta: number; // integer points

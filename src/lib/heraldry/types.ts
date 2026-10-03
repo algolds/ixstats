@@ -80,8 +80,8 @@ export type Attitude =
   | "hauriant";
 
 export type HelmType = "great-helm" | "tilting-helm" | "barrel-helm" | "open-faced-helm";
-export type HelmFacing = "affronte" | "dexter" | "sinister";
-export type MottoPosition = "above" | "below";
+type HelmFacing = "affronte" | "dexter" | "sinister";
+type MottoPosition = "above" | "below";
 
 // --- Composition structures ---
 

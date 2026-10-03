@@ -4,7 +4,7 @@
 import { db } from "~/server/db";
 import { formatCurrency, formatPopulation } from "~/lib/utils";
 
-export interface ActivityData {
+interface ActivityData {
   type: "achievement" | "diplomatic" | "economic" | "social" | "meta";
   category?: "game" | "platform" | "social";
   userId?: string;

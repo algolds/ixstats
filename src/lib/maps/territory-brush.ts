@@ -47,7 +47,7 @@ function extractPolygonGeom(feat: Feature | null | undefined): Polygon | MultiPo
 // Public API
 // ─────────────────────────────────────────────────────────────────────────────
 
-export interface BrushStrokeResult {
+interface BrushStrokeResult {
   source: Polygon | MultiPolygon;
   target: Polygon | MultiPolygon;
   /** Sanitization notes from both geometries. */

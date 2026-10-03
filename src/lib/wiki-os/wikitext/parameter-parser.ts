@@ -100,7 +100,7 @@ export function splitBalancedPipes(text: string): string[] {
 /**
  * Finds the top-level `=` character index in a parameter segment.
  */
-export function findBalancedEquals(part: string): number {
+function findBalancedEquals(part: string): number {
   let tmplDepth = 0;
   let linkDepth = 0;
   let tableDepth = 0;

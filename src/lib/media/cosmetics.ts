@@ -1,4 +1,4 @@
-export interface ActiveCosmeticEffects {
+interface ActiveCosmeticEffects {
   avatarGlow?: {
     enabled: boolean;
     color: string;
@@ -17,7 +17,7 @@ export interface ActiveCosmeticEffects {
   };
 }
 
-export interface CosmeticCatalogItem {
+interface CosmeticCatalogItem {
   id: string;
   name: string;
   description: string;
@@ -27,7 +27,7 @@ export interface CosmeticCatalogItem {
   };
 }
 
-export const COSMETICS_CATALOG: Record<string, CosmeticCatalogItem> = {
+const COSMETICS_CATALOG: Record<string, CosmeticCatalogItem> = {
   cosmetic_gold_glow: {
     id: "cosmetic_gold_glow",
     name: "Golden Profile Glow",

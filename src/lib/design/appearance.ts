@@ -27,9 +27,9 @@ export const APPEARANCE_STORAGE_KEYS = {
   soundEnabled: "ixstates:sound-enabled",
 } as const;
 
-export type AppearanceStorageKeys = typeof APPEARANCE_STORAGE_KEYS;
+type AppearanceStorageKeys = typeof APPEARANCE_STORAGE_KEYS;
 
-export interface AppearanceState {
+interface AppearanceState {
   /** Effective (resolved) theme. */
   theme: "light" | "dark";
   compact: boolean;
@@ -84,7 +84,7 @@ export function applyAppearance(root: HTMLElement, s: AppearanceState): void {
  * back to dark when the OS states no light preference.
  * Self-contained (serialised into the pre-paint script).
  */
-export function initAppearanceFromStorage(
+function initAppearanceFromStorage(
   keys: AppearanceStorageKeys,
   apply: (root: HTMLElement, s: AppearanceState) => void
 ): void {
@@ -127,9 +127,9 @@ export const NAV_STORAGE_KEYS = {
   sidebarCollapsed: "ixstats-sidebar-collapsed",
 } as const;
 
-export type NavStorageKeys = typeof NAV_STORAGE_KEYS;
+type NavStorageKeys = typeof NAV_STORAGE_KEYS;
 
-export interface NavPreferences {
+interface NavPreferences {
   sidebarCollapsed: boolean;
 }
 

@@ -11,7 +11,7 @@ interface FlagMetadataFile {
   flags?: Record<string, { fileName?: string }>;
 }
 
-export class LocalFlagCacheAdapter implements PersistentFlagCacheAdapter {
+class LocalFlagCacheAdapter implements PersistentFlagCacheAdapter {
   private cache = new Map<string, string>();
   private saveTimeout: NodeJS.Timeout | null = null;
   private isSaving = false;

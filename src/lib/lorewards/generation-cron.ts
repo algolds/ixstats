@@ -26,7 +26,7 @@ import type { WikiSource } from "~/lib/wiki-os/config";
 /**
  * Generation result for monitoring
  */
-export interface LoreCardGenerationResult {
+interface LoreCardGenerationResult {
   success: boolean;
   generated: number;
   ixwikiCount: number;
@@ -275,95 +275,5 @@ async function logGenerationResult(result: LoreCardGenerationResult): Promise<vo
     console.log("[Lore Card Cron] ✓ Logged generation result to database");
   } catch (error) {
     console.error("[Lore Card Cron] Failed to log result to database:", error);
-  }
-}
-
-/**
- * Get last generation result from database
- */
-export async function getLastGenerationResult(): Promise<LoreCardGenerationResult | null> {
-  try {
-    const lastLog = await db.syncLog.findFirst({
-      where: { syncType: "lore-card-generation" },
-      orderBy: { startedAt: "desc" },
-    });
-
-    if (!lastLog) return null;
-
-    const metadata: Partial<{
-      ixwikiCount: number;
-      iiwikiCount: number;
-      rarityBreakdown: Record<string, number>;
-      categoryBreakdown: Record<string, number>;
-    }> = {};
-    const errors = lastLog.errorMessage ? JSON.parse(lastLog.errorMessage) : [];
-
-    return {
-      success: lastLog.status === "completed",
-      generated: lastLog.itemsProcessed - lastLog.itemsFailed,
-      ixwikiCount: metadata.ixwikiCount || 0,
-      iiwikiCount: metadata.iiwikiCount || 0,
-      failed: lastLog.itemsFailed,
-      errors,
-      duration:
-        lastLog.completedAt && lastLog.startedAt
-          ? lastLog.completedAt.getTime() - lastLog.startedAt.getTime()
-          : 0,
-      timestamp: lastLog.startedAt,
-      rarityBreakdown: metadata.rarityBreakdown || {},
-      categoryBreakdown: metadata.categoryBreakdown || {},
-    };
-  } catch (error) {
-    console.error("[Lore Card Cron] Error fetching last generation result:", error);
-    return null;
-  }
-}
-
-/**
- * Validate generation health (check if running on schedule)
- */
-export async function validateGenerationHealth(): Promise<{
-  healthy: boolean;
-  lastGeneration?: Date;
-  hoursSinceGeneration?: number;
-  status: "healthy" | "warning" | "critical";
-  message: string;
-}> {
-  const lastResult = await getLastGenerationResult();
-
-  if (!lastResult) {
-    return {
-      healthy: false,
-      status: "critical",
-      message: "No lore card generation has ever run",
-    };
-  }
-
-  const hoursSince = (Date.now() - lastResult.timestamp.getTime()) / (1000 * 60 * 60);
-
-  if (hoursSince < 25) {
-    return {
-      healthy: true,
-      lastGeneration: lastResult.timestamp,
-      hoursSinceGeneration: Math.round(hoursSince * 10) / 10,
-      status: "healthy",
-      message: `Last generation: ${lastResult.generated} cards ${hoursSince.toFixed(1)}h ago`,
-    };
-  } else if (hoursSince < 48) {
-    return {
-      healthy: false,
-      lastGeneration: lastResult.timestamp,
-      hoursSinceGeneration: Math.round(hoursSince * 10) / 10,
-      status: "warning",
-      message: `Generation overdue (${hoursSince.toFixed(1)}h since last run)`,
-    };
-  } else {
-    return {
-      healthy: false,
-      lastGeneration: lastResult.timestamp,
-      hoursSinceGeneration: Math.round(hoursSince * 10) / 10,
-      status: "critical",
-      message: `Generation critical (${hoursSince.toFixed(1)}h since last run - expected <25h)`,
-    };
   }
 }

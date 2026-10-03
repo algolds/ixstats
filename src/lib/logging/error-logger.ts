@@ -7,7 +7,7 @@
 
 import { db } from "~/server/db";
 
-export interface ErrorContext {
+interface ErrorContext {
   userId?: string;
   countryId?: string;
   path?: string;
@@ -16,7 +16,7 @@ export interface ErrorContext {
   metadata?: Record<string, any>;
 }
 
-export interface LoggedError {
+interface LoggedError {
   timestamp: string;
   level: "ERROR" | "WARN" | "INFO";
   message: string;
@@ -183,58 +183,6 @@ export class ErrorLogger {
       // Silent fail - don't throw in error logger
       console.error("[ERROR_LOGGER] Discord webhook failed:", error);
     }
-  }
-
-  /**
-   * Log a warning
-   */
-  static warn(message: string, context?: ErrorContext): void {
-    this.logError(message, context, "WARN");
-  }
-
-  /**
-   * Log an info message
-   */
-  static info(message: string, context?: ErrorContext): void {
-    this.logError(message, context, "INFO");
-  }
-
-  /**
-   * Log CRUD operation failures
-   */
-  static async logCRUDError(
-    operation: "CREATE" | "READ" | "UPDATE" | "DELETE",
-    entity: string,
-    error: Error,
-    context?: ErrorContext
-  ): Promise<void> {
-    await this.logError(
-      `CRUD ${operation} failed for ${entity}: ${error.message}`,
-      {
-        ...context,
-        action: `${operation}_${entity}`,
-      },
-      "ERROR"
-    );
-  }
-
-  /**
-   * Log authentication/authorization errors
-   */
-  static async logAuthError(
-    message: string,
-    userId?: string,
-    context?: ErrorContext
-  ): Promise<void> {
-    await this.logError(
-      message,
-      {
-        ...context,
-        userId,
-        action: "AUTH_ERROR",
-      },
-      "ERROR"
-    );
   }
 
   /**

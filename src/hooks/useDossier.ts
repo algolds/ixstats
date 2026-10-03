@@ -362,5 +362,3 @@ export function useDossier({
     setViewerClearanceLevel,
   };
 }
-
-export const useWikiIntelligence = useDossier;

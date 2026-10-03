@@ -9,7 +9,7 @@ import type {
   NamedLakeFormData,
 } from "./editor-types";
 
-export interface FeatureEditState {
+interface FeatureEditState {
   mode: EditorMode;
   cityForm?: CityFormData;
   subdivisionForm?: SubdivisionFormData;

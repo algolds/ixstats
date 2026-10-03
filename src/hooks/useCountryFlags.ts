@@ -14,13 +14,13 @@ export interface CountryFlag {
   isPlaceholder: boolean;
 }
 
-export interface UseCountryFlagsOptions {
+interface UseCountryFlagsOptions {
   countries: readonly string[];
   preload?: boolean;
   batchSize?: number;
 }
 
-export interface UseCountryFlagsReturn {
+interface UseCountryFlagsReturn {
   flags: Map<string, CountryFlag>;
   loading: boolean;
   error: string | null;

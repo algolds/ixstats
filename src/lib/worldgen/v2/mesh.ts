@@ -12,7 +12,6 @@
 // @ts-expect-error d3-delaunay has no declaration file
 import { Delaunay } from "d3-delaunay";
 import { makeRng } from "./helpers/rng";
-import { distanceKmLatLng } from "~/lib/maps/geo-math";
 import { createEmptyWorldGraph, type WorldGraph } from "./types";
 
 // ──────────────────────────────────────────────
@@ -165,13 +164,6 @@ export function cellAreaKm2(graph: WorldGraph, i: number): number {
 
   // Shoelace area is signed — take absolute value
   return Math.abs(area / 2);
-}
-
-/**
- * Haversine distance between two cells in km.
- */
-export function cellDistanceKm(graph: WorldGraph, a: number, b: number): number {
-  return distanceKmLatLng(cellLat(graph, a), cellLng(graph, a), cellLat(graph, b), cellLng(graph, b));
 }
 
 // ──────────────────────────────────────────────

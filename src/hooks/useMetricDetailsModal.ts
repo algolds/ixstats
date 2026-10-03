@@ -24,7 +24,7 @@ export type MetricType =
 /**
  * MetricDetailsModalState - State for managing which metric modal is open
  */
-export interface MetricDetailsModalState {
+interface MetricDetailsModalState {
   isOpen: boolean;
   metricType: MetricType | null;
   metricId: string | null;
@@ -102,35 +102,4 @@ export function useMetricDetailsModal() {
     closeModal,
     isModalOpen,
   };
-}
-
-/**
- * Helper to determine which modal component to render based on metric type
- */
-export function getModalTypeForMetric(
-  metricType: MetricType
-): "gdp" | "population" | "labor" | "government" | "demographics" {
-  switch (metricType) {
-    case "gdp":
-    case "gdp-per-capita":
-    case "total-gdp":
-      return "gdp";
-    case "population":
-    case "population-density":
-      return "population";
-    case "labor-force":
-    case "employment":
-    case "unemployment":
-      return "labor";
-    case "government-spending":
-    case "fiscal-revenue":
-    case "debt":
-      return "government";
-    case "demographics-health":
-    case "life-expectancy":
-    case "sector-breakdown":
-      return "demographics";
-    default:
-      return "gdp";
-  }
 }

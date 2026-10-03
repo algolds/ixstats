@@ -9,10 +9,10 @@
  * build time, so a change needs a rebuild).
  */
 
-export const PREMIUM_TIER = "mycountry_premium";
+const PREMIUM_TIER = "mycountry_premium";
 
 /** True when NEXT_PUBLIC_PREMIUM_FOR_ALL="true" (test builds). */
-export function isPremiumForAll(): boolean {
+function isPremiumForAll(): boolean {
   return process.env.NEXT_PUBLIC_PREMIUM_FOR_ALL === "true";
 }
 

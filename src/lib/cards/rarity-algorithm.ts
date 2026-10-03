@@ -10,7 +10,7 @@
 import { LoreCategory } from "./category-enums";
 import type { CardRarity } from "@prisma/client";
 
-export interface WikiArticleSignals {
+interface WikiArticleSignals {
   wordCount: number;
   inboundLinks: number;
   outboundLinks: number;
@@ -20,7 +20,7 @@ export interface WikiArticleSignals {
   firstEditAgeDays?: number;
 }
 
-export interface WikiSignalAnalysis {
+interface WikiSignalAnalysis {
   suggestedCategory: LoreCategory;
   suggestedRarity: CardRarity;
   suggestedArtworkSource: "PROCEDURAL" | "WIKI_FETCHED" | "FLAG";
@@ -235,7 +235,7 @@ const CATEGORY_KEYWORDS: Array<{ category: LoreCategory; keywords: string[] }> =
 /**
  * Detect LoreCategory from article title and wiki category names
  */
-export function detectLoreCategory(title: string, categories: string[]): LoreCategory {
+function detectLoreCategory(title: string, categories: string[]): LoreCategory {
   const combinedText = `${title} ${categories.join(" ")}`.toLowerCase();
 
   for (const { category, keywords } of CATEGORY_KEYWORDS) {

@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 
-export type JobLockOutcome<T> = { ran: true; result: T } | { ran: false };
-export interface JobLockOptions {
+type JobLockOutcome<T> = { ran: true; result: T } | { ran: false };
+interface JobLockOptions {
   timeoutMs?: number;
 }
 

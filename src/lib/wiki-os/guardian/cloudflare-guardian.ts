@@ -7,7 +7,7 @@
 
 import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
 
-export interface TurnstileVerifyResult {
+interface TurnstileVerifyResult {
   success: boolean;
   error?: string;
 }

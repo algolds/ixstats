@@ -9,7 +9,7 @@ import type { CardRarity } from "@prisma/client";
 /**
  * Holographic pattern types
  */
-export type HolographicPattern =
+type HolographicPattern =
   | "rainbow-shimmer" // Classic rainbow holographic
   | "radial-burst" // Radial light burst from center
   | "diagonal-sweep" // Diagonal sweeping light
@@ -23,7 +23,7 @@ export type HolographicPattern =
 /**
  * Holographic intensity levels
  */
-export type HolographicIntensity = "subtle" | "medium" | "intense" | "legendary";
+type HolographicIntensity = "subtle" | "medium" | "intense" | "legendary";
 
 /**
  * Get holographic pattern based on card rarity
@@ -471,160 +471,6 @@ export function getHolographicAnimation(rarity: CardRarity): string {
 }
 
 /**
- * Generate holographic shimmer keyframes (for CSS-in-JS)
- */
-export function generateShimmerKeyframes(): string {
-  return `
-    @keyframes holographic-shimmer {
-      0%, 100% {
-        background-position: 0% 50%;
-        opacity: 0.3;
-      }
-      50% {
-        background-position: 100% 50%;
-        opacity: 0.6;
-      }
-    }
-
-    @keyframes radial-pulse {
-      0%, 100% {
-        transform: scale(1);
-        opacity: 0.4;
-      }
-      50% {
-        transform: scale(1.1);
-        opacity: 0.7;
-      }
-    }
-
-    @keyframes diagonal-sweep {
-      0% {
-        background-position: -200% 0;
-      }
-      100% {
-        background-position: 200% 0;
-      }
-    }
-
-    @keyframes cosmic-drift {
-      0% {
-        background-position: 0% 0%;
-      }
-      50% {
-        background-position: 100% 100%;
-      }
-      100% {
-        background-position: 0% 0%;
-      }
-    }
-
-    @keyframes liquid-flow {
-      0%, 100% {
-        background-position: 0% 50%;
-        filter: hue-rotate(0deg);
-      }
-      50% {
-        background-position: 100% 50%;
-        filter: hue-rotate(45deg);
-      }
-    }
-
-    @keyframes shimmer-subtle {
-      0%, 100% { opacity: 0.2; }
-      50% { opacity: 0.3; }
-    }
-
-    @keyframes shimmer-medium {
-      0%, 100% { opacity: 0.3; }
-      50% { opacity: 0.5; }
-    }
-
-    @keyframes shimmer-intense {
-      0%, 100% { opacity: 0.4; }
-      50% { opacity: 0.7; }
-    }
-
-    @keyframes shimmer-epic {
-      0%, 100% { opacity: 0.5; }
-      50% { opacity: 0.8; }
-    }
-
-    @keyframes shimmer-legendary {
-      0%, 100% {
-        opacity: 0.6;
-        transform: scale(1);
-      }
-      50% {
-        opacity: 0.9;
-        transform: scale(1.02);
-      }
-    }
-
-    @keyframes shimmer-mythic {
-      0%, 100% {
-        opacity: 0.7;
-        transform: scale(1) rotate(0deg);
-        filter: hue-rotate(0deg);
-      }
-      50% {
-        opacity: 1;
-        transform: scale(1.05) rotate(1deg);
-        filter: hue-rotate(30deg);
-      }
-    }
-
-    @keyframes sparkle-twinkle {
-      0%, 100% {
-        opacity: 0.4;
-        transform: scale(1);
-      }
-      25% {
-        opacity: 0.7;
-        transform: scale(1.1);
-      }
-      50% {
-        opacity: 0.5;
-        transform: scale(0.95);
-      }
-      75% {
-        opacity: 0.8;
-        transform: scale(1.05);
-      }
-    }
-
-    @keyframes wave-refraction {
-      0% {
-        background-position: 0% 0%;
-        filter: hue-rotate(0deg);
-      }
-      33% {
-        background-position: 50% 50%;
-        filter: hue-rotate(15deg);
-      }
-      66% {
-        background-position: 100% 100%;
-        filter: hue-rotate(30deg);
-      }
-      100% {
-        background-position: 0% 0%;
-        filter: hue-rotate(0deg);
-      }
-    }
-
-    @keyframes foil-shimmer {
-      0%, 100% {
-        background-position: 0% 50%;
-        opacity: 0.5;
-      }
-      50% {
-        background-position: 100% 50%;
-        opacity: 0.8;
-      }
-    }
-  `;
-}
-
-/**
  * Get light refraction effect (for glass physics integration)
  */
 export function getLightRefractionStyle(
@@ -652,52 +498,5 @@ export function getLightRefractionStyle(
   return {
     transform: `perspective(1000px) rotateY(${(deltaX / centerX) * 5}deg) rotateX(${-(deltaY / centerY) * 5}deg)`,
     filter: `brightness(${1 + intensity * 0.2}) contrast(${1 + intensity * 0.1})`,
-  };
-}
-
-/**
- * Get Pokemon-style enhanced 3D tilt effect
- * Provides stronger perspective and rotation for more dramatic tilt
- */
-export function getPokemon3DTiltStyle(
-  mouseX: number,
-  mouseY: number,
-  elementWidth: number,
-  elementHeight: number,
-  intensity: number = 1
-): {
-  cardTransform: string;
-  glareTransform: string;
-  glareOpacity: number;
-  backgroundPosition: string;
-} {
-  const centerX = elementWidth / 2;
-  const centerY = elementHeight / 2;
-
-  // Normalize mouse position to -1 to 1
-  const normalizedX = (mouseX - centerX) / centerX;
-  const normalizedY = (mouseY - centerY) / centerY;
-
-  // Calculate rotation angles with intensity multiplier
-  const rotateY = normalizedX * 15 * intensity; // Max 15deg rotation
-  const rotateX = -normalizedY * 15 * intensity;
-
-  // Calculate distance from center for glare intensity
-  const distance = Math.sqrt(normalizedX * normalizedX + normalizedY * normalizedY);
-  const glareOpacity = Math.max(0.3, 1 - distance) * intensity;
-
-  // Background position for shimmer effect
-  const bgX = 50 + normalizedX * 30;
-  const bgY = 50 + normalizedY * 30;
-
-  // Glare position (opposite to mouse position for realistic reflection)
-  const glareX = 50 - normalizedX * 40;
-  const glareY = 50 - normalizedY * 40;
-
-  return {
-    cardTransform: `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`,
-    glareTransform: `translate(${glareX}%, ${glareY}%)`,
-    glareOpacity,
-    backgroundPosition: `${bgX}% ${bgY}%`,
   };
 }

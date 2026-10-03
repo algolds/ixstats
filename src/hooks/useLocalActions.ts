@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 
-export type LocalActionType =
+type LocalActionType =
   | "issue_response"
   | "policy_created"
   | "meeting_scheduled"
@@ -12,7 +12,7 @@ export type LocalActionType =
   | "deployment"
   | "budget_update";
 
-export interface LocalAction {
+interface LocalAction {
   id: string;
   type: LocalActionType;
   data: Record<string, any>;

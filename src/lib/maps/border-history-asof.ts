@@ -11,7 +11,7 @@
  */
 import type { Feature, Geometry } from "geojson";
 
-export interface BorderHistoryRow {
+interface BorderHistoryRow {
   countryId: string;
   geometry: unknown;
   changedAt: Date;

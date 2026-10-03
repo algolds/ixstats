@@ -38,7 +38,7 @@ function subscribe(onChange: () => void): () => void {
 const readCollapsed = () => document.documentElement.getAttribute("data-sidebar") === "collapsed";
 const unknownOnServer = () => null;
 
-export interface SidebarCollapsedState {
+interface SidebarCollapsedState {
   /** `null` until hydrated; CSS (`sidebar-collapsed:` variant) handles the first paint. */
   collapsed: boolean | null;
   setCollapsed: (collapsed: boolean) => void;

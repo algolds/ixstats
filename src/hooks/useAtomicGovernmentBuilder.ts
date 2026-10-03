@@ -25,7 +25,7 @@ import {
 import type { EffectivenessMetrics } from "~/components/shared/atomic/types";
 import { useAtomicSelectorState } from "./useAtomicSelectorState";
 
-export interface UseAtomicGovernmentBuilderProps {
+interface UseAtomicGovernmentBuilderProps {
   /** Initially selected components */
   initialComponents?: ComponentType[];
   /** Maximum allowed components */
@@ -38,7 +38,7 @@ export interface UseAtomicGovernmentBuilderProps {
   defaultCategoryFilter?: string | null;
 }
 
-export interface UseAtomicGovernmentBuilderReturn {
+interface UseAtomicGovernmentBuilderReturn {
   // State
   selectedComponents: ComponentType[];
   categoryFilter: string | null;

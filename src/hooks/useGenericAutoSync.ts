@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { isEqual } from "~/lib/utils/common";
 
-export type AutoSyncStatus = "idle" | "pending" | "syncing" | "saved" | "error";
+type AutoSyncStatus = "idle" | "pending" | "syncing" | "saved" | "error";
 
-export interface AutoSyncState<TError = Error> {
+interface AutoSyncState<TError = Error> {
   status: AutoSyncStatus;
   isSyncing: boolean;
   lastSyncTime: Date | null;
@@ -14,7 +14,7 @@ export interface AutoSyncState<TError = Error> {
   optimistic?: boolean;
 }
 
-export interface AutoSyncOptions<TData, TResult = unknown, TError = Error> {
+interface AutoSyncOptions<TData, TResult = unknown, TError = Error> {
   enabled?: boolean;
   debounceMs?: number;
   onSyncSuccess?: (result: TResult) => void;
