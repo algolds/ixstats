@@ -13,7 +13,7 @@ interface PassportMastheadProps {
   onEdit: () => void;
 }
 
-/** Passport header: seal, title, and the edit / message / share actions. */
+/** Passport header: seal, title, and the edit, message and share actions. */
 export const PassportMasthead = React.memo(function PassportMasthead({
   cleanUsername,
   isOwner,
@@ -31,7 +31,7 @@ export const PassportMasthead = React.memo(function PassportMasthead({
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
     } catch {
-      // clipboard unavailable (permission denied / insecure context) — nothing copied
+      // Clipboard unavailable (permission denied or insecure context): nothing copied.
     }
   }, [cleanUsername]);
 
@@ -49,13 +49,13 @@ export const PassportMasthead = React.memo(function PassportMasthead({
         {isOwner ? (
           <Button type="button" variant="default" onClick={onEdit}>
             <Settings aria-hidden />
-            <span>Edit Passport</span>
+            <span>Edit passport</span>
           </Button>
         ) : (
           <Button asChild variant="default">
             <Link href={`/messages?user=${encodeURIComponent(cleanUsername)}`}>
               <Send aria-hidden />
-              <span>Send Message</span>
+              <span>Send message</span>
             </Link>
           </Button>
         )}

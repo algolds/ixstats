@@ -31,8 +31,8 @@ export const PassportHistoryTab = React.memo(function PassportHistoryTab({
       <Card variant="inset" padding="none" className="border-separator border">
         <EmptyState
           icon={<Clock />}
-          title="No Activity Yet"
-          message={`@${cleanUsername} does not have any recorded activity yet.`}
+          title="No activity yet"
+          message={`@${cleanUsername} has no recorded activity yet.`}
         />
       </Card>
     );

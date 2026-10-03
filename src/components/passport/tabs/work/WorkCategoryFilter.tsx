@@ -10,11 +10,11 @@ export type WorkCategory = "articles" | "languages" | "directives" | "sports" | 
 export type WorkCategoryFilterValue = WorkCategory | "all" | null;
 
 const CATEGORIES: Array<{ id: WorkCategory; label: string }> = [
-  { id: "articles", label: "Authored Pages" },
+  { id: "articles", label: "Authored pages" },
   { id: "languages", label: "Languages" },
   { id: "directives", label: "Directives" },
   { id: "sports", label: "Clubs" },
-  { id: "feed", label: "Activity Stream" },
+  { id: "feed", label: "Activity" },
 ];
 
 interface WorkCategoryFilterProps {
@@ -66,7 +66,7 @@ export const WorkCategoryFilter = React.memo(function WorkCategoryFilter({
           size="sm"
           value={searchQuery}
           onValueChange={onSearch}
-          placeholder="Search work & articles..."
+          placeholder="Search work and articles"
           aria-label="Search work and articles"
           containerClassName="w-full sm:w-56"
         />

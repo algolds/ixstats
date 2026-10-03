@@ -19,7 +19,6 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Stat } from "~/components/ui/stat";
-import { FlagWatermark } from "~/components/ui/facet/identity/FlagWatermark";
 import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { getScaledValue } from "~/lib/utils/format-utils";
@@ -121,8 +120,8 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
       <Card variant="inset" padding="none" className="border-separator border">
         <EmptyState
           icon={<Globe />}
-          title="No Realms Joined"
-          message={`@${cleanUsername} is not currently a member of any realms.`}
+          title="No realms joined"
+          message={`@${cleanUsername} is not a member of any realms.`}
         />
       </Card>
     );
@@ -140,7 +139,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
           const countryName = country?.name ? country.name.replace(/_/g, " ") : null;
           const flagUrl = country?.flagUrl;
 
-          // Hydrate approval, stability, and capacity (with live fallbacks)
+          // Approval, stability and capacity, with fallbacks when the country has none
           const rawApproval = country?.currentPublicApproval ?? 74;
           const approvalPct = Math.round(rawApproval > 1 ? rawApproval : rawApproval * 100);
 
@@ -157,9 +156,6 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                 "border-separator relative flex flex-col overflow-hidden border p-4 sm:p-5"
               )}
             >
-              {/* Corner flag watermark (decorative) */}
-              <FlagWatermark src={flagUrl} />
-
               <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
                 {/* Identity, meta and action */}
                 <div className="flex min-w-0 flex-1 items-start gap-4 sm:items-center">
@@ -227,12 +223,12 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                       <Button asChild variant="secondary" size="sm">
                         {country ? (
                           <Link href={`/countries/${country.slug}`}>
-                            <span>View Country</span>
+                            <span>View country</span>
                             <ArrowRight aria-hidden />
                           </Link>
                         ) : (
                           <Link href={`/r/${item.slug || item.id}`}>
-                            <span>View Realm</span>
+                            <span>View realm</span>
                             <ArrowRight aria-hidden />
                           </Link>
                         )}
@@ -241,7 +237,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                   </div>
                 </div>
 
-                {/* Telemetry pod */}
+                {/* Country figures */}
                 {country && (
                   <div className="bg-surface rounded-row flex w-full shrink-0 flex-col gap-3 p-3 sm:p-4 lg:w-[420px]">
                     <div className="border-separator flex items-center justify-between gap-4 border-b pb-3">
