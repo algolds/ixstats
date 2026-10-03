@@ -47,7 +47,6 @@ export function MapLoadingScreen({ isReady }: MapLoadingScreenProps) {
           className="bg-surface fixed inset-0 z-50 flex items-center justify-center select-none"
         >
           <div className="relative z-10 flex w-full max-w-sm flex-col items-center gap-6 px-6 text-center">
-            {/* Facet emblem */}
             <FacetMaterial
               material="regular"
               className="flex h-20 w-20 items-center justify-center rounded-full"
@@ -59,7 +58,6 @@ export function MapLoadingScreen({ isReady }: MapLoadingScreenProps) {
               />
             </FacetMaterial>
 
-            {/* Typography */}
             <div className="space-y-2">
               <h2 className="text-label text-title-2 sm:text-title-1">IxMaps</h2>
               <p className="text-label-secondary text-caption">Initializing the world...</p>

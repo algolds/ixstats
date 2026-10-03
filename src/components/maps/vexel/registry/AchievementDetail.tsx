@@ -70,7 +70,6 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
     <div className="text-label-secondary text-footnote grid grid-cols-1 items-start gap-8 md:grid-cols-[1fr_350px]">
       {/* Left Column: Canvas & Description */}
       <div className="space-y-6">
-        {/* Large Canvas Box */}
         <Card className="relative flex aspect-video max-h-[450px] items-center justify-center overflow-hidden p-8">
           <div className="relative flex aspect-square max-h-full max-w-full items-center justify-center">
             {composition.externals?.helm && (
@@ -95,7 +94,6 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
           </div>
         </Card>
 
-        {/* Blazon Description Card */}
         <Card className="space-y-3 p-6">
           <div className="flex items-center justify-between">
             <Eyebrow className="block">Official blazon (heraldic description)</Eyebrow>
@@ -111,7 +109,6 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
 
       {/* Right Column: Metadata & History */}
       <div className="space-y-6">
-        {/* Metadata Card */}
         <Card className="flex flex-col gap-4 p-5">
           <div className="border-separator border-b pb-3">
             <Eyebrow className="mb-0.5 block">Title</Eyebrow>
@@ -145,7 +142,6 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
           </div>
         </Card>
 
-        {/* Revision logs */}
         <Card className="p-5">
           <RevisionHistory achievementId={achievementId} />
         </Card>

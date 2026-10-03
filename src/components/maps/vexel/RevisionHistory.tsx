@@ -52,7 +52,6 @@ export default function RevisionHistory({ achievementId }: RevisionHistoryProps)
               className="border-separator bg-surface rounded-control text-footnote flex items-center justify-between gap-4 border p-2"
             >
               <div className="flex items-center gap-3">
-                {/* Micro preview */}
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center">
                   <ShieldRenderer composition={comp} />
                 </div>

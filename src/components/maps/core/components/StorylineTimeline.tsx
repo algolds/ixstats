@@ -37,7 +37,6 @@ export function StorylineTimeline({
           const isCurrent = pin.id === currentPinId;
           return (
             <div key={pin.id} className="relative flex items-start gap-3 pb-4 last:pb-0">
-              {/* Vertical line */}
               {i < pins.length - 1 && (
                 <div
                   className="absolute top-4 left-[7px] h-full w-0.5"
@@ -47,7 +46,6 @@ export function StorylineTimeline({
                   }}
                 />
               )}
-              {/* Dot */}
               <div
                 className={`relative z-10 mt-0.5 shrink-0 rounded-full border-2 ${isCurrent ? "h-4 w-4" : "h-3 w-3"}`}
                 style={{
@@ -55,7 +53,6 @@ export function StorylineTimeline({
                   backgroundColor: isCurrent || i <= currentIdx ? color : "transparent",
                 }}
               />
-              {/* Content */}
               <button
                 onClick={() => !isCurrent && onNavigate?.(pin.id)}
                 disabled={isCurrent}

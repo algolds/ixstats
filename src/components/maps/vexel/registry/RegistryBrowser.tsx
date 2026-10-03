@@ -46,7 +46,6 @@ export default function RegistryBrowser() {
     <div className="space-y-6">
       {/* Sub-navigation & search toolbar */}
       <Card className="flex flex-col justify-between gap-4 p-4 md:flex-row md:items-center">
-        {/* Filter Tabs */}
         <SegmentedControl
           options={[...REGISTRY_TABS]}
           value={activeTab}
@@ -58,7 +57,6 @@ export default function RegistryBrowser() {
           asTabs
         />
 
-        {/* Search */}
         <div className="text-footnote w-full md:w-72">
           <SearchField
             aria-label="Search the registry"
@@ -70,7 +68,6 @@ export default function RegistryBrowser() {
         </div>
       </Card>
 
-      {/* Grid List */}
       {isLoading ? (
         <div className="text-label-secondary text-footnote flex flex-col items-center justify-center gap-3 py-32">
           <div className="border-tint h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" />
@@ -88,7 +85,6 @@ export default function RegistryBrowser() {
             ))}
           </div>
 
-          {/* Load More */}
           {totalCount > limit && (
             <div className="flex justify-center pt-4">
               <Button variant="outline" size="sm" onClick={() => setLimit((prev) => prev + 16)}>
