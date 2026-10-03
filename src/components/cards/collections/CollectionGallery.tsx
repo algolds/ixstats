@@ -77,7 +77,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
   const [sortBy, setSortBy] = useState<SortOption>(defaultSort);
   const [currentPage, setCurrentPage] = useState(0);
   const [leaderboardCategory, setLeaderboardCategory] = useState<
-    "mostValuable" | "mostComplete" | "mostCards"
+    "mostValuable" | "mostCards"
   >("mostValuable");
 
   // Fetch public collections
@@ -179,7 +179,6 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
               onValueChange={setLeaderboardCategory}
               options={[
                 { value: "mostValuable", label: "Value" },
-                { value: "mostComplete", label: "Complete" },
                 { value: "mostCards", label: "Cards" },
               ]}
             />

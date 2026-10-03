@@ -246,7 +246,7 @@ export const vaultCollectionsRouter = createTRPCRouter({
   getCollectionLeaderboard: rateLimitedPublicProcedure
     .input(
       z.object({
-        category: z.enum(["mostValuable", "mostComplete", "mostCards"]),
+        category: z.enum(["mostValuable", "mostCards"]),
         limit: z.number().min(1).max(50).optional().default(10),
       })
     )
@@ -276,7 +276,6 @@ export const vaultCollectionsRouter = createTRPCRouter({
           User: c.User,
           cardCount: c.items.length,
           value: c.items.reduce((s, i) => s + (i.cardOwnership.cards?.marketValue ?? 0), 0),
-          completeness: 0,
           likes: c._count.likes,
           slug: c.name
             .toLowerCase()
@@ -286,9 +285,7 @@ export const vaultCollectionsRouter = createTRPCRouter({
 
         const sorted = [...enriched];
         if (input.category === "mostValuable") sorted.sort((a, b) => b.value - a.value);
-        else if (input.category === "mostCards") sorted.sort((a, b) => b.cardCount - a.cardCount);
-        else if (input.category === "mostComplete")
-          sorted.sort((a, b) => b.cardCount - a.cardCount);
+        else sorted.sort((a, b) => b.cardCount - a.cardCount);
 
         return {
           category: input.category,

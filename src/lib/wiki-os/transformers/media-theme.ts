@@ -195,29 +195,3 @@ export function setStoredMediaThemeMode(mode: MediaThemeMode): void {
     // ignore
   }
 }
-
-/**
- * Human-readable labels and descriptions for media theme modes.
- */
-export const MEDIA_THEME_OPTIONS: {
-  value: "auto" | "plinth";
-  label: string;
-  shortLabel: string;
-  description: string;
-  iconName: "auto" | "plinth";
-}[] = [
-  {
-    value: "auto",
-    label: "Auto (Adaptive)",
-    shortLabel: "Auto",
-    description: "Inverts black SVGs & formulas in dark mode; keeps photos natural",
-    iconName: "auto",
-  },
-  {
-    value: "plinth",
-    label: "Plinth (Light Plate)",
-    shortLabel: "Plinth",
-    description: "Renders transparent images on a frosted translucent light backplate",
-    iconName: "plinth",
-  },
-];

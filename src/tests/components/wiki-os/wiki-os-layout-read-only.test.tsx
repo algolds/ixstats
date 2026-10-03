@@ -41,9 +41,7 @@ jest.mock("~/components/wiki-os/shared/WikiOSContentWrapper", () => ({
 jest.mock("~/components/wiki-os/shared/SearchModal", () => ({ SearchModal: () => null }));
 jest.mock("~/components/wiki-os/shared/CreatePageModal", () => ({ CreatePageModal: () => null }));
 jest.mock("~/components/wiki-os/shared/WikiOSLogomark", () => ({ WikiOSLogomark: () => null }));
-jest.mock("~/components/wiki-os/shared/WikiUtilitiesRibbon", () => ({
-  WikiUtilitiesRibbon: () => null,
-}));
+
 
 function renderLayout(readOnly?: boolean) {
   return render(
