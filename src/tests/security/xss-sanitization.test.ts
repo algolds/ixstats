@@ -270,6 +270,25 @@ describe("XSS Sanitization Test Suite", () => {
       expect(stripHtml("")).toBe("");
       expect(stripHtml("   ")).toBe("");
     });
+
+    it("turns <br> and block tags into a single space", () => {
+      expect(stripHtml("A<br>B")).toBe("A B");
+      expect(stripHtml("<p>One</p><p>Two</p>")).toBe("One Two");
+      expect(stripHtml("<ul><li>a</li><li>b</li></ul>")).toBe("a b");
+      expect(stripHtml("x<br/>\n<br />y")).toBe("x y");
+    });
+
+    it("collapses runs of whitespace", () => {
+      expect(stripHtml("  a \n\t b   <b>c</b>  ")).toBe("a b c");
+    });
+
+    it("decodes named and numeric entities deterministically", () => {
+      expect(stripHtml("Tom &amp; Jerry")).toBe("Tom & Jerry");
+      expect(stripHtml("a&nbsp;b")).toBe("a b");
+      expect(stripHtml("&#169; &#x2014; &#X41;")).toBe("\u00A9 \u2014 A");
+      expect(stripHtml("&amp;lt;")).toBe("&lt;");
+      expect(stripHtml("x &bogus; y")).toBe("x &bogus; y");
+    });
   });
 
   describe("validateNoXSS() - Pre-validation", () => {

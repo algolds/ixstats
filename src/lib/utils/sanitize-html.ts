@@ -353,9 +353,51 @@ export function escapeHtml(text: string): string {
     .replace(/'/g, "&#039;");
 }
 
+const NAMED_ENTITIES: Readonly<Record<string, string>> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+  ndash: "\u2013",
+  mdash: "\u2014",
+  hellip: "\u2026",
+  lsquo: "\u2018",
+  rsquo: "\u2019",
+  ldquo: "\u201C",
+  rdquo: "\u201D",
+  copy: "\u00A9",
+  reg: "\u00AE",
+  trade: "\u2122",
+};
+
+/**
+ * Decode the common HTML entities in one pass, with no DOM, so server and client
+ * produce identical text (a DOM-based decode on the client only would cause hydration
+ * mismatches). Unknown or out-of-range entities are left untouched.
+ */
+function decodeEntities(text: string): string {
+  return text.replace(/&(?:#(\d+)|#[xX]([0-9a-fA-F]+)|([a-zA-Z]+));/g, (match, dec, hex, name) => {
+    if (name !== undefined) return NAMED_ENTITIES[name] ?? match;
+    const codePoint = dec !== undefined ? parseInt(dec, 10) : parseInt(hex, 16);
+    if (codePoint < 1 || codePoint > 0x10ffff || (codePoint >= 0xd800 && codePoint <= 0xdfff)) {
+      return match;
+    }
+    return String.fromCodePoint(codePoint);
+  });
+}
+
+const BLOCK_TAG_PATTERN =
+  /<\/?(?:br|hr|p|div|li|ul|ol|dl|dt|dd|tr|td|th|table|thead|tbody|tfoot|h[1-6]|blockquote|pre|section|article|aside|header|footer|nav|figure|figcaption)\b(?:"[^"]*"|'[^']*'|[^>"'])*>/gi;
+const ANY_TAG_PATTERN = /<\/?[a-zA-Z](?:"[^"]*"|'[^']*'|[^>"'])*>/g;
+
 /**
  * Strip all HTML tags and return plain text
  * Use for: Search indexing, previews, meta descriptions
+ *
+ * Line breaks and block-level tags become a single space (so "A<br>B" is "A B"),
+ * entities are decoded identically on server and client, and whitespace is collapsed.
  */
 export function stripHtml(html: string): string {
   if (!html) return "";
@@ -363,16 +405,8 @@ export function stripHtml(html: string): string {
   // First sanitize to remove dangerous content
   const sanitized = sanitizeHtml(html);
 
-  // Then strip all tags
-  if (typeof window === "undefined") {
-    // Server-side: regex fallback
-    return sanitized.replace(/<[^>]*>/g, "").trim();
-  } else {
-    // Client-side: use DOM
-    const div = document.createElement("div");
-    div.innerHTML = sanitized;
-    return div.textContent?.trim() || "";
-  }
+  const withoutTags = sanitized.replace(BLOCK_TAG_PATTERN, " ").replace(ANY_TAG_PATTERN, "");
+  return decodeEntities(withoutTags).replace(/\s+/g, " ").trim();
 }
 
 /**
