@@ -1,8 +1,7 @@
-import type { EventTraceStep } from "../types";
 import type { SportResolverContext, SportMatchOutcome, RosterPlayer } from "./types";
+import { actorOf, createTrace, fullName, sideLabel, type Side } from "./common";
 import { extractBaseballRoster, getPlayerOverall } from "./helpers";
 
-type Side = "home" | "away";
 type HalfLabel = "Top" | "Bottom";
 
 interface TeamState {
@@ -27,11 +26,9 @@ const HIT_TYPES = [
   [0.95, "triple", 3],
 ] as const;
 
-const fullName = (p: RosterPlayer) => `${p.firstName} ${p.lastName}`;
-
 export function runBaseballMatch(ctx: SportResolverContext): SportMatchOutcome {
   const { rng } = ctx;
-  const trace: EventTraceStep[] = [];
+  const { trace, push } = createTrace();
 
   const makeTeam = (side: Side, roster: RosterPlayer[] | undefined, offense: number): TeamState => {
     const line = extractBaseballRoster(roster, offense);
@@ -50,20 +47,6 @@ export function runBaseballMatch(ctx: SportResolverContext): SportMatchOutcome {
   const home = makeTeam("home", ctx.homeRoster, ctx.homeOffense);
   const away = makeTeam("away", ctx.awayRoster, ctx.awayOffense);
 
-  const push = (
-    t: number,
-    type: EventTraceStep["type"],
-    description: string,
-    team: Side,
-    actor?: RosterPlayer
-  ) =>
-    trace.push({
-      t,
-      type,
-      description,
-      ...(actor && { actorId: actor.id, actorName: fullName(actor) }),
-      team,
-    });
   const scoreLine = () => `Score: Home ${home.score} - Away ${away.score}`;
 
   push(
@@ -84,7 +67,7 @@ export function runBaseballMatch(ctx: SportResolverContext): SportMatchOutcome {
         "tactic_shift",
         `[${label} ${inning}] PITCHING CHANGE: RP ${fullName(rp)} enters the game, replacing SP ${fullName(sp)}.`,
         pit.side,
-        rp
+        actorOf(rp)
       );
     }
     const lead = pit.score - bat.score;
@@ -97,7 +80,7 @@ export function runBaseballMatch(ctx: SportResolverContext): SportMatchOutcome {
         "tactic_shift",
         `[${label} ${inning}] PITCHING CHANGE: Closer CP ${fullName(cp)} enters the game to close it out.`,
         pit.side,
-        cp
+        actorOf(cp)
       );
     }
   };
@@ -106,13 +89,16 @@ export function runBaseballMatch(ctx: SportResolverContext): SportMatchOutcome {
   const faceBatter = (bat: TeamState, pit: TeamState) => {
     const batter: RosterPlayer = bat.roster?.[bat.orderIdx % (bat.roster.length || 9)] ?? {
       id: `${bat.side}_batter_${bat.orderIdx}`,
-      firstName: bat.side === "home" ? "Home" : "Away",
+      firstName: sideLabel(bat.side),
       lastName: `Batter ${bat.orderIdx + 1}`,
       position: "OF",
       ratings: { overall: bat.offense },
     };
     bat.orderIdx++;
-    const pitcherOverall = Math.max(30, getPlayerOverall(pit.pitcher) - Math.round(pit.fatigue / 3));
+    const pitcherOverall = Math.max(
+      30,
+      getPlayerOverall(pit.pitcher) - Math.round(pit.fatigue / 3)
+    );
     pit.fatigue += 1.2;
     return { batter, hitProb: 0.26 + (getPlayerOverall(batter) - pitcherOverall) / 600 };
   };
@@ -157,7 +143,7 @@ export function runBaseballMatch(ctx: SportResolverContext): SportMatchOutcome {
               ? `${tag} HOME RUN! ${fullName(batter)} crushes a deep blast! ${runs} run(s) score. ${scoreLine()}`
               : `${tag} RBI Hit! ${fullName(batter)} hits a ${hitType}! ${scoreLine()}`,
             bat.side,
-            batter
+            actorOf(batter)
           );
         }
       } else if (roll < hitProb + WALK_PROB) {
@@ -169,7 +155,7 @@ export function runBaseballMatch(ctx: SportResolverContext): SportMatchOutcome {
             "goal",
             `${tag} Walk scores a run! ${fullName(batter)} walks. ${scoreLine()}`,
             bat.side,
-            batter
+            actorOf(batter)
           );
         } else {
           bases[bases.indexOf(false)] = true;
@@ -182,7 +168,7 @@ export function runBaseballMatch(ctx: SportResolverContext): SportMatchOutcome {
             "card",
             `${tag} Strikeout! ${fullName(pit.pitcher)} strikes out ${fullName(batter)}.`,
             pit.side,
-            pit.pitcher
+            actorOf(pit.pitcher)
           );
         }
       }
@@ -196,7 +182,7 @@ export function runBaseballMatch(ctx: SportResolverContext): SportMatchOutcome {
   };
 
   const playExtraHalf = (inning: number, label: HalfLabel, bat: TeamState, pit: TeamState) => {
-    for (let outs = 0; outs < 3; ) {
+    for (let outs = 0; outs < 3;) {
       if (rng() >= faceBatter(bat, pit).hitProb) {
         outs++;
         continue;
