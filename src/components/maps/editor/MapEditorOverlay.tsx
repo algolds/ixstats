@@ -71,17 +71,12 @@ export default function MapEditorOverlay({
     editor,
     neighborGeoms,
     disabledTools,
-    activeSidebarTab,
-    setActiveSidebarTab,
     isAdmin,
     generateTransport,
     recalculateGeo,
     handleRequestExit,
     isSubmitting,
     panelConfigs,
-    setPanelConfigs,
-    handleMoveTab,
-    handleChangePanelPlacement,
     showGrid,
     setShowGrid,
     snapEnabled,
@@ -92,8 +87,6 @@ export default function MapEditorOverlay({
     setShowShortcuts,
     contextMenu,
     setContextMenu,
-    layerStates,
-    setLayerStates,
     handleBorderToolbarSubmit,
     handleExitBorderEdit,
     simplifyAll,
@@ -101,7 +94,6 @@ export default function MapEditorOverlay({
     editorVisibleLayers,
     toggleEditorLayer,
     toolsDisabled,
-    featureCounts,
     panelsLocked,
     setPanelsLocked,
   } = state;
@@ -131,17 +123,6 @@ export default function MapEditorOverlay({
     <MapEditorSidebarPanels
       panelId={panelId}
       state={state}
-      panelConfigs={panelConfigs}
-      setPanelConfigs={setPanelConfigs}
-      activeSidebarTab={activeSidebarTab}
-      setActiveSidebarTab={setActiveSidebarTab}
-      handleMoveTab={handleMoveTab}
-      handleChangePanelPlacement={handleChangePanelPlacement}
-      layerStates={layerStates}
-      setLayerStates={setLayerStates}
-      editorVisibleLayers={editorVisibleLayers}
-      toggleEditorLayer={toggleEditorLayer}
-      featureCounts={featureCounts}
       brushTargetId={brushTargetId}
       setBrushTargetId={setBrushTargetId}
     />
