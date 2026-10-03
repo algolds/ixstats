@@ -6,7 +6,7 @@ import { useUser } from "~/context/auth-context";
 import { useNotify } from "~/hooks/useNotify";
 
 /** Account type of the one-per-user personal persona ("you", tied to no country). */
-export const PERSONAL_ACCOUNT_TYPE = "personal";
+const PERSONAL_ACCOUNT_TYPE = "personal";
 
 export function isPersonalAccount(account: { accountType?: string | null } | null | undefined) {
   return account?.accountType === PERSONAL_ACCOUNT_TYPE;
