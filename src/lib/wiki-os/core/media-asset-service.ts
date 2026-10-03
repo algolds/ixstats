@@ -1,8 +1,6 @@
 /**
- * media-asset-service.ts — WikiOS Native Media & Asset Engine
- *
- * Canonical service for resolving, registering, and querying media assets
- * directly from PostgreSQL `wiki_assets` with MD5 shard path computation.
+ * Resolves, registers and queries media assets in PostgreSQL `wiki_assets`, with MD5 shard path
+ * computation.
  */
 
 import { db } from "~/server/db";
@@ -135,8 +133,7 @@ export class MediaAssetService {
    * Register or update a media asset in PostgreSQL `wiki_assets`
    */
   static async registerAsset(data: RegisterAssetInput): Promise<MediaAssetRecord> {
-    // oxlint-disable-next-line typescript/no-unused-vars
-    const { shard, fullPath, hash, cleanName } = this.getMd5ShardPath(data.filename);
+    const { fullPath, hash, cleanName } = this.getMd5ShardPath(data.filename);
     const title = data.title || cleanName.replace(/_/g, " ");
     let slug = cleanName.toLowerCase();
 
@@ -146,62 +143,45 @@ export class MediaAssetService {
       data.thumbnailUrl ||
       `${baseUrl}/images/thumb/${fullPath}/300px-${encodeURIComponent(cleanName)}`;
 
-    try {
-      // 1. Check if asset already exists by md5Hash
-      const existingByHash = await db.wikiAsset.findUnique({
-        where: { md5Hash: hash },
-      });
+    // Fields for refreshing an existing record: input values win, stored values fill the gaps.
+    const refreshFields = (existing: MediaAssetRecord) => ({
+      title,
+      filename: cleanName,
+      url: canonicalUrl,
+      thumbnailUrl: canonicalThumb,
+      mimeType: data.mimeType || existing.mimeType,
+      sizeBytes: data.sizeBytes || existing.sizeBytes,
+      width: data.width ?? existing.width,
+      height: data.height ?? existing.height,
+      blurhash: data.blurhash ?? existing.blurhash,
+    });
 
+    try {
+      const existingByHash = await db.wikiAsset.findUnique({ where: { md5Hash: hash } });
       if (existingByHash) {
         return (await db.wikiAsset.update({
           where: { id: existingByHash.id },
-          data: {
-            title,
-            filename: cleanName,
-            url: canonicalUrl,
-            thumbnailUrl: canonicalThumb,
-            mimeType: data.mimeType || existingByHash.mimeType,
-            sizeBytes: data.sizeBytes || existingByHash.sizeBytes,
-            width: data.width ?? existingByHash.width,
-            height: data.height ?? existingByHash.height,
-            blurhash: data.blurhash ?? existingByHash.blurhash,
-          },
+          data: refreshFields(existingByHash as MediaAssetRecord),
         })) as MediaAssetRecord;
       }
 
-      // 2. Check if an asset exists by slug
-      const existingBySlug = await db.wikiAsset.findUnique({
-        where: { slug },
-      });
-
+      const existingBySlug = await db.wikiAsset.findUnique({ where: { slug } });
       if (existingBySlug) {
-        // If it's the exact same filename, this is an updated version of the file
+        // The exact same filename is an updated version of the file
         if (existingBySlug.filename.toLowerCase() === cleanName.toLowerCase()) {
           return (await db.wikiAsset.update({
             where: { id: existingBySlug.id },
-            data: {
-              title,
-              filename: cleanName,
-              md5Hash: hash,
-              url: canonicalUrl,
-              thumbnailUrl: canonicalThumb,
-              mimeType: data.mimeType || existingBySlug.mimeType,
-              sizeBytes: data.sizeBytes || existingBySlug.sizeBytes,
-              width: data.width ?? existingBySlug.width,
-              height: data.height ?? existingBySlug.height,
-              blurhash: data.blurhash ?? existingBySlug.blurhash,
-            },
+            data: { ...refreshFields(existingBySlug as MediaAssetRecord), md5Hash: hash },
           })) as MediaAssetRecord;
         }
 
-        // Different file name that collided on slug — disambiguate slug with hash prefix
+        // A different file name that collided on slug: disambiguate with a hash prefix
         const dotIndex = cleanName.lastIndexOf(".");
         const baseName = dotIndex !== -1 ? cleanName.slice(0, dotIndex) : cleanName;
         const ext = dotIndex !== -1 ? cleanName.slice(dotIndex) : "";
         slug = `${baseName.toLowerCase()}_${hash.slice(0, 6)}${ext.toLowerCase()}`;
       }
 
-      // 3. Create new record
       return (await db.wikiAsset.create({
         data: {
           title,
@@ -218,13 +198,11 @@ export class MediaAssetService {
         },
       })) as MediaAssetRecord;
     } catch (err: unknown) {
-      // Fallback: in case of race conditions, try safe update
+      // Race conditions: another writer may have created the record meanwhile
       const fallback = await db.wikiAsset.findFirst({
         where: { OR: [{ md5Hash: hash }, { filename: cleanName }] },
       });
-      if (fallback) {
-        return fallback as MediaAssetRecord;
-      }
+      if (fallback) return fallback as MediaAssetRecord;
       throw err;
     }
   }

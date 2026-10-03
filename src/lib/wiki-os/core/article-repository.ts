@@ -1,10 +1,9 @@
 /**
- * article-repository.ts — WikiOS Authoritative PostgreSQL Article Repository
- *
- * Primary source of truth for WikiOS articles and revisions.
- * Guarantees sub-3ms reads from pre-compiled contentHtml and sub-10ms writes.
+ * Authoritative PostgreSQL repository for WikiOS articles and revisions: sub-3ms reads from
+ * pre-compiled contentHtml and sub-10ms writes.
  */
 
+import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import {
   toArticleSlug,
@@ -20,6 +19,85 @@ import {
 import { LinkGraphService } from "./link-graph-service";
 import { MediaAssetService } from "./media-asset-service";
 
+/** Matches an article by slug or title, in any of the forms callers pass (slug, spaced title). */
+function articleLookupFilter(slug: string) {
+  const normalized = toArticleSlug(slug);
+  const insensitive = (value: string) => ({ equals: value, mode: "insensitive" as const });
+  return [
+    { slug: insensitive(normalized) },
+    { slug: insensitive(slug) },
+    { title: insensitive(slug.replace(/_/g, " ")) },
+    { title: insensitive(slug) },
+    { title: insensitive(normalized) },
+  ];
+}
+
+const ARTICLE_SELECT = {
+  id: true,
+  title: true,
+  source: true,
+  status: true,
+  format: true,
+  contentHtml: true,
+  contentJson: true,
+  wikitext: true,
+  summary: true,
+  namespace: true,
+  namespacePrefix: true,
+  protectionLevel: true,
+  protectionExpiry: true,
+  redirectTargetSlug: true,
+  redirectTargetFragment: true,
+  readingTime: true,
+  wordCount: true,
+  viewCount: true,
+  leadImageUrl: true,
+  authorId: true,
+  lastEditorId: true,
+  syncedAt: true,
+  updatedAt: true,
+} as const satisfies Prisma.WikiArticleSelect;
+
+/** Entity values for columns that are null in the database. */
+const ENTITY_DEFAULTS = {
+  contentHtml: "",
+  wikitext: "",
+  summary: null,
+  namespace: 0,
+  namespacePrefix: null,
+  protectionLevel: "ALL",
+  protectionExpiry: null,
+  infoboxData: null,
+  readingTime: 1,
+  wordCount: 0,
+  viewCount: 0,
+  leadImageUrl: null,
+  redirectTargetSlug: null,
+  redirectTargetFragment: null,
+  authorId: null,
+  lastEditorId: null,
+} satisfies Partial<WikiArticleEntity>;
+
+/** The object without its null/undefined values, so defaults spread under it survive. */
+const defined = <T extends object>(obj: T): Partial<T> =>
+  Object.fromEntries(Object.entries(obj).filter(([, value]) => value != null)) as Partial<T>;
+
+function toArticleEntity(article: Prisma.WikiArticleGetPayload<{ select: typeof ARTICLE_SELECT }>) {
+  const { syncedAt, ...columns } = article;
+  const entity: WikiArticleEntity = {
+    ...ENTITY_DEFAULTS,
+    ...defined(columns),
+    id: toArticleId(article.id),
+    slug: toArticleSlug(article.title),
+    status: (article.status || "PUBLISHED") as WikiArticleEntity["status"],
+    format: (article.format || "STRUCTURED_JSON") as WikiArticleEntity["format"],
+    contentJson: (article.contentJson as unknown as WikiArticleEntity["contentJson"]) ?? null,
+    createdAt: syncedAt ?? new Date(),
+    updatedAt: article.updatedAt ?? new Date(),
+  };
+  return entity;
+}
+
 export class ArticleRepository {
   static async getArticleBySlug(
     slug: string,
@@ -32,76 +110,13 @@ export class ArticleRepository {
    * Find an authoritative article by slug (<2ms query)
    */
   static async findBySlug(slug: string, source = "ixwiki"): Promise<WikiArticleEntity | null> {
-    const normalizedSlug = toArticleSlug(slug);
-
     try {
       const article = await db.wikiArticle.findFirst({
-        where: {
-          source,
-          OR: [
-            { slug: { equals: normalizedSlug, mode: "insensitive" } },
-            { slug: { equals: slug, mode: "insensitive" } },
-            { title: { equals: slug.replace(/_/g, " "), mode: "insensitive" } },
-            { title: { equals: slug, mode: "insensitive" } },
-            { title: { equals: normalizedSlug, mode: "insensitive" } },
-          ],
-        },
-        select: {
-          id: true,
-          title: true,
-          source: true,
-          status: true,
-          format: true,
-          contentHtml: true,
-          contentJson: true,
-          wikitext: true,
-          summary: true,
-          namespace: true,
-          namespacePrefix: true,
-          protectionLevel: true,
-          protectionExpiry: true,
-          redirectTargetSlug: true,
-          redirectTargetFragment: true,
-          readingTime: true,
-          wordCount: true,
-          viewCount: true,
-          leadImageUrl: true,
-          authorId: true,
-          lastEditorId: true,
-          syncedAt: true,
-          updatedAt: true,
-        },
+        where: { source, OR: articleLookupFilter(slug) },
+        select: ARTICLE_SELECT,
       });
-
       if (!article || (!article.wikitext && !article.contentHtml)) return null;
-
-      return {
-        id: toArticleId(article.id),
-        slug: toArticleSlug(article.title),
-        title: article.title,
-        source: article.source,
-        status: (article.status || "PUBLISHED") as WikiArticleEntity["status"],
-        format: (article.format || "STRUCTURED_JSON") as WikiArticleEntity["format"],
-        contentHtml: article.contentHtml ?? "",
-        contentJson: (article.contentJson as unknown as WikiArticleEntity["contentJson"]) ?? null,
-        wikitext: article.wikitext ?? "",
-        summary: article.summary ?? null,
-        namespace: article.namespace ?? 0,
-        namespacePrefix: article.namespacePrefix ?? null,
-        protectionLevel: article.protectionLevel ?? "ALL",
-        protectionExpiry: article.protectionExpiry ?? null,
-        infoboxData: null,
-        readingTime: article.readingTime ?? 1,
-        wordCount: article.wordCount ?? 0,
-        viewCount: article.viewCount ?? 0,
-        leadImageUrl: article.leadImageUrl ?? null,
-        redirectTargetSlug: article.redirectTargetSlug ?? null,
-        redirectTargetFragment: article.redirectTargetFragment ?? null,
-        authorId: article.authorId ?? null,
-        lastEditorId: article.lastEditorId ?? null,
-        createdAt: article.syncedAt ?? new Date(),
-        updatedAt: article.updatedAt ?? new Date(),
-      };
+      return toArticleEntity(article);
     } catch {
       return null;
     }
@@ -302,21 +317,8 @@ export class ArticleRepository {
     source = "ixwiki",
     limit = 50
   ): Promise<WikiRevisionSummary[]> {
-    const normalized = toArticleSlug(slug);
-
     const revisions = await db.wikiRevision.findMany({
-      where: {
-        article: {
-          source,
-          OR: [
-            { slug: { equals: normalized, mode: "insensitive" } },
-            { slug: { equals: slug, mode: "insensitive" } },
-            { title: { equals: slug.replace(/_/g, " "), mode: "insensitive" } },
-            { title: { equals: slug, mode: "insensitive" } },
-            { title: { equals: normalized, mode: "insensitive" } },
-          ],
-        },
-      },
+      where: { article: { source, OR: articleLookupFilter(slug) } },
       orderBy: { createdAt: "desc" },
       take: limit,
       select: {
