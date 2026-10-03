@@ -75,6 +75,88 @@ function compareAgendaItems(a: AgendaItem, b: AgendaItem): number {
   return rank(b) - rank(a) || (b.receivedAt ?? 0) - (a.receivedAt ?? 0);
 }
 
+const finiteOrNull = (value: number | null | undefined): number | null =>
+  typeof value === "number" && Number.isFinite(value) ? value : null;
+
+function issueDeadlineUrgency(deadline: number | null, nowIxTime: number): AgendaUrgency | null {
+  if (deadline === null) return null;
+  if (deadline <= nowIxTime) return "overdue";
+  return deadline - nowIxTime <= ISSUE_DUE_SOON_IX_MS ? "due-soon" : null;
+}
+
+function issueItem(iss: AgendaSourceIssue, nowIxTime: number): AgendaItem {
+  const urgent =
+    getSeverityRank(String(iss.severity ?? "").toLowerCase()) >= 3 || (iss.urgency ?? 0) > 70;
+  const urgency = issueDeadlineUrgency(finiteOrNull(iss.deadlineIxTime), nowIxTime);
+  return {
+    id: `issue:${iss.id}`,
+    kind: "issue",
+    title: iss.title,
+    preview: firstLine(iss.description) || "Waiting for your decision.",
+    statusLabel: urgent ? "Priority issue" : "Open issue",
+    icon: AlertCircle,
+    tone:
+      urgent || urgency === "overdue" ? "critical" : urgency === "due-soon" ? "warning" : "neutral",
+    receivedAt: toMs(iss.createdAt),
+    urgency,
+    flagged: urgent || urgency !== null,
+    drillKind: { kind: "issue", issueId: iss.id },
+  };
+}
+
+function directiveItem(it: AgendaSourceIntent): AgendaItem {
+  const progress = finiteOrNull(it.progress);
+  return {
+    id: `directive:${it.id}`,
+    kind: "directive",
+    title: it.goal,
+    preview: [
+      "In progress",
+      progress === null ? null : `${Math.round(progress)}% done`,
+      it.category ? capitalize(it.category) : null,
+    ]
+      .filter(Boolean)
+      .join(" · "),
+    statusLabel: it.tier ? `${capitalize(it.tier)} directive` : "Directive",
+    icon: Command,
+    tone: "accent",
+    receivedAt: toMs(it.createdAt),
+    urgency: null,
+    flagged: false,
+    intentId: it.id,
+  };
+}
+
+const ELECTION_LABEL: Record<string, string> = {
+  referendum: "Referendum",
+  special: "Special election",
+};
+const ELECTION_PHASE: Record<string, string> = {
+  voting: "Polls are open",
+  campaigning: "Campaigning is under way",
+};
+
+function electionItem(el: AgendaSourceElection, nowIxTime: number): AgendaItem {
+  const soon = el.scheduledIxTime - nowIxTime <= ELECTION_DUE_SOON_IX_MS;
+  return {
+    id: `election:${el.id}`,
+    kind: "election",
+    title: el.name || "Election",
+    preview: ELECTION_PHASE[String(el.status ?? "").toLowerCase()] ?? "Scheduled",
+    statusLabel: ELECTION_LABEL[String(el.electionType ?? "").toLowerCase()] ?? "General election",
+    icon: Megaphone,
+    tone: soon ? "warning" : "neutral",
+    receivedAt: toMs(el.createdAt),
+    urgency: soon ? "due-soon" : "upcoming",
+    flagged: soon,
+    drillKind: { kind: "politics" },
+  };
+}
+
+const isUpcoming = (el: AgendaSourceElection, nowIxTime: number) =>
+  !["completed", "cancelled"].includes(String(el.status ?? "").toLowerCase()) &&
+  el.scheduledIxTime > nowIxTime;
+
 /**
  * The agenda's items, from real game state only: open national issues (with their deadline
  * pressure folded in), active directives and upcoming elections. Pure: the caller passes the
@@ -86,101 +168,13 @@ export function deriveAgendaItems({
   elections = [],
   nowIxTime,
 }: AgendaSources): AgendaItem[] {
-  const items: AgendaItem[] = [];
-
-  for (const iss of issues) {
-    const sev = String(iss.severity ?? "").toLowerCase();
-    const urgent = getSeverityRank(sev) >= 3 || (iss.urgency ?? 0) > 70;
-    const deadline =
-      typeof iss.deadlineIxTime === "number" && Number.isFinite(iss.deadlineIxTime)
-        ? iss.deadlineIxTime
-        : null;
-    const urgency: AgendaUrgency | null =
-      deadline === null
-        ? null
-        : deadline <= nowIxTime
-          ? "overdue"
-          : deadline - nowIxTime <= ISSUE_DUE_SOON_IX_MS
-            ? "due-soon"
-            : null;
-    items.push({
-      id: `issue:${iss.id}`,
-      kind: "issue",
-      title: iss.title,
-      preview: firstLine(iss.description) || "Waiting for your decision.",
-      statusLabel: urgent ? "Priority issue" : "Open issue",
-      icon: AlertCircle,
-      tone:
-        urgent || urgency === "overdue"
-          ? "critical"
-          : urgency === "due-soon"
-            ? "warning"
-            : "neutral",
-      receivedAt: toMs(iss.createdAt),
-      urgency,
-      flagged: urgent || urgency !== null,
-      drillKind: { kind: "issue", issueId: iss.id },
-    });
-  }
-
-  for (const it of intents) {
-    if (String(it.status ?? "").toLowerCase() !== "active") continue;
-    const tier = it.tier ? `${capitalize(it.tier)} directive` : "Directive";
-    const progress =
-      typeof it.progress === "number" && Number.isFinite(it.progress)
-        ? `${Math.round(it.progress)}% done`
-        : null;
-    items.push({
-      id: `directive:${it.id}`,
-      kind: "directive",
-      title: it.goal,
-      preview: ["In progress", progress, it.category ? capitalize(it.category) : null]
-        .filter(Boolean)
-        .join(" · "),
-      statusLabel: tier,
-      icon: Command,
-      tone: "accent",
-      receivedAt: toMs(it.createdAt),
-      urgency: null,
-      flagged: false,
-      intentId: it.id,
-    });
-  }
-
-  for (const el of elections) {
-    const status = String(el.status ?? "").toLowerCase();
-    if (status === "completed" || status === "cancelled") continue;
-    if (!(el.scheduledIxTime > nowIxTime)) continue;
-    const soon = el.scheduledIxTime - nowIxTime <= ELECTION_DUE_SOON_IX_MS;
-    const type = String(el.electionType ?? "general").toLowerCase();
-    const label =
-      type === "referendum"
-        ? "Referendum"
-        : type === "special"
-          ? "Special election"
-          : "General election";
-    const phase =
-      status === "voting"
-        ? "Polls are open"
-        : status === "campaigning"
-          ? "Campaigning is under way"
-          : "Scheduled";
-    items.push({
-      id: `election:${el.id}`,
-      kind: "election",
-      title: el.name || "Election",
-      preview: phase,
-      statusLabel: label,
-      icon: Megaphone,
-      tone: soon ? "warning" : "neutral",
-      receivedAt: toMs(el.createdAt),
-      urgency: soon ? "due-soon" : "upcoming",
-      flagged: soon,
-      drillKind: { kind: "politics" },
-    });
-  }
-
-  return items.sort(compareAgendaItems);
+  return [
+    ...issues.map((iss) => issueItem(iss, nowIxTime)),
+    ...intents
+      .filter((it) => String(it.status ?? "").toLowerCase() === "active")
+      .map(directiveItem),
+    ...elections.filter((el) => isUpcoming(el, nowIxTime)).map((el) => electionItem(el, nowIxTime)),
+  ].sort(compareAgendaItems);
 }
 
 /**

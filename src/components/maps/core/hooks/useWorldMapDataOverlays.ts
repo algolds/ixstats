@@ -4,18 +4,7 @@ import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import type { MapOverlayFeatures, OverlayVisibility } from "../IxWorldMap";
 import { registerStoryPinIcons } from "~/lib/maps/story-pin-icons";
 import type { MapTheme } from "~/lib/map-styles/registry";
-import { setFilteredSourceData } from "../utils/map-core-helpers";
-
-/** Whether a feature belongs to the focused country (matched by id, slug or name). */
-function matchesCountry(f: Feature, countryKey: string): boolean {
-  const p = f.properties;
-  if (!p) return false;
-  return (
-    p.countryId === countryKey ||
-    p.countrySlug === countryKey ||
-    (typeof p.countryName === "string" && p.countryName.toLowerCase() === countryKey.toLowerCase())
-  );
-}
+import { matchesCountry, setFilteredSourceData, setLayersVisible } from "../utils/map-core-helpers";
 
 interface UseWorldMapDataOverlaysProps {
   map: MapLibreMap | null;
@@ -41,7 +30,6 @@ export function useWorldMapDataOverlays({
   const lastStoryPinsRef = useRef<Feature[] | null>(null);
   const lastMapLabelsRef = useRef<Feature[] | null>(null);
 
-  // 1. Render story pins with dynamic zoom/focus filtering
   useEffect(() => {
     if (!map || !isLoaded || !overlayFeatures?.storyPins) return;
 
@@ -69,14 +57,12 @@ export function useWorldMapDataOverlays({
     }
 
     map.on("zoom", updateStoryPins);
-
     return () => {
       map.off("zoom", updateStoryPins);
     };
     // oxlint-disable-next-line
   }, [map, isLoaded, overlayFeatures?.storyPins, selectedCountryId, theme]);
 
-  // 1b. Render custom map labels with dynamic client-side zoom/focus filtering
   useEffect(() => {
     if (!map || !isLoaded || !overlayFeatures?.mapLabels) return;
 
@@ -114,7 +100,6 @@ export function useWorldMapDataOverlays({
     // oxlint-disable-next-line
   }, [map, isLoaded, overlayFeatures?.mapLabels, selectedCountryId, theme]);
 
-  // 2. Toggle overlay groups visibility
   useEffect(() => {
     if (!map || !isLoaded || !overlayVisibility) return;
 
@@ -149,17 +134,11 @@ export function useWorldMapDataOverlays({
     };
 
     for (const [key, layerIds] of Object.entries(overlayLayers)) {
-      const visible = overlayVisibility[key];
-      for (const id of layerIds) {
-        if (map.getLayer(id)) {
-          map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
-        }
-      }
+      setLayersVisible(map, layerIds, overlayVisibility[key]);
     }
     // oxlint-disable-next-line
   }, [map, isLoaded, overlayVisibility, theme]);
 
-  // 3. Toggle all text label layers visibility on/off
   useEffect(() => {
     if (!map || !isLoaded) return;
 
@@ -174,11 +153,7 @@ export function useWorldMapDataOverlays({
       "overlay-pois-label",
     ];
 
-    for (const id of labelLayerIds) {
-      if (map.getLayer(id)) {
-        map.setLayoutProperty(id, "visibility", labelsVisible ? "visible" : "none");
-      }
-    }
+    setLayersVisible(map, labelLayerIds, labelsVisible);
     // oxlint-disable-next-line
   }, [map, isLoaded, labelsVisible, theme]);
 }

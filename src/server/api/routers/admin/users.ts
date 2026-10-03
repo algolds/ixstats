@@ -16,7 +16,11 @@ import {
   fetchWikiUser,
   PROOF_SOURCES,
 } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
-import { createWikiLinkService, WikiLinkError } from "~/server/modules/identity/identity.wiki-links";
+import { fetchGuildMembers, suggestLinks } from "./discord-guild";
+import {
+  createWikiLinkService,
+  WikiLinkError,
+} from "~/server/modules/identity/identity.wiki-links";
 
 /** The wiki-links service for admin link/unlink — the admin's authority stands in for the token proof. */
 const adminWikiLinks = (db: PrismaClient) =>
@@ -198,36 +202,28 @@ export const adminUsersRouter = createTRPCRouter({
         });
       }
 
-      try {
-        const { clerkClient } = await import("@clerk/nextjs/server");
-        const client = await clerkClient();
+      const { clerkClient } = await import("@clerk/nextjs/server");
+      const client = await clerkClient();
 
-        await client.invitations.createInvitation({
-          emailAddress: input.emailAddress,
-          redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/sign-up`,
-          publicMetadata: {
-            reservedNationName: input.reservedNationName,
-            isVip: true,
-            role: input.role,
-          },
-          ignoreExisting: true,
-        });
+      await client.invitations.createInvitation({
+        emailAddress: input.emailAddress,
+        redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/sign-up`,
+        publicMetadata: {
+          reservedNationName: input.reservedNationName,
+          isVip: true,
+          role: input.role,
+        },
+        ignoreExisting: true,
+      });
 
-        console.log(
-          `[Admin Clerk Invite] Successfully created invitation for ${input.emailAddress} with nation ${input.reservedNationName}`
-        );
+      console.log(
+        `[Admin Clerk Invite] Successfully created invitation for ${input.emailAddress} with nation ${input.reservedNationName}`
+      );
 
-        return {
-          success: true,
-          message: `Invitation successfully sent to ${input.emailAddress}`,
-        };
-      } catch (error) {
-        console.error("[Admin Clerk Invite] Failed to create invitation:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to invite user via Clerk.",
-        });
-      }
+      return {
+        success: true,
+        message: `Invitation successfully sent to ${input.emailAddress}`,
+      };
     }),
 
   // --- IDENTITY & CROSS-PLATFORM LINKING PROCEDURES ---
@@ -273,7 +269,7 @@ export const adminUsersRouter = createTRPCRouter({
     .input(z.object({ userId: z.string(), wikiUsername: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const { findLinkableWikiAccount } = await import("~/lib/wiki-os/adapters/ixstates/user-sync");
-      const res = await findLinkableWikiAccount(input.userId, input.wikiUsername, ctx.auth.userId);
+      const res = await findLinkableWikiAccount(input.userId, input.wikiUsername, ctx.auth?.userId ?? undefined);
       if (!res.success) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -367,178 +363,14 @@ export const adminUsersRouter = createTRPCRouter({
     }
 
     try {
-      let guildId = defaultGuildId;
-
-      // 1. Try to resolve the bot's current guilds dynamically
-      try {
-        const guildRes = await fetch("https://discord.com/api/v10/users/@me/guilds", {
-          headers: { Authorization: `Bot ${botToken}` },
-          signal: AbortSignal.timeout(5000),
-        });
-        if (guildRes.ok) {
-          const guilds = (await guildRes.json()) as any[];
-          if (Array.isArray(guilds) && guilds.length > 0 && guilds[0].id) {
-            guildId = guilds[0].id;
-          }
-        }
-      } catch {
-        // Fallback to defaultGuildId
-      }
-
-      // 2. Fetch guild members or discover via recent channel interactions
-      const rawMembers: Array<{
-        id: string;
-        username: string;
-        nick?: string;
-        globalName?: string;
-      }> = [];
-
-      try {
-        const membersRes = await fetch(
-          `https://discord.com/api/v10/guilds/${guildId}/members?limit=1000`,
-          {
-            headers: {
-              Authorization: `Bot ${botToken}`,
-              "Content-Type": "application/json",
-            },
-            signal: AbortSignal.timeout(8000),
-          }
-        );
-
-        if (membersRes.ok) {
-          const guildMembers = (await membersRes.json()) as any[];
-          if (Array.isArray(guildMembers)) {
-            for (const m of guildMembers) {
-              if (!m.user || m.user.bot) continue;
-              rawMembers.push({
-                id: String(m.user.id),
-                username: String(m.user.username || ""),
-                nick: m.nick ? String(m.nick) : undefined,
-                globalName: m.user.global_name ? String(m.user.global_name) : undefined,
-              });
-            }
-          }
-        }
-      } catch {
-        // Guild members list requires Server Members Intent; fallback to channel discovery below
-      }
-
-      // Fallback / Supplementary: Discover active members from recent channel messages
-      if (rawMembers.length === 0) {
-        try {
-          const msgRes = await fetch(
-            `https://discord.com/api/v10/channels/${defaultChannelId}/messages?limit=100`,
-            {
-              headers: { Authorization: `Bot ${botToken}` },
-              signal: AbortSignal.timeout(8000),
-            }
-          );
-          if (msgRes.ok) {
-            const msgs = (await msgRes.json()) as any[];
-            const seen = new Set<string>();
-            for (const msg of msgs) {
-              if (!msg.author || msg.author.bot) continue;
-              const uid = String(msg.author.id);
-              if (seen.has(uid)) continue;
-              seen.add(uid);
-              rawMembers.push({
-                id: uid,
-                username: String(msg.author.username || ""),
-                globalName: msg.author.global_name ? String(msg.author.global_name) : undefined,
-              });
-            }
-          }
-        } catch {
-          // Channel fallback failed
-        }
-      }
-
-      // Fetch all users and countries to match against
-      const users = await ctx.db.user.findMany({
-        include: { country: true },
-      });
-
-      interface Suggestion {
-        discordUserId: string;
-        discordUsername: string;
-        discordNick?: string;
-        discordAvatar?: string;
-        matchedUserId: string;
-        matchedUserClerkId: string;
-        matchedCountryName: string;
-        confidence: "HIGH" | "MEDIUM";
-        reason: string;
-      }
-
-      const suggestions: Suggestion[] = [];
-      const parsedMembers = [];
-
-      for (const m of rawMembers) {
-        const discordUserId = m.id;
-        const discordUsername = m.username;
-        const discordNick = m.nick;
-        const globalName = m.globalName;
-
-        parsedMembers.push({
-          id: discordUserId,
-          username: discordUsername,
-          nick: discordNick,
-          globalName,
-        });
-
-        // Skip if already linked
-        const existingLink = users.find((u) => u.discordUserId === discordUserId);
-        if (existingLink) continue;
-
-        // Try to match by country name in nickname: "[Urcea] John" or "Urcea"
-        for (const u of users) {
-          if (!u.country) continue;
-          const cName = u.country.name.toLowerCase();
-          const nickLower = (discordNick || "").toLowerCase();
-          const globalLower = (globalName || "").toLowerCase();
-          const userLower = discordUsername.toLowerCase();
-
-          // High confidence: country name in brackets [Urcea] or starts with country name
-          if (
-            nickLower.includes(`[${cName}]`) ||
-            nickLower.startsWith(`${cName} |`) ||
-            nickLower.startsWith(`${cName} -`)
-          ) {
-            suggestions.push({
-              discordUserId,
-              discordUsername,
-              discordNick,
-              matchedUserId: u.id,
-              matchedUserClerkId: u.clerkUserId,
-              matchedCountryName: u.country.name,
-              confidence: "HIGH",
-              reason: `Server nickname "${discordNick}" contains nation bracket [${u.country.name}]`,
-            });
-            break;
-          }
-
-          // Medium confidence: exact match on username or nickname
-          if (nickLower === cName || globalLower === cName || userLower === cName) {
-            suggestions.push({
-              discordUserId,
-              discordUsername,
-              discordNick,
-              matchedUserId: u.id,
-              matchedUserClerkId: u.clerkUserId,
-              matchedCountryName: u.country.name,
-              confidence: "HIGH",
-              reason: `Discord identity directly matches nation "${u.country.name}"`,
-            });
-            break;
-          }
-        }
-      }
+      const members = await fetchGuildMembers(botToken, defaultGuildId, defaultChannelId);
+      const users = await ctx.db.user.findMany({ include: { country: true } });
 
       return {
         configured: true,
-        totalGuildMembers: parsedMembers.length,
-        members: parsedMembers.slice(0, 150),
-        suggestions,
+        totalGuildMembers: members.length,
+        members: members.slice(0, 150),
+        suggestions: suggestLinks(members, users),
       };
     } catch (err: any) {
       return {

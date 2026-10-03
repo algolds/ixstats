@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import {
   UserPlus,
   UserXmark as UserMinus,
@@ -59,6 +59,114 @@ interface CountryActionsMenuProps {
   isOwnCountry?: boolean;
 }
 
+type IconType = React.ComponentType<{ className?: string }>;
+type DiplomacyActions = ReturnType<typeof useCountryDiplomacyActions>;
+type ForeignPolicy = Parameters<DiplomacyActions["proposeForeignPolicy"]>[0];
+
+const MANAGEMENT_LINKS: Array<[icon: IconType, label: string, path: string]> = [
+  [Building2, "MyCountry dashboard", "/mycountry"],
+  [ScrollText, "Executive actions", "/mycountry/executive"],
+  [Handshake, "Manage diplomacy", "/mycountry/diplomacy"],
+  [Map, "Map & territory editor", "/mycountry/editor"],
+  [Wallet, "IxVault cards & market", "/vault"],
+  [Scale, "Politics & elections", "/mycountry/politics"],
+];
+
+const DIPLOMACY_PROPOSALS: Array<[icon: IconType, label: string, policy: ForeignPolicy]> = [
+  [Handshake, "Propose free trade", "free_trade"],
+  [Shield, "Propose military alliance", "military_alliance"],
+];
+
+const HOSTILE_PROPOSALS: Array<[icon: IconType, label: string, policy: ForeignPolicy]> = [
+  [Scale, "Impose sanctions", "sanction"],
+  [Swords, "Declare embargo", "embargo"],
+];
+
+const profileUrl = (countryName: string) =>
+  `${window.location.origin}${createUrl(`/countries/${countryName.replace(/\s/g, "_")}`)}`;
+
+function followLabel(diplomacy: DiplomacyActions): string {
+  if (diplomacy.isFollowPending) return diplomacy.isFollowing ? "Unfollowing…" : "Following…";
+  return diplomacy.isFollowing ? "Unfollow Nation" : "Follow Nation";
+}
+
+/** Pick a recent achievement and post a congratulation to the nation's feed. */
+function CongratulateRow({
+  targetCountryName,
+  achievements,
+  viewerCountryId,
+  disabled,
+  onSent,
+}: {
+  targetCountryName: string;
+  achievements: Array<{ id: string; title: string; description?: string | null }>;
+  viewerCountryId: string | undefined;
+  disabled: boolean;
+  onSent: () => void;
+}) {
+  const notify = useNotify();
+  const [selected, setSelected] = useState("");
+  const mutation = api.thinkpages.createPost.useMutation({
+    onSuccess: () => {
+      notify.success(`Congratulations sent to ${targetCountryName}`);
+      setSelected("");
+      onSent();
+    },
+    onError: (error) => notify.error(`Failed to send congratulations: ${error.message}`),
+  });
+
+  const congratulate = () => {
+    if (!viewerCountryId) {
+      notify.error("You need to sign in to send congratulations");
+      return;
+    }
+    if (!selected) {
+      notify.error("Please select an achievement to congratulate");
+      return;
+    }
+    const achievement = achievements.find((a) => a.id === selected);
+    if (!achievement) return;
+
+    mutation.mutate({
+      accountId: viewerCountryId,
+      content:
+        `Congratulations to ${targetCountryName} on ${achievement.title}. ${achievement.description ?? ""}`.trim(),
+      visibility: "public" as const,
+      hashtags: ["achievement", targetCountryName.replace(/\s/g, "")],
+    });
+  };
+
+  return (
+    <Card variant="inset" padding="none" className="flex flex-wrap items-center gap-2 p-2 pl-4">
+      <Heart className="text-label-secondary h-4 w-4 shrink-0" />
+      <Select value={selected} onValueChange={setSelected}>
+        <SelectTrigger
+          size="sm"
+          className="text-footnote min-w-[140px] flex-1"
+          aria-label="Achievement to congratulate"
+        >
+          <SelectValue placeholder="Select achievement…" />
+        </SelectTrigger>
+        <SelectContent>
+          {achievements.map((achievement) => (
+            <SelectItem key={achievement.id} value={achievement.id}>
+              {achievement.title}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button
+        size="sm"
+        variant="secondary"
+        onClick={congratulate}
+        disabled={!viewerCountryId || disabled || mutation.isPending || !selected}
+      >
+        {mutation.isPending ? "Sending…" : "Congratulate"}
+      </Button>
+    </Card>
+  );
+}
+
 export function CountryActionsMenu({
   targetCountryId,
   targetCountryName,
@@ -69,7 +177,6 @@ export function CountryActionsMenu({
 }: CountryActionsMenuProps) {
   const notify = useNotify();
   const router = useRouter();
-  const [selectedAchievement, setSelectedAchievement] = useState<string>("");
   const [copiedLink, setCopiedLink] = useState(false);
   const [schedulerOpen, setSchedulerOpen] = useState(false);
 
@@ -86,61 +193,40 @@ export function CountryActionsMenu({
     { enabled: isOpen }
   );
 
-  const congratulateMutation = api.thinkpages.createPost.useMutation({
-    onSuccess: () => {
-      notify.success(`Congratulations sent to ${targetCountryName}`);
-      setSelectedAchievement("");
-      onClose();
-    },
-    onError: (error) => notify.error(`Failed to send congratulations: ${error.message}`),
-  });
-
-  const handleDiplomaticMessage = useCallback(() => {
-    router.push(createUrl(`/messages?country=${targetCountryId}`));
+  const go = (path: string) => {
+    router.push(createUrl(path));
     onClose();
-  }, [router, targetCountryId, onClose]);
+  };
 
-  const handleCongratulate = useCallback(() => {
-    if (!viewerCountryId) {
-      notify.error("You need to sign in to send congratulations");
-      return;
-    }
-    if (!selectedAchievement) {
-      notify.error("Please select an achievement to congratulate");
-      return;
-    }
-    const achievement = recentAchievements?.find(
-      (a: { id: string }) => a.id === selectedAchievement
-    );
-    if (!achievement) return;
-
-    congratulateMutation.mutate({
-      accountId: viewerCountryId,
-      content:
-        `Congratulations to ${targetCountryName} on ${achievement.title}. ${achievement.description ?? ""}`.trim(),
-      visibility: "public" as const,
-      hashtags: ["achievement", targetCountryName.replace(/\s/g, "")],
-    });
-  }, [
-    viewerCountryId,
-    targetCountryName,
-    selectedAchievement,
-    recentAchievements,
-    congratulateMutation,
-    notify,
-  ]);
-
-  const handleCopyLink = useCallback(() => {
-    const slug = targetCountryName.replace(/\s/g, "_");
-    const url = `${window.location.origin}${createUrl(`/countries/${slug}`)}`;
-    void navigator.clipboard.writeText(url).then(() => {
+  const copyLink = () => {
+    void navigator.clipboard.writeText(profileUrl(targetCountryName)).then(() => {
       setCopiedLink(true);
       notify.success("Link copied to clipboard");
       setTimeout(() => setCopiedLink(false), 2000);
     });
-  }, [targetCountryName, notify]);
+  };
 
-  const isLoading = diplomacy.isPending || congratulateMutation.isPending;
+  const shareProfile = () => {
+    const url = profileUrl(targetCountryName);
+    if (navigator.share) {
+      void navigator.share({ title: targetCountryName, url });
+    } else {
+      void navigator.clipboard.writeText(url);
+      notify.success("Link copied");
+    }
+    onClose();
+  };
+
+  const requestMeeting = () => {
+    if (!viewerCountryId) {
+      notify.error("You must be logged in to request a meeting");
+      return;
+    }
+    setSchedulerOpen(true);
+  };
+
+  const isBusy = diplomacy.isPending;
+  const needsViewer = !viewerCountryId || isBusy;
 
   return (
     <>
@@ -152,119 +238,35 @@ export function CountryActionsMenu({
           </DialogHeader>
 
           <div className="space-y-5">
-            {/* Own Country Actions */}
-            {isOwnCountry && (
+            {isOwnCountry ? (
               <ActionGroup label="Management">
-                <ActionRow
-                  icon={Building2}
-                  label="MyCountry dashboard"
-                  onClick={() => {
-                    router.push(createUrl("/mycountry"));
-                    onClose();
-                  }}
-                />
-                <ActionRow
-                  icon={ScrollText}
-                  label="Executive actions"
-                  onClick={() => {
-                    router.push(createUrl("/mycountry/executive"));
-                    onClose();
-                  }}
-                />
-                <ActionRow
-                  icon={Handshake}
-                  label="Manage diplomacy"
-                  onClick={() => {
-                    router.push(createUrl("/mycountry/diplomacy"));
-                    onClose();
-                  }}
-                />
-                <ActionRow
-                  icon={Map}
-                  label="Map & territory editor"
-                  onClick={() => {
-                    router.push(createUrl("/mycountry/editor"));
-                    onClose();
-                  }}
-                />
-                <ActionRow
-                  icon={Wallet}
-                  label="IxVault cards & market"
-                  onClick={() => {
-                    router.push(createUrl("/vault"));
-                    onClose();
-                  }}
-                />
-                <ActionRow
-                  icon={Scale}
-                  label="Politics & elections"
-                  onClick={() => {
-                    router.push(createUrl("/mycountry/politics"));
-                    onClose();
-                  }}
-                />
+                {MANAGEMENT_LINKS.map(([icon, label, path]) => (
+                  <ActionRow key={path} icon={icon} label={label} onClick={() => go(path)} />
+                ))}
               </ActionGroup>
-            )}
-
-            {/* Other Country: Social Actions */}
-            {!isOwnCountry && (
+            ) : (
               <>
                 <ActionGroup label="Social">
                   <ActionRow
                     icon={diplomacy.isFollowing ? UserMinus : UserPlus}
-                    label={
-                      diplomacy.isFollowPending
-                        ? diplomacy.isFollowing
-                          ? "Unfollowing…"
-                          : "Following…"
-                        : diplomacy.isFollowing
-                          ? "Unfollow Nation"
-                          : "Follow Nation"
-                    }
+                    label={followLabel(diplomacy)}
                     onClick={diplomacy.toggleFollow}
-                    disabled={!viewerCountryId || isLoading}
+                    disabled={needsViewer}
                   />
                   <ActionRow
                     icon={MessageSquare}
                     label="Secure message"
-                    onClick={handleDiplomaticMessage}
+                    onClick={() => go(`/messages?country=${targetCountryId}`)}
                     disabled={!viewerCountryId}
                   />
-
                   {recentAchievements && recentAchievements.length > 0 && (
-                    <Card
-                      variant="inset"
-                      padding="none"
-                      className="flex flex-wrap items-center gap-2 p-2 pl-4"
-                    >
-                      <Heart className="text-label-secondary h-4 w-4 shrink-0" />
-                      <Select value={selectedAchievement} onValueChange={setSelectedAchievement}>
-                        <SelectTrigger
-                          size="sm"
-                          className="text-footnote min-w-[140px] flex-1"
-                          aria-label="Achievement to congratulate"
-                        >
-                          <SelectValue placeholder="Select achievement…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {recentAchievements.map(
-                            (achievement: { id: string; icon?: string | null; title: string }) => (
-                              <SelectItem key={achievement.id} value={achievement.id}>
-                                {achievement.title}
-                              </SelectItem>
-                            )
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={handleCongratulate}
-                        disabled={!viewerCountryId || isLoading || !selectedAchievement}
-                      >
-                        {congratulateMutation.isPending ? "Sending…" : "Congratulate"}
-                      </Button>
-                    </Card>
+                    <CongratulateRow
+                      targetCountryName={targetCountryName}
+                      achievements={recentAchievements}
+                      viewerCountryId={viewerCountryId}
+                      disabled={isBusy}
+                      onSent={onClose}
+                    />
                   )}
                 </ActionGroup>
 
@@ -273,62 +275,45 @@ export function CountryActionsMenu({
                     icon={Building2}
                     label={diplomacy.isEmbassyPending ? "Constructing…" : "Construct Embassy"}
                     onClick={diplomacy.establishEmbassy}
-                    disabled={!viewerCountryId || isLoading}
+                    disabled={needsViewer}
                   />
                   <ActionRow
                     icon={Calendar}
                     label="Request meeting"
-                    onClick={() => {
-                      if (!viewerCountryId) {
-                        notify.error("You must be logged in to request a meeting");
-                        return;
-                      }
-                      setSchedulerOpen(true);
-                    }}
-                    disabled={!viewerCountryId || isLoading}
+                    onClick={requestMeeting}
+                    disabled={needsViewer}
                   />
-                  <ActionRow
-                    icon={Handshake}
-                    label="Propose free trade"
-                    onClick={() => diplomacy.proposeForeignPolicy("free_trade")}
-                    disabled={!viewerCountryId || isLoading}
-                  />
-                  <ActionRow
-                    icon={Shield}
-                    label="Propose military alliance"
-                    onClick={() => diplomacy.proposeForeignPolicy("military_alliance")}
-                    disabled={!viewerCountryId || isLoading}
-                  />
+                  {DIPLOMACY_PROPOSALS.map(([icon, label, policy]) => (
+                    <ActionRow
+                      key={policy}
+                      icon={icon}
+                      label={label}
+                      onClick={() => diplomacy.proposeForeignPolicy(policy)}
+                      disabled={needsViewer}
+                    />
+                  ))}
                 </ActionGroup>
 
                 <ActionGroup label="Foreign policy">
-                  <ActionRow
-                    icon={Scale}
-                    label="Impose sanctions"
-                    onClick={() => diplomacy.proposeForeignPolicy("sanction")}
-                    disabled={!viewerCountryId || isLoading}
-                    destructive
-                  />
-                  <ActionRow
-                    icon={Swords}
-                    label="Declare embargo"
-                    onClick={() => diplomacy.proposeForeignPolicy("embargo")}
-                    disabled={!viewerCountryId || isLoading}
-                    destructive
-                  />
+                  {HOSTILE_PROPOSALS.map(([icon, label, policy]) => (
+                    <ActionRow
+                      key={policy}
+                      icon={icon}
+                      label={label}
+                      onClick={() => diplomacy.proposeForeignPolicy(policy)}
+                      disabled={needsViewer}
+                      destructive
+                    />
+                  ))}
                 </ActionGroup>
               </>
             )}
 
-            {/* Quick Links (always shown) */}
             <ActionGroup label="Quick links">
               <ActionRow
                 icon={Trophy}
                 label="Global leaderboard"
-                onClick={() => {
-                  router.push(createUrl("/leaderboards"));
-                  onClose();
-                }}
+                onClick={() => go("/leaderboards")}
               />
               <WikiLinkPreview title={targetCountryName}>
                 <Link
@@ -347,23 +332,9 @@ export function CountryActionsMenu({
               <ActionRow
                 icon={copiedLink ? Check : Copy}
                 label={copiedLink ? "Link Copied" : "Copy Profile Link"}
-                onClick={handleCopyLink}
+                onClick={copyLink}
               />
-              <ActionRow
-                icon={Share2}
-                label="Share profile"
-                onClick={() => {
-                  const slug = targetCountryName.replace(/\s/g, "_");
-                  const url = `${window.location.origin}${createUrl(`/countries/${slug}`)}`;
-                  if (navigator.share) {
-                    void navigator.share({ title: targetCountryName, url });
-                  } else {
-                    void navigator.clipboard.writeText(url);
-                    notify.success("Link copied");
-                  }
-                  onClose();
-                }}
-              />
+              <ActionRow icon={Share2} label="Share profile" onClick={shareProfile} />
             </ActionGroup>
 
             {!viewerCountryId && !isOwnCountry && (

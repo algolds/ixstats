@@ -4,10 +4,7 @@ import Link from "next/link";
 import { FireFlame as Flame } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
-import { EmptyState } from "~/components/ui/empty-state";
-import { FeedItemSkeleton } from "./UnifiedFeedItem";
-import { Card } from "~/components/ui/card";
-import { FeedList, type FeedHandlers } from "./UnifiedFeedContent";
+import { FeedEmpty, FeedList, FeedSkeletons, type FeedHandlers } from "./UnifiedFeedContent";
 
 /**
  * Trending tab: posts the thinkpages-trending cron job flagged (engagement from other users over
@@ -45,19 +42,13 @@ export function TrendingFeedContent(handlers: FeedHandlers) {
       )}
 
       {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <FeedItemSkeleton key={i} />
-          ))}
-        </div>
+        <FeedSkeletons count={3} />
       ) : posts.length === 0 ? (
-        <Card>
-          <EmptyState
-            icon={<Flame />}
-            title="Nothing is trending right now"
-            message="Posts trend when other people react to, reply to or repost them within the last few days."
-          />
-        </Card>
+        <FeedEmpty
+          icon={<Flame />}
+          title="Nothing is trending right now"
+          message="Posts trend when other people react to, reply to or repost them within the last few days."
+        />
       ) : (
         <FeedList
           items={posts.map((post: any) => ({ id: post.id, source: "thinkpages", rawPost: post }))}

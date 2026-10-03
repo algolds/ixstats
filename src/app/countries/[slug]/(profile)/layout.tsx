@@ -62,6 +62,59 @@ export default function CountryProfileLayout({
   );
 }
 
+function ProfileShellSkeleton() {
+  return (
+    <div className="container mx-auto space-y-6 px-4 py-8" role="status" aria-label="Loading">
+      <Skeleton className="h-5 w-48" />
+      <Skeleton className="rounded-card h-72 w-full" />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <Skeleton className="rounded-card h-96 lg:col-span-2" />
+        <Skeleton className="rounded-card h-96" />
+      </div>
+    </div>
+  );
+}
+
+function ProfileBreadcrumb({
+  slug,
+  name,
+  sectionLabel,
+}: {
+  slug: string;
+  name: string;
+  sectionLabel: string | undefined;
+}) {
+  return (
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink asChild>
+            <Link href={createUrl("/countries")}>Countries</Link>
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          {sectionLabel ? (
+            <BreadcrumbLink asChild>
+              <Link href={createUrl(`/countries/${slug}`)}>{name}</Link>
+            </BreadcrumbLink>
+          ) : (
+            <BreadcrumbPage>{name}</BreadcrumbPage>
+          )}
+        </BreadcrumbItem>
+        {sectionLabel && (
+          <>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{sectionLabel}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </>
+        )}
+      </BreadcrumbList>
+    </Breadcrumb>
+  );
+}
+
 function CountryProfileShell({ slug, children }: { slug: string; children: React.ReactNode }) {
   const { country, isLoading, error, currentIxTime } = useCountryData();
   const { userProfile } = useUserCountry();
@@ -82,11 +135,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
     setBannerMode,
   } = useCountryPageState(country, flagUrl);
 
-  const isOwnCountry = !!(
-    userProfile?.countryId &&
-    country?.id &&
-    userProfile.countryId === country.id
-  );
+  const isOwnCountry = !!country?.id && userProfile?.countryId === country.id;
 
   const shell = useMemo<ProfileShellValue | null>(
     () =>
@@ -117,16 +166,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
   );
 
   if (isLoading) {
-    return (
-      <div className="container mx-auto space-y-6 px-4 py-8" role="status" aria-label="Loading">
-        <Skeleton className="h-5 w-48" />
-        <Skeleton className="rounded-card h-72 w-full" />
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <Skeleton className="rounded-card h-96 lg:col-span-2" />
-          <Skeleton className="rounded-card h-96" />
-        </div>
-      </div>
-    );
+    return <ProfileShellSkeleton />;
   }
 
   if (error || !country || !shell) {
@@ -155,33 +195,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
     <ProfileShellProvider value={shell}>
       <div className="container mx-auto space-y-6 px-4 py-6 sm:py-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link href={createUrl("/countries")}>Countries</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                {sectionLabel ? (
-                  <BreadcrumbLink asChild>
-                    <Link href={createUrl(`/countries/${slug}`)}>{name}</Link>
-                  </BreadcrumbLink>
-                ) : (
-                  <BreadcrumbPage>{name}</BreadcrumbPage>
-                )}
-              </BreadcrumbItem>
-              {sectionLabel && (
-                <>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>{sectionLabel}</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </>
-              )}
-            </BreadcrumbList>
-          </Breadcrumb>
+          <ProfileBreadcrumb slug={slug} name={name} sectionLabel={sectionLabel} />
 
           <Button variant="default" size="sm" onClick={() => setShowCountryActions(true)}>
             <Users aria-hidden />

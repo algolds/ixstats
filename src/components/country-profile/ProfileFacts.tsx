@@ -76,71 +76,44 @@ export function LandRows({
   land: ProfileLand;
   header?: React.ReactNode;
 }) {
-  const rows: { key: string; icon: React.ReactNode; title: string; value: string }[] = [];
-  if (land.capital)
-    rows.push({
-      key: "capital",
-      icon: <Bank aria-hidden className="text-label-secondary size-4" />,
-      title: "Capital",
-      value: land.capital.population
-        ? `${land.capital.name} · ${formatBig(land.capital.population)}`
-        : land.capital.name,
-    });
-  if (land.areaSqKm)
-    rows.push({
-      key: "area",
-      icon: <MapIcon aria-hidden className="text-label-secondary size-4" />,
-      title: "Mapped area",
-      value: `${formatBig(land.areaSqKm)} km²`,
-    });
   const p = land.profile;
-  if (p?.coastlineKm)
-    rows.push({
-      key: "coast",
-      icon: <MapPin aria-hidden className="text-label-secondary size-4" />,
-      title: "Coastline",
-      value: `${formatBig(p.coastlineKm)} km`,
-    });
-  if (p?.isLandlocked || p?.isIsland)
-    rows.push({
-      key: "setting",
-      icon: <MapPin aria-hidden className="text-label-secondary size-4" />,
-      title: "Setting",
-      value: p.isIsland ? "Island nation" : "Landlocked",
-    });
-  if (p?.dominantClimate)
-    rows.push({
-      key: "climate",
-      icon: <Mountain aria-hidden className="text-label-secondary size-4" />,
-      title: "Dominant climate",
-      value: p.dominantClimate,
-    });
-  if (p?.dominantElevation)
-    rows.push({
-      key: "terrain",
-      icon: <Mountain aria-hidden className="text-label-secondary size-4" />,
-      title: "Terrain",
-      value: p.dominantElevation,
-    });
-  if (p?.arableLandPercent)
-    rows.push({
-      key: "arable",
-      icon: <Mountain aria-hidden className="text-label-secondary size-4" />,
-      title: "Arable land",
-      value: `${p.arableLandPercent.toFixed(1)}%`,
-    });
-  if (land.neighbors.length > 0)
-    rows.push({
-      key: "neighbors",
-      icon: <Group aria-hidden className="text-label-secondary size-4" />,
-      title: "Borders",
-      value: `${land.neighbors.length} ${land.neighbors.length === 1 ? "neighbour" : "neighbours"}`,
-    });
-  if (rows.length === 0) return null;
+  const neighbours = land.neighbors.length;
+  const rows = [
+    [
+      Bank,
+      "Capital",
+      land.capital &&
+        (land.capital.population
+          ? `${land.capital.name} · ${formatBig(land.capital.population)}`
+          : land.capital.name),
+    ],
+    [MapIcon, "Mapped area", land.areaSqKm && `${formatBig(land.areaSqKm)} km²`],
+    [MapPin, "Coastline", p?.coastlineKm && `${formatBig(p.coastlineKm)} km`],
+    [
+      MapPin,
+      "Setting",
+      (p?.isLandlocked || p?.isIsland) && (p.isIsland ? "Island nation" : "Landlocked"),
+    ],
+    [Mountain, "Dominant climate", p?.dominantClimate],
+    [Mountain, "Terrain", p?.dominantElevation],
+    [Mountain, "Arable land", p?.arableLandPercent && `${p.arableLandPercent.toFixed(1)}%`],
+    [
+      Group,
+      "Borders",
+      neighbours > 0 && `${neighbours} ${neighbours === 1 ? "neighbour" : "neighbours"}`,
+    ],
+  ] as const;
+  const present = rows.filter((row) => row[2]);
+  if (present.length === 0) return null;
   return (
     <FacetListSection header={header}>
-      {rows.map((r) => (
-        <FacetRow key={r.key} leading={r.icon} title={r.title} trailing={r.value} />
+      {present.map(([Icon, title, value]) => (
+        <FacetRow
+          key={title}
+          leading={<Icon aria-hidden className="text-label-secondary size-4" />}
+          title={title}
+          trailing={value}
+        />
       ))}
     </FacetListSection>
   );

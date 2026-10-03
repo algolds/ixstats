@@ -47,7 +47,7 @@ type WikiLinkDb = Pick<PrismaClient, "wikiAccountLink" | "user" | "$transaction"
 /** Shape a transaction client needs to expose for the legacy-column writes below. */
 type WikiLinkTx = Pick<PrismaClient, "wikiAccountLink" | "user">;
 
-export interface WikiLinkView {
+interface WikiLinkView {
   source: string;
   username: string;
   verified: boolean;

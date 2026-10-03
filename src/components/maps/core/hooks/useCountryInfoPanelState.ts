@@ -4,13 +4,9 @@ import { useState, useCallback, useMemo } from "react";
 import { useCountryPanelData } from "~/hooks/useCountryPanelData";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { api } from "~/trpc/react";
-import type { SelectedCountry } from "../IxWorldMap";
+import type { NeighborTarget, SelectedCountry } from "../IxWorldMap";
 
-import {
-  formatNumber,
-  formatPopulation,
-  formatCurrency,
-} from "~/lib/utils/format-utils";
+import { formatNumber, formatPopulation, formatCurrency } from "~/lib/utils/format-utils";
 
 export { formatNumber, formatPopulation };
 
@@ -26,13 +22,7 @@ export function formatArea(n: number | null | undefined): string {
 
 interface UseCountryInfoPanelStateProps {
   country: SelectedCountry;
-  onNeighborClick?: (neighbor: {
-    featureId: string;
-    countryId: string | null;
-    displayName: string;
-    centroidLng?: number;
-    centroidLat?: number;
-  }) => void;
+  onNeighborClick?: (neighbor: NeighborTarget) => void;
 }
 
 export function useCountryInfoPanelState({
@@ -79,13 +69,7 @@ export function useCountryInfoPanelState({
   }, [wikiRichIntro, wikiSections, wikiImages]);
 
   const handleNeighborClick = useCallback(
-    (neighbor: {
-      featureId: string;
-      countryId: string | null;
-      displayName: string;
-      centroidLng?: number;
-      centroidLat?: number;
-    }) => {
+    (neighbor: NeighborTarget) => {
       onNeighborClick?.(neighbor);
     },
     [onNeighborClick]

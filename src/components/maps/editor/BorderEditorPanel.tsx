@@ -49,7 +49,6 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
 
   return (
     <div className="flex h-full flex-col gap-3 overflow-y-auto">
-      {/* Feature Info */}
       {featureId ? (
         <div>
           <h3 className="text-label text-headline">{displayName || featureId}</h3>
@@ -67,7 +66,6 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
         </div>
       )}
 
-      {/* Stats */}
       {geometry && (
         <div className="border-separator space-y-1 border-t pt-2">
           <div className="text-label-secondary text-footnote flex items-center gap-2">
@@ -91,7 +89,6 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
         </div>
       )}
 
-      {/* Neighbors (for merge mode) */}
       {mode === "merge" && neighbors.length > 0 && (
         <div className="border-separator border-t pt-2">
           <div className="text-label text-caption mb-2 flex items-center gap-2">
@@ -121,7 +118,6 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
         </div>
       )}
 
-      {/* Neighbor list (non-merge mode) */}
       {mode !== "merge" && mode !== "brush" && neighbors.length > 0 && (
         <div className="border-separator border-t pt-2">
           <div className="text-label-secondary text-caption mb-1">
@@ -140,7 +136,6 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
         </div>
       )}
 
-      {/* Brush target selector */}
       {mode === "brush" && neighbors.length > 0 && (
         <div className="border-separator border-t pt-2">
           <div className="text-label text-caption mb-2 flex items-center gap-2">

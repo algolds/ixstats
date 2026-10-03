@@ -5,6 +5,7 @@ import { notifyFromStore } from "~/hooks/useNotify";
 import type { BorderEditorActions, BorderEditorState } from "~/hooks/useBorderEditor";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import { api } from "~/trpc/react";
+import { invalidateMapViews, notifyFailure } from "./geo-invalidation";
 
 interface UseEditorBorderOperationsProps {
   borderActions: BorderEditorActions;
@@ -35,27 +36,46 @@ export function useEditorBorderOperations({
     setActiveEditorMode("view");
   }, [borderActions, setActiveEditorMode]);
 
-  const handleConfirmBorderSave = useCallback(async () => {
-    try {
-      setIsSubmitting(true);
-      await borderActions.submitEdit(true, saveReason);
-      setShowConfirmSaveModal(false);
-      void utils.geoCore.getWorldMap.invalidate();
-      void utils.geoCore.getMapBundle.invalidate();
-      refetchValidation();
-      setActiveEditorMode("view");
-    } catch (err) {
-      console.error("Save failed:", err);
-      notifyFromStore({
-        title: "Border save failed",
-        message: err instanceof Error ? err.message : "Unknown error",
-        type: "error",
-        priority: "high",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [borderActions, saveReason, utils, refetchValidation, setActiveEditorMode]);
+  /** Runs a border operation; on success closes its dialog, refreshes the map and returns to view. */
+  const runBorderOperation = useCallback(
+    async (
+      operation: () => Promise<unknown>,
+      closeDialog: () => void,
+      onError: (err: unknown) => void
+    ) => {
+      try {
+        setIsSubmitting(true);
+        await operation();
+        closeDialog();
+        invalidateMapViews(utils);
+        refetchValidation();
+        setActiveEditorMode("view");
+      } catch (err) {
+        onError(err);
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [utils, refetchValidation, setActiveEditorMode]
+  );
+
+  const handleConfirmBorderSave = useCallback(
+    () =>
+      runBorderOperation(
+        () => borderActions.submitEdit(true, saveReason),
+        () => setShowConfirmSaveModal(false),
+        (err) => {
+          console.error("Save failed:", err);
+          notifyFromStore(
+            notifyFailure(
+              "Border save failed",
+              err instanceof Error ? err.message : "Unknown error"
+            )
+          );
+        }
+      ),
+    [runBorderOperation, borderActions, saveReason]
+  );
 
   const enterBorderEdit = useCallback(
     (initialMode?: "select" | "vertex_edit" | "split" | "merge" | "trace" | "brush") => {
@@ -70,41 +90,23 @@ export function useEditorBorderOperations({
   );
 
   const handleSplitConfirm = useCallback(
-    async (nameA: string, nameB: string) => {
-      try {
-        setIsSubmitting(true);
-        await borderActions.executeSplit(nameA, nameB);
-        setShowSplitDialog(false);
-        void utils.geoCore.getWorldMap.invalidate();
-        void utils.geoCore.getMapBundle.invalidate();
-        refetchValidation();
-        setActiveEditorMode("view");
-      } catch (err) {
-        console.error("Split failed:", err);
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-    [borderActions, utils, refetchValidation, setActiveEditorMode]
+    (nameA: string, nameB: string) =>
+      runBorderOperation(
+        () => borderActions.executeSplit(nameA, nameB),
+        () => setShowSplitDialog(false),
+        (err) => console.error("Split failed:", err)
+      ),
+    [runBorderOperation, borderActions]
   );
 
   const handleMergeConfirm = useCallback(
-    async (newName: string) => {
-      try {
-        setIsSubmitting(true);
-        await borderActions.executeMerge(newName);
-        setShowMergeDialog(false);
-        void utils.geoCore.getWorldMap.invalidate();
-        void utils.geoCore.getMapBundle.invalidate();
-        refetchValidation();
-        setActiveEditorMode("view");
-      } catch (err) {
-        console.error("Merge failed:", err);
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-    [borderActions, utils, refetchValidation, setActiveEditorMode]
+    (newName: string) =>
+      runBorderOperation(
+        () => borderActions.executeMerge(newName),
+        () => setShowMergeDialog(false),
+        (err) => console.error("Merge failed:", err)
+      ),
+    [runBorderOperation, borderActions]
   );
 
   const handleBorderToolbarSubmit = useCallback(() => {

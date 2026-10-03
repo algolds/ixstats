@@ -1,9 +1,8 @@
-// src/app/api/wiki/preview-article/route.ts
 // API endpoint to preview article quality and estimated rarity
 
 import { NextResponse } from "next/server";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
-import type { WikiSource } from "~/lib/wiki-os/config";
+import { invalidSourceResponse, parseWikiSource } from "../article-candidates";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,15 +10,10 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const source = searchParams.get("source") as WikiSource | null;
+    const source = parseWikiSource(searchParams.get("source"));
     const title = searchParams.get("title");
 
-    if (!source || !["ixwiki", "iiwiki"].includes(source)) {
-      return NextResponse.json(
-        { error: "Invalid wiki source. Must be 'ixwiki' or 'iiwiki'" },
-        { status: 400 }
-      );
-    }
+    if (!source) return invalidSourceResponse();
 
     if (!title) {
       return NextResponse.json({ error: "Article title is required" }, { status: 400 });

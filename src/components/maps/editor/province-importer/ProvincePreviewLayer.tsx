@@ -4,6 +4,14 @@ import { memo, useEffect, useMemo, useRef } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { FeatureCollection, Feature, Polygon, MultiPolygon, Position } from "geojson";
 import type { ProvinceFeature } from "~/lib/maps/province-importer/types";
+import { getAllRings } from "~/lib/maps/border-editor";
+import {
+  collection,
+  pointFeature,
+  upsertGeoJSONLayers,
+  type SourcelessLayer,
+} from "../utils/map-helpers";
+import { circle, fill, line, symbol } from "../utils/editor-layer-specs";
 
 interface ProvincePreviewLayerProps {
   map: MapLibreMap | null;
@@ -13,16 +21,108 @@ interface ProvincePreviewLayerProps {
   cities?: Array<{ name: string; lat: number; lng: number; isCapital: boolean }>;
 }
 
-const SOURCE_ID = "province-import-preview";
-const FILL_LAYER_ID = "province-import-fill";
-const LINE_LAYER_ID = "province-import-line";
-const LABEL_LAYER_ID = "province-import-label";
+type Geom = Polygon | MultiPolygon;
 
-const BORDER_SOURCE_ID = "province-import-country-border";
-const BORDER_LINE_LAYER_ID = "province-import-border-line";
-const BORDER_FILL_LAYER_ID = "province-import-border-fill";
+interface Overlay {
+  sourceId: string;
+  /** Bottom to top. */
+  layers: SourcelessLayer[];
+}
 
-/** Compute signed ring area (shoelace formula). Positive = CCW. */
+const LABEL_PAINT = {
+  "text-color": "#1e293b",
+  "text-halo-color": "#ffffff",
+  "text-halo-width": 1.5,
+};
+
+const PROVINCES: Overlay = {
+  sourceId: "province-import-preview",
+  layers: [
+    // A fixed visible colour: the SVG fill may be near-white or grey.
+    fill("province-import-fill", { "fill-color": "#f59e0b", "fill-opacity": 0.2 }),
+    line("province-import-line", {
+      "line-color": "#ef4444",
+      "line-width": 2.5,
+      "line-opacity": 1.0,
+    }),
+    symbol(
+      "province-import-label",
+      {
+        "text-field": ["get", "name"],
+        "text-size": 11,
+        "text-anchor": "center",
+        "text-allow-overlap": false,
+      },
+      LABEL_PAINT
+    ),
+  ],
+};
+
+// Bright outline so the user can see how provinces align to the existing territory.
+const COUNTRY_BORDER: Overlay = {
+  sourceId: "province-import-country-border",
+  layers: [
+    fill("province-import-border-fill", { "fill-color": "#22c55e", "fill-opacity": 0.05 }),
+    line("province-import-border-line", {
+      "line-color": "#22c55e",
+      "line-width": 3,
+      "line-dasharray": [6, 4],
+      "line-opacity": 0.8,
+    }),
+  ],
+};
+
+const CITIES: Overlay = {
+  sourceId: "province-import-preview-cities",
+  layers: [
+    circle("province-import-preview-cities-circle", {
+      "circle-radius": 5,
+      "circle-color": ["case", ["get", "isCapital"], "#ef4444", "#3b82f6"],
+      "circle-stroke-color": "#ffffff",
+      "circle-stroke-width": 1.5,
+    }),
+    symbol(
+      "province-import-preview-cities-label",
+      {
+        "text-field": ["get", "name"],
+        "text-size": 10,
+        "text-offset": [0, 1.2],
+        "text-anchor": "top",
+        "text-allow-overlap": false,
+      },
+      LABEL_PAINT
+    ),
+  ],
+};
+
+const OVERLAYS = [PROVINCES, COUNTRY_BORDER, CITIES];
+
+function removeOverlay(map: MapLibreMap, { sourceId, layers }: Overlay) {
+  for (const { id } of [...layers].reverse()) {
+    if (map.getLayer(id)) map.removeLayer(id);
+  }
+  if (map.getSource(sourceId)) map.removeSource(sourceId);
+}
+
+function setOverlayVisibility(map: MapLibreMap, { layers }: Overlay, visible: boolean) {
+  for (const { id } of layers) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
+  }
+}
+
+/** Updates the overlay's data (adding it, after clearing any stale leftovers, when missing). */
+function syncOverlay(
+  map: MapLibreMap,
+  overlay: Overlay,
+  data: FeatureCollection,
+  visible: boolean
+) {
+  if (!map.getSource(overlay.sourceId)) removeOverlay(map, overlay);
+  upsertGeoJSONLayers(map, overlay.sourceId, data, overlay.layers);
+  setOverlayVisibility(map, overlay, visible);
+}
+
+/** Signed ring area (shoelace formula). Positive = CCW. */
 function ringSignedArea(ring: Position[]): number {
   let area = 0;
   for (let i = 0; i < ring.length - 1; i++) {
@@ -31,32 +131,81 @@ function ringSignedArea(ring: Position[]): number {
   return area / 2;
 }
 
-/** Ensure outer ring is CCW and hole rings are CW per GeoJSON RFC 7946 */
-function normalizePolygonWinding(coords: Position[][]): Position[][] {
-  return coords.map((ring, i) => {
-    const area = ringSignedArea(ring);
-    const isOuter = i === 0;
-    if (isOuter && area < 0) return ring.slice().reverse();
-    if (!isOuter && area > 0) return ring.slice().reverse();
-    return ring;
-  });
+/** GeoJSON RFC 7946 winding: outer ring CCW, holes CW. */
+function normalizeRing(ring: Position[], index: number): Position[] {
+  const area = ringSignedArea(ring);
+  return (index === 0 ? area < 0 : area > 0) ? [...ring].reverse() : ring;
 }
 
-/** Normalize geometry winding for valid GeoJSON rendering */
-function normalizeGeometry(geom: Polygon | MultiPolygon): Polygon | MultiPolygon {
-  if (geom.type === "Polygon") {
-    return { type: "Polygon", coordinates: normalizePolygonWinding(geom.coordinates) };
+function mapRings(geom: Geom, fn: (ring: Position[], index: number) => Position[]): Geom {
+  return geom.type === "Polygon"
+    ? { type: "Polygon", coordinates: geom.coordinates.map(fn) }
+    : { type: "MultiPolygon", coordinates: geom.coordinates.map((poly) => poly.map(fn)) };
+}
+
+function extentOf(geoms: Geom[]) {
+  const extent = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
+  for (const geom of geoms) {
+    for (const [x, y] of getAllRings(geom).flat()) {
+      extent.minX = Math.min(extent.minX, x!);
+      extent.minY = Math.min(extent.minY, y!);
+      extent.maxX = Math.max(extent.maxX, x!);
+      extent.maxY = Math.max(extent.maxY, y!);
+    }
   }
-  return {
-    type: "MultiPolygon",
-    coordinates: geom.coordinates.map((poly) => normalizePolygonWinding(poly)),
-  };
+  return extent;
+}
+
+/** Fits SVG-space coordinates into the country's bounds (object-fit: contain, Y flipped). */
+function svgToGeoTransform(svg: ReturnType<typeof extentOf>, geo: ReturnType<typeof extentOf>) {
+  const svgW = svg.maxX - svg.minX || 1;
+  const svgH = svg.maxY - svg.minY || 1;
+  const geoW = geo.maxX - geo.minX;
+  const geoH = geo.maxY - geo.minY;
+  const scale = Math.min(geoW / svgW, geoH / svgH);
+  const scaledW = svgW * scale;
+  const scaledH = svgH * scale;
+  const padX = (geoW - scaledW) / 2;
+  const padY = (geoH - scaledH) / 2;
+
+  return (pt: Position): Position => [
+    geo.minX + padX + ((pt[0]! - svg.minX) / svgW) * scaledW,
+    // SVG Y=0 is the top; geographic Y increases north.
+    geo.maxY - padY - ((pt[1]! - svg.minY) / svgH) * scaledH,
+  ];
+}
+
+/** The included provinces as a map-ready collection, projected into the country if they are in SVG space. */
+function buildProvinceCollection(provinces: ProvinceFeature[], countryBorder: Geom | null) {
+  const included = provinces.filter((p) => p.included);
+  if (included.length === 0) return collection([]);
+
+  // The extent covers every province (included or not): the full SVG.
+  const svg = extentOf(provinces.map((p) => p.geometry));
+  const isGeographic = svg.maxX <= 180 && svg.maxY <= 90 && svg.minX >= -180 && svg.minY >= -90;
+
+  let toMap = (geom: Geom) => geom;
+  if (!isGeographic) {
+    const geo = countryBorder
+      ? extentOf([countryBorder])
+      : { minX: -10, minY: -10, maxX: 10, maxY: 10 };
+    const transformPt = svgToGeoTransform(svg, geo);
+    toMap = (geom) => mapRings(geom, (ring) => ring.map(transformPt));
+  }
+
+  return collection(
+    included.map((p, i): Feature => ({
+      type: "Feature",
+      id: i,
+      geometry: mapRings(toMap(p.geometry), normalizeRing),
+      properties: { name: p.name, color: p.color || "#6366f1", sourceId: p.sourceId },
+    }))
+  );
 }
 
 /**
- * Renders imported provinces as a preview overlay on the MapLibre map.
- * Also renders the country border as a reference so users can see
- * how provinces align to the existing territory.
+ * Renders imported provinces as a preview overlay on the MapLibre map, together with the
+ * country border as a reference so users can see how provinces align to the territory.
  */
 export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
   map,
@@ -65,367 +214,62 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
   visible,
   cities,
 }: ProvincePreviewLayerProps) {
-  // ── Country border reference layer ──
   useEffect(() => {
     if (!map || !countryBorder) return;
-
-    const borderFc: FeatureCollection = {
-      type: "FeatureCollection",
-      features: [
-        {
-          type: "Feature",
-          geometry: countryBorder,
-          properties: {},
-        },
-      ],
-    };
-
-    const source = map.getSource(BORDER_SOURCE_ID);
-    if (source && "setData" in source) {
-      (source as { setData: (data: FeatureCollection) => void }).setData(borderFc);
-    } else {
-      // Clean stale layers
-      if (map.getLayer(BORDER_LINE_LAYER_ID)) map.removeLayer(BORDER_LINE_LAYER_ID);
-      if (map.getLayer(BORDER_FILL_LAYER_ID)) map.removeLayer(BORDER_FILL_LAYER_ID);
-      if (map.getSource(BORDER_SOURCE_ID)) map.removeSource(BORDER_SOURCE_ID);
-
-      map.addSource(BORDER_SOURCE_ID, { type: "geojson", data: borderFc });
-
-      // Country border reference — bright outline so user can see alignment
-      map.addLayer({
-        id: BORDER_FILL_LAYER_ID,
-        type: "fill",
-        source: BORDER_SOURCE_ID,
-        paint: {
-          "fill-color": "#22c55e",
-          "fill-opacity": 0.05,
-        },
-      });
-
-      map.addLayer({
-        id: BORDER_LINE_LAYER_ID,
-        type: "line",
-        source: BORDER_SOURCE_ID,
-        paint: {
-          "line-color": "#22c55e",
-          "line-width": 3,
-          "line-dasharray": [6, 4],
-          "line-opacity": 0.8,
-        },
-      });
-    }
-
-    const vis = visible ? "visible" : "none";
-    if (map.getLayer(BORDER_FILL_LAYER_ID))
-      map.setLayoutProperty(BORDER_FILL_LAYER_ID, "visibility", vis);
-    if (map.getLayer(BORDER_LINE_LAYER_ID))
-      map.setLayoutProperty(BORDER_LINE_LAYER_ID, "visibility", vis);
+    syncOverlay(
+      map,
+      COUNTRY_BORDER,
+      collection([{ type: "Feature", geometry: countryBorder, properties: {} }]),
+      visible
+    );
   }, [map, countryBorder, visible]);
 
-  // ── Memoized FeatureCollection — only recomputes when provinces change ──
-  const fc = useMemo<FeatureCollection>(() => {
-    const included = provinces.filter((p) => p.included);
-    if (included.length === 0) return { type: "FeatureCollection", features: [] };
+  const fc = useMemo(
+    () => buildProvinceCollection(provinces, countryBorder),
+    [provinces, countryBorder]
+  );
 
-    // Compute bounding box of ALL province shapes (included + excluded for full SVG extent)
-    let svgMinX = Infinity,
-      svgMinY = Infinity,
-      svgMaxX = -Infinity,
-      svgMaxY = -Infinity;
-    for (const p of provinces) {
-      const coords =
-        p.geometry.type === "Polygon"
-          ? p.geometry.coordinates
-          : p.geometry.coordinates.flatMap((c) => c);
-      for (const ring of coords) {
-        for (const pt of ring) {
-          svgMinX = Math.min(svgMinX, pt[0]!);
-          svgMinY = Math.min(svgMinY, pt[1]!);
-          svgMaxX = Math.max(svgMaxX, pt[0]!);
-          svgMaxY = Math.max(svgMaxY, pt[1]!);
-        }
-      }
-    }
+  // Skips setData when the collection is unchanged (avoids expensive MapLibre updates).
+  const prevFcKeyRef = useRef("");
 
-    // Detect if provinces are in SVG coordinates (outside WGS84 range)
-    const needsTransform = svgMaxX > 180 || svgMaxY > 90 || svgMinX < -180 || svgMinY < -90;
-
-    if (!needsTransform) {
-      // Already in geographic coordinates — pass through
-      return {
-        type: "FeatureCollection",
-        features: included.map((p, i): Feature => ({
-          type: "Feature",
-          id: i,
-          geometry: normalizeGeometry(p.geometry),
-          properties: { name: p.name, color: p.color || "#6366f1", sourceId: p.sourceId },
-        })),
-      };
-    }
-
-    // Compute country border bounding box as target
-    let geoMinX = -10,
-      geoMinY = -10,
-      geoMaxX = 10,
-      geoMaxY = 10;
-    if (countryBorder) {
-      geoMinX = Infinity;
-      geoMinY = Infinity;
-      geoMaxX = -Infinity;
-      geoMaxY = -Infinity;
-      const borderCoords =
-        countryBorder.type === "Polygon"
-          ? countryBorder.coordinates
-          : countryBorder.coordinates.flatMap((c) => c);
-      for (const ring of borderCoords) {
-        for (const pt of ring) {
-          geoMinX = Math.min(geoMinX, pt[0]!);
-          geoMinY = Math.min(geoMinY, pt[1]!);
-          geoMaxX = Math.max(geoMaxX, pt[0]!);
-          geoMaxY = Math.max(geoMaxY, pt[1]!);
-        }
-      }
-    }
-
-    const svgW = svgMaxX - svgMinX || 1;
-    const svgH = svgMaxY - svgMinY || 1;
-    const geoW = geoMaxX - geoMinX;
-    const geoH = geoMaxY - geoMinY;
-
-    // Aspect-ratio-preserving fit (object-fit: contain)
-    // Pick the smaller scale to fit without distortion
-    const scale = Math.min(geoW / svgW, geoH / svgH);
-    const scaledW = svgW * scale;
-    const scaledH = svgH * scale;
-    // Center the scaled content within the country bounds
-    const padX = (geoW - scaledW) / 2;
-    const padY = (geoH - scaledH) / 2;
-
-    const transformPt = (pt: Position): Position => {
-      // Normalize point to 0-1 within SVG bounds
-      const nx = (pt[0]! - svgMinX) / svgW;
-      const ny = (pt[1]! - svgMinY) / svgH;
-      // Map to geographic coords, flipping Y (SVG Y=0 is top, geo Y increases north)
-      const geoX = geoMinX + padX + nx * scaledW;
-      const geoY = geoMaxY - padY - ny * scaledH;
-      return [geoX, geoY];
-    };
-
-    const transformRing = (ring: Position[]): Position[] => ring.map(transformPt);
-    const transformGeom = (geom: Polygon | MultiPolygon): Polygon | MultiPolygon => {
-      if (geom.type === "Polygon") {
-        return { type: "Polygon", coordinates: geom.coordinates.map(transformRing) };
-      }
-      return {
-        type: "MultiPolygon",
-        coordinates: geom.coordinates.map((poly) => poly.map(transformRing)),
-      };
-    };
-
-    return {
-      type: "FeatureCollection",
-      features: included.map((p, i): Feature => ({
-        type: "Feature",
-        id: i,
-        geometry: normalizeGeometry(transformGeom(p.geometry)),
-        properties: {
-          name: p.name,
-          color: p.color || "#6366f1",
-          sourceId: p.sourceId,
-        },
-      })),
-    };
-  }, [provinces, countryBorder]);
-
-  // Track previous feature count to avoid unnecessary MapLibre updates
-  const prevFcRef = useRef<string>("");
-
-  // ── Province preview layers ──
   useEffect(() => {
     if (!map) return;
 
-    // Skip if data hasn't actually changed (avoids expensive setData calls)
-    const geom0 = fc.features[0]?.geometry;
-    const firstCoord =
-      geom0?.type === "Polygon"
-        ? (geom0 as Polygon).coordinates?.[0]?.[0]
-        : geom0?.type === "MultiPolygon"
-          ? (geom0 as MultiPolygon).coordinates?.[0]?.[0]?.[0]
-          : undefined;
+    const firstGeometry = fc.features[0]?.geometry as Geom | undefined;
+    const firstCoord = firstGeometry && getAllRings(firstGeometry)[0]?.[0];
     const fcKey = `${fc.features.length}:${JSON.stringify(firstCoord ?? [])}`;
-    if (prevFcRef.current === fcKey && map.getSource(SOURCE_ID)) {
-      // Just update visibility
-      const vis = visible ? "visible" : "none";
-      if (map.getLayer(FILL_LAYER_ID)) map.setLayoutProperty(FILL_LAYER_ID, "visibility", vis);
-      if (map.getLayer(LINE_LAYER_ID)) map.setLayoutProperty(LINE_LAYER_ID, "visibility", vis);
-      if (map.getLayer(LABEL_LAYER_ID)) map.setLayoutProperty(LABEL_LAYER_ID, "visibility", vis);
+    if (prevFcKeyRef.current === fcKey && map.getSource(PROVINCES.sourceId)) {
+      setOverlayVisibility(map, PROVINCES, visible);
       return;
     }
-    prevFcRef.current = fcKey;
+    prevFcKeyRef.current = fcKey;
 
-    // Add or update source
     try {
-      const source = map.getSource(SOURCE_ID);
-      if (source && "setData" in source) {
-        (source as { setData: (data: FeatureCollection) => void }).setData(fc);
-      } else {
-        // Clean up any stale layers first
-        if (map.getLayer(LABEL_LAYER_ID)) map.removeLayer(LABEL_LAYER_ID);
-        if (map.getLayer(LINE_LAYER_ID)) map.removeLayer(LINE_LAYER_ID);
-        if (map.getLayer(FILL_LAYER_ID)) map.removeLayer(FILL_LAYER_ID);
-        if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
-
-        map.addSource(SOURCE_ID, { type: "geojson", data: fc });
-
-        // Add layers at the TOP of the layer stack so they render above
-        // the editor country fill/mask layers.
-        // Use a fixed visible color (not the SVG fill which may be near-white/grey)
-        map.addLayer({
-          id: FILL_LAYER_ID,
-          type: "fill",
-          source: SOURCE_ID,
-          paint: {
-            "fill-color": "#f59e0b",
-            "fill-opacity": 0.2,
-          },
-        });
-
-        map.addLayer({
-          id: LINE_LAYER_ID,
-          type: "line",
-          source: SOURCE_ID,
-          paint: {
-            "line-color": "#ef4444",
-            "line-width": 2.5,
-            "line-opacity": 1.0,
-          },
-        });
-
-        map.addLayer({
-          id: LABEL_LAYER_ID,
-          type: "symbol",
-          source: SOURCE_ID,
-          layout: {
-            "text-field": ["get", "name"],
-            "text-size": 11,
-            "text-anchor": "center",
-            "text-allow-overlap": false,
-          },
-          paint: {
-            "text-color": "#1e293b",
-            "text-halo-color": "#ffffff",
-            "text-halo-width": 1.5,
-          },
-        });
-      }
+      syncOverlay(map, PROVINCES, fc, visible);
     } catch (err) {
       console.error("[ProvincePreview] Error creating/updating layers:", err);
     }
-
-    // Visibility
-    const vis = visible ? "visible" : "none";
-    if (map.getLayer(FILL_LAYER_ID)) map.setLayoutProperty(FILL_LAYER_ID, "visibility", vis);
-    if (map.getLayer(LINE_LAYER_ID)) map.setLayoutProperty(LINE_LAYER_ID, "visibility", vis);
-    if (map.getLayer(LABEL_LAYER_ID)) map.setLayoutProperty(LABEL_LAYER_ID, "visibility", vis);
     // oxlint-disable-next-line
   }, [map, fc, provinces, visible]);
 
-  // ── Aligned cities reference layers ──
   useEffect(() => {
     if (!map) return;
-
-    const citiesList = cities || [];
-    const citiesFc: FeatureCollection = {
-      type: "FeatureCollection",
-      features: citiesList.map((c, i) => ({
-        type: "Feature",
-        id: i,
-        geometry: {
-          type: "Point",
-          coordinates: [c.lng, c.lat],
-        },
-        properties: {
-          name: c.name,
-          isCapital: c.isCapital,
-        },
-      })),
-    };
-
-    const sourceId = "province-import-preview-cities";
-    const circleLayerId = "province-import-preview-cities-circle";
-    const labelLayerId = "province-import-preview-cities-label";
-
     try {
-      const source = map.getSource(sourceId);
-      if (source && "setData" in source) {
-        (source as { setData: (data: FeatureCollection) => void }).setData(citiesFc);
-      } else {
-        // Clean up stale layers
-        if (map.getLayer(labelLayerId)) map.removeLayer(labelLayerId);
-        if (map.getLayer(circleLayerId)) map.removeLayer(circleLayerId);
-        if (map.getSource(sourceId)) map.removeSource(sourceId);
-
-        map.addSource(sourceId, { type: "geojson", data: citiesFc });
-
-        map.addLayer({
-          id: circleLayerId,
-          type: "circle",
-          source: sourceId,
-          paint: {
-            "circle-radius": 5,
-            "circle-color": ["case", ["get", "isCapital"], "#ef4444", "#3b82f6"],
-            "circle-stroke-color": "#ffffff",
-            "circle-stroke-width": 1.5,
-          },
-        });
-
-        map.addLayer({
-          id: labelLayerId,
-          type: "symbol",
-          source: sourceId,
-          layout: {
-            "text-field": ["get", "name"],
-            "text-size": 10,
-            "text-offset": [0, 1.2],
-            "text-anchor": "top",
-            "text-allow-overlap": false,
-          },
-          paint: {
-            "text-color": "#1e293b",
-            "text-halo-color": "#ffffff",
-            "text-halo-width": 1.5,
-          },
-        });
-      }
-
-      const vis = visible ? "visible" : "none";
-      if (map.getLayer(circleLayerId)) map.setLayoutProperty(circleLayerId, "visibility", vis);
-      if (map.getLayer(labelLayerId)) map.setLayoutProperty(labelLayerId, "visibility", vis);
+      const points = (cities ?? []).map((c, i) => ({
+        ...pointFeature([c.lng, c.lat], { name: c.name, isCapital: c.isCapital }),
+        id: i,
+      }));
+      syncOverlay(map, CITIES, collection(points), visible);
     } catch (err) {
       console.error("[ProvincePreview] Error rendering cities preview:", err);
     }
   }, [map, cities, visible]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (!map) return;
       try {
-        if (map.getLayer(LABEL_LAYER_ID)) map.removeLayer(LABEL_LAYER_ID);
-        if (map.getLayer(LINE_LAYER_ID)) map.removeLayer(LINE_LAYER_ID);
-        if (map.getLayer(FILL_LAYER_ID)) map.removeLayer(FILL_LAYER_ID);
-        if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
-        if (map.getLayer(BORDER_LINE_LAYER_ID)) map.removeLayer(BORDER_LINE_LAYER_ID);
-        if (map.getLayer(BORDER_FILL_LAYER_ID)) map.removeLayer(BORDER_FILL_LAYER_ID);
-        if (map.getSource(BORDER_SOURCE_ID)) map.removeSource(BORDER_SOURCE_ID);
-
-        // Clean up cities preview layers
-        const citiesSourceId = "province-import-preview-cities";
-        const citiesCircleLayerId = "province-import-preview-cities-circle";
-        const citiesLabelLayerId = "province-import-preview-cities-label";
-        if (map.getLayer(citiesLabelLayerId)) map.removeLayer(citiesLabelLayerId);
-        if (map.getLayer(citiesCircleLayerId)) map.removeLayer(citiesCircleLayerId);
-        if (map.getSource(citiesSourceId)) map.removeSource(citiesSourceId);
+        for (const overlay of OVERLAYS) removeOverlay(map, overlay);
       } catch {
         // Map may already be destroyed
       }

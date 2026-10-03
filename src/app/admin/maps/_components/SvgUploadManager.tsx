@@ -1,6 +1,6 @@
 "use client";
-import { useState, useRef, useCallback } from "react";
-import { api } from "~/trpc/react";
+import { useState, useRef } from "react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { notifyFromStore } from "~/hooks/useNotify";
 import { withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
@@ -26,6 +26,7 @@ import {
   Settings as Cog,
 } from "iconoir-react";
 import { SvgProcessingDialog } from "./SvgProcessingDialog";
+import { LAYER_TYPES } from "./layer-types";
 import {
   Table,
   TableHeader,
@@ -36,25 +37,130 @@ import {
 } from "~/components/ui/table";
 import { Card } from "~/components/ui/card";
 
-const LAYER_TYPES = [
-  { value: "political", label: "Political" },
-  { value: "climate", label: "Climate" },
-  { value: "altitudes", label: "Altitudes" },
-  { value: "rivers", label: "Rivers" },
-  { value: "lakes", label: "Lakes" },
-  { value: "icecaps", label: "Icecaps" },
-  { value: "background", label: "Background" },
-] as const;
-
 type LayerType = (typeof LAYER_TYPES)[number]["value"];
 
-const STATUS_CONFIG: Record<string, { icon: any; color: string; label: string }> = {
+const STATUS_CONFIG: Record<string, { icon: typeof Clock; color: string; label: string }> = {
   pending: { icon: Clock, color: "text-yellow", label: "Pending" },
   processing: { icon: Cog, color: "text-blue", label: "Processing" },
   processed: { icon: CheckCircle2, color: "text-green", label: "Processed" },
   failed: { icon: XCircle, color: "text-red", label: "Failed" },
   rolled_back: { icon: RotateCcw, color: "text-label-secondary", label: "Rolled back" },
 };
+
+const formatBytes = (bytes: number) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const formatDate = (date: Date | string) =>
+  new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+type UploadHistory = RouterOutputs["geoAdmin"]["getSvgUploadHistory"];
+
+function UploadHistoryTable({
+  history,
+  onProcess,
+  rollback,
+  remove,
+}: {
+  history: UploadHistory;
+  onProcess: (upload: { id: string; fileName: string }) => void;
+  rollback: { mutate: (input: { uploadId: string }) => void; isPending: boolean };
+  remove: { mutate: (input: { uploadId: string }) => void; isPending: boolean };
+}) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="text-label px-4">File</TableHead>
+          <TableHead className="text-label px-4">Status</TableHead>
+          <TableHead className="text-label px-4">Features</TableHead>
+          <TableHead className="text-label px-4">Date</TableHead>
+          <TableHead className="text-label px-4 text-right">Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {history.map((upload) => {
+          const statusCfg = STATUS_CONFIG[upload.status] ?? STATUS_CONFIG.pending!;
+          const StatusIcon = statusCfg.icon;
+
+          return (
+            <TableRow key={upload.id}>
+              <TableCell className="px-4">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{upload.fileName}</span>
+                  <span className="text-label-secondary text-footnote">
+                    {formatBytes(upload.fileSizeBytes)}
+                  </span>
+                  {upload.isActive && <Badge variant="success">Active</Badge>}
+                </div>
+              </TableCell>
+              <TableCell className="px-4">
+                <div className={`flex items-center gap-2 ${statusCfg.color}`}>
+                  <StatusIcon className="h-3.5 w-3.5" />
+                  <span className="text-caption">{statusCfg.label}</span>
+                </div>
+                {upload.errorMessage && (
+                  <p className="text-footnote text-red mt-0.5 max-w-[200px] truncate">
+                    {upload.errorMessage}
+                  </p>
+                )}
+              </TableCell>
+              <TableCell className="text-label px-4">{upload.featureCount ?? "—"}</TableCell>
+              <TableCell className="text-label-secondary text-footnote px-4">
+                {formatDate(upload.createdAt)}
+              </TableCell>
+              <TableCell className="px-4">
+                <div className="flex justify-end gap-2">
+                  {(upload.status === "pending" ||
+                    upload.status === "processed" ||
+                    upload.status === "failed") && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onProcess({ id: upload.id, fileName: upload.fileName })}
+                    >
+                      <Upload className="mr-1 h-3 w-3" />
+                      {upload.status === "pending" ? "Process" : "Reprocess"}
+                    </Button>
+                  )}
+                  {upload.status === "processed" && !upload.isActive && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => rollback.mutate({ uploadId: upload.id })}
+                      disabled={rollback.isPending}
+                    >
+                      <RotateCcw className="mr-1 h-3 w-3" />
+                      Restore
+                    </Button>
+                  )}
+                  {!upload.isActive && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive"
+                      onClick={() => remove.mutate({ uploadId: upload.id })}
+                      disabled={remove.isPending}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+              </TableCell>
+            </TableRow>
+          );
+        })}
+      </TableBody>
+    </Table>
+  );
+}
 
 export function SvgUploadManager() {
   const [selectedLayer, setSelectedLayer] = useState<LayerType>("political");
@@ -86,92 +192,67 @@ export function SvgUploadManager() {
     onSuccess: () => utils.geoAdmin.getSvgUploadHistory.invalidate(),
   });
 
-  const handleFile = useCallback(
-    async (file: File) => {
-      if (!file.name.endsWith(".svg")) {
-        notifyFromStore({
-          title: "Please upload an SVG file",
-          type: "warning",
-          priority: "medium",
-        });
+  const handleFile = async (file: File) => {
+    if (!file.name.endsWith(".svg")) {
+      notifyFromStore({
+        title: "Please upload an SVG file",
+        type: "warning",
+        priority: "medium",
+      });
+      return;
+    }
+
+    if (file.size > 50 * 1024 * 1024) {
+      notifyFromStore({
+        title: "File too large",
+        message: "Maximum 50 MB.",
+        type: "warning",
+        priority: "medium",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("layerType", selectedLayer);
+
+      const res = await fetch(withBasePath("/api/admin/upload-svg"), {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setUploadError(data.error ?? "Upload failed");
         return;
       }
 
-      if (file.size > 50 * 1024 * 1024) {
-        notifyFromStore({
-          title: "File too large",
-          message: "Maximum 50 MB.",
-          type: "warning",
-          priority: "medium",
-        });
-        return;
-      }
-
-      setIsUploading(true);
-      setUploadError(null);
-
-      try {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("layerType", selectedLayer);
-
-        const res = await fetch(withBasePath("/api/admin/upload-svg"), {
-          method: "POST",
-          body: formData,
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          setUploadError(data.error ?? "Upload failed");
-          return;
-        }
-
-        utils.geoAdmin.getSvgUploadHistory.invalidate();
-        setProcessingUpload({ id: data.id, fileName: data.fileName });
-      } catch (err) {
-        setUploadError(err instanceof Error ? err.message : "Upload failed");
-      } finally {
-        setIsUploading(false);
-      }
-    },
-    [selectedLayer, utils]
-  );
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-      const file = e.dataTransfer.files[0];
-      if (file) handleFile(file);
-    },
-    [handleFile]
-  );
-
-  const handleFileInput = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) handleFile(file);
-      // Reset input so same file can be re-selected
-      e.target.value = "";
-    },
-    [handleFile]
-  );
-
-  const formatBytes = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+      utils.geoAdmin.getSvgUploadHistory.invalidate();
+      setProcessingUpload({ id: data.id, fileName: data.fileName });
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const formatDate = (date: Date | string) => {
-    const d = new Date(date);
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
+    // Reset input so same file can be re-selected
+    e.target.value = "";
   };
 
   return (
@@ -268,95 +349,12 @@ export function SvgUploadManager() {
             No uploads yet for this layer type.
           </Card>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-label px-4">File</TableHead>
-                <TableHead className="text-label px-4">Status</TableHead>
-                <TableHead className="text-label px-4">Features</TableHead>
-                <TableHead className="text-label px-4">Date</TableHead>
-                <TableHead className="text-label px-4 text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {history.map((upload) => {
-                const statusCfg = STATUS_CONFIG[upload.status] ?? STATUS_CONFIG.pending!;
-                const StatusIcon = statusCfg.icon;
-
-                return (
-                  <TableRow key={upload.id} className={`${upload.isActive ? "" : ""}`}>
-                    <TableCell className="px-4">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{upload.fileName}</span>
-                        <span className="text-label-secondary text-footnote">
-                          {formatBytes(upload.fileSizeBytes)}
-                        </span>
-                        {upload.isActive && <Badge variant="success">Active</Badge>}
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-4">
-                      <div className={`flex items-center gap-2 ${statusCfg.color}`}>
-                        <StatusIcon className="h-3.5 w-3.5" />
-                        <span className="text-caption">{statusCfg.label}</span>
-                      </div>
-                      {upload.errorMessage && (
-                        <p className="text-footnote text-red mt-0.5 max-w-[200px] truncate">
-                          {upload.errorMessage}
-                        </p>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-label px-4">{upload.featureCount ?? "—"}</TableCell>
-                    <TableCell className="text-label-secondary text-footnote px-4">
-                      {formatDate(upload.createdAt)}
-                    </TableCell>
-                    <TableCell className="px-4">
-                      <div className="flex justify-end gap-2">
-                        {(upload.status === "pending" ||
-                          upload.status === "processed" ||
-                          upload.status === "failed") && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              setProcessingUpload({
-                                id: upload.id,
-                                fileName: upload.fileName,
-                              })
-                            }
-                          >
-                            <Upload className="mr-1 h-3 w-3" />
-                            {upload.status === "pending" ? "Process" : "Reprocess"}
-                          </Button>
-                        )}
-                        {upload.status === "processed" && !upload.isActive && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => rollbackMutation.mutate({ uploadId: upload.id })}
-                            disabled={rollbackMutation.isPending}
-                          >
-                            <RotateCcw className="mr-1 h-3 w-3" />
-                            Restore
-                          </Button>
-                        )}
-                        {!upload.isActive && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-destructive"
-                            onClick={() => deleteMutation.mutate({ uploadId: upload.id })}
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          <UploadHistoryTable
+            history={history}
+            onProcess={setProcessingUpload}
+            rollback={rollbackMutation}
+            remove={deleteMutation}
+          />
         )}
       </div>
 

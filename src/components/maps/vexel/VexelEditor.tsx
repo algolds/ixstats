@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge } from "~/components/ui/badge";
-import React, { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { VexelEditorProvider, useVexelEditor } from "./VexelEditorProvider";
 import { api } from "~/trpc/react";
 import type { HeraldryComposition } from "~/lib/heraldry";
@@ -21,11 +21,10 @@ interface VexelEditorProps {
 
 function EditorShell() {
   const { isDirty, achievementId } = useVexelEditor();
-  const [isCommonsOpen, setIsCommonsOpen] = React.useState(false);
+  const [isCommonsOpen, setIsCommonsOpen] = useState(false);
 
   return (
     <div className="bg-surface text-label relative flex h-screen flex-col overflow-hidden font-sans">
-      {/* Top Navbar */}
       <header className="border-separator bg-fill-3 flex h-14 shrink-0 items-center justify-between border-b px-6">
         <div className="flex items-center gap-3">
           <span className="text-title-2 text-tint">Vexel</span>
@@ -45,16 +44,12 @@ function EditorShell() {
         </div>
       </header>
 
-      {/* Main Layout Area */}
       <div className="relative flex flex-1 overflow-hidden">
-        {/* Main Grid */}
         <div className="grid flex-1 grid-cols-[280px_1fr_320px] overflow-hidden">
-          {/* Left Sidebar: Layers */}
           <aside className="border-separator bg-fill-3 overflow-y-auto border-r p-4">
             <LayerPanel />
           </aside>
 
-          {/* Center Canvas: Preview / Audit */}
           <main className="bg-fill-3 flex flex-col space-y-0 overflow-y-auto p-6">
             <SaveControls />
             <div className="mt-4 space-y-6">
@@ -64,18 +59,15 @@ function EditorShell() {
             </div>
           </main>
 
-          {/* Right Sidebar: Properties & Charge Library */}
           <aside className="border-separator bg-fill-3 flex flex-col gap-6 overflow-y-auto border-l p-4">
             <PropertiesPanel />
             <ChargeLibraryPanel onOpenCommons={() => setIsCommonsOpen(true)} />
           </aside>
         </div>
 
-        {/* Wikimedia Commons slide-over */}
         {isCommonsOpen && <CommonsBrowserPanel onClose={() => setIsCommonsOpen(false)} />}
       </div>
 
-      {/* Bottom Status Bar */}
       <footer className="border-separator bg-fill-3 text-label-secondary text-footnote flex h-8 shrink-0 items-center justify-between border-t px-6">
         <div>{achievementId ? `Editing: ${achievementId}` : "New Design Draft"}</div>
         <div>IxStates Vexel Engine v1.0.0</div>

@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "~/components/ui/badge";
 import React, { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
@@ -17,15 +16,12 @@ import {
   WarningTriangle as AlertTriangle,
   Refresh as RefreshCw,
   OpenBook as BookOpen,
-  Plus,
-  Upload,
-  Trash as Trash2,
-  EditPencil as Edit3,
 } from "iconoir-react";
 import { resolveImageUrl } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import Link from "next/link";
 import { NativeLoreCanvasModal } from "./dossier/NativeLoreCanvasModal";
-import { FileImportDropzone, type ParsedLoreSection } from "./dossier/FileImportDropzone";
+import { NativeLoreView } from "./NativeLoreView";
+import { useNativeLore, type LoreDraft } from "./useNativeLore";
 import { Card, CardContent } from "~/components/ui/card";
 
 /**
@@ -50,91 +46,15 @@ export const DossierTab: React.FC<DossierTabProps> = ({
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
 
-  const toggleSection = (id: string) => {
-    setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
+  const toggleSection = (id: string) => setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
 
-  // State for Canvas editor and file import
+  const { docs: nativeDocs, saveDoc, importSections, deleteDoc } = useNativeLore(countryName);
   const [isCanvasModalOpen, setIsCanvasModalOpen] = useState(false);
-  const [showFileImport, setShowFileImport] = useState(false);
-  const [editingLoreDoc, setEditingLoreDoc] = useState<{
-    id?: string;
-    title: string;
-    content: string;
-    clearance: "PUBLIC" | "ALLIANCE" | "PRIVATE";
-  } | null>(null);
+  const [editingLoreDoc, setEditingLoreDoc] = useState<(LoreDraft & { id?: string }) | null>(null);
 
-  // Native lore documents (persisted locally per nation as fallback + ready for DB sync)
-  const [nativeDocs, setNativeDocs] = useState<
-    Array<{
-      id: string;
-      title: string;
-      content: string;
-      clearance: "PUBLIC" | "ALLIANCE" | "PRIVATE";
-      updatedAt: string;
-    }>
-  >(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem(`ixstats_native_lore_${countryName}`);
-        return saved ? JSON.parse(saved) : [];
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  });
-
-  const saveNativeDocs = (
-    docs: Array<{
-      id: string;
-      title: string;
-      content: string;
-      clearance: "PUBLIC" | "ALLIANCE" | "PRIVATE";
-      updatedAt: string;
-    }>
-  ) => {
-    setNativeDocs(docs);
-    if (typeof window !== "undefined") {
-      localStorage.setItem(`ixstats_native_lore_${countryName}`, JSON.stringify(docs));
-    }
-  };
-
-  const handleSaveNativeDoc = (doc: {
-    title: string;
-    content: string;
-    clearance: "PUBLIC" | "ALLIANCE" | "PRIVATE";
-  }) => {
-    if (editingLoreDoc?.id) {
-      const updated = nativeDocs.map((d) =>
-        d.id === editingLoreDoc.id ? { ...d, ...doc, updatedAt: new Date().toISOString() } : d
-      );
-      saveNativeDocs(updated);
-    } else {
-      const newDoc = {
-        id: `lore_${Date.now()}`,
-        ...doc,
-        updatedAt: new Date().toISOString(),
-      };
-      saveNativeDocs([newDoc, ...nativeDocs]);
-    }
-    setEditingLoreDoc(null);
-  };
-
-  const handleImportSections = (sections: ParsedLoreSection[]) => {
-    const imported = sections.map((s, idx) => ({
-      id: `lore_imported_${Date.now()}_${idx}`,
-      title: s.title,
-      content: s.content,
-      clearance: s.classification,
-      updatedAt: new Date().toISOString(),
-    }));
-    saveNativeDocs([...imported, ...nativeDocs]);
-    setShowFileImport(false);
-  };
-
-  const handleDeleteNativeDoc = (id: string) => {
-    saveNativeDocs(nativeDocs.filter((d) => d.id !== id));
+  const openCanvas = (doc: (LoreDraft & { id?: string }) | null) => {
+    setEditingLoreDoc(doc);
+    setIsCanvasModalOpen(true);
   };
 
   // State for content modal (full-screen section reading)
@@ -286,14 +206,13 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                           </Button>
                           <Button
                             variant="outline"
-                            onClick={() => {
-                              setEditingLoreDoc({
+                            onClick={() =>
+                              openCanvas({
                                 title: `${countryName} National Briefing`,
                                 content: `Executive briefing and lore summary for ${countryName}.`,
                                 clearance: "PUBLIC",
-                              });
-                              setIsCanvasModalOpen(true);
-                            }}
+                              })
+                            }
                           >
                             Create native lore document
                           </Button>
@@ -337,122 +256,14 @@ export const DossierTab: React.FC<DossierTabProps> = ({
               </div>
             )}
 
-            {/* Native Lore View */}
             {activeView === "native_lore" && (
-              <div className="space-y-6">
-                {/* Action Bar */}
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <h3 className="text-label text-headline">Native lore documents</h3>
-                    <p className="text-label-secondary text-footnote">
-                      Custom dossier documents created via the WikiOS Canvas Editor or file import.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowFileImport(!showFileImport)}
-                      className="text-caption gap-2 font-semibold"
-                    >
-                      <Upload className="h-3.5 w-3.5" />
-                      {showFileImport ? "Hide Import" : "Import Files"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        setEditingLoreDoc(null);
-                        setIsCanvasModalOpen(true);
-                      }}
-                      className="text-footnote gap-2"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      New document
-                    </Button>
-                  </div>
-                </div>
-
-                {/* File Import Dropzone Area */}
-                {showFileImport && (
-                  <FileImportDropzone
-                    onImportSections={handleImportSections}
-                    onCancel={() => setShowFileImport(false)}
-                  />
-                )}
-
-                {/* Document Grid / Empty State */}
-                {nativeDocs.length === 0 ? (
-                  <Card className="rounded-card">
-                    <CardContent className="p-8 text-center">
-                      <BookOpen className="text-label-secondary mx-auto mb-3 h-6 w-6" />
-                      <h3 className="text-label text-title-3 mb-2">No native lore documents</h3>
-                      <p className="text-label-secondary text-body mx-auto mb-6 max-w-md">
-                        Create custom dossier documents directly using the WikiOS Canvas Editor or
-                        import existing markdown/text files.
-                      </p>
-                      <Button
-                        onClick={() => {
-                          setEditingLoreDoc(null);
-                          setIsCanvasModalOpen(true);
-                        }}
-                      >
-                        Create first document
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {nativeDocs.map((doc) => (
-                      <Card key={doc.id} className="rounded-card p-5">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <h4 className="text-label text-headline truncate">{doc.title}</h4>
-                              <Badge variant="outline" className="capitalize">
-                                {doc.clearance.toLowerCase()}
-                              </Badge>
-                            </div>
-                            <p className="text-label-secondary text-footnote mt-1 line-clamp-3">
-                              {doc.content.replace(/<[^>]*>/g, "").slice(0, 150)}...
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="border-separator mt-4 flex items-center justify-between border-t pt-3">
-                          <span className="text-label-secondary text-footnote">
-                            Updated {new Date(doc.updatedAt).toLocaleDateString()}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => {
-                                setEditingLoreDoc(doc);
-                                setIsCanvasModalOpen(true);
-                              }}
-                              title="Edit document"
-                              aria-label={`Edit ${doc.title}`}
-                            >
-                              <Edit3 className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="hover:text-destructive h-8 w-8"
-                              onClick={() => handleDeleteNativeDoc(doc.id)}
-                              title="Delete document"
-                              aria-label={`Delete ${doc.title}`}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <NativeLoreView
+                docs={nativeDocs}
+                onNew={() => openCanvas(null)}
+                onEdit={openCanvas}
+                onDelete={deleteDoc}
+                onImport={importSections}
+              />
             )}
           </motion.div>
         </AnimatePresence>
@@ -465,7 +276,10 @@ export const DossierTab: React.FC<DossierTabProps> = ({
               setIsCanvasModalOpen(false);
               setEditingLoreDoc(null);
             }}
-            onSave={handleSaveNativeDoc}
+            onSave={(draft) => {
+              saveDoc(draft, editingLoreDoc?.id);
+              setEditingLoreDoc(null);
+            }}
             initialTitle={editingLoreDoc?.title}
             initialContent={editingLoreDoc?.content}
             initialClearance={editingLoreDoc?.clearance}

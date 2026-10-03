@@ -3,17 +3,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
 import path from "path";
 import crypto from "crypto";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_REDIRECTS = 3;
+const EXTENSION_BY_TYPE: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/jpg": "jpg",
+  "image/gif": "gif",
+  "image/webp": "webp",
+};
+
 // Vector images can carry script, and files land in public/ on the app origin: raster only.
-const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"];
 
 // Get base path for production deployments (e.g., /projects/ixstats)
 const BASE_PATH = process.env.BASE_PATH || process.env.NEXT_PUBLIC_BASE_PATH || "";
+
+const ALLOWED_TYPES = Object.keys(EXTENSION_BY_TYPE);
 
 // Trusted domains for image downloads
 const TRUSTED_DOMAINS = [
@@ -37,29 +45,6 @@ function isTrustedDomain(url: string): boolean {
   } catch {
     return false;
   }
-}
-
-// oxlint-disable-next-line eslint/no-unused-vars
-function getFileNameFromUrl(url: string): string {
-  try {
-    const urlObj = new URL(url);
-    const pathname = urlObj.pathname;
-    const fileName = pathname.split("/").pop() || "image";
-    return fileName;
-  } catch {
-    return "image";
-  }
-}
-
-function getFileExtensionFromType(contentType: string): string {
-  const typeMap: Record<string, string> = {
-    "image/png": "png",
-    "image/jpeg": "jpg",
-    "image/jpg": "jpg",
-    "image/gif": "gif",
-    "image/webp": "webp",
-  };
-  return typeMap[contentType] || "png";
 }
 
 type TrustedFetchResult = { ok: true; response: Response } | { ok: false; error: string };
@@ -114,7 +99,7 @@ function badRequest(error: string): NextResponse {
 function generateSafeFileName(originalUrl: string, contentType: string): string {
   // Create a hash of the URL to ensure uniqueness
   const hash = crypto.createHash("md5").update(originalUrl).digest("hex");
-  const extension = getFileExtensionFromType(contentType);
+  const extension = EXTENSION_BY_TYPE[contentType] || "png";
   const timestamp = Date.now();
   return `downloaded_${timestamp}_${hash}.${extension}`;
 }
@@ -178,10 +163,7 @@ export async function POST(request: NextRequest) {
 
     // Ensure images directory exists
     const imagesDir = path.join(process.cwd(), "public", "images", "downloaded");
-    if (!existsSync(imagesDir)) {
-      await mkdir(imagesDir, { recursive: true });
-      console.log(`[ExternalImageDownload] Created directory: ${imagesDir}`);
-    }
+    await mkdir(imagesDir, { recursive: true });
 
     // Save the file to disk
     const filePath = path.join(imagesDir, fileName);
@@ -213,16 +195,11 @@ export async function POST(request: NextRequest) {
       stack: error instanceof Error ? error.stack : undefined,
     });
 
-    if (error instanceof Error) {
-      if (error.name === "AbortError" || error.name === "TimeoutError") {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Download timeout - image took too long to download",
-          },
-          { status: 408 }
-        );
-      }
+    if (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError")) {
+      return NextResponse.json(
+        { success: false, error: "Download timeout - image took too long to download" },
+        { status: 408 }
+      );
     }
 
     return NextResponse.json(

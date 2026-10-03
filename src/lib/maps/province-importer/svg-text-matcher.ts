@@ -6,17 +6,7 @@
  */
 
 import { getAccumulatedTransform, applyMatrixToPoint } from "./svg-transform";
-
-const SVG_NS = "http://www.w3.org/2000/svg";
-
-// @xmldom/xmldom@0.9's Element type is no longer structurally assignable to the
-// global lib.dom Element (it was in 0.8). All "XmlElement" values in this file are
-// xmldom-parsed nodes, never real DOM elements, so alias to the package's own type.
-type XmlElement = import("@xmldom/xmldom").Element;
-
-// ──────────────────────────────────────────────
-// Types
-// ──────────────────────────────────────────────
+import { SVG_NS, attrOrZero, type XmlElement } from "./svg-dom";
 
 interface TextLabel {
   text: string;
@@ -24,9 +14,61 @@ interface TextLabel {
   y: number;
 }
 
-// ──────────────────────────────────────────────
-// Text Extraction
-// ──────────────────────────────────────────────
+/** Numeric attribute (first value of a list), NaN when absent. */
+const attrOrNaN = (el: XmlElement, name: string) => {
+  const v = el.getAttribute(name);
+  return v != null ? parseFloat(v) : NaN;
+};
+
+/**
+ * Join <tspan> children into one label string.
+ *
+ * Vector editors (Illustrator especially) split a single word into many
+ * <tspan>s solely to encode per-glyph kerning — e.g. "CHRYSONUM" becomes
+ * <tspan>CH</tspan><tspan>R</tspan><tspan>Y</tspan><tspan>SONUM</tspan>,
+ * all sharing one baseline (y="0", increasing x). Those MUST be joined
+ * with no separator. Genuine spaces between words survive verbatim inside
+ * a tspan's text (e.g. "X NORBA"), so individual tspans must NOT be
+ * trimmed. A separator is inserted only at a real line break — when a
+ * tspan starts a new baseline (its y changes) or its x resets leftward
+ * (a carriage return) — which keeps multi-line labels like "São" / "Paulo"
+ * joined as "São Paulo".
+ */
+function tspanLabel(el: XmlElement, tspans: XmlElement[], transformRoot: XmlElement) {
+  let combined = "";
+  let firstX = NaN;
+  let firstY = NaN;
+  let prevX = NaN;
+  let prevBaseline = NaN;
+
+  for (const tspan of tspans) {
+    const raw = tspan.textContent ?? "";
+    if (raw === "") continue;
+
+    const tx = attrOrNaN(tspan, "x");
+    const ty = attrOrNaN(tspan, "y");
+
+    // Anchor the label at the first positioned tspan (fall back to <text>).
+    if (isNaN(firstX)) {
+      const ax = (isNaN(tx) ? attrOrZero(el, "x") : tx) + attrOrZero(tspan, "dx");
+      const ay = (isNaN(ty) ? attrOrZero(el, "y") : ty) + attrOrZero(tspan, "dy");
+      [firstX, firstY] = applyMatrixToPoint(ax, ay, getAccumulatedTransform(tspan, transformRoot));
+    }
+
+    const newLine =
+      (!isNaN(ty) && !isNaN(prevBaseline) && Math.abs(ty - prevBaseline) > 1e-6) ||
+      (!isNaN(tx) && !isNaN(prevX) && tx < prevX - 1e-6);
+    if (combined !== "" && newLine && !/\s$/.test(combined)) combined += " ";
+
+    combined += raw;
+    if (!isNaN(tx)) prevX = tx;
+    if (!isNaN(ty)) prevBaseline = ty;
+  }
+
+  // Collapse whitespace runs (from line breaks or source formatting) and trim.
+  const text = combined.replace(/\s+/g, " ").trim();
+  return text.length >= 2 && !isNaN(firstX) ? { text, x: firstX, y: firstY } : null;
+}
 
 /**
  * Extract all text labels from an SVG, resolving transforms.
@@ -37,100 +79,24 @@ interface TextLabel {
  */
 export function extractAllTextLabels(svgRoot: XmlElement, stopAt?: XmlElement): TextLabel[] {
   const transformRoot = stopAt ?? svgRoot;
-  const labels: TextLabel[] = [];
-  const textEls = svgRoot.getElementsByTagNameNS(SVG_NS, "text");
 
-  for (let i = 0; i < textEls.length; i++) {
-    const el = textEls[i]!;
-
-    // Get accumulated transform from this <text> up to the root
-    const matrix = getAccumulatedTransform(el, transformRoot);
-
-    // Check for <tspan> children
-    const tspans = el.getElementsByTagNameNS(SVG_NS, "tspan");
-
+  return [...svgRoot.getElementsByTagNameNS(SVG_NS, "text")].flatMap((el): TextLabel[] => {
+    const tspans = [...el.getElementsByTagNameNS(SVG_NS, "tspan")];
     if (tspans.length > 0) {
-      // Join <tspan> children into one label string.
-      //
-      // Vector editors (Illustrator especially) split a single word into many
-      // <tspan>s solely to encode per-glyph kerning — e.g. "CHRYSONUM" becomes
-      // <tspan>CH</tspan><tspan>R</tspan><tspan>Y</tspan><tspan>SONUM</tspan>,
-      // all sharing one baseline (y="0", increasing x). Those MUST be joined
-      // with no separator. Genuine spaces between words survive verbatim inside
-      // a tspan's text (e.g. "X NORBA"), so individual tspans must NOT be
-      // trimmed. A separator is inserted only at a real line break — when a
-      // tspan starts a new baseline (its y changes) or its x resets leftward
-      // (a carriage return) — which keeps multi-line labels like "São" / "Paulo"
-      // joined as "São Paulo".
-      let combined = "";
-      let firstX = NaN,
-        firstY = NaN;
-      let prevX = NaN,
-        prevBaseline = NaN;
-
-      for (let j = 0; j < tspans.length; j++) {
-        const tspan = tspans[j]!;
-        const raw = tspan.textContent ?? "";
-        if (raw === "") continue;
-
-        // First coordinate of any (possibly list-valued) x/y attribute.
-        const xAttr = tspan.getAttribute("x");
-        const yAttr = tspan.getAttribute("y");
-        const tx = xAttr != null ? parseFloat(xAttr) : NaN;
-        const ty = yAttr != null ? parseFloat(yAttr) : NaN;
-
-        // Anchor the label at the first positioned tspan (fall back to <text>).
-        if (isNaN(firstX)) {
-          const ax = !isNaN(tx) ? tx : parseFloat(el.getAttribute("x") || "0");
-          const ay = !isNaN(ty) ? ty : parseFloat(el.getAttribute("y") || "0");
-          const dx = parseFloat(tspan.getAttribute("dx") || "0");
-          const dy = parseFloat(tspan.getAttribute("dy") || "0");
-
-          // Accumulate the tspan's own transform if it has one
-          const tspanMatrix = getAccumulatedTransform(tspan, transformRoot);
-          const [rx, ry] = applyMatrixToPoint(ax + dx, ay + dy, tspanMatrix);
-          firstX = rx;
-          firstY = ry;
-        }
-
-        // Insert a space only when this tspan starts a new line, never between
-        // kerning fragments of the same word.
-        if (combined !== "") {
-          const newLine =
-            (!isNaN(ty) && !isNaN(prevBaseline) && Math.abs(ty - prevBaseline) > 1e-6) ||
-            (!isNaN(tx) && !isNaN(prevX) && tx < prevX - 1e-6);
-          if (newLine && !/\s$/.test(combined)) combined += " ";
-        }
-
-        combined += raw;
-        if (!isNaN(tx)) prevX = tx;
-        if (!isNaN(ty)) prevBaseline = ty;
-      }
-
-      // Collapse whitespace runs (from line breaks or source formatting) and trim.
-      const cleaned = combined.replace(/\s+/g, " ").trim();
-      if (cleaned.length >= 2 && !isNaN(firstX)) {
-        labels.push({ text: cleaned, x: firstX, y: firstY });
-      }
-    } else {
-      // No tspan — use <text> element directly
-      const text = (el.textContent || "").trim();
-      if (!text || text.length < 2) continue;
-
-      const x = parseFloat(el.getAttribute("x") || "0");
-      const y = parseFloat(el.getAttribute("y") || "0");
-
-      const [rx, ry] = applyMatrixToPoint(x, y, matrix);
-      labels.push({ text, x: rx, y: ry });
+      const label = tspanLabel(el, tspans, transformRoot);
+      return label ? [label] : [];
     }
-  }
 
-  return labels;
+    const text = (el.textContent || "").trim();
+    if (text.length < 2) return [];
+    const [x, y] = applyMatrixToPoint(
+      attrOrZero(el, "x"),
+      attrOrZero(el, "y"),
+      getAccumulatedTransform(el, transformRoot)
+    );
+    return [{ text, x, y }];
+  });
 }
-
-// ──────────────────────────────────────────────
-// Label → Province Matching
-// ──────────────────────────────────────────────
 
 interface ProvinceSpatialInfo {
   centroid: [number, number];
@@ -141,10 +107,10 @@ interface ProvinceSpatialInfo {
  * Match text labels to provinces by spatial proximity.
  *
  * Strategy:
- *   1. For each label, find provinces whose bbox contains the label point
- *   2. Among those, pick the province whose centroid is closest
- *   3. If no bbox contains the label, find the nearest centroid within a threshold
- *   4. Greedy: each province gets at most one label (closest wins)
+ *   1. Labels inside exactly one province bbox are assigned to it
+ *   2. The remaining candidate pairs (label inside the bbox, or within 2x the average bbox
+ *      diagonal of the centroid) are assigned greedily: bbox containment first, then closest
+ *      centroid. Each province and each label is used at most once.
  *
  * @returns Map from province index → label text
  */
@@ -154,73 +120,43 @@ export function matchLabelsToProvinces(
 ): Map<number, string> {
   if (labels.length === 0 || provinces.length === 0) return new Map();
 
-  // Compute average bbox diagonal for distance threshold
-  let avgDiag = 0;
-  for (const p of provinces) {
-    const dx = p.bbox[2] - p.bbox[0];
-    const dy = p.bbox[3] - p.bbox[1];
-    avgDiag += Math.hypot(dx, dy);
-  }
-  avgDiag /= provinces.length;
-  const maxDist = avgDiag * 2; // Allow labels up to 2x average bbox diagonal away
+  const avgDiag =
+    provinces.reduce(
+      (sum, p) => sum + Math.hypot(p.bbox[2] - p.bbox[0], p.bbox[3] - p.bbox[1]),
+      0
+    ) / provinces.length;
+  const maxDist = avgDiag * 2;
 
-  // Build ALL candidate pairs: label → province with centroid distance
-  // Each label can match any province within range
   const allPairs: { labelIdx: number; provIdx: number; dist: number; inBbox: boolean }[] = [];
-
-  for (let li = 0; li < labels.length; li++) {
-    const label = labels[li]!;
-
-    for (let pi = 0; pi < provinces.length; pi++) {
-      const prov = provinces[pi]!;
-      const [minX, minY, maxX, maxY] = prov.bbox;
+  labels.forEach((label, labelIdx) => {
+    provinces.forEach(({ bbox: [minX, minY, maxX, maxY], centroid }, provIdx) => {
       const inBbox = label.x >= minX && label.x <= maxX && label.y >= minY && label.y <= maxY;
-      const c = prov.centroid;
-      const dist = Math.hypot(label.x - c[0], label.y - c[1]);
-
-      if (inBbox || dist < maxDist) {
-        allPairs.push({ labelIdx: li, provIdx: pi, dist, inBbox });
-      }
-    }
-  }
-
-  // Sort: bbox containment first (true > false), then by distance
-  allPairs.sort((a, b) => {
-    if (a.inBbox !== b.inBbox) return a.inBbox ? -1 : 1;
-    return a.dist - b.dist;
+      const dist = Math.hypot(label.x - centroid[0], label.y - centroid[1]);
+      if (inBbox || dist < maxDist) allPairs.push({ labelIdx, provIdx, dist, inBbox });
+    });
   });
 
-  // Pass 1: assign labels that are inside exactly ONE bbox (unambiguous)
+  allPairs.sort((a, b) => Number(b.inBbox) - Number(a.inBbox) || a.dist - b.dist);
+
   const result = new Map<number, string>();
-  const usedProvinces = new Set<number>();
   const usedLabels = new Set<number>();
-
-  const bboxCounts = new Map<number, number[]>(); // labelIdx → provIndices where it's in bbox
-  for (const pair of allPairs) {
-    if (!pair.inBbox) continue;
-    if (!bboxCounts.has(pair.labelIdx)) bboxCounts.set(pair.labelIdx, []);
-    bboxCounts.get(pair.labelIdx)!.push(pair.provIdx);
-  }
-
-  // First assign unique bbox containments (label inside exactly one province)
-  for (const [labelIdx, provIndices] of bboxCounts) {
-    if (provIndices.length === 1) {
-      const provIdx = provIndices[0]!;
-      if (!usedProvinces.has(provIdx) && !usedLabels.has(labelIdx)) {
-        result.set(provIdx, labels[labelIdx]!.text);
-        usedProvinces.add(provIdx);
-        usedLabels.add(labelIdx);
-      }
-    }
-  }
-
-  // Pass 2: assign remaining by closest centroid distance (greedy)
-  for (const { labelIdx, provIdx } of allPairs) {
-    if (usedProvinces.has(provIdx) || usedLabels.has(labelIdx)) continue;
+  const assign = (labelIdx: number, provIdx: number) => {
+    if (result.has(provIdx) || usedLabels.has(labelIdx)) return;
     result.set(provIdx, labels[labelIdx]!.text);
-    usedProvinces.add(provIdx);
     usedLabels.add(labelIdx);
+  };
+
+  // Pass 1: labels inside exactly ONE bbox (unambiguous)
+  const bboxProvinces = new Map<number, number[]>(); // labelIdx → provinces whose bbox holds it
+  for (const { labelIdx, provIdx, inBbox } of allPairs) {
+    if (inBbox) bboxProvinces.set(labelIdx, [...(bboxProvinces.get(labelIdx) ?? []), provIdx]);
   }
+  for (const [labelIdx, provIndices] of bboxProvinces) {
+    if (provIndices.length === 1) assign(labelIdx, provIndices[0]!);
+  }
+
+  // Pass 2: remaining pairs by bbox containment, then closest centroid (greedy)
+  for (const { labelIdx, provIdx } of allPairs) assign(labelIdx, provIdx);
 
   return result;
 }

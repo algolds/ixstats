@@ -39,12 +39,10 @@ export default function AchievementCard({ achievement }: AchievementCardProps) {
     <Card className="group block overflow-hidden">
       <Link href={`/labs/vexel/registry/${achievement.id}`} className="block">
         <div className="flex flex-col items-center gap-4 p-4">
-          {/* Thumbnail */}
           <div className="relative flex h-32 w-32 transform items-center justify-center transition-transform duration-200 group-hover:scale-[1.03]">
             <ShieldRenderer composition={composition} />
           </div>
 
-          {/* Info */}
           <div className="flex w-full flex-1 flex-col justify-between space-y-2 text-center">
             <div>
               <span

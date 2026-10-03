@@ -4,7 +4,8 @@ import React from "react";
 import { City as Building } from "iconoir-react";
 import { CollapsibleSection } from "./CollapsibleSection";
 import { SectorBreakdownCard } from "~/components/mycountry/shared/primitives";
-import { formatCompactCurrency } from "~/lib/utils";
+import { formatCompactCurrency, formatPercent } from "~/lib/utils";
+import { StatGrid } from "./tabParts";
 import type { MappedEconomyData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
 
 interface GovernmentFiscalSectionProps {
@@ -20,7 +21,9 @@ export function GovernmentFiscalSection({
   economyData,
   currency,
 }: GovernmentFiscalSectionProps): React.JSX.Element {
-  const taxEfficiency = economyData?.fiscal?.taxEfficiency ?? null;
+  const fiscal = economyData?.fiscal;
+  const debtRatio = fiscal?.totalDebtGDPRatio ?? 0;
+  const taxEfficiency = fiscal?.taxEfficiency ?? null;
 
   return (
     <CollapsibleSection
@@ -29,34 +32,30 @@ export function GovernmentFiscalSection({
       isExpanded={isExpanded}
       onToggle={onToggle}
     >
-      <div className="bg-fill-3 rounded-row grid grid-cols-2 gap-4 p-3 md:grid-cols-3">
-        <div className="min-w-0">
-          <span className="text-stat-label text-label-secondary block">Tax Revenue % GDP</span>
-          <p className="text-label text-headline mt-0.5">
-            {`${(economyData?.fiscal?.taxRevenueGDPPercent ?? 0).toFixed(1)}%`}
-          </p>
-          <p className="text-label-secondary text-footnote mt-0.5">Tax burden ratio</p>
-        </div>
-        <div className="min-w-0">
-          <span className="text-stat-label text-label-secondary block">Total debt</span>
-          <p className="text-label text-headline mt-0.5">
-            {formatCompactCurrency(
-              (economyData?.core.nominalGDP ?? 0) *
-                ((economyData?.fiscal?.totalDebtGDPRatio ?? 0) / 100),
+      <StatGrid
+        columns="three"
+        stats={[
+          {
+            label: "Tax Revenue % GDP",
+            value: formatPercent(fiscal?.taxRevenueGDPPercent ?? 0),
+            detail: "Tax burden ratio",
+          },
+          {
+            label: "Total debt",
+            value: formatCompactCurrency(
+              (economyData?.core.nominalGDP ?? 0) * (debtRatio / 100),
               "N/A",
               currency
-            )}
-          </p>
-          <p className="text-label-secondary text-footnote mt-0.5">Outstanding national debt</p>
-        </div>
-        <div className="min-w-0">
-          <span className="text-stat-label text-label-secondary block">Debt to GDP ratio</span>
-          <p className="text-label text-headline mt-0.5">
-            {`${(economyData?.fiscal?.totalDebtGDPRatio ?? 0).toFixed(1)}%`}
-          </p>
-          <p className="text-label-secondary text-footnote mt-0.5">Relative to economic size</p>
-        </div>
-      </div>
+            ),
+            detail: "Outstanding national debt",
+          },
+          {
+            label: "Debt to GDP ratio",
+            value: formatPercent(debtRatio),
+            detail: "Relative to economic size",
+          },
+        ]}
+      />
 
       <SectorBreakdownCard
         title="Fiscal conditions & policy"
@@ -86,7 +85,7 @@ export function GovernmentFiscalSection({
             id: "interest",
             name: "Central bank interest rate",
             value: 0,
-            percentage: economyData?.fiscal?.interestRates ?? 0,
+            percentage: fiscal?.interestRates ?? 0,
             color: "indigo",
           },
         ]}

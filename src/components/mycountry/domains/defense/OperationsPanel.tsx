@@ -19,7 +19,6 @@ export function OperationsPanel({ countryId }: OperationsPanelProps) {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Swords aria-hidden="true" className="text-red h-4 w-4" />
@@ -28,10 +27,8 @@ export function OperationsPanel({ countryId }: OperationsPanelProps) {
         <DeploymentWizard countryId={countryId} onSuccess={handleOperationCreated} />
       </div>
 
-      {/* Active operations */}
       <ActiveOperations countryId={countryId} />
 
-      {/* PvP / PvNPC conflicts */}
       <PvPConflictPanel countryId={countryId} />
     </div>
   );

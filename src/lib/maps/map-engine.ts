@@ -153,7 +153,10 @@ function applyInteractivity(map: any, interactive?: boolean) {
     "touchZoomRotate",
   ];
   for (const h of handlers) {
-    if (map[h]) interactive ? map[h].enable() : map[h].disable();
+    if (map[h]) {
+      if (interactive) map[h].enable();
+      else map[h].disable();
+    }
   }
 }
 

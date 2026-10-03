@@ -102,12 +102,10 @@ export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="rounded-card max-h-[80vh] gap-0 overflow-y-auto p-0 duration-0 data-[state=closed]:animate-none data-[state=open]:animate-none sm:max-w-lg">
-        {/* Header */}
         <DialogHeader className="border-separator border-b px-5 py-3 pr-12">
           <DialogTitle className="text-body">Keyboard shortcuts</DialogTitle>
         </DialogHeader>
 
-        {/* Content */}
         <div className="space-y-5 p-5">
           {SHORTCUT_GROUPS.map((group) => (
             <div key={group.title}>
@@ -146,7 +144,6 @@ export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
           ))}
         </div>
 
-        {/* Footer */}
         <div className="border-separator text-label-secondary text-footnote border-t px-5 py-3 text-center">
           Press{" "}
           <kbd className="border-separator bg-fill-3 text-footnote rounded-control-sm border px-1">

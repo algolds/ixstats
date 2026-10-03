@@ -1,12 +1,5 @@
 "use client";
 
-/**
- * EditorStatusBar — Thin bottom bar showing live context while editing.
- *
- * Displays cursor coordinates, terrain info, current mode/instructions, and zoom level.
- * Inspired by Photoshop/Figma status bars — always visible, compact, informational.
- */
-
 import { useEffect, useState } from "react";
 import {
   ModernTv as Mountain,
@@ -99,6 +92,70 @@ function formatCoord(value: number, posLabel: string, negLabel: string): string 
   return `${abs.toFixed(3)}°${dir}`;
 }
 
+function SaveState({
+  error,
+  isSaving,
+  hasUnsavedChanges,
+  lastSavedAt,
+  onDismissError,
+}: Pick<
+  EditorStatusBarProps,
+  "error" | "isSaving" | "hasUnsavedChanges" | "lastSavedAt" | "onDismissError"
+>) {
+  if (error) {
+    return (
+      <span
+        className="text-destructive ml-2 flex max-w-[40%] shrink items-center gap-1 truncate"
+        title={error}
+      >
+        <WarningTriangle className="h-3 w-3 shrink-0" />
+        <span className="truncate">{error}</span>
+        {onDismissError && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={onDismissError}
+            aria-label="Dismiss error"
+            className="hover:bg-destructive/10 rounded-control-sm size-5"
+          >
+            <Xmark className="h-3 w-3" />
+          </Button>
+        )}
+      </span>
+    );
+  }
+  if (isSaving) {
+    return (
+      <span className="text-yellow ml-2 flex shrink-0 items-center gap-1">
+        <Spinner className="h-3 w-3 animate-spin" />
+        Saving…
+      </span>
+    );
+  }
+  if (hasUnsavedChanges) {
+    return (
+      <span
+        className="text-yellow ml-2 flex shrink-0 items-center gap-1"
+        title="Finish or cancel the current drawing/edit before leaving"
+      >
+        <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden />
+        Unsaved
+      </span>
+    );
+  }
+  if (!lastSavedAt) return null;
+  return (
+    <span
+      className="text-green ml-2 hidden shrink-0 items-center gap-1 sm:flex"
+      title={lastSavedAt.toLocaleString()}
+    >
+      <CheckCircle className="h-3 w-3" />
+      Saved {timeAgo(lastSavedAt)}
+    </span>
+  );
+}
+
 export function EditorStatusBar({
   cursorCoords: propCoords,
   mode,
@@ -128,7 +185,6 @@ export function EditorStatusBar({
       role="status"
       aria-live="polite"
     >
-      {/* Coordinates */}
       <div className="flex min-w-[140px] items-center gap-1 font-mono">
         {activeCoords ? (
           <>
@@ -141,10 +197,8 @@ export function EditorStatusBar({
         )}
       </div>
 
-      {/* Separator */}
       <div className="bg-separator mx-2 h-3 w-px" />
 
-      {/* Altitude + Climate */}
       <div className="hidden min-w-[120px] items-center gap-2 md:flex">
         <Mountain className="text-label-secondary h-3 w-3 shrink-0" />
         {activeTerrain?.elevation ? (
@@ -160,10 +214,8 @@ export function EditorStatusBar({
         )}
       </div>
 
-      {/* Separator */}
       <div className="bg-separator mx-2 hidden h-3 w-px md:block" />
 
-      {/* Mode + hint (takes remaining space) */}
       <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
         <Badge variant="default" className="shrink-0">
           {modeInfo.label}
@@ -176,51 +228,14 @@ export function EditorStatusBar({
         <span className="text-label-secondary hidden truncate sm:inline">{modeInfo.hint}</span>
       </div>
 
-      {/* Save state */}
-      {error ? (
-        <span
-          className="text-destructive ml-2 flex max-w-[40%] shrink items-center gap-1 truncate"
-          title={error}
-        >
-          <WarningTriangle className="h-3 w-3 shrink-0" />
-          <span className="truncate">{error}</span>
-          {onDismissError && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              onClick={onDismissError}
-              aria-label="Dismiss error"
-              className="hover:bg-destructive/10 rounded-control-sm size-5"
-            >
-              <Xmark className="h-3 w-3" />
-            </Button>
-          )}
-        </span>
-      ) : isSaving ? (
-        <span className="text-yellow ml-2 flex shrink-0 items-center gap-1">
-          <Spinner className="h-3 w-3 animate-spin" />
-          Saving…
-        </span>
-      ) : hasUnsavedChanges ? (
-        <span
-          className="text-yellow ml-2 flex shrink-0 items-center gap-1"
-          title="Finish or cancel the current drawing/edit before leaving"
-        >
-          <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden />
-          Unsaved
-        </span>
-      ) : lastSavedAt ? (
-        <span
-          className="text-green ml-2 hidden shrink-0 items-center gap-1 sm:flex"
-          title={lastSavedAt.toLocaleString()}
-        >
-          <CheckCircle className="h-3 w-3" />
-          Saved {timeAgo(lastSavedAt)}
-        </span>
-      ) : null}
+      <SaveState
+        error={error}
+        isSaving={isSaving}
+        hasUnsavedChanges={hasUnsavedChanges}
+        lastSavedAt={lastSavedAt}
+        onDismissError={onDismissError}
+      />
 
-      {/* Feature count */}
       {featureCount !== undefined && (
         <>
           <div className="bg-separator mx-2 hidden h-3 w-px sm:block" />
@@ -228,7 +243,6 @@ export function EditorStatusBar({
         </>
       )}
 
-      {/* Zoom */}
       {zoom !== undefined && (
         <>
           <div className="bg-separator mx-2 h-3 w-px" />

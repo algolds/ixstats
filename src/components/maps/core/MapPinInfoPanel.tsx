@@ -1,15 +1,6 @@
 "use client";
 
-/**
- * MapPinInfoPanel - Panel showing info at a pinned map location.
- *
- * Shows elevation zone, climate type, country, and subdivision.
- * Uses client-side Turf.js results for instant display, enriched
- * by server-side PostGIS query when it arrives.
- */
-
 import { Skeleton } from "~/components/ui/skeleton";
-import { useMemo } from "react";
 import {
   Xmark as X,
   MapPin,
@@ -74,20 +65,21 @@ function InfoRow({
   label,
   value,
   color,
-  loading,
+  serverLoading,
 }: {
   icon: typeof Mountain;
   label: string;
   value: string | null;
   color?: string | null;
-  loading?: boolean;
+  /** The server lookup is still pending, so an empty value may yet fill in. */
+  serverLoading: boolean;
 }) {
   return (
     <div className="flex items-start gap-2 py-2">
       <Icon className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" aria-hidden />
       <div className="min-w-0 flex-1">
         <Eyebrow className="block">{label}</Eyebrow>
-        {loading ? (
+        {serverLoading && !value ? (
           <Skeleton className="mt-0.5 h-4 w-24 rounded-xs" />
         ) : (
           <div className="flex items-center gap-2">
@@ -105,6 +97,44 @@ function InfoRow({
   );
 }
 
+const firstDefined = <T,>(...values: (T | null | undefined)[]): T | null =>
+  values.find((v) => v != null) ?? null;
+
+type ClientProps = Record<string, unknown> | null | undefined;
+type ServerResult = PointInfoServerResult | null;
+
+/** Server (PostGIS) values win; the instant client-side lookup fills in until they arrive. */
+function resolveElevation(server: ServerResult, props: ClientProps) {
+  const fill = (props?.fill as string) ?? null;
+  // Derive the elevation zone from the fill colour when metadata isn't available
+  const zone = fill ? getZoneByColor(fill) : null;
+  return {
+    zoneName: firstDefined(server?.elevation?.zoneName, props?.zoneName as string, zone?.zoneName),
+    label: firstDefined(
+      server?.elevation?.elevationLabel,
+      props?.elevationLabel as string,
+      zone && `${zone.elevationMin}-${zone.elevationMax}m`
+    ),
+    color: firstDefined(server?.elevation?.color, fill),
+  };
+}
+
+function resolveCountryName(server: ServerResult, props: ClientProps) {
+  return firstDefined(
+    server?.country?.name,
+    server?.country?.displayName,
+    props?.displayName as string,
+    props?.featureId as string
+  );
+}
+
+function resolveClimate(server: ServerResult, props: ClientProps) {
+  return {
+    name: firstDefined(server?.climate?.climateName, props?.climateName as string),
+    color: firstDefined(server?.climate?.color, props?.fill as string),
+  };
+}
+
 export default function MapPinInfoPanel({
   pinPosition,
   clientResult,
@@ -112,43 +142,28 @@ export default function MapPinInfoPanel({
   isServerLoading,
   onClose,
 }: MapPinInfoPanelProps) {
-  // Prefer server result, fall back to client result
-  const altClient = clientResult?.altitude?.properties;
-  const climClient = clientResult?.climate?.properties;
-  const polClient = clientResult?.political?.properties;
+  const elevation = resolveElevation(serverResult, clientResult?.altitude?.properties);
+  const climate = resolveClimate(serverResult, clientResult?.climate?.properties);
+  const countryName = resolveCountryName(serverResult, clientResult?.political?.properties);
+  const subdivision = serverResult?.subdivision;
+  const { zoneName, label } = elevation;
 
-  // Derive elevation zone from fill color if metadata not available
-  const altFill = (altClient?.fill as string) ?? null;
-  const derivedZone = useMemo(() => (altFill ? getZoneByColor(altFill) : null), [altFill]);
-
-  const elevZoneName =
-    serverResult?.elevation?.zoneName ??
-    (altClient?.zoneName as string) ??
-    derivedZone?.zoneName ??
-    null;
-  const elevLabel =
-    serverResult?.elevation?.elevationLabel ??
-    (altClient?.elevationLabel as string) ??
-    (derivedZone ? `${derivedZone.elevationMin}-${derivedZone.elevationMax}m` : null);
-  const elevColor = serverResult?.elevation?.color ?? altFill ?? null;
-
-  const climateName =
-    serverResult?.climate?.climateName ?? (climClient?.climateName as string) ?? null;
-  const climateColor = serverResult?.climate?.color ?? (climClient?.fill as string) ?? null;
-
-  const countryName =
-    serverResult?.country?.name ??
-    serverResult?.country?.displayName ??
-    (polClient?.displayName as string) ??
-    (polClient?.featureId as string) ??
-    null;
-
-  const subdivisionName = serverResult?.subdivision?.name ?? null;
-  const subdivisionType = serverResult?.subdivision?.type ?? null;
+  const rows = [
+    {
+      icon: Mountain,
+      label: "Elevation",
+      value: zoneName ? `${zoneName}${label ? ` (${label})` : ""}` : null,
+      color: elevation.color,
+    },
+    { icon: Cloud, label: "Climate", value: climate.name, color: climate.color },
+    { icon: Flag, label: "Country", value: countryName },
+    ...(subdivision?.name || isServerLoading
+      ? [{ icon: Map, label: subdivision?.type ?? "Subdivision", value: subdivision?.name ?? null }]
+      : []),
+  ];
 
   const panelContent = (
     <>
-      {/* Header */}
       <div className="border-separator flex items-center justify-between border-b px-4 py-2">
         <div className="flex items-center gap-2">
           <MapPin className="text-blue h-4 w-4" aria-hidden />
@@ -166,46 +181,18 @@ export default function MapPinInfoPanel({
         </Button>
       </div>
 
-      {/* Coordinates */}
       <div className="border-separator border-b px-4 py-2">
         <div className="text-label-secondary text-footnote font-mono">
           {formatCoord(pinPosition.lat, "lat")}, {formatCoord(pinPosition.lng, "lng")}
         </div>
       </div>
 
-      {/* Info Rows */}
       <div className="divide-separator divide-y px-4">
-        <InfoRow
-          icon={Mountain}
-          label="Elevation"
-          value={elevZoneName ? `${elevZoneName}${elevLabel ? ` (${elevLabel})` : ""}` : null}
-          color={elevColor}
-          loading={isServerLoading && !elevZoneName}
-        />
-        <InfoRow
-          icon={Cloud}
-          label="Climate"
-          value={climateName}
-          color={climateColor}
-          loading={isServerLoading && !climateName}
-        />
-        <InfoRow
-          icon={Flag}
-          label="Country"
-          value={countryName}
-          loading={isServerLoading && !countryName}
-        />
-        {(subdivisionName || isServerLoading) && (
-          <InfoRow
-            icon={Map}
-            label={subdivisionType ?? "Subdivision"}
-            value={subdivisionName}
-            loading={isServerLoading && !subdivisionName}
-          />
-        )}
+        {rows.map((row) => (
+          <InfoRow key={row.label} serverLoading={isServerLoading} {...row} />
+        ))}
       </div>
 
-      {/* Footer */}
       <div className="px-4 py-2 text-center">
         <span className="text-label-secondary text-footnote">Tap map to update pin</span>
       </div>

@@ -47,7 +47,6 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
         </p>
       </div>
 
-      {/* Snap Tolerance */}
       <div className="space-y-2">
         <label className="text-label-secondary text-footnote flex items-center gap-2">
           <Magnet className="h-3 w-3" /> Border snap tolerance
@@ -68,7 +67,6 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
         </div>
       </div>
 
-      {/* Simplify Tolerance */}
       <div className="space-y-2">
         <label className="text-label-secondary text-footnote flex items-center gap-2">
           <Minimize2 className="h-3 w-3" /> Vertex reduction
@@ -89,7 +87,6 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
         </div>
       </div>
 
-      {/* Vertex count stats */}
       {vertexStats.before > 0 && (
         <Card className="text-footnote px-3 py-2">
           <div className="flex items-center justify-between">

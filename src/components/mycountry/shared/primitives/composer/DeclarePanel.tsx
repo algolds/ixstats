@@ -1,14 +1,14 @@
 "use client";
 
 import React from "react";
-import { GitFork, Lock, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
+import { Lock, WarningCircle, WarningTriangle } from "iconoir-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { formatIxCountdown } from "~/lib/statecraft/calendar";
 import { TONE_CLASSES } from "~/components/mycountry/directives/directive-model";
-import { Card } from "~/components/ui/card";
+import { FollowUpChip } from "./FollowUpChip";
 
 interface DeclarePanelProps {
   goal: string;
@@ -38,6 +38,31 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
+type Slots = NonNullable<DeclarePanelProps["slots"]>;
+
+function SlotsUsed({ slots }: { slots: Slots }) {
+  return (
+    <span className="tabular-nums">
+      {slots.usedThisWeek} of {slots.cap} used
+      {slots.cap > slots.usedThisWeek && (
+        <span className="text-label-secondary font-normal"> · this uses 1</span>
+      )}
+    </span>
+  );
+}
+
+function blockedReasonOf(
+  readOnly: boolean | undefined,
+  slots: DeclarePanelProps["slots"],
+  nowIxTime: number
+): string | null {
+  if (readOnly) return "You are viewing another nation. Directives are read-only.";
+  if (!slots || slots.canCommit) return null;
+  return slots.cooldownUntil
+    ? `All ${slots.cap} weekly slots are used. Next slot opens in ${formatIxCountdown(slots.cooldownUntil, nowIxTime)} (IxTime).`
+    : `All ${slots.cap} weekly slots are used.`;
+}
+
 /**
  * Step 4: the confirmation card — what it costs, what is left, and the Declare button (the
  * page's one gold primary action).
@@ -59,17 +84,10 @@ export function DeclarePanel({
 }: DeclarePanelProps) {
   const cost = civCapCost ?? 0;
   const hasCivCap = !!civCap && Number.isFinite(civCap.capacity) && civCap.capacity > 0;
-  const availableAfter = hasCivCap ? Math.round(civCap.available - cost) : null;
+  const available = hasCivCap ? civCap.available : null;
+  const availableAfter = available == null ? null : Math.round(available - cost);
   const goesOver = availableAfter != null && availableAfter < 0;
-  const outOfSlots = slots ? !slots.canCommit : false;
-  const slotsLeft = slots ? Math.max(0, slots.cap - slots.usedThisWeek) : null;
-
-  let blockedReason: string | null = null;
-  if (readOnly) blockedReason = "You are viewing another nation. Directives are read-only.";
-  else if (outOfSlots)
-    blockedReason = slots?.cooldownUntil
-      ? `All ${slots.cap} weekly slots are used. Next slot opens in ${formatIxCountdown(slots.cooldownUntil, nowIxTime)} (IxTime).`
-      : `All ${slots?.cap ?? 3} weekly slots are used.`;
+  const blockedReason = blockedReasonOf(readOnly, slots, nowIxTime);
 
   return (
     <div className="space-y-4">
@@ -86,47 +104,16 @@ export function DeclarePanel({
             "—"
           ) : (
             <span className={cn("tabular-nums", goesOver && TONE_CLASSES.negative.text)}>
-              {Math.round(civCap!.available)} → {availableAfter}
+              {Math.round(available ?? 0)} → {availableAfter}
             </span>
           )}
         </Row>
         <Row label="Weekly slots">
-          {slots ? (
-            <span className="tabular-nums">
-              {slots.usedThisWeek} of {slots.cap} used
-              {slotsLeft != null && slotsLeft > 0 && (
-                <span className="text-label-secondary font-normal"> · this uses 1</span>
-              )}
-            </span>
-          ) : (
-            <Skeleton className="ml-auto h-4 w-24" />
-          )}
+          {slots ? <SlotsUsed slots={slots} /> : <Skeleton className="ml-auto h-4 w-24" />}
         </Row>
       </dl>
 
-      {followUpOf && (
-        <Card
-          variant="inset"
-          padding="none"
-          className="text-footnote flex items-center gap-2 py-1 pr-1 pl-3"
-        >
-          <GitFork className="text-label-secondary h-4 w-4 shrink-0" aria-hidden />
-          <span className="text-label-secondary min-w-0 flex-1 truncate">
-            Follow-up to <span className="text-label font-medium">{followUpOf.goal}</span>
-          </span>
-          {onClearFollowUp && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClearFollowUp}
-              aria-label="Remove follow-up link"
-              className="text-label-secondary max-sm:h-11 max-sm:w-11"
-            >
-              <Xmark />
-            </Button>
-          )}
-        </Card>
-      )}
+      {followUpOf && <FollowUpChip goal={followUpOf.goal} onClear={onClearFollowUp} />}
 
       {goesOver && !blockedReason && (
         <Alert role="note" className="border-yellow/30 text-yellow">

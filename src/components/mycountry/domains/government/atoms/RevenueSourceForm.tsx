@@ -1,6 +1,5 @@
 "use client";
 
-import React, { useRef, useCallback } from "react";
 import { formatExactCurrency } from "~/lib/utils";
 import { usePendingLocks } from "~/hooks/usePendingLocks";
 import { Badge } from "~/components/ui/badge";
@@ -28,81 +27,44 @@ export function RevenueSourceForm({
 }: RevenueSourceFormProps) {
   const { isLocked } = usePendingLocks();
 
-  const dataRef = useRef(data);
-  dataRef.current = data;
-  const totalRevenueRef = useRef(totalRevenue);
-  totalRevenueRef.current = totalRevenue;
-
   const totalCalculated = data.reduce((sum, item) => sum + item.revenueAmount, 0);
   const totalPercent = data.reduce((sum, item) => sum + (item.revenuePercent ?? 0), 0);
+  const percentOf = (amount: number) => (totalRevenue > 0 ? (amount / totalRevenue) * 100 : 0);
 
-  const handleUpdate = useCallback(
-    (index: number, field: keyof RevenueSourceInput, value: string | number) => {
-      const updated = [...dataRef.current];
-      const existing = updated[index];
-      if (!existing) return;
+  const handleUpdate = (index: number, field: keyof RevenueSourceInput, value: string | number) => {
+    const existing = data[index];
+    if (!existing) return;
+    const updated = { ...existing, [field]: value };
+    if (field === "revenueAmount" && typeof value === "number" && totalRevenue > 0) {
+      updated.revenuePercent = percentOf(value);
+    }
+    onChange(data.map((item, i) => (i === index ? updated : item)));
+  };
 
-      updated[index] = {
-        ...existing,
-        [field]: value,
-      };
+  const handleRemove = (index: number) => onChange(data.filter((_, i) => i !== index));
 
-      if (field === "revenueAmount" && typeof value === "number" && totalRevenueRef.current > 0) {
-        updated[index].revenuePercent = (value / totalRevenueRef.current) * 100;
-      }
+  const handleAddCustom = (newRevenue: RevenueSourceInput) =>
+    onChange([...data, { ...newRevenue, revenuePercent: percentOf(newRevenue.revenueAmount) }]);
 
-      onChange(updated);
-    },
-    [onChange]
-  );
-
-  const handleRemove = useCallback(
-    (index: number) => {
-      const updated = dataRef.current.filter((_, i) => i !== index);
-      onChange(updated);
-    },
-    [onChange]
-  );
-
-  const handleAddCustom = useCallback(
-    (newRevenue: RevenueSourceInput) => {
-      const revenueToAdd = {
-        ...newRevenue,
-        revenuePercent:
-          totalRevenueRef.current > 0
-            ? (newRevenue.revenueAmount / totalRevenueRef.current) * 100
-            : 0,
-      };
-      onChange([...dataRef.current, revenueToAdd]);
-    },
-    [onChange]
-  );
-
-  const handleAddPreset = useCallback(
-    (name: string, category: RevenueCategory) => {
-      const preset: RevenueSourceInput = {
+  const handleAddPreset = (name: string, category: RevenueCategory) => {
+    const revenueAmount = totalRevenue * 0.1;
+    onChange([
+      ...data,
+      {
         name,
         category,
         description: `${name} revenue collection`,
         rate: category.includes("Tax") ? 10 : undefined,
-        revenueAmount: totalRevenue * 0.1,
+        revenueAmount,
         collectionMethod: "automatic_deduction",
         administeredBy:
           availableDepartments.find(
             (d) => d.name.includes("Finance") || d.name.includes("Treasury")
           )?.name || "Ministry of Finance",
-      };
-
-      onChange([
-        ...data,
-        {
-          ...preset,
-          revenuePercent: totalRevenue > 0 ? (preset.revenueAmount / totalRevenue) * 100 : 0,
-        },
-      ]);
-    },
-    [data, totalRevenue, availableDepartments, onChange]
-  );
+        revenuePercent: percentOf(revenueAmount),
+      },
+    ]);
+  };
 
   return (
     <Card>
@@ -125,7 +87,6 @@ export function RevenueSourceForm({
         {/* KPI Summary Cards & Category Breakdown */}
         <RevenueSummaryKpis data={data} totalCalculated={totalCalculated} />
 
-        {/* Existing Revenue Channels list */}
         <div className="space-y-4">
           {data.map((item, index) => (
             <RevenueItemRow

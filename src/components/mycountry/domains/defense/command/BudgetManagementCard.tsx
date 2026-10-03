@@ -166,7 +166,6 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-6 px-5 pb-5">
-        {/* Total Budget */}
         <div className="border-separator rounded-control border p-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -198,7 +197,6 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
           </div>
         </div>
 
-        {/* Budget Allocation Progress */}
         <div>
           <div className="mb-2 flex items-center justify-between">
             <Label className="text-body">Budget allocation</Label>
@@ -224,7 +222,6 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
 
         <Separator />
 
-        {/* Category Allocations */}
         <div className="space-y-4">
           {BUDGET_CATEGORIES.map((category) => {
             const Icon = ICON_MAP[category.iconName];

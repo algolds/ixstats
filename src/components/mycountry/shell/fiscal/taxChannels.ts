@@ -1,3 +1,5 @@
+import { parseSectorBreakdown } from "~/lib/economy/sector-breakdown";
+import type { CountryEconomicRelations } from "~/lib/economy/country-relations";
 export interface TaxChannel {
   key: string;
   label: string;
@@ -274,75 +276,69 @@ export function computeTaxYields(
   return { byChannel, total };
 }
 
+/** Revenue weights derived from a country's economic profile row (sector mix and trade shares). */
+export function sectorWeightsForProfile(profile: CountryEconomicRelations["economicProfile"]) {
+  return deriveSectorWeights(
+    parseSectorBreakdown(profile?.sectorBreakdown).map((s) => ({
+      name: s.name,
+      percentage: s.share,
+    })),
+    profile?.exportsGDPPercent,
+    profile?.importsGDPPercent
+  );
+}
+
+const PRIMARY_KEYWORDS = ["agri", "mining", "extract", "fish", "forestry", "primary"];
+const SECONDARY_KEYWORDS = ["manufactur", "construct", "industr", "secondary", "energy", "utilit"];
+
+function sectorTier(name: string | undefined): "primary" | "secondary" | "tertiary" {
+  const lower = (name ?? "").toLowerCase();
+  if (PRIMARY_KEYWORDS.some((k) => lower.includes(k))) return "primary";
+  if (SECONDARY_KEYWORDS.some((k) => lower.includes(k))) return "secondary";
+  return "tertiary";
+}
+
+const fallbackWeights = () =>
+  Object.fromEntries(TAX_CHANNELS.map((ch) => [ch.key, ch.fallbackWeight]));
+
 /** Derive revenue sector weights from actual sector breakdown data. */
 export function deriveSectorWeights(
   sectors: Array<{ name?: string; percentage?: number; gdpContribution?: number }> | undefined,
   exportsGdpPct: number | null | undefined,
   importsGdpPct: number | null | undefined
 ): Record<string, number> {
-  const weights: Record<string, number> = {};
+  if (!sectors || sectors.length === 0) return fallbackWeights();
 
-  if (!sectors || sectors.length === 0) {
-    for (const ch of TAX_CHANNELS) weights[ch.key] = ch.fallbackWeight;
-    return weights;
-  }
-
-  const totalPct = sectors.reduce((sum, s) => sum + (s.percentage ?? s.gdpContribution ?? 0), 0);
+  const sectorPct = (s: (typeof sectors)[number]) => s.percentage ?? s.gdpContribution ?? 0;
+  const totalPct = sectors.reduce((sum, s) => sum + sectorPct(s), 0);
   const norm = totalPct > 0 ? totalPct / 100 : 1;
 
-  let primaryPct = 0;
-  let secondaryPct = 0;
-  let tertiaryPct = 0;
+  const tierPct = { primary: 0, secondary: 0, tertiary: 0 };
+  for (const s of sectors) tierPct[sectorTier(s.name)] += sectorPct(s) / norm;
 
-  for (const s of sectors) {
-    const pct = (s.percentage ?? s.gdpContribution ?? 0) / norm;
-    const name = (s.name ?? "").toLowerCase();
-    if (
-      name.includes("agri") ||
-      name.includes("mining") ||
-      name.includes("extract") ||
-      name.includes("fish") ||
-      name.includes("forestry") ||
-      name.includes("primary")
-    ) {
-      primaryPct += pct;
-    } else if (
-      name.includes("manufactur") ||
-      name.includes("construct") ||
-      name.includes("industr") ||
-      name.includes("secondary") ||
-      name.includes("energy") ||
-      name.includes("utilit")
-    ) {
-      secondaryPct += pct;
-    } else {
-      tertiaryPct += pct;
-    }
-  }
-
-  const sectorTotal = primaryPct + secondaryPct + tertiaryPct;
-  if (sectorTotal > 0) {
-    primaryPct = (primaryPct / sectorTotal) * 100;
-    secondaryPct = (secondaryPct / sectorTotal) * 100;
-    tertiaryPct = (tertiaryPct / sectorTotal) * 100;
-  } else {
-    primaryPct = 10;
-    secondaryPct = 30;
-    tertiaryPct = 60;
-  }
-
-  weights.corporate = (secondaryPct * 0.15 + tertiaryPct * 0.12) / 100;
-  weights.income = (tertiaryPct * 0.25 + secondaryPct * 0.15 + primaryPct * 0.05) / 100;
-  weights.vat = (tertiaryPct * 0.2 + secondaryPct * 0.12 + primaryPct * 0.05) / 100;
+  // Shares of the three tiers as percentages of their total; a 10/30/60 split when none is known.
+  const sectorTotal = tierPct.primary + tierPct.secondary + tierPct.tertiary;
+  const { primary, secondary, tertiary } =
+    sectorTotal > 0
+      ? {
+          primary: (tierPct.primary / sectorTotal) * 100,
+          secondary: (tierPct.secondary / sectorTotal) * 100,
+          tertiary: (tierPct.tertiary / sectorTotal) * 100,
+        }
+      : { primary: 10, secondary: 30, tertiary: 60 };
 
   const exp = exportsGdpPct ?? importsGdpPct;
   const imp = importsGdpPct ?? exportsGdpPct;
-  weights.tariff =
-    exp != null && imp != null
-      ? Math.max(0.02, ((exp + imp) / 200) * 0.1)
-      : (TAX_CHANNELS.find((c) => c.key === "tariff")?.fallbackWeight ?? 0.05);
-  weights.wealth = Math.max(0.01, (tertiaryPct * 0.05) / 100);
-  weights.capGains = Math.max(0.02, (tertiaryPct * 0.1) / 100);
 
-  return weights;
+  return {
+    corporate: (secondary * 0.15 + tertiary * 0.12) / 100,
+    income: (tertiary * 0.25 + secondary * 0.15 + primary * 0.05) / 100,
+    vat: (tertiary * 0.2 + secondary * 0.12 + primary * 0.05) / 100,
+    tariff:
+      exp != null && imp != null
+        ? Math.max(0.02, ((exp + imp) / 200) * 0.1)
+        : (TAX_CHANNELS.find((c) => c.key === "tariff")?.fallbackWeight ?? 0.05),
+    wealth: Math.max(0.01, (tertiary * 0.05) / 100),
+    capGains: Math.max(0.02, (tertiary * 0.1) / 100),
+  };
 }

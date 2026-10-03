@@ -35,13 +35,32 @@ export interface HeroSnapshotData {
   };
 }
 
-function getQualitativeRating(score: number): { label: string; color: string } {
-  if (score >= 80) return { label: "Optimal", color: "text-success" };
-  if (score >= 65) return { label: "Strong", color: "text-success" };
-  if (score >= 45) return { label: "Stable", color: "text-teal" };
-  if (score >= 30) return { label: "Moderate", color: "text-caution" };
-  return { label: "Vulnerable", color: "text-destructive" };
-}
+const RATINGS = [
+  { min: 80, label: "Optimal", color: "text-success" },
+  { min: 65, label: "Strong", color: "text-success" },
+  { min: 45, label: "Stable", color: "text-teal" },
+  { min: 30, label: "Moderate", color: "text-caution" },
+];
+const VULNERABLE = { label: "Vulnerable", color: "text-destructive" };
+
+const getQualitativeRating = (score: number) => RATINGS.find((r) => score >= r.min) ?? VULNERABLE;
+
+const METRIC_COLORS = [
+  { min: 80, color: "var(--color-green)" },
+  { min: 60, color: "var(--color-yellow)" },
+  { min: 35, color: "var(--color-orange)" },
+];
+
+const getMetricColor = (val: number) =>
+  METRIC_COLORS.find((m) => val >= m.min)?.color ?? "var(--color-red)";
+
+// Diplomatic / Efficiency are left out (not shown as 0) when there is no data.
+const RING_FIELDS = [
+  { label: "Economy", key: "economicVitality", always: true },
+  { label: "Wellbeing", key: "populationWellbeing", always: true },
+  { label: "Diplomatic", key: "diplomaticStanding", always: false },
+  { label: "Efficiency", key: "governmentalEfficiency", always: false },
+] as const;
 
 function HeroSnapshotPanelsComponent({
   // oxlint-disable-next-line eslint/no-unused-vars
@@ -55,13 +74,6 @@ function HeroSnapshotPanelsComponent({
   countryId?: string;
   onOpenModal: (modal: "vitality" | "gdp" | "population" | "government") => void;
 }) {
-  const getMetricColor = (val: number) => {
-    if (val < 35) return "var(--color-red)";
-    if (val < 60) return "var(--color-orange)";
-    if (val < 80) return "var(--color-yellow)";
-    return "var(--color-green)";
-  };
-
   const dashboardData = (api as any).mycountry?.getCountryDashboard?.useQuery?.(
     { countryId: countryId || "" },
     { enabled: !!countryId, staleTime: 30_000 }
@@ -73,50 +85,19 @@ function HeroSnapshotPanelsComponent({
     typeof recorded?.publicApproval === "number" ? `${Math.round(recorded.publicApproval)}%` : "—";
   const stability = recorded?.politicalStability || "—";
 
-  const pop = data.stats.population ? Math.round(data.stats.population).toLocaleString() : "—";
-  const gdp = data.stats.currentTotalGdp
-    ? `$${(data.stats.currentTotalGdp / 1e12).toFixed(2)}T`
-    : data.stats.gdpPerCapita
-      ? `$${Math.round(data.stats.gdpPerCapita).toLocaleString()}`
+  const { population, currentTotalGdp, gdpPerCapita } = data.stats;
+  const pop = population ? Math.round(population).toLocaleString() : "—";
+  const gdp = currentTotalGdp
+    ? `$${(currentTotalGdp / 1e12).toFixed(2)}T`
+    : gdpPerCapita
+      ? `$${Math.round(gdpPerCapita).toLocaleString()}`
       : "—";
 
-  const rings = data.activityRingsData
-    ? [
-        {
-          label: "Economy",
-          value: data.activityRingsData.economicVitality || 0,
-          color: getMetricColor(data.activityRingsData.economicVitality || 0),
-          modal: "vitality" as const,
-        },
-        {
-          label: "Wellbeing",
-          value: data.activityRingsData.populationWellbeing || 0,
-          color: getMetricColor(data.activityRingsData.populationWellbeing || 0),
-          modal: "vitality" as const,
-        },
-        // Diplomatic / Efficiency are left out (not shown as 0) when there is no data.
-        ...(typeof data.activityRingsData.diplomaticStanding === "number"
-          ? [
-              {
-                label: "Diplomatic",
-                value: data.activityRingsData.diplomaticStanding,
-                color: getMetricColor(data.activityRingsData.diplomaticStanding),
-                modal: "vitality" as const,
-              },
-            ]
-          : []),
-        ...(typeof data.activityRingsData.governmentalEfficiency === "number"
-          ? [
-              {
-                label: "Efficiency",
-                value: data.activityRingsData.governmentalEfficiency,
-                color: getMetricColor(data.activityRingsData.governmentalEfficiency),
-                modal: "vitality" as const,
-              },
-            ]
-          : []),
-      ]
-    : [];
+  const rings = RING_FIELDS.flatMap(({ label, key, always }) => {
+    const value = data.activityRingsData?.[key];
+    if (!data.activityRingsData || (!always && typeof value !== "number")) return [];
+    return [{ label, value: value || 0, color: getMetricColor(value || 0) }];
+  });
 
   // Overall standing is the mean of the recorded vitality rings.
   const standing =
@@ -124,62 +105,73 @@ function HeroSnapshotPanelsComponent({
       ? getQualitativeRating(rings.reduce((sum, ring) => sum + ring.value, 0) / rings.length)
       : null;
 
+  const headline = [
+    {
+      modal: "population",
+      title: "Population breakdown",
+      icon: Users,
+      tone: "text-blue",
+      label: "Pop",
+      labelClass: "text-stat-label",
+      value: pop,
+      valueClass: "text-label tabular-nums",
+    },
+    {
+      modal: "gdp",
+      title: "GDP breakdown",
+      icon: Coins,
+      tone: "text-green",
+      label: "GDP",
+      labelClass: "text-stat-label",
+      value: gdp,
+      valueClass: "text-success tabular-nums",
+    },
+    {
+      modal: "vitality",
+      title: "Vitality breakdown",
+      icon: Activity,
+      tone: "text-yellow",
+      label: "Standing",
+      labelClass: "text-eyebrow",
+      value: standing?.label ?? "—",
+      valueClass: standing?.color ?? "text-label-secondary",
+    },
+  ] as const;
+
+  const executive = [
+    [Heart, "text-red", "Approval", approval],
+    [Scale, "text-indigo", "Stability", stability],
+  ] as const;
+
   return (
     <div className="bg-surface rounded-row border-separator flex h-full flex-col overflow-hidden border">
-      {/* Section 1: headline figures */}
       <div className="divide-separator bg-surface-secondary grid grid-cols-3 divide-x p-2">
-        <button
-          type="button"
-          onClick={() => onOpenModal("population")}
-          className={SNAPSHOT_BUTTON}
-          title="Population breakdown"
-        >
-          <Users aria-hidden className={cn("text-blue size-4 shrink-0", ICON_GROW)} />
-          <span className="min-w-0">
-            <span className="text-label-secondary text-stat-label block">Pop</span>
-            <span className="text-label text-caption sm:text-headline block truncate tabular-nums group-hover:underline group-focus-visible:underline">
-              {pop}
-            </span>
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onOpenModal("gdp")}
-          className={SNAPSHOT_BUTTON}
-          title="GDP breakdown"
-        >
-          <Coins aria-hidden className={cn("text-green size-4 shrink-0", ICON_GROW)} />
-          <span className="min-w-0">
-            <span className="text-label-secondary text-stat-label block">GDP</span>
-            <span className="text-success text-caption sm:text-headline block truncate tabular-nums group-hover:underline group-focus-visible:underline">
-              {gdp}
-            </span>
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onOpenModal("vitality")}
-          className={SNAPSHOT_BUTTON}
-          title="Vitality breakdown"
-        >
-          <Activity aria-hidden className={cn("text-yellow size-4 shrink-0", ICON_GROW)} />
-          <span className="min-w-0">
-            <span className="text-label-secondary text-eyebrow block">Standing</span>
-            <span
-              className={cn(
-                "text-caption sm:text-headline block truncate group-hover:underline group-focus-visible:underline",
-                standing?.color ?? "text-label-secondary"
-              )}
+        {headline.map(
+          ({ modal, title, icon: Icon, tone, label, labelClass, value, valueClass }) => (
+            <button
+              key={modal}
+              type="button"
+              onClick={() => onOpenModal(modal)}
+              className={SNAPSHOT_BUTTON}
+              title={title}
             >
-              {standing?.label ?? "—"}
-            </span>
-          </span>
-        </button>
+              <Icon aria-hidden className={cn(tone, "size-4 shrink-0", ICON_GROW)} />
+              <span className="min-w-0">
+                <span className={cn("text-label-secondary block", labelClass)}>{label}</span>
+                <span
+                  className={cn(
+                    "text-caption sm:text-headline block truncate group-hover:underline group-focus-visible:underline",
+                    valueClass
+                  )}
+                >
+                  {value}
+                </span>
+              </span>
+            </button>
+          )
+        )}
       </div>
 
-      {/* Section 2: vitality rings */}
       <div className="border-separator flex flex-1 flex-col justify-center border-t p-2">
         <div className="grid grid-cols-2 gap-2">
           {rings.map((ring) => {
@@ -205,19 +197,14 @@ function HeroSnapshotPanelsComponent({
         </div>
       </div>
 
-      {/* Section 3: executive telemetry */}
       <dl className="border-separator divide-separator bg-surface-secondary grid grid-cols-2 divide-x border-t py-2">
-        <div className="flex min-w-0 items-center justify-center gap-1 px-1">
-          <Heart aria-hidden className="text-red size-3.5 shrink-0" />
-          <dt className="text-label-secondary text-footnote">Approval</dt>
-          <dd className="text-label text-caption truncate tabular-nums">{approval}</dd>
-        </div>
-
-        <div className="flex min-w-0 items-center justify-center gap-1 px-1">
-          <Scale aria-hidden className="text-indigo size-3.5 shrink-0" />
-          <dt className="text-label-secondary text-footnote">Stability</dt>
-          <dd className="text-label text-caption truncate tabular-nums">{stability}</dd>
-        </div>
+        {executive.map(([Icon, tone, label, value]) => (
+          <div key={label} className="flex min-w-0 items-center justify-center gap-1 px-1">
+            <Icon aria-hidden className={cn(tone, "size-3.5 shrink-0")} />
+            <dt className="text-label-secondary text-footnote">{label}</dt>
+            <dd className="text-label text-caption truncate tabular-nums">{value}</dd>
+          </div>
+        ))}
       </dl>
     </div>
   );

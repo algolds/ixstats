@@ -20,25 +20,37 @@ import {
   ringArea,
 } from "~/lib/flags/svg-parser";
 import { elementToRings, SHAPE_TAGS } from "./svg-element-converter";
-import { getAccumulatedTransform, applyMatrixToRings, isIdentity } from "./svg-transform";
+import { getAccumulatedTransform, applyMatrixToRings } from "./svg-transform";
 import {
   detectProvinceLayer,
   collectShapeElements,
   filterProvinceShapes,
 } from "./svg-layer-detector";
 import { extractAllTextLabels, matchLabelsToProvinces } from "./svg-text-matcher";
+import {
+  SVG_NS,
+  ancestorElements,
+  elementChildren,
+  groupName,
+  inkscapeLabel,
+  sanitizeSvg,
+  svgTag,
+  type XmlElement,
+} from "./svg-dom";
 
-const SVG_NS = "http://www.w3.org/2000/svg";
-const INKSCAPE_NS = "http://www.inkscape.org/namespaces/inkscape";
+type Ring = [number, number][];
 
-// @xmldom/xmldom@0.9's Element type is no longer structurally assignable to the
-// global lib.dom Element (it was in 0.8). All "XmlElement" values in this file are
-// xmldom-parsed nodes, never real DOM elements, so alias to the package's own type.
-type XmlElement = import("@xmldom/xmldom").Element;
+/** Settings shared by every per-element parse step. */
+interface ParseCtx {
+  /** Transforms are accumulated up to this element. */
+  container: XmlElement;
+  bezierSegments: number;
+  minRingSize: number;
+  includeTransforms: boolean;
+  log: string[];
+}
 
-// ──────────────────────────────────────────────
-// Main Entry Point
-// ──────────────────────────────────────────────
+const GENERIC_PROVINCE_NAME = /^(Province|Region|District)\s+\d+$/i;
 
 /**
  * Parse a province SVG into an array of ProvinceFeature objects.
@@ -50,184 +62,63 @@ export function parseProvinceSvg(
   config: ProvinceParseConfig = {}
 ): ProvinceParseResult {
   const log: string[] = [];
-  const bezierSegments = config.bezierSegments ?? 8;
-  const minRingSize = config.minRingSize ?? 4;
-  const mergeGrouped = config.mergeGroupedPaths !== false;
-  const maxMergeSize = config.maxMergeSize ?? 4;
-  const useTextLabels = config.useTextLabels !== false;
-  const includeTransforms = config.includeTransforms !== false;
-
-  // Sanitize SVG content
-  const sanitized = sanitizeSvg(svgContent);
-
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(sanitized, "image/svg+xml");
+  const doc = new DOMParser().parseFromString(sanitizeSvg(svgContent), "image/svg+xml");
   const svgRoot = doc.documentElement;
 
   if (!svgRoot) {
     throw new Error("Failed to parse SVG: no root element found");
   }
 
-  // Extract viewBox
   const viewBox = extractViewBox(svgRoot);
   log.push(`SVG viewBox: ${viewBox.width} × ${viewBox.height}`);
 
-  // Detect province layer
-  let targetContainer: XmlElement = svgRoot;
-  const layersFound: string[] = [];
+  const targetContainer = findTargetContainer(svgRoot, config.targetLayer, log);
 
-  if (config.targetLayer) {
-    // User-specified layer — find by name/id
-    const match = findLayerByName(svgRoot, config.targetLayer);
-    if (match) {
-      targetContainer = match;
-      log.push(`Using user-specified layer: "${config.targetLayer}"`);
-    } else {
-      log.push(`Warning: layer "${config.targetLayer}" not found, using SVG root`);
-    }
-  } else {
-    // Auto-detect
-    const layerResult = detectProvinceLayer(svgRoot);
-    log.push(...layerResult.log);
-    if (layerResult.layer) {
-      targetContainer = layerResult.layer;
-    }
-  }
-
-  // Collect top-level group names for info
-  const topGroups = svgRoot.getElementsByTagNameNS(SVG_NS, "g");
-  for (let i = 0; i < topGroups.length; i++) {
-    const g = topGroups[i]!;
-    if (g.parentNode !== svgRoot) continue;
-    const name =
-      g.getAttributeNS(INKSCAPE_NS, "label") ||
-      g.getAttribute("inkscape:label") ||
-      g.getAttribute("id") ||
-      "";
-    if (name) layersFound.push(name);
-  }
+  const layersFound = [...svgRoot.getElementsByTagNameNS(SVG_NS, "g")]
+    .filter((g) => g.parentNode === svgRoot)
+    .map((g) => inkscapeLabel(g) || g.getAttribute("id") || "")
+    .filter(Boolean);
   log.push(`Top-level layers: ${layersFound.join(", ") || "none"}`);
 
-  // Collect all shape elements from the target container
   const rawShapes = collectShapeElements(targetContainer, svgRoot);
   log.push(`Raw shape elements: ${rawShapes.length}`);
 
-  // Filter to province-like shapes (removes topo fills, water, decorative elements)
+  // Drops topo fills, water and decorative elements
   const allShapes = filterProvinceShapes(rawShapes, svgRoot, log);
 
   const tagCounts = new Map<string, number>();
   for (const s of allShapes) {
-    const tag = s.localName ?? s.tagName?.split(":").pop() ?? "";
-    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+    tagCounts.set(svgTag(s), (tagCounts.get(svgTag(s)) ?? 0) + 1);
   }
   log.push(
     `Filtered shape elements: ${allShapes.length} (${[...tagCounts.entries()].map(([k, v]) => `${v} ${k}`).join(", ")})`
   );
 
-  // Parse provinces
-  let provinces: ProvinceFeature[];
-
-  if (mergeGrouped) {
-    provinces = parseWithSmartGrouping(
-      allShapes,
-      targetContainer,
-      bezierSegments,
-      minRingSize,
-      maxMergeSize,
-      includeTransforms,
-      log
-    );
-  } else {
-    provinces = parseIndividual(
-      allShapes,
-      targetContainer,
-      bezierSegments,
-      minRingSize,
-      includeTransforms,
-      log
-    );
-  }
+  const ctx: ParseCtx = {
+    container: targetContainer,
+    bezierSegments: config.bezierSegments ?? 8,
+    minRingSize: config.minRingSize ?? 4,
+    includeTransforms: config.includeTransforms !== false,
+    log,
+  };
+  let provinces =
+    config.mergeGroupedPaths !== false
+      ? parseWithSmartGrouping(allShapes, ctx, config.maxMergeSize ?? 4)
+      : allShapes.flatMap((el, i) => parseSingleElement(el, i, ctx) ?? []);
 
   log.push(`Detected ${provinces.length} provinces from ${allShapes.length} shape elements`);
-
-  if (provinces.length === 0 && allShapes.length === 0 && rawShapes.length === 0) {
-    log.push(
-      "HINT: 0 provinces detected. The SVG appears to have no filled shape elements. " +
-        "Try uploading a different SVG with filled province shapes (path, polygon, or rect elements with fill colors)."
-    );
-  } else if (provinces.length === 0 && allShapes.length === 0 && rawShapes.length > 0) {
-    log.push(
-      "HINT: 0 provinces detected after filtering. The SVG appears to be a line-only map " +
-        "without filled regions, or all shapes were classified as decorative/topo. " +
-        "Try uploading an SVG where provinces have distinct fill colors."
-    );
-  } else if (provinces.length === 0 && allShapes.length > 0) {
-    log.push(
-      "HINT: 0 provinces detected from " +
-        allShapes.length +
-        " shape elements. " +
-        "All shapes may have too few vertices (< 8 points) to be province boundaries."
-    );
+  if (provinces.length === 0) {
+    log.push(emptyResultHint(allShapes.length, rawShapes.length));
   }
 
-  // Filter out shapes with too few vertices (likely markers/decorations, not boundaries)
+  // Real province boundaries have 8+ vertices; fewer means markers/decorations
   const preFilterCount = provinces.length;
-  provinces = provinces.filter((p) => {
-    const vertexCount = countGeometryVertices(p.geometry);
-    return vertexCount >= 8; // Real province boundaries have 8+ vertices minimum
-  });
+  provinces = provinces.filter((p) => countGeometryVertices(p.geometry) >= 8);
   if (provinces.length < preFilterCount) {
     log.push(`Filtered ${preFilterCount - provinces.length} low-vertex shapes (< 8 points)`);
   }
 
-  // Auto-exclude non-dominant fill colors (likely external/neighboring territory)
-  if (provinces.length > 5) {
-    const colorCounts = new Map<string, number>();
-    for (const p of provinces) {
-      if (p.color) colorCounts.set(p.color, (colorCounts.get(p.color) ?? 0) + 1);
-    }
-    const sorted = [...colorCounts.entries()].sort((a, b) => b[1] - a[1]);
-    const dominantColor = sorted[0];
-    if (dominantColor && sorted.length >= 2) {
-      let excludedCount = 0;
-      const excludedColors: string[] = [];
-
-      // Grey/neutral colors are likely external territory markers
-      const isGreyNeutral = (hex: string) => {
-        const h = hex.replace("#", "").toLowerCase();
-        if (h.length !== 6) return false;
-        const r = parseInt(h.slice(0, 2), 16);
-        const g = parseInt(h.slice(2, 4), 16);
-        const b = parseInt(h.slice(4, 6), 16);
-        const maxC = Math.max(r, g, b);
-        const minC = Math.min(r, g, b);
-        // Grey: low saturation (max-min < 30) AND mid-range brightness (100-240)
-        return maxC - minC < 30 && maxC > 100 && maxC < 240;
-      };
-
-      for (const [color, count] of sorted) {
-        if (color === dominantColor[0]) continue;
-
-        // Exclude if: few shapes (<=3) OR grey/neutral color (external territory)
-        const shouldExclude = count <= 3 || isGreyNeutral(color);
-
-        if (shouldExclude) {
-          for (const p of provinces) {
-            if (p.color === color) {
-              p.included = false;
-              excludedCount++;
-            }
-          }
-          excludedColors.push(`${color}(${count})`);
-        }
-      }
-      if (excludedCount > 0) {
-        log.push(
-          `Auto-excluded ${excludedCount} external territory shapes (colors: ${excludedColors.join(", ")}; dominant: ${dominantColor[0]}, ${dominantColor[1]} shapes)`
-        );
-      }
-    }
-  }
+  autoExcludeExternalTerritory(provinces, log);
 
   // Merge same-color adjacent provinces (handles multi-path provinces)
   const mergedCount = provinces.length;
@@ -238,137 +129,178 @@ export function parseProvinceSvg(
     );
   }
 
-  // Auto-exclude tiny fragments (< 1% of median province area)
-  if (provinces.length > 3) {
-    const areas = provinces.map((p) => p.areaSqKm).sort((a, b) => a - b);
-    const medianArea = areas[Math.floor(areas.length / 2)]!;
-    const fragmentThreshold = medianArea * 0.01;
-    let fragCount = 0;
+  autoExcludeTinyFragments(provinces, log);
 
+  if (config.useTextLabels !== false && provinces.length > 0) {
+    applyTextLabels(provinces, svgRoot, log);
+  }
+
+  nameGenericProvincesFromIds(provinces, log);
+  numberDuplicateNames(provinces, log);
+
+  return { provinces, viewBox, log, layersFound };
+}
+
+function findTargetContainer(
+  svgRoot: XmlElement,
+  targetLayer: string | undefined,
+  log: string[]
+): XmlElement {
+  if (!targetLayer) {
+    const layerResult = detectProvinceLayer(svgRoot);
+    log.push(...layerResult.log);
+    return layerResult.layer ?? svgRoot;
+  }
+  const match = findLayerByName(svgRoot, targetLayer);
+  log.push(
+    match
+      ? `Using user-specified layer: "${targetLayer}"`
+      : `Warning: layer "${targetLayer}" not found, using SVG root`
+  );
+  return match ?? svgRoot;
+}
+
+function emptyResultHint(filteredCount: number, rawCount: number): string {
+  if (rawCount === 0) {
+    return (
+      "HINT: 0 provinces detected. The SVG appears to have no filled shape elements. " +
+      "Try uploading a different SVG with filled province shapes (path, polygon, or rect elements with fill colors)."
+    );
+  }
+  if (filteredCount === 0) {
+    return (
+      "HINT: 0 provinces detected after filtering. The SVG appears to be a line-only map " +
+      "without filled regions, or all shapes were classified as decorative/topo. " +
+      "Try uploading an SVG where provinces have distinct fill colors."
+    );
+  }
+  return (
+    `HINT: 0 provinces detected from ${filteredCount} shape elements. ` +
+    "All shapes may have too few vertices (< 8 points) to be province boundaries."
+  );
+}
+
+/** Grey: low saturation (max-min < 30) and mid-range brightness (100-240). */
+function isGreyNeutral(hex: string): boolean {
+  const h = hex.replace("#", "").toLowerCase();
+  if (h.length !== 6) return false;
+  const channels = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const maxC = Math.max(...channels);
+  return maxC - Math.min(...channels) < 30 && maxC > 100 && maxC < 240;
+}
+
+/** Non-dominant fill colors with few shapes (<= 3) or grey tones are likely neighboring territory. */
+function autoExcludeExternalTerritory(provinces: ProvinceFeature[], log: string[]): void {
+  if (provinces.length <= 5) return;
+  const colorCounts = new Map<string, number>();
+  for (const p of provinces) {
+    if (p.color) colorCounts.set(p.color, (colorCounts.get(p.color) ?? 0) + 1);
+  }
+  const sorted = [...colorCounts.entries()].sort((a, b) => b[1] - a[1]);
+  const dominantColor = sorted[0];
+  if (!dominantColor || sorted.length < 2) return;
+
+  let excludedCount = 0;
+  const excludedColors: string[] = [];
+  for (const [color, count] of sorted) {
+    if (color === dominantColor[0] || (count > 3 && !isGreyNeutral(color))) continue;
     for (const p of provinces) {
-      if (p.areaSqKm < fragmentThreshold && p.areaSqKm > 0) {
-        p.included = false;
-        fragCount++;
-      }
+      if (p.color === color) p.included = false;
     }
+    excludedCount += count;
+    excludedColors.push(`${color}(${count})`);
+  }
+  if (excludedCount > 0) {
+    log.push(
+      `Auto-excluded ${excludedCount} external territory shapes (colors: ${excludedColors.join(", ")}; dominant: ${dominantColor[0]}, ${dominantColor[1]} shapes)`
+    );
+  }
+}
 
-    if (fragCount > 0) {
-      log.push(
-        `Auto-excluded ${fragCount} tiny fragments (area < ${fragmentThreshold.toFixed(2)} sq units)`
-      );
+/** Provinces under 1% of the median area are fragments. */
+function autoExcludeTinyFragments(provinces: ProvinceFeature[], log: string[]): void {
+  if (provinces.length <= 3) return;
+  const areas = provinces.map((p) => p.areaSqKm).sort((a, b) => a - b);
+  const fragmentThreshold = areas[Math.floor(areas.length / 2)]! * 0.01;
+  const fragments = provinces.filter((p) => p.areaSqKm < fragmentThreshold && p.areaSqKm > 0);
+  for (const p of fragments) p.included = false;
+  if (fragments.length > 0) {
+    log.push(
+      `Auto-excluded ${fragments.length} tiny fragments (area < ${fragmentThreshold.toFixed(2)} sq units)`
+    );
+  }
+}
+
+/** Text labels override generic or low-confidence names. */
+function applyTextLabels(provinces: ProvinceFeature[], svgRoot: XmlElement, log: string[]): void {
+  const labels = extractAllTextLabels(svgRoot, svgRoot);
+  if (labels.length === 0) return;
+  log.push(`Found ${labels.length} text labels for matching`);
+
+  const matches = matchLabelsToProvinces(
+    labels,
+    provinces.map(({ centroid, bbox }) => ({ centroid, bbox }))
+  );
+  let matchCount = 0;
+  for (const [idx, labelText] of matches) {
+    const province = provinces[idx];
+    if (province && (province.confidence < 0.7 || GENERIC_PROVINCE_NAME.test(province.name))) {
+      province.name = labelText;
+      province.confidence = 0.85;
+      matchCount++;
     }
   }
+  if (matchCount > 0) {
+    log.push(`Matched ${matchCount} text labels to provinces`);
+  }
+}
 
-  // Match text labels to provinces with low-confidence names
-  if (useTextLabels && provinces.length > 0) {
-    const labels = extractAllTextLabels(svgRoot, svgRoot);
-    if (labels.length > 0) {
-      log.push(`Found ${labels.length} text labels for matching`);
-
-      const spatialInfo = provinces.map((p) => ({
-        centroid: p.centroid,
-        bbox: p.bbox,
-      }));
-
-      const matches = matchLabelsToProvinces(labels, spatialInfo);
-      let matchCount = 0;
-      for (const [idx, labelText] of matches) {
-        if (idx < provinces.length) {
-          // Text labels always override generic names like "Province 1"
-          const isGeneric = /^(Province|Region|District)\s+\d+$/i.test(provinces[idx]!.name);
-          if (provinces[idx]!.confidence < 0.7 || isGeneric) {
-            provinces[idx]!.name = labelText;
-            provinces[idx]!.confidence = 0.85;
-            matchCount++;
-          }
-        }
-      }
-      if (matchCount > 0) {
-        log.push(`Matched ${matchCount} text labels to provinces`);
-      }
+/** When most names are still generic, fall back to cleaned-up group/element IDs. */
+function nameGenericProvincesFromIds(provinces: ProvinceFeature[], log: string[]): void {
+  const isUnnamed = (p: ProvinceFeature) =>
+    GENERIC_PROVINCE_NAME.test(p.name) || p.confidence < 0.4;
+  if (provinces.filter(isUnnamed).length <= provinces.length * 0.5 || provinces.length === 0) {
+    return;
+  }
+  let cleanedCount = 0;
+  for (const p of provinces.filter(isUnnamed)) {
+    const cleaned = cleanGroupIdToName(p.sourceId);
+    if (
+      cleaned &&
+      cleaned !== p.sourceId &&
+      !/^(province|group|path|region)\s*\d*$/i.test(cleaned)
+    ) {
+      p.name = cleaned;
+      p.confidence = 0.6;
+      cleanedCount++;
     }
   }
-
-  // Fallback: if many provinces still have generic names, try extracting names from group IDs
-  const genericCount = provinces.filter(
-    (p) => /^(Province|Region|District)\s+\d+$/i.test(p.name) || p.confidence < 0.4
-  ).length;
-  if (genericCount > provinces.length * 0.5 && provinces.length > 0) {
-    let cleanedCount = 0;
-    for (const p of provinces) {
-      if (/^(Province|Region|District)\s+\d+$/i.test(p.name) || p.confidence < 0.4) {
-        const cleaned = cleanGroupIdToName(p.sourceId);
-        if (
-          cleaned &&
-          cleaned !== p.sourceId &&
-          !/^(province|group|path|region)\s*\d*$/i.test(cleaned)
-        ) {
-          p.name = cleaned;
-          p.confidence = 0.6;
-          cleanedCount++;
-        }
-      }
-    }
-    if (cleanedCount > 0) {
-      log.push(`Extracted ${cleanedCount} province names from group/element IDs`);
-    }
+  if (cleanedCount > 0) {
+    log.push(`Extracted ${cleanedCount} province names from group/element IDs`);
   }
+}
 
-  // Deduplicate names — if multiple provinces share the same name, append a number.
-  // This commonly happens when all provinces inherit the parent layer name (e.g., "Layer 1").
+/**
+ * Number provinces that share a name — this commonly happens when all provinces inherit the
+ * parent layer name (e.g. "Layer 1").
+ */
+function numberDuplicateNames(provinces: ProvinceFeature[], log: string[]): void {
   const nameCounts = new Map<string, number>();
   for (const p of provinces) {
     nameCounts.set(p.name, (nameCounts.get(p.name) ?? 0) + 1);
   }
   for (const [name, count] of nameCounts) {
     if (count <= 1) continue;
-    // All provinces with this name get numbered, or fallback to "Province N"
-    let idx = 1;
     const isGenericName = /^(layer|group|svg|g)\s*\d*$/i.test(name);
+    let idx = 1;
     for (const p of provinces) {
-      if (p.name === name) {
-        p.name = isGenericName ? `Province ${idx}` : `${name} ${idx}`;
-        p.confidence = Math.min(p.confidence, 0.3); // Low confidence — user should rename
-        idx++;
-      }
+      if (p.name !== name) continue;
+      p.name = isGenericName ? `Province ${idx}` : `${name} ${idx}`;
+      p.confidence = Math.min(p.confidence, 0.3); // Low confidence — user should rename
+      idx++;
     }
     log.push(`Renamed ${count} provinces with duplicate name "${name}" → numbered`);
   }
-
-  return { provinces, viewBox, log, layersFound };
-}
-
-// ──────────────────────────────────────────────
-// Parsing Strategies
-// ──────────────────────────────────────────────
-
-/**
- * Parse each shape element individually (no group merging).
- */
-function parseIndividual(
-  shapes: XmlElement[],
-  container: XmlElement,
-  bezierSegments: number,
-  minRingSize: number,
-  includeTransforms: boolean,
-  log: string[]
-): ProvinceFeature[] {
-  const provinces: ProvinceFeature[] = [];
-
-  for (let i = 0; i < shapes.length; i++) {
-    const result = parseSingleElement(
-      shapes[i]!,
-      i,
-      container,
-      bezierSegments,
-      minRingSize,
-      includeTransforms,
-      log
-    );
-    if (result) provinces.push(result);
-  }
-
-  return provinces;
 }
 
 /**
@@ -377,12 +309,8 @@ function parseIndividual(
  */
 function parseWithSmartGrouping(
   shapes: XmlElement[],
-  container: XmlElement,
-  bezierSegments: number,
-  minRingSize: number,
-  maxMergeSize: number,
-  includeTransforms: boolean,
-  log: string[]
+  ctx: ParseCtx,
+  maxMergeSize: number
 ): ProvinceFeature[] {
   // Group shapes by their immediate parent <g>
   const groupMap = new Map<XmlElement, XmlElement[]>();
@@ -390,11 +318,10 @@ function parseWithSmartGrouping(
 
   for (const shape of shapes) {
     const parent = shape.parentNode as XmlElement | null;
-
-    if (parent && parent !== container && isGroupElement(parent)) {
-      const existing = groupMap.get(parent) ?? [];
-      existing.push(shape);
-      groupMap.set(parent, existing);
+    if (parent && parent !== ctx.container && isGroupElement(parent)) {
+      const members = groupMap.get(parent) ?? [];
+      members.push(shape);
+      groupMap.set(parent, members);
     } else {
       ungrouped.push(shape);
     }
@@ -402,15 +329,26 @@ function parseWithSmartGrouping(
 
   const provinces: ProvinceFeature[] = [];
   let idx = 0;
+  const addSingles = (els: XmlElement[], parentGroup?: XmlElement) => {
+    for (const el of els) {
+      const province = parseSingleElement(el, idx++, ctx, parentGroup);
+      if (province) provinces.push(province);
+    }
+  };
+  const addMerged = (group: XmlElement, groupShapes: XmlElement[]) => {
+    const province = mergeGroupShapes(group, groupShapes, idx++, ctx);
+    if (province) provinces.push(province);
+  };
 
   for (const [group, groupShapes] of groupMap) {
-    // Check if this group has sub-groups (each sub-group = province)
-    const subGroups = getDirectSubGroups(group);
+    // Sub-groups that each hold shapes: each sub-group is a province
+    const subGroups = elementChildren(group).filter(
+      (child) => isGroupElement(child) && hasShapeDescendant(child)
+    );
 
     if (subGroups.length >= 2) {
-      // Nested group structure: recurse into each sub-group
-      log.push(
-        `  Group "${getGroupName(group)}": ${subGroups.length} sub-groups → treating each as province`
+      ctx.log.push(
+        `  Group "${groupName(group)}": ${subGroups.length} sub-groups → treating each as province`
       );
       for (const subGroup of subGroups) {
         const subShapes = groupShapes.filter(
@@ -419,125 +357,60 @@ function parseWithSmartGrouping(
         if (subShapes.length === 0) continue;
 
         if (subShapes.length <= maxMergeSize) {
-          const result = mergeGroupShapes(
-            subGroup,
-            subShapes,
-            idx,
-            container,
-            bezierSegments,
-            minRingSize,
-            includeTransforms,
-            log
-          );
-          if (result) provinces.push(result);
+          addMerged(subGroup, subShapes);
         } else {
           // Too many shapes in sub-group — parse individually
-          for (const shape of subShapes) {
-            const result = parseSingleElement(
-              shape,
-              idx,
-              container,
-              bezierSegments,
-              minRingSize,
-              includeTransforms,
-              log,
-              subGroup
-            );
-            if (result) provinces.push(result);
-            idx++;
-          }
+          addSingles(subShapes, subGroup);
+          idx++;
         }
-        idx++;
       }
-
-      // Also handle shapes directly in the parent group (not in any sub-group)
-      const directShapes = groupShapes.filter((s) => s.parentNode === group);
-      for (const shape of directShapes) {
-        const result = parseSingleElement(
-          shape,
-          idx,
-          container,
-          bezierSegments,
-          minRingSize,
-          includeTransforms,
-          log,
-          group
-        );
-        if (result) provinces.push(result);
-        idx++;
-      }
-    } else if (groupShapes.length > maxMergeSize) {
-      // Too many shapes for one group — split into individual provinces
-      const groupName = getGroupName(group);
-      log.push(
-        `  Group "${groupName}": ${groupShapes.length} shapes (> ${maxMergeSize}) → treating each as province`
-      );
-      for (const shape of groupShapes) {
-        const result = parseSingleElement(
-          shape,
-          idx,
-          container,
-          bezierSegments,
-          minRingSize,
-          includeTransforms,
-          log,
-          group
-        );
-        if (result) provinces.push(result);
-        idx++;
-      }
-    } else if (groupShapes.length === 1) {
-      // Single shape in group — individual province
-      const result = parseSingleElement(
-        groupShapes[0]!,
-        idx,
-        container,
-        bezierSegments,
-        minRingSize,
-        includeTransforms,
-        log,
+      // Shapes directly in the parent group (not in any sub-group)
+      addSingles(
+        groupShapes.filter((s) => s.parentNode === group),
         group
       );
-      if (result) provinces.push(result);
-      idx++;
+    } else if (groupShapes.length > maxMergeSize) {
+      ctx.log.push(
+        `  Group "${groupName(group)}": ${groupShapes.length} shapes (> ${maxMergeSize}) → treating each as province`
+      );
+      addSingles(groupShapes, group);
+    } else if (groupShapes.length === 1) {
+      addSingles(groupShapes, group);
     } else {
       // Small group with meaningful name — merge (multi-part province)
-      const result = mergeGroupShapes(
-        group,
-        groupShapes,
-        idx,
-        container,
-        bezierSegments,
-        minRingSize,
-        includeTransforms,
-        log
-      );
-      if (result) provinces.push(result);
-      idx++;
+      addMerged(group, groupShapes);
     }
   }
 
-  // Process ungrouped shapes
-  for (const shape of ungrouped) {
-    const result = parseSingleElement(
-      shape,
-      idx,
-      container,
-      bezierSegments,
-      minRingSize,
-      includeTransforms,
-      log
-    );
-    if (result) provinces.push(result);
-    idx++;
-  }
-
+  addSingles(ungrouped);
   return provinces;
 }
 
-// ──────────────────────────────────────────────
-// XmlElement Parsing
-// ──────────────────────────────────────────────
+/** Element rings in SVG space: the shape's path with its accumulated transforms applied. */
+function shapeRings(el: XmlElement, ctx: ParseCtx): Ring[] {
+  const rings = elementToRings(el, ctx.bezierSegments);
+  if (rings.length === 0 || !ctx.includeTransforms) return rings;
+  return applyMatrixToRings(rings, getAccumulatedTransform(el, ctx.container));
+}
+
+function buildFeature(
+  sourceId: string,
+  { name, confidence }: { name: string; confidence: number },
+  color: string | undefined,
+  rings: Ring[]
+): ProvinceFeature {
+  return {
+    sourceId,
+    name,
+    geometry: buildGeometry(rings),
+    color,
+    confidence,
+    centroid: calculateCentroid(rings),
+    bbox: calculateBoundingBox(rings),
+    areaSqKm: calculateApproxArea(rings),
+    included: true,
+  };
+}
 
 /**
  * Parse a single SVG shape element into a ProvinceFeature.
@@ -546,190 +419,93 @@ function parseWithSmartGrouping(
 function parseSingleElement(
   el: XmlElement,
   index: number,
-  transformRoot: XmlElement,
-  bezierSegments: number,
-  minRingSize: number,
-  includeTransforms: boolean,
-  log: string[],
+  ctx: ParseCtx,
   parentGroup?: XmlElement
 ): ProvinceFeature | null {
   const sourceId = el.getAttribute("id") || `province_${index}`;
-  const { name, confidence } = detectProvinceName(el, sourceId, parentGroup);
-  const style = el.getAttribute("style") || "";
-  const color = extractFillColor(el, style) ?? undefined;
+  const color = extractFillColor(el, el.getAttribute("style") || "") ?? undefined;
 
   try {
-    let rings = elementToRings(el, bezierSegments);
-
+    const rings = shapeRings(el, ctx);
     if (rings.length === 0) {
-      log.push(`  Skipping ${sourceId}: no valid rings`);
+      ctx.log.push(`  Skipping ${sourceId}: no valid rings`);
       return null;
     }
 
-    // Apply accumulated transforms
-    if (includeTransforms) {
-      const matrix = getAccumulatedTransform(el, transformRoot);
-      if (!isIdentity(matrix)) {
-        rings = applyMatrixToRings(rings, matrix);
-      }
-    }
-
-    const validRings = rings.filter((ring) => ring.length >= minRingSize);
+    const validRings = rings.filter((ring) => ring.length >= ctx.minRingSize);
     if (validRings.length === 0) {
-      log.push(
+      ctx.log.push(
         `  Skipping ${sourceId}: all rings too small (${rings.map((r) => r.length).join(",")} pts)`
       );
       return null;
     }
 
-    const geometry = buildGeometry(validRings);
-    const centroid = calculateCentroid(validRings);
-    const bbox = calculateBoundingBox(validRings);
-    const area = calculateApproxArea(validRings);
-
-    return {
-      sourceId,
-      name,
-      geometry,
-      color,
-      confidence,
-      centroid,
-      bbox,
-      areaSqKm: area,
-      included: true,
-    };
+    return buildFeature(sourceId, detectProvinceName(el, sourceId, parentGroup), color, validRings);
   } catch (err) {
-    log.push(`  Error parsing ${sourceId}: ${err instanceof Error ? err.message : String(err)}`);
+    ctx.log.push(
+      `  Error parsing ${sourceId}: ${err instanceof Error ? err.message : String(err)}`
+    );
     return null;
   }
 }
 
-/**
- * Merge multiple shapes from a group into a single province.
- */
+/** Merge multiple shapes from a group into a single province. */
 function mergeGroupShapes(
   group: XmlElement,
   shapes: XmlElement[],
   index: number,
-  transformRoot: XmlElement,
-  bezierSegments: number,
-  minRingSize: number,
-  includeTransforms: boolean,
-  log: string[]
+  ctx: ParseCtx
 ): ProvinceFeature | null {
   const groupId = group.getAttribute("id") || `group_${index}`;
-  const { name, confidence } = detectProvinceName(null, groupId, group);
+  const named = detectProvinceName(null, groupId, group);
 
-  let color: string | undefined;
-  const allRings: [number, number][][] = [];
+  const color =
+    shapes.map((el) => extractFillColor(el, el.getAttribute("style") || "")).find(Boolean) ??
+    undefined;
 
-  for (const el of shapes) {
-    if (!color) {
-      const style = el.getAttribute("style") || "";
-      color = extractFillColor(el, style) ?? undefined;
-    }
-
+  const allRings = shapes.flatMap((el) => {
     try {
-      let rings = elementToRings(el, bezierSegments);
-
-      if (includeTransforms) {
-        const matrix = getAccumulatedTransform(el, transformRoot);
-        if (!isIdentity(matrix)) {
-          rings = applyMatrixToRings(rings, matrix);
-        }
-      }
-
-      for (const ring of rings) {
-        if (ring.length >= minRingSize) {
-          allRings.push(ring);
-        }
-      }
+      return shapeRings(el, ctx).filter((ring) => ring.length >= ctx.minRingSize);
     } catch {
-      // Skip malformed elements
+      return []; // Skip malformed elements
     }
-  }
+  });
 
   if (allRings.length === 0) {
-    log.push(`  Skipping group "${name}": no valid rings from ${shapes.length} shapes`);
+    ctx.log.push(`  Skipping group "${named.name}": no valid rings from ${shapes.length} shapes`);
     return null;
   }
 
-  const geometry = buildGeometry(allRings);
-  const centroid = calculateCentroid(allRings);
-  const bbox = calculateBoundingBox(allRings);
-  const area = calculateApproxArea(allRings);
-
-  log.push(`  Merged ${shapes.length} shapes into province "${name}" (${allRings.length} rings)`);
-
-  return {
-    sourceId: groupId,
-    name,
-    geometry,
-    color,
-    confidence,
-    centroid,
-    bbox,
-    areaSqKm: area,
-    included: true,
-  };
+  ctx.log.push(
+    `  Merged ${shapes.length} shapes into province "${named.name}" (${allRings.length} rings)`
+  );
+  return buildFeature(groupId, named, color, allRings);
 }
 
-// ──────────────────────────────────────────────
-// Name Detection
-// ──────────────────────────────────────────────
-
 /**
- * Detect province name from SVG element attributes.
- * Searches up to 2 levels of parent groups for names.
- * Priority:
- *   1. inkscape:label on the element
- *   2. data-name attribute
- *   3. id attribute → converted to display name
- *   4. Parent group attributes (same priority order)
- *   5. Grandparent group attributes
- *   6. Fallback: generated from element ID
+ * Detect province name from SVG element attributes: the element itself, then its parent group,
+ * then the grandparent group (each with lower confidence), else a name generated from the ID.
  */
 function detectProvinceName(
   el: XmlElement | null,
   fallbackId: string,
   parentGroup?: XmlElement
 ): { name: string; confidence: number } {
-  // Check element's own attributes
-  if (el) {
-    const result = extractNameFromElement(el, 1.0, 0.95, 0.8);
+  const isNamedGroup = (n: XmlElement | null | undefined): n is XmlElement =>
+    !!n && isGroupElement(n) && n.localName !== "svg";
+  const elParent = el?.parentNode as XmlElement | null | undefined;
+  const parent = parentGroup ?? (isNamedGroup(elParent) ? elParent : null);
+  const grandparent = parent?.parentNode as XmlElement | null | undefined;
+
+  const candidates: [XmlElement | null | undefined, number, number, number][] = [
+    [el, 1.0, 0.95, 0.8],
+    [parent, 0.9, 0.85, 0.7],
+    [isNamedGroup(grandparent) ? grandparent : null, 0.75, 0.7, 0.6],
+  ];
+  for (const [node, labelConf, dataNameConf, idConf] of candidates) {
+    const result = node && extractNameFromElement(node, labelConf, dataNameConf, idConf);
     if (result) return result;
   }
-
-  // Check parent group
-  if (parentGroup) {
-    const result = extractNameFromElement(parentGroup, 0.9, 0.85, 0.7);
-    if (result) return result;
-
-    // Check grandparent group
-    const grandparent = parentGroup.parentNode as XmlElement | null;
-    if (grandparent && isGroupElement(grandparent) && grandparent.localName !== "svg") {
-      const gpResult = extractNameFromElement(grandparent, 0.75, 0.7, 0.6);
-      if (gpResult) return gpResult;
-    }
-  }
-
-  // Check parent if no explicit parentGroup was provided
-  if (!parentGroup && el) {
-    const parent = el.parentNode as XmlElement | null;
-    if (parent && isGroupElement(parent) && parent.localName !== "svg") {
-      const result = extractNameFromElement(parent, 0.9, 0.85, 0.7);
-      if (result) return result;
-
-      // Grandparent
-      const gp = parent.parentNode as XmlElement | null;
-      if (gp && isGroupElement(gp) && gp.localName !== "svg") {
-        const gpResult = extractNameFromElement(gp, 0.75, 0.7, 0.6);
-        if (gpResult) return gpResult;
-      }
-    }
-  }
-
-  // Fallback
   return { name: featureIdToDisplayName(fallbackId), confidence: 0.3 };
 }
 
@@ -740,83 +516,60 @@ function extractNameFromElement(
   dataNameConf: number,
   idConf: number
 ): { name: string; confidence: number } | null {
-  const label = el.getAttributeNS(INKSCAPE_NS, "label") || el.getAttribute("inkscape:label");
-  if (label && !isGenericId(label)) {
-    return { name: label, confidence: labelConf };
-  }
-
-  const dataName = el.getAttribute("data-name");
-  if (dataName && !isGenericId(dataName)) {
-    return { name: dataName, confidence: dataNameConf };
-  }
-
-  // Also check aria-label and title attributes
-  const ariaLabel = el.getAttribute("aria-label");
-  if (ariaLabel && !isGenericId(ariaLabel)) {
-    return { name: ariaLabel, confidence: dataNameConf };
+  const named: [string | null, number][] = [
+    [inkscapeLabel(el), labelConf],
+    [el.getAttribute("data-name"), dataNameConf],
+    [el.getAttribute("aria-label"), dataNameConf],
+  ];
+  for (const [value, confidence] of named) {
+    if (value && !isGenericId(value)) return { name: value, confidence };
   }
 
   const elId = el.getAttribute("id") || "";
-  if (elId && !isGenericId(elId)) {
-    return { name: featureIdToDisplayName(elId), confidence: idConf };
-  }
-
-  return null;
+  return elId && !isGenericId(elId)
+    ? { name: featureIdToDisplayName(elId), confidence: idConf }
+    : null;
 }
 
 /**
- * Check if an ID is a generic auto-generated name.
- * Expanded to catch more editor-generated patterns.
+ * Check if an ID is a generic auto-generated name, e.g. "path123", "g45", "Layer 1", "layer1",
+ * "rect_2".
  */
 function isGenericId(id: string): boolean {
-  // Match SVG auto-generated IDs like "path123", "g45", "Layer 1", "layer1", "rect_2"
   return /^(path|rect|g|layer|use|circle|ellipse|line|polygon|polyline|image|text|tspan|svg|defs|clip|mask|_x[0-9A-Fa-f]+_)[\s_-]*\d*$/i.test(
     id.trim()
   );
 }
 
-// ──────────────────────────────────────────────
-// Geometry Building
-// ──────────────────────────────────────────────
-
 /**
  * Build a Polygon or MultiPolygon from coordinate rings.
  * Closes rings if needed, detects outer vs hole rings by winding order.
  */
-function buildGeometry(rings: [number, number][][]): Polygon | MultiPolygon {
-  // Close rings
+function buildGeometry(rings: Ring[]): Polygon | MultiPolygon {
   const closedRings = rings.map((ring) => {
-    if (
-      ring.length > 0 &&
-      (ring[0]![0] !== ring[ring.length - 1]![0] || ring[0]![1] !== ring[ring.length - 1]![1])
-    ) {
-      return [...ring, ring[0]!];
-    }
-    return ring;
+    const first = ring[0];
+    const last = ring[ring.length - 1];
+    return first && last && (first[0] !== last[0] || first[1] !== last[1])
+      ? [...ring, first]
+      : ring;
   });
 
   if (closedRings.length === 1) {
     const ring = closedRings[0]!;
     // Ensure outer ring is CCW (positive signed area) per GeoJSON RFC 7946
-    const area = ringArea(ring as Position[]);
     return {
       type: "Polygon",
-      coordinates: [area < 0 ? ring.slice().reverse() : ring],
+      coordinates: [ringArea(ring as Position[]) < 0 ? ring.slice().reverse() : ring],
     };
   }
 
-  // Separate outer rings (positive area / CCW) from holes (negative / CW)
+  // Outer rings are CCW (positive area), holes CW
   const outerRings = closedRings.filter((r) => ringArea(r as Position[]) > 0);
   const holeRings = closedRings.filter((r) => ringArea(r as Position[]) <= 0);
 
+  // All rings are CW — reverse them to make outer rings
   if (outerRings.length === 0) {
-    // All rings are CW — reverse them to make outer rings
-    return closedRings.length === 1
-      ? { type: "Polygon", coordinates: [closedRings[0]!.slice().reverse()] }
-      : {
-          type: "MultiPolygon",
-          coordinates: closedRings.map((r) => [r.slice().reverse()]),
-        };
+    return { type: "MultiPolygon", coordinates: closedRings.map((r) => [r.slice().reverse()]) };
   }
 
   if (outerRings.length === 1 && holeRings.length > 0) {
@@ -826,159 +579,69 @@ function buildGeometry(rings: [number, number][][]): Polygon | MultiPolygon {
     };
   }
 
-  // Multiple outer rings → MultiPolygon with holes assigned to containing outers
-  const outerWithHoles: [number, number][][][] = outerRings.map((outer) => [outer]);
+  // Multiple outer rings → MultiPolygon, each hole going to the outer ring containing it
+  // (else the nearest outer by centroid distance)
+  const outerWithHoles: Ring[][] = outerRings.map((outer) => [outer]);
+  const outerCentroids = outerRings.map(ringCentroid);
 
   for (const hole of holeRings) {
-    // Find which outer ring contains this hole (test hole centroid)
     const holeCentroid = ringCentroid(hole);
-    let assigned = false;
-
-    for (let i = 0; i < outerRings.length; i++) {
-      if (pointInRing(holeCentroid, outerRings[i]!)) {
-        outerWithHoles[i]!.push(hole.slice().reverse());
-        assigned = true;
-        break;
-      }
-    }
-
-    // If no outer contains the hole, assign to nearest outer by centroid distance
-    if (!assigned && outerRings.length > 0) {
-      let bestIdx = 0;
-      let bestDist = Infinity;
-      for (let i = 0; i < outerRings.length; i++) {
-        const outerC = ringCentroid(outerRings[i]!);
-        const dx = outerC[0] - holeCentroid[0];
-        const dy = outerC[1] - holeCentroid[1];
-        const dist = dx * dx + dy * dy;
-        if (dist < bestDist) {
-          bestDist = dist;
-          bestIdx = i;
-        }
-      }
-      outerWithHoles[bestIdx]!.push(hole.slice().reverse());
-    }
+    const containing = outerRings.findIndex((outer) => pointInRing(holeCentroid, outer));
+    const nearest = outerCentroids.reduce(
+      (best, c, i) => {
+        const dist = (c[0] - holeCentroid[0]) ** 2 + (c[1] - holeCentroid[1]) ** 2;
+        return dist < best.dist ? { dist, idx: i } : best;
+      },
+      { dist: Infinity, idx: 0 }
+    ).idx;
+    outerWithHoles[containing === -1 ? nearest : containing]!.push(hole.slice().reverse());
   }
 
-  return {
-    type: "MultiPolygon",
-    coordinates: outerWithHoles,
-  };
+  return { type: "MultiPolygon", coordinates: outerWithHoles };
 }
 
-// ──────────────────────────────────────────────
-// SVG Sanitization
-// ──────────────────────────────────────────────
-
-function sanitizeSvg(svgContent: string): string {
-  return svgContent
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/\s+on\w+\s*=\s*"[^"]*"/gi, "")
-    .replace(/\s+on\w+\s*=\s*'[^']*'/gi, "")
-    .replace(/href\s*=\s*"javascript:[^"]*"/gi, "")
-    .replace(/href\s*=\s*'javascript:[^']*'/gi, "")
-    .replace(/xlink:href\s*=\s*"https?:\/\/[^"]*"/gi, "")
-    .replace(/xlink:href\s*=\s*'https?:\/\/[^']*'/gi, "");
-}
-
-// ──────────────────────────────────────────────
-// Helpers
-// ──────────────────────────────────────────────
-
-/** Count total vertices in a GeoJSON geometry. */
 function countGeometryVertices(geom: Polygon | MultiPolygon): number {
-  if (geom.type === "Polygon") {
-    return geom.coordinates.reduce((sum, ring) => sum + ring.length, 0);
-  }
-  return geom.coordinates.reduce(
-    (sum, poly) => sum + poly.reduce((s, ring) => s + ring.length, 0),
-    0
-  );
+  const polygons = geom.type === "Polygon" ? [geom.coordinates] : geom.coordinates;
+  return polygons.flat().reduce((sum, ring) => sum + ring.length, 0);
 }
 
 function extractViewBox(svgRoot: XmlElement): { width: number; height: number } {
-  const viewBoxAttr = svgRoot.getAttribute("viewBox");
-  let w = 0;
-  let h = 0;
-  if (viewBoxAttr) {
-    const parts = viewBoxAttr.split(/[\s,]+/).map(Number);
-    if (parts.length >= 4) {
-      w = parts[2]!;
-      h = parts[3]!;
-    }
+  const parts =
+    svgRoot
+      .getAttribute("viewBox")
+      ?.split(/[\s,]+/)
+      .map(Number) ?? [];
+  if (parts.length >= 4 && parts[2] !== 0) {
+    return { width: parts[2]!, height: parts[3]! };
   }
-  if (w === 0) {
-    w = parseFloat(svgRoot.getAttribute("width") || "0");
-    h = parseFloat(svgRoot.getAttribute("height") || "0");
-  }
-  return { width: w, height: h };
-}
-
-function getGroupName(g: XmlElement): string {
-  return (
-    g.getAttributeNS(INKSCAPE_NS, "label") ||
-    g.getAttribute("inkscape:label") ||
-    g.getAttribute("data-name") ||
-    g.getAttribute("id") ||
-    ""
-  );
+  return {
+    width: parseFloat(svgRoot.getAttribute("width") || "0"),
+    height: parseFloat(svgRoot.getAttribute("height") || "0"),
+  };
 }
 
 function isGroupElement(el: XmlElement): boolean {
-  const tag = el.localName ?? el.tagName?.split(":").pop() ?? "";
-  return tag === "g";
-}
-
-function getDirectSubGroups(group: XmlElement): XmlElement[] {
-  const result: XmlElement[] = [];
-  const children = group.childNodes;
-  for (let i = 0; i < children.length; i++) {
-    const child = children[i] as XmlElement;
-    if (!child || child.nodeType !== 1) continue;
-    if (isGroupElement(child)) {
-      // Only count sub-groups that contain shapes
-      const hasShape = hasShapeDescendant(child);
-      if (hasShape) result.push(child);
-    }
-  }
-  return result;
+  return svgTag(el) === "g";
 }
 
 function hasShapeDescendant(el: XmlElement): boolean {
-  const children = el.childNodes;
-  for (let i = 0; i < children.length; i++) {
-    const child = children[i] as XmlElement;
-    if (!child || child.nodeType !== 1) continue;
-    const tag = child.localName ?? child.tagName?.split(":").pop() ?? "";
-    if (SHAPE_TAGS.has(tag)) return true;
-    if (tag === "g" && hasShapeDescendant(child)) return true;
-  }
-  return false;
+  return elementChildren(el).some(
+    (child) => SHAPE_TAGS.has(svgTag(child)) || (isGroupElement(child) && hasShapeDescendant(child))
+  );
 }
 
 function isDescendantOf(el: XmlElement, ancestor: XmlElement): boolean {
-  let current = el.parentNode as XmlElement | null;
-  while (current) {
-    if (current === ancestor) return true;
-    current = current.parentNode as XmlElement | null;
-  }
-  return false;
+  return ancestorElements(el).includes(ancestor);
 }
 
 function findLayerByName(svgRoot: XmlElement, name: string): XmlElement | null {
   const lower = name.toLowerCase();
-  const allGroups = svgRoot.getElementsByTagNameNS(SVG_NS, "g");
-  for (let i = 0; i < allGroups.length; i++) {
-    const g = allGroups[i]!;
-    const gName = getGroupName(g).toLowerCase();
-    if (gName === lower || gName.includes(lower)) return g;
-  }
-  return null;
+  return (
+    [...svgRoot.getElementsByTagNameNS(SVG_NS, "g")].find((g) =>
+      groupName(g).toLowerCase().includes(lower)
+    ) ?? null
+  );
 }
-
-// ──────────────────────────────────────────────
-// Post-Processing: Color-Based Merging
-// ──────────────────────────────────────────────
 
 /**
  * Merge provinces that share the same fill color and have overlapping/touching bboxes.
@@ -987,52 +650,26 @@ function findLayerByName(svgRoot: XmlElement, name: string): XmlElement | null {
 function mergeSameColorProvinces(provinces: ProvinceFeature[]): ProvinceFeature[] {
   if (provinces.length < 2) return provinces;
 
-  // Group by color
   const byColor = new Map<string, ProvinceFeature[]>();
   const noColor: ProvinceFeature[] = [];
-
   for (const p of provinces) {
-    const color = p.color?.toLowerCase()?.trim();
+    const color = p.color?.toLowerCase().trim();
     if (!color) {
       noColor.push(p);
-      continue;
-    }
-    const group = byColor.get(color) ?? [];
-    group.push(p);
-    byColor.set(color, group);
-  }
-
-  const result: ProvinceFeature[] = [...noColor];
-
-  for (const [_color, group] of byColor) {
-    if (group.length === 1) {
-      result.push(group[0]!);
-      continue;
-    }
-
-    // If many shapes share the same color (>8), they're likely distinct provinces
-    // that happen to share a fill color — don't merge them.
-    if (group.length > 8) {
-      result.push(...group);
-      continue;
-    }
-
-    // Find clusters of touching/overlapping provinces within this color group
-    const clusters = clusterByProximity(group);
-
-    for (const cluster of clusters) {
-      if (cluster.length === 1) {
-        result.push(cluster[0]!);
-        continue;
-      }
-
-      // Merge cluster into a single MultiPolygon province
-      const merged = mergeProvinceCluster(cluster);
-      result.push(merged);
+    } else {
+      const members = byColor.get(color) ?? [];
+      members.push(p);
+      byColor.set(color, members);
     }
   }
 
-  return result;
+  const mergeColorGroup = (group: ProvinceFeature[]): ProvinceFeature[] =>
+    // Many shapes (>8) sharing a color are likely distinct provinces that just share a fill
+    group.length === 1 || group.length > 8
+      ? group
+      : clusterByProximity(group).map((c) => (c.length === 1 ? c[0]! : mergeProvinceCluster(c)));
+
+  return [...noColor, ...[...byColor.values()].flatMap(mergeColorGroup)];
 }
 
 /** Group provinces whose bboxes overlap or touch. */
@@ -1051,18 +688,14 @@ function clusterByProximity(provinces: ProvinceFeature[]): ProvinceFeature[][] {
       visited.add(idx);
       cluster.push(provinces[idx]!);
 
-      // Find all unvisited provinces whose bbox overlaps with a small margin
       for (let j = 0; j < provinces.length; j++) {
-        if (visited.has(j)) continue;
-        if (bboxOverlaps(provinces[idx]!.bbox, provinces[j]!.bbox, 0.5)) {
+        if (!visited.has(j) && bboxOverlaps(provinces[idx]!.bbox, provinces[j]!.bbox, 0.5)) {
           stack.push(j);
         }
       }
     }
-
     clusters.push(cluster);
   }
-
   return clusters;
 }
 
@@ -1083,107 +716,61 @@ function bboxOverlaps(
 /** Merge a cluster of same-color provinces into a single MultiPolygon province. */
 function mergeProvinceCluster(cluster: ProvinceFeature[]): ProvinceFeature {
   // Use the highest-confidence name
-  const bestName = cluster.reduce(
-    (best, p) => (p.confidence > best.confidence ? p : best),
-    cluster[0]!
-  );
+  const best = cluster.reduce((b, p) => (p.confidence > b.confidence ? p : b), cluster[0]!);
 
-  // Collect all coordinate arrays
-  const allCoords: [number, number][][][] = [];
-  for (const p of cluster) {
-    const geo = p.geometry;
-    if (geo.type === "Polygon") {
-      allCoords.push(geo.coordinates as [number, number][][]);
-    } else if (geo.type === "MultiPolygon") {
-      for (const poly of geo.coordinates) {
-        allCoords.push(poly as [number, number][][]);
-      }
-    }
-  }
-
-  const geometry: MultiPolygon = {
-    type: "MultiPolygon",
-    coordinates: allCoords,
-  };
+  const allCoords = cluster.flatMap((p) =>
+    p.geometry.type === "Polygon" ? [p.geometry.coordinates] : p.geometry.coordinates
+  ) as Ring[][];
 
   // Recalculate centroid and bbox from merged geometry
   const allOuters = allCoords.map((c) => c[0]!).flat();
-  const cx = allOuters.reduce((s, p) => s + p[0], 0) / allOuters.length;
-  const cy = allOuters.reduce((s, p) => s + p[1], 0) / allOuters.length;
-
   const lngs = allOuters.map((p) => p[0]);
   const lats = allOuters.map((p) => p[1]);
 
   return {
-    sourceId: bestName.sourceId,
-    name: bestName.name,
-    geometry,
-    color: bestName.color,
-    confidence: bestName.confidence,
-    centroid: [cx, cy],
+    sourceId: best.sourceId,
+    name: best.name,
+    geometry: { type: "MultiPolygon", coordinates: allCoords },
+    color: best.color,
+    confidence: best.confidence,
+    centroid: [
+      lngs.reduce((s, x) => s + x, 0) / allOuters.length,
+      lats.reduce((s, y) => s + y, 0) / allOuters.length,
+    ],
     bbox: [Math.min(...lngs), Math.min(...lats), Math.max(...lngs), Math.max(...lats)],
     areaSqKm: cluster.reduce((s, p) => s + p.areaSqKm, 0),
     included: true,
   };
 }
 
-// ──────────────────────────────────────────────
-// Geometry Helpers
-// ──────────────────────────────────────────────
-
-/** Calculate centroid of a coordinate ring. */
-function ringCentroid(ring: [number, number][]): [number, number] {
-  let sx = 0;
-  let sy = 0;
-  const n =
-    ring.length > 1 &&
-    ring[0]![0] === ring[ring.length - 1]![0] &&
-    ring[0]![1] === ring[ring.length - 1]![1]
-      ? ring.length - 1 // exclude closing duplicate
-      : ring.length;
-  for (let i = 0; i < n; i++) {
-    sx += ring[i]![0];
-    sy += ring[i]![1];
-  }
-  return [sx / n, sy / n];
+/** Centroid of a coordinate ring, excluding a closing duplicate point. */
+function ringCentroid(ring: Ring): [number, number] {
+  const closed =
+    ring.length > 1 && ring[0]![0] === ring.at(-1)![0] && ring[0]![1] === ring.at(-1)![1];
+  const points = closed ? ring.slice(0, -1) : ring;
+  return [
+    points.reduce((s, p) => s + p[0], 0) / points.length,
+    points.reduce((s, p) => s + p[1], 0) / points.length,
+  ];
 }
 
 /**
- * Clean a group/element ID into a human-readable province name.
- * Examples:
- *   "baía-sul-rg"    → "Baía Sul"
- *   "lusia-wasg"     → "Lusia"
- *   "satheriana-rg"  → "Satheriana"
- *   "nova_terra_pb"  → "Nova Terra"
- *
- * Removes common trailing abbreviations (rg, av, pb, sr, wasg, etc.)
- * and cleans separators.
+ * Clean a group/element ID into a human-readable province name, e.g. "baía-sul-rg" → "Baía Sul"
+ * and "nova_terra_pb" → "Nova Terra": drops common trailing abbreviations (rg, av, pb, sr, wasg,
+ * ...), turns separators into spaces and capitalizes each word (accents preserved).
  */
 function cleanGroupIdToName(id: string): string {
-  if (!id) return "";
-
-  let cleaned = id
-    // Remove common trailing abbreviations (2-4 char suffixes after separator)
+  return id
     .replace(/[-_](rg|av|pb|sr|wasg|dist|prov|reg|cty|adm|sub|div)$/i, "")
-    // Replace dashes and underscores with spaces
     .replace(/[-_]+/g, " ")
-    // Remove leading/trailing whitespace
-    .trim();
-
-  // Capitalize first letter of each word, preserving accented characters
-  cleaned = cleaned
+    .trim()
     .split(/\s+/)
-    .map((word) => {
-      if (word.length === 0) return word;
-      return word.charAt(0).toUpperCase() + word.slice(1);
-    })
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
-
-  return cleaned;
 }
 
 /** Ray-casting point-in-ring test. */
-function pointInRing(point: [number, number], ring: [number, number][]): boolean {
+function pointInRing(point: [number, number], ring: Ring): boolean {
   let inside = false;
   const [px, py] = point;
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {

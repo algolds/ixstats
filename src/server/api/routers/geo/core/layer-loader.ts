@@ -20,7 +20,7 @@ import {
   layerInflight,
   type ZoomBucket,
 } from "./cache";
-import { computeApproxAreaForFeature, computeVisualCenter } from "./geometry";
+import { centroidLngLat, computeApproxAreaForFeature, computeVisualCenter } from "./geometry";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 
 /** Warms IxWorld's layers only — other realms build on first request. */
@@ -174,98 +174,199 @@ export async function loadLayerFromDB(
   return promise;
 }
 
+type LayerDb = Parameters<typeof loadLayerFromDB>[0];
+
+function ringSizeOf(geometry: unknown): number {
+  const geom = geometry as Geometry | null;
+  if (geom?.type === "Polygon") return geom.coordinates?.[0]?.length ?? 0;
+  if (geom?.type === "MultiPolygon") {
+    return (geom.coordinates ?? []).reduce((sum, poly) => sum + (poly[0]?.length ?? 0), 0);
+  }
+  return 0;
+}
+
+/** Virtual layer: one label point per unique country name, derived from the realm's political layer. */
+async function buildCountryLabels(
+  db: LayerDb,
+  zoomBucket: ZoomBucket,
+  realmId: string,
+  cacheKey: string
+): Promise<FeatureCollection | null> {
+  const politicalFC = await loadLayerFromDB(db, "political", zoomBucket, realmId);
+  if (!politicalFC) return null;
+
+  // One entry per country name, keeping the polygon with the biggest outline
+  const seen = new Map<
+    string,
+    {
+      lng: number;
+      lat: number;
+      area: number;
+      name: string;
+      continent?: string;
+      region?: string;
+      ringSize: number;
+    }
+  >();
+  const demotedSet = new Set<string>(DEMOTED_COUNTRY_NAMES as unknown as string[]);
+
+  for (const feat of politicalFC.features) {
+    const p = feat.properties;
+    if (!p?._displayName || p._sovereignId) continue;
+    const name = p._displayName as string;
+    const ringSize = ringSizeOf(feat.geometry);
+    if (ringSize <= (seen.get(name)?.ringSize ?? -1)) continue;
+    const [lng, lat] = computeVisualCenter(feat.geometry);
+    seen.set(name, {
+      lng,
+      lat,
+      area: (p._areaSqKm as number) ?? 0,
+      name,
+      ringSize,
+      continent: p._continent as string | undefined,
+      region: p._region as string | undefined,
+    });
+  }
+
+  // The 30 largest countries get base importance; demoted names sink
+  const sortedByArea = Array.from(seen.values()).sort((a, b) => b.area - a.area);
+  const topNames = new Set(sortedByArea.slice(0, 30).map((c) => c.name));
+
+  const features: Feature[] = sortedByArea.map((c, i) => {
+    const importance = demotedSet.has(c.name) ? -1 : topNames.has(c.name) ? 1 : 0;
+    return {
+      type: "Feature" as const,
+      id: i,
+      geometry: { type: "Point" as const, coordinates: [c.lng, c.lat] },
+      properties: {
+        _displayName: c.name,
+        _areaSqKm: c.area,
+        _continent: c.continent,
+        _region: c.region,
+        _importance: importance,
+        _distFade: 1,
+      },
+    };
+  });
+
+  const fc: FeatureCollection = { type: "FeatureCollection", features };
+  console.log(`[GeoRouter] Generated ${features.length} labels for country_labels layer`);
+  setCache(cacheKey, fc);
+  return fc;
+}
+
+type SovInfo = {
+  sovereignCountryId: string;
+  sovereignName: string;
+  relationType: string;
+  autonomyLevel: number;
+  relationLabel: string;
+};
+
+/** Active sovereignty relations: subject -> its sovereign, plus the set of sovereigns. */
+async function loadSovereignty(db: LayerDb) {
+  const subjectMap = new Map<string, SovInfo>();
+  const sovereignSet = new Set<string>();
+  try {
+    const rels = await db.countrySovereignty.findMany({
+      where: { isActive: true },
+      include: { sovereign: { select: { id: true, name: true } } },
+    });
+    for (const r of rels) {
+      subjectMap.set(r.subjectId, {
+        sovereignCountryId: r.sovereignId,
+        sovereignName: r.sovereign.name,
+        relationType: r.relationshipType,
+        autonomyLevel: r.autonomyLevel,
+        relationLabel:
+          SOVEREIGNTY_TYPE_MAP[r.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP]?.short ??
+          r.relationshipType,
+      });
+      sovereignSet.add(r.sovereignId);
+    }
+  } catch {
+    // Table may not exist yet — skip enrichment
+  }
+  return { subjectMap, sovereignSet };
+}
+
+type LayerRow = {
+  featureId: string;
+  geometry: unknown;
+  properties: Record<string, unknown>;
+  displayName: string | null;
+  countryId: string | null;
+  areaSqKm: number | null;
+  centroid: unknown;
+  country?: { continent: string | null; region: string | null } | null;
+};
+
+/** Political feature properties: fill colour (blended toward the root sovereign for subjects) and sovereignty tags. */
+function politicalProperties(
+  layer: LayerRow,
+  sovereignty: Awaited<ReturnType<typeof loadSovereignty>>,
+  countryColorMap: Map<string, string>
+) {
+  const { subjectMap, sovereignSet } = sovereignty;
+  let fillColor = getColorForFeature(layer.featureId, layer.properties);
+  const extraProps: Record<string, unknown> = {};
+
+  if (layer.countryId) {
+    const sovInfo = subjectMap.get(layer.countryId);
+    if (sovInfo) {
+      // This country is a subject — blend color toward root sovereign
+      const sovereignColor = countryColorMap.get(resolveRootSovereign(subjectMap, layer.countryId));
+      if (sovereignColor) {
+        fillColor = getSovereigntyColor(fillColor, sovereignColor, sovInfo.autonomyLevel);
+      }
+      extraProps._sovereignId = sovInfo.sovereignCountryId;
+      extraProps._sovereignName = sovInfo.sovereignName;
+      extraProps._relationType = sovInfo.relationType;
+      extraProps._relationLabel = sovInfo.relationLabel;
+      extraProps._autonomyLevel = sovInfo.autonomyLevel;
+    }
+    if (sovereignSet.has(layer.countryId)) extraProps._isSovereign = true;
+  }
+
+  const [centroidLng, centroidLat] = centroidLngLat(layer.centroid);
+  return {
+    ...layer.properties,
+    _id: layer.featureId,
+    _displayName: layer.displayName || featureIdToDisplayName(layer.featureId),
+    _fillColor: fillColor,
+    _countryId: layer.countryId,
+    _areaSqKm: layer.areaSqKm,
+    _centroidLng: centroidLng,
+    _centroidLat: centroidLat,
+    ...(layer.country?.continent ? { _continent: layer.country.continent } : {}),
+    ...(layer.country?.region ? { _region: layer.country.region } : {}),
+    ...extraProps,
+  };
+}
+
+/** Walks the sovereignty chain up to the root sovereign. */
+function resolveRootSovereign(
+  subjectMap: Map<string, SovInfo>,
+  countryId: string,
+  visited = new Set<string>()
+): string {
+  if (visited.has(countryId)) return countryId; // cycle guard
+  visited.add(countryId);
+  const parent = subjectMap.get(countryId);
+  return parent ? resolveRootSovereign(subjectMap, parent.sovereignCountryId, visited) : countryId;
+}
+
 async function buildLayerFromDB(
-  db: Parameters<typeof loadLayerFromDB>[0],
+  db: LayerDb,
   layerType: string,
   zoomBucket: ZoomBucket,
   realmId: string,
   cacheKey: string
 ): Promise<FeatureCollection | null> {
-  // Virtual layer: country_labels is derived from the same realm's political layer
-  if (layerType === "country_labels") {
-    const politicalFC = await loadLayerFromDB(db, "political", zoomBucket, realmId);
-    if (!politicalFC) return null;
+  if (layerType === "country_labels") return buildCountryLabels(db, zoomBucket, realmId, cacheKey);
 
-    // Build deduplicated point source: one centroid per unique country name
-    const seen = new Map<
-      string,
-      {
-        lng: number;
-        lat: number;
-        area: number;
-        name: string;
-        continent?: string;
-        region?: string;
-        ringSize: number;
-        importance: number;
-      }
-    >();
-
-    // Get top countries set (could be injected but we'll use a local fetch if needed)
-    // For now we'll just use the DEMOTED list and area-based importance
-    const demotedSet = new Set<string>(DEMOTED_COUNTRY_NAMES as unknown as string[]);
-
-    for (const feat of politicalFC.features) {
-      const p = feat.properties;
-      if (!p?._displayName || p._sovereignId) continue;
-      const name = p._displayName as string;
-      const area = (p._areaSqKm as number) ?? 0;
-      const existing = seen.get(name);
-
-      const [lng, lat] = computeVisualCenter(feat.geometry);
-
-      const geom = feat.geometry as any;
-      let ringSize = 0;
-      if (geom?.type === "Polygon") ringSize = geom.coordinates?.[0]?.length ?? 0;
-      else if (geom?.type === "MultiPolygon") {
-        for (const poly of geom.coordinates ?? []) ringSize += poly[0]?.length ?? 0;
-      }
-
-      if (!existing || ringSize > existing.ringSize) {
-        seen.set(name, {
-          lng,
-          lat,
-          area,
-          name,
-          ringSize,
-          continent: p._continent as string | undefined,
-          region: p._region as string | undefined,
-          importance: demotedSet.has(name) ? -1 : 0,
-        });
-      }
-    }
-
-    // Sort by area to find top countries for base importance
-    const sortedByArea = Array.from(seen.values()).sort((a, b) => b.area - a.area);
-    const topNames = new Set(sortedByArea.slice(0, 30).map((c) => c.name));
-
-    const features: Feature[] = sortedByArea.map((c, i) => {
-      let importance = 0;
-      if (demotedSet.has(c.name)) importance = -1;
-      else if (topNames.has(c.name)) importance = 1;
-
-      return {
-        type: "Feature" as const,
-        id: i,
-        geometry: { type: "Point" as const, coordinates: [c.lng, c.lat] },
-        properties: {
-          _displayName: c.name,
-          _areaSqKm: c.area,
-          _continent: c.continent,
-          _region: c.region,
-          _importance: importance,
-          _distFade: 1,
-        },
-      };
-    });
-
-    const fc: FeatureCollection = { type: "FeatureCollection", features };
-    console.log(`[GeoRouter] Generated ${features.length} labels for country_labels layer`);
-    setCache(cacheKey, fc);
-    return fc;
-  }
-
-  const layers = await db.mapLayer.findMany({
+  const isPolitical = layerType === "political";
+  const layers: LayerRow[] = await db.mapLayer.findMany({
     where: { layerType, isActive: true, realmId },
     // Explicit take bypasses global findMany guard (db.ts caps at 1000 by default).
     // Map layers like altitudes have 4000+ features that must all be loaded.
@@ -279,196 +380,56 @@ async function buildLayerFromDB(
       areaSqKm: true,
       centroid: true,
       // Join to Country for continent/region (used for geography tag highlighting)
-      ...(layerType === "political"
-        ? { country: { select: { continent: true, region: true } } }
-        : {}),
+      ...(isPolitical ? { country: { select: { continent: true, region: true } } } : {}),
     },
   });
-
   if (layers.length === 0) return null;
 
-  // ── Sovereignty enrichment for political layer ──
-  type SovInfo = {
-    sovereignCountryId: string;
-    sovereignName: string;
-    relationType: string;
-    autonomyLevel: number;
-    relationLabel: string;
-  };
-  const subjectMap = new Map<string, SovInfo>();
-  const sovereignSet = new Set<string>();
-
-  if (layerType === "political") {
-    try {
-      const rels = await db.countrySovereignty.findMany({
-        where: { isActive: true },
-        include: { sovereign: { select: { id: true, name: true } } },
-      });
-      for (const r of rels) {
-        subjectMap.set(r.subjectId, {
-          sovereignCountryId: r.sovereignId,
-          sovereignName: r.sovereign.name,
-          relationType: r.relationshipType,
-          autonomyLevel: r.autonomyLevel,
-          relationLabel:
-            SOVEREIGNTY_TYPE_MAP[r.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP]?.short ??
-            r.relationshipType,
-        });
-        sovereignSet.add(r.sovereignId);
-      }
-    } catch {
-      // Table may not exist yet — skip enrichment
-    }
-  }
-
-  // Build countryId → featureColor lookup for sovereignty color blending
+  const sovereignty = isPolitical
+    ? await loadSovereignty(db)
+    : { subjectMap: new Map<string, SovInfo>(), sovereignSet: new Set<string>() };
+  // countryId -> feature colour, for sovereignty colour blending
   const countryColorMap = new Map<string, string>();
-  if (layerType === "political") {
+  if (isPolitical) {
     for (const layer of layers) {
       if (layer.countryId) {
-        countryColorMap.set(
-          layer.countryId,
-          getColorForFeature(layer.featureId, layer.properties as Record<string, unknown>)
-        );
+        countryColorMap.set(layer.countryId, getColorForFeature(layer.featureId, layer.properties));
       }
     }
   }
 
-  // Resolve sovereignty chains: walk up to root sovereign
-  function resolveRootSovereign(countryId: string, visited = new Set<string>()): string {
-    if (visited.has(countryId)) return countryId; // cycle guard
-    visited.add(countryId);
-    const parent = subjectMap.get(countryId);
-    if (!parent) return countryId;
-    return resolveRootSovereign(parent.sovereignCountryId, visited);
-  }
+  // Decorative layers (altitudes, rivers, climate, etc.) only need _id + _fillColor and skip the
+  // raw SVG properties; the political layer carries full metadata for info panels and clicks.
+  const features: Feature[] = layers.map((layer, index) => ({
+    type: "Feature" as const,
+    id: index,
+    geometry: layer.geometry as Geometry,
+    properties: isPolitical
+      ? politicalProperties(layer, sovereignty, countryColorMap)
+      : {
+          _id: layer.featureId,
+          _fillColor: layer.properties?.fill as string | undefined,
+          _areaSqKm: layer.areaSqKm ?? computeApproxAreaForFeature(layer.geometry as Geometry),
+        },
+  }));
+  const fc: FeatureCollection = { type: "FeatureCollection", features };
 
-  const features: Feature[] = layers.map(
-    (
-      layer: {
-        featureId: string;
-        geometry: unknown;
-        properties: Record<string, unknown>;
-        displayName: string | null;
-        countryId: string | null;
-        areaSqKm: number | null;
-        centroid: unknown;
-      },
-      index: number
-    ) => {
-      // Centroid stored as [lng, lat] array or { coordinates: [lng, lat] } GeoJSON Point
-      const rawCentroid = layer.centroid as
-        [number, number] | { coordinates?: [number, number] } | null;
-      let centroidLng = 0;
-      let centroidLat = 0;
-      if (Array.isArray(rawCentroid) && rawCentroid.length >= 2) {
-        centroidLng = rawCentroid[0];
-        centroidLat = rawCentroid[1];
-      } else if (
-        rawCentroid &&
-        "coordinates" in rawCentroid &&
-        Array.isArray(rawCentroid.coordinates)
-      ) {
-        centroidLng = rawCentroid.coordinates[0];
-        centroidLat = rawCentroid.coordinates[1];
-      }
-
-      let fillColor: string | undefined;
-      const extraProps: Record<string, unknown> = {};
-
-      if (layerType === "political") {
-        fillColor = getColorForFeature(
-          layer.featureId,
-          layer.properties as Record<string, unknown>
-        );
-
-        // Sovereignty enrichment
-        if (layer.countryId) {
-          const sovInfo = subjectMap.get(layer.countryId);
-          if (sovInfo) {
-            // This country is a subject — blend color toward root sovereign
-            const rootSovereignId = resolveRootSovereign(layer.countryId);
-            const sovereignColor = countryColorMap.get(rootSovereignId);
-            if (sovereignColor) {
-              fillColor = getSovereigntyColor(fillColor, sovereignColor, sovInfo.autonomyLevel);
-            }
-            extraProps._sovereignId = sovInfo.sovereignCountryId;
-            extraProps._sovereignName = sovInfo.sovereignName;
-            extraProps._relationType = sovInfo.relationType;
-            extraProps._relationLabel = sovInfo.relationLabel;
-            extraProps._autonomyLevel = sovInfo.autonomyLevel;
-          }
-          if (sovereignSet.has(layer.countryId)) {
-            extraProps._isSovereign = true;
-          }
-        }
-      } else {
-        fillColor = (layer.properties as Record<string, unknown>)?.fill as string | undefined;
-      }
-
-      // For non-political layers, skip raw SVG properties (fill, ixmap-subgroup, etc.)
-      // — _fillColor already contains the computed color
-      const baseProps =
-        layerType === "political" ? { ...(layer.properties as Record<string, unknown>) } : {};
-
-      // Decorative layers (altitudes, rivers, climate, etc.) only need _id + _fillColor.
-      // Political layer carries full metadata for info panels and click handling.
-      const isPolitical = layerType === "political";
-      const properties = isPolitical
-        ? {
-            ...baseProps,
-            _id: layer.featureId,
-            _displayName: layer.displayName || featureIdToDisplayName(layer.featureId),
-            _fillColor: fillColor,
-            _countryId: layer.countryId,
-            _areaSqKm: layer.areaSqKm,
-            _centroidLng: centroidLng,
-            _centroidLat: centroidLat,
-            ...((layer as any).country?.continent
-              ? { _continent: (layer as any).country.continent }
-              : {}),
-            ...((layer as any).country?.region ? { _region: (layer as any).country.region } : {}),
-            ...extraProps,
-          }
-        : {
-            _id: layer.featureId,
-            _fillColor: fillColor,
-            _areaSqKm: layer.areaSqKm ?? computeApproxAreaForFeature(layer.geometry as Geometry),
-          };
-
-      return {
-        type: "Feature" as const,
-        id: index,
-        geometry: layer.geometry as Geometry,
-        properties,
-      };
-    }
-  );
-
-  const fc: FeatureCollection = {
-    type: "FeatureCollection",
-    features,
-  };
-
-  // Compress geometry for transport (simplify + truncate coords + dedup)
-  // Uses zoom-aware LOD: globe view = aggressive, detail view = minimal
-  const compressionOpts = getCompressionForLayer(layerType, zoomBucket);
-  const compressed =
-    compressionOpts.simplifyTolerance > 0
-      ? compressFeatureCollection(fc, compressionOpts)
-      : compressFeatureCollection(fc, { ...compressionOpts, simplifyTolerance: 0 });
+  // Compress geometry for transport (simplify + truncate coords + dedup) with zoom-aware LOD:
+  // globe view = aggressive, detail view = minimal
+  const compressed = compressFeatureCollection(fc, getCompressionForLayer(layerType, zoomBucket));
 
   // Split features crossing the antimeridian to prevent rendering artifacts
   const split = splitCollectionAtAntimeridian(compressed);
 
   // Merge decorative layers by fill color — these don't need individual feature identity.
   // Reduces 4000+ small Polygons to ~9 MultiPolygons (one per color), cutting payload ~30%.
-  const DECORATIVE_LAYERS = new Set(["altitudes", "climate"]);
   const result = DECORATIVE_LAYERS.has(layerType) ? mergeFeaturesByColor(split) : split;
 
   setCache(cacheKey, result);
   return result;
 }
+
+const DECORATIVE_LAYERS = new Set(["altitudes", "climate"]);
 
 /**
  * Merge GeoJSON features that share the same _fillColor into single MultiPolygon features.

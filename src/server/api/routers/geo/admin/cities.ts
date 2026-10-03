@@ -12,6 +12,7 @@ import { upsertCity } from "~/lib/country-geo";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "~/server/shared/layer-cache";
+import { assertOwnCountry } from "../core/shared";
 
 // ── Shared schema ─────────────────────────────────────────────────────────────
 
@@ -48,13 +49,7 @@ export const geoAdminCitiesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only import cities for your own country",
-        });
-      }
+      assertOwnCountry(ctx, input.countryId, "import cities for");
 
       // Verify country exists
       const countryRecord = await ctx.db.country.findUnique({
@@ -146,13 +141,7 @@ export const geoAdminCitiesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only parse city SVGs for your own country",
-        });
-      }
+      assertOwnCountry(ctx, input.countryId, "parse city SVGs for");
 
       const { parseCitySvg } = await import("~/lib/city-importer/svg-points");
       return parseCitySvg(input.svgContent, {

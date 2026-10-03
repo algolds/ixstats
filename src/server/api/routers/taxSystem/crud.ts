@@ -57,6 +57,37 @@ function validateBracketsState(
   return errors.length === 0 ? { ok: true } : { ok: false, errors };
 }
 
+const TaxSaveInput = z.object({
+  countryId: z.string(),
+  data: TaxBuilderStateSchema,
+  skipConflictCheck: z.boolean().optional().default(false),
+});
+
+/** Write-access check, bracket validation and conflict detection shared by create and update. */
+async function checkTaxSave(
+  ctx: Parameters<typeof assertCountryWriteAccess>[0] & { db: PrismaClient },
+  input: z.infer<typeof TaxSaveInput>
+) {
+  const data = input.data as TaxBuilderState;
+  await assertCountryWriteAccess(ctx, input.countryId);
+
+  const bracketValidation = validateBracketsState(data);
+  if (bracketValidation.ok === false) {
+    const rejection = {
+      taxSystem: null,
+      syncResult: null,
+      warnings: [],
+      errors: bracketValidation.errors,
+    } as any;
+    return { data, warnings: [] as ConflictWarning[], rejection };
+  }
+
+  const warnings: ConflictWarning[] = input.skipConflictCheck
+    ? []
+    : await detectTaxConflicts(ctx.db as any, input.countryId, data);
+  return { data, warnings, rejection: null };
+}
+
 const TAX_SYSTEM_INCLUDE = {
   taxCategories: {
     include: {
@@ -263,186 +294,132 @@ export const taxSystemCrudRouter = createTRPCRouter({
     }),
 
   // Create tax system
-  create: protectedProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        data: TaxBuilderStateSchema,
-        skipConflictCheck: z.boolean().optional().default(false),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const data = input.data as TaxBuilderState;
-      const { skipConflictCheck } = input;
+  create: protectedProcedure.input(TaxSaveInput).mutation(async ({ ctx, input }) => {
+    const { data, warnings, rejection } = await checkTaxSave(ctx, input);
+    if (rejection) return rejection;
 
-      await assertCountryWriteAccess(ctx, input.countryId);
-
-      // Server-side validation for bracket continuity/overlaps
-      const bracketValidation = validateBracketsState(data);
-      if (bracketValidation.ok === false) {
-        return {
-          taxSystem: null,
-          syncResult: null,
-          warnings: [],
-          errors: bracketValidation.errors,
-        } as any;
-      }
-
-      // Detect conflicts if not skipped
-      let warnings: ConflictWarning[] = [];
-      if (!skipConflictCheck) {
-        warnings = await detectTaxConflicts(ctx.db as any, input.countryId, data);
-      }
-
-      // Create tax system with categories; fallback to update on unique constraint
-      let taxSystem;
-      try {
-        taxSystem = await ctx.db.taxSystem.create({
-          data: { countryId: input.countryId, ...taxSystemWriteData(data, input.countryId) },
-          include: TAX_SYSTEM_INCLUDE,
-        });
-      } catch (e: any) {
-        if (!(e instanceof AppError && e.code === "CONFLICT")) {
-          throw e;
-        }
-        // Unique on countryId exists already: perform update path
-        await clearTaxCategories(ctx.db, input.countryId);
-
-        taxSystem = await ctx.db.taxSystem.update({
-          where: { countryId: input.countryId },
-          data: taxSystemWriteData(data, input.countryId),
-          include: TAX_SYSTEM_INCLUDE,
-        });
-      }
-
-      await replaceTaxComponents(ctx.db, input.countryId, data.selectedAtomicTaxComponents);
-
-      // Sync with FiscalSystem table
-      const syncResult = await syncTaxData(ctx.db as any, input.countryId, data);
-
-      // Notify about tax system creation
-      try {
-        await notificationHooks.onTaxSystemChange({
-          countryId: input.countryId,
-          changeType: "created",
-          systemName: data.taxSystem.taxSystemName,
-          details: `Tax system created with ${data.categories.length} categories`,
-        });
-      } catch (error) {
-        console.error("[TaxSystem] Failed to send tax system creation notification:", error);
-      }
-
-      return {
-        taxSystem,
-        syncResult,
-        warnings,
-      };
-    }),
-
-  // Update tax system
-  update: protectedProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        data: TaxBuilderStateSchema,
-        skipConflictCheck: z.boolean().optional().default(false),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const data = input.data as TaxBuilderState;
-      const { skipConflictCheck } = input;
-
-      await assertCountryWriteAccess(ctx, input.countryId);
-
-      // Server-side validation for bracket continuity/overlaps
-      const bracketValidation = validateBracketsState(data);
-      if (bracketValidation.ok === false) {
-        return {
-          taxSystem: null,
-          syncResult: null,
-          warnings: [],
-          errors: bracketValidation.errors,
-        } as any;
-      }
-
-      // Detect conflicts if not skipped
-      let warnings: ConflictWarning[] = [];
-      if (!skipConflictCheck) {
-        warnings = await detectTaxConflicts(ctx.db as any, input.countryId, data);
-      }
-
-      // Ensure a tax system row exists so the update below can't throw
-      // "TaxSystem not found" when the editor saves before one was created.
-      await ctx.db.taxSystem.upsert({
-        where: { countryId: input.countryId },
-        create: {
-          countryId: input.countryId,
-          taxSystemName: data.taxSystem.taxSystemName || "National Tax System",
-        },
-        update: {},
+    // Create tax system with categories; fallback to update on unique constraint
+    let taxSystem;
+    try {
+      taxSystem = await ctx.db.taxSystem.create({
+        data: { countryId: input.countryId, ...taxSystemWriteData(data, input.countryId) },
+        include: TAX_SYSTEM_INCLUDE,
       });
-
-      // Delete existing categories and recreate (easier than updating)
+    } catch (e: any) {
+      if (!(e instanceof AppError && e.code === "CONFLICT")) {
+        throw e;
+      }
+      // Unique on countryId exists already: perform update path
       await clearTaxCategories(ctx.db, input.countryId);
 
-      const taxSystem = await ctx.db.taxSystem.update({
+      taxSystem = await ctx.db.taxSystem.update({
         where: { countryId: input.countryId },
         data: taxSystemWriteData(data, input.countryId),
         include: TAX_SYSTEM_INCLUDE,
       });
+    }
 
-      await replaceTaxComponents(ctx.db, input.countryId, data.selectedAtomicTaxComponents);
+    await replaceTaxComponents(ctx.db, input.countryId, data.selectedAtomicTaxComponents);
 
-      // Sync with FiscalSystem table
-      const syncResult = await syncTaxData(ctx.db as any, input.countryId, data);
+    // Sync with FiscalSystem table
+    const syncResult = await syncTaxData(ctx.db as any, input.countryId, data);
 
-      // Check for significant revenue projection changes
-      try {
-        const country = await ctx.db.country.findUnique({
-          where: { id: input.countryId },
-          select: {
-            taxRevenueGDPPercent: true,
-            currentGdpPerCapita: true,
-            currentPopulation: true,
-          },
-        });
+    // Notify about tax system creation
+    try {
+      await notificationHooks.onTaxSystemChange({
+        countryId: input.countryId,
+        changeType: "created",
+        systemName: data.taxSystem.taxSystemName,
+        details: `Tax system created with ${data.categories.length} categories`,
+      });
+    } catch (error) {
+      console.error("[TaxSystem] Failed to send tax system creation notification:", error);
+    }
 
-        if (country && data.taxSystem.collectionEfficiency) {
-          const previousRevenue = country.taxRevenueGDPPercent || 0;
-          const newRevenue = data.taxSystem.collectionEfficiency;
-          const changePercent =
-            previousRevenue > 0 ? ((newRevenue - previousRevenue) / previousRevenue) * 100 : 0;
+    return {
+      taxSystem,
+      syncResult,
+      warnings,
+    };
+  }),
 
-          // Notify if revenue projection changed by more than 10%
-          if (Math.abs(changePercent) > 10) {
-            await notificationHooks.onTaxSystemChange({
-              countryId: input.countryId,
-              changeType: "revenue_projection_change",
-              systemName: data.taxSystem.taxSystemName,
-              previousValue: previousRevenue,
-              newValue: newRevenue,
-              changePercent,
-            });
-          }
+  // Update tax system
+  update: protectedProcedure.input(TaxSaveInput).mutation(async ({ ctx, input }) => {
+    const { data, warnings, rejection } = await checkTaxSave(ctx, input);
+    if (rejection) return rejection;
+
+    // Ensure a tax system row exists so the update below can't throw
+    // "TaxSystem not found" when the editor saves before one was created.
+    await ctx.db.taxSystem.upsert({
+      where: { countryId: input.countryId },
+      create: {
+        countryId: input.countryId,
+        taxSystemName: data.taxSystem.taxSystemName || "National Tax System",
+      },
+      update: {},
+    });
+
+    // Delete existing categories and recreate (easier than updating)
+    await clearTaxCategories(ctx.db, input.countryId);
+
+    const taxSystem = await ctx.db.taxSystem.update({
+      where: { countryId: input.countryId },
+      data: taxSystemWriteData(data, input.countryId),
+      include: TAX_SYSTEM_INCLUDE,
+    });
+
+    await replaceTaxComponents(ctx.db, input.countryId, data.selectedAtomicTaxComponents);
+
+    // Sync with FiscalSystem table
+    const syncResult = await syncTaxData(ctx.db as any, input.countryId, data);
+
+    // Check for significant revenue projection changes
+    try {
+      const country = await ctx.db.country.findUnique({
+        where: { id: input.countryId },
+        select: {
+          taxRevenueGDPPercent: true,
+          currentGdpPerCapita: true,
+          currentPopulation: true,
+        },
+      });
+
+      if (country && data.taxSystem.collectionEfficiency) {
+        const previousRevenue = country.taxRevenueGDPPercent || 0;
+        const newRevenue = data.taxSystem.collectionEfficiency;
+        const changePercent =
+          previousRevenue > 0 ? ((newRevenue - previousRevenue) / previousRevenue) * 100 : 0;
+
+        // Notify if revenue projection changed by more than 10%
+        if (Math.abs(changePercent) > 10) {
+          await notificationHooks.onTaxSystemChange({
+            countryId: input.countryId,
+            changeType: "revenue_projection_change",
+            systemName: data.taxSystem.taxSystemName,
+            previousValue: previousRevenue,
+            newValue: newRevenue,
+            changePercent,
+          });
         }
-
-        // Notify about tax system update
-        await notificationHooks.onTaxSystemChange({
-          countryId: input.countryId,
-          changeType: "updated",
-          systemName: data.taxSystem.taxSystemName,
-          details: `Tax system updated with ${data.categories.length} categories`,
-        });
-      } catch (error) {
-        console.error("[TaxSystem] Failed to send tax system update notification:", error);
       }
 
-      return {
-        taxSystem,
-        syncResult,
-        warnings,
-      };
-    }),
+      // Notify about tax system update
+      await notificationHooks.onTaxSystemChange({
+        countryId: input.countryId,
+        changeType: "updated",
+        systemName: data.taxSystem.taxSystemName,
+        details: `Tax system updated with ${data.categories.length} categories`,
+      });
+    } catch (error) {
+      console.error("[TaxSystem] Failed to send tax system update notification:", error);
+    }
+
+    return {
+      taxSystem,
+      syncResult,
+      warnings,
+    };
+  }),
 
   // Delete tax system
   delete: protectedProcedure

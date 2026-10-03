@@ -1,13 +1,8 @@
 /**
- * Transient Map Editor Store
- *
- * Decouples high-frequency mouse pointer movements, hover tooltips,
- * and transient drag coordinates from React state to eliminate top-level
- * re-render cascades across the map editor tree.
- *
- * Writes update the snapshot immediately but subscribers are notified at most
- * once per animation frame, so a 120 Hz pointer produces ≤ 1 React render per
- * frame in the leaf components that read it (status bar, hover tooltip, HUD).
+ * Keeps high-frequency pointer state (hover, cursor coordinates, zoom) out of React state so it
+ * never re-renders the editor tree. Writes update the snapshot immediately but subscribers are
+ * notified at most once per animation frame, so a 120 Hz pointer costs leaf readers (status bar,
+ * hover tooltip) at most one render per frame.
  */
 
 import { useSyncExternalStore } from "react";
@@ -24,7 +19,6 @@ interface TransientEditorState {
   cursorCoords: [number, number] | null;
   /** Cursor position in map-container pixels (for tooltips that follow the pointer). */
   cursorScreen: { x: number; y: number } | null;
-  activeVertexIndex: number | null;
   terrainInfo: LiveTerrainInfo | null;
   /** Current map zoom (updated on zoom end). */
   zoom: number | null;
@@ -35,7 +29,6 @@ class TransientStore {
     hoveredFeatureId: null,
     cursorCoords: null,
     cursorScreen: null,
-    activeVertexIndex: null,
     terrainInfo: null,
     zoom: null,
   };
@@ -43,9 +36,7 @@ class TransientStore {
   private listeners = new Set<() => void>();
   private frame: number | null = null;
 
-  public getSnapshot = (): TransientEditorState => {
-    return this.state;
-  };
+  public getSnapshot = (): TransientEditorState => this.state;
 
   public subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener);
@@ -62,19 +53,20 @@ class TransientStore {
     coords: [number, number] | null,
     screen?: { x: number; y: number } | null
   ): void => {
+    const { cursorCoords, cursorScreen } = this.state;
+    const nextScreen = screen === undefined ? cursorScreen : screen;
     const sameCoords =
-      this.state.cursorCoords === coords ||
-      (!!this.state.cursorCoords &&
+      cursorCoords === coords ||
+      (!!cursorCoords &&
         !!coords &&
-        this.state.cursorCoords[0] === coords[0] &&
-        this.state.cursorCoords[1] === coords[1]);
-    const nextScreen = screen === undefined ? this.state.cursorScreen : screen;
+        cursorCoords[0] === coords[0] &&
+        cursorCoords[1] === coords[1]);
     const sameScreen =
-      this.state.cursorScreen === nextScreen ||
-      (!!this.state.cursorScreen &&
+      cursorScreen === nextScreen ||
+      (!!cursorScreen &&
         !!nextScreen &&
-        this.state.cursorScreen.x === nextScreen.x &&
-        this.state.cursorScreen.y === nextScreen.y);
+        cursorScreen.x === nextScreen.x &&
+        cursorScreen.y === nextScreen.y);
     if (sameCoords && sameScreen) return;
     this.state = {
       ...this.state,
@@ -87,12 +79,6 @@ class TransientStore {
   public setTerrainInfo = (info: LiveTerrainInfo | null): void => {
     if (this.state.terrainInfo === info) return;
     this.state = { ...this.state, terrainInfo: info };
-    this.emitChange();
-  };
-
-  public setActiveVertexIndex = (index: number | null): void => {
-    if (this.state.activeVertexIndex === index) return;
-    this.state = { ...this.state, activeVertexIndex: index };
     this.emitChange();
   };
 
@@ -121,10 +107,7 @@ class TransientStore {
 
 export const transientMapStore = new TransientStore();
 
-/**
- * Hook to subscribe to transient map editor state changes cleanly.
- * The selector must return a primitive or a reference held by the store.
- */
+/** The selector must return a primitive or a reference held by the store. */
 export function useTransientMapStore<T>(selector: (state: TransientEditorState) => T): T {
   return useSyncExternalStore(
     transientMapStore.subscribe,

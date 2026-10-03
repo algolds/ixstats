@@ -5,9 +5,8 @@ import { Map, WarningCircle as AlertCircle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { FacetMaterial } from "~/components/ui/facet";
 import { Skeleton } from "~/components/ui/skeleton";
-import type { Geometry, Position } from "geojson";
-
-// ── Editor Loading Screen ────────────────────────────────────────────
+import type { Geometry, MultiPolygon, Polygon } from "geojson";
+import { getAllRings } from "~/lib/maps/border-editor";
 
 export function EditorLoadingScreen({ countryName }: { countryName?: string | null }) {
   return (
@@ -33,43 +32,22 @@ export function EditorLoadingScreen({ countryName }: { countryName?: string | nu
   );
 }
 
-// ── Geometry Vertices Counter Helper ─────────────────────────────────
-
 export function countGeometryVertices(geometry: Geometry | object): number {
-  const geo = geometry as { type?: string; coordinates?: Position[][] | Position[][][] };
-  if (!geo.coordinates) return 0;
-  if (geo.type === "Polygon") {
-    return (geo.coordinates as Position[][]).reduce((s, ring) => s + ring.length, 0);
-  }
-  if (geo.type === "MultiPolygon") {
-    return (geo.coordinates as Position[][][]).reduce(
-      (s, poly) => s + poly.reduce((s2, ring) => s2 + ring.length, 0),
-      0
-    );
-  }
-  return 0;
+  const geo = geometry as { type?: string; coordinates?: unknown };
+  if (!geo.coordinates || (geo.type !== "Polygon" && geo.type !== "MultiPolygon")) return 0;
+  return getAllRings(geo as Polygon | MultiPolygon).reduce((sum, ring) => sum + ring.length, 0);
 }
-
-// ── Error Boundary Component ─────────────────────────────────────────
 
 interface ErrorBoundaryProps {
   name: string;
   children: ReactNode;
 }
 
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error: Error | null;
-}
+export class EditorErrorBoundary extends Component<ErrorBoundaryProps, { hasError: boolean }> {
+  state = { hasError: false };
 
-export class EditorErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, error };
+  static getDerivedStateFromError() {
+    return { hasError: true };
   }
 
   componentDidCatch(error: Error) {
@@ -84,11 +62,7 @@ export class EditorErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoun
           <p className="text-label-secondary text-footnote">
             {this.props.name} encountered an error
           </p>
-          <Button
-            variant="secondary"
-            size="xs"
-            onClick={() => this.setState({ hasError: false, error: null })}
-          >
+          <Button variant="secondary" size="xs" onClick={() => this.setState({ hasError: false })}>
             Retry
           </Button>
         </div>

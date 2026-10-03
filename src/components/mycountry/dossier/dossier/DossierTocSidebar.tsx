@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import {
@@ -43,62 +43,150 @@ interface DossierTocSidebarProps {
   wikiSource?: WikiSource;
 }
 
+const CATEGORY_KEYWORDS: Array<[category: string, keywords: string[]]> = [
+  ["Geography & Demographics", ["geograph", "climat", "demograph", "populat", "land", "territor"]],
+  [
+    "Government & Politics",
+    ["govern", "politi", "execut", "foreign", "diploma", "law", "constitut"],
+  ],
+  ["Economy & Infrastructure", ["econom", "trad", "financ", "currenc", "industr", "infrastruct"]],
+  ["History & Culture", ["histor", "cultur", "religi", "languag", "ethni", "societ"]],
+  ["Military & Defense", ["militar", "defens", "securit", "force", "navy", "army"]],
+];
+
 function categorizeTitle(title: string, source: "wiki" | "native"): string {
   if (source === "native") return "Native Canvas Lore";
-
   const lower = title.toLowerCase();
-  if (
-    lower.includes("geograph") ||
-    lower.includes("climat") ||
-    lower.includes("demograph") ||
-    lower.includes("populat") ||
-    lower.includes("land") ||
-    lower.includes("territor")
-  ) {
-    return "Geography & Demographics";
-  }
-  if (
-    lower.includes("govern") ||
-    lower.includes("politi") ||
-    lower.includes("execut") ||
-    lower.includes("foreign") ||
-    lower.includes("diploma") ||
-    lower.includes("law") ||
-    lower.includes("constitut")
-  ) {
-    return "Government & Politics";
-  }
-  if (
-    lower.includes("econom") ||
-    lower.includes("trad") ||
-    lower.includes("financ") ||
-    lower.includes("currenc") ||
-    lower.includes("industr") ||
-    lower.includes("infrastruct")
-  ) {
-    return "Economy & Infrastructure";
-  }
-  if (
-    lower.includes("histor") ||
-    lower.includes("cultur") ||
-    lower.includes("religi") ||
-    lower.includes("languag") ||
-    lower.includes("ethni") ||
-    lower.includes("societ")
-  ) {
-    return "History & Culture";
-  }
-  if (
-    lower.includes("militar") ||
-    lower.includes("defens") ||
-    lower.includes("securit") ||
-    lower.includes("force") ||
-    lower.includes("navy") ||
-    lower.includes("army")
-  ) {
-    return "Military & Defense";
-  }
-  return "General Dossier Sections";
+  const match = CATEGORY_KEYWORDS.find(([, keywords]) => keywords.some((k) => lower.includes(k)));
+  return match?.[0] ?? "General Dossier Sections";
+}
+
+/** The WikiOS topic pages injected into the category folders: [id key, page title, label, category]. */
+const WIKI_PAGES: Array<
+  [key: string, page: (name: string) => string, label: (name: string) => string, category: string]
+> = [
+  ["main", (n) => n, (n) => `${n} (Main WikiOS Article)`, "General Dossier Sections"],
+  ["geo", (n) => `Geography of ${n}`, (n) => `Geography of ${n}`, "Geography & Demographics"],
+  [
+    "demog",
+    (n) => `Demographics of ${n}`,
+    (n) => `Demographics of ${n}`,
+    "Geography & Demographics",
+  ],
+  [
+    "gov",
+    (n) => `Government of ${n}`,
+    (n) => `Government & Politics of ${n}`,
+    "Government & Politics",
+  ],
+  ["econ", (n) => `Economy of ${n}`, (n) => `Economy of ${n}`, "Economy & Infrastructure"],
+  ["hist", (n) => `History of ${n}`, (n) => `History of ${n}`, "History & Culture"],
+  ["mil", (n) => `Military of ${n}`, (n) => `Military of ${n}`, "Military & Defense"],
+];
+
+const wikiPagesFor = (countryName: string): TocItem[] =>
+  countryName
+    ? WIKI_PAGES.map(([key, page, label, category]) => ({
+        id: `page_${key}_${countryName}`,
+        title: label(countryName),
+        pageTitle: page(countryName),
+        isPage: true,
+        source: "wiki",
+        category,
+      }))
+    : [];
+
+function TocRow({
+  item,
+  isSelected,
+  onClick,
+}: {
+  item: TocItem;
+  isSelected: boolean;
+  onClick: () => void;
+}) {
+  const ItemIcon = item.isPage ? Globe : item.source === "wiki" ? BookOpen : FileText;
+  return (
+    <button
+      type="button"
+      aria-current={isSelected ? "true" : undefined}
+      onClick={onClick}
+      className={`text-footnote rounded-control-sm flex w-full items-center justify-between px-2 py-1 text-left transition-[background-color,border-color,transform] duration-150 ${
+        isSelected
+          ? "bg-fill-3 text-label font-semibold"
+          : item.isPage
+            ? "text-label hover:bg-fill-3 font-medium"
+            : "text-label-secondary hover:text-label hover:bg-fill-3"
+      }`}
+    >
+      <div className="flex min-w-0 items-center gap-2">
+        <ItemIcon className="text-label-secondary h-3 w-3 shrink-0" />
+        <span className="text-caption truncate">{item.title}</span>
+      </div>
+
+      {item.isPage ? (
+        <ExternalLink className="text-label-secondary h-3 w-3 shrink-0" />
+      ) : (
+        <ChevronRight className="h-3 w-3 shrink-0 opacity-40" />
+      )}
+    </button>
+  );
+}
+
+function TocFolder({
+  name,
+  items,
+  isOpen,
+  activeSectionId,
+  onToggle,
+  onSelect,
+}: {
+  name: string;
+  items: TocItem[];
+  isOpen: boolean;
+  activeSectionId: string | null | undefined;
+  onToggle: () => void;
+  onSelect: (item: TocItem) => void;
+}) {
+  const FolderIcon = isOpen ? FolderOpen : Folder;
+  const Chevron = isOpen ? ChevronDown : ChevronRight;
+  return (
+    <div className="border-separator rounded-control border">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        className="text-label h-auto min-h-(--control-height-sm) w-full justify-between justify-start py-2 text-left whitespace-normal"
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          <FolderIcon className="text-label-secondary h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">{name}</span>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="text-label-secondary bg-fill-3 text-footnote rounded-control-sm px-2 py-0.5 tabular-nums">
+            {items.length}
+          </span>
+          <Chevron className="text-label-secondary h-3.5 w-3.5" />
+        </div>
+      </Button>
+
+      {isOpen && (
+        <div className="border-separator space-y-0.5 border-t pt-1 pr-1 pb-1 pl-4">
+          {items.map((item) => (
+            <TocRow
+              key={item.id}
+              item={item}
+              isSelected={activeSectionId === item.id}
+              onClick={() => onSelect(item)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function DossierTocSidebar({
@@ -113,114 +201,27 @@ export function DossierTocSidebar({
   const [sourceFilter, setSourceFilter] = useState<"all" | "wiki" | "native">("all");
   const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
 
-  // Individual WikiOS Topic Pages to inject into category folders
-  const wikiPages = useMemo<TocItem[]>(() => {
-    if (!countryName) return [];
-    return [
-      {
-        id: `page_main_${countryName}`,
-        title: `${countryName} (Main WikiOS Article)`,
-        pageTitle: countryName,
-        isPage: true,
-        source: "wiki",
-        category: "General Dossier Sections",
-      },
-      {
-        id: `page_geo_${countryName}`,
-        title: `Geography of ${countryName}`,
-        pageTitle: `Geography of ${countryName}`,
-        isPage: true,
-        source: "wiki",
-        category: "Geography & Demographics",
-      },
-      {
-        id: `page_demog_${countryName}`,
-        title: `Demographics of ${countryName}`,
-        pageTitle: `Demographics of ${countryName}`,
-        isPage: true,
-        source: "wiki",
-        category: "Geography & Demographics",
-      },
-      {
-        id: `page_gov_${countryName}`,
-        title: `Government & Politics of ${countryName}`,
-        pageTitle: `Government of ${countryName}`,
-        isPage: true,
-        source: "wiki",
-        category: "Government & Politics",
-      },
-      {
-        id: `page_econ_${countryName}`,
-        title: `Economy of ${countryName}`,
-        pageTitle: `Economy of ${countryName}`,
-        isPage: true,
-        source: "wiki",
-        category: "Economy & Infrastructure",
-      },
-      {
-        id: `page_hist_${countryName}`,
-        title: `History of ${countryName}`,
-        pageTitle: `History of ${countryName}`,
-        isPage: true,
-        source: "wiki",
-        category: "History & Culture",
-      },
-      {
-        id: `page_mil_${countryName}`,
-        title: `Military of ${countryName}`,
-        pageTitle: `Military of ${countryName}`,
-        isPage: true,
-        source: "wiki",
-        category: "Military & Defense",
-      },
-    ];
-  }, [countryName]);
-
-  // Combined list of items (Pages + Sections + Native Docs)
-  const allTocItems = useMemo(() => {
-    const wikiItems: TocItem[] = sections.map((s) => ({
+  const query = searchQuery.trim().toLowerCase();
+  const allTocItems: TocItem[] = [
+    ...wikiPagesFor(countryName),
+    ...sections.map((s) => ({
       ...s,
-      source: "wiki",
+      source: "wiki" as const,
       category: s.category || categorizeTitle(s.title, "wiki"),
-    }));
+    })),
+    ...nativeDocs.map((d) => ({ ...d, source: "native" as const, category: "Native Canvas Lore" })),
+  ];
 
-    const nativeItems: TocItem[] = nativeDocs.map((d) => ({
-      ...d,
-      source: "native",
-      category: "Native Canvas Lore",
-    }));
-
-    return [...wikiPages, ...wikiItems, ...nativeItems];
-  }, [wikiPages, sections, nativeDocs]);
-
-  // Group items by category subfolders
-  const groupedFolders = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-
-    const filtered = allTocItems.filter((item) => {
-      const matchesSearch =
-        !query ||
-        item.title.toLowerCase().includes(query) ||
-        (item.category && item.category.toLowerCase().includes(query)) ||
-        (item.pageTitle && item.pageTitle.toLowerCase().includes(query));
-
-      const matchesSource = sourceFilter === "all" || item.source === sourceFilter;
-
-      return matchesSearch && matchesSource;
-    });
-
-    const folderMap: Record<string, TocItem[]> = {};
-
-    for (const item of filtered) {
-      const folderName = item.category || categorizeTitle(item.title, item.source);
-      if (!folderMap[folderName]) {
-        folderMap[folderName] = [];
-      }
-      folderMap[folderName].push(item);
-    }
-
-    return folderMap;
-  }, [allTocItems, searchQuery, sourceFilter]);
+  // Group the matching items into category folders.
+  const groupedFolders: Record<string, TocItem[]> = {};
+  for (const item of allTocItems) {
+    const matchesSearch = [item.title, item.category, item.pageTitle].some((field) =>
+      field?.toLowerCase().includes(query)
+    );
+    if (!matchesSearch || (sourceFilter !== "all" && item.source !== sourceFilter)) continue;
+    const folderName = item.category || categorizeTitle(item.title, item.source);
+    (groupedFolders[folderName] ??= []).push(item);
+  }
 
   const toggleFolder = (folderName: string) => {
     setOpenFolders((prev) => ({
@@ -291,84 +292,17 @@ export function DossierTocSidebar({
               No dossier folders or pages found.
             </div>
           ) : (
-            Object.entries(groupedFolders).map(([folderName, items]) => {
-              const isOpen = searchQuery.trim().length > 0 || openFolders[folderName] !== false;
-
-              return (
-                <div key={folderName} className="border-separator rounded-control border">
-                  {/* Folder Header Button */}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleFolder(folderName)}
-                    aria-expanded={isOpen}
-                    className="text-label h-auto min-h-(--control-height-sm) w-full justify-between justify-start py-2 text-left whitespace-normal"
-                  >
-                    <div className="flex min-w-0 items-center gap-2">
-                      {isOpen ? (
-                        <FolderOpen className="text-label-secondary h-3.5 w-3.5 shrink-0" />
-                      ) : (
-                        <Folder className="text-label-secondary h-3.5 w-3.5 shrink-0" />
-                      )}
-                      <span className="truncate">{folderName}</span>
-                    </div>
-
-                    <div className="flex shrink-0 items-center gap-2">
-                      <span className="text-label-secondary bg-fill-3 text-footnote rounded-control-sm px-2 py-0.5 tabular-nums">
-                        {items.length}
-                      </span>
-                      {isOpen ? (
-                        <ChevronDown className="text-label-secondary h-3.5 w-3.5" />
-                      ) : (
-                        <ChevronRight className="text-label-secondary h-3.5 w-3.5" />
-                      )}
-                    </div>
-                  </Button>
-
-                  {/* Subfolder Item List (Pages & Sections) */}
-                  {isOpen && (
-                    <div className="border-separator space-y-0.5 border-t pt-1 pr-1 pb-1 pl-4">
-                      {items.map((item) => {
-                        const isSelected = activeSectionId === item.id;
-                        return (
-                          <button
-                            key={item.id}
-                            type="button"
-                            aria-current={isSelected ? "true" : undefined}
-                            onClick={() => handleItemClick(item)}
-                            className={`text-footnote rounded-control-sm flex w-full items-center justify-between px-2 py-1 text-left transition-[background-color,border-color,transform] duration-150 ${
-                              isSelected
-                                ? "bg-fill-3 text-label font-semibold"
-                                : item.isPage
-                                  ? "text-label hover:bg-fill-3 font-medium"
-                                  : "text-label-secondary hover:text-label hover:bg-fill-3"
-                            }`}
-                          >
-                            <div className="flex min-w-0 items-center gap-2">
-                              {item.isPage ? (
-                                <Globe className="text-label-secondary h-3 w-3 shrink-0" />
-                              ) : item.source === "wiki" ? (
-                                <BookOpen className="text-label-secondary h-3 w-3 shrink-0" />
-                              ) : (
-                                <FileText className="text-label-secondary h-3 w-3 shrink-0" />
-                              )}
-                              <span className="text-caption truncate">{item.title}</span>
-                            </div>
-
-                            {item.isPage ? (
-                              <ExternalLink className="text-label-secondary h-3 w-3 shrink-0" />
-                            ) : (
-                              <ChevronRight className="h-3 w-3 shrink-0 opacity-40" />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })
+            Object.entries(groupedFolders).map(([folderName, items]) => (
+              <TocFolder
+                key={folderName}
+                name={folderName}
+                items={items}
+                isOpen={query.length > 0 || openFolders[folderName] !== false}
+                activeSectionId={activeSectionId}
+                onToggle={() => toggleFolder(folderName)}
+                onSelect={handleItemClick}
+              />
+            ))
           )}
         </CardContent>
       </Card>

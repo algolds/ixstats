@@ -98,7 +98,6 @@ export function CulturalExchangeWizard({
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      {/* Header */}
       <div className="border-separator flex shrink-0 items-center justify-between border-b p-4 pr-12">
         <div>
           <h2 className="text-label text-title-3">Create cultural exchange</h2>
@@ -111,7 +110,6 @@ export function CulturalExchangeWizard({
         </Button>
       </div>
 
-      {/* Progress Bar */}
       <div className="shrink-0 px-4 py-3">
         <div className="flex gap-2">
           {STEPS.map((step) => (
@@ -126,12 +124,10 @@ export function CulturalExchangeWizard({
         </div>
       </div>
 
-      {/* Content */}
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
         <div className="pb-12">{renderStepContent()}</div>
       </div>
 
-      {/* Footer */}
       <div className="border-separator flex shrink-0 justify-between gap-4 border-t p-4">
         <Button variant="outline" onClick={currentStep === 1 ? onCancel : form.handlePrevious}>
           <ArrowLeft className="mr-2" />

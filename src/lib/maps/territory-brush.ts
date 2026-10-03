@@ -21,10 +21,6 @@ import { union } from "@turf/union";
 import type { Feature, FeatureCollection, Polygon, MultiPolygon } from "geojson";
 import { sanitizeRegionShape } from "~/lib/maps/border-editor";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
 /** Wrap a raw geometry as a GeoJSON Feature for turf. */
 function toFeature(geometry: Polygon | MultiPolygon): Feature<Polygon | MultiPolygon> {
   return { type: "Feature", geometry, properties: {} };
@@ -42,10 +38,6 @@ function extractPolygonGeom(feat: Feature | null | undefined): Polygon | MultiPo
   }
   return null;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Public API
-// ─────────────────────────────────────────────────────────────────────────────
 
 interface BrushStrokeResult {
   source: Polygon | MultiPolygon;
@@ -77,7 +69,6 @@ export function applyBrushStroke(
 ): BrushStrokeResult | null {
   if (strokePoints.length === 0 || radiusKm <= 0) return null;
 
-  // ── 1. Build brush polygon from stroke ────────────────────────────────────
   // Use a LineString for ≥2 points (turf buffers as a capsule along the path).
   // For a single point use a Point geometry directly (circular brush).
   let strokeGeom: GeoJSON.Geometry;
@@ -104,7 +95,6 @@ export function applyBrushStroke(
   const brushGeom = extractPolygonGeom(brushFeature ?? null);
   if (!brushGeom) return null; // degenerate stroke
 
-  // ── 2. Compute transfer area = B ∩ S ──────────────────────────────────────
   const fc: FeatureCollection<Polygon | MultiPolygon> = featureCollection([
     toFeature(brushGeom) as Feature<Polygon | MultiPolygon>,
     toFeature(source) as Feature<Polygon | MultiPolygon>,
@@ -120,7 +110,6 @@ export function applyBrushStroke(
   const transferGeom = extractPolygonGeom(transferFeature);
   if (!transferGeom) return null; // no overlap with source
 
-  // ── 3. S' = S − transfer ──────────────────────────────────────────────────
   let newSourceGeom: Polygon | MultiPolygon | null = null;
   try {
     const diff = difference(
@@ -137,7 +126,6 @@ export function applyBrushStroke(
   // If source was fully consumed, signal caller to use a merge instead.
   if (!newSourceGeom) return null;
 
-  // ── 4. T' = T ∪ transfer ──────────────────────────────────────────────────
   let newTargetGeom: Polygon | MultiPolygon | null = null;
   try {
     const united = union(
@@ -153,7 +141,6 @@ export function applyBrushStroke(
 
   if (!newTargetGeom) return null;
 
-  // ── 5. Sanitize both results ───────────────────────────────────────────────
   // sanitizeRegionShape expects (geometry, countryBorder). Since we're operating
   // on region shapes without a strict outer border here, pass the geometry itself
   // as the countryBorder (no-op clipping path — only spike/dedup and despiking run).

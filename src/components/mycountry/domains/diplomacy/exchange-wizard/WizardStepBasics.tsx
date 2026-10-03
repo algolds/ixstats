@@ -41,7 +41,6 @@ export const WizardStepBasics = React.memo(function WizardStepBasics({
         </p>
       </div>
 
-      {/* Title */}
       <div className="space-y-2">
         <Label htmlFor="title" className="text-label">
           Exchange Title *
@@ -54,11 +53,9 @@ export const WizardStepBasics = React.memo(function WizardStepBasics({
         />
       </div>
 
-      {/* Type Dropdown */}
       <div className="space-y-2">
         <Label className="text-label">Exchange Type *</Label>
 
-        {/* Primary Types */}
         <ExchangeTypeGrid
           primary
           selected={type}
@@ -66,7 +63,6 @@ export const WizardStepBasics = React.memo(function WizardStepBasics({
           className="grid grid-cols-2 gap-2 md:grid-cols-4"
         />
 
-        {/* More Types (Expandable) */}
         <div>
           <Button
             type="button"
@@ -105,7 +101,6 @@ export const WizardStepBasics = React.memo(function WizardStepBasics({
         </div>
       </div>
 
-      {/* Description */}
       <div className="space-y-2">
         <Label htmlFor="description" className="text-label">
           Description *

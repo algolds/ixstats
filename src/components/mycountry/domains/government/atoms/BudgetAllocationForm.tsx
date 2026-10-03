@@ -1,6 +1,5 @@
 "use client";
 
-import React, { useRef, useCallback } from "react";
 import { formatExactCurrency, formatNumber } from "~/lib/utils";
 import { usePendingLocks } from "~/hooks/usePendingLocks";
 import { Input } from "~/components/ui/input";
@@ -54,42 +53,29 @@ export function BudgetAllocationForm({
 }: BudgetAllocationFormProps) {
   const { isLocked } = usePendingLocks();
 
-  // Use a ref to access latest data without causing re-renders
-  const dataRef = useRef(data);
-  dataRef.current = data;
-  const totalBudgetRef = useRef(totalBudget);
-  totalBudgetRef.current = totalBudget;
+  const handleChange = <K extends keyof BudgetAllocationInput>(
+    field: K,
+    value: BudgetAllocationInput[K]
+  ) => {
+    const updatedData: BudgetAllocationInput = { ...data };
+    updatedData[field] = value;
 
-  const handleChange = useCallback(
-    <K extends keyof BudgetAllocationInput>(field: K, value: BudgetAllocationInput[K]) => {
-      const updatedData: BudgetAllocationInput = { ...dataRef.current };
-      updatedData[field] = value;
+    // Keep amount and percentage in step with each other.
+    if (field === "allocatedAmount" && totalBudget > 0) {
+      updatedData.allocatedPercent =
+        Math.round((updatedData.allocatedAmount / totalBudget) * 100 * 1000) / 1000;
+    }
+    if (field === "allocatedPercent") {
+      updatedData.allocatedAmount = Math.round((totalBudget * updatedData.allocatedPercent) / 100);
+    }
 
-      // Auto-calculate percentage when amount changes
-      if (field === "allocatedAmount" && totalBudgetRef.current > 0) {
-        updatedData.allocatedPercent =
-          Math.round((updatedData.allocatedAmount / totalBudgetRef.current) * 100 * 1000) / 1000; // Round to 3 decimal places
-      }
-
-      // Auto-calculate amount when percentage changes
-      if (field === "allocatedPercent") {
-        updatedData.allocatedAmount = Math.round(
-          (totalBudgetRef.current * updatedData.allocatedPercent) / 100
-        ); // Round to nearest dollar
-      }
-
-      onChange(updatedData);
-    },
-    [onChange]
-  );
-
-  const formatCurrency = (amount: number) => {
-    return formatExactCurrency(amount, currency);
+    onChange(updatedData);
   };
+
+  const formatCurrency = (amount: number) => formatExactCurrency(amount, currency);
 
   const cardElement = (
     <Card className={cn("overflow-hidden", !isCollapsed && "border-separator-opaque")}>
-      {/* Header row: always visible */}
       <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
           {onToggleCollapse && (
@@ -128,7 +114,6 @@ export function BudgetAllocationForm({
           </div>
         </div>
 
-        {/* Inline amount / share controls */}
         <div className="flex flex-wrap items-center gap-4 lg:mr-4 lg:ml-auto">
           <label className="flex items-center gap-2">
             <Eyebrow>Amount</Eyebrow>
@@ -185,7 +170,6 @@ export function BudgetAllocationForm({
           </div>
         </div>
 
-        {/* Status badge + outflow */}
         <div className="border-separator flex items-center justify-between gap-3 border-t pt-3 sm:justify-end lg:border-t-0 lg:pt-0">
           <div className="text-right">
             <div className="text-label text-caption font-semibold tabular-nums">
@@ -196,11 +180,9 @@ export function BudgetAllocationForm({
         </div>
       </div>
 
-      {/* Expanded section */}
       {!isCollapsed && (
         <div className="border-separator space-y-4 border-t px-4 pt-4 pb-4">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {/* Inputs */}
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label
@@ -257,7 +239,6 @@ export function BudgetAllocationForm({
               )}
             </div>
 
-            {/* Utilization & context */}
             <div className="space-y-4">
               <div className="space-y-2">
                 <h4 className="text-label text-headline flex items-center gap-2">

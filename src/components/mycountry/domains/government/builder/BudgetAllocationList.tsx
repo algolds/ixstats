@@ -111,7 +111,6 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
 
       <BudgetMeter budgetSummary={budgetSummary} />
 
-      {/* Vital service warnings list */}
       {vitalWarnings.length > 0 && (
         <div className="space-y-2">
           {vitalWarnings.map((warning, idx) => (

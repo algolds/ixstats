@@ -1,5 +1,4 @@
-// src/lib/xenforo-service.ts
-// Fetches recent activity from the XenForo forum REST API for the unified activity hub.
+// XenForo forum REST API client and recent-activity feeds for the unified activity hub.
 
 interface ForumActivityItem {
   id: string;
@@ -13,10 +12,6 @@ interface ForumActivityItem {
   viewCount?: number;
   excerpt?: string;
 }
-
-// ---------------------------------------------------------------------------
-// XenForo API Response Types
-// ---------------------------------------------------------------------------
 
 export interface XFUser {
   user_id: number;
@@ -112,7 +107,6 @@ export interface XFForum {
   node_type_id: string;
 }
 
-// Response wrappers
 export interface XFThreadsResponse {
   threads: XFThread[];
   pagination?: XFPagination;
@@ -138,7 +132,7 @@ export interface XFPagination {
   total: number;
 }
 
-export interface ForumThread {
+interface ForumThread {
   threadId: number;
   title: string;
   author: string;
@@ -149,10 +143,6 @@ export interface ForumThread {
   viewCount: number;
 }
 
-const CACHE_TTL = 60 * 60 * 1000; // 1 hour
-let cached: { data: ForumActivityItem[]; fetchedAt: number } | null = null;
-let cachedThreads: { data: ForumThread[]; fetchedAt: number } | null = null;
-
 export function getXfApiKey(): string | undefined {
   return process.env.XENFORO_API_KEY;
 }
@@ -161,270 +151,113 @@ export function getXfApiUrl(): string {
   return process.env.XENFORO_API_URL || "https://forum.ixwiki.com/api";
 }
 
-// Internal aliases for backward compat within this file
-function getApiKey(): string | undefined {
-  return getXfApiKey();
-}
-function getApiUrl(): string {
-  return getXfApiUrl();
+interface XfRequestOptions {
+  body?: Record<string, string>;
+  /** Act as this XenForo user (XF-Api-User header; needs a super admin API key). */
+  xfUserId?: number;
 }
 
-// oxlint-disable-next-line typescript/no-unused-vars
-function stripBBCode(text: string): string {
-  return text.replace(/\[\/?\w+(?:=[^\]]*)?]/g, "").trim();
-}
-
-export async function xfFetch<T>(endpoint: string): Promise<T | null> {
-  const apiKey = getApiKey();
-  if (!apiKey) return null;
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-  try {
-    const response = await fetch(`${getApiUrl()}${endpoint}`, {
-      headers: {
-        "XF-Api-Key": apiKey,
-        Accept: "application/json",
-      },
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      console.error(`[XenForo] HTTP ${response.status} for ${endpoint}`);
-      return null;
-    }
-
-    return await response.json();
-  } catch (error) {
-    clearTimeout(timeoutId);
-    console.error(`[XenForo] Failed to fetch ${endpoint}:`, error);
-    return null;
-  }
-}
-
-/**
- * POST to XenForo API endpoint.
- * Used for creating/updating resources (custom fields, user profiles).
- */
-export async function xfPost<T>(endpoint: string, body: Record<string, string>): Promise<T | null> {
-  const apiKey = getApiKey();
-  if (!apiKey) return null;
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-  try {
-    const response = await fetch(`${getApiUrl()}${endpoint}`, {
-      method: "POST",
-      headers: {
-        "XF-Api-Key": apiKey,
-        "Content-Type": "application/x-www-form-urlencoded",
-        Accept: "application/json",
-      },
-      body: new URLSearchParams(body),
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      console.error(`[XenForo] POST HTTP ${response.status} for ${endpoint}`);
-      return null;
-    }
-
-    return await response.json();
-  } catch (error) {
-    clearTimeout(timeoutId);
-    console.error(`[XenForo] Failed to POST ${endpoint}:`, error);
-    return null;
-  }
-}
-
-/**
- * Fetch forum threads with engagement data for trending algorithm.
- */
-export async function getForumTrendingThreads(limit = 15): Promise<ForumThread[]> {
-  if (cachedThreads && Date.now() - cachedThreads.fetchedAt < CACHE_TTL) {
-    return cachedThreads.data.slice(0, limit);
-  }
-
-  if (!getApiKey()) return [];
-
-  const baseUrl = "https://forum.ixwiki.com";
-  const data = await xfFetch<XFThreadsResponse>(
-    `/threads/?order=last_post_date&direction=desc&limit=${limit}`
-  );
-
-  const threads: ForumThread[] = (data?.threads ?? []).map((t) => ({
-    threadId: t.thread_id,
-    title: t.title,
-    author: t.username,
-    timestamp: new Date(t.post_date * 1000),
-    url: `${baseUrl}/threads/${t.thread_id}/`,
-    forumName: t.Forum?.title,
-    replyCount: t.reply_count,
-    viewCount: t.view_count,
-  }));
-
-  cachedThreads = { data: threads, fetchedAt: Date.now() };
-  return threads.slice(0, limit);
-}
-
-/**
- * Fetch recent forum activity (threads + posts) from XenForo.
- * Returns empty array silently if no API key is configured or API is unreachable.
- */
-export async function getForumActivity(limit = 15): Promise<ForumActivityItem[]> {
-  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL) {
-    return cached.data.slice(0, limit);
-  }
-
-  if (!getApiKey()) return [];
-
-  const baseUrl = "https://forum.ixwiki.com";
-
-  // XenForo's /posts/ GET endpoint doesn't exist — use threads only for activity
-  const threadsData = await xfFetch<XFThreadsResponse>(
-    `/threads/?order=last_post_date&direction=desc&limit=${limit}`
-  );
-
-  const items: ForumActivityItem[] = [];
-
-  for (const thread of threadsData?.threads ?? []) {
-    items.push({
-      id: `xf-thread-${thread.thread_id}`,
-      type: "thread",
-      title: thread.title,
-      author: thread.username,
-      timestamp: new Date(thread.post_date * 1000),
-      url: `${baseUrl}/threads/${thread.thread_id}/`,
-      forumName: thread.Forum?.title,
-      replyCount: thread.reply_count,
-      viewCount: thread.view_count,
-    });
-  }
-
-  items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  const uniqueItems = items.slice(0, limit);
-
-  cached = { data: uniqueItems, fetchedAt: Date.now() };
-  return uniqueItems;
-}
-
-// ---------------------------------------------------------------------------
-// Per-user API methods (for write operations using XF-Api-User header)
-// ---------------------------------------------------------------------------
-
-/**
- * GET from XenForo API acting as a specific user.
- * Uses XF-Api-User header to impersonate the user (requires super admin API key).
- */
-export async function xfFetchAsUser<T>(endpoint: string, xfUserId: number): Promise<T | null> {
-  const apiKey = getApiKey();
-  if (!apiKey) return null;
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-  try {
-    const response = await fetch(`${getApiUrl()}${endpoint}`, {
-      headers: {
-        "XF-Api-Key": apiKey,
-        "XF-Api-User": String(xfUserId),
-        Accept: "application/json",
-      },
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      console.error(`[XenForo] HTTP ${response.status} for ${endpoint} (as user ${xfUserId})`);
-      return null;
-    }
-
-    return await response.json();
-  } catch (error) {
-    clearTimeout(timeoutId);
-    console.error(`[XenForo] Failed to fetch ${endpoint} as user ${xfUserId}:`, error);
-    return null;
-  }
-}
-
-/**
- * POST to XenForo API acting as a specific user.
- */
-export async function xfPostAsUser<T>(
+async function xfRequest<T>(
+  method: "GET" | "POST" | "DELETE",
   endpoint: string,
-  body: Record<string, string>,
-  xfUserId: number
+  { body, xfUserId }: XfRequestOptions = {}
 ): Promise<T | null> {
-  const apiKey = getApiKey();
+  const apiKey = getXfApiKey();
   if (!apiKey) return null;
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  const label = method === "GET" ? "" : `${method} `;
+  const asUser = xfUserId ? ` as user ${xfUserId}` : "";
 
   try {
-    const response = await fetch(`${getApiUrl()}${endpoint}`, {
-      method: "POST",
+    const response = await fetch(`${getXfApiUrl()}${endpoint}`, {
+      ...(method !== "GET" && { method }),
       headers: {
         "XF-Api-Key": apiKey,
-        "XF-Api-User": String(xfUserId),
-        "Content-Type": "application/x-www-form-urlencoded",
+        ...(xfUserId && { "XF-Api-User": String(xfUserId) }),
+        ...(body && { "Content-Type": "application/x-www-form-urlencoded" }),
         Accept: "application/json",
       },
-      body: new URLSearchParams(body),
-      signal: controller.signal,
+      ...(body && { body: new URLSearchParams(body) }),
+      signal: AbortSignal.timeout(15000),
     });
-    clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.error(`[XenForo] POST HTTP ${response.status} for ${endpoint} (as user ${xfUserId})`);
+      console.error(
+        `[XenForo] ${label}HTTP ${response.status} for ${endpoint}${xfUserId ? ` (as user ${xfUserId})` : ""}`
+      );
       return null;
     }
 
     return await response.json();
   } catch (error) {
-    clearTimeout(timeoutId);
-    console.error(`[XenForo] Failed to POST ${endpoint} as user ${xfUserId}:`, error);
+    console.error(
+      `[XenForo] Failed to ${method === "GET" ? "fetch" : method} ${endpoint}${asUser}:`,
+      error
+    );
     return null;
   }
 }
 
-/**
- * DELETE from XenForo API, optionally acting as a specific user.
- */
-export async function xfDelete<T>(endpoint: string, xfUserId?: number): Promise<T | null> {
-  const apiKey = getApiKey();
-  if (!apiKey) return null;
+export const xfFetch = <T>(endpoint: string) => xfRequest<T>("GET", endpoint);
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
+/** POST to a XenForo API endpoint (creating/updating resources such as custom fields). */
+export const xfPost = <T>(endpoint: string, body: Record<string, string>) =>
+  xfRequest<T>("POST", endpoint, { body });
 
-  const headers: Record<string, string> = {
-    "XF-Api-Key": apiKey,
-    Accept: "application/json",
+/** GET from the XenForo API, acting as a specific user. */
+export const xfFetchAsUser = <T>(endpoint: string, xfUserId: number) =>
+  xfRequest<T>("GET", endpoint, { xfUserId });
+
+/** POST to the XenForo API, acting as a specific user. */
+export const xfPostAsUser = <T>(endpoint: string, body: Record<string, string>, xfUserId: number) =>
+  xfRequest<T>("POST", endpoint, { body, xfUserId });
+
+/** DELETE from the XenForo API, optionally acting as a specific user. */
+export const xfDelete = <T>(endpoint: string, xfUserId?: number) =>
+  xfRequest<T>("DELETE", endpoint, { xfUserId });
+
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+const FORUM_BASE_URL = "https://forum.ixwiki.com";
+
+/** Builds a 1-hour-cached "latest threads" reader; empty when no API key is configured or the API is unreachable. */
+function cachedThreadFeed<T>(
+  toItem: (thread: XFThread) => T,
+  finalize: (items: T[]) => T[] = (i) => i
+) {
+  let cache: { data: T[]; fetchedAt: number } | null = null;
+
+  return async (limit = 15): Promise<T[]> => {
+    if (cache && Date.now() - cache.fetchedAt < CACHE_TTL) return cache.data.slice(0, limit);
+    if (!getXfApiKey()) return [];
+
+    const data = await xfFetch<XFThreadsResponse>(
+      `/threads/?order=last_post_date&direction=desc&limit=${limit}`
+    );
+    const items = finalize((data?.threads ?? []).map(toItem));
+    cache = { data: items, fetchedAt: Date.now() };
+    return items.slice(0, limit);
   };
-  if (xfUserId) headers["XF-Api-User"] = String(xfUserId);
-
-  try {
-    const response = await fetch(`${getApiUrl()}${endpoint}`, {
-      method: "DELETE",
-      headers,
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      console.error(`[XenForo] DELETE HTTP ${response.status} for ${endpoint}`);
-      return null;
-    }
-
-    return await response.json();
-  } catch (error) {
-    clearTimeout(timeoutId);
-    console.error(`[XenForo] Failed to DELETE ${endpoint}:`, error);
-    return null;
-  }
 }
+
+const toForumThread = (t: XFThread): ForumThread => ({
+  threadId: t.thread_id,
+  title: t.title,
+  author: t.username,
+  timestamp: new Date(t.post_date * 1000),
+  url: `${FORUM_BASE_URL}/threads/${t.thread_id}/`,
+  forumName: t.Forum?.title,
+  replyCount: t.reply_count,
+  viewCount: t.view_count,
+});
+
+/** Forum threads with engagement data for the trending algorithm. */
+export const getForumTrendingThreads = cachedThreadFeed(toForumThread);
+
+/** Recent forum activity for the unified activity hub (XenForo has no GET /posts/, so threads only). */
+export const getForumActivity = cachedThreadFeed(
+  (t): ForumActivityItem => {
+    const { threadId, ...rest } = toForumThread(t);
+    return { id: `xf-thread-${threadId}`, type: "thread", ...rest };
+  },
+  (items) => items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+);

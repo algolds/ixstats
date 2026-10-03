@@ -7,42 +7,54 @@ import { Checkbox } from "~/components/ui/checkbox";
 
 interface CommitStepProps {
   importer: ReturnType<typeof useProvinceImporter>;
-  onCommit: () => void;
 }
 
-export const CommitStep = memo(function CommitStep({
-  importer,
-  onCommit: _onCommit,
-}: CommitStepProps) {
+function SummaryCard({
+  rows,
+}: {
+  rows: Array<{ label: string; value: React.ReactNode; valueClass?: string }>;
+}) {
+  return (
+    <div className="border-separator rounded-control space-y-2 border p-3">
+      {rows.map(({ label, value, valueClass = "text-label" }) => (
+        <div key={label} className="text-footnote flex justify-between">
+          <span className="text-label-secondary">{label}</span>
+          <span className={`${valueClass} font-medium`}>{value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const LIST_CLASS = "border-separator rounded-control max-h-[200px] overflow-y-auto border";
+
+export const CommitStep = memo(function CommitStep({ importer }: CommitStepProps) {
+  const isCities = importer.importScope === "cities";
   const provinces = importer.currentProvinces.filter((p) => p.included);
+  const report = importer.validationReport;
 
   return (
     <div className="space-y-4">
       <div>
         <h3 className="text-label text-body font-medium">Import summary</h3>
         <p className="text-label-secondary text-footnote mt-1">
-          Review and confirm the {importer.importScope === "cities" ? "city" : "province"} import.
+          Review and confirm the {isCities ? "city" : "province"} import.
         </p>
       </div>
 
-      {importer.importScope === "cities" ? (
+      {isCities ? (
         <>
-          {/* Summary card */}
-          <div className="border-separator rounded-control space-y-2 border p-3">
-            <div className="text-footnote flex justify-between">
-              <span className="text-label-secondary">Cities to import</span>
-              <span className="text-label font-medium">{importer.alignedCities.length}</span>
-            </div>
-            <div className="text-footnote flex justify-between">
-              <span className="text-label-secondary">National capitals</span>
-              <span className="text-label font-medium">
-                {importer.alignedCities.filter((c) => c.isCapital).length}
-              </span>
-            </div>
-          </div>
+          <SummaryCard
+            rows={[
+              { label: "Cities to import", value: importer.alignedCities.length },
+              {
+                label: "National capitals",
+                value: importer.alignedCities.filter((c) => c.isCapital).length,
+              },
+            ]}
+          />
 
-          {/* City list */}
-          <div className="border-separator rounded-control max-h-[200px] overflow-y-auto border">
+          <div className={LIST_CLASS}>
             {importer.alignedCities.map((c, index) => (
               <div
                 key={index}
@@ -62,42 +74,28 @@ export const CommitStep = memo(function CommitStep({
         </>
       ) : (
         <>
-          {/* Summary card */}
-          <div className="border-separator rounded-control space-y-2 border p-3">
-            <div className="text-footnote flex justify-between">
-              <span className="text-label-secondary">Provinces to create</span>
-              <span className="text-label font-medium">{provinces.length}</span>
-            </div>
-            {importer.validationReport && (
-              <>
-                <div className="text-footnote flex justify-between">
-                  <span className="text-label-secondary">Coverage</span>
-                  <span className="text-label font-medium">
-                    {importer.validationReport.coveragePercent}%
-                  </span>
-                </div>
-                <div className="text-footnote flex justify-between">
-                  <span className="text-label-secondary">Gaps</span>
-                  <span
-                    className={`font-medium ${importer.validationReport.gaps.length > 0 ? "text-yellow" : "text-green"}`}
-                  >
-                    {importer.validationReport.gaps.length}
-                  </span>
-                </div>
-                <div className="text-footnote flex justify-between">
-                  <span className="text-label-secondary">Overlaps</span>
-                  <span
-                    className={`font-medium ${importer.validationReport.overlaps.length > 0 ? "text-red" : "text-green"}`}
-                  >
-                    {importer.validationReport.overlaps.length}
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
+          <SummaryCard
+            rows={[
+              { label: "Provinces to create", value: provinces.length },
+              ...(report
+                ? [
+                    { label: "Coverage", value: `${report.coveragePercent}%` },
+                    {
+                      label: "Gaps",
+                      value: report.gaps.length,
+                      valueClass: report.gaps.length > 0 ? "text-yellow" : "text-green",
+                    },
+                    {
+                      label: "Overlaps",
+                      value: report.overlaps.length,
+                      valueClass: report.overlaps.length > 0 ? "text-red" : "text-green",
+                    },
+                  ]
+                : []),
+            ]}
+          />
 
-          {/* Province list */}
-          <div className="border-separator rounded-control max-h-[200px] overflow-y-auto border">
+          <div className={LIST_CLASS}>
             {provinces.map((p) => (
               <div
                 key={p.sourceId}
@@ -116,8 +114,7 @@ export const CommitStep = memo(function CommitStep({
         </>
       )}
 
-      {/* Replace toggle (only if not cities-only) */}
-      {importer.importScope !== "cities" && importer.existingSubdivisions.length > 0 && (
+      {!isCities && importer.existingSubdivisions.length > 0 && (
         <div className="rounded-control border-yellow/30 bg-yellow/5 border p-3">
           <label className="flex cursor-pointer items-start gap-2">
             <Checkbox
@@ -139,17 +136,15 @@ export const CommitStep = memo(function CommitStep({
         </div>
       )}
 
-      {importer.importScope !== "cities" &&
-        importer.validationReport &&
-        !importer.validationReport.valid && (
-          <div className="border-separator rounded-control text-footnote text-yellow flex items-start gap-2 border px-3 py-2">
-            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            <span>
-              Topology issues were detected. You can still import, but provinces may have gaps or
-              overlaps that need manual correction later.
-            </span>
-          </div>
-        )}
+      {!isCities && report && !report.valid && (
+        <div className="border-separator rounded-control text-footnote text-yellow flex items-start gap-2 border px-3 py-2">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>
+            Topology issues were detected. You can still import, but provinces may have gaps or
+            overlaps that need manual correction later.
+          </span>
+        </div>
+      )}
     </div>
   );
 });

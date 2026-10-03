@@ -179,7 +179,6 @@ export function AssetManager({
         </div>
       )}
 
-      {/* Image Viewing Modal */}
       {viewingImage && (
         <Dialog open={true} onOpenChange={() => setViewingImage(null)}>
           <DialogContent className="max-w-4xl">

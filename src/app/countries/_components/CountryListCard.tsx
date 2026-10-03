@@ -1,5 +1,4 @@
 "use client";
-// src/app/countries/_components/CountryListCard.tsx
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -14,14 +13,11 @@ import {
   WhiteFlag as FlagIcon,
   OpenBook as BookOpen,
 } from "iconoir-react";
-import { formatPopulation, formatCurrency } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
 import { GrowthArrow } from "~/components/ui/GrowthArrow";
-import { useRef } from "react";
-import { cn } from "~/lib/utils";
-import { createUrl } from "~/lib/utils";
+import { cn, createUrl, formatCurrency, formatPopulation } from "~/lib/utils";
 import { Card, CardContent, CardFooter } from "~/components/ui/card";
 
 interface CountryData {
@@ -48,10 +44,9 @@ interface CountryListCardProps {
   flagLoading?: boolean;
 }
 
-// Extract dominant color from flag via native 1x1 canvas
+/** The flag's dominant colour: the image drawn into a 1x1 canvas. */
 function useDominantColor(imageUrl: string | null | undefined) {
   const [color, setColor] = useState<string | null>(null);
-  const imgRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     if (!imageUrl) return;
@@ -73,25 +68,12 @@ function useDominantColor(imageUrl: string | null | undefined) {
       }
     };
     img.onerror = () => setColor(null);
-    imgRef.current = img;
-    return () => {
-      imgRef.current = null;
-    };
   }, [imageUrl]);
   return color;
 }
 
-export function CountryListCard({
-  country,
-  flagUrl: propFlagUrl,
-  flagLoading: propFlagLoading,
-}: CountryListCardProps) {
+export function CountryListCard({ country, flagUrl, flagLoading }: CountryListCardProps) {
   const router = useRouter();
-
-  // Determine which flag data to use - prefer props when available
-  const flagUrl = propFlagUrl;
-  const flagLoading = propFlagLoading;
-
   const dominantColor = useDominantColor(flagUrl);
 
   const wikiUrl = `/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`;
@@ -173,7 +155,6 @@ export function CountryListCard({
           </div>
         </div>
 
-        {/* Compact stats row */}
         <div className="text-footnote mb-2 flex items-center justify-between gap-2">
           <div className="flex items-center gap-1">
             <Users aria-hidden="true" className="text-label-secondary h-3 w-3" />

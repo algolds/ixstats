@@ -9,8 +9,6 @@
 import type { Position, Polygon, MultiPolygon } from "geojson";
 import { getAllRings } from "./border-editor";
 
-// ── Types ──
-
 type VertexKey = string & { readonly __brand: "VertexKey" };
 
 export interface TopologyRef {
@@ -25,8 +23,6 @@ export interface TopologyRef {
  */
 export type TopologyIndex = Map<VertexKey, TopologyRef[]>;
 
-// ── Coordinate quantization & Branded keys ──
-
 /**
  * Quantize a coordinate to given decimal places (~1.1 m precision at 5 decimals) for
  * spatial-hash bucketing.
@@ -39,7 +35,12 @@ export function vkey(coord: Position): VertexKey {
   return toVertexKey(coord, 5);
 }
 
-// ── Index building ──
+/** Whether the last vertex of a non-empty ring repeats the first. */
+function endsMatch(ring: Position[]): boolean {
+  const first = ring[0]!;
+  const last = ring[ring.length - 1]!;
+  return first[0] === last[0] && first[1] === last[1];
+}
 
 /**
  * Build a spatial-hash topology index from a set of polygon features.
@@ -60,12 +61,7 @@ export function buildTopologyIndex(
     for (let ri = 0; ri < rings.length; ri++) {
       const ring = rings[ri]!;
       // Skip the closing vertex (same as ring[0])
-      const len =
-        ring.length > 0 &&
-        ring[0]![0] === ring[ring.length - 1]![0] &&
-        ring[0]![1] === ring[ring.length - 1]![1]
-          ? ring.length - 1
-          : ring.length;
+      const len = ring.length > 0 && endsMatch(ring) ? ring.length - 1 : ring.length;
       for (let vi = 0; vi < len; vi++) {
         const key = vkey(ring[vi]!);
         let bucket = index.get(key);
@@ -80,9 +76,6 @@ export function buildTopologyIndex(
 
   return index;
 }
-
-// ── Snap assistance ──
-// ── Cascade moves ──
 
 /**
  * Given a topology index, move every vertex that shares the `oldKey`
@@ -103,64 +96,36 @@ export function cascadeMoveVertex(
   const updated = new Map<string, Polygon | MultiPolygon>();
   if (!refs || refs.length === 0) return updated;
 
+  const moved = (): Position => [newCoord[0]!, newCoord[1]!];
+
   for (const ref of refs) {
     // Get or clone the geometry
-    let geom = updated.get(ref.featureId);
-    if (!geom) {
-      const src = geometries.get(ref.featureId);
-      if (!src) continue;
-      geom = structuredClone(src) as Polygon | MultiPolygon;
-    }
+    const original = geometries.get(ref.featureId);
+    const geom =
+      updated.get(ref.featureId) ??
+      (original && (structuredClone(original) as Polygon | MultiPolygon));
+    if (!geom) continue;
 
-    const rings = getAllRings(geom);
-    const ring = rings[ref.ringIndex];
+    const ring = getAllRings(geom)[ref.ringIndex];
     if (!ring || ref.vertexIndex >= ring.length) continue;
 
-    // Move the vertex
-    ring[ref.vertexIndex] = [newCoord[0]!, newCoord[1]!];
+    ring[ref.vertexIndex] = moved();
 
-    // Maintain ring closure: if we moved vertex 0, also update the last vertex
-    if (ref.vertexIndex === 0 && ring.length > 1) {
-      // Check if the ring was closed (last === first before move)
-      const origFirst = geometries.get(ref.featureId);
-      if (origFirst) {
-        const origRings = getAllRings(origFirst);
-        const origRing = origRings[ref.ringIndex];
-        if (origRing && origRing.length > 1) {
-          const of = origRing[0]!;
-          const ol = origRing[origRing.length - 1]!;
-          if (of[0] === ol[0] && of[1] === ol[1]) {
-            ring[ring.length - 1] = [newCoord[0]!, newCoord[1]!];
-          }
-        }
-      }
-    }
-    // If we moved the last vertex and ring was closed, sync first vertex
-    if (ref.vertexIndex === ring.length - 1 && ring.length > 1) {
-      const origSrc = geometries.get(ref.featureId);
-      if (origSrc) {
-        const origRings = getAllRings(origSrc);
-        const origRing = origRings[ref.ringIndex];
-        if (origRing && origRing.length > 1) {
-          const of2 = origRing[0]!;
-          const ol2 = origRing[origRing.length - 1]!;
-          if (of2[0] === ol2[0] && of2[1] === ol2[1]) {
-            ring[0] = [newCoord[0]!, newCoord[1]!];
-          }
-        }
-      }
+    // Keep a closed ring closed: moving the first vertex moves the last, and vice versa
+    const originalRing = original && getAllRings(original)[ref.ringIndex];
+    if (originalRing && originalRing.length > 1 && endsMatch(originalRing) && ring.length > 1) {
+      if (ref.vertexIndex === 0) ring[ring.length - 1] = moved();
+      if (ref.vertexIndex === ring.length - 1) ring[0] = moved();
     }
 
     updated.set(ref.featureId, geom);
   }
 
-  // Update the index: migrate refs from oldKey to newKey
+  // Migrate refs from the old key to the new one
   const newKey = vkey(newCoord);
   if (vKey !== newKey) {
-    const movedRefs = index.get(vKey) || [];
     index.delete(vKey);
-    const existing = index.get(newKey) || [];
-    index.set(newKey, [...existing, ...movedRefs]);
+    index.set(newKey, [...(index.get(newKey) || []), ...refs]);
   }
 
   return updated;

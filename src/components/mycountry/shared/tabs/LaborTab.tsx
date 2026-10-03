@@ -2,33 +2,278 @@
 
 import React from "react";
 import { CollapsibleSection } from "./CollapsibleSection";
-import { formatExactCurrency } from "~/lib/utils";
-import { motion, AnimatePresence } from "motion/react";
+import {
+  type DataTabProps,
+  MetricToggleGrid,
+  StatGrid,
+  TabShell,
+  ToggleMetric,
+  toggleView,
+  useAccordion,
+} from "./tabParts";
+import { formatExactCurrency, formatPercent } from "~/lib/utils";
 import {
   StatUp as TrendingUp,
   Suitcase as Briefcase,
   Group as Users,
   Dollar as DollarSign,
 } from "iconoir-react";
-import { Button } from "~/components/ui/button";
-import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import {
-  SectorBreakdownCard,
-  MetricCardGrid,
-  useCountryData,
-} from "~/components/mycountry/shared/primitives";
-import type { CardImageType } from "~/lib/cards/image-presets";
-import Link from "next/link";
-import { createUrl } from "~/lib/utils";
-import { InlineHelpIcon } from "~/components/ui/help-icon";
+import { SectorBreakdownCard } from "~/components/mycountry/shared/primitives";
 import type { MetricType } from "~/hooks/useMetricDetailsModal";
-import type {
-  CountryWithEconomicData,
-  MappedEconomyData,
-} from "~/components/mycountry/shared/primitives/CountryDataProvider";
-import type { extractCountryImageData } from "~/lib/media";
-import type { MyCountryMetricView } from "~/hooks/useMyCountryMetrics";
-import { Card, CardContent } from "~/components/ui/card";
+
+const EMPLOYMENT_SECTORS = [
+  {
+    id: "agriculture",
+    name: "Agriculture",
+    color: "green",
+    description: "Farming, forestry, fishing",
+    imageKeyword: "labor_primary",
+  },
+  {
+    id: "industry",
+    name: "Industry",
+    color: "blue",
+    description: "Manufacturing, construction",
+    imageKeyword: "labor_secondary",
+  },
+  {
+    id: "services",
+    name: "Services",
+    color: "purple",
+    description: "Trade, finance, healthcare",
+    imageKeyword: "labor_tertiary",
+  },
+] as const;
+
+const EMPLOYMENT_TYPES = [
+  { id: "fulltime", key: "fullTime", name: "Full-Time", color: "emerald" },
+  { id: "parttime", key: "partTime", name: "Part-Time", color: "blue" },
+  { id: "selfemployed", key: "selfEmployed", name: "Self-Employed", color: "amber" },
+  { id: "temporary", key: "temporary", name: "Temporary", color: "purple" },
+  { id: "informal", key: "informal", name: "Informal", color: "red" },
+] as const;
+
+function UnemploymentBadge({ rate }: { rate: number }) {
+  if (rate < 4) return <span className="text-caption text-green font-semibold">Low</span>;
+  if (rate > 8) return <span className="text-destructive text-caption font-semibold">High</span>;
+  return <span className="text-caption text-yellow font-semibold">Stable</span>;
+}
+
+type Labor = NonNullable<NonNullable<DataTabProps["economyData"]>["labor"]>;
+type SectionProps = { labor: Labor; section: ReturnType<typeof useAccordion> };
+
+function LaborMetrics({
+  country,
+  labor,
+  currency,
+  metricView,
+  setMetricViewAction,
+  openMetricModalAction,
+}: Pick<
+  DataTabProps,
+  "country" | "metricView" | "setMetricViewAction" | "openMetricModalAction"
+> & { labor: Labor; currency: string }) {
+  const participation = formatPercent(labor?.laborForceParticipationRate ?? 0);
+  const unemploymentRate = labor?.unemploymentRate ?? 0;
+  const openMetric = (metric: MetricType) => () => openMetricModalAction(metric, country.id);
+  const isParticipation = metricView.workforce === "participation";
+  const isEmployed = metricView.employment === "employed";
+  const isMinimum = metricView.compensation === "minimum";
+
+  return (
+    <MetricToggleGrid>
+      <ToggleMetric
+        label={isParticipation ? "Participation Rate" : "Total Workforce"}
+        valueKey={metricView.workforce}
+        value={isParticipation ? participation : (labor?.totalWorkforce ?? 0).toLocaleString()}
+        detail={isParticipation ? "Active workforce share" : `${participation} participation`}
+        onToggle={() => toggleView(setMetricViewAction, "workforce", "participation", "count")}
+        onValueClick={openMetric("labor-force")}
+      />
+      <ToggleMetric
+        label={isEmployed ? "Employment Rate" : "Unemployment Rate"}
+        valueKey={metricView.employment}
+        value={formatPercent((isEmployed ? labor?.employmentRate : unemploymentRate) ?? 0)}
+        aside={<UnemploymentBadge rate={unemploymentRate} />}
+        detail={isEmployed ? "Active employment share" : "Seeking employment"}
+        onToggle={() => toggleView(setMetricViewAction, "employment", "employed", "unemployed")}
+        onValueClick={openMetric(isEmployed ? "employment" : "unemployment")}
+      />
+      <ToggleMetric
+        label={isMinimum ? "Minimum Wage" : "Average Wage"}
+        valueKey={metricView.compensation}
+        value={formatExactCurrency(
+          (isMinimum ? labor?.minimumWage : labor?.averageAnnualIncome) ?? 0,
+          currency
+        )}
+        detail={isMinimum ? "Per year (mandatory)" : "Average annual salary"}
+        onToggle={() => toggleView(setMetricViewAction, "compensation", "minimum", "average")}
+        onValueClick={openMetric("labor-force")}
+      />
+    </MetricToggleGrid>
+  );
+}
+
+function WorkforceSection({ labor, section }: SectionProps) {
+  const totalWorkforce = labor?.totalWorkforce ?? 0;
+  return (
+    <CollapsibleSection icon={Users} title="Workforce overview" {...section("workforce")}>
+      <StatGrid
+        inset
+        stats={[
+          {
+            label: "Labor force",
+            value: totalWorkforce.toLocaleString(),
+            detail: "Active workforce",
+          },
+          {
+            label: "Participation",
+            value: formatPercent(labor?.laborForceParticipationRate ?? 0),
+            detail: "Working-age share",
+          },
+          {
+            label: "Employment",
+            value: formatPercent(labor?.employmentRate ?? 0),
+            detail: "Employed portion",
+          },
+          {
+            label: "Unemployment",
+            value: formatPercent(labor?.unemploymentRate ?? 0),
+            detail: "Actively seeking",
+          },
+        ]}
+      />
+
+      <SectorBreakdownCard
+        title="Employment by sector"
+        subtitle="Distribution of workforce across economic sectors"
+        layout="grid"
+        showTrends={false}
+        showSectorImages={true}
+        valueAsPeople={true}
+        sectors={EMPLOYMENT_SECTORS.map(({ id, ...sector }) => {
+          const percentage = labor?.employmentBySector?.[id] ?? 0;
+          return { id, ...sector, value: totalWorkforce * (percentage / 100), percentage };
+        })}
+        totalValue={totalWorkforce}
+      />
+    </CollapsibleSection>
+  );
+}
+
+function CompensationSection({ labor, section, currency }: SectionProps & { currency: string }) {
+  return (
+    <CollapsibleSection icon={DollarSign} title="Compensation & wages" {...section("compensation")}>
+      <StatGrid
+        inset
+        stats={[
+          {
+            label: "Average annual income",
+            value: formatExactCurrency(labor?.averageAnnualIncome ?? 0, currency),
+            detail: "Mean earnings",
+          },
+          {
+            label: "Minimum wage",
+            value: formatExactCurrency(labor?.minimumWage ?? 0, currency),
+            detail: "Per year",
+          },
+          {
+            label: "Average work week",
+            value: `${labor?.averageWorkweekHours ?? 0}h`,
+            detail: "Hours per week",
+          },
+          {
+            label: "Productivity index",
+            value: (labor?.skillsAndProductivity?.laborProductivityIndex ?? 0).toFixed(0),
+            detail: "Output efficiency",
+          },
+        ]}
+      />
+
+      <SectorBreakdownCard
+        title="Employment types"
+        subtitle="Breakdown by employment arrangement"
+        layout="list"
+        showProgressBars={true}
+        sectors={EMPLOYMENT_TYPES.map(({ key, ...type }) => {
+          const share = labor?.employmentByType?.[key] ?? 0;
+          return { ...type, value: share, percentage: share };
+        })}
+      />
+    </CollapsibleSection>
+  );
+}
+
+function HumanCapitalSection({
+  labor,
+  literacyRate,
+  section,
+}: SectionProps & { literacyRate: number }) {
+  const skills = labor?.skillsAndProductivity;
+  return (
+    <CollapsibleSection
+      icon={TrendingUp}
+      title="Human capital & skills"
+      {...section("human-capital")}
+    >
+      <StatGrid
+        inset
+        stats={[
+          {
+            label: "Education years",
+            value: `${(skills?.averageEducationYears ?? 0).toFixed(1)} years`,
+            detail: "Schooling duration",
+          },
+          {
+            label: "Tertiary ed rate",
+            value: formatPercent(skills?.tertiaryEducationRate ?? 0),
+            detail: "University graduates",
+          },
+          {
+            label: "Vocational rate",
+            value: formatPercent(skills?.vocationalTrainingRate ?? 0),
+            detail: "Technical certified",
+          },
+          {
+            label: "Youth Unemp.",
+            value: formatPercent(labor?.youthUnemploymentRate ?? 0),
+            detail: "Age 15-24 unemployed",
+          },
+        ]}
+      />
+
+      <SectorBreakdownCard
+        title="Skills & capital metrics"
+        subtitle="National human capital and education stats"
+        layout="list"
+        showProgressBars={true}
+        sectors={[
+          {
+            id: "literacy",
+            name: "Adult literacy rate",
+            value: 0,
+            percentage: literacyRate,
+            color: "emerald",
+          },
+          {
+            id: "tertiary",
+            name: "Tertiary education rate",
+            value: 0,
+            percentage: skills?.tertiaryEducationRate ?? 0,
+            color: "blue",
+          },
+          {
+            id: "skills-gap",
+            name: "Skills gap index",
+            value: 0,
+            percentage: skills?.skillsGapIndex ?? 0,
+            color: "purple",
+          },
+        ]}
+      />
+    </CollapsibleSection>
+  );
+}
 
 export function LaborTab({
   country,
@@ -38,487 +283,40 @@ export function LaborTab({
   openMetricModalAction,
   metricView,
   setMetricViewAction,
-}: {
-  country: CountryWithEconomicData;
-  economyData: MappedEconomyData;
-  countryImageData: ReturnType<typeof extractCountryImageData>;
-  setImageUploadModalAction: (state: { isOpen: boolean; cardType: CardImageType }) => void;
-  openMetricModalAction: (metricType: MetricType, countryId: string) => void;
-  metricView: MyCountryMetricView;
-  setMetricViewAction: React.Dispatch<React.SetStateAction<MyCountryMetricView>>;
-}) {
-  const [expandedSection, setExpandedSection] = React.useState<string | null>("workforce");
+}: DataTabProps) {
+  const section = useAccordion("workforce");
   const currency = country?.nationalIdentity?.currency || "USD";
-  const { isPublicReadOnly } = useCountryData();
-
-  const toggleSection = (sectionId: string) => {
-    setExpandedSection(expandedSection === sectionId ? null : sectionId);
-  };
+  const labor = economyData?.labor;
+  if (!labor) return null;
 
   return (
-    <Card className="rounded-card relative overflow-hidden">
-      {/* Background wash system (desaturated flag wash + radial dot mesh) */}
-      <MetricCardGrid
-        metrics={[]} // empty metrics to just render background
-        backgroundImage={{
-          countryId: country.id,
-          cardType: "labor",
-          showEditButton: !isPublicReadOnly,
-          onEditClick: () => setImageUploadModalAction({ isOpen: true, cardType: "labor" }),
-          autoFallback: true,
-          countryImageData: countryImageData ?? undefined,
-          countryName: country.name,
-        }}
-        className="pointer-events-none absolute inset-0 z-0"
+    <TabShell
+      country={country}
+      countryImageData={countryImageData}
+      setImageUploadModalAction={setImageUploadModalAction}
+      cardType="labor"
+      title="Labor & workforce"
+      help="View national employment rates, labor participation, wages, and education levels. Click values to open historical charts and details."
+      subtitle={`Employment, wages, and human capital for ${country.name}`}
+      editorIcon={Briefcase}
+      metrics={
+        <LaborMetrics
+          country={country}
+          labor={labor}
+          currency={currency}
+          metricView={metricView}
+          setMetricViewAction={setMetricViewAction}
+          openMetricModalAction={openMetricModalAction}
+        />
+      }
+    >
+      <WorkforceSection labor={labor} section={section} />
+      <CompensationSection labor={labor} section={section} currency={currency} />
+      <HumanCapitalSection
+        labor={labor}
+        section={section}
+        literacyRate={economyData?.demographics?.literacyRate ?? 0}
       />
-
-      <CardContent className="relative z-10 space-y-4 pt-4 pb-4">
-        {/* ── Compact Header ── */}
-        <div className="border-separator flex items-center justify-between border-b pb-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-label text-headline">Labor & workforce</h3>
-              <InlineHelpIcon
-                title="Labor & workforce"
-                content="View national employment rates, labor participation, wages, and education levels. Click values to open historical charts and details."
-              />
-            </div>
-            <p className="text-label-secondary text-footnote">
-              Employment, wages, and human capital for {country.name}
-            </p>
-          </div>
-          {!isPublicReadOnly && (
-            <Link href={createUrl("/mycountry/editor")}>
-              <Button size="sm" variant="outline" className="text-footnote h-8 gap-2">
-                <Briefcase className="h-3.5 w-3.5" />
-                <span>Open editor</span>
-              </Button>
-            </Link>
-          )}
-        </div>
-
-        {/* ── 3-Column Metric Toggle Grid ── */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="grid grid-cols-3 gap-2">
-              {/* Metric 1: Workforce */}
-              <Card
-                variant="inset"
-                padding="sm"
-                className="text-left"
-                onClick={() =>
-                  setMetricViewAction((v: MyCountryMetricView) => ({
-                    ...v,
-                    workforce: v.workforce === "participation" ? "count" : "participation",
-                  }))
-                }
-                interactive
-              >
-                <span className="text-stat-label text-label-secondary block">
-                  {metricView.workforce === "participation"
-                    ? "Participation Rate"
-                    : "Total Workforce"}
-                </span>
-                <div
-                  className="mt-0.5 flex items-center gap-2"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openMetricModalAction("labor-force", country.id);
-                  }}
-                >
-                  <AnimatePresence mode="wait">
-                    <motion.p
-                      key={metricView.workforce}
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 4 }}
-                      transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-                      className="text-label text-title-3 flex items-center hover:underline"
-                    >
-                      {metricView.workforce === "participation"
-                        ? `${(economyData?.labor?.laborForceParticipationRate ?? 0).toFixed(1)}%`
-                        : (economyData?.labor?.totalWorkforce ?? 0).toLocaleString()}
-                    </motion.p>
-                  </AnimatePresence>
-                </div>
-                <p className="text-label-secondary text-footnote mt-0.5 truncate">
-                  {metricView.workforce === "participation"
-                    ? "Active workforce share"
-                    : `${(economyData?.labor?.laborForceParticipationRate ?? 0).toFixed(1)}% participation`}
-                </p>
-              </Card>
-
-              {/* Metric 2: Employment */}
-              <Card
-                variant="inset"
-                padding="sm"
-                className="text-left"
-                onClick={() =>
-                  setMetricViewAction((v: MyCountryMetricView) => ({
-                    ...v,
-                    employment: v.employment === "employed" ? "unemployed" : "employed",
-                  }))
-                }
-                interactive
-              >
-                <span className="text-stat-label text-label-secondary block">
-                  {metricView.employment === "employed" ? "Employment Rate" : "Unemployment Rate"}
-                </span>
-                <div
-                  className="mt-0.5 flex items-center gap-2"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openMetricModalAction(
-                      metricView.employment === "employed" ? "employment" : "unemployment",
-                      country.id
-                    );
-                  }}
-                >
-                  <AnimatePresence mode="wait">
-                    <motion.p
-                      key={metricView.employment}
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 4 }}
-                      transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-                      className="text-label text-title-3 hover:underline"
-                    >
-                      {metricView.employment === "employed"
-                        ? `${(economyData?.labor?.employmentRate ?? 0).toFixed(1)}%`
-                        : `${(economyData?.labor?.unemploymentRate ?? 0).toFixed(1)}%`}
-                    </motion.p>
-                  </AnimatePresence>
-                  {(() => {
-                    const unemp = economyData?.labor?.unemploymentRate ?? 0;
-                    if (unemp < 4.0)
-                      return <span className="text-caption text-green font-semibold">Low</span>;
-                    if (unemp > 8.0)
-                      return (
-                        <span className="text-destructive text-caption font-semibold">High</span>
-                      );
-                    return <span className="text-caption text-yellow font-semibold">Stable</span>;
-                  })()}
-                </div>
-                <p className="text-label-secondary text-footnote mt-0.5 truncate">
-                  {metricView.employment === "employed"
-                    ? `Active employment share`
-                    : `Seeking employment`}
-                </p>
-              </Card>
-
-              {/* Metric 3: Compensation */}
-              <Card
-                variant="inset"
-                padding="sm"
-                className="text-left"
-                onClick={() =>
-                  setMetricViewAction((v: MyCountryMetricView) => ({
-                    ...v,
-                    compensation: v.compensation === "minimum" ? "average" : "minimum",
-                  }))
-                }
-                interactive
-              >
-                <span className="text-stat-label text-label-secondary block">
-                  {metricView.compensation === "minimum" ? "Minimum Wage" : "Average Wage"}
-                </span>
-                <div
-                  className="mt-0.5 flex items-center gap-2"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openMetricModalAction("labor-force", country.id);
-                  }}
-                >
-                  <AnimatePresence mode="wait">
-                    <motion.p
-                      key={metricView.compensation}
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 4 }}
-                      transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-                      className="text-label text-title-3 hover:underline"
-                    >
-                      {metricView.compensation === "minimum"
-                        ? formatExactCurrency(economyData?.labor?.minimumWage ?? 0, currency)
-                        : formatExactCurrency(
-                            economyData?.labor?.averageAnnualIncome ?? 0,
-                            currency
-                          )}
-                    </motion.p>
-                  </AnimatePresence>
-                </div>
-                <p className="text-label-secondary text-footnote mt-0.5 truncate">
-                  {metricView.compensation === "minimum"
-                    ? `Per year (mandatory)`
-                    : `Average annual salary`}
-                </p>
-              </Card>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="text-footnote">
-            Click metric value to view history, click headers to toggle views
-          </TooltipContent>
-        </Tooltip>
-
-        {/* ── Sub-Tabs Content (Folder Dossier Accordion Stack) ── */}
-        <div className="border-separator space-y-3 border-t pt-3">
-          {/* Dossier Section 1: Workforce */}
-          <CollapsibleSection
-            icon={Users}
-            title="Workforce overview"
-            isExpanded={expandedSection === "workforce"}
-            onToggle={() => toggleSection("workforce")}
-          >
-            <Card
-              variant="inset"
-              padding="none"
-              className="grid grid-cols-2 gap-4 p-3 md:grid-cols-4"
-            >
-              <div className="min-w-0">
-                <span className="text-stat-label text-label-secondary block">Labor force</span>
-                <p className="text-label text-headline mt-0.5">
-                  {(economyData?.labor?.totalWorkforce ?? 0).toLocaleString()}
-                </p>
-                <p className="text-label-secondary text-footnote mt-0.5">Active workforce</p>
-              </div>
-              <div className="min-w-0">
-                <span className="text-stat-label text-label-secondary block">Participation</span>
-                <p className="text-label text-headline mt-0.5">
-                  {`${(economyData?.labor?.laborForceParticipationRate ?? 0).toFixed(1)}%`}
-                </p>
-                <p className="text-label-secondary text-footnote mt-0.5">Working-age share</p>
-              </div>
-              <div className="min-w-0">
-                <span className="text-stat-label text-label-secondary block">Employment</span>
-                <p className="text-label text-headline mt-0.5">
-                  {`${(economyData?.labor?.employmentRate ?? 0).toFixed(1)}%`}
-                </p>
-                <p className="text-label-secondary text-footnote mt-0.5">Employed portion</p>
-              </div>
-              <div className="min-w-0">
-                <span className="text-stat-label text-label-secondary block">Unemployment</span>
-                <p className="text-label text-headline mt-0.5">
-                  {`${(economyData?.labor?.unemploymentRate ?? 0).toFixed(1)}%`}
-                </p>
-                <p className="text-label-secondary text-footnote mt-0.5">Actively seeking</p>
-              </div>
-            </Card>
-
-            <SectorBreakdownCard
-              title="Employment by sector"
-              subtitle="Distribution of workforce across economic sectors"
-              layout="grid"
-              showTrends={false}
-              showSectorImages={true}
-              valueAsPeople={true}
-              sectors={[
-                {
-                  id: "agriculture",
-                  name: "Agriculture",
-                  value:
-                    (economyData?.labor?.totalWorkforce ?? 0) *
-                    ((economyData?.labor?.employmentBySector?.agriculture ?? 0) / 100),
-                  percentage: economyData?.labor?.employmentBySector?.agriculture ?? 0,
-                  color: "green",
-                  description: "Farming, forestry, fishing",
-                  imageKeyword: "labor_primary",
-                },
-                {
-                  id: "industry",
-                  name: "Industry",
-                  value:
-                    (economyData?.labor?.totalWorkforce ?? 0) *
-                    ((economyData?.labor?.employmentBySector?.industry ?? 0) / 100),
-                  percentage: economyData?.labor?.employmentBySector?.industry ?? 0,
-                  color: "blue",
-                  description: "Manufacturing, construction",
-                  imageKeyword: "labor_secondary",
-                },
-                {
-                  id: "services",
-                  name: "Services",
-                  value:
-                    (economyData?.labor?.totalWorkforce ?? 0) *
-                    ((economyData?.labor?.employmentBySector?.services ?? 0) / 100),
-                  percentage: economyData?.labor?.employmentBySector?.services ?? 0,
-                  color: "purple",
-                  description: "Trade, finance, healthcare",
-                  imageKeyword: "labor_tertiary",
-                },
-              ]}
-              totalValue={economyData?.labor?.totalWorkforce ?? 0}
-            />
-          </CollapsibleSection>
-
-          {/* Dossier Section 2: Compensation */}
-          <CollapsibleSection
-            icon={DollarSign}
-            title="Compensation & wages"
-            isExpanded={expandedSection === "compensation"}
-            onToggle={() => toggleSection("compensation")}
-          >
-            <Card
-              variant="inset"
-              padding="none"
-              className="grid grid-cols-2 gap-4 p-3 md:grid-cols-4"
-            >
-              <div className="min-w-0">
-                <span className="text-stat-label text-label-secondary block">
-                  Average annual income
-                </span>
-                <p className="text-label text-headline mt-0.5">
-                  {formatExactCurrency(economyData?.labor?.averageAnnualIncome ?? 0, currency)}
-                </p>
-                <p className="text-label-secondary text-footnote mt-0.5">Mean earnings</p>
-              </div>
-              <div className="min-w-0">
-                <span className="text-stat-label text-label-secondary block">Minimum wage</span>
-                <p className="text-label text-headline mt-0.5">
-                  {formatExactCurrency(economyData?.labor?.minimumWage ?? 0, currency)}
-                </p>
-                <p className="text-label-secondary text-footnote mt-0.5">Per year</p>
-              </div>
-              <div className="min-w-0">
-                <span className="text-stat-label text-label-secondary block">
-                  Average work week
-                </span>
-                <p className="text-label text-headline mt-0.5">
-                  {economyData?.labor?.averageWorkweekHours ?? 0}h
-                </p>
-                <p className="text-label-secondary text-footnote mt-0.5">Hours per week</p>
-              </div>
-              <div className="min-w-0">
-                <span className="text-stat-label text-label-secondary block">
-                  Productivity index
-                </span>
-                <p className="text-label text-headline mt-0.5">
-                  {(economyData?.labor?.skillsAndProductivity?.laborProductivityIndex ?? 0).toFixed(
-                    0
-                  )}
-                </p>
-                <p className="text-label-secondary text-footnote mt-0.5">Output efficiency</p>
-              </div>
-            </Card>
-
-            <SectorBreakdownCard
-              title="Employment types"
-              subtitle="Breakdown by employment arrangement"
-              layout="list"
-              showProgressBars={true}
-              sectors={[
-                {
-                  id: "fulltime",
-                  name: "Full-Time",
-                  value: economyData?.labor?.employmentByType?.fullTime ?? 0,
-                  percentage: economyData?.labor?.employmentByType?.fullTime ?? 0,
-                  color: "emerald",
-                },
-                {
-                  id: "parttime",
-                  name: "Part-Time",
-                  value: economyData?.labor?.employmentByType?.partTime ?? 0,
-                  percentage: economyData?.labor?.employmentByType?.partTime ?? 0,
-                  color: "blue",
-                },
-                {
-                  id: "selfemployed",
-                  name: "Self-Employed",
-                  value: economyData?.labor?.employmentByType?.selfEmployed ?? 0,
-                  percentage: economyData?.labor?.employmentByType?.selfEmployed ?? 0,
-                  color: "amber",
-                },
-                {
-                  id: "temporary",
-                  name: "Temporary",
-                  value: economyData?.labor?.employmentByType?.temporary ?? 0,
-                  percentage: economyData?.labor?.employmentByType?.temporary ?? 0,
-                  color: "purple",
-                },
-                {
-                  id: "informal",
-                  name: "Informal",
-                  value: economyData?.labor?.employmentByType?.informal ?? 0,
-                  percentage: economyData?.labor?.employmentByType?.informal ?? 0,
-                  color: "red",
-                },
-              ]}
-            />
-          </CollapsibleSection>
-
-          {/* Dossier Section 3: Human Capital */}
-          <CollapsibleSection
-            icon={TrendingUp}
-            title="Human capital & skills"
-            isExpanded={expandedSection === "human-capital"}
-            onToggle={() => toggleSection("human-capital")}
-          >
-            <Card
-              variant="inset"
-              padding="none"
-              className="grid grid-cols-2 gap-4 p-3 md:grid-cols-4"
-            >
-              <div className="min-w-0">
-                <span className="text-stat-label text-label-secondary block">Education years</span>
-                <p className="text-label text-headline mt-0.5">
-                  {`${(economyData?.labor?.skillsAndProductivity?.averageEducationYears ?? 0).toFixed(1)} years`}
-                </p>
-                <p className="text-label-secondary text-footnote mt-0.5">Schooling duration</p>
-              </div>
-              <div className="min-w-0">
-                <span className="text-stat-label text-label-secondary block">Tertiary ed rate</span>
-                <p className="text-label text-headline mt-0.5">
-                  {`${(economyData?.labor?.skillsAndProductivity?.tertiaryEducationRate ?? 0).toFixed(1)}%`}
-                </p>
-                <p className="text-label-secondary text-footnote mt-0.5">University graduates</p>
-              </div>
-              <div className="min-w-0">
-                <span className="text-stat-label text-label-secondary block">Vocational rate</span>
-                <p className="text-label text-headline mt-0.5">
-                  {`${(economyData?.labor?.skillsAndProductivity?.vocationalTrainingRate ?? 0).toFixed(1)}%`}
-                </p>
-                <p className="text-label-secondary text-footnote mt-0.5">Technical certified</p>
-              </div>
-              <div className="min-w-0">
-                <span className="text-stat-label text-label-secondary block">Youth Unemp.</span>
-                <p className="text-label text-headline mt-0.5">
-                  {`${(economyData?.labor?.youthUnemploymentRate ?? 0).toFixed(1)}%`}
-                </p>
-                <p className="text-label-secondary text-footnote mt-0.5">Age 15-24 unemployed</p>
-              </div>
-            </Card>
-
-            <SectorBreakdownCard
-              title="Skills & capital metrics"
-              subtitle="National human capital and education stats"
-              layout="list"
-              showProgressBars={true}
-              sectors={[
-                {
-                  id: "literacy",
-                  name: "Adult literacy rate",
-                  value: 0,
-                  percentage: economyData?.demographics?.literacyRate ?? 0,
-                  color: "emerald",
-                },
-                {
-                  id: "tertiary",
-                  name: "Tertiary education rate",
-                  value: 0,
-                  percentage: economyData?.labor?.skillsAndProductivity?.tertiaryEducationRate ?? 0,
-                  color: "blue",
-                },
-                {
-                  id: "skills-gap",
-                  name: "Skills gap index",
-                  value: 0,
-                  percentage: economyData?.labor?.skillsAndProductivity?.skillsGapIndex ?? 0,
-                  color: "purple",
-                },
-              ]}
-            />
-          </CollapsibleSection>
-        </div>
-      </CardContent>
-    </Card>
+    </TabShell>
   );
 }

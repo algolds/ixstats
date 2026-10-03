@@ -1,14 +1,3 @@
-/**
- * Geographic Map Router
- *
- * tRPC router for the IxEarth world map system.
- * Handles map layer data, country geometry, spatial queries,
- * and country-feature linking.
- *
- * Data source: PostgreSQL + PostGIS (map_layers table),
- * with file-based fallback for initial load.
- */
-
 import { z } from "zod";
 import {
   createTRPCRouter,
@@ -16,27 +5,12 @@ import {
   standardMutationCountryOwnerProcedure,
 } from "~/server/api/trpc";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
-import { TRPCError } from "@trpc/server";
 import { GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { validatePointContainment } from "~/lib/maps/geo-validation";
-
-/** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
-const coordinatesSchema = z
-  .tuple([z.number(), z.number()])
-  .refine(([lng, lat]) => lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90, {
-    message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)",
-  });
-
-// ──────────────────────────────────────────────
-// Router
-// ──────────────────────────────────────────────
+import { assertFound, assertOwnCountry, coordinatesSchema } from "../core/shared";
 
 export const geoFeaturesLabelsRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // Map Labels — Custom styled text on the map
-  // ──────────────────────────────────────────────
-
   createMapLabel: standardMutationCountryOwnerProcedure
     .input(
       z.object({
@@ -70,10 +44,7 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
       await validatePointContainment(
         ctx.db as any,
         input.countryId,
@@ -142,14 +113,13 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
-      const label = await ctx.db.mapLabel.findFirst({
-        where: { id: input.labelId, countryId: input.countryId },
-      });
-      if (!label) throw new TRPCError({ code: "NOT_FOUND", message: "Map label not found" });
+      assertOwnCountry(ctx, input.countryId);
+      assertFound(
+        await ctx.db.mapLabel.findFirst({
+          where: { id: input.labelId, countryId: input.countryId },
+        }),
+        "Map label not found"
+      );
 
       if (input.coordinates) {
         await validatePointContainment(
@@ -174,14 +144,13 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
   deleteMapLabel: standardMutationCountryOwnerProcedure
     .input(z.object({ countryId: z.string(), labelId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
-      const label = await ctx.db.mapLabel.findFirst({
-        where: { id: input.labelId, countryId: input.countryId },
-      });
-      if (!label) throw new TRPCError({ code: "NOT_FOUND", message: "Map label not found" });
+      assertOwnCountry(ctx, input.countryId);
+      assertFound(
+        await ctx.db.mapLabel.findFirst({
+          where: { id: input.labelId, countryId: input.countryId },
+        }),
+        "Map label not found"
+      );
       await ctx.db.mapLabel.delete({ where: { id: input.labelId } });
       await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS);
       broadcastMapUpdate("mapLabel", input.countryId);

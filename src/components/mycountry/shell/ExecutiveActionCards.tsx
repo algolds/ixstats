@@ -17,7 +17,7 @@ import {
 import { focusRing } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
-import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
+import type { MyCountrySection } from "~/components/mycountry/shell/mycountry-sections";
 import type { StatusTone } from "./status-tone";
 
 /** Canon-feed category → label, glyph and status tone (only a crisis is critical). */

@@ -33,6 +33,129 @@ const MODES: { key: AlignmentMode; label: string; icon: typeof Crosshair; desc: 
   { key: "manual", label: "Manual adjust", icon: Move, desc: "Fine-tune position" },
 ];
 
+type Importer = AlignmentStepProps["importer"];
+type ManualTransform = Importer["manualTransform"];
+
+interface ManualSlider {
+  label: string;
+  ariaLabel: string;
+  icon: typeof Move;
+  min: number;
+  max: number;
+  step: number;
+  minText: string;
+  maxText: string;
+  valueClass: string;
+  format: (t: ManualTransform) => string;
+  get: (t: ManualTransform) => number;
+  set: (t: ManualTransform, v: number) => ManualTransform;
+}
+
+const DEGREE_CLASS = "text-label font-mono font-medium";
+
+const MANUAL_SLIDERS: ManualSlider[] = [
+  {
+    label: "Shift East/West",
+    ariaLabel: "Shift east/west",
+    icon: Move,
+    min: -5,
+    max: 5,
+    step: 0.01,
+    minText: "-5°",
+    maxText: "+5°",
+    valueClass: DEGREE_CLASS,
+    format: (t) => `${t.translate[0].toFixed(2)}°`,
+    get: (t) => t.translate[0],
+    set: (t, v) => ({ ...t, translate: [v, t.translate[1]] }),
+  },
+  {
+    label: "Shift North/South",
+    ariaLabel: "Shift north/south",
+    icon: Move,
+    min: -5,
+    max: 5,
+    step: 0.01,
+    minText: "-5°",
+    maxText: "+5°",
+    valueClass: DEGREE_CLASS,
+    format: (t) => `${t.translate[1].toFixed(2)}°`,
+    get: (t) => t.translate[1],
+    set: (t, v) => ({ ...t, translate: [t.translate[0], v] }),
+  },
+  {
+    label: "Rotation",
+    ariaLabel: "Rotation",
+    icon: RotateCw,
+    min: -45,
+    max: 45,
+    step: 0.5,
+    minText: "-45°",
+    maxText: "+45°",
+    valueClass: DEGREE_CLASS,
+    format: (t) => `${t.rotate.toFixed(1)}°`,
+    get: (t) => t.rotate,
+    set: (t, v) => ({ ...t, rotate: v }),
+  },
+  {
+    label: "Scale",
+    ariaLabel: "Scale",
+    icon: ZoomIn,
+    min: 0.5,
+    max: 2,
+    step: 0.01,
+    minText: "0.5x",
+    maxText: "2x",
+    valueClass: "text-label font-medium tabular-nums",
+    format: (t) => `${t.scale.toFixed(2)}x`,
+    get: (t) => t.scale,
+    set: (t, v) => ({ ...t, scale: v }),
+  },
+];
+
+function ManualAdjustControls({ importer }: { importer: Importer }) {
+  const transform = importer.manualTransform;
+  return (
+    <div className="space-y-3">
+      <p className="text-label-secondary text-footnote">
+        Fine-tune position, rotation, and scale. Changes preview as you adjust.
+      </p>
+
+      {MANUAL_SLIDERS.map((slider) => (
+        <div key={slider.label} className="space-y-2">
+          <label className="text-label-secondary text-footnote flex items-center gap-2">
+            <slider.icon className="h-3 w-3" /> {slider.label}
+          </label>
+          <Slider
+            aria-label={slider.ariaLabel}
+            min={slider.min}
+            max={slider.max}
+            step={slider.step}
+            value={[slider.get(transform)]}
+            onValueChange={([v]) =>
+              v !== undefined && importer.setManualTransform(slider.set(transform, v))
+            }
+            className="w-full py-2"
+          />
+          <div className="text-label-secondary text-footnote flex justify-between">
+            <span>{slider.minText}</span>
+            <span className={slider.valueClass}>{slider.format(transform)}</span>
+            <span>{slider.maxText}</span>
+          </div>
+        </div>
+      ))}
+
+      <Button
+        variant="outline"
+        size="sm"
+        className="w-full"
+        onClick={() => importer.setManualTransform({ translate: [0, 0], rotate: 0, scale: 1 })}
+      >
+        Reset manual adjustments
+      </Button>
+    </div>
+  );
+}
+
 export const AlignmentStep = memo(function AlignmentStep({ importer }: AlignmentStepProps) {
   const hasAlignment = !!importer.transform;
 
@@ -47,7 +170,6 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
         </p>
       </div>
 
-      {/* Auto-alignment status */}
       {hasAlignment && (
         <div className="bg-green/15 rounded-control text-footnote text-green-ink flex items-center gap-2 px-3 py-2">
           <Check className="h-3.5 w-3.5 shrink-0" />
@@ -55,7 +177,6 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
         </div>
       )}
 
-      {/* Mode selector */}
       <SegmentedControl
         aria-label="Alignment mode"
         fullWidth
@@ -69,7 +190,6 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
         }))}
       />
 
-      {/* Mode-specific controls */}
       {importer.alignmentMode === "reference-points" && (
         <div className="space-y-3">
           <p className="text-label-secondary text-footnote">
@@ -140,7 +260,6 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
         </div>
       )}
 
-      {/* Snap to Border — available after any alignment */}
       {hasAlignment && (
         <div className="border-tint/40 bg-tint-fill rounded-control space-y-2 border border-dashed p-3">
           <p className="text-label-secondary text-footnote">
@@ -164,139 +283,7 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
         </div>
       )}
 
-      {importer.alignmentMode === "manual" && (
-        <div className="space-y-3">
-          <p className="text-label-secondary text-footnote">
-            Fine-tune position, rotation, and scale. Changes preview as you adjust.
-          </p>
-
-          {/* Translate X */}
-          <div className="space-y-2">
-            <label className="text-label-secondary text-footnote flex items-center gap-2">
-              <Move className="h-3 w-3" /> Shift East/West
-            </label>
-            <Slider
-              aria-label="Shift east/west"
-              min={-5}
-              max={5}
-              step={0.01}
-              value={[importer.manualTransform.translate[0]]}
-              onValueChange={([v]) =>
-                v !== undefined &&
-                importer.setManualTransform({
-                  ...importer.manualTransform,
-                  translate: [v, importer.manualTransform.translate[1]],
-                })
-              }
-              className="w-full py-2"
-            />
-            <div className="text-label-secondary text-footnote flex justify-between">
-              <span>-5°</span>
-              <span className="text-label font-mono font-medium">
-                {importer.manualTransform.translate[0].toFixed(2)}°
-              </span>
-              <span>+5°</span>
-            </div>
-          </div>
-
-          {/* Translate Y */}
-          <div className="space-y-2">
-            <label className="text-label-secondary text-footnote flex items-center gap-2">
-              <Move className="h-3 w-3" /> Shift North/South
-            </label>
-            <Slider
-              aria-label="Shift north/south"
-              min={-5}
-              max={5}
-              step={0.01}
-              value={[importer.manualTransform.translate[1]]}
-              onValueChange={([v]) =>
-                v !== undefined &&
-                importer.setManualTransform({
-                  ...importer.manualTransform,
-                  translate: [importer.manualTransform.translate[0], v],
-                })
-              }
-              className="w-full py-2"
-            />
-            <div className="text-label-secondary text-footnote flex justify-between">
-              <span>-5°</span>
-              <span className="text-label font-mono font-medium">
-                {importer.manualTransform.translate[1].toFixed(2)}°
-              </span>
-              <span>+5°</span>
-            </div>
-          </div>
-
-          {/* Rotation */}
-          <div className="space-y-2">
-            <label className="text-label-secondary text-footnote flex items-center gap-2">
-              <RotateCw className="h-3 w-3" /> Rotation
-            </label>
-            <Slider
-              aria-label="Rotation"
-              min={-45}
-              max={45}
-              step={0.5}
-              value={[importer.manualTransform.rotate]}
-              onValueChange={([v]) =>
-                v !== undefined &&
-                importer.setManualTransform({
-                  ...importer.manualTransform,
-                  rotate: v,
-                })
-              }
-              className="w-full py-2"
-            />
-            <div className="text-label-secondary text-footnote flex justify-between">
-              <span>-45°</span>
-              <span className="text-label font-mono font-medium">
-                {importer.manualTransform.rotate.toFixed(1)}°
-              </span>
-              <span>+45°</span>
-            </div>
-          </div>
-
-          {/* Scale */}
-          <div className="space-y-2">
-            <label className="text-label-secondary text-footnote flex items-center gap-2">
-              <ZoomIn className="h-3 w-3" /> Scale
-            </label>
-            <Slider
-              aria-label="Scale"
-              min={0.5}
-              max={2}
-              step={0.01}
-              value={[importer.manualTransform.scale]}
-              onValueChange={([v]) =>
-                v !== undefined &&
-                importer.setManualTransform({
-                  ...importer.manualTransform,
-                  scale: v,
-                })
-              }
-              className="w-full py-2"
-            />
-            <div className="text-label-secondary text-footnote flex justify-between">
-              <span>0.5x</span>
-              <span className="text-label font-medium tabular-nums">
-                {importer.manualTransform.scale.toFixed(2)}x
-              </span>
-              <span>2x</span>
-            </div>
-          </div>
-
-          {/* Reset manual transform button */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() => importer.setManualTransform({ translate: [0, 0], rotate: 0, scale: 1 })}
-          >
-            Reset manual adjustments
-          </Button>
-        </div>
-      )}
+      {importer.alignmentMode === "manual" && <ManualAdjustControls importer={importer} />}
     </div>
   );
 });

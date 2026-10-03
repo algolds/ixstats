@@ -26,6 +26,17 @@ export function WikiAuthorPopover({ username }: { username: string }) {
 
   const wikiUserUrl = createUrl(getWikiProfilePath(username));
   const wikiContribsUrl = createUrl(`/wiki/contributions/${username}`);
+  const country = author?.country;
+  const links = [
+    { href: wikiUserUrl, icon: BookOpen, label: "Wiki user page" },
+    { href: wikiContribsUrl, icon: Clock, label: "Contributions" },
+    ...(country?.slug
+      ? [
+          { href: createUrl(`/countries/${country.slug}`), icon: Globe, label: "Country page" },
+          { href: createUrl(`/maps?country=${country.id}`), icon: MapIcon, label: "View on map" },
+        ]
+      : []),
+  ];
 
   return (
     <HoverCard open={open} onOpenChange={setOpen} openDelay={300} closeDelay={100}>
@@ -45,7 +56,6 @@ export function WikiAuthorPopover({ username }: { username: string }) {
           </div>
         ) : (
           <div className="space-y-2">
-            {/* Header */}
             <div className="flex items-center gap-2">
               {author?.country?.flag ? (
                 <UnifiedCountryFlag
@@ -70,7 +80,6 @@ export function WikiAuthorPopover({ username }: { username: string }) {
               </div>
             </div>
 
-            {/* Country info badge */}
             {author?.country?.economicTier && (
               <div className="text-label-secondary text-footnote">
                 <span className="font-medium">{author.country.economicTier}</span>
@@ -78,40 +87,17 @@ export function WikiAuthorPopover({ username }: { username: string }) {
               </div>
             )}
 
-            {/* Quick links */}
             <div className="border-separator flex flex-col gap-0.5 border-t pt-2">
-              <Link
-                href={wikiUserUrl}
-                className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm text-footnote flex items-center gap-2 px-2 py-1 transition-colors"
-              >
-                <BookOpen aria-hidden className="size-3.5 shrink-0" />
-                Wiki user page
-              </Link>
-              <Link
-                href={wikiContribsUrl}
-                className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm text-footnote flex items-center gap-2 px-2 py-1 transition-colors"
-              >
-                <Clock aria-hidden className="size-3.5 shrink-0" />
-                Contributions
-              </Link>
-              {author?.country?.slug && (
-                <>
-                  <Link
-                    href={createUrl(`/countries/${author.country.slug}`)}
-                    className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm text-footnote flex items-center gap-2 px-2 py-1 transition-colors"
-                  >
-                    <Globe aria-hidden className="size-3.5 shrink-0" />
-                    Country page
-                  </Link>
-                  <Link
-                    href={createUrl(`/maps?country=${author.country.id}`)}
-                    className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm text-footnote flex items-center gap-2 px-2 py-1 transition-colors"
-                  >
-                    <MapIcon aria-hidden className="size-3.5 shrink-0" />
-                    View on map
-                  </Link>
-                </>
-              )}
+              {links.map(({ href, icon: Icon, label }) => (
+                <Link
+                  key={label}
+                  href={href}
+                  className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm text-footnote flex items-center gap-2 px-2 py-1 transition-colors"
+                >
+                  <Icon aria-hidden className="size-3.5 shrink-0" />
+                  {label}
+                </Link>
+              ))}
               {!author?.country && !isLoading && (
                 <span className="text-label-secondary text-footnote px-2 py-0.5">
                   No linked IxStats country

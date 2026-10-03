@@ -1,7 +1,7 @@
 import type { EconomicComponentType } from "@prisma/client";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 
-export interface ParsedEconomicComponent {
+interface ParsedEconomicComponent {
   id: string;
   type: EconomicComponentType;
   name: string;

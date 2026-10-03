@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo, useCallback, useState } from "react";
+import React, { memo, useState } from "react";
 import {
   Globe,
   Hexagon,
@@ -22,33 +22,54 @@ import { EditQueuePanel } from "../panels/EditQueuePanel";
 import { WikiScannerPanel } from "../panels/WikiScannerPanel";
 import type { TabId } from "~/components/maps/editor/EditorPanel";
 import type { useMapEditorOverlayState } from "../hooks/useMapEditorOverlayState";
-import type {
-  PanelPlacement,
-  PanelConfig,
-  LayerStateRecord,
-  EditorFeature,
-} from "../types/editor-state";
+import type { LayerStateRecord } from "../types/editor-state";
+import { useFeatureActionHandlers } from "./useFeatureActionHandlers";
 export type MapEditorOverlayReturnState = ReturnType<typeof useMapEditorOverlayState>;
+
+interface LayerDef {
+  id: string;
+  name: string;
+  icon: React.ElementType;
+  /** Default opacity; omitted for layers without an opacity control. */
+  opacity?: number;
+}
+
+const LAYER_DEFS: LayerDef[] = [
+  { id: "border", name: "Country Border", icon: Globe },
+  { id: "climate", name: "Climate Zones", icon: CloudSun },
+  { id: "regions", name: "Regions", icon: Hexagon, opacity: 0.6 },
+  { id: "cities", name: "Cities", icon: MapPin, opacity: 1 },
+  { id: "pois", name: "POIs", icon: Landmark, opacity: 1 },
+  { id: "stories", name: "Story Pins", icon: BookMarked, opacity: 1 },
+  { id: "labels", name: "Labels", icon: TypeIcon, opacity: 1 },
+  { id: "routes", name: "Routes", icon: Route },
+  { id: "geography", name: "Peaks, Rivers & Lakes", icon: Mountain, opacity: 1 },
+];
+
+/** The Climate layer is toggled through the map's visible-layer set and is never lockable. */
+function buildLayers(
+  layerStates: Record<string, LayerStateRecord>,
+  editorVisibleLayers: Set<string>
+) {
+  return LAYER_DEFS.map(({ id, name, icon, opacity }) => {
+    if (id === "climate") {
+      return { id, name, icon, visible: editorVisibleLayers.has(id), locked: true };
+    }
+    const layer = layerStates[id];
+    return {
+      id,
+      name,
+      icon,
+      visible: layer?.visible ?? true,
+      locked: id === "border" ? false : (layer?.locked ?? false),
+      ...(opacity !== undefined && { opacity: layer?.opacity ?? opacity }),
+    };
+  });
+}
 
 interface MapEditorSidebarPanelsProps {
   panelId: "panelA" | "panelB";
   state: MapEditorOverlayReturnState;
-  panelConfigs: {
-    panelA: PanelConfig;
-    panelB: PanelConfig;
-  };
-  setPanelConfigs: React.Dispatch<
-    React.SetStateAction<{ panelA: PanelConfig; panelB: PanelConfig }>
-  >;
-  activeSidebarTab: TabId;
-  setActiveSidebarTab: (tab: TabId) => void;
-  handleMoveTab: (tabId: string, panelId: "panelA" | "panelB") => void;
-  handleChangePanelPlacement: (panelId: "panelA" | "panelB", placement: PanelPlacement) => void;
-  layerStates: Record<string, LayerStateRecord>;
-  setLayerStates: React.Dispatch<React.SetStateAction<Record<string, LayerStateRecord>>>;
-  editorVisibleLayers: Set<string>;
-  toggleEditorLayer: (layerId: string) => void;
-  featureCounts: Record<string, number>;
   brushTargetId: string | null;
   setBrushTargetId: (id: string | null) => void;
 }
@@ -56,21 +77,24 @@ interface MapEditorSidebarPanelsProps {
 export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
   panelId,
   state,
-  panelConfigs,
-  setPanelConfigs,
-  activeSidebarTab,
-  setActiveSidebarTab,
-  handleMoveTab,
-  handleChangePanelPlacement,
-  layerStates,
-  setLayerStates,
-  editorVisibleLayers,
-  toggleEditorLayer,
-  featureCounts,
   brushTargetId,
   setBrushTargetId,
 }: MapEditorSidebarPanelsProps) {
-  const { editor, isWorldMode, panelsLocked, isAdmin } = state;
+  const {
+    editor,
+    isWorldMode,
+    panelsLocked,
+    isAdmin,
+    panelConfigs,
+    setPanelConfigs,
+    activeSidebarTab,
+    setActiveSidebarTab,
+    layerStates,
+    setLayerStates,
+    editorVisibleLayers,
+    toggleEditorLayer,
+    featureCounts,
+  } = state;
 
   const config = panelConfigs[panelId];
   const isStacked = panelConfigs.panelA.placement === panelConfigs.panelB.placement;
@@ -87,138 +111,34 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
     tabs = [...tabs, "queue" as TabId];
   }
 
-  const [panelBActiveTab, setPanelBActiveTab] = useState<TabId>(() => {
-    return tabs.includes("properties") ? "properties" : (tabs[0] ?? "properties");
-  });
+  const [panelBActiveTab, setPanelBActiveTab] = useState<TabId>(() =>
+    tabs.includes("properties") ? "properties" : (tabs[0] ?? "properties")
+  );
 
   const effectiveActiveTab: TabId = panelId === "panelA" ? activeSidebarTab : panelBActiveTab;
 
-  const handleSelectFeature = useCallback(
-    (feat: EditorFeature) => {
-      state.handleSelectFeature?.(feat);
-    },
-    [state.handleSelectFeature]
-  );
+  const {
+    onSelectFeature: handleSelectFeature,
+    onEditFeature: handleEditFeature,
+    onDeleteFeature: handleDeleteFeature,
+  } = useFeatureActionHandlers(state);
 
-  const handleEditFeature = useCallback(
-    (feat: EditorFeature) => {
-      state.handleEditFeature?.(feat);
-    },
-    [state.handleEditFeature]
-  );
-
-  const handleDeleteFeature = useCallback(
-    (feat: EditorFeature) => {
-      state.handleDeleteFeature?.(feat);
-    },
-    [state.handleDeleteFeature]
-  );
+  const updateLayer = (
+    id: string,
+    patch: (layer: LayerStateRecord | undefined) => Partial<LayerStateRecord>
+  ) => setLayerStates((prev) => ({ ...prev, [id]: { ...prev[id]!, ...patch(prev[id]) } }));
 
   const renderLayersElement = () => (
     <LayerPanel
-      layers={[
-        {
-          id: "border",
-          name: "Country Border",
-          icon: Globe,
-          visible: layerStates.border?.visible ?? true,
-          locked: false,
-        },
-        {
-          id: "climate",
-          name: "Climate Zones",
-          icon: CloudSun,
-          visible: editorVisibleLayers.has("climate"),
-          locked: true,
-        },
-        {
-          id: "regions",
-          name: "Regions",
-          icon: Hexagon,
-          visible: layerStates.regions?.visible ?? true,
-          locked: layerStates.regions?.locked ?? false,
-          opacity: layerStates.regions?.opacity ?? 0.6,
-        },
-        {
-          id: "cities",
-          name: "Cities",
-          icon: MapPin,
-          visible: layerStates.cities?.visible ?? true,
-          locked: layerStates.cities?.locked ?? false,
-          opacity: layerStates.cities?.opacity ?? 1,
-        },
-        {
-          id: "pois",
-          name: "POIs",
-          icon: Landmark,
-          visible: layerStates.pois?.visible ?? true,
-          locked: layerStates.pois?.locked ?? false,
-          opacity: layerStates.pois?.opacity ?? 1,
-        },
-        {
-          id: "stories",
-          name: "Story Pins",
-          icon: BookMarked,
-          visible: layerStates.stories?.visible ?? true,
-          locked: layerStates.stories?.locked ?? false,
-          opacity: layerStates.stories?.opacity ?? 1,
-        },
-        {
-          id: "labels",
-          name: "Labels",
-          icon: TypeIcon,
-          visible: layerStates.labels?.visible ?? true,
-          locked: layerStates.labels?.locked ?? false,
-          opacity: layerStates.labels?.opacity ?? 1,
-        },
-        {
-          id: "routes",
-          name: "Routes",
-          icon: Route,
-          visible: layerStates.routes?.visible ?? true,
-          locked: layerStates.routes?.locked ?? false,
-        },
-        {
-          id: "geography",
-          name: "Peaks, Rivers & Lakes",
-          icon: Mountain,
-          visible: layerStates.geography?.visible ?? true,
-          locked: layerStates.geography?.locked ?? false,
-          opacity: layerStates.geography?.opacity ?? 1,
-        },
-      ]}
+      layers={buildLayers(layerStates, editorVisibleLayers)}
       onToggleVisibility={(id) => {
-        if (id === "climate") {
-          toggleEditorLayer("climate");
-          return;
-        }
-        setLayerStates((prev) => ({
-          ...prev,
-          [id]: {
-            ...prev[id]!,
-            visible: !(prev[id]?.visible ?? true),
-          },
-        }));
+        if (id === "climate") toggleEditorLayer("climate");
+        else updateLayer(id, (layer) => ({ visible: !(layer?.visible ?? true) }));
       }}
       onToggleLock={(id) => {
-        if (id === "climate") return;
-        setLayerStates((prev) => ({
-          ...prev,
-          [id]: {
-            ...prev[id]!,
-            locked: !(prev[id]?.locked ?? false),
-          },
-        }));
+        if (id !== "climate") updateLayer(id, (layer) => ({ locked: !(layer?.locked ?? false) }));
       }}
-      onOpacityChange={(id, val) => {
-        setLayerStates((prev) => ({
-          ...prev,
-          [id]: {
-            ...prev[id]!,
-            opacity: val,
-          },
-        }));
-      }}
+      onOpacityChange={(id, opacity) => updateLayer(id, () => ({ opacity }))}
       featureCounts={featureCounts}
       features={editor.allFeatures}
       selectedFeature={editor.selectedFeature}
@@ -268,9 +188,9 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
         }))
       }
       tabs={tabs}
-      onTabDrop={(tabId) => handleMoveTab(tabId, panelId)}
+      onTabDrop={(tabId) => state.handleMoveTab(tabId, panelId)}
       placement={config.placement}
-      onChangePlacement={(placement) => handleChangePanelPlacement(panelId, placement)}
+      onChangePlacement={(placement) => state.handleChangePanelPlacement(panelId, placement)}
       isWorldMode={isWorldMode}
       activeTabOverride={effectiveActiveTab}
       onTabChange={(tab) => {
@@ -301,7 +221,6 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
             onSelectFeature={handleSelectFeature}
             onEditFeature={handleEditFeature}
             onDeleteFeature={handleDeleteFeature}
-            isLoading={editor.featuresLoading}
             selectedIds={editor.selectedIds}
             onToggleSelect={editor.toggleSelectId}
           />

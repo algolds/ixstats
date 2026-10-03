@@ -1,14 +1,3 @@
-/**
- * Geographic Map Router
- *
- * tRPC router for the IxEarth world map system.
- * Handles map layer data, country geometry, spatial queries,
- * and country-feature linking.
- *
- * Data source: PostgreSQL + PostGIS (map_layers table),
- * with file-based fallback for initial load.
- */
-
 import { z } from "zod";
 import { createTRPCRouter, cachedPublicProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
@@ -18,15 +7,7 @@ import { SOVEREIGNTY_TYPES } from "~/lib/maps/map-config";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { clearLayerCache } from "./core";
 
-// ──────────────────────────────────────────────
-// Router
-// ──────────────────────────────────────────────
-
 export const geoSovereigntyRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // Sovereignty / dependency management
-  // ──────────────────────────────────────────────
-
   /** Get all active sovereignty relationships (public, cached) */
   getSovereigntyRelations: cachedPublicProcedure.query(async ({ ctx }) => {
     const relations = await ctx.db.countrySovereignty.findMany({

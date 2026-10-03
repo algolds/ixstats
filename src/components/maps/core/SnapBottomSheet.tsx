@@ -54,16 +54,9 @@ function visibleHeight(
   halfHeight: string,
   fullHeight: string
 ): number {
-  switch (snap) {
-    case "dismissed":
-      return 0;
-    case "peek":
-      return peekHeight;
-    case "half":
-      return parseHeight(halfHeight, windowHeight);
-    case "full":
-      return parseHeight(fullHeight, windowHeight);
-  }
+  if (snap === "dismissed") return 0;
+  if (snap === "peek") return peekHeight;
+  return parseHeight(snap === "half" ? halfHeight : fullHeight, windowHeight);
 }
 
 const NEXT_SNAP: Record<"peek" | "half" | "full", "peek" | "half" | "full"> = {
@@ -100,7 +93,6 @@ export function SnapBottomSheet({
   const [hintVisible, setHintVisible] = useState(true);
 
   const sheetRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
   const hasEnteredRef = useRef(false);
 
   const sheetHeight = visibleHeight("full", windowHeight, peekHeight, halfHeight, fullHeight);
@@ -259,14 +251,11 @@ export function SnapBottomSheet({
     };
   }, []);
 
-  // Tap on peek → open to half
-  const handlePeekTap = useCallback(() => {
-    setSnap((s) => (s === "peek" ? "half" : s));
-  }, []);
-
-  const handleHandleClick = useCallback(() => {
-    setSnap((s) => (s === "dismissed" ? s : NEXT_SNAP[s]));
-  }, []);
+  const handlePeekTap = useCallback(() => setSnap((s) => (s === "peek" ? "half" : s)), []);
+  const handleHandleClick = useCallback(
+    () => setSnap((s) => (s === "dismissed" ? s : NEXT_SNAP[s])),
+    []
+  );
 
   const expanded = snap === "half" || snap === "full";
   // Part of the fixed-height sheet sits below the fold at peek/half; pad the scroll area by
@@ -285,7 +274,6 @@ export function SnapBottomSheet({
         />
       )}
 
-      {/* Sheet */}
       <div
         ref={sheetRef}
         role="region"
@@ -315,7 +303,6 @@ export function SnapBottomSheet({
         {peekContent && (
           <div onClick={handlePeekTap} className="shrink-0 px-4 pb-2">
             {peekContent}
-            {/* Hint text */}
             <div
               className="text-label-secondary text-footnote mt-1 flex items-center justify-center gap-1 transition-opacity duration-200"
               style={{ opacity: hintVisible && snap === "peek" ? 0.7 : 0 }}
@@ -330,7 +317,6 @@ export function SnapBottomSheet({
         {/* Scrollable content — rendered at half/full */}
         {snap !== "peek" && (
           <div
-            ref={contentRef}
             className="min-h-0 flex-1 overflow-y-auto"
             style={{ overscrollBehavior: "contain", paddingBottom: `${hiddenBelow}px` }}
           >

@@ -4,7 +4,7 @@ import { TRPCError } from "@trpc/server";
 import type { Prisma } from "@prisma/client";
 // Import the wiki search service
 import { globalCache } from "~/lib/cache";
-import { pollInclude, transformPost } from "./post-utils";
+import { postInclude, transformPost } from "./post-utils";
 import { realmFeedWhere } from "./realm-feed";
 
 interface PostDateFields {
@@ -147,85 +147,7 @@ export const thinkpagesFeedRouter = createTRPCRouter({
 
       const posts = await db.thinkpagesPost.findMany({
         where: whereClause,
-        include: {
-          account: {
-            select: {
-              id: true,
-              username: true,
-              displayName: true,
-              profileImageUrl: true,
-              accountType: true,
-              verified: true,
-              clerkUserId: true,
-              countryId: true,
-              country: {
-                select: {
-                  id: true,
-                  name: true,
-                  flag: true,
-                },
-              },
-            },
-          },
-          parentPost: {
-            include: {
-              account: {
-                select: {
-                  id: true,
-                  username: true,
-                  displayName: true,
-                  profileImageUrl: true,
-                  accountType: true,
-                  verified: true,
-                  clerkUserId: true,
-                  countryId: true,
-                  country: {
-                    select: {
-                      id: true,
-                      name: true,
-                      flag: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          repostOf: {
-            include: {
-              account: {
-                select: {
-                  id: true,
-                  username: true,
-                  displayName: true,
-                  profileImageUrl: true,
-                  accountType: true,
-                  verified: true,
-                  clerkUserId: true,
-                  countryId: true,
-                  country: {
-                    select: {
-                      id: true,
-                      name: true,
-                      flag: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          reactions: true,
-          mediaAttachments: true,
-          ...pollInclude,
-          reposts: {
-            select: { accountId: true },
-          },
-          _count: {
-            select: {
-              replies: true,
-              reposts: true,
-            },
-          },
-        },
+        include: postInclude,
         orderBy: feedOrderBy(input.filter),
         take: input.limit,
         cursor: input.cursor ? { id: input.cursor } : undefined,

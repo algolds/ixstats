@@ -1,18 +1,23 @@
 import { useEffect, useCallback, useRef } from "react";
-import type { Map as MapLibreMap } from "maplibre-gl";
+import type { ExpressionSpecification, Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
-import type { SelectedCountry, SelectedFeature, HoveredCountry } from "../IxWorldMap";
-import { INTERACTION_COLORS } from "~/lib/maps/map-config";
-import { escHtml, COUNTRY_LABEL_OPACITY } from "../utils/map-core-helpers";
+import type { SelectedCountry, SelectedFeature, HoveredCountry, MapLayerData } from "../IxWorldMap";
+import { COUNTRY_LABEL_OPACITY } from "../utils/map-core-helpers";
 import { computeCountryLabelFade } from "../utils/label-fade";
-import { transientMapStore } from "../../editor/utils/transientStore";
+import {
+  SELECTED_COUNTRY_LAYERS,
+  clearAllHover,
+  isPointOnGlobeOrMap,
+  pickCountry,
+  pickOverlayFeature,
+  updateHover,
+  type HoverState,
+} from "../utils/world-map-hit-testing";
 
 interface UseWorldMapInteractionsProps {
   map: MapLibreMap | null;
   isLoaded: boolean;
-  layers: any[];
-  overlayVisibility?: Record<string, boolean>;
-  labelsVisible?: boolean;
+  layers: MapLayerData[];
   geographyFilter?: { type: "continent" | "region"; value: string } | null;
   topCountryNames?: Set<string>;
   selectedCountryId?: string | null;
@@ -26,14 +31,143 @@ interface UseWorldMapInteractionsProps {
   tooltipPopupRef: React.MutableRefObject<any>;
 }
 
+const POINTER_LIKE_EVENTS = ["mousedown", "pointerdown", "dblclick", "wheel", "contextmenu"];
+const CAPTURE_OPTS: AddEventListenerOptions = { capture: true, passive: false };
+
+/**
+ * Mouse/pointer/wheel/dblclick/contextmenu that start off the globe disc never reach MapLibre;
+ * touches pass through as long as any finger is on the globe (pinch from the edge).
+ */
+function attachGlobeGuards(map: MapLibreMap) {
+  const container = map.getCanvasContainer();
+  const canvas = map.getCanvas();
+  const toCanvasPoint = (clientX: number, clientY: number) => {
+    const rect = canvas.getBoundingClientRect();
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  };
+  const isOnGlobe = (clientX: number, clientY: number) =>
+    isPointOnGlobeOrMap(map, toCanvasPoint(clientX, clientY));
+  const stopOffGlobe = (e: Event) => {
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+  };
+  const onCanvas = (e: Event) => e.target === canvas || e.target === container;
+
+  const onPointerLike = (e: Event) => {
+    const { clientX, clientY } = e as MouseEvent;
+    if (onCanvas(e) && !isOnGlobe(clientX, clientY)) stopOffGlobe(e);
+  };
+  const onTouchStart = (e: Event) => {
+    const touches = Array.from((e as TouchEvent).touches || []);
+    if (onCanvas(e) && !touches.some((t) => isOnGlobe(t.clientX, t.clientY))) stopOffGlobe(e);
+  };
+
+  for (const type of POINTER_LIKE_EVENTS)
+    container.addEventListener(type, onPointerLike, CAPTURE_OPTS);
+  container.addEventListener("touchstart", onTouchStart, CAPTURE_OPTS);
+  return () => {
+    for (const type of POINTER_LIKE_EVENTS) {
+      container.removeEventListener(type, onPointerLike, CAPTURE_OPTS);
+    }
+    container.removeEventListener("touchstart", onTouchStart, CAPTURE_OPTS);
+  };
+}
+
+/** Run `handler` with the latest argument at most once per animation frame. */
+function coalesceToFrame<T>(handler: (arg: T) => void) {
+  let pending: T | null = null;
+  let frame = 0;
+  return {
+    schedule(arg: T) {
+      pending = arg;
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        const latest = pending;
+        pending = null;
+        if (latest) handler(latest);
+      });
+    },
+    cancel() {
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+      pending = null;
+    },
+  };
+}
+
+/** Dim countries outside the active continent/region filter (or restore the default look). */
+function applyGeographyFilter(
+  map: MapLibreMap,
+  filter: UseWorldMapInteractionsProps["geographyFilter"]
+) {
+  const matches: ExpressionSpecification | undefined = filter
+    ? ["==", ["get", filter.type === "continent" ? "_continent" : "_region"], filter.value]
+    : undefined;
+  map.setPaintProperty(
+    "fill-political",
+    "fill-opacity",
+    matches
+      ? ["case", matches, 0.6, 0.08]
+      : // matches the configuration POLITICAL layer opacity
+        ["case", ["boolean", ["feature-state", "hover"], false], 0.6, 0.12]
+  );
+  if (map.getLayer("country-name-labels")) {
+    map.setPaintProperty(
+      "country-name-labels",
+      "text-opacity",
+      matches ? ["case", matches, COUNTRY_LABEL_OPACITY, 0.1] : COUNTRY_LABEL_OPACITY
+    );
+  }
+}
+
+type SelectedIdx = { data: unknown; idx: number };
+
+/** Mark the selected country's polygon via feature state, clearing only the previous one. */
+function syncSelectedCountry(
+  map: MapLibreMap,
+  layers: MapLayerData[],
+  selectedCountryId: string | null | undefined,
+  prevRef: React.MutableRefObject<SelectedIdx>
+) {
+  for (const layer of SELECTED_COUNTRY_LAYERS) {
+    if (!map.getLayer(layer.id) && map.getSource("source-political")) map.addLayer(layer);
+  }
+
+  const political = layers.find((l) => l.type === "political");
+  if (!political || !map.getSource("source-political")) return;
+
+  const idx = selectedCountryId
+    ? political.data.features.findIndex(
+        (f) =>
+          (f.properties?._id || f.properties?.id) === selectedCountryId ||
+          (f.properties?._countryId || f.properties?.countryId) === selectedCountryId
+      )
+    : -1;
+
+  // Clear only the previously selected feature (one call) instead of resetting state on every
+  // country polygon each time `layers` changes. When the political data object changed,
+  // generated ids may have shifted, so clear the source's feature state instead (MapLibre only
+  // removes a single key when an id is given).
+  const prev = prevRef.current;
+  if (prev.data !== political.data) {
+    try {
+      map.removeFeatureState({ source: "source-political" });
+    } catch (err) {
+      console.debug("[useWorldMapInteractions] Reset selected state error:", err);
+    }
+  } else if (prev.idx >= 0 && prev.idx !== idx) {
+    map.setFeatureState({ source: "source-political", id: prev.idx }, { selected: false });
+  }
+
+  if (idx >= 0) map.setFeatureState({ source: "source-political", id: idx }, { selected: true });
+  prevRef.current = { data: political.data, idx };
+}
+
 export function useWorldMapInteractions({
   map,
   isLoaded,
   layers,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  overlayVisibility,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  labelsVisible,
   geographyFilter,
   topCountryNames,
   selectedCountryId,
@@ -46,24 +180,14 @@ export function useWorldMapInteractions({
   labelFeaturesRef,
   tooltipPopupRef,
 }: UseWorldMapInteractionsProps) {
-  const hoveredFeatureIdRef = useRef<number | null>(null);
-  const hoveredOverlayIdRef = useRef<string | null>(null);
-  const hoveredSubdivisionIdRef = useRef<number | null>(null);
-  const selectedIdxRef = useRef<{ data: unknown; idx: number }>({ data: null, idx: -1 });
+  const hoverRef = useRef<HoverState>({ featureId: null, overlayKey: null, subdivisionId: null });
+  const selectedIdxRef = useRef<SelectedIdx>({ data: null, idx: -1 });
+  const isDraggingRef = useRef(false);
 
-  // Keep latest refs to avoid stale callbacks
-  const onCountryClickRef = useRef(onCountryClick);
+  // Keep latest callbacks to avoid stale listeners
+  const handlersRef = useRef({ onCountryClick, onCountryHover, onMapClick, onFeatureClick });
   // oxlint-disable-next-line
-  onCountryClickRef.current = onCountryClick;
-  const onCountryHoverRef = useRef(onCountryHover);
-  // oxlint-disable-next-line
-  onCountryHoverRef.current = onCountryHover;
-  const onMapClickRef = useRef(onMapClick);
-  // oxlint-disable-next-line
-  onMapClickRef.current = onMapClick;
-  const onFeatureClickRef = useRef(onFeatureClick);
-  // oxlint-disable-next-line
-  onFeatureClickRef.current = onFeatureClick;
+  handlersRef.current = { onCountryClick, onCountryHover, onMapClick, onFeatureClick };
 
   const updateDistanceFade = useCallback(() => {
     if (!map) return;
@@ -73,18 +197,13 @@ export function useWorldMapInteractions({
     const source = map.getSource("source-country-labels");
     if (!source) return;
 
-    const center = map.getCenter();
-    const zoom = map.getZoom();
-
     const bounds = map.getBounds();
-    const visibleLngSpan = bounds.getEast() - bounds.getWest();
-    const visibleLatSpan = bounds.getNorth() - bounds.getSouth();
     const viewRadius =
-      Math.sqrt(visibleLngSpan * visibleLngSpan + visibleLatSpan * visibleLatSpan) / 2;
+      Math.hypot(bounds.getEast() - bounds.getWest(), bounds.getNorth() - bounds.getSouth()) / 2;
 
     const updated = computeCountryLabelFade(baseFeatures, {
-      center,
-      zoom,
+      center: map.getCenter(),
+      zoom: map.getZoom(),
       viewRadius,
       topCountryNames,
     });
@@ -94,585 +213,114 @@ export function useWorldMapInteractions({
     (source as any).setData(updated);
   }, [map, topCountryNames, labelFeaturesRef]);
 
-  // Check if a screen point is on the visible globe or map surface
-  const isPointOnGlobeOrMap = useCallback(
-    (pt: { x: number; y: number }): boolean => {
-      if (!map) return false;
-      try {
-        // `transform` is an undocumented internal that MapLibre 6 no longer
-        // exposes on the public Map type (removed along with the Camera
-        // refactor); still probed defensively at runtime, with the geometric
-        // fallback below covering both the "missing" and "removed" cases.
-        const mapTransform = (map as any).transform;
-        if (mapTransform && typeof mapTransform.isPointOnMapSurface === "function") {
-          return mapTransform.isPointOnMapSurface(pt);
-        }
-      } catch (err) {
-        console.debug("[useWorldMapInteractions] Point surface check error:", err);
-      }
-
-      // Fallback for flat projection / high zoom or missing transform method
-      if (map.getZoom() >= 4.5) return true;
-      const canvas = map.getCanvas();
-      if (!canvas) return true;
-      const cx = canvas.clientWidth / 2;
-      const cy = canvas.clientHeight / 2;
-      const dx = pt.x - cx;
-      const dy = pt.y - cy;
-      const cursorDistSq = dx * dx + dy * dy;
-
-      const center = map.getCenter();
-      let edgeLat = center.lat - 88;
-      if (edgeLat < -90) edgeLat = center.lat + 88;
-      const edgeScreen = map.project({ lng: center.lng, lat: edgeLat });
-      const rx = edgeScreen.x - cx;
-      const ry = edgeScreen.y - cy;
-      const radiusSq = rx * rx + ry * ry;
-      return radiusSq > 0 ? cursorDistSq <= radiusSq : true;
-    },
-    [map]
-  );
-
-  // Check if a screen point is outside the visible globe disc (globe projection only)
-  const isOutsideGlobe = useCallback(
-    (pt: { x: number; y: number }): boolean => {
-      return !isPointOnGlobeOrMap(pt);
-    },
-    [isPointOnGlobeOrMap]
-  );
-
-  const isDraggingRef = useRef(false);
-
-  // Handle country hover + overlay feature tooltips
   const handleMouseMove = useCallback(
-    (e: any) => {
-      if (!map || isDraggingRef.current) return;
-      if (!map.getLayer("fill-political")) return;
-
-      if (isOutsideGlobe(e.point)) {
-        if (hoveredFeatureIdRef.current !== null && map.getSource("source-political")) {
-          map.setFeatureState(
-            { source: "source-political", id: hoveredFeatureIdRef.current },
-            { hover: false }
-          );
-        }
-        hoveredFeatureIdRef.current = null;
-        onCountryHoverRef.current?.(null);
-
-        if (tooltipPopupRef.current?.isOpen()) tooltipPopupRef.current.remove();
-        hoveredOverlayIdRef.current = null;
-
-        if (
-          hoveredSubdivisionIdRef.current !== null &&
-          map.getSource("source-overlay-subdivisions")
-        ) {
-          map.setFeatureState(
-            { source: "source-overlay-subdivisions", id: hoveredSubdivisionIdRef.current },
-            { hover: false }
-          );
-          hoveredSubdivisionIdRef.current = null;
-        }
-        if (!isMeasuring) map.getCanvas().style.cursor = "default";
-        return;
-      }
-
-      const overlayLayerIds = [
-        "overlay-cities-circle",
-        "capitals-star",
-        "overlay-pois-circle",
-        "overlay-subdivisions-fill",
-        "story-pins-icon",
-      ].filter((id) => map.getLayer(id));
-
-      let overlayHit: any = null;
-      if (overlayLayerIds.length > 0) {
-        const hits = map.queryRenderedFeatures(e.point, { layers: overlayLayerIds });
-        if (hits.length > 0) overlayHit = hits[0];
-      }
-
-      if (overlayHit) {
-        const props = overlayHit.properties ?? {};
-        const name = String(props.name ?? props.title ?? "");
-        const layerId = overlayHit.layer?.id ?? "";
-        const featureKey = `${layerId}:${props.id ?? name}`;
-
-        const isSubHover = layerId === "overlay-subdivisions-fill";
-        const subId = isSubHover ? (overlayHit.id as number) : null;
-        if (hoveredSubdivisionIdRef.current !== subId) {
-          if (
-            hoveredSubdivisionIdRef.current !== null &&
-            map.getSource("source-overlay-subdivisions")
-          ) {
-            map.setFeatureState(
-              { source: "source-overlay-subdivisions", id: hoveredSubdivisionIdRef.current },
-              { hover: false }
-            );
-          }
-          if (subId !== null && map.getSource("source-overlay-subdivisions")) {
-            map.setFeatureState(
-              { source: "source-overlay-subdivisions", id: subId },
-              { hover: true }
-            );
-          }
-          hoveredSubdivisionIdRef.current = subId;
-        }
-
-        if (featureKey !== hoveredOverlayIdRef.current && name) {
-          hoveredOverlayIdRef.current = featureKey;
-
-          let typeHint = "";
-          if (layerId === "capitals-star") typeHint = "Capital";
-          else if (layerId === "overlay-cities-circle")
-            typeHint = props.cityType ? String(props.cityType) : "City";
-          else if (layerId === "overlay-pois-circle")
-            typeHint = props.category ? String(props.category) : "POI";
-          else if (layerId === "overlay-subdivisions-fill")
-            typeHint = props.type ? String(props.type) : "Region";
-          else if (layerId === "story-pins-icon") typeHint = "Story Pin";
-
-          const safeName = escHtml(name);
-          const safeType = escHtml(typeHint);
-          const popContent = safeType
-            ? `<strong>${safeName}</strong><span class="ixmap-tt-type">${safeType}</span>`
-            : `<strong>${safeName}</strong>`;
-
-          const popup = tooltipPopupRef.current;
-          if (popup) {
-            popup.setLngLat(e.lngLat).setHTML(popContent).addTo(map);
-          }
-        } else if (hoveredOverlayIdRef.current === featureKey) {
-          tooltipPopupRef.current?.setLngLat(e.lngLat);
-        }
-
-        if (!isMeasuring) map.getCanvas().style.cursor = "pointer";
-      } else {
-        if (hoveredOverlayIdRef.current) {
-          hoveredOverlayIdRef.current = null;
-          tooltipPopupRef.current?.remove();
-        }
-        if (
-          hoveredSubdivisionIdRef.current !== null &&
-          map.getSource("source-overlay-subdivisions")
-        ) {
-          map.setFeatureState(
-            { source: "source-overlay-subdivisions", id: hoveredSubdivisionIdRef.current },
-            { hover: false }
-          );
-          hoveredSubdivisionIdRef.current = null;
-        }
-      }
-
-      const features = map.queryRenderedFeatures(e.point, {
-        layers: ["fill-political"],
-      });
-
-      const nextFeature = features[0] || null;
-      const nextFeatureId = nextFeature?.id != null ? (nextFeature.id as number) : null;
-
-      if (hoveredFeatureIdRef.current !== nextFeatureId) {
-        if (hoveredFeatureIdRef.current !== null && map.getSource("source-political")) {
-          try {
-            map.setFeatureState(
-              { source: "source-political", id: hoveredFeatureIdRef.current },
-              { hover: false }
-            );
-          } catch (err) {
-            console.debug("[useWorldMapInteractions] Reset hover state error:", err);
-          }
-        }
-
-        hoveredFeatureIdRef.current = nextFeatureId;
-
-        if (nextFeatureId !== null) {
-          if (map.getSource("source-political")) {
-            try {
-              map.setFeatureState(
-                { source: "source-political", id: nextFeatureId },
-                { hover: true }
-              );
-            } catch (err) {
-              console.debug("[useWorldMapInteractions] Set hover state error:", err);
-            }
-          }
-          if (!isMeasuring && !overlayHit) map.getCanvas().style.cursor = "pointer";
-
-          const hoveredId =
-            (nextFeature.properties?._countryId as string) ||
-            (nextFeature.properties?._id as string) ||
-            String(nextFeatureId);
-          transientMapStore.setHoveredFeatureId(hoveredId);
-          if (e.lngLat) {
-            transientMapStore.setCursorCoords([e.lngLat.lng, e.lngLat.lat]);
-          }
-
-          onCountryHoverRef.current?.({
-            featureId: nextFeature.properties?._id || "",
-            displayName: nextFeature.properties?._displayName || "Unknown",
-            fillColor: nextFeature.properties?._fillColor || "#e8e5da",
-            centroidLng: nextFeature.properties?._centroidLng || 0,
-            centroidLat: nextFeature.properties?._centroidLat || 0,
-            countryId: (nextFeature.properties?._countryId as string) || null,
-          });
-        } else {
-          transientMapStore.setHoveredFeatureId(null);
-          transientMapStore.setCursorCoords(null);
-          onCountryHoverRef.current?.(null);
-          if (!isMeasuring && !overlayHit) map.getCanvas().style.cursor = "";
-        }
-      }
+    (e: MapMouseEvent) => {
+      if (!map || isDraggingRef.current || !map.getLayer("fill-political")) return;
+      updateHover(
+        {
+          map,
+          hover: hoverRef.current,
+          popup: tooltipPopupRef.current,
+          isMeasuring,
+          onCountryHover: handlersRef.current.onCountryHover,
+        },
+        e
+      );
     },
-    [map, isOutsideGlobe, isMeasuring, tooltipPopupRef]
+    [map, isMeasuring, tooltipPopupRef]
   );
 
-  // Handle country + feature click
   const handleClick = useCallback(
-    (e: any) => {
+    (e: MapMouseEvent) => {
       if (!map) return;
+      const { onMapClick, onFeatureClick, onCountryClick } = handlersRef.current;
 
-      onMapClickRef.current?.(e.lngLat.lng, e.lngLat.lat);
+      onMapClick?.(e.lngLat.lng, e.lngLat.lat);
       tooltipPopupRef.current?.remove();
-      hoveredOverlayIdRef.current = null;
+      hoverRef.current.overlayKey = null;
 
-      if (isOutsideGlobe(e.point)) return;
+      if (!isPointOnGlobeOrMap(map, e.point)) return;
 
-      const overlayLayerIds = [
-        "overlay-cities-circle",
-        "capitals-star",
-        "overlay-pois-circle",
-        "story-pins-icon",
-      ].filter((id) => map.getLayer(id));
-
-      if (overlayLayerIds.length > 0) {
-        const overlayHits = map.queryRenderedFeatures(e.point, {
-          layers: overlayLayerIds,
-        });
-
-        if (overlayHits.length > 0) {
-          const hit = overlayHits[0];
-          const props = hit.properties ?? {};
-          const coords = (hit.geometry as any).coordinates as [number, number];
-          const layerId = hit.layer?.id;
-
-          const featureType =
-            layerId === "story-pins-icon"
-              ? "storyPin"
-              : layerId === "overlay-pois-circle"
-                ? "poi"
-                : layerId === "capitals-star"
-                  ? "capital"
-                  : "city";
-
-          const selected: SelectedFeature = {
-            id: String(props.id ?? ""),
-            featureType,
-            name: String(featureType === "storyPin" ? (props.title ?? "") : (props.name ?? "")),
-            countryId: String(props.countryId ?? ""),
-            countryName: String(props.countryName ?? ""),
-            countrySlug: props.countrySlug ? String(props.countrySlug) : null,
-            coordinates: coords,
-            ...(featureType !== "poi" &&
-              featureType !== "storyPin" && {
-                cityType: props.cityType ? String(props.cityType) : undefined,
-                population: props.population != null ? Number(props.population) : null,
-                isCapital: featureType === "capital" || !!props.isCapital,
-              }),
-            ...(featureType === "poi" && {
-              category: props.category ? String(props.category) : undefined,
-              icon: props.icon ? String(props.icon) : null,
-              description: props.description ? String(props.description) : null,
-            }),
-            ...(featureType === "storyPin" && {
-              category: props.category ? String(props.category) : undefined,
-              ixTimeYear: props.ixTimeYear != null ? Number(props.ixTimeYear) : null,
-              eraLabel: props.eraLabel ? String(props.eraLabel) : null,
-            }),
-            wikiPageTitle: props.wikiPageTitle ? String(props.wikiPageTitle) : null,
-          };
-
-          onFeatureClickRef.current?.(selected);
-          return;
-        }
-      }
-
-      onFeatureClickRef.current?.(null);
-
-      if (!map.getLayer("fill-political")) return;
-      const features = map.queryRenderedFeatures(e.point, {
-        layers: ["fill-political"],
-      });
-
-      if (features.length > 0) {
-        const feature = features[0];
-        const country: SelectedCountry = {
-          featureId: feature.properties?._id || "",
-          displayName: feature.properties?._displayName || "Unknown",
-          fillColor: feature.properties?._fillColor || "#e8e5da",
-          centroidLng: feature.properties?._centroidLng || 0,
-          centroidLat: feature.properties?._centroidLat || 0,
-          countryId: (feature.properties?._countryId as string) || null,
-        };
-
-        onCountryClickRef.current?.(country);
-      } else {
-        onCountryClickRef.current?.(null);
-      }
+      const feature = pickOverlayFeature(map, e.point);
+      onFeatureClick?.(feature);
+      if (!feature && map.getLayer("fill-political")) onCountryClick?.(pickCountry(map, e.point));
     },
-    [map, isOutsideGlobe, tooltipPopupRef]
+    [map, tooltipPopupRef]
   );
 
-  // Bind mouse move, drag, clicks, and capture interceptors to constrain controls to the globe surface
+  // Hover, click, drag and the off-globe event guards
   useEffect(() => {
     if (!map || !isLoaded) return;
 
-    const canvasContainer = map.getCanvasContainer();
     const canvas = map.getCanvas();
-    if (!canvasContainer || !canvas) return;
+    if (!map.getCanvasContainer() || !canvas) return;
 
     const handleDragStart = () => {
       isDraggingRef.current = true;
       canvas.style.cursor = "grabbing";
     };
-
     const handleDragEnd = () => {
       isDraggingRef.current = false;
-      if (!isMeasuring) {
-        canvas.style.cursor = "grab";
-      }
+      if (!isMeasuring) canvas.style.cursor = "grab";
     };
 
     // Hit-testing (two queryRenderedFeatures calls) is the costliest part of hover, and
     // mousemove can fire several times per frame on high-rate pointers. Coalesce to one
     // hit-test per animation frame using the latest event.
-    let pendingMove: any = null;
-    let moveFrame = 0;
-    const flushMouseMove = () => {
-      moveFrame = 0;
-      const ev = pendingMove;
-      pendingMove = null;
-      if (ev) handleMouseMove(ev);
-    };
-    const scheduleMouseMove = (e: any) => {
-      pendingMove = e;
-      if (!moveFrame) moveFrame = requestAnimationFrame(flushMouseMove);
+    const moves = coalesceToFrame(handleMouseMove);
+    const handleMouseLeave = () => {
+      moves.cancel();
+      clearAllHover(
+        map,
+        hoverRef.current,
+        tooltipPopupRef.current,
+        handlersRef.current.onCountryHover
+      );
+      canvas.style.cursor = "default";
     };
 
-    map.on("mousemove", scheduleMouseMove);
+    map.on("mousemove", moves.schedule);
     map.on("click", handleClick);
     map.on("dragstart", handleDragStart);
     map.on("dragend", handleDragEnd);
-
-    // Coordinate conversion from client viewport to canvas
-    const getCanvasPoint = (clientX: number, clientY: number) => {
-      const rect = canvas.getBoundingClientRect();
-      return { x: clientX - rect.left, y: clientY - rect.top };
-    };
-
-    // Capture & stop mouse/pointer events that originate outside the globe disc
-    const stopOffGlobe = (e: Event) => {
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-    };
-    // Mouse/pointer/wheel/dblclick/contextmenu that start off the globe disc never reach MapLibre.
-    const handleCapturePointerLike = (e: MouseEvent) => {
-      if (e.target !== canvas && e.target !== canvasContainer) return;
-      if (!isPointOnGlobeOrMap(getCanvasPoint(e.clientX, e.clientY))) stopOffGlobe(e);
-    };
-    // Touches pass through as long as any finger is on the globe (pinch from the edge).
-    const handleCaptureTouchStart = (e: TouchEvent) => {
-      if (e.target !== canvas && e.target !== canvasContainer) return;
-      const touches = Array.from(e.touches || []);
-      const anyTouchOnGlobe = touches.some((t) =>
-        isPointOnGlobeOrMap(getCanvasPoint(t.clientX, t.clientY))
-      );
-      if (!anyTouchOnGlobe) stopOffGlobe(e);
-    };
-
-    const captureOpts: AddEventListenerOptions = { capture: true, passive: false };
-    const POINTER_LIKE_EVENTS = ["mousedown", "pointerdown", "dblclick", "wheel", "contextmenu"];
-    for (const type of POINTER_LIKE_EVENTS) {
-      canvasContainer.addEventListener(
-        type,
-        handleCapturePointerLike as EventListener,
-        captureOpts
-      );
-    }
-    canvasContainer.addEventListener("touchstart", handleCaptureTouchStart, captureOpts);
-
-    const handleMouseLeave = () => {
-      if (moveFrame) cancelAnimationFrame(moveFrame);
-      moveFrame = 0;
-      pendingMove = null;
-      tooltipPopupRef.current?.remove();
-      hoveredOverlayIdRef.current = null;
-      if (
-        hoveredSubdivisionIdRef.current !== null &&
-        map.getSource("source-overlay-subdivisions")
-      ) {
-        map.setFeatureState(
-          { source: "source-overlay-subdivisions", id: hoveredSubdivisionIdRef.current },
-          { hover: false }
-        );
-        hoveredSubdivisionIdRef.current = null;
-      }
-      if (hoveredFeatureIdRef.current !== null && map.getSource("source-political")) {
-        map.setFeatureState(
-          { source: "source-political", id: hoveredFeatureIdRef.current },
-          { hover: false }
-        );
-      }
-      if (hoveredFeatureIdRef.current !== null) onCountryHoverRef.current?.(null);
-      hoveredFeatureIdRef.current = null;
-      canvas.style.cursor = "default";
-    };
     canvas.addEventListener("mouseleave", handleMouseLeave);
+    const detachGuards = attachGlobeGuards(map);
 
     return () => {
-      if (moveFrame) cancelAnimationFrame(moveFrame);
-      pendingMove = null;
-      map.off("mousemove", scheduleMouseMove);
+      moves.cancel();
+      map.off("mousemove", moves.schedule);
       map.off("click", handleClick);
       map.off("dragstart", handleDragStart);
       map.off("dragend", handleDragEnd);
-
-      for (const type of POINTER_LIKE_EVENTS) {
-        canvasContainer.removeEventListener(
-          type,
-          handleCapturePointerLike as EventListener,
-          captureOpts
-        );
-      }
-      canvasContainer.removeEventListener("touchstart", handleCaptureTouchStart, captureOpts);
-
       canvas.removeEventListener("mouseleave", handleMouseLeave);
+      detachGuards();
     };
-  }, [
-    map,
-    isLoaded,
-    handleMouseMove,
-    handleClick,
-    isPointOnGlobeOrMap,
-    isMeasuring,
-    tooltipPopupRef,
-  ]);
+  }, [map, isLoaded, handleMouseMove, handleClick, isMeasuring, tooltipPopupRef]);
 
-  // Bind move/zoom end labels distance fade
+  // Every zoom also ends with a `moveend`, so one listener recomputes the label fade once per
+  // gesture (listening to `zoomend` as well pushed the label source twice per zoom).
   useEffect(() => {
     if (!map || !isLoaded) return;
 
-    // Every zoom also ends with a `moveend`, so one listener recomputes the label fade once
-    // per gesture (listening to `zoomend` as well pushed the label source twice per zoom).
+    const handleZoomChange = () => onZoomChange?.(Math.round(map.getZoom() * 10) / 10);
     map.on("moveend", updateDistanceFade);
-
-    const handleZoomChange = () => {
-      onZoomChange?.(Math.round(map.getZoom() * 10) / 10);
-    };
     map.on("zoomend", handleZoomChange);
-
     return () => {
       map.off("moveend", updateDistanceFade);
       map.off("zoomend", handleZoomChange);
     };
   }, [map, isLoaded, onZoomChange, updateDistanceFade]);
 
-  // Geography filtering effects
   useEffect(() => {
-    if (!map || !isLoaded) return;
-
-    const fillLayerId = "fill-political";
-    if (!map.getLayer(fillLayerId)) return;
-
-    const politicalLayer = layers.find((l) => l.type === "political");
-    const isVisible = politicalLayer?.visible !== false;
-
-    if (geographyFilter && isVisible) {
-      const propKey = geographyFilter.type === "continent" ? "_continent" : "_region";
-      map.setPaintProperty(fillLayerId, "fill-opacity", [
-        "case",
-        ["==", ["get", propKey], geographyFilter.value],
-        0.6,
-        0.08,
-      ]);
-      if (map.getLayer("country-name-labels")) {
-        map.setPaintProperty("country-name-labels", "text-opacity", [
-          "case",
-          ["==", ["get", propKey], geographyFilter.value],
-          COUNTRY_LABEL_OPACITY,
-          0.1,
-        ] as any);
-      }
-    } else if (isVisible) {
-      map.setPaintProperty(fillLayerId, "fill-opacity", [
-        "case",
-        ["boolean", ["feature-state", "hover"], false],
-        0.6,
-        0.12, // match configuration POLITICAL layer opacity
-      ]);
-      if (map.getLayer("country-name-labels")) {
-        map.setPaintProperty("country-name-labels", "text-opacity", COUNTRY_LABEL_OPACITY as any);
-      }
-    }
+    if (!map || !isLoaded || !map.getLayer("fill-political")) return;
+    if (layers.find((l) => l.type === "political")?.visible === false) return;
+    applyGeographyFilter(map, geographyFilter);
   }, [map, isLoaded, geographyFilter, layers]);
 
-  // Highlight selected country
   useEffect(() => {
     if (!map || !isLoaded) return;
-
-    if (!map.getLayer("selected-country-outline")) {
-      if (map.getSource("source-political")) {
-        map.addLayer({
-          id: "selected-country-fill",
-          type: "fill",
-          source: "source-political",
-          paint: {
-            "fill-color": INTERACTION_COLORS.selected,
-            "fill-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 0.4, 0],
-          },
-        });
-        map.addLayer({
-          id: "selected-country-outline",
-          type: "line",
-          source: "source-political",
-          paint: {
-            "line-color": INTERACTION_COLORS.selectedStroke,
-            "line-width": ["case", ["boolean", ["feature-state", "selected"], false], 3, 0],
-          },
-        });
-      }
-    }
-
-    const political = layers.find((l) => l.type === "political");
-    if (political && map.getSource("source-political")) {
-      const idx = selectedCountryId
-        ? political.data.features.findIndex(
-            (f: any) =>
-              (f.properties?._id || f.properties?.id) === selectedCountryId ||
-              (f.properties?._countryId || f.properties?.countryId) === selectedCountryId
-          )
-        : -1;
-
-      // Clear only the previously selected feature (one call) instead of resetting state on
-      // every country polygon each time `layers` changes. When the political data object
-      // changed, generated ids may have shifted, so clear the source's feature state instead
-      // (MapLibre only removes a single key when an id is given).
-      const prev = selectedIdxRef.current;
-      if (prev.data !== political.data) {
-        try {
-          map.removeFeatureState({ source: "source-political" });
-        } catch (err) {
-          console.debug("[useWorldMapInteractions] Reset selected state error:", err);
-        }
-      } else if (prev.idx >= 0 && prev.idx !== idx) {
-        map.setFeatureState({ source: "source-political", id: prev.idx }, { selected: false });
-      }
-
-      if (idx >= 0) {
-        map.setFeatureState({ source: "source-political", id: idx }, { selected: true });
-      }
-      selectedIdxRef.current = { data: political.data, idx };
-    }
+    syncSelectedCountry(map, layers, selectedCountryId, selectedIdxRef);
   }, [map, selectedCountryId, isLoaded, layers]);
 
-  return {
-    updateDistanceFade,
-  };
+  return { updateDistanceFade };
 }

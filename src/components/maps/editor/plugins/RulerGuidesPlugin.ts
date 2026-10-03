@@ -1,39 +1,27 @@
 import { Ruler } from "iconoir-react";
-import type { MapEditorPlugin, MapEditorContextType } from "./types";
-import { isKeyboardInputTarget } from "../hooks/drag-utils";
+import type { MapEditorPlugin, MapEditorContextType, ToolbarItem } from "./types";
+import { toolShortcuts } from "./shortcuts";
+
+const toolbarItems: ToolbarItem[] = [
+  {
+    id: "tool-ruler",
+    mode: "ruler",
+    icon: Ruler,
+    label: "Ruler (Measure)",
+    shortcut: "U",
+    group: 4,
+    order: 1,
+  },
+];
 
 export const RulerGuidesPlugin: MapEditorPlugin = {
   id: "ruler-guides",
   name: "Rulers & Snapping Guides",
-  global: true, // Keydown listens globally to U key
+  global: true,
   modes: ["ruler"],
 
-  toolbarItems: [
-    {
-      id: "tool-ruler",
-      mode: "ruler",
-      icon: Ruler,
-      label: "Ruler (Measure)",
-      shortcut: "U",
-      group: 4,
-      order: 1,
-    },
-  ],
-
-  onKeyDown(e: KeyboardEvent, context: MapEditorContextType) {
-    if (isKeyboardInputTarget(e.target) || isKeyboardInputTarget(document.activeElement)) {
-      return false;
-    }
-    if (e.ctrlKey || e.metaKey || e.altKey) {
-      return false;
-    }
-
-    if (e.key.toLowerCase() === "u") {
-      context.onModeChange("ruler");
-      return true;
-    }
-    return false;
-  },
+  toolbarItems,
+  onKeyDown: toolShortcuts(toolbarItems),
 
   snapPoint(coords: [number, number], context: MapEditorContextType): [number, number] {
     const map = context.map;

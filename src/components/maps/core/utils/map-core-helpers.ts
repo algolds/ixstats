@@ -1,4 +1,7 @@
-export const COUNTRY_LABEL_OPACITY: unknown = ["coalesce", ["get", "_distFade"], 0];
+import type { Feature } from "geojson";
+import type { ExpressionSpecification, Map as MapLibreMap } from "maplibre-gl";
+
+export const COUNTRY_LABEL_OPACITY: ExpressionSpecification = ["coalesce", ["get", "_distFade"], 0];
 
 /** Escape HTML entities for safe insertion into popup innerHTML */
 export function escHtml(s: string): string {
@@ -69,4 +72,26 @@ export function setFilteredSourceData(
   if (sameFeatureList(lastRef.current, features)) return;
   lastRef.current = features;
   source.setData({ ...base, type: "FeatureCollection", features });
+}
+
+/** Whether a feature belongs to the focused country (matched by id, slug or name). */
+export function matchesCountry(f: Feature, countryKey: string): boolean {
+  const p = f.properties;
+  if (!p) return false;
+  return (
+    p.countryId === countryKey ||
+    p.countrySlug === countryKey ||
+    (typeof p.countryName === "string" && p.countryName.toLowerCase() === countryKey.toLowerCase())
+  );
+}
+
+/** Show/hide each of `layerIds` that exists on the map. */
+export function setLayersVisible(
+  map: MapLibreMap,
+  layerIds: string[],
+  visible: boolean | undefined
+) {
+  for (const id of layerIds) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
+  }
 }

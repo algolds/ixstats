@@ -1,4 +1,3 @@
-// src/app/api/wiki/random-articles/route.ts
 // API endpoint to fetch random wiki articles for batch lore card generation.
 // Uses lightweight batched metadata (one request per <=50 titles) instead of running a
 // full generateCard per candidate, which previously tripped the wiki's rate limit.

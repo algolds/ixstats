@@ -1,18 +1,8 @@
-/**
- * P2P Trading Router
- *
- * Provides endpoints for peer-to-peer card trading:
- * - Create trade offers
- * - Accept/decline/counter trades
- * - View active trades
- * - View trade history
- * - Cancel pending trades
- */
-
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { TradeStatus } from "@prisma/client";
+import { FINISHED_TRADE_STATUSES, TRADE_PARTIES_INCLUDE } from "./_shared";
 
 export const tradingQueriesRouter = createTRPCRouter({
   /**
@@ -27,32 +17,7 @@ export const tradingQueriesRouter = createTRPCRouter({
         status: TradeStatus.PENDING,
         expiresAt: { gt: new Date() },
       },
-      include: {
-        initiator: {
-          select: {
-            id: true,
-            clerkUserId: true,
-            country: {
-              select: {
-                name: true,
-                flag: true,
-              },
-            },
-          },
-        },
-        recipient: {
-          select: {
-            id: true,
-            clerkUserId: true,
-            country: {
-              select: {
-                name: true,
-                flag: true,
-              },
-            },
-          },
-        },
-      },
+      include: TRADE_PARTIES_INCLUDE,
       orderBy: { createdAt: "desc" },
     });
 
@@ -72,62 +37,20 @@ export const tradingQueriesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const userId = ctx.user.id;
 
+      const where = {
+        OR: [{ initiatorId: userId }, { recipientId: userId }],
+        status: { in: FINISHED_TRADE_STATUSES },
+      };
+
       const trades = await ctx.db.tradeOffer.findMany({
-        where: {
-          OR: [{ initiatorId: userId }, { recipientId: userId }],
-          status: {
-            in: [
-              TradeStatus.ACCEPTED,
-              TradeStatus.REJECTED,
-              TradeStatus.CANCELLED,
-              TradeStatus.EXPIRED,
-            ],
-          },
-        },
-        include: {
-          initiator: {
-            select: {
-              id: true,
-              clerkUserId: true,
-              country: {
-                select: {
-                  name: true,
-                  flag: true,
-                },
-              },
-            },
-          },
-          recipient: {
-            select: {
-              id: true,
-              clerkUserId: true,
-              country: {
-                select: {
-                  name: true,
-                  flag: true,
-                },
-              },
-            },
-          },
-        },
+        where,
+        include: TRADE_PARTIES_INCLUDE,
         orderBy: { updatedAt: "desc" },
         take: input.limit,
         skip: input.offset,
       });
 
-      const total = await ctx.db.tradeOffer.count({
-        where: {
-          OR: [{ initiatorId: userId }, { recipientId: userId }],
-          status: {
-            in: [
-              TradeStatus.ACCEPTED,
-              TradeStatus.REJECTED,
-              TradeStatus.CANCELLED,
-              TradeStatus.EXPIRED,
-            ],
-          },
-        },
-      });
+      const total = await ctx.db.tradeOffer.count({ where });
 
       return {
         trades,
@@ -146,32 +69,7 @@ export const tradingQueriesRouter = createTRPCRouter({
 
       const trade = await ctx.db.tradeOffer.findUnique({
         where: { id: input.tradeId },
-        include: {
-          initiator: {
-            select: {
-              id: true,
-              clerkUserId: true,
-              country: {
-                select: {
-                  name: true,
-                  flag: true,
-                },
-              },
-            },
-          },
-          recipient: {
-            select: {
-              id: true,
-              clerkUserId: true,
-              country: {
-                select: {
-                  name: true,
-                  flag: true,
-                },
-              },
-            },
-          },
-        },
+        include: TRADE_PARTIES_INCLUDE,
       });
 
       if (!trade) {

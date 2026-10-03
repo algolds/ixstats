@@ -25,14 +25,14 @@ import {
   InfoCircle as Info,
 } from "iconoir-react";
 import { cn } from "~/lib/utils/cn";
-import { type TimeRange, type ChartType, TIME_RANGE_OPTIONS, CHART_TYPE_OPTIONS } from "./types";
+import {
+  type TimeRange,
+  type ChartType,
+  type MetricModalTab,
+  TIME_RANGE_OPTIONS,
+  CHART_TYPE_OPTIONS,
+} from "./types";
 import { type MetricThemeVariant, getThemeClasses } from "./MetricModalLayout";
-
-export interface MetricModalTab {
-  id: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-}
 
 interface BaseMetricDetailsModalProps {
   /** Modal open state */

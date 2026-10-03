@@ -23,19 +23,13 @@ import {
   type TransportSegmentInput,
   type VehicleTrip,
 } from "~/lib/maps/transport-vehicle-sim";
-import { distanceKm } from "~/lib/maps/geo-math";
-
-// ── Types ───────────────────────────────────────────────────────────
-
-interface TransportNodeInput {
-  id: string;
-  name?: string | null;
-  nodeType?: string;
-  coordinates: [number, number];
-  elevation?: number | null;
-  capacity?: number | null;
-  connectedCount?: number;
-}
+import {
+  buildFlightArcs,
+  buildHubPillars,
+  type FlightArcData,
+  type HubPillarData,
+  type TransportNodeInput,
+} from "./deck-transport-data";
 
 export interface DeckTransportOverlayProps {
   map: MapLibreMap | null;
@@ -50,30 +44,7 @@ export interface DeckTransportOverlayProps {
   onSelectSegment?: (segmentId: string) => void;
 }
 
-interface FlightArcData {
-  id: string;
-  source: [number, number];
-  target: [number, number];
-  height: number;
-  segmentId: string;
-}
-
-interface HubPillarData {
-  id: string;
-  name: string;
-  lng: number;
-  lat: number;
-  elevation: number;
-  nodeType: string;
-  isIntermodal?: boolean;
-}
-
-// ── Math Helpers ────────────────────────────────────────────────────
-
-const haversineDistKm = distanceKm;
-
-// ── Typed Control Adapter (MapLibre <-> MapboxOverlay) ───────────────
-
+// Typed adapter so MapboxOverlay can be added as a MapLibre control
 class DeckMapLibreAdapter implements MapLibreControl {
   private overlay: MapboxOverlay;
 
@@ -104,8 +75,6 @@ class DeckMapLibreAdapter implements MapLibreControl {
   }
 }
 
-// ── Component ───────────────────────────────────────────────────────
-
 export function DeckTransportOverlay({
   map,
   segments,
@@ -124,122 +93,20 @@ export function DeckTransportOverlay({
   const lastTickRef = useRef<number>(0);
   const isGlobeModeRef = useRef<boolean>(false);
 
-  // 1. Prepare flight arcs from air_corridors
-  const flightArcs = useMemo<FlightArcData[]>(() => {
-    if (!enableFlightArcs) return [];
-    const arcs: FlightArcData[] = [];
+  const flightArcs = useMemo(
+    () => (enableFlightArcs ? buildFlightArcs(segments) : []),
+    [segments, enableFlightArcs]
+  );
 
-    for (const seg of segments) {
-      if (seg.routeType !== "air_corridor") continue;
-      const coords = seg.geometry?.coordinates;
-      if (!coords || coords.length < 2) continue;
-
-      const source = coords[0];
-      const target = coords[coords.length - 1];
-      if (!source || !target) continue;
-
-      const dist = haversineDistKm(source, target);
-      // Parabolic altitude scales with geographic flight distance (capped at 120km)
-      const height = Math.min(dist * 120, 120000);
-
-      arcs.push({
-        id: `arc-${seg.id}`,
-        source,
-        target,
-        height,
-        segmentId: seg.id,
-      });
-    }
-
-    return arcs;
-  }, [segments, enableFlightArcs]);
-
-  // 2. Prepare simulated trips for TripsLayer
   const trips = useMemo<VehicleTrip[]>(() => {
     if (!enableGpuTrips || segments.length === 0) return [];
     return generateVehicleTrips(segments, 0.45, 120);
   }, [segments, enableGpuTrips]);
 
-  // 3. Prepare hub pillars from nodes or segment terminals with intermodal detection
-  const hubPillars = useMemo<HubPillarData[]>(() => {
-    if (!enableHubPillars) return [];
-
-    // Detect intermodal multi-family convergence at nodes
-    const intermodalNodeIds = new Set<string>();
-    if (nodes.length > 0 && segments.length > 0) {
-      const nodeModalTypes = new Map<string, Set<string>>();
-
-      for (const seg of segments) {
-        const coords = seg.geometry?.coordinates;
-        if (!coords || coords.length < 2) continue;
-        const p1 = coords[0]!;
-        const p2 = coords[coords.length - 1]!;
-
-        for (const n of nodes) {
-          const d1 = Math.hypot(n.coordinates[0] - p1[0], n.coordinates[1] - p1[1]);
-          const d2 = Math.hypot(n.coordinates[0] - p2[0], n.coordinates[1] - p2[1]);
-          if (d1 < 0.02 || d2 < 0.02) {
-            const set = nodeModalTypes.get(n.id) ?? new Set<string>();
-            set.add(seg.routeType);
-            nodeModalTypes.set(n.id, set);
-          }
-        }
-      }
-
-      for (const [nodeId, types] of nodeModalTypes.entries()) {
-        const families = new Set<string>();
-        for (const t of types) {
-          if (t.includes("rail")) families.add("rail");
-          else if (["shipping_lane", "canal", "ferry"].includes(t)) families.add("maritime");
-          else if (t === "air_corridor") families.add("air");
-          else if (["motorway", "highway", "trunk", "road", "secondary"].includes(t)) {
-            families.add("road");
-          }
-        }
-        if (families.size > 1) {
-          intermodalNodeIds.add(nodeId);
-        }
-      }
-    }
-
-    if (nodes.length > 0) {
-      return nodes.map((n) => {
-        const isIntermodal = intermodalNodeIds.has(n.id);
-        const baseElevation = n.capacity ?? (n.connectedCount ?? 3) * 1500;
-        return {
-          id: `hub-${n.id}`,
-          name: n.name ?? (isIntermodal ? "Intermodal Freight Terminal" : "Transport Hub"),
-          lng: n.coordinates[0],
-          lat: n.coordinates[1],
-          elevation: isIntermodal ? baseElevation * 1.4 : baseElevation,
-          nodeType: n.nodeType ?? "junction",
-          isIntermodal,
-        };
-      });
-    }
-
-    // Fallback: derive pillars at air corridor endpoints
-    const airportCoords = new Map<string, [number, number]>();
-    for (const arc of flightArcs) {
-      airportCoords.set(`${arc.source[0].toFixed(3)},${arc.source[1].toFixed(3)}`, arc.source);
-      airportCoords.set(`${arc.target[0].toFixed(3)},${arc.target[1].toFixed(3)}`, arc.target);
-    }
-
-    const derived: HubPillarData[] = [];
-    let idx = 0;
-    airportCoords.forEach(([lng, lat]) => {
-      derived.push({
-        id: `derived-hub-${idx++}`,
-        name: "Terminal Hub",
-        lng,
-        lat,
-        elevation: 8000,
-        nodeType: "airport",
-      });
-    });
-
-    return derived;
-  }, [nodes, segments, flightArcs, enableHubPillars]);
+  const hubPillars = useMemo(
+    () => (enableHubPillars ? buildHubPillars(nodes, segments, flightArcs) : []),
+    [nodes, segments, flightArcs, enableHubPillars]
+  );
 
   // 4. Layer builder (pure function)
   const buildDeckLayers = useCallback(
@@ -250,7 +117,6 @@ export function DeckTransportOverlay({
 
       const layers: Layer[] = [];
 
-      // ── ArcLayer: 3D Flight Corridors ──
       if (enableFlightArcs && flightArcs.length > 0) {
         layers.push(
           new ArcLayer<FlightArcData>({
@@ -270,7 +136,6 @@ export function DeckTransportOverlay({
         );
       }
 
-      // ── TripsLayer: GPU Vehicle Light Trails ──
       if (enableGpuTrips && trips.length > 0) {
         layers.push(
           new TripsLayer<VehicleTrip>({
@@ -289,7 +154,6 @@ export function DeckTransportOverlay({
         );
       }
 
-      // ── ColumnLayer: 3D Volumetric Hub Pillars ──
       if (enableHubPillars && hubPillars.length > 0) {
         layers.push(
           new ColumnLayer<HubPillarData>({

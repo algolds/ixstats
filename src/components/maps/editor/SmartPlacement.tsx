@@ -38,6 +38,13 @@ interface Suggestion {
   civCapImpact?: string;
 }
 
+const has = (text: string, ...words: string[]) => {
+  const lower = text.toLowerCase();
+  return words.some((w) => lower.includes(w));
+};
+
+const clampScore = (score: number) => Math.min(100, Math.max(5, score));
+
 function computeCivCapMetrics(elev: string, climate: string, isCoastal?: boolean) {
   let agriScore = 50;
   let tradeScore = 40;
@@ -49,28 +56,28 @@ function computeCivCapMetrics(elev: string, climate: string, isCoastal?: boolean
     waterScore += 20;
   }
 
-  if (elev.toLowerCase().includes("mountain") || elev.toLowerCase().includes("highland")) {
+  if (has(elev, "mountain", "highland")) {
     defenseScore += 45;
     agriScore -= 25;
     tradeScore -= 15;
-  } else if (elev.toLowerCase().includes("lowland") || elev.toLowerCase().includes("valley")) {
+  } else if (has(elev, "lowland", "valley")) {
     agriScore += 35;
     tradeScore += 20;
     waterScore += 25;
   }
 
-  if (climate.toLowerCase().includes("tropical") || climate.toLowerCase().includes("temperate")) {
+  if (has(climate, "tropical", "temperate")) {
     agriScore += 20;
-  } else if (climate.toLowerCase().includes("arid") || climate.toLowerCase().includes("desert")) {
+  } else if (has(climate, "arid", "desert")) {
     agriScore -= 35;
     waterScore -= 40;
   }
 
   return {
-    agriScore: Math.min(100, Math.max(5, agriScore)),
-    tradeScore: Math.min(100, Math.max(5, tradeScore)),
-    defenseScore: Math.min(100, Math.max(5, defenseScore)),
-    waterScore: Math.min(100, Math.max(5, waterScore)),
+    agriScore: clampScore(agriScore),
+    tradeScore: clampScore(tradeScore),
+    defenseScore: clampScore(defenseScore),
+    waterScore: clampScore(waterScore),
   };
 }
 
@@ -79,7 +86,6 @@ function generateSuggestions(props: SmartPlacementProps): Suggestion[] {
   const elev = props.terrainInfo?.elevation?.zoneName ?? "";
   const climate = props.terrainInfo?.climate?.climateName ?? "";
 
-  // Coastal suggestions
   if (props.isCoastal) {
     suggestions.push({
       icon: Anchor,
@@ -92,8 +98,7 @@ function generateSuggestions(props: SmartPlacementProps): Suggestion[] {
     });
   }
 
-  // Elevation-based
-  if (elev.toLowerCase().includes("highland") || elev.toLowerCase().includes("mountain")) {
+  if (has(elev, "highland", "mountain")) {
     suggestions.push({
       icon: Mountain,
       title: "Highland Bastion",
@@ -103,11 +108,7 @@ function generateSuggestions(props: SmartPlacementProps): Suggestion[] {
       color: "text-label-secondary",
       civCapImpact: "+45% Defensive Security",
     });
-  } else if (
-    elev.toLowerCase().includes("lowland") ||
-    elev.toLowerCase().includes("valley") ||
-    elev.toLowerCase().includes("coastal")
-  ) {
+  } else if (has(elev, "lowland", "valley", "coastal")) {
     suggestions.push({
       icon: Waves,
       title: "Fertile Floodplain Basin",
@@ -119,8 +120,7 @@ function generateSuggestions(props: SmartPlacementProps): Suggestion[] {
     });
   }
 
-  // Climate-based
-  if (climate.toLowerCase().includes("desert") || climate.toLowerCase().includes("arid")) {
+  if (has(climate, "desert", "arid")) {
     suggestions.push({
       icon: Landmark,
       title: "Caravan Oasis Stop",
@@ -130,7 +130,7 @@ function generateSuggestions(props: SmartPlacementProps): Suggestion[] {
       color: "text-yellow",
       civCapImpact: "+20% Trans-Arid Trade",
     });
-  } else if (climate.toLowerCase().includes("tropical")) {
+  } else if (has(climate, "tropical")) {
     suggestions.push({
       icon: TreePine,
       title: "Tropical Biodiversity Hub",
@@ -145,17 +145,23 @@ function generateSuggestions(props: SmartPlacementProps): Suggestion[] {
   return suggestions;
 }
 
+const METRIC_TILES = [
+  { key: "agriScore", label: "Agri yield", icon: Waves, iconClass: "text-green" },
+  { key: "tradeScore", label: "Trade flow", icon: Anchor, iconClass: "text-blue" },
+  { key: "defenseScore", label: "Defense", icon: Shield, iconClass: "text-label-secondary" },
+  { key: "waterScore", label: "Water table", icon: Droplets, iconClass: "text-cyan" },
+] as const;
+
 export function SmartPlacement(props: SmartPlacementProps) {
   if (!props.coordinates || !props.terrainInfo) return null;
 
-  const elev = props.terrainInfo?.elevation?.zoneName ?? "";
-  const climate = props.terrainInfo?.climate?.climateName ?? "";
+  const elev = props.terrainInfo.elevation?.zoneName ?? "";
+  const climate = props.terrainInfo.climate?.climateName ?? "";
   const suggestions = generateSuggestions(props);
   const metrics = computeCivCapMetrics(elev, climate, props.isCoastal);
 
   return (
     <Card className="space-y-2 p-2">
-      {/* CivCap Intelligence Header */}
       <div className="flex items-center justify-between">
         <Eyebrow className="flex items-center gap-2">
           <span>CivCap geographic intelligence</span>
@@ -165,35 +171,20 @@ export function SmartPlacement(props: SmartPlacementProps) {
         </span>
       </div>
 
-      {/* CivCap Rating Bars */}
       <div className="text-footnote grid grid-cols-2 gap-2">
-        <div className="bg-fill-3 rounded-control-sm flex items-center justify-between px-2 py-1">
-          <span className="text-label-secondary flex items-center gap-1">
-            <Waves className="text-green h-2.5 w-2.5" /> Agri yield
-          </span>
-          <span className="font-semibold tabular-nums">{metrics.agriScore}%</span>
-        </div>
-        <div className="bg-fill-3 rounded-control-sm flex items-center justify-between px-2 py-1">
-          <span className="text-label-secondary flex items-center gap-1">
-            <Anchor className="text-blue h-2.5 w-2.5" /> Trade flow
-          </span>
-          <span className="font-semibold tabular-nums">{metrics.tradeScore}%</span>
-        </div>
-        <div className="bg-fill-3 rounded-control-sm flex items-center justify-between px-2 py-1">
-          <span className="text-label-secondary flex items-center gap-1">
-            <Shield className="text-label-secondary h-2.5 w-2.5" /> Defense
-          </span>
-          <span className="font-semibold tabular-nums">{metrics.defenseScore}%</span>
-        </div>
-        <div className="bg-fill-3 rounded-control-sm flex items-center justify-between px-2 py-1">
-          <span className="text-label-secondary flex items-center gap-1">
-            <Droplets className="text-cyan h-2.5 w-2.5" /> Water table
-          </span>
-          <span className="font-semibold tabular-nums">{metrics.waterScore}%</span>
-        </div>
+        {METRIC_TILES.map(({ key, label, icon: Icon, iconClass }) => (
+          <div
+            key={key}
+            className="bg-fill-3 rounded-control-sm flex items-center justify-between px-2 py-1"
+          >
+            <span className="text-label-secondary flex items-center gap-1">
+              <Icon className={`${iconClass} h-2.5 w-2.5`} /> {label}
+            </span>
+            <span className="font-semibold tabular-nums">{metrics[key]}%</span>
+          </div>
+        ))}
       </div>
 
-      {/* Smart Suggestions */}
       {suggestions.length > 0 && (
         <div className="border-separator space-y-2 border-t pt-1">
           {suggestions.map((s, i) => {

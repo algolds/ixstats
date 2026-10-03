@@ -179,3 +179,21 @@ function extractCoords(geometry: import("geojson").Geometry): [number, number][]
   if ("coordinates" in geometry) walk(geometry.coordinates);
   return result;
 }
+
+/** Centroid stored as [lng, lat] or { coordinates: [lng, lat] } (GeoJSON Point); [0, 0] when absent. */
+export function centroidLngLat(raw: unknown): [number, number] {
+  const centroid = raw as [number, number] | { coordinates?: [number, number] } | null;
+  if (Array.isArray(centroid) && centroid.length >= 2) return [centroid[0], centroid[1]];
+  if (centroid && "coordinates" in centroid && Array.isArray(centroid.coordinates)) {
+    return [centroid.coordinates[0], centroid.coordinates[1]];
+  }
+  return [0, 0];
+}
+
+/** Percentile rank (0-1, ties broken by input order) per id so colours distribute evenly. */
+export function percentileRanks(items: Array<{ id: string; value: number }>) {
+  const sorted = [...items].sort((a, b) => a.value - b.value);
+  return new Map(
+    sorted.map(({ id }, i) => [id, sorted.length > 1 ? i / (sorted.length - 1) : 0.5])
+  );
+}

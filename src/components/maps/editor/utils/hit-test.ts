@@ -1,17 +1,7 @@
 /**
- * Deterministic distance-based hit-testing for the map editor.
- *
- * Replaces the previous fixed ±6px bbox + "points-first" stable sort with a
- * predictable, Photoshop-like model:
- *
- *  1. Exact-point query first: whatever is actually rendered under the cursor
- *     wins (a point dot beats a polygon fill; a polygon beats nothing).
- *  2. If nothing is under the cursor, fall back to the nearest point within a
- *     per-layer tolerance (grab-assist for small dots).
- *
- * Points render 4–7px, so an exact-point query already covers "aimed at the
- * dot"; the tolerance fallback only kicks in over empty space, which prevents
- * accidental point selection when clicking a region.
+ * Deterministic hit-testing for the map editor: whatever is rendered under the cursor wins
+ * (a point dot beats a polygon fill); only over empty space does the nearest point within a
+ * per-layer tolerance get picked, so clicking a region never grabs a nearby point by accident.
  */
 
 import type { Map as MapLibreMap, PointLike, MapGeoJSONFeature } from "maplibre-gl";
@@ -118,111 +108,80 @@ function makeBbox(point: { x: number; y: number }, tol: number): [PointLike, Poi
   ];
 }
 
+const compareHits = (a: HitResult, b: HitResult) =>
+  a.distance - b.distance || (POINT_PRIORITY[a.layerId] ?? 99) - (POINT_PRIORITY[b.layerId] ?? 99);
+
+const isPointOrLabel = (hit: HitResult) => hit.kind === "point" || hit.kind === "label";
+
 export function hitTestFeatures(
   map: MapLibreMap,
   point: PointLike,
   opts: HitTestOptions = {}
 ): HitTestResult {
-  const pointTolerance = opts.pointTolerance ?? 8;
-  const labelTolerance = opts.labelTolerance ?? 6;
-  const polygonTolerance = opts.polygonTolerance ?? 2;
-  const gapTolerance = opts.gapTolerance ?? 2;
+  const {
+    pointTolerance = 8,
+    labelTolerance = 6,
+    polygonTolerance = 2,
+    gapTolerance = 2,
+    excludeLayers = [],
+  } = opts;
 
   const restrict = opts.layers ? new Set(opts.layers) : null;
   const include = (id: string) => !restrict || restrict.has(id);
+  const selectable = (id: string) => !excludeLayers.includes(id);
 
   const pointLayers = POINT_LAYERS.filter(include);
   const labelLayers = LABEL_LAYERS.filter(include);
-  const polyLayers = POLYGON_LAYERS.filter(include);
-  const gapLayers = GAP_LAYERS.filter(include);
-  const allLayers = [...pointLayers, ...labelLayers, ...polyLayers, ...gapLayers];
+  const allLayers = [
+    ...pointLayers,
+    ...labelLayers,
+    ...POLYGON_LAYERS.filter(include),
+    ...GAP_LAYERS.filter(include),
+  ];
   if (allLayers.length === 0) return { hit: null, locked: false };
 
   const p = Array.isArray(point) ? { x: point[0], y: point[1] } : point;
 
-  // ── Exact-point query (what is rendered under the cursor) ──
-  // Small bbox tolerance for polygon/gap layers so a near-edge cursor still
-  // resolves the fill; point/label layers query the exact pixel and rely on
-  // Grab-assist for near misses.
+  const toHit = (feature: MapGeoJSONFeature, layerId: string, kind: HitLayerKind): HitResult => ({
+    layerId,
+    featureId: feature.properties?.id as string | undefined,
+    kind,
+    distance: kind === "point" || kind === "label" ? pixelDistance(map, p, feature) : 0,
+    feature,
+  });
+
+  // Exact query: what is rendered under the cursor. Polygon/gap layers get a small bbox so a
+  // near-edge cursor still resolves the fill; points and labels rely on grab-assist below.
   const polyQuery =
     polygonTolerance > 0 || gapTolerance > 0
       ? makeBbox(p, Math.max(polygonTolerance, gapTolerance))
       : point;
-  const exactHits = map.queryRenderedFeatures(polyQuery, { layers: allLayers });
+  const exactHits = map
+    .queryRenderedFeatures(polyQuery, { layers: allLayers })
+    .map((f) => toHit(f, f.layer.id, layerKind(f.layer.id)));
+  const locked = exactHits.some((h) => !selectable(h.layerId));
 
-  const exactPoints: HitResult[] = [];
-  const exactPolys: HitResult[] = [];
-  let lockedHit: HitResult | null = null;
-
-  for (const feature of exactHits) {
-    const layerId = feature.layer.id;
-    const kind = layerKind(layerId);
-    const result: HitResult = {
-      layerId,
-      featureId: feature.properties?.id as string | undefined,
-      kind,
-      distance: kind === "point" || kind === "label" ? pixelDistance(map, p, feature) : 0,
-      feature,
-    };
-    if (kind === "point" || kind === "label") exactPoints.push(result);
-    else exactPolys.push(result);
-
-    if (opts.excludeLayers?.includes(layerId) && !lockedHit) {
-      lockedHit = result;
-    }
-  }
-
-  exactPoints.sort((a, b) => {
-    if (a.distance !== b.distance) return a.distance - b.distance;
-    return (POINT_PRIORITY[a.layerId] ?? 99) - (POINT_PRIORITY[b.layerId] ?? 99);
-  });
-
-  const bestExactPoint = exactPoints.find((h) => !opts.excludeLayers?.includes(h.layerId));
-  if (bestExactPoint) {
-    return { hit: bestExactPoint, locked: !!lockedHit };
-  }
-
+  const exactPoints = exactHits.filter(isPointOrLabel).sort(compareHits);
   // Thin lines win over the region fill they cross (render order would put the fill first).
-  exactPolys.sort((a, b) => POLYGON_LAYERS.indexOf(a.layerId) - POLYGON_LAYERS.indexOf(b.layerId));
-  const bestExactPoly = exactPolys.find((h) => !opts.excludeLayers?.includes(h.layerId));
-  if (bestExactPoly) {
-    return { hit: bestExactPoly, locked: !!lockedHit };
-  }
+  const exactPolys = exactHits
+    .filter((h) => !isPointOrLabel(h))
+    .sort((a, b) => POLYGON_LAYERS.indexOf(a.layerId) - POLYGON_LAYERS.indexOf(b.layerId));
+  const exact = [...exactPoints, ...exactPolys].find((h) => selectable(h.layerId));
+  if (exact) return { hit: exact, locked };
 
-  // ── Grab-assist — nearest point within tolerance (empty space only) ──
-  const grabLayers = pointLayers.filter((id) => !opts.excludeLayers?.includes(id));
-  const grabHits: HitResult[] = [];
-  for (const layerId of grabLayers) {
-    const tol = pointLayers.includes(layerId) ? pointTolerance : labelTolerance;
-    const hits = map.queryRenderedFeatures(makeBbox(p, tol), { layers: [layerId] });
-    for (const feature of hits) {
-      grabHits.push({
-        layerId,
-        featureId: feature.properties?.id as string | undefined,
-        kind: "point",
-        distance: pixelDistance(map, p, feature),
-        feature,
-      });
-    }
-  }
-  for (const layerId of labelLayers.filter((id) => !opts.excludeLayers?.includes(id))) {
-    const hits = map.queryRenderedFeatures(makeBbox(p, labelTolerance), { layers: [layerId] });
-    for (const feature of hits) {
-      grabHits.push({
-        layerId,
-        featureId: feature.properties?.id as string | undefined,
-        kind: "label",
-        distance: pixelDistance(map, p, feature),
-        feature,
-      });
-    }
-  }
+  // Grab-assist: nearest point within tolerance (empty space only).
+  const grabHits = (layerIds: string[], kind: HitLayerKind, tolerance: number) =>
+    layerIds
+      .filter(selectable)
+      .flatMap((layerId) =>
+        map
+          .queryRenderedFeatures(makeBbox(p, tolerance), { layers: [layerId] })
+          .map((f) => toHit(f, layerId, kind))
+      );
+  const best = [
+    ...grabHits(pointLayers, "point", pointTolerance),
+    ...grabHits(labelLayers, "label", labelTolerance),
+  ].sort(compareHits)[0];
 
-  grabHits.sort((a, b) => {
-    if (a.distance !== b.distance) return a.distance - b.distance;
-    return (POINT_PRIORITY[a.layerId] ?? 99) - (POINT_PRIORITY[b.layerId] ?? 99);
-  });
-
-  const best = grabHits[0] ?? null;
-  return { hit: best, locked: !!lockedHit };
+  return { hit: best ?? null, locked };
 }

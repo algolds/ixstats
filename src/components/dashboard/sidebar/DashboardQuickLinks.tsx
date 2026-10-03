@@ -19,22 +19,10 @@ import { Badge } from "~/components/ui/badge";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 
-const EXTERNAL_LINKS = [
-  {
-    label: "Getting started",
-    href: "/help/getting-started/welcome",
-    icon: BookOpen,
-  },
-  {
-    label: "Stashes",
-    href: "/stashes",
-    icon: Bookmark,
-  },
-  {
-    label: "ThinkTanks",
-    href: "/thinktanks",
-    icon: Users,
-  },
+const QUICK_LINKS = [
+  { label: "Getting started", href: "/help/getting-started/welcome", icon: BookOpen },
+  { label: "Stashes", href: "/stashes", icon: Bookmark, signedInOnly: true },
+  { label: "ThinkTanks", href: "/thinktanks", icon: Users },
 ] as const;
 
 /** The legal footer's text links: underline on hover and keyboard focus, with the focus ring. */
@@ -74,41 +62,30 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
     <Card className="w-48">
       <h2 className="text-headline text-label px-3 pt-3">Quick links</h2>
       <div className="space-y-2 p-3 pt-2">
-        {/* Links */}
         <div className="space-y-1 pt-0.5">
-          {/* Server-rendered Discord badge, passed through props */}
           {discordBadge}
 
-          {EXTERNAL_LINKS.map((link) => {
-            if (["Stashes", "Groups"].includes(link.label) && !isSignedIn) {
-              return null;
-            }
-            const Icon = link.icon;
-            const isExternal = link.href.startsWith("http");
-            const Comp = isExternal ? "a" : Link;
-            const extraProps = isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {};
-
-            return (
-              <Comp
-                key={link.label}
-                href={link.href}
-                {...extraProps}
+          {QUICK_LINKS.filter((link) => isSignedIn || !("signedInOnly" in link)).map(
+            ({ label, href, icon: Icon }) => (
+              <Link
+                key={label}
+                href={href}
                 className="text-label-secondary hover:text-label focus-visible:text-label hover:bg-fill-4 active:bg-fill-3 rounded-row text-footnote focus-visible:outline-tint flex items-center justify-between gap-2 px-2 py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <Icon aria-hidden className="size-3.5 shrink-0" />
-                  <span className="truncate">{link.label}</span>
+                  <span className="truncate">{label}</span>
                 </div>
 
-                {link.label === "ThinkTanks" && thinktankUnreadCount > 0 && (
+                {label === "ThinkTanks" && thinktankUnreadCount > 0 && (
                   <Badge variant="success">
                     {thinktankUnreadCount > 99 ? "99+" : thinktankUnreadCount}
                     <span className="sr-only"> unread</span>
                   </Badge>
                 )}
-              </Comp>
-            );
-          })}
+              </Link>
+            )
+          )}
         </div>
 
         <div className="border-separator space-y-2 border-t pt-2">

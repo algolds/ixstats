@@ -1,13 +1,9 @@
 "use client";
 
 /**
- * EditorRulers — Photoshop-style lng/lat rulers along the top and left edges of
- * the editor canvas, plus draggable guides.
- *
- * Re-renders on map move (throttled to one frame) so ticks and guides track the
- * camera while panning; it is its own component so that re-render stays local
- * instead of re-rendering the whole EditorMap. Drag from a ruler to add a guide;
- * double-click a guide to delete it.
+ * Lng/lat rulers along the top and left edges of the editor canvas, plus draggable guides.
+ * Re-renders on map move (throttled to one frame) so ticks and guides track the camera; it is its
+ * own component so that re-render stays local instead of re-rendering the whole EditorMap.
  */
 
 import React, { memo, useEffect, useRef, useState } from "react";
@@ -30,18 +26,46 @@ interface EditorRulersProps {
 
 const RULER = 24;
 
-function pickStep(span: number): number {
-  if (span < 0.1) return 0.01;
-  if (span < 0.2) return 0.02;
-  if (span < 0.5) return 0.05;
-  if (span < 1) return 0.1;
-  if (span < 2) return 0.2;
-  if (span < 5) return 0.5;
-  if (span < 10) return 1;
-  if (span < 25) return 2;
-  if (span < 50) return 5;
-  if (span < 100) return 10;
-  return 20;
+/** Major tick spacing (degrees) for a visible span: the first row whose limit exceeds the span. */
+const STEPS: [limit: number, step: number][] = [
+  [0.1, 0.01],
+  [0.2, 0.02],
+  [0.5, 0.05],
+  [1, 0.1],
+  [2, 0.2],
+  [5, 0.5],
+  [10, 1],
+  [25, 2],
+  [50, 5],
+  [100, 10],
+];
+
+const pickStep = (span: number) => STEPS.find(([limit]) => span < limit)?.[1] ?? 20;
+
+interface Tick {
+  pos: number;
+  isMajor: boolean;
+  label?: string;
+}
+
+/** Ticks between `lo` and `hi` (degrees), placed by `toScreen` and kept within [0, size]. */
+function rulerTicks(lo: number, hi: number, toScreen: (value: number) => number, size: number) {
+  const step = pickStep(hi - lo);
+  const minorStep = step / 5;
+  const decimals = Math.max(0, -Math.floor(Math.log10(step)));
+  const ticks: Tick[] = [];
+  for (
+    let v = Math.ceil(lo / minorStep) * minorStep;
+    v <= Math.floor(hi / minorStep) * minorStep + minorStep / 2;
+    v += minorStep
+  ) {
+    const pos = toScreen(v) - RULER;
+    if (pos >= 0 && pos <= size) {
+      const isMajor = Math.abs(Math.round(v / minorStep) % 5) === 0;
+      ticks.push({ pos, isMajor, label: isMajor ? v.toFixed(decimals) : undefined });
+    }
+  }
+  return ticks;
 }
 
 function useMapFrameTick(map: MapLibreMap | null, isLoaded: boolean): number {
@@ -68,6 +92,16 @@ function useMapFrameTick(map: MapLibreMap | null, isLoaded: boolean): number {
   return tick;
 }
 
+type DragGuide = { type: "h" | "v"; currentVal: number; screenPos: number };
+
+/** The guide a drag at container pixel (x, y) would create: horizontal follows latitude, vertical longitude. */
+function dragGuideAt(map: MapLibreMap, type: "h" | "v", x: number, y: number): DragGuide {
+  const ll = map.unproject([x, y]);
+  return type === "h"
+    ? { type, currentVal: ll.lat, screenPos: y }
+    : { type, currentVal: ll.lng, screenPos: x };
+}
+
 export const EditorRulers = memo(function EditorRulers({
   map,
   isLoaded,
@@ -78,11 +112,7 @@ export const EditorRulers = memo(function EditorRulers({
 }: EditorRulersProps) {
   useMapFrameTick(map, isLoaded);
 
-  const [activeDragGuide, setActiveDragGuide] = useState<{
-    type: "h" | "v";
-    currentVal: number;
-    screenPos: number;
-  } | null>(null);
+  const [activeDragGuide, setActiveDragGuide] = useState<DragGuide | null>(null);
   const dragTypeRef = useRef<"h" | "v" | null>(null);
   const activeRef = useRef(activeDragGuide);
   // oxlint-disable-next-line -- latest-value ref read by the mouseup handler
@@ -103,12 +133,7 @@ export const EditorRulers = memo(function EditorRulers({
       if (!e || !rect || !map || !type) return;
       const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
       const y = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
-      const ll = map.unproject([x, y]);
-      setActiveDragGuide(
-        type === "h"
-          ? { type, currentVal: ll.lat, screenPos: y }
-          : { type, currentVal: ll.lng, screenPos: x }
-      );
+      setActiveDragGuide(dragGuideAt(map, type, x, y));
     };
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -144,15 +169,8 @@ export const EditorRulers = memo(function EditorRulers({
     e.preventDefault();
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect || !map) return;
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const ll = map.unproject([x, y]);
     dragTypeRef.current = type;
-    setActiveDragGuide(
-      type === "h"
-        ? { type, currentVal: ll.lat, screenPos: y }
-        : { type, currentVal: ll.lng, screenPos: x }
-    );
+    setActiveDragGuide(dragGuideAt(map, type, e.clientX - rect.left, e.clientY - rect.top));
   };
 
   const rect = containerRef.current?.getBoundingClientRect();
@@ -162,50 +180,23 @@ export const EditorRulers = memo(function EditorRulers({
   const rulerHeight = rect.height - RULER;
   const center = map.getCenter();
 
-  const ticks: { x: number; isMajor: boolean; label?: string }[] = [];
-  const yTicks: { y: number; isMajor: boolean; label?: string }[] = [];
-
-  // Top ruler (longitude)
-  const west = map.unproject([RULER, 0]).lng;
-  const east = map.unproject([rect.width, 0]).lng;
-  const step = pickStep(east - west);
-  const minorStep = step / 5;
-  const lngDecimals = Math.max(0, -Math.floor(Math.log10(step)));
-  for (
-    let lng = Math.ceil(west / minorStep) * minorStep;
-    lng <= Math.floor(east / minorStep) * minorStep + minorStep / 2;
-    lng += minorStep
-  ) {
-    const x = map.project([lng, center.lat]).x - RULER;
-    if (x >= 0 && x <= rulerWidth) {
-      const isMajor = Math.abs(Math.round(lng / minorStep) % 5) === 0;
-      ticks.push({ x, isMajor, label: isMajor ? lng.toFixed(lngDecimals) : undefined });
-    }
-  }
-
-  // Left ruler (latitude)
-  const north = map.unproject([0, RULER]).lat;
-  const south = map.unproject([0, rect.height]).lat;
-  const stepLat = pickStep(north - south);
-  const minorStepLat = stepLat / 5;
-  const latDecimals = Math.max(0, -Math.floor(Math.log10(stepLat)));
-  for (
-    let lat = Math.ceil(south / minorStepLat) * minorStepLat;
-    lat <= Math.floor(north / minorStepLat) * minorStepLat + minorStepLat / 2;
-    lat += minorStepLat
-  ) {
-    const y = map.project([center.lng, lat]).y - RULER;
-    if (y >= 0 && y <= rulerHeight) {
-      const isMajor = Math.abs(Math.round(lat / minorStepLat) % 5) === 0;
-      yTicks.push({ y, isMajor, label: isMajor ? lat.toFixed(latDecimals) : undefined });
-    }
-  }
+  const ticks = rulerTicks(
+    map.unproject([RULER, 0]).lng,
+    map.unproject([rect.width, 0]).lng,
+    (lng) => map.project([lng, center.lat]).x,
+    rulerWidth
+  );
+  const yTicks = rulerTicks(
+    map.unproject([0, rect.height]).lat,
+    map.unproject([0, RULER]).lat,
+    (lat) => map.project([center.lng, lat]).y,
+    rulerHeight
+  );
 
   const removeGuide = (id: string) => setGuides?.((prev) => prev.filter((g) => g.id !== id));
 
   return (
     <>
-      {/* Top Ruler */}
       <svg
         className="border-separator bg-fill-2 pointer-events-auto absolute top-0 right-0 left-[24px] z-20 h-6 cursor-ns-resize border-b select-none"
         style={{ width: rulerWidth }}
@@ -215,16 +206,16 @@ export const EditorRulers = memo(function EditorRulers({
         {ticks.map((t, idx) => (
           <g key={idx}>
             <line
-              x1={t.x}
+              x1={t.pos}
               y1={t.isMajor ? 12 : 18}
-              x2={t.x}
+              x2={t.pos}
               y2={24}
               className="stroke-label-tertiary"
               strokeWidth={1}
             />
             {t.label && (
               <text
-                x={t.x}
+                x={t.pos}
                 y={10}
                 className="fill-label-secondary text-footnote tabular-nums"
                 textAnchor="middle"
@@ -236,7 +227,6 @@ export const EditorRulers = memo(function EditorRulers({
         ))}
       </svg>
 
-      {/* Left Ruler */}
       <svg
         className="border-separator bg-fill-2 pointer-events-auto absolute top-[24px] bottom-0 left-0 z-20 w-6 cursor-ew-resize border-r select-none"
         style={{ height: rulerHeight }}
@@ -247,16 +237,16 @@ export const EditorRulers = memo(function EditorRulers({
           <g key={idx}>
             <line
               x1={t.isMajor ? 12 : 18}
-              y1={t.y}
+              y1={t.pos}
               x2={24}
-              y2={t.y}
+              y2={t.pos}
               className="stroke-label-tertiary"
               strokeWidth={1}
             />
             {t.label && (
               <text
                 x={10}
-                y={t.y + 3}
+                y={t.pos + 3}
                 className="fill-label-secondary text-footnote tabular-nums"
                 textAnchor="end"
               >
@@ -267,12 +257,10 @@ export const EditorRulers = memo(function EditorRulers({
         ))}
       </svg>
 
-      {/* Corner box */}
       <div className="border-separator bg-fill-3 pointer-events-none absolute top-0 left-0 z-30 flex h-6 w-6 items-center justify-center border-r border-b">
         <span className="text-label-secondary text-caption font-mono font-semibold">°</span>
       </div>
 
-      {/* Guides */}
       <svg className="pointer-events-none absolute inset-0 z-10 h-full w-full">
         {showGuides &&
           guides.map((guide) => {

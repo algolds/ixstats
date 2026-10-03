@@ -10,6 +10,8 @@ import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { Button } from "~/components/ui/button";
 import { WikiArticleActions } from "./WikiArticleActions";
 import { useWikiLeadImage } from "./useWikiLeadImage";
+import { WikiLeadThumb } from "./WikiLeadThumb";
+import { decodeWikiTitle } from "./externalLinks";
 import { Card } from "~/components/ui/card";
 
 export function InlineWikiArticlePreview({
@@ -19,16 +21,8 @@ export function InlineWikiArticlePreview({
   title: string;
   wiki?: "ixwiki" | "iiwiki";
 }) {
-  const cleanTitle = useMemo(() => {
-    try {
-      return decodeURIComponent(title).replace(/_/g, " ").trim();
-    } catch {
-      return title.replace(/_/g, " ").trim();
-    }
-  }, [title]);
+  const cleanTitle = decodeWikiTitle(title);
 
-  // ─── Queries ─────────────────────────────────────────────────────────────────
-  // Article text intro
   const { data: intro } = api.wikios.getIntro.useQuery(
     { title: cleanTitle, wiki },
     { enabled: !!cleanTitle, staleTime: 30 * 60_000 }
@@ -48,7 +42,6 @@ export function InlineWikiArticlePreview({
 
   return (
     <Card variant="inset" padding="sm" className="mt-2 sm:p-4">
-      {/* Content & lead image */}
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1 space-y-1">
           {formattedHtml && (
@@ -59,26 +52,16 @@ export function InlineWikiArticlePreview({
           )}
         </div>
 
-        {/* Lead image thumbnail */}
         {leadImage && (
-          <Link
+          <WikiLeadThumb
+            image={leadImage}
             href={wikiHref}
-            className="border-separator bg-fill-4 rounded-row focus-visible:outline-tint relative h-20 w-28 shrink-0 overflow-hidden border focus-visible:outline-2 focus-visible:outline-offset-2 sm:h-22 sm:w-32"
-            title={`View ${cleanTitle}`}
-          >
-            <img
-              src={leadImage}
-              alt={cleanTitle}
-              className="h-full w-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = "none";
-              }}
-            />
-          </Link>
+            title={cleanTitle}
+            className="sm:h-22 sm:w-32"
+          />
         )}
       </div>
 
-      {/* ── Action toolbar, margin composer, repost ── */}
       <WikiArticleActions
         title={cleanTitle}
         trailing={

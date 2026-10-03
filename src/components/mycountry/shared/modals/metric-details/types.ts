@@ -40,3 +40,11 @@ export const CHART_TYPE_OPTIONS: { value: ChartType; label: string }[] = [
   { value: "bar", label: "Bar" },
   { value: "composed", label: "Composed" },
 ];
+
+/** Recharts `<Tooltip contentStyle>` shared by every metric chart. */
+export const CHART_TOOLTIP_STYLE = {
+  background: "var(--color-surface-elevated)",
+  color: "var(--color-label)",
+  borderColor: "var(--color-separator)",
+  borderRadius: "8px",
+} as const;

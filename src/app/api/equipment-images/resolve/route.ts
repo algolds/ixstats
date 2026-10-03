@@ -1,4 +1,3 @@
-// src/app/api/equipment-images/resolve/route.ts
 /**
  * Equipment Image Resolution API
  *

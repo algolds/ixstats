@@ -139,49 +139,10 @@ export const notificationsPreferencesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
-      if (input.id) {
-        const updated = await db.intelligenceAlertThreshold.update({
-          where: { id: input.id },
-          data: {
-            countryId: input.countryId,
-            userId: input.userId,
-            alertType: input.alertType,
-            metricName: input.metricName,
-            criticalMin: input.criticalMin,
-            criticalMax: input.criticalMax,
-            highMin: input.highMin,
-            highMax: input.highMax,
-            mediumMin: input.mediumMin,
-            mediumMax: input.mediumMax,
-            notifyOnCritical: input.notifyOnCritical,
-            notifyOnHigh: input.notifyOnHigh,
-            notifyOnMedium: input.notifyOnMedium,
-            isActive: input.isActive,
-          },
-        });
-        return updated;
-      }
-
-      const created = await db.intelligenceAlertThreshold.create({
-        data: {
-          countryId: input.countryId,
-          userId: input.userId,
-          alertType: input.alertType,
-          metricName: input.metricName,
-          criticalMin: input.criticalMin,
-          criticalMax: input.criticalMax,
-          highMin: input.highMin,
-          highMax: input.highMax,
-          mediumMin: input.mediumMin,
-          mediumMax: input.mediumMax,
-          notifyOnCritical: input.notifyOnCritical,
-          notifyOnHigh: input.notifyOnHigh,
-          notifyOnMedium: input.notifyOnMedium,
-          isActive: input.isActive,
-        },
-      });
-
-      return created;
+      const { id, ...data } = input;
+      return id
+        ? db.intelligenceAlertThreshold.update({ where: { id }, data })
+        : db.intelligenceAlertThreshold.create({ data });
     }),
 
   // Delete an alert threshold

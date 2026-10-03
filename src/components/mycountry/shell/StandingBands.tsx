@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   Activity,
   Group as Users,
@@ -76,6 +76,11 @@ export function describeCivCapBand(
   };
 }
 
+function civCapPercent(civCap: CivCapBandInput | null | undefined): number | null {
+  if (!civCap || !Number.isFinite(civCap.capacity) || civCap.capacity <= 0) return null;
+  return Math.min(100, Math.max(0, (civCap.used / civCap.capacity) * 100));
+}
+
 type RingKey =
   "economicVitality" | "populationWellbeing" | "diplomaticStanding" | "governmentalEfficiency";
 const RING_KEYS: Record<string, RingKey> = {
@@ -87,6 +92,95 @@ const RING_KEYS: Record<string, RingKey> = {
 
 function finiteScore(raw: unknown): number | null {
   return typeof raw === "number" && Number.isFinite(raw) ? Math.round(raw) : null;
+}
+
+type StandingCountry = ReturnType<typeof useCountryData>["country"];
+type ActivityRings = ReturnType<typeof useCountryData>["activityRingsData"];
+
+/** The four vitality rings, which of them have data, and their composite score. */
+function deriveVitality(country: StandingCountry, activityRingsData: ActivityRings) {
+  // Server-computed vitality (countries.getActivityRingsData); a null score has no data yet
+  const src = (activityRingsData ?? null) as Partial<Record<RingKey, unknown>> | null;
+  const ringScores = {
+    economicVitality: finiteScore(src?.economicVitality),
+    populationWellbeing: finiteScore(src?.populationWellbeing),
+    diplomaticStanding: finiteScore(src?.diplomaticStanding),
+    governmentalEfficiency: finiteScore(src?.governmentalEfficiency),
+  };
+  const rings: VitalityRing[] =
+    country && activityRingsData ? createVitalityRingsFromCountry(ringScores) : [];
+  const knownRings = rings.filter((r) => ringScores[RING_KEYS[r.id]!] !== null);
+  const compositeScore =
+    knownRings.length > 0
+      ? Math.round(knownRings.reduce((sum, r) => sum + r.value, 0) / knownRings.length)
+      : 0;
+  return { ringScores, rings, knownRings, compositeScore };
+}
+
+function deriveFigures(country: StandingCountry) {
+  const population = country?.currentPopulation ?? country?.population ?? 0;
+  const totalGdp =
+    country?.currentTotalGdp ??
+    country?.gdp ??
+    (population && country?.currentGdpPerCapita ? population * country.currentGdpPerCapita : 0);
+  return {
+    population,
+    totalGdp,
+    // Country.publicApproval (0-100), moved by issues and directives
+    approvalPct: finiteScore(country?.publicApproval),
+    // InternalStabilityMetrics.stabilityScore (0-100); null until it is computed
+    stabilityPct: finiteScore(country?.stabilityMetrics?.stabilityScore),
+  };
+}
+
+/** One vitality ring as a tile that opens the breakdown. */
+function RingTile({
+  ring,
+  known,
+  onOpen,
+}: {
+  ring: VitalityRing;
+  known: boolean;
+  onOpen: () => void;
+}) {
+  return (
+    // Native button: the Button primitive would force its icon size onto HealthRing's svg.
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`${ring.label}: ${known ? `${ring.value} of 100` : "no data yet"}. Open vitality breakdown`}
+      className={cn(
+        "group/ring border-separator bg-surface rounded-row facet-press facet-lift flex cursor-pointer items-center gap-2 border p-2 text-left select-none",
+        focusRing
+      )}
+    >
+      <HealthRing
+        value={known ? ring.value : 0}
+        size={36}
+        color={known ? ring.color : "var(--color-label-secondary)"}
+        label={ring.label}
+      />
+      <div className="min-w-0 flex-1">
+        <span className="text-label-secondary group-hover/ring:text-label group-focus-visible/ring:text-label text-footnote block truncate transition-colors">
+          {ring.label}
+        </span>
+        {known ? (
+          // The ring hue mixed toward the label colour so it stays readable on light surfaces.
+          <span
+            className="text-headline font-semibold tabular-nums"
+            style={{ color: `color-mix(in srgb, ${ring.color} 50%, var(--color-label))` }}
+          >
+            {ring.value}
+            <span className="text-label-secondary text-footnote font-normal">/100</span>
+          </span>
+        ) : (
+          <span className="text-label-secondary text-headline tabular-nums" title="No data yet">
+            —
+          </span>
+        )}
+      </div>
+    </button>
+  );
 }
 
 /** National Standing rail card — population/GDP telemetry + governance strip + 4 vitality rings. */
@@ -107,85 +201,25 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
     { enabled: !!countryId, refetchInterval: 20_000 }
   );
 
-  // 1. Public Approval (Country.publicApproval, 0-100) — moved by issues and directives
-  const approvalPct = useMemo(() => {
-    const raw = country?.publicApproval;
-    return typeof raw === "number" && Number.isFinite(raw) ? Math.round(raw) : null;
-  }, [country?.publicApproval]);
-
-  // 2. Stability (InternalStabilityMetrics.stabilityScore, 0-100); null until it is computed
-  const stabilityPct = useMemo(() => {
-    const raw = country?.stabilityMetrics?.stabilityScore;
-    return typeof raw === "number" && Number.isFinite(raw) ? Math.round(raw) : null;
-  }, [country?.stabilityMetrics?.stabilityScore]);
-
-  // 3. Civil Service Capacity used/capacity; directive slots go in the tooltip
-  const civCapBand = useMemo(
-    () =>
-      describeCivCapBand(
-        civCapQuery.data,
-        intentStatus.data
-          ? { used: intentStatus.data.usedThisWeek, cap: intentStatus.data.cap }
-          : null
-      ),
-    [civCapQuery.data, intentStatus.data]
+  const { ringScores, rings, knownRings, compositeScore } = deriveVitality(
+    country,
+    activityRingsData
   );
+  const { population, totalGdp, approvalPct, stabilityPct } = deriveFigures(country);
+  const ratingLabelText = getRatingLabel(compositeScore);
+  const formattedPop = showExactPop
+    ? Math.round(population).toLocaleString()
+    : formatCompact(population);
 
-  // Server-computed vitality (countries.getActivityRingsData); a null score has no data yet
-  const ringScores = useMemo(() => {
-    const src = (activityRingsData ?? null) as Partial<Record<RingKey, unknown>> | null;
-    return {
-      economicVitality: finiteScore(src?.economicVitality),
-      populationWellbeing: finiteScore(src?.populationWellbeing),
-      diplomaticStanding: finiteScore(src?.diplomaticStanding),
-      governmentalEfficiency: finiteScore(src?.governmentalEfficiency),
-    };
-  }, [activityRingsData]);
-
-  const rings = useMemo<VitalityRing[]>(() => {
-    if (!country || !activityRingsData) return [];
-    return createVitalityRingsFromCountry(ringScores);
-  }, [country, activityRingsData, ringScores]);
-
-  const knownRings = useMemo(
-    () => rings.filter((r) => ringScores[RING_KEYS[r.id]!] !== null),
-    [rings, ringScores]
-  );
-
-  const compositeScore = useMemo(() => {
-    return knownRings.length > 0
-      ? Math.round(
-          knownRings.reduce((sum: number, r: VitalityRing) => sum + r.value, 0) / knownRings.length
-        )
-      : 0;
-  }, [knownRings]);
-
-  const ratingLabelText = useMemo(() => getRatingLabel(compositeScore), [compositeScore]);
-
-  const population = useMemo(() => {
-    return country?.currentPopulation ?? country?.population ?? 0;
-  }, [country?.currentPopulation, country?.population]);
-
-  const totalGdp = useMemo(() => {
-    return (
-      country?.currentTotalGdp ??
-      country?.gdp ??
-      (population && country?.currentGdpPerCapita ? population * country.currentGdpPerCapita : 0)
-    );
-  }, [country?.currentTotalGdp, country?.gdp, country?.currentGdpPerCapita, population]);
-
-  const formattedPop = useMemo(() => {
-    return showExactPop ? Math.round(population).toLocaleString() : formatCompact(population);
-  }, [showExactPop, population]);
-
+  // CivCap used/capacity; directive slots go in the tooltip
   const civCapData = civCapQuery.data;
-  const civCapPct =
-    civCapData && Number.isFinite(civCapData.capacity) && civCapData.capacity > 0
-      ? Math.min(100, Math.max(0, (civCapData.used / civCapData.capacity) * 100))
-      : null;
+  const civCapBand = describeCivCapBand(
+    civCapData,
+    intentStatus.data ? { used: intentStatus.data.usedThisWeek, cap: intentStatus.data.cap } : null
+  );
+  const civCapPct = civCapPercent(civCapData);
 
   const handleOpenBreakdown = () => setIsBreakdownOpen(true);
-
   const handleTogglePop = () => setShowExactPop((prev) => !prev);
 
   return (
@@ -312,51 +346,14 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
 
         {/* The four vitality rings */}
         <div className="relative grid grid-cols-2 gap-2">
-          {rings.map((ring) => {
-            const known = ringScores[RING_KEYS[ring.id]!] !== null;
-            return (
-              // Native button: the Button primitive would force its icon size onto HealthRing's svg.
-              <button
-                key={ring.id}
-                type="button"
-                onClick={handleOpenBreakdown}
-                aria-label={`${ring.label}: ${known ? `${ring.value} of 100` : "no data yet"}. Open vitality breakdown`}
-                className={cn(
-                  "group/ring border-separator bg-surface rounded-row facet-press facet-lift flex cursor-pointer items-center gap-2 border p-2 text-left select-none",
-                  focusRing
-                )}
-              >
-                <HealthRing
-                  value={known ? ring.value : 0}
-                  size={36}
-                  color={known ? ring.color : "var(--color-label-secondary)"}
-                  label={ring.label}
-                />
-                <div className="min-w-0 flex-1">
-                  <span className="text-label-secondary group-hover/ring:text-label group-focus-visible/ring:text-label text-footnote block truncate transition-colors">
-                    {ring.label}
-                  </span>
-                  {known ? (
-                    // The ring hue mixed toward the label colour so it stays readable on light surfaces.
-                    <span
-                      className="text-headline font-semibold tabular-nums"
-                      style={{ color: `color-mix(in srgb, ${ring.color} 50%, var(--color-label))` }}
-                    >
-                      {ring.value}
-                      <span className="text-label-secondary text-footnote font-normal">/100</span>
-                    </span>
-                  ) : (
-                    <span
-                      className="text-label-secondary text-headline tabular-nums"
-                      title="No data yet"
-                    >
-                      —
-                    </span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
+          {rings.map((ring) => (
+            <RingTile
+              key={ring.id}
+              ring={ring}
+              known={ringScores[RING_KEYS[ring.id]!] !== null}
+              onOpen={handleOpenBreakdown}
+            />
+          ))}
         </div>
       </Card>
 

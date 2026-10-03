@@ -6,6 +6,7 @@
  */
 
 import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
@@ -42,6 +43,154 @@ function rejectRealmBoard(group: { type: string }, action: string): void {
 }
 import { filterInvitableUserIds } from "./invite-privacy";
 import { ensurePersonalAccount } from "../personal-account";
+
+type GroupDb = Pick<
+  PrismaClient,
+  "thinkshareConversation" | "thinktankGroup" | "user" | "thinkpagesAccount"
+>;
+type GroupMemberRow = { userId: string; role: string };
+
+/** Auto-heal a missing ThinkShare conversation for the group (mutates `group` to match). */
+async function healGroupConversation(
+  db: GroupDb,
+  group: {
+    id: string;
+    name: string;
+    avatar: string | null;
+    conversationId: string | null;
+    conversation: { id: string; lastActivity: Date } | null;
+    members: GroupMemberRow[];
+  }
+) {
+  if (group.conversationId && group.conversation) return;
+  try {
+    const newConv = await db.thinkshareConversation.create({
+      data: {
+        type: "group",
+        name: group.name,
+        avatar: group.avatar,
+        source: "thinktank",
+        sourceId: group.id,
+        participants: {
+          create: group.members.map((m) => ({
+            userId: m.userId,
+            role: m.role === "owner" || m.role === "admin" ? "admin" : "participant",
+          })),
+        },
+      },
+    });
+
+    await db.thinktankGroup.update({
+      where: { id: group.id },
+      data: { conversationId: newConv.id },
+    });
+
+    group.conversationId = newConv.id;
+    group.conversation = { id: newConv.id, lastActivity: newConv.createdAt };
+  } catch (e) {
+    console.warn("[ThinkTanks] Failed to auto-heal group conversation:", e);
+  }
+}
+
+/** Members joined to their user record (or first active persona) for display. */
+async function enrichGroupMembers<M extends GroupMemberRow>(
+  db: GroupDb,
+  members: M[]
+): Promise<Array<M & { user: any }>> {
+  const memberUserIds = members.map((m) => m.userId);
+  const [users, userAccounts] = await Promise.all([
+    db.user.findMany({
+      where: { clerkUserId: { in: memberUserIds } },
+      select: {
+        id: true,
+        clerkUserId: true,
+        forumUsername: true,
+        wikiUsername: true,
+        country: { select: { id: true, name: true, flag: true } },
+      },
+    }),
+    db.thinkpagesAccount.findMany({
+      where: { clerkUserId: { in: memberUserIds }, isActive: true },
+      select: { clerkUserId: true, profileImageUrl: true, displayName: true, username: true },
+      orderBy: { createdAt: "asc" },
+    }),
+  ]);
+
+  const userMap = new Map(users.map((u) => [u.clerkUserId, u]));
+  const accountMap = new Map<string, (typeof userAccounts)[number]>();
+  for (const acc of userAccounts) {
+    if (!accountMap.has(acc.clerkUserId)) accountMap.set(acc.clerkUserId, acc);
+  }
+
+  return members.map((m) => {
+    const u = userMap.get(m.userId);
+    const acc = accountMap.get(m.userId);
+    if (u) {
+      return {
+        ...m,
+        user: {
+          ...u,
+          avatarUrl: acc?.profileImageUrl || null,
+          displayName:
+            pickDisplayName({ ...u, thinkpagesDisplayName: acc?.displayName }) ??
+            UNKNOWN_DISPLAY_NAME,
+        },
+      };
+    }
+    return {
+      ...m,
+      user: acc
+        ? {
+            clerkUserId: m.userId,
+            avatarUrl: acc.profileImageUrl || null,
+            displayName: acc.displayName || acc.username,
+            country: null,
+          }
+        : null,
+    };
+  });
+}
+
+type GroupSettings = {
+  allowPersonaPosting?: boolean;
+  rules?: string;
+  bannerUrl?: string;
+  themeAccent?: string;
+  pinnedDocIds?: string[];
+};
+
+function parseGroupSettings(raw: string | null, groupId: string): GroupSettings {
+  const settings: GroupSettings = { allowPersonaPosting: false };
+  if (!raw) return settings;
+  try {
+    return { ...settings, ...JSON.parse(raw) };
+  } catch (err) {
+    console.warn("[ThinkTanks] Malformed settings on group", groupId, err);
+    return settings;
+  }
+}
+
+function parseGroupTags(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return [raw];
+  }
+}
+
+function viewerMembership(
+  group: { createdBy: string; members: GroupMemberRow[] },
+  viewerId: string
+) {
+  if (!viewerId) return { isMember: false, userRole: null };
+  const isOwner = group.createdBy === viewerId;
+  const isMember = isOwner || group.members.some((m) => m.userId === viewerId);
+  const userRole = isOwner
+    ? "owner"
+    : group.members.find((m) => m.userId === viewerId)?.role || (isMember ? "member" : null);
+  return { isMember, userRole };
+}
 
 export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
   // Create a new ThinkTank group
@@ -358,118 +507,8 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
 
       if (!group) return null;
 
-      // Auto-heal missing ThinkShare conversation for this group
-      if (!group.conversationId || !group.conversation) {
-        try {
-          const newConv = await db.thinkshareConversation.create({
-            data: {
-              type: "group",
-              name: group.name,
-              avatar: group.avatar,
-              source: "thinktank",
-              sourceId: group.id,
-              participants: {
-                create: group.members.map((m: any) => ({
-                  userId: m.userId,
-                  role: m.role === "owner" || m.role === "admin" ? "admin" : "participant",
-                })),
-              },
-            },
-          });
-
-          await db.thinktankGroup.update({
-            where: { id: group.id },
-            data: { conversationId: newConv.id },
-          });
-
-          group.conversationId = newConv.id;
-          group.conversation = { id: newConv.id, lastActivity: newConv.createdAt };
-        } catch (e) {
-          console.warn("[ThinkTanks] Failed to auto-heal group conversation:", e);
-        }
-      }
-
-      const memberUserIds = group.members.map((m: any) => m.userId);
-      const users = await db.user.findMany({
-        where: { clerkUserId: { in: memberUserIds } },
-        select: {
-          id: true,
-          clerkUserId: true,
-          forumUsername: true,
-          wikiUsername: true,
-          country: { select: { id: true, name: true, flag: true } },
-        },
-      });
-
-      const userAccounts = await db.thinkpagesAccount.findMany({
-        where: { clerkUserId: { in: memberUserIds }, isActive: true },
-        select: {
-          clerkUserId: true,
-          profileImageUrl: true,
-          displayName: true,
-          username: true,
-        },
-        orderBy: { createdAt: "asc" },
-      });
-
-      const userMap = new Map<string, any>(users.map((u: any) => [u.clerkUserId, u]));
-      const accountMap = new Map<string, any>();
-      for (const acc of userAccounts) {
-        if (!accountMap.has(acc.clerkUserId)) {
-          accountMap.set(acc.clerkUserId, acc);
-        }
-      }
-
-      const enrichedMembers = group.members.map((m: any) => {
-        const u = userMap.get(m.userId);
-        const acc = accountMap.get(m.userId);
-        return {
-          ...m,
-          user: u
-            ? {
-                ...u,
-                avatarUrl: acc?.profileImageUrl || null,
-                displayName:
-                  pickDisplayName({ ...u, thinkpagesDisplayName: acc?.displayName }) ??
-                  UNKNOWN_DISPLAY_NAME,
-              }
-            : acc
-              ? {
-                  clerkUserId: m.userId,
-                  avatarUrl: acc.profileImageUrl || null,
-                  displayName: acc.displayName || acc.username,
-                  country: null,
-                }
-              : null,
-        };
-      });
-
-      let parsedSettings: {
-        allowPersonaPosting?: boolean;
-        rules?: string;
-        bannerUrl?: string;
-        themeAccent?: string;
-        pinnedDocIds?: string[];
-      } = {
-        allowPersonaPosting: false,
-      };
-
-      if (group.settings) {
-        try {
-          parsedSettings = { ...parsedSettings, ...JSON.parse(group.settings) };
-        } catch (err) {
-          console.warn("[ThinkTanks] Malformed settings on group", input.groupId, err);
-        }
-      }
-
-      let parsedTags: string[] = [];
-      if (group.tags) {
-        try {
-          parsedTags = JSON.parse(group.tags);
-        } catch {
-          parsedTags = [group.tags];
-        }
-      }
+      await healGroupConversation(db, group);
+      const enrichedMembers = await enrichGroupMembers(db, group.members);
 
       const targetUserId = ctx.auth?.userId || "";
 
@@ -477,22 +516,9 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       const boardAccess = isRealmBoard(group)
         ? await getRealmBoardAccess(db, group.id, targetUserId)
         : null;
-
-      const isMember = boardAccess
-        ? boardAccess.isMember
-        : targetUserId
-          ? group.createdBy === targetUserId ||
-            group.members.some((m: any) => m.userId === targetUserId)
-          : false;
-
-      const userRole = boardAccess
-        ? boardAccess.role
-        : targetUserId
-          ? group.createdBy === targetUserId
-            ? "owner"
-            : group.members.find((m: any) => m.userId === targetUserId)?.role ||
-              (isMember ? "member" : null)
-          : null;
+      const { isMember, userRole } = boardAccess
+        ? { isMember: boardAccess.isMember, userRole: boardAccess.role }
+        : viewerMembership(group, targetUserId);
 
       // Members and documents of non-public groups are for members only (SL-2).
       const canRead = canReadGroupType(group.type) || isMember;
@@ -504,8 +530,8 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
         conversationId: isMember ? group.conversationId : null,
         conversation: isMember ? group.conversation : null,
         members: canRead ? enrichedMembers : [],
-        settings: parsedSettings,
-        tags: parsedTags,
+        settings: parseGroupSettings(group.settings, input.groupId),
+        tags: parseGroupTags(group.tags),
         isMember,
         userRole,
         realmId: boardAccess?.realmId ?? null,

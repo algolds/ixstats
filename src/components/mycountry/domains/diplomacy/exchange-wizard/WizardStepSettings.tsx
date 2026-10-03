@@ -39,7 +39,6 @@ export const WizardStepSettings = React.memo(function WizardStepSettings({
         </p>
       </div>
 
-      {/* Dates */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="startDate" className="text-label flex items-center gap-2">
@@ -79,7 +78,6 @@ export const WizardStepSettings = React.memo(function WizardStepSettings({
         </div>
       </div>
 
-      {/* Max Participants */}
       <div className="space-y-2">
         <Label htmlFor="maxParticipants" className="text-label flex items-center gap-2">
           <Group className="h-4 w-4" />
@@ -97,7 +95,6 @@ export const WizardStepSettings = React.memo(function WizardStepSettings({
         </p>
       </div>
 
-      {/* Public/Private */}
       <div className="border-separator bg-surface rounded-row border p-4">
         <div
           onClick={() => onIsPublicChange(!isPublic)}

@@ -1,5 +1,3 @@
-// src/server/api/routers/government.ts
-
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
@@ -14,10 +12,72 @@ import {
 import { mapTaxComponentTypeToId } from "~/lib/enums";
 import { IxTime } from "~/lib/ixtime";
 
-// Input validation schemas
-// Base schema for government departments
-// Create schema - all required fields with defaults
-// Update schema - all fields optional
+const MONTH_MS = 30.44 * 24 * 60 * 60 * 1000;
+
+type ComponentRow = {
+  id: string;
+  componentType: string;
+  isActive: boolean;
+  implementationDate: Date | null;
+};
+
+type CatalogEntry = {
+  name?: string;
+  metadata?: { staffRequired?: number; timeToImplement?: string };
+};
+
+type RolloutKind = "government" | "economic" | "tax";
+
+/** One entry per component family: its rows, the catalog describing them, and how a row maps to a catalog id. */
+function componentFamilies(rows: Record<RolloutKind, ComponentRow[]>) {
+  return [
+    {
+      kind: "government",
+      rows: rows.government,
+      catalog: ATOMIC_COMPONENTS as Record<string, CatalogEntry>,
+      idOf: (c: ComponentRow) => String(c.componentType),
+    },
+    {
+      kind: "economic",
+      rows: rows.economic,
+      catalog: ATOMIC_ECONOMIC_COMPONENTS as Record<string, CatalogEntry>,
+      idOf: (c: ComponentRow) => String(c.componentType),
+    },
+    {
+      kind: "tax",
+      rows: rows.tax,
+      catalog: ATOMIC_TAX_COMPONENTS as Record<string, CatalogEntry>,
+      idOf: (c: ComponentRow) => mapTaxComponentTypeToId(String(c.componentType)),
+    },
+  ] as const;
+}
+
+/** A component still rolling out; its duration is estimated from the catalog timeframe (IxTime domain). */
+function rolloutEntry(
+  kind: RolloutKind,
+  componentId: string,
+  id: string,
+  entry: CatalogEntry | undefined,
+  implementationDate: Date | null,
+  nowMs: number
+) {
+  const completionDate = implementationDate ? new Date(implementationDate).getTime() : nowMs;
+  const parsed = parseTimeToImplement(entry?.metadata?.timeToImplement ?? "12 months");
+  const totalMonths = parsed.years ? parsed.years * 12 : (parsed.months ?? 12);
+  const durationMs = Math.max(1, totalMonths * MONTH_MS);
+  const remainingMs = Math.max(0, completionDate - nowMs);
+  return {
+    kind,
+    id: componentId,
+    componentType: id,
+    name: entry?.name ?? id,
+    staffRequired: entry?.metadata?.staffRequired ?? 0,
+    completionDate,
+    remainingMs,
+    progress: Math.round(Math.min(100, Math.max(0, (1 - remainingMs / durationMs) * 100))),
+  };
+}
+
 export const governmentComponentsRouter = createTRPCRouter({
   // Civil service capacity + rollout queue for the country dashboard.
   // Aggregates government / economic / tax components: staff is consumed by both
@@ -31,9 +91,10 @@ export const governmentComponentsRouter = createTRPCRouter({
       // implementationDate is stored in IxTime (game time), so compare against IxTime now.
       const nowMs = IxTime.getCurrentIxTime();
       const now = new Date(nowMs);
-      const MONTH_MS = 30.44 * 24 * 60 * 60 * 1000;
 
-      const [country, gov, econ, tax] = await Promise.all([
+      const forCountry = { where: { countryId: input.countryId } };
+      const select = { id: true, componentType: true, isActive: true, implementationDate: true };
+      const [country, government, economic, tax] = await Promise.all([
         ctx.db.country.findUnique({
           where: { id: input.countryId },
           select: {
@@ -42,126 +103,38 @@ export const governmentComponentsRouter = createTRPCRouter({
             governmentStructure: { select: { governmentEffectiveness: true } },
           },
         }),
-        ctx.db.governmentComponent.findMany({
-          where: { countryId: input.countryId },
-          select: { id: true, componentType: true, isActive: true, implementationDate: true },
-        }),
-        ctx.db.economicComponent.findMany({
-          where: { countryId: input.countryId },
-          select: { id: true, componentType: true, isActive: true, implementationDate: true },
-        }),
-        ctx.db.taxComponent.findMany({
-          where: { countryId: input.countryId },
-          select: { id: true, componentType: true, isActive: true, implementationDate: true },
-        }),
+        ctx.db.governmentComponent.findMany({ ...forCountry, select }),
+        ctx.db.economicComponent.findMany({ ...forCountry, select }),
+        ctx.db.taxComponent.findMany({ ...forCountry, select }),
       ]);
 
-      const isActive = (c: { isActive: boolean; implementationDate: Date | null }) =>
+      const isActive = (c: ComponentRow) =>
         c.isActive === true || (!!c.implementationDate && new Date(c.implementationDate) <= now);
 
-      type RolloutEntry = {
-        kind: "government" | "economic" | "tax";
-        id: string;
-        componentType: string;
-        name: string;
-        staffRequired: number;
-        completionDate: number;
-        remainingMs: number;
-        progress: number;
-      };
-
-      const rolloutQueue: RolloutEntry[] = [];
-      const allGovTypes: string[] = [];
-      const allEconTypes: string[] = [];
-      const allTaxIds: string[] = [];
+      const rolloutQueue: ReturnType<typeof rolloutEntry>[] = [];
+      const idsByKind: Record<RolloutKind, string[]> = { government: [], economic: [], tax: [] };
       let activeCount = 0;
-
-      const addRollout = (
-        kind: RolloutEntry["kind"],
-        id: string,
-        componentType: string,
-        name: string,
-        staffRequired: number,
-        timeToImplement: string | undefined,
-        c: { implementationDate: Date | null }
-      ) => {
-        const completionMs = c.implementationDate
-          ? new Date(c.implementationDate).getTime()
-          : nowMs;
-        // Estimate total rollout duration from the catalog timeframe (IxTime domain).
-        const parsed = parseTimeToImplement(timeToImplement ?? "12 months");
-        const totalMonths = parsed.years ? parsed.years * 12 : (parsed.months ?? 12);
-        const durationMs = Math.max(1, totalMonths * MONTH_MS);
-        const remainingMs = Math.max(0, completionMs - nowMs);
-        const progress = Math.round(
-          Math.min(100, Math.max(0, (1 - remainingMs / durationMs) * 100))
-        );
-        rolloutQueue.push({
-          kind,
-          id,
-          componentType,
-          name,
-          staffRequired,
-          completionDate: completionMs,
-          remainingMs,
-          progress,
-        });
-      };
-
-      for (const c of gov) {
-        const type = String(c.componentType);
-        const data = (ATOMIC_COMPONENTS as Record<string, any>)[type];
-        allGovTypes.push(type);
-        if (isActive(c)) activeCount++;
-        else
-          addRollout(
-            "government",
-            c.id,
-            type,
-            data?.name ?? type,
-            data?.metadata?.staffRequired ?? 0,
-            data?.metadata?.timeToImplement,
-            c
-          );
-      }
-      for (const c of econ) {
-        const type = String(c.componentType);
-        const data = (ATOMIC_ECONOMIC_COMPONENTS as Record<string, any>)[type];
-        allEconTypes.push(type);
-        if (isActive(c)) activeCount++;
-        else
-          addRollout(
-            "economic",
-            c.id,
-            type,
-            data?.name ?? type,
-            data?.metadata?.staffRequired ?? 0,
-            data?.metadata?.timeToImplement,
-            c
-          );
-      }
-      for (const c of tax) {
-        const id = mapTaxComponentTypeToId(String(c.componentType));
-        const data = (ATOMIC_TAX_COMPONENTS as Record<string, any>)[id];
-        allTaxIds.push(id);
-        if (isActive(c)) activeCount++;
-        else
-          addRollout(
-            "tax",
-            c.id,
-            id,
-            data?.name ?? id,
-            data?.metadata?.staffRequired ?? 0,
-            data?.metadata?.timeToImplement,
-            c
-          );
+      for (const { kind, rows, catalog, idOf } of componentFamilies({
+        government,
+        economic,
+        tax,
+      })) {
+        for (const c of rows) {
+          const id = idOf(c);
+          idsByKind[kind].push(id);
+          if (isActive(c)) activeCount++;
+          else
+            rolloutQueue.push(
+              rolloutEntry(kind, c.id, id, catalog[id], c.implementationDate, nowMs)
+            );
+        }
       }
 
       // Staff is consumed by both active and implementing components.
       const consumedStaff = calculateTotalConsumedStaff(
-        allGovTypes as any[],
-        allEconTypes as any[],
-        allTaxIds
+        idsByKind.government as any[],
+        idsByKind.economic as any[],
+        idsByKind.tax
       );
       const effectiveness =
         country?.governmentStructure?.governmentEffectiveness ??

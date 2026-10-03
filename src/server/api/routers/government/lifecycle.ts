@@ -1,7 +1,5 @@
-// src/server/api/routers/government.ts
-
 import { z } from "zod";
-import type { Prisma } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import {
@@ -21,9 +19,6 @@ async function writeGovernmentChildren(
   governmentStructureId: string,
   data: GovernmentBuilderData
 ) {
-  // ============================================================
-  // BATCH DEPARTMENT CREATION
-  // ============================================================
   const departmentIdMap = new Map<number, string>();
 
   if (data.departments.length > 0) {
@@ -88,9 +83,6 @@ async function writeGovernmentChildren(
     }
   }
 
-  // ============================================================
-  // BATCH BUDGET ALLOCATIONS (was N+1, now single createMany)
-  // ============================================================
   const allocationData = data.budgetAllocations
     .map((allocation) => {
       const departmentIndex = parseInt(allocation.departmentId);
@@ -112,9 +104,6 @@ async function writeGovernmentChildren(
     await tx.budgetAllocation.createMany({ data: allocationData });
   }
 
-  // ============================================================
-  // BATCH REVENUE SOURCES (was N+1, now single createMany)
-  // ============================================================
   if (data.revenueSources.length > 0) {
     const revenueData = data.revenueSources.map((revenueSource) => ({
       governmentStructureId,
@@ -135,143 +124,98 @@ async function writeGovernmentChildren(
   }
 }
 
+const lifecycleInput = z.object({
+  countryId: z.string(),
+  data: GovernmentBuilderStateSchema,
+  skipConflictCheck: z.boolean().optional().default(false),
+});
+
+type LifecycleInput = z.infer<typeof lifecycleInput>;
+
+const NOTIFICATION_NOUN = { created: "creation", updated: "update" } as const;
+
+/** Syncing of dependent tables and the change notification shared by create and update. */
+async function finishLifecycle(
+  db: PrismaClient,
+  { countryId, data }: LifecycleInput,
+  verb: "created" | "updated",
+  governmentStructure: unknown
+) {
+  const syncResult = await syncGovernmentData(db as any, countryId, data);
+
+  try {
+    await notificationHooks.onGovernmentStructureChange({
+      countryId,
+      changeType: "component_added",
+      componentName: data.structure.governmentName,
+      details: `Government structure ${verb} with ${data.departments.length} departments`,
+    });
+  } catch (error) {
+    console.error(
+      `[Government] Failed to send government structure ${NOTIFICATION_NOUN[verb]} notification:`,
+      error
+    );
+  }
+
+  return { governmentStructure, syncResult };
+}
+
+const detectWarnings = (db: PrismaClient, input: LifecycleInput): Promise<ConflictWarning[]> =>
+  input.skipConflictCheck
+    ? Promise.resolve([])
+    : detectGovernmentConflicts(db as any, input.countryId, input.data);
+
 export const governmentLifecycleRouter = createTRPCRouter({
   // Create complete government structure
-  create: protectedProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        data: GovernmentBuilderStateSchema,
-        skipConflictCheck: z.boolean().optional().default(false),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { countryId, data, skipConflictCheck } = input;
-      await assertCountryWriteAccess(ctx, countryId);
+  create: protectedProcedure.input(lifecycleInput).mutation(async ({ ctx, input }) => {
+    const { countryId, data } = input;
+    await assertCountryWriteAccess(ctx, countryId);
 
-      // Check if government structure already exists
-      const existing = await ctx.db.governmentStructure.findUnique({
-        where: { countryId },
+    const existing = await ctx.db.governmentStructure.findUnique({ where: { countryId } });
+    if (existing) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: "Government structure already exists for this country. Use update instead.",
       });
+    }
 
-      if (existing) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "Government structure already exists for this country. Use update instead.",
-        });
-      }
+    const warnings = await detectWarnings(ctx.db, input);
 
-      // Detect conflicts if not skipped
-      let warnings: ConflictWarning[] = [];
-      if (!skipConflictCheck) {
-        warnings = await detectGovernmentConflicts(ctx.db as any, countryId, data);
-      }
-
-      // Create in transaction with batched operations for performance
-      // Phase 1 optimization: Reduces ~50 DB round-trips to ~5-10
-      const result = await ctx.db.$transaction(async (tx) => {
-        // Create government structure
-        const governmentStructure = await tx.governmentStructure.create({
-          data: {
-            countryId,
-            ...data.structure,
-          },
-        });
-
-        await writeGovernmentChildren(tx, governmentStructure.id, data);
-
-        return governmentStructure;
+    // Batched writes in one transaction (~5-10 DB round-trips instead of ~50)
+    const result = await ctx.db.$transaction(async (tx) => {
+      const governmentStructure = await tx.governmentStructure.create({
+        data: { countryId, ...data.structure },
       });
+      await writeGovernmentChildren(tx, governmentStructure.id, data);
+      return governmentStructure;
+    });
 
-      // Sync with other tables (Country, GovernmentBudget, etc.)
-      const syncResult = await syncGovernmentData(ctx.db as any, countryId, data);
-
-      // Notify about government structure creation
-      try {
-        await notificationHooks.onGovernmentStructureChange({
-          countryId,
-          changeType: "component_added",
-          componentName: data.structure.governmentName,
-          details: `Government structure created with ${data.departments.length} departments`,
-        });
-      } catch (error) {
-        console.error(
-          "[Government] Failed to send government structure creation notification:",
-          error
-        );
-      }
-
-      return {
-        governmentStructure: result,
-        syncResult,
-        warnings,
-      };
-    }),
+    return { ...(await finishLifecycle(ctx.db, input, "created", result)), warnings };
+  }),
 
   // Update government structure
-  update: protectedProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        data: GovernmentBuilderStateSchema,
-        skipConflictCheck: z.boolean().optional().default(false),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { countryId, data, skipConflictCheck } = input;
-      await assertCountryWriteAccess(ctx, countryId);
+  update: protectedProcedure.input(lifecycleInput).mutation(async ({ ctx, input }) => {
+    const { countryId, data } = input;
+    await assertCountryWriteAccess(ctx, countryId);
 
-      // Detect conflicts if not skipped
-      let warnings: ConflictWarning[] = [];
-      if (!skipConflictCheck) {
-        warnings = await detectGovernmentConflicts(ctx.db as any, countryId, data);
-      }
+    const warnings = await detectWarnings(ctx.db, input);
 
-      const result = await ctx.db.$transaction(async (tx) => {
-        // Update government structure
-        const governmentStructure = await tx.governmentStructure.update({
-          where: { countryId },
-          data: data.structure,
-        });
-
-        // Delete existing related data (batch deletes are already efficient)
-        await tx.budgetAllocation.deleteMany({
-          where: { governmentStructureId: governmentStructure.id },
-        });
-        await tx.revenueSource.deleteMany({
-          where: { governmentStructureId: governmentStructure.id },
-        });
-        await tx.governmentDepartment.deleteMany({
-          where: { governmentStructureId: governmentStructure.id },
-        });
-
-        await writeGovernmentChildren(tx, governmentStructure.id, data);
-
-        return governmentStructure;
+    const result = await ctx.db.$transaction(async (tx) => {
+      const governmentStructure = await tx.governmentStructure.update({
+        where: { countryId },
+        data: data.structure,
       });
 
-      // Sync with other tables (Country, GovernmentBudget, etc.)
-      const syncResult = await syncGovernmentData(ctx.db as any, countryId, data);
+      // Replace the existing related data
+      const where = { governmentStructureId: governmentStructure.id };
+      await tx.budgetAllocation.deleteMany({ where });
+      await tx.revenueSource.deleteMany({ where });
+      await tx.governmentDepartment.deleteMany({ where });
 
-      // Notify about government structure update
-      try {
-        await notificationHooks.onGovernmentStructureChange({
-          countryId,
-          changeType: "component_added",
-          componentName: data.structure.governmentName,
-          details: `Government structure updated with ${data.departments.length} departments`,
-        });
-      } catch (error) {
-        console.error(
-          "[Government] Failed to send government structure update notification:",
-          error
-        );
-      }
+      await writeGovernmentChildren(tx, governmentStructure.id, data);
+      return governmentStructure;
+    });
 
-      return {
-        governmentStructure: result,
-        syncResult,
-        warnings,
-      };
-    }),
+    return { ...(await finishLifecycle(ctx.db, input, "updated", result)), warnings };
+  }),
 });

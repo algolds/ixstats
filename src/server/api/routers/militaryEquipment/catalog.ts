@@ -1,6 +1,3 @@
-// src/server/api/routers/militaryEquipment.ts
-// Phase 6: Military Equipment Catalog Migration
-
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { Prisma, type PrismaClient } from "@prisma/client";
@@ -48,13 +45,11 @@ const equipmentFields = {
   isActive: z.boolean().optional(),
 };
 
-type Db = PrismaClient;
-
 /**
  * Seed an empty catalog (and manufacturer list) from the built-in data. `db:seed` doesn't run
  * in production, so this is what first fills the tables there.
  */
-async function ensureCatalogSeeded(db: Db) {
+async function ensureCatalogSeeded(db: PrismaClient) {
   const [equipmentCount, manufacturerCount] = await Promise.all([
     db.militaryEquipmentCatalog.count(),
     db.defenseManufacturer.count(),
@@ -73,7 +68,7 @@ async function ensureCatalogSeeded(db: Db) {
 }
 
 /** Resolve a manufacturer key or name to its key, or throw BAD_REQUEST. */
-async function resolveManufacturerKey(db: Db, manufacturer: string): Promise<string> {
+async function resolveManufacturerKey(db: PrismaClient, manufacturer: string): Promise<string> {
   const match = await db.defenseManufacturer.findFirst({
     where: { OR: [{ key: manufacturer }, { name: manufacturer }] },
     select: { key: true },
@@ -88,11 +83,98 @@ function isUniqueViolation(error: unknown): boolean {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
 }
 
-export const militaryEquipmentCatalogRouter = createTRPCRouter({
-  // ==========================================
-  // PUBLIC ENDPOINTS
-  // ==========================================
+/** Admin context the audited mutations run in. */
+type AdminCtx = { db: PrismaClient; auth?: { userId: string | null } | null };
 
+const parseJsonColumns = <T extends { specifications: string | null; capabilities: string | null }>(
+  item: T
+) => ({
+  ...item,
+  specifications: item.specifications ? JSON.parse(item.specifications) : null,
+  capabilities: item.capabilities ? JSON.parse(item.capabilities) : null,
+});
+
+/** Records a successful admin action in the audit log and the server log. */
+async function auditSuccess(ctx: AdminCtx, action: string, details: object, logLine: string) {
+  await ctx.db.auditLog.create({
+    data: {
+      userId: ctx.auth!.userId,
+      action: `military_equipment.${action}`,
+      details: JSON.stringify(details),
+      success: true,
+      timestamp: new Date(),
+    },
+  });
+  console.log(`[MILITARY_EQUIPMENT] Admin ${ctx.auth!.userId} ${logLine}`);
+}
+
+/**
+ * Runs an admin mutation; on failure it is logged, recorded in the audit log, and surfaced as
+ * `failureMessage` (INTERNAL_SERVER_ERROR) unless `mapError` or `passThroughTrpc` says otherwise.
+ */
+async function auditedMutation<T>(
+  ctx: AdminCtx,
+  opts: {
+    action: string;
+    label: string;
+    input: object;
+    failureMessage: string;
+    passThroughTrpc?: boolean;
+    mapError?: (error: unknown) => TRPCError | null;
+  },
+  run: () => Promise<T>
+): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    console.error(`[MILITARY_EQUIPMENT] Admin failed to ${opts.label}:`, error);
+    await ctx.db.auditLog
+      .create({
+        data: {
+          userId: ctx.auth!.userId,
+          action: `military_equipment.${opts.action}`,
+          details: JSON.stringify({ input: opts.input }),
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
+          timestamp: new Date(),
+        },
+      })
+      .catch((err: unknown) => {
+        console.error("[MilitaryEquipment] Background op failed:", (err as Error).message);
+      });
+
+    if (opts.passThroughTrpc && error instanceof TRPCError) throw error;
+    throw (
+      opts.mapError?.(error) ??
+      new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: opts.failureMessage,
+        cause: error,
+      })
+    );
+  }
+}
+
+/** Update fields that store an empty string as null. */
+const NULLABLE_TEXT_FIELDS = [
+  "subcategory",
+  "imageUrl",
+  "description",
+  "historicalContext",
+] as const;
+const PLAIN_FIELDS = [
+  "name",
+  "category",
+  "era",
+  "acquisitionCost",
+  "maintenanceCost",
+  "technologyLevel",
+  "crewRequirement",
+  "maintenanceHours",
+  "isActive",
+] as const;
+
+export const militaryEquipmentCatalogRouter = createTRPCRouter({
   /**
    * Active catalog items as player equipment templates, plus the manufacturer list.
    * Falls back to the built-in data if the catalog can't be read.
@@ -126,10 +208,6 @@ export const militaryEquipmentCatalogRouter = createTRPCRouter({
     }
   }),
 
-  // ==========================================
-  // ADMIN ENDPOINTS
-  // ==========================================
-
   /**
    * Admin: Get all catalog equipment including inactive items
    */
@@ -146,20 +224,20 @@ export const militaryEquipmentCatalogRouter = createTRPCRouter({
       try {
         await ensureCatalogSeeded(ctx.db);
 
-        const where: any = {};
-
-        if (!input.includeInactive) where.isActive = true;
-        if (input.category) where.category = input.category;
-        if (input.era) where.era = input.era;
-        if (input.search) {
-          where.OR = [
-            { name: { contains: input.search, mode: "insensitive" } },
-            { subcategory: { contains: input.search, mode: "insensitive" } },
-          ];
-        }
-
         const equipment = await ctx.db.militaryEquipmentCatalog.findMany({
-          where,
+          where: {
+            ...(input.includeInactive ? {} : { isActive: true }),
+            ...(input.category ? { category: input.category } : {}),
+            ...(input.era ? { era: input.era } : {}),
+            ...(input.search
+              ? {
+                  OR: [
+                    { name: { contains: input.search, mode: "insensitive" } },
+                    { subcategory: { contains: input.search, mode: "insensitive" } },
+                  ],
+                }
+              : {}),
+          },
           orderBy: [
             { category: "asc" },
             { era: "desc" },
@@ -167,15 +245,7 @@ export const militaryEquipmentCatalogRouter = createTRPCRouter({
             { name: "asc" },
           ],
         });
-
-        // Parse JSON fields
-        const parsedEquipment = equipment.map((item) => ({
-          ...item,
-          specifications: item.specifications ? JSON.parse(item.specifications) : null,
-          capabilities: item.capabilities ? JSON.parse(item.capabilities) : null,
-        }));
-
-        return parsedEquipment;
+        return equipment.map(parseJsonColumns);
       } catch (error) {
         console.error("[MILITARY_EQUIPMENT] Admin failed to get all equipment:", error);
         throw new TRPCError({
@@ -191,270 +261,153 @@ export const militaryEquipmentCatalogRouter = createTRPCRouter({
    */
   createCatalogEquipment: adminProcedure
     .input(z.object({ key: z.string().trim().max(200).optional(), ...equipmentFields }))
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const manufacturer = await resolveManufacturerKey(ctx.db, input.manufacturer);
+    .mutation(({ ctx, input }) =>
+      auditedMutation(
+        ctx,
+        {
+          action: "create",
+          label: "create equipment",
+          input,
+          failureMessage: "Failed to create equipment",
+          passThroughTrpc: true,
+          mapError: (error) =>
+            isUniqueViolation(error)
+              ? new TRPCError({
+                  code: "CONFLICT",
+                  message: "An equipment item with this key already exists",
+                })
+              : null,
+        },
+        async () => {
+          const manufacturer = await resolveManufacturerKey(ctx.db, input.manufacturer);
 
-        const equipment = await ctx.db.militaryEquipmentCatalog.create({
-          data: {
-            key: input.key || `${input.category}_${input.name.toLowerCase().replace(/\s+/g, "_")}`,
-            name: input.name,
-            manufacturer,
-            category: input.category,
-            subcategory: input.subcategory || null,
-            era: input.era,
-            specifications: JSON.stringify(input.specifications ?? {}),
-            capabilities: JSON.stringify(input.capabilities ?? {}),
-            acquisitionCost: input.acquisitionCost,
-            maintenanceCost: input.maintenanceCost,
-            technologyLevel: input.technologyLevel,
-            crewRequirement: input.crewRequirement,
-            maintenanceHours: input.maintenanceHours ?? null,
-            imageUrl: input.imageUrl || null,
-            description: input.description || null,
-            historicalContext: input.historicalContext || null,
-            isActive: input.isActive ?? true,
-            usageCount: 0,
-          },
-        });
+          const equipment = await ctx.db.militaryEquipmentCatalog.create({
+            data: {
+              key:
+                input.key || `${input.category}_${input.name.toLowerCase().replace(/\s+/g, "_")}`,
+              name: input.name,
+              manufacturer,
+              category: input.category,
+              subcategory: input.subcategory || null,
+              era: input.era,
+              specifications: JSON.stringify(input.specifications ?? {}),
+              capabilities: JSON.stringify(input.capabilities ?? {}),
+              acquisitionCost: input.acquisitionCost,
+              maintenanceCost: input.maintenanceCost,
+              technologyLevel: input.technologyLevel,
+              crewRequirement: input.crewRequirement,
+              maintenanceHours: input.maintenanceHours ?? null,
+              imageUrl: input.imageUrl || null,
+              description: input.description || null,
+              historicalContext: input.historicalContext || null,
+              isActive: input.isActive ?? true,
+              usageCount: 0,
+            },
+          });
 
-        // Audit log
-        await ctx.db.auditLog.create({
-          data: {
-            userId: ctx.auth!.userId,
-            action: "military_equipment.create",
-            details: JSON.stringify({
+          await auditSuccess(
+            ctx,
+            "create",
+            {
               equipmentId: equipment.id,
               name: equipment.name,
               category: equipment.category,
               era: equipment.era,
-            }),
-            success: true,
-            timestamp: new Date(),
-          },
-        });
-
-        console.log(
-          `[MILITARY_EQUIPMENT] Admin ${ctx.auth!.userId} created equipment: ${equipment.name} (${equipment.id})`
-        );
-
-        return {
-          success: true,
-          equipment: {
-            ...equipment,
-            specifications: equipment.specifications ? JSON.parse(equipment.specifications) : null,
-            capabilities: equipment.capabilities ? JSON.parse(equipment.capabilities) : null,
-          },
-        };
-      } catch (error) {
-        console.error("[MILITARY_EQUIPMENT] Admin failed to create equipment:", error);
-
-        // Audit log failure
-        await ctx.db.auditLog
-          .create({
-            data: {
-              userId: ctx.auth!.userId,
-              action: "military_equipment.create",
-              details: JSON.stringify({ input }),
-              success: false,
-              error: error instanceof Error ? error.message : "Unknown error",
-              timestamp: new Date(),
             },
-          })
-          .catch((err: unknown) => {
-            console.error("[MilitaryEquipment] Background op failed:", (err as Error).message);
-          });
-
-        if (error instanceof TRPCError) throw error;
-        if (isUniqueViolation(error)) {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message: "An equipment item with this key already exists",
-          });
+            `created equipment: ${equipment.name} (${equipment.id})`
+          );
+          return { success: true, equipment: parseJsonColumns(equipment) };
         }
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create equipment",
-          cause: error,
-        });
-      }
-    }),
+      )
+    ),
 
   /**
    * Admin: Update existing catalog equipment
    */
   updateCatalogEquipment: adminProcedure
     .input(z.object({ id: z.string().cuid(), ...z.object(equipmentFields).partial().shape }))
-    .mutation(async ({ ctx, input }) => {
-      try {
-        // Verify equipment exists
-        const existing = await ctx.db.militaryEquipmentCatalog.findUnique({
-          where: { id: input.id },
-        });
-
-        if (!existing) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Equipment not found",
+    .mutation(({ ctx, input }) =>
+      auditedMutation(
+        ctx,
+        {
+          action: "update",
+          label: "update equipment",
+          input,
+          failureMessage: "Failed to update equipment",
+          passThroughTrpc: true,
+        },
+        async () => {
+          const existing = await ctx.db.militaryEquipmentCatalog.findUnique({
+            where: { id: input.id },
           });
-        }
+          if (!existing) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Equipment not found" });
+          }
 
-        const updateData: Prisma.MilitaryEquipmentCatalogUpdateInput = { updatedAt: new Date() };
-        if (input.name !== undefined) updateData.name = input.name;
-        if (input.manufacturer !== undefined) {
-          updateData.manufacturer = await resolveManufacturerKey(ctx.db, input.manufacturer);
-        }
-        if (input.category !== undefined) updateData.category = input.category;
-        if (input.subcategory !== undefined) updateData.subcategory = input.subcategory || null;
-        if (input.era !== undefined) updateData.era = input.era;
-        if (input.specifications !== undefined)
-          updateData.specifications = JSON.stringify(input.specifications);
-        if (input.capabilities !== undefined)
-          updateData.capabilities = JSON.stringify(input.capabilities);
-        if (input.acquisitionCost !== undefined) updateData.acquisitionCost = input.acquisitionCost;
-        if (input.maintenanceCost !== undefined) updateData.maintenanceCost = input.maintenanceCost;
-        if (input.technologyLevel !== undefined) updateData.technologyLevel = input.technologyLevel;
-        if (input.crewRequirement !== undefined) updateData.crewRequirement = input.crewRequirement;
-        if (input.maintenanceHours !== undefined)
-          updateData.maintenanceHours = input.maintenanceHours;
-        if (input.imageUrl !== undefined) updateData.imageUrl = input.imageUrl || null;
-        if (input.description !== undefined) updateData.description = input.description || null;
-        if (input.historicalContext !== undefined)
-          updateData.historicalContext = input.historicalContext || null;
-        if (input.isActive !== undefined) updateData.isActive = input.isActive;
+          const updateData: Prisma.MilitaryEquipmentCatalogUpdateInput = { updatedAt: new Date() };
+          for (const field of PLAIN_FIELDS) {
+            if (input[field] !== undefined) Object.assign(updateData, { [field]: input[field] });
+          }
+          for (const field of NULLABLE_TEXT_FIELDS) {
+            if (input[field] !== undefined) updateData[field] = input[field] || null;
+          }
+          if (input.manufacturer !== undefined) {
+            updateData.manufacturer = await resolveManufacturerKey(ctx.db, input.manufacturer);
+          }
+          if (input.specifications !== undefined) {
+            updateData.specifications = JSON.stringify(input.specifications);
+          }
+          if (input.capabilities !== undefined) {
+            updateData.capabilities = JSON.stringify(input.capabilities);
+          }
 
-        const equipment = await ctx.db.militaryEquipmentCatalog.update({
-          where: { id: input.id },
-          data: updateData,
-        });
-
-        // Audit log
-        await ctx.db.auditLog.create({
-          data: {
-            userId: ctx.auth!.userId,
-            action: "military_equipment.update",
-            details: JSON.stringify({
-              equipmentId: equipment.id,
-              name: equipment.name,
-              changes: Object.keys(updateData),
-            }),
-            success: true,
-            timestamp: new Date(),
-          },
-        });
-
-        console.log(
-          `[MILITARY_EQUIPMENT] Admin ${ctx.auth!.userId} updated equipment: ${equipment.name} (${equipment.id})`
-        );
-
-        return {
-          success: true,
-          equipment: {
-            ...equipment,
-            specifications: equipment.specifications ? JSON.parse(equipment.specifications) : null,
-            capabilities: equipment.capabilities ? JSON.parse(equipment.capabilities) : null,
-          },
-        };
-      } catch (error) {
-        console.error("[MILITARY_EQUIPMENT] Admin failed to update equipment:", error);
-
-        // Audit log failure
-        await ctx.db.auditLog
-          .create({
-            data: {
-              userId: ctx.auth!.userId,
-              action: "military_equipment.update",
-              details: JSON.stringify({ input }),
-              success: false,
-              error: error instanceof Error ? error.message : "Unknown error",
-              timestamp: new Date(),
-            },
-          })
-          .catch((err: unknown) => {
-            console.error("[MilitaryEquipment] Background op failed:", (err as Error).message);
+          const equipment = await ctx.db.militaryEquipmentCatalog.update({
+            where: { id: input.id },
+            data: updateData,
           });
 
-        if (error instanceof TRPCError) throw error;
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to update equipment",
-          cause: error,
-        });
-      }
-    }),
+          await auditSuccess(
+            ctx,
+            "update",
+            { equipmentId: equipment.id, name: equipment.name, changes: Object.keys(updateData) },
+            `updated equipment: ${equipment.name} (${equipment.id})`
+          );
+          return { success: true, equipment: parseJsonColumns(equipment) };
+        }
+      )
+    ),
 
   /**
    * Admin: Delete equipment (soft delete - sets isActive=false)
    */
   deleteCatalogEquipment: adminProcedure
-    .input(
-      z.object({
-        id: z.string().cuid(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const equipment = await ctx.db.militaryEquipmentCatalog.update({
-          where: { id: input.id },
-          data: {
-            isActive: false,
-            updatedAt: new Date(),
-          },
-          select: {
-            id: true,
-            name: true,
-            category: true,
-          },
-        });
-
-        // Audit log
-        await ctx.db.auditLog.create({
-          data: {
-            userId: ctx.auth!.userId,
-            action: "military_equipment.delete",
-            details: JSON.stringify({
-              equipmentId: equipment.id,
-              name: equipment.name,
-            }),
-            success: true,
-            timestamp: new Date(),
-          },
-        });
-
-        console.log(
-          `[MILITARY_EQUIPMENT] Admin ${ctx.auth!.userId} deleted equipment: ${equipment.name} (${equipment.id})`
-        );
-
-        return {
-          success: true,
-          equipment,
-        };
-      } catch (error) {
-        console.error("[MILITARY_EQUIPMENT] Admin failed to delete equipment:", error);
-
-        // Audit log failure
-        await ctx.db.auditLog
-          .create({
-            data: {
-              userId: ctx.auth!.userId,
-              action: "military_equipment.delete",
-              details: JSON.stringify({ input }),
-              success: false,
-              error: error instanceof Error ? error.message : "Unknown error",
-              timestamp: new Date(),
-            },
-          })
-          .catch((err: unknown) => {
-            console.error("[MilitaryEquipment] Background op failed:", (err as Error).message);
+    .input(z.object({ id: z.string().cuid() }))
+    .mutation(({ ctx, input }) =>
+      auditedMutation(
+        ctx,
+        {
+          action: "delete",
+          label: "delete equipment",
+          input,
+          failureMessage: "Failed to delete equipment",
+        },
+        async () => {
+          const equipment = await ctx.db.militaryEquipmentCatalog.update({
+            where: { id: input.id },
+            data: { isActive: false, updatedAt: new Date() },
+            select: { id: true, name: true, category: true },
           });
 
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to delete equipment",
-          cause: error,
-        });
-      }
-    }),
+          await auditSuccess(
+            ctx,
+            "delete",
+            { equipmentId: equipment.id, name: equipment.name },
+            `deleted equipment: ${equipment.name} (${equipment.id})`
+          );
+          return { success: true, equipment };
+        }
+      )
+    ),
 
   /**
    * Admin: Bulk toggle equipment active status
@@ -466,65 +419,29 @@ export const militaryEquipmentCatalogRouter = createTRPCRouter({
         isActive: z.boolean(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const result = await ctx.db.militaryEquipmentCatalog.updateMany({
-          where: {
-            id: { in: input.equipmentIds },
-          },
-          data: {
-            isActive: input.isActive,
-            updatedAt: new Date(),
-          },
-        });
-
-        // Audit log
-        await ctx.db.auditLog.create({
-          data: {
-            userId: ctx.auth!.userId,
-            action: "military_equipment.bulk_toggle",
-            details: JSON.stringify({
-              count: result.count,
-              equipmentIds: input.equipmentIds,
-              isActive: input.isActive,
-            }),
-            success: true,
-            timestamp: new Date(),
-          },
-        });
-
-        console.log(
-          `[MILITARY_EQUIPMENT] Admin ${ctx.auth!.userId} bulk toggled ${result.count} equipment items to ${input.isActive ? "active" : "inactive"}`
-        );
-
-        return {
-          success: true,
-          count: result.count,
-        };
-      } catch (error) {
-        console.error("[MILITARY_EQUIPMENT] Admin failed to bulk toggle equipment:", error);
-
-        // Audit log failure
-        await ctx.db.auditLog
-          .create({
-            data: {
-              userId: ctx.auth!.userId,
-              action: "military_equipment.bulk_toggle",
-              details: JSON.stringify({ input }),
-              success: false,
-              error: error instanceof Error ? error.message : "Unknown error",
-              timestamp: new Date(),
-            },
-          })
-          .catch((err: unknown) => {
-            console.error("[MilitaryEquipment] Background op failed:", (err as Error).message);
+    .mutation(({ ctx, input }) =>
+      auditedMutation(
+        ctx,
+        {
+          action: "bulk_toggle",
+          label: "bulk toggle equipment",
+          input,
+          failureMessage: "Failed to bulk toggle equipment",
+        },
+        async () => {
+          const result = await ctx.db.militaryEquipmentCatalog.updateMany({
+            where: { id: { in: input.equipmentIds } },
+            data: { isActive: input.isActive, updatedAt: new Date() },
           });
 
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to bulk toggle equipment",
-          cause: error,
-        });
-      }
-    }),
+          await auditSuccess(
+            ctx,
+            "bulk_toggle",
+            { count: result.count, equipmentIds: input.equipmentIds, isActive: input.isActive },
+            `bulk toggled ${result.count} equipment items to ${input.isActive ? "active" : "inactive"}`
+          );
+          return { success: true, count: result.count };
+        }
+      )
+    ),
 });

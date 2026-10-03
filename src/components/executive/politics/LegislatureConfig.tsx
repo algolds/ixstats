@@ -17,6 +17,8 @@ import { api } from "~/trpc/react";
 
 type SelectionMethod =
   "elected" | "appointed" | "sortition" | "hereditary" | "ex-officio" | "corporatist";
+type ChamberType = "unicameral" | "bicameral" | "tricameral" | "tetracameral";
+type ElectoralSystem = "proportional" | "fptp" | "mixed";
 
 const SELECTION_METHOD_LABELS: Record<SelectionMethod, string> = {
   elected: "Elected",
@@ -27,11 +29,64 @@ const SELECTION_METHOD_LABELS: Record<SelectionMethod, string> = {
   corporatist: "Corporatist (by sector)",
 };
 
+const ELECTORAL_SYSTEMS: [ElectoralSystem, string][] = [
+  ["proportional", "Proportional (D'Hondt)"],
+  ["fptp", "First past the post"],
+  ["mixed", "Mixed (50/50)"],
+];
+
+const CHAMBER_TYPES: [ChamberType, string][] = [
+  ["unicameral", "Unicameral (one chamber)"],
+  ["bicameral", "Bicameral (two chambers)"],
+  ["tricameral", "Tricameral (three chambers)"],
+  ["tetracameral", "Tetracameral (four chambers)"],
+];
+
+const ELECTION_CYCLES = [
+  ["fixed", "Fixed term"],
+  ["variable", "Variable (snap elections)"],
+] as const;
+
 interface ChamberItem {
   name: string;
   seats: number;
-  electoralSystem: "proportional" | "fptp" | "mixed";
+  electoralSystem: ElectoralSystem;
   selectionMethod?: SelectionMethod;
+}
+
+const MIN_CHAMBER_SEATS = 10;
+const clampSeats = (value: number, max = 5000) => Math.max(1, Math.min(max, value || 1));
+const sumSeats = (chambers: ChamberItem[]) =>
+  chambers.reduce((sum, c) => sum + (Number(c.seats) || 0), 0);
+
+/** Default chambers for a chamber type: names and a seat split of `total`. */
+function presetChambers(
+  type: ChamberType,
+  total: number,
+  system: ElectoralSystem,
+  unicameralName: string,
+  selectionMethod?: SelectionMethod
+): ChamberItem[] {
+  const share = (fraction: number) => Math.max(MIN_CHAMBER_SEATS, Math.floor(total * fraction));
+  const rows: [string, number][] = {
+    unicameral: [[unicameralName, total]] as [string, number][],
+    bicameral: [
+      ["House of Representatives", Math.max(MIN_CHAMBER_SEATS, total - share(0.4))],
+      ["Senate", share(0.4)],
+    ] as [string, number][],
+    tricameral: [
+      ["House of Commons", Math.max(MIN_CHAMBER_SEATS, total - share(0.2) * 2)],
+      ["Senate", share(0.2)],
+      ["House of Nobles", share(0.2)],
+    ] as [string, number][],
+    tetracameral: [
+      ["Congress of the Commons", total - share(0.25) * 3],
+      ["Senate", share(0.25)],
+      ["Chamber of Regions", share(0.25)],
+      ["Council of State", share(0.25)],
+    ] as [string, number][],
+  }[type];
+  return rows.map(([name, seats]) => ({ name, seats, electoralSystem: system, selectionMethod }));
 }
 
 function parseChambersClient(
@@ -40,47 +95,146 @@ function parseChambersClient(
   totalSeats: number,
   globalElectoralSystem: string
 ): ChamberItem[] {
-  if (chamberType && chamberType.includes("|")) {
-    const [, serialized] = chamberType.split("|");
-    if (serialized) {
-      return serialized
-        .split(";")
-        .filter(Boolean)
-        .map((part) => {
-          const [name, seatsStr, system, selection] = part.split(":");
-          return {
-            name: name || "Chamber",
-            seats: Number(seatsStr) || 100,
-            electoralSystem: (system || globalElectoralSystem || "proportional") as any,
-            selectionMethod: (selection as SelectionMethod) || "elected",
-          };
-        });
-    }
+  const system = (globalElectoralSystem || "proportional") as ElectoralSystem;
+  const serialized = chamberType.split("|")[1];
+  if (serialized) {
+    return serialized
+      .split(";")
+      .filter(Boolean)
+      .map((part) => {
+        const [name, seatsStr, chamberSystem, selection] = part.split(":");
+        return {
+          name: name || "Chamber",
+          seats: Number(seatsStr) || 100,
+          electoralSystem: (chamberSystem || system) as ElectoralSystem,
+          selectionMethod: (selection as SelectionMethod) || "elected",
+        };
+      });
   }
 
-  const system = (globalElectoralSystem || "proportional") as any;
-  if (chamberType === "bicameral") {
-    const senateSeats = Math.max(10, Math.floor(totalSeats * 0.4));
-    const houseSeats = Math.max(10, totalSeats - senateSeats);
-    return [
-      {
-        name: "House of Representatives",
-        seats: houseSeats,
-        electoralSystem: system,
-        selectionMethod: "elected",
-      },
-      { name: "Senate", seats: senateSeats, electoralSystem: system, selectionMethod: "elected" },
-    ];
-  }
+  const type = chamberType === "bicameral" ? "bicameral" : "unicameral";
+  return presetChambers(
+    type,
+    totalSeats,
+    system,
+    legislatureName || "National Assembly",
+    "elected"
+  );
+}
 
-  return [
-    {
-      name: legislatureName || "National Assembly",
-      seats: totalSeats,
-      electoralSystem: system,
-      selectionMethod: "elected",
-    },
-  ];
+function SaveLabel({ saved, exists }: { saved: boolean; exists: boolean }) {
+  const Icon = saved ? CheckCircle : Save;
+  return (
+    <>
+      <Icon className="h-4 w-4" />
+      {saved ? "Saved" : exists ? "Update legislature" : "Create legislature"}
+    </>
+  );
+}
+
+const CHAMBER_SELECT_TRIGGER =
+  "bg-surface-secondary text-footnote h-8 w-full min-w-0 overflow-hidden";
+
+function ChamberRow({
+  index,
+  chamber,
+  onChange,
+  onSeatsBlur,
+}: {
+  index: number;
+  chamber: ChamberItem;
+  onChange: (field: keyof ChamberItem, value: string) => void;
+  onSeatsBlur: (value: string) => void;
+}) {
+  const labelClass = "text-footnote text-label-secondary";
+  return (
+    <div className="rounded-control border-separator bg-fill-2 grid grid-cols-1 gap-3 border p-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="space-y-1">
+        <Label className={labelClass}>Chamber {index + 1} name</Label>
+        <Input
+          value={chamber.name}
+          onChange={(e) => onChange("name", e.target.value)}
+          placeholder={`Chamber ${index + 1}`}
+          className="bg-surface-secondary text-footnote h-8"
+        />
+      </div>
+      <div className="space-y-1">
+        <Label className={labelClass}>Seats (10 to 5,000)</Label>
+        <Input
+          type="number"
+          min={10}
+          max={5000}
+          value={chamber.seats}
+          onChange={(e) => onChange("seats", e.target.value)}
+          onBlur={(e) => onSeatsBlur(e.target.value)}
+          className="bg-surface-secondary text-footnote h-8"
+        />
+      </div>
+      <div className="min-w-0 space-y-1">
+        <Label className={labelClass}>Electoral system</Label>
+        <Select
+          value={chamber.electoralSystem}
+          onValueChange={(v) => onChange("electoralSystem", v)}
+        >
+          <SelectTrigger className={CHAMBER_SELECT_TRIGGER}>
+            <SelectValue className="truncate" />
+          </SelectTrigger>
+          <SelectContent>
+            {ELECTORAL_SYSTEMS.map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="min-w-0 space-y-1">
+        <Label className={labelClass}>Selection method</Label>
+        <Select
+          value={chamber.selectionMethod || "elected"}
+          onValueChange={(v) => onChange("selectionMethod", v)}
+        >
+          <SelectTrigger className={CHAMBER_SELECT_TRIGGER}>
+            <SelectValue className="truncate" />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(SELECTION_METHOD_LABELS).map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+}
+
+function ChamberLayout({
+  chambers,
+  onChange,
+  onSeatsBlur,
+}: {
+  chambers: ChamberItem[];
+  onChange: (index: number, field: keyof ChamberItem, value: string) => void;
+  onSeatsBlur: (index: number, value: string) => void;
+}) {
+  return (
+    <div className="rounded-control border-separator bg-fill-2 space-y-3 border p-3">
+      <h4 className="text-eyebrow text-label-tertiary">Chamber layout and settings</h4>
+      <div className="space-y-3">
+        {chambers.map((chamber, index) => (
+          <ChamberRow
+            key={index}
+            index={index}
+            chamber={chamber}
+            onChange={(field, value) => onChange(index, field, value)}
+            onSeatsBlur={(value) => onSeatsBlur(index, value)}
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 interface LegislatureConfigProps {
@@ -90,16 +244,15 @@ interface LegislatureConfigProps {
 export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
   const [formData, setFormData] = useState({
     name: "National Assembly",
-    chamberType: "unicameral" as "unicameral" | "bicameral" | "tricameral" | "tetracameral",
+    chamberType: "unicameral" as ChamberType,
     totalSeats: 100,
-    electoralSystem: "proportional" as "proportional" | "fptp" | "mixed",
+    electoralSystem: "proportional" as ElectoralSystem,
     termLength: 4,
     electionCycle: "fixed" as "fixed" | "variable",
   });
   const [chambers, setChambers] = useState<ChamberItem[]>([]);
   const [saved, setSaved] = useState(false);
-  // Track whether per-chamber edits are in progress to prevent the
-  // unicameral sync effect from overwriting manual seat edits
+  // Set by per-chamber edits so the unicameral sync effect doesn't overwrite them.
   const chamberEditInProgress = useRef(false);
 
   const { data: legislature, refetch } = api.elections.getLegislature.useQuery(
@@ -116,17 +269,12 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
         legislature.electoralSystem
       );
 
-      let baseChamberType = legislature.chamberType;
-      if (legislature.chamberType.includes("|")) {
-        baseChamberType = legislature.chamberType.split("|")[0]!;
-      }
-
       // oxlint-disable-next-line
       setFormData({
         name: legislature.name,
-        chamberType: baseChamberType as any,
+        chamberType: legislature.chamberType.split("|")[0] as ChamberType,
         totalSeats: legislature.totalSeats,
-        electoralSystem: legislature.electoralSystem as "proportional" | "fptp" | "mixed",
+        electoralSystem: legislature.electoralSystem as ElectoralSystem,
         termLength: legislature.termLength,
         electionCycle: (legislature.electionCycle as "fixed" | "variable") ?? "fixed",
       });
@@ -136,9 +284,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
     }
   }, [legislature]);
 
-  // Sync single chamber config with main inputs if in unicameral mode.
-  // Skip when the totalSeats change originated from a per-chamber edit
-  // (the updateChamber handler sets chamberEditInProgress.current = true).
+  // In unicameral mode the single chamber mirrors the main inputs (skipped after a chamber edit).
   useEffect(() => {
     if (chamberEditInProgress.current) {
       chamberEditInProgress.current = false;
@@ -160,7 +306,6 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
   const configureLegislature = api.elections.configureLegislature.useMutation({
     onSuccess: () => {
       refetch();
-      // Seats were reset and an election (re)scheduled — refresh the lifecycle views.
       void utils.elections.getElectionStatus.invalidate({ countryId });
       void utils.elections.getElections.invalidate({ countryId });
       void utils.elections.getCurrentParliament.invalidate({ countryId });
@@ -169,107 +314,60 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
     },
   });
 
+  const patchForm = (patch: Partial<typeof formData>) =>
+    setFormData((prev) => ({ ...prev, ...patch }));
+
   function handleChamberTypeChange(type: string) {
-    let newChambers: ChamberItem[] = [];
-    const currentName = formData.name || "Parliament";
-    const currentSys = formData.electoralSystem;
-    const currentSeats = Number(formData.totalSeats) || 100;
-
-    if (type === "unicameral") {
-      newChambers = [{ name: currentName, seats: currentSeats, electoralSystem: currentSys }];
-    } else if (type === "bicameral") {
-      const senateSeats = Math.max(10, Math.floor(currentSeats * 0.4));
-      const houseSeats = Math.max(10, currentSeats - senateSeats);
-      newChambers = [
-        { name: "House of Representatives", seats: houseSeats, electoralSystem: currentSys },
-        { name: "Senate", seats: senateSeats, electoralSystem: currentSys },
-      ];
-    } else if (type === "tricameral") {
-      const senateSeats = Math.max(10, Math.floor(currentSeats * 0.2));
-      const chamber3Seats = Math.max(10, Math.floor(currentSeats * 0.2));
-      const houseSeats = Math.max(10, currentSeats - senateSeats - chamber3Seats);
-      newChambers = [
-        { name: "House of Commons", seats: houseSeats, electoralSystem: currentSys },
-        { name: "Senate", seats: senateSeats, electoralSystem: currentSys },
-        { name: "House of Nobles", seats: chamber3Seats, electoralSystem: currentSys },
-      ];
-    } else if (type === "tetracameral") {
-      const seatPart = Math.max(10, Math.floor(currentSeats / 4));
-      newChambers = [
-        {
-          name: "Congress of the Commons",
-          seats: currentSeats - seatPart * 3,
-          electoralSystem: currentSys,
-        },
-        { name: "Senate", seats: seatPart, electoralSystem: currentSys },
-        { name: "Chamber of Regions", seats: seatPart, electoralSystem: currentSys },
-        { name: "Council of State", seats: seatPart, electoralSystem: currentSys },
-      ];
-    }
-
-    const newTotal = newChambers.reduce((acc, c) => acc + c.seats, 0);
-    setFormData({ ...formData, chamberType: type as any, totalSeats: newTotal });
+    const newChambers = presetChambers(
+      type as ChamberType,
+      Number(formData.totalSeats) || 100,
+      formData.electoralSystem,
+      formData.name || "Parliament"
+    );
+    setFormData({
+      ...formData,
+      chamberType: type as ChamberType,
+      totalSeats: sumSeats(newChambers),
+    });
     setChambers(newChambers);
   }
 
-  function updateChamber(index: number, field: keyof ChamberItem, value: any) {
-    const updated: ChamberItem[] = chambers.map((c, idx) => {
-      if (idx === index) {
-        if (field === "seats") {
-          const val = Number(value) || 0;
-          return { ...c, [field]: val };
-        }
-        return { ...c, [field]: value };
-      }
-      return c;
-    });
+  /** Stores per-chamber edits and totals them, flagged so the unicameral sync leaves them alone. */
+  function commitChambers(updated: ChamberItem[]) {
     setChambers(updated);
-
-    const newTotal = updated.reduce((acc, c) => acc + (Number(c.seats) || 0), 0);
-    // Flag that this totalSeats change is from a per-chamber edit,
-    // so the unicameral sync effect (which depends on totalSeats) won't
-    // overwrite the user's manual edits.
     chamberEditInProgress.current = true;
-    setFormData((prev) => ({ ...prev, totalSeats: newTotal }));
+    setFormData((prev) => ({ ...prev, totalSeats: sumSeats(updated) }));
   }
 
-  function handleBlurChamber(index: number, value: any) {
-    const num = Math.max(1, Math.min(5000, Number(value) || 1));
-    const updated = chambers.map((c, idx) => {
-      if (idx === index) {
-        return { ...c, seats: num };
-      }
-      return c;
-    });
-    setChambers(updated);
+  function updateChamber(index: number, field: keyof ChamberItem, value: string) {
+    commitChambers(
+      chambers.map((c, idx) =>
+        idx === index ? { ...c, [field]: field === "seats" ? Number(value) || 0 : value } : c
+      )
+    );
+  }
 
-    const newTotal = updated.reduce((acc, c) => acc + (Number(c.seats) || 0), 0);
-    chamberEditInProgress.current = true;
-    setFormData((prev) => ({ ...prev, totalSeats: newTotal }));
+  function handleBlurChamber(index: number, value: string) {
+    commitChambers(
+      chambers.map((c, idx) => (idx === index ? { ...c, seats: clampSeats(Number(value)) } : c))
+    );
   }
 
   function handleSave() {
-    const clampedChambers = chambers.map((c) => ({
-      ...c,
-      seats: Math.max(1, Math.min(5000, Number(c.seats) || 1)),
-    }));
+    const clampedChambers = chambers.map((c) => ({ ...c, seats: clampSeats(Number(c.seats)) }));
     setChambers(clampedChambers);
 
-    const computedTotal = clampedChambers.reduce((acc, c) => acc + c.seats, 0);
-    const clampedTotal = Math.max(1, Math.min(10000, computedTotal));
-
+    const clampedTotal = clampSeats(sumSeats(clampedChambers), 10000);
     const serializedChambers = clampedChambers
       .map((c) => `${c.name}:${c.seats}:${c.electoralSystem}:${c.selectionMethod || "elected"}`)
       .join(";");
-    const fullChamberType = `${formData.chamberType}|${serializedChambers}`;
-
-    const clampedTerm = Math.max(1, Math.min(10, Number(formData.termLength) || 4));
+    const clampedTerm = clampSeats(Number(formData.termLength) || 4, 10);
 
     setFormData({ ...formData, totalSeats: clampedTotal, termLength: clampedTerm });
     configureLegislature.mutate({
       countryId,
       name: formData.name,
-      chamberType: fullChamberType,
+      chamberType: `${formData.chamberType}|${serializedChambers}`,
       totalSeats: clampedTotal,
       electoralSystem: formData.electoralSystem,
       termLength: clampedTerm,
@@ -291,7 +389,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
               <Label>Legislature name</Label>
               <Input
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => patchForm({ name: e.target.value })}
                 placeholder="e.g. National Assembly"
               />
             </div>
@@ -302,10 +400,11 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="unicameral">Unicameral (one chamber)</SelectItem>
-                  <SelectItem value="bicameral">Bicameral (two chambers)</SelectItem>
-                  <SelectItem value="tricameral">Tricameral (three chambers)</SelectItem>
-                  <SelectItem value="tetracameral">Tetracameral (four chambers)</SelectItem>
+                  {CHAMBER_TYPES.map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -320,16 +419,8 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                 max={isMultiChamber ? 10000 : 5000}
                 value={formData.totalSeats}
                 disabled={isMultiChamber}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    totalSeats: Number(e.target.value) || 0,
-                  })
-                }
-                onBlur={(e) => {
-                  const val = Math.max(1, Math.min(5000, Number(e.target.value) || 1));
-                  setFormData({ ...formData, totalSeats: val });
-                }}
+                onChange={(e) => patchForm({ totalSeats: Number(e.target.value) || 0 })}
+                onBlur={(e) => patchForm({ totalSeats: clampSeats(Number(e.target.value)) })}
               />
               <p className="text-label-secondary text-footnote mt-1">
                 {isMultiChamber ? "Sum of all chambers, up to 10,000" : "1 to 5,000 seats"}
@@ -340,15 +431,17 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
               <Select
                 value={formData.electoralSystem}
                 disabled={isMultiChamber}
-                onValueChange={(v) => setFormData({ ...formData, electoralSystem: v as any })}
+                onValueChange={(v) => patchForm({ electoralSystem: v as ElectoralSystem })}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="proportional">Proportional (D&apos;Hondt)</SelectItem>
-                  <SelectItem value="fptp">First past the post</SelectItem>
-                  <SelectItem value="mixed">Mixed (50/50)</SelectItem>
+                  {ELECTORAL_SYSTEMS.map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {isMultiChamber && (
@@ -362,23 +455,24 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                 min={1}
                 max={10}
                 value={formData.termLength}
-                onChange={(e) =>
-                  setFormData({ ...formData, termLength: Number(e.target.value) || 1 })
-                }
+                onChange={(e) => patchForm({ termLength: Number(e.target.value) || 1 })}
               />
             </div>
             <div>
               <Label>Election cycle</Label>
               <Select
                 value={formData.electionCycle}
-                onValueChange={(v) => setFormData({ ...formData, electionCycle: v as any })}
+                onValueChange={(v) => patchForm({ electionCycle: v as "fixed" | "variable" })}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="fixed">Fixed term</SelectItem>
-                  <SelectItem value="variable">Variable (snap elections)</SelectItem>
+                  {ELECTION_CYCLES.map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <p className="text-label-secondary text-footnote mt-1">
@@ -388,77 +482,11 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
           </div>
 
           {isMultiChamber && chambers.length > 0 && (
-            <div className="rounded-control border-separator bg-fill-2 space-y-3 border p-3">
-              <h4 className="text-eyebrow text-label-tertiary">Chamber layout and settings</h4>
-              <div className="space-y-3">
-                {chambers.map((chamber, index) => (
-                  <div
-                    key={index}
-                    className="rounded-control border-separator bg-fill-2 grid grid-cols-1 gap-3 border p-3 sm:grid-cols-2 lg:grid-cols-4"
-                  >
-                    <div className="space-y-1">
-                      <Label className="text-footnote text-label-secondary">
-                        Chamber {index + 1} name
-                      </Label>
-                      <Input
-                        value={chamber.name}
-                        onChange={(e) => updateChamber(index, "name", e.target.value)}
-                        placeholder={`Chamber ${index + 1}`}
-                        className="bg-surface-secondary text-footnote h-8"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-footnote text-label-secondary">
-                        Seats (10 to 5,000)
-                      </Label>
-                      <Input
-                        type="number"
-                        min={10}
-                        max={5000}
-                        value={chamber.seats}
-                        onChange={(e) => updateChamber(index, "seats", e.target.value)}
-                        onBlur={(e) => handleBlurChamber(index, e.target.value)}
-                        className="bg-surface-secondary text-footnote h-8"
-                      />
-                    </div>
-                    <div className="min-w-0 space-y-1">
-                      <Label className="text-footnote text-label-secondary">Electoral system</Label>
-                      <Select
-                        value={chamber.electoralSystem}
-                        onValueChange={(v) => updateChamber(index, "electoralSystem", v)}
-                      >
-                        <SelectTrigger className="bg-surface-secondary text-footnote h-8 w-full min-w-0 overflow-hidden">
-                          <SelectValue className="truncate" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="proportional">Proportional (D&apos;Hondt)</SelectItem>
-                          <SelectItem value="fptp">First past the post</SelectItem>
-                          <SelectItem value="mixed">Mixed (50/50)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="min-w-0 space-y-1">
-                      <Label className="text-footnote text-label-secondary">Selection method</Label>
-                      <Select
-                        value={chamber.selectionMethod || "elected"}
-                        onValueChange={(v) => updateChamber(index, "selectionMethod", v)}
-                      >
-                        <SelectTrigger className="bg-surface-secondary text-footnote h-8 w-full min-w-0 overflow-hidden">
-                          <SelectValue className="truncate" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(SELECTION_METHOD_LABELS).map(([value, label]) => (
-                            <SelectItem key={value} value={value}>
-                              {label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <ChamberLayout
+              chambers={chambers}
+              onChange={updateChamber}
+              onSeatsBlur={handleBlurChamber}
+            />
           )}
 
           {legislature && (
@@ -473,17 +501,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
             size="sm"
             className="w-full gap-2"
           >
-            {saved ? (
-              <>
-                <CheckCircle className="h-4 w-4" />
-                Saved
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4" />
-                {legislature ? "Update legislature" : "Create legislature"}
-              </>
-            )}
+            <SaveLabel saved={saved} exists={!!legislature} />
           </Button>
         </div>
       </CardContent>

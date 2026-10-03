@@ -26,7 +26,7 @@ import {
   validateEquipmentImagesJob,
   getValidationStats,
 } from "~/server/cron/validate-equipment-images";
-import { cronAuthError } from "../cron-auth";
+import { cronAuthError, cronFailureResponse } from "../cron-auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -67,19 +67,9 @@ export async function GET(request: NextRequest) {
       timestamp: result.timestamp.toISOString(),
     });
   } catch (error) {
-    console.error("[API] Image validation cron job failed:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-        timestamp: new Date().toISOString(),
-      },
-      { status: 500 }
-    );
+    return cronFailureResponse("[API] Image validation cron job failed:", error);
   }
 }
 
-export async function POST(request: NextRequest) {
-  // Same logic as GET for compatibility
-  return GET(request);
-}
+// POST runs the same job as GET, for compatibility
+export const POST = GET;

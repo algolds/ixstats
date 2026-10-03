@@ -194,8 +194,6 @@ export function findContainingRegion(
   );
 }
 
-// ── GeoJSON export / import ─────────────────────────────────────────
-
 /** Serialises editor features to a GeoJSON FeatureCollection (one feature per editor feature). */
 export function featuresToGeoJSON(features: EditorFeature[]): FeatureCollection {
   const out: Feature[] = [];

@@ -85,7 +85,7 @@ countries/
 │   ├── CountriesPageModular.tsx      # Explore grid orchestrator
 │   ├── CountriesFocusGridModular.tsx
 │   ├── CountriesFilterSidebar.tsx
-│   ├── CountriesSearch.tsx
+│   ├── filters.ts                    # Sort/filter types and the sort options
 │   ├── CountriesSortBar.tsx
 │   ├── CountriesStats.tsx
 │   ├── CountryComparisonModal.tsx

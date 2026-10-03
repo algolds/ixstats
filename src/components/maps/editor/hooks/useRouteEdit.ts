@@ -1,112 +1,91 @@
 import { useRef, useEffect, useCallback } from "react";
 import type { Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
-import type { Position } from "geojson";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import {
   getGeoJSONSource,
   updateSnapGuide,
   getFeatureCoords,
   EMPTY_FC,
+  collection,
+  lineFeature,
+  midpointFeatures,
+  pointFeature,
 } from "../utils/map-helpers";
 import {
-  HYSTERESIS_PX,
   exceedsHysteresis,
   detectAxis,
   axisLock,
   type DragAxis,
   type ScreenPoint,
 } from "./drag-utils";
+import {
+  canvasPoint,
+  createListeners,
+  createLongPress,
+  nearbyMarker,
+  queryNear,
+} from "./map-interaction";
+import { useLatest } from "./useLatest";
+
+type Vertex = [number, number];
 
 interface UseRouteEditProps {
   map: MapLibreMap | null;
   isLoaded: boolean;
   mode: EditorMode;
-  routeWaypoints?: [number, number][];
-  editingRouteVertices?: [number, number][];
-  onRouteVerticesUpdate?: (vertices: [number, number][]) => void;
+  editingRouteVertices?: Vertex[];
+  onRouteVerticesUpdate?: (vertices: Vertex[]) => void;
 }
+
+interface RouteDrag {
+  index: number;
+  startPos: ScreenPoint | null;
+  startCoords: Vertex | null;
+  initialVertices: Vertex[] | null;
+  /** Vertices being dragged; drawn straight to the map sources, committed on release. */
+  liveVertices: Vertex[] | null;
+  exceededHysteresis: boolean;
+  axis: DragAxis | null;
+}
+
+const VERTEX_LAYER = "editor-route-edit-vertices-layer";
+const MIDPOINT_LAYER = "editor-route-edit-midpoints-layer";
+
+const replaceAt = (vertices: Vertex[], index: number, vertex: Vertex) =>
+  vertices.map((v, i) => (i === index ? vertex : v));
 
 export function useRouteEdit({
   map,
   isLoaded,
   mode,
-  routeWaypoints,
   editingRouteVertices,
   onRouteVerticesUpdate,
 }: UseRouteEditProps) {
-  const routeDraggingRef = useRef<number | null>(null);
-  const lastMousePointRef = useRef<{ x: number; y: number } | null>(null);
-  const dragStartPosRef = useRef<ScreenPoint | null>(null);
-  const dragStartCoordsRef = useRef<[number, number] | null>(null);
-  const dragInitialVerticesRef = useRef<[number, number][] | null>(null);
-  const isExceededHysteresisRef = useRef<boolean>(false);
-  const currentAxisRef = useRef<DragAxis | null>(null);
-  const liveDraggingVerticesRef = useRef<[number, number][] | null>(null);
+  const dragRef = useRef<RouteDrag | null>(null);
 
-  // Keep latest refs of parameters to avoid stale closure in event callbacks
-  const routeWaypointsRef = useRef(routeWaypoints);
-  // oxlint-disable-next-line
-  routeWaypointsRef.current = routeWaypoints;
-  const editingRouteVerticesRef = useRef(editingRouteVertices);
-  // oxlint-disable-next-line
-  editingRouteVerticesRef.current = editingRouteVertices;
-  const onRouteVerticesUpdateRef = useRef(onRouteVerticesUpdate);
-  // oxlint-disable-next-line
-  onRouteVerticesUpdateRef.current = onRouteVerticesUpdate;
+  const latest = useLatest({ editingRouteVertices, onRouteVerticesUpdate });
 
-  const updateRouteEditVis = useCallback((overrideVertices?: [number, number][]) => {
-    const vertices = overrideVertices ?? editingRouteVerticesRef.current;
-    if (!map || !vertices || vertices.length === 0) return;
+  const updateRouteEditVis = useCallback(
+    (overrideVertices?: Vertex[]) => {
+      const vertices = overrideVertices ?? latest.current.editingRouteVertices;
+      if (!map || !vertices || vertices.length === 0) return;
 
-    const lineFc = {
-      type: "FeatureCollection" as const,
-      features: [
-        {
-          type: "Feature" as const,
-          geometry: {
-            type: "LineString" as const,
-            coordinates: vertices,
-          },
-          properties: {},
-        },
-      ],
-    };
-    getGeoJSONSource(map, "editor-route-edit-line")?.setData(lineFc);
-
-    const vertFc = {
-      type: "FeatureCollection" as const,
-      features: vertices.map((coord, idx) => ({
-        type: "Feature" as const,
-        geometry: { type: "Point" as const, coordinates: coord },
-        properties: { vertexIndex: idx },
-      })),
-    };
-    getGeoJSONSource(map, "editor-route-edit-vertices")?.setData(vertFc);
-
-    const midFeatures: GeoJSON.Feature[] = [];
-    for (let i = 0; i < vertices.length - 1; i++) {
-      const a = vertices[i]!;
-      const b = vertices[i + 1]!;
-      midFeatures.push({
-        type: "Feature",
-        geometry: {
-          type: "Point",
-          coordinates: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2],
-        },
-        properties: { startIndex: i },
-      });
-    }
-    getGeoJSONSource(map, "editor-route-edit-midpoints")?.setData({
-      type: "FeatureCollection",
-      features: midFeatures,
-    });
-  }, [map]);
+      getGeoJSONSource(map, "editor-route-edit-line")?.setData(collection([lineFeature(vertices)]));
+      getGeoJSONSource(map, "editor-route-edit-vertices")?.setData(
+        collection(vertices.map((coord, vertexIndex) => pointFeature(coord, { vertexIndex })))
+      );
+      getGeoJSONSource(map, "editor-route-edit-midpoints")?.setData(
+        collection(midpointFeatures(vertices, (startIndex) => ({ startIndex })))
+      );
+    },
+    [map]
+  );
 
   const clearRouteEditVis = useCallback(() => {
     if (!map) return;
-    getGeoJSONSource(map, "editor-route-edit-line")?.setData(EMPTY_FC);
-    getGeoJSONSource(map, "editor-route-edit-vertices")?.setData(EMPTY_FC);
-    getGeoJSONSource(map, "editor-route-edit-midpoints")?.setData(EMPTY_FC);
+    for (const id of ["line", "vertices", "midpoints"]) {
+      getGeoJSONSource(map, `editor-route-edit-${id}`)?.setData(EMPTY_FC);
+    }
   }, [map]);
 
   useEffect(() => {
@@ -122,374 +101,227 @@ export function useRouteEdit({
 
   // Clear snap preview when leaving add-route mode
   useEffect(() => {
-    if (mode !== "add-route") {
-      if (map && isLoaded) {
-        getGeoJSONSource(map, "editor-route-snap-preview")?.setData(EMPTY_FC);
-        getGeoJSONSource(map, "editor-route-preview-segment")?.setData(EMPTY_FC);
-      }
+    if (mode !== "add-route" && map && isLoaded) {
+      getGeoJSONSource(map, "editor-route-snap-preview")?.setData(EMPTY_FC);
+      getGeoJSONSource(map, "editor-route-preview-segment")?.setData(EMPTY_FC);
     }
   }, [map, isLoaded, mode]);
 
-  // Handle route drag and mouse interactions
   useEffect(() => {
     if (!map || !isLoaded) return;
 
     const canvas = map.getCanvas();
+    const listeners = createListeners(map);
+    const editing = () => mode === "edit-route";
+    const setCursor = (cursor: string) => {
+      canvas.style.cursor = cursor;
+    };
 
-    const onRouteVertexMouseDown = (e: MapLayerMouseEvent) => {
-      if (mode !== "edit-route") return;
+    /** Removes a vertex (a route keeps at least two). */
+    const deleteVertex = (index: number) => {
+      const vertices = latest.current.editingRouteVertices;
+      if (vertices && vertices.length > 2) {
+        latest.current.onRouteVerticesUpdate?.(vertices.filter((_, i) => i !== index));
+      }
+    };
+
+    const endDrag = () => {
+      dragRef.current = null;
+      map.dragPan.enable();
+      setCursor("");
+      updateSnapGuide(map, null, null);
+    };
+
+    const onVertexMouseDown = (e: MapLayerMouseEvent) => {
+      if (!editing()) return;
       e.preventDefault();
       const f = e.features?.[0];
       if (!f) return;
 
-      const idx = f.properties.vertexIndex as number;
-      routeDraggingRef.current = idx;
-      dragStartPosRef.current = { x: e.point.x, y: e.point.y };
-      const currentVertices = editingRouteVerticesRef.current;
-      if (currentVertices && currentVertices[idx]) {
-        dragStartCoordsRef.current = currentVertices[idx]!;
-        dragInitialVerticesRef.current = [...currentVertices];
-        liveDraggingVerticesRef.current = [...currentVertices];
-      }
-      isExceededHysteresisRef.current = false;
-      currentAxisRef.current = null;
+      const index = f.properties.vertexIndex as number;
+      const vertices = latest.current.editingRouteVertices;
+      const vertex = vertices?.[index];
+      dragRef.current = {
+        index,
+        startPos: { x: e.point.x, y: e.point.y },
+        startCoords: vertex ?? null,
+        initialVertices: vertex && vertices ? [...vertices] : null,
+        liveVertices: vertex && vertices ? [...vertices] : null,
+        exceededHysteresis: false,
+        axis: null,
+      };
       map.dragPan.disable();
-      map.getCanvas().style.cursor = "grabbing";
+      setCursor("grabbing");
     };
 
-    const onRouteMidpointClick = (e: MapLayerMouseEvent) => {
-      if (mode !== "edit-route") return;
+    const onMidpointClick = (e: MapLayerMouseEvent) => {
+      if (!editing()) return;
       e.preventDefault();
       const f = e.features?.[0];
       if (!f) return;
 
       const startIndex = f.properties.startIndex as number;
-      const midCoord = getFeatureCoords(f.geometry) as [number, number];
-
-      const vertices = editingRouteVerticesRef.current;
-      if (onRouteVerticesUpdateRef.current && vertices) {
-        const nextVertices = [...vertices];
-        nextVertices.splice(startIndex + 1, 0, midCoord);
-        onRouteVerticesUpdateRef.current(nextVertices);
+      const midCoord = getFeatureCoords(f.geometry) as Vertex;
+      const vertices = latest.current.editingRouteVertices;
+      if (latest.current.onRouteVerticesUpdate && vertices) {
+        const next = [...vertices];
+        next.splice(startIndex + 1, 0, midCoord);
+        latest.current.onRouteVerticesUpdate(next);
       }
     };
 
-    const onRouteMouseMove = (e: MapLayerMouseEvent) => {
-      lastMousePointRef.current = { x: e.point.x, y: e.point.y };
+    const onMouseMove = (e: MapLayerMouseEvent) => {
+      const drag = dragRef.current;
+      if (!editing() || !drag) return;
 
-      if (mode !== "edit-route" || routeDraggingRef.current === null) return;
-      const idx = routeDraggingRef.current;
-
-      // 4px Hysteresis dead zone prevents accidental single-pixel jitter
-      if (!isExceededHysteresisRef.current) {
-        if (
-          dragStartPosRef.current &&
-          !exceedsHysteresis(dragStartPosRef.current, { x: e.point.x, y: e.point.y }, HYSTERESIS_PX)
-        ) {
-          return;
-        }
-        isExceededHysteresisRef.current = true;
+      // A 4px dead zone prevents accidental single-pixel jitter.
+      if (!drag.exceededHysteresis) {
+        if (drag.startPos && !exceedsHysteresis(drag.startPos, e.point)) return;
+        drag.exceededHysteresis = true;
       }
 
-      const lngLat = e.lngLat;
-      let target: [number, number] = [lngLat.lng, lngLat.lat];
+      let target: Vertex = [e.lngLat.lng, e.lngLat.lat];
+      const origTarget = target;
 
-      // Shift Axis Locking (horizontal / vertical / 45° diagonal)
-      const isShift = Boolean(e.originalEvent && e.originalEvent.shiftKey);
-      if (isShift && dragStartCoordsRef.current && dragStartPosRef.current) {
-        if (!currentAxisRef.current) {
-          currentAxisRef.current = detectAxis(
-            e.point.x - dragStartPosRef.current.x,
-            e.point.y - dragStartPosRef.current.y
-          );
-        }
-        target = axisLock(dragStartCoordsRef.current, target, currentAxisRef.current);
+      // Shift locks the drag to horizontal / vertical / 45 degrees.
+      if (e.originalEvent?.shiftKey && drag.startCoords && drag.startPos) {
+        drag.axis ??= detectAxis(e.point.x - drag.startPos.x, e.point.y - drag.startPos.y);
+        target = axisLock(drag.startCoords, target, drag.axis);
       } else {
-        currentAxisRef.current = null;
+        drag.axis = null;
       }
 
-      const snapLayers = ["editor-points-capital", "editor-points-city", "editor-points-poi"];
-      const bbox: [[number, number], [number, number]] = [
-        [e.point.x - 15, e.point.y - 15],
-        [e.point.x + 15, e.point.y + 15],
-      ];
-      const hits = map.queryRenderedFeatures(bbox, { layers: snapLayers });
-      if (hits.length > 0) {
-        const coords = getFeatureCoords(hits[0]!.geometry);
-        if (coords) {
-          target = [coords[0], coords[1]];
-        }
-      }
+      target = nearbyMarker(map, e.point) ?? target;
 
-      const origTarget: Position = [lngLat.lng, lngLat.lat];
       const didSnap = target[0] !== origTarget[0] || target[1] !== origTarget[1];
       updateSnapGuide(map, didSnap ? origTarget : null, didSnap ? target : null);
 
-      const baseVertices = liveDraggingVerticesRef.current ?? editingRouteVerticesRef.current;
+      const baseVertices = drag.liveVertices ?? latest.current.editingRouteVertices;
       if (baseVertices) {
-        const nextVertices = [...baseVertices];
-        nextVertices[idx] = target;
-        liveDraggingVerticesRef.current = nextVertices;
-        // Directly update map visual sources at 60fps without triggering React tree re-renders
-        updateRouteEditVis(nextVertices);
+        drag.liveVertices = replaceAt(baseVertices, drag.index, target);
+        // Straight to the map sources at 60fps, no React re-render.
+        updateRouteEditVis(drag.liveVertices);
       }
     };
 
-    const onRouteMouseUp = () => {
-      if (routeDraggingRef.current === null) return;
-      if (
-        liveDraggingVerticesRef.current &&
-        onRouteVerticesUpdateRef.current &&
-        isExceededHysteresisRef.current
-      ) {
-        onRouteVerticesUpdateRef.current(liveDraggingVerticesRef.current);
+    const onMouseUp = () => {
+      const drag = dragRef.current;
+      if (!drag) return;
+      if (drag.liveVertices && drag.exceededHysteresis) {
+        latest.current.onRouteVerticesUpdate?.(drag.liveVertices);
       }
-      routeDraggingRef.current = null;
-      dragStartPosRef.current = null;
-      dragStartCoordsRef.current = null;
-      dragInitialVerticesRef.current = null;
-      liveDraggingVerticesRef.current = null;
-      isExceededHysteresisRef.current = false;
-      currentAxisRef.current = null;
-      map.dragPan.enable();
-      map.getCanvas().style.cursor = "";
-      updateSnapGuide(map, null, null);
+      endDrag();
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && routeDraggingRef.current !== null) {
-        if (dragInitialVerticesRef.current) {
-          updateRouteEditVis(dragInitialVerticesRef.current);
-          if (onRouteVerticesUpdateRef.current) {
-            onRouteVerticesUpdateRef.current(dragInitialVerticesRef.current);
-          }
-        }
-        routeDraggingRef.current = null;
-        dragStartPosRef.current = null;
-        dragStartCoordsRef.current = null;
-        dragInitialVerticesRef.current = null;
-        liveDraggingVerticesRef.current = null;
-        isExceededHysteresisRef.current = false;
-        currentAxisRef.current = null;
-        map.dragPan.enable();
-        map.getCanvas().style.cursor = "";
-        updateSnapGuide(map, null, null);
+      const drag = dragRef.current;
+      if (e.key !== "Escape" || !drag) return;
+      if (drag.initialVertices) {
+        updateRouteEditVis(drag.initialVertices);
+        latest.current.onRouteVerticesUpdate?.(drag.initialVertices);
       }
+      endDrag();
     };
 
-    const onRouteContextMenu = (e: MapLayerMouseEvent) => {
-      if (mode !== "edit-route") return;
-      const bbox: [[number, number], [number, number]] = [
-        [e.point.x - 10, e.point.y - 10],
-        [e.point.x + 10, e.point.y + 10],
-      ];
-      const hits = map.queryRenderedFeatures(bbox, {
-        layers: ["editor-route-edit-vertices-layer"],
-      });
-      if (hits.length === 0) return;
+    const hitVertexIndex = (point: { x: number; y: number }, radius: number) =>
+      queryNear(map, point, radius, [VERTEX_LAYER])[0]?.properties.vertexIndex as
+        number | undefined;
 
+    const onContextMenu = (e: MapLayerMouseEvent) => {
+      if (!editing()) return;
+      const index = hitVertexIndex(e.point, 10);
+      if (index === undefined) return;
       e.preventDefault();
-      if (e.originalEvent) e.originalEvent.preventDefault();
-      const idx = hits[0]!.properties.vertexIndex as number;
-
-      const vertices = editingRouteVerticesRef.current;
-      if (vertices && vertices.length > 2) {
-        const nextVertices = [...vertices];
-        nextVertices.splice(idx, 1);
-        if (onRouteVerticesUpdateRef.current) {
-          onRouteVerticesUpdateRef.current(nextVertices);
-        }
-      }
+      e.originalEvent?.preventDefault();
+      deleteVertex(index);
     };
 
-    const onRouteVertexEnter = () => {
-      if (mode === "edit-route" && routeDraggingRef.current === null) {
-        map.getCanvas().style.cursor = "grab";
-      }
-    };
-
-    const onRouteVertexLeave = () => {
-      if (mode === "edit-route" && routeDraggingRef.current === null) {
-        map.getCanvas().style.cursor = "";
-      }
-    };
-
-    const onRouteMidpointEnter = () => {
-      if (mode === "edit-route") {
-        map.getCanvas().style.cursor = "copy";
-      }
-    };
-
-    const onRouteMidpointLeave = () => {
-      if (mode === "edit-route" && routeDraggingRef.current === null) {
-        map.getCanvas().style.cursor = "";
-      }
-    };
-
-    const onRouteCanvasContextMenu = (ev: MouseEvent) => {
-      if (mode !== "edit-route") return;
-      const rect = canvas.getBoundingClientRect();
-      const x = ev.clientX - rect.left;
-      const y = ev.clientY - rect.top;
-      const bbox: [[number, number], [number, number]] = [
-        [x - 12, y - 12],
-        [x + 12, y + 12],
-      ];
-      const hits = map.queryRenderedFeatures(bbox, {
-        layers: ["editor-route-edit-vertices-layer"],
-      });
-      if (hits.length === 0) return;
-
+    const onCanvasContextMenu = (ev: MouseEvent) => {
+      if (!editing()) return;
+      const index = hitVertexIndex(canvasPoint(canvas, ev.clientX, ev.clientY), 12);
+      if (index === undefined) return;
       ev.preventDefault();
       ev.stopPropagation();
-      const idx = hits[0]!.properties.vertexIndex as number;
-
-      const vertices = editingRouteVerticesRef.current;
-      if (vertices && vertices.length > 2) {
-        const nextVertices = [...vertices];
-        nextVertices.splice(idx, 1);
-        if (onRouteVerticesUpdateRef.current) {
-          onRouteVerticesUpdateRef.current(nextVertices);
-        }
-      }
+      deleteVertex(index);
     };
 
-    // Touch support for routes
-    let routeLongPressTimer: ReturnType<typeof setTimeout> | null = null;
-    let routeTouchStartPoint: { x: number; y: number } | null = null;
+    // Touch: a long press on a vertex deletes it, dragging moves it.
+    const longPress = createLongPress();
 
-    const onRouteTouchStart = (e: TouchEvent) => {
-      if (mode !== "edit-route") return;
+    const onTouchStart = (e: TouchEvent) => {
       const touch = e.touches[0];
-      if (!touch) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = touch.clientX - rect.left;
-      const y = touch.clientY - rect.top;
-      routeTouchStartPoint = { x, y };
+      if (!editing() || !touch) return;
+      const start = canvasPoint(canvas, touch.clientX, touch.clientY);
+      longPress.begin(start);
 
-      const bbox: [[number, number], [number, number]] = [
-        [x - 20, y - 20],
-        [x + 20, y + 20],
-      ];
-      const hits = map.queryRenderedFeatures(bbox, {
-        layers: ["editor-route-edit-vertices-layer"],
+      const index = hitVertexIndex(start, 20);
+      if (index === undefined) return;
+      dragRef.current = {
+        index,
+        startPos: null,
+        startCoords: null,
+        initialVertices: null,
+        liveVertices: null,
+        exceededHysteresis: false,
+        axis: null,
+      };
+      map.dragPan.disable();
+
+      longPress.arm(() => {
+        if (!editing()) return;
+        dragRef.current = null;
+        map.dragPan.enable();
+        deleteVertex(index);
       });
-
-      if (hits.length > 0) {
-        const idx = hits[0]!.properties.vertexIndex as number;
-        routeDraggingRef.current = idx;
-        map.dragPan.disable();
-
-        routeLongPressTimer = setTimeout(() => {
-          if (mode !== "edit-route") return;
-          routeDraggingRef.current = null;
-          map.dragPan.enable();
-          const vertices = editingRouteVerticesRef.current;
-          if (vertices && vertices.length > 2) {
-            const nextVertices = [...vertices];
-            nextVertices.splice(idx, 1);
-            if (onRouteVerticesUpdateRef.current) {
-              onRouteVerticesUpdateRef.current(nextVertices);
-            }
-          }
-        }, 500);
-      }
     };
 
-    const onRouteTouchMove = (e: TouchEvent) => {
-      if (routeDraggingRef.current === null || mode !== "edit-route") return;
+    const onTouchMove = (e: TouchEvent) => {
+      const drag = dragRef.current;
       const touch = e.touches[0];
-      if (!touch) return;
+      if (!drag || !editing() || !touch) return;
 
-      if (routeLongPressTimer && routeTouchStartPoint) {
-        const rect = canvas.getBoundingClientRect();
-        const dx = touch.clientX - rect.left - routeTouchStartPoint.x;
-        const dy = touch.clientY - rect.top - routeTouchStartPoint.y;
-        if (Math.sqrt(dx * dx + dy * dy) > 8) {
-          clearTimeout(routeLongPressTimer);
-          routeLongPressTimer = null;
-        }
-      }
+      const point = canvasPoint(canvas, touch.clientX, touch.clientY);
+      longPress.move(point);
 
-      const lngLat = map.unproject([
-        touch.clientX - canvas.getBoundingClientRect().left,
-        touch.clientY - canvas.getBoundingClientRect().top,
-      ]);
-      let target: [number, number] = [lngLat.lng, lngLat.lat];
-
-      const snapLayers = ["editor-points-capital", "editor-points-city", "editor-points-poi"];
-      const bbox: [[number, number], [number, number]] = [
-        [
-          touch.clientX - canvas.getBoundingClientRect().left - 15,
-          touch.clientY - canvas.getBoundingClientRect().top - 15,
-        ],
-        [
-          touch.clientX - canvas.getBoundingClientRect().left + 15,
-          touch.clientY - canvas.getBoundingClientRect().top + 15,
-        ],
-      ];
-      const hits = map.queryRenderedFeatures(bbox, { layers: snapLayers });
-      if (hits.length > 0) {
-        const coords = getFeatureCoords(hits[0]!.geometry);
-        if (coords) {
-          target = [coords[0], coords[1]];
-        }
-      }
-
-      const vertices = editingRouteVerticesRef.current;
-      if (onRouteVerticesUpdateRef.current && vertices) {
-        const nextVertices = [...vertices];
-        nextVertices[routeDraggingRef.current] = target;
-        onRouteVerticesUpdateRef.current(nextVertices);
+      const lngLat = map.unproject([point.x, point.y]);
+      const target = nearbyMarker(map, point) ?? [lngLat.lng, lngLat.lat];
+      const vertices = latest.current.editingRouteVertices;
+      if (latest.current.onRouteVerticesUpdate && vertices) {
+        latest.current.onRouteVerticesUpdate(replaceAt(vertices, drag.index, target));
       }
       e.preventDefault();
     };
 
-    const onRouteTouchEnd = () => {
-      if (routeLongPressTimer) {
-        clearTimeout(routeLongPressTimer);
-        routeLongPressTimer = null;
-      }
-      routeTouchStartPoint = null;
-      if (routeDraggingRef.current !== null) {
-        routeDraggingRef.current = null;
+    const onTouchEnd = () => {
+      longPress.end();
+      if (dragRef.current) {
+        dragRef.current = null;
         map.dragPan.enable();
       }
     };
 
-    map.on("mousedown", "editor-route-edit-vertices-layer", onRouteVertexMouseDown);
-    map.on("click", "editor-route-edit-midpoints-layer", onRouteMidpointClick);
-    map.on("mousemove", onRouteMouseMove);
-    map.on("mouseup", onRouteMouseUp);
-    map.on("contextmenu", onRouteContextMenu);
-    canvas.addEventListener("contextmenu", onRouteCanvasContextMenu);
-    map.on("mouseenter", "editor-route-edit-vertices-layer", onRouteVertexEnter);
-    map.on("mouseleave", "editor-route-edit-vertices-layer", onRouteVertexLeave);
-    map.on("mouseenter", "editor-route-edit-midpoints-layer", onRouteMidpointEnter);
-    window.addEventListener("mouseup", onRouteMouseUp);
-    window.addEventListener("keydown", onKeyDown);
-
-    canvas.addEventListener("touchstart", onRouteTouchStart, { passive: false });
-    canvas.addEventListener("touchmove", onRouteTouchMove, { passive: false });
-    canvas.addEventListener("touchend", onRouteTouchEnd);
+    listeners.onLayer("mousedown", VERTEX_LAYER, onVertexMouseDown);
+    listeners.onLayer("click", MIDPOINT_LAYER, onMidpointClick);
+    listeners.onMap("mousemove", onMouseMove);
+    listeners.onMap("mouseup", onMouseUp);
+    listeners.onMap("contextmenu", onContextMenu);
+    listeners.onDom(canvas, "contextmenu", onCanvasContextMenu);
+    listeners.onLayer("mouseenter", VERTEX_LAYER, () => {
+      if (editing() && !dragRef.current) setCursor("grab");
+    });
+    listeners.onLayer("mouseleave", VERTEX_LAYER, () => {
+      if (editing() && !dragRef.current) setCursor("");
+    });
+    listeners.onLayer("mouseenter", MIDPOINT_LAYER, () => {
+      if (editing()) setCursor("copy");
+    });
+    listeners.onDom(window, "mouseup", onMouseUp);
+    listeners.onDom(window, "keydown", onKeyDown);
+    listeners.onTouch(canvas, { start: onTouchStart, move: onTouchMove, end: onTouchEnd });
 
     return () => {
-      if (routeLongPressTimer) clearTimeout(routeLongPressTimer);
-      window.removeEventListener("mouseup", onRouteMouseUp);
-      window.removeEventListener("keydown", onKeyDown);
-      map.off("mousedown", "editor-route-edit-vertices-layer", onRouteVertexMouseDown);
-      map.off("click", "editor-route-edit-midpoints-layer", onRouteMidpointClick);
-      map.off("mousemove", onRouteMouseMove);
-      map.off("mouseup", onRouteMouseUp);
-      map.off("contextmenu", onRouteContextMenu);
-      canvas.removeEventListener("contextmenu", onRouteCanvasContextMenu);
-      map.off("mouseenter", "editor-route-edit-vertices-layer", onRouteVertexEnter);
-      map.off("mouseleave", "editor-route-edit-vertices-layer", onRouteVertexLeave);
-      map.off("mouseenter", "editor-route-edit-midpoints-layer", onRouteMidpointEnter);
-      map.off("mouseleave", "editor-route-edit-midpoints-layer", onRouteMidpointLeave);
-      canvas.removeEventListener("touchstart", onRouteTouchStart);
-      canvas.removeEventListener("touchmove", onRouteTouchMove);
-      canvas.removeEventListener("touchend", onRouteTouchEnd);
+      longPress.cancel();
+      listeners.dispose();
     };
-  }, [map, isLoaded, mode]);
+  }, [map, isLoaded, mode, updateRouteEditVis]);
 }

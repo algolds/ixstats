@@ -51,7 +51,6 @@ export function MobileEditorSheet({
           <SheetTitle>{title ?? "Map editor"}</SheetTitle>
         </SheetHeader>
 
-        {/* Section switcher */}
         <div className="border-separator shrink-0 border-b pb-2">
           <SegmentedControl
             aria-label="Editor panel"
@@ -66,7 +65,6 @@ export function MobileEditorSheet({
           />
         </div>
 
-        {/* Title bar (only for properties tab) */}
         {title && activeTab === "properties" && (
           <div className="pt-2 pb-2">
             <h3 className="text-label text-headline">{title}</h3>

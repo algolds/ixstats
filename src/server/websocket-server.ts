@@ -1,5 +1,4 @@
-// Next.js WebSocket Server Integration
-// Integrates WebSocket server with Next.js custom server (server.mjs)
+// Integrates the ThinkPages WebSocket server with the Next.js custom server (server.mjs).
 
 import type { Server as HTTPServer } from "http";
 import type { ThinkPagesWebSocketServer } from "~/lib/websocket/thinkpages-websocket-server";
@@ -10,13 +9,9 @@ import {
   type MessageBroadcaster,
 } from "~/server/thinkpages-broadcast-bridge";
 
-// Global instance
 let thinkPagesServer: ThinkPagesWebSocketServer | null = null;
 let broadcastSubscriber: BroadcastSubscriber | null = null;
 
-/**
- * Initialize WebSocket server with HTTP server
- */
 export async function initializeWebSocketServer(httpServer: HTTPServer): Promise<void> {
   if (thinkPagesServer) {
     console.warn("WebSocket server already initialized");
@@ -36,7 +31,6 @@ export async function initializeWebSocketServer(httpServer: HTTPServer): Promise
 
     console.log("WebSocket Server initialized successfully");
 
-    // Graceful shutdown handling
     process.on("SIGTERM", handleShutdown);
     process.on("SIGINT", handleShutdown);
   } catch (error) {
@@ -49,9 +43,6 @@ export function getThinkPagesBroadcaster(): MessageBroadcaster {
   return thinkPagesServer ?? redisThinkPagesBroadcaster;
 }
 
-/**
- * Handle graceful shutdown
- */
 async function handleShutdown(): Promise<void> {
   console.log("Shutting down WebSocket services...");
 

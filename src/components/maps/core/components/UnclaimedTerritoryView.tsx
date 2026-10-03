@@ -1,12 +1,12 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
 import { MapPin, Globe, OpenBook as BookOpen } from "iconoir-react";
 import { StatCard } from "~/components/maps/core/components/StatCard";
 import { sanitizeWikiContent } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { Button } from "~/components/ui/button";
+import { WikiLinkButton, wikiSiteName } from "~/components/maps/shared/WikiLinkButton";
 import type { SelectedCountry } from "../IxWorldMap";
 
 interface UnclaimedTerritoryViewProps {
@@ -63,21 +63,15 @@ export function UnclaimedTerritoryView({
 
       {wikiRichIntro?.wikiUrl && (
         <div className="mt-3">
-          {wikiRichIntro.wikiUrl.startsWith("/") || wikiRichIntro.wikiUrl.includes("/wiki/") ? (
-            <Button asChild variant="outline" size="sm" className="w-full">
-              <Link href={wikiRichIntro.wikiUrl}>
-                <BookOpen aria-hidden />
-                Read on IxWiki
-              </Link>
-            </Button>
-          ) : (
-            <Button asChild variant="outline" size="sm" className="w-full">
-              <a href={wikiRichIntro.wikiUrl} target="_blank" rel="noopener noreferrer">
-                <BookOpen aria-hidden />
-                Read on {wikiRichIntro.wikiUrl.includes("ixwiki") ? "IxWiki" : "IIWiki"}
-              </a>
-            </Button>
-          )}
+          <WikiLinkButton
+            url={wikiRichIntro.wikiUrl}
+            variant="outline"
+            size="sm"
+            className="w-full"
+          >
+            <BookOpen aria-hidden />
+            Read on {wikiSiteName(wikiRichIntro.wikiUrl)}
+          </WikiLinkButton>
         </div>
       )}
     </div>

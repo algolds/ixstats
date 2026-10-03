@@ -12,7 +12,7 @@ import { MobileOptimized } from "./MobileOptimizations";
 import {
   getSectionFromPathname,
   type MyCountrySection,
-} from "~/components/mycountry/shell/MyCountrySidebarNav";
+} from "~/components/mycountry/shell/mycountry-sections";
 import { useMyCountryCompliance } from "~/hooks/useMyCountryCompliance";
 import { MyCountryComplianceModal } from "~/components/mycountry/shared/modals/MyCountryComplianceModal";
 import { DashboardErrorBoundary } from "~/components/dashboard/DashboardErrorBoundary";

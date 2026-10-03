@@ -62,6 +62,34 @@ function EmptyState({
   );
 }
 
+/** Skeleton while loading, a retry panel on error, otherwise the children. */
+function QueryGuard({
+  tree,
+  errorTitle,
+  children,
+}: {
+  tree: { isLoading: boolean; error: { message: string } | null; refetch: () => unknown };
+  errorTitle: string;
+  children: React.ReactNode;
+}) {
+  if (tree.isLoading) return <ListSkeleton />;
+  if (tree.error) {
+    return (
+      <EmptyState
+        icon={Archive}
+        title={errorTitle}
+        body={tree.error.message}
+        action={
+          <Button variant="outline" className="max-sm:h-11" onClick={() => void tree.refetch()}>
+            Try again
+          </Button>
+        }
+      />
+    );
+  }
+  return <>{children}</>;
+}
+
 function ListSkeleton() {
   return (
     <div className="space-y-3" aria-busy="true">
@@ -69,6 +97,35 @@ function ListSkeleton() {
         <Skeleton key={i} className="rounded-card h-40 w-full" />
       ))}
     </div>
+  );
+}
+
+function DirectivesHeader({
+  readOnly,
+  onDraftPolicy,
+}: {
+  readOnly: boolean;
+  onDraftPolicy: () => void;
+}) {
+  return (
+    <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <h2 className="text-label text-title-1 leading-8">Directives</h2>
+        <p className="text-label-secondary text-body mt-1 max-w-2xl">
+          Set a national goal, choose how hard to push, and track what it changes. Each directive
+          uses a weekly slot and holds CivCap while it executes.
+        </p>
+      </div>
+      {!readOnly && (
+        <Button
+          variant="outline"
+          className="self-start max-sm:h-11 sm:self-auto"
+          onClick={onDraftPolicy}
+        >
+          <Page /> Draft a custom policy
+        </Button>
+      )}
+    </header>
   );
 }
 
@@ -122,15 +179,11 @@ export function DirectivesWorkspace({
     };
   }, [tree.data]);
 
-  const executingCount = useMemo(
-    () => active.filter((i) => directiveTimeline(i, nowIxTime).phase === "executing").length,
-    [active, nowIxTime]
-  );
-
-  const filteredHistory = useMemo(
-    () => (historyFilter === "all" ? history : history.filter((i) => i.status === historyFilter)),
-    [history, historyFilter]
-  );
+  const executingCount = active.filter(
+    (i) => directiveTimeline(i, nowIxTime).phase === "executing"
+  ).length;
+  const filteredHistory =
+    historyFilter === "all" ? history : history.filter((i) => i.status === historyFilter);
 
   const startFollowUp = (ref: DirectiveRef) => {
     setFollowUpOf(ref);
@@ -155,22 +208,14 @@ export function DirectivesWorkspace({
   // Roving focus for the view tabs (the Tabs primitive leaves arrow keys to its caller).
   const onTabKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const index = views.findIndex((v) => v.id === view);
-    const last = views.length - 1;
-    const next =
-      e.key === "ArrowRight"
-        ? index === last
-          ? 0
-          : index + 1
-        : e.key === "ArrowLeft"
-          ? index === 0
-            ? last
-            : index - 1
-          : e.key === "Home"
-            ? 0
-            : e.key === "End"
-              ? last
-              : -1;
-    if (next < 0) return;
+    const count = views.length;
+    const next = {
+      ArrowRight: (index + 1) % count,
+      ArrowLeft: (index + count - 1) % count,
+      Home: 0,
+      End: count - 1,
+    }[e.key];
+    if (next === undefined) return;
     e.preventDefault();
     const id = views[next]!.id;
     setView(id);
@@ -186,25 +231,7 @@ export function DirectivesWorkspace({
 
   return (
     <Card className="rounded-card space-y-6 p-4 sm:p-6">
-      {/* Page header */}
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="text-label text-title-1 leading-8">Directives</h2>
-          <p className="text-label-secondary text-body mt-1 max-w-2xl">
-            Set a national goal, choose how hard to push, and track what it changes. Each directive
-            uses a weekly slot and holds CivCap while it executes.
-          </p>
-        </div>
-        {!readOnly && (
-          <Button
-            variant="outline"
-            className="self-start max-sm:h-11 sm:self-auto"
-            onClick={() => setShowPolicySheet(true)}
-          >
-            <Page /> Draft a custom policy
-          </Button>
-        )}
-      </header>
+      <DirectivesHeader readOnly={readOnly} onDraftPolicy={() => setShowPolicySheet(true)} />
 
       <DirectiveStatusStrip
         countryId={countryId}
@@ -240,7 +267,6 @@ export function DirectivesWorkspace({
           ))}
         </TabsList>
 
-        {/* Views */}
         <TabsContent value="new" role="tabpanel" id={panelId("new")} aria-labelledby={tabId("new")}>
           {readOnly ? (
             <EmptyState
@@ -267,49 +293,34 @@ export function DirectivesWorkspace({
           id={panelId("active")}
           aria-labelledby={tabId("active")}
         >
-          {tree.isLoading ? (
-            <ListSkeleton />
-          ) : tree.error ? (
-            <EmptyState
-              icon={Archive}
-              title="Directives could not be loaded"
-              body={tree.error.message}
-              action={
-                <Button
-                  variant="outline"
-                  className="max-sm:h-11"
-                  onClick={() => void tree.refetch()}
-                >
-                  Try again
-                </Button>
-              }
-            />
-          ) : active.length === 0 ? (
-            <EmptyState
-              icon={KeyCommand}
-              title="No directives in force"
-              body="Declare a Directive to start moving your nation."
-              action={
-                !readOnly && (
-                  <Button className="max-sm:h-11" onClick={() => setView("new")}>
-                    <Plus aria-hidden="true" /> Declare Directive
-                  </Button>
-                )
-              }
-            />
-          ) : (
-            <div className="space-y-3">
-              {active.map((intent) => (
-                <DirectiveCard
-                  key={intent.id}
-                  intent={intent}
-                  parentGoal={intent.parentId ? goalById.get(intent.parentId) : null}
-                  onFollowUp={startFollowUp}
-                  {...cardProps}
-                />
-              ))}
-            </div>
-          )}
+          <QueryGuard tree={tree} errorTitle="Directives could not be loaded">
+            {active.length === 0 ? (
+              <EmptyState
+                icon={KeyCommand}
+                title="No directives in force"
+                body="Declare a Directive to start moving your nation."
+                action={
+                  !readOnly && (
+                    <Button className="max-sm:h-11" onClick={() => setView("new")}>
+                      <Plus aria-hidden="true" /> Declare Directive
+                    </Button>
+                  )
+                }
+              />
+            ) : (
+              <div className="space-y-3">
+                {active.map((intent) => (
+                  <DirectiveCard
+                    key={intent.id}
+                    intent={intent}
+                    parentGoal={intent.parentId ? goalById.get(intent.parentId) : null}
+                    onFollowUp={startFollowUp}
+                    {...cardProps}
+                  />
+                ))}
+              </div>
+            )}
+          </QueryGuard>
         </TabsContent>
 
         <TabsContent
@@ -318,78 +329,63 @@ export function DirectivesWorkspace({
           id={panelId("history")}
           aria-labelledby={tabId("history")}
         >
-          {tree.isLoading ? (
-            <ListSkeleton />
-          ) : tree.error ? (
-            <EmptyState
-              icon={Archive}
-              title="History could not be loaded"
-              body={tree.error.message}
-              action={
-                <Button
-                  variant="outline"
-                  className="max-sm:h-11"
-                  onClick={() => void tree.refetch()}
-                >
-                  Try again
-                </Button>
-              }
-            />
-          ) : history.length === 0 ? (
-            <EmptyState
-              icon={Archive}
-              title="No past directives yet"
-              body="Directives you complete or abandon are listed here with the effects they recorded."
-            />
-          ) : (
-            <div className="space-y-4">
-              <div role="group" aria-label="Filter history" className="flex flex-wrap gap-2">
-                {HISTORY_FILTERS.map((f) => (
-                  <Toggle
-                    key={f.id}
-                    variant="outline"
-                    size="sm"
-                    pressed={historyFilter === f.id}
-                    onPressedChange={() => {
-                      setHistoryFilter(f.id);
-                      setHistoryLimit(HISTORY_PAGE);
-                    }}
-                    className="rounded-full px-3 max-sm:h-11"
-                  >
-                    {f.label}
-                  </Toggle>
-                ))}
-              </div>
-              {filteredHistory.length === 0 ? (
-                <p className="text-label-secondary text-body px-1">
-                  No {historyFilter} directives.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {filteredHistory.slice(0, historyLimit).map((intent) => (
-                    <DirectiveCard
-                      key={intent.id}
-                      intent={intent}
-                      parentGoal={intent.parentId ? goalById.get(intent.parentId) : null}
-                      onReuseGoal={reuseGoal}
-                      {...cardProps}
-                    />
+          <QueryGuard tree={tree} errorTitle="History could not be loaded">
+            {history.length === 0 ? (
+              <EmptyState
+                icon={Archive}
+                title="No past directives yet"
+                body="Directives you complete or abandon are listed here with the effects they recorded."
+              />
+            ) : (
+              <div className="space-y-4">
+                <div role="group" aria-label="Filter history" className="flex flex-wrap gap-2">
+                  {HISTORY_FILTERS.map((f) => (
+                    <Toggle
+                      key={f.id}
+                      variant="outline"
+                      size="sm"
+                      pressed={historyFilter === f.id}
+                      onPressedChange={() => {
+                        setHistoryFilter(f.id);
+                        setHistoryLimit(HISTORY_PAGE);
+                      }}
+                      className="rounded-full px-3 max-sm:h-11"
+                    >
+                      {f.label}
+                    </Toggle>
                   ))}
                 </div>
-              )}
-              {filteredHistory.length > historyLimit && (
-                <div className="flex justify-center">
-                  <Button
-                    variant="outline"
-                    className="max-sm:h-11"
-                    onClick={() => setHistoryLimit((n) => n + HISTORY_PAGE)}
-                  >
-                    Show more
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
+                {filteredHistory.length === 0 ? (
+                  <p className="text-label-secondary text-body px-1">
+                    No {historyFilter} directives.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredHistory.slice(0, historyLimit).map((intent) => (
+                      <DirectiveCard
+                        key={intent.id}
+                        intent={intent}
+                        parentGoal={intent.parentId ? goalById.get(intent.parentId) : null}
+                        onReuseGoal={reuseGoal}
+                        {...cardProps}
+                      />
+                    ))}
+                  </div>
+                )}
+                {filteredHistory.length > historyLimit && (
+                  <div className="flex justify-center">
+                    <Button
+                      variant="outline"
+                      className="max-sm:h-11"
+                      onClick={() => setHistoryLimit((n) => n + HISTORY_PAGE)}
+                    >
+                      Show more
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </QueryGuard>
         </TabsContent>
       </Tabs>
 

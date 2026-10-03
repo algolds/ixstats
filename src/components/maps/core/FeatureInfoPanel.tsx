@@ -1,12 +1,5 @@
 "use client";
 
-/**
- * FeatureInfoPanel - Slide-out panel for map markers (cities, POIs, capitals).
- *
- * Desktop: Right-side panel. Mobile: Snap bottom sheet.
- * Shows feature data, wiki intro (fetched on demand), and action links.
- */
-
 import { Skeleton } from "~/components/ui/skeleton";
 import { memo } from "react";
 import {
@@ -31,6 +24,7 @@ import { Button } from "~/components/ui/button";
 import { FacetMaterial } from "~/components/ui/facet";
 import { Stat } from "~/components/ui/stat";
 import { Card } from "~/components/ui/card";
+import { WikiLinkButton } from "~/components/maps/shared/WikiLinkButton";
 
 interface FeatureInfoPanelProps {
   feature: SelectedFeature;
@@ -38,16 +32,17 @@ interface FeatureInfoPanelProps {
   onOpenStoryModal?: (pinId: string) => void;
 }
 
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
 function FeaturePeekContent({ feature }: { feature: SelectedFeature }) {
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const isCity = feature.featureType === "city" || feature.featureType === "capital";
+  const { featureType } = feature;
   const typeLabel =
-    feature.featureType === "capital"
+    featureType === "capital"
       ? "Capital"
-      : feature.featureType === "city"
-        ? feature.cityType || "City"
-        : feature.featureType === "storyPin"
-          ? "Story Pin"
+      : featureType === "storyPin"
+        ? "Story Pin"
+        : featureType === "city"
+          ? feature.cityType || "City"
           : feature.category || "POI";
 
   return (
@@ -61,6 +56,92 @@ function FeaturePeekContent({ feature }: { feature: SelectedFeature }) {
           <span>{feature.countryName}</span>
         </div>
       </div>
+    </div>
+  );
+}
+
+function FeatureHeaderIcon({ feature }: { feature: SelectedFeature }) {
+  if (feature.featureType === "storyPin") {
+    return <BookMarked className="text-wiki h-4 w-4 shrink-0" aria-hidden />;
+  }
+  if (feature.featureType === "city" || feature.featureType === "capital") {
+    return (
+      <MapPin
+        className={`h-4 w-4 shrink-0 ${feature.isCapital ? "text-yellow" : "text-blue"}`}
+        aria-hidden
+      />
+    );
+  }
+  return <Landmark className="text-label-secondary h-4 w-4 shrink-0" aria-hidden />;
+}
+
+/** Desktop-only header (mobile uses the sheet's peek header). */
+function FeatureHeader({ feature, onClose }: { feature: SelectedFeature; onClose: () => void }) {
+  const isCity = feature.featureType === "city" || feature.featureType === "capital";
+  const kind = isCity ? (feature.cityType ?? "city") : (feature.category ?? "landmark");
+  return (
+    <div className="border-separator flex items-center justify-between border-b px-4 py-3">
+      <div className="flex items-center gap-2 overflow-hidden">
+        <FeatureHeaderIcon feature={feature} />
+        <div className="min-w-0">
+          <h3 className="text-label text-title-3 truncate">{feature.name}</h3>
+          <p className="text-label-secondary text-footnote">
+            {capitalize(kind)}
+            {" · "}
+            {feature.countryName}
+          </p>
+        </div>
+      </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={onClose}
+        aria-label="Close"
+        title="Close (Esc)"
+        className="text-label-secondary h-8 w-8 shrink-0 rounded-full"
+      >
+        <X aria-hidden />
+      </Button>
+    </div>
+  );
+}
+
+function StoryPinDetails({
+  feature,
+  onOpenStoryModal,
+}: {
+  feature: SelectedFeature;
+  onOpenStoryModal?: (pinId: string) => void;
+}) {
+  return (
+    <div className="mb-3 space-y-2">
+      {(feature.ixTimeYear || feature.eraLabel) && (
+        <div className="text-label text-caption flex items-center gap-2">
+          <Calendar className="text-wiki h-3.5 w-3.5" aria-hidden />
+          <span>
+            {feature.ixTimeYear && `Year ${feature.ixTimeYear}`}
+            {feature.ixTimeYear && feature.eraLabel && " · "}
+            {feature.eraLabel}
+          </span>
+        </div>
+      )}
+      {feature.category && (
+        <Badge variant="outline" className="capitalize">
+          {feature.category}
+        </Badge>
+      )}
+      {onOpenStoryModal && feature.id && (
+        <Button
+          variant="secondary"
+          size="sm"
+          className="w-full"
+          onClick={() => onOpenStoryModal(feature.id)}
+        >
+          <BookMarked aria-hidden />
+          Read full story
+        </Button>
+      )}
     </div>
   );
 }
@@ -87,53 +168,12 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
 
   const panelContent = (
     <>
-      {/* Header — only needed for desktop since mobile has Peek header */}
-      {!isMobile && (
-        <div className="border-separator flex items-center justify-between border-b px-4 py-3">
-          <div className="flex items-center gap-2 overflow-hidden">
-            {isStoryPin ? (
-              <BookMarked className="text-wiki h-4 w-4 shrink-0" aria-hidden />
-            ) : isCity ? (
-              <MapPin
-                className={`h-4 w-4 shrink-0 ${feature.isCapital ? "text-yellow" : "text-blue"}`}
-                aria-hidden
-              />
-            ) : (
-              <Landmark className="text-label-secondary h-4 w-4 shrink-0" aria-hidden />
-            )}
-            <div className="min-w-0">
-              <h3 className="text-label text-title-3 truncate">{feature.name}</h3>
-              <p className="text-label-secondary text-footnote">
-                {isCity
-                  ? (feature.cityType ?? "City").charAt(0).toUpperCase() +
-                    (feature.cityType ?? "city").slice(1)
-                  : (feature.category ?? "Landmark").charAt(0).toUpperCase() +
-                    (feature.category ?? "landmark").slice(1)}
-                {" · "}
-                {feature.countryName}
-              </p>
-            </div>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            aria-label="Close"
-            title="Close (Esc)"
-            className="text-label-secondary h-8 w-8 shrink-0 rounded-full"
-          >
-            <X aria-hidden />
-          </Button>
-        </div>
-      )}
+      {!isMobile && <FeatureHeader feature={feature} onClose={onClose} />}
 
-      {/* Body */}
       <div
         className="overflow-y-auto p-4"
         style={{ maxHeight: isMobile ? "100%" : "calc(100% - 56px)" }}
       >
-        {/* Wiki intro loading skeleton */}
         {wikiLoading && feature.wikiPageTitle && (
           <div className="mb-3 space-y-2">
             <Skeleton className="h-3 w-full rounded-xs" />
@@ -142,7 +182,6 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
           </div>
         )}
 
-        {/* Wiki intro text */}
         {wikiIntro?.extract && (
           <div className="mb-3">
             <p className="text-label-secondary text-footnote line-clamp-5 leading-relaxed">
@@ -151,7 +190,6 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
           </div>
         )}
 
-        {/* City population */}
         {isCity && feature.population != null && (
           <Card className="mb-3 px-3 py-2">
             <Stat
@@ -163,7 +201,6 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
           </Card>
         )}
 
-        {/* POI description */}
         {!isCity && !isStoryPin && feature.description && (
           <Card className="mb-3 px-3 py-2">
             <Eyebrow className="block">Description</Eyebrow>
@@ -171,57 +208,15 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
           </Card>
         )}
 
-        {/* Story Pin details */}
-        {isStoryPin && (
-          <div className="mb-3 space-y-2">
-            {(feature.ixTimeYear || feature.eraLabel) && (
-              <div className="text-label text-caption flex items-center gap-2">
-                <Calendar className="text-wiki h-3.5 w-3.5" aria-hidden />
-                <span>
-                  {feature.ixTimeYear && `Year ${feature.ixTimeYear}`}
-                  {feature.ixTimeYear && feature.eraLabel && " · "}
-                  {feature.eraLabel}
-                </span>
-              </div>
-            )}
-            {feature.category && (
-              <Badge variant="outline" className="capitalize">
-                {feature.category}
-              </Badge>
-            )}
-            {onOpenStoryModal && feature.id && (
-              <Button
-                variant="secondary"
-                size="sm"
-                className="w-full"
-                onClick={() => onOpenStoryModal(feature.id)}
-              >
-                <BookMarked aria-hidden />
-                Read full story
-              </Button>
-            )}
-          </div>
-        )}
+        {isStoryPin && <StoryPinDetails feature={feature} onOpenStoryModal={onOpenStoryModal} />}
 
-        {/* Action buttons */}
         <div className="mt-4 flex flex-col gap-2">
-          {wikiIntro?.wikiUrl &&
-            (wikiIntro.wikiUrl.startsWith("/") || wikiIntro.wikiUrl.includes("/wiki/") ? (
-              <Button asChild variant="outline" size="sm">
-                <Link href={wikiIntro.wikiUrl}>
-                  <BookOpen aria-hidden />
-                  Read on {wikiIntro.wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"}
-                </Link>
-              </Button>
-            ) : (
-              <Button asChild variant="outline" size="sm">
-                <a href={wikiIntro.wikiUrl} target="_blank" rel="noopener noreferrer">
-                  <BookOpen aria-hidden />
-                  Read on {wikiIntro.wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"}
-                  <ExternalLink aria-hidden />
-                </a>
-              </Button>
-            ))}
+          {wikiIntro?.wikiUrl && (
+            <WikiLinkButton url={wikiIntro.wikiUrl} externalIcon variant="outline" size="sm">
+              <BookOpen aria-hidden />
+              Read on {wikiIntro.wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"}
+            </WikiLinkButton>
+          )}
           {feature.countrySlug && (
             <Button asChild size="sm" className="bg-blue text-on-blue hover:bg-blue/90">
               <Link href={`/countries/${feature.countrySlug}`}>
@@ -237,7 +232,6 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
 
   return (
     <>
-      {/* Desktop: Right-side panel */}
       {!isMobile && (
         <div
           onMouseDown={(e) => e.stopPropagation()}
@@ -252,7 +246,6 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
         </div>
       )}
 
-      {/* Mobile: Snap bottom sheet */}
       {isMobile && (
         <SnapBottomSheet onClose={onClose} peekContent={<FeaturePeekContent feature={feature} />}>
           {panelContent}

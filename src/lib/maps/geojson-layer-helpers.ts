@@ -16,10 +16,15 @@ import type { FeatureCollection, Geometry } from "geojson";
  * it silently skipped their setup — or their cleanup, leaving layers behind — whenever they
  * were toggled mid-pan.
  */
-export function isMapStyleReady(map: MapLibreMap | null | undefined): map is MapLibreMap {
+export function isMapStyleLoaded(map: MapLibreMap | null | undefined): boolean {
   if (!map) return false;
   const style = (map as unknown as { style?: { _loaded?: boolean } }).style;
   return !!style && style._loaded !== false;
+}
+
+/** Type-guard form of {@link isMapStyleLoaded} for code that holds a nullable map. */
+export function isMapStyleReady(map: MapLibreMap | null | undefined): map is MapLibreMap {
+  return isMapStyleLoaded(map);
 }
 
 /**
@@ -43,7 +48,7 @@ export function setOrUpdateGeoJSONSource(
         data: data as any,
       });
       return true;
-    } catch (_err) {
+    } catch {
       return false;
     }
   }
@@ -64,7 +69,7 @@ export function ensureMapLayer(
     try {
       map.addLayer(layerConfig, beforeLayerId);
       return true;
-    } catch (_err) {
+    } catch {
       return false;
     }
   }
@@ -84,7 +89,7 @@ export function removeLayerAndSource(
   if (map.getLayer(layerId)) {
     try {
       map.removeLayer(layerId);
-    } catch (_err) {
+    } catch {
       // Ignored
     }
   }
@@ -92,7 +97,7 @@ export function removeLayerAndSource(
   if (sourceId && map.getSource(sourceId)) {
     try {
       map.removeSource(sourceId);
-    } catch (_err) {
+    } catch {
       // Ignored
     }
   }

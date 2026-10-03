@@ -5,6 +5,7 @@
  * including foundation templates, archetypes, and initial sub-system setup.
  */
 
+import type { Country, EconomicArchetype, PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { protectedProcedure } from "~/server/api/trpc";
@@ -14,6 +15,7 @@ import { clearLayerCache } from "~/server/shared/layer-cache";
 import { getBonusConfig, grantBonus, NEW_PLAYER_BONUS_SOURCE } from "~/lib/vault/vault-bonus";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { IxTime } from "~/lib/ixtime";
+import { generateSlug } from "~/lib/utils/slug-utils";
 import {
   countryEconomicInputsSchema,
   countryGovernmentComponentSchema,
@@ -38,6 +40,7 @@ import {
   pointActiveNation,
   resolveBuilderRealm,
 } from "~/server/modules/realms";
+import { pct, type EconInputs, type NumberKey } from "./shared";
 
 const BUILDER_REALM_ERROR_CODES = {
   REALM_NOT_FOUND: "NOT_FOUND",
@@ -52,395 +55,507 @@ function builderRealmError(error: Error): never {
   throw error;
 }
 
+type TaxInput = z.infer<typeof countryTaxSystemInputSchema>;
+type GovernmentStructureInput = z.infer<typeof countryGovernmentStructureInputSchema>;
+type GovernmentComponentInput = z.infer<typeof countryGovernmentComponentSchema>;
+type EconomyBuilderInput = z.infer<typeof countryEconomyBuilderStateSchema>;
+
+/** The sub-system payloads a nation is founded with; an archetype fills whichever the builder left empty. */
+interface FoundingPayload {
+  taxSystemData: TaxInput | null | undefined;
+  governmentStructure: GovernmentStructureInput | null | undefined;
+  governmentComponents: GovernmentComponentInput[];
+  economyBuilderState: EconomyBuilderInput | null | undefined;
+}
+
+interface Baseline {
+  population: number;
+  gdpPerCapita: number;
+  nominalGDP: number;
+}
+
+type Fallback = number | ((base: Baseline) => number);
+type Getter = (e: EconInputs, taxRate: number | undefined) => number | undefined;
+
+/** Numeric columns where a missing or zero input falls back to a default. */
+const ZERO_FALLBACK_FIELDS: ReadonlyArray<readonly [NumberKey, Getter, Fallback]> = [
+  ["currencyExchangeRate", (e) => e.coreIndicators?.currencyExchangeRate, 1],
+  ["laborForceParticipationRate", (e) => e.laborEmployment?.laborForceParticipationRate, 65],
+  ["employmentRate", (e) => e.laborEmployment?.employmentRate, 95],
+  ["unemploymentRate", (e) => e.laborEmployment?.unemploymentRate, 5],
+  ["averageWorkweekHours", (e) => e.laborEmployment?.averageWorkweekHours, 40],
+  ["minimumWage", (e) => e.laborEmployment?.minimumWage, 15],
+  [
+    "averageAnnualIncome",
+    (e) => e.laborEmployment?.averageAnnualIncome,
+    (b) => b.gdpPerCapita * 0.8,
+  ],
+  ["taxRevenueGDPPercent", (e, taxRate) => e.fiscalSystem?.taxRevenueGDPPercent || taxRate, 25],
+  [
+    "governmentRevenueTotal",
+    (e) => e.fiscalSystem?.governmentRevenueTotal,
+    (b) => b.nominalGDP * 0.25,
+  ],
+  [
+    "taxRevenuePerCapita",
+    (e) => e.fiscalSystem?.taxRevenuePerCapita,
+    (b) => (b.nominalGDP * 0.25) / b.population,
+  ],
+  ["governmentBudgetGDPPercent", (e) => e.fiscalSystem?.governmentBudgetGDPPercent, 25],
+  ["budgetDeficitSurplus", (e) => e.fiscalSystem?.budgetDeficitSurplus, 0],
+  ["internalDebtGDPPercent", (e) => e.fiscalSystem?.internalDebtGDPPercent, 30],
+  ["externalDebtGDPPercent", (e) => e.fiscalSystem?.externalDebtGDPPercent, 20],
+  ["totalDebtGDPRatio", (e) => e.fiscalSystem?.totalDebtGDPRatio, 50],
+  [
+    "debtPerCapita",
+    (e) => e.fiscalSystem?.debtPerCapita,
+    (b) => (b.nominalGDP * 0.5) / b.population,
+  ],
+  ["interestRates", (e) => e.fiscalSystem?.interestRates, 3.5],
+  ["debtServiceCosts", (e) => e.fiscalSystem?.debtServiceCosts, (b) => b.nominalGDP * 0.02],
+  ["povertyRate", (e) => e.incomeWealth?.povertyRate, 12],
+  [
+    "incomeInequalityGini",
+    (e) =>
+      e.incomeWealth?.incomeInequalityGini ||
+      (e.incomeWealth?.giniIndex ? e.incomeWealth.giniIndex / 100 : undefined),
+    0.35,
+  ],
+  ["socialMobilityIndex", (e) => e.incomeWealth?.socialMobilityIndex, 65],
+  [
+    "totalGovernmentSpending",
+    (e) => e.governmentSpending?.totalSpending,
+    (b) => b.nominalGDP * 0.22,
+  ],
+  ["spendingGDPPercent", (e) => e.governmentSpending?.spendingGDPPercent, 22],
+  [
+    "spendingPerCapita",
+    (e) => e.governmentSpending?.spendingPerCapita,
+    (b) => (b.nominalGDP * 0.22) / b.population,
+  ],
+  ["lifeExpectancy", (e) => e.demographics?.lifeExpectancy, 78.5],
+  ["urbanPopulationPercent", (e) => e.demographics?.urbanRuralSplit?.urban, 65],
+  ["ruralPopulationPercent", (e) => e.demographics?.urbanRuralSplit?.rural, 35],
+  ["literacyRate", (e) => e.demographics?.literacyRate, 95],
+];
+
+/** Growth and inflation inputs arrive as percents; only an absent value (not 0) takes the default. */
+const RATE_FIELDS: ReadonlyArray<readonly [NumberKey, Getter, number]> = [
+  ["adjustedGdpGrowth", (e) => pct(e.coreIndicators?.realGDPGrowthRate), 0.025],
+  ["actualGdpGrowth", (e) => pct(e.coreIndicators?.realGDPGrowthRate), 0.025],
+  ["realGDPGrowthRate", (e) => pct(e.coreIndicators?.realGDPGrowthRate), 0.025],
+  ["populationGrowthRate", (e) => pct(e.demographics?.populationGrowthRate), 0.008],
+  ["inflationRate", (e) => pct(e.coreIndicators?.inflationRate), 0.02],
+];
+
+function buildCountryNumbers(econ: EconInputs, taxRate: number | undefined, base: Baseline) {
+  const resolve = (fallback: Fallback) =>
+    typeof fallback === "function" ? fallback(base) : fallback;
+  return Object.fromEntries([
+    ...ZERO_FALLBACK_FIELDS.map(([key, get, fallback]) => [
+      key,
+      get(econ, taxRate) || resolve(fallback),
+    ]),
+    ...RATE_FIELDS.map(([key, get, fallback]) => [key, get(econ, taxRate) ?? fallback]),
+  ]) as Record<NumberKey, number>;
+}
+
+/** Foundations are IxWorld nations; names repeat across realms (ruling E-p). */
+function findFoundation(db: PrismaClient, ref: string) {
+  return db.country.findFirst({
+    where: { realmId: DEFAULT_REALM_ID, OR: [{ slug: ref }, { name: ref }] },
+  });
+}
+
+async function findArchetype(db: PrismaClient, idOrKey: string) {
+  return (
+    (await db.economicArchetype.findUnique({ where: { id: idOrKey } })) ??
+    (await db.economicArchetype.findFirst({ where: { key: idOrKey } }))
+  );
+}
+
+function parseArchetypeJson<T>(raw: string, field: string): T | null {
+  try {
+    return JSON.parse(raw) as T;
+  } catch (e) {
+    console.error(`Failed to parse archetype ${field}:`, e);
+    return null;
+  }
+}
+
+/** Archetype row; `economicStructure` / `economicModel` are optional extras the schema does not store. */
+type ArchetypeWithEconomy = EconomicArchetype & {
+  economicStructure?: string | null;
+  economicModel?: string | null;
+};
+
+function archetypeTaxSystem(archetype: EconomicArchetype): TaxInput | undefined {
+  const profile = parseArchetypeJson<{
+    incomeRate?: number;
+    corporateRate?: number;
+    consumptionRate?: number;
+  }>(archetype.taxProfile, "taxProfile");
+  if (!profile) return undefined;
+  const incomeRate = profile.incomeRate || 15;
+  const rated = (categoryName: string, categoryType: string, baseRate: number) => ({
+    categoryName,
+    categoryType,
+    baseRate,
+    isActive: true,
+  });
+  return {
+    taxSystemName: `${archetype.name} Tax System`,
+    taxAuthority: "Ministry of Finance",
+    progressiveTax: true,
+    baseRate: incomeRate,
+    categories: [
+      {
+        ...rated("Income Tax", "income", incomeRate),
+        brackets: [
+          {
+            bracketName: "Base Bracket",
+            minIncome: 0,
+            maxIncome: null,
+            rate: incomeRate,
+            isActive: true,
+          },
+        ],
+      },
+      rated("Corporate Tax", "corporate", profile.corporateRate || 20),
+      rated("Consumption Tax", "consumption", profile.consumptionRate || 10),
+    ],
+  };
+}
+
+const DEFAULT_DEPARTMENTS = [
+  ["Ministry of Finance", "finance"],
+  ["Ministry of Interior", "interior"],
+  ["Ministry of Foreign Affairs", "foreign"],
+  ["Ministry of Defense", "defense"],
+  ["Ministry of Justice", "justice"],
+] as const;
+
+function archetypeEconomyState(
+  archetype: ArchetypeWithEconomy,
+  base: Baseline
+): EconomyBuilderInput | undefined {
+  if (!archetype.economicStructure) return undefined;
+  const parsed = parseArchetypeJson<{
+    tradeOpenness?: number;
+    economicFreedom?: number;
+    sectors?: EconomyBuilderInput["sectors"];
+    selectedAtomicComponents?: string[];
+  }>(archetype.economicStructure, "economicStructure");
+  if (!parsed) return undefined;
+  return {
+    structure: {
+      economicModel: archetype.economicModel || "Social Market",
+      economicTier: "Developed",
+      totalGDP: base.nominalGDP,
+      gdpPerCapita: base.gdpPerCapita,
+      population: base.population,
+      tradeOpenness: parsed.tradeOpenness || 60,
+      economicFreedom: parsed.economicFreedom || 70,
+      creditRating: "AA",
+      fdi: base.nominalGDP * 0.03,
+      foreignReserves: base.nominalGDP * 0.15,
+    },
+    sectors: parsed.sectors || [],
+    selectedAtomicComponents: parsed.selectedAtomicComponents || [],
+  };
+}
+
+function archetypeComponents(archetype: EconomicArchetype): GovernmentComponentInput[] {
+  const types = parseArchetypeJson<string[]>(
+    archetype.governmentComponents,
+    "governmentComponents"
+  );
+  return Array.isArray(types)
+    ? types.map((componentType) => ({ componentType, effectivenessScore: 60, isActive: true }))
+    : [];
+}
+
+/** Fills the sub-system payloads the builder left empty from the chosen archetype. */
+function withArchetypeDefaults(
+  archetype: ArchetypeWithEconomy,
+  payload: FoundingPayload,
+  name: string,
+  base: Baseline
+): FoundingPayload {
+  const taxSystemData =
+    !payload.taxSystemData && archetype.taxProfile
+      ? (archetypeTaxSystem(archetype) ?? payload.taxSystemData)
+      : payload.taxSystemData;
+  const economyBuilderState =
+    !payload.economyBuilderState && archetype.economicStructure
+      ? (archetypeEconomyState(archetype, base) ?? payload.economyBuilderState)
+      : payload.economyBuilderState;
+  const governmentStructure = payload.governmentStructure ?? {
+    governmentName: `Government of ${name}`,
+    governmentType: archetype.name || "Constitutional Republic",
+    totalBudget: base.nominalGDP * 0.3,
+    fiscalYear: "Calendar Year",
+    budgetCurrency: "USD",
+    departments: DEFAULT_DEPARTMENTS.map(([deptName, category]) => ({
+      name: deptName,
+      category,
+      isActive: true,
+    })),
+  };
+  const governmentComponents =
+    payload.governmentComponents.length === 0 && archetype.governmentComponents
+      ? archetypeComponents(archetype)
+      : payload.governmentComponents;
+  return { taxSystemData, governmentStructure, governmentComponents, economyBuilderState };
+}
+
+async function uniqueCountrySlug(db: PrismaClient, name: string): Promise<string> {
+  const baseSlug = generateSlug(name) || "country";
+  let slug = baseSlug;
+  for (let n = 2; await db.country.findUnique({ where: { slug }, select: { id: true } }); n++) {
+    slug = `${baseSlug}-${n}`;
+  }
+  return slug;
+}
+
+interface CountryDataArgs {
+  name: string;
+  slug: string;
+  realmId: string;
+  econ: EconInputs;
+  foundation: Country | null;
+  base: Baseline;
+  taxRate: number | undefined;
+  structureType: string | undefined;
+}
+
+function buildCountryText(
+  econ: EconInputs,
+  foundation: Country | null,
+  structureType: string | undefined
+) {
+  const identity = econ.nationalIdentity;
+  return {
+    continent: econ.geography?.continent || foundation?.continent || "Custom",
+    region: econ.geography?.region || foundation?.region || "Custom",
+    governmentType: identity?.governmentType || structureType || "Federal Republic",
+    religion: identity?.nationalReligion || "Secular",
+    leader: identity?.leader || "President",
+    flag: econ.flagUrl || foundation?.flag || undefined,
+    coatOfArms: econ.coatOfArmsUrl || foundation?.coatOfArms || undefined,
+  };
+}
+
+function buildCountryData(args: CountryDataArgs) {
+  const { econ, foundation, base } = args;
+  const { population, gdpPerCapita } = base;
+  const totalGdp = population * gdpPerCapita;
+  const landArea = foundation?.landArea;
+  return {
+    ...buildCountryNumbers(econ, args.taxRate, base),
+    name: args.name,
+    slug: args.slug,
+    realmId: args.realmId,
+    ...buildCountryText(econ, foundation, args.structureType),
+    landArea,
+    areaSqMi: foundation?.areaSqMi,
+    baselinePopulation: population,
+    baselineGdpPerCapita: gdpPerCapita,
+    currentPopulation: population,
+    currentGdpPerCapita: gdpPerCapita,
+    currentTotalGdp: totalGdp,
+    economicTier: getEconomicTierFromGdpPerCapita(gdpPerCapita),
+    populationTier: getPopulationTierFromPopulation(population),
+    nominalGDP: base.nominalGDP,
+    maxGdpGrowthRate: 0.15,
+    totalWorkforce: econ.laborEmployment?.totalWorkforce || Math.round(population * 0.65),
+    populationDensity: landArea ? population / landArea : undefined,
+    gdpDensity: landArea ? totalGdp / landArea : undefined,
+  };
+}
+
+async function ensureDefaultRole(
+  db: PrismaClient,
+  player: { roleId: string | null },
+  userId: string
+) {
+  if (player.roleId) return;
+  const defaultRole = await db.role.findFirst({ where: { name: "user" } });
+  if (defaultRole) {
+    await db.user.update({ where: { clerkUserId: userId }, data: { roleId: defaultRole.id } });
+  }
+}
+
+/** One-time onboarding bonuses (a no-op if the account was already paid at sign-up); never fails the build. */
+async function grantOnboardingBonuses(
+  db: PrismaClient,
+  userId: string,
+  country: { id: string; name: string },
+  foundationRef: string | null
+) {
+  try {
+    const bcfg = await getBonusConfig(db);
+    const countryMeta = { countryId: country.id, countryName: country.name };
+    await grantBonus(db, userId, NEW_PLAYER_BONUS_SOURCE, bcfg.newPlayer, {
+      oneTime: true,
+      metadata: countryMeta,
+    });
+    if (foundationRef) {
+      await grantBonus(db, userId, "bonus:wiki_import", bcfg.wikiImport, {
+        oneTime: true,
+        metadata: { ...countryMeta, foundation: foundationRef },
+      });
+    }
+  } catch (bonusError) {
+    console.error("[createCountry] Failed to grant onboarding bonus:", bonusError);
+  }
+}
+
+async function prepareFounding(db: PrismaClient, input: CreateCountryInput) {
+  const foundation = input.foundationCountry
+    ? await findFoundation(db, input.foundationCountry)
+    : null;
+  const archetype = input.archetypeId ? await findArchetype(db, input.archetypeId) : null;
+
+  const econ: EconInputs = input.economicInputs ?? {};
+  const population =
+    econ.coreIndicators?.totalPopulation || foundation?.baselinePopulation || 10000000;
+  const gdpPerCapita =
+    econ.coreIndicators?.gdpPerCapita || foundation?.baselineGdpPerCapita || 25000;
+  const base: Baseline = {
+    population,
+    gdpPerCapita,
+    nominalGDP: econ.coreIndicators?.nominalGDP || population * gdpPerCapita,
+  };
+
+  const submitted: FoundingPayload = {
+    taxSystemData: input.taxSystemData,
+    governmentStructure: input.governmentStructure,
+    governmentComponents: input.governmentComponents ?? [],
+    economyBuilderState: input.economyBuilderState,
+  };
+  const payload = archetype
+    ? withArchetypeDefaults(archetype, submitted, input.name, base)
+    : submitted;
+  return { foundation, econ, base, payload };
+}
+
+const createCountryInput = z.object({
+  name: z.string(),
+  foundationCountry: z.string().nullable(),
+  economicInputs: countryEconomicInputsSchema,
+  governmentComponents: z.array(countryGovernmentComponentSchema).optional(),
+  taxSystemData: countryTaxSystemInputSchema.nullish(),
+  governmentStructure: countryGovernmentStructureInputSchema.nullish(),
+  economyBuilderState: countryEconomyBuilderStateSchema.nullish(),
+  archetypeId: z.string().optional(),
+  /** Realm to found the nation in; defaults to the realm of the nation the player acts as, else IxWorld. */
+  realmId: z.string().min(1).max(100).optional(),
+});
+type CreateCountryInput = z.infer<typeof createCountryInput>;
+
 export const managementCreateProcedures = {
   // Create a new country from builder
-  createCountry: protectedProcedure
-    .input(
-      z.object({
-        name: z.string(),
-        foundationCountry: z.string().nullable(),
-        economicInputs: countryEconomicInputsSchema,
-        governmentComponents: z.array(countryGovernmentComponentSchema).optional(),
-        taxSystemData: countryTaxSystemInputSchema.nullish(),
-        governmentStructure: countryGovernmentStructureInputSchema.nullish(),
-        economyBuilderState: countryEconomyBuilderStateSchema.nullish(),
-        archetypeId: z.string().optional(),
-        /** Realm to found the nation in; defaults to the realm of the nation the player acts as, else IxWorld. */
-        realmId: z.string().min(1).max(100).optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
-      if (!userId) {
-        throw new Error("User not authenticated");
-      }
+  createCountry: protectedProcedure.input(createCountryInput).mutation(async ({ ctx, input }) => {
+    const userId = ctx.auth.userId;
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
 
-      const player = await ctx.db.user.findUnique({
-        where: { clerkUserId: userId },
-        include: { role: true },
+    const player = await ctx.db.user.findUnique({
+      where: { clerkUserId: userId },
+      include: { role: true },
+    });
+    if (!player) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "User account not found" });
+    }
+
+    // The target realm (input, else the realm of the nation the player acts as, else IxWorld), open and
+    // under the player's nation cap there — a player at the cap gets a clear refusal, never their old nation.
+    const { realmId } = await resolveBuilderRealm(
+      ctx.db,
+      { id: player.id, clerkUserId: userId },
+      input.realmId
+    ).catch(builderRealmError);
+    const nameTaken = await ctx.db.country.findFirst({
+      where: { realmId, name: input.name },
+      select: { id: true },
+    });
+    if (nameTaken) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: `A country named "${input.name}" already exists in this realm`,
       });
-      if (!player) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "User account not found" });
-      }
+    }
 
-      // The target realm (input, else the realm of the nation the player acts as, else IxWorld), open and
-      // under the player's nation cap there — a player at the cap gets a clear refusal, never their old nation.
-      const { realmId } = await resolveBuilderRealm(
-        ctx.db,
-        { id: player.id, clerkUserId: userId },
-        input.realmId
-      ).catch(builderRealmError);
-      const nameTaken = await ctx.db.country.findFirst({
-        where: { realmId, name: input.name },
-        select: { id: true },
-      });
-      if (nameTaken) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: `A country named "${input.name}" already exists in this realm`,
-        });
-      }
+    await ensureDefaultRole(ctx.db, player, userId);
 
-      if (!player.roleId) {
-        const defaultRole = await ctx.db.role.findFirst({
-          where: { name: "user" },
-        });
+    const { foundation, econ, base, payload } = await prepareFounding(ctx.db, input);
+    const { taxSystemData, governmentStructure, governmentComponents, economyBuilderState } =
+      payload;
 
-        if (defaultRole) {
-          await ctx.db.user.update({
-            where: { clerkUserId: userId },
-            data: { roleId: defaultRole.id },
-          });
-        }
-      }
+    const slug = await uniqueCountrySlug(ctx.db, input.name);
+    const { nationalIdentity, demographics, incomeWealth, governmentSpending, fiscalSystem } = {
+      nationalIdentity: econ.nationalIdentity ?? {},
+      demographics: econ.demographics ?? {},
+      incomeWealth: econ.incomeWealth ?? {},
+      governmentSpending: econ.governmentSpending ?? {},
+      fiscalSystem: econ.fiscalSystem ?? {},
+    };
 
-      let foundationData: any = null;
-      if (input.foundationCountry) {
-        // Foundations are IxWorld nations; names repeat across realms (ruling E-p).
-        const foundationCountry = await ctx.db.country.findFirst({
-          where: {
-            realmId: DEFAULT_REALM_ID,
-            OR: [{ slug: input.foundationCountry }, { name: input.foundationCountry }],
-          },
-        });
-        if (foundationCountry) {
-          foundationData = {
-            baselinePopulation: foundationCountry.baselinePopulation,
-            baselineGdpPerCapita: foundationCountry.baselineGdpPerCapita,
-            continent: foundationCountry.continent,
-            region: foundationCountry.region,
-            landArea: foundationCountry.landArea,
-            areaSqMi: foundationCountry.areaSqMi,
-            flag: foundationCountry.flag,
-            coatOfArms: foundationCountry.coatOfArms,
-          };
-        }
-      }
-
-      // Query Faction Class Archetype if provided
-      let archetype: any = null;
-      if (input.archetypeId) {
-        archetype = await ctx.db.economicArchetype.findUnique({
-          where: { id: input.archetypeId },
-        });
-        if (!archetype) {
-          archetype = await ctx.db.economicArchetype.findFirst({
-            where: { key: input.archetypeId },
-          });
-        }
-      }
-
-      const econ = input.economicInputs || {};
-      const coreIndicators = (econ.coreIndicators || {}) as any;
-      const laborEmployment = (econ.laborEmployment || {}) as any;
-      const fiscalSystem = (econ.fiscalSystem || {}) as any;
-      const demographics = (econ.demographics || {}) as any;
-      const incomeWealth = (econ.incomeWealth || {}) as any;
-      const governmentSpending = (econ.governmentSpending || {}) as any;
-      const nationalIdentity = (econ.nationalIdentity || {}) as any;
-      const geography = (econ.geography || {}) as any;
-
-      const population =
-        coreIndicators.totalPopulation || foundationData?.baselinePopulation || 10000000;
-      const gdpPerCapita =
-        coreIndicators.gdpPerCapita || foundationData?.baselineGdpPerCapita || 25000;
-      const nominalGDP = coreIndicators.nominalGDP || population * gdpPerCapita;
-      const totalGdp = population * gdpPerCapita;
-
-      let taxSystemData = input.taxSystemData;
-      let governmentStructure = input.governmentStructure;
-      let governmentComponentsList = input.governmentComponents || [];
-      let economyBuilderState = input.economyBuilderState;
-
-      // Populate defaults from selected Faction Archetype if missing in input
-      if (archetype) {
-        if (!taxSystemData && archetype.taxProfile) {
-          try {
-            const parsedProfile = JSON.parse(archetype.taxProfile);
-            taxSystemData = {
-              taxSystemName: `${archetype.name} Tax System`,
-              taxAuthority: "Ministry of Finance",
-              progressiveTax: true,
-              baseRate: parsedProfile.incomeRate || 15,
-              categories: [
-                {
-                  categoryName: "Income Tax",
-                  categoryType: "income",
-                  baseRate: parsedProfile.incomeRate || 15,
-                  isActive: true,
-                  brackets: [
-                    {
-                      bracketName: "Base Bracket",
-                      minIncome: 0,
-                      maxIncome: null,
-                      rate: parsedProfile.incomeRate || 15,
-                      isActive: true,
-                    },
-                  ],
-                },
-                {
-                  categoryName: "Corporate Tax",
-                  categoryType: "corporate",
-                  baseRate: parsedProfile.corporateRate || 20,
-                  isActive: true,
-                },
-                {
-                  categoryName: "Consumption Tax",
-                  categoryType: "consumption",
-                  baseRate: parsedProfile.consumptionRate || 10,
-                  isActive: true,
-                },
-              ],
-            };
-          } catch (e) {
-            console.error("Failed to parse archetype taxProfile:", e);
-          }
-        }
-
-        if (!governmentStructure) {
-          governmentStructure = {
-            governmentName: `Government of ${input.name}`,
-            governmentType: archetype.name || "Constitutional Republic",
-            totalBudget: nominalGDP * 0.3,
-            fiscalYear: "Calendar Year",
-            budgetCurrency: "USD",
-            departments: [
-              { name: "Ministry of Finance", category: "finance", isActive: true },
-              { name: "Ministry of Interior", category: "interior", isActive: true },
-              { name: "Ministry of Foreign Affairs", category: "foreign", isActive: true },
-              { name: "Ministry of Defense", category: "defense", isActive: true },
-              { name: "Ministry of Justice", category: "justice", isActive: true },
-            ],
-          };
-        }
-
-        if (governmentComponentsList.length === 0 && archetype.governmentComponents) {
-          try {
-            const parsedComps = JSON.parse(archetype.governmentComponents);
-            if (Array.isArray(parsedComps)) {
-              governmentComponentsList = parsedComps.map((type: string) => ({
-                componentType: type,
-                effectivenessScore: 60,
-                isActive: true,
-              }));
-            }
-          } catch (e) {
-            console.error("Failed to parse archetype governmentComponents:", e);
-          }
-        }
-
-        if (!economyBuilderState && archetype.economicStructure) {
-          try {
-            const parsedEcon = JSON.parse(archetype.economicStructure);
-            economyBuilderState = {
-              structure: {
-                economicModel: archetype.economicModel || "Social Market",
-                economicTier: "Developed",
-                totalGDP: nominalGDP,
-                gdpPerCapita,
-                population,
-                tradeOpenness: parsedEcon.tradeOpenness || 60,
-                economicFreedom: parsedEcon.economicFreedom || 70,
-                creditRating: "AA",
-                fdi: nominalGDP * 0.03,
-                foreignReserves: nominalGDP * 0.15,
-              },
-              sectors: parsedEcon.sectors || [],
-              selectedAtomicComponents: parsedEcon.selectedAtomicComponents || [],
-            };
-          } catch (e) {
-            console.error("Failed to parse archetype economicStructure:", e);
-          }
-        }
-      }
-
-      let baseSlug = input.name
-        .toLowerCase()
-        .trim()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
-      if (!baseSlug) baseSlug = "country";
-
-      let slug = baseSlug;
-      let counter = 1;
-      while (await ctx.db.country.findUnique({ where: { slug }, select: { id: true } })) {
-        counter++;
-        slug = `${baseSlug}-${counter}`;
-      }
-
-      try {
-        const result = await ctx.db.$transaction(async (tx) => {
-          const ixNow = new Date(IxTime.getCurrentIxTime());
-          const country = await tx.country.create({
-            data: {
+    try {
+      const result = await ctx.db.$transaction(async (tx) => {
+        const ixNow = new Date(IxTime.getCurrentIxTime());
+        const country = await tx.country.create({
+          data: {
+            ...buildCountryData({
               name: input.name,
               slug,
               realmId,
-              continent: geography.continent || foundationData?.continent || "Custom",
-              region: geography.region || foundationData?.region || "Custom",
-              landArea: foundationData?.landArea,
-              areaSqMi: foundationData?.areaSqMi,
-              governmentType:
-                nationalIdentity.governmentType ||
-                governmentStructure?.governmentType ||
-                "Federal Republic",
-              religion: nationalIdentity.nationalReligion || "Secular",
-              leader: nationalIdentity.leader || "President",
-              flag: econ.flagUrl || foundationData?.flag || undefined,
-              coatOfArms: econ.coatOfArmsUrl || foundationData?.coatOfArms || undefined,
-              baselinePopulation: population,
-              baselineGdpPerCapita: gdpPerCapita,
-              baselineDate: ixNow,
-              currentPopulation: population,
-              currentGdpPerCapita: gdpPerCapita,
-              currentTotalGdp: totalGdp,
-              adjustedGdpGrowth:
-                coreIndicators.realGDPGrowthRate !== undefined
-                  ? coreIndicators.realGDPGrowthRate / 100
-                  : 0.025,
-              populationGrowthRate:
-                demographics.populationGrowthRate !== undefined
-                  ? demographics.populationGrowthRate / 100
-                  : 0.008,
-              actualGdpGrowth:
-                coreIndicators.realGDPGrowthRate !== undefined
-                  ? coreIndicators.realGDPGrowthRate / 100
-                  : 0.025,
-              economicTier: getEconomicTierFromGdpPerCapita(gdpPerCapita),
-              populationTier: getPopulationTierFromPopulation(population),
-              nominalGDP,
-              realGDPGrowthRate:
-                coreIndicators.realGDPGrowthRate !== undefined
-                  ? coreIndicators.realGDPGrowthRate / 100
-                  : 0.025,
-              maxGdpGrowthRate: 0.15,
-
-              inflationRate:
-                coreIndicators.inflationRate !== undefined
-                  ? coreIndicators.inflationRate / 100
-                  : 0.02,
-              currencyExchangeRate: coreIndicators.currencyExchangeRate || 1.0,
-              laborForceParticipationRate: laborEmployment.laborForceParticipationRate || 65,
-              employmentRate: laborEmployment.employmentRate || 95,
-              unemploymentRate: laborEmployment.unemploymentRate || 5,
-              totalWorkforce: laborEmployment.totalWorkforce || Math.round(population * 0.65),
-              averageWorkweekHours: laborEmployment.averageWorkweekHours || 40,
-              minimumWage: laborEmployment.minimumWage || 15,
-              averageAnnualIncome: laborEmployment.averageAnnualIncome || gdpPerCapita * 0.8,
-              taxRevenueGDPPercent:
-                fiscalSystem.taxRevenueGDPPercent || (taxSystemData as any)?.totalTaxRate || 25,
-              governmentRevenueTotal: fiscalSystem.governmentRevenueTotal || nominalGDP * 0.25,
-              taxRevenuePerCapita:
-                fiscalSystem.taxRevenuePerCapita || (nominalGDP * 0.25) / population,
-              governmentBudgetGDPPercent: fiscalSystem.governmentBudgetGDPPercent || 25,
-              budgetDeficitSurplus: fiscalSystem.budgetDeficitSurplus || 0,
-              internalDebtGDPPercent: fiscalSystem.internalDebtGDPPercent || 30,
-              externalDebtGDPPercent: fiscalSystem.externalDebtGDPPercent || 20,
-              totalDebtGDPRatio: fiscalSystem.totalDebtGDPRatio || 50,
-              debtPerCapita: fiscalSystem.debtPerCapita || (nominalGDP * 0.5) / population,
-              interestRates: fiscalSystem.interestRates || 3.5,
-              debtServiceCosts: fiscalSystem.debtServiceCosts || nominalGDP * 0.02,
-              povertyRate: incomeWealth.povertyRate || 12,
-              incomeInequalityGini:
-                incomeWealth.incomeInequalityGini ||
-                (incomeWealth.giniIndex ? incomeWealth.giniIndex / 100 : 0.35),
-              socialMobilityIndex: incomeWealth.socialMobilityIndex || 65,
-              totalGovernmentSpending: governmentSpending.totalSpending || nominalGDP * 0.22,
-              spendingGDPPercent: governmentSpending.spendingGDPPercent || 22,
-              spendingPerCapita:
-                governmentSpending.spendingPerCapita || (nominalGDP * 0.22) / population,
-              lifeExpectancy: demographics.lifeExpectancy || 78.5,
-              urbanPopulationPercent: demographics.urbanRuralSplit?.urban || 65,
-              ruralPopulationPercent: demographics.urbanRuralSplit?.rural || 35,
-              literacyRate: demographics.literacyRate || 95,
-              populationDensity: foundationData?.landArea
-                ? population / foundationData.landArea
-                : undefined,
-              gdpDensity: foundationData?.landArea ? totalGdp / foundationData.landArea : undefined,
-              lastCalculated: ixNow,
-            },
-          });
-
-          await syncNationalIdentity(tx, country.id, input.name, nationalIdentity);
-          await syncDemographics(tx, country.id, demographics);
-          await syncIncomeAndSpending(
-            tx,
-            country.id,
-            incomeWealth,
-            governmentSpending,
-            fiscalSystem
-          );
-          await syncTaxSystem(tx, country.id, taxSystemData);
-          await syncGovernmentStructure(tx, country.id, input.name, governmentStructure);
-          await syncGovernmentComponents(tx, country.id, governmentComponentsList);
-          await syncEconomyBuilderState(tx, country.id, economyBuilderState);
-
-          // assignNation re-checks the cap inside the transaction (a concurrent build or claim may have
-          // filled it). The nation just built becomes the one the player acts as, so /mycountry shows it.
-          await assignNation(tx, { userId: player.id, countryId: country.id });
-          await pointActiveNation(tx, player.id, country.id);
-
-          return country;
+              econ,
+              foundation,
+              base,
+              taxRate: taxSystemData?.totalTaxRate,
+              structureType: governmentStructure?.governmentType,
+            }),
+            baselineDate: ixNow,
+            lastCalculated: ixNow,
+          },
         });
 
-        await invalidateCache(["countries.getAll"]);
-        clearLayerCache("political");
-        await globalCache.delete(`user_profile:${userId}`);
+        await syncNationalIdentity(tx, country.id, input.name, nationalIdentity);
+        await syncDemographics(tx, country.id, demographics);
+        await syncIncomeAndSpending(tx, country.id, incomeWealth, governmentSpending, fiscalSystem);
+        await syncTaxSystem(tx, country.id, taxSystemData);
+        await syncGovernmentStructure(tx, country.id, input.name, governmentStructure);
+        await syncGovernmentComponents(tx, country.id, governmentComponents);
+        await syncEconomyBuilderState(tx, country.id, economyBuilderState);
 
-        // Onboarding bonuses (one-time; a no-op if the account was already paid at sign-up)
-        try {
-          const bcfg = await getBonusConfig(ctx.db);
-          await grantBonus(ctx.db, userId, NEW_PLAYER_BONUS_SOURCE, bcfg.newPlayer, {
-            oneTime: true,
-            metadata: { countryId: result.id, countryName: result.name },
-          });
-          if (input.foundationCountry) {
-            await grantBonus(ctx.db, userId, "bonus:wiki_import", bcfg.wikiImport, {
-              oneTime: true,
-              metadata: {
-                countryId: result.id,
-                countryName: result.name,
-                foundation: input.foundationCountry,
-              },
-            });
-          }
-        } catch (bonusError) {
-          console.error("[createCountry] Failed to grant onboarding bonus:", bonusError);
-        }
-        queueAchievementCheck(userId, result.id);
+        // assignNation re-checks the cap inside the transaction (a concurrent build or claim may have
+        // filled it). The nation just built becomes the one the player acts as, so /mycountry shows it.
+        await assignNation(tx, { userId: player.id, countryId: country.id });
+        await pointActiveNation(tx, player.id, country.id);
 
-        return result;
-      } catch (error) {
-        console.error("[createCountry] Transaction failed:", error);
-        if (error instanceof NationOwnershipError && error.code === "CAP_REACHED") {
-          throw new TRPCError({ code: "CONFLICT", message: error.message });
-        }
-        throw new Error(
-          `Failed to create country: ${error instanceof Error ? error.message : "Unknown error"}`,
-          { cause: error }
-        );
+        return country;
+      });
+
+      await invalidateCache(["countries.getAll"]);
+      clearLayerCache("political");
+      await globalCache.delete(`user_profile:${userId}`);
+
+      await grantOnboardingBonuses(ctx.db, userId, result, input.foundationCountry);
+      queueAchievementCheck(userId, result.id);
+
+      return result;
+    } catch (error) {
+      console.error("[createCountry] Transaction failed:", error);
+      if (error instanceof NationOwnershipError && error.code === "CAP_REACHED") {
+        throw new TRPCError({ code: "CONFLICT", message: error.message });
       }
-    }),
+      throw new Error(
+        `Failed to create country: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { cause: error }
+      );
+    }
+  }),
 };

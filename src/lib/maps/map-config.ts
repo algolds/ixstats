@@ -161,8 +161,6 @@ function getProjectionSpec(mode: ProjectionMode): { type: unknown } {
   }
 }
 
-// ─── Route Styles (single source of truth) ───────────────────────────────────
-
 /**
  * Visual style for each transport route type.
  * Consumed by TransportOverlay (IxWorldMap) and EditorMap route layers so that
@@ -267,10 +265,6 @@ export function getCountryColor(featureId: string): string {
   return DEFAULT_COUNTRY_COLORS[Math.abs(hash) % DEFAULT_COUNTRY_COLORS.length];
 }
 
-// ──────────────────────────────────────────────
-// Sovereignty / dependency configuration
-// ──────────────────────────────────────────────
-
 export const SOVEREIGNTY_TYPES = [
   // Original types
   { value: "crown_possession", label: "Crown Possession", short: "Crown Poss." },
@@ -348,13 +342,6 @@ export function getSovereigntyColor(
   return blendColors(subjectColor, sovereignColor, sovereignWeight);
 }
 
-// ──────────────────────────────────────────────
-// Elevation legend configuration
-// ──────────────────────────────────────────────
-// ──────────────────────────────────────────────
-// Climate legend configuration (Trewartha)
-// ──────────────────────────────────────────────
-
 interface ClimateLegendEntry {
   code: IxWorldClimate;
   label: string;
@@ -369,10 +356,6 @@ export function getClimateLegend(): ClimateLegendEntry[] {
     color: CLIMATE_COLORS[code],
   }));
 }
-
-// ──────────────────────────────────────────────
-// Ocean & sea label positions
-// ──────────────────────────────────────────────
 
 interface WaterBodyLabel {
   name: string;
@@ -392,7 +375,6 @@ interface WaterBodyLabel {
 }
 
 export const WATER_BODY_LABELS: WaterBodyLabel[] = [
-  // ── Major Oceans ──
   {
     name: "Levantine Ocean",
     coordinates: [115, 32],
@@ -437,7 +419,6 @@ export const WATER_BODY_LABELS: WaterBodyLabel[] = [
     maxDepthM: 7200,
   },
 
-  // ── Seas ──
   {
     name: "Kilikas Sea",
     coordinates: [25, 58],

@@ -11,6 +11,13 @@
 import { useMemo } from "react";
 import { api } from "~/trpc/react";
 
+/** The subdivision fields the embed maps draw. */
+interface EmbedSubdivision {
+  id: string;
+  name: string;
+  geometry: GeoJSON.Geometry | null;
+}
+
 const MAP_CACHE = { staleTime: 30 * 60_000, gcTime: 2 * 60 * 60_000 } as const;
 
 export function useCountryMapEmbed(countryId: string | null | undefined) {
@@ -61,7 +68,7 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
       cities,
       capital,
       pois: bundle?.pois ?? [],
-      subdivisions: bundle?.subdivisions ?? [],
+      subdivisions: (bundle?.subdivisions ?? []) as EmbedSubdivision[],
 
       // Neighbors
       neighbors: bundle?.neighbors ?? [],

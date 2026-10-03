@@ -1,17 +1,5 @@
-/**
- * Geographic Map Router
- *
- * tRPC router for the IxEarth world map system.
- * Handles map layer data, country geometry, spatial queries,
- * and country-feature linking.
- *
- * Data source: PostgreSQL + PostGIS (map_layers table),
- * with file-based fallback for initial load.
- */
-
 import { z } from "zod";
 import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
 import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import {
@@ -20,24 +8,10 @@ import {
   checkNameUniqueness,
 } from "~/lib/maps/geo-validation";
 
-/** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
-const coordinatesSchema = z
-  .tuple([z.number(), z.number()])
-  .refine(([lng, lat]) => lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90, {
-    message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)",
-  });
-
 import { syncGeographicDemographics } from "~/lib/country-geo/sync";
-
-// ──────────────────────────────────────────────
-// Router
-// ──────────────────────────────────────────────
+import { assertFound, assertOwnCountry, coordinatesSchema } from "../core/shared";
 
 export const geoFeaturesCitiesRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // User map editor endpoints (country owners)
-  // ──────────────────────────────────────────────
-
   /**
    * Create a city within the user's country.
    * Auto-approved if the point is inside the country's borders.
@@ -58,10 +32,7 @@ export const geoFeaturesCitiesRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       // Verify ownership
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
       // Validate containment + collision + name uniqueness
       await validatePointContainment(
@@ -136,18 +107,15 @@ export const geoFeaturesCitiesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
       // Verify city belongs to country
-      const city = await ctx.db.city.findFirst({
-        where: { id: input.cityId, countryId: input.countryId },
-      });
-      if (!city) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "City not found" });
-      }
+      assertFound(
+        await ctx.db.city.findFirst({
+          where: { id: input.cityId, countryId: input.countryId },
+        }),
+        "City not found"
+      );
 
       // If coordinates changed, validate containment + collision
       if (input.coordinates) {
@@ -209,17 +177,14 @@ export const geoFeaturesCitiesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
-      const city = await ctx.db.city.findFirst({
-        where: { id: input.cityId, countryId: input.countryId },
-      });
-      if (!city) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "City not found" });
-      }
+      const city = assertFound(
+        await ctx.db.city.findFirst({
+          where: { id: input.cityId, countryId: input.countryId },
+        }),
+        "City not found"
+      );
 
       const wasCapital = city.isNationalCapital;
       await ctx.db.city.delete({ where: { id: input.cityId } });

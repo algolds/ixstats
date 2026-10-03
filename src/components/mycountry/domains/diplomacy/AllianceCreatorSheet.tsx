@@ -125,7 +125,6 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
         </SheetHeader>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
-          {/* Name fields */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-caption mb-2 block">Alliance name</Label>
@@ -148,7 +147,6 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
 
           <Separator />
 
-          {/* Type */}
           <div>
             <Label className="text-caption mb-2 block">Alliance type</Label>
             <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
@@ -169,7 +167,6 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
             </Select>
           </div>
 
-          {/* Description */}
           <div>
             <Label className="text-caption mb-2 block">Description</Label>
             <Textarea
@@ -182,7 +179,6 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
 
           <Separator />
 
-          {/* Settings row */}
           <div className="grid grid-cols-3 gap-3">
             <div>
               <Label className="text-caption mb-2 block">Color</Label>

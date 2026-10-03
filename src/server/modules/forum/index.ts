@@ -5,7 +5,6 @@
  * live in ~/shared/forum-utils so client components don't pull in this module.
  */
 
-// ─── Services ────────────────────────────────────────────────────────────────
 export {
   getForumActivity,
   getForumTrendingThreads,
@@ -26,10 +25,7 @@ export {
   type XFForum,
 } from "./services/xenforo-service";
 
-export {
-  lookupForumUser,
-  syncUserToForum,
-} from "./services/xenforo-user-sync";
+export { lookupForumUser, syncUserToForum } from "./services/xenforo-user-sync";
 
 export {
   createForumLinkService,
@@ -44,11 +40,5 @@ export {
 } from "./services/linked-user";
 
 export { forumBridge } from "./services/forum-bridge";
-// ─── Lib / Utilities ─────────────────────────────────────────────────────────
 export { transformBBCode } from "./lib/bbcode-transformer";
-export {
-  cacheKey,
-  cacheInvalidate,
-  invalidateThread,
-  cachedFetch
-} from "./lib/cache";
+export { cacheKey, cacheInvalidate, invalidateThread, cachedFetch } from "./lib/cache";

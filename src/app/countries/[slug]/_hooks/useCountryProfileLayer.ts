@@ -19,6 +19,7 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
+import type { WikiSource } from "~/lib/wiki-os/config";
 import type { CountryWithEconomicData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
 import { formatCensusValue } from "~/components/mycountry/shell/WorldCensusCard";
 import {
@@ -55,100 +56,10 @@ const MAP = {
   refetchOnWindowFocus: false,
 } as const;
 
-// ─── Model ──────────────────────────────────────────────────────────────────
-
-export interface ProfileIdentity {
-  name: string;
-  officialName: string | null;
-  motto: string | null;
-  anthem: string | null;
-  demonym: string | null;
-  capital: string | null;
-  languages: string | null;
-  currency: string | null;
-  governmentType: string | null;
-  leaders: { title: string; name: string }[];
-  continent: string | null;
-  region: string | null;
-  realm: { name: string; slug: string } | null;
-  flagUrl: string | null;
-  coatOfArmsUrl: string | null;
-  sovereign: { username: string | null; roleName: string | null } | null;
-}
-
-interface ProfileLore {
-  articleTitle: string;
-  wikiHref: string;
-  prologue: string[];
-  chapters: Partial<Record<LoreChapter, LoreSection>>;
-  founding: FoundingEvent[];
-  isLoading: boolean;
-  /** True once the wiki answered with no usable prose. */
-  isEmpty: boolean;
-}
-
-export interface ProfileVitals {
-  population: number | null;
-  populationGrowth: number | null;
-  gdpTotal: number | null;
-  gdpPerCapita: number | null;
-  gdpGrowth: number | null;
-  economicTier: string | null;
-  populationTier: string | null;
-  landArea: number | null;
-  density: number | null;
-  unemployment: number | null;
-  inflation: number | null;
-  lifeExpectancy: number | null;
-  literacy: number | null;
-  urbanShare: number | null;
-  gini: number | null;
-  povertyRate: number | null;
-  debtToGdp: number | null;
-  taxRevenueShare: number | null;
-  publicApproval: number | null;
-  stabilityScore: number | null;
-  /** Model history (year, total GDP, population) from the economic engine. */
-  history: { year: number; gdp: number; population: number }[];
-}
-
-export interface ProfileLand {
-  hasGeometry: boolean;
-  areaSqKm: number | null;
-  capital: { name: string; population: number | null } | null;
-  cities: {
-    id: string;
-    name: string;
-    population: number | null;
-    isCapital: boolean;
-    isPort: boolean;
-  }[];
-  subdivisions: {
-    id: string;
-    name: string;
-    type: string;
-    population: number | null;
-    capital: string | null;
-  }[];
-  storyPins: {
-    id: string;
-    title: string;
-    category: string;
-    year: number | null;
-    eraLabel: string | null;
-    excerpt: string | null;
-  }[];
-  neighbors: { name: string; countryId: string | null }[];
-  profile: {
-    coastlineKm: number | null;
-    isLandlocked: boolean;
-    isIsland: boolean;
-    dominantClimate: string | null;
-    dominantElevation: string | null;
-    arableLandPercent: number | null;
-  } | null;
-  isLoading: boolean;
-}
+export type ProfileIdentity = ReturnType<typeof buildIdentity>;
+type ProfileLore = ReturnType<typeof buildLore>;
+export type ProfileVitals = ReturnType<typeof buildVitals>;
+export type ProfileLand = ReturnType<typeof toLand>;
 
 export interface ProfileState {
   government: {
@@ -227,8 +138,6 @@ export interface CountryProfileLayer {
   currentIxTime: number;
 }
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
 function str(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
@@ -285,7 +194,7 @@ type GeoBundle = RouterOutputs["countryGeo"]["getCountryGeoBundle"];
 type Row = Record<string, unknown>;
 const rows = (value: unknown): Row[] => (Array.isArray(value) ? (value as Row[]) : []);
 
-function toLand(bundle: GeoBundle | undefined, isLoading: boolean): ProfileLand {
+function toLand(bundle: GeoBundle | undefined, isLoading: boolean) {
   const cities = rows(bundle?.cities).map((c) => ({
     id: String(c.id),
     name: String(c.name),
@@ -335,7 +244,199 @@ function toLand(bundle: GeoBundle | undefined, isLoading: boolean): ProfileLand 
   };
 }
 
-// ─── Hook ───────────────────────────────────────────────────────────────────
+type Loose = Record<string, any>;
+type Output<R extends keyof RouterOutputs, P extends keyof RouterOutputs[R]> = NonNullable<
+  RouterOutputs[R][P]
+>;
+
+const firstStr = (...values: unknown[]) => values.map(str).find(Boolean) ?? null;
+
+function buildIdentity(
+  c: Loose,
+  infobox: Infobox | null,
+  flagUrl: string | null,
+  imageSource: WikiSource
+) {
+  const own = (c.nationalIdentity ?? {}) as Record<string, unknown>;
+  const ib: Partial<NonNullable<Infobox>> = infobox ?? {};
+  const coatFile = firstStr(ib.image_coat, ib.coat_of_arms);
+  const { realm, owner } = c;
+  return {
+    name: String(c.name).replace(/_/g, " "),
+    officialName: firstStr(own.officialName, ib.conventional_long_name, ib.official_name),
+    motto: firstStr(own.motto, ib.motto, ib.national_motto),
+    anthem: firstStr(own.nationalAnthem, ib.national_anthem),
+    demonym: firstStr(own.demonym, ib.demonym),
+    capital: firstStr(own.capitalCity, ib.capital),
+    languages: firstStr(own.officialLanguages, ib.official_languages),
+    currency: firstStr(own.currency, ib.currency),
+    governmentType: firstStr(own.governmentType, c.governmentType, ib.government_type),
+    leaders: infoboxLeaders(infobox),
+    continent: str(c.continent),
+    region: str(c.region),
+    realm:
+      str(realm?.name) && str(realm?.slug)
+        ? { name: String(realm.name), slug: String(realm.slug) }
+        : null,
+    flagUrl,
+    coatOfArmsUrl:
+      str(c.coatOfArms) ?? (coatFile ? (resolveImageUrl(coatFile, imageSource) ?? null) : null),
+    sovereign: owner
+      ? {
+          username: firstStr(owner.forumUsername, owner.wikiUsername),
+          roleName: firstStr(owner.role?.displayName, owner.role?.name),
+        }
+      : null,
+  };
+}
+
+function buildLore(
+  article: ReturnType<typeof splitWikiSections>,
+  overview: string,
+  founding: FoundingEvent[],
+  title: string,
+  isLoading: boolean
+) {
+  // Non-IxWiki sources (and articles missing from the shadow store) fall back to the cached overview.
+  const lead = leadParagraphs(article.lead);
+  const prologue = lead.length ? lead : wikiToParagraphs(overview, { max: 3 });
+  const chapters: Partial<Record<LoreChapter, LoreSection>> = {};
+  for (const [chapter, keywords] of Object.entries(LORE_CHAPTER_KEYWORDS) as [
+    LoreChapter,
+    readonly string[],
+  ][]) {
+    const section = pickLoreSection(article.sections, keywords, {
+      max: chapter === "history" ? 6 : 3,
+    });
+    if (section) chapters[chapter] = section;
+  }
+  return {
+    articleTitle: title,
+    wikiHref: titleToWikiOSRoute(title),
+    prologue,
+    chapters,
+    founding,
+    isLoading,
+    isEmpty: !isLoading && prologue.length === 0 && Object.keys(chapters).length === 0,
+  };
+}
+
+function buildVitals(c: Loose) {
+  const zero = { allowZero: true };
+  return {
+    population: realNumber(c.currentPopulation),
+    populationGrowth: realNumber(c.populationGrowthRate, zero),
+    gdpTotal: realNumber(c.currentTotalGdp),
+    gdpPerCapita: realNumber(c.currentGdpPerCapita),
+    gdpGrowth: realNumber(c.adjustedGdpGrowth, zero),
+    economicTier: str(c.economicTier),
+    populationTier: str(c.populationTier),
+    landArea: realNumber(c.landArea),
+    density: realNumber(c.populationDensity),
+    unemployment: realNumber(c.unemploymentRate, zero),
+    inflation: realNumber(c.inflationRate, zero),
+    lifeExpectancy: realNumber(c.lifeExpectancy),
+    literacy: realNumber(c.literacyRate),
+    urbanShare: realNumber(c.urbanPopulationPercent),
+    gini: realNumber(c.incomeInequalityGini),
+    povertyRate: realNumber(c.povertyRate),
+    debtToGdp: realNumber(c.totalDebtGDPRatio),
+    taxRevenueShare: realNumber(c.taxRevenueGDPPercent),
+    publicApproval: realNumber(c.publicApproval),
+    stabilityScore: realNumber(c.stabilityMetrics?.stabilityScore),
+    history: yearlySeries(c.historical),
+  };
+}
+
+function buildGovernment(
+  gov: RouterOutputs["government"]["getByCountryId"] | undefined
+): ProfileState["government"] {
+  if (!gov) return null;
+  return {
+    name: gov.governmentName,
+    type: gov.governmentType,
+    headOfState: str(gov.headOfState),
+    headOfGovernment: str(gov.headOfGovernment),
+    legislature: str(gov.legislatureName),
+    executive: str(gov.executiveName),
+    judiciary: str(gov.judicialName),
+    departments: (gov.departments ?? []).map((d) => d.name).slice(0, 12),
+  };
+}
+
+function buildElection(
+  status: Output<"elections", "getElectionStatus"> | undefined
+): ProfileState["election"] {
+  if (!status || !(status.lastElection || status.upcoming)) return null;
+  const { lastElection: last, upcoming } = status;
+  return {
+    lastName: last?.name ?? null,
+    lastIxTime: last?.scheduledIxTime ?? null,
+    turnout: realNumber(last?.turnout),
+    results: (last?.results ?? []).map(({ partyName, color, votePercentage, seatsWon }) => ({
+      partyName,
+      color,
+      votePercentage,
+      seatsWon,
+    })),
+    upcomingName: upcoming?.name ?? null,
+    upcomingIxTime: upcoming?.scheduledIxTime ?? null,
+    totalSeats: status.totalSeats,
+  };
+}
+
+function buildOwner(
+  isOwner: boolean,
+  intents: Parameters<typeof countOwnerDirectives>[0],
+  pending: Output<"nationalIssues", "getPendingCount"> | undefined
+): ProfileOwnerLayer | null {
+  if (!isOwner) return null;
+  const counts = countOwnerDirectives(intents);
+  return {
+    activeIssues: pending?.total ?? null,
+    urgentIssues: pending?.urgent ?? null,
+    draftDirectives: counts.drafts,
+    directivesInForce: counts.active,
+  };
+}
+
+function buildWorld(
+  rankings: Output<"mycountry", "getRankings"> | undefined,
+  relations: Output<"diplomaticCore", "getRelationships"> | undefined,
+  embassies: Output<"diplomaticEmbassies", "getEmbassies"> | undefined,
+  isLoading: boolean
+): ProfileWorld {
+  return {
+    rankings: (rankings ?? []).map((r) => ({
+      category: r.category,
+      rank: r.global.position,
+      total: r.global.total,
+      value: formatCensusValue(r),
+      percentile: realNumber(r.percentile, { allowZero: true }),
+    })),
+    relations: (relations ?? []).map((r) => ({
+      id: r.id,
+      countryId: r.targetCountryId,
+      name: r.targetCountryName,
+      flagUrl: r.targetCountryFlag ?? null,
+      relationship: String(r.relationship),
+      strength: r.strength,
+      treaties: Array.isArray(r.treaties) ? r.treaties.map(String) : [],
+    })),
+    embassies: (embassies ?? [])
+      .filter((e) => e.status !== "closed")
+      .map((e) => ({
+        id: e.id,
+        countryName: e.country,
+        countrySlug: e.countrySlug,
+        flagUrl: e.countryFlag,
+        role: e.role,
+        status: e.status,
+        level: typeof e.level === "number" ? e.level : null,
+      })),
+    isLoading,
+  };
+}
 
 interface UseCountryProfileLayerOptions {
   country: CountryWithEconomicData | null | undefined;
@@ -353,7 +454,7 @@ export function useCountryProfileLayer({
   currentIxTime,
 }: UseCountryProfileLayerOptions): CountryProfileLayer | null {
   // `getByIdWithEconomicData` returns `any`; narrow the fields this layer reads.
-  const c = country as Record<string, any> | null | undefined;
+  const c = country as Loose | null | undefined;
   const countryId: string = c?.id ?? "";
   const enabled = !!countryId;
   const wikiSource = (str(c?.wikiSource) ?? "ixwiki") as "ixwiki" | "iiwiki" | "althistory";
@@ -374,10 +475,11 @@ export function useCountryProfileLayer({
     { enabled: !!redirect, ...WIKI }
   );
 
-  // Land, state and world.
-  const geo = api.countryGeo.getCountryGeoBundle.useQuery({ countryId }, { enabled, ...MAP });
-  // The public record (server-filtered: enacted directives, resolved issues), signed out too.
-  const record = api.countries.getPublicRecord.useQuery({ countryId }, { enabled, ...STATIC });
+  // Land, state and world. The public record is server-filtered (enacted directives, resolved
+  // issues) and readable signed out.
+  const byCountry = { countryId };
+  const geo = api.countryGeo.getCountryGeoBundle.useQuery(byCountry, { enabled, ...MAP });
+  const record = api.countries.getPublicRecord.useQuery(byCountry, { enabled, ...STATIC });
   const canon = api.mycountry.getCanonFeed.useQuery(
     { countryId, limit: 40 },
     { enabled, ...STATIC }
@@ -386,240 +488,83 @@ export function useCountryProfileLayer({
     { countryId, budgetYearsLimit: 1, revenueSourcesLimit: 1 },
     { enabled, ...STATIC }
   );
-  const election = api.elections.getElectionStatus.useQuery({ countryId }, { enabled, ...STATIC });
-  const rankings = api.mycountry.getRankings.useQuery({ countryId }, { enabled, ...STATIC });
-  const relations = api.diplomaticCore.getRelationships.useQuery(
-    { countryId },
-    { enabled, ...STATIC }
-  );
-  const embassies = api.diplomaticEmbassies.getEmbassies.useQuery(
-    { countryId },
-    { enabled, ...STATIC }
-  );
+  const election = api.elections.getElectionStatus.useQuery(byCountry, { enabled, ...STATIC });
+  const rankings = api.mycountry.getRankings.useQuery(byCountry, { enabled, ...STATIC });
+  const relations = api.diplomaticCore.getRelationships.useQuery(byCountry, {
+    enabled,
+    ...STATIC,
+  });
+  const embassies = api.diplomaticEmbassies.getEmbassies.useQuery(byCountry, {
+    enabled,
+    ...STATIC,
+  });
 
   // The owner layer: the owner's full directive tree and open-issue counts.
-  const intents = api.intent.getTree.useQuery(
-    { countryId },
-    { enabled: enabled && isOwner, ...STATIC }
-  );
-  const pending = api.nationalIssues.getPendingCount.useQuery(
-    { countryId },
-    { enabled: enabled && isOwner, ...STATIC }
-  );
+  const ownerOnly = { enabled: enabled && isOwner, ...STATIC };
+  const intents = api.intent.getTree.useQuery(byCountry, ownerOnly);
+  const pending = api.nationalIssues.getPendingCount.useQuery(byCountry, ownerOnly);
+
+  const articleText = (redirect ? redirected.data : wikitext.data)?.wikitext ?? "";
+  const loreLoading =
+    wikiProfile.isLoading ||
+    (wikiSource === "ixwiki" && (wikitext.isLoading || (!!redirect && redirected.isLoading)));
 
   return useMemo<CountryProfileLayer | null>(() => {
     if (!c) return null;
     const infobox = wikiProfile.data?.infobox ?? null;
-    const identityRow = (c.nationalIdentity ?? null) as Record<string, unknown> | null;
-    const name = String(c.name).replace(/_/g, " ");
+    const identity = buildIdentity(c, infobox, flagUrl, wikiProfile.data?.wikiSource ?? wikiSource);
 
-    // ── Identity: in-app national identity first, then the wiki infobox.
-    const coatFile = str(infobox?.image_coat) ?? str(infobox?.coat_of_arms);
-    const identity: ProfileIdentity = {
-      name,
-      officialName:
-        str(identityRow?.officialName) ??
-        str(infobox?.conventional_long_name) ??
-        str(infobox?.official_name),
-      motto: str(identityRow?.motto) ?? str(infobox?.motto) ?? str(infobox?.national_motto),
-      anthem: str(identityRow?.nationalAnthem) ?? str(infobox?.national_anthem),
-      demonym: str(identityRow?.demonym) ?? str(infobox?.demonym),
-      capital: str(identityRow?.capitalCity) ?? str(infobox?.capital),
-      languages: str(identityRow?.officialLanguages) ?? str(infobox?.official_languages),
-      currency: str(identityRow?.currency) ?? str(infobox?.currency),
-      governmentType:
-        str(identityRow?.governmentType) ?? str(c.governmentType) ?? str(infobox?.government_type),
-      leaders: infoboxLeaders(infobox),
-      continent: str(c.continent),
-      region: str(c.region),
-      realm:
-        str(c.realm?.name) && str(c.realm?.slug)
-          ? { name: String(c.realm.name), slug: String(c.realm.slug) }
-          : null,
-      flagUrl,
-      coatOfArmsUrl:
-        str(c.coatOfArms) ??
-        (coatFile
-          ? (resolveImageUrl(coatFile, wikiProfile.data?.wikiSource ?? wikiSource) ?? null)
-          : null),
-      sovereign: c.owner
-        ? {
-            username: str(c.owner.forumUsername) ?? str(c.owner.wikiUsername),
-            roleName: str(c.owner.role?.displayName) ?? str(c.owner.role?.name),
-          }
-        : null,
-    };
-
-    // ── Lore: prologue + one wiki section per chapter.
-    const text = redirect ? (redirected.data?.wikitext ?? "") : (wikitext.data?.wikitext ?? "");
-    const article = splitWikiSections(text);
-    let prologue = leadParagraphs(article.lead);
-    if (prologue.length === 0) {
-      // Non-IxWiki sources (and articles missing from the shadow store): the cached overview.
-      prologue = wikiToParagraphs(wikiProfile.data?.sections?.[0]?.content ?? "", { max: 3 });
-    }
-    const chapters: Partial<Record<LoreChapter, LoreSection>> = {};
-    for (const chapter of Object.keys(LORE_CHAPTER_KEYWORDS) as LoreChapter[]) {
-      const section = pickLoreSection(article.sections, LORE_CHAPTER_KEYWORDS[chapter], {
-        max: chapter === "history" ? 6 : 3,
-      });
-      if (section) chapters[chapter] = section;
-    }
-    const loreLoading =
-      wikiProfile.isLoading ||
-      (wikiSource === "ixwiki" && (wikitext.isLoading || (!!redirect && redirected.isLoading)));
     const founding = infoboxFounding(infobox);
-    const lore: ProfileLore = {
-      articleTitle: redirect ?? articleTitle,
-      wikiHref: titleToWikiOSRoute(redirect ?? articleTitle),
-      prologue,
-      chapters,
+    const lore = buildLore(
+      splitWikiSections(articleText),
+      wikiProfile.data?.sections?.[0]?.content ?? "",
       founding,
-      isLoading: loreLoading,
-      isEmpty: !loreLoading && prologue.length === 0 && Object.keys(chapters).length === 0,
-    };
+      redirect ?? articleTitle,
+      loreLoading
+    );
 
-    // ── Vitals: straight from the economic engine; missing stays null.
-    const stability = c.stabilityMetrics as { stabilityScore?: number } | null | undefined;
-    const vitals: ProfileVitals = {
-      population: realNumber(c.currentPopulation),
-      populationGrowth: realNumber(c.populationGrowthRate, { allowZero: true }),
-      gdpTotal: realNumber(c.currentTotalGdp),
-      gdpPerCapita: realNumber(c.currentGdpPerCapita),
-      gdpGrowth: realNumber(c.adjustedGdpGrowth, { allowZero: true }),
-      economicTier: str(c.economicTier),
-      populationTier: str(c.populationTier),
-      landArea: realNumber(c.landArea),
-      density: realNumber(c.populationDensity),
-      unemployment: realNumber(c.unemploymentRate, { allowZero: true }),
-      inflation: realNumber(c.inflationRate, { allowZero: true }),
-      lifeExpectancy: realNumber(c.lifeExpectancy),
-      literacy: realNumber(c.literacyRate),
-      urbanShare: realNumber(c.urbanPopulationPercent),
-      gini: realNumber(c.incomeInequalityGini),
-      povertyRate: realNumber(c.povertyRate),
-      debtToGdp: realNumber(c.totalDebtGDPRatio),
-      taxRevenueShare: realNumber(c.taxRevenueGDPPercent),
-      publicApproval: realNumber(c.publicApproval),
-      stabilityScore: realNumber(stability?.stabilityScore),
-      history: yearlySeries(c.historical),
-    };
-
-    // ── Land.
     const land = toLand(geo.data, geo.isLoading);
-
-    // ── State: public record only.
     const directives: PublicDirective[] = record.data?.directives ?? [];
     const issueOutcomes: PublicIssueOutcome[] = record.data?.issueOutcomes ?? [];
-    const toIxTime = (ms: number) => IxTime.convertToIxTime(ms);
-    const { decisions, diplomacy } = splitCanonFeed(canon.data, toIxTime);
-    const gov = government.data;
-    const status = election.data;
+    const { decisions, diplomacy } = splitCanonFeed(canon.data, (ms) => IxTime.convertToIxTime(ms));
     const state: ProfileState = {
-      government: gov
-        ? {
-            name: gov.governmentName,
-            type: gov.governmentType,
-            headOfState: str(gov.headOfState),
-            headOfGovernment: str(gov.headOfGovernment),
-            legislature: str(gov.legislatureName),
-            executive: str(gov.executiveName),
-            judiciary: str(gov.judicialName),
-            departments: (gov.departments ?? []).map((d) => d.name).slice(0, 12),
-          }
-        : null,
+      government: buildGovernment(government.data),
       directives,
       issueOutcomes,
-      election:
-        status && (status.lastElection || status.upcoming)
-          ? {
-              lastName: status.lastElection?.name ?? null,
-              lastIxTime: status.lastElection?.scheduledIxTime ?? null,
-              turnout: realNumber(status.lastElection?.turnout),
-              results: (status.lastElection?.results ?? []).map((r) => ({
-                partyName: r.partyName,
-                color: r.color,
-                votePercentage: r.votePercentage,
-                seatsWon: r.seatsWon,
-              })),
-              upcomingName: status.upcoming?.name ?? null,
-              upcomingIxTime: status.upcoming?.scheduledIxTime ?? null,
-              totalSeats: status.totalSeats,
-            }
-          : null,
+      election: buildElection(election.data),
       isLoading: record.isLoading || government.isLoading,
     };
 
-    // ── World.
-    const world: ProfileWorld = {
-      rankings: (rankings.data ?? []).map((r) => ({
-        category: r.category,
-        rank: r.global.position,
-        total: r.global.total,
-        value: formatCensusValue(r),
-        percentile: realNumber(r.percentile, { allowZero: true }),
-      })),
-      relations: (relations.data ?? []).map((r) => ({
-        id: r.id,
-        countryId: r.targetCountryId,
-        name: r.targetCountryName,
-        flagUrl: r.targetCountryFlag ?? null,
-        relationship: String(r.relationship),
-        strength: r.strength,
-        treaties: Array.isArray(r.treaties) ? r.treaties.map(String) : [],
-      })),
-      embassies: (embassies.data ?? [])
-        .filter((e) => e.status !== "closed")
-        .map((e) => ({
-          id: e.id,
-          countryName: e.country,
-          countrySlug: e.countrySlug,
-          flagUrl: e.countryFlag,
-          role: e.role,
-          status: e.status,
-          level: typeof e.level === "number" ? e.level : null,
-        })),
-      isLoading: rankings.isLoading || relations.isLoading,
-    };
-
-    // ── Chronicle: lore dates + map story pins + the IxTime record.
-    const chronicle = buildChronicle({
-      founding,
-      storyPins: land.storyPins.map((p) => ({
-        id: p.id,
-        title: p.title,
-        content: p.excerpt,
-        ixTimeYear: p.year,
-        eraLabel: p.eraLabel,
-      })),
-      directives,
-      issueOutcomes,
-      decisions,
-      diplomacy,
-    });
-
-    // ── Owner layer (never rendered for visitors).
-    const ownerCounts = countOwnerDirectives(isOwner ? intents.data?.allIntents : null);
-    const owner: ProfileOwnerLayer | null = isOwner
-      ? {
-          activeIssues: pending.data?.total ?? null,
-          urgentIssues: pending.data?.urgent ?? null,
-          draftDirectives: ownerCounts.drafts,
-          directivesInForce: ownerCounts.active,
-        }
-      : null;
-
     return {
       countryId,
-      slug: str(c.slug) ?? name.replace(/\s+/g, "_"),
+      slug: str(c.slug) ?? identity.name.replace(/\s+/g, "_"),
       identity,
       lore,
-      vitals,
+      vitals: buildVitals(c),
       land,
       state,
-      world,
-      chronicle,
-      owner,
+      world: buildWorld(
+        rankings.data,
+        relations.data,
+        embassies.data,
+        rankings.isLoading || relations.isLoading
+      ),
+      // Lore dates + map story pins + the IxTime record.
+      chronicle: buildChronicle({
+        founding,
+        storyPins: land.storyPins.map((p) => ({
+          id: p.id,
+          title: p.title,
+          content: p.excerpt,
+          ixTimeYear: p.year,
+          eraLabel: p.eraLabel,
+        })),
+        directives,
+        issueOutcomes,
+        decisions,
+        diplomacy,
+      }),
+      owner: buildOwner(isOwner, intents.data?.allIntents, pending.data),
       currentIxTime,
     };
   }, [
@@ -632,11 +577,8 @@ export function useCountryProfileLayer({
     wikiSource,
     redirect,
     wikiProfile.data,
-    wikiProfile.isLoading,
-    wikitext.data,
-    wikitext.isLoading,
-    redirected.data,
-    redirected.isLoading,
+    articleText,
+    loreLoading,
     geo.data,
     geo.isLoading,
     record.data,

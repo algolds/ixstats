@@ -31,7 +31,7 @@ export function useDynamicIslandState({ onSearchResult, realm }: UseDynamicIslan
   // Select only the greeting string: subscribing to the raw IxTime timestamp re-rendered the
   // island (and re-measured its motion `layout` animations) every second.
   const greeting = useIxTimeStore((st) => getGreeting(st.ixTimeTimestamp));
-  const { theme, effectiveTheme, setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const router = useRouter();
 
   // Profile data for greeting
@@ -90,7 +90,6 @@ export function useDynamicIslandState({ onSearchResult, realm }: UseDynamicIslan
     return Object.entries(groups);
   }, [results]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const flatResults = results ?? [];
   const showResults = searchOpen && debouncedQuery.length >= 2;
   const hasResults = grouped.length > 0;
@@ -163,19 +162,16 @@ export function useDynamicIslandState({ onSearchResult, realm }: UseDynamicIslan
 
   return {
     searchOpen,
-    setSearchOpen,
     query,
     setQuery,
     selectedIdx,
     setSelectedIdx,
     isFlashing,
-    setIsFlashing,
     containerRef,
     inputRef,
     user,
     isLoaded,
     theme,
-    effectiveTheme,
     setTheme,
     router,
     greeting,
@@ -183,7 +179,6 @@ export function useDynamicIslandState({ onSearchResult, realm }: UseDynamicIslan
     messageUnreadCount,
     unreadNotifications,
     totalUnread,
-    results,
     searchLoading,
     grouped,
     flatResults,

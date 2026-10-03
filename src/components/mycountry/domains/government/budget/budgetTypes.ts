@@ -1,11 +1,3 @@
-import type {
-  GovernmentDepartment,
-  BudgetAllocation,
-  RevenueSource,
-  BudgetSummary,
-  RevenueSummary,
-} from "~/types/government";
-
 export interface BudgetHealthStatus {
   status: "surplus" | "balanced" | "moderate" | "deficit";
   /** Semantic status classes for an outline `<Badge>` (border + text colour). */

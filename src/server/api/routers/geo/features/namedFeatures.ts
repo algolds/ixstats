@@ -1,15 +1,9 @@
 import { z } from "zod";
 import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { upsertPeak, upsertNamedRiver, upsertNamedLake } from "~/lib/country-geo/named-features";
-
-const coordinatesSchema = z
-  .tuple([z.number(), z.number()])
-  .refine(([lng, lat]) => lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90, {
-    message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)",
-  });
+import { assertFound, assertOwnCountry, coordinatesSchema } from "../core/shared";
 
 export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
   // ─── Peak CRUD ───
@@ -26,10 +20,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
       const peak = await upsertPeak(ctx.db, input.countryId, {
         ...input,
@@ -56,17 +47,14 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
-      const existing = await ctx.db.peak.findFirst({
-        where: { id: input.peakId, countryId: input.countryId },
-      });
-      if (!existing) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Peak not found" });
-      }
+      const existing = assertFound(
+        await ctx.db.peak.findFirst({
+          where: { id: input.peakId, countryId: input.countryId },
+        }),
+        "Peak not found"
+      );
 
       const peak = await upsertPeak(ctx.db, input.countryId, {
         id: input.peakId,
@@ -94,17 +82,14 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
-      const existing = await ctx.db.peak.findFirst({
-        where: { id: input.peakId, countryId: input.countryId },
-      });
-      if (!existing) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Peak not found" });
-      }
+      assertFound(
+        await ctx.db.peak.findFirst({
+          where: { id: input.peakId, countryId: input.countryId },
+        }),
+        "Peak not found"
+      );
 
       await ctx.db.peak.delete({ where: { id: input.peakId } });
 
@@ -125,10 +110,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
       const river = await upsertNamedRiver(ctx.db, input.countryId, {
         ...input,
@@ -152,17 +134,14 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
-      const existing = await ctx.db.namedRiver.findFirst({
-        where: { id: input.riverId, countryId: input.countryId },
-      });
-      if (!existing) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "NamedRiver not found" });
-      }
+      const existing = assertFound(
+        await ctx.db.namedRiver.findFirst({
+          where: { id: input.riverId, countryId: input.countryId },
+        }),
+        "NamedRiver not found"
+      );
 
       const river = await upsertNamedRiver(ctx.db, input.countryId, {
         id: input.riverId,
@@ -186,17 +165,14 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
-      const existing = await ctx.db.namedRiver.findFirst({
-        where: { id: input.riverId, countryId: input.countryId },
-      });
-      if (!existing) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "NamedRiver not found" });
-      }
+      assertFound(
+        await ctx.db.namedRiver.findFirst({
+          where: { id: input.riverId, countryId: input.countryId },
+        }),
+        "NamedRiver not found"
+      );
 
       await ctx.db.namedRiver.delete({ where: { id: input.riverId } });
 
@@ -218,10 +194,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
       const lake = await upsertNamedLake(ctx.db, input.countryId, {
         ...input,
@@ -246,17 +219,14 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
-      const existing = await ctx.db.namedLake.findFirst({
-        where: { id: input.lakeId, countryId: input.countryId },
-      });
-      if (!existing) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "NamedLake not found" });
-      }
+      const existing = assertFound(
+        await ctx.db.namedLake.findFirst({
+          where: { id: input.lakeId, countryId: input.countryId },
+        }),
+        "NamedLake not found"
+      );
 
       const lake = await upsertNamedLake(ctx.db, input.countryId, {
         id: input.lakeId,
@@ -281,17 +251,14 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
-      const existing = await ctx.db.namedLake.findFirst({
-        where: { id: input.lakeId, countryId: input.countryId },
-      });
-      if (!existing) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "NamedLake not found" });
-      }
+      assertFound(
+        await ctx.db.namedLake.findFirst({
+          where: { id: input.lakeId, countryId: input.countryId },
+        }),
+        "NamedLake not found"
+      );
 
       await ctx.db.namedLake.delete({ where: { id: input.lakeId } });
 

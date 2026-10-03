@@ -1,4 +1,3 @@
-// src/app/api/wiki/category-articles/route.ts
 // List articles in a live wiki category with lightweight batched preview metadata.
 // Returns the same shape as /api/wiki/random-articles so the admin tool consumes it directly.
 

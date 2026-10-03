@@ -11,6 +11,35 @@ import { db } from "~/server/db";
 import { PageManagementService } from "~/lib/wiki-os/core/page-management-service";
 import { getSiteStats } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 
+const DiagnosticListInput = z.object({
+  realm: z.string().default("ixwiki"),
+  limit: z.number().min(1).max(200).default(50),
+});
+const ArticleRankInput = z.object({
+  realm: z.string().default("ixwiki"),
+  limit: z.number().min(1).max(100).default(25),
+});
+const ArchivedInput = z.object({
+  realm: z.string().default("ixwiki"),
+  limit: z.number().min(1).max(100).default(50),
+});
+
+/** Published, non-redirect main-namespace articles ordered by word count. */
+const articlesByWordCount = (realm: string, limit: number, order: "asc" | "desc") =>
+  db.wikiArticle.findMany({
+    where: { source: realm, status: "PUBLISHED", namespace: 0, redirectTargetSlug: null },
+    orderBy: { wordCount: order },
+    take: limit,
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      wordCount: true,
+      readingTime: true,
+      updatedAt: true,
+    },
+  });
+
 export const wikiosUtilitiesRouter = createTRPCRouter({
   /**
    * High-Level Health & Ecosystem Telemetry (<5ms)
@@ -81,139 +110,59 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
   /**
    * Diagnostic: Orphan Articles (0 incoming links)
    */
-  getOrphanArticles: publicProcedure
-    .input(
-      z.object({
-        realm: z.string().default("ixwiki"),
-        limit: z.number().min(1).max(200).default(50),
-      })
-    )
-    .query(async ({ input }) => {
-      return PageManagementService.getOrphanPages(input.limit, input.realm);
-    }),
+  getOrphanArticles: publicProcedure.input(DiagnosticListInput).query(async ({ input }) => {
+    return PageManagementService.getOrphanPages(input.limit, input.realm);
+  }),
 
   /**
    * Diagnostic: Dead-End Articles (0 outgoing links)
    */
-  getDeadEndArticles: publicProcedure
-    .input(
-      z.object({
-        realm: z.string().default("ixwiki"),
-        limit: z.number().min(1).max(200).default(50),
-      })
-    )
-    .query(async ({ input }) => {
-      return PageManagementService.getDeadEndPages(input.limit, input.realm);
-    }),
+  getDeadEndArticles: publicProcedure.input(DiagnosticListInput).query(async ({ input }) => {
+    return PageManagementService.getDeadEndPages(input.limit, input.realm);
+  }),
 
   /**
    * Diagnostic: Broken Redirects
    */
-  getBrokenRedirects: publicProcedure
-    .input(
-      z.object({
-        realm: z.string().default("ixwiki"),
-        limit: z.number().min(1).max(200).default(50),
-      })
-    )
-    .query(async ({ input }) => {
-      return PageManagementService.getBrokenRedirects(input.limit, input.realm);
-    }),
+  getBrokenRedirects: publicProcedure.input(DiagnosticListInput).query(async ({ input }) => {
+    return PageManagementService.getBrokenRedirects(input.limit, input.realm);
+  }),
 
   /**
    * Diagnostic: Shortest Published Articles (<150 bytes)
    */
   getShortestArticles: publicProcedure
-    .input(
-      z.object({
-        realm: z.string().default("ixwiki"),
-        limit: z.number().min(1).max(100).default(25),
-      })
-    )
-    .query(async ({ input }) => {
-      const articles = await db.wikiArticle.findMany({
-        where: {
-          source: input.realm,
-          status: "PUBLISHED",
-          namespace: 0,
-          redirectTargetSlug: null,
-        },
-        orderBy: { wordCount: "asc" },
-        take: input.limit,
-        select: {
-          id: true,
-          slug: true,
-          title: true,
-          wordCount: true,
-          readingTime: true,
-          updatedAt: true,
-        },
-      });
-
-      return articles;
-    }),
+    .input(ArticleRankInput)
+    .query(({ input }) => articlesByWordCount(input.realm, input.limit, "asc")),
 
   /**
    * Diagnostic: Longest Published Articles
    */
   getLongestArticles: publicProcedure
-    .input(
-      z.object({
-        realm: z.string().default("ixwiki"),
-        limit: z.number().min(1).max(100).default(25),
-      })
-    )
-    .query(async ({ input }) => {
-      const articles = await db.wikiArticle.findMany({
-        where: {
-          source: input.realm,
-          status: "PUBLISHED",
-          namespace: 0,
-          redirectTargetSlug: null,
-        },
-        orderBy: { wordCount: "desc" },
-        take: input.limit,
-        select: {
-          id: true,
-          slug: true,
-          title: true,
-          wordCount: true,
-          readingTime: true,
-          updatedAt: true,
-        },
-      });
-
-      return articles;
-    }),
+    .input(ArticleRankInput)
+    .query(({ input }) => articlesByWordCount(input.realm, input.limit, "desc")),
 
   /**
    * Governance: Soft-Deleted & Archived Articles
    */
-  getArchivedArticles: publicProcedure
-    .input(
-      z.object({
-        realm: z.string().default("ixwiki"),
-        limit: z.number().min(1).max(100).default(50),
-      })
-    )
-    .query(async ({ input }) => {
-      return db.wikiArticle.findMany({
-        where: {
-          source: input.realm,
-          status: "ARCHIVED",
-        },
-        orderBy: { updatedAt: "desc" },
-        take: input.limit,
-        select: {
-          id: true,
-          slug: true,
-          title: true,
-          summary: true,
-          lastEditorId: true,
-          updatedAt: true,
-        },
-      });
-    }),
+  getArchivedArticles: publicProcedure.input(ArchivedInput).query(async ({ input }) => {
+    return db.wikiArticle.findMany({
+      where: {
+        source: input.realm,
+        status: "ARCHIVED",
+      },
+      orderBy: { updatedAt: "desc" },
+      take: input.limit,
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        summary: true,
+        lastEditorId: true,
+        updatedAt: true,
+      },
+    });
+  }),
 
   /**
    * Governance: System Event & Action Audit Logs

@@ -119,7 +119,6 @@ export function BudgetOverviewCharts({
         </div>
       </Card>
 
-      {/* Revenue Sources Chart */}
       <Card className="space-y-3 p-4">
         <div className="border-separator border-b pb-3">
           <h4 className="text-label text-headline">Revenue sources</h4>

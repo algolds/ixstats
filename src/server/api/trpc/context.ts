@@ -4,6 +4,7 @@
  */
 
 import { getAuth, verifyToken } from "@clerk/nextjs/server";
+import type { PrismaClient } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { db, isDatabaseReadOnly } from "~/server/db";
 import { Cache } from "~/lib/cache";
@@ -14,200 +15,189 @@ import { resolveRateLimitIdentifier } from "./rate-limit-identity";
 
 const VERBOSE = process.env.TRPC_VERBOSE === "true";
 
+/** The acting user: `User` with its role, plus the active nation when the lookup selected it. */
+type ContextUser = NonNullable<Awaited<ReturnType<UserManagementService["getOrCreateUser"]>>> & {
+  country?: { id: string; name: string; flag: string | null; realmId: string } | null;
+};
+
+type ClerkAuth = ReturnType<typeof getAuth>;
+/** Clerk's auth object, or the `{ userId }` rebuilt from a Bearer token or a granted play-as. */
+type RequestAuth = ClerkAuth | { userId: string; sessionClaims?: undefined };
+
 // Short-lived user context cache to avoid redundant DB queries during parallel tRPC calls.
 // TTL of 5 seconds is short enough that role/permission changes propagate quickly.
-const userContextCache = new Cache({
+const userContextCache = new Cache<ContextUser>({
   defaultTtlMs: 5000, // 5 seconds
   maxSize: 50,
 });
 
-function getCachedUserContext(clerkUserId: string): any | null {
-  return userContextCache.get(clerkUserId) ?? null;
+const debug = (...args: unknown[]) => {
+  if (VERBOSE) console.log(...args);
+};
+
+const READ_ONLY_USER_SELECT = {
+  id: true,
+  clerkUserId: true,
+  countryId: true,
+  roleId: true,
+  membershipTier: true,
+  wikiUsername: true,
+  wikiUserId: true,
+  lastSeenAt: true,
+  createdAt: true,
+  updatedAt: true,
+  country: { select: { id: true, name: true, flag: true, realmId: true } },
+  role: { select: { id: true, name: true, level: true } },
+} as const;
+
+interface AuthState {
+  auth: RequestAuth | null;
+  impersonatorId?: string;
 }
 
-function setCachedUserContext(clerkUserId: string, user: any): void {
-  userContextCache.set(clerkUserId, user);
+/** Verifies a `Authorization: Bearer` token (API routes); null when absent or Clerk is unconfigured. */
+async function authFromBearerToken(headers: Headers): Promise<{ userId: string } | null> {
+  const authHeader = headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer ")) return null;
+
+  const secretKey = process.env.CLERK_SECRET_KEY;
+  if (!secretKey) {
+    // Skip token verification if Clerk is not configured (demo mode)
+    if (VERBOSE) {
+      console.warn("[TRPC Context] CLERK_SECRET_KEY not set — skipping Bearer token verification");
+    }
+    return null;
+  }
+
+  try {
+    const verifiedToken = await verifyToken(authHeader.substring(7), { secretKey });
+    return verifiedToken?.sub ? { userId: verifiedToken.sub } : null;
+  } catch (tokenError) {
+    console.error("[TRPC Context] Token verification failed:", tokenError);
+    throw new UnauthorizedError("Invalid or expired authentication token");
+  }
+}
+
+/** The user requesting play-as mode, via the short-lived context cache. */
+async function loadRequester(clerkUserId: string) {
+  let requester: ContextUser | null | undefined = userContextCache.get(clerkUserId);
+  if (!requester) {
+    requester = await db.user.findUnique({ where: { clerkUserId }, include: { role: true } });
+    if (requester) userContextCache.set(clerkUserId, requester);
+  }
+  return requester;
+}
+
+/**
+ * Applies a granted `x-play-as-user` header to `state` (rebuilding `auth` and recording the
+ * impersonator) and writes the audit row. Returns the user id the request now acts as.
+ */
+async function applyPlayAs(headers: Headers, state: AuthState, realUserId: string) {
+  const playAsUserHeader = headers.get("x-play-as-user");
+  if (!playAsUserHeader || playAsUserHeader === realUserId) return realUserId;
+
+  const requester = await loadRequester(realUserId);
+  const requesterRole = requester?.role
+    ? { name: requester.role.name, level: requester.role.level }
+    : null;
+
+  // Only look up the target when the requester passes the staff check — avoids an extra
+  // DB round-trip for the common case of a non-staff user with a stale play-as header.
+  const target = isRequesterStaff(realUserId, requesterRole, isSystemOwner)
+    ? await db.user.findUnique({
+        where: { clerkUserId: playAsUserHeader },
+        include: { role: true },
+      })
+    : null;
+
+  const decision = decidePlayAs({
+    realUserId,
+    requestedUserId: playAsUserHeader,
+    requesterRole,
+    target,
+    isSystemOwner,
+  });
+  if (decision.kind === "none") return realUserId;
+
+  // Trusted IP sources only (see resolveRateLimitIdentifier) — never a client-controlled
+  // forwarding header, so a spoofed value can't pollute the audit trail either.
+  const audit = {
+    realUserId,
+    requestedUserId: playAsUserHeader,
+    ip: headers.get("cf-connecting-ip") || headers.get("x-real-ip"),
+    userAgent: headers.get("user-agent"),
+  };
+
+  if (decision.kind === "denied") {
+    console.warn(
+      `[TRPC Context] Denied impersonation attempt: User ${realUserId} tried to play as ${playAsUserHeader} (${decision.reason})`
+    );
+    await recordPlayAsAudit(db, { ...audit, kind: "denied", reason: decision.reason });
+    return realUserId;
+  }
+
+  state.impersonatorId = realUserId;
+  // Rebuild `auth` from scratch — do NOT spread the old `auth` — this drops the
+  // impersonator's `sessionClaims` so downstream role checks evaluate the target user,
+  // not the impersonator's own session.
+  state.auth = { userId: decision.targetUserId };
+  debug(`[TRPC Context] ${realUserId} playing as user ${decision.targetUserId}`);
+  await recordPlayAsAudit(db, { ...audit, kind: "granted" });
+  return decision.targetUserId;
+}
+
+/** Loads the acting user: context cache first, then a read-only lookup or the get-or-create service. */
+async function loadContextUser(userId: string): Promise<ContextUser | null> {
+  const cached = userContextCache.get(userId);
+  if (cached) {
+    debug(`[TRPC Context] User ${userId} served from context cache`);
+    return cached;
+  }
+
+  let user: ContextUser | null;
+  if (isDatabaseReadOnly) {
+    // In read-only mode, only look up existing users (no creation)
+    user = (await db.user.findUnique({
+      where: { clerkUserId: userId },
+      select: READ_ONLY_USER_SELECT,
+    })) as unknown as ContextUser | null;
+    if (!user) {
+      console.warn(
+        `[TRPC Context] Read-only mode: User ${userId} not found in database (cannot create)`
+      );
+    }
+  } else {
+    // Normal mode: use centralized user management service to ensure correct role
+    user = await new UserManagementService(db as unknown as PrismaClient).getOrCreateUser(userId);
+  }
+
+  if (!user) {
+    console.error(`[TRPC Context] Failed to get/create user: ${userId}`);
+    return null;
+  }
+  userContextCache.set(userId, user);
+  debug(
+    `[TRPC Context] User loaded: ${userId}, role: ${user.role?.name || "NO_ROLE"}, roleId: ${user.roleId || "NULL"}, roleLevel: ${user.role?.level ?? "NULL"}`
+  );
+  return user;
 }
 
 export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequest }) => {
-  // Extract Clerk auth information if available
-  let auth = null;
-  let user = null;
-  let impersonatorId: string | undefined = undefined;
+  const state: AuthState = { auth: null };
+  let user: ContextUser | null = null;
 
   try {
     // Try to get auth from request first (for app router)
     if (opts.req) {
-      auth = (opts.req as any).auth ?? getAuth(opts.req);
+      state.auth = (opts.req as NextRequest & { auth?: ClerkAuth }).auth ?? getAuth(opts.req);
     }
+    // Otherwise from the authorization header (for API routes)
+    if (!state.auth?.userId) state.auth = (await authFromBearerToken(opts.headers)) ?? state.auth;
 
-    // If no auth from request, try to get it from authorization header (for API routes)
-    if (!auth?.userId) {
-      const authHeader = opts.headers.get("authorization");
-      if (authHeader?.startsWith("Bearer ")) {
-        const token = authHeader.substring(7);
-        const clerkSecretKey = process.env.CLERK_SECRET_KEY;
-        if (!clerkSecretKey) {
-          // Skip token verification if Clerk is not configured (demo mode)
-          if (VERBOSE) {
-            console.warn(
-              "[TRPC Context] CLERK_SECRET_KEY not set — skipping Bearer token verification"
-            );
-          }
-        } else {
-          try {
-            const verifiedToken = await verifyToken(token, {
-              secretKey: clerkSecretKey,
-            });
-            if (verifiedToken?.sub) {
-              auth = { userId: verifiedToken.sub };
-            }
-          } catch (tokenError) {
-            console.error("[TRPC Context] Token verification failed:", tokenError);
-            throw new UnauthorizedError("Invalid or expired authentication token");
-          }
-        }
-      }
-    }
-
-    // Get user from database if we have a userId
-    if (auth?.userId) {
+    const realUserId = state.auth?.userId;
+    if (realUserId) {
       try {
-        const playAsUserHeader = opts.headers.get("x-play-as-user");
-        const realUserId = auth.userId;
-        let activeUserId = realUserId;
-
-        if (playAsUserHeader && playAsUserHeader !== realUserId) {
-          // Look up the user requesting the play-as mode (existing cached lookup)
-          let impersonator = getCachedUserContext(realUserId);
-          if (!impersonator) {
-            impersonator = await db.user.findUnique({
-              where: { clerkUserId: realUserId },
-              include: {
-                role: true,
-              },
-            });
-            if (impersonator) {
-              setCachedUserContext(realUserId, impersonator);
-            }
-          }
-
-          const requesterRole = impersonator?.role
-            ? { name: impersonator.role.name, level: impersonator.role.level }
-            : null;
-
-          // Only look up the target when the requester passes the staff check — avoids an extra
-          // DB round-trip for the common case of a non-staff user with a stale play-as header.
-          const target = isRequesterStaff(realUserId, requesterRole, isSystemOwner)
-            ? await db.user.findUnique({
-                where: { clerkUserId: playAsUserHeader },
-                include: { role: true },
-              })
-            : null;
-
-          const decision = decidePlayAs({
-            realUserId,
-            requestedUserId: playAsUserHeader,
-            requesterRole,
-            target,
-            isSystemOwner,
-          });
-
-          // Trusted IP sources only (see resolveRateLimitIdentifier) — never a client-controlled
-          // forwarding header, so a spoofed value can't pollute the audit trail either.
-          const auditIp = opts.headers.get("cf-connecting-ip") || opts.headers.get("x-real-ip");
-          const auditUserAgent = opts.headers.get("user-agent");
-
-          if (decision.kind === "granted") {
-            activeUserId = decision.targetUserId;
-            impersonatorId = realUserId;
-            // Rebuild `auth` from scratch — do NOT spread the old `auth` — this drops the
-            // impersonator's `sessionClaims` so downstream role checks evaluate the target user,
-            // not the impersonator's own session.
-            auth = { userId: activeUserId };
-            if (VERBOSE) {
-              console.log(
-                `[TRPC Context] ${impersonatorId} playing as user ${activeUserId}`
-              );
-            }
-            await recordPlayAsAudit(db, {
-              realUserId,
-              requestedUserId: playAsUserHeader,
-              kind: "granted",
-              ip: auditIp,
-              userAgent: auditUserAgent,
-            });
-          } else if (decision.kind === "denied") {
-            console.warn(
-              `[TRPC Context] Denied impersonation attempt: User ${realUserId} tried to play as ${playAsUserHeader} (${decision.reason})`
-            );
-            await recordPlayAsAudit(db, {
-              realUserId,
-              requestedUserId: playAsUserHeader,
-              kind: "denied",
-              reason: decision.reason,
-              ip: auditIp,
-              userAgent: auditUserAgent,
-            });
-          }
-        }
-
-        // Check short-lived user context cache first (avoids redundant DB queries during parallel calls)
-        user = getCachedUserContext(activeUserId);
-        if (user) {
-          if (VERBOSE) console.log(`[TRPC Context] User ${activeUserId} served from context cache`);
-        } else if (isDatabaseReadOnly) {
-          // In read-only mode, only look up existing users (no creation)
-          if (VERBOSE) {
-            console.log(
-              `[TRPC Context] Read-only mode: Looking up user ${activeUserId} (no creation)`
-            );
-          }
-          user = await db.user.findUnique({
-            where: { clerkUserId: activeUserId },
-            select: {
-              id: true,
-              clerkUserId: true,
-              countryId: true,
-              roleId: true,
-              membershipTier: true,
-              wikiUsername: true,
-              wikiUserId: true,
-              lastSeenAt: true,
-              createdAt: true,
-              updatedAt: true,
-              country: { select: { id: true, name: true, flag: true, realmId: true } },
-              role: { select: { id: true, name: true, level: true } },
-            },
-          });
-          if (!user) {
-            console.warn(
-              `[TRPC Context] Read-only mode: User ${activeUserId} not found in database (cannot create)`
-            );
-          } else {
-            setCachedUserContext(activeUserId, user);
-          }
-        } else {
-          // Normal mode: use centralized user management service to ensure correct role
-          if (VERBOSE) {
-            console.log(`[TRPC Context] Using centralized service for user: ${activeUserId}`);
-          }
-          const userService = new UserManagementService(db as any);
-          user = await userService.getOrCreateUser(activeUserId);
-          if (user) {
-            setCachedUserContext(activeUserId, user);
-          }
-        }
-
-        if (user) {
-          if (VERBOSE) {
-            console.log(
-              `[TRPC Context] User loaded: ${activeUserId}, role: ${(user as any).role?.name || "NO_ROLE"}, roleId: ${(user as any).roleId || "NULL"}, roleLevel: ${(user as any).role?.level ?? "NULL"}`
-            );
-          }
-        } else {
-          console.error(`[TRPC Context] Failed to get/create user: ${activeUserId}`);
-        }
+        user = await loadContextUser(await applyPlayAs(opts.headers, state, realUserId));
       } catch (dbError) {
         console.error("[TRPC Context] Database user lookup failed:", dbError);
       }
@@ -216,6 +206,7 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
     console.warn("[TRPC Context] Auth extraction failed:", error);
   }
 
+  const { auth, impersonatorId } = state;
   // Rate limit identity comes from trusted sources only (never a client-supplied header) — see
   // resolveRateLimitIdentifier for the trust model. Keyed on the *real* (pre-impersonation)
   // identity so play-as can't give an admin a fresh rate-limit bucket.

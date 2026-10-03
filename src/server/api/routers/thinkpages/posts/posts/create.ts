@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-// Import the wiki search service
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { validateNoXSS } from "~/lib/utils";
 import { vaultService } from "~/lib/vault/vault-service";
-import { invalidateFeeds, personaDisplayName } from "../../post-utils";
+import { invalidateFeeds, personaDisplayName, postAuthorsInclude } from "../../post-utils";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 
 /** Visibilities whose posts other people can open, so they may trigger notifications. */
@@ -85,12 +85,218 @@ const CreatePostSchema = z.object({
     .optional(),
 });
 
+type PostDb = Pick<
+  PrismaClient,
+  "thinkpagesAccount" | "thinkpagesPost" | "poll" | "mediaAttachment" | "postMention"
+>;
+
+const logNotifyFailure = (kind: string) => (err: unknown) =>
+  console.error(`[ThinkPages] Failed to send ${kind} notification:`, err);
+
+/** The caller's active persona; the caller must own it. */
+async function requirePostingAccount(db: PostDb, accountId: string, clerkUserId: string) {
+  const account = await db.thinkpagesAccount.findUnique({ where: { id: accountId } });
+
+  if (!account || !account.isActive) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Account not found or inactive" });
+  }
+  if (account.clerkUserId !== clerkUserId) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You do not have permission to post from this account",
+    });
+  }
+  return account;
+}
+
+const mediaAttachmentData = (postId: string, urls: string[]) =>
+  urls.map((url, index) => ({
+    postId,
+    type: "image",
+    url,
+    filename: `image_${index + 1}`,
+    mimeType: url.startsWith("data:") ? url.split(";")[0]!.split(":")[1] : "image/jpeg",
+    fileSize: null,
+  }));
+
+/** Record @mentions and notify the owning user of each mentioned persona once, never the author. */
+async function recordMentions(
+  db: PostDb,
+  post: { id: string },
+  input: { content: string; mentions: string[] },
+  notify: { clerkUserId: string; actorName: string | undefined; notifiable: boolean }
+) {
+  const mentionedAccounts = await db.thinkpagesAccount.findMany({
+    where: { username: { in: input.mentions.map((m) => m.replace("@", "")) } },
+    select: { id: true, username: true, clerkUserId: true },
+  });
+  if (mentionedAccounts.length === 0) return;
+
+  await db.postMention.createMany({
+    data: mentionedAccounts.map((mentioned) => ({
+      postId: post.id,
+      mentionedAccountId: mentioned.id,
+      position: input.content.indexOf(`@${mentioned.username}`),
+    })),
+  });
+
+  if (!notify.notifiable) return;
+  // Notifications are keyed by Clerk user id.
+  const recipients = new Set(
+    mentionedAccounts
+      .map((mentioned) => mentioned.clerkUserId)
+      .filter((id): id is string => !!id && id !== notify.clerkUserId)
+  );
+  for (const recipient of recipients) {
+    await notificationHooks
+      .onSocialActivity({
+        activityType: "mention",
+        fromUserId: notify.clerkUserId,
+        fromUserName: notify.actorName,
+        toUserId: recipient,
+        contentTitle: input.content.substring(0, 50),
+        contentId: post.id,
+      })
+      .catch(logNotifyFailure("mention"));
+  }
+}
+
+/** IxCredits for a social post: 1 IxC for each of the first 5 posts per day. Never blocks posting. */
+async function awardPostCredits(
+  db: PostDb,
+  clerkUserId: string,
+  post: { id: string },
+  meta: { postType: string; accountId: string }
+) {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const postsToday = await db.thinkpagesPost.count({
+      where: { accountId: meta.accountId, createdAt: { gte: today } },
+    });
+    if (postsToday > 5) return 0;
+
+    const earnResult = await vaultService.earnCredits(
+      clerkUserId,
+      1,
+      "EARN_SOCIAL",
+      "SOCIAL_POST",
+      db as any,
+      { postId: post.id, ...meta }
+    );
+    return earnResult.success ? 1 : 0;
+  } catch (error) {
+    console.error("[ThinkPages] Failed to award post credits:", error);
+    return 0;
+  }
+}
+
+/** Fire-and-forget Discord autoposts so the createPost response stays fast. */
+async function mirrorToDiscord(
+  db: PostDb,
+  post: {
+    id: string;
+    content: string;
+    ixTimeTimestamp?: Date | string;
+    pollId?: string | null;
+    visibility: string;
+    postType: string;
+  },
+  account: {
+    displayName: string;
+    username: string;
+    verified: boolean;
+    profileImageUrl?: string | null;
+  },
+  input: { postToDiscord: boolean; mediaUrls?: string[] }
+) {
+  // Public, non-repost posts go to the IxTwitter channel.
+  if (input.postToDiscord && post.visibility === "public" && post.postType !== "repost") {
+    try {
+      const { postThinkPagesToDiscord } = await import("~/lib/discord/ixtwitter-sync");
+      postThinkPagesToDiscord(
+        db as any,
+        post,
+        {
+          displayName: account.displayName,
+          username: account.username,
+          verified: account.verified,
+          profileImageUrl: account.profileImageUrl,
+        },
+        input.mediaUrls
+      ).catch((err: unknown) =>
+        console.error("[ThinkPages] Autopost to Discord promise error:", err)
+      );
+    } catch (error) {
+      console.error("[ThinkPages] Failed to trigger Discord autopost:", error);
+    }
+  }
+
+  // Mirror to the admin-configured #thinkpages Discord feed (filtered, deduped).
+  // Independent of the IxTwitter autopost above; the filter/enable lives in admin config.
+  if (post.visibility === "public") {
+    try {
+      const { mirrorThinkPagesPostToDiscordFeed } = await import("~/lib/discord/thinkpages-feed");
+      mirrorThinkPagesPostToDiscordFeed(db as any, post.id, input.mediaUrls).catch((err: unknown) =>
+        console.error("[ThinkPages] Discord feed mirror promise error:", err)
+      );
+    } catch (error) {
+      console.error("[ThinkPages] Failed to trigger Discord feed mirror:", error);
+    }
+  }
+}
+
+/** Notify the original author of a repost or quote (never for self-reposts or private posts). */
+async function notifyRepost(
+  post: {
+    id: string;
+    repostOf?: { content: string | null; account: { clerkUserId: string | null } } | null;
+  },
+  input: { content: string; repostOfId?: string },
+  from: { clerkUserId: string; actorName: string | undefined }
+) {
+  const originalAuthorId = post.repostOf?.account?.clerkUserId;
+  if (!input.repostOfId || !originalAuthorId || originalAuthorId === from.clerkUserId) return;
+
+  const isQuote = input.content.trim().length > 0;
+  await notificationHooks
+    .onSocialActivity({
+      activityType: isQuote ? "quote" : "repost",
+      fromUserId: from.clerkUserId,
+      fromUserName: from.actorName,
+      toUserId: originalAuthorId,
+      contentTitle: isQuote
+        ? input.content.substring(0, 50)
+        : (post.repostOf?.content ?? "").substring(0, 50) || undefined,
+      // A quote links to the quoting post; a plain repost to the original.
+      contentId: isQuote ? post.id : input.repostOfId,
+    })
+    .catch(logNotifyFailure("repost"));
+}
+
+/** Bump the denormalised reply / repost counters on the parent or original post. */
+async function bumpEngagementCounters(
+  db: PostDb,
+  input: { parentPostId?: string; repostOfId?: string }
+) {
+  if (input.parentPostId) {
+    await db.thinkpagesPost.updateMany({
+      where: { id: input.parentPostId },
+      data: { replyCount: { increment: 1 } },
+    });
+  }
+  if (input.repostOfId) {
+    await db.thinkpagesPost.updateMany({
+      where: { id: input.repostOfId },
+      data: { repostCount: { increment: 1 } },
+    });
+  }
+}
+
 export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
-  // Post creation
   createPost: protectedProcedure.input(CreatePostSchema).mutation(async ({ ctx, input }) => {
     const { db } = ctx;
 
-    // Verify account exists and is active
     const clerkUserId = ctx.auth?.userId;
     if (!clerkUserId) {
       throw new TRPCError({
@@ -98,49 +304,22 @@ export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
         message: "You must be logged in to create posts",
       });
     }
+    const account = await requirePostingAccount(db, input.accountId, clerkUserId);
 
-    const account = await db.thinkpagesAccount.findUnique({
-      where: { id: input.accountId },
-    });
+    const postType = input.repostOfId ? "repost" : input.parentPostId ? "reply" : "original";
 
-    if (!account || !account.isActive) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "Account not found or inactive",
-      });
-    }
-
-    if (account.clerkUserId !== clerkUserId) {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "You do not have permission to post from this account",
-      });
-    }
-
-    // Determine post type
-    let postType: "original" | "repost" | "reply" = "original";
-    if (input.parentPostId) postType = "reply";
-    if (input.repostOfId) postType = "repost";
-
-    let pollId: string | null = null;
-    if (input.poll) {
-      const createdPoll = await db.poll.create({
-        data: {
-          question: input.poll.question,
-          description: input.poll.description,
-          pollType: input.poll.pollType,
-          multiple: input.poll.multiple,
-          options: {
-            create: input.poll.options.map((opt) => ({
-              label: opt,
-            })),
+    const poll = input.poll
+      ? await db.poll.create({
+          data: {
+            question: input.poll.question,
+            description: input.poll.description,
+            pollType: input.poll.pollType,
+            multiple: input.poll.multiple,
+            options: { create: input.poll.options.map((label) => ({ label })) },
           },
-        },
-      });
-      pollId = createdPoll.id;
-    }
+        })
+      : null;
 
-    // Create the post
     const post = await db.thinkpagesPost.create({
       data: {
         accountId: input.accountId,
@@ -152,204 +331,45 @@ export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
         repostOfId: input.repostOfId,
         visibility: input.visibility,
         ixTimeTimestamp: new Date(), // Store real-world time for social media timestamps
-        pollId,
+        pollId: poll?.id ?? null,
       } as any,
-      include: {
-        account: {
-          select: {
-            id: true,
-            username: true,
-            displayName: true,
-            profileImageUrl: true,
-            clerkUserId: true,
-            accountType: true,
-            verified: true,
-            countryId: true,
-            country: {
-              select: {
-                id: true,
-                name: true,
-                flag: true,
-              },
-            },
-          },
-        },
-        parentPost: {
-          include: {
-            account: {
-              select: {
-                id: true,
-                username: true,
-                displayName: true,
-                profileImageUrl: true,
-                clerkUserId: true,
-                accountType: true,
-                verified: true,
-                countryId: true,
-                country: {
-                  select: {
-                    id: true,
-                    name: true,
-                    flag: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-        repostOf: {
-          include: {
-            account: {
-              select: {
-                id: true,
-                username: true,
-                displayName: true,
-                profileImageUrl: true,
-                clerkUserId: true,
-                accountType: true,
-                verified: true,
-                countryId: true,
-                country: {
-                  select: {
-                    id: true,
-                    name: true,
-                    flag: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
+      include: postAuthorsInclude,
     });
 
-    // Create media attachments if any
-    if (input.mediaUrls && input.mediaUrls.length > 0) {
-      await db.mediaAttachment.createMany({
-        data: input.mediaUrls.map((url, index) => ({
-          postId: post.id,
-          type: "image",
-          url: url,
-          filename: `image_${index + 1}`,
-          mimeType: url.startsWith("data:") ? url.split(";")[0]!.split(":")[1] : "image/jpeg",
-          fileSize: null,
-        })),
-      });
+    if (input.mediaUrls?.length) {
+      await db.mediaAttachment.createMany({ data: mediaAttachmentData(post.id, input.mediaUrls) });
     }
 
-    // Update account post count
     await db.thinkpagesAccount.update({
       where: { id: input.accountId },
-      data: {
-        postCount: { increment: 1 },
-      },
+      data: { postCount: { increment: 1 } },
     });
 
-    // Keep the denormalised engagement counters on the parent / original post in step.
-    if (input.parentPostId) {
-      await db.thinkpagesPost.updateMany({
-        where: { id: input.parentPostId },
-        data: { replyCount: { increment: 1 } },
-      });
-    }
-    if (input.repostOfId) {
-      await db.thinkpagesPost.updateMany({
-        where: { id: input.repostOfId },
-        data: { repostCount: { increment: 1 } },
-      });
-    }
+    await bumpEngagementCounters(db, input);
 
     const actorName = personaDisplayName(account);
     // Private and draft posts can only be opened by their author, so they notify nobody.
     const notifiable = NOTIFIABLE_VISIBILITIES.has(post.visibility);
 
-    // Create mentions if any
-    if (input.mentions && input.mentions.length > 0) {
-      const mentionedAccounts = await db.thinkpagesAccount.findMany({
-        where: {
-          username: {
-            in: input.mentions.map((m) => m.replace("@", "")),
-          },
-        },
-        select: { id: true, username: true, clerkUserId: true },
-      });
-
-      const mentionData = mentionedAccounts.map((mentionedAccount: any) => ({
-        postId: post.id,
-        mentionedAccountId: mentionedAccount.id,
-        position: input.content.indexOf(`@${mentionedAccount.username}`),
-      }));
-
-      if (mentionData.length > 0) {
-        await db.postMention.createMany({
-          data: mentionData,
-        });
-
-        // 🔔 Notify the owning user of each mentioned persona (notifications are keyed by Clerk
-        // user id), once per user, never the author themselves.
-        const recipients = new Set(
-          mentionedAccounts
-            .map((mentioned) => mentioned.clerkUserId)
-            .filter((id): id is string => !!id && id !== clerkUserId)
-        );
-        if (notifiable) {
-          for (const recipient of recipients) {
-            await notificationHooks
-              .onSocialActivity({
-                activityType: "mention",
-                fromUserId: clerkUserId,
-                fromUserName: actorName,
-                toUserId: recipient,
-                contentTitle: input.content.substring(0, 50),
-                contentId: post.id,
-              })
-              .catch((err) =>
-                console.error("[ThinkPages] Failed to send mention notification:", err)
-              );
-          }
-        }
-      }
+    if (input.mentions?.length) {
+      await recordMentions(
+        db,
+        post,
+        { content: input.content, mentions: input.mentions },
+        { clerkUserId, actorName, notifiable }
+      );
     }
 
-    // 🔔 Notify the original author of a repost or quote
-    const originalAuthorId = (post as any).repostOf?.account?.clerkUserId as string | undefined;
-    if (input.repostOfId && notifiable && originalAuthorId && originalAuthorId !== clerkUserId) {
-      const isQuote = input.content.trim().length > 0;
-      await notificationHooks
-        .onSocialActivity({
-          activityType: isQuote ? "quote" : "repost",
-          fromUserId: clerkUserId,
-          fromUserName: actorName,
-          toUserId: originalAuthorId,
-          contentTitle: isQuote
-            ? input.content.substring(0, 50)
-            : ((post as any).repostOf?.content ?? "").substring(0, 50) || undefined,
-          // A quote links to the quoting post; a plain repost to the original.
-          contentId: isQuote ? post.id : input.repostOfId,
-        })
-        .catch((err) => console.error("[ThinkPages] Failed to send repost notification:", err));
-    }
+    if (notifiable) await notifyRepost(post, input, { clerkUserId, actorName });
 
-    // 🔔 Notify if this is a reply
-    if (input.parentPostId && (post as any).parentPost) {
+    // Notify if this is a reply. Skip replies to any of the caller's own personas (keyed by
+    // owning user, not persona).
+    if (input.parentPostId && post.parentPost) {
       const parentPost = await db.thinkpagesPost.findUnique({
         where: { id: input.parentPostId },
-        select: {
-          id: true,
-          accountId: true,
-          account: {
-            select: {
-              id: true,
-              username: true,
-              displayName: true,
-              profileImageUrl: true,
-              clerkUserId: true,
-            },
-          },
-        },
+        select: { id: true, accountId: true, account: { select: { clerkUserId: true } } },
       });
 
-      // Skip replies to any of the caller's own personas (keyed by owning user, not persona).
       if (parentPost && parentPost.account.clerkUserId !== clerkUserId) {
         await notificationHooks
           .onThinkPageActivity({
@@ -360,90 +380,20 @@ export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
             authorName: actorName,
             targetUserId: parentPost.account.clerkUserId,
           })
-          .catch((err) => console.error("[ThinkPages] Failed to send reply notification:", err));
+          .catch(logNotifyFailure("reply"));
       }
     }
 
-    // 💰 Award IxCredits for social post (if within daily cap)
-    let creditsEarned = 0;
-    try {
-      // Check daily post count
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+    const creditsEarned = await awardPostCredits(db, clerkUserId, post, {
+      postType,
+      accountId: input.accountId,
+    });
 
-      const postsToday = await db.thinkpagesPost.count({
-        where: {
-          accountId: input.accountId,
-          createdAt: { gte: today },
-        },
-      });
-
-      // Only award for first 5 posts per day (1 IxC each)
-      if (postsToday <= 5) {
-        const earnResult = await vaultService.earnCredits(
-          clerkUserId,
-          1,
-          "EARN_SOCIAL",
-          "SOCIAL_POST",
-          db as any,
-          {
-            postId: post.id,
-            postType,
-            accountId: input.accountId,
-          }
-        );
-
-        if (earnResult.success) {
-          creditsEarned = 1;
-        }
-      }
-    } catch (error) {
-      // Don't block post creation if earning fails
-      console.error("[ThinkPages] Failed to award post credits:", error);
-    }
-
-    // 📣 Autopost public, non-repost posts to Discord IxTwitter channel
-    if (input.postToDiscord && post.visibility === "public" && post.postType !== "repost") {
-      try {
-        const { postThinkPagesToDiscord } = await import("~/lib/discord/ixtwitter-sync");
-        // Run asynchronously without awaiting to keep createPost response fast
-        postThinkPagesToDiscord(
-          db as any,
-          post,
-          {
-            displayName: account.displayName,
-            username: account.username,
-            verified: account.verified,
-            profileImageUrl: account.profileImageUrl,
-          },
-          input.mediaUrls
-        ).catch((err: unknown) =>
-          console.error("[ThinkPages] Autopost to Discord promise error:", err)
-        );
-      } catch (error) {
-        console.error("[ThinkPages] Failed to trigger Discord autopost:", error);
-      }
-    }
-
-    // 📰 Mirror to the admin-configured #thinkpages Discord feed (filtered, deduped).
-    // Independent of the IxTwitter autopost above; the filter/enable lives in admin config.
-    if (post.visibility === "public") {
-      try {
-        const { mirrorThinkPagesPostToDiscordFeed } = await import("~/lib/discord/thinkpages-feed");
-        mirrorThinkPagesPostToDiscordFeed(db as any, post.id, input.mediaUrls).catch(
-          (err: unknown) => console.error("[ThinkPages] Discord feed mirror promise error:", err)
-        );
-      } catch (error) {
-        console.error("[ThinkPages] Failed to trigger Discord feed mirror:", error);
-      }
-    }
+    await mirrorToDiscord(db, post, account, input);
 
     queueAchievementCheck(clerkUserId);
     await invalidateFeeds();
 
-    return {
-      ...post,
-      creditsEarned,
-    };
+    return { ...post, creditsEarned };
   }),
 });

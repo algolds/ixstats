@@ -52,12 +52,10 @@ export default function PreviewPanel() {
           Live render
         </h2>
 
-        {/* Render custom loaders */}
         {customChargeIds.map((id) => (
           <ChargeSvgLoader key={id} chargeId={id} onLoaded={handleChargeSvgLoaded} />
         ))}
 
-        {/* Canvas */}
         <Card
           variant="inset"
           padding="none"
@@ -79,7 +77,6 @@ export default function PreviewPanel() {
               customChargeSvgs={customChargeSvgs}
             />
 
-            {/* Motto scroll placeholder */}
             {composition.externals?.motto && (
               <div
                 className={`pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 ${

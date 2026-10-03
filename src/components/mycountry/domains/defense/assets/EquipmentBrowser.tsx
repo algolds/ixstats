@@ -108,7 +108,6 @@ export const EquipmentBrowser = React.memo(function EquipmentBrowser({
 
   return (
     <>
-      {/* Search and Filters */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="relative">
           <Search
@@ -150,7 +149,6 @@ export const EquipmentBrowser = React.memo(function EquipmentBrowser({
         </Select>
       </div>
 
-      {/* Equipment List */}
       <div className="grid max-h-96 grid-cols-1 gap-2 overflow-y-auto">
         {isLoading &&
           Array.from({ length: 4 }).map((_, i) => (

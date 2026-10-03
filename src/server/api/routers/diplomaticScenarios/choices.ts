@@ -1,30 +1,77 @@
-// src/server/api/routers/diplomaticScenarios.ts
-// Phase 7B: Diplomatic Scenarios Router - Dynamic scenario generation and choice tracking
-
 import { z } from "zod";
+import type { CulturalScenario, PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
-/**
- * Diplomatic Scenarios Router
- *
- * Provides API endpoints for dynamic diplomatic scenario generation, player choice tracking,
- * and scenario analytics. Integrates with the CulturalScenario database model and
- * diplomatic-scenario-generator utility for context-aware scenario generation.
- *
- * Public endpoints (11): Query scenarios, generate scenarios, track choices, calculate relevance
- * Admin endpoints (7): CRUD operations with audit logging
- * Analytics endpoints (4): Usage statistics, choice distribution, performance metrics
- *
- * Total: 22 endpoints
- */
-export const diplomaticScenariosChoicesRouter = createTRPCRouter({
-  // ==========================================
-  // PUBLIC ENDPOINTS (11)
-  // ==========================================
+type ChoiceOption = {
+  id: string;
+  riskLevel?: string;
+  effects?: { culturalImpact?: number; relationshipChange?: number; economicImpact?: number };
+};
 
+const RISK_BONUS: Record<string, number> = { low: 0, medium: 2, high: 5, extreme: 8 };
+
+/** Friendly pre-checks; the conditional updateMany in recordChoice is the authority. */
+function assertScenarioOpenFor(scenario: CulturalScenario, countryId: string) {
+  if (countryId !== scenario.country1Id && countryId !== scenario.country2Id) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "This scenario does not involve your country",
+    });
+  }
+  if (scenario.status !== "active" && scenario.status !== "pending") {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Scenario is no longer active" });
+  }
+  if (scenario.expiresAt < new Date()) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Scenario has expired" });
+  }
+}
+
+/** IxCredits for taking part: 10 base, +5 for high-stakes scenarios, plus a risk bonus. Never blocks the choice. */
+async function awardScenarioCredits(
+  db: PrismaClient,
+  userId: string,
+  scenario: CulturalScenario,
+  choice: ChoiceOption,
+  input: { scenarioId: string; choiceId: string; choiceLabel: string }
+) {
+  try {
+    const isHighStakes = scenario.culturalImpact > 70 || scenario.diplomaticRisk > 70;
+    const riskLevel = choice.riskLevel || "medium";
+    const creditReward = 10 + (isHighStakes ? 5 : 0) + (RISK_BONUS[riskLevel] || 0);
+
+    const earnResult = await vaultService.earnCredits(
+      userId,
+      creditReward,
+      "EARN_ACTIVE",
+      "diplomatic_scenario",
+      db,
+      {
+        scenarioId: input.scenarioId,
+        scenarioType: scenario.type,
+        choiceId: input.choiceId,
+        choiceLabel: input.choiceLabel,
+        culturalImpact: scenario.culturalImpact,
+        diplomaticRisk: scenario.diplomaticRisk,
+        highStakes: isHighStakes,
+        riskLevel,
+      }
+    );
+    if (!earnResult.success) return 0;
+
+    console.log(
+      `[DIPLOMATIC_SCENARIOS] Awarded ${creditReward} IxC to ${userId} for scenario participation`
+    );
+    return creditReward;
+  } catch (error) {
+    console.error("[DIPLOMATIC_SCENARIOS] Failed to award scenario credits:", error);
+    return 0;
+  }
+}
+
+export const diplomaticScenariosChoicesRouter = createTRPCRouter({
   /**
    * Record player choice and update scenario status
    * Creates ScenarioGeneration record for historical tracking
@@ -53,36 +100,15 @@ export const diplomaticScenariosChoicesRouter = createTRPCRouter({
           });
         }
 
-        if (
-          input.countryId !== scenario.country1Id &&
-          input.countryId !== scenario.country2Id
-        ) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "This scenario does not involve your country",
-          });
-        }
-
-        // Friendly pre-checks; the conditional updateMany below is the authority
-        if (scenario.status !== "active" && scenario.status !== "pending") {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Scenario is no longer active",
-          });
-        }
-
-        if (scenario.expiresAt < new Date()) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Scenario has expired",
-          });
-        }
+        assertScenarioOpenFor(scenario, input.countryId);
 
         // Parse response options to find selected choice
         const responseOptions = scenario.responseOptions
           ? JSON.parse(scenario.responseOptions)
           : [];
-        const selectedChoice = responseOptions.find((opt: any) => opt.id === input.choiceId);
+        const selectedChoice = responseOptions.find(
+          (opt: ChoiceOption) => opt.id === input.choiceId
+        );
 
         if (!selectedChoice) {
           throw new TRPCError({
@@ -151,57 +177,9 @@ export const diplomaticScenariosChoicesRouter = createTRPCRouter({
           `[DIPLOMATIC_SCENARIOS] Recorded choice ${input.choiceId} for scenario ${input.scenarioId} by country ${input.countryId}`
         );
 
-        // 💰 Award IxCredits for diplomatic scenario participation
-        let creditsEarned = 0;
-        if (ctx.auth?.userId) {
-          try {
-            // Base reward: 10 IxC for participating
-            let creditReward = 10;
-
-            // Bonus for high-stakes scenarios (high cultural impact or diplomatic risk)
-            const isHighStakes = scenario.culturalImpact > 70 || scenario.diplomaticRisk > 70;
-            if (isHighStakes) {
-              creditReward += 5; // +5 IxC bonus for high-stakes events
-            }
-
-            // Bonus for risky choices
-            const choiceRisk = selectedChoice.riskLevel || "medium";
-            const riskBonus = {
-              low: 0,
-              medium: 2,
-              high: 5,
-              extreme: 8,
-            };
-            creditReward += riskBonus[choiceRisk as keyof typeof riskBonus] || 0;
-
-            const earnResult = await vaultService.earnCredits(
-              ctx.auth.userId,
-              creditReward,
-              "EARN_ACTIVE",
-              "diplomatic_scenario",
-              ctx.db,
-              {
-                scenarioId: input.scenarioId,
-                scenarioType: scenario.type,
-                choiceId: input.choiceId,
-                choiceLabel: input.choiceLabel,
-                culturalImpact: scenario.culturalImpact,
-                diplomaticRisk: scenario.diplomaticRisk,
-                highStakes: isHighStakes,
-                riskLevel: choiceRisk,
-              }
-            );
-
-            if (earnResult.success) {
-              creditsEarned = creditReward;
-              console.log(
-                `[DIPLOMATIC_SCENARIOS] Awarded ${creditReward} IxC to ${ctx.auth.userId} for scenario participation`
-              );
-            }
-          } catch (error) {
-            console.error("[DIPLOMATIC_SCENARIOS] Failed to award scenario credits:", error);
-          }
-        }
+        const creditsEarned = ctx.auth?.userId
+          ? await awardScenarioCredits(ctx.db, ctx.auth.userId, scenario, selectedChoice, input)
+          : 0;
 
         return {
           success: true,

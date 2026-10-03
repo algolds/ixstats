@@ -43,6 +43,97 @@ interface DashboardSidebarLayoutProps {
   disableGlobalHover?: boolean;
 }
 
+const STORAGE_KEY = "ixstats.sidebar.collapsed";
+
+/** Hover state that opens the collapsed rail: instantly for the rail variant, after 250ms otherwise. */
+function useDelayedHover(isHovered: boolean, instant: boolean) {
+  const [delayed, setDelayed] = useState(false);
+  useEffect(() => {
+    if (!isHovered || instant) {
+      // oxlint-disable-next-line
+      setDelayed(isHovered);
+      return;
+    }
+    const timer = setTimeout(() => setDelayed(true), 250);
+    return () => clearTimeout(timer);
+  }, [isHovered, instant]);
+  return delayed;
+}
+
+/** Collapse state, remembered in localStorage unless collapsing is disabled. */
+function useCollapsedState(disableCollapse: boolean, defaultCollapsed: boolean) {
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    const stored = disableCollapse ? null : localStorage.getItem(STORAGE_KEY);
+    // oxlint-disable-next-line
+    if (disableCollapse) setCollapsed(false);
+    else if (stored === "true" || stored === "false") setCollapsed(stored === "true");
+    setIsMounted(true);
+  }, [disableCollapse]);
+
+  const toggle = () => {
+    if (disableCollapse) return;
+    setCollapsed(!collapsed);
+    localStorage.setItem(STORAGE_KEY, String(!collapsed));
+  };
+  return { collapsed: !disableCollapse && collapsed && isMounted, toggle };
+}
+
+/** Width classes and inline width for the rail column, by variant and collapse state. */
+function railColumn(
+  rail: boolean,
+  narrow: boolean,
+  widthClass: string | undefined,
+  widthStyle: string | undefined
+) {
+  const expandedClass = widthClass ?? (rail ? "w-64" : "w-48");
+  if (!rail) {
+    return narrow
+      ? { expandedClass, className: "pointer-events-none mr-[-24px] w-0 opacity-0", width: "0px" }
+      : { expandedClass, className: "w-48 opacity-100", width: "12rem" };
+  }
+  return narrow
+    ? { expandedClass, className: "-left-6 w-14 opacity-100 xl:-left-12", width: "3.5rem" }
+    : {
+        expandedClass,
+        className: cn("-left-6 opacity-100 xl:-left-12", expandedClass),
+        width: widthStyle ?? "16rem",
+      };
+}
+
+const LAYOUT = {
+  rail: {
+    hero: "w-full max-w-[1800px] lg:px-8 xl:px-12",
+    body: "w-full max-w-[1800px] px-4 sm:px-6 lg:px-8 xl:px-12",
+  },
+  default: { hero: "container", body: "container px-4" },
+};
+
+function RailBalancer({
+  narrow,
+  expandedClass,
+  width,
+}: {
+  narrow: boolean;
+  expandedClass: string;
+  width: string;
+}) {
+  return (
+    <div
+      aria-hidden="true"
+      className={cn(
+        "z-raised pointer-events-none relative hidden shrink-0 transition-[width] duration-300 ease-out lg:block",
+        narrow
+          ? "-right-6 w-14 opacity-0 xl:-right-12"
+          : cn("-right-6 opacity-0 xl:-right-12", expandedClass)
+      )}
+      style={{ width }}
+    />
+  );
+}
+
 export function DashboardSidebarLayout({
   children,
   heroSection,
@@ -59,61 +150,19 @@ export function DashboardSidebarLayout({
   expandedWidthStyle,
   disableGlobalHover = false,
 }: DashboardSidebarLayoutProps) {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(defaultCollapsed);
-  const [isMounted, setIsMounted] = useState(false);
+  const rail = variant === "rail";
   const [isHovered, setIsHovered] = useState(false);
-  const [isHoveredDelayed, setIsHoveredDelayed] = useState(false);
-
-  useEffect(() => {
-    let timer: any = null;
-    if (isHovered) {
-      if (variant === "rail") {
-        // oxlint-disable-next-line
-        setIsHoveredDelayed(true);
-      } else {
-        timer = setTimeout(() => {
-          setIsHoveredDelayed(true);
-        }, 250);
-      }
-    } else {
-      setIsHoveredDelayed(false);
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [isHovered, variant]);
-
-  useEffect(() => {
-    if (disableCollapse) {
-      // oxlint-disable-next-line
-      setIsSidebarCollapsed(false);
-      setIsMounted(true);
-    } else {
-      const stored = localStorage.getItem("ixstats.sidebar.collapsed");
-      if (stored === "true") {
-        setIsSidebarCollapsed(true);
-      } else if (stored === "false") {
-        setIsSidebarCollapsed(false);
-      }
-      setIsMounted(true);
-    }
-  }, [disableCollapse]);
-
-  const handleToggleSidebar = () => {
-    if (disableCollapse) return;
-    const next = !isSidebarCollapsed;
-    setIsSidebarCollapsed(next);
-    localStorage.setItem("ixstats.sidebar.collapsed", String(next));
-  };
-
-  const isCollapsedNow = !disableCollapse && isSidebarCollapsed && isMounted;
+  const isHoveredDelayed = useDelayedHover(isHovered, rail);
+  const { collapsed: isCollapsedNow, toggle: handleToggleSidebar } = useCollapsedState(
+    disableCollapse,
+    defaultCollapsed
+  );
   const isHoverActive = isCollapsedNow && isHoveredDelayed;
 
-  const defaultExpandedWidthClass = variant === "rail" ? "w-64" : "w-48";
-  const defaultExpandedWidthStyle = variant === "rail" ? "16rem" : "12rem";
-
-  const resolvedExpandedWidthClass = expandedWidthClassName ?? defaultExpandedWidthClass;
-  const resolvedExpandedWidthStyle = expandedWidthStyle ?? defaultExpandedWidthStyle;
+  const narrow = isCollapsedNow && !isHoverActive;
+  const column = railColumn(rail, narrow, expandedWidthClassName, expandedWidthStyle);
+  const layout = rail ? LAYOUT.rail : LAYOUT.default;
+  const defaultHidden = !rail && isCollapsedNow;
 
   return (
     <SidebarContext.Provider
@@ -125,69 +174,32 @@ export function DashboardSidebarLayout({
       }}
     >
       <div className="relative flex min-h-full w-full flex-1 flex-col space-y-0">
-        {/* Hero Section */}
         {heroSection && (
-          <div
-            className={cn(
-              "z-raised relative mx-auto px-4 pt-4 sm:pt-6",
-              variant === "rail" ? "w-full max-w-[1800px] lg:px-8 xl:px-12" : "container"
-            )}
-          >
+          <div className={cn("z-raised relative mx-auto px-4 pt-4 sm:pt-6", layout.hero)}>
             {heroSection}
           </div>
         )}
 
-        <div
-          className={cn(
-            "z-raised relative mx-auto py-4 sm:py-6 md:py-8",
-            variant === "rail"
-              ? "w-full max-w-[1800px] px-4 sm:px-6 lg:px-8 xl:px-12"
-              : "container px-4"
-          )}
-        >
-          {/* Alerts */}
+        <div className={cn("z-raised relative mx-auto py-4 sm:py-6 md:py-8", layout.body)}>
           {alerts && <div className="mb-4 space-y-3 sm:mb-6">{alerts}</div>}
 
-          {/* Main Layout — icon rail + content */}
           <div className="flex gap-4 sm:gap-6">
-            {/* Desktop: Fixed icon rail */}
             <div
               onMouseEnter={disableGlobalHover ? undefined : () => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
               className={cn(
                 "z-sticky relative hidden shrink-0 transition-[width,opacity] duration-300 ease-out lg:block",
-                variant === "rail"
-                  ? isCollapsedNow && !isHoverActive
-                    ? "-left-6 w-14 opacity-100 xl:-left-12"
-                    : cn("-left-6 opacity-100 xl:-left-12", resolvedExpandedWidthClass)
-                  : isCollapsedNow
-                    ? "pointer-events-none mr-[-24px] w-0 opacity-0"
-                    : "w-48 opacity-100"
+                column.className
               )}
-              style={{
-                width:
-                  variant === "rail"
-                    ? isCollapsedNow && !isHoverActive
-                      ? "3.5rem"
-                      : resolvedExpandedWidthStyle
-                    : isCollapsedNow
-                      ? "0px"
-                      : "12rem",
-              }}
+              style={{ width: column.width }}
             >
               <div
                 className={cn(
                   "sticky top-(--shell-top-offset) space-y-4 transition-[transform,opacity] duration-300 ease-out",
-                  variant === "rail"
-                    ? "translate-x-0 opacity-100"
-                    : isCollapsedNow
-                      ? "translate-x-[-120%] opacity-0"
-                      : "translate-x-0 opacity-100"
+                  defaultHidden ? "translate-x-[-120%] opacity-0" : "translate-x-0 opacity-100"
                 )}
               >
-                {sidebarContent ? (
-                  sidebarContent
-                ) : (
+                {sidebarContent || (
                   <>
                     <DashboardPlayerWidget
                       heroCollapsed={heroCollapsed}
@@ -198,7 +210,7 @@ export function DashboardSidebarLayout({
                   </>
                 )}
 
-                {!disableCollapse && variant !== "rail" && (
+                {!disableCollapse && !rail && (
                   <Button
                     variant="secondary"
                     size="sm"
@@ -213,10 +225,8 @@ export function DashboardSidebarLayout({
               </div>
             </div>
 
-            {/* Main Content */}
             <div className="relative min-w-0 flex-1">
-              {/* Floating Expand button shown only when collapsed in hide mode */}
-              {isCollapsedNow && showFloatingExpand && variant !== "rail" && (
+              {isCollapsedNow && showFloatingExpand && !rail && (
                 <Button
                   variant="outline"
                   size="icon"
@@ -231,19 +241,12 @@ export function DashboardSidebarLayout({
               {children}
             </div>
 
-            {/* Symmetrical Right Balancer (Rail Mode) — ensures centered page alignment on sidebar lock/unlock */}
-            {variant === "rail" && (
-              <div
-                aria-hidden="true"
-                className={cn(
-                  "z-raised pointer-events-none relative hidden shrink-0 transition-[width] duration-300 ease-out lg:block",
-                  isCollapsedNow && !isHoverActive
-                    ? "-right-6 w-14 opacity-0 xl:-right-12"
-                    : cn("-right-6 opacity-0 xl:-right-12", resolvedExpandedWidthClass)
-                )}
-                style={{
-                  width: isCollapsedNow && !isHoverActive ? "3.5rem" : resolvedExpandedWidthStyle,
-                }}
+            {/* Symmetrical right balancer (rail mode): keeps the page centred as the rail opens and closes. */}
+            {rail && (
+              <RailBalancer
+                narrow={narrow}
+                expandedClass={column.expandedClass}
+                width={column.width}
               />
             )}
           </div>

@@ -15,10 +15,6 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
  * Analytics endpoints: Usage statistics and trends
  */
 export const militaryEquipmentAnalyticsRouter = createTRPCRouter({
-  // ==========================================
-  // ANALYTICS ENDPOINTS
-  // ==========================================
-
   /**
    * Get equipment usage statistics
    */

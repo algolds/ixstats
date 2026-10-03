@@ -7,6 +7,13 @@ import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { TRPCError } from "@trpc/server";
+import {
+  cursorPageInput,
+  cursorPageArgs,
+  trimCursorPage,
+  PROMPT_SUMMARY,
+  COUNTRY_BADGE,
+} from "./_shared";
 
 export const blurbsBrowseRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
@@ -17,27 +24,21 @@ export const blurbsBrowseRouter = createTRPCRouter({
   getActivePrompts: publicProcedure
     .input(
       z.object({
-        limit: z.number().min(1).max(50).default(20),
-        cursor: z.string().optional(),
+        ...cursorPageInput,
       })
     )
     .query(async ({ input }) => {
       const prompts = await db.blurbPrompt.findMany({
         where: { status: "ACTIVE" },
         orderBy: { publishedAt: "desc" },
-        take: input.limit + 1,
-        ...(input.cursor && { cursor: { id: input.cursor }, skip: 1 }),
+        ...cursorPageArgs(input),
         include: {
           _count: { select: { responses: true } },
         },
       });
 
-      let nextCursor: string | undefined;
-      if (prompts.length > input.limit) {
-        nextCursor = prompts.pop()!.id;
-      }
-
-      return { prompts, nextCursor };
+      const page = trimCursorPage(prompts, input.limit);
+      return { prompts: page.rows, nextCursor: page.nextCursor };
     }),
 
   /** Get a single prompt by slug with response count. */
@@ -59,8 +60,7 @@ export const blurbsBrowseRouter = createTRPCRouter({
     .input(
       z.object({
         promptId: z.string().min(1),
-        limit: z.number().min(1).max(50).default(20),
-        cursor: z.string().optional(),
+        ...cursorPageInput,
         featuredFirst: z.boolean().default(true),
       })
     )
@@ -70,26 +70,21 @@ export const blurbsBrowseRouter = createTRPCRouter({
         orderBy: input.featuredFirst
           ? [{ featured: "desc" }, { createdAt: "desc" }]
           : { createdAt: "desc" },
-        take: input.limit + 1,
-        ...(input.cursor && { cursor: { id: input.cursor }, skip: 1 }),
+        ...cursorPageArgs(input),
         include: {
           user: {
             select: {
               id: true,
               clerkUserId: true,
-              country: { select: { id: true, name: true, flag: true } },
+              country: COUNTRY_BADGE,
             },
           },
-          country: { select: { id: true, name: true, flag: true } },
+          country: COUNTRY_BADGE,
         },
       });
 
-      let nextCursor: string | undefined;
-      if (responses.length > input.limit) {
-        nextCursor = responses.pop()!.id;
-      }
-
-      return { responses, nextCursor };
+      const page = trimCursorPage(responses, input.limit);
+      return { responses: page.rows, nextCursor: page.nextCursor };
     }),
 
   /** All blurbs for a given country (gallery view). */
@@ -97,18 +92,16 @@ export const blurbsBrowseRouter = createTRPCRouter({
     .input(
       z.object({
         countryId: z.string().min(1),
-        limit: z.number().min(1).max(50).default(20),
-        cursor: z.string().optional(),
+        ...cursorPageInput,
       })
     )
     .query(async ({ input }) => {
       const responses = await db.blurbResponse.findMany({
         where: { countryId: input.countryId },
         orderBy: { createdAt: "desc" },
-        take: input.limit + 1,
-        ...(input.cursor && { cursor: { id: input.cursor }, skip: 1 }),
+        ...cursorPageArgs(input),
         include: {
-          prompt: { select: { id: true, title: true, question: true, slug: true } },
+          prompt: PROMPT_SUMMARY,
           user: {
             select: {
               id: true,
@@ -118,12 +111,8 @@ export const blurbsBrowseRouter = createTRPCRouter({
         },
       });
 
-      let nextCursor: string | undefined;
-      if (responses.length > input.limit) {
-        nextCursor = responses.pop()!.id;
-      }
-
-      return { responses, nextCursor };
+      const page = trimCursorPage(responses, input.limit);
+      return { responses: page.rows, nextCursor: page.nextCursor };
     }),
 
   /** Total blurb response count (for WikiOS homepage stat card). */

@@ -21,22 +21,13 @@ import {
 } from "~/components/ui/sheet";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { Card } from "~/components/ui/card";
+import { IDEOLOGY_OPTIONS } from "./ideologies";
 
 interface BillsPanelProps {
   countryId: string;
   /** Only the country owner can propose / vote. */
   canManage?: boolean;
 }
-
-const IDEOLOGIES = [
-  { value: "far_left", label: "Far left" },
-  { value: "left", label: "Left" },
-  { value: "center_left", label: "Center-left" },
-  { value: "center", label: "Center" },
-  { value: "center_right", label: "Center-right" },
-  { value: "right", label: "Right" },
-  { value: "far_right", label: "Far right" },
-] as const;
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   in_committee: {
@@ -94,7 +85,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [ideology, setIdeology] = useState<(typeof IDEOLOGIES)[number]["value"]>("center");
+  const [ideology, setIdeology] = useState<(typeof IDEOLOGY_OPTIONS)[number]["value"]>("center");
   const [gdpEffect, setGdpEffect] = useState(0);
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -200,7 +191,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                       aria-label="Lean"
                       value={ideology}
                       onValueChange={(v) => setIdeology(v as typeof ideology)}
-                      options={IDEOLOGIES}
+                      options={IDEOLOGY_OPTIONS}
                       size="sm"
                       className="w-full"
                     />

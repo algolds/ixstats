@@ -131,7 +131,6 @@ export const AssetFormFields = React.memo(function AssetFormFields({
 }: AssetFormFieldsProps) {
   return (
     <>
-      {/* Asset Type */}
       <div className="space-y-2">
         <Label>Asset type</Label>
         <Select
@@ -153,7 +152,6 @@ export const AssetFormFields = React.memo(function AssetFormFields({
         </Select>
       </div>
 
-      {/* Name & Category */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label>Name *</Label>
@@ -173,7 +171,6 @@ export const AssetFormFields = React.memo(function AssetFormFields({
         </div>
       </div>
 
-      {/* Quantity */}
       <div className="grid grid-cols-2 gap-3">
         <NumberField
           label="Total quantity"
@@ -190,7 +187,6 @@ export const AssetFormFields = React.memo(function AssetFormFields({
         />
       </div>
 
-      {/* Capability */}
       <div className="space-y-2">
         <Label>Capability / Description (Optional)</Label>
         <Input
@@ -200,7 +196,6 @@ export const AssetFormFields = React.memo(function AssetFormFields({
         />
       </div>
 
-      {/* Performance */}
       <div className="grid grid-cols-2 gap-3">
         <NumberField
           label="Range (km) (Optional)"
@@ -216,7 +211,6 @@ export const AssetFormFields = React.memo(function AssetFormFields({
         />
       </div>
 
-      {/* Status */}
       <div className="space-y-2">
         <Label>Status</Label>
         <Select
@@ -238,7 +232,6 @@ export const AssetFormFields = React.memo(function AssetFormFields({
         </Select>
       </div>
 
-      {/* Modernization Level */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label>Modernization level</Label>
@@ -254,7 +247,6 @@ export const AssetFormFields = React.memo(function AssetFormFields({
 
       <Separator />
 
-      {/* Costs */}
       <div className="grid grid-cols-2 gap-3">
         <NumberField
           label="Acquisition Cost ($)"
@@ -270,7 +262,6 @@ export const AssetFormFields = React.memo(function AssetFormFields({
         />
       </div>
 
-      {/* Equipment Image */}
       <EquipmentImageField formData={formData} onChange={onChange} />
     </>
   );

@@ -84,7 +84,6 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
 
   return (
     <Card className={cn("p-5", isCritical && "border-yellow/40")}>
-      {/* Header */}
       <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-b pb-3">
         <div className="flex min-w-0 items-center gap-2">
           <StatusIcon
@@ -107,7 +106,6 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
         </Badge>
       </div>
 
-      {/* Progress & Budget Ratio */}
       <div className="mt-4 space-y-2">
         <div className="text-footnote flex flex-wrap items-center justify-between gap-2">
           <span className="text-label-secondary text-footnote flex items-center gap-2">
@@ -176,7 +174,6 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
         </div>
       </dl>
 
-      {/* Description & Action */}
       <div className="text-footnote mt-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-label-secondary text-footnote max-w-xl leading-relaxed">
           {degradation.description}

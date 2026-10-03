@@ -1,8 +1,6 @@
-// src/app/api/onoma/tts/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { rateLimiter } from "~/lib/cache";
-import { globalCache } from "~/lib/cache";
+import { rateLimiter, globalCache } from "~/lib/cache";
 import { db } from "~/server/db";
 import { isSystemOwner } from "~/lib/auth";
 import crypto from "crypto";
@@ -58,28 +56,16 @@ export function mergeWavBuffers(buffers: Buffer[]): Buffer {
   if (buffers.length === 0) return createSilentWavBuffer();
   if (buffers.length === 1) return buffers[0] ?? createSilentWavBuffer();
 
-  let totalDataSize = 0;
-  buffers.forEach((buf) => {
-    // 44 bytes is standard WAV header size
-    if (buf.length > 44) totalDataSize += buf.length - 44;
-  });
+  // 44 bytes is the standard WAV header size
+  const pcm = buffers.filter((b) => b.length > 44).map((b) => b.subarray(44));
+  const totalDataSize = pcm.reduce((sum, b) => sum + b.length, 0);
 
-  const merged = Buffer.alloc(44 + totalDataSize);
-  buffers[0].copy(merged, 0, 0, 44);
+  const header = Buffer.alloc(44);
+  buffers[0].copy(header, 0, 0, 44);
+  header.writeUInt32LE(totalDataSize + 36, 4);
+  header.writeUInt32LE(totalDataSize, 40);
 
-  const totalFileSize = 44 + totalDataSize - 8;
-  merged.writeUInt32LE(totalFileSize, 4);
-  merged.writeUInt32LE(totalDataSize, 40);
-
-  let offset = 44;
-  buffers.forEach((buf) => {
-    if (buf.length > 44) {
-      buf.copy(merged, offset, 44, buf.length);
-      offset += buf.length - 44;
-    }
-  });
-
-  return merged;
+  return Buffer.concat([header, ...pcm]);
 }
 
 /** Merges multiple MP3 buffers by direct concatenation */
@@ -87,420 +73,415 @@ export function mergeMp3Buffers(buffers: Buffer[]): Buffer {
   return Buffer.concat(buffers);
 }
 
-/** Parse and validate the engine config value (defaults to the fastapi path). */
-function parseEngine(raw: string | undefined): KokoroEngine {
-  return raw === "kokoro-web" ? "kokoro-web" : "kokoro-fastapi";
-}
+const ADMIN_ROLES = ["admin", "owner", "staff"];
+const BETA_ROLES = ["beta_tester", "beta-tester", "beta"];
+const CACHE_OPTS = { ttl: 30 * 24 * 60 * 60, tier: "standard" } as const;
+const PROSODY_SUFFIX: Record<string, string> = {
+  exclamatory: "!",
+  inquisitive: "?",
+  mysterious: "...",
+};
+
+type RoleClaims = { role?: unknown } | undefined;
+
+const json = (error: string, status: number, extra?: Record<string, unknown>) =>
+  NextResponse.json({ error, ...extra }, { status });
+
+const audioResponse = (buf: Buffer, contentType: string) =>
+  new NextResponse(new Uint8Array(buf), {
+    status: 200,
+    headers: { "Content-Type": contentType, "Content-Length": String(buf.length) },
+  });
+
+const withHttp = (url: string) => (url && !/^https?:\/\//i.test(url) ? `http://${url}` : url);
 
 /** Read a cached {d, ct} wrapper, falling back to legacy plain-base64 entries. */
 function readCached(raw: string | undefined | null): { data: string; ct: string } | null {
   if (!raw) return null;
   try {
-    const p = JSON.parse(raw) as unknown;
-    if (p && typeof p === "object" && typeof (p as { d?: unknown }).d === "string") {
-      return { data: (p as { d: string }).d, ct: (p as { ct?: string }).ct || "audio/mpeg" };
-    }
+    const p = JSON.parse(raw) as { d?: unknown; ct?: string } | null;
+    if (typeof p?.d === "string") return { data: p.d, ct: p.ct || "audio/mpeg" };
   } catch {
     /* legacy plain base64 string */
   }
   return { data: raw, ct: "audio/mpeg" };
 }
 
+/** System owners, admins/staff and beta testers may use the narrator. */
+async function resolveAccess(userId: string, sessionClaims: object | undefined) {
+  const claims = sessionClaims as
+    { metadata?: RoleClaims; publicMetadata?: RoleClaims } | undefined;
+  const clerkRole = claims?.metadata?.role || claims?.publicMetadata?.role;
+  const role = typeof clerkRole === "string" ? clerkRole : "";
+  let isAdmin = isSystemOwner(userId) || ADMIN_ROLES.includes(role);
+  let hasAccess = isAdmin || BETA_ROLES.includes(role);
+
+  if (!isAdmin) {
+    const dbUser = await db.user.findUnique({
+      where: { clerkUserId: userId },
+      include: { role: true },
+    });
+    if (dbUser) {
+      const roleName = dbUser.role?.name || "";
+      const roleLevel = dbUser.role?.level ?? 999;
+      if (ADMIN_ROLES.includes(roleName) || roleLevel <= 20) {
+        isAdmin = true;
+        hasAccess = true;
+      } else if (BETA_ROLES.includes(roleName) || roleLevel === 90) {
+        hasAccess = true;
+      }
+    }
+  }
+  return { isAdmin, hasAccess };
+}
+
+interface TtsConfig {
+  enabled: boolean;
+  baseUrl: string;
+  apiKey: string;
+  engine: KokoroEngine;
+  fastApiUrl: string;
+}
+
+interface TtsParams {
+  text: string;
+  /** Onoma's canonical IPA, which drives phoneme synthesis when present */
+  ipa: string;
+  voice: string;
+  /** client picked a voice (per-name override), so skip the culture map */
+  voiceExplicit: boolean;
+  culture: string;
+  speed: number;
+  model: string;
+  anglicize: boolean;
+  phonemePrefix: string;
+  stripStress: boolean;
+  prosody: string;
+}
+
+type TtsBody = Partial<Record<keyof TtsParams | keyof TtsConfig, unknown>>;
+
+function paramsFromBody(body: TtsBody, d: TtsParams): TtsParams {
+  return {
+    text: (body.text as string) || "",
+    ipa: (body.ipa as string) || d.ipa,
+    voice: (body.voice as string) || d.voice,
+    voiceExplicit: !!body.voice,
+    culture: (body.culture as string) || d.culture,
+    speed: body.speed != null ? Number(body.speed) : d.speed,
+    model: (body.model as string) || d.model,
+    anglicize: body.anglicize !== undefined ? Boolean(body.anglicize) : d.anglicize,
+    phonemePrefix: (body.phonemePrefix as string | undefined) ?? d.phonemePrefix,
+    stripStress: body.stripStress !== undefined ? Boolean(body.stripStress) : d.stripStress,
+    prosody: (body.prosody as string | undefined) ?? d.prosody,
+  };
+}
+
+function paramsFromQuery(q: URLSearchParams, d: TtsParams): TtsParams {
+  return {
+    text: q.get("text") || "",
+    ipa: q.get("ipa") || "",
+    voice: q.get("voice") || d.voice,
+    voiceExplicit: !!q.get("voice"),
+    culture: q.get("culture") || "",
+    speed: q.get("speed") ? Number(q.get("speed")) : d.speed,
+    model: q.get("model") || d.model,
+    anglicize: q.get("anglicize") ? q.get("anglicize") !== "false" : d.anglicize,
+    phonemePrefix: q.get("phonemePrefix") || d.phonemePrefix,
+    stripStress: q.get("stripStress") ? q.get("stripStress") === "true" : d.stripStress,
+    prosody: q.get("prosody") || d.prosody,
+  };
+}
+
+/** Phoneme-native kokoro-fastapi synthesis; null when unavailable so the caller falls back. */
+async function synthesizeFastApi(
+  p: TtsParams,
+  fastApiUrl: string,
+  headers: Record<string, string>
+): Promise<{ buf: Buffer; ct: string } | null> {
+  let ipa = p.anglicize ? anglicizeForSpeech(p.ipa) : p.ipa;
+  if (p.stripStress) ipa = ipa.replace(/[ˈˌ]/g, "");
+  let { phonemes } = ipaToKokoroPhonemes(ipa);
+  if (!phonemes) return null;
+  phonemes = p.phonemePrefix + phonemes + (PROSODY_SUFFIX[p.prosody] ?? "");
+
+  try {
+    const res = await fetch(`${fastApiUrl.replace(/\/$/, "")}/dev/generate_from_phonemes`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ phonemes, voice: p.voice }),
+      signal: AbortSignal.timeout(60000),
+    });
+    if (!res.ok) return null;
+    return {
+      buf: Buffer.from(await res.arrayBuffer()),
+      ct: res.headers.get("content-type") || "audio/wav",
+    };
+  } catch (e) {
+    console.warn(
+      `[Kokoro FastAPI Segment] Failed, falling back to kokoro-web: ${e instanceof Error ? e.message : e}`
+    );
+    return null;
+  }
+}
+
+/** Plain-text kokoro-web (or fastapi OpenAI-compatible) synthesis; returns an error response on failure. */
+async function synthesizeWeb(
+  p: TtsParams,
+  sentence: string,
+  config: TtsConfig,
+  baseUrl: string,
+  headers: Record<string, string>
+): Promise<{ buf: Buffer; ct: string } | NextResponse> {
+  if (!baseUrl) return json("Kokoro natural voice service fallback is not configured", 503);
+
+  const cleanBaseUrl = baseUrl
+    .replace(/\/$/, "")
+    .replace(/\/api$/, "")
+    .replace(/\/v1$/, "");
+  const ttsUrl =
+    config.engine === "kokoro-fastapi"
+      ? `${cleanBaseUrl}/v1/audio/speech`
+      : `${cleanBaseUrl}/api/v1/audio/speech`;
+  const input = (ipaToSpokenText(p.ipa) || sentence) + (PROSODY_SUFFIX[p.prosody] ?? "");
+
+  const response = await fetch(ttsUrl, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      model: p.model,
+      voice: p.voice,
+      input,
+      response_format: "mp3",
+      speed: p.speed,
+    }),
+    signal: AbortSignal.timeout(60000),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`[Kokoro TTS API Segment Error] status=${response.status}`, errorText);
+    return json(`Kokoro API returned error status ${response.status} for segment`, 502, {
+      details: errorText.substring(0, 200),
+    });
+  }
+  return { buf: Buffer.from(await response.arrayBuffer()), ct: "audio/mpeg" };
+}
+
+async function loadConfig() {
+  const rows = await db.systemConfig.findMany({
+    where: { key: { startsWith: "onoma.kokoro." } },
+  });
+  const map = new Map(rows.map((r) => [r.key, r.value]));
+  const get = (k: string) => map.get(`onoma.kokoro.${k}`);
+
+  let voiceMap: Record<string, string> = {};
+  try {
+    const parsed = JSON.parse(get("voiceMap") || "{}");
+    if (parsed && typeof parsed === "object") voiceMap = parsed;
+  } catch {
+    /* ignore malformed map */
+  }
+
+  const speed = get("speed");
+  const config: TtsConfig = {
+    enabled: get("enabled") === "true",
+    baseUrl: get("baseUrl") || "",
+    apiKey: get("apiKey") || "",
+    // kokoro-fastapi is primary; kokoro-web (the re-spelling path) stays as fallback so the swap is rollback-safe.
+    engine: get("engine") === "kokoro-web" ? "kokoro-web" : "kokoro-fastapi",
+    fastApiUrl: get("fastApiUrl") || "",
+  };
+  const defaults: TtsParams = {
+    text: "",
+    ipa: "",
+    voice: get("voice") || "af_heart",
+    voiceExplicit: false,
+    culture: "",
+    speed: speed != null && speed !== "" ? Number(speed) : 1.0,
+    model: get("model") || "model_q8f16",
+    anglicize: true,
+    phonemePrefix: "",
+    stripStress: false,
+    prosody: "neutral",
+  };
+  return { config, defaults, voiceMap, savedBaseUrl: config.baseUrl };
+}
+
+/** Engine overrides (the admin panel's unsaved values) are honoured for admins only. */
+function applyAdminOverrides(config: TtsConfig, body: TtsBody) {
+  if (body.engine) config.engine = body.engine === "kokoro-web" ? "kokoro-web" : "kokoro-fastapi";
+  if (body.fastApiUrl) config.fastApiUrl = body.fastApiUrl as string;
+  if (body.baseUrl) config.baseUrl = body.baseUrl as string;
+  // An empty key means "use the saved one" (the admin form never holds it).
+  if (body.apiKey) config.apiKey = body.apiKey as string;
+  // In test mode we bypass the "enabled" switch
+  config.enabled = true;
+}
+
+interface SegmentContext {
+  p: TtsParams;
+  config: TtsConfig;
+  baseUrl: string;
+  fastApiUrl: string;
+  headers: Record<string, string>;
+  keyFor: (prefix: string, text: string) => string;
+  useCache: boolean;
+}
+
+const readCache = async (key: string, enabled: boolean) =>
+  enabled ? readCached(await globalCache.get<string>(key)) : null;
+
+/** Synthesizes (or loads from cache) every sentence; returns an error response on failure. */
+async function synthesizeSentences(sentences: string[], ctx: SegmentContext) {
+  const { p, config, baseUrl, fastApiUrl, headers, keyFor, useCache } = ctx;
+  const useFastApi = config.engine === "kokoro-fastapi" && !!p.ipa && !!fastApiUrl;
+  const buffers: Buffer[] = [];
+  let isWav = useFastApi;
+
+  for (const sentence of sentences) {
+    const segmentKey = keyFor("onoma:tts:segment:", sentence);
+    const cached = await readCache(segmentKey, useCache);
+    if (cached) {
+      buffers.push(Buffer.from(cached.data, "base64"));
+      if (cached.ct === "audio/wav") isWav = true;
+      else if (cached.ct === "audio/mpeg") isWav = false;
+      continue;
+    }
+
+    const segment =
+      (useFastApi && (await synthesizeFastApi(p, fastApiUrl, headers))) ||
+      (await synthesizeWeb(p, sentence, config, baseUrl, headers));
+    if (segment instanceof NextResponse) return segment;
+
+    isWav = segment.ct.includes("wav");
+    buffers.push(segment.buf);
+    if (useCache) {
+      await globalCache.set(
+        segmentKey,
+        JSON.stringify({ d: segment.buf.toString("base64"), ct: segment.ct }),
+        CACHE_OPTS
+      );
+    }
+  }
+  return { buffers, isWav };
+}
+
+/** Parses and validates the request into synthesis parameters; returns an error response when invalid. */
+async function prepareRequest(request: NextRequest, isAdmin: boolean) {
+  const { config, defaults, voiceMap, savedBaseUrl } = await loadConfig();
+
+  let p: TtsParams;
+  if (request.method === "POST") {
+    let body: TtsBody;
+    try {
+      body = await request.json();
+    } catch {
+      return json("Invalid JSON body", 400);
+    }
+    p = paramsFromBody(body, defaults);
+    if (isAdmin) applyAdminOverrides(config, body);
+  } else {
+    p = paramsFromQuery(new URL(request.url).searchParams, defaults);
+  }
+
+  if (!p.text) return json("Text parameter is required", 400);
+
+  // Apply the per-culture voice unless the client explicitly chose a voice.
+  const primaryCulture = p.culture.split("+")[0].toLowerCase().trim();
+  if (!p.voiceExplicit && p.culture && voiceMap[primaryCulture]) p.voice = voiceMap[primaryCulture];
+
+  const baseUrl = withHttp(config.baseUrl.trim());
+  const fastApiUrl = withHttp(config.fastApiUrl.trim());
+
+  if (!config.enabled) return json("Kokoro natural voice service is not enabled", 503);
+  if (!baseUrl && !fastApiUrl) return json("Kokoro natural voice service is not configured", 503);
+
+  // Only skip cache if we are testing overrides explicitly
+  const isTestingOverrides =
+    request.method === "POST" &&
+    isAdmin &&
+    (request.headers.get("x-test-override") === "true" || config.baseUrl !== savedBaseUrl);
+
+  return { p, config, baseUrl, fastApiUrl, useCache: !isTestingOverrides };
+}
+
 async function handleTts(request: NextRequest) {
   try {
     const session = await auth();
     const userId = session?.userId;
-    if (!userId) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    }
+    if (!userId) return json("Authentication required", 401);
 
-    // Rate Limit
     const limit = await rateLimiter.check(userId, "onoma-tts");
-    if (!limit.success) {
-      return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
-    }
+    if (!limit.success) return json("Rate limit exceeded", 429);
 
-    // Determine authorization: System Owners, Admins/Staff, Beta Testers
-    const isOwner = isSystemOwner(userId);
-    const clerkRole =
-      (session.sessionClaims?.metadata as any)?.role ||
-      (session.sessionClaims?.publicMetadata as any)?.role;
-    const allowedAdminRoles = ["admin", "owner", "staff"];
-    const allowedBetaRoles = ["beta_tester", "beta-tester", "beta"];
-
-    let isAdmin =
-      isOwner || (typeof clerkRole === "string" && allowedAdminRoles.includes(clerkRole));
-    let hasAccess =
-      isAdmin || (typeof clerkRole === "string" && allowedBetaRoles.includes(clerkRole));
-
-    if (!hasAccess || !isAdmin) {
-      const dbUser = await db.user.findUnique({
-        where: { clerkUserId: userId },
-        include: { role: true },
-      });
-      if (dbUser) {
-        const roleName = dbUser.role?.name || "";
-        const roleLevel = dbUser.role?.level ?? 999;
-        if (allowedAdminRoles.includes(roleName) || roleLevel <= 20) {
-          isAdmin = true;
-          hasAccess = true;
-        } else if (allowedBetaRoles.includes(roleName) || roleLevel === 90) {
-          hasAccess = true;
-        }
-      }
-    }
-
+    const { isAdmin, hasAccess } = await resolveAccess(userId, session.sessionClaims);
     if (!hasAccess) {
-      return NextResponse.json(
-        {
-          error:
-            "Narrator feature is currently restricted to system owners, administrators, and beta testers.",
-        },
-        { status: 403 }
+      return json(
+        "Narrator feature is currently restricted to system owners, administrators, and beta testers.",
+        403
       );
     }
 
-    // Read config from DB
-    const rows = await db.systemConfig.findMany({
-      where: { key: { startsWith: "onoma.kokoro." } },
-    });
-    const map = new Map(rows.map((r) => [r.key, r.value]));
+    const prepared = await prepareRequest(request, isAdmin);
+    if (prepared instanceof NextResponse) return prepared;
+    const { p, config, baseUrl, fastApiUrl, useCache } = prepared;
 
-    let enabled = map.get("onoma.kokoro.enabled") === "true";
-    let baseUrl = map.get("onoma.kokoro.baseUrl") || "";
-    let apiKey = map.get("onoma.kokoro.apiKey") || "";
-    const defaultModel = map.get("onoma.kokoro.model") || "model_q8f16";
-    const defaultVoice = map.get("onoma.kokoro.voice") || "af_heart";
-    const defaultSpeedVal = map.get("onoma.kokoro.speed");
-    const defaultSpeed =
-      defaultSpeedVal != null && defaultSpeedVal !== "" ? Number(defaultSpeedVal) : 1.0;
-    // Phoneme-native engine + its base URL. kokoro-fastapi is primary; kokoro-web
-    // (the re-spelling path) stays as fallback so the swap is rollback-safe.
-    let engine = parseEngine(map.get("onoma.kokoro.engine"));
-    let fastApiUrl = map.get("onoma.kokoro.fastApiUrl") || "";
-
-    // Per-culture voice assignments (JSON in systemConfig).
-    let voiceMap: Record<string, string> = {};
-    try {
-      const parsed = JSON.parse(map.get("onoma.kokoro.voiceMap") || "{}");
-      if (parsed && typeof parsed === "object") voiceMap = parsed;
-    } catch {
-      /* ignore malformed map */
-    }
-
-    // Extract input parameters
-    let text = "";
-    let ipa = ""; // Onoma's canonical IPA — drives phoneme synthesis when present
-    let voice = defaultVoice;
-    let voiceExplicit = false; // client picked a voice (per-name override) → skip culture map
-    let culture = "";
-    let speed = defaultSpeed;
-    let model = defaultModel;
-    let anglicize = true;
-    let phonemePrefix = "";
-    let stripStress = false;
-    let prosody = "neutral";
-
-    if (request.method === "POST") {
-      try {
-        const body = await request.json();
-        text = body.text || "";
-        if (body.ipa) ipa = body.ipa;
-        if (body.voice) {
-          voice = body.voice;
-          voiceExplicit = true;
-        }
-        if (body.culture) culture = body.culture;
-        if (body.speed != null) speed = Number(body.speed);
-        if (body.model) model = body.model;
-        if (body.anglicize !== undefined) anglicize = Boolean(body.anglicize);
-        if (body.phonemePrefix !== undefined) phonemePrefix = body.phonemePrefix;
-        if (body.stripStress !== undefined) stripStress = Boolean(body.stripStress);
-        if (body.prosody !== undefined) prosody = body.prosody;
-
-        // Allow overrides of the engine settings only if Admin (the admin panel's unsaved values)
-        if (isAdmin) {
-          if (body.engine) engine = parseEngine(body.engine);
-          if (body.fastApiUrl) fastApiUrl = body.fastApiUrl;
-          if (body.baseUrl) baseUrl = body.baseUrl;
-          // An empty key means "use the saved one" (the admin form never holds it).
-          if (body.apiKey) apiKey = body.apiKey;
-          // In test mode we bypass the "enabled" switch
-          enabled = true;
-        }
-      } catch {
-        return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-      }
-    } else {
-      // GET request
-      const { searchParams } = new URL(request.url);
-      text = searchParams.get("text") || "";
-      ipa = searchParams.get("ipa") || "";
-      if (searchParams.get("voice")) {
-        voice = searchParams.get("voice")!;
-        voiceExplicit = true;
-      }
-      culture = searchParams.get("culture") || "";
-      if (searchParams.get("speed")) speed = Number(searchParams.get("speed"));
-      if (searchParams.get("model")) model = searchParams.get("model")!;
-      if (searchParams.get("anglicize")) anglicize = searchParams.get("anglicize") !== "false";
-      if (searchParams.get("phonemePrefix")) phonemePrefix = searchParams.get("phonemePrefix")!;
-      if (searchParams.get("stripStress")) stripStress = searchParams.get("stripStress") === "true";
-      if (searchParams.get("prosody")) prosody = searchParams.get("prosody")!;
-    }
-
-    if (!text) {
-      return NextResponse.json({ error: "Text parameter is required" }, { status: 400 });
-    }
-
-    // Apply the per-culture voice unless the client explicitly chose a voice.
-    if (!voiceExplicit && culture) {
-      const primaryCulture = culture.split("+")[0].toLowerCase().trim();
-      if (voiceMap[primaryCulture]) voice = voiceMap[primaryCulture];
-    }
-
-    let normalizedBaseUrl = baseUrl.trim();
-    let normalizedFastApiUrl = fastApiUrl.trim();
-
-    if (!enabled) {
-      return NextResponse.json(
-        { error: "Kokoro natural voice service is not enabled" },
-        { status: 503 }
-      );
-    }
-    if (!normalizedBaseUrl && !normalizedFastApiUrl) {
-      return NextResponse.json(
-        { error: "Kokoro natural voice service is not configured" },
-        { status: 503 }
-      );
-    }
-
-    if (normalizedBaseUrl && !/^https?:\/\//i.test(normalizedBaseUrl)) {
-      normalizedBaseUrl = `http://${normalizedBaseUrl}`;
-    }
-    if (normalizedFastApiUrl && !/^https?:\/\//i.test(normalizedFastApiUrl)) {
-      normalizedFastApiUrl = `http://${normalizedFastApiUrl}`;
-    }
-
-    // Cache key for the entire request to see if we have a full hit
-    const cacheKey =
-      "onoma:tts:" +
+    const keyFor = (prefix: string, text: string) =>
+      prefix +
       crypto
         .createHash("sha1")
         .update(
-          `${engine}|${text}|${ipa}|${voice}|${speed}|${model}|${anglicize}|${phonemePrefix}|${stripStress}|${prosody}`
+          `${config.engine}|${text}|${p.ipa}|${p.voice}|${p.speed}|${p.model}|${p.anglicize}|${p.phonemePrefix}|${p.stripStress}|${p.prosody}`
         )
         .digest("hex");
+    const cacheKey = keyFor("onoma:tts:", p.text);
 
-    // Only skip cache if we are testing overrides explicitly
-    const isTestingOverrides =
-      request.method === "POST" &&
-      isAdmin &&
-      (request.headers.get("x-test-override") === "true" ||
-        baseUrl !== (map.get("onoma.kokoro.baseUrl") || ""));
+    const cachedFull = await readCache(cacheKey, useCache);
+    if (cachedFull) return audioResponse(Buffer.from(cachedFull.data, "base64"), cachedFull.ct);
 
-    if (!isTestingOverrides) {
-      const cached = readCached(await globalCache.get<string>(cacheKey));
-      if (cached) {
-        const audioBuffer = Buffer.from(cached.data, "base64");
-        return new NextResponse(audioBuffer, {
-          status: 200,
-          headers: {
-            "Content-Type": cached.ct,
-            "Content-Length": String(audioBuffer.length),
-          },
-        });
-      }
-    }
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (config.apiKey) headers["Authorization"] = `Bearer ${config.apiKey}`;
 
-    const authHeaders: Record<string, string> = { "Content-Type": "application/json" };
-    if (apiKey) authHeaders["Authorization"] = `Bearer ${apiKey}`;
+    const sentences = splitIntoSentences(p.text);
+    if (sentences.length === 0) return json("Text parameter contains no speakable content", 400);
 
-    // Split incoming text into sentences
-    const sentences = splitIntoSentences(text);
+    const result = await synthesizeSentences(sentences, {
+      p,
+      config,
+      baseUrl,
+      fastApiUrl,
+      headers,
+      keyFor,
+      useCache,
+    });
+    if (result instanceof NextResponse) return result;
 
-    if (sentences.length === 0) {
-      return NextResponse.json(
-        { error: "Text parameter contains no speakable content" },
-        { status: 400 }
-      );
-    }
+    const { buffers, isWav } = result;
 
-    const audioBuffers: Buffer[] = [];
-    let isWav = !!(engine === "kokoro-fastapi" && ipa && normalizedFastApiUrl);
-
-    for (const sentence of sentences) {
-      // Generate individual cache key per sentence segment
-      const segmentCacheKey =
-        "onoma:tts:segment:" +
-        crypto
-          .createHash("sha1")
-          .update(
-            `${engine}|${sentence}|${ipa}|${voice}|${speed}|${model}|${anglicize}|${phonemePrefix}|${stripStress}|${prosody}`
-          )
-          .digest("hex");
-
-      let sentenceBuf: Buffer | null = null;
-      let sentenceCt = isWav ? "audio/wav" : "audio/mpeg";
-
-      // 1. Check cache for segment
-      if (!isTestingOverrides) {
-        const cached = readCached(await globalCache.get<string>(segmentCacheKey));
-        if (cached) {
-          sentenceBuf = Buffer.from(cached.data, "base64");
-          sentenceCt = cached.ct;
-          if (sentenceCt === "audio/wav") isWav = true;
-          else if (sentenceCt === "audio/mpeg") isWav = false;
-        }
-      }
-
-      // 2. Synthesize segment if cache miss
-      if (!sentenceBuf) {
-        if (engine === "kokoro-fastapi" && ipa && normalizedFastApiUrl) {
-          let processedIpa = ipa;
-          if (anglicize) {
-            processedIpa = anglicizeForSpeech(processedIpa);
-          }
-          if (stripStress) {
-            processedIpa = processedIpa.replace(/[ˈˌ]/g, "");
-          }
-          let { phonemes } = ipaToKokoroPhonemes(processedIpa);
-
-          // Apply prosody inflection to phonemes
-          if (phonemes) {
-            if (prosody === "exclamatory") phonemes += "!";
-            else if (prosody === "inquisitive") phonemes += "?";
-            else if (prosody === "mysterious") phonemes += "...";
-          }
-
-          if (phonemePrefix && phonemes) {
-            phonemes = phonemePrefix + phonemes;
-          }
-
-          if (phonemes) {
-            try {
-              const fastApiBase = normalizedFastApiUrl.replace(/\/$/, "");
-              const fastRes = await fetch(`${fastApiBase}/dev/generate_from_phonemes`, {
-                method: "POST",
-                headers: authHeaders,
-                body: JSON.stringify({ phonemes, voice }),
-                signal: AbortSignal.timeout(60000),
-              });
-              if (fastRes.ok) {
-                sentenceBuf = Buffer.from(await fastRes.arrayBuffer());
-                sentenceCt = fastRes.headers.get("content-type") || "audio/wav";
-                isWav = sentenceCt.includes("wav");
-              }
-            } catch (e: any) {
-              console.warn(
-                `[Kokoro FastAPI Segment] Failed, falling back to kokoro-web: ${e?.message}`
-              );
-            }
-          }
-        }
-
-        // Fallback or kokoro-web plain-text synthesis
-        if (!sentenceBuf) {
-          if (!normalizedBaseUrl) {
-            return NextResponse.json(
-              { error: "Kokoro natural voice service fallback is not configured" },
-              { status: 503 }
-            );
-          }
-          const cleanBaseUrl = normalizedBaseUrl
-            .replace(/\/$/, "")
-            .replace(/\/api$/, "")
-            .replace(/\/v1$/, "");
-          const ttsUrl =
-            engine === "kokoro-fastapi"
-              ? `${cleanBaseUrl}/v1/audio/speech`
-              : `${cleanBaseUrl}/api/v1/audio/speech`;
-
-          let input = ipaToSpokenText(ipa) || sentence;
-          if (prosody === "exclamatory") input += "!";
-          else if (prosody === "inquisitive") input += "?";
-          else if (prosody === "mysterious") input += "...";
-
-          const reqBody = { model, voice, input, response_format: "mp3", speed };
-
-          const response = await fetch(ttsUrl, {
-            method: "POST",
-            headers: authHeaders,
-            body: JSON.stringify(reqBody),
-            signal: AbortSignal.timeout(60000),
-          });
-
-          if (response.ok) {
-            sentenceBuf = Buffer.from(await response.arrayBuffer());
-            sentenceCt = "audio/mpeg";
-            isWav = false;
-          } else {
-            const errorText = await response.text();
-            console.error(`[Kokoro TTS API Segment Error] status=${response.status}`, errorText);
-            return NextResponse.json(
-              {
-                error: `Kokoro API returned error status ${response.status} for segment`,
-                details: errorText.substring(0, 200),
-              },
-              { status: 502 }
-            );
-          }
-        }
-
-        // Write segment to cache
-        if (sentenceBuf && !isTestingOverrides) {
-          await globalCache.set(
-            segmentCacheKey,
-            JSON.stringify({ d: sentenceBuf.toString("base64"), ct: sentenceCt }),
-            { ttl: 30 * 24 * 60 * 60, tier: "standard" }
-          );
-        }
-      }
-
-      if (sentenceBuf) {
-        audioBuffers.push(sentenceBuf);
-      }
-    }
-
-    // Merge audio buffers based on the resolved content type
-    const finalBuffer = isWav ? mergeWavBuffers(audioBuffers) : mergeMp3Buffers(audioBuffers);
+    const finalBuffer = isWav ? mergeWavBuffers(buffers) : mergeMp3Buffers(buffers);
     const contentType = isWav ? "audio/wav" : "audio/mpeg";
 
-    // Save full paragraph result back to cache for direct future hits
-    if (!isTestingOverrides && finalBuffer.length > 0) {
+    if (useCache && finalBuffer.length > 0) {
       await globalCache.set(
         cacheKey,
         JSON.stringify({ d: finalBuffer.toString("base64"), ct: contentType }),
-        { ttl: 30 * 24 * 60 * 60, tier: "standard" }
+        CACHE_OPTS
       );
     }
 
-    return new NextResponse(new Uint8Array(finalBuffer), {
-      status: 200,
-      headers: {
-        "Content-Type": contentType,
-        "Content-Length": String(finalBuffer.length),
-      },
-    });
-  } catch (error: any) {
+    return audioResponse(finalBuffer, contentType);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
     console.warn(
       "[Kokoro TTS Proxy Connection Failure/Timeout] falling back. Error:",
-      error?.message || error
+      message || error
     );
-    return NextResponse.json(
-      {
-        error: "Failed to connect to Kokoro natural voice service",
-        details: error.message || "Timeout or network failure",
-      },
-      { status: 502 }
-    );
+    return json("Failed to connect to Kokoro natural voice service", 502, {
+      details: message || "Timeout or network failure",
+    });
   }
 }
 
-export async function GET(request: NextRequest) {
-  return handleTts(request);
-}
-
-export async function POST(request: NextRequest) {
-  return handleTts(request);
-}
+export const GET = handleTts;
+export const POST = handleTts;

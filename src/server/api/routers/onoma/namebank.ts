@@ -1,7 +1,5 @@
-// src/server/api/routers/onoma/namebank.ts
-// Onoma Lab — Stash & NameBank tRPC Router (CRUD, training data, and sharing)
-
 import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
@@ -13,6 +11,90 @@ import {
   mapStandaloneItemToEntry,
   parseStashItemNote,
 } from "./namebank-helpers";
+import { getOrCreateDefaultStash } from "~/server/shared/default-stash";
+
+const SaveToNameBankSchema = z.object({
+  id: z.string().optional(),
+  type: z.enum(["dictionary", "saved-name"]),
+  title: z.string().min(1),
+  values: z.array(z.string()),
+  category: z.string().nullable().optional(),
+  culturalProfile: z.string().nullable().optional(),
+  role: z.string().nullable().optional(),
+  gender: z.string().nullable().optional(),
+  setName: z.string().nullable().optional(),
+  isPublic: z.boolean().optional(),
+  countryId: z.string().nullable().optional(),
+  stashId: z.string().optional(),
+  lexiconDefinition: z
+    .object({
+      partOfSpeech: z.string(),
+      root: z.string(),
+      meaning: z.string(),
+      origin: z.string(),
+    })
+    .optional(),
+});
+type SaveToNameBankInput = z.infer<typeof SaveToNameBankSchema>;
+
+const TRAINING_SOURCES = {
+  country: {
+    take: 100,
+    load: (db: PrismaClient, take: number) => db.country.findMany({ select: { name: true }, take }),
+  },
+  city: {
+    take: 200,
+    load: (db: PrismaClient, take: number) => db.city.findMany({ select: { name: true }, take }),
+  },
+  province: {
+    take: 150,
+    load: (db: PrismaClient, take: number) =>
+      db.subdivision.findMany({ select: { name: true }, take }),
+  },
+  person: {
+    take: 150,
+    load: (db: PrismaClient, take: number) =>
+      db.governmentOfficial.findMany({ select: { name: true }, take }),
+  },
+};
+
+function assertOwnsStashItem(item: { stash: { userId: string } }, userId: string) {
+  if (item.stash.userId !== userId) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this entry" });
+  }
+}
+
+/** Standalone NameBank row as the client reads it, plus the stash-only fields from the request. */
+function standaloneEntry(
+  row: Parameters<typeof mapStandaloneItemToEntry>[0],
+  userId: string,
+  input: SaveToNameBankInput
+) {
+  return {
+    ...mapStandaloneItemToEntry(row, userId),
+    role: input.role || null,
+    gender: input.gender || null,
+    setName: input.setName || null,
+    lexiconDefinition: input.lexiconDefinition || null,
+  };
+}
+
+const updateStandalone = (
+  db: PrismaClient,
+  id: string,
+  input: SaveToNameBankInput,
+  values: string[]
+) =>
+  db.nameBank.update({
+    where: { id },
+    data: {
+      title: input.title,
+      values,
+      category: input.category,
+      culturalProfile: input.culturalProfile,
+      isPublic: input.isPublic ?? false,
+    },
+  });
 
 export const onomaNameBankRouter = createTRPCRouter({
   /**
@@ -122,63 +204,16 @@ export const onomaNameBankRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const { db } = ctx;
-
-      if (input.category === "country") {
-        const countries = await db.country.findMany({
-          select: { name: true },
-          take: 100,
-        });
-        return countries.map((c) => c.name);
-      } else if (input.category === "city") {
-        const cities = await db.city.findMany({
-          select: { name: true },
-          take: 200,
-        });
-        return cities.map((c) => c.name);
-      } else if (input.category === "province") {
-        const subdivisions = await db.subdivision.findMany({
-          select: { name: true },
-          take: 150,
-        });
-        return subdivisions.map((s) => s.name);
-      } else {
-        const officials = await db.governmentOfficial.findMany({
-          select: { name: true },
-          take: 150,
-        });
-        return officials.map((o) => o.name);
-      }
+      const { take, load } = TRAINING_SOURCES[input.category];
+      const rows = await load(ctx.db, take);
+      return rows.map((r) => r.name);
     }),
 
   /**
    * Save a generated name or custom dictionary directly into a global Stash folder or standalone Onoma NameBank.
    */
   saveToNameBank: protectedProcedure
-    .input(
-      z.object({
-        id: z.string().optional(),
-        type: z.enum(["dictionary", "saved-name"]),
-        title: z.string().min(1),
-        values: z.array(z.string()),
-        category: z.string().nullable().optional(),
-        culturalProfile: z.string().nullable().optional(),
-        role: z.string().nullable().optional(),
-        gender: z.string().nullable().optional(),
-        setName: z.string().nullable().optional(),
-        isPublic: z.boolean().optional(),
-        countryId: z.string().nullable().optional(),
-        stashId: z.string().optional(),
-        lexiconDefinition: z
-          .object({
-            partOfSpeech: z.string(),
-            root: z.string(),
-            meaning: z.string(),
-            origin: z.string(),
-          })
-          .optional(),
-      })
-    )
+    .input(SaveToNameBankSchema)
     .mutation(async ({ ctx, input }) => {
       // An entry may be tagged to a country only by someone who may write to that country.
       if (input.countryId) await assertCountryWriteAccess(ctx, input.countryId);
@@ -196,23 +231,11 @@ export const onomaNameBankRouter = createTRPCRouter({
           if (!owned) {
             throw new TRPCError({ code: "NOT_FOUND", message: "Entry not found" });
           }
-          const updated = await db.nameBank.update({
-            where: { id: owned.id },
-            data: {
-              title: input.title,
-              values: cleanValues,
-              category: input.category,
-              culturalProfile: input.culturalProfile,
-              isPublic: input.isPublic ?? false,
-            },
-          });
-          return {
-            ...mapStandaloneItemToEntry(updated, userId),
-            role: input.role || null,
-            gender: input.gender || null,
-            setName: input.setName || null,
-            lexiconDefinition: input.lexiconDefinition || null,
-          };
+          return standaloneEntry(
+            await updateStandalone(db, owned.id, input, cleanValues),
+            userId,
+            input
+          );
         }
 
         const created = await db.nameBank.create({
@@ -227,14 +250,7 @@ export const onomaNameBankRouter = createTRPCRouter({
             countryId: input.countryId,
           },
         });
-
-        return {
-          ...mapStandaloneItemToEntry(created, userId),
-          role: input.role || null,
-          gender: input.gender || null,
-          setName: input.setName || null,
-          lexiconDefinition: input.lexiconDefinition || null,
-        };
+        return standaloneEntry(created, userId, input);
       }
 
       // 1. Get or create the stash folder (a caller-supplied stash must be the caller's own)
@@ -248,28 +264,18 @@ export const onomaNameBankRouter = createTRPCRouter({
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this stash" });
         }
       } else {
-        let defaultStash = await db.stash.findFirst({
-          where: { userId: { in: requireWikiUserIds(ctx) }, isDefault: true },
-          orderBy: { createdAt: "asc" },
-        });
-        if (!defaultStash) {
-          defaultStash = await db.stash.create({
-            data: { userId, name: "My Stash", color: "#3b82f6", isDefault: true },
-          });
-        }
-        targetStashId = defaultStash.id;
+        targetStashId = (await getOrCreateDefaultStash(ctx.db, requireWikiUserIds(ctx), userId)).id;
       }
 
       // 2. Serialize metadata into JSON note
-      const noteData = {
+      const note = JSON.stringify({
         category: input.category || null,
         role: input.role || null,
         gender: input.gender || null,
         setName: input.setName || null,
         values: cleanValues,
         lexiconDefinition: input.lexiconDefinition || null,
-      };
-      const note = JSON.stringify(noteData);
+      });
       const pageTitle = input.title;
       const pageSlug = encodeURIComponent(pageTitle.replace(/ /g, "_"));
 
@@ -287,57 +293,25 @@ export const onomaNameBankRouter = createTRPCRouter({
             where: { id: input.id, userId: ctx.user.id },
           });
           if (standalone) {
-            const updated = await db.nameBank.update({
-              where: { id: input.id },
-              data: {
-                title: input.title,
-                values: cleanValues,
-                category: input.category,
-                culturalProfile: input.culturalProfile,
-                isPublic: input.isPublic ?? false,
-              },
-            });
-            return {
-              ...mapStandaloneItemToEntry(updated, userId),
-              role: input.role || null,
-              gender: input.gender || null,
-              setName: input.setName || null,
-              lexiconDefinition: input.lexiconDefinition || null,
-            };
+            return standaloneEntry(
+              await updateStandalone(db, input.id, input, cleanValues),
+              userId,
+              input
+            );
           }
-
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Entry not found",
-          });
+          throw new TRPCError({ code: "NOT_FOUND", message: "Entry not found" });
         }
-
-        if (existing.stash.userId !== userId) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "You do not own this entry",
-          });
-        }
+        assertOwnsStashItem(existing, userId);
 
         item = await db.stashItem.update({
           where: { id: input.id },
-          data: {
-            pageTitle,
-            pageSlug,
-            note,
-            stashId: targetStashId,
-          },
+          data: { pageTitle, pageSlug, note, stashId: targetStashId },
           include: { stash: true },
         });
       } else {
         // Create new stash item
         item = await db.stashItem.upsert({
-          where: {
-            stashId_pageTitle: {
-              stashId: targetStashId,
-              pageTitle,
-            },
-          },
+          where: { stashId_pageTitle: { stashId: targetStashId, pageTitle } },
           create: {
             stashId: targetStashId,
             pageTitle,
@@ -345,9 +319,7 @@ export const onomaNameBankRouter = createTRPCRouter({
             contentType: input.type === "dictionary" ? "dictionary" : "name",
             note,
           },
-          update: {
-            note,
-          },
+          update: { note },
           include: { stash: true },
         });
       }
@@ -390,12 +362,7 @@ export const onomaNameBankRouter = createTRPCRouter({
         });
       }
 
-      if (existing.stash.userId !== userId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not own this entry",
-        });
-      }
+      assertOwnsStashItem(existing, userId);
 
       // Nullify references in cloned dictionaries to prevent foreign key failure
       await db.nameBank.updateMany({
@@ -440,15 +407,7 @@ export const onomaNameBankRouter = createTRPCRouter({
         });
       }
 
-      let defaultStash = await db.stash.findFirst({
-        where: { userId: { in: requireWikiUserIds(ctx) }, isDefault: true },
-        orderBy: { createdAt: "asc" },
-      });
-      if (!defaultStash) {
-        defaultStash = await db.stash.create({
-          data: { userId, name: "My Stash", color: "#3b82f6", isDefault: true },
-        });
-      }
+      const defaultStash = await getOrCreateDefaultStash(ctx.db, requireWikiUserIds(ctx), userId);
 
       const note = JSON.stringify({
         category: source.category,
@@ -510,12 +469,7 @@ export const onomaNameBankRouter = createTRPCRouter({
         });
       }
 
-      if (item.stash.userId !== userId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not own this entry",
-        });
-      }
+      assertOwnsStashItem(item, userId);
 
       const parsed = parseStashItemNote(item.note, item.contentType);
 

@@ -3,24 +3,17 @@
 import React from "react";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { Xmark as X } from "iconoir-react";
 import { formatExactCurrency } from "~/lib/utils";
-import type { RevenueSourceInput, RevenueCategory } from "~/types/government";
+import type { RevenueSourceInput } from "~/types/government";
+import { revenueCategoryIcons } from "./revenueConstants";
 import {
-  revenueCategories,
-  revenueCategoryIcons,
-  getCollectionMethodIcon,
-  getCollectionMethodsForCategory,
-} from "./revenueConstants";
+  AdministeredBySelect,
+  CollectionMethodSelect,
+  RevenueCategorySelect,
+} from "./RevenueSelects";
 import { Card } from "~/components/ui/card";
 
 interface RevenueItemRowProps {
@@ -74,28 +67,12 @@ export function RevenueItemRow({
             />
           </div>
 
-          <Select
+          <RevenueCategorySelect
             value={item.category}
-            onValueChange={(value: RevenueCategory) => onUpdate(index, "category", value)}
+            onChange={(value) => onUpdate(index, "category", value)}
             disabled={isReadOnly}
-          >
-            <SelectTrigger className="h-8">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {revenueCategories.map((category) => {
-                const CategoryIcon = revenueCategoryIcons[category];
-                return (
-                  <SelectItem key={category} value={category}>
-                    <div className="flex items-center">
-                      <CategoryIcon className="text-label-secondary mr-2 h-3.5 w-3.5" />
-                      {category}
-                    </div>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+            dense
+          />
 
           <Textarea
             value={item.description || ""}
@@ -157,65 +134,25 @@ export function RevenueItemRow({
         <div className="space-y-3">
           <div className="space-y-2">
             <Label className="text-label-secondary text-caption">Collection channel</Label>
-            <Select
+            <CollectionMethodSelect
+              category={item.category}
               value={item.collectionMethod || ""}
-              onValueChange={(value) => onUpdate(index, "collectionMethod", value)}
+              onChange={(value) => onUpdate(index, "collectionMethod", value)}
               disabled={isReadOnly}
-            >
-              <SelectTrigger className="text-footnote h-8">
-                <SelectValue placeholder="Select collection method" />
-              </SelectTrigger>
-              <SelectContent className="max-h-80">
-                {getCollectionMethodsForCategory(item.category).map((method) => {
-                  const IconComponent = getCollectionMethodIcon(method.icon);
-                  return (
-                    <SelectItem key={method.id} value={method.id}>
-                      <div className="flex items-center gap-2">
-                        <IconComponent className="text-label-secondary h-3.5 w-3.5 shrink-0" />
-                        <div className="flex flex-col text-left">
-                          <span className="text-caption font-semibold">{method.name}</span>
-                          <span className="text-label-secondary text-footnote">
-                            {method.description}
-                          </span>
-                        </div>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
+              dense
+            />
           </div>
 
           <div className="space-y-2">
             <Label className="text-label-secondary text-caption">Administrative authority</Label>
-            {availableDepartments.length > 0 ? (
-              <Select
-                value={item.administeredBy || ""}
-                onValueChange={(value) => onUpdate(index, "administeredBy", value)}
-                disabled={isReadOnly}
-              >
-                <SelectTrigger className="text-footnote h-8">
-                  <SelectValue placeholder="Select department" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableDepartments
-                    .filter((dept) => dept.name && dept.name.trim() !== "")
-                    .map((dept) => (
-                      <SelectItem key={dept.id} value={dept.name}>
-                        {dept.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <Input
-                value={item.administeredBy || ""}
-                onChange={(e) => onUpdate(index, "administeredBy", e.target.value)}
-                placeholder="Ministry or agency name"
-                disabled={isReadOnly}
-                className="h-8"
-              />
-            )}
+            <AdministeredBySelect
+              value={item.administeredBy || ""}
+              onChange={(value) => onUpdate(index, "administeredBy", value)}
+              disabled={isReadOnly}
+              dense
+              departments={availableDepartments}
+              placeholder="Ministry or agency name"
+            />
           </div>
         </div>
       </div>

@@ -5,8 +5,11 @@
  * tax systems, and demographics.
  */
 
+import type { Country } from "@prisma/client";
 import { z } from "zod";
 import { IxTime } from "~/lib/ixtime";
+import { pct, type EconInputs, type NumberKey } from "./shared";
+import { generateSlug } from "~/lib/utils/slug-utils";
 import { protectedProcedure } from "~/server/api/trpc";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { invalidateCache, globalCache } from "~/lib/cache";
@@ -28,6 +31,65 @@ import {
   syncGovernmentComponents,
   syncEconomyBuilderState,
 } from "~/server/shared/country-mutation-helpers";
+
+type NumberOverrides = { [K in NumberKey]?: Country[K] };
+type TextKey =
+  "continent" | "region" | "governmentType" | "religion" | "leader" | "flag" | "coatOfArms";
+
+/** Text fields: a supplied (non-empty) value wins, otherwise the stored one is kept. */
+const TEXT_SOURCES: ReadonlyArray<
+  readonly [TextKey, (e: EconInputs, structureType: string | undefined) => string | undefined]
+> = [
+  ["continent", (e) => e.geography?.continent],
+  ["region", (e) => e.geography?.region],
+  ["governmentType", (e, structureType) => e.nationalIdentity?.governmentType || structureType],
+  ["religion", (e) => e.nationalIdentity?.nationalReligion],
+  ["leader", (e) => e.nationalIdentity?.leader],
+  ["flag", (e) => e.flagUrl],
+  ["coatOfArms", (e) => e.coatOfArmsUrl],
+];
+
+/** Numeric fields: a supplied value (even 0) wins, otherwise the stored one is kept. */
+const NUMBER_SOURCES: ReadonlyArray<
+  readonly [NumberKey, (e: EconInputs, taxRate: number | undefined) => number | undefined]
+> = [
+  ["adjustedGdpGrowth", (e) => pct(e.coreIndicators?.realGDPGrowthRate)],
+  ["actualGdpGrowth", (e) => pct(e.coreIndicators?.realGDPGrowthRate)],
+  ["realGDPGrowthRate", (e) => pct(e.coreIndicators?.realGDPGrowthRate)],
+  ["inflationRate", (e) => pct(e.coreIndicators?.inflationRate)],
+  ["currencyExchangeRate", (e) => e.coreIndicators?.currencyExchangeRate],
+  ["populationGrowthRate", (e) => pct(e.demographics?.populationGrowthRate)],
+  ["lifeExpectancy", (e) => e.demographics?.lifeExpectancy],
+  ["urbanPopulationPercent", (e) => e.demographics?.urbanRuralSplit?.urban],
+  ["ruralPopulationPercent", (e) => e.demographics?.urbanRuralSplit?.rural],
+  ["literacyRate", (e) => e.demographics?.literacyRate],
+  ["laborForceParticipationRate", (e) => e.laborEmployment?.laborForceParticipationRate],
+  ["employmentRate", (e) => e.laborEmployment?.employmentRate],
+  ["unemploymentRate", (e) => e.laborEmployment?.unemploymentRate],
+  ["averageWorkweekHours", (e) => e.laborEmployment?.averageWorkweekHours],
+  ["minimumWage", (e) => e.laborEmployment?.minimumWage],
+  ["averageAnnualIncome", (e) => e.laborEmployment?.averageAnnualIncome],
+  ["taxRevenueGDPPercent", (e, taxRate) => e.fiscalSystem?.taxRevenueGDPPercent ?? taxRate],
+  ["governmentRevenueTotal", (e) => e.fiscalSystem?.governmentRevenueTotal],
+  ["taxRevenuePerCapita", (e) => e.fiscalSystem?.taxRevenuePerCapita],
+  ["governmentBudgetGDPPercent", (e) => e.fiscalSystem?.governmentBudgetGDPPercent],
+  ["budgetDeficitSurplus", (e) => e.fiscalSystem?.budgetDeficitSurplus],
+  ["internalDebtGDPPercent", (e) => e.fiscalSystem?.internalDebtGDPPercent],
+  ["externalDebtGDPPercent", (e) => e.fiscalSystem?.externalDebtGDPPercent],
+  ["totalDebtGDPRatio", (e) => e.fiscalSystem?.totalDebtGDPRatio],
+  ["debtPerCapita", (e) => e.fiscalSystem?.debtPerCapita],
+  ["interestRates", (e) => e.fiscalSystem?.interestRates],
+  ["debtServiceCosts", (e) => e.fiscalSystem?.debtServiceCosts],
+  ["povertyRate", (e) => e.incomeWealth?.povertyRate],
+  [
+    "incomeInequalityGini",
+    (e) => e.incomeWealth?.incomeInequalityGini ?? pct(e.incomeWealth?.giniIndex),
+  ],
+  ["socialMobilityIndex", (e) => e.incomeWealth?.socialMobilityIndex],
+  ["totalGovernmentSpending", (e) => e.governmentSpending?.totalSpending],
+  ["spendingGDPPercent", (e) => e.governmentSpending?.spendingGDPPercent],
+  ["spendingPerCapita", (e) => e.governmentSpending?.spendingPerCapita],
+];
 
 export const managementUpdateProcedures = {
   updateCountry: protectedProcedure
@@ -58,28 +120,24 @@ export const managementUpdateProcedures = {
         throw new Error("Country not found");
       }
 
-      const econ = input.economicInputs;
-      const coreIndicators = econ?.coreIndicators;
-      const laborEmployment = econ?.laborEmployment;
-      const fiscalSystem = econ?.fiscalSystem;
-      const demographics = econ?.demographics;
-      const incomeWealth = econ?.incomeWealth;
-      const governmentSpending = econ?.governmentSpending;
-      const nationalIdentity = econ?.nationalIdentity;
-      const geography = econ?.geography;
+      const econ: EconInputs = input.economicInputs ?? {};
+      const { coreIndicators, laborEmployment, demographics } = econ;
+      const { fiscalSystem, incomeWealth, governmentSpending, nationalIdentity } = econ;
 
       const population = coreIndicators?.totalPopulation || existingCountry.baselinePopulation;
       const gdpPerCapita = coreIndicators?.gdpPerCapita || existingCountry.baselineGdpPerCapita;
       const nominalGDP = coreIndicators?.nominalGDP || population * gdpPerCapita;
-      const totalGdp = population * gdpPerCapita;
+      const taxRate = input.taxSystemData?.totalTaxRate;
 
-      const slug = input.name
-        .toLowerCase()
-        .trim()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
+      const textOverrides = Object.fromEntries(
+        TEXT_SOURCES.map(([key, get]) => [
+          key,
+          get(econ, input.governmentStructure?.governmentType) || existingCountry[key] || undefined,
+        ])
+      ) as { [K in TextKey]?: string };
+      const numberOverrides = Object.fromEntries(
+        NUMBER_SOURCES.map(([key, get]) => [key, get(econ, taxRate) ?? existingCountry[key]])
+      ) as NumberOverrides;
 
       try {
         const result = await ctx.db.$transaction(async (tx) => {
@@ -87,162 +145,18 @@ export const managementUpdateProcedures = {
             where: { id: input.id },
             data: {
               name: input.name,
-              slug,
-              continent: geography?.continent || existingCountry.continent,
-              region: geography?.region || existingCountry.region,
-              governmentType:
-                nationalIdentity?.governmentType ||
-                input.governmentStructure?.governmentType ||
-                existingCountry.governmentType,
-              religion: nationalIdentity?.nationalReligion || existingCountry.religion,
-              leader: nationalIdentity?.leader || existingCountry.leader,
-              flag: econ?.flagUrl || existingCountry.flag || undefined,
-              coatOfArms: econ?.coatOfArmsUrl || existingCountry.coatOfArms || undefined,
+              slug: generateSlug(input.name),
+              ...textOverrides,
+              ...numberOverrides,
               baselinePopulation: existingCountry.baselinePopulation,
               baselineGdpPerCapita: existingCountry.baselineGdpPerCapita,
               currentPopulation: population,
               currentGdpPerCapita: gdpPerCapita,
-              currentTotalGdp: totalGdp,
-              adjustedGdpGrowth:
-                coreIndicators?.realGDPGrowthRate !== undefined
-                  ? coreIndicators.realGDPGrowthRate / 100
-                  : existingCountry.adjustedGdpGrowth,
-              populationGrowthRate:
-                demographics?.populationGrowthRate !== undefined
-                  ? demographics.populationGrowthRate / 100
-                  : existingCountry.populationGrowthRate,
-              actualGdpGrowth:
-                coreIndicators?.realGDPGrowthRate !== undefined
-                  ? coreIndicators.realGDPGrowthRate / 100
-                  : existingCountry.actualGdpGrowth,
+              currentTotalGdp: population * gdpPerCapita,
               economicTier: getEconomicTierFromGdpPerCapita(gdpPerCapita),
               populationTier: getPopulationTierFromPopulation(population),
               nominalGDP,
-              realGDPGrowthRate:
-                coreIndicators?.realGDPGrowthRate !== undefined
-                  ? coreIndicators.realGDPGrowthRate / 100
-                  : existingCountry.realGDPGrowthRate,
-              inflationRate:
-                coreIndicators?.inflationRate !== undefined
-                  ? coreIndicators.inflationRate / 100
-                  : existingCountry.inflationRate,
-              currencyExchangeRate:
-                coreIndicators?.currencyExchangeRate !== undefined
-                  ? coreIndicators.currencyExchangeRate
-                  : existingCountry.currencyExchangeRate,
-              laborForceParticipationRate:
-                laborEmployment?.laborForceParticipationRate !== undefined
-                  ? laborEmployment.laborForceParticipationRate
-                  : existingCountry.laborForceParticipationRate,
-              employmentRate:
-                laborEmployment?.employmentRate !== undefined
-                  ? laborEmployment.employmentRate
-                  : existingCountry.employmentRate,
-              unemploymentRate:
-                laborEmployment?.unemploymentRate !== undefined
-                  ? laborEmployment.unemploymentRate
-                  : existingCountry.unemploymentRate,
               totalWorkforce: laborEmployment?.totalWorkforce || Math.round(population * 0.65),
-              averageWorkweekHours:
-                laborEmployment?.averageWorkweekHours !== undefined
-                  ? laborEmployment.averageWorkweekHours
-                  : existingCountry.averageWorkweekHours,
-              minimumWage:
-                laborEmployment?.minimumWage !== undefined
-                  ? laborEmployment.minimumWage
-                  : existingCountry.minimumWage,
-              averageAnnualIncome:
-                laborEmployment?.averageAnnualIncome !== undefined
-                  ? laborEmployment.averageAnnualIncome
-                  : existingCountry.averageAnnualIncome,
-              taxRevenueGDPPercent:
-                fiscalSystem?.taxRevenueGDPPercent !== undefined
-                  ? fiscalSystem.taxRevenueGDPPercent
-                  : input.taxSystemData?.totalTaxRate !== undefined
-                    ? input.taxSystemData.totalTaxRate
-                    : existingCountry.taxRevenueGDPPercent,
-              governmentRevenueTotal:
-                fiscalSystem?.governmentRevenueTotal !== undefined
-                  ? fiscalSystem.governmentRevenueTotal
-                  : existingCountry.governmentRevenueTotal,
-              taxRevenuePerCapita:
-                fiscalSystem?.taxRevenuePerCapita !== undefined
-                  ? fiscalSystem.taxRevenuePerCapita
-                  : existingCountry.taxRevenuePerCapita,
-              governmentBudgetGDPPercent:
-                fiscalSystem?.governmentBudgetGDPPercent !== undefined
-                  ? fiscalSystem.governmentBudgetGDPPercent
-                  : existingCountry.governmentBudgetGDPPercent,
-              budgetDeficitSurplus:
-                fiscalSystem?.budgetDeficitSurplus !== undefined
-                  ? fiscalSystem.budgetDeficitSurplus
-                  : existingCountry.budgetDeficitSurplus,
-              internalDebtGDPPercent:
-                fiscalSystem?.internalDebtGDPPercent !== undefined
-                  ? fiscalSystem.internalDebtGDPPercent
-                  : existingCountry.internalDebtGDPPercent,
-              externalDebtGDPPercent:
-                fiscalSystem?.externalDebtGDPPercent !== undefined
-                  ? fiscalSystem.externalDebtGDPPercent
-                  : existingCountry.externalDebtGDPPercent,
-              totalDebtGDPRatio:
-                fiscalSystem?.totalDebtGDPRatio !== undefined
-                  ? fiscalSystem.totalDebtGDPRatio
-                  : existingCountry.totalDebtGDPRatio,
-              debtPerCapita:
-                fiscalSystem?.debtPerCapita !== undefined
-                  ? fiscalSystem.debtPerCapita
-                  : existingCountry.debtPerCapita,
-              interestRates:
-                fiscalSystem?.interestRates !== undefined
-                  ? fiscalSystem.interestRates
-                  : existingCountry.interestRates,
-              debtServiceCosts:
-                fiscalSystem?.debtServiceCosts !== undefined
-                  ? fiscalSystem.debtServiceCosts
-                  : existingCountry.debtServiceCosts,
-              povertyRate:
-                incomeWealth?.povertyRate !== undefined
-                  ? incomeWealth.povertyRate
-                  : existingCountry.povertyRate,
-              incomeInequalityGini:
-                incomeWealth?.incomeInequalityGini !== undefined
-                  ? incomeWealth.incomeInequalityGini
-                  : incomeWealth?.giniIndex !== undefined
-                    ? incomeWealth.giniIndex / 100
-                    : existingCountry.incomeInequalityGini,
-              socialMobilityIndex:
-                incomeWealth?.socialMobilityIndex !== undefined
-                  ? incomeWealth.socialMobilityIndex
-                  : existingCountry.socialMobilityIndex,
-              totalGovernmentSpending:
-                governmentSpending?.totalSpending !== undefined
-                  ? governmentSpending.totalSpending
-                  : existingCountry.totalGovernmentSpending,
-              spendingGDPPercent:
-                governmentSpending?.spendingGDPPercent !== undefined
-                  ? governmentSpending.spendingGDPPercent
-                  : existingCountry.spendingGDPPercent,
-              spendingPerCapita:
-                governmentSpending?.spendingPerCapita !== undefined
-                  ? governmentSpending.spendingPerCapita
-                  : existingCountry.spendingPerCapita,
-              lifeExpectancy:
-                demographics?.lifeExpectancy !== undefined
-                  ? demographics.lifeExpectancy
-                  : existingCountry.lifeExpectancy,
-              urbanPopulationPercent:
-                demographics?.urbanRuralSplit?.urban !== undefined
-                  ? demographics.urbanRuralSplit.urban
-                  : existingCountry.urbanPopulationPercent,
-              ruralPopulationPercent:
-                demographics?.urbanRuralSplit?.rural !== undefined
-                  ? demographics.urbanRuralSplit.rural
-                  : existingCountry.ruralPopulationPercent,
-              literacyRate:
-                demographics?.literacyRate !== undefined
-                  ? demographics.literacyRate
-                  : existingCountry.literacyRate,
               lastCalculated: new Date(IxTime.getCurrentIxTime()),
             },
           });

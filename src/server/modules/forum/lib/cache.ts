@@ -1,4 +1,3 @@
-// src/lib/forum/cache.ts
 // In-memory TTL cache for XenForo API responses — delegates to unified Cache.
 
 import { Cache } from "~/lib/cache";
@@ -26,11 +25,11 @@ export function cacheKey(type: ForumCacheType, ...parts: (string | number)[]): s
   return `forum:${type}:${parts.join(":")}`;
 }
 
-export function cacheGet<T>(key: string): T | null {
+function cacheGet<T>(key: string): T | null {
   return (forumCache.get(key) as T) ?? null;
 }
 
-export function cacheSet<T>(key: string, data: T, type: ForumCacheType): void {
+function cacheSet<T>(key: string, data: T, type: ForumCacheType): void {
   forumCache.set(key, data, FORUM_CACHE_TTL[type]);
 }
 

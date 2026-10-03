@@ -20,7 +20,7 @@ import {
   CheckCircle as CheckCircle2,
 } from "iconoir-react";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import type { VitalityRing } from "~/components/mycountry/shared/primitives/tabs/VitalityRingsDisplay";
+import type { VitalityRing } from "~/components/mycountry/shared/primitives/tabs/vitality";
 import { Card } from "~/components/ui/card";
 
 interface VitalityBreakdownModalProps {

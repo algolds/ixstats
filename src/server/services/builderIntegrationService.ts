@@ -1,4 +1,3 @@
-// src/server/services/builderIntegrationService.ts
 /**
  * Builder Integration Service
  *
@@ -14,7 +13,7 @@
  * - Rollback support for failed operations
  */
 
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import type { GovernmentBuilderState } from "~/types/government";
 import type { TaxBuilderState } from "~/types/builder";
 
@@ -23,8 +22,6 @@ type GovernmentBuilderData = Omit<GovernmentBuilderState, "isValid" | "errors">;
 
 // Type for tax data without validation state
 type TaxBuilderData = Omit<TaxBuilderState, "isValid" | "errors">;
-
-// ==================== TYPE DEFINITIONS ====================
 
 export interface ConflictWarning {
   field: string;
@@ -70,8 +67,6 @@ const DEPARTMENT_TO_SPENDING_CATEGORY: Record<string, string> = {
   "Emergency Management": "other",
   Other: "other",
 };
-
-// ==================== CONFLICT DETECTION ====================
 
 /**
  * Detect conflicts when updating government structure
@@ -322,26 +317,58 @@ export async function detectTaxConflicts(
   return warnings;
 }
 
-// ==================== SYNC OPERATIONS ====================
+/** Runs `detect` for warnings, then `apply` in a transaction, collecting what was touched. */
+async function runIntegration(
+  db: PrismaClient,
+  detect: () => Promise<ConflictWarning[]>,
+  apply: (
+    tx: Prisma.TransactionClient,
+    affectedTables: string[],
+    syncedFields: string[]
+  ) => Promise<void>
+): Promise<IntegrationResult> {
+  const affectedTables: string[] = [];
+  const syncedFields: string[] = [];
+
+  try {
+    const warnings = await detect();
+    await db.$transaction((tx) => apply(tx, affectedTables, syncedFields));
+    return { success: true, warnings, affectedTables, syncedFields };
+  } catch (error) {
+    return {
+      success: false,
+      warnings: [],
+      affectedTables,
+      syncedFields,
+      errors: [error instanceof Error ? error.message : "Unknown error during sync"],
+    };
+  }
+}
+
+function spendingByCategory(governmentData: GovernmentBuilderState | GovernmentBuilderData) {
+  const totals: Record<string, number> = {};
+  governmentData.departments.forEach((dept, index) => {
+    const allocation = governmentData.budgetAllocations.find(
+      (a) => a.departmentId === index.toString()
+    );
+    const category = DEPARTMENT_TO_SPENDING_CATEGORY[dept.category] || "other";
+    totals[category] = (totals[category] || 0) + (allocation?.allocatedAmount || 0);
+  });
+  return totals;
+}
 
 /**
  * Sync government builder data to all relevant database tables
  */
-export async function syncGovernmentData(
+export function syncGovernmentData(
   db: PrismaClient,
   countryId: string,
   governmentData: GovernmentBuilderState | GovernmentBuilderData
 ): Promise<IntegrationResult> {
-  const affectedTables: string[] = [];
-  const syncedFields: string[] = [];
-  const errors: string[] = [];
-
-  try {
-    // Get warnings first
-    const warnings = await detectGovernmentConflicts(db, countryId, governmentData);
-
-    await db.$transaction(async (tx) => {
-      // 1. Sync Country table fields
+  return runIntegration(
+    db,
+    () => detectGovernmentConflicts(db, countryId, governmentData),
+    async (tx, affectedTables, syncedFields) => {
       const country = await tx.country.findUnique({ where: { id: countryId } });
       if (country) {
         await tx.country.update({
@@ -355,126 +382,59 @@ export async function syncGovernmentData(
         syncedFields.push("Country.governmentType", "Country.leader");
       }
 
-      // 2. Sync GovernmentBudget table
+      const spendingCategories = JSON.stringify(spendingByCategory(governmentData));
       const govBudget = await tx.governmentBudget.findUnique({ where: { countryId } });
       if (govBudget) {
-        // Calculate spending by category from departments
-        const spendingByCategory: Record<string, number> = {};
-
-        governmentData.departments.forEach(
-          (dept: GovernmentBuilderState["departments"][number], index: number) => {
-            const allocation = governmentData.budgetAllocations.find(
-              (a: { departmentId: string }) => a.departmentId === index.toString()
-            );
-            const category = DEPARTMENT_TO_SPENDING_CATEGORY[dept.category] || "other";
-            spendingByCategory[category] =
-              (spendingByCategory[category] || 0) + (allocation?.allocatedAmount || 0);
-          }
-        );
-
-        await tx.governmentBudget.update({
-          where: { countryId },
-          data: {
-            spendingCategories: JSON.stringify(spendingByCategory),
-          },
-        });
-        affectedTables.push("GovernmentBudget");
+        await tx.governmentBudget.update({ where: { countryId }, data: { spendingCategories } });
         syncedFields.push("GovernmentBudget.spendingCategories");
       } else {
-        // Create if doesn't exist
-        const spendingByCategory: Record<string, number> = {};
-        governmentData.departments.forEach(
-          (dept: GovernmentBuilderState["departments"][number], index: number) => {
-            const allocation = governmentData.budgetAllocations.find(
-              (a: { departmentId: string }) => a.departmentId === index.toString()
-            );
-            const category = DEPARTMENT_TO_SPENDING_CATEGORY[dept.category] || "other";
-            spendingByCategory[category] =
-              (spendingByCategory[category] || 0) + (allocation?.allocatedAmount || 0);
-          }
-        );
-
-        await tx.governmentBudget.create({
-          data: {
-            countryId,
-            spendingCategories: JSON.stringify(spendingByCategory),
-          },
-        });
-        affectedTables.push("GovernmentBudget");
+        await tx.governmentBudget.create({ data: { countryId, spendingCategories } });
       }
+      affectedTables.push("GovernmentBudget");
+    }
+  );
+}
 
-      // 3. (Optional) Fiscal sync deferred: handled by tax sync and analytics pipelines
-    });
-
-    return {
-      success: true,
-      warnings,
-      affectedTables,
-      syncedFields,
-    };
-  } catch (error) {
-    errors.push(error instanceof Error ? error.message : "Unknown error during sync");
-    return {
-      success: false,
-      warnings: [],
-      affectedTables,
-      syncedFields,
-      errors,
-    };
-  }
+/** Tax rates per fiscal-system field, as set by the matching builder categories. */
+function extractFiscalRates(taxData: TaxBuilderState | TaxBuilderData) {
+  const baseRate = (...types: string[]) =>
+    taxData.categories.find((c) => types.includes(c.categoryType))?.baseRate;
+  return {
+    personalIncomeTaxRates: baseRate("Income Tax")?.toString(),
+    corporateTaxRates: baseRate("Corporate Tax")?.toString(),
+    salesTaxRate: baseRate("Sales Tax", "Value-Added Tax (VAT)"),
+    propertyTaxRate: baseRate("Property Tax"),
+    payrollTaxRate: baseRate("Payroll Tax"),
+  };
 }
 
 /**
  * Sync tax builder data to all relevant database tables
  */
-export async function syncTaxData(
+export function syncTaxData(
   db: PrismaClient,
   countryId: string,
   taxData: TaxBuilderState | TaxBuilderData
 ): Promise<IntegrationResult> {
-  const affectedTables: string[] = [];
-  const syncedFields: string[] = [];
-  const errors: string[] = [];
-
-  try {
-    // Get warnings first
-    const warnings = await detectTaxConflicts(db, countryId, taxData);
-
-    await db.$transaction(async (tx) => {
-      // 1. Sync FiscalSystem table
+  return runIntegration(
+    db,
+    () => detectTaxConflicts(db, countryId, taxData),
+    async (tx, affectedTables, syncedFields) => {
       const fiscalSystem = await tx.fiscalSystem.findUnique({ where: { countryId } });
-
-      // Extract tax rates from categories
-      const incomeTax = taxData.categories.find(
-        (c: { categoryType: string }) => c.categoryType === "Income Tax"
-      );
-      const corpTax = taxData.categories.find(
-        (c: { categoryType: string }) => c.categoryType === "Corporate Tax"
-      );
-      const salesTax = taxData.categories.find(
-        (c: { categoryType: string }) =>
-          c.categoryType === "Sales Tax" || c.categoryType === "Value-Added Tax (VAT)"
-      );
-      const propertyTax = taxData.categories.find(
-        (c: { categoryType: string }) => c.categoryType === "Property Tax"
-      );
-      const payrollTax = taxData.categories.find(
-        (c: { categoryType: string }) => c.categoryType === "Payroll Tax"
-      );
+      const rates = extractFiscalRates(taxData);
 
       if (fiscalSystem) {
         await tx.fiscalSystem.update({
           where: { countryId },
           data: {
             personalIncomeTaxRates:
-              incomeTax?.baseRate?.toString() || fiscalSystem.personalIncomeTaxRates,
-            corporateTaxRates: corpTax?.baseRate?.toString() || fiscalSystem.corporateTaxRates,
-            salesTaxRate: salesTax?.baseRate || fiscalSystem.salesTaxRate,
-            propertyTaxRate: propertyTax?.baseRate || fiscalSystem.propertyTaxRate,
-            payrollTaxRate: payrollTax?.baseRate || fiscalSystem.payrollTaxRate,
+              rates.personalIncomeTaxRates || fiscalSystem.personalIncomeTaxRates,
+            corporateTaxRates: rates.corporateTaxRates || fiscalSystem.corporateTaxRates,
+            salesTaxRate: rates.salesTaxRate || fiscalSystem.salesTaxRate,
+            propertyTaxRate: rates.propertyTaxRate || fiscalSystem.propertyTaxRate,
+            payrollTaxRate: rates.payrollTaxRate || fiscalSystem.payrollTaxRate,
           },
         });
-        affectedTables.push("FiscalSystem");
         syncedFields.push(
           "FiscalSystem.personalIncomeTaxRates",
           "FiscalSystem.corporateTaxRates",
@@ -483,35 +443,18 @@ export async function syncTaxData(
           "FiscalSystem.payrollTaxRate"
         );
       } else {
-        // Create if doesn't exist
         await tx.fiscalSystem.create({
           data: {
             countryId,
-            personalIncomeTaxRates: incomeTax?.baseRate?.toString() || "0",
-            corporateTaxRates: corpTax?.baseRate?.toString() || "0",
-            salesTaxRate: salesTax?.baseRate || 0,
-            propertyTaxRate: propertyTax?.baseRate || 0,
-            payrollTaxRate: payrollTax?.baseRate || 0,
+            personalIncomeTaxRates: rates.personalIncomeTaxRates || "0",
+            corporateTaxRates: rates.corporateTaxRates || "0",
+            salesTaxRate: rates.salesTaxRate || 0,
+            propertyTaxRate: rates.propertyTaxRate || 0,
+            payrollTaxRate: rates.payrollTaxRate || 0,
           },
         });
-        affectedTables.push("FiscalSystem");
       }
-    });
-
-    return {
-      success: true,
-      warnings,
-      affectedTables,
-      syncedFields,
-    };
-  } catch (error) {
-    errors.push(error instanceof Error ? error.message : "Unknown error during sync");
-    return {
-      success: false,
-      warnings: [],
-      affectedTables,
-      syncedFields,
-      errors,
-    };
-  }
+      affectedTables.push("FiscalSystem");
+    }
+  );
 }

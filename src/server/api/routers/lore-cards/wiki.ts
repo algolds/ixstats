@@ -1,16 +1,5 @@
-/**
- * Lore Cards Wiki & Batch Generation Router (IIWiki Dev Proxy Enabled)
- *
- * Handles:
- * - Direct wiki lore card generation & metadata analysis
- * - Custom card creation from Card Designer Studio
- * - Multi-source lore archive search (IxWiki, IIWiki, WikiOS, Stash)
- * - Wiki category search & autocomplete
- * - Category member batch resolution
- * - Main namespace (0) complete wiki crawler
- */
-
 import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure, publicProcedure } from "~/server/api/trpc";
 import { requireWikiUserIds } from "~/lib/wiki-os/auth";
@@ -21,8 +10,9 @@ import { autoMatchSubcategory } from "~/lib/cards/subcategory-registry";
 import { analyzeWikiSignals } from "~/lib/cards/rarity-algorithm";
 import { searchPages, getRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
-import { getWikiUserAgent, getMediaWikiApiUrl, DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
+import { getMediaWikiApiUrl, DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import { cleanWikitextExcerpt } from "~/lib/wiki-os/transformers/wikitext-parser";
+import type { WikiSource } from "~/lib/wiki-os/config";
 
 const isArticleTitle = (title: string): boolean => {
   if (!title || !title.trim()) return false;
@@ -36,6 +26,300 @@ const isArticleTitle = (title: string): boolean => {
   if (/\.(png|jpg|jpeg|gif|svg|webp|ico)$/i.test(title)) return false;
   return true;
 };
+
+/** Runs a read-only lookup; any failure is logged and answered with the empty result instead. */
+async function orFallback<T, F>(label: string, fallback: F, run: () => Promise<T>): Promise<T | F> {
+  try {
+    return await run();
+  } catch (error) {
+    console.error(`[Lore Cards] ${label}:`, error);
+    return fallback;
+  }
+}
+
+const containsAny = (query: string, fields: string[]) => ({
+  OR: fields.map((field) => ({ [field]: { contains: query, mode: "insensitive" as const } })),
+});
+
+async function searchStash(
+  db: PrismaClient,
+  input: { query: string; stashId?: string },
+  ownerIds: string[] | null
+) {
+  const items = await db.stashItem.findMany({
+    where: {
+      ...(ownerIds ? { stash: { userId: { in: ownerIds } } } : {}),
+      ...(input.stashId ? { stashId: input.stashId } : {}),
+      ...(input.query.trim() ? containsAny(input.query, ["pageTitle", "note"]) : {}),
+    },
+    include: {
+      stash: { select: { id: true, name: true, color: true } },
+      annotations: { take: 3 },
+    },
+    take: 30,
+    orderBy: { updatedAt: "desc" },
+  });
+  const stashes = await db.stash.findMany({
+    where: ownerIds ? { userId: { in: ownerIds } } : {},
+    select: { id: true, name: true, color: true, _count: { select: { items: true } } },
+    orderBy: { order: "asc" },
+  });
+
+  return {
+    items: items.map((item) => ({
+      id: item.id,
+      title: item.pageTitle,
+      pageSlug: item.pageSlug,
+      snippet: item.note || item.annotations[0]?.selectedText || `Saved in ${item.stash.name}`,
+      stashName: item.stash.name,
+      stashColor: item.stash.color,
+      source: "stash" as const,
+      annotationCount: item.annotations.length,
+      savedAt: item.savedAt,
+    })),
+    stashes: stashes.map((s) => ({
+      id: s.id,
+      name: s.name,
+      color: s.color,
+      count: s._count.items,
+    })),
+  };
+}
+
+/** Cards and articles stored in the local database; null when nothing matches (or the lookup fails). */
+async function searchLocalLore(db: PrismaClient, query: string) {
+  try {
+    const search = query.trim();
+    const dbCards = await db.card.findMany({
+      where: search ? containsAny(query, ["title", "subcategory", "wikiArticleTitle"]) : {},
+      take: 20,
+      orderBy: { createdAt: "desc" },
+    });
+    const dbArticles = await db.wikiArticle.findMany({
+      where: search ? { title: { contains: query, mode: "insensitive" } } : {},
+      select: { id: true, title: true, wikitext: true },
+      take: 20,
+      orderBy: { updatedAt: "desc" },
+    });
+    if (dbCards.length === 0 && dbArticles.length === 0) return null;
+
+    return [
+      ...dbCards.map((c) => ({
+        id: `card-${c.id}`,
+        title: c.title,
+        pageSlug: c.slug || encodeURIComponent(c.title),
+        snippet:
+          c.description || c.wikiExcerpt || `Canonical ${c.category || "Lore"} card: ${c.title}`,
+        source: "wikios" as const,
+        imageUrl: c.artworkUrl || c.artwork || null,
+        category: c.category || "SPECIAL",
+        rarity: c.rarity,
+        marketValue: c.marketValue,
+      })),
+      ...dbArticles.map((a) => ({
+        id: `art-${a.id}`,
+        title: a.title,
+        pageSlug: encodeURIComponent(a.title),
+        snippet:
+          a.wikitext.slice(0, 180).replace(/^\[\[[^\]]+\]\]\s*/, "") ||
+          `WikiOS article: ${a.title}`,
+        source: "wikios" as const,
+        imageUrl: null,
+        category: "SPECIAL",
+        rarity: "RARE",
+        marketValue: 1000,
+      })),
+    ];
+  } catch (dbErr) {
+    console.warn("[Lore Cards] Error querying DB cards/articles:", dbErr);
+    return null;
+  }
+}
+
+type SearchHit = { title: string; pageId?: number | string; length?: number };
+
+/** Runs `load` and logs a warning instead of failing; `fallback` stands in for the result. */
+type LegacyPreview = Awaited<
+  ReturnType<typeof wikiLoreCardGenerator.fetchArticleMetadataBatch>
+>[number] & { excerpt?: string; description?: string; rarity?: string; marketValue?: number };
+
+async function warnOnError<T>(label: string, fallback: T, load: () => Promise<T>): Promise<T> {
+  try {
+    return await load();
+  } catch (e) {
+    console.warn(`[Lore Cards] ${label}:`, e);
+    return fallback;
+  }
+}
+
+/** Search hits for a query: the bridge search, else the wiki's opensearch endpoint. */
+async function searchWiki(query: string, wikiSrc: WikiSource): Promise<SearchHit[]> {
+  const found = await warnOnError("searchPages error", [] as SearchHit[], () =>
+    searchPages(query, 25, wikiSrc)
+  );
+  if (found.length > 0) return found;
+
+  return warnOnError("HTTP search fallback error", [] as SearchHit[], async () => {
+    const res = await fetch(
+      `${getMediaWikiApiUrl(wikiSrc)}?action=opensearch&search=${encodeURIComponent(query)}&limit=25&format=json`,
+      { headers: { "User-Agent": DEFAULT_USER_AGENT }, signal: AbortSignal.timeout(6000) }
+    );
+    const data = res.ok ? await res.json() : null;
+    return Array.isArray(data) && Array.isArray(data[1])
+      ? (data[1] as string[]).map((title, idx) => ({ title, pageId: idx, length: 1200 }))
+      : [];
+  });
+}
+
+/** Recently changed article titles, used as the default list when there is no query. */
+async function recentArticleTitles(wikiSrc: WikiSource): Promise<string[]> {
+  if (wikiSrc === "iiwiki") {
+    return warnOnError("IIWiki recentchanges fetch error", [] as string[], async () => {
+      const res = await fetch(
+        `${getMediaWikiApiUrl("iiwiki")}?action=query&list=recentchanges&rclimit=30&rcnamespace=0&format=json`,
+        { headers: { "User-Agent": DEFAULT_USER_AGENT } }
+      );
+      const changes: Array<{ title?: string }> = res.ok
+        ? ((await res.json()).query?.recentchanges ?? [])
+        : [];
+      return [...new Set(changes.flatMap((r) => r.title || []))].filter(isArticleTitle);
+    });
+  }
+  return warnOnError("getRecentChanges error", [] as string[], async () => {
+    const recents = await getRecentChanges(30);
+    return [...new Set((recents ?? []).map((r) => r.title).filter((t) => t && isArticleTitle(t)))];
+  });
+}
+
+async function stashItemExcerpt(db: PrismaClient, stashItemId: string) {
+  const item = await db.stashItem.findUnique({
+    where: { id: stashItemId },
+    include: { stash: true, annotations: true },
+  });
+  if (!item) return null;
+  return {
+    stashName: item.stash.name,
+    excerpt:
+      item.note ||
+      item.annotations.map((a) => a.selectedText).join(" ") ||
+      `Excerpt from lore bookmark in ${item.stash.name}`,
+  };
+}
+
+/** Excerpt, image and length of a wiki article; keeps whatever was resolved before a failure. */
+async function wikiArticleExcerpt(pageTitle: string, wikiSrc: WikiSource) {
+  const found = { excerpt: "", imageUrl: null as string | null, hasImage: false, length: 1000 };
+  try {
+    const [preview] = await wikiLoreCardGenerator.fetchArticleMetadataBatch([pageTitle], wikiSrc);
+    if (preview) {
+      found.excerpt = preview.extract || "";
+      found.imageUrl = preview.imageUrl || null;
+      found.hasImage = preview.hasImage;
+      found.length = preview.length;
+    }
+    // No extract from the preview: fall back to the article's own wikitext
+    const text = found.excerpt || (await getArticleWikitextShadow(pageTitle, wikiSrc))?.wikitext;
+    found.excerpt = text ? cleanWikitextExcerpt(text, 400) : "";
+  } catch (wikiErr) {
+    console.warn("[Lore Cards] Wiki fetch error in fetchLoreMetadata:", wikiErr);
+  }
+  return found;
+}
+
+async function buildLoreMetadata(
+  db: PrismaClient,
+  input: {
+    source: "ixwiki" | "iiwiki" | "wikios" | "stash";
+    pageTitle: string;
+    stashItemId?: string;
+  }
+) {
+  const stash =
+    input.source === "stash" && input.stashItemId
+      ? await stashItemExcerpt(db, input.stashItemId)
+      : null;
+  const wiki =
+    input.source === "ixwiki" || input.source === "iiwiki"
+      ? await wikiArticleExcerpt(input.pageTitle, input.source)
+      : null;
+  const rawExcerpt =
+    stash?.excerpt ||
+    wiki?.excerpt ||
+    `Historical chronicles and archival entries of ${input.pageTitle}.`;
+  const hasImage = wiki?.hasImage ?? false;
+  const resolvedImageUrl = wiki?.imageUrl ?? null;
+
+  const signals = {
+    wordCount: Math.round((wiki?.length ?? 1000) / 5),
+    inboundLinks: 12,
+    outboundLinks: 8,
+    editCount: 6,
+    categoryNames: [],
+    hasImages: hasImage,
+  };
+
+  const analysis = analyzeWikiSignals(input.pageTitle, signals);
+  const resolvedCategory = analysis.suggestedCategory || LoreCategory.SPECIAL;
+  const matchedSubcategory =
+    stash?.stashName || autoMatchSubcategory(resolvedCategory, rawExcerpt || input.pageTitle);
+
+  return {
+    title: input.pageTitle,
+    wikiSource: input.source,
+    subcategory: matchedSubcategory || "Lore Archive",
+    excerpt: rawExcerpt,
+    description: rawExcerpt.slice(0, 140),
+    category: resolvedCategory,
+    rarity: analysis.suggestedRarity || CardRarity.RARE,
+    marketValue: 600,
+    hasImage,
+    imageUrl: resolvedImageUrl,
+    artworkSource: hasImage ? ArtworkSource.WIKI_FETCHED : ArtworkSource.PROCEDURAL,
+  };
+}
+
+async function searchRemoteLore(query: string, wikiSrc: WikiSource) {
+  const hits = query.trim()
+    ? await searchWiki(query, wikiSrc)
+    : (await recentArticleTitles(wikiSrc)).map((title, i) => ({
+        title,
+        pageId: `feat-${i}`,
+        length: 2500,
+      }));
+  // Filter out non-article pages (File:, Category:, Media:, .png, .jpg)
+  const results = hits.filter((r) => isArticleTitle(r.title));
+
+  // Fast batch-resolve metadata & extracts for top search results
+  const titlesToFetch = results.map((r) => r.title).filter(Boolean);
+  const previews =
+    titlesToFetch.length > 0
+      ? await warnOnError("Error batch fetching metadata previews", [], () =>
+          wikiLoreCardGenerator.fetchArticleMetadataBatch(titlesToFetch.slice(0, 25), wikiSrc)
+        )
+      : [];
+  // `excerpt`, `description`, `rarity` and `marketValue` are not part of the preview, so they stay undefined.
+  const previewMap = new Map<string, LegacyPreview>(
+    previews.filter((p) => p.title).map((p) => [p.title.toLowerCase(), p])
+  );
+
+  return results.map((r) => {
+    const meta = previewMap.get(r.title.toLowerCase());
+    const cleanSnippet = cleanWikitextExcerpt(meta?.excerpt || meta?.description || "", 180);
+    return {
+      id: `wiki-${r.title}`,
+      title: r.title,
+      pageSlug: encodeURIComponent(r.title),
+      snippet:
+        cleanSnippet || `Canonical lore documentation and historical archive entry for ${r.title}.`,
+      source: wikiSrc,
+      length: r.length,
+      imageUrl: meta?.imageUrl || null,
+      category: meta?.category || undefined,
+      rarity: meta?.rarity || undefined,
+      marketValue: meta?.marketValue || undefined,
+    };
+  });
+}
 
 export const loreCardsWikiRouter = createTRPCRouter({
   /**
@@ -54,62 +338,53 @@ export const loreCardsWikiRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      try {
-        const candidate = await wikiLoreCardGenerator.generateCard(
-          input.articleTitle,
-          input.wikiSource as any
-        );
+      const candidate = await wikiLoreCardGenerator.generateCard(
+        input.articleTitle,
+        input.wikiSource as any
+      );
 
-        if (!candidate) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: `Could not generate lore card for "${input.articleTitle}". Article not found or incomplete.`,
-          });
-        }
-
-        if (input.targetRarity) {
-          candidate.rarity = input.targetRarity;
-        }
-
-        if (input.category) {
-          candidate.category = input.category;
-        }
-
-        if (input.artworkUrl) {
-          candidate.artwork = input.artworkUrl;
-        }
-
-        const cardId = await wikiLoreCardGenerator.createCard(candidate);
-
-        // Record Audit Log
-        await Promise.allSettled([
-          ctx.db.auditLog.create({
-            data: {
-              userId: ctx.auth?.userId || "admin",
-              action: "LORE_CARD_MINT",
-              entityType: "CARD",
-              target: cardId,
-              details: `Minted lore card "${candidate.title}" (Rarity: ${candidate.rarity}, Category: ${candidate.category}) from ${input.wikiSource}`,
-              success: true,
-            },
-          }),
-        ]);
-
-        return {
-          success: true,
-          cardId,
-          title: candidate.title,
-          rarity: candidate.rarity,
-          category: candidate.category,
-        };
-      } catch (error) {
-        console.error("[Lore Cards] Error in generateLoreCard:", error);
-        if (error instanceof TRPCError) throw error;
+      if (!candidate) {
         throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to generate lore card",
+          code: "NOT_FOUND",
+          message: `Could not generate lore card for "${input.articleTitle}". Article not found or incomplete.`,
         });
       }
+
+      if (input.targetRarity) {
+        candidate.rarity = input.targetRarity;
+      }
+
+      if (input.category) {
+        candidate.category = input.category;
+      }
+
+      if (input.artworkUrl) {
+        candidate.artwork = input.artworkUrl;
+      }
+
+      const cardId = await wikiLoreCardGenerator.createCard(candidate);
+
+      // Record Audit Log
+      await Promise.allSettled([
+        ctx.db.auditLog.create({
+          data: {
+            userId: ctx.auth?.userId || "admin",
+            action: "LORE_CARD_MINT",
+            entityType: "CARD",
+            target: cardId,
+            details: `Minted lore card "${candidate.title}" (Rarity: ${candidate.rarity}, Category: ${candidate.category}) from ${input.wikiSource}`,
+            success: true,
+          },
+        }),
+      ]);
+
+      return {
+        success: true,
+        cardId,
+        title: candidate.title,
+        rarity: candidate.rarity,
+        category: candidate.category,
+      };
     }),
 
   /**
@@ -137,85 +412,76 @@ export const loreCardsWikiRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      try {
-        const slugBase = input.title
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, "");
-        const uniqueSuffix = crypto.randomUUID().slice(0, 5);
-        const slug = `${slugBase}-${uniqueSuffix}`;
+      const slugBase = input.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      const uniqueSuffix = crypto.randomUUID().slice(0, 5);
+      const slug = `${slugBase}-${uniqueSuffix}`;
 
-        const card = await ctx.db.card.create({
+      const card = await ctx.db.card.create({
+        data: {
+          title: input.title,
+          name: input.title,
+          slug,
+          description: input.description ?? input.wikiExcerpt ?? null,
+          category: input.category,
+          subcategory: input.subcategory ?? null,
+          rarity: input.rarity,
+          season: input.season,
+          cardType: input.cardType,
+          marketValue: input.marketValue,
+          totalSupply: input.totalSupply ?? null,
+          artworkUrl: input.artworkUrl ?? null,
+          artwork: input.artworkUrl ?? null,
+          artworkSource: ArtworkSource.PROCEDURAL,
+          artworkCredit: input.artworkCredit ?? "Game-Icons.net",
+          wikiSource: input.wikiSource ?? null,
+          wikiArticleTitle: input.wikiArticleTitle ?? null,
+          wikiExcerpt: input.wikiExcerpt ?? null,
+          attributes: input.attributes ?? {},
+          metadata: input.metadata ?? {},
+        },
+      });
+
+      // Record Audit Log & SyncLog
+      await Promise.allSettled([
+        ctx.db.auditLog.create({
           data: {
-            title: input.title,
-            name: input.title,
-            slug,
-            description: input.description ?? input.wikiExcerpt ?? null,
-            category: input.category,
-            subcategory: input.subcategory ?? null,
-            rarity: input.rarity,
-            season: input.season,
-            cardType: input.cardType,
-            marketValue: input.marketValue,
-            totalSupply: input.totalSupply ?? null,
-            artworkUrl: input.artworkUrl ?? null,
-            artwork: input.artworkUrl ?? null,
-            artworkSource: ArtworkSource.PROCEDURAL,
-            artworkCredit: input.artworkCredit ?? "Game-Icons.net",
-            wikiSource: input.wikiSource ?? null,
-            wikiArticleTitle: input.wikiArticleTitle ?? null,
-            wikiExcerpt: input.wikiExcerpt ?? null,
-            attributes: input.attributes ?? {},
-            metadata: input.metadata ?? {},
+            userId: ctx.auth?.userId || "admin",
+            action: "CARD_DESIGNER_MINT",
+            entityType: "CARD",
+            target: card.id,
+            details: `Minted custom card "${card.title}" (Rarity: ${input.rarity}, Season: ${input.season}, Value: ${input.marketValue} IxCredits)`,
+            success: true,
           },
-        });
-
-        // Record Audit Log & SyncLog
-        await Promise.allSettled([
-          ctx.db.auditLog.create({
-            data: {
-              userId: ctx.auth?.userId || "admin",
-              action: "CARD_DESIGNER_MINT",
-              entityType: "CARD",
-              target: card.id,
-              details: `Minted custom card "${card.title}" (Rarity: ${input.rarity}, Season: ${input.season}, Value: ${input.marketValue} IxCredits)`,
-              success: true,
+        }),
+        ctx.db.syncLog.create({
+          data: {
+            syncType: "custom-card-creation",
+            status: "SUCCESS",
+            cardsProcessed: 1,
+            cardsCreated: 1,
+            cardsUpdated: 0,
+            startedAt: new Date(),
+            completedAt: new Date(),
+            metadata: {
+              cardId: card.id,
+              title: card.title,
+              rarity: input.rarity,
+              category: input.category,
             },
-          }),
-          ctx.db.syncLog.create({
-            data: {
-              syncType: "custom-card-creation",
-              status: "SUCCESS",
-              cardsProcessed: 1,
-              cardsCreated: 1,
-              cardsUpdated: 0,
-              startedAt: new Date(),
-              completedAt: new Date(),
-              metadata: {
-                cardId: card.id,
-                title: card.title,
-                rarity: input.rarity,
-                category: input.category,
-              },
-            },
-          }),
-        ]);
+          },
+        }),
+      ]);
 
-        return {
-          success: true,
-          cardId: card.id,
-          slug: card.slug,
-          title: card.title,
-          message: "Custom card successfully created and published to database.",
-        };
-      } catch (error) {
-        console.error("[Lore Cards] Error in createCustomDesignedCard:", error);
-        if (error instanceof TRPCError) throw error;
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to create custom card",
-        });
-      }
+      return {
+        success: true,
+        cardId: card.id,
+        slug: card.slug,
+        title: card.title,
+        message: "Custom card successfully created and published to database.",
+      };
     }),
 
   /**
@@ -232,248 +498,16 @@ export const loreCardsWikiRouter = createTRPCRouter({
     .query(async ({ input, ctx }) => {
       try {
         if (input.source === "stash") {
-          const userId = ctx.auth?.userId;
-          const whereClause: any = {};
-          if (userId) {
-            whereClause.stash = { userId: { in: requireWikiUserIds(ctx) } };
-          }
-          if (input.stashId) {
-            whereClause.stashId = input.stashId;
-          }
-          if (input.query.trim()) {
-            whereClause.OR = [
-              { pageTitle: { contains: input.query, mode: "insensitive" } },
-              { note: { contains: input.query, mode: "insensitive" } },
-            ];
-          }
-
-          const items = await ctx.db.stashItem.findMany({
-            where: whereClause,
-            include: {
-              stash: { select: { id: true, name: true, color: true } },
-              annotations: { take: 3 },
-            },
-            take: 30,
-            orderBy: { updatedAt: "desc" },
-          });
-
-          const stashes = await ctx.db.stash.findMany({
-            where: userId ? { userId: { in: requireWikiUserIds(ctx) } } : {},
-            select: { id: true, name: true, color: true, _count: { select: { items: true } } },
-            orderBy: { order: "asc" },
-          });
-
-          return {
-            items: items.map((item) => ({
-              id: item.id,
-              title: item.pageTitle,
-              pageSlug: item.pageSlug,
-              snippet:
-                item.note || item.annotations[0]?.selectedText || `Saved in ${item.stash.name}`,
-              stashName: item.stash.name,
-              stashColor: item.stash.color,
-              source: "stash" as const,
-              annotationCount: item.annotations.length,
-              savedAt: item.savedAt,
-            })),
-            stashes: stashes.map((s) => ({
-              id: s.id,
-              name: s.name,
-              color: s.color,
-              count: s._count.items,
-            })),
-          };
+          return searchStash(ctx.db, input, ctx.auth?.userId ? requireWikiUserIds(ctx) : null);
         }
 
         if (input.source === "wikios" || input.source === "ixwiki") {
-          try {
-            const dbCards = await ctx.db.card.findMany({
-              where: input.query.trim()
-                ? {
-                    OR: [
-                      { title: { contains: input.query, mode: "insensitive" } },
-                      { subcategory: { contains: input.query, mode: "insensitive" } },
-                      { wikiArticleTitle: { contains: input.query, mode: "insensitive" } },
-                    ],
-                  }
-                : {},
-              take: 20,
-              orderBy: { createdAt: "desc" },
-            });
-
-            const dbArticles = await ctx.db.wikiArticle.findMany({
-              where: input.query.trim()
-                ? {
-                    title: { contains: input.query, mode: "insensitive" },
-                  }
-                : {},
-              select: {
-                id: true,
-                title: true,
-                wikitext: true,
-              },
-              take: 20,
-              orderBy: { updatedAt: "desc" },
-            });
-
-            if (dbCards.length > 0 || dbArticles.length > 0) {
-              const items = [
-                ...dbCards.map((c) => ({
-                  id: `card-${c.id}`,
-                  title: c.title,
-                  pageSlug: c.slug || encodeURIComponent(c.title),
-                  snippet:
-                    c.description ||
-                    c.wikiExcerpt ||
-                    `Canonical ${c.category || "Lore"} card: ${c.title}`,
-                  source: "wikios" as const,
-                  imageUrl: c.artworkUrl || c.artwork || null,
-                  category: c.category || "SPECIAL",
-                  rarity: c.rarity,
-                  marketValue: c.marketValue,
-                })),
-                ...dbArticles.map((a) => ({
-                  id: `art-${a.id}`,
-                  title: a.title,
-                  pageSlug: encodeURIComponent(a.title),
-                  snippet:
-                    a.wikitext.slice(0, 180).replace(/^\[\[[^\]]+\]\]\s*/, "") ||
-                    `WikiOS article: ${a.title}`,
-                  source: "wikios" as const,
-                  imageUrl: null,
-                  category: "SPECIAL",
-                  rarity: "RARE",
-                  marketValue: 1000,
-                })),
-              ];
-
-              return { items, stashes: [] };
-            }
-          } catch (dbErr) {
-            console.warn("[Lore Cards] Error querying DB cards/articles:", dbErr);
-          }
+          const items = await searchLocalLore(ctx.db, input.query);
+          if (items) return { items, stashes: [] };
         }
 
         const wikiSrc = input.source === "iiwiki" ? "iiwiki" : "ixwiki";
-        let results: Array<{ title: string; pageId?: number | string; length?: number }> = [];
-
-        if (input.query.trim()) {
-          try {
-            results = await searchPages(input.query, 25, wikiSrc as any);
-          } catch (e) {
-            console.warn("[Lore Cards] searchPages error:", e);
-          }
-
-          // If searchPages returned empty, fall back to HTTP API with correct User-Agent
-          if (results.length === 0) {
-            try {
-              const httpUrl = `${getMediaWikiApiUrl(wikiSrc as any)}?action=opensearch&search=${encodeURIComponent(input.query)}&limit=25&format=json`;
-              const res = await fetch(httpUrl, {
-                headers: { "User-Agent": DEFAULT_USER_AGENT },
-                signal: AbortSignal.timeout(6000),
-              });
-              if (res.ok) {
-                const data = await res.json();
-                if (Array.isArray(data) && Array.isArray(data[1])) {
-                  results = (data[1] as string[]).map((title: string, idx: number) => ({
-                    title,
-                    pageId: idx,
-                    length: 1200,
-                  }));
-                }
-              }
-            } catch (httpErr) {
-              console.warn("[Lore Cards] HTTP search fallback error:", httpErr);
-            }
-          }
-        } else {
-          // No query: Fetch recent changes or default featured lore topics from target wiki
-          let recentTitles: string[] = [];
-
-          if (wikiSrc === "iiwiki") {
-            try {
-              const iiUrl = `${getMediaWikiApiUrl("iiwiki")}?action=query&list=recentchanges&rclimit=30&rcnamespace=0&format=json`;
-              const res = await fetch(iiUrl, {
-                headers: { "User-Agent": getWikiUserAgent("iiwiki") },
-              });
-              if (res.ok) {
-                const data = await res.json();
-                const rc = data.query?.recentchanges || [];
-                if (Array.isArray(rc) && rc.length > 0) {
-                  recentTitles = Array.from(
-                    new Set(rc.map((r: any) => r.title).filter(Boolean))
-                  ).filter(isArticleTitle);
-                }
-              }
-            } catch (iiErr) {
-              console.warn("[Lore Cards] IIWiki recentchanges fetch error:", iiErr);
-            }
-          } else {
-            try {
-              const recents = await getRecentChanges(30);
-              if (recents && recents.length > 0) {
-                const titles = recents
-                  .map((r: { title: string }) => r.title)
-                  .filter((t: string): t is string => Boolean(t) && isArticleTitle(t));
-                recentTitles = Array.from(new Set(titles));
-              }
-            } catch (recentErr) {
-              console.warn("[Lore Cards] getRecentChanges error:", recentErr);
-            }
-          }
-
-          results = recentTitles.map((title, i) => ({
-            title,
-            pageId: `feat-${i}`,
-            length: 2500,
-          }));
-        }
-
-        // Filter out non-article pages (File:, Category:, Media:, .png, .jpg)
-        results = results.filter((r) => isArticleTitle(r.title));
-
-        // Fast batch-resolve metadata & extracts for top search results
-        const titlesToFetch = results.map((r) => r.title).filter(Boolean);
-        const previewMap: Record<string, any> = {};
-        if (titlesToFetch.length > 0) {
-          try {
-            const previews = await wikiLoreCardGenerator.fetchArticleMetadataBatch(
-              titlesToFetch.slice(0, 25),
-              wikiSrc as any
-            );
-            for (const p of previews) {
-              if (p.title) {
-                previewMap[p.title.toLowerCase()] = p;
-              }
-            }
-          } catch (batchErr) {
-            console.warn("[Lore Cards] Error batch fetching metadata previews:", batchErr);
-          }
-        }
-
-        return {
-          items: results.map((r) => {
-            const meta = previewMap[r.title.toLowerCase()];
-            const rawText = meta?.excerpt || meta?.description || "";
-            const cleanSnippet = cleanWikitextExcerpt(rawText, 180);
-
-            return {
-              id: `wiki-${r.title}`,
-              title: r.title,
-              pageSlug: encodeURIComponent(r.title),
-              snippet:
-                cleanSnippet ||
-                `Canonical lore documentation and historical archive entry for ${r.title}.`,
-              source: wikiSrc,
-              length: r.length,
-              imageUrl: meta?.imageUrl || null,
-              category: meta?.category || undefined,
-              rarity: meta?.rarity || undefined,
-              marketValue: meta?.marketValue || undefined,
-            };
-          }),
-          stashes: [],
-        };
+        return { items: await searchRemoteLore(input.query, wikiSrc), stashes: [] };
       } catch (error) {
         console.error("[Lore Cards] Error in searchLoreArchive:", error);
         return { items: [], stashes: [] };
@@ -493,92 +527,7 @@ export const loreCardsWikiRouter = createTRPCRouter({
     )
     .query(async ({ input, ctx }) => {
       try {
-        let rawExcerpt = "";
-        let resolvedImageUrl: string | null = null;
-        let hasImage = false;
-        let estimatedRarity: CardRarity | undefined;
-        let estimatedValue: number | undefined;
-        let stashName: string | undefined;
-        let articleLength = 1000;
-
-        if (input.source === "stash" && input.stashItemId) {
-          const item = await ctx.db.stashItem.findUnique({
-            where: { id: input.stashItemId },
-            include: {
-              stash: true,
-              annotations: true,
-            },
-          });
-
-          if (item) {
-            stashName = item.stash.name;
-            rawExcerpt =
-              item.note ||
-              item.annotations.map((a) => a.selectedText).join(" ") ||
-              `Excerpt from lore bookmark in ${item.stash.name}`;
-          }
-        }
-
-        if (input.source === "ixwiki" || input.source === "iiwiki") {
-          try {
-            const wikiSrc = input.source === "iiwiki" ? "iiwiki" : "ixwiki";
-            const previews = await wikiLoreCardGenerator.fetchArticleMetadataBatch(
-              [input.pageTitle],
-              wikiSrc as any
-            );
-            const p = previews[0];
-            if (p) {
-              rawExcerpt = p.extract || "";
-              resolvedImageUrl = p.imageUrl || null;
-              hasImage = p.hasImage;
-              articleLength = p.length;
-            }
-
-            if (!rawExcerpt) {
-              const articleRes = await getArticleWikitextShadow(input.pageTitle, wikiSrc as any);
-              const textContent = articleRes?.wikitext || "";
-              if (textContent) {
-                rawExcerpt = cleanWikitextExcerpt(textContent, 400);
-              }
-            } else {
-              rawExcerpt = cleanWikitextExcerpt(rawExcerpt, 400);
-            }
-          } catch (wikiErr) {
-            console.warn("[Lore Cards] Wiki fetch error in fetchLoreMetadata:", wikiErr);
-          }
-        }
-
-        if (!rawExcerpt) {
-          rawExcerpt = `Historical chronicles and archival entries of ${input.pageTitle}.`;
-        }
-
-        const signals = {
-          wordCount: Math.round(articleLength / 5),
-          inboundLinks: 12,
-          outboundLinks: 8,
-          editCount: 6,
-          categoryNames: [],
-          hasImages: hasImage,
-        };
-
-        const analysis = analyzeWikiSignals(input.pageTitle, signals);
-        const resolvedCategory = analysis.suggestedCategory || LoreCategory.SPECIAL;
-        const matchedSubcategory =
-          stashName || autoMatchSubcategory(resolvedCategory, rawExcerpt || input.pageTitle);
-
-        return {
-          title: input.pageTitle,
-          wikiSource: input.source,
-          subcategory: matchedSubcategory || "Lore Archive",
-          excerpt: rawExcerpt,
-          description: rawExcerpt.slice(0, 140),
-          category: resolvedCategory,
-          rarity: estimatedRarity || analysis.suggestedRarity || CardRarity.RARE,
-          marketValue: estimatedValue || 600,
-          hasImage,
-          imageUrl: resolvedImageUrl,
-          artworkSource: hasImage ? ArtworkSource.WIKI_FETCHED : ArtworkSource.PROCEDURAL,
-        };
+        return await buildLoreMetadata(ctx.db, input);
       } catch (error) {
         console.error("[Lore Cards] Error in fetchLoreMetadata:", error);
         return {
@@ -608,19 +557,20 @@ export const loreCardsWikiRouter = createTRPCRouter({
         limit: z.number().min(1).max(100).default(30),
       })
     )
-    .query(async ({ input }) => {
-      try {
-        const categories = await wikiLoreCardGenerator.searchCategories(
-          input.prefix,
-          input.source,
-          input.limit
-        );
-        return { categories, source: input.source };
-      } catch (error) {
-        console.error("[Lore Cards] Error searching wiki categories:", error);
-        return { categories: [], source: input.source };
-      }
-    }),
+    .query(({ input }) =>
+      orFallback(
+        "Error searching wiki categories",
+        { categories: [], source: input.source },
+        async () => {
+          const categories = await wikiLoreCardGenerator.searchCategories(
+            input.prefix,
+            input.source,
+            input.limit
+          );
+          return { categories, source: input.source };
+        }
+      )
+    ),
 
   /**
    * Fetch category statistics (size, pages, files, subcats) for a list of categories
@@ -632,14 +582,19 @@ export const loreCardsWikiRouter = createTRPCRouter({
         categories: z.array(z.string()),
       })
     )
-    .query(async ({ input }) => {
-      try {
-        const stats = await wikiLoreCardGenerator.getCategoriesInfo(input.categories, input.source);
-        return { stats, source: input.source };
-      } catch (error) {
-        console.error("[Lore Cards] Error getting category stats:", error);
-        return { stats: {}, source: input.source };
-      }
+    .query(({ input }) => {
+      const noStats: Awaited<ReturnType<typeof wikiLoreCardGenerator.getCategoriesInfo>> = {};
+      return orFallback(
+        "Error getting category stats",
+        { stats: noStats, source: input.source },
+        async () => {
+          const stats = await wikiLoreCardGenerator.getCategoriesInfo(
+            input.categories,
+            input.source
+          );
+          return { stats, source: input.source };
+        }
+      );
     }),
 
   /**
@@ -654,21 +609,22 @@ export const loreCardsWikiRouter = createTRPCRouter({
         type: z.enum(["page", "file", "page|file"]).default("page|file"),
       })
     )
-    .query(async ({ input }) => {
-      try {
-        const cleanCat = input.category.replace(/^category:\s*/i, "").trim();
-        const titles = await wikiLoreCardGenerator.fetchCategoryMembers(
-          cleanCat,
-          input.source,
-          input.limit,
-          input.type
-        );
-        return { titles, category: cleanCat, source: input.source, count: titles.length };
-      } catch (error) {
-        console.error("[Lore Cards] Error fetching category members:", error);
-        return { titles: [], category: input.category, source: input.source, count: 0 };
-      }
-    }),
+    .query(({ input }) =>
+      orFallback(
+        "Error fetching category members",
+        { titles: [], category: input.category, source: input.source, count: 0 },
+        async () => {
+          const cleanCat = input.category.replace(/^category:\s*/i, "").trim();
+          const titles = await wikiLoreCardGenerator.fetchCategoryMembers(
+            cleanCat,
+            input.source,
+            input.limit,
+            input.type
+          );
+          return { titles, category: cleanCat, source: input.source, count: titles.length };
+        }
+      )
+    ),
 
   /**
    * Fetch all page titles in the main namespace (namespace 0) for a wiki (up to 10,000)
@@ -680,18 +636,19 @@ export const loreCardsWikiRouter = createTRPCRouter({
         limit: z.number().min(1).max(20000).default(10000),
       })
     )
-    .query(async ({ input }) => {
-      try {
-        const titles = await wikiLoreCardGenerator.fetchAllMainNamespacePages(
-          input.source,
-          input.limit
-        );
-        return { titles, source: input.source, count: titles.length };
-      } catch (error) {
-        console.error("[Lore Cards] Error fetching all main namespace pages:", error);
-        return { titles: [], source: input.source, count: 0 };
-      }
-    }),
+    .query(({ input }) =>
+      orFallback(
+        "Error fetching all main namespace pages",
+        { titles: [], source: input.source, count: 0 },
+        async () => {
+          const titles = await wikiLoreCardGenerator.fetchAllMainNamespacePages(
+            input.source,
+            input.limit
+          );
+          return { titles, source: input.source, count: titles.length };
+        }
+      )
+    ),
 
   /**
    * Batch fetch article metadata (images, excerpts, categories, estimated values)
@@ -703,18 +660,15 @@ export const loreCardsWikiRouter = createTRPCRouter({
         source: z.enum(["ixwiki", "iiwiki"]).default("ixwiki"),
       })
     )
-    .query(async ({ input }) => {
-      try {
+    .query(({ input }) =>
+      orFallback("Error fetching article previews batch", { previews: [] }, async () => {
         const previews = await wikiLoreCardGenerator.fetchArticleMetadataBatch(
           input.titles,
           input.source
         );
         return { previews };
-      } catch (error) {
-        console.error("[Lore Cards] Error fetching article previews batch:", error);
-        return { previews: [] };
-      }
-    }),
+      })
+    ),
 
   /**
    * Resolve author info for a wiki article (Page Creator + Top Contributor)

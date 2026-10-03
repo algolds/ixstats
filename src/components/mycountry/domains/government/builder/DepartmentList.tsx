@@ -1,10 +1,4 @@
 "use client";
-/**
- * Department List Component
- *
- * Renders departments as a grid of Facet cards.
- * Clicking a card opens a centered Sheet modal to edit details and link atomic components.
- */
 
 import React, { useState } from "react";
 import { Button } from "~/components/ui/button";
@@ -44,16 +38,16 @@ interface DepartmentListProps {
   onGovernmentComponentsChange?: (components: ComponentType[]) => void;
 }
 
+const getPriorityLevel = (priority: number) =>
+  Math.max(1, Math.min(10, Math.round((priority || 50) / 10)));
+
 const getPriorityLabel = (priority: number) => {
-  const level = Math.max(1, Math.min(10, Math.round((priority || 50) / 10)));
+  const level = getPriorityLevel(priority);
   if (level <= 3) return "Reactive";
   if (level <= 6) return "Active";
   if (level <= 8) return "Strategic";
   return "Executive";
 };
-
-const getPriorityLevel = (priority: number) =>
-  Math.max(1, Math.min(10, Math.round((priority || 50) / 10)));
 
 /** A department's glyph: its chosen named icon, an uploaded logo, or the category icon. */
 function DepartmentGlyph({
@@ -78,6 +72,176 @@ function DepartmentGlyph({
     }
   }
   return <CategoryIcon aria-hidden="true" className={className} />;
+}
+
+/** Atomic components whose category (or name) matches the department's category. */
+function linkedComponents(department: DepartmentInput, governmentComponents: ComponentType[]) {
+  const deptCategory = department.category?.toLowerCase();
+  return governmentComponents.filter((compType) => {
+    const comp = ATOMIC_COMPONENTS[compType];
+    return (
+      comp &&
+      (comp.category?.toLowerCase() === deptCategory ||
+        comp.name?.toLowerCase().includes(deptCategory || ""))
+    );
+  });
+}
+
+function DepartmentCard({
+  department,
+  index,
+  hasError,
+  parent,
+  governmentComponents,
+  isReadOnly,
+  onEdit,
+  onRemove,
+}: {
+  department: DepartmentInput;
+  index: number;
+  hasError: boolean;
+  parent?: DepartmentInput;
+  governmentComponents: ComponentType[];
+  isReadOnly: boolean;
+  onEdit: () => void;
+  onRemove: () => void;
+}) {
+  const priorityLevel = getPriorityLevel(department.priority);
+  const activeLinkedComponents = linkedComponents(department, governmentComponents);
+  const displayName = department.name || `department ${index + 1}`;
+
+  return (
+    <div className="h-full">
+      <Card
+        interactive
+        className={cn("flex h-full flex-col justify-between", hasError && "border-destructive/40")}
+        onClick={onEdit}
+      >
+        <CardContent className="flex h-full flex-col justify-between space-y-4 p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <span
+                className={cn(
+                  "flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden",
+                  hasError ? "text-destructive" : "text-label-secondary"
+                )}
+              >
+                <DepartmentGlyph department={department} className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h4 className="text-label text-headline truncate">
+                    {department.name || `Department ${index + 1}`}
+                  </h4>
+                  {department.shortName && <Badge variant="outline">{department.shortName}</Badge>}
+                </div>
+                <Eyebrow>{department.category}</Eyebrow>
+              </div>
+            </div>
+
+            <div className="flex shrink-0 items-center gap-1">
+              {hasError && (
+                <Badge variant="destructive">
+                  <AlertTriangle aria-hidden="true" />
+                  Error
+                </Badge>
+              )}
+              {!isReadOnly && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Remove ${displayName}`}
+                  className="text-label-secondary hover:text-destructive h-8 w-8"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove();
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Edit ${displayName}`}
+                className="text-label-secondary h-8 w-8"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+              >
+                <Edit2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+
+          {department.description && (
+            <p className="text-label-secondary text-footnote line-clamp-2 leading-relaxed">
+              {department.description}
+            </p>
+          )}
+
+          <div className="border-separator space-y-2 border-t pt-3">
+            <div className="text-label-secondary text-footnote flex flex-wrap items-center justify-between gap-2">
+              <span className="text-label font-medium">
+                {department.ministerTitle || "Minister"}:{" "}
+                <span className="text-label-secondary font-normal">
+                  {department.minister || "Vacant"}
+                </span>
+              </span>
+              <span className="text-label flex items-center gap-2 font-medium tabular-nums">
+                Priority {priorityLevel}/10
+                <Badge variant="default">{getPriorityLabel(department.priority)}</Badge>
+              </span>
+            </div>
+
+            <Progress
+              value={priorityLevel * 10}
+              className="bg-fill-3 h-1.5"
+              indicatorClassName="bg-yellow"
+              aria-label="Department priority"
+            />
+
+            {parent && department.parentDepartmentId && (
+              <div className="text-label-secondary text-footnote mt-1 flex items-center gap-1">
+                <span>Reporting to:</span>
+                <span className="text-label truncate font-medium">
+                  {parent.name || `Department ${parseInt(department.parentDepartmentId) + 1}`}
+                </span>
+              </div>
+            )}
+          </div>
+        </CardContent>
+
+        <CardFooter className="border-separator mt-auto border-t px-5 py-3">
+          <div className="space-y-2">
+            <Eyebrow className="block">
+              Linked infrastructure ({activeLinkedComponents.length})
+            </Eyebrow>
+            {activeLinkedComponents.length > 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {activeLinkedComponents.map((compType) => {
+                  const comp = ATOMIC_COMPONENTS[compType];
+                  if (!comp) return null;
+                  const CompIcon = comp.icon;
+                  return (
+                    <Badge key={compType} variant="outline">
+                      {CompIcon && <CompIcon aria-hidden="true" className="text-label-secondary" />}
+                      <span className="max-w-[120px] truncate">{comp.name}</span>
+                    </Badge>
+                  );
+                })}
+              </div>
+            ) : (
+              <span className="text-label-secondary text-footnote block">
+                No governance components linked
+              </span>
+            )}
+          </div>
+        </CardFooter>
+      </Card>
+    </div>
+  );
 }
 
 export const DepartmentList = React.memo(function DepartmentList({
@@ -125,169 +289,23 @@ export const DepartmentList = React.memo(function DepartmentList({
       </div>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        {departments.map((department, index) => {
-          const hasError = !!validationErrors.departments?.[index];
-          const priorityLevel = getPriorityLevel(department.priority);
-
-          // Find active components linked to this category
-          const activeLinkedComponents = governmentComponents.filter((compType) => {
-            const comp = ATOMIC_COMPONENTS[compType];
-            if (!comp) return false;
-            const deptCategory = department.category?.toLowerCase();
-            return (
-              comp.category?.toLowerCase() === deptCategory ||
-              comp.name?.toLowerCase().includes(deptCategory || "")
-            );
-          });
-
-          const parent = department.parentDepartmentId
-            ? departments[parseInt(department.parentDepartmentId)]
-            : undefined;
-
-          return (
-            <div key={index} className="h-full">
-              <Card
-                interactive
-                className={cn(
-                  "flex h-full flex-col justify-between",
-                  hasError && "border-destructive/40"
-                )}
-                onClick={() => handleEditRow(index)}
-              >
-                <CardContent className="flex h-full flex-col justify-between space-y-4 p-5">
-                  {/* Header: title, acronym, category glyph */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span
-                        className={cn(
-                          "flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden",
-                          hasError ? "text-destructive" : "text-label-secondary"
-                        )}
-                      >
-                        <DepartmentGlyph department={department} className="h-5 w-5" />
-                      </span>
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h4 className="text-label text-headline truncate">
-                            {department.name || `Department ${index + 1}`}
-                          </h4>
-                          {department.shortName && (
-                            <Badge variant="outline">{department.shortName}</Badge>
-                          )}
-                        </div>
-                        <Eyebrow>{department.category}</Eyebrow>
-                      </div>
-                    </div>
-
-                    <div className="flex shrink-0 items-center gap-1">
-                      {hasError && (
-                        <Badge variant="destructive">
-                          <AlertTriangle aria-hidden="true" />
-                          Error
-                        </Badge>
-                      )}
-                      {!isReadOnly && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`Remove ${department.name || `department ${index + 1}`}`}
-                          className="text-label-secondary hover:text-destructive h-8 w-8"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onRemoveDepartment(index);
-                          }}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Edit ${department.name || `department ${index + 1}`}`}
-                        className="text-label-secondary h-8 w-8"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditRow(index);
-                        }}
-                      >
-                        <Edit2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {department.description && (
-                    <p className="text-label-secondary text-footnote line-clamp-2 leading-relaxed">
-                      {department.description}
-                    </p>
-                  )}
-
-                  {/* Minister & priority */}
-                  <div className="border-separator space-y-2 border-t pt-3">
-                    <div className="text-label-secondary text-footnote flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-label font-medium">
-                        {department.ministerTitle || "Minister"}:{" "}
-                        <span className="text-label-secondary font-normal">
-                          {department.minister || "Vacant"}
-                        </span>
-                      </span>
-                      <span className="text-label flex items-center gap-2 font-medium tabular-nums">
-                        Priority {priorityLevel}/10
-                        <Badge variant="default">{getPriorityLabel(department.priority)}</Badge>
-                      </span>
-                    </div>
-
-                    <Progress
-                      value={priorityLevel * 10}
-                      className="bg-fill-3 h-1.5"
-                      indicatorClassName="bg-yellow"
-                      aria-label="Department priority"
-                    />
-
-                    {parent && department.parentDepartmentId && (
-                      <div className="text-label-secondary text-footnote mt-1 flex items-center gap-1">
-                        <span>Reporting to:</span>
-                        <span className="text-label truncate font-medium">
-                          {parent.name ||
-                            `Department ${parseInt(department.parentDepartmentId) + 1}`}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-
-                {/* Footer: linked infrastructure */}
-                <CardFooter className="border-separator mt-auto border-t px-5 py-3">
-                  <div className="space-y-2">
-                    <Eyebrow className="block">
-                      Linked infrastructure ({activeLinkedComponents.length})
-                    </Eyebrow>
-                    {activeLinkedComponents.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {activeLinkedComponents.map((compType) => {
-                          const comp = ATOMIC_COMPONENTS[compType];
-                          if (!comp) return null;
-                          const CompIcon = comp.icon;
-                          return (
-                            <Badge key={compType} variant="outline">
-                              {CompIcon && (
-                                <CompIcon aria-hidden="true" className="text-label-secondary" />
-                              )}
-                              <span className="max-w-[120px] truncate">{comp.name}</span>
-                            </Badge>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <span className="text-label-secondary text-footnote block">
-                        No governance components linked
-                      </span>
-                    )}
-                  </div>
-                </CardFooter>
-              </Card>
-            </div>
-          );
-        })}
+        {departments.map((department, index) => (
+          <DepartmentCard
+            key={index}
+            department={department}
+            index={index}
+            hasError={!!validationErrors.departments?.[index]}
+            parent={
+              department.parentDepartmentId
+                ? departments[parseInt(department.parentDepartmentId)]
+                : undefined
+            }
+            governmentComponents={governmentComponents}
+            isReadOnly={isReadOnly}
+            onEdit={() => handleEditRow(index)}
+            onRemove={() => onRemoveDepartment(index)}
+          />
+        ))}
 
         {departments.length === 0 && (
           <div className="border-separator rounded-row col-span-full border border-dashed p-12 text-center">
@@ -306,7 +324,6 @@ export const DepartmentList = React.memo(function DepartmentList({
         )}
       </div>
 
-      {/* Sheet for department details */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent size="wide" className="overflow-y-auto">
           <SheetHeader className="border-separator border-b pb-4">

@@ -8,11 +8,10 @@ import { Button } from "~/components/ui/button";
 
 interface FeedGroupedDrawerProps {
   subEdits: any[];
-  isWiki: boolean;
   className?: string;
 }
 
-export function FeedGroupedDrawer({ subEdits, isWiki, className }: FeedGroupedDrawerProps) {
+export function FeedGroupedDrawer({ subEdits, className }: FeedGroupedDrawerProps) {
   const [expanded, setExpanded] = useState(false);
 
   if (!subEdits || subEdits.length <= 1) return null;
@@ -34,16 +33,14 @@ export function FeedGroupedDrawer({ subEdits, isWiki, className }: FeedGroupedDr
           )}
         />
         <span>
-          {expanded ? "Hide" : "Show"} {subEdits.length} {isWiki ? "edits" : "items"}
+          {expanded ? "Hide" : "Show"} {subEdits.length} items
         </span>
       </Button>
 
       {expanded && (
         <div className="bg-surface-secondary rounded-row mt-2 space-y-1 p-3">
           {subEdits.map((sub: any, i: number) => {
-            const subTitle = sub.content?.title ?? "";
-            const subDesc = sub.content?.description ?? "";
-            const display = isWiki ? subDesc.slice(0, 80) : subTitle.slice(0, 80);
+            const display = (sub.content?.title ?? "").slice(0, 80);
             return (
               <div
                 key={i}

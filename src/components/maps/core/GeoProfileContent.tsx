@@ -1,13 +1,6 @@
 "use client";
 
-/**
- * GeoProfileContent - Geographic analytics tab content for CountryInfoPanel.
- *
- * Displays climate distribution, elevation profile, hydrology, economic modifiers,
- * resources, and crisis risk for a country. Uses pure CSS bars (no chart library).
- *
- * Data source: geo.getCountryGeoProfile + resources.getCountryResources
- */
+/** Geography tab of CountryInfoPanel: climate, elevation, hydrology, modifiers, resources and risk (CSS bars only). */
 
 import { useState } from "react";
 import {
@@ -37,7 +30,7 @@ import {
 } from "~/lib/worldgen/climate-system";
 import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { Skeleton } from "~/components/ui/skeleton";
+import { GeoProfileSkeleton } from "./components/GeoProfileSkeleton";
 import { Button } from "~/components/ui/button";
 import { Stat } from "~/components/ui/stat";
 import { Card } from "~/components/ui/card";
@@ -115,15 +108,120 @@ function RiskBadge({ type, score }: { type: string; score: number }) {
   );
 }
 
+interface ZoneRow {
+  label: string;
+  percentArea: number;
+  color: string;
+  /** Extra right-aligned detail (e.g. an elevation range). */
+  detail?: string;
+}
+
+const ZoneSwatch = ({ color }: { color: string }) => (
+  <span
+    className="inline-block h-2.5 w-2.5 shrink-0 rounded-xs"
+    style={{ backgroundColor: color }}
+  />
+);
+
+function ZoneLegendRow({ row }: { row: ZoneRow }) {
+  return (
+    <>
+      <ZoneSwatch color={row.color} />
+      <span className="text-label flex-1 truncate">{row.label}</span>
+      <span className="text-label font-medium tabular-nums">{row.percentArea}%</span>
+      {row.detail && <span className="text-label-secondary tabular-nums">{row.detail}</span>}
+    </>
+  );
+}
+
+/** Stacked area bar with a dominant-zone summary that expands into the full legend. */
+function ZoneSection({
+  title,
+  noun,
+  rows,
+  dominantIndex,
+}: {
+  title: string;
+  noun: string;
+  rows: ZoneRow[];
+  dominantIndex: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const dominant = rows[dominantIndex];
+
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <Eyebrow>{title}</Eyebrow>
+        {rows.length > 1 && (
+          <span className="text-label-secondary text-footnote">{rows.length} zones</span>
+        )}
+      </div>
+
+      <button
+        type="button"
+        className="hover:ring-separator focus-visible:outline-tint mt-2 flex h-3 w-full cursor-pointer overflow-hidden rounded-full transition-shadow hover:ring-1 focus-visible:outline-2 focus-visible:outline-offset-2"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        aria-label={`Show all ${noun} zones`}
+        title="Click to expand all zones"
+      >
+        {rows.map((z, i) => (
+          <div
+            key={i}
+            className="h-full"
+            style={{
+              width: `${z.percentArea}%`,
+              backgroundColor: z.color,
+              minWidth: z.percentArea > 0 ? "2px" : "0",
+            }}
+          />
+        ))}
+      </button>
+
+      {dominant && !expanded && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setExpanded(true)}
+          aria-expanded={false}
+          className="mt-2 h-auto w-full justify-start px-1 py-1 font-normal"
+        >
+          <ZoneLegendRow row={dominant} />
+          {rows.length > 1 && <ChevronRight className="text-label-secondary h-3 w-3" />}
+        </Button>
+      )}
+
+      {expanded && (
+        <div className="mt-2 space-y-0.5">
+          {rows.map((z, i) => (
+            <div key={i} className="text-footnote flex items-center gap-2">
+              <ZoneLegendRow row={z} />
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setExpanded(false)}
+            aria-expanded
+            className="text-label-secondary hover:text-label -ml-2"
+          >
+            <ChevronDown className="h-3 w-3" /> Collapse
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface GeoProfileContentProps {
   countryId: string;
   countryName?: string;
 }
 
 export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
-  const [climateExpanded, setClimateExpanded] = useState(false);
-  const [elevationExpanded, setElevationExpanded] = useState(false);
-
   const { data: profile, isLoading } = api.geoCore.getCountryGeoProfile.useQuery(
     { countryId },
     { staleTime: 10 * 60_000, gcTime: 30 * 60_000 }
@@ -135,13 +233,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
   );
 
   if (isLoading) {
-    return (
-      <div className="space-y-3 py-2" aria-busy="true" aria-label="Loading geography">
-        <Skeleton className="rounded-control h-24 w-full" />
-        <Skeleton className="h-4 w-2/3 rounded-xs" />
-        <Skeleton className="h-4 w-1/2 rounded-xs" />
-      </div>
-    );
+    return <GeoProfileSkeleton />;
   }
 
   if (!profile) {
@@ -156,7 +248,6 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
   const elevationZones = profile.elevation.zones ?? [];
   const crisisRisk = profile.crisisRisk as unknown as Record<string, number> | undefined;
 
-  // Top 3 crisis risks
   const topRisks = crisisRisk
     ? Object.entries(crisisRisk)
         .sort(([, a], [, b]) => b - a)
@@ -165,7 +256,6 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
 
   return (
     <div className="space-y-4">
-      {/* ── Key Stats ── */}
       <div className="grid grid-cols-2 gap-2">
         <Card className="px-3 py-2">
           <Eyebrow className="flex items-center gap-2">
@@ -222,7 +312,6 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
         </Card>
       </div>
 
-      {/* ── Neighbors ── */}
       {profile.neighbors && profile.neighbors.length > 0 && (
         <div>
           <Eyebrow>
@@ -246,194 +335,37 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
         </div>
       )}
 
-      {/* ── Climate ── */}
-      {climateZones.length > 0 &&
-        (() => {
-          const dominant = climateZones[0]; // sorted by area desc from endpoint
-          return (
-            <div>
-              <div className="flex items-center justify-between">
-                <Eyebrow>Climate</Eyebrow>
-                {climateZones.length > 1 && (
-                  <span className="text-label-secondary text-footnote">
-                    {climateZones.length} zones
-                  </span>
-                )}
-              </div>
+      {climateZones.length > 0 && (
+        <ZoneSection
+          title="Climate"
+          noun="climate"
+          rows={climateZones.map((z) => ({
+            label: z.type,
+            percentArea: z.percentArea,
+            color: getClimateColor(z.type),
+          }))}
+          // sorted by area desc from the endpoint
+          dominantIndex={0}
+        />
+      )}
 
-              {/* Stacked bar */}
-              <button
-                type="button"
-                className="hover:ring-separator focus-visible:outline-tint mt-2 flex h-3 w-full cursor-pointer overflow-hidden rounded-full transition-shadow hover:ring-1 focus-visible:outline-2 focus-visible:outline-offset-2"
-                onClick={() => setClimateExpanded((v) => !v)}
-                aria-expanded={climateExpanded}
-                aria-label="Show all climate zones"
-                title="Click to expand all zones"
-              >
-                {climateZones.map((z, i) => (
-                  <div
-                    key={i}
-                    className="h-full"
-                    style={{
-                      width: `${z.percentArea}%`,
-                      backgroundColor: getClimateColor(z.type),
-                      minWidth: z.percentArea > 0 ? "2px" : "0",
-                    }}
-                  />
-                ))}
-              </button>
+      {elevationZones.length > 0 && (
+        <ZoneSection
+          title="Elevation"
+          noun="elevation"
+          rows={elevationZones.map((z) => ({
+            label: z.name,
+            percentArea: z.percentArea,
+            color: getElevationColor(z.name),
+            detail: `${z.minElev}–${z.maxElev}m`,
+          }))}
+          dominantIndex={elevationZones.reduce(
+            (best, z, i) => (z.areaSqKm > elevationZones[best]!.areaSqKm ? i : best),
+            0
+          )}
+        />
+      )}
 
-              {/* Dominant zone summary */}
-              {dominant && !climateExpanded && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setClimateExpanded(true)}
-                  aria-expanded={false}
-                  className="mt-2 h-auto w-full justify-start px-1 py-1 font-normal"
-                >
-                  <span
-                    className="inline-block h-2.5 w-2.5 shrink-0 rounded-xs"
-                    style={{ backgroundColor: getClimateColor(dominant.type) }}
-                  />
-                  <span className="text-label flex-1 truncate">{dominant.type}</span>
-                  <span className="text-label font-medium tabular-nums">
-                    {dominant.percentArea}%
-                  </span>
-                  {climateZones.length > 1 && (
-                    <ChevronRight className="text-label-secondary h-3 w-3" />
-                  )}
-                </Button>
-              )}
-
-              {/* Expanded legend */}
-              {climateExpanded && (
-                <div className="mt-2 space-y-0.5">
-                  {climateZones.map((z, i) => (
-                    <div key={i} className="text-footnote flex items-center gap-2">
-                      <span
-                        className="inline-block h-2.5 w-2.5 shrink-0 rounded-xs"
-                        style={{ backgroundColor: getClimateColor(z.type) }}
-                      />
-                      <span className="text-label flex-1 truncate">{z.type}</span>
-                      <span className="text-label font-medium tabular-nums">{z.percentArea}%</span>
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setClimateExpanded(false)}
-                    aria-expanded
-                    className="text-label-secondary hover:text-label -ml-2"
-                  >
-                    <ChevronDown className="h-3 w-3" /> Collapse
-                  </Button>
-                </div>
-              )}
-            </div>
-          );
-        })()}
-
-      {/* ── Elevation ── */}
-      {elevationZones.length > 0 &&
-        (() => {
-          // Find largest zone by area
-          const dominant = [...elevationZones].sort((a, b) => b.areaSqKm - a.areaSqKm)[0];
-          return (
-            <div>
-              <div className="flex items-center justify-between">
-                <Eyebrow>Elevation</Eyebrow>
-                {elevationZones.length > 1 && (
-                  <span className="text-label-secondary text-footnote">
-                    {elevationZones.length} zones
-                  </span>
-                )}
-              </div>
-
-              {/* Stacked bar */}
-              <button
-                type="button"
-                className="hover:ring-separator focus-visible:outline-tint mt-2 flex h-3 w-full cursor-pointer overflow-hidden rounded-full transition-shadow hover:ring-1 focus-visible:outline-2 focus-visible:outline-offset-2"
-                onClick={() => setElevationExpanded((v) => !v)}
-                aria-expanded={elevationExpanded}
-                aria-label="Show all elevation zones"
-                title="Click to expand all zones"
-              >
-                {elevationZones.map((z, i) => (
-                  <div
-                    key={i}
-                    className="h-full"
-                    style={{
-                      width: `${z.percentArea}%`,
-                      backgroundColor: getElevationColor(z.name),
-                      minWidth: z.percentArea > 0 ? "2px" : "0",
-                    }}
-                  />
-                ))}
-              </button>
-
-              {/* Dominant zone summary */}
-              {dominant && !elevationExpanded && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setElevationExpanded(true)}
-                  aria-expanded={false}
-                  className="mt-2 h-auto w-full justify-start px-1 py-1 font-normal"
-                >
-                  <span
-                    className="inline-block h-2.5 w-2.5 shrink-0 rounded-xs"
-                    style={{ backgroundColor: getElevationColor(dominant.name) }}
-                  />
-                  <span className="text-label flex-1 truncate">{dominant.name}</span>
-                  <span className="text-label font-medium tabular-nums">
-                    {dominant.percentArea}%
-                  </span>
-                  <span className="text-label-secondary tabular-nums">
-                    {dominant.minElev}–{dominant.maxElev}m
-                  </span>
-                  {elevationZones.length > 1 && (
-                    <ChevronRight className="text-label-secondary h-3 w-3" />
-                  )}
-                </Button>
-              )}
-
-              {/* Expanded legend */}
-              {elevationExpanded && (
-                <div className="mt-2 space-y-0.5">
-                  {elevationZones.map((z, i) => (
-                    <div key={i} className="text-footnote flex items-center gap-2">
-                      <span
-                        className="inline-block h-2.5 w-2.5 shrink-0 rounded-xs"
-                        style={{ backgroundColor: getElevationColor(z.name) }}
-                      />
-                      <span className="text-label flex-1 truncate">{z.name}</span>
-                      <span className="text-label font-medium tabular-nums">{z.percentArea}%</span>
-                      <span className="text-label-secondary tabular-nums">
-                        {z.minElev}–{z.maxElev}m
-                      </span>
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setElevationExpanded(false)}
-                    aria-expanded
-                    className="text-label-secondary hover:text-label -ml-2"
-                  >
-                    <ChevronDown className="h-3 w-3" /> Collapse
-                  </Button>
-                </div>
-              )}
-            </div>
-          );
-        })()}
-
-      {/* ── Water ── */}
       <div className="text-footnote flex flex-wrap gap-x-4 gap-y-0.5">
         <span className="text-label-secondary">
           {profile.hydro.riverCount} rivers · {profile.hydro.lakeCount} lakes ·{" "}
@@ -441,7 +373,6 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
         </span>
       </div>
 
-      {/* ── Economic Modifiers ── */}
       <div>
         <Eyebrow>Geographic modifiers</Eyebrow>
         <div className="mt-2 flex flex-wrap gap-2">
@@ -451,7 +382,6 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
         </div>
       </div>
 
-      {/* ── Resources ── */}
       {resources && resources.length > 0 && (
         <div>
           <Eyebrow>Resources ({resources.length})</Eyebrow>
@@ -485,7 +415,6 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
         </div>
       )}
 
-      {/* ── Crisis Risk ── */}
       {topRisks.length > 0 && (
         <div>
           <Eyebrow className="flex items-center gap-2">
@@ -500,7 +429,6 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
         </div>
       )}
 
-      {/* ── Dimensions (compact) ── */}
       <div className="text-label-secondary border-separator text-footnote flex flex-wrap gap-x-4 gap-y-0.5 border-t pt-2">
         <span>{profile.area.areaKm2.toLocaleString()} km²</span>
         <span>

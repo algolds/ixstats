@@ -1,4 +1,3 @@
-// src/server/services/wikimedia-equipment-image-resolver.ts
 /**
  * Wikimedia Equipment Image Resolver Service
  *
@@ -29,6 +28,13 @@ interface BatchResolveResult {
   result: WikimediaImageResult;
 }
 
+function failure(source: WikimediaImageResult["source"], error: string): WikimediaImageResult {
+  return { success: false, imageUrl: null, cached: false, source, timestamp: new Date(), error };
+}
+
+const errorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error ? error.message : fallback;
+
 /**
  * Resolve a single equipment image from Wikimedia
  */
@@ -40,14 +46,7 @@ export async function resolveEquipmentImage(equipmentId: string): Promise<Wikime
     });
 
     if (!equipment) {
-      return {
-        success: false,
-        imageUrl: null,
-        cached: false,
-        source: "database",
-        timestamp: new Date(),
-        error: "Equipment not found",
-      };
+      return failure("database", "Equipment not found");
     }
 
     // 2. Check if we have a valid cached URL (updated within 7 days)
@@ -91,24 +90,10 @@ export async function resolveEquipmentImage(equipmentId: string): Promise<Wikime
     }
 
     // 4. No image found
-    return {
-      success: false,
-      imageUrl: null,
-      cached: false,
-      source: "wikimedia_search",
-      timestamp: new Date(),
-      error: "No image found on Wikimedia Commons",
-    };
+    return failure("wikimedia_search", "No image found on Wikimedia Commons");
   } catch (error) {
     console.error("[WIKIMEDIA_RESOLVER] Error resolving image:", error);
-    return {
-      success: false,
-      imageUrl: null,
-      cached: false,
-      source: "database",
-      timestamp: new Date(),
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
+    return failure("database", errorMessage(error, "Unknown error"));
   }
 }
 
@@ -168,24 +153,10 @@ async function searchWikimediaForEquipment(
       }
     }
 
-    return {
-      success: false,
-      imageUrl: null,
-      cached: false,
-      source: "wikimedia_search",
-      timestamp: new Date(),
-      error: "No matching images found",
-    };
+    return failure("wikimedia_search", "No matching images found");
   } catch (error) {
     console.error("[WIKIMEDIA_RESOLVER] Search error:", error);
-    return {
-      success: false,
-      imageUrl: null,
-      cached: false,
-      source: "wikimedia_search",
-      timestamp: new Date(),
-      error: error instanceof Error ? error.message : "Search failed",
-    };
+    return failure("wikimedia_search", errorMessage(error, "Search failed"));
   }
 }
 
@@ -195,16 +166,18 @@ async function searchWikimediaForEquipment(
 async function queryWikimediaAPI(searchTerm: string): Promise<WikimediaImageResult> {
   try {
     const searchUrl = new URL("https://commons.wikimedia.org/w/api.php");
-    searchUrl.searchParams.set("action", "query");
-    searchUrl.searchParams.set("format", "json");
-    searchUrl.searchParams.set("generator", "search");
-    searchUrl.searchParams.set("gsrsearch", searchTerm);
-    searchUrl.searchParams.set("gsrnamespace", "6"); // File namespace
-    searchUrl.searchParams.set("gsrlimit", "3"); // Get top 3 results
-    searchUrl.searchParams.set("prop", "imageinfo");
-    searchUrl.searchParams.set("iiprop", "url");
-    searchUrl.searchParams.set("iiurlwidth", THUMBNAIL_WIDTH.toString());
-    searchUrl.searchParams.set("origin", "*");
+    searchUrl.search = new URLSearchParams({
+      action: "query",
+      format: "json",
+      generator: "search",
+      gsrsearch: searchTerm,
+      gsrnamespace: "6", // File namespace
+      gsrlimit: "3", // Top 3 results
+      prop: "imageinfo",
+      iiprop: "url",
+      iiurlwidth: String(THUMBNAIL_WIDTH),
+      origin: "*",
+    }).toString();
 
     const response = await fetch(searchUrl.toString(), {
       headers: {
@@ -220,19 +193,11 @@ async function queryWikimediaAPI(searchTerm: string): Promise<WikimediaImageResu
     const pages = data.query?.pages;
 
     if (!pages) {
-      return {
-        success: false,
-        imageUrl: null,
-        cached: false,
-        source: "wikimedia_api",
-        timestamp: new Date(),
-        error: "No results found",
-      };
+      return failure("wikimedia_api", "No results found");
     }
 
     // Get first valid image
-    for (const pageId in pages) {
-      const page = pages[pageId];
+    for (const page of Object.values<any>(pages)) {
       const imageInfo = page.imageinfo?.[0];
 
       if (imageInfo?.url) {
@@ -247,67 +212,40 @@ async function queryWikimediaAPI(searchTerm: string): Promise<WikimediaImageResu
       }
     }
 
-    return {
-      success: false,
-      imageUrl: null,
-      cached: false,
-      source: "wikimedia_api",
-      timestamp: new Date(),
-      error: "No valid image URLs found",
-    };
+    return failure("wikimedia_api", "No valid image URLs found");
   } catch (error) {
     console.error("[WIKIMEDIA_RESOLVER] API query error:", error);
-    return {
-      success: false,
-      imageUrl: null,
-      cached: false,
-      source: "wikimedia_api",
-      timestamp: new Date(),
-      error: error instanceof Error ? error.message : "API query failed",
-    };
+    return failure("wikimedia_api", errorMessage(error, "API query failed"));
   }
 }
 
 /**
  * Build intelligent search terms based on equipment name and category
  */
+/** Category-specific extra search phrases: [name keyword, phrase appended to the name]. */
+const CATEGORY_KEYWORDS: Record<string, [string, string][]> = {
+  aircraft: [
+    ["fighter", "fighter jet"],
+    ["bomber", "bomber aircraft"],
+    ["helicopter", "helicopter"],
+  ],
+  naval: [
+    ["carrier", "aircraft carrier"],
+    ["submarine", "submarine"],
+    ["destroyer", "destroyer ship"],
+  ],
+  vehicle: [
+    ["tank", "battle tank"],
+    ["apc", "armored personnel carrier"],
+  ],
+  missile: [["", "missile system"]],
+};
+
 function buildSearchTerms(name: string, category: string): string[] {
-  const terms: string[] = [];
+  const lowerName = name.toLowerCase();
+  const keyword = CATEGORY_KEYWORDS[category]?.find(([needle]) => lowerName.includes(needle));
 
-  // Primary: exact name with category
-  terms.push(`${name} ${category} military`);
-
-  // Secondary: exact name
-  terms.push(name);
-
-  // Tertiary: name with specific keywords based on category
-  if (category === "aircraft") {
-    if (name.toLowerCase().includes("fighter")) {
-      terms.push(`${name} fighter jet`);
-    } else if (name.toLowerCase().includes("bomber")) {
-      terms.push(`${name} bomber aircraft`);
-    } else if (name.toLowerCase().includes("helicopter")) {
-      terms.push(`${name} helicopter`);
-    }
-  } else if (category === "naval") {
-    if (name.toLowerCase().includes("carrier")) {
-      terms.push(`${name} aircraft carrier`);
-    } else if (name.toLowerCase().includes("submarine")) {
-      terms.push(`${name} submarine`);
-    } else if (name.toLowerCase().includes("destroyer")) {
-      terms.push(`${name} destroyer ship`);
-    }
-  } else if (category === "vehicle") {
-    if (name.toLowerCase().includes("tank")) {
-      terms.push(`${name} battle tank`);
-    } else if (name.toLowerCase().includes("apc")) {
-      terms.push(`${name} armored personnel carrier`);
-    }
-  } else if (category === "missile") {
-    terms.push(`${name} missile system`);
-  }
-
-  return terms;
+  return [`${name} ${category} military`, name, ...(keyword ? [`${name} ${keyword[1]}`] : [])];
 }
 
 /**

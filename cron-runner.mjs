@@ -17,51 +17,14 @@
  * NOTE: no top-level await — PM2's Bun fork container `require()`s this entry
  * file, which fails on top-level await. Everything runs inside main().
  */
-import { existsSync, readFileSync } from "fs";
-import { resolve } from "path";
-
-function loadEnvVariables() {
-  const cwd = process.cwd();
-  const mode = process.env.NODE_ENV || "development";
-  const envFiles =
-    mode === "production"
-      ? // .env.production.local holds the prod secrets (same list as ws-backend.mjs); first file wins.
-        [".env.production", ".env.local", ".env.production.local"]
-      : [".env.local.dev", ".env.local"];
-  envFiles.push(".env");
-
-  for (const file of envFiles) {
-    const absolutePath = resolve(cwd, file);
-    if (!existsSync(absolutePath)) continue;
-    try {
-      for (const rawLine of readFileSync(absolutePath, "utf8").split(/\r?\n/)) {
-        const line = rawLine.trim();
-        if (!line || line.startsWith("#")) continue;
-        const eq = line.indexOf("=");
-        if (eq === -1) continue;
-        const key = line.slice(0, eq).trim();
-        let value = line.slice(eq + 1).trim();
-        if (
-          (value.startsWith('"') && value.endsWith('"')) ||
-          (value.startsWith("'") && value.endsWith("'"))
-        ) {
-          value = value.slice(1, -1);
-        }
-        if (Object.prototype.hasOwnProperty.call(process.env, key)) continue;
-        process.env[key] = value;
-      }
-    } catch (error) {
-      console.warn(`[Cron] Failed to load env file ${file}:`, error.message);
-    }
-  }
-}
+import { loadEnvVariables } from "./load-env.mjs";
 
 async function main() {
   if (typeof Bun === "undefined") {
     console.error("[Cron] cron-runner.mjs must run under Bun");
     process.exit(1);
   }
-  loadEnvVariables();
+  loadEnvVariables("[Cron]");
 
   const [
     { CRON_JOBS, resolveEnabledJobs, resolveSchedule, summarizeResult },

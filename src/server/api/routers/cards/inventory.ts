@@ -11,6 +11,79 @@ import { getValuationConfig, junkValue } from "~/lib/cards/valuation";
 import { vaultService, LedgerError } from "~/lib/vault/vault-service";
 import { LoreCategory } from "~/lib/cards/category-enums";
 
+const NS_CARD_ORDER: Record<string, Record<string, string>[]> = {
+  marketValue: [{ marketValue: "desc" }],
+  marketValue_asc: [{ marketValue: "asc" }],
+  name: [{ title: "asc" }],
+  recent: [{ createdAt: "desc" }],
+  rarity: [{ marketValue: "desc" }],
+};
+
+/** Card-type filter as a Prisma where fragment. */
+function cardTypeWhere(filter: string): Record<string, unknown> {
+  switch (filter) {
+    case "all":
+      return {};
+    case "COMMONS_IMPORT":
+      return { cardType: "COMMONS_IMPORT" };
+    case "USER_CUSTOM":
+      return {
+        AND: [
+          {
+            OR: [
+              { cardType: { notIn: ["NS_IMPORT", "LORE", "LORE_BATCH", "COMMONS_IMPORT"] } },
+              { nsCardId: null },
+            ],
+          },
+          { cardType: { notIn: ["LORE", "LORE_BATCH", "COMMONS_IMPORT"] } },
+        ],
+      };
+    case "LORE":
+    case "LORE_BATCH":
+      return { OR: [{ cardType: { in: ["LORE_BATCH", "LORE"] } }, { category: { not: null } }] };
+    case "NS_IMPORT":
+      return { OR: [{ cardType: "NS_IMPORT" }, { nsCardId: { not: null } }] };
+    default:
+      return { cardType: filter };
+  }
+}
+
+/** Where clause for the NS card library; a search replaces any `OR` from the card-type filter. */
+function buildNSCardWhere(input: {
+  categoryFilter?: string;
+  cardTypeFilter: string;
+  season?: number;
+  rarity?: string;
+  isRetired?: boolean;
+  includeRetired?: boolean;
+  cteFilter: string;
+  search?: string;
+  region?: string;
+}) {
+  const term = input.search?.trim();
+  const retired = input.isRetired ?? (input.includeRetired ? undefined : false);
+  return {
+    ...(input.categoryFilter ? { category: input.categoryFilter } : {}),
+    ...cardTypeWhere(input.cardTypeFilter),
+    ...(input.season ? { season: input.season } : {}),
+    ...(input.rarity && Object.values(CardRarity).includes(input.rarity as CardRarity)
+      ? { rarity: input.rarity }
+      : {}),
+    ...(retired === undefined ? {} : { isRetired: retired }),
+    ...(input.cteFilter !== "all"
+      ? { metadata: { path: ["isCTE"], equals: input.cteFilter === "cte_only" } }
+      : {}),
+    ...(input.search
+      ? {
+          OR: ["title", "name", "slug", "wikiExcerpt"].map((field) => ({
+            [field]: { contains: term, mode: "insensitive" },
+          })),
+        }
+      : {}),
+    ...(input.region ? { stats: { path: ["region"], string_contains: input.region } } : {}),
+  };
+}
+
 /**
  * Cards Inventory & Library router
  */
@@ -222,93 +295,8 @@ export const cardsInventoryRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const where: Record<string, unknown> = {};
-
-        if (input.categoryFilter) {
-          where.category = input.categoryFilter;
-        }
-
-        if (input.cardTypeFilter && input.cardTypeFilter !== "all") {
-          if (input.cardTypeFilter === "COMMONS_IMPORT") {
-            where.cardType = "COMMONS_IMPORT";
-          } else if (input.cardTypeFilter === "USER_CUSTOM") {
-            where.AND = [
-              {
-                OR: [
-                  { cardType: { notIn: ["NS_IMPORT", "LORE", "LORE_BATCH", "COMMONS_IMPORT"] } },
-                  { nsCardId: null },
-                ],
-              },
-              {
-                cardType: { notIn: ["LORE", "LORE_BATCH", "COMMONS_IMPORT"] },
-              },
-            ];
-          } else if (input.cardTypeFilter === "LORE" || input.cardTypeFilter === "LORE_BATCH") {
-            where.OR = [{ cardType: { in: ["LORE_BATCH", "LORE"] } }, { category: { not: null } }];
-          } else if (input.cardTypeFilter === "NS_IMPORT") {
-            where.OR = [{ cardType: "NS_IMPORT" }, { nsCardId: { not: null } }];
-          } else {
-            where.cardType = input.cardTypeFilter;
-          }
-        }
-
-        if (input.season) {
-          where.season = input.season;
-        }
-
-        if (input.rarity && Object.values(CardRarity).includes(input.rarity as CardRarity)) {
-          where.rarity = input.rarity;
-        }
-
-        if (input.isRetired !== undefined) {
-          where.isRetired = input.isRetired;
-        } else if (!input.includeRetired) {
-          where.isRetired = false;
-        }
-
-        if (input.cteFilter && input.cteFilter !== "all") {
-          where.metadata = {
-            path: ["isCTE"],
-            equals: input.cteFilter === "cte_only",
-          };
-        }
-
-        if (input.search) {
-          const term = input.search.trim();
-          where.OR = [
-            { title: { contains: term, mode: "insensitive" } },
-            { name: { contains: term, mode: "insensitive" } },
-            { slug: { contains: term, mode: "insensitive" } },
-            { wikiExcerpt: { contains: term, mode: "insensitive" } },
-          ];
-        }
-
-        if (input.region) {
-          where.stats = {
-            path: ["region"],
-            string_contains: input.region,
-          };
-        }
-
-        let orderBy: Record<string, string>[];
-        switch (input.sortBy) {
-          case "marketValue":
-            orderBy = [{ marketValue: "desc" }];
-            break;
-          case "marketValue_asc":
-            orderBy = [{ marketValue: "asc" }];
-            break;
-          case "name":
-            orderBy = [{ title: "asc" }];
-            break;
-          case "recent":
-            orderBy = [{ createdAt: "desc" }];
-            break;
-          case "rarity":
-          default:
-            orderBy = [{ marketValue: "desc" }];
-            break;
-        }
+        const where = buildNSCardWhere(input);
+        const orderBy = NS_CARD_ORDER[input.sortBy] ?? NS_CARD_ORDER.marketValue;
 
         const [total, cards] = await Promise.all([
           ctx.db.card.count({ where: where as any }),
@@ -509,16 +497,10 @@ export const cardsInventoryRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[CARDS_ROUTER] Error in junkCards:", error);
-        if (error instanceof TRPCError) {
-          throw error;
-        }
         if (error instanceof LedgerError) {
           throw new TRPCError({ code: "PRECONDITION_FAILED", message: error.message });
         }
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to junk cards",
-        });
+        throw error;
       }
     }),
 });

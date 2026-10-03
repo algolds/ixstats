@@ -18,10 +18,10 @@ interface AuthSectionProps {
   isLoaded: boolean;
   greeting: string;
   countryName?: string;
-  router: ReturnType<typeof useRouter>;
 }
 
-export function AuthSection({ user, isLoaded, greeting, countryName, router }: AuthSectionProps) {
+export function AuthSection({ user, isLoaded, greeting, countryName }: AuthSectionProps) {
+  const router = useRouter();
   if (!isLoaded) {
     return <span className="text-label-secondary text-footnote">…</span>;
   }
@@ -72,7 +72,6 @@ export function AuthSection({ user, isLoaded, greeting, countryName, router }: A
         className="rounded-card mt-2 w-64 p-0"
         sideOffset={8}
       >
-        {/* Header */}
         <div className="border-separator flex items-center gap-3 border-b px-4 py-3">
           {user.imageUrl ? (
             <img
@@ -93,7 +92,6 @@ export function AuthSection({ user, isLoaded, greeting, countryName, router }: A
           </div>
         </div>
 
-        {/* Quick actions */}
         <div className="space-y-0.5 p-2">
           <Button
             variant="ghost"

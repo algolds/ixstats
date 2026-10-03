@@ -1,46 +1,33 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  ArrowRight,
-  CheckCircle,
-  DiceSix,
-  GitFork,
-  Search,
-  WarningCircle,
-  Xmark,
-} from "iconoir-react";
+import React, { useCallback, useEffect, useState } from "react";
+import { WarningCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
 import type { RouterOutputs } from "~/trpc/react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
-import { cn } from "~/lib/utils";
 import { useIxTimeStore } from "~/stores/ixtime-store";
 import {
   OFFERED_TIERS,
-  TONE_CLASSES,
   categoryLabel,
-  parseChangeLines,
   suggestedDomain,
-  tierMaySpawnResistance,
   tierMeta,
   type DirectiveCountrySignals,
   type OfferedTier,
 } from "~/components/mycountry/directives/directive-model";
 import { useCountryData } from "./CountryDataProvider";
-import { DirectivePresetsCatalog } from "./composer/DirectivePresetsCatalog";
 import {
   DIRECTIVE_DOMAINS,
   DIRECTIVE_PRESETS,
   type DirectiveDomain,
 } from "./composer/directive-presets";
 import { StepSection } from "./composer/StepSection";
+import { DeclaredCard } from "./composer/DeclaredCard";
+import { GoalStep, MAX_GOAL, MIN_GOAL } from "./composer/GoalStep";
 import { ApproachPicker } from "./composer/ApproachPicker";
 import { ImpactPreview } from "./composer/ImpactPreview";
 import { DeclarePanel } from "./composer/DeclarePanel";
-import { Card } from "~/components/ui/card";
 
 export type IntentCommitResult = RouterOutputs["intent"]["commit"];
 
@@ -61,12 +48,90 @@ interface IntentComposerProps {
   onViewActive?: () => void;
 }
 
-const MIN_GOAL = 2;
-const MAX_GOAL = 200;
+const randomItem = <T,>(items: readonly T[]): T | undefined =>
+  items[Math.floor(Math.random() * items.length)];
+
+/** A random preset from the domain the country most needs, else from any domain. */
+function randomPreset(signals: DirectiveCountrySignals) {
+  const domain = suggestedDomain(signals) ?? randomItem(DIRECTIVE_DOMAINS);
+  return randomItem(DIRECTIVE_PRESETS.filter((p) => p.domain === domain));
+}
 
 function isCompleteGoal(text: string): boolean {
   const t = text.trim();
   return t.length >= MIN_GOAL && !t.endsWith(":");
+}
+
+function SuggestErrorStep({
+  message,
+  onChangeGoal,
+  onRetry,
+}: {
+  message: string;
+  onChangeGoal: () => void;
+  onRetry: () => void;
+}) {
+  return (
+    <StepSection step={2} title="Choose an approach">
+      <Alert variant="destructive" className="border-destructive/30">
+        <WarningCircle aria-hidden />
+        <AlertDescription className="gap-2">
+          <p>{message}</p>
+          <div className="flex gap-2">
+            <Button variant="outline" className="text-label max-sm:h-11" onClick={onChangeGoal}>
+              Change goal
+            </Button>
+            <Button variant="ghost" className="text-label max-sm:h-11" onClick={onRetry}>
+              Try again
+            </Button>
+          </div>
+        </AlertDescription>
+      </Alert>
+    </StepSection>
+  );
+}
+
+/** The packages `intent.suggest` offers for a goal, and the one matching the chosen approach. */
+function useDirectiveSuggestions(countryId: string, goal: string, tier: OfferedTier) {
+  const suggest = api.intent.suggest.useQuery(
+    { countryId, goal },
+    { enabled: !!countryId && goal.length >= MIN_GOAL, retry: false, staleTime: 60_000 }
+  );
+  const brokerUnlocked = suggest.data?.broker?.unlocked ?? false;
+  const packages = (suggest.data?.packages ?? []).filter(
+    (p) =>
+      (OFFERED_TIERS as readonly string[]).includes(p.tier) &&
+      (p.tier !== "broker_unlocked" || brokerUnlocked)
+  );
+  const activePackage =
+    packages.find((p) => p.tier === tier) ?? packages.find((p) => p.tier === "moderate");
+  return { suggest, packages, activePackage };
+}
+
+function ProjectedImpactStep({
+  pkg,
+  broker,
+}: {
+  pkg: ReturnType<typeof useDirectiveSuggestions>["activePackage"];
+  broker: React.ComponentProps<typeof ImpactPreview>["broker"];
+}) {
+  return (
+    <StepSection
+      step={3}
+      title="Projected impact"
+      description={pkg ? `${tierMeta(pkg.tier).label} approach` : undefined}
+    >
+      {pkg ? (
+        <ImpactPreview pkg={pkg} broker={broker} />
+      ) : (
+        <div className="space-y-3" aria-busy="true">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="rounded-row h-24 w-full" />
+          <Skeleton className="rounded-row h-16 w-full" />
+        </div>
+      )}
+    </StepSection>
+  );
 }
 
 /**
@@ -107,24 +172,7 @@ export const IntentComposer = React.memo(function IntentComposer({
     { countryId },
     { enabled: !!countryId }
   );
-  const suggest = api.intent.suggest.useQuery(
-    { countryId, goal },
-    { enabled: !!countryId && goal.length >= MIN_GOAL, retry: false, staleTime: 60_000 }
-  );
-
-  const packages = useMemo(() => {
-    const brokerUnlocked = suggest.data?.broker?.unlocked ?? false;
-    return (suggest.data?.packages ?? []).filter(
-      (p) =>
-        (OFFERED_TIERS as readonly string[]).includes(p.tier) &&
-        (p.tier !== "broker_unlocked" || brokerUnlocked)
-    );
-  }, [suggest.data]);
-
-  const activePackage = useMemo(
-    () => packages.find((p) => p.tier === tier) ?? packages.find((p) => p.tier === "moderate"),
-    [packages, tier]
-  );
+  const { suggest, packages, activePackage } = useDirectiveSuggestions(countryId, goal, tier);
 
   const commit = api.intent.commit.useMutation({
     onSuccess: (res) => {
@@ -133,12 +181,16 @@ export const IntentComposer = React.memo(function IntentComposer({
       setQuery("");
       setErr(null);
       onFollowUpChange?.(null);
-      void utils.intent.getStatus.invalidate();
-      void utils.intent.getTree.invalidate();
-      void utils.policies.getPolicyReconContext.invalidate();
-      void utils.mycountry.getCanonFeed.invalidate();
-      void utils.nationalIssues.getMyIssues.invalidate();
-      void utils.countries.getByIdWithEconomicData.invalidate();
+      for (const endpoint of [
+        utils.intent.getStatus,
+        utils.intent.getTree,
+        utils.policies.getPolicyReconContext,
+        utils.mycountry.getCanonFeed,
+        utils.nationalIssues.getMyIssues,
+        utils.countries.getByIdWithEconomicData,
+      ]) {
+        void endpoint.invalidate();
+      }
       onCommitted?.(res);
     },
     onError: (e) => setErr(e.message),
@@ -158,15 +210,10 @@ export const IntentComposer = React.memo(function IntentComposer({
     setErr(null);
   }, []);
 
-  const suggestOne = useCallback(() => {
-    const signals = (country ?? {}) as DirectiveCountrySignals;
-    const pick =
-      suggestedDomain(signals) ??
-      DIRECTIVE_DOMAINS[Math.floor(Math.random() * DIRECTIVE_DOMAINS.length)]!;
-    const pool = DIRECTIVE_PRESETS.filter((p) => p.domain === pick);
-    const preset = pool[Math.floor(Math.random() * pool.length)];
+  const suggestOne = () => {
+    const preset = randomPreset((country ?? {}) as DirectiveCountrySignals);
     if (preset) chooseGoal(preset.label);
-  }, [country, chooseGoal]);
+  };
 
   const declare = () => {
     if (!activePackage || !goal) return;
@@ -179,172 +226,39 @@ export const IntentComposer = React.memo(function IntentComposer({
     });
   };
 
-  // ── Success ──────────────────────────────────────────────────────────────
   if (declared) {
-    const { res } = declared;
-    const changes = parseChangeLines(res.intent.changesJson);
-    const meta = tierMeta(res.intent.tier);
     return (
-      <Card
-        role="region"
-        aria-label="Directive declared"
-        aria-live="polite"
-        className="animate-in fade-in rounded-card p-4 duration-200 sm:p-6"
-      >
-        <div className="flex items-start gap-3">
-          <CheckCircle className={cn("mt-0.5 h-6 w-6 shrink-0", TONE_CLASSES.positive.text)} />
-          <div className="min-w-0 flex-1">
-            <h3 className="text-label text-title-3">Directive declared</h3>
-            <p className="text-label text-body mt-1 font-medium">{declared.goal}</p>
-            <p className="text-label-secondary text-body mt-1">
-              {meta.label} approach · {categoryLabel(res.intent.category)}
-              {res.intent.civCapCost ? ` · ${res.intent.civCapCost} CivCap held for a week` : ""}
-            </p>
-          </div>
-        </div>
-        {changes.length > 0 && (
-          <ul className="border-separator mt-4 space-y-2 border-t pt-4">
-            {changes.map((c, i) => (
-              <li key={i} className="text-label-secondary text-body first-letter:uppercase">
-                {c.label}
-              </li>
-            ))}
-          </ul>
-        )}
-        {tierMaySpawnResistance(res.intent.tier) && (
-          <p className="text-label-secondary text-footnote mt-4">
-            Watch your issues: a resistance issue may follow. It must be resolved before this
-            directive can be completed.
-          </p>
-        )}
-        <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-          {onViewActive && (
-            <Button className="max-sm:h-11" onClick={onViewActive}>
-              View active directives
-            </Button>
-          )}
-          {onFollowUpChange && (
-            <Button
-              variant="outline"
-              className="max-sm:h-11"
-              onClick={() => {
-                onFollowUpChange({ id: res.intent.id, goal: declared.goal });
+      <DeclaredCard
+        declared={declared}
+        onViewActive={onViewActive}
+        onFollowUp={
+          onFollowUpChange
+            ? () => {
+                onFollowUpChange({ id: declared.res.intent.id, goal: declared.goal });
                 setDeclared(null);
-              }}
-            >
-              <GitFork /> Build a follow-up
-            </Button>
-          )}
-          <Button variant="ghost" className="max-sm:h-11" onClick={() => setDeclared(null)}>
-            Declare another
-          </Button>
-        </div>
-      </Card>
-    );
-  }
-
-  // ── Step 1: goal ─────────────────────────────────────────────────────────
-  if (!goal) {
-    const trimmed = query.trim();
-    return (
-      <StepSection
-        step={1}
-        title="Choose a goal"
-        description="Pick a preset, or describe what you want your government to achieve."
-        action={
-          <Button variant="ghost" className="max-sm:h-11" onClick={suggestOne}>
-            <DiceSix /> <span className="hidden sm:inline">Suggest one</span>
-            <span className="sr-only sm:hidden">Suggest a goal</span>
-          </Button>
+              }
+            : undefined
         }
-      >
-        <div className="space-y-4">
-          {followUpOf && (
-            <Card
-              variant="inset"
-              padding="none"
-              className="text-footnote flex items-center gap-2 py-1 pr-1 pl-3"
-            >
-              <GitFork className="text-label-secondary h-4 w-4 shrink-0" aria-hidden />
-              <span className="text-label-secondary min-w-0 flex-1 truncate">
-                Follow-up to <span className="text-label font-medium">{followUpOf.goal}</span>
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onFollowUpChange?.(null)}
-                aria-label="Remove follow-up link"
-                className="text-label-secondary max-sm:h-11 max-sm:w-11"
-              >
-                <Xmark />
-              </Button>
-            </Card>
-          )}
-
-          <form
-            role="search"
-            onSubmit={(e) => {
-              e.preventDefault();
-              chooseGoal(query);
-            }}
-            className="space-y-2"
-          >
-            <label htmlFor="directive-goal" className="sr-only">
-              Goal
-            </label>
-            <div className="relative">
-              <Search
-                className="text-label-secondary pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
-                aria-hidden
-              />
-              <Input
-                id="directive-goal"
-                type="text"
-                value={query}
-                maxLength={MAX_GOAL}
-                autoComplete="off"
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search presets or type a goal, e.g. “cut youth unemployment”"
-                className="rounded-row focus-visible:border-yellow/60 focus-visible:ring-yellow/30 h-11 pr-11 pl-9"
-              />
-              {query && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setQuery("")}
-                  aria-label="Clear"
-                  className="text-label-secondary absolute top-1/2 right-1 -translate-y-1/2"
-                >
-                  <Xmark />
-                </Button>
-              )}
-            </div>
-            {trimmed.length >= MIN_GOAL && (
-              <Button
-                type="submit"
-                variant="outline"
-                className="rounded-row h-auto min-h-11 w-full justify-start gap-3 px-3 py-2 text-left"
-              >
-                <span className="text-label-secondary shrink-0">Use as a custom goal:</span>
-                <span className="text-label min-w-0 flex-1 truncate font-medium">{trimmed}</span>
-                <ArrowRight className="text-label-secondary" aria-hidden />
-              </Button>
-            )}
-          </form>
-
-          <DirectivePresetsCatalog
-            query={query}
-            domain={domain}
-            onDomainChange={setDomain}
-            onSelectGoal={chooseGoal}
-          />
-        </div>
-      </StepSection>
+        onDismiss={() => setDeclared(null)}
+      />
     );
   }
 
-  // ── Steps 2–4 ────────────────────────────────────────────────────────────
+  if (!goal) {
+    return (
+      <GoalStep
+        query={query}
+        onQueryChange={setQuery}
+        domain={domain}
+        onDomainChange={setDomain}
+        followUpOf={followUpOf}
+        onClearFollowUp={() => onFollowUpChange?.(null)}
+        onChooseGoal={chooseGoal}
+        onSuggest={suggestOne}
+      />
+    );
+  }
+
   const readOnly = !!isViewingOtherCountry || !!isPublicReadOnly;
   const suggestError = suggest.error?.message ?? null;
 
@@ -371,26 +285,11 @@ export const IntentComposer = React.memo(function IntentComposer({
       />
 
       {suggestError ? (
-        <StepSection step={2} title="Choose an approach">
-          <Alert variant="destructive" className="border-destructive/30">
-            <WarningCircle aria-hidden />
-            <AlertDescription className="gap-2">
-              <p>{suggestError}</p>
-              <div className="flex gap-2">
-                <Button variant="outline" className="text-label max-sm:h-11" onClick={changeGoal}>
-                  Change goal
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="text-label max-sm:h-11"
-                  onClick={() => void suggest.refetch()}
-                >
-                  Try again
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        </StepSection>
+        <SuggestErrorStep
+          message={suggestError}
+          onChangeGoal={changeGoal}
+          onRetry={() => void suggest.refetch()}
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] lg:items-start">
           <div className="min-w-0 space-y-4">
@@ -407,23 +306,7 @@ export const IntentComposer = React.memo(function IntentComposer({
               />
             </StepSection>
 
-            <StepSection
-              step={3}
-              title="Projected impact"
-              description={
-                activePackage ? `${tierMeta(activePackage.tier).label} approach` : undefined
-              }
-            >
-              {activePackage ? (
-                <ImpactPreview pkg={activePackage} broker={suggest.data?.broker ?? null} />
-              ) : (
-                <div className="space-y-3" aria-busy="true">
-                  <Skeleton className="h-4 w-40" />
-                  <Skeleton className="rounded-row h-24 w-full" />
-                  <Skeleton className="rounded-row h-16 w-full" />
-                </div>
-              )}
-            </StepSection>
+            <ProjectedImpactStep pkg={activePackage} broker={suggest.data?.broker ?? null} />
           </div>
 
           <StepSection

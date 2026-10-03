@@ -24,14 +24,10 @@ import {
 export class MessagingConversationOperations {
   private db: any;
   private websocket?: any;
-  private forumBridge?: any;
-  private wikiBridge?: any;
 
   constructor(dependencies: MessagingDependencies) {
     this.db = dependencies.db;
     this.websocket = dependencies.websocket;
-    this.forumBridge = dependencies.forumBridge;
-    this.wikiBridge = dependencies.wikiBridge;
   }
 
   public async createConversation(actorId: string, input: CreateConversationInput) {
@@ -165,25 +161,6 @@ export class MessagingConversationOperations {
     });
 
     return { success: true };
-  }
-
-  public async syncDiscussions(actorId: string) {
-    const results = {
-      forum: { synced: false },
-      wiki: { synced: false },
-    };
-
-    if (this.forumBridge?.syncInbound) {
-      await this.forumBridge.syncInbound(actorId, this.db);
-      results.forum.synced = true;
-    }
-
-    if (this.wikiBridge?.syncInbound) {
-      await this.wikiBridge.syncInbound(actorId, this.db);
-      results.wiki.synced = true;
-    }
-
-    return results;
   }
 
   public async sendAdminBroadcast(input: SendAdminBroadcastInput) {

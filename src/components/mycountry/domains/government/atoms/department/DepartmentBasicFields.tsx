@@ -128,7 +128,6 @@ export const DepartmentBasicFields = React.memo(function DepartmentBasicFields({
         />
       </div>
 
-      {/* Priority Level Slider */}
       <Card variant="inset" className="space-y-2 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h4 className="text-label text-headline">Operational priority</h4>

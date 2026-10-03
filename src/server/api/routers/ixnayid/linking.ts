@@ -18,7 +18,10 @@ import {
   fetchWikiUser,
   PROOF_SOURCES,
 } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
-import { createWikiLinkService, WikiLinkError } from "~/server/modules/identity/identity.wiki-links";
+import {
+  createWikiLinkService,
+  WikiLinkError,
+} from "~/server/modules/identity/identity.wiki-links";
 
 const wikiSourceInput = z.enum(PROOF_SOURCES);
 const wikiLinks = () => createWikiLinkService(db, { fetchWikiUser, fetchUserPageHistory });
@@ -48,26 +51,31 @@ function forumTrpcError(error: Error): never {
 
 function toTrpcError(error: Error): never {
   if (error instanceof WikiLinkError) {
-    const code = error.code === "WIKI_UNREACHABLE" ? "SERVICE_UNAVAILABLE" : error.code === "TAKEN" ? "CONFLICT" : "BAD_REQUEST";
+    const code =
+      error.code === "WIKI_UNREACHABLE"
+        ? "SERVICE_UNAVAILABLE"
+        : error.code === "TAKEN"
+          ? "CONFLICT"
+          : "BAD_REQUEST";
     throw new TRPCError({ code, message: error.message });
   }
   throw error;
 }
 
 export const ixnayidLinkingRouter = createTRPCRouter({
-  // =========================================================================
-  // VERIFIED WIKI ACCOUNT LINKING (token-on-user-page proof)
-  // =========================================================================
-
   listWikiLinks: protectedProcedure.query(({ ctx }) => wikiLinks().list(ctx.user.id)),
 
   startWikiVerification: lightMutationProcedure
     .input(z.object({ source: wikiSourceInput, username: z.string().trim().min(1).max(100) }))
-    .mutation(({ ctx, input }) => wikiLinks().start(ctx.user.id, input.source, input.username).catch(toTrpcError)),
+    .mutation(({ ctx, input }) =>
+      wikiLinks().start(ctx.user.id, input.source, input.username).catch(toTrpcError)
+    ),
 
   confirmWikiVerification: lightMutationProcedure
     .input(z.object({ source: wikiSourceInput }))
-    .mutation(({ ctx, input }) => wikiLinks().confirm(ctx.user.id, input.source).catch(toTrpcError)),
+    .mutation(({ ctx, input }) =>
+      wikiLinks().confirm(ctx.user.id, input.source).catch(toTrpcError)
+    ),
 
   unlinkWikiAccount: protectedProcedure
     .input(z.object({ source: wikiSourceInput }))
@@ -75,10 +83,6 @@ export const ixnayidLinkingRouter = createTRPCRouter({
       await wikiLinks().unlink(ctx.user.id, input.source);
       return { success: true };
     }),
-
-  // =========================================================================
-  // DISCORD LINKING
-  // =========================================================================
 
   linkDiscord: protectedProcedure.mutation(async ({ ctx }) => {
     const result = await linkDiscordAccount(ctx.user.id, ctx.auth.userId);
@@ -108,10 +112,6 @@ export const ixnayidLinkingRouter = createTRPCRouter({
     });
     return { success: true };
   }),
-
-  // =========================================================================
-  // VERIFIED FORUM LINKING (code-on-forum-profile proof, WK-1)
-  // =========================================================================
 
   /** Issue a short-lived code for the player to put on their XenForo profile. */
   startForumVerification: lightMutationProcedure

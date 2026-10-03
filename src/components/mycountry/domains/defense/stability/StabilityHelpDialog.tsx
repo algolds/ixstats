@@ -48,7 +48,6 @@ export const StabilityHelpDialog = React.memo(function StabilityHelpDialog() {
         </SheetHeader>
 
         <div className="text-body space-y-6">
-          {/* Overall Score */}
           <div className="space-y-2">
             <h4 className="flex items-center gap-2 font-semibold">
               <Users className="h-4 w-4" />
@@ -80,7 +79,6 @@ export const StabilityHelpDialog = React.memo(function StabilityHelpDialog() {
 
           <Separator />
 
-          {/* Crime Metrics */}
           <div className="space-y-2">
             <h4 className="flex items-center gap-2 font-semibold">
               <Shield className="h-4 w-4" />
@@ -115,7 +113,6 @@ export const StabilityHelpDialog = React.memo(function StabilityHelpDialog() {
 
           <Separator />
 
-          {/* Public Order */}
           <div className="space-y-2">
             <h4 className="flex items-center gap-2 font-semibold">
               <Activity className="h-4 w-4" />
@@ -143,7 +140,6 @@ export const StabilityHelpDialog = React.memo(function StabilityHelpDialog() {
 
           <Separator />
 
-          {/* Social Metrics */}
           <div className="space-y-2">
             <h4 className="flex items-center gap-2 font-semibold">
               <Heart className="h-4 w-4" />
@@ -171,7 +167,6 @@ export const StabilityHelpDialog = React.memo(function StabilityHelpDialog() {
 
           <Separator />
 
-          {/* Trust Metrics */}
           <div className="space-y-2">
             <h4 className="flex items-center gap-2 font-semibold">
               <Eye className="h-4 w-4" />
@@ -198,7 +193,6 @@ export const StabilityHelpDialog = React.memo(function StabilityHelpDialog() {
 
           <Separator />
 
-          {/* Event Generation */}
           <div className="space-y-2">
             <h4 className="flex items-center gap-2 font-semibold">
               <AlertTriangle className="h-4 w-4" />
@@ -250,7 +244,6 @@ export const StabilityHelpDialog = React.memo(function StabilityHelpDialog() {
 
           <Separator />
 
-          {/* Improvement Tips */}
           <div className="space-y-2">
             <h4 className="text-label font-semibold">How to improve stability</h4>
             <div className="text-footnote space-y-2 pl-4">

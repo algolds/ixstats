@@ -5,11 +5,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { createMessagingService } from "~/server/modules/messaging";
-import { notificationAPI } from "~/lib/notifications/api";
-import { getThinkPagesBroadcaster } from "~/server/websocket-server";
-import { forumBridge } from "~/server/modules/forum";
-import { wikiTalkBridge } from "~/server/bridges/wiki-talk-bridge";
+import { messagingFor, mapMessagingErrors } from "./_service";
 
 export const messagesParticipantsRouter = createTRPCRouter({
   /**
@@ -31,13 +27,7 @@ export const messagesParticipantsRouter = createTRPCRouter({
         });
       }
 
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
       return await messagingService.leaveConversation(principalId, {
         conversationId: input.conversationId,
@@ -55,34 +45,19 @@ export const messagesParticipantsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
-      try {
-        return await messagingService.addParticipant(ctx.auth.userId, {
-          conversationId: input.conversationId,
-          targetUserId: input.userId,
-        });
-      } catch (err: any) {
-        if (err.name === "MessagingForbiddenError") {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "You must be an active participant to add others",
-          });
+      return await mapMessagingErrors(
+        () =>
+          messagingService.addParticipant(ctx.auth.userId, {
+            conversationId: input.conversationId,
+            targetUserId: input.userId,
+          }),
+        {
+          forbidden: "You must be an active participant to add others",
+          notFound: "Conversation not found",
         }
-        if (err.name === "MessagingNotFoundError") {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Conversation not found",
-          });
-        }
-        throw err;
-      }
+      );
     }),
 
   /**
@@ -97,28 +72,16 @@ export const messagesParticipantsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
-      try {
-        return await messagingService.markMessagesAsRead(ctx.auth.userId, {
-          conversationId: input.conversationId,
-          messageIds: input.messageIds,
-        });
-      } catch (err: any) {
-        if (err.name === "MessagingForbiddenError") {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "You are not an active participant in this conversation",
-          });
-        }
-        throw err;
-      }
+      return await mapMessagingErrors(
+        () =>
+          messagingService.markMessagesAsRead(ctx.auth.userId, {
+            conversationId: input.conversationId,
+            messageIds: input.messageIds,
+          }),
+        { forbidden: "You are not an active participant in this conversation" }
+      );
     }),
 
   /**

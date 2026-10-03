@@ -15,8 +15,6 @@
 import { cleanWikiMarkup } from "~/lib/wiki-os/transformers/wikitext-parser";
 import type { PublicDirective, PublicIssueOutcome } from "~/lib/country/public-record";
 
-// ─── Wiki lore ──────────────────────────────────────────────────────────────
-
 interface WikiSection {
   title: string;
   level: number;
@@ -218,8 +216,6 @@ export function redirectTarget(wikitext: string | null | undefined): string | nu
   return match ? match[1]!.trim() : null;
 }
 
-// ─── Directives & issues (public record) ────────────────────────────────────
-
 // The public-record rules live in `~/lib/country/public-record` so the server
 // (`countries.getPublicRecord`, `intent.getTree` for visitors) and the profile share them.
 export {
@@ -242,8 +238,6 @@ export function countOwnerDirectives(intents: readonly { status: string }[] | nu
     active: list.filter((i) => i.status === "active").length,
   };
 }
-
-// ─── Chronicle ──────────────────────────────────────────────────────────────
 
 export type ChronicleKind = "founding" | "story" | "directive" | "decision" | "diplomacy";
 
@@ -451,8 +445,6 @@ export function splitCanonFeed(
   }
   return { decisions, diplomacy };
 }
-
-// ─── Formatting ─────────────────────────────────────────────────────────────
 
 /** Finite, non-zero-by-default number or null (never render a fabricated 0). */
 export function realNumber(value: unknown, { allowZero = false } = {}): number | null {

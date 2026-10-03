@@ -72,7 +72,6 @@ export const WizardStepReview = React.memo(function WizardStepReview({
       </div>
 
       <div className="space-y-5">
-        {/* Type & Title */}
         <div className="border-separator bg-surface rounded-row border p-4">
           <div className="flex items-start gap-3">
             {React.createElement(typeConfig.icon, {
@@ -86,7 +85,6 @@ export const WizardStepReview = React.memo(function WizardStepReview({
           </div>
         </div>
 
-        {/* Countries */}
         <div className="border-separator bg-surface rounded-row border p-4">
           <h5 className="text-label-secondary text-headline mb-3">Participating countries</h5>
           <div className="flex flex-col gap-3">
@@ -105,13 +103,11 @@ export const WizardStepReview = React.memo(function WizardStepReview({
           </div>
         </div>
 
-        {/* Narrative */}
         <div className="border-separator bg-surface rounded-row border p-4">
           <h5 className="text-label-secondary text-headline mb-2">Narrative</h5>
           <p className="text-label-secondary text-body">{data.narrative}</p>
         </div>
 
-        {/* Objectives */}
         <div className="border-separator bg-surface rounded-row border p-4">
           <h5 className="text-label-secondary text-headline mb-3">Objectives</h5>
           <div className="flex flex-wrap gap-2">
@@ -123,7 +119,6 @@ export const WizardStepReview = React.memo(function WizardStepReview({
           </div>
         </div>
 
-        {/* Details */}
         <div className="border-separator bg-surface rounded-row border p-4">
           <h5 className="text-label-secondary text-headline mb-3">Details</h5>
           <div className="grid grid-cols-2 gap-4">

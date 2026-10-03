@@ -46,14 +46,12 @@ export function AnalyticsLegend({ overlayVisibility, overlayData }: AnalyticsLeg
 
       {legend.type === "gradient" && (
         <div className="mt-2">
-          {/* Gradient bar */}
           <div
             className="h-2.5 w-full rounded-full"
             style={{
               background: `linear-gradient(to right, ${legend.stops.map((s) => s.color).join(", ")})`,
             }}
           />
-          {/* Labels below gradient */}
           <div className="mt-0.5 flex justify-between">
             {legend.stops
               .filter((s) => s.label)

@@ -34,7 +34,7 @@ interface IncomeDistributionRow {
   intergenerationalMobility?: number | null;
 }
 
-interface CountryEconomicRelations {
+export interface CountryEconomicRelations {
   economicProfile: EconomicProfileRow | null;
   laborMarket: LaborMarketRow | null;
   fiscalSystem: FiscalSystemRow | null;
