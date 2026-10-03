@@ -109,7 +109,7 @@ export function ThinktankHeader({
             alt=""
             className="size-full object-cover blur-[2px]"
           />
-          {/* v2 banner scrim: the artwork fades into the header surface. */}
+          {/* Banner scrim: the artwork fades into the header surface. */}
           <div className="from-surface/30 via-surface/70 to-surface absolute inset-0 bg-gradient-to-b" />
         </div>
       )}
@@ -127,8 +127,8 @@ export function ThinktankHeader({
                 onBack();
               }}
               className="text-label-secondary hover:text-label size-8 shrink-0 p-0 md:hidden"
-              title="Back to Directory"
-              aria-label="Back to Directory"
+              title="Back to directory"
+              aria-label="Back to directory"
             >
               <ArrowLeft />
             </Button>
@@ -163,11 +163,11 @@ export function ThinktankHeader({
             <div className="flex items-center gap-2">
               <h1 className="text-headline text-label truncate">{group.name}</h1>
               {group.type === "private" ? (
-                <span title="Private Group" className="inline-flex">
+                <span title="Private group" className="inline-flex">
                   <Lock className="text-orange size-3.5 shrink-0" aria-label="Private" />
                 </span>
               ) : (
-                <span title="Public Group" className="inline-flex">
+                <span title="Public group" className="inline-flex">
                   <Globe className="text-green size-3.5 shrink-0" aria-label="Public" />
                 </span>
               )}
@@ -213,8 +213,8 @@ export function ThinktankHeader({
                 onOpenSettings();
               }}
               className="text-label-secondary hover:text-label size-8 p-0"
-              title="Group Settings"
-              aria-label="Group Settings"
+              title="Group settings"
+              aria-label="Group settings"
             >
               <Settings />
             </Button>
@@ -235,7 +235,7 @@ export function ThinktankHeader({
           ) : (
             <Button size="sm" disabled={isJoining} onClick={onJoin}>
               <Plus />
-              Join Group
+              Join group
             </Button>
           )}
         </div>

@@ -9,7 +9,7 @@ import { stripBasePath } from "~/lib/base-path";
 
 const NAV_ITEMS = [
   { href: "/blurbs", icon: BookOpen, label: "Browse" },
-  { href: "/blurbs/mine", icon: User, label: "My Blurbs" },
+  { href: "/blurbs/mine", icon: User, label: "My blurbs" },
   { href: "/blurbs/submit", icon: PenLine, label: "Submit" },
 ] as const;
 

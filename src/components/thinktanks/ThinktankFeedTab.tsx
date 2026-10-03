@@ -75,7 +75,7 @@ export function ThinktankFeedTab({
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [mediaUrlInput, setMediaUrlInput] = useState("");
   const [showMediaInput, setShowMediaInput] = useState(false);
-  /** The post awaiting the moderator's removal confirmation (AlertDialog, spec §7.3). */
+  /** The post awaiting the moderator's removal confirmation. */
   const [pendingRemovePostId, setPendingRemovePostId] = useState<string | null>(null);
 
   // Queries
@@ -98,7 +98,7 @@ export function ThinktankFeedTab({
   const joinMutation = api.thinkpages.joinThinktank.useMutation({
     onSuccess: () => {
       soundEffects.success();
-      notify.success("Joined group successfully!");
+      notify.success("Joined group");
       void utils.thinkpages.getThinktankById.invalidate({ groupId });
       void utils.thinkpages.getThinktanks.invalidate();
       void utils.thinkpages.getGroupFeed.invalidate({ groupId });
@@ -114,7 +114,7 @@ export function ThinktankFeedTab({
   const createPostMutation = api.thinkpages.createGroupPost.useMutation({
     onSuccess: () => {
       soundEffects.success();
-      notify.success("Note published to group feed!");
+      notify.success("Note published to group feed");
       setPostContent("");
       setMediaUrlInput("");
       setShowMediaInput(false);
@@ -305,8 +305,8 @@ export function ThinktankFeedTab({
             <Card>
               <EmptyState
                 icon={<RssFeed />}
-                title="No Notes or Updates Yet"
-                message="Be the first to share an idea, note to self, or update in this group."
+                title="No notes or updates yet"
+                message="Share an idea or update to start the feed."
               />
             </Card>
           ) : (
@@ -463,7 +463,7 @@ export function ThinktankFeedTab({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ── Floating Frosted Glass Overlay (Apple Design) ── */}
+      {/* ── Floating overlay ── */}
       {!isMember && !readOnly && (
         <div className="absolute inset-0 z-10 flex items-center justify-center p-4">
           <motion.div

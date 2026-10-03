@@ -78,7 +78,7 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
       onClick={onClick}
       aria-current={isSelected || undefined}
       className={cn(
-        "group rounded-row relative flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left transition-[background-color,scale] duration-150 select-none active:scale-[0.98]",
+        "group rounded-row relative flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left transition-colors duration-150 select-none",
         isSelected ? "bg-tint-fill text-label" : "hover:bg-fill-4 text-label hover:text-label"
       )}
     >

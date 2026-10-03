@@ -50,7 +50,7 @@ export function MessagesNewConversationModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MessageSquare className="text-tint size-5" aria-hidden="true" />
-            New Conversation
+            New conversation
           </DialogTitle>
         </DialogHeader>
 
@@ -66,7 +66,7 @@ export function MessagesNewConversationModal({
                     <MessageSquare className="size-4" aria-hidden="true" />
                   </span>
                 }
-                title="Message Myself"
+                title="Message myself"
                 subtitle="Save notes and drafts"
               />
             </FacetListSection>

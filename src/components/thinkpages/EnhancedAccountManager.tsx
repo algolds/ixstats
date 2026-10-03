@@ -185,7 +185,7 @@ export function EnhancedAccountManager({
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => toggleFavorite(account.id)}>
                 <Star />
-                {isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+                {isFavorite ? "Remove from favorites" : "Add to favorites"}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onAccountSettings(account)}>
                 <Settings />
@@ -287,7 +287,7 @@ export function EnhancedAccountManager({
                 isOwner ? (
                   <Button variant="outline" size="sm" onClick={onCreateAccount}>
                     <Plus aria-hidden="true" />
-                    Create Account
+                    Create account
                   </Button>
                 ) : undefined
               }
@@ -348,7 +348,7 @@ export function EnhancedAccountManager({
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-title-3 text-label">Account Manager</h3>
+          <h3 className="text-title-3 text-label">Account manager</h3>
           <Badge variant="outline" className="tabular-nums">
             {accounts.length}/25
           </Badge>

@@ -9,10 +9,10 @@ import { PortalTintSync } from "~/components/providers/PortalTintSync";
 
 export const metadata: Metadata = {
   title: {
-    template: "%s — IxForum",
-    default: "IxForum — Community Discussion",
+    template: "%s | IxForum",
+    default: "IxForum | Community discussion",
   },
-  description: "IxForum — the native forum experience for the Ixnay community",
+  description: "The IxForum community forum for Ixnay.",
   openGraph: {
     siteName: "IxForum",
     type: "website",

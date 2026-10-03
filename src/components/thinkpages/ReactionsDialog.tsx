@@ -112,7 +112,7 @@ export function ReactionsDialog({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="flex max-h-[580px] flex-col gap-0 overflow-hidden p-0 sm:max-w-md">
         <DialogHeader className="border-separator border-b px-6 py-4 text-left">
-          <DialogTitle className="text-title-3">Post Activity</DialogTitle>
+          <DialogTitle className="text-title-3">Post activity</DialogTitle>
           <DialogDescription>View interactions and reactions</DialogDescription>
         </DialogHeader>
 
@@ -139,7 +139,7 @@ export function ReactionsDialog({
             >
               <a href={discordMsgUrl} target="_blank" rel="noopener noreferrer">
                 <MessageSquare aria-hidden="true" />
-                Open Original Discord Post
+                Open original Discord post
               </a>
             </Button>
           </div>
@@ -223,9 +223,7 @@ export function ReactionsDialog({
                           }
                           className={cn(
                             "shrink-0 transition-transform",
-                            reaction.account.isDiscordUser
-                              ? "cursor-default"
-                              : "active:scale-[0.98]"
+                            reaction.account.isDiscordUser && "cursor-default"
                           )}
                           disabled={!!reaction.account.isDiscordUser}
                         >

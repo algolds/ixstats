@@ -129,7 +129,7 @@ export function ThinktankRosterTab({
             className="col-span-full py-16"
             icon={<User />}
             title="No matching members found"
-            message={"Try refining your search query."}
+            message="Try a different search."
           />
         ) : (
           filteredMembers.map((member) => {

@@ -115,7 +115,7 @@ function SystemBroadcastCard({ item, onDismiss }: { item: any; onDismiss?: () =>
           <div className="mt-2 flex items-center gap-2">
             <Button asChild variant="secondary" size="sm">
               <Link href={item.href}>
-                <span>Open Details</span>
+                <span>Open details</span>
                 <ExternalLink aria-hidden="true" />
               </Link>
             </Button>
@@ -559,7 +559,7 @@ export function MessagesChatPanel({
                 message={
                   searchQuery
                     ? `No bulletins match "${searchQuery}"`
-                    : "Platform announcements and simulation updates will appear here."
+                    : "No platform announcements or simulation updates have been sent."
                 }
               />
             ) : (

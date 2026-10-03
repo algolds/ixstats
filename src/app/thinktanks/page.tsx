@@ -3,9 +3,9 @@ import { type Metadata } from "next";
 import { ThinktankWorkspace } from "~/components/thinktanks/ThinktankWorkspace";
 
 export const metadata: Metadata = {
-  title: "ThinkTanks — Academic Groups & Collaborative Research | IxStates",
+  title: "ThinkTanks | IxStates",
   description:
-    "Join institutional ThinkTanks, collaborate on working papers, publish group thinks, and engage in real-time diplomatic deliberations.",
+    "Join ThinkTanks, collaborate on working papers, publish group thinks and join diplomatic discussions.",
 };
 
 export default function ThinktanksPage() {

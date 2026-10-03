@@ -83,7 +83,7 @@ export function ThinktankPapersTab({
   const createDocMutation = api.thinkpages.createThinktankDocument.useMutation({
     onSuccess: (newDoc: any) => {
       soundEffects.success();
-      notify.success("Working Paper drafted successfully!");
+      notify.success("Working Paper drafted");
       setIsCreating(false);
       setSelectedDocId(newDoc.id);
       void utils.thinkpages.getThinktankDocuments.invalidate({ groupId });
@@ -97,7 +97,7 @@ export function ThinktankPapersTab({
   const updateDocMutation = api.thinkpages.updateThinktankDocument.useMutation({
     onSuccess: () => {
       soundEffects.success();
-      notify.success("Paper updated successfully!");
+      notify.success("Paper updated");
       setIsEditing(false);
       void utils.thinkpages.getThinktankDocuments.invalidate({ groupId });
     },
@@ -357,7 +357,7 @@ export function ThinktankPapersTab({
         ) : (
           <div className="text-label-secondary flex h-full flex-col items-center justify-center p-8 text-center">
             <Book className="text-label-tertiary h-10 w-10" />
-            <h3 className="text-label text-headline mt-3">Select a Document</h3>
+            <h3 className="text-label text-headline mt-3">Select a document</h3>
             <p className="text-footnote mt-1 max-w-sm">
               Choose a document from the list on the left to read or edit.
             </p>

@@ -52,7 +52,7 @@ export function ComposerPollModal({
         <DialogHeader>
           <DialogTitle className="text-title-3 flex items-center gap-2">
             <Vote className="text-tint size-5" aria-hidden="true" />
-            Configure Poll Draft
+            Configure poll draft
           </DialogTitle>
           <DialogDescription className="sr-only">
             Set the poll question, type and options.
@@ -77,7 +77,7 @@ export function ComposerPollModal({
         {/* Poll Type & Multiple Options */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
-            <span className="text-subhead text-label block">Poll Type</span>
+            <span className="text-subhead text-label block">Poll type</span>
             <Select
               value={pollDraft.pollType}
               onValueChange={(val: "choice" | "feature-poll") =>
@@ -88,11 +88,11 @@ export function ComposerPollModal({
               }
             >
               <SelectTrigger aria-label="Poll type">
-                <SelectValue placeholder="Select Poll Type" />
+                <SelectValue placeholder="Select poll type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="choice">Choice Poll</SelectItem>
-                {!isRegularUser && <SelectItem value="feature-poll">Feature Poll</SelectItem>}
+                <SelectItem value="choice">Choice poll</SelectItem>
+                {!isRegularUser && <SelectItem value="feature-poll">Feature poll</SelectItem>}
               </SelectContent>
             </Select>
           </div>
@@ -108,7 +108,7 @@ export function ComposerPollModal({
                 htmlFor="modal-poll-multiple-toggle"
                 className="text-body text-label cursor-pointer"
               >
-                Multiple Selection
+                Multiple selection
               </label>
             </div>
           </div>
@@ -210,7 +210,7 @@ export function ComposerPollModal({
             }}
             className="text-destructive hover:text-destructive"
           >
-            Discard Poll
+            Discard poll
           </Button>
           <Button
             type="button"
@@ -225,10 +225,10 @@ export function ComposerPollModal({
                 return;
               }
               setShowPollModal(false);
-              notify.success("Poll configured successfully!");
+              notify.success("Poll configured");
             }}
           >
-            Save & Apply
+            Save & apply
           </Button>
         </DialogFooter>
       </DialogContent>

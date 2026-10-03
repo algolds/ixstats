@@ -74,11 +74,11 @@ export function PostModals({
 }: PostModalsProps) {
   return (
     <>
-      {/* Delete confirmation — a destructive decision (AlertDialog, spec §7.3) */}
+      {/* Delete confirmation */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Post</AlertDialogTitle>
+            <AlertDialogTitle>Delete post</AlertDialogTitle>
             <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -111,7 +111,7 @@ export function PostModals({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Flag className="text-warning size-5" aria-hidden="true" />
-              Report Post
+              Report post
             </DialogTitle>
             <DialogDescription>Help us understand what is wrong.</DialogDescription>
           </DialogHeader>
@@ -133,7 +133,7 @@ export function PostModals({
               Cancel
             </Button>
             <Button onClick={handleSubmitFlag} disabled={!flagReason.trim() || isFlagPending}>
-              {isFlagPending ? "Flagging..." : "Report Post"}
+              {isFlagPending ? "Flagging..." : "Report post"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -177,7 +177,7 @@ export function PostModals({
                 onClick={() => window.open(lightboxMedia.url, "_blank")}
               >
                 <ExternalLink aria-hidden="true" />
-                Open Original
+                Open original
               </Button>
               <div className="bg-separator h-4 w-px" aria-hidden="true" />
               <Button
@@ -185,11 +185,11 @@ export function PostModals({
                 size="sm"
                 onClick={() => {
                   navigator.clipboard.writeText(lightboxMedia.url);
-                  notify.success("Image URL copied to clipboard!");
+                  notify.success("Image URL copied to clipboard");
                 }}
               >
                 <Copy aria-hidden="true" />
-                Copy Link
+                Copy link
               </Button>
               <div className="bg-separator h-4 w-px" aria-hidden="true" />
               <Button variant="secondary" size="sm" onClick={() => setLightboxMedia(null)}>

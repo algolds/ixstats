@@ -67,13 +67,13 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
             </div>
             <p className="text-footnote text-label-secondary flex items-center gap-2 tabular-nums">
               {isChampionBulletin ? (
-                <span>Final Season Standings</span>
+                <span>Final season standings</span>
               ) : isPlayoffBulletin ? (
                 <span>{roundName || "Playoffs"}</span>
               ) : matchDay ? (
                 <span>Matchday {matchDay}</span>
               ) : (
-                <span>Official League Bulletin</span>
+                <span>Official league bulletin</span>
               )}
             </p>
           </div>
@@ -98,14 +98,14 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
               <Trophy className="size-6" aria-hidden="true" />
             </div>
             <div>
-              <Eyebrow className="text-yellow">League Champion</Eyebrow>
+              <Eyebrow className="text-yellow">League champion</Eyebrow>
               <h3 className="text-title-3 text-label">{championName}</h3>
             </div>
           </div>
           {championId && (
             <Button asChild variant="secondary" size="sm">
               <Link href={`/myclub/${championId}`}>
-                <span>View Club</span>
+                <span>View club</span>
                 <ChevronRight aria-hidden="true" />
               </Link>
             </Button>
@@ -205,7 +205,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
         <div className="border-separator flex items-center justify-end border-t px-4 py-2">
           <Button asChild variant="secondary" size="sm">
             <Link href={leagueHref}>
-              <span>Open League</span>
+              <span>Open league</span>
               <ChevronRight aria-hidden="true" />
             </Link>
           </Button>

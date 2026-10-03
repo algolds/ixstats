@@ -51,13 +51,13 @@ export function AccountDetailsForm({
         <Button variant="ghost" size="icon-sm" onClick={onBack} aria-label="Back to account type">
           <ArrowLeft />
         </Button>
-        <h3 className="text-headline text-label">Account Details</h3>
+        <h3 className="text-headline text-label">Account details</h3>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="thinkpages-first-name" className="text-subhead text-label mb-2 block">
-            First Name
+            First name
           </label>
           <Input
             id="thinkpages-first-name"
@@ -89,7 +89,7 @@ export function AccountDetailsForm({
       {/* Username Handle */}
       <div>
         <label htmlFor="thinkpages-username" className="text-subhead text-label mb-2 block">
-          Username Handle
+          Username handle
         </label>
         <div className="relative">
           <span className="text-body text-label-secondary absolute inset-y-0 left-3 flex items-center">
@@ -164,13 +164,13 @@ export function AccountDetailsForm({
               />
             ) : (
               <div className="text-footnote text-label-secondary flex size-full items-center justify-center">
-                No Image
+                No image
               </div>
             )}
           </div>
           <div className="flex flex-col gap-2">
             <Button type="button" variant="secondary" size="sm" onClick={onOpenImageSearch}>
-              Search Repository
+              Search repository
             </Button>
             {formData.profileImageUrl && (
               <Button
@@ -180,7 +180,7 @@ export function AccountDetailsForm({
                 onClick={() => setFormData((p: any) => ({ ...p, profileImageUrl: "" }))}
                 className="text-destructive hover:text-destructive"
               >
-                Remove Image
+                Remove image
               </Button>
             )}
           </div>

@@ -168,7 +168,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
   }[] = [
     { id: "all", label: "All Lorefeed", icon: BookOpen },
     { id: "watchlist", label: `Watchlist (${watchlistItems?.length ?? 0})`, icon: Eye },
-    { id: "recent", label: "Recent Edits", icon: Edit3 },
+    { id: "recent", label: "Recent edits", icon: Edit3 },
     { id: "stash", label: "Stashes", icon: Bookmark },
   ];
 
@@ -221,7 +221,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
             message={
               searchQuery
                 ? `No articles match "${searchQuery}" in this filter.`
-                : "Watch pages in WikiOS to receive personalized live dispatches right here."
+                : "Watch pages in WikiOS to follow their changes here."
             }
             action={
               <Button asChild variant="secondary" size="sm">
@@ -250,7 +250,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                     {item.type === "new" ? (
                       <Badge variant="success">
                         <FilePlus aria-hidden="true" />
-                        New Article
+                        New article
                       </Badge>
                     ) : item.type === "watchlist" ? (
                       <Badge variant="warning">

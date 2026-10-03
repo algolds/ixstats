@@ -11,7 +11,6 @@ import {
   Activity,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { facetAccentStyle, type FacetAccent } from "~/lib/design/identity";
 import { formatCompact } from "~/lib/format/compact";
 import { api } from "~/trpc/react";
 import { GlassLineChart, GlassBarChart, GlassPieChart } from "~/components/shared/charts";
@@ -37,40 +36,20 @@ interface LiveDataCardProps {
   };
 }
 
-/**
- * Inset data panel inside a post: icon + title, a meta caption, the chart and a footer row. `accent`
- * is the data domain colour (v2: a 20% border and a 5% wash in the domain hue) through the Facet 3.1
- * scoped accent (`facetAccentStyle`, spec §16.8) — `--tint` (focus, links) is left alone.
- */
+/** Inset data panel inside a post: icon + title, a meta caption, the chart and a footer row. */
 function DataCardFrame({
   icon,
   title,
   meta,
-  accent,
   children,
 }: {
   icon: React.ReactNode;
   title: string;
   meta: React.ReactNode;
-  /** The data domain colour, a system colour role (e.g. `"blue"`). */
-  accent?: FacetAccent;
   children: React.ReactNode;
 }) {
   return (
-    <div
-      data-accent={accent}
-      className={cn(
-        "bg-surface-secondary rounded-row relative isolate overflow-hidden border p-3",
-        accent ? "border-facet-accent/20" : "border-separator"
-      )}
-      style={facetAccentStyle(accent)}
-    >
-      {accent && (
-        <span
-          aria-hidden="true"
-          className="bg-facet-accent/5 pointer-events-none absolute inset-0 -z-10"
-        />
-      )}
+    <div className="bg-surface-secondary rounded-row border-separator overflow-hidden border p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="text-headline text-label flex items-center gap-2 [&_svg]:size-4 [&_svg]:shrink-0">
           {icon}
@@ -196,12 +175,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     const currentGdp = rawHistory[rawHistory.length - 1]?.totalGdp || 0;
 
     return (
-      <DataCardFrame
-        icon={<TrendingUp className="text-blue" />}
-        accent="blue"
-        title={title}
-        meta="GDP Growth"
-      >
+      <DataCardFrame icon={<TrendingUp className="text-blue" />} title={title} meta="GDP Growth">
         <div className="h-[125px] w-full">
           <GlassLineChart
             data={chartPoints}
@@ -216,7 +190,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <DataCardFooter label="Recent Trajectory">
+        <DataCardFooter label="Recent trajectory">
           <span className="text-label font-semibold tabular-nums">
             Current: {formatMoney(currentGdp)}
           </span>
@@ -244,7 +218,6 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     return (
       <DataCardFrame
         icon={<Globe className="text-teal" />}
-        accent="teal"
         title={title}
         meta={`${relations.length || 3} Connections`}
       >
@@ -261,7 +234,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <DataCardFooter label="Global Network">
+        <DataCardFooter label="Global network">
           <span className="text-label font-semibold tabular-nums">
             Top {activeRelations.length} Relations
           </span>
@@ -283,9 +256,8 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     return (
       <DataCardFrame
         icon={<BarChart3 className="text-orange" />}
-        accent="orange"
         title={title}
-        meta="Flow Dynamics"
+        meta="Flow dynamics"
       >
         <div className="h-[125px] w-full">
           <GlassPieChart
@@ -300,7 +272,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <DataCardFooter label="Net Balance">
+        <DataCardFooter label="Net balance">
           <span
             className={cn(
               "font-semibold tabular-nums",
@@ -335,9 +307,8 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     return (
       <DataCardFrame
         icon={<TrendingUp className="text-green" />}
-        accent="green"
         title={title}
-        meta="Macro Indicators"
+        meta="Macro indicators"
       >
         <div className="h-[125px] w-full">
           <GlassBarChart
@@ -352,7 +323,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <DataCardFooter label="Current Total GDP">
+        <DataCardFooter label="Current total GDP">
           <span className="text-label font-semibold tabular-nums">{formatMoney(gdpVal)}</span>
         </DataCardFooter>
       </DataCardFrame>
@@ -377,12 +348,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <DataCardFrame
-        icon={<Users className="text-teal" />}
-        accent="teal"
-        title={title}
-        meta="Demographic Split"
-      >
+      <DataCardFrame icon={<Users className="text-teal" />} title={title} meta="Demographic split">
         <div className="h-[125px] w-full">
           <GlassPieChart
             data={pieData}
@@ -396,7 +362,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <DataCardFooter label="Population Total">
+        <DataCardFooter label="Population total">
           <span className="text-label font-semibold tabular-nums">{popVal.toLocaleString()}</span>
         </DataCardFooter>
       </DataCardFrame>
@@ -420,7 +386,6 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     return (
       <DataCardFrame
         icon={<BarChart3 className="text-yellow" />}
-        accent="yellow"
         title={title}
         meta="Fiscal Profile (% of GDP)"
       >
@@ -437,7 +402,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <DataCardFooter label="Debt Profile">
+        <DataCardFooter label="Debt profile">
           <span
             className={cn(
               "font-semibold",
@@ -466,12 +431,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <DataCardFrame
-        icon={<Briefcase className="text-teal" />}
-        accent="teal"
-        title={title}
-        meta="Labor Dynamics"
-      >
+      <DataCardFrame icon={<Briefcase className="text-teal" />} title={title} meta="Labor dynamics">
         <div className="h-[125px] w-full">
           <GlassBarChart
             data={barData}
@@ -485,7 +445,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <DataCardFooter label="Average Annual Income">
+        <DataCardFooter label="Average annual income">
           <span className="text-label font-semibold tabular-nums">
             ${(activeEcon.averageAnnualIncome || 35000).toLocaleString()}
           </span>
@@ -513,9 +473,8 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     return (
       <DataCardFrame
         icon={<Activity className="text-red" />}
-        accent="red"
         title={title}
-        meta="Vitality Indicators"
+        meta="Vitality indicators"
       >
         <div className="h-[125px] w-full">
           <GlassBarChart
@@ -530,7 +489,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <DataCardFooter label="Overall Health Status">
+        <DataCardFooter label="Overall health status">
           <span className="text-success font-semibold">Active</span>
         </DataCardFooter>
       </DataCardFrame>

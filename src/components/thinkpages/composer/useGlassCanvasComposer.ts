@@ -339,7 +339,7 @@ export function useGlassCanvasComposer({
           newVisualization = {
             id: `diplo-${Date.now()}`,
             type: "diplomatic_map",
-            title: "Diplomatic Relations Map",
+            title: "Diplomatic relations map",
             data: diplomaticData!,
             config: {
               mapType: "world",
@@ -352,7 +352,7 @@ export function useGlassCanvasComposer({
           newVisualization = {
             id: `trade-${Date.now()}`,
             type: "trade_flow",
-            title: "Trade Flow Analysis",
+            title: "Trade flow analysis",
             data: tradeData!,
             config: {
               flowType: "sankey",
@@ -365,7 +365,7 @@ export function useGlassCanvasComposer({
           newVisualization = {
             id: `gdp-${Date.now()}`,
             type: "gdp_growth",
-            title: "Economic Performance Overview",
+            title: "Economic performance overview",
             data: economicData!,
             config: {
               metrics: ["gdp", "inflation", "unemployment"],
@@ -378,7 +378,7 @@ export function useGlassCanvasComposer({
           newVisualization = {
             id: `demo-${Date.now()}`,
             type: "demographics",
-            title: "Demographics Profile",
+            title: "Demographics profile",
             data: {
               lifeExpectancy: economicData.lifeExpectancy,
               literacyRate: economicData.literacyRate,
@@ -396,7 +396,7 @@ export function useGlassCanvasComposer({
           newVisualization = {
             id: `fiscal-${Date.now()}`,
             type: "budget_debt",
-            title: "Fiscal & Debt Analysis",
+            title: "Fiscal & debt analysis",
             data: {
               taxRevenueGDPPercent: economicData.taxRevenueGDPPercent,
               governmentBudgetGDPPercent: economicData.governmentBudgetGDPPercent,
@@ -414,7 +414,7 @@ export function useGlassCanvasComposer({
           newVisualization = {
             id: `labor-${Date.now()}`,
             type: "labor_market",
-            title: "Labor & Income Profile",
+            title: "Labor & income profile",
             data: {
               unemploymentRate: economicData.unemploymentRate,
               incomeInequalityGini: economicData.incomeInequalityGini,
@@ -432,7 +432,7 @@ export function useGlassCanvasComposer({
           newVisualization = {
             id: `vitality-${Date.now()}`,
             type: "national_vitality",
-            title: "National Vitality Assessment",
+            title: "National vitality assessment",
             data: vitalityData!,
             config: {
               metrics: ["economic", "population", "diplomatic", "government"],
@@ -490,7 +490,7 @@ export function useGlassCanvasComposer({
 
       if (result.success) {
         setSelectedImages((prev) => [...prev, result.url]);
-        notify.success("Image uploaded successfully");
+        notify.success("Image uploaded");
       } else {
         notify.error(result.error || "Failed to upload image");
       }

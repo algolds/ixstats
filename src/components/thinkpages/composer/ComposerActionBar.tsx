@@ -165,12 +165,12 @@ export function ComposerActionBar({
                     "text-tint hover:bg-tint-fill hover:text-tint size-8 p-0",
                     pollDraft && "bg-tint-fill"
                   )}
-                  aria-label="Add Poll"
+                  aria-label="Add poll"
                 >
                   <Vote />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top">Add Poll</TooltipContent>
+              <TooltipContent side="top">Add poll</TooltipContent>
             </Tooltip>
 
             <div className="border-separator flex h-5 items-center gap-2 border-l px-3">

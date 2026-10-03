@@ -400,7 +400,7 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
           mentions: extractMentions(replyText),
           mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
         });
-        notify.success("Reply posted!");
+        notify.success("Reply posted");
         setReplyText("");
         setShowReplyComposer(false);
         setShowReplies(true);

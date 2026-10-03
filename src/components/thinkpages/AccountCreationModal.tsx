@@ -209,7 +209,7 @@ export function AccountCreationModal({
   const handleImageSelected = (imageUrl: string) => {
     setFormData((prev) => ({ ...prev, profileImageUrl: imageUrl }));
     setShowUnsplashSearch(false);
-    notify.success("Profile picture selected!");
+    notify.success("Profile picture selected");
   };
 
   const validateForm = (): boolean => {
@@ -244,7 +244,7 @@ export function AccountCreationModal({
       });
       await utils.thinkpages.getMyAccounts.invalidate();
       await utils.thinkpages.getAccountCountsByType.invalidate({ countryId });
-      notify.success("Account created successfully!");
+      notify.success("Account created");
       onAccountCreated(newAccount);
       onClose();
     } catch (error: any) {
@@ -289,7 +289,7 @@ export function AccountCreationModal({
           </div>
           <div>
             <DialogTitle className="text-title-3 flex items-center gap-2">
-              <span>Create Thinkpages Account</span>
+              <span>Create ThinkPages account</span>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -297,7 +297,7 @@ export function AccountCreationModal({
                     variant="ghost"
                     size="icon-sm"
                     className="text-label-secondary hover:text-label"
-                    aria-label="Thinkpages Help"
+                    aria-label="ThinkPages help"
                   >
                     <HelpCircle aria-hidden />
                   </Button>
@@ -324,7 +324,7 @@ export function AccountCreationModal({
           <div className="bg-destructive/10 rounded-row m-3 p-3 sm:m-4 sm:p-4">
             <div className="text-destructive flex items-center gap-2">
               <AlertCircle className="size-4" aria-hidden="true" />
-              <span className="text-headline">Account Limit Reached</span>
+              <span className="text-headline">Account limit reached</span>
             </div>
             <p className="text-footnote text-label-secondary mt-1 pl-6">
               You have reached the maximum of {maxAccounts} accounts. Delete an existing account to
@@ -388,7 +388,7 @@ export function AccountCreationModal({
                       )}
                     />
                     <span>
-                      {showAdvanced ? "Hide Advanced Settings" : "Show Advanced Settings"}
+                      {showAdvanced ? "Hide advanced settings" : "Show advanced settings"}
                     </span>
                   </button>
 
@@ -406,7 +406,7 @@ export function AccountCreationModal({
                             id="tp-create-posting-frequency"
                             className="text-subhead text-label mb-2 block"
                           >
-                            Posting Frequency
+                            Posting frequency
                           </span>
                           <SegmentedControl
                             aria-labelledby="tp-create-posting-frequency"
@@ -428,7 +428,7 @@ export function AccountCreationModal({
                             id="tp-create-political-lean"
                             className="text-subhead text-label mb-2 block"
                           >
-                            Political Lean
+                            Political lean
                           </span>
                           <SegmentedControl
                             aria-labelledby="tp-create-political-lean"
@@ -497,7 +497,7 @@ export function AccountCreationModal({
               }
             >
               {createAccountMutation.isPending && <Loader2 className="animate-spin" />}
-              Create Account
+              Create account
             </Button>
           )}
         </DialogFooter>

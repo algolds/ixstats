@@ -20,12 +20,12 @@ export function MessagesEmptyState({ activeFolder, onNewConversation }: Messages
       className="h-full"
       icon={<Icon />}
       title="Select a conversation"
-      message="Choose a conversation from the sidebar, or start a new one to begin messaging."
+      message="Choose a conversation or start a new one."
       action={
         activeFolder === "conversations" && onNewConversation ? (
           <Button onClick={onNewConversation}>
             <Plus />
-            New Conversation
+            New conversation
           </Button>
         ) : undefined
       }

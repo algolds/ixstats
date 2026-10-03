@@ -105,7 +105,7 @@ export function MessagesFolderNav({
         </PopoverTrigger>
         <PopoverContent side="bottom" align="end" className="w-64">
           <PopoverHeader>
-            <PopoverTitle className="text-headline text-label">Message Settings</PopoverTitle>
+            <PopoverTitle className="text-headline text-label">Message settings</PopoverTitle>
             <PopoverDescription className="text-footnote text-label-secondary mt-1">
               Customize your messaging experience.
             </PopoverDescription>

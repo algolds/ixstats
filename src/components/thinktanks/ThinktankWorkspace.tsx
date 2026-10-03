@@ -164,7 +164,7 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
   const joinMutation = api.thinkpages.joinThinktank.useMutation({
     onSuccess: () => {
       soundEffects.success();
-      notify.success("Joined group successfully!");
+      notify.success("Joined group");
       if (selectedGroupId) {
         void utils.thinkpages.getThinktankById.invalidate({ groupId: selectedGroupId });
       }
@@ -296,12 +296,12 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
               </div>
             </div>
           ) : (
-            /* Apple-styled Empty State */
+            /* Empty State */
             <EmptyState
               className="h-full"
               icon={<Group />}
-              title="Select a Group"
-              message="Choose a group from the sidebar to view the feed, open discussions, or check the roster."
+              title="Select a group"
+              message="Choose a group to see its feed, discussions and roster."
               action={
                 <Button
                   onClick={() => {
@@ -310,7 +310,7 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
                   }}
                 >
                   <Plus />
-                  Create a Group
+                  Create a group
                 </Button>
               }
             />

@@ -35,7 +35,7 @@ type LiveDataTile = {
   type: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  /** System colour for the icon (§2.4 data colours). */
+  /** System colour for the icon. */
   color: string;
   loading?: boolean;
   available: boolean;
@@ -99,7 +99,7 @@ export function ComposerLiveDataDrawer({
     },
     {
       type: "budget_debt",
-      label: "Budget & Debt",
+      label: "Budget & debt",
       icon: BarChart3,
       color: "text-red",
       loading: isLoadingEconomic,
@@ -107,7 +107,7 @@ export function ComposerLiveDataDrawer({
     },
     {
       type: "labor_market",
-      label: "Labor Market",
+      label: "Labor market",
       icon: Briefcase,
       color: "text-teal",
       loading: isLoadingEconomic,
@@ -115,7 +115,7 @@ export function ComposerLiveDataDrawer({
     },
     {
       type: "national_vitality",
-      label: "Vitality Rings",
+      label: "Vitality rings",
       icon: Activity,
       color: "text-red",
       loading: isLoadingVitality,

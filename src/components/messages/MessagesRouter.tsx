@@ -151,7 +151,7 @@ function MessagesRouterInner() {
     }
   }, []);
 
-  // ── Server-side folder queries (Phase 2) ──
+  // ── Server-side folder queries ──
   const {
     data: folderData,
     isLoading: isLoadingConversations,
@@ -499,7 +499,7 @@ function MessagesRouterInner() {
         });
         setSelectedConversationId(result.id);
         setShowNewConversation(false);
-        notify.success("Conversation created!");
+        notify.success("Conversation created");
         void refetchConversations();
       } catch (error: any) {
         notify.error(error.message || "Failed to create conversation");
@@ -510,7 +510,7 @@ function MessagesRouterInner() {
 
   const leaveConversationMutation = api.messages.leaveConversation.useMutation({
     onSuccess: () => {
-      notify.success("Conversation deleted successfully");
+      notify.success("Conversation deleted");
       setSelectedConversationId(null);
       void refetchConversations();
     },
@@ -534,7 +534,7 @@ function MessagesRouterInner() {
 
   const addParticipantMutation = api.messages.addParticipant.useMutation({
     onSuccess: () => {
-      notify.success("Participant added successfully");
+      notify.success("Participant added");
       if (selectedConversationId) {
         void utils.messages.getConversationMessages.invalidate({
           conversationId: selectedConversationId,

@@ -62,8 +62,8 @@ export function UnifiedComposerContainer({
           <Card>
             <EmptyState
               icon={<Users />}
-              title="No Account Selected"
-              message="Please select an account to start posting"
+              title="No account selected"
+              message="Select an account to post."
             />
           </Card>
         )}
@@ -110,12 +110,12 @@ export function UnifiedComposerContainer({
           ) : (
             <EmptyState
               icon={<Users />}
-              title="Select an Account to Compose"
-              message="Choose an account from the Accounts tab to start posting"
+              title="Select an account to compose"
+              message="Choose an account in the Accounts tab to post."
               action={
                 <Button variant="outline" onClick={() => setActiveTab("accounts")}>
                   <Users aria-hidden="true" />
-                  Manage Accounts
+                  Manage accounts
                 </Button>
               }
             />

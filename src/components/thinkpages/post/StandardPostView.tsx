@@ -205,7 +205,7 @@ export function StandardPostView({
       {post.pinned && (
         <div className="text-subhead text-yellow mb-3 flex items-center gap-2">
           <Pin className="size-4" aria-hidden="true" />
-          <span>Pinned Post</span>
+          <span>Pinned post</span>
         </div>
       )}
 
@@ -305,7 +305,7 @@ export function StandardPostView({
             )}
 
             {post.account?.bio?.startsWith("Former Nation") && (
-              <Badge variant="default">Former Nation</Badge>
+              <Badge variant="default">Former nation</Badge>
             )}
 
             <div

@@ -50,7 +50,7 @@ export function MessagesAddParticipantsModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="text-tint size-5" aria-hidden="true" />
-            Add Participant
+            Add participant
           </DialogTitle>
         </DialogHeader>
 
