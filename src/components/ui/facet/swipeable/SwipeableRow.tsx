@@ -1009,9 +1009,7 @@ function TrayActionButton({
     springX,
     (isPrimary
       ? [0, reveal * 0.5, reveal]
-      : side === "trailing"
-        ? [0, reveal * 0.5, reveal, emphasize, emphasize + 20]
-        : [0, reveal, emphasize, emphasize + 20]
+      : [0, reveal * 0.5, reveal, emphasize, emphasize + 20]
     ).map((v) => sign * v),
     isPrimary ? [0, 0.5, 1.0] : [0, 0.5, 1.0, 1.0, 0.0]
   );

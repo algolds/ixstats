@@ -84,7 +84,7 @@ traces/
 AGENTS.md
 CLAUDE.md
 arch.md
-maps.md
+/maps.md
 plans/
 c15t-backend.config.ts
 typecheck-*.log

@@ -87,8 +87,7 @@ export function IxStatsLogo({
       : {},
   };
 
-  // oxlint-disable-next-line
-  const LogoIcon = () => (
+  const logoIcon = (
     <motion.div
       className={cn("relative flex items-center justify-center", config.container)}
       variants={logoVariants}
@@ -135,21 +134,20 @@ export function IxStatsLogo({
     </motion.div>
   );
 
-  // oxlint-disable-next-line
-  const LogoText = () => <h1 className={cn("text-yellow font-bold", config.text)}>IxStats™</h1>;
+  const logoText = <h1 className={cn("text-yellow font-bold", config.text)}>IxStats™</h1>;
 
   if (variant === "with-text") {
     return (
       <div className={cn("flex items-center justify-center gap-4", className)}>
-        <LogoIcon />
-        <LogoText />
+        {logoIcon}
+        {logoText}
       </div>
     );
   }
 
   return (
     <div className={cn("flex items-center justify-center", className)}>
-      <LogoIcon />
+      {logoIcon}
     </div>
   );
 }
