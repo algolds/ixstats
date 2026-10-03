@@ -20,7 +20,7 @@ import { Card } from "~/components/ui/card";
 
 /*
  * Lab-only *frames*: each template's outer element carries the configurator's lab materials
- * (`facet-material-*`, `styles/facet/lab.css`). Everything inside is Facet 3 — real primitives
+ * (`facet-material-*`, `styles/facet/lab.css`). Everything inside is a real primitive
  * coloured by the tint, which `LabTemplates` scopes to the lab's accent colour.
  */
 
@@ -106,7 +106,7 @@ export function InteractiveCardTemplates({
             <div>
               <h4 className="text-headline leading-tight">MyCountry Security Core</h4>
               <p className="text-label-secondary text-footnote mt-0.5">
-                Integrity & Threat Profile Validation
+                Integrity & threat profile validation
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -172,7 +172,7 @@ export function InteractiveCardTemplates({
             <span className="text-label-secondary text-eyebrow mb-0.5 block">
               Lab material (chrome)
             </span>
-            <h4 className="text-headline leading-tight">System Core Hub</h4>
+            <h4 className="text-headline leading-tight">System core hub</h4>
           </div>
 
           <Card variant="inset" className="relative z-10 flex flex-col gap-3">
@@ -219,8 +219,8 @@ export function InteractiveCardTemplates({
               <Activity aria-hidden className="h-4 w-4" />
             </div>
             <div>
-              <h4 className="text-headline leading-tight">System Overview</h4>
-              <p className="text-label-secondary text-footnote">Real-time performance metrics</p>
+              <h4 className="text-headline leading-tight">System overview</h4>
+              <p className="text-label-secondary text-footnote">Performance metrics</p>
             </div>
           </div>
           <div className="border-separator relative z-10 border-t pt-3">
@@ -249,7 +249,7 @@ export function InteractiveCardTemplates({
             <span className="text-label-secondary text-footnote tabular-nums">v1.4.0</span>
           </div>
           <div className="pointer-events-none relative z-10 space-y-1">
-            <h4 className="text-headline">Global Fabric</h4>
+            <h4 className="text-headline">Global fabric</h4>
             <p className="text-label-secondary text-footnote leading-relaxed">
               Spatial mesh coordinates and geopolitical alignment.
             </p>
@@ -270,11 +270,11 @@ export function InteractiveCardTemplates({
             className="z-0 rounded-[inherit]"
           />
           <div className="pointer-events-none relative z-10">
-            <span className="text-label-secondary text-eyebrow">Progressive Diffusion</span>
-            <h4 className="text-headline">Stepped Layer Refraction</h4>
+            <span className="text-label-secondary text-eyebrow">Progressive diffusion</span>
+            <h4 className="text-headline">Stepped layer refraction</h4>
           </div>
           <div className="rounded-control border-separator bg-surface-secondary text-footnote relative z-10 border p-3">
-            Multi-stop gradient mask applied seamlessly across card surface.
+            Multi-stop gradient mask applied across the card surface.
           </div>
         </div>
       );
@@ -292,10 +292,10 @@ export function InteractiveCardTemplates({
           <TextureOverlay texture={texture} opacity={textureOpacity} className="z-0" />
           <div className="pointer-events-none relative z-10 flex items-center justify-between">
             <Star aria-hidden className="text-tint h-5 w-5" />
-            <span className="text-label-secondary text-eyebrow tabular-nums">Specular Glare</span>
+            <span className="text-label-secondary text-eyebrow tabular-nums">Specular glare</span>
           </div>
           <div className="pointer-events-none relative z-10 space-y-2">
-            <h4 className="text-headline leading-tight">Refractive Edge</h4>
+            <h4 className="text-headline leading-tight">Refractive edge</h4>
             <p className="text-label-secondary text-footnote leading-relaxed">
               Dynamic light specular tracking layer.
             </p>
@@ -316,8 +316,8 @@ export function InteractiveCardTemplates({
           <TextureOverlay texture={texture} opacity={textureOpacity} className="z-0" />
           <div className="relative z-10 flex items-start justify-between">
             <div className="pointer-events-none space-y-1">
-              <span className="text-label-secondary text-eyebrow block">Masked Chamfer</span>
-              <h4 className="text-headline">Cutout Specimen</h4>
+              <span className="text-label-secondary text-eyebrow block">Masked chamfer</span>
+              <h4 className="text-headline">Cutout specimen</h4>
             </div>
             <Hexagon aria-hidden className="text-tint h-6 w-6" />
           </div>
@@ -336,11 +336,11 @@ export function InteractiveCardTemplates({
         >
           <TextureOverlay texture={texture} opacity={textureOpacity} className="z-0" />
           <div className="pointer-events-none relative z-10 flex items-center justify-between">
-            <span className="text-eyebrow">Active Particle</span>
-            <span className="text-footnote text-tint tabular-nums">Orbit Trajectory</span>
+            <span className="text-eyebrow">Active particle</span>
+            <span className="text-footnote text-tint tabular-nums">Orbit trajectory</span>
           </div>
           <div className="pointer-events-none relative z-10 space-y-1">
-            <h4 className="text-headline">Comet Particle Motion</h4>
+            <h4 className="text-headline">Comet particle motion</h4>
             <p className="text-label-secondary text-footnote leading-relaxed">
               Orbital beam sweep along container perimeter border.
             </p>
@@ -383,7 +383,7 @@ export function InteractiveCardTemplates({
           <div className="border-separator pointer-events-none relative z-10 flex items-center justify-between gap-3 border-b px-4 py-3">
             <div className="flex items-center gap-2">
               <Code aria-hidden className="text-tint h-3.5 w-3.5" />
-              <span className="text-eyebrow">Exported Code</span>
+              <span className="text-eyebrow">Exported code</span>
             </div>
             <span className="text-label-secondary text-footnote tabular-nums">
               .{"{"} material: {material}, depth: {depth} {"}"}

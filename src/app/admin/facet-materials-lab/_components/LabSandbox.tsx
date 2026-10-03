@@ -69,8 +69,8 @@ function renderBackdrop(style: BgStyleType, theme: "light" | "dark", customColor
                 <span>1.1.0 Ogma</span>
               </div>
               <div className="text-caption flex -rotate-3 gap-12">
-                <span>Tactile Shading Grid</span>
-                <span>Optic Refraction Field</span>
+                <span>Tactile shading grid</span>
+                <span>Optic refraction field</span>
               </div>
               <div className="flex rotate-2 gap-20">
                 <span>Next.js 16</span>
