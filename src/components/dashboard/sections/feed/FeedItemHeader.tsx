@@ -3,6 +3,7 @@
 import { Clock, OpenNewWindow as ExternalLink } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { timeAgo } from "~/lib/format/compact";
+import { forumThreadIdFromUrl, wikiTitleFromUrl } from "./externalLinks";
 import {
   WikiHtmlContent,
   WikiLinkPreview,
@@ -18,8 +19,8 @@ interface FeedItemHeaderProps {
 }
 
 function FeedExternalLink({ url }: { url: string }) {
-  const wikiMatch = url.match(/ixwiki\.com\/wiki\/([^#?]+)/);
-  const forumMatch = url.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
+  const wikiTitle = wikiTitleFromUrl(url);
+  const forumThreadId = forumThreadIdFromUrl(url);
 
   const link = (
     <a
@@ -33,16 +34,14 @@ function FeedExternalLink({ url }: { url: string }) {
     </a>
   );
 
-  if (wikiMatch) {
+  if (wikiTitle) {
     return (
-      <WikiLinkPreview title={decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ")} wiki="ixwiki">
+      <WikiLinkPreview title={wikiTitle} wiki="ixwiki">
         {link}
       </WikiLinkPreview>
     );
   }
-  if (forumMatch) {
-    return <ForumLinkPreview threadId={parseInt(forumMatch[1]!, 10)}>{link}</ForumLinkPreview>;
-  }
+  if (forumThreadId) return <ForumLinkPreview threadId={forumThreadId}>{link}</ForumLinkPreview>;
 
   return link;
 }
