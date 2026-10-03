@@ -24,6 +24,7 @@ import {
   type RankedColour,
 } from "~/lib/maps/png-realm-map";
 import { ColourNationMapper } from "./ColourNationMapper";
+import { LAYER_TYPES } from "./layer-types";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -65,18 +66,9 @@ import {
 } from "~/components/ui/table";
 import { Card } from "~/components/ui/card";
 
-const LAYER_TYPES = [
-  { value: "auto", label: "Auto-detect" },
-  { value: "political", label: "Political" },
-  { value: "climate", label: "Climate" },
-  { value: "altitudes", label: "Altitudes" },
-  { value: "rivers", label: "Rivers" },
-  { value: "lakes", label: "Lakes" },
-  { value: "icecaps", label: "Icecaps" },
-  { value: "background", label: "Background" },
-] as const;
+const QUICK_LAYER_OPTIONS = [{ value: "auto", label: "Auto-detect" }, ...LAYER_TYPES] as const;
 
-type LayerOption = (typeof LAYER_TYPES)[number]["value"];
+type LayerOption = (typeof QUICK_LAYER_OPTIONS)[number]["value"];
 
 const LAYER_KEYWORDS: Record<string, string[]> = {
   political: ["political", "countries", "borders", "nations", "sovereign"],
@@ -416,7 +408,7 @@ function QuickUpdatePanel() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {LAYER_TYPES.map((lt) => (
+                {QUICK_LAYER_OPTIONS.map((lt) => (
                   <SelectItem key={lt.value} value={lt.value}>
                     {lt.label}
                   </SelectItem>
