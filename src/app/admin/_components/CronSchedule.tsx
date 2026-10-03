@@ -1,4 +1,5 @@
 import * as React from "react";
+import { format } from "date-fns";
 import { cn } from "~/lib/utils";
 import { Eyebrow } from "~/components/ui/eyebrow";
 
@@ -11,23 +12,8 @@ const FIELD_RANGES: [number, number][] = [
   [0, 6],
 ];
 
-const MONTH_NAMES = [
-  "",
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTH_NAMES = ["", ..."Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")];
+const DAY_NAMES = "Sun Mon Tue Wed Thu Fri Sat".split(" ");
 
 function parseField(field: string, min: number, max: number): number[] {
   const values = new Set<number>();
@@ -123,12 +109,8 @@ function humanReadable(fields: string[]): string {
   return parts.join(", ");
 }
 
-function formatTime(hour: number, minute: number): string {
-  const period = hour >= 12 ? "PM" : "AM";
-  const h = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  const m = minute.toString().padStart(2, "0");
-  return `${h}:${m} ${period}`;
-}
+const formatTime = (hour: number, minute: number) =>
+  format(new Date(2000, 0, 1, hour, minute), "h:mm a");
 
 function joinList(items: string[]): string {
   if (items.length <= 1) return items[0] ?? "";
@@ -186,32 +168,7 @@ function getNextRuns(fields: string[], count: number, from: Date): Date[] {
   return runs;
 }
 
-function formatNextRun(date: Date): string {
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const day = days[date.getDay()];
-  const month = months[date.getMonth()];
-  const d = date.getDate();
-  const h = date.getHours();
-  const m = date.getMinutes().toString().padStart(2, "0");
-  const period = h >= 12 ? "PM" : "AM";
-  const hour = h === 0 ? 12 : h > 12 ? h - 12 : h;
-
-  return `${day}, ${month} ${d} at ${hour}:${m} ${period}`;
-}
+const formatNextRun = (date: Date) => format(date, "EEE, MMM d 'at' h:mm a");
 
 interface CronScheduleProps extends Omit<React.ComponentProps<"div">, "children" | "title"> {
   /** Standard 5-field cron expression (e.g. "0 9 * * 1-5"). */
