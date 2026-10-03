@@ -132,6 +132,30 @@ async function buildProfile(db: PrismaClient, clerkUserId: string) {
   return profileOf(clerkUserId, userRecord, countryRecord);
 }
 
+/** The user with role (carrying a flat permissions array) and a brief country, or null. */
+async function findUserWithRole(db: PrismaClient, clerkUserId: string) {
+  const user = await db.user.findUnique({
+    where: { clerkUserId },
+    include: {
+      role: {
+        include: {
+          rolePermissions: {
+            include: { permission: { select: { id: true, name: true, description: true } } },
+          },
+        },
+      },
+      country: { select: { id: true, name: true, economicTier: true } },
+    },
+  });
+  if (!user) return null;
+  return {
+    ...user,
+    role: user.role
+      ? { ...user.role, permissions: user.role.rolePermissions.map((rp) => rp.permission) }
+      : null,
+  };
+}
+
 export const usersProfileRouter = createTRPCRouter({
   // Get current user's profile using auth context (no input required)
   getProfile: rateLimitedPublicProcedure.query(async ({ ctx }) => {
@@ -205,53 +229,7 @@ export const usersProfileRouter = createTRPCRouter({
   getCurrentUserWithRole: publicProcedure.query(async ({ ctx }) => {
     try {
       const { userId } = ctx.auth as { userId?: string };
-
-      if (!userId) {
-        return { user: null };
-      }
-
-      const user = await ctx.db.user.findUnique({
-        where: { clerkUserId: userId },
-        include: {
-          role: {
-            include: {
-              rolePermissions: {
-                include: {
-                  permission: {
-                    select: { id: true, name: true, description: true },
-                  },
-                },
-              },
-            },
-          },
-          country: {
-            select: {
-              id: true,
-              name: true,
-              economicTier: true,
-            },
-          },
-        },
-      });
-
-      if (!user) {
-        return { user: null };
-      }
-
-      // Transform role data to include permissions array
-      const transformedRole = user.role
-        ? {
-            ...user.role,
-            permissions: user.role.rolePermissions.map((rp) => rp.permission),
-          }
-        : null;
-
-      return {
-        user: {
-          ...user,
-          role: transformedRole,
-        },
-      };
+      return { user: userId ? await findUserWithRole(ctx.db, userId) : null };
     } catch (error) {
       console.error("Error fetching current user with role:", error);
       return { user: null };
@@ -260,51 +238,10 @@ export const usersProfileRouter = createTRPCRouter({
 
   // Get user by Clerk ID with role (for admin use)
   getUserWithRole: publicProcedure
-    .input(
-      z.object({
-        clerkUserId: z.string(),
-      })
-    )
+    .input(z.object({ clerkUserId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
-        const user = await ctx.db.user.findUnique({
-          where: { clerkUserId: input.clerkUserId },
-          include: {
-            role: {
-              include: {
-                rolePermissions: {
-                  include: {
-                    permission: {
-                      select: { id: true, name: true, description: true },
-                    },
-                  },
-                },
-              },
-            },
-            country: {
-              select: { id: true, name: true, economicTier: true },
-            },
-          },
-        });
-
-        if (!user) {
-          return { user: null };
-        }
-
-        // Transform role data to include permissions array
-        const transformedRole = user.role
-          ? {
-              ...user.role,
-              permissions: user.role.rolePermissions.map((rp) => rp.permission),
-            }
-          : null;
-
-        return {
-          user: {
-            ...user,
-            role: transformedRole,
-          },
-        };
+        return { user: await findUserWithRole(ctx.db, input.clerkUserId) };
       } catch (error) {
         console.error("Error fetching user with role:", error);
         return { user: null };
