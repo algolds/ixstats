@@ -11,7 +11,7 @@ import {
   type ExchangeType,
 } from "./cultural-exchange-types";
 
-export interface ExchangeMutationCallbacks {
+interface ExchangeMutationCallbacks {
   refetch: () => unknown;
   onCreated: () => void;
   onArtifactUploaded: () => void;

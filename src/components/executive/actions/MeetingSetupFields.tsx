@@ -21,7 +21,7 @@ import { INTENT_TEMPLATES } from "./meeting-scheduler-intents";
 import { fromDateInputValue, toDateInputValue, type TimePreset } from "./meeting-scheduler-logic";
 import type { IntentTemplate, MeetingSchedulerProps } from "./meeting-scheduler-types";
 
-export const EYEBROW = "text-label-secondary text-eyebrow";
+const EYEBROW = "text-label-secondary text-eyebrow";
 
 const TIME_PRESETS = [
   { value: "immediately", label: "Immediately" },
