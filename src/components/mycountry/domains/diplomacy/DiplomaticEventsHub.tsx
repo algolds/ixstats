@@ -1,19 +1,6 @@
 "use client";
 
-/**
- * Diplomatic Events Hub Component
- *
- * Interactive diplomatic events management system featuring:
- * - Active events feed with scenario cards
- * - Event response system with action buttons
- * - Impact preview and outcome simulation
- * - Event history log with filtering
- * - Real-time countdown timers for urgent events
- *
- * @module DiplomaticEventsHub
- */
-
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
@@ -74,112 +61,93 @@ interface DiplomaticEventsHubProps {
   countryName: string;
 }
 
-// Event type configuration
-const EVENT_TYPE_CONFIG: Record<string, { icon: React.ReactNode; label: string }> = {
-  border_dispute: {
-    icon: <AlertCircle className="h-4 w-4" />,
-    label: "Border dispute",
-  },
-  trade_renegotiation: {
-    icon: <TrendingUp className="h-4 w-4" />,
-    label: "Trade negotiation",
-  },
-  cultural_misunderstanding: {
-    icon: <MessageSquare className="h-4 w-4" />,
-    label: "Cultural issue",
-  },
-  intelligence_breach: {
-    icon: <Eye className="h-4 w-4" />,
-    label: "Intelligence breach",
-  },
-  humanitarian_crisis: {
-    icon: <AlertCircle className="h-4 w-4" />,
-    label: "Humanitarian crisis",
-  },
-  alliance_pressure: {
-    icon: <Community className="h-4 w-4" />,
-    label: "Alliance pressure",
-  },
-  economic_sanctions_debate: {
-    icon: <TrendingDown className="h-4 w-4" />,
-    label: "Sanctions debate",
-  },
-  technology_transfer_request: {
-    icon: <Cpu className="h-4 w-4" />,
-    label: "Tech transfer",
-  },
-  diplomatic_incident: {
-    icon: <AlertCircle className="h-4 w-4" />,
-    label: "Diplomatic incident",
-  },
-  mediation_opportunity: {
-    icon: <CheckCircle className="h-4 w-4" />,
-    label: "Mediation opportunity",
-  },
-  embassy_security_threat: {
-    icon: <AlertCircle className="h-4 w-4" />,
-    label: "Security threat",
-  },
-  treaty_renewal: {
-    icon: <FileText className="h-4 w-4" />,
-    label: "Treaty renewal",
-  },
+type IconComponent = React.ComponentType<{ className?: string }>;
+
+const EVENT_TYPE_CONFIG: Record<string, { icon: IconComponent; label: string }> = {
+  border_dispute: { icon: AlertCircle, label: "Border dispute" },
+  trade_renegotiation: { icon: TrendingUp, label: "Trade negotiation" },
+  cultural_misunderstanding: { icon: MessageSquare, label: "Cultural issue" },
+  intelligence_breach: { icon: Eye, label: "Intelligence breach" },
+  humanitarian_crisis: { icon: AlertCircle, label: "Humanitarian crisis" },
+  alliance_pressure: { icon: Community, label: "Alliance pressure" },
+  economic_sanctions_debate: { icon: TrendingDown, label: "Sanctions debate" },
+  technology_transfer_request: { icon: Cpu, label: "Tech transfer" },
+  diplomatic_incident: { icon: AlertCircle, label: "Diplomatic incident" },
+  mediation_opportunity: { icon: CheckCircle, label: "Mediation opportunity" },
+  embassy_security_threat: { icon: AlertCircle, label: "Security threat" },
+  treaty_renewal: { icon: FileText, label: "Treaty renewal" },
 };
 
-// Countdown timer component
-function EventCountdown({ expiresAt }: { expiresAt: string | Date }) {
-  const [timeLeft, setTimeLeft] = useState("");
-  const [urgency, setUrgency] = useState<"critical" | "warning" | "normal">("normal");
+const HISTORY_FILTERS = [
+  ["all", "All events"],
+  ["border_dispute", "Border disputes"],
+  ["trade_renegotiation", "Trade negotiations"],
+  ["cultural_misunderstanding", "Cultural issues"],
+  ["alliance_pressure", "Alliance pressure"],
+  ["treaty_renewal", "Treaty renewals"],
+];
 
-  useEffect(() => {
-    const updateTimer = () => {
-      const now = new Date().getTime();
-      const expiry = new Date(expiresAt).getTime();
-      const diff = expiry - now;
+/** How each response button picks from a scenario's options: keywords in the label, else a fixed slot. */
+const RESPONSE_MATCHERS = {
+  accept: { words: ["accept", "agree"], fallbackIndex: 0 },
+  reject: { words: ["reject", "decline"], fallbackIndex: 1 },
+  negotiate: { words: ["negotiate", "counter"], fallbackIndex: 2 },
+};
+type ResponseAction = keyof typeof RESPONSE_MATCHERS;
 
-      if (diff <= 0) {
-        setTimeLeft("Expired");
-        return;
-      }
+const RESPONSE_BUTTONS: {
+  action: ResponseAction;
+  label: string;
+  variant: "destructive" | "secondary" | "default";
+  icon: IconComponent;
+}[] = [
+  { action: "reject", label: "Reject", variant: "destructive", icon: XCircle },
+  { action: "negotiate", label: "Negotiate", variant: "secondary", icon: MessageSquare },
+  { action: "accept", label: "Accept", variant: "default", icon: CheckCircle },
+];
 
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const days = Math.floor(hours / 24);
+const HOUR_MS = 60 * 60 * 1000;
 
-      if (hours < 24) {
-        setTimeLeft(`${hours}h remaining`);
-        setUrgency("critical");
-      } else if (days < 3) {
-        setTimeLeft(`${days}d remaining`);
-        setUrgency("warning");
-      } else {
-        setTimeLeft(`${days}d remaining`);
-        setUrgency("normal");
-      }
-    };
+function eventTypeConfig(type: string) {
+  return EVENT_TYPE_CONFIG[type] ?? { icon: FileText, label: type };
+}
 
-    updateTimer();
-    const interval = setInterval(updateTimer, 60000); // Update every minute
-
-    return () => clearInterval(interval);
-  }, [expiresAt]);
-
+function EventTypeBadge({ type }: { type: string }) {
+  const { icon: Icon, label } = eventTypeConfig(type);
   return (
-    <Badge
-      variant="outline"
-      className={cn(
-        "flex items-center gap-1",
-        urgency === "critical" && "text-destructive",
-        urgency === "warning" && "text-yellow",
-        urgency === "normal" && "text-label-secondary"
-      )}
-    >
-      <Clock className="h-3 w-3" />
-      {timeLeft}
+    <Badge variant="outline">
+      <Icon className="h-4 w-4" />
+      {label}
     </Badge>
   );
 }
 
-// Impact preview component
+const URGENCY_CLASS = {
+  critical: "text-destructive",
+  warning: "text-yellow",
+  normal: "text-label-secondary",
+};
+
+function EventCountdown({ expiresAt }: { expiresAt: string | Date }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const diff = new Date(expiresAt).getTime() - now;
+  const hours = Math.floor(diff / HOUR_MS);
+  const days = Math.floor(hours / 24);
+  const urgency = diff <= 0 ? "normal" : hours < 24 ? "critical" : days < 3 ? "warning" : "normal";
+
+  return (
+    <Badge variant="outline" className={cn("flex items-center gap-1", URGENCY_CLASS[urgency])}>
+      <Clock className="h-3 w-3" />
+      {diff <= 0 ? "Expired" : `${hours < 24 ? `${hours}h` : `${days}d`} remaining`}
+    </Badge>
+  );
+}
+
 function ImpactPreview({
   impact,
 }: {
@@ -218,13 +186,131 @@ function ImpactPreview({
   );
 }
 
+function ActiveEventCard({ event, onOpen }: { event: DiplomaticEvent; onOpen: () => void }) {
+  const first = event.responseOptions?.[0];
+  return (
+    <Card className="rounded-card">
+      <CardHeader className="p-5 pb-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <div className="mb-2 flex items-center gap-2">
+              <EventTypeBadge type={event.type} />
+              <EventCountdown expiresAt={event.expiresAt} />
+            </div>
+            <h3 className="text-label text-title-3">{event.title}</h3>
+            {event.country2Name && (
+              <p className="text-label-secondary text-body mt-1">with {event.country2Name}</p>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="px-5 pb-5">
+        <p className="text-label-secondary text-body mb-4 line-clamp-3">{event.narrative}</p>
+
+        {event.responseOptions && event.responseOptions.length > 0 && (
+          <div className="mb-4">
+            <Eyebrow>Potential impacts</Eyebrow>
+            <ImpactPreview
+              impact={{
+                relationship: first?.relationshipEffect || 0,
+                economic: first?.economicImpact || 0,
+                cultural: first?.culturalImpact || 0,
+              }}
+            />
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <Button size="sm" variant="default" className="flex-1" onClick={onOpen}>
+            <Eye className="h-4 w-4" />
+            View & respond
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function HistoryEventRow({ event }: { event: DiplomaticEvent }) {
+  return (
+    <Card className="rounded-card p-4">
+      <div className="flex items-start gap-4">
+        <div className="flex-1">
+          <div className="mb-2 flex items-center gap-2">
+            <EventTypeBadge type={event.type} />
+            <Badge variant="default" className="capitalize">
+              {event.status}
+            </Badge>
+          </div>
+          <h4 className="text-label text-headline">{event.title}</h4>
+          {event.country2Name && (
+            <p className="text-label-secondary text-footnote">with {event.country2Name}</p>
+          )}
+        </div>
+        <div className="text-label-secondary text-footnote text-right">
+          {new Date(event.resolvedAt ?? event.createdAt).toLocaleDateString()}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function EventResponseBody({ event }: { event: DiplomaticEvent }) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h4 className="text-label text-headline mb-2">Situation</h4>
+        <p className="text-label-secondary text-body">{event.narrative}</p>
+      </div>
+
+      {event.responseOptions && event.responseOptions.length > 0 && (
+        <div>
+          <h4 className="text-label text-headline mb-3">Response options</h4>
+          <div className="space-y-3">
+            {event.responseOptions.map((option, idx) => (
+              <Card variant="inset" key={idx} className="p-4">
+                <div className="mb-2 flex items-start justify-between">
+                  <h5 className="text-label text-body font-medium">
+                    {option.label || `Option ${idx + 1}`}
+                  </h5>
+                  <Badge variant="outline" className="capitalize">
+                    {option.difficulty || "moderate"}
+                  </Badge>
+                </div>
+                <p className="text-label-secondary text-body mb-3">
+                  {option.description || "No description available"}
+                </p>
+                <ImpactPreview
+                  impact={{
+                    relationship: option.relationshipEffect,
+                    economic: option.economicImpact,
+                    cultural: option.culturalImpact,
+                  }}
+                />
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Picks the option a response button stands for: a keyword match in the label, else a fixed slot. */
+function pickResponseOption(options: ScenarioResponseOption[], action: ResponseAction) {
+  const { words, fallbackIndex } = RESPONSE_MATCHERS[action];
+  return (
+    options.find((opt) => words.some((w) => opt.label?.toLowerCase().includes(w))) ??
+    options[fallbackIndex]
+  );
+}
+
 export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
   const [activeTab, setActiveTab] = useState("active");
   const [selectedEvent, setSelectedEvent] = useState<DiplomaticEvent | null>(null);
   const [isResponseDialogOpen, setIsResponseDialogOpen] = useState(false);
   const [historyFilter, setHistoryFilter] = useState<string>("all");
 
-  // Fetch active scenarios
   const {
     data: activeData,
     isLoading: activeLoading,
@@ -235,7 +321,6 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
     limit: 50,
   });
 
-  // Fetch scenario history (completed/expired)
   const { data: historyData, isLoading: historyLoading } =
     api.diplomaticScenarios.getAllScenarios.useQuery({
       isActive: false,
@@ -243,12 +328,16 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
       limit: 100,
     });
 
-  // Extract scenarios from API response
   const activeScenarios: DiplomaticEvent[] = activeData?.scenarios || [];
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const scenarioHistory: DiplomaticEvent[] = historyData?.scenarios || [];
+  const filteredHistory =
+    historyFilter === "all"
+      ? scenarioHistory
+      : scenarioHistory.filter((s) => s.type === historyFilter);
+  const urgentCount = activeScenarios.filter(
+    (s) => new Date(s.expiresAt).getTime() - Date.now() < 24 * HOUR_MS
+  ).length;
 
-  // Response mutation
   const respondMutation = api.diplomaticScenarios.recordChoice.useMutation({
     onSuccess: () => {
       void refetchActive();
@@ -257,56 +346,15 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
     },
   });
 
-  // Filter history
-  const filteredHistory = useMemo(() => {
-    if (!scenarioHistory) return [];
-    if (historyFilter === "all") return scenarioHistory;
-    return scenarioHistory.filter((s) => s.type === historyFilter);
-  }, [scenarioHistory, historyFilter]);
-
-  // Handle event response
-  const handleResponse = (action: "accept" | "reject" | "negotiate") => {
+  const handleResponse = (action: ResponseAction) => {
     if (!selectedEvent) return;
-
-    // Find the appropriate response option based on action
-    const responseOptions = selectedEvent.responseOptions || [];
-    let selectedOption = responseOptions[0]; // Default to first option
-
-    if (action === "accept") {
-      selectedOption =
-        responseOptions.find(
-          (opt) =>
-            opt.label?.toLowerCase().includes("accept") ||
-            opt.label?.toLowerCase().includes("agree")
-        ) || responseOptions[0];
-    } else if (action === "reject") {
-      selectedOption =
-        responseOptions.find(
-          (opt) =>
-            opt.label?.toLowerCase().includes("reject") ||
-            opt.label?.toLowerCase().includes("decline")
-        ) || responseOptions[1];
-    } else if (action === "negotiate") {
-      selectedOption =
-        responseOptions.find(
-          (opt) =>
-            opt.label?.toLowerCase().includes("negotiate") ||
-            opt.label?.toLowerCase().includes("counter")
-        ) || responseOptions[2];
-    }
-
+    const selectedOption = pickResponseOption(selectedEvent.responseOptions || [], action);
     respondMutation.mutate({
       scenarioId: selectedEvent.id,
-      countryId: countryId,
+      countryId,
       choiceId: selectedOption?.id || "default",
       choiceLabel: selectedOption?.label || "Unknown Choice",
     });
-  };
-
-  // Open response dialog
-  const openResponseDialog = (event: DiplomaticEvent) => {
-    setSelectedEvent(event);
-    setIsResponseDialogOpen(true);
   };
 
   if (activeLoading) {
@@ -321,23 +369,16 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
     );
   }
 
+  const SelectedIcon = selectedEvent && EVENT_TYPE_CONFIG[selectedEvent.type]?.icon;
+
   return (
     <div className="space-y-6">
-      {/* Header Stats */}
       <Card className="rounded-card p-4">
         <dl className="grid grid-cols-3 gap-4">
           {[
-            { label: "Active events", value: activeScenarios?.length || 0, icon: FileText },
-            {
-              label: "Urgent (<24h)",
-              value:
-                activeScenarios?.filter((s) => {
-                  const hours = (new Date(s.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60);
-                  return hours < 24;
-                }).length || 0,
-              icon: Clock,
-            },
-            { label: "Total resolved", value: scenarioHistory?.length || 0, icon: History },
+            { label: "Active events", value: activeScenarios.length, icon: FileText },
+            { label: "Urgent (<24h)", value: urgentCount, icon: Clock },
+            { label: "Total resolved", value: scenarioHistory.length, icon: History },
           ].map((stat) => (
             <div key={stat.label} className="space-y-1">
               <dt>
@@ -352,12 +393,11 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
         </dl>
       </Card>
 
-      {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="bg-fill-3 inline-flex flex-wrap gap-1 rounded-full p-1">
           <TabsTrigger value="active" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            Active Events ({activeScenarios?.length || 0})
+            Active Events ({activeScenarios.length})
           </TabsTrigger>
           <TabsTrigger value="history" className="flex items-center gap-2">
             <History className="h-4 w-4" />
@@ -365,72 +405,19 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
           </TabsTrigger>
         </TabsList>
 
-        {/* Active Events Tab */}
         <TabsContent value="active" className="space-y-4">
-          {activeScenarios && activeScenarios.length > 0 ? (
+          {activeScenarios.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {activeScenarios.map((event) => {
-                const eventConfig = EVENT_TYPE_CONFIG[event.type] || {
-                  icon: <FileText className="h-4 w-4" />,
-                  label: event.type,
-                };
-
-                return (
-                  <Card key={event.id} className="rounded-card">
-                    <CardHeader className="p-5 pb-3">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="mb-2 flex items-center gap-2">
-                            <Badge variant="outline">
-                              {eventConfig.icon}
-                              {eventConfig.label}
-                            </Badge>
-                            <EventCountdown expiresAt={event.expiresAt} />
-                          </div>
-                          <h3 className="text-label text-title-3">{event.title}</h3>
-                          {event.country2Name && (
-                            <p className="text-label-secondary text-body mt-1">
-                              with {event.country2Name}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="px-5 pb-5">
-                      <p className="text-label-secondary text-body mb-4 line-clamp-3">
-                        {event.narrative}
-                      </p>
-
-                      {/* Quick Impact Preview */}
-                      {event.responseOptions && event.responseOptions.length > 0 && (
-                        <div className="mb-4">
-                          <Eyebrow>Potential impacts</Eyebrow>
-                          <ImpactPreview
-                            impact={{
-                              relationship: event.responseOptions[0]?.relationshipEffect || 0,
-                              economic: event.responseOptions[0]?.economicImpact || 0,
-                              cultural: event.responseOptions[0]?.culturalImpact || 0,
-                            }}
-                          />
-                        </div>
-                      )}
-
-                      {/* Action Buttons */}
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="default"
-                          className="flex-1"
-                          onClick={() => openResponseDialog(event)}
-                        >
-                          <Eye className="h-4 w-4" />
-                          View & respond
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+              {activeScenarios.map((event) => (
+                <ActiveEventCard
+                  key={event.id}
+                  event={event}
+                  onOpen={() => {
+                    setSelectedEvent(event);
+                    setIsResponseDialogOpen(true);
+                  }}
+                />
+              ))}
             </div>
           ) : (
             <Card className="rounded-card flex min-h-[240px] items-center justify-center p-6">
@@ -447,9 +434,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
           )}
         </TabsContent>
 
-        {/* Event History Tab */}
         <TabsContent value="history" className="space-y-4">
-          {/* History Filter */}
           <div className="flex items-center gap-3">
             <Filter className="text-label-secondary h-4 w-4" />
             <Select value={historyFilter} onValueChange={setHistoryFilter}>
@@ -457,18 +442,16 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                 <SelectValue placeholder="Filter by type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All events</SelectItem>
-                <SelectItem value="border_dispute">Border disputes</SelectItem>
-                <SelectItem value="trade_renegotiation">Trade negotiations</SelectItem>
-                <SelectItem value="cultural_misunderstanding">Cultural issues</SelectItem>
-                <SelectItem value="alliance_pressure">Alliance pressure</SelectItem>
-                <SelectItem value="treaty_renewal">Treaty renewals</SelectItem>
+                {HISTORY_FILTERS.map(([value, label]) => (
+                  <SelectItem key={value} value={value!}>
+                    {label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Badge variant="outline">{filteredHistory.length} events</Badge>
           </div>
 
-          {/* History List */}
           {historyLoading ? (
             <div className="space-y-3" role="status" aria-label="Loading event history">
               <Skeleton className="rounded-card h-20" />
@@ -476,39 +459,9 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
             </div>
           ) : filteredHistory.length > 0 ? (
             <div className="space-y-3">
-              {filteredHistory.map((event) => {
-                const eventConfig = EVENT_TYPE_CONFIG[event.type] || {
-                  icon: <FileText className="h-4 w-4" />,
-                  label: event.type,
-                };
-
-                return (
-                  <Card key={event.id} className="rounded-card p-4">
-                    <div className="flex items-start gap-4">
-                      <div className="flex-1">
-                        <div className="mb-2 flex items-center gap-2">
-                          <Badge variant="outline">
-                            {eventConfig.icon}
-                            {eventConfig.label}
-                          </Badge>
-                          <Badge variant="default" className="capitalize">
-                            {event.status}
-                          </Badge>
-                        </div>
-                        <h4 className="text-label text-headline">{event.title}</h4>
-                        {event.country2Name && (
-                          <p className="text-label-secondary text-footnote">
-                            with {event.country2Name}
-                          </p>
-                        )}
-                      </div>
-                      <div className="text-label-secondary text-footnote text-right">
-                        {new Date(event.resolvedAt ?? event.createdAt).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
+              {filteredHistory.map((event) => (
+                <HistoryEventRow key={event.id} event={event} />
+              ))}
             </div>
           ) : (
             <Card className="rounded-card flex min-h-[200px] items-center justify-center p-6">
@@ -521,12 +474,11 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
         </TabsContent>
       </Tabs>
 
-      {/* Response Sheet */}
       <Sheet open={isResponseDialogOpen} onOpenChange={setIsResponseDialogOpen}>
         <SheetContent size="wide" className="overflow-y-auto">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
-              {selectedEvent && EVENT_TYPE_CONFIG[selectedEvent.type]?.icon}
+              {SelectedIcon && <SelectedIcon className="h-4 w-4" />}
               {selectedEvent?.title}
             </SheetTitle>
             <SheetDescription>
@@ -534,46 +486,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
             </SheetDescription>
           </SheetHeader>
 
-          {selectedEvent && (
-            <div className="space-y-6">
-              {/* Event Details */}
-              <div>
-                <h4 className="text-label text-headline mb-2">Situation</h4>
-                <p className="text-label-secondary text-body">{selectedEvent.narrative}</p>
-              </div>
-
-              {/* Response Options */}
-              {selectedEvent.responseOptions && selectedEvent.responseOptions.length > 0 && (
-                <div>
-                  <h4 className="text-label text-headline mb-3">Response options</h4>
-                  <div className="space-y-3">
-                    {selectedEvent.responseOptions.map((option, idx) => (
-                      <Card variant="inset" key={idx} className="p-4">
-                        <div className="mb-2 flex items-start justify-between">
-                          <h5 className="text-label text-body font-medium">
-                            {option.label || `Option ${idx + 1}`}
-                          </h5>
-                          <Badge variant="outline" className="capitalize">
-                            {option.difficulty || "moderate"}
-                          </Badge>
-                        </div>
-                        <p className="text-label-secondary text-body mb-3">
-                          {option.description || "No description available"}
-                        </p>
-                        <ImpactPreview
-                          impact={{
-                            relationship: option.relationshipEffect,
-                            economic: option.economicImpact,
-                            cultural: option.culturalImpact,
-                          }}
-                        />
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          {selectedEvent && <EventResponseBody event={selectedEvent} />}
 
           <SheetFooter className="flex flex-wrap gap-2">
             <Button
@@ -583,30 +496,17 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
             >
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={() => handleResponse("reject")}
-              disabled={respondMutation.isPending}
-            >
-              <XCircle className="h-4 w-4" />
-              Reject
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => handleResponse("negotiate")}
-              disabled={respondMutation.isPending}
-            >
-              <MessageSquare className="h-4 w-4" />
-              Negotiate
-            </Button>
-            <Button
-              variant="default"
-              onClick={() => handleResponse("accept")}
-              disabled={respondMutation.isPending}
-            >
-              <CheckCircle className="h-4 w-4" />
-              Accept
-            </Button>
+            {RESPONSE_BUTTONS.map(({ action, label, variant, icon: Icon }) => (
+              <Button
+                key={action}
+                variant={variant}
+                onClick={() => handleResponse(action)}
+                disabled={respondMutation.isPending}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Button>
+            ))}
           </SheetFooter>
         </SheetContent>
       </Sheet>
