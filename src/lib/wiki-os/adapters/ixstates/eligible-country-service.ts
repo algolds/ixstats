@@ -14,7 +14,10 @@
 
 import * as fsPromises from "fs/promises";
 import * as path from "path";
-import { getFullIiwikiApiUrl } from "~/lib/wiki-os/adapters/mediawiki/bridge/http-reader";
+import {
+  ALTHISTORY_API,
+  getFullIiwikiApiUrl,
+} from "~/lib/wiki-os/adapters/mediawiki/bridge/http-reader";
 import { parseInfoboxWithTemplates, type UnifiedInfoboxData } from "./unified-parser";
 import { withRetrySafe } from "~/lib/system/with-retry";
 import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
@@ -61,7 +64,6 @@ interface MemoryCacheEntry {
   refreshPromise: Promise<EligibleCountryResult[]> | null;
 }
 
-const ALTHISTORY_API = "https://althistory.fandom.com/api.php";
 const WIKI_HEADERS = { "User-Agent": DEFAULT_USER_AGENT, "Api-User-Agent": DEFAULT_USER_AGENT };
 
 const CACHE_DIR = path.join(process.cwd(), "data", "cache", "eligible-countries");
