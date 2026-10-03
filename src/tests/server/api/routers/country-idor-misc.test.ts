@@ -170,26 +170,6 @@ describe("Plan 332: wikios discussions only post as a country the caller may wri
   });
 });
 
-describe("Plan 332: users.createCountry only acts for the caller", () => {
-  it("rejects creating a country for a different user", async () => {
-    const db = { country: { create: jest.fn() } };
-    const caller = usersCountryLinkingRouter.createCaller(createIdorContext(db));
-    await expect(
-      caller.createCountry({ userId: "someone_else", countryName: "Nowhere" })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    expect(db.country.create).not.toHaveBeenCalled();
-  });
-
-  it("lets the caller past the check (then refuses a second country)", async () => {
-    const db = { country: { create: jest.fn() } };
-    const caller = usersCountryLinkingRouter.createCaller(createIdorContext(db));
-    await expect(
-      caller.createCountry({ userId: CALLER_CLERK_ID, countryName: "Nowhere" })
-    ).rejects.toThrow("User already has a linked country");
-    expect(db.country.create).not.toHaveBeenCalled();
-  });
-});
-
 describe("Plan 332: security.resolvePvNPCConflict only strikes NPC nations", () => {
   it("rejects a strike on a nation claimed by a player", async () => {
     const db = {

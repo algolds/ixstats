@@ -1,5 +1,5 @@
 /**
- * Baseline data for a brand-new Country row — the one source for users.createCountry and for a realm
+ * Baseline data for a brand-new Country row: a realm
  * nation created by an approved claim (realms ruling E-f). Callers add the slug and any realm/wiki fields.
  */
 import { IxTime } from "~/lib/ixtime";

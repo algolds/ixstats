@@ -22,7 +22,7 @@ const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
 const jsonRecordSchema = z.record(z.string(), jsonValueSchema.optional());
 
 /** National identity fields shared by the builder payload and country creation. */
-export const nationalIdentityFieldsSchema = z.object({
+const nationalIdentityFieldsSchema = z.object({
   countryName: z.string().optional(),
   officialName: z.string().optional(),
   governmentType: z.string().optional(),

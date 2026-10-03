@@ -418,7 +418,7 @@ describe("claimNationPage", () => {
       realmId: EURTH,
       wikiSource: "iiwiki",
       wikiPageTitle: "Aurelia",
-      baselinePopulation: 1_000_000, // the users.createCountry baseline
+      baselinePopulation: 1_000_000, // the baseline-country default
     });
     expect(db.realmClaim.create).toHaveBeenCalledWith({
       data: expect.objectContaining({

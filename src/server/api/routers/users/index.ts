@@ -6,7 +6,7 @@
  *
  * Domains:
  *  - profile:         user record CRUD, profile lookups (by id / batch / social / abilities / role)
- *  - country-linking: createCountry, link/unlink country, getLinkedCountry, membership tier
+ *  - country-linking: setActiveNation, membership status and tier
  *  - preferences:     wiki preferences (get/update) + resolveWikiAuthor
  *  - admin:           getActiveUsers, admin favorites (add/remove/list/reorder), setupDatabase
  */

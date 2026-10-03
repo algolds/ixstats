@@ -6,7 +6,7 @@ describe("buildBaselineCountryData", () => {
   beforeEach(() => jest.useFakeTimers().setSystemTime(new Date("2026-09-28T12:00:00Z")));
   afterEach(() => jest.useRealTimers());
 
-  it("gives a new nation the defaults users.createCountry has always used", () => {
+  it("gives a new nation the baseline defaults", () => {
     const data = buildBaselineCountryData("Aurelia");
     const now = new Date(IxTime.getCurrentIxTime());
 
