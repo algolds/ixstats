@@ -10,7 +10,7 @@ import {
   Label as Tag,
 } from "iconoir-react";
 import type { City, PointOfInterest, Subdivision } from "@prisma/client";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { SearchableList } from "~/components/mycountry/shared/primitives";
@@ -27,18 +27,12 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 /**
- * Geography attribute editor — MyCountry P-C.
- *
- * Lives under the Overview page, after the Government tab. Owns the
- * geographic attribute UI (cities, subdivisions, POIs) + a settings
- * dialog for the geographic rollup mode and rebase action. Spatial
- * (geometry, coordinates, placement) is owned by the map editor.
- *
- * Uses the existing countryGeo tRPC router (upsertCity, upsertSubdivision,
- * upsertPoi, setCapital) — owner-gated via standardMutationCountryOwnerProcedure.
+ * Geography attribute editor (cities, subdivisions, POIs) plus the rollup settings dialog. Spatial
+ * data (geometry, coordinates, placement) belongs to the map editor; writes go through the
+ * owner-gated countryGeo router.
  */
 export function GeographyContent() {
-  const { country, isPublicReadOnly } = useCountryData();
+  const { country } = useCountryData();
   const countryId = country?.id;
 
   const {
@@ -72,12 +66,6 @@ export function GeographyContent() {
     return <p className="text-label-secondary text-body">No geographic data found.</p>;
   }
 
-  // The bundle builder queries through an untyped client; rows are these Prisma models.
-  const cities: City[] = bundle.cities;
-  const subdivisions: Subdivision[] = bundle.subdivisions;
-  const pois: PointOfInterest[] = bundle.pois;
-  const { rollups, country: countryData } = bundle;
-
   if (!bundle.geometry) {
     return (
       <div className="space-y-4">
@@ -96,8 +84,41 @@ export function GeographyContent() {
   }
 
   return (
+    <GeographyBody
+      countryId={countryId}
+      countryName={country?.name}
+      bundle={bundle}
+      geoProfile={geoProfile}
+      onRefetch={() => refetch()}
+    />
+  );
+}
+
+type GeoProfile = NonNullable<RouterOutputs["geoCore"]["getCountryGeoProfile"]>;
+type GeoBundle = NonNullable<RouterOutputs["countryGeo"]["getCountryGeoBundle"]>;
+
+function GeographyBody({
+  countryId,
+  countryName,
+  bundle,
+  geoProfile,
+  onRefetch,
+}: {
+  countryId: string;
+  countryName?: string;
+  bundle: GeoBundle;
+  geoProfile: GeoProfile | undefined;
+  onRefetch: () => void;
+}) {
+  const { isPublicReadOnly } = useCountryData();
+  // The bundle builder queries through an untyped client; rows are these Prisma models.
+  const cities: City[] = bundle.cities;
+  const subdivisions: Subdivision[] = bundle.subdivisions;
+  const pois: PointOfInterest[] = bundle.pois;
+  const { rollups, country: countryData } = bundle;
+
+  return (
     <div className="space-y-4">
-      {/* Rollup settings trigger */}
       {rollups && !isPublicReadOnly && (
         <RollupSettingsModal
           countryId={countryId}
@@ -105,11 +126,9 @@ export function GeographyContent() {
           rollups={rollups}
           nationalPopulation={countryData?.currentPopulation ?? 0}
           nationalGdp={countryData?.currentTotalGdp ?? 0}
-          onUpdated={() => refetch()}
+          onUpdated={onRefetch}
         />
       )}
-
-      {/* Header stats */}
       <div className="grid grid-cols-3 gap-3">
         {(
           [
@@ -127,13 +146,11 @@ export function GeographyContent() {
           </Card>
         ))}
       </div>
-
-      {/* Geographic profile summary */}
       {geoProfile && (
         <Card className="rounded-card">
           <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 p-4 pb-3">
             <h3 className="text-label text-headline">Geographic profile</h3>
-            <GeographyReportModal countryName={country?.name ?? ""} geoProfile={geoProfile} />
+            <GeographyReportModal countryName={countryName ?? ""} geoProfile={geoProfile} />
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-3 px-4 pb-4 sm:grid-cols-4">
             <ProfileStat
@@ -159,16 +176,9 @@ export function GeographyContent() {
         </Card>
       )}
 
-      {/* Compliance guard — surfaces population/GDP rollup inconsistencies,
-          capital integrity, founded-year sanity, and coordinate-bounds issues. */}
-      {!isPublicReadOnly && (
-        <GeoCompliancePanel countryId={countryId} onRefresh={() => refetch()} />
-      )}
-
-      {/* National Transit & Mobility Index Card */}
-      <TransitMobilityCard countryId={countryId} countryName={country?.name} />
-
-      {/* Cities editor */}
+      {/* Surfaces rollup inconsistencies, capital integrity, founded-year and coordinate-bounds issues. */}
+      {!isPublicReadOnly && <GeoCompliancePanel countryId={countryId} onRefresh={onRefetch} />}
+      <TransitMobilityCard countryId={countryId} countryName={countryName} />
       <SearchableList
         title="Cities"
         icon={<Building2 className="text-label-secondary h-3.5 w-3.5" />}
@@ -177,12 +187,8 @@ export function GeographyContent() {
         searchPlaceholder="Search cities, mayors, specializations…"
         emptyMessage="No cities yet. Use the map editor to place some."
         noMatchMessage="No cities match your search."
-        renderItem={(city) => (
-          <CityEditor city={city} countryId={countryId} onSaved={() => refetch()} />
-        )}
+        renderItem={(city) => <CityEditor item={city} countryId={countryId} onSaved={onRefetch} />}
       />
-
-      {/* Subdivisions editor */}
       <SearchableList
         title="Subdivisions"
         icon={<MapPin className="text-label-secondary h-3.5 w-3.5" />}
@@ -192,11 +198,9 @@ export function GeographyContent() {
         emptyMessage="No subdivisions yet. Generate some from the action buttons above."
         noMatchMessage="No subdivisions match your search."
         renderItem={(sub) => (
-          <SubdivisionEditor subdivision={sub} countryId={countryId} onSaved={() => refetch()} />
+          <SubdivisionEditor item={sub} countryId={countryId} onSaved={onRefetch} />
         )}
       />
-
-      {/* Points of Interest (read-only) */}
       <SearchableList
         title="Points of interest"
         icon={<Pin className="text-label-secondary h-3.5 w-3.5" />}
@@ -205,18 +209,10 @@ export function GeographyContent() {
         searchPlaceholder="Search POIs, categories…"
         emptyMessage="No points of interest yet."
         noMatchMessage="No POIs match your search."
-        renderItem={(poi) => (
-          <PoiCard poi={poi} countryId={countryId} onApplied={() => refetch()} />
-        )}
+        renderItem={(poi) => <PoiCard poi={poi} countryId={countryId} onApplied={onRefetch} />}
       />
     </div>
   );
-}
-
-interface CityEditorProps {
-  city: City;
-  countryId: string;
-  onSaved: () => void;
 }
 
 interface EditorActionsProps {
@@ -273,59 +269,64 @@ function EditorActions({
   );
 }
 
-function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
+interface TextField {
+  key: string;
+  label: string;
+  value: string | null;
+}
+
+interface GeoEntityCardProps {
+  name: string;
+  subtitle: string;
+  population: number | null;
+  gdpContribution: number | null;
+  /** Free-text attributes; the first is also shown in the read-only summary as `summaryLabel`. */
+  textFields: TextField[];
+  summaryLabel: string;
+  isPending: boolean;
+  onSave: (
+    values: { population: number; gdpContribution: number; text: Record<string, string> },
+    done: () => void
+  ) => void;
+  populate: React.ReactNode;
+}
+
+/** The shared editor card for a city or subdivision: stats summary, or inputs while editing. */
+function GeoEntityCard({
+  name,
+  subtitle,
+  population: initialPopulation,
+  gdpContribution: initialGdp,
+  textFields,
+  summaryLabel,
+  isPending,
+  onSave,
+  populate,
+}: GeoEntityCardProps) {
   const [editing, setEditing] = useState(false);
-  const [population, setPopulation] = useState(city.population ?? 0);
-  const [gdpContribution, setGdpContribution] = useState(city.gdpContribution ?? 0);
-  const [mayorName, setMayorName] = useState(city.mayorName ?? "");
-  const [specialization, setSpecialization] = useState(city.specialization ?? "");
+  const [population, setPopulation] = useState(initialPopulation ?? 0);
+  const [gdpContribution, setGdpContribution] = useState(initialGdp ?? 0);
+  const [text, setText] = useState(() =>
+    Object.fromEntries(textFields.map((f) => [f.key, f.value ?? ""]))
+  );
   const { isPublicReadOnly } = useCountryData();
-
-  const upsert = api.countryGeo.upsertCity.useMutation({
-    onSuccess: () => {
-      setEditing(false);
-      onSaved();
-    },
-  });
-
-  const handleSave = () => {
-    upsert.mutate({
-      countryId,
-      id: city.id,
-      name: city.name,
-      population: population,
-      gdpContribution: gdpContribution,
-      mayorName: mayorName || undefined,
-      specialization: specialization || undefined,
-    });
-  };
+  const summaryValue = textFields[0]?.value;
 
   return (
     <Card className="p-3">
       <div className="mb-2 flex items-center justify-between">
         <div>
-          <div className="text-label text-caption font-semibold">{city.name}</div>
-          <div className="text-label-secondary text-footnote">
-            {city.isNationalCapital ? "National capital" : city.type}
-            {city.wikiPageTitle ? ` · wiki: ${city.wikiPageTitle}` : ""}
-          </div>
+          <div className="text-label text-caption font-semibold">{name}</div>
+          <div className="text-label-secondary text-footnote">{subtitle}</div>
         </div>
         <EditorActions
           editing={editing && !isPublicReadOnly}
           readOnly={!!isPublicReadOnly}
-          isPending={upsert.isPending}
-          onSave={handleSave}
+          isPending={isPending}
+          onSave={() => onSave({ population, gdpContribution, text }, () => setEditing(false))}
           onCancel={() => setEditing(false)}
           onEdit={() => setEditing(true)}
-          populate={
-            <PopulateFromWikiButton
-              countryId={countryId}
-              kind="city"
-              id={city.id}
-              wikiTitle={city.wikiPageTitle}
-              onApplied={onSaved}
-            />
-          }
+          populate={populate}
         />
       </div>
 
@@ -343,32 +344,31 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
             value={gdpContribution}
             onChange={(v) => setGdpContribution(parseFloat(v) || 0)}
           />
-          <FieldInput label="Mayor name" type="text" value={mayorName} onChange={setMayorName} />
-          <FieldInput
-            label="Specialization"
-            type="text"
-            value={specialization}
-            onChange={setSpecialization}
-          />
+          {textFields.map((f) => (
+            <FieldInput
+              key={f.key}
+              label={f.label}
+              type="text"
+              value={text[f.key] ?? ""}
+              onChange={(v) => setText((prev) => ({ ...prev, [f.key]: v }))}
+            />
+          ))}
         </div>
       ) : (
         <div className="text-label-secondary text-footnote grid grid-cols-2 gap-2">
-          <div>
-            <span className="text-stat-label text-label-secondary block">Pop</span>
-            <div className="text-label-secondary text-footnote">
-              {(city.population ?? 0).toLocaleString()}
+          {[
+            ["Pop", (initialPopulation ?? 0).toLocaleString()],
+            ["GDP", Math.round(initialGdp ?? 0).toLocaleString()],
+          ].map(([label, value]) => (
+            <div key={label}>
+              <span className="text-stat-label text-label-secondary block">{label}</span>
+              <div className="text-label-secondary text-footnote">{value}</div>
             </div>
-          </div>
-          <div>
-            <span className="text-stat-label text-label-secondary block">GDP</span>
-            <div className="text-label-secondary text-footnote">
-              {Math.round(city.gdpContribution ?? 0).toLocaleString()}
-            </div>
-          </div>
-          {city.mayorName && (
+          ))}
+          {summaryValue && (
             <div className="col-span-2">
-              <Eyebrow className="block">Mayor</Eyebrow>
-              <div className="text-label-secondary text-footnote">{city.mayorName}</div>
+              <Eyebrow className="block">{summaryLabel}</Eyebrow>
+              <div className="text-label-secondary text-footnote">{summaryValue}</div>
             </div>
           )}
         </div>
@@ -377,114 +377,100 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
   );
 }
 
-interface SubdivisionEditorProps {
-  subdivision: Subdivision;
+interface EditorProps<T> {
   countryId: string;
   onSaved: () => void;
+  item: T;
 }
 
-function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEditorProps) {
-  const [editing, setEditing] = useState(false);
-  const [population, setPopulation] = useState(subdivision.population ?? 0);
-  const [gdpContribution, setGdpContribution] = useState(subdivision.gdpContribution ?? 0);
-  const [governorName, setGovernorName] = useState(subdivision.governorName ?? "");
-  const [governmentType, setGovernmentType] = useState(subdivision.governmentType ?? "");
-  const { isPublicReadOnly } = useCountryData();
-
-  const upsert = api.countryGeo.upsertSubdivision.useMutation({
-    onSuccess: () => {
-      setEditing(false);
-      onSaved();
-    },
-  });
-
-  const handleSave = () => {
-    upsert.mutate({
-      countryId,
-      id: subdivision.id,
-      name: subdivision.name,
-      population: population,
-      gdpContribution: gdpContribution,
-      governorName: governorName || undefined,
-      governmentType: governmentType || undefined,
-    });
-  };
-
+function CityEditor({ item: city, countryId, onSaved }: EditorProps<City>) {
+  const upsert = api.countryGeo.upsertCity.useMutation();
   return (
-    <Card className="p-3">
-      <div className="mb-2 flex items-center justify-between">
-        <div>
-          <div className="text-label text-caption font-semibold">{subdivision.name}</div>
-          <div className="text-label-secondary text-footnote">{subdivision.type}</div>
-        </div>
-        <EditorActions
-          editing={editing && !isPublicReadOnly}
-          readOnly={!!isPublicReadOnly}
-          isPending={upsert.isPending}
-          onSave={handleSave}
-          onCancel={() => setEditing(false)}
-          onEdit={() => setEditing(true)}
-          populate={
-            <PopulateFromWikiButton
-              countryId={countryId}
-              kind="subdivision"
-              id={subdivision.id}
-              onApplied={onSaved}
-            />
+    <GeoEntityCard
+      name={city.name}
+      subtitle={`${city.isNationalCapital ? "National capital" : city.type}${city.wikiPageTitle ? ` · wiki: ${city.wikiPageTitle}` : ""}`}
+      population={city.population}
+      gdpContribution={city.gdpContribution}
+      textFields={[
+        { key: "mayorName", label: "Mayor name", value: city.mayorName },
+        { key: "specialization", label: "Specialization", value: city.specialization },
+      ]}
+      summaryLabel="Mayor"
+      isPending={upsert.isPending}
+      onSave={({ population, gdpContribution, text }, done) =>
+        upsert.mutate(
+          {
+            countryId,
+            id: city.id,
+            name: city.name,
+            population,
+            gdpContribution,
+            mayorName: text.mayorName || undefined,
+            specialization: text.specialization || undefined,
+          },
+          {
+            onSuccess: () => {
+              done();
+              onSaved();
+            },
           }
+        )
+      }
+      populate={
+        <PopulateFromWikiButton
+          countryId={countryId}
+          kind="city"
+          id={city.id}
+          wikiTitle={city.wikiPageTitle}
+          onApplied={onSaved}
         />
-      </div>
+      }
+    />
+  );
+}
 
-      {editing ? (
-        <div className="space-y-2">
-          <FieldInput
-            label="Population"
-            type="number"
-            value={population}
-            onChange={(v) => setPopulation(parseInt(v) || 0)}
-          />
-          <FieldInput
-            label="GDP contribution"
-            type="number"
-            value={gdpContribution}
-            onChange={(v) => setGdpContribution(parseFloat(v) || 0)}
-          />
-          <FieldInput
-            label="Governor name"
-            type="text"
-            value={governorName}
-            onChange={setGovernorName}
-          />
-          <FieldInput
-            label="Government type"
-            type="text"
-            value={governmentType}
-            onChange={setGovernmentType}
-          />
-        </div>
-      ) : (
-        <div className="text-label-secondary text-footnote grid grid-cols-2 gap-2">
-          <div>
-            <span className="text-stat-label text-label-secondary block">Pop</span>
-            <div className="text-label-secondary text-footnote">
-              {(subdivision.population ?? 0).toLocaleString()}
-            </div>
-          </div>
-          <div>
-            <span className="text-stat-label text-label-secondary block">GDP</span>
-            <div className="text-label-secondary text-footnote">
-              {Math.round(subdivision.gdpContribution ?? 0).toLocaleString()}
-            </div>
-          </div>
-          {subdivision.governorName && (
-            <div className="col-span-2">
-              <Eyebrow className="block">Governor</Eyebrow>
-              <div className="text-label-secondary text-footnote">{subdivision.governorName}</div>
-            </div>
-          )}
-        </div>
-      )}
-    </Card>
+function SubdivisionEditor({ item: subdivision, countryId, onSaved }: EditorProps<Subdivision>) {
+  const upsert = api.countryGeo.upsertSubdivision.useMutation();
+  return (
+    <GeoEntityCard
+      name={subdivision.name}
+      subtitle={subdivision.type}
+      population={subdivision.population}
+      gdpContribution={subdivision.gdpContribution}
+      textFields={[
+        { key: "governorName", label: "Governor name", value: subdivision.governorName },
+        { key: "governmentType", label: "Government type", value: subdivision.governmentType },
+      ]}
+      summaryLabel="Governor"
+      isPending={upsert.isPending}
+      onSave={({ population, gdpContribution, text }, done) =>
+        upsert.mutate(
+          {
+            countryId,
+            id: subdivision.id,
+            name: subdivision.name,
+            population,
+            gdpContribution,
+            governorName: text.governorName || undefined,
+            governmentType: text.governmentType || undefined,
+          },
+          {
+            onSuccess: () => {
+              done();
+              onSaved();
+            },
+          }
+        )
+      }
+      populate={
+        <PopulateFromWikiButton
+          countryId={countryId}
+          kind="subdivision"
+          id={subdivision.id}
+          onApplied={onSaved}
+        />
+      }
+    />
   );
 }
 
