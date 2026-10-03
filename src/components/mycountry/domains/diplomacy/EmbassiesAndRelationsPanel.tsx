@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   City as Building2,
   Group as Users,
@@ -17,28 +17,20 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { SectionTabBar } from "~/components/mycountry/shared/primitives/SectionTabBar";
 
-// Hooks
 import { useEmbassyNetworkData } from "~/hooks/useEmbassyNetworkData";
-import { useNetworkMetrics } from "~/hooks/useNetworkMetrics";
 
-// Sub-components (embassy network)
 import { EmbassyGrid, EmptyState } from "./embassy-network";
 import { DiplomaticRelationsList } from "./DiplomaticRelationsList";
 
-// Alliance sub-component
 import { AllianceDashboard } from "./alliances/AllianceDashboard";
 
-// Cultural exchanges
 import { CulturalExchangeProgram } from "./CulturalExchangeProgram";
 
-// Diplomatic events
 import { DiplomaticEventsHub } from "./DiplomaticEventsHub";
 
-// Proposal / invitation inbox
 import { DiplomacyInbox } from "./inbox/DiplomacyInbox";
 import { useDiplomacyInboxCount } from "./inbox/useDiplomacyInbox";
 
-// Sheets
 import { EmbassyCreatorSheet } from "./EmbassyCreatorSheet";
 import { EmbassyDetailSheet } from "./EmbassyDetailSheet";
 import { AllianceCreatorSheet } from "./AllianceCreatorSheet";
@@ -48,20 +40,82 @@ interface EmbassiesAndRelationsPanelProps {
   countryId: string;
 }
 
+type DiplomacyTab = "inbox" | "embassies" | "relations" | "alliances" | "exchanges" | "events";
+
+/** Counts for the tab badges. Active embassies without a relation record count as relations. */
+function computeStats(
+  embassies: { status: string; guestCountryId: string; hostCountryId: string }[],
+  relations: { targetCountryId: string }[],
+  allianceCount: number,
+  countryId: string
+) {
+  const active = embassies.filter((e) => e.status === "ACTIVE" || e.status === "active");
+  const related = new Set(relations.map((r) => r.targetCountryId));
+  const unrelatedPartners = new Set(
+    active
+      .map((e) => (e.guestCountryId === countryId ? e.hostCountryId : e.guestCountryId))
+      .filter((id) => !related.has(id))
+  );
+  return {
+    activeEmbassies: active.length,
+    totalRelations: relations.length + unrelatedPartners.size,
+    allianceCount,
+  };
+}
+
+function PanelSection({
+  icon: Icon,
+  title,
+  help,
+  action,
+  children,
+}: {
+  icon: typeof Building2;
+  title: string;
+  /** Tooltip text; omitted for sections without a help icon. */
+  help?: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const heading = (
+    <div className="flex items-center gap-2">
+      <Icon className="text-label-secondary h-4 w-4" />
+      <h3 className="text-label text-headline">{title}</h3>
+      {help && <SectionHelpIcon title={title} content={help} />}
+    </div>
+  );
+  return (
+    <section className="space-y-3">
+      {action ? (
+        <div className="flex items-center justify-between">
+          {heading}
+          {action}
+        </div>
+      ) : (
+        heading
+      )}
+      {children}
+    </section>
+  );
+}
+
+function CreateButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <Button variant="outline" size="sm" className="gap-2" onClick={onClick}>
+      <Plus className="h-3.5 w-3.5" />
+      {label}
+    </Button>
+  );
+}
+
 export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsPanelProps) {
   const { user } = useUser();
 
-  // Sheet state
   const [showEmbassyCreator, setShowEmbassyCreator] = useState(false);
   const [selectedEmbassyId, setSelectedEmbassyId] = useState<string | null>(null);
   const [showAllianceCreator, setShowAllianceCreator] = useState(false);
+  const [activeTab, setActiveTab] = useState<DiplomacyTab>("embassies");
 
-  // Sub-tab navigation state
-  const [activeTab, setActiveTab] = useState<
-    "inbox" | "embassies" | "relations" | "alliances" | "exchanges" | "events"
-  >("embassies");
-
-  // Determine ownership
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
   const isOwner = userProfile?.countryId === countryId;
 
@@ -75,59 +129,31 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
     if (inbox.count > 0) setActiveTab("inbox");
   }, [inbox.isLoading, inbox.count, isOwner]);
 
-  // Country data
   const { data: country } = api.countries.getByIdBasic.useQuery(
     { id: countryId },
     { enabled: !!countryId }
   );
 
-  // Embassy data (with synergies)
   const {
     embassiesWithSynergies,
     isLoading: embassiesLoading,
     refetch: refetchEmbassies,
   } = useEmbassyNetworkData(countryId, isOwner);
-  const networkMetrics = useNetworkMetrics(embassiesWithSynergies);
 
-  // Relations data
   const { data: relations } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
 
-  // Alliances data
   const { data: alliances, refetch: refetchAlliances } =
     api.diplomaticPolicies.getAlliances.useQuery({ countryId }, { enabled: !!countryId });
 
-  // Stats
-  const stats = useMemo(() => {
-    const activeEmbassies = embassiesWithSynergies.filter(
-      (e) => e.status === "ACTIVE" || e.status === "active"
-    ).length;
-
-    const relationsTargetIds = new Set(relations?.map((r) => r.targetCountryId) ?? []);
-    let additionalRelationsCount = 0;
-    embassiesWithSynergies.forEach((e) => {
-      if (e.status === "ACTIVE" || e.status === "active") {
-        const partnerId = e.guestCountryId === countryId ? e.hostCountryId : e.guestCountryId;
-        if (!relationsTargetIds.has(partnerId)) {
-          additionalRelationsCount++;
-          relationsTargetIds.add(partnerId);
-        }
-      }
-    });
-
-    const relList = relations ?? [];
-    const totalRelations = relList.length + additionalRelationsCount;
-    const allianceCount = alliances?.length ?? 0;
-    const avgStrength =
-      totalRelations > 0
-        ? Math.round(relList.reduce((sum, r) => sum + (r.strength ?? 0), 0) / totalRelations)
-        : 0;
-
-    return { activeEmbassies, totalRelations, allianceCount, avgStrength };
-  }, [embassiesWithSynergies, relations, alliances, countryId]);
-
+  const stats = computeStats(
+    embassiesWithSynergies,
+    relations ?? [],
+    alliances?.length ?? 0,
+    countryId
+  );
   const countryName = country?.name ?? "Your Country";
 
   if (embassiesLoading) {
@@ -144,7 +170,6 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
 
   return (
     <div className="space-y-5">
-      {/* ─── Sub-Tab Navigation Bar (shared with the other domain sections) ─── */}
       <SectionTabBar
         tabs={[
           ...(isOwner
@@ -183,46 +208,27 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
         activeClassName="text-cyan"
       />
 
-      {/* ─── Tab Content Views ─── */}
       {activeTab === "inbox" && isOwner && (
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <MailIn className="text-label-secondary h-4 w-4" />
-            <h3 className="text-label text-headline">Diplomatic inbox</h3>
-            <SectionHelpIcon
-              title="Diplomatic inbox"
-              content="Free trade and military alliance proposals and alliance invitations need the other nation's consent. Answer incoming ones here, or withdraw your own while they are pending. Unanswered items expire after 14 days."
-            />
-          </div>
+        <PanelSection
+          icon={MailIn}
+          title="Diplomatic inbox"
+          help="Free trade and military alliance proposals and alliance invitations need the other nation's consent. Answer incoming ones here, or withdraw your own while they are pending. Unanswered items expire after 14 days."
+        >
           <DiplomacyInbox countryId={countryId} />
-        </section>
+        </PanelSection>
       )}
 
       {activeTab === "embassies" && (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Building2 className="text-label-secondary h-4 w-4" />
-              <h3 className="text-label text-headline">Embassy network</h3>
-              <SectionHelpIcon
-                title="Embassy network"
-                content="Manage your diplomatic embassies. Embassies provide synergy bonuses based on shared government components and improve bilateral relations with host nations."
-              />
-            </div>
-            {isOwner && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={() => setShowEmbassyCreator(true)}
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Establish embassy
-              </Button>
-            )}
-          </div>
-
-          {/* Embassy grid or empty state */}
+        <PanelSection
+          icon={Building2}
+          title="Embassy network"
+          help="Manage your diplomatic embassies. Embassies provide synergy bonuses based on shared government components and improve bilateral relations with host nations."
+          action={
+            isOwner && (
+              <CreateButton label="Establish embassy" onClick={() => setShowEmbassyCreator(true)} />
+            )
+          }
+        >
           {embassiesWithSynergies.length > 0 ? (
             <EmbassyGrid
               embassies={embassiesWithSynergies}
@@ -232,41 +238,24 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
           ) : (
             <EmptyState isOwner={isOwner} onEstablishEmbassy={() => setShowEmbassyCreator(true)} />
           )}
-        </section>
+        </PanelSection>
       )}
 
       {activeTab === "relations" && (
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Handshake className="text-label-secondary h-4 w-4" />
-            <h3 className="text-label text-headline">Diplomatic relations</h3>
-          </div>
+        <PanelSection icon={Handshake} title="Diplomatic relations">
           <DiplomaticRelationsList countryId={countryId} />
-        </section>
+        </PanelSection>
       )}
 
       {activeTab === "alliances" && (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Users className="text-label-secondary h-4 w-4" />
-              <h3 className="text-label text-headline">Alliances & blocs</h3>
-              <SectionHelpIcon
-                title="Alliances & blocs"
-                content="Form and manage alliances with other nations. Alliances give mutual defense, trade advantages and diplomatic standing."
-              />
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={() => setShowAllianceCreator(true)}
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Create alliance
-            </Button>
-          </div>
-
+        <PanelSection
+          icon={Users}
+          title="Alliances & blocs"
+          help="Form and manage alliances with other nations. Alliances give mutual defense, trade advantages and diplomatic standing."
+          action={
+            <CreateButton label="Create alliance" onClick={() => setShowAllianceCreator(true)} />
+          }
+        >
           {!alliances || alliances.length === 0 ? (
             <Card className="rounded-card p-6 text-center">
               <Users className="text-label-secondary mx-auto mb-3 h-6 w-6" />
@@ -287,30 +276,21 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
               ))}
             </div>
           )}
-        </section>
+        </PanelSection>
       )}
 
       {activeTab === "exchanges" && (
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Palette className="text-label-secondary h-4 w-4" />
-            <h3 className="text-label text-headline">Cultural exchanges</h3>
-          </div>
+        <PanelSection icon={Palette} title="Cultural exchanges">
           <CulturalExchangeProgram primaryCountry={{ id: countryId, name: countryName }} />
-        </section>
+        </PanelSection>
       )}
 
       {activeTab === "events" && (
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <FileText className="text-label-secondary h-4 w-4" />
-            <h3 className="text-label text-headline">Diplomatic events</h3>
-          </div>
+        <PanelSection icon={FileText} title="Diplomatic events">
           <DiplomaticEventsHub countryId={countryId} countryName={countryName} />
-        </section>
+        </PanelSection>
       )}
 
-      {/* ─── Sheets ─── */}
       <EmbassyCreatorSheet
         countryId={countryId}
         countryName={countryName}
