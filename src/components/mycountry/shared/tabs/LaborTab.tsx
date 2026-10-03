@@ -59,7 +59,7 @@ function UnemploymentBadge({ rate }: { rate: number }) {
   return <span className="text-caption text-yellow font-semibold">Stable</span>;
 }
 
-type Labor = NonNullable<DataTabProps["economyData"]>["labor"];
+type Labor = NonNullable<NonNullable<DataTabProps["economyData"]>["labor"]>;
 type SectionProps = { labor: Labor; section: ReturnType<typeof useAccordion> };
 
 function LaborMetrics({
@@ -287,6 +287,7 @@ export function LaborTab({
   const section = useAccordion("workforce");
   const currency = country?.nationalIdentity?.currency || "USD";
   const labor = economyData?.labor;
+  if (!labor) return null;
 
   return (
     <TabShell
