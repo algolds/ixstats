@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { Xmark as X, Plus, SystemRestart } from "iconoir-react";
-import { ComparisonCharts } from "./charts/ComparisonCharts";
+import { ComparisonCharts, chartColor } from "./charts/ComparisonCharts";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
@@ -32,18 +32,7 @@ interface CountryComparisonModalProps {
   onCountrySelect?: (countryId: string) => void;
 }
 
-const CHART_COLORS = [
-  "#8b5cf6",
-  "#06b6d4",
-  "#84cc16",
-  "#f97316",
-  "#ec4899",
-  "#14b8a6",
-  "#f59e0b",
-  "#ef4444",
-];
 const MAX_COUNTRIES = 8;
-const colorAt = (index: number) => CHART_COLORS[index] || "#8b5cf6";
 
 type AvailableCountry = CountryComparisonModalProps["availableCountries"][number];
 
@@ -66,7 +55,7 @@ function toComparisonCountry(
     gdpDensity: data.gdpDensity,
     landArea: data.landArea,
     continent: data.continent || fallback.continent,
-    color: colorAt(index),
+    color: chartColor(index),
   };
 }
 
@@ -137,7 +126,7 @@ export function CountryComparisonModal({
     setSelectedCountries(
       selectedCountries
         .filter((c) => c.id !== countryId)
-        .map((country, index) => ({ ...country, color: colorAt(index) }))
+        .map((country, index) => ({ ...country, color: chartColor(index) }))
     );
     if (removed) notify.success(`${removed.name} removed from comparison`);
   };
