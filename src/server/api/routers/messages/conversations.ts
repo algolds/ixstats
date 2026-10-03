@@ -4,11 +4,7 @@
 
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { createMessagingService } from "~/server/modules/messaging";
-import { notificationAPI } from "~/lib/notifications/api";
-import { getThinkPagesBroadcaster } from "~/server/websocket-server";
-import { forumBridge } from "~/server/modules/forum";
-import { wikiTalkBridge } from "~/server/bridges/wiki-talk-bridge";
+import { messagingFor } from "./_service";
 
 const MessageFolderSchema = z.enum([
   "inbox",
@@ -48,13 +44,7 @@ export const messagesConversationsRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
       return await messagingService.getConversationsByFolder(ctx.auth.userId, {
         folder: input.folder as any,
@@ -69,13 +59,7 @@ export const messagesConversationsRouter = createTRPCRouter({
   getConversation: protectedProcedure
     .input(z.object({ conversationId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
       return await messagingService.getConversation(ctx.auth.userId, input.conversationId);
     }),
@@ -86,13 +70,7 @@ export const messagesConversationsRouter = createTRPCRouter({
   getFolderCounts: protectedProcedure
     .input(z.object({ userId: z.string().optional().default("") }).optional())
     .query(async ({ ctx }) => {
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
       return await messagingService.getFolderCounts(ctx.auth.userId);
     }),
@@ -101,13 +79,7 @@ export const messagesConversationsRouter = createTRPCRouter({
    * Mark all conversations/messages as read for the current user.
    */
   markAllAsRead: protectedProcedure.mutation(async ({ ctx }) => {
-    const messagingService = createMessagingService({
-      db: ctx.db,
-      notifications: notificationAPI,
-      websocket: getThinkPagesBroadcaster(),
-      forumBridge,
-      wikiBridge: wikiTalkBridge,
-    });
+    const messagingService = messagingFor(ctx);
 
     return await messagingService.markAllAsRead(ctx.auth.userId);
   }),
@@ -131,13 +103,7 @@ export const messagesConversationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
       return await messagingService.createConversation(ctx.auth.userId, {
         participantIds: input.participantIds,
