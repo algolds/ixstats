@@ -10,25 +10,25 @@ const WHITE = "#ffffff";
 const regularFont = () => [...MAP_SYMBOL_FONTS.regular];
 const isTouchDevice = () => "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
-const circle = (
+export const circle = (
   id: string,
   paint: LayerOf<"circle">["paint"],
   filter?: Filter
 ): SourcelessLayer => ({ id, type: "circle", paint, ...(filter && { filter }) });
 
-const line = (
+export const line = (
   id: string,
   paint: LayerOf<"line">["paint"],
   extra: { filter?: Filter; layout?: LayerOf<"line">["layout"] } = {}
 ): SourcelessLayer => ({ id, type: "line", paint, ...extra });
 
-const fill = (id: string, paint: LayerOf<"fill">["paint"]): SourcelessLayer => ({
+export const fill = (id: string, paint: LayerOf<"fill">["paint"]): SourcelessLayer => ({
   id,
   type: "fill",
   paint,
 });
 
-const symbol = (
+export const symbol = (
   id: string,
   layout: LayerOf<"symbol">["layout"],
   paint: LayerOf<"symbol">["paint"],

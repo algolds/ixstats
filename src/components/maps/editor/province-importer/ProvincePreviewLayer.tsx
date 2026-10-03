@@ -11,6 +11,7 @@ import {
   upsertGeoJSONLayers,
   type SourcelessLayer,
 } from "../utils/map-helpers";
+import { circle, fill, line, symbol } from "../utils/editor-layer-specs";
 
 interface ProvincePreviewLayerProps {
   map: MapLibreMap | null;
@@ -38,27 +39,22 @@ const PROVINCES: Overlay = {
   sourceId: "province-import-preview",
   layers: [
     // A fixed visible colour: the SVG fill may be near-white or grey.
-    {
-      id: "province-import-fill",
-      type: "fill",
-      paint: { "fill-color": "#f59e0b", "fill-opacity": 0.2 },
-    },
-    {
-      id: "province-import-line",
-      type: "line",
-      paint: { "line-color": "#ef4444", "line-width": 2.5, "line-opacity": 1.0 },
-    },
-    {
-      id: "province-import-label",
-      type: "symbol",
-      layout: {
+    fill("province-import-fill", { "fill-color": "#f59e0b", "fill-opacity": 0.2 }),
+    line("province-import-line", {
+      "line-color": "#ef4444",
+      "line-width": 2.5,
+      "line-opacity": 1.0,
+    }),
+    symbol(
+      "province-import-label",
+      {
         "text-field": ["get", "name"],
         "text-size": 11,
         "text-anchor": "center",
         "text-allow-overlap": false,
       },
-      paint: LABEL_PAINT,
-    },
+      LABEL_PAINT
+    ),
   ],
 };
 
@@ -66,49 +62,36 @@ const PROVINCES: Overlay = {
 const COUNTRY_BORDER: Overlay = {
   sourceId: "province-import-country-border",
   layers: [
-    {
-      id: "province-import-border-fill",
-      type: "fill",
-      paint: { "fill-color": "#22c55e", "fill-opacity": 0.05 },
-    },
-    {
-      id: "province-import-border-line",
-      type: "line",
-      paint: {
-        "line-color": "#22c55e",
-        "line-width": 3,
-        "line-dasharray": [6, 4],
-        "line-opacity": 0.8,
-      },
-    },
+    fill("province-import-border-fill", { "fill-color": "#22c55e", "fill-opacity": 0.05 }),
+    line("province-import-border-line", {
+      "line-color": "#22c55e",
+      "line-width": 3,
+      "line-dasharray": [6, 4],
+      "line-opacity": 0.8,
+    }),
   ],
 };
 
 const CITIES: Overlay = {
   sourceId: "province-import-preview-cities",
   layers: [
-    {
-      id: "province-import-preview-cities-circle",
-      type: "circle",
-      paint: {
-        "circle-radius": 5,
-        "circle-color": ["case", ["get", "isCapital"], "#ef4444", "#3b82f6"],
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 1.5,
-      },
-    },
-    {
-      id: "province-import-preview-cities-label",
-      type: "symbol",
-      layout: {
+    circle("province-import-preview-cities-circle", {
+      "circle-radius": 5,
+      "circle-color": ["case", ["get", "isCapital"], "#ef4444", "#3b82f6"],
+      "circle-stroke-color": "#ffffff",
+      "circle-stroke-width": 1.5,
+    }),
+    symbol(
+      "province-import-preview-cities-label",
+      {
         "text-field": ["get", "name"],
         "text-size": 10,
         "text-offset": [0, 1.2],
         "text-anchor": "top",
         "text-allow-overlap": false,
       },
-      paint: LABEL_PAINT,
-    },
+      LABEL_PAINT
+    ),
   ],
 };
 

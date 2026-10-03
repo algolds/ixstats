@@ -21,6 +21,7 @@ import {
   upsertGeoJSONLayers,
   type SourcelessLayer,
 } from "../utils/map-helpers";
+import { circle, fill, line } from "../utils/editor-layer-specs";
 import { createListeners } from "./map-interaction";
 
 /** Border-edit sources and their layers (z-order is array order). */
@@ -28,111 +29,81 @@ const BORDER_SOURCES: Array<[sourceId: string, layers: SourcelessLayer[]]> = [
   [
     "neighbors",
     [
-      {
-        id: "neighbors-fill",
-        type: "fill",
-        paint: { "fill-color": "#4a5568", "fill-opacity": 0.3 },
-      },
-      { id: "neighbors-line", type: "line", paint: { "line-color": "#718096", "line-width": 0.5 } },
+      fill("neighbors-fill", { "fill-color": "#4a5568", "fill-opacity": 0.3 }),
+      line("neighbors-line", { "line-color": "#718096", "line-width": 0.5 }),
     ],
   ],
-  [
-    "merge-targets",
-    [
-      {
-        id: "merge-targets-fill",
-        type: "fill",
-        paint: { "fill-color": "#4299e1", "fill-opacity": 0.3 },
-      },
-    ],
-  ],
+  ["merge-targets", [fill("merge-targets-fill", { "fill-color": "#4299e1", "fill-opacity": 0.3 })]],
   [
     "active-feature",
     [
-      { id: "active-fill", type: "fill", paint: { "fill-color": "#48bb78", "fill-opacity": 0.25 } },
-      { id: "active-line", type: "line", paint: { "line-color": "#48bb78", "line-width": 2 } },
+      fill("active-fill", { "fill-color": "#48bb78", "fill-opacity": 0.25 }),
+      line("active-line", { "line-color": "#48bb78", "line-width": 2 }),
     ],
   ],
   [
     "vertices",
     [
-      {
-        id: "vertices-circles",
-        type: "circle",
-        paint: {
-          "circle-radius": ["case", ["==", ["get", "selected"], true], 7, 4],
-          "circle-color": ["case", ["==", ["get", "selected"], true], "#f6e05e", "#fff"],
-          "circle-stroke-color": "#000",
-          "circle-stroke-width": 1,
-        },
-      },
+      circle("vertices-circles", {
+        "circle-radius": ["case", ["==", ["get", "selected"], true], 7, 4],
+        "circle-color": ["case", ["==", ["get", "selected"], true], "#f6e05e", "#fff"],
+        "circle-stroke-color": "#000",
+        "circle-stroke-width": 1,
+      }),
     ],
   ],
   [
     "midpoints",
     [
-      {
-        id: "midpoints-circles",
-        type: "circle",
-        paint: {
-          "circle-radius": 3,
-          "circle-color": "#a0aec0",
-          "circle-stroke-color": "#000",
-          "circle-stroke-width": 0.5,
-          "circle-opacity": 0.6,
-        },
-      },
+      circle("midpoints-circles", {
+        "circle-radius": 3,
+        "circle-color": "#a0aec0",
+        "circle-stroke-color": "#000",
+        "circle-stroke-width": 0.5,
+        "circle-opacity": 0.6,
+      }),
     ],
   ],
   [
     "split-line",
     [
-      {
-        id: "split-line-layer",
-        type: "line",
-        paint: { "line-color": "#f56565", "line-width": 2, "line-dasharray": [4, 2] },
-      },
-      {
-        id: "split-points",
-        type: "circle",
-        filter: ["==", "$type", "Point"],
-        paint: {
+      line("split-line-layer", {
+        "line-color": "#f56565",
+        "line-width": 2,
+        "line-dasharray": [4, 2],
+      }),
+      circle(
+        "split-points",
+        {
           "circle-radius": 5,
           "circle-color": "#f56565",
           "circle-stroke-color": "#fff",
           "circle-stroke-width": 1,
         },
-      },
+        ["==", "$type", "Point"]
+      ),
     ],
   ],
   [
     "trace-start",
     [
-      {
-        id: "trace-start-circle",
-        type: "circle",
-        paint: {
-          "circle-radius": 7,
-          "circle-color": "#3b82f6",
-          "circle-stroke-color": "#fff",
-          "circle-stroke-width": 1.5,
-        },
-      },
+      circle("trace-start-circle", {
+        "circle-radius": 7,
+        "circle-color": "#3b82f6",
+        "circle-stroke-color": "#fff",
+        "circle-stroke-width": 1.5,
+      }),
     ],
   ],
   [
     "brush-cursor",
     [
-      {
-        id: "brush-cursor-layer",
-        type: "line",
-        paint: { "line-color": "#a855f7", "line-width": 1.5, "line-dasharray": [2, 2] },
-      },
-      {
-        id: "brush-cursor-fill",
-        type: "fill",
-        paint: { "fill-color": "#a855f7", "fill-opacity": 0.1 },
-      },
+      line("brush-cursor-layer", {
+        "line-color": "#a855f7",
+        "line-width": 1.5,
+        "line-dasharray": [2, 2],
+      }),
+      fill("brush-cursor-fill", { "fill-color": "#a855f7", "fill-opacity": 0.1 }),
     ],
   ],
 ];
