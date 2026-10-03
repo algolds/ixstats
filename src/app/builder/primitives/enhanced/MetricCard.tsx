@@ -13,7 +13,6 @@ import { useSectionTheme, getGlassClasses } from "./theme-utils";
 import { useFormattedAnimatedValue, MOTION_VARIANTS } from "./animation-utils";
 import type { MetricCardProps } from "./types";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Button } from "~/components/ui/button";
 
 export function MetricCard({
@@ -28,12 +27,10 @@ export function MetricCard({
   change,
   changeUnit,
   className,
-  texture,
-  textureOpacity,
   tooltip,
   precision,
 }: MetricCardProps) {
-  const { theme: resolvedTheme, colors, cssVars } = useSectionTheme(sectionId, theme);
+  const { colors, cssVars } = useSectionTheme(sectionId, theme);
 
   const numericValue = typeof value === "number" ? value : 0;
   const isNumeric = typeof value === "number";
@@ -73,27 +70,22 @@ export function MetricCard({
     <motion.div
       {...MOTION_VARIANTS.scaleIn}
       className={cn(
-        "rounded-control hover:shadow-floating relative overflow-hidden p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
-        getGlassClasses("base", resolvedTheme, sectionId),
+        "rounded-control relative overflow-hidden p-4",
+        getGlassClasses("base"),
         className
       )}
       style={cssVars as React.CSSProperties}
     >
-      {texture && texture !== "none" && (
-        <TextureOverlay texture={texture} opacity={textureOpacity ?? 0.03} />
-      )}
-
       {/* Header with Icon and Label */}
       <div className="relative z-10 mb-3 flex items-start justify-between">
         <div className="flex min-w-0 flex-1 items-center gap-2">
           {Icon && (
-            <motion.div
-              whileHover={{ scale: 1.1 }}
+            <div
               className="rounded-control shrink-0 p-2"
               style={{ backgroundColor: colors.background }}
             >
               <Icon className="h-5 w-5" style={{ color: colors.primary }} />
-            </motion.div>
+            </div>
           )}
 
           <div className="min-w-0 flex-1">
@@ -167,14 +159,6 @@ export function MetricCard({
           <span className="text-label-secondary">from previous</span>
         </motion.div>
       )}
-
-      {/* Animated Background Glow on Hover */}
-      <motion.div
-        className="rounded-control pointer-events-none absolute inset-0 z-0 opacity-0"
-        whileHover={{ opacity: 0.1 }}
-        style={{ backgroundColor: colors.primary }}
-        transition={{ duration: 0.2 }}
-      />
     </motion.div>
   );
 }

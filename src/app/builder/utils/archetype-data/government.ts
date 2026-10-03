@@ -48,7 +48,6 @@ export const governmentArchetypes: ArchetypeSeed[] = [
       ];
       return democraticCountries.includes(country.name);
     },
-    gradient: "bg-blue/10",
     categoryId: "political-systems",
     priority: 12,
   },
@@ -85,7 +84,6 @@ export const governmentArchetypes: ArchetypeSeed[] = [
       ];
       return federalCountries.includes(country.name);
     },
-    gradient: "bg-purple/10",
     categoryId: "political-systems",
     priority: 13,
   },
@@ -128,7 +126,6 @@ export const governmentArchetypes: ArchetypeSeed[] = [
       ];
       return monarchies.includes(country.name);
     },
-    gradient: "bg-yellow/10",
     categoryId: "political-systems",
     priority: 14,
   },
@@ -197,7 +194,6 @@ export const governmentArchetypes: ArchetypeSeed[] = [
       ];
       return commonLawCountries.includes(country.name);
     },
-    gradient: "bg-teal/10",
     categoryId: "legal-systems",
     priority: 15,
   },
@@ -269,7 +265,6 @@ export const governmentArchetypes: ArchetypeSeed[] = [
       ];
       return civilLawCountries.includes(country.name);
     },
-    gradient: "bg-indigo/10",
     categoryId: "legal-systems",
     priority: 16,
   },

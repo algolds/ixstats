@@ -51,8 +51,6 @@ export interface EnhancedInputProps {
   className?: string;
 }
 
-import type { TextureType } from "~/components/ui/texture-overlay";
-
 export interface NumberFlowConfig {
   format?: (value: number) => string;
   duration?: number;
@@ -81,8 +79,6 @@ export interface MetricCardProps {
   changeUnit?: string;
   className?: string;
   size?: "sm" | "md" | "lg";
-  texture?: TextureType;
-  textureOpacity?: number;
   tooltip?: string;
   precision?: number;
 }

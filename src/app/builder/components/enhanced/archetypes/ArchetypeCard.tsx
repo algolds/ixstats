@@ -28,12 +28,10 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
   const colors = getArchetypeColors(archetype.id);
 
   return (
-    // v2 (c5c6b382): emerald selection — border, ring and glow — with a hover lift and accent rim.
-    // Selected, the card's accent is green and re-tints its subtree (the "Selected" button).
     <Card
       className={cn(
         "flex h-full flex-col justify-between gap-4 p-5",
-        isSelected ? "ring-green/60 ring-2" : "hover:border-green/30"
+        isSelected && "border-tint ring-tint/50 ring-1"
       )}
     >
       {/* Header */}
@@ -63,9 +61,7 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
           </Badge>
           <div className="text-caption text-green-ink font-semibold">
             Innovation:{" "}
-            <span className="font-data tabular-nums">
-              {archetype.growthMetrics.innovationIndex}
-            </span>
+            <span className="tabular-nums">{archetype.growthMetrics.innovationIndex}</span>
           </div>
         </div>
       </div>

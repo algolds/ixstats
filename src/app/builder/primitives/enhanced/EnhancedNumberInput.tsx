@@ -134,7 +134,7 @@ export function EnhancedNumberInput({
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { theme: resolvedTheme, cssVars } = useSectionTheme(sectionId, theme);
+  const { cssVars } = useSectionTheme(sectionId, theme);
 
   // Safely handle all numeric parameters
   const safeMin = typeof min === "number" && !isNaN(min) ? min : 0;
@@ -501,8 +501,6 @@ export function EnhancedNumberInput({
                   type="button"
                   onClick={handleDecrement}
                   disabled={disabled || Number(value) <= min}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                   className={cn(
                     "flex items-center justify-center rounded transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     "hover:bg-surface hover:text-tint",
@@ -518,8 +516,6 @@ export function EnhancedNumberInput({
                   type="button"
                   onClick={handleIncrement}
                   disabled={disabled || Number(value) >= max}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                   className={cn(
                     "flex items-center justify-center rounded transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     "hover:bg-surface hover:text-tint",
@@ -536,8 +532,6 @@ export function EnhancedNumberInput({
                     type="button"
                     onClick={handleReset}
                     disabled={disabled}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
                     className={cn(
                       "flex items-center justify-center rounded transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       "hover:bg-surface hover:text-tint",
@@ -562,7 +556,7 @@ export function EnhancedNumberInput({
           animate={{ opacity: 1, height: "auto" }}
           className={cn(
             "rounded-control text-body flex items-center gap-2 px-3 py-2",
-            getGlassClasses("base", resolvedTheme, sectionId)
+            getGlassClasses("base")
           )}
         >
           {comparisonData.trend === "up" && <TrendingUp className="text-green h-4 w-4" />}

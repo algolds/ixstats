@@ -5,9 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Globe, EditPencil as Edit3, ArrowRight, ClockRotateRight, Trash } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
-import { HUE_BADGE, hueAccentStyle } from "~/components/mycountry/shell/domain-hue";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
@@ -44,14 +42,7 @@ function IIWikiLogoIcon({ className }: { className?: string; "aria-hidden"?: boo
   );
 }
 
-/**
- * One starting path, restored from c5c6b382: a card with the builder's chevron texture (at the
- * Facet texture cap, .05), the path's glyph in its v2 accent badge, an accent badge and hover rim,
- * the hover lift and press, and the "Continue" arrow drifting on hover. The path hue is the card's
- * Facet accent; the card is the primitive's pressable (`onClick`: a focusable `role="button"` with
- * Enter/Space, press, lift and the focus ring), named by its title and described by its blurb.
- * Keyboard focus shows the hover affordances too.
- */
+/** One starting path: a pressable card named by its title and described by its blurb. */
 function PathCard({
   title,
   description,
@@ -69,7 +60,7 @@ function PathCard({
       aria-labelledby={badge ? `${titleId} ${badgeId}` : titleId}
       aria-describedby={descriptionId}
       data-cuelume-press
-      className="group hover:border-facet-accent/40 focus-visible:border-facet-accent/40 h-full overflow-hidden p-6 text-left"
+      className="group h-full overflow-hidden p-6 text-left"
       interactive
     >
       <CardContent className="relative flex h-full flex-col justify-between p-0">
@@ -77,23 +68,14 @@ function PathCard({
           <div className="flex items-center justify-between">
             <span
               aria-hidden="true"
-              className={cn(
-                "rounded-control-lg flex size-12 items-center justify-center border transition-[scale] duration-150 motion-safe:group-hover:scale-105 motion-safe:group-focus-visible:scale-105",
-                HUE_BADGE
-              )}
+              className="rounded-control-lg bg-fill-3 text-label-secondary flex size-12 items-center justify-center"
             >
               <Icon aria-hidden="true" className={cn("h-6 w-6", iconClassName)} />
             </span>
             {badge && (
-              <span
-                id={badgeId}
-                className={cn(
-                  "text-caption rounded-full border px-3 py-0.5 font-semibold",
-                  HUE_BADGE
-                )}
-              >
+              <Badge id={badgeId} variant="secondary">
                 {badge}
-              </span>
+              </Badge>
             )}
           </div>
 
@@ -193,7 +175,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
     const displayFlag = getHighResFlagUrl(rawFlag);
 
     return {
-      name: name && name !== "New Nation" && name !== "Custom Nation" ? name : "In-Progress Nation",
+      name: name && name !== "New Nation" && name !== "Custom Nation" ? name : "Untitled nation",
       flag: displayFlag,
       targetStep: targetStep as BuilderStep,
       stepLabel: getStepLabel(targetStep),
@@ -239,7 +221,6 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
 
   return (
     <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-1 flex-col justify-center space-y-6 py-2 sm:space-y-8 sm:py-4">
-      {/* Brand Header */}
       <div className="flex flex-col items-center space-y-4 text-center">
         <motion.div
           initial={{ opacity: 0, y: -8 }}
@@ -247,8 +228,6 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
           transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
           className="group relative isolate select-none"
         >
-          {/* v2 ambient warm glow halo behind the logo (the gold tint glow) */}
-
           <MyCountryLogo
             size="xl"
             variant="full"
@@ -264,7 +243,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
             Build your country.
           </h1>
           <p className="text-label-secondary text-body sm:text-title-3 mx-auto max-w-lg leading-relaxed">
-            Choose a starting point below. All 140+ options can be modified later.
+            Choose a starting point. You can change everything later.
           </p>
         </div>
       </div>
@@ -302,7 +281,6 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                     <div className="flex min-w-0 items-center gap-4">
                       <Trash aria-hidden="true" className="text-destructive h-6 w-6 shrink-0" />
                       <div className="min-w-0 flex-1 space-y-1">
-                        <Eyebrow className="text-destructive block">Confirmation required</Eyebrow>
                         <h2
                           id="foundation-discard-title"
                           className="text-label text-headline sm:text-title-3 truncate"
@@ -310,7 +288,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                           Discard draft for {inProgressData.name}?
                         </h2>
                         <p className="text-label-secondary text-footnote sm:text-body">
-                          All unsaved progress and configuration will be permanently deleted.
+                          This permanently deletes your unsaved progress.
                         </p>
                       </div>
                     </div>
@@ -351,13 +329,11 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                   exit={{ opacity: 0, scale: 0.98 }}
                   transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
                 >
-                  {/* v2 resume banner: gold glass with warm glows, the draft's flag and the
-                      gold Resume action. The whole banner resumes on a pointer press through a
-                      stretched target under the content (a pressable card may not hold the
-                      Discard / Resume buttons); keyboard and assistive tech use the buttons. */}
+                  {/* The whole banner resumes on a pointer press through a stretched target under the
+                      content (a pressable card may not hold the Discard and Resume buttons);
+                      keyboard and assistive tech use the buttons. */}
                   <Card
                     role="region"
-                    variant="hero"
                     aria-labelledby="foundation-resume-title"
                     className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
                   >
@@ -382,22 +358,11 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                         ) : (
                           <span
                             aria-hidden="true"
-                            className={cn(
-                              "rounded-control-lg flex size-12 items-center justify-center border",
-                              HUE_BADGE
-                            )}
-                            style={hueAccentStyle("yellow")}
+                            className="rounded-control-lg bg-fill-3 text-label-secondary flex size-12 items-center justify-center"
                           >
                             <ClockRotateRight className="h-6 w-6" />
                           </span>
                         )}
-                        {/* v2 "live draft" dot */}
-                        <span
-                          aria-hidden="true"
-                          className="bg-surface ring-surface absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center rounded-full ring-2"
-                        >
-                          <span className="bg-green size-2 rounded-full" />
-                        </span>
                       </div>
 
                       <div className="min-w-0 flex-1 space-y-1">
@@ -413,9 +378,6 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                         >
                           Resume {inProgressData.name}
                         </h2>
-                        <p className="text-label-secondary text-footnote sm:text-body truncate">
-                          Continue configuring your nation where you left off.
-                        </p>
                       </div>
                     </div>
 
@@ -454,26 +416,25 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
         )}
       </AnimatePresence>
 
-      {/* 3 Starting Options */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <PathCard
-          title="Start with a Template"
-          description="Select a real country or archetype to use as a template. We'll do the heavy lifting to get you started."
+          title="Start with a template"
+          description="Copy a real country or an economic archetype, then edit it."
           icon={Globe}
           badge="Recommended"
           onClick={() => onSelectPath("template")}
         />
 
         <PathCard
-          title="Start from Scratch"
-          description="Customize every aspect of your country from the ground up. Only for the most dedicated worldbuilders."
+          title="Start from scratch"
+          description="Set every value yourself, starting from a blank country."
           icon={Edit3}
           onClick={() => onSelectPath("scratch")}
         />
 
         <PathCard
           title="Import from IIWiki"
-          description="Use your existing country data from IIWiki to build your country. Core stats, flag, and relevant lore are automatically parsed."
+          description="Pull your country's stats, flag and lore from IIWiki."
           icon={IIWikiLogoIcon}
           iconClassName="h-7 w-7"
           onClick={() => onSelectPath("import")}

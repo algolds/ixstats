@@ -7,7 +7,6 @@ export interface CountryArchetype {
   icon: React.ComponentType<{ className?: string }>;
   color: string;
   filter: (country: RealCountryData) => boolean;
-  gradient: string;
 }
 
 export interface CountryPreview {

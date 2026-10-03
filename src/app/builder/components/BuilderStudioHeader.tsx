@@ -54,8 +54,8 @@ const SECTION_LABELS: Record<BuilderSection, string> = {
   identity: "Identity",
   government: "Government",
   economics: "Economics",
-  preview: "Preview & Finalize",
-  import: "Wiki Import",
+  preview: "Preview and finalize",
+  import: "Wiki import",
 };
 
 export interface BuilderStudioHeaderProps {
@@ -137,12 +137,8 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
             tech (one h1 per page; step content starts at h2). */}
         <h1 className="sr-only">{SECTION_LABELS[activeSection]} · MyCountry Builder</h1>
         <div className="mx-auto w-full max-w-6xl px-4">
-          {/* v2 studio bar (c5c6b382): a gold-rimmed glass bar over the builder canvas */}
-          <Card
-            variant="hero"
-            className="flex flex-wrap items-center justify-between gap-2 p-2 sm:flex-nowrap sm:p-3"
-          >
-            {/* Left Group: Back Button & Step Context */}
+          <Card className="flex flex-wrap items-center justify-between gap-2 p-2 sm:flex-nowrap sm:p-3">
+            {/* Back, restart and step count */}
             <div className="flex shrink-0 items-center gap-2">
               <Button
                 type="button"
@@ -188,7 +184,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
               </div>
             </div>
 
-            {/* Center: Connected Step Progression Track */}
+            {/* Step track */}
             <nav
               aria-label="Builder steps"
               className="flex min-w-0 flex-1 items-center justify-center gap-2 overflow-x-auto py-0.5 sm:gap-2"
@@ -221,7 +217,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                         aria-current="step"
                         data-cuelume-press="tick"
                         className={cn(
-                          "border-tint/40 bg-tint/15 text-yellow-ink text-caption shadow-card facet-press facet-press-sm relative flex shrink-0 cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold",
+                          "border-tint/40 bg-tint/15 text-yellow-ink text-caption shadow-card relative flex shrink-0 cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold",
                           focusRing,
                           hitSlop
                         )}
@@ -238,7 +234,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                             disabled={!isAccessible}
                             onClick={() => isAccessible && onNavigate(stepKey)}
                             className={cn(
-                              "text-caption facet-press facet-press-sm relative flex h-7 shrink-0 items-center justify-center gap-1 rounded-full border px-2",
+                              "text-caption relative flex h-7 shrink-0 items-center justify-center gap-1 rounded-full border px-2",
                               focusRing,
                               hitSlop,
                               isCompleted
@@ -271,7 +267,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
               })}
             </nav>
 
-            {/* Right Group: Guide Trigger & Primary Action CTA */}
+            {/* Guide and primary action */}
             <div className="flex shrink-0 items-center gap-2">
               {hasAlerts && (
                 <Badge
@@ -309,7 +305,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-caption">
-                  Step Companion & Guidelines
+                  Step guide
                 </TooltipContent>
               </Tooltip>
 
@@ -329,7 +325,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                   ) : (
                     <>
                       <CheckCircle aria-hidden="true" className="h-3.5 w-3.5" />
-                      <span>{mode === "edit" ? "Save Nation" : "Create Nation"}</span>
+                      <span>{mode === "edit" ? "Save nation" : "Create nation"}</span>
                     </>
                   )}
                 </Button>

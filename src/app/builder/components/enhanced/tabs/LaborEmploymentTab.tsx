@@ -181,53 +181,45 @@ export function LaborEmploymentTab({
 
   return (
     <div className="space-y-6">
-      <h2 className="sr-only">Labor & Employment Configuration</h2>
+      <h2 className="sr-only">Labor & employment configuration</h2>
       <p className="sr-only">
         Configure workforce dynamics, employment sectors, income, and worker rights.
       </p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          label="Total Workforce"
+          label="Total workforce"
           value={derivedMetrics.laborForceSize}
           icon={Users}
           sectionId="labor"
           trend="neutral"
-          texture="dots"
-          textureOpacity={0.04}
         />
         <MetricCard
-          label="Unemployment Rate"
+          label="Unemployment rate"
           value={economyBuilder.laborMarket.unemploymentRate}
           unit="%"
           precision={1}
           icon={economyBuilder.laborMarket.unemploymentRate < 5 ? TrendingUp : TrendingDown}
           sectionId="labor"
           trend={economyBuilder.laborMarket.unemploymentRate < 5 ? "up" : "down"}
-          texture="dots"
-          textureOpacity={0.04}
         />
         <MetricCard
-          label="Participation Rate"
+          label="Participation rate"
           value={economyBuilder.laborMarket.laborForceParticipationRate}
           unit="%"
           precision={1}
           icon={Users}
           sectionId="labor"
           trend={economyBuilder.laborMarket.laborForceParticipationRate > 65 ? "up" : "neutral"}
-          texture="dots"
-          textureOpacity={0.04}
         />
         <MetricCard
-          label="Avg Workweek"
+          label="Avg workweek"
           value={economyBuilder.laborMarket.averageWorkweekHours}
           unit=" hrs"
           precision={1}
           icon={TrendingDown}
           sectionId="labor"
           trend="neutral"
-          texture="dots"
-          textureOpacity={0.04}
         />
       </div>
 
@@ -236,8 +228,8 @@ export function LaborEmploymentTab({
           [
             { id: "workforce", label: "Workforce", icon: Users },
             { id: "employment", label: "Employment", icon: Briefcase },
-            { id: "income", label: "Income & Wages", icon: DollarSign },
-            { id: "protections", label: "Worker Rights & Protections", icon: Shield },
+            { id: "income", label: "Income & wages", icon: DollarSign },
+            { id: "protections", label: "Worker rights & protections", icon: Shield },
           ] as const
         ).map((section) => {
           const Icon = section.icon;
@@ -265,10 +257,10 @@ export function LaborEmploymentTab({
         <Card>
           <div className="border-separator border-b px-6 py-4">
             <h3 className="text-label text-headline flex items-center gap-2">
-              {activeSection === "workforce" && "Workforce Structure"}
-              {activeSection === "employment" && "Employment Configuration"}
-              {activeSection === "income" && "Income & Wage Settings"}
-              {activeSection === "protections" && "Worker Protections"}
+              {activeSection === "workforce" && "Workforce structure"}
+              {activeSection === "employment" && "Employment"}
+              {activeSection === "income" && "Income and wages"}
+              {activeSection === "protections" && "Worker protections"}
             </h3>
           </div>
           <CardContent className="space-y-6 p-6">

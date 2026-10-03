@@ -33,7 +33,6 @@ const wikiSites: WikiSite[] = [
     baseUrl: "https://iiwiki.com",
     description: "SimFic and Alt-History Encyclopedia",
     theme: "blue",
-    gradient: "bg-teal/10",
   },
   {
     name: "althistory",
@@ -41,7 +40,6 @@ const wikiSites: WikiSite[] = [
     baseUrl: "https://althistory.fandom.com",
     description: "Alternative History and Speculative Fiction Encyclopedia",
     theme: "indigo",
-    gradient: "bg-purple/10",
   },
 ];
 
@@ -407,7 +405,7 @@ export const ImportSection = React.memo(function ImportSection({
         {selectedResult && !parsedData && (
           <Button type="button" variant="outline" size="sm" onClick={handleBackFromSelection}>
             <ArrowLeft aria-hidden />
-            Back to Search
+            Back to search
           </Button>
         )}
 
@@ -422,7 +420,7 @@ export const ImportSection = React.memo(function ImportSection({
                   onClick={() => onNavigate("foundation")}
                 >
                   <ArrowLeft aria-hidden />
-                  <span>Back to Foundation</span>
+                  <span>Back to foundation</span>
                 </Button>
               </div>
             )}

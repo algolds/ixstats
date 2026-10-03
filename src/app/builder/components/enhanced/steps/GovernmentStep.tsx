@@ -6,7 +6,6 @@ import React, { useState, useMemo, useRef, useEffect, useCallback } from "react"
 
 // oxlint-disable-next-line eslint/no-unused-vars
 import {
-  InfoCircle as Info,
   Crown,
   Coins,
   WarningTriangle as AlertTriangle,
@@ -343,7 +342,6 @@ export function GovernmentStep({
         tabs={tabs}
         activeTab={activeTab}
         onTabChange={onTabChange}
-        sectionTheme="government"
         hideTabList={tabs.length <= 1}
       >
         {activeTab === "components" && (
@@ -373,7 +371,7 @@ export function GovernmentStep({
               <div className="border-separator border-b px-6 py-4">
                 <h2 className="text-label text-headline flex items-center gap-2">
                   <Users className="text-tint h-5 w-5" />
-                  Government Departments
+                  Government departments
                 </h2>
               </div>
               <CardContent className="p-6">
@@ -432,7 +430,7 @@ export function GovernmentStep({
               <div className="border-separator border-b px-6 py-4">
                 <h2 className="text-label text-headline flex items-center gap-2">
                   <DollarSign className="text-tint h-5 w-5" />
-                  Budget Allocations
+                  Budget allocations
                 </h2>
               </div>
               <CardContent className="p-6">

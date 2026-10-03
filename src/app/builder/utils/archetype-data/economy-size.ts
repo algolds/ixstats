@@ -27,7 +27,6 @@ export const economySizeArchetypes: ArchetypeSeed[] = [
     icon: Banknote,
     color: "text-green",
     filter: (country: RealCountryData) => getEconomicTier(country.gdpPerCapita) === "Advanced",
-    gradient: "bg-green/10",
     categoryId: "economic-classifications",
     priority: 1,
   },
@@ -38,7 +37,6 @@ export const economySizeArchetypes: ArchetypeSeed[] = [
     icon: Banknote,
     color: "text-green",
     filter: (country: RealCountryData) => getEconomicTier(country.gdpPerCapita) === "Developed",
-    gradient: "bg-green/10",
     categoryId: "economic-classifications",
     priority: 2,
   },
@@ -49,7 +47,6 @@ export const economySizeArchetypes: ArchetypeSeed[] = [
     icon: TrendingUp,
     color: "text-purple",
     filter: (country: RealCountryData) => getEconomicTier(country.gdpPerCapita) === "Emerging",
-    gradient: "bg-purple/10",
     categoryId: "economic-classifications",
     priority: 3,
   },
@@ -60,7 +57,6 @@ export const economySizeArchetypes: ArchetypeSeed[] = [
     icon: BarChart3,
     color: "text-orange",
     filter: (country: RealCountryData) => getEconomicTier(country.gdpPerCapita) === "Developing",
-    gradient: "bg-orange/10",
     categoryId: "economic-classifications",
     priority: 4,
   },
@@ -75,7 +71,6 @@ export const economySizeArchetypes: ArchetypeSeed[] = [
     filter: (country: RealCountryData) =>
       getPopulationTier(country.population) === "Very Large" ||
       getPopulationTier(country.population) === "Large",
-    gradient: "bg-red/10",
     categoryId: "population-demographics",
     priority: 5,
   },
@@ -86,7 +81,6 @@ export const economySizeArchetypes: ArchetypeSeed[] = [
     icon: Users,
     color: "text-yellow",
     filter: (country: RealCountryData) => getPopulationTier(country.population) === "Medium",
-    gradient: "bg-yellow/10",
     categoryId: "population-demographics",
     priority: 6,
   },
@@ -97,7 +91,6 @@ export const economySizeArchetypes: ArchetypeSeed[] = [
     icon: Users,
     color: "text-red",
     filter: (country: RealCountryData) => (country.population || 0) >= 100000000,
-    gradient: "bg-red/10",
     categoryId: "population-demographics",
     priority: 4.5,
   },
@@ -108,7 +101,6 @@ export const economySizeArchetypes: ArchetypeSeed[] = [
     icon: Users,
     color: "text-green",
     filter: (country: RealCountryData) => getPopulationTier(country.population) === "Small",
-    gradient: "bg-green/10",
     categoryId: "population-demographics",
     priority: 7,
   },
@@ -153,7 +145,6 @@ export const economySizeArchetypes: ArchetypeSeed[] = [
       ]);
       return islands.has(country.name) || country.name.toLowerCase().includes("island");
     },
-    gradient: "bg-teal/10",
     categoryId: "geographical-regions",
     priority: 15,
   },
@@ -175,7 +166,6 @@ export const economySizeArchetypes: ArchetypeSeed[] = [
       ]);
       return g7.has(country.name);
     },
-    gradient: "bg-yellow/10",
     categoryId: "economic-classifications",
     priority: 0.5,
   },

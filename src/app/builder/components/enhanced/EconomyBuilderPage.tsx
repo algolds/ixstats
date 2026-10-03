@@ -1,11 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import {
-  Industry as Factory,
-  Group as Users,
-  Flash as Zap,
-} from "iconoir-react";
+import { Industry as Factory, Group as Users, Flash as Zap } from "iconoir-react";
 import { isEqual } from "~/lib/utils";
 
 import { useBuilderFilter } from "~/app/builder/components/builder-filter-context";
@@ -21,8 +17,6 @@ import type { GovernmentBuilderState, RevenueSource } from "~/types/government";
 import { Suspense } from "react";
 import { EconomySectorsTab, WorkforceSocietyTab } from "./tabs";
 import { TabLoadingFallback } from "../../components/GlobalBuilderLoading";
-
-import { BuilderErrorBoundary } from "../../components/BuilderErrorBoundary";
 
 import { BuilderTabCard, type TabDefinition } from "../../primitives/BuilderTabCard";
 
@@ -143,10 +137,7 @@ export function EconomyBuilderPage({
 
       return changed ? next : prev;
     });
-  }, [
-    economicInputs.coreIndicators?.totalPopulation,
-    economicInputs.coreIndicators?.nominalGDP,
-  ]);
+  }, [economicInputs.coreIndicators?.totalPopulation, economicInputs.coreIndicators?.nominalGDP]);
 
   useEffect(() => {
     if (persistedEconomyBuilder?.selectedAtomicComponents) {
@@ -332,19 +323,25 @@ export function EconomyBuilderPage({
           ...economyBuilder.structure,
           ...existingConfiguration.structure,
           economicTier: (["Developing", "Emerging", "Developed", "Advanced"] as const).includes(
-            existingConfiguration.structure?.economicTier as "Developing" | "Emerging" | "Developed" | "Advanced"
+            existingConfiguration.structure?.economicTier as
+              "Developing" | "Emerging" | "Developed" | "Advanced"
           )
             ? (existingConfiguration.structure.economicTier as
                 "Developing" | "Emerging" | "Developed" | "Advanced")
             : "Developing",
           growthStrategy: (
             ["Export-Led", "Import-Substitution", "Balanced", "Innovation-Driven"] as const
-          ).includes(existingConfiguration.structure?.growthStrategy as "Export-Led" | "Import-Substitution" | "Balanced" | "Innovation-Driven")
+          ).includes(
+            existingConfiguration.structure?.growthStrategy as
+              "Export-Led" | "Import-Substitution" | "Balanced" | "Innovation-Driven"
+          )
             ? (existingConfiguration.structure.growthStrategy as
                 "Export-Led" | "Import-Substitution" | "Balanced" | "Innovation-Driven")
             : "Balanced",
         },
-        sectors: (existingConfiguration.sectors as typeof economyBuilder.sectors) || economyBuilder.sectors,
+        sectors:
+          (existingConfiguration.sectors as typeof economyBuilder.sectors) ||
+          economyBuilder.sectors,
         laborMarket: {
           ...economyBuilder.laborMarket,
           ...existingLaborMarket,
@@ -385,38 +382,37 @@ export function EconomyBuilderPage({
         tabs={tabs}
         activeTab={currentTab}
         onTabChange={(tabId) => onTabChange?.(tabId)}
-        sectionTheme="economics"
         hideTabList={tabs.length <= 1}
       >
-          {currentTab === "components" && (
-            <EconomyComponentPanel
+        {currentTab === "components" && (
+          <EconomyComponentPanel
+            selectedComponents={selectedComponents}
+            onComponentChange={handleComponentChange}
+            governmentComponents={governmentComponents}
+          />
+        )}
+
+        {currentTab === "sectors" && (
+          <Suspense fallback={<TabLoadingFallback />}>
+            <EconomySectorsTab
+              economyBuilder={economyBuilder}
+              onEconomyBuilderChange={handleEconomyBuilderChange}
               selectedComponents={selectedComponents}
-              onComponentChange={handleComponentChange}
-              governmentComponents={governmentComponents}
+              showAdvanced={isExpertOrEdit || showAdvanced}
             />
-          )}
+          </Suspense>
+        )}
 
-          {currentTab === "sectors" && (
-            <Suspense fallback={<TabLoadingFallback />}>
-              <EconomySectorsTab
-                economyBuilder={economyBuilder}
-                onEconomyBuilderChange={handleEconomyBuilderChange}
-                selectedComponents={selectedComponents}
-                showAdvanced={isExpertOrEdit || showAdvanced}
-              />
-            </Suspense>
-          )}
-
-          {currentTab === "workforce" && (
-            <Suspense fallback={<TabLoadingFallback />}>
-              <WorkforceSocietyTab
-                economyBuilder={economyBuilder}
-                onEconomyBuilderChange={handleEconomyBuilderChange}
-                selectedComponents={selectedComponents}
-                showAdvanced={isExpertOrEdit || showAdvanced}
-              />
-            </Suspense>
-          )}
+        {currentTab === "workforce" && (
+          <Suspense fallback={<TabLoadingFallback />}>
+            <WorkforceSocietyTab
+              economyBuilder={economyBuilder}
+              onEconomyBuilderChange={handleEconomyBuilderChange}
+              selectedComponents={selectedComponents}
+              showAdvanced={isExpertOrEdit || showAdvanced}
+            />
+          </Suspense>
+        )}
       </BuilderTabCard>
 
       <EconomyArchetypeHandler

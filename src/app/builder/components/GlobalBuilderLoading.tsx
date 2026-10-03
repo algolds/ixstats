@@ -10,8 +10,6 @@ interface GlobalBuilderLoadingProps {
   message?: string;
   className?: string;
   variant?: "full" | "compact" | "minimal";
-  /** Kept for API compatibility; the Facet loader shows no decorative subsystem strip. */
-  showSubsystems?: boolean;
 }
 
 /** A small spinner plus a message: the one meaningful live indicator while the builder loads. */
@@ -30,7 +28,7 @@ function LoadingLabel({ message, size = "sm" }: { message: string; size?: "sm" |
 /**
  * GlobalBuilderLoading - route-level loading state for the builder.
  *
- * `full` renders a Facet skeleton shaped like the builder (header card and a section card);
+ * `full` renders a skeleton shaped like the builder (header card and a section card);
  * `compact` a short card; `minimal` an inline spinner.
  */
 export function GlobalBuilderLoading({
