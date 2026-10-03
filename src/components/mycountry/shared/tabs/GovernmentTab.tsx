@@ -13,6 +13,7 @@ import {
   useAccordion,
 } from "./tabParts";
 import { formatCompactCurrency, formatPercent, toTitleCase } from "~/lib/utils";
+import { stripHtml } from "~/lib/utils/sanitize-html";
 import { motion, AnimatePresence } from "motion/react";
 import { Building, Crown, NavArrowRight as ChevronRight } from "iconoir-react";
 import { SectorBreakdownCard } from "~/components/mycountry/shared/primitives";
@@ -209,7 +210,7 @@ function StructureSection({
           },
           {
             label: "Capital city",
-            value: identity?.capitalCity || "N/A",
+            value: stripHtml(identity?.capitalCity ?? "") || "N/A",
             detail: "Seat of power",
           },
           {

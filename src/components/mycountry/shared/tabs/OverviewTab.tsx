@@ -11,6 +11,7 @@ import {
 import Link from "next/link";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { cn } from "~/lib/utils";
+import { stripHtml } from "~/lib/utils/sanitize-html";
 import { Skeleton } from "~/components/ui/skeleton";
 import { assetUrl } from "~/lib/base-path";
 import { smartNormalizeGrowthRate } from "~/lib/statecraft/growth-calculations";
@@ -98,16 +99,21 @@ function WikiIntroBlock({
   );
 }
 
-function IdentityPills({
+/** Wiki infobox values can carry raw HTML (<div>, <br>…); these fields are plain text. */
+export function IdentityPills({
   identity,
 }: {
   identity: NonNullable<CountryWithEconomicData["nationalIdentity"]>;
 }) {
-  const fields = OVERVIEW_IDENTITY_FIELDS.filter((f) => f.getValue(identity));
+  const fields = OVERVIEW_IDENTITY_FIELDS.flatMap((f) => {
+    const raw = f.getValue(identity);
+    const value = raw ? stripHtml(raw) : "";
+    return value ? [{ ...f, value }] : [];
+  });
   if (fields.length === 0) return null;
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-      {fields.map(({ key, icon: FieldIcon, color, label, getValue }) => (
+      {fields.map(({ key, icon: FieldIcon, color, label, value }) => (
         <div
           key={key}
           className="border-separator bg-surface rounded-control flex items-center gap-2 border px-3 py-2"
@@ -115,7 +121,7 @@ function IdentityPills({
           <FieldIcon className={cn("h-3.5 w-3.5 shrink-0", color)} />
           <div className="min-w-0">
             <Eyebrow className="block">{label}</Eyebrow>
-            <p className="text-label text-caption truncate font-semibold">{getValue(identity)}</p>
+            <p className="text-label text-caption truncate font-semibold">{value}</p>
           </div>
         </div>
       ))}
@@ -260,7 +266,7 @@ export function OverviewTab({
         <div className="border-separator space-y-3 border-t pt-3">
           {country.nationalIdentity?.motto && (
             <p className="text-label-secondary text-footnote italic">
-              &ldquo;{country.nationalIdentity.motto}&rdquo;
+              &ldquo;{stripHtml(country.nationalIdentity.motto)}&rdquo;
             </p>
           )}
 
