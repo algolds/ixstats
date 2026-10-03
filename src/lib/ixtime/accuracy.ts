@@ -271,6 +271,7 @@ export class IxTimeAccuracyVerifier {
     const calculatedIxTime = this.calculateExpectedIxTime(testRealTime);
 
     // Calculate expected using pivot point logic
+    const PIVOT_POINT_REAL = new Date("2025-07-27T00:00:00.000Z").getTime();
     const PIVOT_POINT_IXTIME = new Date("2040-01-01T00:00:00.000Z").getTime();
     const realTimeUntilPivot = (PIVOT_POINT_REAL - testRealTime) / 1000;
     const ixTimeBeforePivot = realTimeUntilPivot * 4.0 * 1000; // 4x speed
@@ -301,6 +302,7 @@ export class IxTimeAccuracyVerifier {
     const calculatedIxTime = this.calculateExpectedIxTime(testRealTime);
 
     // Calculate expected using pivot point logic
+    const PIVOT_POINT_REAL = new Date("2025-07-27T00:00:00.000Z").getTime();
     const PIVOT_POINT_IXTIME = new Date("2040-01-01T00:00:00.000Z").getTime();
     const realTimeElapsed = (testRealTime - PIVOT_POINT_REAL) / 1000;
     const ixTimeElapsed = realTimeElapsed * 2.0 * 1000; // 2x speed
