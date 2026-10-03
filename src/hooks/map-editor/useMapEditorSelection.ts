@@ -18,6 +18,21 @@ interface UseMapEditorSelectionProps {
   onRefresh?: () => void;
 }
 
+/** Apply a lasso / rectangle match to the current selection. */
+function combineSelection(
+  prev: Set<string>,
+  matched: Set<string>,
+  mode: "replace" | "add" | "subtract"
+): Set<string> {
+  if (mode === "replace") return matched;
+  const next = new Set(prev);
+  for (const id of matched) {
+    if (mode === "add") next.add(id);
+    else next.delete(id);
+  }
+  return next;
+}
+
 export function useMapEditorSelection({
   allFeatures,
   countryId: _countryId,
@@ -63,42 +78,20 @@ export function useMapEditorSelection({
       mode: "replace" | "add" | "subtract" = "replace"
     ) => {
       if (!coordsOrGeom) return;
-      let poly: Polygon | MultiPolygon;
-      if (Array.isArray(coordsOrGeom)) {
-        if (coordsOrGeom.length < 3) return;
-        poly = {
-          type: "Polygon",
-          coordinates: [[...coordsOrGeom, coordsOrGeom[0]!]],
-        };
-      } else {
-        poly = coordsOrGeom;
-      }
+      if (Array.isArray(coordsOrGeom) && coordsOrGeom.length < 3) return;
+      const poly: Polygon | MultiPolygon = Array.isArray(coordsOrGeom)
+        ? { type: "Polygon", coordinates: [[...coordsOrGeom, coordsOrGeom[0]!]] }
+        : coordsOrGeom;
       const matchedIds = new Set<string>();
       for (const feat of allFeatures) {
-        if (feat.coordinates) {
-          const pt = point(feat.coordinates);
-          try {
-            if (booleanPointInPolygon(pt, poly)) {
-              matchedIds.add(feat.id);
-            }
-          } catch {
-            // degenerate lasso polygon or feature point — feature left unselected
-          }
+        if (!feat.coordinates) continue;
+        try {
+          if (booleanPointInPolygon(point(feat.coordinates), poly)) matchedIds.add(feat.id);
+        } catch {
+          // degenerate lasso polygon or feature point — feature left unselected
         }
       }
-      setSelectedIds((prev) => {
-        if (mode === "add") {
-          const next = new Set(prev);
-          for (const id of matchedIds) next.add(id);
-          return next;
-        }
-        if (mode === "subtract") {
-          const next = new Set(prev);
-          for (const id of matchedIds) next.delete(id);
-          return next;
-        }
-        return matchedIds;
-      });
+      setSelectedIds((prev) => combineSelection(prev, matchedIds, mode));
       setLassoGeometry(null);
     },
     [allFeatures]
@@ -111,37 +104,21 @@ export function useMapEditorSelection({
         | [[number, number], [number, number]],
       mode: "replace" | "add" | "subtract" = "replace"
     ) => {
-      let minLng: number, minLat: number, maxLng: number, maxLat: number;
-      if (Array.isArray(bounds)) {
-        [[minLng, minLat], [maxLng, maxLat]] = bounds;
-      } else {
-        minLng = bounds.west;
-        minLat = bounds.south;
-        maxLng = bounds.east;
-        maxLat = bounds.north;
-      }
-      const matchedIds = new Set<string>();
-      for (const feat of allFeatures) {
-        if (feat.coordinates) {
-          const [lng, lat] = feat.coordinates;
-          if (lng >= minLng && lng <= maxLng && lat >= minLat && lat <= maxLat) {
-            matchedIds.add(feat.id);
-          }
-        }
-      }
-      setSelectedIds((prev) => {
-        if (mode === "add") {
-          const next = new Set(prev);
-          for (const id of matchedIds) next.add(id);
-          return next;
-        }
-        if (mode === "subtract") {
-          const next = new Set(prev);
-          for (const id of matchedIds) next.delete(id);
-          return next;
-        }
-        return matchedIds;
-      });
+      const [[minLng, minLat], [maxLng, maxLat]] = Array.isArray(bounds)
+        ? bounds
+        : [
+            [bounds.west, bounds.south],
+            [bounds.east, bounds.north],
+          ];
+      const matchedIds = new Set(
+        allFeatures
+          .filter(
+            ({ coordinates: c }) =>
+              c && c[0] >= minLng && c[0] <= maxLng && c[1] >= minLat && c[1] <= maxLat
+          )
+          .map((f) => f.id)
+      );
+      setSelectedIds((prev) => combineSelection(prev, matchedIds, mode));
     },
     [allFeatures]
   );
