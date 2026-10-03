@@ -1,6 +1,7 @@
 "use client";
 // Inline spotlight search bar for WikiOS Hero with featured thumbnail images, direct DB queries, page creation, and keyboard navigation.
 
+import { useDebounce } from "~/hooks/useDebounce";
 import React, { useState, useEffect, useRef, useDeferredValue, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -42,7 +43,6 @@ export function HeroSpotlightSearch({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
@@ -56,15 +56,8 @@ export function HeroSpotlightSearch({
     return () => clearInterval(interval);
   }, [query, isOpen, placeholderHints.length]);
 
-  // Debounce search query (120ms for instant native database spotlight feel)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(query.trim());
-    }, 120);
-    return () => clearTimeout(timer);
-  }, [query]);
-
-  const deferredQuery = useDeferredValue(debouncedQuery);
+  // 120ms for instant native database spotlight feel
+  const deferredQuery = useDeferredValue(useDebounce(query.trim(), 120));
 
   // Direct native database query with featured image thumbnails
   const { data: searchData, isFetching: isLoading } = api.wikios.advancedSearch.useQuery(

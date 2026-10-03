@@ -1,6 +1,7 @@
 "use client";
 // WikiOS Search Modal with incremental query debouncing and keyboard navigation.
 
+import { useDebounce } from "~/hooks/useDebounce";
 import {
   useState,
   useEffect,
@@ -26,15 +27,9 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(query), 300);
-    return () => clearTimeout(timer);
-  }, [query]);
-
-  const deferredQuery = useDeferredValue(debouncedQuery);
+  const deferredQuery = useDeferredValue(useDebounce(query, 300));
 
   const { data: searchData } = api.wikios.advancedSearch.useQuery(
     { query: deferredQuery, limit: 8 },
