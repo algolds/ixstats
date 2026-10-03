@@ -219,6 +219,60 @@ interface CityEditorProps {
   onSaved: () => void;
 }
 
+interface EditorActionsProps {
+  editing: boolean;
+  readOnly: boolean;
+  isPending: boolean;
+  onSave: () => void;
+  onCancel: () => void;
+  onEdit: () => void;
+  populate: React.ReactNode;
+}
+
+/** Save/Cancel while editing; the wiki populate button and Edit otherwise (hidden when read-only). */
+function EditorActions({
+  editing,
+  readOnly,
+  isPending,
+  onSave,
+  onCancel,
+  onEdit,
+  populate,
+}: EditorActionsProps) {
+  if (editing) {
+    return (
+      <div className="flex gap-1">
+        <Button
+          type="button"
+          size="xs"
+          onClick={onSave}
+          disabled={isPending}
+          className="h-11 sm:h-7"
+        >
+          {isPending ? (
+            <Loader2 aria-hidden="true" className="animate-spin" />
+          ) : (
+            <Save aria-hidden="true" />
+          )}
+          Save
+        </Button>
+        <Button type="button" variant="ghost" size="xs" onClick={onCancel} className="h-11 sm:h-7">
+          Cancel
+        </Button>
+      </div>
+    );
+  }
+  if (readOnly) return null;
+  return (
+    <div className="flex items-center gap-1">
+      {populate}
+      <Button type="button" variant="ghost" size="xs" onClick={onEdit} className="h-11 sm:h-7">
+        Edit
+      </Button>
+    </div>
+  );
+}
+
 function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
   const [editing, setEditing] = useState(false);
   const [population, setPopulation] = useState(city.population ?? 0);
@@ -256,54 +310,23 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
             {city.wikiPageTitle ? ` · wiki: ${city.wikiPageTitle}` : ""}
           </div>
         </div>
-        {editing && !isPublicReadOnly ? (
-          <div className="flex gap-1">
-            <Button
-              type="button"
-              size="xs"
-              onClick={handleSave}
-              disabled={upsert.isPending}
-              className="h-11 sm:h-7"
-            >
-              {upsert.isPending ? (
-                <Loader2 aria-hidden="true" className="animate-spin" />
-              ) : (
-                <Save aria-hidden="true" />
-              )}
-              Save
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="xs"
-              onClick={() => setEditing(false)}
-              className="h-11 sm:h-7"
-            >
-              Cancel
-            </Button>
-          </div>
-        ) : (
-          !isPublicReadOnly && (
-            <div className="flex items-center gap-1">
-              <PopulateFromWikiButton
-                countryId={countryId}
-                kind="city"
-                id={city.id}
-                wikiTitle={city.wikiPageTitle}
-                onApplied={onSaved}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="xs"
-                onClick={() => setEditing(true)}
-                className="h-11 sm:h-7"
-              >
-                Edit
-              </Button>
-            </div>
-          )
-        )}
+        <EditorActions
+          editing={editing && !isPublicReadOnly}
+          readOnly={isPublicReadOnly}
+          isPending={upsert.isPending}
+          onSave={handleSave}
+          onCancel={() => setEditing(false)}
+          onEdit={() => setEditing(true)}
+          populate={
+            <PopulateFromWikiButton
+              countryId={countryId}
+              kind="city"
+              id={city.id}
+              wikiTitle={city.wikiPageTitle}
+              onApplied={onSaved}
+            />
+          }
+        />
       </div>
 
       {editing ? (
@@ -394,53 +417,22 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
           <div className="text-label text-caption font-semibold">{subdivision.name}</div>
           <div className="text-label-secondary text-footnote">{subdivision.type}</div>
         </div>
-        {editing && !isPublicReadOnly ? (
-          <div className="flex gap-1">
-            <Button
-              type="button"
-              size="xs"
-              onClick={handleSave}
-              disabled={upsert.isPending}
-              className="h-11 sm:h-7"
-            >
-              {upsert.isPending ? (
-                <Loader2 aria-hidden="true" className="animate-spin" />
-              ) : (
-                <Save aria-hidden="true" />
-              )}
-              Save
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="xs"
-              onClick={() => setEditing(false)}
-              className="h-11 sm:h-7"
-            >
-              Cancel
-            </Button>
-          </div>
-        ) : (
-          !isPublicReadOnly && (
-            <div className="flex items-center gap-1">
-              <PopulateFromWikiButton
-                countryId={countryId}
-                kind="subdivision"
-                id={subdivision.id}
-                onApplied={onSaved}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="xs"
-                onClick={() => setEditing(true)}
-                className="h-11 sm:h-7"
-              >
-                Edit
-              </Button>
-            </div>
-          )
-        )}
+        <EditorActions
+          editing={editing && !isPublicReadOnly}
+          readOnly={isPublicReadOnly}
+          isPending={upsert.isPending}
+          onSave={handleSave}
+          onCancel={() => setEditing(false)}
+          onEdit={() => setEditing(true)}
+          populate={
+            <PopulateFromWikiButton
+              countryId={countryId}
+              kind="subdivision"
+              id={subdivision.id}
+              onApplied={onSaved}
+            />
+          }
+        />
       </div>
 
       {editing ? (

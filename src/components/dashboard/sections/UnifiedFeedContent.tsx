@@ -133,22 +133,7 @@ function groupRepeatedActivities(activities: any[]): any[] {
   return result;
 }
 
-export function UnifiedFeedContent({
-  activeTab,
-  currentUserAccountId,
-  accounts,
-  countryId,
-  isOwner,
-  onAccountSelectAction,
-  onAccountSettingsAction,
-  onCreateAccountAction,
-  onLikeAction,
-  onRepostAction,
-  onReactionAction,
-  onReplyAction,
-  onShareAction,
-}: {
-  activeTab: FeedTab;
+export interface FeedHandlers {
   currentUserAccountId: string;
   accounts: any[];
   countryId: string;
@@ -161,7 +146,75 @@ export function UnifiedFeedContent({
   onReactionAction: (id: string, type: string) => void;
   onReplyAction: (id: string) => void;
   onShareAction: (id: string) => void;
-}) {
+}
+
+function FeedSkeletons() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <FeedItemSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+
+/** ThinkPages posts render as threads; every other activity as a unified feed item. */
+export function FeedList({
+  items,
+  currentUserAccountId,
+  accounts,
+  countryId,
+  isOwner,
+  onAccountSelectAction,
+  onAccountSettingsAction,
+  onCreateAccountAction,
+  onLikeAction,
+  onRepostAction,
+  onReactionAction,
+  onReplyAction,
+  onShareAction,
+}: FeedHandlers & { items: any[] }) {
+  return (
+    <div className="space-y-2">
+      {items.map((a) => {
+        if (a.source === "thinkpages" && a.rawPost) {
+          return (
+            <motion.div
+              key={a.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={springSmooth}
+            >
+              <ThinkpagesPost
+                post={a.rawPost}
+                currentUserAccountId={currentUserAccountId}
+                accounts={accounts}
+                countryId={countryId}
+                isOwner={isOwner}
+                onAccountSelect={onAccountSelectAction}
+                onAccountSettings={onAccountSettingsAction}
+                onCreateAccount={onCreateAccountAction}
+                onLike={onLikeAction}
+                onRepost={() => onRepostAction(a.rawPost)}
+                onReaction={onReactionAction}
+                onReply={onReplyAction}
+                onShare={onShareAction}
+                onAccountClick={() => {}}
+                showThread={true}
+              />
+            </motion.div>
+          );
+        }
+        return <UnifiedFeedItem key={a.id} activity={a} />;
+      })}
+    </div>
+  );
+}
+
+export function UnifiedFeedContent({
+  activeTab,
+  ...handlers
+}: FeedHandlers & { activeTab: FeedTab }) {
   const { data: feedData, isLoading: feedLoading } = api.activities.getGlobalFeed.useQuery(
     { limit: 50 },
     { refetchInterval: 60_000, staleTime: 30_000 }
@@ -177,7 +230,9 @@ export function UnifiedFeedContent({
 
   const wikiAsFeed = useMemo(() => {
     if (!wikiRecentChanges) return [];
-    return wikiRecentChanges.map((rc: any) => {
+    // A change without a valid timestamp is dropped rather than dated "now".
+    const dated = wikiRecentChanges.filter((rc: any) => !isNaN(new Date(rc.timestamp).getTime()));
+    return dated.map((rc: any) => {
       const sizeChange = (rc.newLen ?? 0) - (rc.oldLen ?? 0);
       const isNewPage = rc.type === "new";
       return {
@@ -204,10 +259,7 @@ export function UnifiedFeedContent({
           },
         },
         engagement: { likes: 0, comments: 0, shares: 0, views: 0 },
-        timestamp: (() => {
-          const d = new Date(rc.timestamp);
-          return isNaN(d.getTime()) ? new Date() : d;
-        })(),
+        timestamp: new Date(rc.timestamp),
         priority: isNewPage ? "medium" : "low",
         visibility: "public",
       };
@@ -254,13 +306,7 @@ export function UnifiedFeedContent({
   }, [feedData, wikiAsFeed, activeTab]);
 
   if (feedLoading) {
-    return (
-      <div className="space-y-3">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <FeedItemSkeleton key={i} />
-        ))}
-      </div>
-    );
+    return <FeedSkeletons />;
   }
 
   if (filteredFeed.length === 0) {
@@ -276,70 +322,10 @@ export function UnifiedFeedContent({
     );
   }
 
-  return (
-    <div className="space-y-2">
-      {filteredFeed.map((a: any) => {
-        if (a.source === "thinkpages" && a.rawPost) {
-          return (
-            <motion.div
-              key={a.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={springSmooth}
-            >
-              <ThinkpagesPost
-                post={a.rawPost}
-                currentUserAccountId={currentUserAccountId}
-                accounts={accounts}
-                countryId={countryId}
-                isOwner={isOwner}
-                onAccountSelect={onAccountSelectAction}
-                onAccountSettings={onAccountSettingsAction}
-                onCreateAccount={onCreateAccountAction}
-                onLike={onLikeAction}
-                onRepost={() => onRepostAction(a.rawPost)}
-                onReaction={onReactionAction}
-                onReply={onReplyAction}
-                onShare={onShareAction}
-                onAccountClick={() => {}}
-                showThread={true}
-              />
-            </motion.div>
-          );
-        }
-        return <UnifiedFeedItem key={a.id} activity={a} />;
-      })}
-    </div>
-  );
+  return <FeedList items={filteredFeed} {...handlers} />;
 }
 
-export function FollowingFeedContent({
-  currentUserAccountId,
-  accounts,
-  countryId,
-  isOwner,
-  onAccountSelectAction,
-  onAccountSettingsAction,
-  onCreateAccountAction,
-  onLikeAction,
-  onRepostAction,
-  onReactionAction,
-  onReplyAction,
-  onShareAction,
-}: {
-  currentUserAccountId: string;
-  accounts: any[];
-  countryId: string;
-  isOwner: boolean;
-  onAccountSelectAction: (a: any) => void;
-  onAccountSettingsAction: (a: any) => void;
-  onCreateAccountAction: () => void;
-  onLikeAction: (id: string) => void;
-  onRepostAction: (post: any) => void;
-  onReactionAction: (id: string, type: string) => void;
-  onReplyAction: (id: string) => void;
-  onShareAction: (id: string) => void;
-}) {
+export function FollowingFeedContent(handlers: FeedHandlers) {
   const { data: followingData, isLoading: followingLoading } =
     api.activities.getFollowingFeed.useQuery(
       { limit: 30 },
@@ -352,13 +338,7 @@ export function FollowingFeedContent({
   }, [followingData]);
 
   if (followingLoading) {
-    return (
-      <div className="space-y-3">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <FeedItemSkeleton key={i} />
-        ))}
-      </div>
-    );
+    return <FeedSkeletons />;
   }
 
   const followingCount = followingData?.followingCount ?? 0;
@@ -392,39 +372,5 @@ export function FollowingFeedContent({
     );
   }
 
-  return (
-    <div className="space-y-2">
-      {processedActivities.map((a: any) => {
-        if (a.source === "thinkpages" && a.rawPost) {
-          return (
-            <motion.div
-              key={a.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={springSmooth}
-            >
-              <ThinkpagesPost
-                post={a.rawPost}
-                currentUserAccountId={currentUserAccountId}
-                accounts={accounts}
-                countryId={countryId}
-                isOwner={isOwner}
-                onAccountSelect={onAccountSelectAction}
-                onAccountSettings={onAccountSettingsAction}
-                onCreateAccount={onCreateAccountAction}
-                onLike={onLikeAction}
-                onRepost={() => onRepostAction(a.rawPost)}
-                onReaction={onReactionAction}
-                onReply={onReplyAction}
-                onShare={onShareAction}
-                onAccountClick={() => {}}
-                showThread={true}
-              />
-            </motion.div>
-          );
-        }
-        return <UnifiedFeedItem key={a.id} activity={a} />;
-      })}
-    </div>
-  );
+  return <FeedList items={processedActivities} {...handlers} />;
 }

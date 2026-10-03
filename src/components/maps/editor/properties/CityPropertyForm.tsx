@@ -3,12 +3,12 @@ import { Button } from "~/components/ui/button";
 import React from "react";
 import type { CityFormData, EditorFeature } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
+import { CoordinatePicker } from "./CoordinatePicker";
 
-import { MapPin, ModernTv as Mountain, SystemRestart as Loader2 } from "iconoir-react";
+import { ModernTv as Mountain, SystemRestart as Loader2 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Checkbox } from "~/components/ui/checkbox";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
-import { Card } from "~/components/ui/card";
 
 const CITY_TYPES = ["capital", "city", "town", "village", "hamlet", "port", "fortress"];
 
@@ -73,31 +73,12 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
         className="w-full"
       />
 
-      {/* Coordinate Picker Block */}
       {countryId && (
-        <Card className="text-footnote flex items-center justify-between px-3 py-2">
-          <div className="text-label-secondary text-left font-medium">
-            Coordinates:{" "}
-            {activeCoords ? (
-              <span className="text-label font-semibold tabular-nums">
-                {activeCoords[1].toFixed(4)}&deg; N, {activeCoords[0].toFixed(4)}&deg; E
-              </span>
-            ) : (
-              <span className="italic">Not placed yet</span>
-            )}
-          </div>
-          <Button
-            type="button"
-            variant={isPickingLocation ? "secondary" : "ghost"}
-            size="sm"
-            aria-pressed={isPickingLocation}
-            onClick={() => setIsPickingLocation?.(!isPickingLocation)}
-            className="shrink-0"
-          >
-            <MapPin className="size-3.5" aria-hidden />
-            <span>{isPickingLocation ? "Click on Map..." : "Pick on Map"}</span>
-          </Button>
-        </Card>
+        <CoordinatePicker
+          coordinates={activeCoords}
+          isPickingLocation={isPickingLocation}
+          setIsPickingLocation={setIsPickingLocation}
+        />
       )}
 
       <input
