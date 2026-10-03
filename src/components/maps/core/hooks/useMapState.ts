@@ -8,10 +8,8 @@ import { buildDefaultVisibility, applyOverlayToggle } from "~/lib/maps/overlay-r
 
 interface UseMapStateProps {
   userCountryId: string | null;
-  isAdmin: boolean;
   onCountrySelect?: (country: SelectedCountry | null) => void;
   mapRef: React.RefObject<any>;
-  measureToolRef: React.RefObject<any>;
   /**
    * Returns the loaded map layers at call time. A getter (backed by a ref in MapContainer)
    * because the layers are fetched after this hook runs; passing them by value handed the
@@ -26,12 +24,8 @@ interface UseMapStateProps {
 
 export function useMapState({
   userCountryId,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  isAdmin,
   onCountrySelect,
   mapRef,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  measureToolRef,
   getMapLayers,
   isPinToolActive,
   pinPosition,
@@ -316,7 +310,6 @@ export function useMapState({
     projectionMode,
     setProjectionMode,
     isEditing,
-    setIsEditing,
     isWorldEditing,
     setIsWorldEditing,
     selectedRouteId,
@@ -324,11 +317,9 @@ export function useMapState({
     storyPinModalId,
     setStoryPinModalId,
     editingCountryId,
-    setEditingCountryId,
     currentZoom,
     setCurrentZoom,
     overlayVisibility,
-    setOverlayVisibility,
     labelsVisible,
     toggleLabels,
     toggleOverlay,
