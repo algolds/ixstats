@@ -21,7 +21,7 @@ import { generateNSImportDescription } from "./import-service";
  */
 export const activeRunningJobs = new Set<string>();
 
-export interface SyncCounts {
+interface SyncCounts {
   cardsCreated: number;
   cardsUpdated: number;
   errors: string[];
@@ -31,7 +31,7 @@ export interface SyncCounts {
  * Upsert a single NSCard definition into the DB.
  * Returns flags describing what happened.
  */
-export async function upsertNSCardDefinition(
+async function upsertNSCardDefinition(
   db: PrismaClient,
   nsCard: NSCard,
   importedFrom: string,

@@ -217,7 +217,7 @@ export async function syncFromStateFile(): Promise<number> {
 /**
  * Backfill historical entries from ALL OOL wiki pages (2017-2026).
  */
-export async function syncFromOOLPages(): Promise<number> {
+async function syncFromOOLPages(): Promise<number> {
   let totalSynced = 0;
 
   for (const year of OOL_YEARS) {
@@ -345,7 +345,7 @@ export async function recomputeUserStats(username: string): Promise<void> {
 /**
  * Recompute stats for all users with entries.
  */
-export async function recomputeAllStats(): Promise<number> {
+async function recomputeAllStats(): Promise<number> {
   const winners = await db.lorewardEntry.findMany({
     where: { status: "approved" },
     select: { winnerUser: true, runnerUpUser: true },
@@ -368,7 +368,7 @@ export async function recomputeAllStats(): Promise<number> {
  * Sync canonical medal scores and membership data from the main IxWiki:OOL page.
  * This is the authoritative source for user rankings.
  */
-export async function syncFromMainOOLPage(): Promise<number> {
+async function syncFromMainOOLPage(): Promise<number> {
   const wikitext = await fetchOOLPageWikitext("main");
   if (!wikitext) {
     console.warn("[Lorewards] Could not fetch main OOL page");

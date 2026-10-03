@@ -18,7 +18,7 @@ export function raceIntervalMs(settings: unknown): number {
   return (typeof days === "number" && days > 0 ? days : 3) * ONE_IXDAY_MS;
 }
 
-export interface Fixture {
+interface Fixture {
   matchDay: number;
   homeTeamIndex: number;
   awayTeamIndex: number;
@@ -26,7 +26,7 @@ export interface Fixture {
   awayTeamId?: string;
 }
 
-export interface DivisionConfig {
+interface DivisionConfig {
   name: string;
   teamIndices: number[];
 }

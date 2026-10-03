@@ -40,7 +40,7 @@ export const STABILITY_NUMERIC_FIELDS = [
   "fearOfCrime",
 ] as const;
 
-export type StabilityNumericField = (typeof STABILITY_NUMERIC_FIELDS)[number];
+type StabilityNumericField = (typeof STABILITY_NUMERIC_FIELDS)[number];
 type StabilityValues = Record<StabilityNumericField, number>;
 
 /** Per-100k / per-year rates: floored at 0 only. Everything else is a 0-100 percentage. */
@@ -70,7 +70,7 @@ function parseSnapshot(raw: string | null | undefined): Partial<StabilityValues>
  * The formula stability metrics for a country (inputs as security.getInternalStability has
  * always assembled them). Null when the country does not exist.
  */
-export async function computeFormulaStability(
+async function computeFormulaStability(
   db: PrismaClient,
   countryId: string
 ): Promise<StabilityMetrics | null> {

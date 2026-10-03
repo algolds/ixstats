@@ -17,7 +17,7 @@ import {
 import type { ComponentType, SVGProps } from "react";
 import { cleanWikiMarkup } from "~/lib/wiki-os/transformers/wikitext-parser";
 
-export type WikiSectionIcon = ComponentType<SVGProps<SVGSVGElement>>;
+type WikiSectionIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
 // ─── Wiki intro parsing ──────────────────────────────────────────────────────
 
@@ -50,7 +50,7 @@ export function extractWikiIntroHtml(introObj: WikiIntro): string | null {
 // ─── Coat of arms detection ──────────────────────────────────────────────────
 
 /** Regex matching common coat-of-arms / seal / emblem image titles. */
-export const COAT_OF_ARMS_REGEX = /coat.?of.?arms|coa|seal|emblem|escudo|wappen/i;
+const COAT_OF_ARMS_REGEX = /coat.?of.?arms|coa|seal|emblem|escudo|wappen/i;
 
 /**
  * Finds the coat-of-arms image URL among a list of wiki page images, or `null`.
@@ -65,19 +65,6 @@ export function findCoatOfArmsUrl(
 }
 
 // ─── Wiki URL generation ─────────────────────────────────────────────────────
-
-/**
- * Builds the canonical wiki article URL for a country, honoring its
- * `wikiSource` (iiwiki vs. ixwiki). Spaces are converted to underscores and
- * the page title is URL-encoded.
- */
-export function getCountryWikiUrl(countryName: string, wikiSource?: string | null): string {
-  if (wikiSource !== "iiwiki") {
-    const basePath = process.env.BASE_PATH || "";
-    return `${basePath}/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}`;
-  }
-  return `https://iiwiki.com/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}`;
-}
 
 /**
  * Builds a deep link to a specific section anchor within a country's wiki
@@ -114,7 +101,7 @@ export function cleanWikiSectionContent(rawContent: string | null): string | nul
 
 // ─── Wiki section classification ─────────────────────────────────────────────
 
-export const WIKI_SECTION_TYPES: Array<{
+const WIKI_SECTION_TYPES: Array<{
   pattern: RegExp;
   label: string;
   icon: WikiSectionIcon;

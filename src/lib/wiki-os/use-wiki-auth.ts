@@ -8,13 +8,13 @@
 
 import { useUser } from "@clerk/nextjs";
 
-export interface WikiAuthUser {
+interface WikiAuthUser {
   id: string;
   username: string | null;
   imageUrl: string | null;
 }
 
-export interface WikiAuthState {
+interface WikiAuthState {
   isLoaded: boolean;
   isSignedIn: boolean;
   user: WikiAuthUser | null;

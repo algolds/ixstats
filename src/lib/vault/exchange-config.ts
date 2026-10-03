@@ -12,7 +12,7 @@
 
 import { type PrismaClient } from "@prisma/client";
 
-export interface ExchangeConfig {
+interface ExchangeConfig {
   /** Sovereign cost to charter a new company (currency sink). */
   charterFee: number;
   /** Soft cap on simultaneous ACTIVE companies per player. */
@@ -31,7 +31,7 @@ export interface ExchangeConfig {
   valuationDecisionWeight: number;
 }
 
-export const EXCHANGE_CONFIG_DEFAULTS: ExchangeConfig = {
+const EXCHANGE_CONFIG_DEFAULTS: ExchangeConfig = {
   charterFee: 5000,
   activeCompanyCap: 3,
   convertRate: 1.0,
@@ -55,13 +55,6 @@ const KEY = {
   valuationStandingWeight: "exchange_valuation_standing_weight",
   valuationDecisionWeight: "exchange_valuation_decision_weight",
 } as const satisfies Record<keyof ExchangeConfig, string>;
-
-/** Non-config bookkeeping keys (cron last-run tracking — stored as IxTime ms). */
-export const EXCHANGE_STATE_KEYS = {
-  lastSectorTickIxTime: "exchange_last_sector_tick_ixtime",
-  lastFairValueTickIxTime: "exchange_last_fairvalue_tick_ixtime",
-} as const;
-
 let cache: { value: ExchangeConfig; expires: number } | null = null;
 const CACHE_TTL_MS = 60_000;
 
@@ -87,47 +80,4 @@ export async function getExchangeConfig(db: PrismaClient): Promise<ExchangeConfi
 
   cache = { value: merged, expires: now + CACHE_TTL_MS };
   return merged;
-}
-
-/** Update a single config value (DM admin). Invalidates the in-memory cache. */
-export async function setExchangeConfig(
-  db: PrismaClient,
-  field: keyof ExchangeConfig,
-  value: number,
-  description?: string
-): Promise<void> {
-  await db.systemConfig.upsert({
-    where: { key: KEY[field] },
-    create: {
-      key: KEY[field],
-      value: String(value),
-      description: description ?? `Exchange: ${field}`,
-    },
-    update: { value: String(value) },
-  });
-  cache = null;
-}
-
-/** Read a cron last-run IxTime (ms). Returns null if never run. */
-export async function getExchangeState(
-  db: PrismaClient,
-  key: (typeof EXCHANGE_STATE_KEYS)[keyof typeof EXCHANGE_STATE_KEYS]
-): Promise<number | null> {
-  const row = await db.systemConfig.findUnique({ where: { key } });
-  if (!row) return null;
-  const n = Number(row.value);
-  return Number.isNaN(n) ? null : n;
-}
-
-/** Persist a cron last-run IxTime (ms). */
-export async function setExchangeState(
-  db: PrismaClient,
-  key: (typeof EXCHANGE_STATE_KEYS)[keyof typeof EXCHANGE_STATE_KEYS],
-  ixTime: number
-): Promise<void> {
-  await db.systemConfig.upsert({
-    where: { key },
-    create: { key, value: String(ixTime), description: "Exchange cron last-run IxTime (ms)" },
-    update: { value: String(ixTime) },
-  });
 }

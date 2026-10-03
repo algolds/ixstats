@@ -29,13 +29,13 @@ export const SOUND_STORAGE_KEYS = {
   VOLUME: "ixstates:sound-volume",
 } as const;
 
-export const DEFAULT_SOUND_SETTINGS = {
+const DEFAULT_SOUND_SETTINGS = {
   enabled: true,
   volume: 0.25,
 } as const;
 
 /** Window event fired whenever the enabled flag or volume changes. */
-export const SOUND_SETTINGS_EVENT = "ixstates-sound-settings-changed";
+const SOUND_SETTINGS_EVENT = "ixstates-sound-settings-changed";
 
 let isSoundInitialized = false;
 
@@ -206,9 +206,6 @@ export const soundCues = {
   /** A Halo notification arrived. */
   notify: () => playSound("chime", { volume: 0.16 }),
 } as const;
-
-export type SoundMoment = keyof typeof soundCues;
-
 /**
  * Raw palette (legacy). Prefer {@link soundCues}; hover/press/tick cues are retired and
  * remain only until feature code migrates.

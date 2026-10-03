@@ -6,7 +6,7 @@ export interface TeamStorytellerModifiers {
   countryScandal?: number;
 }
 
-export interface ModifiedTeamRatings {
+interface ModifiedTeamRatings {
   team: TeamRatingVector;
   seedDelta: number;
 }

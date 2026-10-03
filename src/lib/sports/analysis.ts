@@ -22,7 +22,7 @@ export interface MatchAnalysisFacts {
   tacticalKeynotes: string[];
 }
 
-export interface MatchAnalysisInput {
+interface MatchAnalysisInput {
   homeTeamName: string;
   awayTeamName: string;
   homeScore: number;

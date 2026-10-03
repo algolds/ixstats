@@ -33,7 +33,7 @@ export interface CatalogManufacturer {
 }
 
 /** The catalog row fields the player template needs. */
-export interface CatalogEquipmentRow {
+interface CatalogEquipmentRow {
   key: string;
   name: string;
   manufacturer: string;

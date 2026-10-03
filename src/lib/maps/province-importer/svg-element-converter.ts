@@ -87,7 +87,7 @@ function parsePoints(pointsAttr: string): [number, number][] {
 }
 
 /** Convert a <polygon> element (auto-closed ring). */
-export function polygonToRings(el: XmlElement): [number, number][][] {
+function polygonToRings(el: XmlElement): [number, number][][] {
   const pointsAttr = el.getAttribute("points");
   if (!pointsAttr) return [];
 
@@ -105,7 +105,7 @@ export function polygonToRings(el: XmlElement): [number, number][][] {
 }
 
 /** Convert a <polyline> element (not auto-closed). */
-export function polylineToRings(el: XmlElement): [number, number][][] {
+function polylineToRings(el: XmlElement): [number, number][][] {
   const pointsAttr = el.getAttribute("points");
   if (!pointsAttr) return [];
 
@@ -124,7 +124,7 @@ export function polylineToRings(el: XmlElement): [number, number][][] {
 }
 
 /** Convert a <rect> element to a 4-corner rectangle ring. */
-export function rectToRings(el: XmlElement): [number, number][][] {
+function rectToRings(el: XmlElement): [number, number][][] {
   const x = parseFloat(el.getAttribute("x") || "0");
   const y = parseFloat(el.getAttribute("y") || "0");
   const w = parseFloat(el.getAttribute("width") || "0");
@@ -145,7 +145,7 @@ export function rectToRings(el: XmlElement): [number, number][][] {
 }
 
 /** Approximate a <circle> as a polygon with N segments. */
-export function circleToRings(el: XmlElement, segments: number = 32): [number, number][][] {
+function circleToRings(el: XmlElement, segments: number = 32): [number, number][][] {
   const cx = parseFloat(el.getAttribute("cx") || "0");
   const cy = parseFloat(el.getAttribute("cy") || "0");
   const r = parseFloat(el.getAttribute("r") || "0");
@@ -162,7 +162,7 @@ export function circleToRings(el: XmlElement, segments: number = 32): [number, n
 }
 
 /** Approximate an <ellipse> as a polygon with N segments. */
-export function ellipseToRings(el: XmlElement, segments: number = 32): [number, number][][] {
+function ellipseToRings(el: XmlElement, segments: number = 32): [number, number][][] {
   const cx = parseFloat(el.getAttribute("cx") || "0");
   const cy = parseFloat(el.getAttribute("cy") || "0");
   const rx = parseFloat(el.getAttribute("rx") || "0");

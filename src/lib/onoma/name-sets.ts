@@ -35,13 +35,13 @@ export interface NameSlot {
   suffixRule?: "hendalarsk-matronymic" | "yonderian-patronymic" | "caphirian-lineage" | "none";
 }
 
-export interface NameTemplate {
+interface NameTemplate {
   slots: NameSlot[];
   separator: string;
   presetKey?: string;
 }
 
-export interface ConventionPreset {
+interface ConventionPreset {
   key: string;
   name: string;
   description: string;

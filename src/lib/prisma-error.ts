@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { NotFoundError, ConflictError, ValidationError, InternalError } from "~/lib/app-error";
 
-export interface ParsedPrismaError {
+interface ParsedPrismaError {
   type: "unique_constraint" | "not_found" | "foreign_key" | "constraint" | "timeout" | "unknown";
   model?: string;
   field?: string;

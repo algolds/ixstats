@@ -1,11 +1,3 @@
-/**
- * wiki-ast.ts — Canonical IxWiki Abstract Syntax Tree (AST) Document Model (v2).
- * Provides a structured, immutable representation of an article for Plate,
- * CodeMirror, and backend sync pipelines.
- */
-
-export const WIKI_AST_VERSION = 1;
-
 // ─── Source Spans & Diagnostics ─────────────────────────────────────────────
 
 export interface WikiSourceSpan {
@@ -25,7 +17,7 @@ export type ParseState = "complete" | "incomplete";
 
 // ─── Inline Text & Marks ───────────────────────────────────────────────────
 
-export interface WikiTextMark {
+interface WikiTextMark {
   bold?: boolean;
   italic?: boolean;
   underline?: boolean;

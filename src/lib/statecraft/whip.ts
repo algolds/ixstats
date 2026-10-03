@@ -12,11 +12,10 @@
 
 import type { VoteResult } from "./legislative-vote";
 
-export type WhipLevel = "revealed" | "questioned" | "greyed";
-export type WhipVerdict =
-  "pass" | "fail" | "leaning_pass" | "leaning_fail" | "too_close" | "unknown";
+type WhipLevel = "revealed" | "questioned" | "greyed";
+type WhipVerdict = "pass" | "fail" | "leaning_pass" | "leaning_fail" | "too_close" | "unknown";
 
-export interface WhipReading {
+interface WhipReading {
   level: WhipLevel;
   verdict: WhipVerdict;
   caption: string;

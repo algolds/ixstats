@@ -24,7 +24,7 @@ export interface SportThemeConfig {
 
 export type SportTheme = SportThemeConfig;
 
-export const SPORT_THEMES: Record<SportPresetKey, SportThemeConfig> = {
+const SPORT_THEMES: Record<SportPresetKey, SportThemeConfig> = {
   soccer: {
     key: "soccer",
     name: "Soccer",

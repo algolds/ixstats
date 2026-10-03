@@ -3,7 +3,7 @@
  * Pure module: safe to import from client components and server code alike.
  */
 
-export const CONSEQUENCE_FIELD_LABELS: Record<string, string> = {
+const CONSEQUENCE_FIELD_LABELS: Record<string, string> = {
   // Country
   publicApproval: "Public Approval",
   unemploymentRate: "Unemployment",
@@ -75,7 +75,7 @@ export function consequenceFieldLabel(field: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-export interface ConsequenceLike {
+interface ConsequenceLike {
   targetField: string;
   operation: "add" | "subtract" | "multiply" | "set";
   value: number;

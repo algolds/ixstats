@@ -11,18 +11,12 @@
 
 export type ArticleId = string & { readonly __brand: unique symbol };
 export type RevisionId = string & { readonly __brand: unique symbol };
-export type ArticleSlug = string & { readonly __brand: unique symbol };
-export type CategoryId = string & { readonly __brand: unique symbol };
-export type UserId = string & { readonly __brand: unique symbol };
-export type AssetId = string & { readonly __brand: unique symbol };
-
+type ArticleSlug = string & { readonly __brand: unique symbol };
 export const toArticleSlug = (slug: string): ArticleSlug =>
   slug.trim().toLowerCase().replace(/ /g, "_").replace(/_{2,}/g, "_") as ArticleSlug;
 
 export const toArticleId = (id: string): ArticleId => id as ArticleId;
 export const toRevisionId = (id: string): RevisionId => id as RevisionId;
-export const toUserId = (id: string): UserId => id as UserId;
-
 /**
  * Public revision reference shared by history, diff and undo: the MediaWiki rev_id for
  * revisions synced from MediaWiki, else the WikiOS revision row id (native edits have no
@@ -39,7 +33,7 @@ export const parseRevisionRef = (ref: string): { mwRevId: number } | { id: strin
 // Structured Block AST
 // ---------------------------------------------------------------------------
 
-export type WikiBlock =
+type WikiBlock =
   | ParagraphBlock
   | HeadingBlock
   | InfoboxBlock
@@ -49,20 +43,20 @@ export type WikiBlock =
   | TableBlock
   | ImageBlock;
 
-export interface ParagraphBlock {
+interface ParagraphBlock {
   type: "paragraph";
   id: string;
   children: Array<TextNode | WikilinkInline | ExternalLinkInline>;
 }
 
-export interface HeadingBlock {
+interface HeadingBlock {
   type: "heading";
   id: string;
   level: 2 | 3 | 4 | 5 | 6;
   text: string;
 }
 
-export interface InfoboxBlock {
+interface InfoboxBlock {
   type: "infobox";
   id: string;
   templateName: string;
@@ -70,14 +64,14 @@ export interface InfoboxBlock {
   mapCoordinates?: { lat: number; lng: number; zoom?: number };
 }
 
-export interface StatPlaceholderBlock {
+interface StatPlaceholderBlock {
   type: "stat_placeholder";
   id: string;
   key: string; // e.g. "CountryData:Vesper|gdp"
   fallbackValue?: string;
 }
 
-export interface MapEmbedBlock {
+interface MapEmbedBlock {
   type: "map_embed";
   id: string;
   lat: number;
@@ -87,7 +81,7 @@ export interface MapEmbedBlock {
   pinType?: string;
 }
 
-export interface CalloutBlock {
+interface CalloutBlock {
   type: "callout";
   id: string;
   tone: "info" | "warning" | "success" | "neutral";
@@ -95,7 +89,7 @@ export interface CalloutBlock {
   title?: string;
 }
 
-export interface TableBlock {
+interface TableBlock {
   type: "table";
   id: string;
   headers: string[];
@@ -103,7 +97,7 @@ export interface TableBlock {
   caption?: string;
 }
 
-export interface ImageBlock {
+interface ImageBlock {
   type: "image";
   id: string;
   url: string;
@@ -113,7 +107,7 @@ export interface ImageBlock {
   height?: number;
 }
 
-export interface TextNode {
+interface TextNode {
   type: "text";
   text: string;
   bold?: boolean;
@@ -123,7 +117,7 @@ export interface TextNode {
   underline?: boolean;
 }
 
-export interface WikilinkInline {
+interface WikilinkInline {
   type: "wikilink";
   targetSlug: ArticleSlug;
   displayText: string;
@@ -131,7 +125,7 @@ export interface WikilinkInline {
   isBroken?: boolean;
 }
 
-export interface ExternalLinkInline {
+interface ExternalLinkInline {
   type: "external_link";
   url: string;
   displayText: string;
@@ -141,8 +135,8 @@ export interface ExternalLinkInline {
 // Article Payloads & Entities
 // ---------------------------------------------------------------------------
 
-export type WikiContentFormat = "STRUCTURED_JSON" | "MARKDOWN" | "WIKITEXT" | "HTML";
-export type WikiArticleStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED" | "PROTECTED";
+type WikiContentFormat = "STRUCTURED_JSON" | "MARKDOWN" | "WIKITEXT" | "HTML";
+type WikiArticleStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED" | "PROTECTED";
 
 export interface SaveArticleInput {
   slug: string;

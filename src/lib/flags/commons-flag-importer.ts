@@ -3,11 +3,11 @@ import {
   type CommonsCategoryItem,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 
-export type CommonsFlagItem = CommonsCategoryItem & {
+type CommonsFlagItem = CommonsCategoryItem & {
   isAlreadyImported?: boolean;
 };
 
-export class CommonsFlagImporter {
+class CommonsFlagImporter {
   /**
    * Fetch list of SVG flags in a Commons category using central wiki primitives.
    */

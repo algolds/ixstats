@@ -17,7 +17,7 @@ export interface DocumentHeading {
   id: string;
 }
 
-export interface MarkdownDocument {
+interface MarkdownDocument {
   meta: DocumentMeta;
   body: string;
   headings: DocumentHeading[];

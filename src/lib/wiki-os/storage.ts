@@ -13,7 +13,7 @@
 import { db } from "~/server/db";
 import { getWikiAuth, type WikiAuthContext } from "~/lib/wiki-os/auth";
 
-export interface WikiUserRecord {
+interface WikiUserRecord {
   id: string;
   countryId: string | null;
 }

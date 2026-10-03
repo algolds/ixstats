@@ -20,7 +20,7 @@ import type {
 } from "~/types/tax-system";
 import { CALCULATION_METHODS } from "~/types/tax-system";
 
-import type { TaxBuilderState } from "~/types/builder/tax-builder";
+import type { TaxBuilderState } from "~/types/builder";
 export type { TaxBuilderState };
 
 interface UseTaxBuilderStateOptions {

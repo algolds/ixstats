@@ -26,7 +26,7 @@ const DEFAULT_RULES: [string, string][] = [
   ["j", "dʒ"],
 ];
 
-export const CULTURE_RULES: Record<string, [string, string][]> = {
+const CULTURE_RULES: Record<string, [string, string][]> = {
   latin: [
     ["ph", "f"],
     ["th", "t"],
@@ -295,7 +295,7 @@ export function getCultureRules(cultureOrTemplate: string | null): [string, stri
   return CULTURE_RULES[primaryCulture] || DEFAULT_RULES;
 }
 
-export interface ResolvePhoneticsOptions {
+interface ResolvePhoneticsOptions {
   culture?: string | null;
   category?: string | null;
   subType?: string | null;
@@ -395,7 +395,7 @@ export function resolveNamePhonetics(
 /**
  * Returns the default BCP-47 voice tag for a culture family.
  */
-export function getCultureDefaultVoiceTag(culture: string): string {
+function getCultureDefaultVoiceTag(culture: string): string {
   switch (culture) {
     case "latin":
       return "it-IT";
@@ -431,7 +431,7 @@ export function getCultureDefaultVoiceTag(culture: string): string {
 /**
  * Returns the default Kokoro neural voice persona for a culture family.
  */
-export function getCultureDefaultKokoroVoice(culture: string): string {
+function getCultureDefaultKokoroVoice(culture: string): string {
   switch (culture) {
     case "latin":
       return "bf_emma";

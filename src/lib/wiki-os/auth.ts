@@ -39,7 +39,7 @@ export interface WikiAuthIdentity {
 }
 
 /** Sanitize a string to be a safe MediaWiki username. */
-export function sanitizeMediaWikiUsername(input: string): string {
+function sanitizeMediaWikiUsername(input: string): string {
   // MediaWiki usernames cannot contain # < > [ ] | { } / @ : =
   let clean = input
     .replace(/[#<>[\]|{}/@:=]/g, "")
@@ -144,12 +144,6 @@ export function requireWikiAuthId(ctx: WikiAuthContext): string {
     throw new TRPCError({ code: "UNAUTHORIZED", message: "You must be signed in." });
   }
   return authId;
-}
-
-/** Attribution label for edit summaries: wiki username, else account id, else "anonymous". */
-export function getWikiActorLabel(ctx: WikiAuthContext): string {
-  const { wikiUsername, userId } = getWikiAuth(ctx);
-  return wikiUsername ?? userId ?? "anonymous";
 }
 
 /**

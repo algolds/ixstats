@@ -12,9 +12,8 @@
  */
 
 import { DOMParser, XMLSerializer } from "@xmldom/xmldom";
-import type { Position } from "geojson";
 
-export interface PreprocessResult {
+interface PreprocessResult {
   /** Cleaned SVG string ready for parsing */
   svgContent: string;
   /** Log of preprocessing actions */
@@ -29,8 +28,6 @@ export interface PreprocessResult {
 }
 
 // oxlint-disable-next-line typescript/no-unused-vars
-const SVG_NS = "http://www.w3.org/2000/svg";
-
 // @xmldom/xmldom@0.9's Element/Node types are no longer structurally assignable to
 // the global lib.dom Element/Node (they were in 0.8, minus EventTarget methods).
 // All "XmlElement"/"XmlNode" values in this file are xmldom-parsed nodes, never
@@ -514,82 +511,4 @@ function countShapes(root: XmlElement): number {
   }
   walk(root);
   return count;
-}
-
-// ──────────────────────────────────────────────
-// Self-intersection detection & fix
-// ──────────────────────────────────────────────
-
-/**
- * Check if a ring self-intersects and split at crossing points.
- * Returns the original ring if no intersections, or multiple valid rings.
- */
-export function fixSelfIntersectingRing(ring: Position[]): Position[][] {
-  if (ring.length < 4) return [ring];
-
-  // Find intersection points
-  const intersections: Array<{ segA: number; segB: number; point: Position }> = [];
-
-  for (let i = 0; i < ring.length - 1; i++) {
-    for (let j = i + 2; j < ring.length - 1; j++) {
-      // Don't check adjacent segments (they share a vertex)
-      if (j === i + 1 || (i === 0 && j === ring.length - 2)) continue;
-
-      const pt = segmentIntersection(ring[i]!, ring[i + 1]!, ring[j]!, ring[j + 1]!);
-      if (pt) {
-        intersections.push({ segA: i, segB: j, point: pt });
-      }
-    }
-  }
-
-  if (intersections.length === 0) return [ring];
-
-  // For the first intersection, split into two rings
-  const { segA, segB, point } = intersections[0]!;
-
-  // Ring 1: start → segA → intersection → segB+1 → end
-  const ring1: Position[] = [];
-  for (let i = 0; i <= segA; i++) ring1.push(ring[i]!);
-  ring1.push(point);
-  for (let i = segB + 1; i < ring.length; i++) ring1.push(ring[i]!);
-
-  // Ring 2: intersection → segA+1 → segB → intersection
-  const ring2: Position[] = [point];
-  for (let i = segA + 1; i <= segB; i++) ring2.push(ring[i]!);
-  ring2.push(point);
-
-  // Recursively fix any remaining intersections
-  const result: Position[][] = [];
-  for (const r of [ring1, ring2]) {
-    if (r.length >= 4) {
-      result.push(...fixSelfIntersectingRing(r));
-    }
-  }
-
-  return result.length > 0 ? result : [ring];
-}
-
-/** Find intersection point of two line segments, or null if they don't intersect. */
-function segmentIntersection(
-  p1: Position,
-  p2: Position,
-  p3: Position,
-  p4: Position
-): Position | null {
-  const d1x = p2[0]! - p1[0]!;
-  const d1y = p2[1]! - p1[1]!;
-  const d2x = p4[0]! - p3[0]!;
-  const d2y = p4[1]! - p3[1]!;
-
-  const denom = d1x * d2y - d1y * d2x;
-  if (Math.abs(denom) < 1e-12) return null; // parallel
-
-  const t = ((p3[0]! - p1[0]!) * d2y - (p3[1]! - p1[1]!) * d2x) / denom;
-  const u = ((p3[0]! - p1[0]!) * d1y - (p3[1]! - p1[1]!) * d1x) / denom;
-
-  if (t > 0 && t < 1 && u > 0 && u < 1) {
-    return [p1[0]! + t * d1x, p1[1]! + t * d1y];
-  }
-
-  return null;
 }

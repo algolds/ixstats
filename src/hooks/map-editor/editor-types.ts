@@ -87,7 +87,7 @@ export interface POIFormData {
   storylineId?: string;
 }
 
-export type StoryPinCategory =
+type StoryPinCategory =
   | "battle"
   | "founding"
   | "treaty"
@@ -103,7 +103,7 @@ export type StoryPinCategory =
   | "linguistic"
   | "upheaval";
 
-export type MapLabelType =
+type MapLabelType =
   | "mountain_range"
   | "strait"
   | "bay"
@@ -168,16 +168,6 @@ export interface NamedLakeFormData {
   wikiPageTitle?: string;
   geometry?: object;
 }
-
-export type ActiveFormState =
-  | { type: "city"; data: CityFormData; onChange: (d: CityFormData) => void }
-  | { type: "subdivision"; data: SubdivisionFormData; onChange: (d: SubdivisionFormData) => void }
-  | { type: "poi"; data: POIFormData; onChange: (d: POIFormData) => void }
-  | { type: "storyPin"; data: StoryPinFormData; onChange: (d: StoryPinFormData) => void }
-  | { type: "mapLabel"; data: MapLabelFormData; onChange: (d: MapLabelFormData) => void }
-  | { type: "peak"; data: PeakFormData; onChange: (d: PeakFormData) => void }
-  | { type: "river"; data: NamedRiverFormData; onChange: (d: NamedRiverFormData) => void }
-  | { type: "lake"; data: NamedLakeFormData; onChange: (d: NamedLakeFormData) => void };
 
 const DUPLICATE_OFFSET_DEG = 0.05;
 

@@ -5,7 +5,7 @@
 
 import type { ParsedFeature } from "../svg-parser";
 
-export interface FeatureDiffEntry {
+interface FeatureDiffEntry {
   featureId: string;
   displayName: string;
   status: "added" | "modified" | "removed" | "unchanged";
@@ -18,7 +18,7 @@ export interface FeatureDiffEntry {
   existingCountryName?: string | null;
 }
 
-export interface LayerDiff {
+interface LayerDiff {
   layerType: string;
   totalExisting: number;
   totalIncoming: number;

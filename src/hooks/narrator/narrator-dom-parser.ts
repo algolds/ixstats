@@ -4,7 +4,7 @@
 import type { PlaybackBlock } from "./narrator-types";
 
 // Strip citation/edit cruft from raw article text.
-export function cleanContentText(text: string): string {
+function cleanContentText(text: string): string {
   return text
     .replace(/\[\d+\]/g, "") // remove [1], [2] citation brackets
     .replace(/\[citation needed\]/gi, "")
@@ -13,15 +13,15 @@ export function cleanContentText(text: string): string {
 }
 
 // Split prose into sentences (abbreviation-naive, but the server re-splits anyway).
-export function splitSentences(text: string): string[] {
+function splitSentences(text: string): string[] {
   const parts = text.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g);
   return parts ? parts.map((s) => s.trim()).filter(Boolean) : [text];
 }
 
 // Pack prose into bounded chunks so every TTS request is ~constant size (~14s on Kokoro).
-export const TTS_CHUNK_CHARS = 240;
+const TTS_CHUNK_CHARS = 240;
 
-export function chunkText(text: string): string[] {
+function chunkText(text: string): string[] {
   const out: string[] = [];
   let buf = "";
   const flush = () => {

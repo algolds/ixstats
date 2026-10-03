@@ -7,12 +7,12 @@
  * subdivisions it already loaded.
  */
 
-export interface ExistingSubdivisionRef {
+interface ExistingSubdivisionRef {
   id: string;
   name: string;
 }
 
-export interface MergePlanEntry<T> {
+interface MergePlanEntry<T> {
   province: T;
   /** id of the existing subdivision to update, or null to create */
   existingId: string | null;

@@ -8,7 +8,7 @@ import type {
 } from "./types";
 import { TINCTURE_KIND } from "./constants";
 
-export interface GenerationOptions {
+interface GenerationOptions {
   cultureGroup?: string;
   religion?: string;
   governmentType?: string;
@@ -28,8 +28,6 @@ const SHAPES: ShieldShape[] = [
 const METALS: Tincture[] = ["or", "argent"];
 const COLOURS: Tincture[] = ["gules", "azure", "vert", "purpure", "sable"];
 // oxlint-disable-next-line typescript/no-unused-vars
-const NEUTRALS: Tincture[] = ["ermine", "vair"];
-
 const DIVISION_POOL: Division[] = [
   "plain",
   "per-pale",

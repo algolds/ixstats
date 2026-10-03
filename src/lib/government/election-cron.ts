@@ -18,7 +18,7 @@ import { db } from "~/server/db";
 import { IxTime } from "~/lib/ixtime";
 import { ensureUpcomingElection, resolveElection } from "./election-lifecycle";
 
-export interface ElectionCronResult {
+interface ElectionCronResult {
   resolved: number;
   scheduled: number;
   skipped: number;

@@ -4,13 +4,7 @@ import { getPreset } from "./presets";
 
 export type CareerStage = "rookie" | "developing" | "prime" | "plateau" | "declining" | "retired";
 
-export interface MarkovTransition {
-  from: CareerStage;
-  to: CareerStage;
-  probability: number;
-}
-
-export interface GeneratedPlayer {
+interface GeneratedPlayer {
   firstName: string;
   lastName: string;
   position: string;
@@ -227,7 +221,7 @@ export function advanceCareerStage(
   return current;
 }
 
-export function generatePlayer(args: {
+function generatePlayer(args: {
   sport: SportPresetKey;
   position?: string;
   age?: number;

@@ -24,7 +24,7 @@ export interface UnifiedNotification {
   metadata?: Record<string, any>;
 }
 
-export type NotificationSource =
+type NotificationSource =
   "realtime" | "admin" | "system" | "user" | "intelligence" | "external" | "scheduled";
 
 export type NotificationCategory =
@@ -43,7 +43,7 @@ export type NotificationCategory =
   | "military"
   | string;
 
-export type NotificationType =
+type NotificationType =
   "alert" | "update" | "opportunity" | "warning" | "critical" | "info" | "success" | "error";
 
 export type NotificationPriority = "critical" | "high" | "medium" | "low";
@@ -56,7 +56,7 @@ export type DeliveryMethod =
 export type NotificationStatus =
   "pending" | "delivered" | "deferred" | "read" | "dismissed" | "expired" | "suppressed" | "failed";
 
-export interface NotificationAction {
+interface NotificationAction {
   id: string;
   label: string;
   type?: "primary" | "secondary" | "danger";
@@ -65,14 +65,14 @@ export interface NotificationAction {
   onClick?: () => void;
 }
 
-export interface NotificationTrigger {
+interface NotificationTrigger {
   type: string;
   source: string;
   data?: any;
   confidence?: number;
 }
 
-export interface NotificationContext {
+interface NotificationContext {
   userId: string;
   countryId?: string;
   isExecutiveMode: boolean;
@@ -86,7 +86,7 @@ export interface NotificationContext {
   [key: string]: any;
 }
 
-export interface CategoryPreferences {
+interface CategoryPreferences {
   enabled: boolean;
   minPriority: NotificationPriority;
   deliveryMethods?: DeliveryMethod[];

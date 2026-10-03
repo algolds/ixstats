@@ -9,7 +9,7 @@
 import { executeMediaWikiWrite, updateRevisionActor } from "./write-service";
 import { db } from "~/server/db";
 
-export interface MediaWikiSyncJob {
+interface MediaWikiSyncJob {
   slug: string;
   title: string;
   wikitext: string;

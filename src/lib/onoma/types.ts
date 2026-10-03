@@ -5,39 +5,13 @@ import { z } from "zod";
 
 export type Brand<T, B extends string> = T & { readonly __brand: B };
 export type IPAString = Brand<string, "IPAString">;
-export type LanguagePackId = Brand<string, "LanguagePackId">;
-export type SVGPathString = Brand<string, "SVGPathString">;
-export type ConlangWord = Brand<string, "ConlangWord">;
-
-export const toIPAString = (s: string): IPAString => s as IPAString;
-export const toSVGPathString = (s: string): SVGPathString => s as SVGPathString;
-export const toConlangWord = (s: string): ConlangWord => s as ConlangWord;
-
 // Strict Conlang Marketplace & Syntax Schemas
-export const PhonologyRulesSchema = z.object({
-  consonants: z.array(z.string()).default([]),
-  vowels: z.array(z.string()).default([]),
-  syllables: z.array(z.string()).default(["CV", "CVC"]),
-  maxConsonantCluster: z.number().int().min(1).max(6).default(3),
-  stressRule: z.enum(["initial", "penultimate", "ultimate", "none"]).default("penultimate"),
-});
-
-export const MorphologyRulesSchema = z.object({
-  genderSystem: z
-    .enum(["masculine-feminine-neuter", "animate-inanimate", "common-neuter", "none"])
-    .default("none"),
-  declensionPatterns: z.record(z.string(), z.record(z.string(), z.string())).default({}),
-});
-
-export const LexiconDefinitionSchema = z.object({
+const LexiconDefinitionSchema = z.object({
   partOfSpeech: z.string().default("Noun"),
   root: z.string().default(""),
   meaning: z.string().default(""),
   origin: z.string().default(""),
 });
-
-export type LexiconDefinition = z.infer<typeof LexiconDefinitionSchema>;
-
 export const StashNoteMetadataSchema = z.object({
   category: z.string().nullable().optional(),
   role: z.string().nullable().optional(),
@@ -54,30 +28,6 @@ export const StashNoteMetadataSchema = z.object({
     })
     .optional(),
 });
-
-export interface DefaultDictionaryPreset {
-  id: string;
-  title: string;
-  description?: string;
-  category?: string;
-  culturalProfile?: string;
-  values: string[];
-}
-
-export interface GrammarProfileData {
-  id?: string;
-  userId?: string;
-  languagePackId?: string | null;
-  name: string;
-  wordOrder: "SVO" | "SOV" | "VSO" | "VOS" | "OVS" | "OSV" | string;
-  caseSystem: Record<string, string>;
-  verbConjugation: Record<string, string>;
-  articles: Record<string, string>;
-  numberSystem: Record<string, string>;
-  adjectiveOrder: "before" | "after" | string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
 
 export interface LinguisticProfile {
   id: string;
@@ -96,10 +46,6 @@ export interface ResolvedNamePhonetics {
   kokoroVoicePersona?: string;
   source: "override" | "dictionary" | "template" | "culture" | "default";
 }
-
-export type PhonologyRules = z.infer<typeof PhonologyRulesSchema>;
-export type MorphologyRules = z.infer<typeof MorphologyRulesSchema>;
-export type StashNoteMetadata = z.infer<typeof StashNoteMetadataSchema>;
 
 /**
  * All IxStates-specific name categories supported by the generators.
@@ -133,11 +79,6 @@ export type CulturalProfile =
   | "indic"
   | "uralic"
   | "constructed";
-
-/**
- * Training mode for name generation.
- */
-export type TrainingMode = "ixworld" | "preset" | "lexicon";
 
 /**
  * Options for Markov chain name generation.
@@ -187,67 +128,6 @@ export interface GenerateOptions {
  * Gender option for species/character generators.
  */
 export type Gender = "male" | "female" | "neutral";
-
-/**
- * Species preset identifiers (rebranded from original Onoma).
- */
-export type SpeciesPreset =
-  | "fantasy-generic"
-  | "monstrous" // Goblin, Orc, Ogre
-  | "stout-folk" // Dwarf, Halfling, Gnome
-  | "fey-elven" // Elf, Dark Elf, Faery
-  | "mythic" // Dragon, Demon, Angel, Half-Demon
-  | "primitive"; // Caveman, tribal
-
-/**
- * Group/organization preset identifiers.
- */
-export type GroupPreset =
-  "religious-order" | "military-unit" | "covert-organization" | "academic-institution" | "guild";
-
-/**
- * Descriptor for a generator preset shown in the UI.
- */
-export interface GeneratorPreset {
-  id: string;
-  name: string;
-  description: string;
-  category: NameCategory;
-  icon?: string;
-}
-
-/**
- * NameBank entry shape matching the Prisma model for client-side use.
- */
-export interface NameBankEntry {
-  id: string;
-  userId: string;
-  type: "dictionary" | "saved-name";
-  title: string;
-  values: string[];
-  category: NameCategory | null;
-  culturalProfile: CulturalProfile | null;
-  isPublic: boolean;
-  countryId: string | null;
-  clonedFromId: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-/**
- * Result of a name generation batch.
- */
-export interface GenerationResult {
-  names: string[];
-  category: NameCategory;
-  culturalProfile: CulturalProfile | null;
-  trainingMode: TrainingMode;
-  generatedAt: Date;
-}
-
-export type DictionaryId = Brand<string, "DictionaryId">;
-export type StashEntryId = Brand<string, "StashEntryId">;
-
 /**
  * The three primary Product Model pillars defined in the Onoma Brand Guide:
  * - CREATE: Make language useful (Places, People, Organizations, Cultures, Names)
@@ -270,12 +150,6 @@ export type OnomaSection =
   | "explore"
   | "bank"
   | "settings";
-
-/**
- * Sections belonging to the CREATE pillar.
- */
-export type CreateSection = "overview" | "places" | "people" | "organizations" | "culture";
-
 /**
  * Studio workspace sub-tabs (System Construction Layer).
  */
@@ -289,7 +163,7 @@ export type ExploreSubTab = "phonology" | "grammar" | "writing" | "packs";
 /**
  * Mapping of section IDs to display metadata.
  */
-export interface OnomaNavItem {
+interface OnomaNavItem {
   id: OnomaSection;
   label: string;
   icon: string;
@@ -301,7 +175,7 @@ export interface OnomaNavItem {
 /**
  * All available Onoma nav items for the CREATE pillar and primary utilities.
  */
-export const ONOMA_NAV_ITEMS: OnomaNavItem[] = [
+const ONOMA_NAV_ITEMS: OnomaNavItem[] = [
   {
     id: "overview",
     label: "Sandbox",

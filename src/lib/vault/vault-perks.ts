@@ -1,14 +1,14 @@
 import { type PrismaClient } from "@prisma/client";
 import { Cache } from "~/lib/cache";
 
-export interface VaultEffectPerks {
+interface VaultEffectPerks {
   cardCapacity?: number;
   yieldBoost?: number;
   loreTokens?: number;
   [key: string]: unknown;
 }
 
-export interface VaultEffectItem {
+interface VaultEffectItem {
   perks?: VaultEffectPerks;
   [key: string]: unknown;
 }
@@ -57,7 +57,7 @@ export const VAULT_CONFIG_DEFAULTS: VaultConfig = {
   exemptStaffFromLimit: true,
 };
 
-export const VAULT_CONFIG_KEYS: Record<keyof VaultConfig, string> = {
+const VAULT_CONFIG_KEYS: Record<keyof VaultConfig, string> = {
   activeDailyCap: "vault_activeDailyCap",
   socialDailyCap: "vault_socialDailyCap",
   xpPerLevel: "vault_xpPerLevel",
@@ -79,17 +79,17 @@ export const VAULT_CONFIG_KEYS: Record<keyof VaultConfig, string> = {
   exemptStaffFromLimit: "vault_exemptStaffFromLimit",
 };
 
-export const vaultConfigCache = new Cache<VaultConfig>({
+const vaultConfigCache = new Cache<VaultConfig>({
   defaultTtlMs: 60_000,
   maxSize: 10,
 });
 
-export const userPerksCache = new Cache<VaultEffectItem[]>({
+const userPerksCache = new Cache<VaultEffectItem[]>({
   defaultTtlMs: 300_000,
   maxSize: 500,
 });
 
-export const VAULT_CONFIG_CACHE_KEY = "vault_config";
+const VAULT_CONFIG_CACHE_KEY = "vault_config";
 
 export function invalidateVaultConfigCache(): void {
   vaultConfigCache.delete(VAULT_CONFIG_CACHE_KEY);

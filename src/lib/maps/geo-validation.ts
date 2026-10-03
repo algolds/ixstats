@@ -18,7 +18,7 @@ import { TRPCError } from "@trpc/server";
  * Validate that coordinates are within valid WGS84 bounds.
  * Throws TRPCError BAD_REQUEST if invalid.
  */
-export function validateCoordinateBounds(lng: number, lat: number): void {
+function validateCoordinateBounds(lng: number, lat: number): void {
   if (lng < -180 || lng > 180) {
     throw new TRPCError({
       code: "BAD_REQUEST",
@@ -178,7 +178,7 @@ export async function validatePolygonContainment(
  * Helper to clean a PostGIS-returned GeoJSON geometry to a Polygon or MultiPolygon.
  * Filters out line strings, points, and other non-polygon components.
  */
-export function cleanPostGISGeometry(
+function cleanPostGISGeometry(
   geometry:
     Geometry | { type: string; coordinates?: any; geometries?: Geometry[] } | null | undefined
 ): Polygon | MultiPolygon | null {
@@ -490,7 +490,7 @@ function extractAllPositions(geometry: Geometry): [number, number][] {
 // Geometry Structure Validation (Pure — no DB)
 // ──────────────────────────────────────────────
 
-export interface GeometryValidationError {
+interface GeometryValidationError {
   type: string;
   message: string;
 }

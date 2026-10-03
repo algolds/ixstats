@@ -11,7 +11,7 @@ import { notificationAPI } from "~/lib/notifications";
 // ── Seat-allocation helpers (single source of truth) ──
 
 /** D'Hondt method for proportional seat allocation. */
-export function dHondtAllocation(
+function dHondtAllocation(
   partyVotes: { partyId: string; votes: number }[],
   totalSeats: number
 ): Map<string, number> {
@@ -35,7 +35,7 @@ export function dHondtAllocation(
 }
 
 /** FPTP allocation: winner takes all (single-district). */
-export function fptpAllocation(
+function fptpAllocation(
   partyVotes: { partyId: string; votes: number }[],
   totalSeats: number
 ): Map<string, number> {
@@ -115,7 +115,7 @@ export function parseChambers(
   ];
 }
 
-export type SimulateElectionResult =
+type SimulateElectionResult =
   { ok: true; election: any } | { ok: false; reason: "not_found" | "insufficient_candidates" };
 
 /**

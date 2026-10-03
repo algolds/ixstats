@@ -17,28 +17,16 @@ export interface VertexRef {
   coord: Position;
 }
 
-export interface EdgeRef {
+interface EdgeRef {
   ringIndex: number;
   startIndex: number;
   endIndex: number;
   midpoint: Position;
 }
 
-export interface NearestResult<T> {
+interface NearestResult<T> {
   ref: T;
   distance: number; // degrees (approximate)
-}
-
-export type BorderEditAction =
-  | { type: "move_vertex"; ref: VertexRef; to: Position }
-  | { type: "add_vertex"; edge: EdgeRef; at: Position }
-  | { type: "remove_vertex"; ref: VertexRef }
-  | { type: "replace_geometry"; geometry: Polygon | MultiPolygon };
-
-export interface UndoEntry {
-  action: BorderEditAction;
-  previousGeometry: Polygon | MultiPolygon;
-  resultGeometry: Polygon | MultiPolygon;
 }
 
 // ──────────────────────────────────────────────
@@ -233,52 +221,6 @@ export function findNearestEdge(
 // ──────────────────────────────────────────────
 // Shared Border Detection
 // ──────────────────────────────────────────────
-
-/**
- * Find shared border segments between two features.
- * Returns pairs of edges that are within `tolerance` degrees of each other.
- */
-export function findSharedBorders(
-  geometryA: Polygon | MultiPolygon,
-  geometryB: Polygon | MultiPolygon,
-  tolerance = 0.01
-): Array<{ edgeA: EdgeRef; edgeB: EdgeRef }> {
-  const ringsA = getAllRings(geometryA);
-  const ringsB = getAllRings(geometryB);
-  const shared: Array<{ edgeA: EdgeRef; edgeB: EdgeRef }> = [];
-
-  for (let riA = 0; riA < ringsA.length; riA++) {
-    const ringA = ringsA[riA]!;
-    for (let iA = 0; iA < ringA.length - 1; iA++) {
-      const a1 = ringA[iA]!;
-      const a2 = ringA[iA + 1]!;
-
-      for (let riB = 0; riB < ringsB.length; riB++) {
-        const ringB = ringsB[riB]!;
-        for (let iB = 0; iB < ringB.length - 1; iB++) {
-          const b1 = ringB[iB]!;
-          const b2 = ringB[iB + 1]!;
-
-          // Check if edges overlap (same segment, possibly reversed)
-          if (
-            (distanceDeg(a1, b1) < tolerance && distanceDeg(a2, b2) < tolerance) ||
-            (distanceDeg(a1, b2) < tolerance && distanceDeg(a2, b1) < tolerance)
-          ) {
-            const midA: Position = [(a1[0]! + a2[0]!) / 2, (a1[1]! + a2[1]!) / 2];
-            const midB: Position = [(b1[0]! + b2[0]!) / 2, (b1[1]! + b2[1]!) / 2];
-            shared.push({
-              edgeA: { ringIndex: riA, startIndex: iA, endIndex: iA + 1, midpoint: midA },
-              edgeB: { ringIndex: riB, startIndex: iB, endIndex: iB + 1, midpoint: midB },
-            });
-          }
-        }
-      }
-    }
-  }
-
-  return shared;
-}
-
 // ──────────────────────────────────────────────
 // Geometry Metrics
 // ──────────────────────────────────────────────
@@ -576,7 +518,7 @@ function getSplitLineSegment(splitLine: Position[], tStart: number, tEnd: number
 // ──────────────────────────────────────────────
 
 /** Ray-casting point-in-polygon test against a single polygon (outer ring + holes). */
-export function pointInPolygonRing(point: Position, rings: Position[][]): boolean {
+function pointInPolygonRing(point: Position, rings: Position[][]): boolean {
   const [x, y] = point;
   // Test outer ring
   const outer = rings[0];
@@ -590,7 +532,7 @@ export function pointInPolygonRing(point: Position, rings: Position[][]): boolea
 }
 
 /** Check if a point is inside a Polygon or any polygon of a MultiPolygon. */
-export function pointInGeometry(point: Position, geometry: Polygon | MultiPolygon): boolean {
+function pointInGeometry(point: Position, geometry: Polygon | MultiPolygon): boolean {
   if (geometry.type === "Polygon") {
     return pointInPolygonRing(point, geometry.coordinates);
   }
@@ -740,55 +682,8 @@ export function simplifyGeometry(
   return rebuildGeometry(geometry, rings);
 }
 
-/**
- * Snap a point to the nearest country border edge if within tolerance.
- * Returns the snapped position or the original if no edge is close enough.
- */
-export function snapToBorderEdge(
-  point: Position,
-  borderGeometry: Polygon | MultiPolygon,
-  tolerance: number = 0.015 // ~1.7km at equator
-): Position {
-  const rings = getAllRings(borderGeometry);
-
-  // 1. Prioritize snapping to vertices first
-  let bestVertexDist = Infinity;
-  let bestVertex: Position = point;
-
-  for (const ring of rings) {
-    for (const vertex of ring) {
-      const d = distanceDeg(point, vertex);
-      if (d < bestVertexDist && d <= tolerance) {
-        bestVertexDist = d;
-        bestVertex = vertex;
-      }
-    }
-  }
-
-  if (bestVertexDist <= tolerance) {
-    return bestVertex;
-  }
-
-  // 2. Fallback: snap to the nearest projected point on segment/edge
-  let bestDist = Infinity;
-  let bestProj: Position = point;
-
-  for (const ring of rings) {
-    for (let i = 0; i < ring.length - 1; i++) {
-      const proj = projectPointToSegment(point, ring[i]!, ring[i + 1]!);
-      const d = distanceDeg(point, proj);
-      if (d < bestDist && d <= tolerance) {
-        bestDist = d;
-        bestProj = proj;
-      }
-    }
-  }
-
-  return bestDist <= tolerance ? bestProj : point;
-}
-
 /** Get visual bounding box of Polygon/MultiPolygon and cache it on the object */
-export function getGeometryBBox(geom: Polygon | MultiPolygon): {
+function getGeometryBBox(geom: Polygon | MultiPolygon): {
   minLng: number;
   minLat: number;
   maxLng: number;
@@ -1254,8 +1149,8 @@ export function alignSharedVertices(
   modifiedA: boolean;
   modifiedB: boolean;
 } {
-  let currentA = JSON.parse(JSON.stringify(geomA)) as Polygon | MultiPolygon;
-  let currentB = JSON.parse(JSON.stringify(geomB)) as Polygon | MultiPolygon;
+  let currentA = structuredClone(geomA) as Polygon | MultiPolygon;
+  let currentB = structuredClone(geomB) as Polygon | MultiPolygon;
   let modifiedA = false;
   let modifiedB = false;
 
@@ -1352,32 +1247,6 @@ function angleBetween(a: Position, b: Position, c: Position): number {
   if (magBA < 1e-10 || magBC < 1e-10) return 0;
   const cos = Math.max(-1, Math.min(1, dot / (magBA * magBC)));
   return Math.acos(cos) * (180 / Math.PI);
-}
-
-export function findNearestAltitudeSnap(
-  point: Position,
-  altitudeFeatures: Array<{ geometry: Polygon | MultiPolygon; properties: { zoneId?: string } }>,
-  maxDistance: number = 0.01 // ~1.1km at equator
-): AltitudeSnapResult | null {
-  let best: AltitudeSnapResult | null = null;
-
-  for (const feature of altitudeFeatures) {
-    const rings = getAllRings(feature.geometry);
-    const zoneId = feature.properties.zoneId ?? "unknown";
-
-    for (const ring of rings) {
-      for (let i = 0; i < ring.length - 1; i++) {
-        const projected = projectPointToSegment(point, ring[i]!, ring[i + 1]!);
-        const d = distanceDeg(point, projected);
-
-        if (d <= maxDistance && (!best || d < best.distance)) {
-          best = { position: projected, zoneId, distance: d };
-        }
-      }
-    }
-  }
-
-  return best;
 }
 
 export * from "./border-shaping";

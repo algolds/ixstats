@@ -17,8 +17,6 @@ import { withBasePath } from "~/lib/base-path";
 import type { PlaybackBlock } from "./narrator/narrator-types";
 import { extractArticleBlocks } from "./narrator/narrator-dom-parser";
 
-export type { PlaybackBlock };
-
 export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | null>) {
   const notify = useNotify();
   const {

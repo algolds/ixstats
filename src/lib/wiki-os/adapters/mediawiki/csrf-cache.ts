@@ -38,7 +38,7 @@ function mergeCookies(current: string[], newHeaders: string[]): string[] {
 /**
  * Performs login or gets a cached session token.
  */
-export async function getBotSessionAndToken(): Promise<{ cookies: string[]; csrfToken: string }> {
+async function getBotSessionAndToken(): Promise<{ cookies: string[]; csrfToken: string }> {
   if (cachedBotToken && cachedBotCookies.length > 0 && Date.now() - cachedBotAt < TOKEN_TTL_MS) {
     return { cookies: cachedBotCookies, csrfToken: cachedBotToken };
   }
@@ -129,14 +129,6 @@ export async function getUserSessionAndToken(_ctx?: {
   headers?: Headers;
 }): Promise<{ cookies: string[]; csrfToken: string }> {
   return getBotSessionAndToken();
-}
-
-/**
- * Backwards compatibility helper to get a CSRF token.
- */
-export async function getCsrfToken(): Promise<string> {
-  const session = await getBotSessionAndToken();
-  return session.csrfToken;
 }
 
 /**

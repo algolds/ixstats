@@ -1,4 +1,4 @@
-export interface NotificationEventEntry {
+interface NotificationEventEntry {
   eventKey: string;
   name: string;
   description: string;
@@ -339,11 +339,6 @@ export const NOTIFICATION_EVENTS: NotificationEventEntry[] = [
 export const NOTIFICATION_CATEGORIES = Array.from(
   new Set(NOTIFICATION_EVENTS.map((e) => e.category))
 ).sort();
-
-export const NOTIFICATION_SOURCES = Array.from(
-  new Set(NOTIFICATION_EVENTS.map((e) => e.source))
-).sort();
-
 export const NOTIFICATION_TRIGGER_TYPES = Array.from(
   new Set(NOTIFICATION_EVENTS.map((e) => e.triggerType))
 ).sort();
@@ -359,18 +354,3 @@ export const CATEGORY_ORDER: Record<string, number> = {
   achievement: 7,
   system: 8,
 };
-
-export function getEventsByCategory(category?: string): NotificationEventEntry[] {
-  if (category) return NOTIFICATION_EVENTS.filter((e) => e.category === category);
-  return NOTIFICATION_EVENTS;
-}
-
-export function getEventsBySource(source?: string): NotificationEventEntry[] {
-  if (source) return NOTIFICATION_EVENTS.filter((e) => e.source === source);
-  return NOTIFICATION_EVENTS;
-}
-
-export function getEventsByTriggerType(triggerType?: string): NotificationEventEntry[] {
-  if (triggerType) return NOTIFICATION_EVENTS.filter((e) => e.triggerType === triggerType);
-  return NOTIFICATION_EVENTS;
-}

@@ -19,7 +19,7 @@ import {
   type LoreCategory as LoreCategoryType,
 } from "./category-enums";
 
-export interface ArticleClassificationInput {
+interface ArticleClassificationInput {
   title?: string | null;
   text?: string | null;
   categories?: Array<string | { title: string }> | null;
@@ -29,7 +29,7 @@ export interface ArticleClassificationInput {
 /**
  * Tier 1: Canonical mapping of MediaWiki infobox templates to LoreCategory.
  */
-export const INFOBOX_CATEGORY_MAP: Record<string, LoreCategoryType> = {
+const INFOBOX_CATEGORY_MAP: Record<string, LoreCategoryType> = {
   // PEOPLE
   "infobox person": LoreCategory.PEOPLE,
   "infobox officeholder": LoreCategory.PEOPLE,
@@ -181,7 +181,7 @@ export const INFOBOX_CATEGORY_MAP: Record<string, LoreCategoryType> = {
 /**
  * Tier 2: MediaWiki Category taxonomy regex patterns.
  */
-export const CATEGORY_TAXONOMY_PATTERNS: Array<{
+const CATEGORY_TAXONOMY_PATTERNS: Array<{
   pattern: RegExp;
   category: LoreCategoryType;
 }> = [
@@ -293,7 +293,7 @@ const SPECIFICITY_RANK: Record<LoreCategoryType, number> = {
 /**
  * Helper to extract template names from raw wikitext (e.g. {{Infobox person | ...}} -> "infobox person")
  */
-export function extractInfoboxTemplatesFromWikitext(wikitext: string): string[] {
+function extractInfoboxTemplatesFromWikitext(wikitext: string): string[] {
   if (!wikitext) return [];
   const matches = wikitext.match(/\{\{\s*([a-zA-Z0-9_\s-]+)(?:\||\}\})/g) || [];
   return matches

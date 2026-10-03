@@ -1,9 +1,7 @@
 import { withBasePath } from "~/lib/base-path";
 import { isWikimediaCommonsUrl, getCommonsProxyUrl } from "~/lib/wiki-os/transformers/image-url";
 
-export { isWikimediaCommonsUrl, getCommonsProxyUrl };
-
-export interface DownloadedImage {
+interface DownloadedImage {
   url: string;
   originalUrl: string;
   fileName: string;
@@ -17,7 +15,7 @@ export interface DownloadedImage {
  * Supports CORS-enabled images from wikis and Unsplash
  * Returns a local URL to the saved image
  */
-export async function downloadAndConvertImage(imageUrl: string): Promise<DownloadedImage> {
+async function downloadAndConvertImage(imageUrl: string): Promise<DownloadedImage> {
   console.log(`[ImageDownloadService] Starting download: ${imageUrl}`);
 
   try {
@@ -192,38 +190,4 @@ export async function processImageSelection(
     options?.onError?.(errorMessage as Error);
     throw error;
   }
-}
-
-/**
- * Batch download multiple images
- * Useful for downloading both flag and coat of arms at once
- */
-export async function downloadMultipleImages(urls: string[]): Promise<DownloadedImage[]> {
-  const results: DownloadedImage[] = [];
-
-  for (const url of urls) {
-    if (isExternalImageUrl(url)) {
-      try {
-        if (isWikimediaCommonsUrl(url)) {
-          const proxyUrl = getCommonsProxyUrl(url);
-          results.push({
-            url: proxyUrl,
-            originalUrl: url,
-            fileName: url.split("/").pop() || "image",
-            fileSize: 0,
-            fileType: "image/jpeg",
-            downloadedAt: Date.now(),
-          });
-        } else {
-          const downloaded = await downloadAndConvertImage(url);
-          results.push(downloaded);
-        }
-      } catch (error) {
-        console.error(`[ImageDownloadService] Failed to download ${url}:`, error);
-        // Continue with other downloads even if one fails
-      }
-    }
-  }
-
-  return results;
 }

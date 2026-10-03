@@ -28,11 +28,6 @@ export interface LanguageFamily {
   seaTemplates: string[];
 }
 
-export interface NamingConfig {
-  families: LanguageFamily[];
-  regionAssignments?: Map<number, string>;
-}
-
 // ── Constants ────────────────────────────────
 
 const VOWELS = new Set("aeiouàáâãäåèéêëìíîïòóôõöùúûüæœ");
@@ -53,7 +48,7 @@ function isVowel(c: string): boolean {
  * keeping consonant clusters with the following vowel.
  * "nordheim" → ["nord","heim"], "istanbul" → ["is","tan","bul"]
  */
-export function splitIntoSyllables(word: string): string[] {
+function splitIntoSyllables(word: string): string[] {
   const w = word.toLowerCase();
   if (w.length <= MAX_SYLL) return [w];
 
@@ -345,98 +340,4 @@ export class MarkovNameGenerator {
 }
 
 // ── Multi-family coordinator ─────────────────
-
-/**
- * Manages multiple naming generators, one per language family.
- * Assigns families to regions and ensures global name uniqueness.
- */
-export class WorldNamingSystem {
-  private generators: Map<string, MarkovNameGenerator> = new Map();
-  private allNames: Set<string> = new Set();
-  private familyIds: string[];
-  private rng: () => number;
-
-  constructor(families: LanguageFamily[], seed: number) {
-    this.rng = makeRng(seed);
-    this.familyIds = families.map((f) => f.id);
-    for (const family of families) {
-      this.generators.set(family.id, new MarkovNameGenerator(family, seed + hashString(family.id)));
-    }
-  }
-
-  getGenerator(familyId: string): MarkovNameGenerator | undefined {
-    return this.generators.get(familyId);
-  }
-
-  randomFamily(): string {
-    return this.familyIds[Math.floor(this.rng() * this.familyIds.length)]!;
-  }
-
-  /** Assign families to regions via BFS from seed points, with mutation chance */
-  assignFamilies(regionCount: number, neighbors: Map<number, number[]>): Map<number, string> {
-    const assignments = new Map<number, string>();
-    const fc = this.familyIds.length;
-    const seedCount = Math.min(fc, regionCount);
-    const idx = Array.from({ length: regionCount }, (_, i) => i);
-
-    for (let i = idx.length - 1; i > 0; i--) {
-      const j = Math.floor(this.rng() * (i + 1));
-      [idx[i], idx[j]] = [idx[j]!, idx[i]!];
-    }
-    for (let i = 0; i < seedCount; i++) assignments.set(idx[i]!, this.familyIds[i % fc]!);
-
-    const queue = idx.slice(0, seedCount);
-    while (queue.length > 0) {
-      const cur = queue.shift()!;
-      const fam = assignments.get(cur);
-      if (!fam) continue;
-      for (const nb of neighbors.get(cur) ?? []) {
-        if (!assignments.has(nb)) {
-          assignments.set(
-            nb,
-            this.rng() < 0.15 ? this.familyIds[Math.floor(this.rng() * fc)]! : fam
-          );
-          queue.push(nb);
-        }
-      }
-    }
-    for (let i = 0; i < regionCount; i++) {
-      if (!assignments.has(i)) assignments.set(i, this.randomFamily());
-    }
-    return assignments;
-  }
-
-  private withGen(
-    familyId: string,
-    fallback: string,
-    fn: (g: MarkovNameGenerator) => string
-  ): string {
-    const gen = this.generators.get(familyId);
-    if (!gen) return `${fallback}${this.allNames.size}`;
-    gen.addExisting(this.allNames);
-    const name = fn(gen);
-    this.allNames.add(name);
-    return name;
-  }
-
-  generateName(familyId: string, options: { useSuffix?: boolean } = {}): string {
-    return this.withGen(familyId, "Region", (g) => g.generate(options));
-  }
-  generateRiverName(familyId: string): string {
-    return this.withGen(familyId, "River ", (g) => g.generateRiverName());
-  }
-  generateLakeName(familyId: string): string {
-    return this.withGen(familyId, "Lake ", (g) => g.generateLakeName());
-  }
-  generateSeaName(familyId: string): string {
-    return this.withGen(familyId, "Sea ", (g) => g.generateSeaName());
-  }
-}
-
 // ── Utilities ────────────────────────────────
-
-function hashString(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return Math.abs(h);
-}

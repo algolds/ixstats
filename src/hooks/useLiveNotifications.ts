@@ -9,30 +9,6 @@
 import { useEffect } from "react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-
-export interface LiveNotification {
-  id: string;
-  userId: string | null;
-  countryId: string | null;
-  title: string;
-  description: string | null;
-  message: string | null;
-  read: boolean;
-  dismissed: boolean;
-  href: string | null;
-  type: string | null;
-  category: string | null;
-  priority: string;
-  severity: string;
-  source: string | null;
-  actionable: boolean;
-  metadata: string | null;
-  relevanceScore: number | null;
-  deliveryMethod: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 let originalTitle: string | null = null;
 
 /**

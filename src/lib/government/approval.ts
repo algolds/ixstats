@@ -9,7 +9,7 @@
  * coalitions land, sum coalition members' support here instead.
  */
 
-export interface PartySupport {
+interface PartySupport {
   id: string;
   currentSupport: number; // 0..100
 }

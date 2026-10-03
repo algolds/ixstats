@@ -25,7 +25,7 @@ interface VaultNotificationOptions {
  * Send a vault notification through the Dynamic Island toast system.
  * Call directly (not a hook) — safe from any component or function.
  */
-export function sendVaultNotification({
+function sendVaultNotification({
   title,
   message,
   type,

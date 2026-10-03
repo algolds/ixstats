@@ -3,7 +3,7 @@
  * Unified theming utilities for the executive dashboard
  */
 
-export type TabTheme =
+type TabTheme =
   | "executive"
   | "economy"
   | "labor"
@@ -16,12 +16,12 @@ export type TabTheme =
   | "detailed"
   | "modeling";
 
-export type IconCategory = "primary" | "secondary" | "tertiary" | "accent";
+type IconCategory = "primary" | "secondary" | "tertiary" | "accent";
 
 /**
  * Icon mappings for each tab using Tabler and Lucide icons
  */
-export const MyCountryTabIcons = {
+const MyCountryTabIcons = {
   executive: {
     primary: "Crown", // Leadership symbol
     secondary: "Gavel", // Executive authority
@@ -93,7 +93,7 @@ export const MyCountryTabIcons = {
 /**
  * Color definitions for each tab theme
  */
-export const TabColors = {
+const TabColors = {
   executive: {
     primary: "#B45309", // Amber-700
     secondary: "#F59E0B", // Amber-500
@@ -188,7 +188,7 @@ export const TabColors = {
  * Section-level theme classes for MyCountry navigation and headers.
  * Single source of truth for Tailwind gradient/border/glow classes per section.
  */
-export const SECTION_THEME_CLASSES = {
+const SECTION_THEME_CLASSES = {
   overview: {
     gradient: "from-slate-700 to-slate-900",
     activeGlow: "shadow-amber-500/10",
@@ -258,7 +258,7 @@ export const SECTION_THEME_CLASSES = {
 /**
  * CSS class generators for tab theming
  */
-export const getTabThemeClasses = (theme: TabTheme) => {
+const getTabThemeClasses = (theme: TabTheme) => {
   return {
     content: `tab-content-${theme}`,
     interactive: "tab-interactive",
@@ -279,21 +279,21 @@ export const getTabThemeClasses = (theme: TabTheme) => {
 /**
  * Get icon component name for a specific tab and category
  */
-export const getTabIcon = (theme: TabTheme, category: IconCategory = "primary") => {
+const getTabIcon = (theme: TabTheme, category: IconCategory = "primary") => {
   return MyCountryTabIcons[theme][category];
 };
 
 /**
  * Get color values for a specific tab theme
  */
-export const getTabColors = (theme: TabTheme) => {
+const getTabColors = (theme: TabTheme) => {
   return TabColors[theme];
 };
 
 /**
  * Generate CSS custom properties for a tab theme
  */
-export const getTabCSSProperties = (theme: TabTheme) => {
+const getTabCSSProperties = (theme: TabTheme) => {
   const colors = getTabColors(theme);
   return {
     "--current-tab-primary": colors.primary,
@@ -308,7 +308,7 @@ export const getTabCSSProperties = (theme: TabTheme) => {
 /**
  * Utility to combine tab theme with additional classes
  */
-export const combineTabClasses = (theme: TabTheme, additionalClasses: string[] = []) => {
+const combineTabClasses = (theme: TabTheme, additionalClasses: string[] = []) => {
   const themeClasses = getTabThemeClasses(theme);
   return [themeClasses.content, ...additionalClasses].filter(Boolean).join(" ");
 };
@@ -316,21 +316,21 @@ export const combineTabClasses = (theme: TabTheme, additionalClasses: string[] =
 /**
  * Check if a tab theme is valid
  */
-export const isValidTabTheme = (theme: string): theme is TabTheme => {
+const isValidTabTheme = (theme: string): theme is TabTheme => {
   return Object.keys(MyCountryTabIcons).includes(theme);
 };
 
 /**
  * Get all available tab themes
  */
-export const getAllTabThemes = (): TabTheme[] => {
+const getAllTabThemes = (): TabTheme[] => {
   return Object.keys(MyCountryTabIcons) as TabTheme[];
 };
 
 /**
  * Get theme-specific animation delays for staggered effects
  */
-export const getTabAnimationDelay = (theme: TabTheme, index: number = 0) => {
+const getTabAnimationDelay = (theme: TabTheme, index: number = 0) => {
   const baseDelays: Record<TabTheme, number> = {
     executive: 0,
     economy: 100,
@@ -351,7 +351,7 @@ export const getTabAnimationDelay = (theme: TabTheme, index: number = 0) => {
 /**
  * Generate theme-aware Tailwind classes
  */
-export const getTabTailwindClasses = (theme: TabTheme) => {
+const getTabTailwindClasses = (theme: TabTheme) => {
   const colors = getTabColors(theme);
 
   // Convert hex colors to Tailwind-compatible values

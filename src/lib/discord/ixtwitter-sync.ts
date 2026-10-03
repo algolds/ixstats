@@ -190,27 +190,6 @@ async function fetchDiscordMessages(after?: string, before?: string): Promise<Di
   return res.json() as Promise<DiscordMessage[]>;
 }
 
-async function fetchAllDiscordMessages(before?: string): Promise<DiscordMessage[]> {
-  const allMessages: DiscordMessage[] = [];
-  let currentBefore = before;
-  let batchCount = 0;
-
-  while (batchCount < 50) {
-    const batch = await fetchDiscordMessages(undefined, currentBefore);
-    if (batch.length === 0) break;
-
-    allMessages.push(...batch);
-    currentBefore = batch[batch.length - 1]!.id;
-    batchCount++;
-
-    if (batch.length < 100) break;
-
-    await new Promise((r) => setTimeout(r, 1200));
-  }
-
-  return allMessages;
-}
-
 function getDiscordAvatarUrl(author: DiscordMessage["author"]): string | null {
   if (!author.avatar) return null;
   const ext = author.avatar.startsWith("a_") ? "gif" : "png";
@@ -369,32 +348,6 @@ async function getOrCreateHandleAccount(
 }
 
 // oxlint-disable-next-line typescript/no-unused-vars
-async function getOrCreateBotAccount(db: PrismaClient) {
-  let botAccount = await db.thinkpagesAccount.findUnique({
-    where: { username: "ixtwitter_bot" },
-  });
-
-  if (!botAccount) {
-    console.log("[DiscordPoster] Creating IxTwitter bot account...");
-    botAccount = await db.thinkpagesAccount.create({
-      data: {
-        username: "ixtwitter_bot",
-        displayName: "IxTwitter",
-        firstName: "Ix",
-        lastName: "Twitter",
-        accountType: "media",
-        clerkUserId: "system_ixtwitter_bot",
-        countryId: DEFAULT_COUNTRY_ID || (await getDefaultCountryId(db)),
-        verified: true,
-        isActive: true,
-        bio: "Auto-posted from the IxTwitter Discord channel",
-      },
-    });
-    console.log(`[DiscordPoster] Created bot account: ${botAccount.id}`);
-  }
-
-  return botAccount;
-}
 
 async function getPostedMessageIds(db: PrismaClient): Promise<Map<string, string>> {
   const postedIds = new Map<string, string>();
@@ -712,102 +665,13 @@ async function runIxTwitterSync(db: PrismaClient): Promise<{ posted: number; ski
   }
 }
 
-export async function backfillIxTwitterToThinkPages(): Promise<{
-  posted: number;
-  skipped: number;
-  alreadyPosted: number;
-}> {
-  if (!DISCORD_BOT_TOKEN) {
-    console.warn("[DiscordPoster] DISCORD_BOT_TOKEN not set, skipping backfill");
-    return { posted: 0, skipped: 0, alreadyPosted: 0 };
-  }
-
-  const db = sharedDb;
-
-  try {
-    await loadCountryIdCache(db);
-
-    console.log("[DiscordPoster] Fetching all messages from Discord channel...");
-    const allMessages = await fetchAllDiscordMessages();
-    console.log(`[DiscordPoster] Fetched ${allMessages.length} total messages`);
-
-    const postedIds = await getPostedMessageIds(db);
-    console.log(`[DiscordPoster] Found ${postedIds.size} already-posted message IDs`);
-
-    // oxlint-disable-next-line typescript/no-unused-vars
-    const validMessages = allMessages
-      .filter((m) => !m.author.bot && m.content.trim().length > 0 && !postedIds.has(m.id))
-      .reverse();
-
-    let posted = 0;
-    let skipped = 0;
-    let alreadyPosted = 0;
-
-    for (const message of allMessages.filter((m) => !m.author.bot && m.content.trim().length > 0)) {
-      if (postedIds.has(message.id)) {
-        alreadyPosted++;
-        continue;
-      }
-
-      try {
-        const handle = extractPrimaryHandle(message.content);
-        const displayName = extractDisplayName(message.content, message.author.username);
-
-        // Ensure the main Discord user account exists
-        await getOrCreateDiscordAccount(db, message.author.username, message, displayName);
-
-        let accountId: string;
-        if (handle) {
-          const handleAccountId = await getOrCreateHandleAccount(
-            db,
-            handle,
-            message.author.username,
-            displayName
-          );
-          accountId =
-            handleAccountId ||
-            (await getOrCreateDiscordAccount(db, message.author.username, message, displayName))
-              .accountId;
-        } else {
-          accountId = (
-            await getOrCreateDiscordAccount(db, message.author.username, message, displayName)
-          ).accountId;
-        }
-
-        const ok = await createPostFromMessage(db, accountId, message);
-        if (ok) {
-          posted++;
-          if (posted % 50 === 0) {
-            console.log(
-              `[DiscordPoster] Backfill progress: ${posted} posted, ${skipped} skipped, ${alreadyPosted} already posted`
-            );
-          }
-        } else {
-          skipped++;
-        }
-      } catch (error) {
-        console.error(`[DiscordPoster] Failed to post message ${message.id}:`, error);
-        skipped++;
-      }
-    }
-
-    console.log(
-      `[DiscordPoster] Backfill complete: ${posted} posted, ${skipped} skipped, ${alreadyPosted} already posted`
-    );
-    return { posted, skipped, alreadyPosted };
-  } catch (error) {
-    console.error("[DiscordPoster] Backfill failed:", error);
-    return { posted: 0, skipped: 0, alreadyPosted: 0 };
-  }
-}
-
 async function getDefaultCountryId(db: PrismaClient): Promise<string> {
   const country = await db.country.findFirst({ select: { id: true } });
   if (country) return country.id;
   throw new Error("No country found in database for bot account");
 }
 
-export function mapThinkpagesReactionToDiscord(reactionType: string): string {
+function mapThinkpagesReactionToDiscord(reactionType: string): string {
   if (reactionType.startsWith("discord:")) {
     const parts = reactionType.split(":");
     const name = parts[1] || "";
@@ -1223,7 +1087,7 @@ export async function removeDiscordReaction(
   }
 }
 
-export function decodeHtmlEntities(str: string): string {
+function decodeHtmlEntities(str: string): string {
   if (!str) return "";
   return str
     .replace(/&amp;/g, "&")

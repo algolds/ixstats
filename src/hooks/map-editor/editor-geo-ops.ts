@@ -35,7 +35,7 @@ function allRings(geom: Polygon | MultiPolygon): Position[][] {
   return geom.type === "Polygon" ? geom.coordinates : geom.coordinates.flat();
 }
 
-export function geometryBbox(geom: Polygon | MultiPolygon): [number, number, number, number] {
+function geometryBbox(geom: Polygon | MultiPolygon): [number, number, number, number] {
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
@@ -220,7 +220,7 @@ export function featuresToGeoJSON(features: EditorFeature[]): FeatureCollection 
   return { type: "FeatureCollection", features: out };
 }
 
-export type ImportableFeature =
+type ImportableFeature =
   | { kind: "city"; name: string; coordinates: LngLat; properties: Record<string, unknown> }
   | { kind: "poi"; name: string; coordinates: LngLat; properties: Record<string, unknown> }
   | {
@@ -230,7 +230,7 @@ export type ImportableFeature =
       properties: Record<string, unknown>;
     };
 
-export interface GeoJSONImportPlan {
+interface GeoJSONImportPlan {
   features: ImportableFeature[];
   skipped: number;
 }

@@ -388,7 +388,7 @@ export async function ixwikiGetUserCreatedPages(
   return Array.from(pagesMap.values()).slice(0, limit);
 }
 
-export interface IxwikiUserInfo {
+interface IxwikiUserInfo {
   exists: boolean;
   userId: number;
   username: string;

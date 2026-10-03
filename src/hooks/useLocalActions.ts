@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 
-export type LocalActionType =
+type LocalActionType =
   | "issue_response"
   | "policy_created"
   | "meeting_scheduled"
@@ -12,7 +12,7 @@ export type LocalActionType =
   | "deployment"
   | "budget_update";
 
-export interface LocalAction {
+interface LocalAction {
   id: string;
   type: LocalActionType;
   data: Record<string, any>;
@@ -53,7 +53,7 @@ function persistActions(countryId: string, actions: LocalAction[]): void {
 }
 
 function generateId(): string {
-  return `local_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  return `local_${Date.now()}_${crypto.randomUUID().slice(0, 7)}`;
 }
 
 export function useLocalActions(countryId: string): UseLocalActionsReturn {

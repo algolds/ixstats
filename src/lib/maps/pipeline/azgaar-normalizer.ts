@@ -21,7 +21,7 @@ export interface NormalizedCountryPayload {
   capitalCoordinates?: [number, number];
 }
 
-export interface NormalizedCityPayload {
+interface NormalizedCityPayload {
   name: string;
   type: string;
   coordinates: [number, number];
@@ -30,7 +30,7 @@ export interface NormalizedCityPayload {
   countryFeatureId: string;
 }
 
-export interface NormalizedRiverPayload {
+interface NormalizedRiverPayload {
   name: string;
   geometry: any;
   lengthKm: number;

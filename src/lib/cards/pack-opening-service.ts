@@ -4,20 +4,6 @@
 import type { Particle, HapticPattern } from "~/types/pack-opening";
 import { CardRarity } from "./enums";
 import { getRarityHex } from "./display-utils";
-
-/**
- * Sound file paths for different rarities
- */
-// oxlint-disable-next-line typescript/no-unused-vars
-const RARITY_SOUNDS: Record<CardRarity, string> = {
-  COMMON: "/sounds/common-reveal.mp3",
-  UNCOMMON: "/sounds/common-reveal.mp3",
-  RARE: "/sounds/rare-reveal.mp3",
-  ULTRA_RARE: "/sounds/rare-reveal.mp3",
-  EPIC: "/sounds/legendary-reveal.mp3",
-  LEGENDARY: "/sounds/legendary-reveal.mp3",
-};
-
 /**
  * Haptic vibration patterns (in milliseconds)
  */
@@ -31,7 +17,7 @@ const HAPTIC_PATTERNS: Record<HapticPattern, number | number[]> = {
  * Pack Opening Service
  * Coordinates animations, sounds, and haptic feedback
  */
-export class PackOpeningService {
+class PackOpeningService {
   private audioContext: Map<string, HTMLAudioElement> = new Map();
 
   /**
@@ -135,19 +121,4 @@ export function getPackOpeningService(): PackOpeningService {
     }
   }
   return serviceInstance;
-}
-
-/**
- * Helper to detect mobile device for particle optimization
- */
-export function isMobileDevice(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.innerWidth < 768;
-}
-
-/**
- * Helper to get optimal particle count for device
- */
-export function getOptimalParticleCount(): number {
-  return isMobileDevice() ? 25 : 50;
 }

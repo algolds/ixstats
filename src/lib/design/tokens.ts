@@ -17,8 +17,6 @@ export const BACKGROUND_ROLES = [
   "surface-secondary",
   "surface-elevated",
 ] as const;
-export type BackgroundRole = (typeof BACKGROUND_ROLES)[number];
-
 /** Colour roles. Keys are the `--color-<role>` names in tokens.css. */
 export const COLOR_ROLES = {
   light: {
@@ -65,7 +63,7 @@ export const COLOR_ROLES = {
   },
 } as const satisfies Record<Appearance, Record<string, string>>;
 
-export type ColorRole = keyof (typeof COLOR_ROLES)["light"];
+type ColorRole = keyof (typeof COLOR_ROLES)["light"];
 
 /** Increase Contrast overrides (`data-contrast="more"` / `prefers-contrast: more`). */
 export const COLOR_ROLES_MORE_CONTRAST = {
@@ -102,7 +100,7 @@ export const SYSTEM_COLORS = {
   gray: { light: "#6b7280", dark: "#9ca3af" },
 } as const satisfies Record<string, Record<Appearance, string>>;
 
-export type SystemColor = keyof typeof SYSTEM_COLORS;
+type SystemColor = keyof typeof SYSTEM_COLORS;
 
 /** `on-<system colour>` text colour, same for every hue. */
 export const ON_SYSTEM_COLOR = { light: "#ffffff", dark: "#0b0c0f" } as const;
@@ -122,19 +120,6 @@ export const STATUS_ALIASES = {
   success: "green",
   info: "blue",
 } as const satisfies Record<string, SystemColor>;
-
-/** Categorical series order; `chart-1…8` in tokens.css follow it. */
-export const CHART_ORDER = [
-  "blue",
-  "orange",
-  "green",
-  "purple",
-  "pink",
-  "teal",
-  "yellow",
-  "red",
-] as const satisfies readonly SystemColor[];
-
 /** App ids accepted by `data-app`. `default` is the unscoped shell tint. */
 export const APP_IDS = [
   "mycountry",
@@ -147,7 +132,7 @@ export const APP_IDS = [
   "sports",
   "admin",
 ] as const;
-export type AppId = (typeof APP_IDS)[number];
+type AppId = (typeof APP_IDS)[number];
 
 interface TintSet {
   /** `--tint` */
@@ -197,10 +182,6 @@ export const APP_TINTS = {
     dark: { tint: "#2dd4bf", strong: "#5eead4", onTint: "#042f2e" },
   },
 } as const satisfies Record<"default" | Exclude<AppId, "admin">, Record<Appearance, TintSet>>;
-
-/** Admin uses the default (shell) tint. */
-export type TintedApp = keyof typeof APP_TINTS;
-
 /** Text styles: size / line height in px at a 16px root, before `--text-scale`. */
 export const TEXT_STYLES = {
   display: { size: 40, lineHeight: 44, weight: 700, tracking: "-0.015em" },
@@ -215,11 +196,6 @@ export const TEXT_STYLES = {
   footnote: { size: 12, lineHeight: 16, weight: 400, tracking: "0.005em" },
   caption: { size: 12, lineHeight: 16, weight: 500, tracking: "0.01em" },
 } as const;
-export type TextStyle = keyof typeof TEXT_STYLES;
-
-/** `--text-scale` bounds. */
-export const TEXT_SCALE = { min: 0.9, max: 1.3, default: 1 } as const;
-
 /** Concentric radius scale in px (`rounded-<name>`). */
 export const RADII = {
   sheet: 20,

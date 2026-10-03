@@ -14,7 +14,7 @@
 
 import type { GeneratedWorld } from "~/lib/worldgen/types";
 
-export interface AccuracyScoreCard {
+interface AccuracyScoreCard {
   seed: number;
   overallScore: number; // 0 - 100
   isWithinSafeTargets: boolean;
@@ -28,7 +28,7 @@ export interface AccuracyScoreCard {
   warnings: string[];
 }
 
-export const SAFE_GEOGRAPHIC_TARGETS = {
+const SAFE_GEOGRAPHIC_TARGETS = {
   landPercentageMin: 25,
   landPercentageMax: 45,
   continentCountMin: 1,

@@ -33,7 +33,7 @@ import {
   utcDayStart,
 } from "~/lib/vault/vault-passive-income";
 
-export interface PassiveIncomeSummary {
+interface PassiveIncomeSummary {
   success: boolean;
   processed: number;
   distributed: number;

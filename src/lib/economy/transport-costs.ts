@@ -9,13 +9,13 @@
  */
 
 /** Inputs are intentionally permissive: unknown `routeType` falls through to the road default (0.01). */
-export interface RouteCostInput {
+interface RouteCostInput {
   routeType: string;
   lengthKm: number;
   terrainDifficulty: number;
 }
 
-export interface RouteCost {
+interface RouteCost {
   /** Construction cost in billions, rounded to 3 decimals. */
   costBillion: number;
   /** Annual maintenance cost in billions, rounded to 3 decimals (= 2% of construction). */
@@ -81,7 +81,7 @@ export function calculateRouteCosts({
 
 // ── Intermodal Transit & Transfer Penalties ─────────────────────────
 
-export type ModalFamily = "rail" | "road" | "maritime" | "air" | "utility" | "military";
+type ModalFamily = "rail" | "road" | "maritime" | "air" | "utility" | "military";
 
 export function getRouteFamily(routeType: string): ModalFamily {
   if (routeType.includes("rail")) return "rail";
@@ -92,13 +92,13 @@ export function getRouteFamily(routeType: string): ModalFamily {
   return "military";
 }
 
-export interface IntermodalTransferInput {
+interface IntermodalTransferInput {
   fromType: string;
   toType: string;
   volumeTons?: number;
 }
 
-export interface IntermodalTransferResult {
+interface IntermodalTransferResult {
   /** Transfer cost in billions USD for the specified volume */
   transferCostBillion: number;
   /** Dwell time / modal transfer delay in hours */

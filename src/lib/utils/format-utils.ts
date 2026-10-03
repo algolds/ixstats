@@ -303,20 +303,6 @@ export function formatNumber(num: number, decimals: number = 1): string {
 }
 
 /**
- * Format a whole-number metric (population, workforce, etc.) — never shows decimals.
- * Use this for any count of people, items, units, etc.
- */
-export function formatWholeNumber(num: number | null | undefined, fallback = "N/A"): string {
-  if (num === null || num === undefined || Number.isNaN(num)) return fallback;
-  const absNum = Math.abs(num);
-  if (absNum >= 1e12) return Math.round(num / 1e12) + "T";
-  if (absNum >= 1e9) return Math.round(num / 1e9) + "B";
-  if (absNum >= 1e6) return Math.round(num / 1e6) + "M";
-  if (absNum >= 1e3) return Math.round(num / 1e3) + "K";
-  return Math.round(num).toLocaleString("en-US");
-}
-
-/**
  * Format percentage with optional decimal places
  *
  * @param value - The decimal value (e.g., 0.15 for 15%)
@@ -344,41 +330,6 @@ export function formatPercentage(value: number, decimals: number = 1): string {
  */
 export function formatPercent(value: number, decimals: number = 1): string {
   return value.toFixed(decimals) + "%";
-}
-
-/**
- * Format number with fixed decimals and commas (no K/M/B/T, just comma-separated)
- *
- * @param num - The number to format
- * @param decimals - Number of decimal places (default: 0)
- * @returns Formatted number with commas
- *
- * @example
- * formatNumberWithDecimals(1234567) → "1,234,567"
- * formatNumberWithDecimals(123.456, 2) → "123.46"
- */
-export function formatNumberWithDecimals(num: number, decimals: number = 0): string {
-  return num.toLocaleString("en-US", {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  });
-}
-
-/**
- * Format large number with full precision and commas (no scaling)
- * Useful when exact values are needed
- *
- * @param num - The number to format
- * @returns Formatted number with commas
- *
- * @example
- * formatExactNumber(1234567890) → "1,234,567,890"
- */
-export function formatExactNumber(num: number): string {
-  return num.toLocaleString("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
 }
 
 /**
@@ -438,47 +389,6 @@ export function formatExactCurrency(amount: number, currency: string = "USD"): s
       })}`;
     }
   }
-}
-
-/**
- * Format a ratio or decimal as a percentage
- * Handles both decimal (0.15) and percentage (15) inputs
- *
- * @param value - The value to format
- * @param isAlreadyPercent - Whether the value is already a percentage (default: false)
- * @param decimals - Number of decimal places (default: 1)
- * @returns Formatted percentage string
- *
- * @example
- * formatRatio(0.155) → "15.5%"
- * formatRatio(15.5, true) → "15.5%"
- */
-export function formatRatio(
-  value: number,
-  isAlreadyPercent: boolean = false,
-  decimals: number = 1
-): string {
-  return isAlreadyPercent ? formatPercent(value, decimals) : formatPercentage(value, decimals);
-}
-
-/**
- * Get the appropriate scaling suffix for a number
- *
- * @param num - The number to get suffix for
- * @returns The scaling suffix ('K', 'M', 'B', 'T', or '')
- *
- * @example
- * getNumberSuffix(1234) → "K"
- * getNumberSuffix(5678900) → "M"
- */
-export function getNumberSuffix(num: number): string {
-  const absNum = Math.abs(num);
-
-  if (absNum >= 1e12) return "T";
-  if (absNum >= 1e9) return "B";
-  if (absNum >= 1e6) return "M";
-  if (absNum >= 1e3) return "K";
-  return "";
 }
 
 /**
@@ -766,54 +676,6 @@ export function formatYears(value: number | null | undefined, fallback = "N/A"):
     return fallback;
   }
   return `${value.toFixed(1)} yrs`;
-}
-
-/**
- * Format time duration in hours
- * Provides null/undefined safety with configurable fallback
- *
- * @param value - The number of hours
- * @param fallback - Fallback string for null/undefined/NaN values (default: "N/A")
- * @returns Formatted hours string
- *
- * @example
- * formatHours(40.5) → "40.5 hrs"
- * formatHours(null) → "N/A"
- * formatHours(35.0, "Unknown") → "35.0 hrs"
- */
-export function formatHours(value: number | null | undefined, fallback = "N/A"): string {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return fallback;
-  }
-  return `${value.toFixed(1)} hrs`;
-}
-
-/**
- * Format percentage with automatic normalization
- * Intelligently handles both decimal (0.15) and percentage (15) inputs
- * Provides null/undefined safety with configurable fallback
- *
- * @param value - The percentage value (auto-normalized if <= 1)
- * @param fallback - Fallback string for null/undefined/NaN values (default: "N/A")
- * @param digits - Number of decimal places (default: 1)
- * @returns Formatted percentage string
- *
- * @example
- * formatPercentWithNormalization(0.155) → "15.5%"
- * formatPercentWithNormalization(15.5) → "15.5%"
- * formatPercentWithNormalization(null) → "N/A"
- * formatPercentWithNormalization(0.155, "N/A", 2) → "15.50%"
- */
-export function formatPercentWithNormalization(
-  value: number | null | undefined,
-  fallback = "N/A",
-  digits = 1
-): string {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return fallback;
-  }
-  const normalized = Math.abs(value) <= 1 ? value * 100 : value;
-  return `${normalized.toFixed(digits)}%`;
 }
 
 /**

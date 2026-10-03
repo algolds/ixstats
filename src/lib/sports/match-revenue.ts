@@ -8,7 +8,7 @@
  * `awayRevenueCollectedAt`), so collecting again pays nothing until new matches finish.
  */
 
-export interface RevenueTeam {
+interface RevenueTeam {
   id: string;
   stadiumCapacity: number;
   ticketPrice: number;
@@ -16,7 +16,7 @@ export interface RevenueTeam {
   sponsor: unknown;
 }
 
-export interface RevenueMatch {
+interface RevenueMatch {
   id: string;
   homeTeamId: string;
   awayTeamId: string;
@@ -24,7 +24,7 @@ export interface RevenueMatch {
   awayScore: number | null;
 }
 
-export interface MatchRevenue {
+interface MatchRevenue {
   homeMatches: number;
   wins: number;
   ticketRevenue: number;
@@ -40,7 +40,7 @@ function sponsorTerms(sponsor: unknown): { baseFee: number; winBonus: number } {
 }
 
 /** Ticket revenue for one home match at the club's current stadium, prices and popularity. */
-export function ticketRevenuePerHomeMatch(team: RevenueTeam): number {
+function ticketRevenuePerHomeMatch(team: RevenueTeam): number {
   return team.stadiumCapacity * team.ticketPrice * 0.6 * (team.popularity / 100);
 }
 

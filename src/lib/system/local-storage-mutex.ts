@@ -44,41 +44,9 @@ class LocalStorageMutex {
 }
 
 // Singleton instance
-export const localStorageMutex = new LocalStorageMutex();
+const localStorageMutex = new LocalStorageMutex();
 
 // Helper functions for common localStorage operations
-export async function safeGetItem(key: string): Promise<string | null> {
-  return localStorageMutex.withLock(key, () => {
-    try {
-      return localStorage.getItem(key);
-    } catch (error) {
-      console.warn(`Failed to get localStorage item '${key}':`, error);
-      return null;
-    }
-  });
-}
-
-export async function safeSetItem(key: string, value: string): Promise<void> {
-  return localStorageMutex.withLock(key, () => {
-    try {
-      localStorage.setItem(key, value);
-    } catch (error) {
-      console.warn(`Failed to set localStorage item '${key}':`, error);
-      throw error;
-    }
-  });
-}
-
-export async function safeRemoveItem(key: string): Promise<void> {
-  return localStorageMutex.withLock(key, () => {
-    try {
-      localStorage.removeItem(key);
-    } catch (error) {
-      console.warn(`Failed to remove localStorage item '${key}':`, error);
-    }
-  });
-}
-
 // Synchronous versions for cases where async isn't possible
 export function safeGetItemSync(key: string): string | null {
   try {

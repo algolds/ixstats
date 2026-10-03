@@ -34,7 +34,6 @@ import {
   type TriggerCondition,
 } from "./evaluators/condition-evaluator";
 import {
-  substituteVariables,
   maybeTriggerStaffingShortage,
   type ResponseOptionTemplate,
   type TemplateCandidate,
@@ -77,30 +76,6 @@ export class NationalIssuesEngine {
   }
 
   /**
-   * Substitute {{variable}} placeholders in a template string.
-   */
-  static substituteVariables(
-    template: string,
-    snapshot: CountrySnapshot,
-    extraVars?: Record<string, string>
-  ): string {
-    return substituteVariables(template, snapshot, extraVars);
-  }
-
-  /**
-   * Auto-trigger a "Government Staffing Shortage" issue when active + implementing
-   * component staff requirements exceed the country's civil service capacity.
-   */
-  private static async maybeTriggerStaffingShortage(
-    countryId: string,
-    db: PrismaClient,
-    snapshot: CountrySnapshot,
-    result: EvaluationResult
-  ): Promise<void> {
-    return maybeTriggerStaffingShortage(countryId, db, snapshot, result);
-  }
-
-  /**
    * Main evaluation entry point. Analyzes a country's state and generates
    * appropriate issues from the template library.
    */
@@ -129,7 +104,7 @@ export class NationalIssuesEngine {
       }
 
       // Structural staffing-shortage check runs regardless of the normal pipeline cap.
-      await this.maybeTriggerStaffingShortage(countryId, db, snapshot, result);
+      await maybeTriggerStaffingShortage(countryId, db, snapshot, result);
 
       // Suppress generation if too many pending issues
       if (snapshot.pendingIssueCount >= 10) {

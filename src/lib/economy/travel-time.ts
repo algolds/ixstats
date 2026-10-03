@@ -16,7 +16,7 @@ import { bearing, distanceKm } from "~/lib/maps/geo-math";
 /** A route vertex as [longitude, latitude] in degrees. */
 export type LngLat = [number, number];
 
-export interface TravelTimeCalculationInput {
+interface TravelTimeCalculationInput {
   lengthKm?: number | null;
   speedKmh?: number | null;
   routeType?: string | null;
@@ -31,7 +31,7 @@ export interface TravelTimeCalculationInput {
 }
 
 /** One current or wind system's net effect on a sea route. */
-export interface SeaConditionEffect {
+interface SeaConditionEffect {
   name: string;
   kind: "current" | "wind";
   /** Distance-weighted mean along-track speed change where it applies (km/h, signed). */
@@ -40,7 +40,7 @@ export interface SeaConditionEffect {
   distanceKm: number;
 }
 
-export interface SeaTransitSummary {
+interface SeaTransitSummary {
   /** Great-circle length of the path (km). */
   distanceKm: number;
   /** Ship speed through still water (km/h). */
@@ -51,7 +51,7 @@ export interface SeaTransitSummary {
   largestEffect: SeaConditionEffect | null;
 }
 
-export interface TravelTimeResult {
+interface TravelTimeResult {
   totalMinutes: number;
   hours: number;
   minutes: number;
@@ -66,7 +66,7 @@ export interface TravelTimeResult {
   sea?: SeaTransitSummary;
 }
 
-export interface SpeedPreset {
+interface SpeedPreset {
   speed: number;
   label: string;
 }
@@ -74,7 +74,7 @@ export interface SpeedPreset {
 /**
  * Standard baseline speeds (km/h) by route type.
  */
-export const DEFAULT_ROUTE_SPEEDS: Record<string, number> = {
+const DEFAULT_ROUTE_SPEEDS: Record<string, number> = {
   // Rail
   high_speed_rail: 300,
   rail: 120,
@@ -109,7 +109,7 @@ export const DEFAULT_ROUTE_SPEEDS: Record<string, number> = {
 /**
  * Speed preset quick-pills per route type for high-efficiency UI selection.
  */
-export const SPEED_PRESETS_BY_TYPE: Record<string, SpeedPreset[]> = {
+const SPEED_PRESETS_BY_TYPE: Record<string, SpeedPreset[]> = {
   high_speed_rail: [
     { speed: 200, label: "200 (Regional)" },
     { speed: 250, label: "250 (Express)" },
@@ -203,7 +203,7 @@ export function isInstantaneousRoute(routeType?: string | null): boolean {
   return routeType === "power_grid" || routeType === "fiber";
 }
 
-export interface RouteSpeedInput {
+interface RouteSpeedInput {
   routeType?: string | null;
   speedKmh?: number | null;
   properties?: Record<string, unknown> | object | null;

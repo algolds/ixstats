@@ -10,7 +10,7 @@
  */
 import { Redis } from "ioredis";
 
-export interface AchievementQueueItem {
+interface AchievementQueueItem {
   /** Internal `User.id` or Clerk id; the worker resolves either. */
   userId: string;
   /** Country to evaluate against; null/absent means the user's active country, if any. */
@@ -42,7 +42,7 @@ function getRedisClient(): Redis | null {
   return null;
 }
 
-export function queueKey(item: AchievementQueueItem): string {
+function queueKey(item: AchievementQueueItem): string {
   return `${item.userId}:${item.countryId ?? ""}`;
 }
 

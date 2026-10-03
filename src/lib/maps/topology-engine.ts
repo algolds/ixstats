@@ -11,7 +11,7 @@ import { getAllRings } from "./border-editor";
 
 // ── Types ──
 
-export type VertexKey = string & { readonly __brand: "VertexKey" };
+type VertexKey = string & { readonly __brand: "VertexKey" };
 
 export interface TopologyRef {
   featureId: string;
@@ -31,7 +31,7 @@ export type TopologyIndex = Map<VertexKey, TopologyRef[]>;
  * Quantize a coordinate to given decimal places (~1.1 m precision at 5 decimals) for
  * spatial-hash bucketing.
  */
-export function toVertexKey(coord: Position, precision = 5): VertexKey {
+function toVertexKey(coord: Position, precision = 5): VertexKey {
   return `${coord[0]!.toFixed(precision)},${coord[1]!.toFixed(precision)}` as VertexKey;
 }
 
@@ -82,41 +82,6 @@ export function buildTopologyIndex(
 }
 
 // ── Snap assistance ──
-
-/**
- * Snap a point to the nearest indexed vertex if within tolerance (degrees).
- * Prevents micro-slivers and border tearing during province boundary alignment.
- */
-export function snapToNearestVertex(
-  coord: Position,
-  index: TopologyIndex,
-  tolerance = 0.001
-): Position {
-  let closestKey: VertexKey | null = null;
-  let minDistanceSq = tolerance * tolerance;
-
-  for (const key of index.keys()) {
-    const [kLngStr, kLatStr] = (key as string).split(",");
-    const kLng = parseFloat(kLngStr ?? "0");
-    const kLat = parseFloat(kLatStr ?? "0");
-    const dLng = coord[0]! - kLng;
-    const dLat = coord[1]! - kLat;
-    const distSq = dLng * dLng + dLat * dLat;
-
-    if (distSq < minDistanceSq) {
-      minDistanceSq = distSq;
-      closestKey = key;
-    }
-  }
-
-  if (closestKey) {
-    const [lngStr, latStr] = (closestKey as string).split(",");
-    return [parseFloat(lngStr ?? "0"), parseFloat(latStr ?? "0")];
-  }
-
-  return coord;
-}
-
 // ── Cascade moves ──
 
 /**
@@ -144,7 +109,7 @@ export function cascadeMoveVertex(
     if (!geom) {
       const src = geometries.get(ref.featureId);
       if (!src) continue;
-      geom = JSON.parse(JSON.stringify(src)) as Polygon | MultiPolygon;
+      geom = structuredClone(src) as Polygon | MultiPolygon;
     }
 
     const rings = getAllRings(geom);

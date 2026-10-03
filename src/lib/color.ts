@@ -5,23 +5,13 @@
  * - HSL (h: 0-360, s: 0-100, l: 0-100) <-> RGB (0-255) <-> HEX ("#rrggbb" or "#rrggbbaa")
  */
 
-export interface HslColor {
+interface HslColor {
   h: number;
   s: number;
   l: number;
 }
 
-export interface HslaColor extends HslColor {
-  a: number;
-}
-
-export interface RgbColor {
-  r: number;
-  g: number;
-  b: number;
-}
-
-export interface RgbaColor extends RgbColor {
+interface HslaColor extends HslColor {
   a: number;
 }
 

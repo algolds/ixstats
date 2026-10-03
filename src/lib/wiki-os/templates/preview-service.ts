@@ -17,7 +17,7 @@
 import { getTemplatePreview } from "./template-registry";
 
 export type PreviewSource = "network" | "cache";
-export interface TemplatePreview {
+interface TemplatePreview {
   html: string;
   source: PreviewSource;
   /** true when served from cache without network */

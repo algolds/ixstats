@@ -35,7 +35,7 @@ function monthToIndex(month: string): number {
   return MONTHS.indexOf(month);
 }
 
-export interface ParsedOOLEntry {
+interface ParsedOOLEntry {
   date: string;
   type: "daily" | "weekly" | "monthly";
   winnerUser: string | null;
@@ -58,7 +58,7 @@ export interface ParsedOOLEntry {
  * Format C (2017-2020, wikitable):
  *   |[[user:X]] 3/18/2017
  */
-export function parseDailyEntries(wikitext: string, year: number): ParsedOOLEntry[] {
+function parseDailyEntries(wikitext: string, year: number): ParsedOOLEntry[] {
   const entries: ParsedOOLEntry[] = [];
 
   // Detect old wikitable format (2017-2020)
@@ -221,7 +221,7 @@ function extractUser(text: string): string | null {
  *   *'''March 2 - March 8''' - [[User: Castadilla]]
  *   *'''April 6 - April 12''' - [[Castadilla]]
  */
-export function parseWeeklyEntries(wikitext: string, year: number): ParsedOOLEntry[] {
+function parseWeeklyEntries(wikitext: string, year: number): ParsedOOLEntry[] {
   const entries: ParsedOOLEntry[] = [];
 
   const weeklyMatch = wikitext.match(/==\s*Weekly\s*==([\s\S]*?)(?:==\s*Monthly\s*==|$)/i);
@@ -282,7 +282,7 @@ export function parseWeeklyEntries(wikitext: string, year: number): ParsedOOLEnt
  *   ====January====\n[[Castadilla]]
  *   *'''January''': [[User:X]] for [[Article]]
  */
-export function parseMonthlyEntries(wikitext: string, year: number): ParsedOOLEntry[] {
+function parseMonthlyEntries(wikitext: string, year: number): ParsedOOLEntry[] {
   const entries: ParsedOOLEntry[] = [];
 
   const monthlyMatch = wikitext.match(/==\s*Monthly\s*==([\s\S]*?)(?:\n==[^=]|$)/i);
@@ -398,13 +398,13 @@ export const OOL_YEARS = [2017, 2018, 2019, 2020, 2022, 2023, 2024, 2025, 2026];
 // Main OOL page parsers (IxWiki:OOL — active members, annual winners)
 // ---------------------------------------------------------------------------
 
-export interface ActiveMember {
+interface ActiveMember {
   username: string;
   membershipDate: string; // "Antiquity", "Sept-23", etc.
   medalScore: number;
 }
 
-export interface AnnualWinner {
+interface AnnualWinner {
   year: number;
   username: string | null;
 }

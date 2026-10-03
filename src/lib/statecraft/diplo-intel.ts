@@ -10,14 +10,14 @@
  * Pure: no DB, no React. Caller passes the reach signals.
  */
 
-export type IntelLevel = "revealed" | "questioned" | "greyed";
+type IntelLevel = "revealed" | "questioned" | "greyed";
 
-export interface IntelReach {
+interface IntelReach {
   hasEmbassy: boolean;
   relationStrength: number; // 0-100 DiplomaticRelation.strength (0 if none)
 }
 
-export interface IntelAssessment {
+interface IntelAssessment {
   level: IntelLevel;
   reason: string; // never-lie caption
 }

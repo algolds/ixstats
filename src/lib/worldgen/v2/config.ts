@@ -35,7 +35,7 @@ export const DEFAULT_PARAMS: WorldGenParams = {
 // Elevation Zones (meters)
 // ──────────────────────────────────────────────
 
-export interface ElevationZone {
+interface ElevationZone {
   id: number;
   zoneId: string;
   name: string;
@@ -123,7 +123,7 @@ export function getElevationZone(meters: number): number {
 // Trewartha Biome Classification
 // ──────────────────────────────────────────────
 
-export interface TrewarthaBiome {
+interface TrewarthaBiome {
   id: number;
   code: string;
   name: string;

@@ -39,7 +39,7 @@ export const DIRECTIVE_CIVCAP_WINDOW_MS = 7 * DAY_MS;
 /** Share of component staff still needed when the Technocrats broker is satisfied. */
 const TECHNOCRAT_STAFF_FACTOR = 0.85;
 
-export interface CivCapBreakdown {
+interface CivCapBreakdown {
   governmentStaff: number;
   recon: number;
   policies: number;
@@ -47,7 +47,7 @@ export interface CivCapBreakdown {
   delegatedIssues: number;
 }
 
-export interface CivCapState {
+interface CivCapState {
   componentTypes: string[];
   departmentCategories: string[];
   /** Government effectiveness (0-100) the capacity was derived from. */

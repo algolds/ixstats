@@ -19,7 +19,7 @@ type XmlElement = import("@xmldom/xmldom").Element;
 // Types
 // ──────────────────────────────────────────────
 
-export interface SvgMatrix {
+interface SvgMatrix {
   a: number;
   b: number;
   c: number;
@@ -28,14 +28,14 @@ export interface SvgMatrix {
   f: number;
 }
 
-export const IDENTITY_SVG_MATRIX: SvgMatrix = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
+const IDENTITY_SVG_MATRIX: SvgMatrix = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
 
 // ──────────────────────────────────────────────
 // Matrix Operations
 // ──────────────────────────────────────────────
 
 /** Multiply two SVG matrices: result = A * B */
-export function multiplyMatrices(A: SvgMatrix, B: SvgMatrix): SvgMatrix {
+function multiplyMatrices(A: SvgMatrix, B: SvgMatrix): SvgMatrix {
   return {
     a: A.a * B.a + A.c * B.b,
     b: A.b * B.a + A.d * B.b,
@@ -60,7 +60,7 @@ export function isIdentity(m: SvgMatrix): boolean {
  * Handles: translate, scale, rotate, matrix, skewX, skewY.
  * Handles chained transforms: "translate(10,20) scale(2)".
  */
-export function parseTransformAttr(str: string): SvgMatrix {
+function parseTransformAttr(str: string): SvgMatrix {
   if (!str || !str.trim()) return { ...IDENTITY_SVG_MATRIX };
 
   let result: SvgMatrix = { ...IDENTITY_SVG_MATRIX };

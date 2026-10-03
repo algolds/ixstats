@@ -12,10 +12,10 @@ import {
   type FilterableAtomicComponent,
 } from "~/lib/admin/atomic-component-filters";
 
-export type AtomicComponentDomain = "economy" | "government";
+type AtomicComponentDomain = "economy" | "government";
 
 /** The fields the catalog page shows, common to government and economic components. */
-export interface CatalogComponent extends FilterableAtomicComponent {
+interface CatalogComponent extends FilterableAtomicComponent {
   type: string;
   effectiveness: number;
   synergies: readonly string[];

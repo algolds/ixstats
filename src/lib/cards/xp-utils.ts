@@ -2,7 +2,7 @@ import { type PrismaClient } from "@prisma/client";
 
 const XP_PER_LEVEL = 1000;
 
-export interface GrantXpResult {
+interface GrantXpResult {
   prevLevel: number;
   newLevel: number;
   prevXP: number;

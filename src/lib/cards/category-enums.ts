@@ -72,10 +72,6 @@ export function isValidLoreCategory(value: string): value is LoreCategory {
   return Object.values(LoreCategory).includes(value as LoreCategory);
 }
 
-export function isValidArtworkSource(value: string): value is ArtworkSource {
-  return Object.values(ArtworkSource).includes(value as ArtworkSource);
-}
-
 /**
  * Core keyword roots per category. Plural and stem variations are dynamically expanded.
  */
@@ -403,13 +399,6 @@ function expandSynonyms(roots: readonly string[]): string[] {
 export const CATEGORY_SYNONYMS: Record<LoreCategory, readonly string[]> = Object.fromEntries(
   Object.entries(CATEGORY_ROOTS).map(([cat, roots]) => [cat, expandSynonyms(roots)])
 ) as unknown as Record<LoreCategory, readonly string[]>;
-
-/**
- * Returns all synonyms/aliases for a given category.
- */
-export function getCategorySynonyms(category: LoreCategory): readonly string[] {
-  return CATEGORY_SYNONYMS[category] || [];
-}
 
 /**
  * Find matching LoreCategory for any keyword, synonym, or alias.

@@ -33,15 +33,9 @@ import {
   ixwikiResolveRedirect,
   ixwikiGetRevisionWikitext,
   ixwikiGetCurrentRevMeta,
-  ixwikiGetNamespacedWikitext,
-  ixwikiSearchTemplates,
   ixwikiFullTextSearch,
   ixwikiGetParentCategories,
-  ixwikiGetCategoryInfo,
-  ixwikiGetPageProps,
-  ixwikiGetPageProtection,
-  ixwikiGetImageMeta,
-  ixwikiGetPageLog,
+  ixwikiGetImageMeta
 } from "./pg-reader";
 import {
   iiwikiGetWikitext,
@@ -233,7 +227,7 @@ export async function getBacklinks(title: string, limit?: number, offset?: numbe
   return ixwikiGetBacklinks(title, limit, offset);
 }
 
-export interface CategoryMembersResult {
+interface CategoryMembersResult {
   members: Array<{
     pageid?: number;
     pageId?: number;
@@ -367,20 +361,6 @@ export async function getCurrentRevMeta(title: string) {
 }
 
 /**
- * Get wikitext from any namespace via direct MySQL.
- */
-export async function getNamespacedWikitext(title: string, namespace: number) {
-  return ixwikiGetNamespacedWikitext(title, namespace);
-}
-
-/**
- * Search templates by prefix via direct MySQL.
- */
-export async function searchTemplates(query: string, limit?: number) {
-  return ixwikiSearchTemplates(query, limit);
-}
-
-/**
  * Full-text search via MySQL searchindex table.
  */
 export async function fullTextSearch(
@@ -397,27 +377,6 @@ export async function fullTextSearch(
  */
 export async function getParentCategories(title: string) {
   return ixwikiGetParentCategories(title);
-}
-
-/**
- * Get category info with subcategories via direct MySQL.
- */
-export async function getCategoryInfo(category: string) {
-  return ixwikiGetCategoryInfo(category);
-}
-
-/**
- * Get page properties via direct MySQL.
- */
-export async function getPageProps(pageId: number) {
-  return ixwikiGetPageProps(pageId);
-}
-
-/**
- * Get page protection status via direct MySQL.
- */
-export async function getPageProtection(title: string) {
-  return ixwikiGetPageProtection(title);
 }
 
 /**
@@ -445,13 +404,6 @@ export async function getImageMeta(filename: string) {
 }
 
 /**
- * Get page action log (stub — returns [] until wikiLog is implemented).
- */
-export async function getPageLog(title: string, limit?: number) {
-  return ixwikiGetPageLog(title, limit);
-}
-
-/**
  * Extract coordinates from article wikitext.
  */
 export async function getCoordinates(
@@ -475,18 +427,6 @@ export async function getPageImages(
   }
 ) {
   return httpGetPageImages(title, opts);
-}
-
-/**
- * Search with fallback: try ixwiki first, then iiwiki.
- */
-export async function searchWithFallback(
-  query: string,
-  limit: number = 10
-): Promise<WikiSearchResult[]> {
-  const results = await searchPages(query, limit, "ixwiki");
-  if (results.length > 0) return results;
-  return searchPages(query, limit, "iiwiki");
 }
 
 // ──────────────────────────────────────────────

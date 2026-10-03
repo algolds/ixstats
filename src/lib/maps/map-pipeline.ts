@@ -17,7 +17,7 @@ import { getZoneByColor } from "./elevation-config";
 // Types
 // ──────────────────────────────────────────────
 
-export type PipelineSource = "svg" | "png" | "procedural";
+type PipelineSource = "svg" | "png" | "procedural";
 
 export interface PipelineInput {
   source: PipelineSource;
@@ -36,16 +36,16 @@ export interface PipelineInput {
   targetLayers?: string[];
 }
 
-export type PipelineStage =
+type PipelineStage =
   "upload" | "conversion" | "parsing" | "enrichment" | "validation" | "complete" | "error";
 
-export interface PipelineProgress {
+interface PipelineProgress {
   stage: PipelineStage;
   progress: number; // 0-100
   message: string;
 }
 
-export interface PipelineResult {
+interface PipelineResult {
   layers: Record<string, FeatureCollection>;
   /** PNG input only: the colours found (auto-detect) or mapped, each with its feature id. */
   detectedColors?: PngToSvgResult["detectedColors"];

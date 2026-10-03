@@ -312,27 +312,6 @@ export function getCategories(
 }
 
 /**
- * Calculate complexity distribution
- *
- * @param selectedComponents - Array of selected component types
- * @returns Count of low/medium/high complexity components
- */
-export function calculateComplexityDistribution(
-  selectedComponents: ComponentType[]
-): Record<"Low" | "Medium" | "High", number> {
-  const distribution = { Low: 0, Medium: 0, High: 0 };
-
-  selectedComponents.forEach((type) => {
-    const component = ATOMIC_COMPONENTS[type];
-    if (component?.metadata.complexity) {
-      distribution[component.metadata.complexity]++;
-    }
-  });
-
-  return distribution;
-}
-
-/**
  * Calculate the country's civil service capacity limit
  * @param population - Current country population
  * @param governmentEffectiveness - Government effectiveness score (0-100)

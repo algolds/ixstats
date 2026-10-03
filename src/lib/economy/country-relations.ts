@@ -5,21 +5,21 @@
  * missing value `null` so the UI can show "—" instead of a stand-in number.
  */
 
-export interface EconomicProfileRow {
+interface EconomicProfileRow {
   economicComplexity?: number | null;
   sectorBreakdown?: string | null;
   exportsGDPPercent?: number | null;
   importsGDPPercent?: number | null;
 }
 
-export interface LaborMarketRow {
+interface LaborMarketRow {
   youthUnemploymentRate?: number | null;
   femaleParticipationRate?: number | null;
   informalEmploymentRate?: number | null;
   medianWage?: number | null;
 }
 
-export interface FiscalSystemRow {
+interface FiscalSystemRow {
   corporateTaxRates?: string | null;
   personalIncomeTaxRates?: string | null;
   salesTaxRate?: number | null;
@@ -28,13 +28,13 @@ export interface FiscalSystemRow {
   taxEfficiency?: number | null;
 }
 
-export interface IncomeDistributionRow {
+interface IncomeDistributionRow {
   top10PercentWealth?: number | null;
   middleClassPercent?: number | null;
   intergenerationalMobility?: number | null;
 }
 
-export interface CountryEconomicRelations {
+interface CountryEconomicRelations {
   economicProfile: EconomicProfileRow | null;
   laborMarket: LaborMarketRow | null;
   fiscalSystem: FiscalSystemRow | null;

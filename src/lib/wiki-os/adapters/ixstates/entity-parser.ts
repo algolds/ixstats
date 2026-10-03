@@ -22,7 +22,7 @@ import { compareValues, type ContradictionVerdict } from "~/lib/country-geo";
 
 export type EntityKind = "city" | "subdivision" | "poi";
 
-export interface AppliedField {
+interface AppliedField {
   /** IxStats entity attribute name (e.g. "population") */
   field: string;
   /** Wiki infobox key the value came from (e.g. "population_total") */
@@ -37,7 +37,7 @@ export interface AppliedField {
   verdict: ContradictionVerdict;
 }
 
-export interface SkippedField {
+interface SkippedField {
   field: string;
   reason: string;
 }

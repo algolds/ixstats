@@ -12,15 +12,6 @@ import { currentBudgetYear } from "./budget-year";
 
 type BudgetDb = Pick<PrismaClient, "budgetAllocation"> | Prisma.TransactionClient;
 
-export interface EffectiveBudget<T> {
-  /** The year whose allocations are in effect, or null when the country has no budget. */
-  budgetYear: number | null;
-  currentYear: number;
-  /** True when the budget in effect is from an earlier year than the current one. */
-  carriedForward: boolean;
-  allocations: T[];
-}
-
 /** Latest budget year at or before `currentYear` for the country, or null. */
 export async function findEffectiveBudgetYear(
   db: BudgetDb,

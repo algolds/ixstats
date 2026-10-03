@@ -13,7 +13,7 @@
 
 import { meetsScale, RARITY_PERCENTILE } from "./scaling";
 
-export type AchievementCategory =
+type AchievementCategory =
   "Economic" | "Military" | "Diplomatic" | "Government" | "Social" | "General";
 
 export type AchievementRarity = "Common" | "Uncommon" | "Rare" | "Epic" | "Legendary";
@@ -921,20 +921,6 @@ export function getAchievementById(id: string): AchievementDefinition | undefine
 }
 
 /**
- * Get all achievements by category
- */
-export function getAchievementsByCategory(category: AchievementCategory): AchievementDefinition[] {
-  return ACHIEVEMENT_DEFINITIONS.filter((achievement) => achievement.category === category);
-}
-
-/**
- * Get all achievements by rarity
- */
-export function getAchievementsByRarity(rarity: AchievementRarity): AchievementDefinition[] {
-  return ACHIEVEMENT_DEFINITIONS.filter((achievement) => achievement.rarity === rarity);
-}
-
-/**
  * Check which achievements should be unlocked for given data
  * @param data Extended country and relational data
  * @param alreadyUnlocked Set of already unlocked achievement IDs
@@ -963,16 +949,6 @@ export function checkAchievements(
   }
 
   return toUnlock;
-}
-
-/**
- * Get total point value for a set of achievements
- */
-export function calculateTotalPoints(achievementIds: string[]): number {
-  return achievementIds.reduce((total, id) => {
-    const achievement = getAchievementById(id);
-    return total + (achievement?.points ?? 0);
-  }, 0);
 }
 
 /**

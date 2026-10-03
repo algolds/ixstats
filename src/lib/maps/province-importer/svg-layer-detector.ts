@@ -201,14 +201,6 @@ const WATER_COLORS = new Set([
   "#0066cc",
 ]);
 
-/** Common province fill colors (neutral, pastel, or distinctive). */
-// oxlint-disable-next-line typescript/no-unused-vars
-const PROVINCE_FILL_PATTERNS = [
-  /^#f[0-9a-f]{5}$/i, // Light pastels (f-prefix)
-  /^#e[0-9a-f]{5}$/i, // Light greys/pastels
-  /^#d[0-9a-f]{5}$/i, // Mid-light
-];
-
 /**
  * Classify shapes into province candidates vs non-province (topo/water/decorative).
  * Returns only the elements that look like province fills.
@@ -386,7 +378,7 @@ function extractStyleProp(style: string, prop: string): string {
  *   - rgba(): "rgba(170,187,204,0.5)" → "#aabbcc"
  *   - Named colors: passed through unchanged
  */
-export function normalizeColor(color: string): string {
+function normalizeColor(color: string): string {
   const trimmed = color.trim().toLowerCase();
 
   // Handle rgb(r,g,b) and rgba(r,g,b,a)
@@ -458,7 +450,7 @@ function collectShapesRecursive(el: XmlElement, result: XmlElement[], hiddenClas
  * Check if an element is likely decorative (thin border, invisible, etc.).
  * Province shapes MUST have a visible fill — stroke-only elements are borders/lines.
  */
-export function isDecorativeElement(el: XmlElement): boolean {
+function isDecorativeElement(el: XmlElement): boolean {
   const style = el.getAttribute("style") || "";
   const fill = el.getAttribute("fill") || "";
   const stroke = el.getAttribute("stroke") || "";
@@ -699,10 +691,6 @@ function getDepthFromRoot(el: XmlElement, root: XmlElement): number {
 }
 
 // oxlint-disable-next-line typescript/no-unused-vars
-function parseStrokeWidthFromStyle(style: string): number {
-  const match = style.match(/stroke-width\s*:\s*([\d.]+)/);
-  return match ? parseFloat(match[1]!) : 0;
-}
 
 /**
  * Parse <style> blocks inside the SVG to find CSS classes with display:none.

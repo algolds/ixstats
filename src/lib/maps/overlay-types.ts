@@ -24,10 +24,10 @@ export type TRPCUtils = ReturnType<typeof import("~/trpc/react").api.useUtils>;
  * - `analytics`— independent data layer drawn by an overlay component;
  *                combinable; usually default-off.
  */
-export type OverlayCategory = "fill" | "feature" | "analytics";
+type OverlayCategory = "fill" | "feature" | "analytics";
 
 /** Context handed to fetchers / availability gates. */
-export interface OverlayFetchCtx {
+interface OverlayFetchCtx {
   focusedCountryId?: string;
   zoom: number;
 }
@@ -52,21 +52,6 @@ export type OverlayLegend =
       title: string;
       lines: { color: string; style: "solid" | "dashed"; label: string }[];
     };
-
-/**
- * Props every overlay *component* receives from the registry-driven render loop.
- * The concrete overlay components have heterogeneous prop shapes (ChoroplethOverlay
- * needs `layerId`/`colorScale`, GeopoliticalOverlay needs `relations`/`conflicts`,
- * …). The registry bridges that gap via `renderProps`, so this type is the lowest
- * common denominator the loop relies on.
- */
-export interface OverlayComponentProps {
-  map: MapLibreMap | null;
-  visible: boolean;
-  data?: unknown;
-  legend?: OverlayLegend;
-  [key: string]: unknown;
-}
 
 /** Inputs available when computing a component's props in the render loop. */
 export interface OverlayRenderCtx {

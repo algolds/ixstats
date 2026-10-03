@@ -6,7 +6,7 @@
  * existing installs keep their current behaviour until an admin turns something off.
  */
 
-export interface SportsNotifyConfig {
+interface SportsNotifyConfig {
   matchdayBulletins: boolean;
   llmNarration: boolean;
   seasonBulletins: boolean;

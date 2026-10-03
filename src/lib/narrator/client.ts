@@ -1,7 +1,7 @@
 import { db } from "~/server/db";
 import { isAllowedLlmApiUrl } from "./llm-url";
 
-export interface LLMConfig {
+interface LLMConfig {
   provider?: string;
   apiKey?: string;
   apiUrl?: string;

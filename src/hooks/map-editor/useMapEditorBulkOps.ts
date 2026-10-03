@@ -27,10 +27,10 @@ import {
   randomPointsInPolygon,
 } from "./editor-geo-ops";
 
-export type BulkEditField = "color" | "type" | "level" | "governmentType";
+type BulkEditField = "color" | "type" | "level" | "governmentType";
 
 /** Runs async tasks with bounded concurrency; collects per-item success. */
-export async function runLimited<T>(
+async function runLimited<T>(
   items: T[],
   limit: number,
   task: (item: T) => Promise<void>

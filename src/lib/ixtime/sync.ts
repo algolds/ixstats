@@ -8,7 +8,7 @@
 
 import { IxTime } from "./core";
 
-export interface SyncTarget {
+interface SyncTarget {
   id: string;
   name: string;
   endpoint: string;

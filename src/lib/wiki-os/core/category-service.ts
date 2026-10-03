@@ -7,15 +7,6 @@
 import { db } from "~/server/db";
 import { toArticleSlug } from "./domain-types";
 
-export interface CategoryTreeItem {
-  id: string;
-  slug: string;
-  name: string;
-  description: string | null;
-  memberCount: number;
-  subcategories: CategoryTreeItem[];
-}
-
 export class CategoryService {
   /**
    * Get Category Details and Direct Members (Articles & Subcategories)

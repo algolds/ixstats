@@ -16,7 +16,7 @@ export interface LiveTraceEvent {
   actorName?: string;
 }
 
-export interface LiveMatchState {
+interface LiveMatchState {
   progress: number; // 0..1 through the broadcast window
   minute: number; // current match minute being shown
   maxMinute: number;

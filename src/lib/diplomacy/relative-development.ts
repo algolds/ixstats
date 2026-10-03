@@ -6,7 +6,7 @@
  * derives asymmetric trade, tax, and diplomatic standing multipliers.
  */
 
-export interface AsymmetryAnalysis {
+interface AsymmetryAnalysis {
   ratio: number; // Partner tier / Self tier (>1 = partner higher development)
   tierDiff: number;
   label:

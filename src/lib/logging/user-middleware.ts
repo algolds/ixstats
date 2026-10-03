@@ -8,7 +8,7 @@
 import { UserLogger, type UserLogContext, type UserAction } from "./user-logger";
 import { ErrorLogger } from "./error-logger";
 
-export interface UserLoggingConfig {
+interface UserLoggingConfig {
   enabled: boolean;
   logLevel: "ALL" | "MUTATIONS_ONLY" | "SENSITIVE_ONLY";
   excludePaths: string[];
@@ -29,7 +29,7 @@ const DEFAULT_CONFIG: UserLoggingConfig = {
   includeMetadata: true,
 };
 
-export function createUserLoggingMiddleware(config: Partial<UserLoggingConfig> = {}) {
+function createUserLoggingMiddleware(config: Partial<UserLoggingConfig> = {}) {
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
 
   return async ({
@@ -400,4 +400,3 @@ export const userLoggingMiddleware = {
   }),
 };
 
-export default userLoggingMiddleware;

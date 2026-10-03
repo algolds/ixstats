@@ -22,15 +22,6 @@ export interface Particle {
 }
 
 /**
- * Pack opening state management
- */
-export interface PackOpeningState {
-  stage: PackOpeningStage;
-  cards: CardInstance[];
-  selectedCards: string[]; // card IDs for bulk actions
-}
-
-/**
  * Card instance from pack opening (minimal data for animation)
  */
 export interface CardInstance {

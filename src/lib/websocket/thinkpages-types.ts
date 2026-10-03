@@ -31,7 +31,7 @@ export interface MessageUpdate {
   readBy?: string[];
 }
 
-export interface GroupUpdate {
+interface GroupUpdate {
   id: string;
   type: "group:created" | "group:updated" | "group:deleted" | "member:joined" | "member:left";
   groupId: string;
@@ -40,7 +40,7 @@ export interface GroupUpdate {
   timestamp: number;
 }
 
-export interface ConversationUpdate {
+interface ConversationUpdate {
   id: string;
   type: "conversation:created" | "conversation:updated" | "conversation:deleted";
   conversationId: string;
@@ -56,34 +56,6 @@ export interface ReadReceipt {
   groupId?: string;
   accountId: string;
   readAt: number;
-}
-
-export interface ThinkPagesWebSocketEvent {
-  type:
-    | "presence:update"
-    | "typing:update"
-    | "message:update"
-    | "group:update"
-    | "conversation:update"
-    | "read:receipt";
-  data:
-    | PresenceUpdate
-    | TypingIndicator
-    | MessageUpdate
-    | GroupUpdate
-    | ConversationUpdate
-    | ReadReceipt;
-  timestamp: number;
-  channel: string;
-  accountId?: string;
-}
-
-export interface ThinkPagesSubscription {
-  type: "presence" | "conversations" | "groups" | "account";
-  channel: string;
-  accountId?: string;
-  conversationId?: string;
-  groupId?: string;
 }
 
 export interface ThinkPagesClientState {

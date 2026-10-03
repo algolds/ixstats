@@ -96,8 +96,3 @@ export async function processExpiredTrades() {
     };
   }
 }
-
-export async function manualTriggerTradeExpiry() {
-  console.log("[MANUAL] Manually triggering trade expiry");
-  return await processExpiredTrades();
-}

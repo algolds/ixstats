@@ -6,7 +6,7 @@ import { point } from "@turf/helpers";
 import { booleanPointInPolygon } from "@turf/boolean-point-in-polygon";
 import type { EditorFeature } from "./editor-types";
 
-export interface EditorGuideLine {
+interface EditorGuideLine {
   id: string;
   type: "h" | "v";
   value: number;

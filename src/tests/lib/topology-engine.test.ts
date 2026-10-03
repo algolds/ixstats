@@ -99,8 +99,8 @@ describe("cascadeMoveVertex", () => {
       { id: "b", geometry: SQUARE_B },
     ]);
     const geometries = new Map([
-      ["a", JSON.parse(JSON.stringify(SQUARE_A)) as Polygon],
-      ["b", JSON.parse(JSON.stringify(SQUARE_B)) as Polygon],
+      ["a", structuredClone(SQUARE_A) as Polygon],
+      ["b", structuredClone(SQUARE_B) as Polygon],
     ]);
 
     const oldKey = vkey([1, 0]); // shared vertex
@@ -130,7 +130,7 @@ describe("cascadeMoveVertex", () => {
 
   it("returns empty map when oldKey has no refs", () => {
     const index = buildTopologyIndex([{ id: "a", geometry: SQUARE_A }]);
-    const geometries = new Map([["a", JSON.parse(JSON.stringify(SQUARE_A)) as Polygon]]);
+    const geometries = new Map([["a", structuredClone(SQUARE_A) as Polygon]]);
 
     const updated = cascadeMoveVertex(index, geometries, vkey([99, 99]), [100, 100]);
     expect(updated.size).toBe(0);
@@ -142,8 +142,8 @@ describe("cascadeMoveVertex", () => {
       { id: "b", geometry: SQUARE_B },
     ]);
     const geometries = new Map([
-      ["a", JSON.parse(JSON.stringify(SQUARE_A)) as Polygon],
-      ["b", JSON.parse(JSON.stringify(SQUARE_B)) as Polygon],
+      ["a", structuredClone(SQUARE_A) as Polygon],
+      ["b", structuredClone(SQUARE_B) as Polygon],
     ]);
 
     const oldKey = vkey([1, 0]);
@@ -163,8 +163,8 @@ describe("cascadeMoveVertex", () => {
       { id: "b", geometry: SQUARE_B },
     ]);
     const geometries = new Map([
-      ["a", JSON.parse(JSON.stringify(SQUARE_A)) as Polygon],
-      ["b", JSON.parse(JSON.stringify(SQUARE_B)) as Polygon],
+      ["a", structuredClone(SQUARE_A) as Polygon],
+      ["b", structuredClone(SQUARE_B) as Polygon],
     ]);
 
     // (0,0) is only in feature "a"

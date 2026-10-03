@@ -52,7 +52,7 @@ export interface DiplomaticChoice {
   metadata?: Record<string, unknown>;
 }
 
-export interface Effect {
+interface Effect {
   type: "economic" | "diplomatic" | "security" | "cultural" | "reputation";
   magnitude: number; // -100 to +100
   duration: "instant" | "short" | "medium" | "long" | "permanent";
@@ -78,7 +78,7 @@ export interface CumulativeEffects {
   };
 }
 
-export interface RippleEffectPreview {
+interface RippleEffectPreview {
   immediateEffects: Effect[];
   secondOrderEffects: Effect[]; // How it affects partners' partners
   longTermConsequences: Effect[]; // What might happen months later

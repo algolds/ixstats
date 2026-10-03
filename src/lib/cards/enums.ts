@@ -38,7 +38,7 @@ export type CardType = (typeof CardType)[keyof typeof CardType];
 /**
  * Pack types
  */
-export const PackType = {
+const PackType = {
   BASIC: "BASIC",
   PREMIUM: "PREMIUM",
   ELITE: "ELITE",
@@ -47,7 +47,7 @@ export const PackType = {
   EVENT: "EVENT",
 } as const;
 
-export type PackType = (typeof PackType)[keyof typeof PackType];
+type PackType = (typeof PackType)[keyof typeof PackType];
 
 /**
  * How a card was acquired
@@ -68,18 +68,18 @@ export type AcquireMethod = (typeof AcquireMethod)[keyof typeof AcquireMethod];
 /**
  * Auction status
  */
-export const AuctionStatus = {
+const AuctionStatus = {
   ACTIVE: "ACTIVE",
   COMPLETED: "COMPLETED",
   CANCELLED: "CANCELLED",
 } as const;
 
-export type AuctionStatus = (typeof AuctionStatus)[keyof typeof AuctionStatus];
+type AuctionStatus = (typeof AuctionStatus)[keyof typeof AuctionStatus];
 
 /**
  * Trade status
  */
-export const TradeStatus = {
+const TradeStatus = {
   PENDING: "PENDING",
   ACCEPTED: "ACCEPTED",
   REJECTED: "REJECTED",
@@ -87,32 +87,4 @@ export const TradeStatus = {
   EXPIRED: "EXPIRED",
 } as const;
 
-export type TradeStatus = (typeof TradeStatus)[keyof typeof TradeStatus];
-
-/**
- * Helper function to get all rarity values as an array
- */
-export function getAllRarities(): CardRarity[] {
-  return Object.values(CardRarity);
-}
-
-/**
- * Helper function to get all card type values as an array
- */
-export function getAllCardTypes(): CardType[] {
-  return Object.values(CardType);
-}
-
-/**
- * Helper function to check if a value is a valid CardRarity
- */
-export function isValidCardRarity(value: string): value is CardRarity {
-  return Object.values(CardRarity).includes(value as CardRarity);
-}
-
-/**
- * Helper function to check if a value is a valid CardType
- */
-export function isValidCardType(value: string): value is CardType {
-  return Object.values(CardType).includes(value as CardType);
-}
+type TradeStatus = (typeof TradeStatus)[keyof typeof TradeStatus];

@@ -6,7 +6,7 @@ import { BuilderProgressView } from "./BuilderProgressView";
 import type { DIViewProps, ViewMode } from "~/components/halo/types";
 import type { BuilderFilterState } from "~/app/builder/components/builder-filter-context";
 import type { BuilderContextValue } from "~/app/builder/components/enhanced/context/BuilderStateContext";
-import type { RealCountryData } from "~/app/builder/lib/economy-types";
+import type { RealCountryData } from "~/types/builder";
 import { Button } from "~/components/ui/button";
 
 /**

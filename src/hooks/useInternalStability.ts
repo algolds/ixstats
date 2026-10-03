@@ -9,12 +9,12 @@ interface UseInternalStabilityProps {
 }
 
 /** Semantic status tone for a stability reading; maps to text colours that read in both themes. */
-export type StabilityTone = "success" | "neutral" | "warning" | "critical";
+type StabilityTone = "success" | "neutral" | "warning" | "critical";
 
 /** Direction of the stability trend, for the consumer to pick a glyph. */
-export type StabilityTrendDirection = "up" | "down" | "flat";
+type StabilityTrendDirection = "up" | "down" | "flat";
 
-export const STABILITY_TONE_TEXT: Record<StabilityTone, string> = {
+const STABILITY_TONE_TEXT: Record<StabilityTone, string> = {
   success: "text-emerald-600",
   neutral: "text-foreground",
   warning: "text-orange-600",
@@ -22,7 +22,7 @@ export const STABILITY_TONE_TEXT: Record<StabilityTone, string> = {
 };
 
 /** Stability score (0–100) → semantic tone. */
-export function getStabilityTone(score: number): StabilityTone {
+function getStabilityTone(score: number): StabilityTone {
   if (score >= 80) return "success";
   if (score >= 60) return "neutral";
   if (score >= 20) return "warning";
@@ -30,7 +30,7 @@ export function getStabilityTone(score: number): StabilityTone {
 }
 
 /** Event severity → semantic tone. */
-export function getSeverityTone(severity: string): StabilityTone {
+function getSeverityTone(severity: string): StabilityTone {
   switch (severity) {
     case "critical":
     case "high":

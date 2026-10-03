@@ -148,41 +148,6 @@ export async function syncGeographicDemographics(
 }
 
 /**
- * Sets a city as national capital and syncs with NationalIdentity.
- */
-export async function setCapital(db: any, countryId: string, cityId: string): Promise<void> {
-  const city = await db.city.findFirst({
-    where: { id: cityId, countryId },
-  });
-  if (!city) {
-    throw new Error(`City not found or does not belong to this country.`);
-  }
-
-  await db.city.updateMany({
-    where: { countryId, isNationalCapital: true },
-    data: { isNationalCapital: false },
-  });
-
-  await db.city.update({
-    where: { id: cityId },
-    data: { isNationalCapital: true },
-  });
-
-  await db.nationalIdentity.upsert({
-    where: { countryId },
-    update: {
-      capitalCityId: cityId,
-      capitalCity: city.name,
-    },
-    create: {
-      countryId,
-      capitalCityId: cityId,
-      capitalCity: city.name,
-    },
-  });
-}
-
-/**
  * Update the rollup mode of a country.
  */
 export async function updateGeoRollupMode(db: any, countryId: string, mode: string) {

@@ -30,7 +30,7 @@ import { useAtomicSelectorState } from "./useAtomicSelectorState";
 /**
  * Hook Props
  */
-export interface UseAtomicEconomicBuilderProps {
+interface UseAtomicEconomicBuilderProps {
   countryId?: string;
   initialSelection?: EconomicComponentType[];
   maxComponents?: number;
@@ -40,7 +40,7 @@ export interface UseAtomicEconomicBuilderProps {
 /**
  * Hook Return Type
  */
-export interface UseAtomicEconomicBuilderReturn {
+interface UseAtomicEconomicBuilderReturn {
   // Selection State
   selectedComponents: EconomicComponentType[];
   selectedIds: Set<string>;

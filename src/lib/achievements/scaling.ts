@@ -15,9 +15,9 @@
 import type { PrismaClient } from "@prisma/client";
 import type { AchievementRarity, ExtendedAchievementData } from "./definitions";
 
-export type ScaleMetric = "currentPopulation" | "currentTotalGdp" | "currentGdpPerCapita";
+type ScaleMetric = "currentPopulation" | "currentTotalGdp" | "currentGdpPerCapita";
 
-export const SCALE_METRICS: ScaleMetric[] = [
+const SCALE_METRICS: ScaleMetric[] = [
   "currentPopulation",
   "currentTotalGdp",
   "currentGdpPerCapita",

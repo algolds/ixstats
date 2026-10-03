@@ -126,19 +126,3 @@ export function getMemoryStats(): {
 
   return { heapUsedMB, heapTotalMB, usagePercent, rssMB };
 }
-
-/**
- * Log current memory configuration (useful for debugging)
- */
-export function logMemoryConfig(): void {
-  console.log(`[MemoryConfig] Environment: ${isDev ? "development" : "production"}`);
-  console.log(`[MemoryConfig] Cache max entries: ${memoryConfig.cache.maxEntries}`);
-  console.log(`[MemoryConfig] tRPC cache size: ${memoryConfig.trpc.maxCacheSize}`);
-  console.log(`[MemoryConfig] Intelligence cache size: ${memoryConfig.intelligence.maxCacheSize}`);
-  console.log(`[MemoryConfig] Query default limit: ${memoryConfig.query.defaultLimit}`);
-
-  const stats = getMemoryStats();
-  console.log(
-    `[MemoryConfig] Current heap: ${stats.heapUsedMB.toFixed(1)}MB / ${stats.heapTotalMB.toFixed(1)}MB (${(stats.usagePercent * 100).toFixed(1)}%)`
-  );
-}

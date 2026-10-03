@@ -1,7 +1,7 @@
 /**
  * Standard chart color palette for all GlassCharts
  */
-export const CHART_COLOR_MAP: Record<string, string> = {
+const CHART_COLOR_MAP: Record<string, string> = {
   blue: "hsl(217, 91%, 60%)",
   emerald: "hsl(160, 84%, 60%)",
   green: "hsl(142, 71%, 45%)",

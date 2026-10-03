@@ -3,9 +3,9 @@
  * (v2 Design Bible §7: Player-facing state is ALWAYS qualitative bands, never raw math/percentages)
  */
 
-export type StandingBandKey = "aligned" | "cooperative" | "neutral" | "tense" | "hostile";
+type StandingBandKey = "aligned" | "cooperative" | "neutral" | "tense" | "hostile";
 
-export interface StandingBandInfo {
+interface StandingBandInfo {
   key: StandingBandKey;
   label: string;
   /**
@@ -27,7 +27,7 @@ const BAND_TEXT: Record<StandingBandKey, string> = {
   hostile: "text-destructive",
 };
 
-export const STANDING_BANDS: Record<StandingBandKey, StandingBandInfo> = {
+const STANDING_BANDS: Record<StandingBandKey, StandingBandInfo> = {
   aligned: {
     key: "aligned",
     label: "Aligned",

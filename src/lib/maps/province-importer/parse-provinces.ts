@@ -1159,7 +1159,7 @@ function ringCentroid(ring: [number, number][]): [number, number] {
  * Removes common trailing abbreviations (rg, av, pb, sr, wasg, etc.)
  * and cleans separators.
  */
-export function cleanGroupIdToName(id: string): string {
+function cleanGroupIdToName(id: string): string {
   if (!id) return "";
 
   let cleaned = id

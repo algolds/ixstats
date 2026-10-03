@@ -15,7 +15,7 @@
 import type { PackedGraph } from "~/lib/worldgen/types";
 import type { FeatureCollection } from "geojson";
 
-export interface ScientificAuditReport {
+interface ScientificAuditReport {
   compositeScore: number; // 0-100%
   passesThreshold: boolean; // compositeScore >= 85
   metrics: {

@@ -1,21 +1,8 @@
-/**
- * MediaWiki Country Infobox to IxStats Database Mapping
- *
- * Maps Wikipedia/IxWiki Template:Infobox_country parameters to IxStats database schema
- *
- * Usage:
- * const wikiData = parseInfoboxTemplate(wikitext);
- * const mappedData = mapInfoboxToIxStats(wikiData);
- * await importCountryData(mappedData);
- */
-
-import { parseInfobox, parseCoordTemplate } from "~/lib/wiki-os/transformers/infobox-parser";
-
-export interface WikiInfoboxData {
+interface WikiInfoboxData {
   [key: string]: string | number | null;
 }
 
-export interface IxStatsCountryData {
+interface IxStatsCountryData {
   // Country Basic Info
   name?: string;
   slug?: string;
@@ -66,7 +53,7 @@ export interface IxStatsCountryData {
 /**
  * Mapping configuration from Wiki infobox parameters to IxStats fields
  */
-export const INFOBOX_FIELD_MAPPING: Record<
+const INFOBOX_FIELD_MAPPING: Record<
   string,
   {
     ixStatsField: string;
@@ -196,22 +183,6 @@ export const INFOBOX_FIELD_MAPPING: Record<
 };
 
 /**
- * ponytail: Pure delegating parser that uses the robust brace-depth tokenizer.
- * Parse MediaWiki infobox template text into key-value pairs.
- */
-export function parseInfoboxTemplate(wikitext: string): WikiInfoboxData {
-  const parsed = parseInfobox(wikitext);
-  if (!parsed) return {};
-  const data: WikiInfoboxData = {};
-  for (const f of parsed.fields) {
-    if (f.cleanValue) {
-      data[f.key] = f.cleanValue;
-    }
-  }
-  return data;
-}
-
-/**
  * Map parsed wiki infobox data to IxStats database structure
  */
 export function mapInfoboxToIxStats(wikiData: WikiInfoboxData): IxStatsCountryData {
@@ -281,45 +252,3 @@ export function deriveGovCategory(
   if (s.includes("republic")) return "republic";
   return undefined;
 }
-
-/**
- * ponytail: Parse coordinates from Wikipedia format using the shared coordinate parser.
- */
-export function parseCoordinates(
-  coordString: string
-): { latitude: string; longitude: string } | null {
-  const coords = parseCoordTemplate(coordString);
-  if (!coords) return null;
-  const [lon, lat] = coords;
-  return {
-    latitude: lat.toFixed(6),
-    longitude: lon.toFixed(6),
-  };
-}
-
-/**
- * Example usage and test data
- */
-export const EXAMPLE_WIKI_INFOBOX = `
-{{Infobox country
-| conventional_long_name = Republic of Example
-| common_name = Example
-| native_name = République d'Exemple
-| image_flag = Flag of Example.svg
-| image_coat = Coat of arms of Example.svg
-| national_motto = "Unity and Progress"
-| national_anthem = "Our Homeland"
-| capital = Example City
-| largest_city = capital
-| official_languages = English, French
-| demonym = Examplean
-| government_type = Federal Republic
-| leader_title1 = President
-| leader_name1 = John Smith
-| area_km2 = 500000
-| population_estimate = 25000000
-| population_estimate_year = 2024
-| population_density_km2 = 50
-| religion = Christianity (60%), Islam (30%), Other (10%)
-}}
-`;

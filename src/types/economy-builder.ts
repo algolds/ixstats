@@ -29,7 +29,7 @@ export interface EconomyBuilderState {
   version: string;
 }
 
-export interface EconomyStructure {
+interface EconomyStructure {
   economicModel: string;
   primarySectors: string[];
   secondarySectors: string[];
@@ -41,7 +41,7 @@ export interface EconomyStructure {
   sectors?: SectorConfiguration[];
 }
 
-export interface EconomyBuilderErrors {
+interface EconomyBuilderErrors {
   structure?: string[];
   sectors?: { [key: string]: string[] };
   labor?: string[];
@@ -71,15 +71,6 @@ export interface SectorConfiguration {
   innovation: number; // innovation index 0-100
   sustainability: number; // sustainability score 0-100
   competitiveness: number; // global competitiveness score 0-100
-}
-
-export interface SectorImpact {
-  sectorId: string;
-  economicImpact: number; // multiplier effect (1.0 = neutral)
-  employmentImpact: number; // jobs created/lost
-  taxRevenueImpact: number; // tax revenue generated
-  environmentalImpact: number; // environmental score
-  socialImpact: number; // social development impact
 }
 
 // ============================================
@@ -203,80 +194,11 @@ export interface RegionDistribution {
 // ============================================
 // INCOME & WEALTH CONFIGURATION
 // ============================================
-
-export interface IncomeWealthConfiguration {
-  nationalMedianIncome: number;
-  nationalMeanIncome: number;
-  nationalMedianWage: number;
-  nationalMeanWage: number;
-
-  incomePercentiles: {
-    p10: number;
-    p25: number;
-    p50: number; // median
-    p75: number;
-    p90: number;
-    p95: number;
-    p99: number;
-    p99_9: number;
-  };
-
-  incomeClasses: {
-    lowerClass: { percent: number; averageIncome: number; threshold: number };
-    lowerMiddleClass: { percent: number; averageIncome: number; threshold: number };
-    middleClass: { percent: number; averageIncome: number; threshold: number };
-    upperMiddleClass: { percent: number; averageIncome: number; threshold: number };
-    upperClass: { percent: number; averageIncome: number; threshold: number };
-    wealthyClass: { percent: number; averageIncome: number; threshold: number };
-  };
-
-  giniCoefficient: number; // 0-1 scale
-  palmRatio: number; // ratio of top 10% to bottom 40%
-  incomeShare: {
-    bottom50: number;
-    middle40: number;
-    top10: number;
-    top1: number;
-  };
-
-  povertyLine: number;
-  povertyRate: number; // percentage
-  extremePovertyRate: number; // percentage
-  childPovertyRate: number;
-  seniorPovertyRate: number;
-
-  averageWageBySector: {
-    agriculture: number;
-    mining: number;
-    manufacturing: number;
-    construction: number;
-    utilities: number;
-    wholesale: number;
-    retail: number;
-    transportation: number;
-    information: number;
-    finance: number;
-    professional: number;
-    education: number;
-    healthcare: number;
-    hospitality: number;
-    government: number;
-  };
-
-  genderPayGap: number; // percentage
-  racialWageGap: number; // percentage (if applicable)
-  urbanRuralIncomeGap: number; // percentage
-
-  socialMobilityIndex: number; // 0-100
-  interGenerationalElasticity: number; // 0-1, lower is better
-  economicMobilityRate: number; // percentage moving up quintiles
-}
-
 // ============================================
 // TRADE CONFIGURATION
 // ============================================
 
-export interface TradeConfiguration {
+interface TradeConfiguration {
   totalExports: number; // USD
   totalImports: number; // USD
   tradeBalance: number; // USD
@@ -310,7 +232,7 @@ export interface TradeConfiguration {
   importDependencyIndex: number; // 0-100
 }
 
-export interface TradePartner {
+interface TradePartner {
   country: string;
   share: number; // percentage of total trade
   tradeValue: number; // USD
@@ -320,56 +242,9 @@ export interface TradePartner {
 // ============================================
 // PRODUCTIVITY CONFIGURATION
 // ============================================
-
-export interface ProductivityConfiguration {
-  laborProductivity: number; // GDP per worker
-  laborProductivityGrowth: number; // annual percentage
-  capitalProductivity: number; // GDP per unit of capital
-  totalFactorProductivity: number; // index
-
-  technologyAdoptionIndex: number; // 0-100
-  digitalizationIndex: number; // 0-100
-  automationLevel: number; // percentage
-
-  innovationIndex: number; // 0-100
-  rdInvestmentGDP: number; // percentage
-  patentApplications: number; // per capita
-  technologyTransfer: number; // index
-
-  infrastructureQuality: number; // 0-100
-  logisticsPerformance: number; // 0-100
-  connectivityIndex: number; // 0-100
-
-  humanCapitalIndex: number; // 0-100
-  skillsMatch: number; // percentage
-  trainingInvestment: number; // percentage of GDP
-}
-
 // ============================================
 // BUSINESS ENVIRONMENT
 // ============================================
-
-export interface BusinessEnvironmentConfiguration {
-  easeOfDoingBusiness: number; // 0-100
-  businessStartupTime: number; // days
-  businessStartupCost: number; // percentage of income per capita
-  businessRegulation: "Light" | "Moderate" | "Heavy" | "Comprehensive";
-
-  marketConcentration: number; // index
-  competitionLevel: number; // 0-100
-  marketBarriers: number; // 0-100
-
-  financialDevelopment: number; // 0-100
-  creditAvailability: number; // 0-100
-  bankingEfficiency: number; // 0-100
-  capitalMarketDevelopment: number; // 0-100
-
-  corruptionPerceptionIndex: number; // 0-100
-  regulatoryQuality: number; // 0-100
-  ruleOfLaw: number; // 0-100
-  governmentEffectiveness: number; // 0-100
-}
-
 // ============================================
 // ECONOMIC HEALTH METRICS
 // ============================================
@@ -402,80 +277,12 @@ export interface EconomicHealthMetrics {
 // ============================================
 // ATOMIC COMPONENT IMPACT
 // ============================================
-
-export interface AtomicComponentImpact {
-  componentType: EconomicComponentType;
-  economicImpact: {
-    gdpImpact: number; // multiplier
-    growthImpact: number; // percentage change
-    employmentImpact: number; // percentage change
-    productivityImpact: number; // percentage change
-  };
-  sectorImpact: Record<string, number>; // sector-specific multipliers
-  taxImpact: {
-    revenueImpact: number; // percentage change
-    optimalRates: {
-      corporate: number;
-      income: number;
-      consumption: number;
-    };
-  };
-  governmentImpact: {
-    spendingNeeds: number; // percentage change
-    capacityRequirements: number; // 0-100
-    policyAlignment: number; // 0-100
-  };
-}
-
 // ============================================
 // CROSS-BUILDER INTEGRATION
 // ============================================
-
-export interface CrossBuilderIntegration {
-  governmentSynergies: {
-    componentType: string;
-    synergyStrength: number; // 0-100
-    description: string;
-  }[];
-  governmentConflicts: {
-    componentType: string;
-    conflictStrength: number; // 0-100
-    description: string;
-  }[];
-  taxRecommendations: {
-    taxType: string;
-    recommendedRate: number;
-    rationale: string;
-    impact: number; // percentage change
-  }[];
-  unifiedEffectiveness: number; // 0-100
-  optimizationSuggestions: string[];
-  riskFactors: string[];
-}
-
 // ============================================
 // VALIDATION & CONSTRAINTS
 // ============================================
-
-export interface EconomyValidationRules {
-  sectorSumMustEqual100: boolean;
-  maxSectorContribution: number;
-  minSectorContribution: number;
-  participationRateRange: [number, number]; // [min, max]
-  unemploymentRateRange: [number, number]; // [min, max]
-  employmentTypesMustSumTo100: boolean;
-  ageDistributionMustSumTo100: boolean;
-  urbanRuralMustSumTo100: boolean;
-  populationGrowthRange: [number, number];
-  gdpGrowthRange: [number, number];
-  inflationRange: [number, number];
-  giniRange: [number, number];
-  maxAtomicComponents: number;
-  minAtomicComponents: number;
-  maxConflictsAllowed: number;
-  minSynergiesRequired: number;
-}
-
 // ============================================
 // ARCHETYPE TEMPLATES
 // ============================================
@@ -503,28 +310,4 @@ export interface EconomicArchetype {
 // ============================================
 // UTILITY TYPES
 // ============================================
-
-export type EconomyBuilderTab =
-  | "atomicComponents"
-  | "sectors"
-  | "labor"
-  | "demographics"
-  | "income"
-  | "trade"
-  | "productivity"
-  | "business"
-  | "preview";
-
-export type EconomyBuilderMode = "create" | "edit" | "view";
-
-export interface EconomyBuilderConfig {
-  mode: EconomyBuilderMode;
-  allowAtomicComponents: boolean;
-  maxAtomicComponents: number;
-  allowAdvancedSettings: boolean;
-  enableCrossBuilderSync: boolean;
-  enableRealTimeValidation: boolean;
-  showEffectivenessPreview: boolean;
-}
-
 export type { EconomicInputs } from "~/app/builder/lib/economy-data-service";

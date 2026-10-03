@@ -1,6 +1,6 @@
-export type RetryStrategy = "exponential" | "linear" | "fixed";
+type RetryStrategy = "exponential" | "linear" | "fixed";
 
-export interface RetryOptions {
+interface RetryOptions {
   maxAttempts: number;
   strategy: RetryStrategy;
   baseDelayMs: number;
@@ -10,7 +10,7 @@ export interface RetryOptions {
   onRetry?: (attempt: number, error: Error, delayMs: number) => void;
 }
 
-export interface AttemptResult<T> {
+interface AttemptResult<T> {
   success: boolean;
   value: T | undefined;
   error: Error | undefined;

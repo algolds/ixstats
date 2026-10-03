@@ -25,7 +25,7 @@ import { withBasePath } from "~/lib/base-path";
 // Types
 // ──────────────────────────────────────────────
 
-export interface EligibleCountryResult {
+interface EligibleCountryResult {
   pageName: string;
   displayName: string;
   completeness: number;

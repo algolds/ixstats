@@ -14,7 +14,7 @@ import type { applyTactics } from "./tactics";
 type TacticalVector = ReturnType<typeof applyTactics>;
 type Winner = ExtendedMatchResult["winner"];
 
-export interface SliderAdjustedRatings {
+interface SliderAdjustedRatings {
   homeOffense: number;
   homeDefense: number;
   awayOffense: number;
@@ -22,7 +22,7 @@ export interface SliderAdjustedRatings {
   baseVariance: number;
 }
 
-export interface MatchOutcomeInputs {
+interface MatchOutcomeInputs {
   outcome: SportMatchOutcome;
   ratings: SliderAdjustedRatings;
   homeStrength: number;

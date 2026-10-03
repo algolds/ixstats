@@ -5,14 +5,14 @@ import { getNationalIssuesConfig } from "~/lib/national-issues/config";
 import { INTENT_CATEGORY_TO_TEMPLATE, spawnResistanceForIntent } from "~/lib/intent/resistance";
 import type { Category } from "~/lib/intent/assemble";
 
-export interface PolicyMaintenanceResult {
+interface PolicyMaintenanceResult {
   countriesProcessed: number;
   policiesProcessed: number;
   totalCostDebited: number;
   volatileSpawns: SpawnVolatileIssuesResult;
 }
 
-export interface SpawnVolatileIssuesResult {
+interface SpawnVolatileIssuesResult {
   policiesRolled: number;
   policyIssuesSpawned: number;
   intentsRolled: number;
@@ -24,7 +24,7 @@ export interface SpawnVolatileIssuesResult {
  * (fiscal/trade/defense/…) don't match template domains (economic/military/…);
  * this bridges the vocabulary (the "fixed matching" fix).
  */
-export const POLICY_CATEGORY_TO_TEMPLATE: Record<string, string[]> = {
+const POLICY_CATEGORY_TO_TEMPLATE: Record<string, string[]> = {
   fiscal: ["economic"],
   financial: ["economic"],
   economics: ["economic"],
@@ -81,7 +81,7 @@ function policyTemplateTokens(policy: { category: string; policyType: string }):
  *
  * Never throws — best-effort, per-country failures are caught.
  */
-export async function spawnVolatileIssues(): Promise<SpawnVolatileIssuesResult> {
+async function spawnVolatileIssues(): Promise<SpawnVolatileIssuesResult> {
   const result: SpawnVolatileIssuesResult = {
     policiesRolled: 0,
     policyIssuesSpawned: 0,

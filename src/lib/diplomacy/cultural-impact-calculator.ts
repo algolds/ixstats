@@ -24,7 +24,7 @@ import { DiplomaticChoiceTracker, type DiplomaticChoice } from "./choice-tracker
 // TYPE DEFINITIONS
 // ============================================================================
 
-export interface CulturalExchangeData {
+interface CulturalExchangeData {
   id: string;
   type: string; // festival, exhibition, education, etc.
   scenarioType?: CulturalScenarioType;
@@ -38,7 +38,7 @@ export interface CulturalExchangeData {
   endDate: Date;
 }
 
-export interface CulturalExchangeOutcome {
+interface CulturalExchangeOutcome {
   exchangeId: string;
   responseChoice: string;
   culturalImpactChange: number; // -100 to +100
@@ -48,7 +48,7 @@ export interface CulturalExchangeOutcome {
   publicPerception: number; // 0-100
 }
 
-export interface RelationshipImpactResult {
+interface RelationshipImpactResult {
   currentState: RelationshipState;
   newState: RelationshipState;
   stateChanged: boolean;
@@ -64,7 +64,7 @@ export interface RelationshipImpactResult {
   reasoning: string[];
 }
 
-export interface CulturalExchangeHistory {
+interface CulturalExchangeHistory {
   totalExchanges: number;
   successfulExchanges: number;
   failedExchanges: number;

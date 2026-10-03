@@ -26,7 +26,7 @@ import type {
 // Identity Transform
 // ──────────────────────────────────────────────
 
-export const IDENTITY_MATRIX: AffineMatrix = {
+const IDENTITY_MATRIX: AffineMatrix = {
   a: 1,
   b: 0,
   c: 0,
@@ -268,7 +268,7 @@ function ensureWinding(ring: Position[], shouldBeCCW: boolean): Position[] {
 }
 
 /** Apply affine transform to a Polygon or MultiPolygon geometry. */
-export function applyAffineToGeometry(
+function applyAffineToGeometry(
   geometry: Polygon | MultiPolygon,
   matrix: AffineMatrix
 ): Polygon | MultiPolygon {
@@ -331,27 +331,10 @@ interface SnapInfo {
 }
 
 /**
- * Extract the ordered border ring vertices from a country border geometry.
- * For MultiPolygon, uses the outer ring of the largest polygon.
- */
-export function extractBorderRing(countryBorder: Polygon | MultiPolygon): Position[] {
-  if (countryBorder.type === "Polygon") {
-    return countryBorder.coordinates[0] ?? [];
-  }
-  // MultiPolygon: pick the largest outer ring by vertex count
-  let best: Position[] = [];
-  for (const poly of countryBorder.coordinates) {
-    const ring = poly[0];
-    if (ring && ring.length > best.length) best = ring;
-  }
-  return best;
-}
-
-/**
  * Extract ALL outer rings from a country border geometry.
  * For MultiPolygon, returns the outer ring of every polygon (supports islands).
  */
-export function extractAllBorderRings(countryBorder: Polygon | MultiPolygon): Position[][] {
+function extractAllBorderRings(countryBorder: Polygon | MultiPolygon): Position[][] {
   if (countryBorder.type === "Polygon") {
     const ring = countryBorder.coordinates[0];
     return ring && ring.length > 0 ? [ring] : [];
@@ -440,35 +423,6 @@ export function snapProvincesToBorderMultiRing(
     }
 
     const geometry = snapGeometryToBorder(province.geometry, edges, ring, tolerance);
-    return { ...province, geometry };
-  });
-}
-
-/**
- * Snap province outer vertices to the country border and conform edges
- * to follow the actual border curve.
- *
- * For each province ring:
- * 1. Snap vertices within tolerance to the nearest border point
- * 2. For consecutive snapped vertices, insert intermediate border vertices
- *    so the province edge follows the actual border curve
- * 3. Ensure the result is a closed polygon
- */
-export function snapProvincesToBorder(
-  provinces: ProvinceFeature[],
-  countryBorder: Polygon | MultiPolygon,
-  tolerance: number
-): ProvinceFeature[] {
-  const borderRing = extractBorderRing(countryBorder);
-  // Extract edges from the outer ring only (not holes) so edge indices match borderRing
-  const borderEdges: Array<[Position, Position]> = [];
-  for (let i = 0; i < borderRing.length - 1; i++) {
-    borderEdges.push([borderRing[i]!, borderRing[i + 1]!]);
-  }
-
-  return provinces.map((province) => {
-    if (!province.included) return province;
-    const geometry = snapGeometryToBorder(province.geometry, borderEdges, borderRing, tolerance);
     return { ...province, geometry };
   });
 }
@@ -800,24 +754,6 @@ function extractGeometryVertices(geometry: Polygon | MultiPolygon): Position[] {
     }
   }
   return all;
-}
-
-function _extractEdges(geometry: Polygon | MultiPolygon): Array<[Position, Position]> {
-  const edges: Array<[Position, Position]> = [];
-  const addRingEdges = (ring: Position[]) => {
-    for (let i = 0; i < ring.length - 1; i++) {
-      edges.push([ring[i]!, ring[i + 1]!]);
-    }
-  };
-
-  if (geometry.type === "Polygon") {
-    for (const ring of geometry.coordinates) addRingEdges(ring);
-  } else {
-    for (const polygon of geometry.coordinates) {
-      for (const ring of polygon) addRingEdges(ring);
-    }
-  }
-  return edges;
 }
 
 function findNearestPoint(point: Position, candidates: Position[]): Position | null {

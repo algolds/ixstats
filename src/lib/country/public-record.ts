@@ -21,7 +21,7 @@
 
 // ─── Directives ─────────────────────────────────────────────────────────────
 
-export type PublicDirectiveStatus = "active" | "completed";
+type PublicDirectiveStatus = "active" | "completed";
 
 /** Statuses a visitor may see: declared (in force) and completed. */
 export const PUBLIC_DIRECTIVE_STATUSES: readonly PublicDirectiveStatus[] = ["active", "completed"];
@@ -139,7 +139,7 @@ export function toPublicIssueOutcomes(
  * the budget relation lists (structure and department allocations, sub-budgets, revenue sources)
  * come back empty. Offices, leaders, branches, departments and political metrics are kept.
  */
-export type RedactedGovernmentBudget<T> = Omit<T, "totalBudget"> & { totalBudget?: undefined };
+type RedactedGovernmentBudget<T> = Omit<T, "totalBudget"> & { totalBudget?: undefined };
 
 type DepartmentLike = { budgetAllocations?: unknown; subBudgets?: unknown };
 

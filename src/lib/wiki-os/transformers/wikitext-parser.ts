@@ -233,7 +233,7 @@ function convertWikitextImages(text: string, wikiSource: string): string {
 /**
  * Strips wikitext file, image, and media links, properly handling nested brackets.
  */
-export function stripWikitextFiles(text: string): string {
+function stripWikitextFiles(text: string): string {
   let result = "";
   let i = 0;
 

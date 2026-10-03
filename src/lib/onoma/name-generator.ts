@@ -78,22 +78,6 @@ export function generateFantasySyllableName(): string {
 }
 
 /**
- * Generates a name using a Markov chain trained on the provided names list.
- */
-export function generateMarkovName(
-  trainingNames: string[],
-  options: GenerateOptions = {},
-  order = 2
-): string | null {
-  if (!trainingNames || trainingNames.length === 0) {
-    return null;
-  }
-  const chain = new MarkovChain(order);
-  chain.addWords(trainingNames);
-  return chain.generate(options);
-}
-
-/**
  * Generates a noble/clan surname formatted according to the rules of the selected culture.
  */
 export function generateNobleSurname(
@@ -122,7 +106,7 @@ export function generateNobleSurname(
   }
 }
 
-export interface PresetGenerationContext {
+interface PresetGenerationContext {
   category: NameCategory;
   subType?: string;
   gender?: Gender;
@@ -261,7 +245,7 @@ export function generatePresetName(ctx: PresetGenerationContext): string | null 
   return null;
 }
 
-export interface ExportNameItem {
+interface ExportNameItem {
   name: string;
   ipa: string;
   syllables: number;

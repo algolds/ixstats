@@ -193,13 +193,13 @@ export function useEconomicModel(
 
   // Computed: Projected Data
   const projectedData = useMemo(() => {
+    const gdp = country.economicData?.gdp;
+    const population = country.population;
+    // No recorded base GDP or population means nothing real to project from
+    if (gdp == null || population == null) return [];
     return generateYearlyProjectionData(
       parameters,
-      {
-        gdp: country.economicData?.gdp ?? 1000,
-        population: country.population ?? 1000000,
-        sectoralOutputs,
-      },
+      { gdp, population, sectoralOutputs },
       policyEffects
     );
   }, [parameters, sectoralOutputs, policyEffects, country.economicData?.gdp, country.population]);

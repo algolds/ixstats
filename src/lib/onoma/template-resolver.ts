@@ -7,7 +7,7 @@ export function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-export function pickAndRemove<T>(arr: T[]): T | undefined {
+function pickAndRemove<T>(arr: T[]): T | undefined {
   if (arr.length === 0) return undefined;
   const idx = Math.floor(Math.random() * arr.length);
   const val = arr[idx];

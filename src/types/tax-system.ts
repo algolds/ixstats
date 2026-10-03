@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 
-export const TaxSystemInputSchema = z.object({
+const TaxSystemInputSchema = z.object({
   taxSystemName: z.string().min(1, "Tax system name is required"),
   taxAuthority: z.string().optional(),
   fiscalYear: z.string().min(1, "Fiscal year is required"),
@@ -19,7 +19,7 @@ export const TaxSystemInputSchema = z.object({
   collectionEfficiency: z.number().min(0).max(100).optional(),
 });
 
-export const TaxCategoryInputSchema = z.object({
+const TaxCategoryInputSchema = z.object({
   categoryName: z.string().min(1, "Category name is required"),
   categoryType: z.string().min(1, "Category type is required"),
   description: z.string().optional(),
@@ -36,7 +36,7 @@ export const TaxCategoryInputSchema = z.object({
   icon: z.string().optional(),
 });
 
-export const TaxBracketInputSchema = z.object({
+const TaxBracketInputSchema = z.object({
   bracketName: z.string().optional(),
   minIncome: z.number().nonnegative(),
   maxIncome: z.number().nonnegative().optional(),
@@ -47,7 +47,7 @@ export const TaxBracketInputSchema = z.object({
   priority: z.number().int().min(1),
 });
 
-export const TaxExemptionInputSchema = z.object({
+const TaxExemptionInputSchema = z.object({
   categoryId: z.string().optional(),
   exemptionName: z.string().min(1),
   exemptionType: z.string().min(1),
@@ -60,7 +60,7 @@ export const TaxExemptionInputSchema = z.object({
   endDate: z.date().optional(),
 });
 
-export const TaxDeductionInputSchema = z.object({
+const TaxDeductionInputSchema = z.object({
   deductionName: z.string().min(1),
   deductionType: z.string().min(1),
   description: z.string().optional(),
@@ -79,58 +79,13 @@ export const TaxBuilderStateSchema = z.object({
   deductions: z.record(z.string(), z.array(TaxDeductionInputSchema)),
   selectedAtomicTaxComponents: z.array(z.string()).optional(),
 });
-
-export type TaxBuilderStateZod = z.infer<typeof TaxBuilderStateSchema>;
-
 // Base enums and constants
-export const TAX_CATEGORIES = {
-  INCOME: "Personal Income Tax",
-  CORPORATE: "Corporate Income Tax",
-  SALES: "Sales Tax / VAT",
-  PROPERTY: "Property Tax",
-  CAPITAL_GAINS: "Capital Gains Tax",
-  ESTATE: "Estate Tax",
-  GIFT: "Gift Tax",
-  CUSTOMS: "Customs Duties",
-  EXCISE: "Excise Tax",
-  PAYROLL: "Payroll Tax",
-  OTHER: "Other Tax",
-} as const;
-
-export const TAX_TYPES = {
-  DIRECT: "Direct Tax",
-  INDIRECT: "Indirect Tax",
-} as const;
-
 export const CALCULATION_METHODS = {
   PERCENTAGE: "percentage",
   FIXED: "fixed",
   TIERED: "tiered",
   PROGRESSIVE: "progressive",
 } as const;
-
-export const EXEMPTION_TYPES = {
-  INDIVIDUAL: "Individual",
-  CORPORATE: "Corporate",
-  SECTOR: "Sector",
-  GEOGRAPHIC: "Geographic",
-  INCOME_BASED: "Income Based",
-} as const;
-
-export const DEDUCTION_TYPES = {
-  STANDARD: "Standard",
-  ITEMIZED: "Itemized",
-  ABOVE_THE_LINE: "Above the Line",
-  BELOW_THE_LINE: "Below the Line",
-} as const;
-
-export const FISCAL_YEARS = {
-  CALENDAR: "calendar",
-  APRIL_MARCH: "april-march",
-  JULY_JUNE: "july-june",
-  OCTOBER_SEPTEMBER: "october-september",
-} as const;
-
 // Core tax system types
 export interface TaxSystem {
   id: string;
@@ -159,7 +114,7 @@ export interface TaxSystem {
   taxCalculations?: TaxCalculation[];
 }
 
-export interface TaxCategory {
+interface TaxCategory {
   id: string;
   taxSystemId: string;
   categoryName: string;
@@ -186,7 +141,7 @@ export interface TaxCategory {
   taxDeductions?: TaxDeduction[];
 }
 
-export interface TaxBracket {
+interface TaxBracket {
   id: string;
   taxSystemId: string;
   categoryId: string;
@@ -202,7 +157,7 @@ export interface TaxBracket {
   updatedAt: Date;
 }
 
-export interface TaxExemption {
+interface TaxExemption {
   id: string;
   taxSystemId: string;
   categoryId?: string;
@@ -219,7 +174,7 @@ export interface TaxExemption {
   updatedAt: Date;
 }
 
-export interface TaxDeduction {
+interface TaxDeduction {
   id: string;
   categoryId: string;
   deductionName: string;
@@ -234,7 +189,7 @@ export interface TaxDeduction {
   updatedAt: Date;
 }
 
-export interface TaxPolicy {
+interface TaxPolicy {
   id: string;
   taxSystemId: string;
   policyName: string;
@@ -252,7 +207,7 @@ export interface TaxPolicy {
   updatedAt: Date;
 }
 
-export interface TaxCalculation {
+interface TaxCalculation {
   id: string;
   taxSystemId: string;
   calculationName: string;
@@ -286,7 +241,7 @@ export interface TaxSystemInput {
   collectionEfficiency?: number;
 }
 
-export type CalculationMethodValue = (typeof CALCULATION_METHODS)[keyof typeof CALCULATION_METHODS];
+type CalculationMethodValue = (typeof CALCULATION_METHODS)[keyof typeof CALCULATION_METHODS];
 
 export interface TaxCategoryInput {
   categoryName: string;
@@ -341,59 +296,6 @@ export interface TaxDeductionInput {
 }
 
 // Calculator types
-export interface TaxCalculationRequest {
-  taxSystemId: string;
-  taxYear: number;
-  income: number;
-  deductions?: TaxDeductionAmount[];
-  exemptions?: TaxExemptionAmount[];
-  specialCircumstances?: any;
-}
-
-export interface TaxDeductionAmount {
-  deductionId: string;
-  amount: number;
-  description?: string;
-}
-
-export interface TaxExemptionAmount {
-  exemptionId: string;
-  amount: number;
-  description?: string;
-}
-
-export interface TaxCalculationResult {
-  taxableIncome: number;
-  totalDeductions: number;
-  totalExemptions: number;
-  adjustedGrossIncome: number;
-  taxOwed: number;
-  effectiveRate: number;
-  marginalRate: number;
-  breakdown: TaxCategoryBreakdown[];
-  appliedBrackets: AppliedTaxBracket[];
-}
-
-export interface TaxCategoryBreakdown {
-  categoryId: string;
-  categoryName: string;
-  taxableAmount: number;
-  taxOwed: number;
-  rate: number;
-  exemptions: number;
-  deductions: number;
-}
-
-export interface AppliedTaxBracket {
-  bracketId: string;
-  bracketName?: string;
-  minIncome: number;
-  maxIncome?: number;
-  rate: number;
-  taxableAmount: number;
-  taxOwed: number;
-}
-
 // Templates and presets
 export interface TaxSystemTemplate {
   name: string;
@@ -403,7 +305,7 @@ export interface TaxSystemTemplate {
   categories: TaxCategoryTemplate[];
 }
 
-export interface TaxCategoryTemplate {
+interface TaxCategoryTemplate {
   categoryName: string;
   categoryType: string;
   description: string;
@@ -414,7 +316,7 @@ export interface TaxCategoryTemplate {
   deductions?: TaxDeductionTemplate[];
 }
 
-export interface TaxBracketTemplate {
+interface TaxBracketTemplate {
   bracketName?: string;
   minIncome: number;
   maxIncome?: number;
@@ -422,7 +324,7 @@ export interface TaxBracketTemplate {
   marginalRate: boolean;
 }
 
-export interface TaxExemptionTemplate {
+interface TaxExemptionTemplate {
   exemptionName: string;
   exemptionType: string;
   description: string;
@@ -430,7 +332,7 @@ export interface TaxExemptionTemplate {
   exemptionRate?: number;
 }
 
-export interface TaxDeductionTemplate {
+interface TaxDeductionTemplate {
   deductionName: string;
   deductionType: string;
   description: string;
@@ -439,54 +341,4 @@ export interface TaxDeductionTemplate {
 }
 
 // Validation types
-export interface TaxSystemValidation {
-  isValid: boolean;
-  errors: TaxValidationError[];
-  warnings: TaxValidationWarning[];
-}
-
-export interface TaxValidationError {
-  field: string;
-  message: string;
-  code: string;
-}
-
-export interface TaxValidationWarning {
-  field: string;
-  message: string;
-  code: string;
-  severity: "low" | "medium" | "high";
-}
-
 // Analytics and reporting types
-export interface TaxRevenueProjection {
-  category: string;
-  currentRevenue: number;
-  projectedRevenue: number;
-  growthRate: number;
-  confidence: number;
-}
-
-export interface TaxAnalytics {
-  totalRevenue: number;
-  revenueByCategory: Record<string, number>;
-  effectiveRates: Record<string, number>;
-  complianceRates: Record<string, number>;
-  projections: TaxRevenueProjection[];
-  trends: TaxTrend[];
-}
-
-export interface TaxTrend {
-  period: string;
-  category: string;
-  value: number;
-  change: number;
-  changePercent: number;
-}
-
-export type TaxCategoryType = keyof typeof TAX_CATEGORIES;
-export type TaxTypeEnum = keyof typeof TAX_TYPES;
-export type CalculationMethod = keyof typeof CALCULATION_METHODS;
-export type ExemptionType = keyof typeof EXEMPTION_TYPES;
-export type DeductionType = keyof typeof DEDUCTION_TYPES;
-export type FiscalYear = keyof typeof FISCAL_YEARS;

@@ -17,7 +17,7 @@ import { isSystemOwner } from "~/lib/auth";
  * Extract Discord user info from Clerk's external accounts.
  * Uses the Clerk backend SDK to read the user's OAuth connections.
  */
-export async function extractDiscordFromClerk(
+async function extractDiscordFromClerk(
   clerkUserId: string
 ): Promise<{ discordUserId: string; discordUsername: string } | null> {
   try {

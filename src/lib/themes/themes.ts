@@ -669,25 +669,4 @@ export const jsonThemes: Record<string, JsonColorTheme> = {
     punctuation: "#999999",
   },
 };
-
-/** Curated subset of popular themes for UI pickers and demos. */
-export const popularThemes = [
-  "github-dark",
-  "github-light",
-  "monokai",
-  "dracula",
-  "nord",
-  "one-dark-pro",
-  "catppuccin-mocha",
-  "tokyo-night",
-  "solarized-dark",
-  "night-owl",
-  "rose-pine",
-  "gruvbox-dark-medium",
-  "ayu-dark",
-  "material-theme-ocean",
-  "vitesse-dark",
-] as const;
-
-export type PopularTheme = (typeof popularThemes)[number];
 export type ShikiThemeName = keyof typeof jsonThemes;

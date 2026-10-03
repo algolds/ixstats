@@ -17,7 +17,7 @@ export type MaterialFinishType =
   | "ASTRAL_VOID"
   | "SOLAR_CROWN";
 
-export interface RarityMaterialConfig {
+interface RarityMaterialConfig {
   rarity: string;
   name: string;
   materialName: string;

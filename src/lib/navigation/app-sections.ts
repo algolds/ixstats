@@ -82,10 +82,10 @@ import {
 export type NavIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
 /** `data-app` tint keys (tokens.css). Omitted = the default (indigo) tint. */
-export type AppTint =
+type AppTint =
   "admin" | "mycountry" | "intel" | "maps" | "thinkpages" | "vault" | "forum" | "wiki" | "sports";
 
-export type AppId =
+type AppId =
   | "home"
   | "mycountry"
   | "maps"
@@ -110,7 +110,7 @@ export interface NavigationVisibilitySettings {
   showHelpTab?: boolean;
 }
 
-export interface AppSection {
+interface AppSection {
   id: string;
   label: string;
   /** A real route, optionally with a query (`/settings?tab=appearance`). */
@@ -590,7 +590,7 @@ function splitHref(href: string): { path: string; query: URLSearchParams } {
 }
 
 /** `/a/b/` → `/a/b`; empty → `/`. */
-export function normalizePath(pathname: string): string {
+function normalizePath(pathname: string): string {
   const path = pathname.split("?")[0]?.split("#")[0] ?? "/";
   if (path === "" || path === "/") return "/";
   return path.endsWith("/") ? path.slice(0, -1) : path;
@@ -687,7 +687,7 @@ export function groupSections(
   return runs;
 }
 
-export interface AppVisibilityContext {
+interface AppVisibilityContext {
   signedIn: boolean;
   isAdmin: boolean;
   /** Holds the `labs.access` permission (sees Labs even when `showLabsTab` is off). */

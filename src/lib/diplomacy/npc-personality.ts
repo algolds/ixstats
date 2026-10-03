@@ -32,7 +32,7 @@ import type {
  * 8 core personality traits that define NPC country behavior
  * All traits are measured on a 0-100 scale
  */
-export interface PersonalityTraits {
+interface PersonalityTraits {
   /**
    * ASSERTIVENESS (0-100)
    * Willingness to take strong diplomatic stances and push for national interests
@@ -110,7 +110,7 @@ export interface PersonalityTraits {
  * Personality archetype defining overall strategic approach
  * Each archetype has characteristic trait ranges
  */
-export type PersonalityArchetype =
+type PersonalityArchetype =
   | "aggressive_expansionist"
   | "peaceful_merchant"
   | "cautious_isolationist"
@@ -141,7 +141,7 @@ export interface NPCPersonality {
  * Personality drift tracking for gradual evolution
  * Max ±2 points per IxTime year across all traits
  */
-export interface PersonalityDrift {
+interface PersonalityDrift {
   countryId: string;
   ixTimeYear: number;
   traitChanges: Partial<PersonalityTraits>;
@@ -218,7 +218,7 @@ export interface ObservableData {
 /**
  * Scenario types for behavioral prediction
  */
-export type DiplomaticScenario =
+type DiplomaticScenario =
   | "alliance_proposal"
   | "trade_dispute"
   | "cultural_exchange_offer"
@@ -233,7 +233,7 @@ export type DiplomaticScenario =
 /**
  * Predicted response to diplomatic scenario
  */
-export interface BehavioralResponse {
+interface BehavioralResponse {
   scenario: DiplomaticScenario;
   predictedAction: "accept" | "reject" | "negotiate" | "escalate" | "defer";
   confidence: number; // 0-100
@@ -253,7 +253,7 @@ export interface BehavioralResponse {
 /**
  * Relationship preference direction
  */
-export interface RelationshipPreference {
+interface RelationshipPreference {
   targetCountryId: string;
   desiredState: MarkovRelationshipState;
   currentState: MarkovRelationshipState;
@@ -266,7 +266,7 @@ export interface RelationshipPreference {
 /**
  * Event generation modifier based on personality
  */
-export interface EventModifier {
+interface EventModifier {
   eventType: string;
   probabilityMultiplier: number; // 0-2 (0=never, 1=baseline, 2=twice as likely)
   severityAdjustment: number; // -2 to +2 (adjust event severity)
@@ -1342,170 +1342,4 @@ export class NPCPersonalitySystem {
 
     return { updatedTraits, drift };
   }
-}
-
-// ==================== HELPER FUNCTIONS ====================
-
-/**
- * Create observable data from database query results
- */
-export function createObservableDataFromDatabase(dbData: {
-  relationships: Array<{
-    relationship: string;
-    strength: number;
-    tradeVolume?: number;
-    culturalExchange?: string;
-    treaties?: string[];
-  }>;
-  embassies: Array<{
-    level: number;
-    influence: number;
-    specialization?: string;
-  }>;
-  treaties: Array<{
-    type: string;
-    parties?: string;
-  }>;
-  historicalActions?: DiplomaticChoice[];
-}): ObservableData {
-  const relationships = dbData.relationships;
-
-  // Count relationships by type
-  const hostile = relationships.filter(
-    (r) => r.relationship === "hostile" || r.relationship === "Hostile"
-  ).length;
-  const tense = relationships.filter(
-    (r) => r.relationship === "tense" || r.relationship === "strained" || r.relationship === "cool"
-  ).length;
-  const neutral = relationships.filter(
-    (r) => r.relationship === "neutral" || r.relationship === "cooperative"
-  ).length;
-  const friendly = relationships.filter((r) => r.relationship === "friendly").length;
-  const allied = relationships.filter((r) => r.relationship === "alliance").length;
-
-  const avgStrength =
-    relationships.reduce((sum, r) => sum + r.strength, 0) / Math.max(1, relationships.length);
-  const deterioratingCount = relationships.filter((r) => r.strength < 30).length;
-
-  // Embassy metrics
-  const embassies = dbData.embassies;
-  const securityEmbassies = embassies.filter((e) => e.specialization === "security").length;
-  const economicEmbassies = embassies.filter((e) => e.specialization === "economic").length;
-  const culturalEmbassies = embassies.filter((e) => e.specialization === "cultural").length;
-  const avgLevel = embassies.reduce((sum, e) => sum + e.level, 0) / Math.max(1, embassies.length);
-  const avgInfluence =
-    embassies.reduce((sum, e) => sum + e.influence, 0) / Math.max(1, embassies.length);
-
-  // Economic metrics
-  const totalTradeVolume = relationships.reduce((sum, r) => sum + (r.tradeVolume || 0), 0);
-  const highValuePartners = relationships.filter((r) => (r.tradeVolume || 0) > 500000).length;
-  const tradeTreatyCount = relationships.filter((r) =>
-    r.treaties?.some((t) => t.toLowerCase().includes("trade"))
-  ).length;
-
-  // Cultural metrics
-  const highExchangeCount = relationships.filter(
-    (r) => r.culturalExchange === "High" || r.culturalExchange === "high"
-  ).length;
-  const mediumExchangeCount = relationships.filter(
-    (r) => r.culturalExchange === "Medium" || r.culturalExchange === "medium"
-  ).length;
-
-  // Treaty metrics
-  const treaties = dbData.treaties;
-  const defensiveTreaties = treaties.filter((t) => t.type.toLowerCase().includes("defense")).length;
-  const tradeTreaties = treaties.filter((t) => t.type.toLowerCase().includes("trade")).length;
-  const culturalTreaties = treaties.filter((t) => t.type.toLowerCase().includes("cultural")).length;
-  const multilateralTreaties = treaties.filter(
-    (t) => t.parties && t.parties.split(",").length > 2
-  ).length;
-
-  // Historical actions
-  const actions = dbData.historicalActions || [];
-  const cooperativeActions = actions.filter((a) =>
-    ["propose_alliance", "trade_agreement", "cultural_exchange"].includes(a.type)
-  ).length;
-  const aggressiveActions = actions.filter((a) =>
-    ["sanction", "close_embassy", "cancel_treaty"].includes(a.type)
-  ).length;
-
-  return {
-    relationships: {
-      total: relationships.length,
-      hostile,
-      tense,
-      neutral,
-      friendly,
-      allied,
-      averageStrength: Math.round(avgStrength),
-      deterioratingCount,
-    },
-    embassies: {
-      total: embassies.length,
-      securitySpecialized: securityEmbassies,
-      economicSpecialized: economicEmbassies,
-      culturalSpecialized: culturalEmbassies,
-      averageLevel: Math.round(avgLevel * 10) / 10,
-      averageInfluence: Math.round(avgInfluence),
-    },
-    economic: {
-      totalTradeVolume,
-      highValuePartners,
-      tradeTreatyCount,
-      tradeGrowthTrend: 0, // Would be calculated from historical data
-    },
-    cultural: {
-      highExchangeCount,
-      mediumExchangeCount,
-      culturalTreatyCount: culturalTreaties,
-      totalExchangePrograms: highExchangeCount + mediumExchangeCount,
-    },
-    historical: {
-      totalActions: actions.length,
-      cooperativeActions,
-      aggressiveActions,
-      consistencyScore: 50, // Would be calculated from action patterns
-      policyVolatility: 50, // Would be calculated from policy changes
-    },
-    treaties: {
-      total: treaties.length,
-      defensive: defensiveTreaties,
-      trade: tradeTreaties,
-      cultural: culturalTreaties,
-      multilateral: multilateralTreaties,
-    },
-  };
-}
-
-/**
- * Get archetype description for UI display
- */
-export function getArchetypeDescription(archetype: PersonalityArchetype): string {
-  const descriptions: Record<PersonalityArchetype, string> = {
-    aggressive_expansionist:
-      "Assertive power-seeker with military focus, willing to take risks and confront rivals to expand influence.",
-    peaceful_merchant:
-      "Trade-focused cooperator that prioritizes economic partnerships over military power and seeks mutual prosperity.",
-    cautious_isolationist:
-      "Risk-averse nation that maintains minimal foreign entanglements, prefers neutrality and independence.",
-    cultural_diplomat:
-      "Soft power advocate that builds relationships through cultural exchanges and values people-to-people ties.",
-    pragmatic_realist:
-      "Balanced actor that adapts to circumstances, maintains flexibility, and pursues practical advantages.",
-    ideological_hardliner:
-      "Principled nation that adheres to core values, difficult to compromise with, willing to sacrifice for beliefs.",
-  };
-
-  return descriptions[archetype];
-}
-
-/**
- * Get trait interpretation for UI display
- */
-export function interpretTrait(traitName: keyof PersonalityTraits, value: number): string {
-  if (value >= 75) return "Very High";
-  if (value >= 60) return "High";
-  if (value >= 40) return "Moderate";
-  if (value >= 25) return "Low";
-  return "Very Low";
 }

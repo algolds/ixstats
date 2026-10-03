@@ -145,40 +145,6 @@ export function calculateNegativeSpaceGaps(
   return null;
 }
 
-export function getNearestPointOnGeometryBoundary(
-  pt: [number, number],
-  geometry: any
-): [number, number] {
-  if (!geometry) return pt;
-  let minDistance = Infinity;
-  let nearestPoint: [number, number] = pt;
-
-  const checkRing = (ring: [number, number][]) => {
-    for (let i = 0; i < ring.length; i++) {
-      const coord = ring[i]!;
-      const dist = Math.hypot(coord[0] - pt[0], coord[1] - pt[1]);
-      if (dist < minDistance) {
-        minDistance = dist;
-        nearestPoint = coord;
-      }
-    }
-  };
-
-  if (geometry.type === "Polygon") {
-    for (const ring of geometry.coordinates) {
-      checkRing(ring);
-    }
-  } else if (geometry.type === "MultiPolygon") {
-    for (const poly of geometry.coordinates) {
-      for (const ring of poly) {
-        checkRing(ring);
-      }
-    }
-  }
-
-  return nearestPoint;
-}
-
 export function splitPolygonByLine(polygon: any, lineCoords: [number, number][]) {
   if (lineCoords.length < 2) return null;
   const lineFeature = {

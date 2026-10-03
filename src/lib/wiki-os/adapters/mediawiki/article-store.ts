@@ -13,9 +13,7 @@ import { getArticleWikitext, getPageHistory, getRevisionWikitext, type WikiSourc
 import { fetchMediaWikiPageAuthorsAndRevisions } from "./bridge/http-reader";
 import type { ArticleAuthorInfo } from "~/lib/wiki-os/types/canonical";
 
-export type { ArticleAuthorInfo };
-
-export interface ShadowResult {
+interface ShadowResult {
   wikitext: string;
   revid: number | null;
   timestamp: string | null;
@@ -23,7 +21,7 @@ export interface ShadowResult {
   stale: boolean;
 }
 
-export interface HistoryRevision {
+interface HistoryRevision {
   /** Revision reference accepted by getRevisionWikitext (see `toRevisionRef`). */
   revid: string;
   timestamp: string;
@@ -129,7 +127,7 @@ export async function saveArticleHtmlShadow(
 /**
  * Fetch revision history from PostgreSQL, falling back to MediaWiki.
  */
-export async function getPageHistoryShadow(
+export async function getArticleHistoryShadow(
   title: string,
   limit = 50,
   offset?: number,
@@ -169,9 +167,6 @@ export async function getPageHistoryShadow(
     fromShadow: false,
   };
 }
-
-/** Alias for getPageHistoryShadow */
-export const getArticleHistoryShadow = getPageHistoryShadow;
 
 type MediaWikiAuthorsData = Awaited<ReturnType<typeof fetchMediaWikiPageAuthorsAndRevisions>>;
 

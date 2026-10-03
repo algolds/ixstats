@@ -116,7 +116,7 @@ type RenderableTemplate = Pick<
   "title" | "description" | "longDescription" | "responseOptions" | "deadlineDaysBase"
 >;
 
-export interface RenderedIssue {
+interface RenderedIssue {
   title: string;
   description: string;
   longDescription: string | null;

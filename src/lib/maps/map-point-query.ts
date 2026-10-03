@@ -58,11 +58,3 @@ function findContainingFeature(
 
   return null;
 }
-
-/**
- * Extract display info from a client-side query result feature.
- */
-export function extractFeatureInfo(feature: Feature | null): Record<string, unknown> | null {
-  if (!feature?.properties) return null;
-  return feature.properties;
-}

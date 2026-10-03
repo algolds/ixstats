@@ -9,7 +9,7 @@
 
 import type { CardInstance } from "~/types/cards-display";
 
-export interface CardDesignIconMetadata {
+interface CardDesignIconMetadata {
   id?: string;
   name?: string;
   slug?: string;

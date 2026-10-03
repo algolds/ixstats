@@ -25,7 +25,7 @@ import {
   WEAPON_SYSTEMS_EXTENDED,
 } from "./equipment-extended";
 
-export interface EquipmentCatalogSeedRow {
+interface EquipmentCatalogSeedRow {
   key: string;
   name: string;
   manufacturer: string;
@@ -42,7 +42,7 @@ export interface EquipmentCatalogSeedRow {
   isActive: boolean;
 }
 
-export interface ManufacturerSeedRow {
+interface ManufacturerSeedRow {
   key: string;
   name: string;
   country: string;

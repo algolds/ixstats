@@ -28,7 +28,7 @@ import type {
   MediaBlock,
 } from "../core/wiki-ast";
 
-export interface WikitextParseResult extends WikiDocument {
+interface WikitextParseResult extends WikiDocument {
   parseConfidence: "full" | "partial";
 }
 
@@ -661,35 +661,3 @@ function plateLeavesToAstInlines(leaves?: any[]): WikiInlineNode[] {
 }
 
 // ─── Legacy HTML Fallback (For Explicit Visual Previews Only) ─────────────────
-
-export function astToHtml(doc: WikiDocument): string {
-  const parts: string[] = [];
-  for (const node of doc.nodes) {
-    switch (node.type) {
-      case "heading":
-      case "h2":
-      case "h3":
-      case "h4":
-        parts.push(
-          `<h${node.level || 2}>${serializeBlockNodeToWikitext(node)}</h${node.level || 2}>`
-        );
-        break;
-      case "paragraph":
-      case "p":
-        parts.push(`<p>${serializeBlockNodeToWikitext(node)}</p>`);
-        break;
-      case "infobox":
-      case "template":
-        parts.push(
-          `<div class="wikios-template-preview"><em>${serializeBlockNodeToWikitext(node)}</em></div>`
-        );
-        break;
-      case "divider":
-        parts.push("<hr>");
-        break;
-      default:
-        break;
-    }
-  }
-  return parts.join("\n");
-}

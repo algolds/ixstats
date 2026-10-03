@@ -104,20 +104,3 @@ export function ridgedNoise(x: number, y: number, config: NoiseConfig): number {
 
   return maxAmp > 0 ? sum / maxAmp : 0;
 }
-
-/**
- * Simple 2D value noise at a single frequency (no octaves).
- * Returns a value in [-1, 1].
- */
-export function simpleNoise(
-  x: number,
-  y: number,
-  freq: number,
-  angle: number,
-  ox: number,
-  oy: number
-): number {
-  const rx = x * Math.cos(angle) - y * Math.sin(angle);
-  const ry = x * Math.sin(angle) + y * Math.cos(angle);
-  return Math.sin((rx + ox) * freq) * Math.cos((ry + oy) * freq);
-}

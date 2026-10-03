@@ -6,7 +6,7 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { CountriesPageModular } from "./_components/CountriesPageModular";
 import type { CountryCardData } from "~/components/mycountry/dossier/CountryFocusCard";
-import { useBulkFlagCache } from "~/hooks/useUnifiedFlags";
+import { useBulkFlags } from "~/hooks/useUnifiedFlags";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { WarningTriangle } from "iconoir-react";
@@ -45,7 +45,7 @@ export default function CountriesPage() {
   }, [countriesResult]);
 
   // Bulk fetch flags
-  const { flagUrls, isLoading: flagsLoading } = useBulkFlagCache(countryNames);
+  const { flagUrls, isLoading: flagsLoading } = useBulkFlags(countryNames);
 
   // Process countries data for the focus grid
   const processedCountries: CountryCardData[] = useMemo(() => {

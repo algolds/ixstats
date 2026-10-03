@@ -17,8 +17,7 @@
 import { db } from "~/server/db";
 import { createHash } from "crypto";
 
-export type CacheService =
-  "mediawiki" | "unsplash" | "flagcdn" | "restcountries" | "wikimedia" | "custom";
+type CacheService = "mediawiki" | "unsplash" | "flagcdn" | "restcountries" | "wikimedia" | "custom";
 
 export type CacheType =
   | "infobox"
@@ -32,9 +31,9 @@ export type CacheType =
   | "html"
   | "json";
 
-export type ValidationStatus = "valid" | "stale" | "needs_revalidation" | "failed";
+type ValidationStatus = "valid" | "stale" | "needs_revalidation" | "failed";
 
-export interface CacheOptions {
+interface CacheOptions {
   service: CacheService;
   type: CacheType;
   identifier: string;
@@ -43,7 +42,7 @@ export interface CacheOptions {
   revalidationInterval?: number; // How often to check for updates (default: 7 days)
 }
 
-export interface CacheMetadata {
+interface CacheMetadata {
   lastFetched: string;
   contentHash?: string;
   apiCallCount?: number;
@@ -56,7 +55,7 @@ export interface CacheMetadata {
   [key: string]: any;
 }
 
-export interface CacheEntry<T = any> {
+interface CacheEntry<T = any> {
   id: string;
   key: string;
   service: string;
@@ -77,18 +76,14 @@ export interface CacheEntry<T = any> {
 /**
  * Generate a unique cache key
  */
-export function generateCacheKey(
-  service: CacheService,
-  type: CacheType,
-  identifier: string
-): string {
+function generateCacheKey(service: CacheService, type: CacheType, identifier: string): string {
   return `${service}:${type}:${identifier.toLowerCase().replace(/\s+/g, "_")}`;
 }
 
 /**
  * Generate a content hash for validation
  */
-export function generateContentHash(content: any): string {
+function generateContentHash(content: any): string {
   const normalized =
     typeof content === "string" ? content : JSON.stringify(content, Object.keys(content).sort());
 
@@ -98,7 +93,7 @@ export function generateContentHash(content: any): string {
 /**
  * Default cache TTL configurations (in milliseconds)
  */
-export const CACHE_TTL = {
+const CACHE_TTL = {
   // MediaWiki content (mostly static)
   INFOBOX: 7 * 24 * 60 * 60 * 1000, // 7 days
   WIKITEXT: 7 * 24 * 60 * 60 * 1000, // 7 days
@@ -118,7 +113,7 @@ export const CACHE_TTL = {
 /**
  * Revalidation intervals (how often to check if content changed)
  */
-export const REVALIDATION_INTERVAL = {
+const REVALIDATION_INTERVAL = {
   INFOBOX: 7 * 24 * 60 * 60 * 1000, // Check weekly
   WIKITEXT: 7 * 24 * 60 * 60 * 1000, // Check weekly
   TEMPLATE: 14 * 24 * 60 * 60 * 1000, // Check bi-weekly
@@ -130,7 +125,7 @@ export const REVALIDATION_INTERVAL = {
 /**
  * Universal External API Cache Service
  */
-export class ExternalApiCacheService {
+class ExternalApiCacheService {
   /**
    * Get a cached entry if it exists and is valid
    */

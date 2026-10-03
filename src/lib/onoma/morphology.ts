@@ -3,16 +3,16 @@
 
 import { MarkovChain } from "./markov-chain";
 
-export type GrammaticalGender = "masculine" | "feminine" | "neuter" | "common";
+type GrammaticalGender = "masculine" | "feminine" | "neuter" | "common";
 
-export interface DeclensionCase {
+interface DeclensionCase {
   singular: string;
   plural: string;
   descriptionSingular: string;
   descriptionPlural: string;
 }
 
-export interface DeclensionTable {
+interface DeclensionTable {
   nominative: DeclensionCase;
   genitive: DeclensionCase;
   accusative: DeclensionCase;

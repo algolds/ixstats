@@ -9,7 +9,7 @@
 import type { PrismaClient } from "@prisma/client";
 import type { Geometry } from "geojson";
 
-export interface TerrainPointResult {
+interface TerrainPointResult {
   elevationZone: {
     zoneId: string;
     zoneName: string;
@@ -24,7 +24,7 @@ export interface TerrainPointResult {
   } | null;
 }
 
-export interface TerrainAreaResult {
+interface TerrainAreaResult {
   elevationZones: Array<{
     zoneId: string;
     zoneName: string;

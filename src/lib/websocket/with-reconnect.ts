@@ -1,6 +1,6 @@
-export type ReconnectStrategy = "exponential" | "exponentialWithJitter" | "fixed";
+type ReconnectStrategy = "exponential" | "exponentialWithJitter" | "fixed";
 
-export interface ReconnectOptions {
+interface ReconnectOptions {
   maxAttempts: number;
   strategy: ReconnectStrategy;
   baseDelayMs: number;
@@ -10,7 +10,7 @@ export interface ReconnectOptions {
   onGaveUp?: () => void;
 }
 
-export interface ReconnectController {
+interface ReconnectController {
   readonly attempt: number;
   readonly isActive: boolean;
   schedule(): void;

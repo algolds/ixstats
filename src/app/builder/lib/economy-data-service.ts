@@ -7,10 +7,10 @@
  * @module economy-data-service
  */
 
-import type { RealCountryData } from "./economy-types";
+import type { RealCountryData } from "~/types/builder";
 
 // Re-export all types and default generator
-export * from "./economy-types";
+export * from "~/types/builder";
 export * from "./default-economic-inputs";
 
 let cachedEconomyData: RealCountryData[] | null = null;

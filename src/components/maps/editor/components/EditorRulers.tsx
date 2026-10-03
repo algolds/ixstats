@@ -121,7 +121,7 @@ export const EditorRulers = memo(function EditorRulers({
       const current = activeRef.current;
       if (current && setGuides) {
         const newGuide: EditorGuide = {
-          id: `guide-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          id: `guide-${Date.now()}-${crypto.randomUUID()}`,
           type: current.type,
           value: current.currentVal,
         };

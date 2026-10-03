@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-export type SpawnMode = "probability" | "deterministic" | "off";
+type SpawnMode = "probability" | "deterministic" | "off";
 
 export interface NationalIssuesConfig {
   maxIssuesPerSession: number;

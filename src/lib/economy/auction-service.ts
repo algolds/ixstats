@@ -160,7 +160,7 @@ export class AuctionService {
 
         const newAuction = await tx.cardAuction.create({
           data: {
-            id: `auction_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            id: `auction_${Date.now()}_${crypto.randomUUID()}`,
             cardInstanceId: ownership.id,
             sellerId: params.userId,
             startingPrice: params.startingPrice,
@@ -407,7 +407,7 @@ export class AuctionService {
         // 7. Create bid record
         await tx.auctionBid.create({
           data: {
-            id: `bid_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            id: `bid_${Date.now()}_${crypto.randomUUID()}`,
             auctionId: params.auctionId,
             bidderId: params.userId,
             amount: params.amount,

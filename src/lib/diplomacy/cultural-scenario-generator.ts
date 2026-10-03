@@ -31,12 +31,12 @@ export type CulturalScenarioType =
   | "festival_security"
   | "artistic_freedom";
 
-export type ResponseRequirement = {
+type ResponseRequirement = {
   skill: "negotiation" | "cultural_sensitivity" | "economic" | "legal" | "security";
   level: number; // 0-100
 };
 
-export interface CulturalScenarioTemplate {
+interface CulturalScenarioTemplate {
   type: CulturalScenarioType;
   name: string;
   description: string;
@@ -47,7 +47,7 @@ export interface CulturalScenarioTemplate {
   tags: string[];
 }
 
-export interface ScenarioContext {
+interface ScenarioContext {
   exchangeId: string;
   exchangeType: string;
   country1: {
@@ -69,7 +69,7 @@ export interface ScenarioContext {
   economicTies: number; // 0-100
 }
 
-export interface ResponseOption {
+interface ResponseOption {
   id: string;
   label: string;
   description: string;
@@ -95,12 +95,12 @@ export interface ResponseOption {
   npcsLikelyToChoose: string[]; // Personality archetypes
 }
 
-export type CulturalScenarioRecentAction = Pick<
+type CulturalScenarioRecentAction = Pick<
   DiplomaticChoice,
   "id" | "type" | "targetCountry" | "targetCountryId" | "timestamp" | "ixTimeTimestamp"
 >;
 
-export interface CulturalScenarioMetadata {
+interface CulturalScenarioMetadata {
   triggeredBy: string;
   relevanceScore: number;
   playerReputation?: CumulativeEffects;
@@ -275,7 +275,7 @@ export class CulturalScenarioGenerator {
     };
 
     return {
-      id: `cultural_scenario_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+      id: `cultural_scenario_${Date.now()}_${crypto.randomUUID()}`,
       type: template.type,
       title: this.generateTitle(template, context),
       narrative,

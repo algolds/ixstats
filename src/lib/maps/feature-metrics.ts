@@ -9,7 +9,7 @@ import {
   calculateCentroid,
 } from "~/lib/flags/svg/topology-flattener";
 
-export interface PolygonMetrics {
+interface PolygonMetrics {
   centroid: [number, number];
   boundingBox: [number, number, number, number];
   areaSqKm: number;

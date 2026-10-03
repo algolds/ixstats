@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
 import { useAuth } from "@clerk/nextjs";
 
-export interface VaultStats {
+interface VaultStats {
   totalCards: number;
   deckValue: number;
   unopenedPacks: number;

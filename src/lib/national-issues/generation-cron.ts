@@ -12,7 +12,7 @@ import { db } from "~/server/db";
 import { NationalIssuesEngine } from "./engine";
 import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
 
-export interface IssuesGenerationResult {
+interface IssuesGenerationResult {
   countriesChecked: number;
   countriesEvaluated: number;
   issuesGenerated: number;

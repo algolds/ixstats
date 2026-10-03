@@ -33,11 +33,11 @@ The root level of `src/lib/` is strictly reserved for platform-wide architectura
 
 ## 2. Modular Subpackages Catalog
 
-All domain logic is partitioned into dedicated subpackages in `src/lib/<domain>/`. Subpackages with a master `index.ts` barrel: `activity`, `ai`, `auth`, `builder`, `cache`, `country-geo`, `demo-seed`, `discord`, `heraldry`, `ixtime`, `logging`, `lorewards`, `media`, `military`, `national-issues`, `nationstates`, `notifications`, `policies`, `sports`, `themes`, `utils`, `websocket`, `wiki-os`. Highlights:
+All domain logic is partitioned into dedicated subpackages in `src/lib/<domain>/`. Subpackages with a master `index.ts` barrel: `activity`, `auth`, `builder`, `cache`, `country-geo`, `heraldry`, `ixtime`, `logging`, `lorewards`, `media`, `national-issues`, `notifications`, `policies`, `sports`, `themes`, `utils`. Highlights:
 
 ### Platform Infrastructure & Foundations
 - **`src/lib/cache/`** — Redis/in-memory cache client, sliding window rate limiters, stampede protection, outbound HTTP cache, and tRPC response caching middleware.
-- **`src/lib/system/`** — Structured JSON logging, query performance monitoring, boot-time system validations, connection pooling, V8 memory profiling, and process error handlers.
+- **`src/lib/system/`** — Query performance monitoring, boot-time system validations, connection pooling, V8 memory profiling, and process error handlers.
 - **`src/lib/utils/`** — Universal Tailwind `cn()` merger, currency/number formatters, date utilities, chart math, CSV/PDF report exporters, and HTML sanitizers.
 - **`src/lib/auth/`** — CASL permission definitions, ability builders, Clerk/Prisma user management, and system-owner security constants.
 - **`src/lib/websocket/`** — Real-time Socket.IO servers, reconnection managers, marketplace streams, and intelligence broadcasts.
@@ -89,7 +89,6 @@ import { rateLimiter, globalCache } from "~/lib/cache";
 import { ArticleRepository, LinkGraphService } from "~/lib/wiki-os";
 
 // ✅ Also fine: packages without a barrel are imported by file
-import { logger } from "~/lib/system/logger";
 import { memoryConfig } from "~/lib/system/dev-memory-config";
 import { IxStatsCalculator } from "~/lib/economy/calculations";
 

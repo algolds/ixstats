@@ -53,8 +53,6 @@ interface UseMapEditorOptions {
   worldMapLayers?: import("~/components/maps/core/IxWorldMap").MapLayerData[];
 }
 
-export type { BulkEditField } from "./map-editor/useMapEditorBulkOps";
-
 /** In-progress work that has not reached the server yet (see useEditorDraft). */
 export interface EditorDraft {
   mode: EditorMode;

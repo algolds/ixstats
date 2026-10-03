@@ -1,15 +1,15 @@
 "use client";
 // Unified Flag Hooks - Consolidates all flag loading approaches (Plan 164)
-// Replaces useFlag, useBulkFlagCache, useBatchFlags, etc.
+// Replaces the old useFlag / bulk flag cache hooks.
 
-import { useState, useMemo, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 
 const DEFAULT_PLACEHOLDER = "/images/flags/placeholder.svg";
 
 // Single flag hook result
-export interface UseFlagResult {
+interface UseFlagResult {
   flagUrl: string | null;
   isLoading: boolean;
   error: boolean;
@@ -18,7 +18,7 @@ export interface UseFlagResult {
 }
 
 // Bulk flag hook result
-export interface UseBulkFlagsResult {
+interface UseBulkFlagsResult {
   flagUrls: Record<string, string | null>;
   isLoading: boolean;
   error: string | null;
@@ -28,11 +28,6 @@ export interface UseBulkFlagsResult {
 }
 
 // Flag preloader result
-export interface UseFlagPreloaderResult {
-  preloadFlags: (countryNames: string[]) => Promise<void>;
-  isPreloading: boolean;
-  preloadedCount: number;
-}
 
 /**
  * Hook for loading a single flag
@@ -133,44 +128,5 @@ export function useBulkFlags(
     localCount: 0,
     placeholderCount,
     refetch,
-  };
-}
-
-/**
- * Backward compatibility alias for useBulkFlags
- */
-export const useBulkFlagCache = useBulkFlags;
-export const useBatchFlags = useBulkFlags;
-
-/**
- * Hook for preloading flags in the background
- */
-export function useFlagPreloader(): UseFlagPreloaderResult {
-  const utils = api.useUtils();
-  const [isPreloading, setIsPreloading] = useState(false);
-  const [preloadedCount, setPreloadedCount] = useState(0);
-
-  const preloadFlags = useCallback(
-    async (countryNames: string[]) => {
-      if (!countryNames.length) return;
-      setIsPreloading(true);
-      try {
-        await utils.countries.flags.resolveBatch.prefetch({
-          countryNames: [...countryNames],
-        });
-        setPreloadedCount((prev) => prev + countryNames.length);
-      } catch (err) {
-        console.warn("[useFlagPreloader] Preload error:", err);
-      } finally {
-        setIsPreloading(false);
-      }
-    },
-    [utils]
-  );
-
-  return {
-    preloadFlags,
-    isPreloading,
-    preloadedCount,
   };
 }

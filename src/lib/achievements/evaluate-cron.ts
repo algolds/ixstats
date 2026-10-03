@@ -13,9 +13,9 @@ import { achievementService } from "./service";
 /** Evaluate users seen within this window. Overlaps the hourly schedule so none are missed. */
 export const ACHIEVEMENT_EVAL_ACTIVE_WINDOW_MS = 90 * 60_000;
 /** Most users evaluated per run (most recently seen first). */
-export const ACHIEVEMENT_EVAL_MAX_USERS = 500;
+const ACHIEVEMENT_EVAL_MAX_USERS = 500;
 
-export interface AchievementEvaluateResult {
+interface AchievementEvaluateResult {
   usersEvaluated: number;
   achievementsUnlocked: number;
   failures: number;

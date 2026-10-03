@@ -67,7 +67,7 @@ const MODEL_CONFIG: Record<string, { prismaModel: string; lookupField: string }>
   },
 };
 
-export interface ConsequenceInput {
+interface ConsequenceInput {
   targetModel: string;
   targetField: string;
   operation: "add" | "subtract" | "multiply" | "set";
@@ -86,7 +86,7 @@ export interface AppliedConsequence {
   effectType: string;
 }
 
-export interface RecordEventParams {
+interface RecordEventParams {
   db: PrismaClient;
   countryId: string;
   sourceType: "issue" | "policy" | "decision" | "diplomacy" | "election" | "other";

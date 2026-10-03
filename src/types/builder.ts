@@ -1,11 +1,3 @@
-/**
- * Unified Builder Domain Type Definitions
- *
- * Consolidates country reference data, economic inputs, tax builder contracts,
- * and builder suggestions into a unified type surface.
- */
-
-import type { GovernmentSpendingData } from "~/types/economics";
 import type {
   TaxSystemInput,
   TaxCategoryInput,
@@ -13,8 +5,9 @@ import type {
   TaxExemptionInput,
   TaxDeductionInput,
 } from "~/types/tax-system";
+import type { GovernmentSpendingData } from "~/types/economics";
 
-// ─── 1. Country Reference & Core Indicators ─────────────────────────────────
+export type { GovernmentSpendingData };
 
 export interface RealCountryData {
   name: string;
@@ -57,8 +50,6 @@ export interface CoreEconomicIndicators {
   giniCoefficient?: number;
 }
 
-export type CoreIndicatorsData = CoreEconomicIndicators;
-
 export interface NationalIdentityData {
   countryName: string;
   officialName: string;
@@ -67,6 +58,8 @@ export interface NationalIdentityData {
   mottoNative: string;
   capitalCity: string;
   largestCity: string;
+  capitalCityId?: string;
+  largestCityId?: string;
   demonym: string;
   currency: string;
   officialLanguages: string;
@@ -84,11 +77,29 @@ export interface NationalIdentityData {
   postalCodeFormat?: string;
   weekStartDay?: string;
   nationalSport?: string;
+  nationalAnimal?: string;
+  nationalBird?: string;
+  nationalFish?: string;
+  founders?: string;
+  nationalFlower?: string;
+  nationalDish?: string;
+  nationalFruit?: string;
+  nationalDrink?: string;
+  nationalInstrument?: string;
+  nationalSymbol?: string;
+  nationalAnimalImage?: string;
+  nationalBirdImage?: string;
+  nationalFishImage?: string;
+  foundersImage?: string;
+  nationalFlowerImage?: string;
+  nationalDishImage?: string;
+  nationalFruitImage?: string;
+  nationalDrinkImage?: string;
+  nationalInstrumentImage?: string;
+  nationalSymbolImage?: string;
   coordinatesLatitude?: string;
   coordinatesLongitude?: string;
 }
-
-// ─── 2. Economic Inputs & Demographic Contracts ─────────────────────────────
 
 export interface LaborEmploymentData {
   laborForceParticipationRate: number;
@@ -106,7 +117,7 @@ export interface LaborEmploymentData {
   wageGrowthRate?: number;
 }
 
-export interface TaxRates {
+interface TaxRates {
   personalIncomeTaxRates: { bracket: number; rate: number }[];
   corporateTaxRates: { size: string; rate: number }[];
   salesTaxRate: number;
@@ -176,7 +187,7 @@ export interface EducationLevel {
   color: string;
 }
 
-export interface CitizenshipStatus {
+interface CitizenshipStatus {
   status: string;
   percent: number;
   color: string;
@@ -194,7 +205,7 @@ export interface DemographicData {
   populationGrowthRate: number;
 }
 
-export interface GeographyData {
+interface GeographyData {
   continent?: string;
   region?: string;
 }
@@ -214,7 +225,17 @@ export interface EconomicInputs {
   demographics: DemographicData;
 }
 
-// ─── 3. Tax Builder State ───────────────────────────────────────────────────
+export interface EconomicComparison {
+  metric: string;
+  userValue: number;
+  comparableCountries: Array<{
+    name: string;
+    value: number;
+    tier: string;
+  }>;
+  analysis: string;
+  tier: "Developing" | "Emerging" | "Developed" | "Advanced";
+}
 
 export interface TaxBuilderState {
   taxSystem: TaxSystemInput;
@@ -225,24 +246,4 @@ export interface TaxBuilderState {
   selectedAtomicTaxComponents?: string[];
   isValid: boolean;
   errors: Record<string, any>;
-}
-
-export type {
-  TaxSystemInput,
-  TaxCategoryInput,
-  TaxBracketInput,
-  TaxExemptionInput,
-  TaxDeductionInput,
-};
-
-// ─── 4. Builder Suggestions ─────────────────────────────────────────────────
-
-export interface SuggestionItem<T = any> {
-  id: string;
-  title: string;
-  description?: string;
-  severity: "info" | "warning" | "critical";
-  diff?: string;
-  payload?: T;
-  action?: () => void;
 }

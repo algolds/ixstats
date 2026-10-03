@@ -121,7 +121,7 @@ function computePoliticalDeltas(
   return d;
 }
 
-export function calculateGovernmentEffectivenessScore(componentTypes: ComponentType[]): number {
+function calculateGovernmentEffectivenessScore(componentTypes: ComponentType[]): number {
   const metrics = calculateGovernmentEffectiveness(componentTypes);
   return Math.round(metrics.totalEffectiveness * 100) / 100;
 }

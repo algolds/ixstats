@@ -18,7 +18,7 @@ type XmlElement = import("@xmldom/xmldom").Element;
 // Types
 // ──────────────────────────────────────────────
 
-export interface TextLabel {
+interface TextLabel {
   text: string;
   x: number;
   y: number;

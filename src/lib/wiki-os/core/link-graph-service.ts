@@ -8,7 +8,7 @@
 import { db } from "~/server/db";
 import { toArticleSlug } from "./domain-types";
 
-export interface ExtractedLink {
+interface ExtractedLink {
   targetSlug: string;
   anchorText?: string;
   sectionAnchor?: string;

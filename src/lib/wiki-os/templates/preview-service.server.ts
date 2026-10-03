@@ -10,8 +10,8 @@ import { Redis } from "ioredis";
 import { getTemplatePreview } from "./template-registry";
 import { previewCacheKey } from "./preview-service";
 
-export type PreviewSource = "redis" | "network";
-export interface ServerTemplatePreview {
+type PreviewSource = "redis" | "network";
+interface ServerTemplatePreview {
   html: string;
   source: PreviewSource;
   cached: boolean;

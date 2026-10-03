@@ -91,7 +91,7 @@ export interface CountryImageData {
   capitalCity?: string | null;
 }
 
-export interface ImageKeywordResult {
+interface ImageKeywordResult {
   query: string;
   fallbackQuery: string;
   orientation: "landscape" | "squarish";

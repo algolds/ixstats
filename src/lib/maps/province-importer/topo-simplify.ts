@@ -24,7 +24,7 @@ const topoSimplify = require("topojson-simplify") as {
 };
 
 /** Configuration for the simplification pipeline */
-export interface SimplifyConfig {
+interface SimplifyConfig {
   /** Target vertex count per province (default: 100) */
   targetVerticesPerProvince: number;
   /** Minimum allowed vertices per ring (default: 12) */
@@ -49,7 +49,7 @@ const DEFAULT_CONFIG: SimplifyConfig = {
 };
 
 /** Stats returned from the simplification pipeline */
-export interface SimplifyResult {
+interface SimplifyResult {
   features: Feature<Polygon | MultiPolygon>[];
   stats: Array<{
     name: string;
@@ -74,7 +74,7 @@ export function countVertices(geometry: Polygon | MultiPolygon): number {
 /**
  * Round all coordinates to the specified decimal precision.
  */
-export function roundCoordinates(
+function roundCoordinates(
   geometry: Polygon | MultiPolygon,
   precision: number
 ): Polygon | MultiPolygon {
@@ -121,7 +121,7 @@ function ensureRingsClosed(geometry: Polygon | MultiPolygon): Polygon | MultiPol
  * Fix self-intersections in a polygon.
  * Uses turf.unkinkPolygon → union. Falls back to buffer(0).
  */
-export function fixSelfIntersections(geometry: Polygon | MultiPolygon): Polygon | MultiPolygon {
+function fixSelfIntersections(geometry: Polygon | MultiPolygon): Polygon | MultiPolygon {
   try {
     const turf = require("@turf/turf");
     const feature = turf.feature(geometry);

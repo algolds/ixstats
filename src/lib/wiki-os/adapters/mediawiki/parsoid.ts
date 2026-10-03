@@ -11,7 +11,7 @@ import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser"
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 import { saveArticleHtmlShadow } from "./article-store";
 
-export interface ParsoidArticle {
+interface ParsoidArticle {
   /** Rendered HTML */
   html: string;
   /** Article title */

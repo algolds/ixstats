@@ -12,7 +12,7 @@ import type { Position, Polygon, MultiPolygon } from "geojson";
 import { getAllRings } from "./border-editor";
 import { type TopologyRef } from "./topology-engine";
 
-export type FeatureVertexRef = TopologyRef;
+type FeatureVertexRef = TopologyRef;
 
 export interface SharedVertexData {
   lng: number;
@@ -188,7 +188,7 @@ export function moveSharedVertex<T extends Polygon | MultiPolygon>(
   const updated = new Map<string, T>();
 
   for (const [id, geom] of features.entries()) {
-    const cloned = JSON.parse(JSON.stringify(geom)) as T;
+    const cloned = structuredClone(geom) as T;
     updated.set(id, cloned);
   }
 

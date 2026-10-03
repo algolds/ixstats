@@ -18,7 +18,7 @@ import {
   Refresh as RefreshCw,
   EyeClosed as EyeOff,
 } from "iconoir-react";
-import { useBulkFlagCache } from "~/hooks/useUnifiedFlags";
+import { useBulkFlags } from "~/hooks/useUnifiedFlags";
 import { useNotify } from "~/hooks/useNotify";
 import {
   Table,
@@ -66,7 +66,7 @@ export function CountryAdminPanel() {
 
   // Bulk flag cache
   const countryNames = useMemo(() => countries.map((c: any) => c.name), [countries]);
-  const { flagUrls, isLoading: flagsLoading } = useBulkFlagCache(countryNames);
+  const { flagUrls, isLoading: flagsLoading } = useBulkFlags(countryNames);
 
   // Handlers
   const handleEdit = (country: any) => {

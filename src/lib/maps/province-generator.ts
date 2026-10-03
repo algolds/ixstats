@@ -31,7 +31,7 @@ import type { Feature, FeatureCollection, Point, Polygon, MultiPolygon, BBox } f
 // Types
 // ──────────────────────────────────────────────────────────────
 
-export interface ProvinceGeneratorOpts {
+interface ProvinceGeneratorOpts {
   /**
    * Integer seed for reproducible point placement.
    * Same seed + same country + same count → identical output.

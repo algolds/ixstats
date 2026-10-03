@@ -7,7 +7,7 @@
 
 import { IxTime } from "./core";
 
-export interface TimeAccuracyTest {
+interface TimeAccuracyTest {
   id: string;
   name: string;
   description: string;
@@ -16,7 +16,7 @@ export interface TimeAccuracyTest {
   criticality: "low" | "medium" | "high" | "critical";
 }
 
-export interface AccuracyResult {
+interface AccuracyResult {
   passed: boolean;
   accuracy: number; // Percentage (0-100)
   expectedValue: number | string;

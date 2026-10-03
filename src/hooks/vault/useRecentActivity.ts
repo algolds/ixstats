@@ -2,7 +2,7 @@
 
 import { api } from "~/trpc/react";
 
-export interface RecentActivity {
+interface RecentActivity {
   id: string;
   type: string;
   amount: number;

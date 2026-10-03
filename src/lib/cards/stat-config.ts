@@ -7,12 +7,12 @@ export interface CardStatDef {
   description: string;
 }
 
-export interface StatProgression {
+interface StatProgression {
   boostPerLevel: number;
   cap: number;
 }
 
-export interface SpecialStatNormalization {
+interface SpecialStatNormalization {
   type: "log" | "rank" | "linear";
   refMax?: number;
 }
@@ -161,7 +161,7 @@ export const LEGACY_KEY_MAP: Record<string, string> = {
   social: "legacy",
 };
 
-export const SPECIAL_NORMALIZATION: Record<string, SpecialStatNormalization> = {
+const SPECIAL_NORMALIZATION: Record<string, SpecialStatNormalization> = {
   population: { type: "log", refMax: 100_000_000 },
   gdpPerCapita: { type: "log", refMax: 200_000 },
   tradeVolume: { type: "log", refMax: 10_000_000_000_000 },
@@ -185,25 +185,8 @@ export function getBaseStatDefs(): CardStatDef[] {
   return BASE;
 }
 
-export function getBaseStatDef(key: string): CardStatDef | undefined {
-  return BASE.find((s) => s.key === key);
-}
-
 export function getSpecialStatsForType(cardType: CardType): CardStatDef[] {
   return SPECIALS[cardType] ?? [];
-}
-
-export function getStatDefByKey(key: string): CardStatDef | undefined {
-  return (
-    BASE.find((s) => s.key === key) ??
-    Object.values(SPECIALS)
-      .flat()
-      .find((s) => s.key === key)
-  );
-}
-
-export function getBaseStatKeys(): string[] {
-  return BASE.map((s) => s.key);
 }
 
 export function normalizeSpecialStat(key: string, rawValue: number): number {
@@ -240,5 +223,3 @@ export function formatCompactValue(value: number): string {
   if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
   return value.toFixed(1);
 }
-
-export const STAT_CONFIG = { BASE, SPECIALS, PROGRESSION: STAT_PROGRESSION, LEGACY_KEY_MAP };

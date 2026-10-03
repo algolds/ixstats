@@ -7,14 +7,14 @@
 
 import type { LoreCategory } from "./category-enums";
 
-export interface SubcategoryDefinition {
+interface SubcategoryDefinition {
   id: string;
   label: string;
   iconPath: string; // Game-Icons SVG path under /icons/game-icons/icons/ffffff/transparent/1x1/...
   keywords: string[];
 }
 
-export const CATEGORY_SUBCATEGORIES: Record<LoreCategory, SubcategoryDefinition[]> = {
+const CATEGORY_SUBCATEGORIES: Record<LoreCategory, SubcategoryDefinition[]> = {
   CULTURE: [
     {
       id: "sports",

@@ -1,9 +1,3 @@
-/**
- * Production Performance Optimizations
- * Memory management, query optimization, and production-ready configurations
- */
-
-import { NextRequest, NextResponse } from "next/server";
 import { memoryConfig, isDevMode, getMemoryStats } from "./dev-memory-config";
 // Note: Using globalThis.performance (available in Node.js 16+ and browsers)
 // instead of importing from perf_hooks which isn't bundleable for client-side
@@ -12,7 +6,7 @@ import { memoryConfig, isDevMode, getMemoryStats } from "./dev-memory-config";
  * Memory optimization utilities
  * Enhanced with dev-mode proactive cache clearing
  */
-export class MemoryOptimizer {
+class MemoryOptimizer {
   private static readonly MAX_MEMORY_USAGE = 1024 * 1024 * 1024; // 1GB
   private static readonly GC_THRESHOLD = isDevMode ? 0.7 : 0.8; // 70% in dev, 80% in prod
   private static readonly CACHE_CLEAR_THRESHOLD = memoryConfig.monitoring.cacheClearThreshold;
@@ -155,140 +149,9 @@ export class MemoryOptimizer {
 }
 
 /**
- * Query optimization utilities
- */
-export class QueryOptimizer {
-  /**
-   * Optimize Prisma includes for better performance
-   */
-  static optimizeIncludes(include: Record<string, any>): Record<string, any> {
-    const optimized: Record<string, any> = {};
-
-    for (const [key, value] of Object.entries(include)) {
-      if (typeof value === "object" && value !== null) {
-        // Use select instead of full include when possible
-        if (value.select) {
-          optimized[key] = { select: value.select };
-        } else if (value.take) {
-          optimized[key] = { take: value.take };
-        } else {
-          optimized[key] = value;
-        }
-      } else {
-        optimized[key] = value;
-      }
-    }
-
-    return optimized;
-  }
-
-  /**
-   * Create optimized select clause for common patterns
-   */
-  static createSelectClause(fields: string[]): Record<string, boolean> {
-    const select: Record<string, boolean> = {};
-    fields.forEach((field) => {
-      select[field] = true;
-    });
-    return select;
-  }
-
-  /**
-   * Batch queries for better performance
-   */
-  static async batchQueries<T>(queries: (() => Promise<T>)[], batchSize = 10): Promise<T[]> {
-    const results: T[] = [];
-
-    for (let i = 0; i < queries.length; i += batchSize) {
-      const batch = queries.slice(i, i + batchSize);
-      const batchResults = await Promise.all(batch.map((query) => query()));
-      results.push(...batchResults);
-
-      // Allow event loop to process other tasks
-      await new Promise((resolve) => setImmediate(resolve));
-    }
-
-    return results;
-  }
-}
-
-/**
- * API response optimization
- */
-export class ResponseOptimizer {
-  /**
-   * Compress and optimize API responses
-   */
-  static optimizeResponse(data: any): any {
-    if (Array.isArray(data)) {
-      // Limit array size for performance
-      if (data.length > 1000) {
-        console.warn("[ResponseOptimizer] Large array detected, limiting size");
-        return data.slice(0, 1000);
-      }
-    }
-
-    // Remove null/undefined values to reduce payload size
-    return this.removeEmptyValues(data);
-  }
-
-  /**
-   * Remove empty values from objects
-   */
-  private static removeEmptyValues(obj: any): any {
-    if (Array.isArray(obj)) {
-      return obj.map((item) => this.removeEmptyValues(item));
-    }
-
-    if (obj && typeof obj === "object") {
-      const cleaned: any = {};
-      for (const [key, value] of Object.entries(obj)) {
-        if (value !== null && value !== undefined && value !== "") {
-          cleaned[key] = this.removeEmptyValues(value);
-        }
-      }
-      return cleaned;
-    }
-
-    return obj;
-  }
-
-  /**
-   * Create optimized Next.js response
-   */
-  static createOptimizedResponse(
-    data: any,
-    options: {
-      status?: number;
-      headers?: Record<string, string>;
-      compress?: boolean;
-    } = {}
-  ): NextResponse {
-    const { status = 200, headers = {}, compress = true } = options;
-
-    const optimizedData = this.optimizeResponse(data);
-
-    const responseHeaders: Record<string, string> = {
-      "Content-Type": "application/json",
-      "Cache-Control": "public, max-age=300, s-maxage=600", // 5min client, 10min CDN
-      ...headers,
-    };
-
-    if (compress) {
-      responseHeaders["Content-Encoding"] = "gzip";
-    }
-
-    return NextResponse.json(optimizedData, {
-      status,
-      headers: responseHeaders,
-    });
-  }
-}
-
-/**
  * Database connection optimization
  */
-export class DatabaseOptimizer {
+class DatabaseOptimizer {
   private static pgStatStatementsAvailable: boolean | null = null;
 
   /**
@@ -350,83 +213,9 @@ export class DatabaseOptimizer {
 }
 
 /**
- * Production middleware optimizations
- */
-export class ProductionMiddleware {
-  /**
-   * Request performance monitoring
-   */
-  static monitorRequest(req: NextRequest): { startTime: number; path: string } {
-    const startTime = performance.now();
-    const path = req.nextUrl.pathname;
-
-    // Log slow requests
-    setTimeout(() => {
-      const duration = performance.now() - startTime;
-      if (duration > 1000) {
-        // 1 second
-        console.warn(`[ProductionMiddleware] Slow request: ${path} (${duration.toFixed(2)}ms)`);
-      }
-    }, 1000);
-
-    return { startTime, path };
-  }
-
-  /**
-   * Rate limiting headers
-   */
-  static addRateLimitHeaders(
-    response: NextResponse,
-    options: {
-      limit?: number;
-      remaining?: number;
-      reset?: number;
-    } = {}
-  ): NextResponse {
-    const { limit = 1000, remaining = 999, reset = Date.now() + 3600000 } = options;
-
-    response.headers.set("X-RateLimit-Limit", limit.toString());
-    response.headers.set("X-RateLimit-Remaining", remaining.toString());
-    response.headers.set("X-RateLimit-Reset", reset.toString());
-
-    return response;
-  }
-
-  /**
-   * Security headers for production
-   */
-  static addSecurityHeaders(response: NextResponse, opts?: { pathname?: string }): NextResponse {
-    response.headers.set("X-Content-Type-Options", "nosniff");
-
-    // Skip X-Frame-Options for embeddable paths — frame-ancestors CSP supersedes it
-    const pathname = opts?.pathname ?? "";
-    const isEmbeddable =
-      pathname.startsWith("/maps") ||
-      pathname.startsWith("/wiki/") ||
-      pathname.startsWith("/countries/");
-    if (!isEmbeddable) {
-      response.headers.set("X-Frame-Options", "DENY");
-    }
-
-    response.headers.set("X-XSS-Protection", "1; mode=block");
-    response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-
-    // CSP for production
-    if (process.env.NODE_ENV === "production") {
-      response.headers.set(
-        "Content-Security-Policy",
-        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:;"
-      );
-    }
-
-    return response;
-  }
-}
-
-/**
  * Performance monitoring and alerting
  */
-export class PerformanceMonitor {
+class PerformanceMonitor {
   private static metrics: Map<string, number[]> = new Map();
   private static readonly MAX_METRICS_PER_NAME = isDevMode ? 100 : 1000;
   private static readonly MAX_METRIC_NAMES = isDevMode ? 50 : 500;

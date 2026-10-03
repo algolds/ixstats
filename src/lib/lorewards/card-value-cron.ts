@@ -33,7 +33,7 @@ import { getCardMarketValue } from "~/lib/cards/card-service";
 /**
  * Result interface for value update operation
  */
-export interface ValueUpdateResult {
+interface ValueUpdateResult {
   success: boolean;
   cardsUpdated: number;
   strongCorrelations: number;
@@ -294,12 +294,4 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
       correlationDetails,
     };
   }
-}
-
-/**
- * Manually trigger card value update (for testing/admin)
- */
-export async function manualCardValueUpdate() {
-  console.log("[Card Value Cron] Manual update triggered");
-  return await updateCardValues();
 }

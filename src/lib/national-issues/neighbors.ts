@@ -8,7 +8,7 @@
 
 import type { PrismaClient } from "@prisma/client";
 
-export interface Neighbor {
+interface Neighbor {
   name: string;
   countryId: string | null;
 }
@@ -70,9 +70,4 @@ export async function resolveNeighbors(countryId: string, db: PrismaClient): Pro
     console.warn(`[Neighbors] Failed to resolve neighbors for ${countryId}:`, err);
     return [];
   }
-}
-
-/** Test seam: clear the memo cache. */
-export function clearNeighborCache(): void {
-  cache.clear();
 }

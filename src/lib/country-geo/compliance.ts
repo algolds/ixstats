@@ -18,7 +18,7 @@ import { formatNumber } from "~/lib/utils/format-utils";
 
 export type ComplianceSeverity = "error" | "warning" | "info";
 
-export type ComplianceCategory =
+type ComplianceCategory =
   | "population"
   | "gdp"
   | "capital"
@@ -44,7 +44,7 @@ export interface ComplianceIssue {
   context?: Record<string, number | string>;
 }
 
-export interface ComplianceInput {
+interface ComplianceInput {
   cities: Array<{
     id: string;
     name: string;

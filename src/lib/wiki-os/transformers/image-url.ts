@@ -5,7 +5,7 @@ import { createHash } from "crypto";
 import { withBasePath } from "~/lib/base-path";
 import { DEFAULT_MEDIAWIKI_URL, type WikiSource } from "../config";
 
-export type ExtendedWikiSource = WikiSource | "commons";
+type ExtendedWikiSource = WikiSource | "commons";
 
 /**
  * Checks if a filename or image path corresponds to a maintenance/WIP template,

@@ -43,7 +43,7 @@ export interface ResourcePlacementPayload {
   elevationZone?: string;
 }
 
-export interface SharedVertexPayload {
+interface SharedVertexPayload {
   lng: number;
   lat: number;
   featureRefs: Array<{ featureId: string; ringIndex: number; vertexIndex: number }>;

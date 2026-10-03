@@ -40,7 +40,7 @@ export interface NPCParticipationContext {
   historicalSuccess: number; // 0-100
 }
 
-export interface NPCParticipationDecision {
+interface NPCParticipationDecision {
   willParticipate: boolean;
   enthusiasmLevel: number; // 0-100
   resourceCommitment: number; // 0-100
@@ -56,7 +56,7 @@ export interface NPCParticipationDecision {
   responseTimeline: "immediate" | "short_term" | "long_term"; // How quickly NPC responds
 }
 
-export interface NPCInitiatedProposal {
+interface NPCInitiatedProposal {
   npcCountryId: string;
   npcCountryName: string;
   targetCountryId: string;
@@ -80,7 +80,7 @@ export interface NPCInitiatedProposal {
   urgency: "low" | "medium" | "high" | "critical";
 }
 
-export interface NPCScenarioResponse {
+interface NPCScenarioResponse {
   npcCountryId: string;
   scenarioId: string;
   chosenOption: string;

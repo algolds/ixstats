@@ -4,7 +4,7 @@
  * deterministically per league/team id, so a given entity always shows the same
  * cover. All filenames below were verified to resolve on Commons.
  */
-export const SPORT_COVER_POOL: Record<string, string[]> = {
+const SPORT_COVER_POOL: Record<string, string[]> = {
   soccer: [
     "Camp Nou - Interior (2005).jpg",
     "Pitch side view - Wembley Stadium - geograph.org.uk - 4624558.jpg",

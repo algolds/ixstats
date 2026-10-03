@@ -29,7 +29,7 @@ export const TRENDING_CONFIG = {
   risingHours: 6,
 } as const;
 
-export type EngagementKind = keyof typeof TRENDING_CONFIG.weights;
+type EngagementKind = keyof typeof TRENDING_CONFIG.weights;
 
 export interface EngagementEvent {
   /** The post that received the engagement. */
@@ -40,7 +40,7 @@ export interface EngagementEvent {
   actorId: string;
 }
 
-export interface PostEngagement {
+interface PostEngagement {
   /** Decayed, weighted score. */
   score: number;
   /** Undecayed weighted engagement count (reactions + 2·replies + 3·reposts). */
@@ -87,7 +87,7 @@ export function scoreEngagement(
   return scores;
 }
 
-export interface TrendingCandidate {
+interface TrendingCandidate {
   id: string;
   visibility: string;
   postType: string;
@@ -135,13 +135,13 @@ export function parseHashtags(stored: string | null | undefined): string[] {
   return [...new Set(tags)];
 }
 
-export interface TopicSourcePost {
+interface TopicSourcePost {
   id: string;
   hashtags: string | null;
   authorId: string;
 }
 
-export interface ComputedTopic {
+interface ComputedTopic {
   /** Display spelling (most used), also the `/hashtags/<tag>` path segment. */
   hashtag: string;
   postCount: number;

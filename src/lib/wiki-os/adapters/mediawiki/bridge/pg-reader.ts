@@ -74,7 +74,7 @@ export async function ixwikiGetWikitext(title: string): Promise<WikiArticle | nu
   return null;
 }
 
-export interface RevisionContent {
+interface RevisionContent {
   wikitext: string;
   /** Title of the article the revision belongs to. */
   title: string;

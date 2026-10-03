@@ -10,9 +10,9 @@
  * That keeps it testable and reusable from both a client component and a server query.
  */
 
-export type CalendarKind = "election" | "issue" | "term";
+type CalendarKind = "election" | "issue" | "term";
 
-export interface CalendarEvent {
+interface CalendarEvent {
   id: string;
   label: string;
   ixTime: number; // IxTime ms timestamp the event falls on
@@ -20,7 +20,7 @@ export interface CalendarEvent {
   kind: CalendarKind;
 }
 
-export interface CalendarInputs {
+interface CalendarInputs {
   nowIxTime: number;
   elections?: { id: string; name: string; scheduledIxTime: number; status?: string }[];
   issueDeadlines?: { id: string; title: string; deadlineIxTime: number | null | undefined }[];

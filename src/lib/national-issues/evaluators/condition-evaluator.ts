@@ -37,7 +37,7 @@ const SCALAR_OPERATORS: Record<
 /**
  * Get a field value from the snapshot by key name. Supports nested dot notation.
  */
-export function getSnapshotField(snapshot: CountrySnapshot, field: string): unknown {
+function getSnapshotField(snapshot: CountrySnapshot, field: string): unknown {
   if (field.includes(".")) {
     const parts = field.split(".");
     let current: unknown = snapshot;
@@ -56,7 +56,7 @@ export function getSnapshotField(snapshot: CountrySnapshot, field: string): unkn
 /**
  * Compare a resolved value against a field-comparison condition.
  */
-export function evaluateValue(
+function evaluateValue(
   fieldValue: unknown,
   condition: {
     field: string;

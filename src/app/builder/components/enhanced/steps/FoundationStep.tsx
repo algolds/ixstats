@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import { Globe } from "iconoir-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import type { RealCountryData } from "~/app/builder/lib/economy-types";
+import type { RealCountryData } from "~/types/builder";
 import { createDefaultEconomicInputs } from "~/app/builder/lib/default-economic-inputs";
 import { createDefaultEconomyBuilderState } from "~/app/builder/components/enhanced/economy-builder/economyStateUtils";
 import type { EconomicArchetype } from "~/lib/economy/archetypes/types";

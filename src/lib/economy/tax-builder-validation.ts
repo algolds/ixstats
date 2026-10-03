@@ -8,9 +8,9 @@
  * - Error generation and completeness checks
  */
 
-import type { TaxBuilderState } from "~/types/builder/tax-builder";
+import type { TaxBuilderState } from "~/types/builder";
 
-export interface ValidationResult {
+interface ValidationResult {
   isValid: boolean;
   errors: Record<string, any>;
 }
@@ -174,69 +174,4 @@ function validateBrackets(builderState: TaxBuilderState): Record<string, Record<
   });
 
   return bracketErrors;
-}
-
-/**
- * Check if validation has errors for a specific step
- */
-export function hasStepErrors(stepId: string, validationErrors: Record<string, any>): boolean {
-  switch (stepId) {
-    case "atomic":
-      // No specific validation errors for atomic components
-      return false;
-    case "configuration":
-      return !!(validationErrors.taxSystem || validationErrors.categories);
-    case "exemptions":
-      // Exemptions don't have specific validation currently
-      return false;
-    case "calculator":
-      // Calculator step shows all errors
-      return Object.keys(validationErrors).length > 0;
-    default:
-      return false;
-  }
-}
-
-/**
- * Get completion percentage for builder state
- */
-export function getCompletionPercentage(builderState: TaxBuilderState): number {
-  let completed = 0;
-  let total = 0;
-
-  // Tax system basics (25%)
-  total += 25;
-  if (builderState.taxSystem.taxSystemName?.trim()) completed += 10;
-  if (builderState.taxSystem.fiscalYear) completed += 5;
-  if (builderState.taxSystem.progressiveTax !== undefined) completed += 5;
-  if (builderState.taxSystem.complianceRate) completed += 2.5;
-  if (builderState.taxSystem.collectionEfficiency) completed += 2.5;
-
-  // Categories (50%)
-  total += 50;
-  if (builderState.categories.length > 0) {
-    const categoryWeight = 50 / builderState.categories.length;
-    builderState.categories.forEach((cat, idx) => {
-      let catCompletion = 0;
-      if (cat.categoryName?.trim()) catCompletion += 0.3;
-      if (cat.categoryType) catCompletion += 0.2;
-      if (cat.calculationMethod) catCompletion += 0.2;
-      if (cat.baseRate !== undefined) catCompletion += 0.15;
-      if (builderState.brackets[idx.toString()]?.length > 0) catCompletion += 0.15;
-      completed += categoryWeight * catCompletion;
-    });
-  }
-
-  // Validation (25%)
-  total += 25;
-  const validation = validateTaxBuilderState(builderState);
-  if (validation.isValid) {
-    completed += 25;
-  } else {
-    // Partial credit for having some valid data
-    const errorCount = Object.keys(validation.errors).length;
-    completed += Math.max(0, 25 - errorCount * 5);
-  }
-
-  return Math.min(100, Math.round((completed / total) * 100));
 }

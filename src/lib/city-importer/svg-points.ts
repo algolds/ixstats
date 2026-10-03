@@ -40,13 +40,13 @@ export interface SvgCityPoint {
   isCapital: boolean;
 }
 
-export interface SvgProvinceRef {
+interface SvgProvinceRef {
   name: string; // province label text
   svgX: number; // province shape centroid in root SVG space
   svgY: number;
 }
 
-export interface ParsedCitySvg {
+interface ParsedCitySvg {
   layers: SvgLayerInfo[];
   points: SvgCityPoint[];
   svgProvinces: SvgProvinceRef[];
@@ -54,7 +54,7 @@ export interface ParsedCitySvg {
   detectedCityNameLayerId?: string;
 }
 
-export interface ParseCitySvgOptions {
+interface ParseCitySvgOptions {
   citiesLayerId?: string; // which layer holds the dots; auto-detect if unset
   capitalLayerId?: string; // layer (or marker) that marks capitals; optional
   cityNameLayerId?: string; // layer holding city names/labels; optional

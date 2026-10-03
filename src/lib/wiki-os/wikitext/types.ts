@@ -7,7 +7,6 @@ import type {
   WikiBlockNode,
   WikiInlineNode,
   WikiTextNode,
-  WikiTextMark,
   WikiLinkInline,
   WikiExternalLinkInline,
   CoordChipInline,
@@ -23,7 +22,6 @@ import type {
   Diagnostic,
   WikiSourceSpan,
   ParseState,
-  WikiParagraphBlock,
   WikiHeadingBlock,
   MediaBlock,
   WikiTableBlock,
@@ -41,7 +39,6 @@ export type {
   WikiBlockNode,
   WikiInlineNode,
   WikiTextNode,
-  WikiTextMark,
   WikiLinkInline,
   WikiExternalLinkInline,
   CoordChipInline,
@@ -55,9 +52,6 @@ export type {
   WikiParameter,
   TemplateClassification,
   Diagnostic,
-  WikiSourceSpan,
-  ParseState,
-  WikiParagraphBlock,
   WikiHeadingBlock,
   MediaBlock,
   WikiTableBlock,
@@ -88,22 +82,4 @@ export interface ParsedTemplate {
   functionName?: string;
   expression?: string;
   branches?: string[];
-}
-
-export interface Token {
-  type:
-    | "TEXT"
-    | "TEMPLATE_OPEN"
-    | "TEMPLATE_CLOSE"
-    | "LINK_OPEN"
-    | "LINK_CLOSE"
-    | "TABLE_OPEN"
-    | "TABLE_CLOSE"
-    | "PIPE"
-    | "EQUALS"
-    | "HEADING_MARK"
-    | "COMMENT";
-  value: string;
-  start: number;
-  end: number;
 }

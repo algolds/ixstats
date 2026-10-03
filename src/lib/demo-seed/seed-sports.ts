@@ -14,15 +14,7 @@ import { seedBoxingLeague } from "./sports/seed-boxing";
 
 type Prisma = PrismaClient;
 
-export {
-  seedCaphirianSoccerLeague,
-  seedYonderreSoccerLeague,
-  seedOHLHockeyLeague,
-  seedF1League,
-  seedBoxingLeague,
-};
-
-export interface SeedingOptions {
+interface SeedingOptions {
   seedCaphirianSoccer?: boolean;
   seedYonderreSoccer?: boolean;
   seedOHLHockey?: boolean;

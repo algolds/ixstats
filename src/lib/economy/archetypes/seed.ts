@@ -14,7 +14,7 @@ import { historicalArchetypes } from "./historical";
 
 export type ArchetypeEra = "modern" | "historical";
 
-export interface ArchetypeSeedRow {
+interface ArchetypeSeedRow {
   key: string;
   name: string;
   description: string;

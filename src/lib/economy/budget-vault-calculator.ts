@@ -23,7 +23,7 @@ import { type PrismaClient } from "@prisma/client";
 /**
  * Budget category multiplier breakdown
  */
-export interface BudgetMultiplierBreakdown {
+interface BudgetMultiplierBreakdown {
   /** Department category (e.g., "Economic Development", "Defense") */
   category: string;
   /** Department name */
@@ -40,7 +40,7 @@ export interface BudgetMultiplierBreakdown {
  * Budget Vault Calculator
  * Calculates passive income multipliers based on budget allocation
  */
-export class BudgetVaultCalculator {
+class BudgetVaultCalculator {
   /**
    * Calculate total budget multiplier for passive income
    *

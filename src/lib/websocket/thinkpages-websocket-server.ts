@@ -36,7 +36,7 @@ export interface ThinkPagesMessageEvent {
   timestamp: number;
 }
 
-export interface ThinkPagesReadReceiptEvent {
+interface ThinkPagesReadReceiptEvent {
   type: "read:receipt";
   conversationId?: string;
   groupId?: string;
@@ -179,5 +179,3 @@ export class ThinkPagesWebSocketServer {
     await this.io.close();
   }
 }
-
-export type ThinkPagesWSS = ThinkPagesWebSocketServer;

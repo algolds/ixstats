@@ -4,7 +4,7 @@
  * Used across the province import pipeline: parsing, alignment, topology, and UI.
  */
 
-import type { Position, Polygon, MultiPolygon, FeatureCollection } from "geojson";
+import type { Position, Polygon, MultiPolygon } from "geojson";
 
 // ──────────────────────────────────────────────
 // Province Feature Types
@@ -163,90 +163,3 @@ export interface TopologyReport {
 // ──────────────────────────────────────────────
 
 export type ImportStep = "upload" | "names" | "align" | "snap" | "validate" | "commit";
-
-export interface ProvinceImportSession {
-  /** Current wizard step */
-  step: ImportStep;
-  /** Country ID being imported to */
-  countryId: string;
-  /** Upload record ID (if uploaded via API) */
-  uploadId?: string;
-  /** Raw parsed provinces (pre-alignment) */
-  rawProvinces: ProvinceFeature[];
-  /** Provinces after alignment and snapping */
-  alignedProvinces: ProvinceFeature[];
-  /** Current alignment mode */
-  alignmentMode: AlignmentMode;
-  /** Reference points placed by the user */
-  referencePoints: ReferencePoint[];
-  /** Computed affine transform */
-  transform: AffineMatrix | null;
-  /** Manual transform parameters */
-  manualTransform: ManualTransform;
-  /** Snap tolerance in degrees */
-  snapTolerance: number;
-  /** Topology validation report */
-  validationReport: TopologyReport | null;
-  /** Whether processing is in progress */
-  isProcessing: boolean;
-  /** Error message, if any */
-  error: string | null;
-}
-
-// ──────────────────────────────────────────────
-// Commit Data
-// ──────────────────────────────────────────────
-
-export interface ProvinceCommitData {
-  name: string;
-  type: string;
-  geometry: Polygon | MultiPolygon;
-  level?: number;
-  capital?: string;
-  population?: number;
-  color?: string;
-}
-
-export interface ProvinceCommitInput {
-  countryId: string;
-  provinces: ProvinceCommitData[];
-  replaceExisting: boolean;
-}
-
-// ──────────────────────────────────────────────
-// PNG Tracer Types
-// ──────────────────────────────────────────────
-
-export interface PngTracerConfig {
-  /** Minimum region area in pixels (skip tiny regions) */
-  minRegionPixels?: number;
-  /** Color distance threshold for grouping similar colors (0-255) */
-  colorThreshold?: number;
-  /** Douglas-Peucker simplification tolerance (pixels) */
-  simplifyTolerance?: number;
-  /** Colors to ignore (e.g., background, borders) */
-  ignoreColors?: string[];
-}
-
-export interface TracedRegion {
-  /** Hex color of the region */
-  color: string;
-  /** Boundary polygon in pixel coordinates */
-  boundary: Position[];
-  /** Area in pixels */
-  areaPixels: number;
-}
-
-// ──────────────────────────────────────────────
-// GeoJSON Helpers
-// ──────────────────────────────────────────────
-
-/** A province collection ready for MapLibre preview rendering. */
-export interface ProvincePreviewData {
-  /** GeoJSON for all provinces */
-  collection: FeatureCollection;
-  /** Country border polygon for comparison */
-  countryBorder: Polygon | MultiPolygon;
-  /** Alignment error metric (degrees RMSE) */
-  alignmentError?: number;
-}

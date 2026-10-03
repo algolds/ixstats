@@ -2,7 +2,7 @@
 // Configuration service with DB-backed config reading and proper growth factor handling
 
 import { Cache } from "~/lib/cache";
-import type { EconomicConfig, IxStatsConfig } from "../types/ixstats";
+import type { EconomicConfig } from "../types/ixstats";
 
 /**
  * FIXED: Get default economic configuration with proper global growth factor
@@ -56,32 +56,10 @@ export function getDefaultEconomicConfig(): EconomicConfig {
 }
 
 /**
- * Get default IxStats system configuration
- */
-export function getDefaultIxStatsConfig(): IxStatsConfig {
-  return {
-    economic: getDefaultEconomicConfig(),
-
-    timeSettings: {
-      baselineYear: 2028, // In-game epoch year
-      currentIxTimeMultiplier: 2.0, // 2x real-time speed (standard after 7/27/25)
-      updateIntervalSeconds: 60, // Auto-update every minute
-    },
-
-    displaySettings: {
-      defaultCurrency: "USD",
-      numberFormat: "en-US",
-      showHistoricalData: true,
-      chartTimeRange: 10, // Default 10-year chart range
-    },
-  };
-}
-
-/**
  * FIXED: Validate growth rate values to ensure they're in decimal form
  * Excel exports percentages as decimals (0.5% → 0.005)
  */
-export function validateGrowthRate(value: number, context = ""): number {
+function validateGrowthRate(value: number, context = ""): number {
   const numValue = Number(value);
 
   if (!isFinite(numValue) || isNaN(numValue)) {
@@ -112,7 +90,7 @@ export function validateGrowthRate(value: number, context = ""): number {
 /**
  * FIXED: Validate GDP per capita value and determine appropriate tier with max growth rates
  */
-export function validateGdpPerCapita(
+function validateGdpPerCapita(
   value: number,
   countryName = ""
 ): {
@@ -152,73 +130,12 @@ export function validateGdpPerCapita(
 }
 
 /**
- * FIXED: Validate population value and determine appropriate tier
- */
-export function validatePopulation(
-  value: number,
-  countryName = ""
-): {
-  value: number;
-  tier: string;
-} {
-  const numValue = Number(value);
-
-  if (!isFinite(numValue) || isNaN(numValue) || numValue <= 0) {
-    console.warn(
-      `[Config] Invalid population for ${countryName}: ${value}, defaulting to 1,000,000`
-    );
-    return { value: 1_000_000, tier: "1" };
-  }
-
-  // Determine tier based on user specifications
-  if (numValue >= 500_000_000) {
-    return { value: numValue, tier: "X" };
-  } else if (numValue >= 350_000_000) {
-    return { value: numValue, tier: "7" };
-  } else if (numValue >= 120_000_000) {
-    return { value: numValue, tier: "6" };
-  } else if (numValue >= 80_000_000) {
-    return { value: numValue, tier: "5" };
-  } else if (numValue >= 50_000_000) {
-    return { value: numValue, tier: "4" };
-  } else if (numValue >= 30_000_000) {
-    return { value: numValue, tier: "3" };
-  } else if (numValue >= 10_000_000) {
-    return { value: numValue, tier: "2" };
-  } else {
-    return { value: numValue, tier: "1" };
-  }
-}
-
-/**
  * FIXED: Get maximum allowed growth rate for a given GDP per capita
  * Based on user-specified tier system
  */
-export function getMaxGrowthRateForGdpPerCapita(gdpPerCapita: number): number {
+function getMaxGrowthRateForGdpPerCapita(gdpPerCapita: number): number {
   const validation = validateGdpPerCapita(gdpPerCapita);
   return validation.maxGrowthRate;
-}
-
-/**
- * FIXED: Validate and adjust growth rate against tier-based maximum
- * Ensures growth rates don't exceed tier-based caps
- */
-export function adjustGrowthRateForTier(
-  growthRate: number,
-  gdpPerCapita: number,
-  context = ""
-): number {
-  const validatedRate = validateGrowthRate(growthRate, context);
-  const maxRate = getMaxGrowthRateForGdpPerCapita(gdpPerCapita);
-
-  if (validatedRate > maxRate) {
-    console.warn(
-      `[Config] Growth rate ${(validatedRate * 100).toFixed(2)}% exceeds max ${(maxRate * 100).toFixed(2)}% for GDP per capita $${gdpPerCapita.toLocaleString()} in ${context}`
-    );
-    return maxRate;
-  }
-
-  return validatedRate;
 }
 
 /**
@@ -247,59 +164,6 @@ export function calculateEffectiveGrowthRate(
   effectiveRate = Math.max(effectiveRate, -0.5);
 
   return effectiveRate;
-}
-
-/**
- * Create a configuration object for a specific country based on its current stats
- */
-export function createCountrySpecificConfig(
-  baseConfig: EconomicConfig,
-  countryGdpPerCapita: number,
-  countryPopulation: number,
-  // oxlint-disable-next-line typescript/no-unused-vars
-  localGrowthFactor = 1.0
-): EconomicConfig & {
-  countryEconomicTier: string;
-  countryPopulationTier: string;
-  countryMaxGrowthRate: number;
-} {
-  const gdpValidation = validateGdpPerCapita(countryGdpPerCapita);
-  const popValidation = validatePopulation(countryPopulation);
-
-  return {
-    ...baseConfig,
-    // Keep the global growth factor as-is (it's already a multiplier)
-    globalGrowthFactor: baseConfig.globalGrowthFactor,
-
-    // Country-specific metadata
-    countryEconomicTier: gdpValidation.tier,
-    countryPopulationTier: popValidation.tier,
-    countryMaxGrowthRate: gdpValidation.maxGrowthRate,
-  };
-}
-
-/**
- * FIXED: Log configuration summary for debugging
- */
-export function logConfigSummary(config: EconomicConfig, context = ""): void {
-  console.log(`[Config] ${context} Configuration Summary:`);
-  console.log(
-    `  Global Growth Factor: ${((config.globalGrowthFactor - 1) * 100).toFixed(2)}% (${config.globalGrowthFactor}x)`
-  );
-  console.log(`  Base Inflation Rate: ${(config.baseInflationRate * 100).toFixed(2)}%`);
-  console.log(`  Economic Tiers: ${Object.keys(config.economicTierThresholds).length}`);
-  console.log(`  Population Tiers: ${Object.keys(config.populationTierThresholds).length}`);
-  console.log(`  Update Interval: ${config.calculationIntervalMs / 1000}s`);
-
-  // Log tier breakdowns with max growth rates
-  console.log(`  Economic Tier Breakdown:`);
-  console.log(`    Impoverished ($0-$9,999): 10% max growth`);
-  console.log(`    Developing ($10K-$24.9K): 7.50% max growth`);
-  console.log(`    Developed ($25K-$34.9K): 5% max growth`);
-  console.log(`    Healthy ($35K-$44.9K): 3.50% max growth`);
-  console.log(`    Strong ($45K-$54.9K): 2.75% max growth`);
-  console.log(`    Very Strong ($55K-$64.9K): 1.50% max growth`);
-  console.log(`    Extravagant ($65K+): 0.50% max growth`);
 }
 
 /**
@@ -340,33 +204,6 @@ export const CONFIG_CONSTANTS = {
   SUSPICIOUS_GROWTH_THRESHOLD: 0.2, // 20% - log warning
   EXTREME_GROWTH_THRESHOLD: 0.5, // 50% - cap value
 } as const;
-
-/**
- * FIXED: Helper to format growth rates for display
- */
-export function formatGrowthRateForDisplay(decimal: number): string {
-  return `${(decimal * 100).toFixed(2)}%`;
-}
-
-/**
- * FIXED: Helper to parse growth rates from Excel/user input
- */
-export function parseGrowthRateFromInput(input: string | number): number {
-  if (typeof input === "number") {
-    return validateGrowthRate(input);
-  }
-
-  const str = String(input).trim();
-  if (str.includes("%")) {
-    // Parse as percentage and convert to decimal
-    const percentValue = parseFloat(str.replace("%", ""));
-    return validateGrowthRate(percentValue / 100);
-  } else {
-    // Parse as decimal
-    return validateGrowthRate(parseFloat(str));
-  }
-}
-
 // ============================================================================
 // DB-backed configuration reader (live wiring)
 // ============================================================================

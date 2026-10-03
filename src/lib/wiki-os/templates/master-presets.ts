@@ -7,7 +7,7 @@
 import type { TemplateParam } from "~/lib/wiki-os/templates/template-registry";
 
 // Palette presets and builder flows guarantee `name`; refine the canonical type instead of redefining it.
-export type PaletteTemplateParam = TemplateParam & { name: string };
+type PaletteTemplateParam = TemplateParam & { name: string };
 
 export interface MasterTemplatePreset {
   name: string;

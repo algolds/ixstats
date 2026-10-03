@@ -1,15 +1,15 @@
-export interface DecretalSliderOption {
+interface DecretalSliderOption {
   label: string;
   value: number; // multiplier or baseline factor
 }
 
-export interface DecretalSlider {
+interface DecretalSlider {
   key: string;
   label: string;
   options: DecretalSliderOption[];
 }
 
-export interface PolicyDecretal {
+interface PolicyDecretal {
   key: string;
   name: string;
   description: string;

@@ -10,7 +10,7 @@
 // The valid-token set is seeded from the misaki en inventory; refine it with
 // `scripts/onoma/kokoro-vocab-oracle.ts` once the container is up.
 
-export interface KokoroPhonemeResult {
+interface KokoroPhonemeResult {
   phonemes: string; // ready for /dev/generate_from_phonemes
   dropped: string[]; // IPA tokens removed (not in Kokoro's vocab, no mapping)
 }

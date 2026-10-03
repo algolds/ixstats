@@ -4,7 +4,7 @@
 
 import { createRNG } from "./rng";
 
-export interface RaceResult {
+interface RaceResult {
   positions: Array<{
     driverId: string;
     teamId: string;
@@ -16,7 +16,7 @@ export interface RaceResult {
   weatherEffect: number;
 }
 
-export const F1_POINTS: Record<number, number> = {
+const F1_POINTS: Record<number, number> = {
   1: 25,
   2: 18,
   3: 15,

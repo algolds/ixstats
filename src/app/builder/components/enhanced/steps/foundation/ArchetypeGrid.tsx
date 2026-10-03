@@ -15,7 +15,7 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { Progress } from "~/components/ui/progress";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import type { RealCountryData } from "~/app/builder/lib/economy-types";
+import type { RealCountryData } from "~/types/builder";
 import type { EconomicArchetype } from "~/lib/economy/archetypes/types";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/components/ui/tooltip";

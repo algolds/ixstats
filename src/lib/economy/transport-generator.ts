@@ -48,14 +48,7 @@ export interface CityNode {
   hasAirport?: boolean;
 }
 
-export interface TerrainCell {
-  elevation: number; // meters
-  isWater: boolean;
-  isCoast: boolean;
-  climateType?: string;
-}
-
-export interface GeneratedRoute {
+interface GeneratedRoute {
   routeType: RouteType;
   name: string;
   geometry: { type: "LineString"; coordinates: [number, number][] };
@@ -208,28 +201,6 @@ const ROUTE_CONFIGS: Record<
     baseSpeed: 40,
   },
 };
-
-/**
- * Compute terrain traversal cost for a route type at a given point.
- * Returns Infinity if impassable.
- */
-/** Terrain traversal cost for A* pathfinding (used by future grid-based pathfinder) */
-export function terrainCost(elevation: number, isWater: boolean, routeType: RouteType): number {
-  const config = ROUTE_CONFIGS[routeType];
-
-  if (routeType === "shipping_lane") {
-    return isWater ? config.waterCost : Infinity; // shipping only on water
-  }
-
-  if (isWater) return config.waterCost; // land routes can't cross water
-
-  if (elevation > config.maxElevation) return Infinity;
-
-  // Cost increases with elevation (exponential for realism)
-  const elevCost = 1 + (elevation / 1000) * config.elevationCostFactor;
-  return elevCost;
-}
-
 // ── Haversine distance ─────────────────────────────────────────────
 
 import { distanceKm as haversineKm } from "~/lib/maps/geo-math";
@@ -761,7 +732,7 @@ export function estimateCoastalCities(
   });
 }
 
-export interface GeneratedNode {
+interface GeneratedNode {
   id: string;
   name: string;
   coordinates: [number, number];
@@ -769,7 +740,7 @@ export interface GeneratedNode {
   cityId?: string;
 }
 
-export interface GeneratedSegment {
+interface GeneratedSegment {
   id: string;
   fromNodeId: string;
   toNodeId: string;
@@ -782,7 +753,7 @@ export interface GeneratedSegment {
   isInternational: boolean;
 }
 
-export interface GeneratedNetwork {
+interface GeneratedNetwork {
   nodes: GeneratedNode[];
   segments: GeneratedSegment[];
   routes: GeneratedRoute[];

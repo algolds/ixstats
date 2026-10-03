@@ -103,7 +103,7 @@ function isInlineNode(node: WikiBlockNode | WikiInlineNode): boolean {
   );
 }
 
-export function serializeInlineNodeToWikitext(node: WikiInlineNode): string {
+function serializeInlineNodeToWikitext(node: WikiInlineNode): string {
   if (
     "text" in node &&
     typeof (node as { text?: unknown }).text === "string" &&

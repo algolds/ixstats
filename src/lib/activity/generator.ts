@@ -4,7 +4,7 @@
 import { db } from "~/server/db";
 import { formatCurrency, formatPopulation } from "~/lib/utils";
 
-export interface ActivityData {
+interface ActivityData {
   type: "achievement" | "diplomatic" | "economic" | "social" | "meta";
   category?: "game" | "platform" | "social";
   userId?: string;
@@ -387,86 +387,6 @@ export class ActivityGenerator {
     } catch (error) {
       console.error("Error saving activity to database:", error);
       throw error;
-    }
-  }
-
-  /**
-   * Generate sample activities for testing
-   */
-  static async generateSampleActivities(): Promise<void> {
-    try {
-      // Get some countries for sample data
-      const countries = await db.country.findMany({
-        take: 5,
-        select: { id: true, name: true, currentTotalGdp: true, economicTier: true },
-      });
-
-      if (countries.length === 0) {
-        console.log("No countries found for sample activities");
-        return;
-      }
-
-      // Create sample activities
-      const sampleActivities: ActivityData[] = [
-        {
-          type: "meta",
-          category: "platform",
-          title: "Activity Feed System Launch",
-          description:
-            "Introducing the new live activity feed system with real-time updates, social interactions, and comprehensive engagement tracking!",
-          metadata: {
-            version: "2.1.0",
-            features: ["Live Activity Feed", "Real-time Updates", "Social Engagement"],
-          },
-          priority: "HIGH",
-          visibility: "public",
-        },
-      ];
-
-      // Add country-specific activities
-      for (const country of countries.slice(0, 3)) {
-        sampleActivities.push({
-          type: "achievement",
-          category: "game",
-          countryId: country.id,
-          title: `${country.name} Economic Update`,
-          description: `${country.name} maintains strong economic performance with current GDP of ${formatCurrency(country.currentTotalGdp || 0)} in the ${country.economicTier} tier.`,
-          metadata: {
-            gdp: country.currentTotalGdp,
-            tier: country.economicTier,
-          },
-          priority: "MEDIUM",
-          visibility: "public",
-          relatedCountries: [country.id],
-        });
-      }
-
-      // Create diplomatic activity if we have at least 2 countries
-      if (countries.length >= 2) {
-        sampleActivities.push({
-          type: "diplomatic",
-          category: "game",
-          title: "Trade Partnership Established",
-          description: `${countries[0]!.name} and ${countries[1]!.name} have established a comprehensive trade partnership to boost bilateral economic cooperation.`,
-          metadata: {
-            countries: [countries[0]!.name, countries[1]!.name],
-            eventType: "trade_agreement",
-            tradeValue: 25000000000,
-          },
-          priority: "MEDIUM",
-          visibility: "public",
-          relatedCountries: [countries[0]!.id, countries[1]!.id],
-        });
-      }
-
-      // Save all sample activities
-      for (const activity of sampleActivities) {
-        await this.createActivity(activity);
-      }
-
-      console.log(`Created ${sampleActivities.length} sample activities`);
-    } catch (error) {
-      console.error("Error generating sample activities:", error);
     }
   }
 

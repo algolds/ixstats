@@ -36,7 +36,7 @@ export interface ChartTooltipProps<T = number, P = Record<string, unknown>> {
 /**
  * Config for a single series line/area/bar in the chart
  */
-export interface ChartSeriesConfig {
+interface ChartSeriesConfig {
   label: string;
   color: string;
   unit?: string;
