@@ -15,6 +15,14 @@ export type Subjects =
 const CRUD_ACTIONS: Actions[] = ["manage", "read", "update", "create", "delete"];
 const PREMIUM_SECTIONS = ["defense", "intelligence", "map-editor"];
 
+/** A tool id given directly or as `{ toolId }`. */
+const toolIdOf = (value: unknown): string | undefined =>
+  typeof value === "string"
+    ? value
+    : value && typeof value === "object" && "toolId" in value
+      ? (value as { toolId: string }).toolId
+      : undefined;
+
 export interface AppAbility {
   can(action: Actions, subject: Subjects, fieldOrExtra?: any): boolean;
   cannot(action: Actions, subject: Subjects, fieldOrExtra?: any): boolean;
@@ -70,13 +78,8 @@ export function defineAbilityFor(
     }
 
     if (subject === "Tool") {
-      if (typeof fieldOrExtra === "object" && fieldOrExtra !== null && "toolId" in fieldOrExtra) {
-        return unlockedToolSet.has(fieldOrExtra.toolId);
-      }
-      if (typeof fieldOrExtra === "string") {
-        return unlockedToolSet.has(fieldOrExtra);
-      }
-      return true;
+      const toolId = toolIdOf(fieldOrExtra);
+      return toolId === undefined || unlockedToolSet.has(toolId);
     }
 
     return false;
