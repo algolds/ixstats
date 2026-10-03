@@ -1,8 +1,6 @@
 /**
- * src/lib/wiki-os/services/auto-sync-service.ts — WikiOS recent-changes sync
- *
- * Reads MediaWiki recentchanges and incrementally synchronizes articles, revisions, and
- * categories into PostgreSQL. runAutoSyncCycle runs from the `wiki-recentchanges` cron job
+ * WikiOS recent-changes sync: incrementally copies MediaWiki articles, revisions and categories
+ * into PostgreSQL. runAutoSyncCycle runs from the `wiki-recentchanges` cron job
  * (src/server/cron/jobs.ts) and from the /api/wikios/inbound-sync webhook; there is no
  * in-process daemon.
  */
@@ -17,130 +15,100 @@ const MEDIAWIKI_URL = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.c
 const API_URL = `${MEDIAWIKI_URL.replace(/\/+$/, "")}/api.php`;
 
 function sanitize(str: string | null | undefined): string {
-  if (!str) return "";
-  return str.replace(/\0/g, "").replace(/\u0000/g, "");
+  return (str ?? "").replaceAll("\0", "");
 }
+
+const CATEGORY_SUBSTRINGS = [
+  // malformed URLs and link artifacts
+  "http:",
+  "https:",
+  "://",
+  ".com",
+  ".org",
+  ".net",
+  "www.",
+  "%2f",
+  "%3a",
+  // template / maintenance / namespace tags
+  "template",
+  "infobox",
+  "navbox",
+  "navigational",
+  "wikiproject",
+  "glottolog",
+  "module:",
+  "user:",
+  "portal:",
+  "wikipedia:",
+  "help:",
+  "disambiguation",
+  "redirects",
+  "tracking",
+  "maintenance",
+  "cleanup",
+  "unreferenced",
+  "stub",
+  // authority control and library identifiers
+  "identifiers",
+  "viaf",
+  "bnf",
+  "lccn",
+  "gnd",
+  "isni",
+  "fast",
+  "nla",
+  "ndl",
+  "worldcat",
+  // citation style and template tracking
+  "citation",
+  "webarchive",
+  "wayback",
+  "short description",
+  "script errors",
+  "duplicate arguments",
+  "hcards",
+  "lang-",
+  "wikidata",
+];
+
+const CATEGORY_PREFIXES = [
+  "people executed",
+  "deaths from",
+  "buried at",
+  "cs1",
+  "articles containing",
+  "articles with",
+  "articles needing",
+  "pages ",
+  "ixwb",
+];
+
+const CATEGORY_EXACT = new Set([
+  "births",
+  "deaths",
+  "living people",
+  "missing people",
+  "fat people",
+]);
+
+const MARKUP_ARTIFACT = /[<>{}[\]%]/;
+const REAL_WORLD_BIRTHS_DEATHS = /\b(?:\d{1,4}\s+|(?:century|millennium)\s+)(?:births|deaths)\b/;
+
+// Real-world countries and political entities (IxWorld lore is deliberately not listed).
+const REAL_WORLD_ENTITY =
+  /\b(?:iran|iranian|portugal|portuguese|north america|south america|united states|u\.s\.|usa|russia|russian|china|chinese|germany|german|france|french|spain|spanish|italy|italian|japan|japanese|india|indian|brazil|brazilian|mexico|mexican|turkey|turkish|egypt|egyptian|israel|israeli|saudi|syria|syrian|iraq|iraqi|korea|korean|vietnam|vietnamese|netherlands|dutch|belgium|belgian|sweden|swedish|norway|norwegian|denmark|danish|finland|finnish|poland|polish|ukraine|ukrainian|canada|canadian|australia|australian|new zealand|argentina|chile|colombia|venezuela|peru|cuba|south africa|nigeria|kenya|ghana|morocco|algeria|tunisia|ethiopia|philippines|indonesia|malaysia|thailand|singapore|pakistan|bangladesh|ireland|irish|scotland|scottish|wales|welsh|england|english|united kingdom|british|austria|austrian|switzerland|swiss|greece|greek|hungary|hungarian|romania|romanian|bulgaria|serbia|croatia|czech|slovakia|albania|iceland|estonia|latvia|lithuania|taiwan|hong kong|latter day saint)\b/;
 
 function isIrlOrMaintenanceCategory(name: string): boolean {
   if (!name) return true;
   const lower = name.toLowerCase().replace(/_/g, " ").trim();
-
-  // 0. Malformed URLs, embedded links, or HTML/wikitext artifacts
-  if (
-    lower.includes("http:") ||
-    lower.includes("https:") ||
-    lower.includes("://") ||
-    lower.includes(".com") ||
-    lower.includes(".org") ||
-    lower.includes(".net") ||
-    lower.includes("www.") ||
-    lower.includes("%2f") ||
-    lower.includes("%3a") ||
-    /[<>{}[\]%]/.test(name)
-  ) {
-    return true;
-  }
-
-  // 1. Template, Module, Navbox, Infobox, WikiProject, Glottolog, Maintenance tags
-  if (
-    lower.includes("template") ||
-    lower.includes("infobox") ||
-    lower.includes("navbox") ||
-    lower.includes("navigational") ||
-    lower.includes("wikiproject") ||
-    lower.includes("glottolog") ||
-    lower.includes("module:") ||
-    lower.includes("user:") ||
-    lower.includes("portal:") ||
-    lower.includes("wikipedia:") ||
-    lower.includes("help:") ||
-    lower.includes("disambiguation") ||
-    lower.includes("redirects") ||
-    lower.includes("tracking") ||
-    lower.includes("maintenance") ||
-    lower.includes("cleanup") ||
-    lower.includes("unreferenced") ||
-    lower.includes("stub") ||
-    lower.includes("stubs")
-  ) {
-    return true;
-  }
-
-  // 2. Real-World Births and Deaths
-  if (
-    /\b\d{1,4}\s+(?:births|deaths)\b/i.test(lower) ||
-    /\b(?:century|millennium)\s+(?:births|deaths)\b/i.test(lower) ||
-    lower === "births" ||
-    lower === "deaths" ||
-    lower === "living people" ||
-    lower === "missing people" ||
-    lower === "fat people" ||
-    lower.startsWith("people executed") ||
-    lower.startsWith("deaths from") ||
-    lower.startsWith("buried at")
-  ) {
-    return true;
-  }
-
-  // 3. Authority Control & Library Identifiers
-  if (
-    lower.includes("identifiers") ||
-    lower.includes("viaf") ||
-    lower.includes("bnf") ||
-    lower.includes("lccn") ||
-    lower.includes("gnd") ||
-    lower.includes("isni") ||
-    lower.includes("fast") ||
-    lower.includes("nla") ||
-    lower.includes("ndl") ||
-    lower.includes("worldcat")
-  ) {
-    return true;
-  }
-
-  // 4. Citation Style 1 (CS1) & Template Tracking
-  if (
-    lower.startsWith("cs1") ||
-    lower.includes("citation") ||
-    lower.includes("citations using") ||
-    lower.includes("webarchive") ||
-    lower.includes("wayback") ||
-    lower.includes("short description") ||
-    lower.includes("script errors") ||
-    lower.includes("duplicate arguments")
-  ) {
-    return true;
-  }
-
-  // 5. Language & Microformats
-  if (
-    lower.startsWith("articles containing") ||
-    lower.startsWith("articles with") ||
-    lower.startsWith("articles needing") ||
-    lower.includes("hcards") ||
-    lower.includes("lang-")
-  ) {
-    return true;
-  }
-
-  // 6. Real-World IRL Country / Political Entities (excluding IxWorld lore)
-  const irlRegex =
-    /\b(?:iran|iranian|portugal|portuguese|north america|south america|united states|u\.s\.|usa|russia|russian|china|chinese|germany|german|france|french|spain|spanish|italy|italian|japan|japanese|india|indian|brazil|brazilian|mexico|mexican|turkey|turkish|egypt|egyptian|israel|israeli|saudi|syria|syrian|iraq|iraqi|korea|korean|vietnam|vietnamese|netherlands|dutch|belgium|belgian|sweden|swedish|norway|norwegian|denmark|danish|finland|finnish|poland|polish|ukraine|ukrainian|canada|canadian|australia|australian|new zealand|argentina|chile|colombia|venezuela|peru|cuba|south africa|nigeria|kenya|ghana|morocco|algeria|tunisia|ethiopia|philippines|indonesia|malaysia|thailand|singapore|pakistan|bangladesh|ireland|irish|scotland|scottish|wales|welsh|england|english|united kingdom|british|austria|austrian|switzerland|swiss|greece|greek|hungary|hungarian|romania|romanian|bulgaria|serbia|croatia|czech|slovakia|albania|iceland|estonia|latvia|lithuania|taiwan|hong kong|latter day saint)\b/i;
-  if (irlRegex.test(lower)) {
-    return true;
-  }
-
-  // 7. Wikidata & Bot Maintenance
-  if (
-    lower.includes("wikidata") ||
-    lower.includes("templatedata") ||
-    lower.startsWith("pages ") ||
-    lower.startsWith("ixwb")
-  ) {
-    return true;
-  }
-
-  return false;
+  return (
+    MARKUP_ARTIFACT.test(name) ||
+    CATEGORY_SUBSTRINGS.some((fragment) => lower.includes(fragment)) ||
+    CATEGORY_PREFIXES.some((prefix) => lower.startsWith(prefix)) ||
+    CATEGORY_EXACT.has(lower) ||
+    REAL_WORLD_BIRTHS_DEATHS.test(lower) ||
+    REAL_WORLD_ENTITY.test(lower)
+  );
 }
 
 let isSyncing = false;
@@ -170,6 +138,102 @@ export async function syncSinglePage(title: string): Promise<boolean> {
   }
 }
 
+interface MwRevision {
+  slots?: { main?: { "*"?: string } };
+  "*"?: string;
+  user?: string;
+  revid?: number;
+  timestamp?: string;
+  comment?: string;
+  minor?: string;
+}
+
+interface MwPage {
+  pageid?: number;
+  missing?: string;
+  ns?: number;
+  lastrevid?: number;
+  revisions?: MwRevision[];
+}
+
+/** The page's current revision from MediaWiki; null when the page is missing or deleted. */
+async function fetchPageWithRevision(rawTitle: string): Promise<MwPage | null> {
+  const url = new URL(API_URL);
+  url.search = new URLSearchParams({
+    action: "query",
+    titles: rawTitle,
+    prop: "revisions|info",
+    rvprop: "content|ids|timestamp|user|comment|size|flags",
+    rvslots: "main",
+    format: "json",
+  }).toString();
+
+  const res = await fetch(url, {
+    headers: { "User-Agent": DEFAULT_USER_AGENT, Accept: "application/json" },
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!res.ok) throw new Error(`MediaWiki returned HTTP ${res.status}`);
+
+  const data = await res.json();
+  const page = Object.values(data?.query?.pages ?? {})[0] as MwPage | undefined;
+  return page && page.pageid !== undefined && page.missing === undefined ? page : null;
+}
+
+/** Record the revision; (source, mwRevId) is unique, so a known revision is skipped by the DB. */
+async function recordRevision(
+  articleId: string,
+  revId: number,
+  rev: MwRevision | undefined,
+  wikitext: string
+): Promise<void> {
+  const byteSize = calculateRawTextBytes(wikitext);
+  const prevRev = await db.wikiRevision.findFirst({
+    where: { articleId },
+    orderBy: { createdAt: "desc" },
+    select: { byteSize: true },
+  });
+
+  await db.wikiRevision.createMany({
+    data: [
+      {
+        articleId,
+        mwRevId: revId,
+        author: sanitize(rev?.user || "MediaWiki Editor"),
+        summary: sanitize(rev?.comment).substring(0, 480),
+        wikitext,
+        byteSize,
+        byteDelta: prevRev ? byteSize - (prevRev.byteSize || 0) : byteSize,
+        minor: rev?.minor !== undefined,
+        format: "WIKITEXT",
+        source: "ixwiki",
+        createdAt: rev?.timestamp ? new Date(rev.timestamp) : new Date(),
+      },
+    ],
+    skipDuplicates: true,
+  });
+}
+
+async function syncCategories(articleId: string, wikitext: string): Promise<void> {
+  for (const [, rawName] of wikitext.matchAll(/\[\[Category:([^\]|]+)(?:\|[^\]]*)?\]\]/gi)) {
+    const catName = rawName?.trim();
+    if (!catName || isIrlOrMaintenanceCategory(catName)) continue;
+
+    const slug = toArticleSlug(catName);
+    const category = await (db as any).wikiCategory.upsert({
+      where: { slug },
+      create: { slug, name: catName.replace(/_/g, " ") },
+      update: {},
+      select: { id: true },
+    });
+
+    await (db as any).wikiCategoryMember.upsert({
+      where: { categoryId_articleId: { categoryId: category.id, articleId } },
+      create: { articleId, categoryId: category.id },
+      update: {},
+    });
+  }
+}
+
 /**
  * Sync one page's current revision. Returns false when there is nothing to sync (empty title,
  * missing/deleted page); throws on HTTP or database failure so callers can retry later.
@@ -178,151 +242,51 @@ async function syncPageOrThrow(title: string): Promise<boolean> {
   const rawTitle = sanitize(title.replace(/_/g, " ").trim());
   if (!rawTitle) return false;
 
-  const url = new URL(API_URL);
-  url.searchParams.set("action", "query");
-  url.searchParams.set("titles", rawTitle);
-  url.searchParams.set("prop", "revisions|info");
-  url.searchParams.set("rvprop", "content|ids|timestamp|user|comment|size|flags");
-  url.searchParams.set("rvslots", "main");
-  url.searchParams.set("format", "json");
-
-  const res = await fetch(url.toString(), {
-    headers: { "User-Agent": DEFAULT_USER_AGENT, Accept: "application/json" },
-    signal: AbortSignal.timeout(10000),
-  });
-
-  if (!res.ok) throw new Error(`MediaWiki returned HTTP ${res.status}`);
-  const data = await res.json();
-  const pages = data?.query?.pages;
-  if (!pages) return false;
-
-  const page = Object.values(pages)[0] as any;
-  if (!page || page.pageid === undefined || page.missing !== undefined) return false;
+  const page = await fetchPageWithRevision(rawTitle);
+  if (!page) return false;
 
   const rev = page.revisions?.[0];
-  const wikitext = sanitize(rev?.slots?.main?.["*"] || rev?.["*"] || "");
+  const wikitext = sanitize(rev?.slots?.main?.["*"] || rev?.["*"]);
   const words = wikitext.split(/\s+/).filter(Boolean).length;
-  const readingTime = Math.max(1, Math.ceil(words / 200));
-  const author = sanitize(rev?.user || "MediaWiki Editor");
   const revId = Number(rev?.revid || page.lastrevid || 0);
-  const revTimestamp = rev?.timestamp ? new Date(rev.timestamp) : new Date();
   const cleanSum = cleanExcerpt(wikitext, 300);
-  const summary = cleanSum ? cleanSum.substring(0, 480) : null;
-  const leadImageUrl = extractLeadImageFromWikitext(wikitext);
-  const slug = toArticleSlug(rawTitle);
-  const ns = Number(page.ns || 0);
+  const where = { source_title: { source: "ixwiki", title: rawTitle } };
 
   // The reader prefers cached contentHtml, so when the wikitext changes the cache must be cleared
   // or MediaWiki-side edits never show (NEW-2). An empty cache is re-rendered on the next view.
-  const previous = await db.wikiArticle.findUnique({
-    where: { source_title: { source: "ixwiki", title: rawTitle } },
-    select: { wikitext: true },
-  });
-  const wikitextChanged = !previous || previous.wikitext !== wikitext;
+  const previous = await db.wikiArticle.findUnique({ where, select: { wikitext: true } });
+
+  const fields = {
+    slug: toArticleSlug(rawTitle),
+    namespace: Number(page.ns || 0),
+    wikitext,
+    summary: cleanSum ? cleanSum.substring(0, 480) : null,
+    leadImageUrl: extractLeadImageFromWikitext(wikitext) || null,
+    wordCount: words,
+    readingTime: Math.max(1, Math.ceil(words / 200)),
+    mwPageId: Number(page.pageid),
+    mwLatestRevId: revId,
+    syncedAt: new Date(),
+  };
 
   const article = await (db as any).wikiArticle.upsert({
-    where: {
-      source_title: { source: "ixwiki", title: rawTitle },
-    },
+    where,
     create: {
+      ...fields,
       title: rawTitle,
-      slug,
       source: "ixwiki",
-      namespace: ns,
       status: "PUBLISHED",
       format: "WIKITEXT",
-      wikitext,
-      summary,
-      leadImageUrl: leadImageUrl || null,
-      wordCount: words,
-      readingTime,
-      mwPageId: Number(page.pageid),
-      mwLatestRevId: revId,
-      syncedAt: new Date(),
     },
     update: {
-      slug,
-      namespace: ns,
-      wikitext,
-      ...(wikitextChanged ? { contentHtml: "" } : {}),
-      summary,
-      leadImageUrl: leadImageUrl || null,
-      wordCount: words,
-      readingTime,
-      mwPageId: Number(page.pageid),
-      mwLatestRevId: revId,
-      syncedAt: new Date(),
+      ...fields,
+      ...(!previous || previous.wikitext !== wikitext ? { contentHtml: "" } : {}),
     },
     select: { id: true },
   });
 
-  // Record revision; (source, mwRevId) is unique, so a known revision is skipped by the DB.
-  if (revId > 0) {
-    const rawByteSize = calculateRawTextBytes(wikitext);
-    const prevRev = await db.wikiRevision.findFirst({
-      where: { articleId: article.id },
-      orderBy: { createdAt: "desc" },
-      select: { byteSize: true },
-    });
-
-    const byteDelta = prevRev ? rawByteSize - (prevRev.byteSize || 0) : rawByteSize;
-
-    await db.wikiRevision.createMany({
-      data: [
-        {
-          articleId: article.id,
-          mwRevId: revId,
-          author,
-          summary: sanitize(rev?.comment || "").substring(0, 480),
-          wikitext,
-          byteSize: rawByteSize,
-          byteDelta,
-          minor: Boolean(rev?.minor !== undefined),
-          format: "WIKITEXT",
-          source: "ixwiki",
-          createdAt: revTimestamp,
-        },
-      ],
-      skipDuplicates: true,
-    });
-  }
-
-  // Parse category tags and sync memberships
-  const catMatches = wikitext.match(/\[\[Category:([^\]|]+)(?:\|[^\]]*)?\]\]/gi) || [];
-  for (const match of catMatches) {
-    const catName = match
-      .replace(/\[\[Category:/i, "")
-      .replace(/\]\]$/, "")
-      .split("|")[0]
-      ?.trim();
-    if (!catName || isIrlOrMaintenanceCategory(catName)) continue;
-
-    const catSlug = toArticleSlug(catName);
-    const category = await (db as any).wikiCategory.upsert({
-      where: { slug: catSlug },
-      create: {
-        slug: catSlug,
-        name: catName.replace(/_/g, " "),
-      },
-      update: {},
-      select: { id: true },
-    });
-
-    await (db as any).wikiCategoryMember.upsert({
-      where: {
-        categoryId_articleId: {
-          categoryId: category.id,
-          articleId: article.id,
-        },
-      },
-      create: {
-        articleId: article.id,
-        categoryId: category.id,
-      },
-      update: {},
-    });
-  }
-
+  if (revId > 0) await recordRevision(article.id, revId, rev, wikitext);
+  await syncCategories(article.id, wikitext);
   return true;
 }
 
