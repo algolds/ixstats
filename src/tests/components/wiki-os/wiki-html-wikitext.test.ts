@@ -62,6 +62,11 @@ describe("serializePlateToWikitext", () => {
     expect(complete).toBe(true);
   });
 
+  it("keeps list items on consecutive lines (a blank line would split the list in MediaWiki)", () => {
+    const { wikitext } = serializePlateToWikitext(fromHtml("<ul><li>a</li><li>b</li></ul>"));
+    expect(wikitext).toBe("* a\n* b");
+  });
+
   it("renders combined bold+italic marks as five-quote wikitext", () => {
     const value = deserializeParsoidHtml("<body></body>");
     void value;

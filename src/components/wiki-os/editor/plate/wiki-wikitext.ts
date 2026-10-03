@@ -108,7 +108,7 @@ function inlineToWikitext(children: Descendant[]): string {
   return out;
 }
 
-/** One entry per item; the caller joins them like any other block parts. */
+/** One entry per item, each ending in a newline; join with "" so items stay on consecutive lines. */
 function listToWikitext(el: Loose): string[] {
   const defaultMarker = el.type === "ol" ? "#" : "*";
   return (el.children || []).map((li: Loose) => {
@@ -172,7 +172,7 @@ function blockToWikitext(el: Loose, state: { complete: boolean }): string {
       return `<pre>${esc(el.children.map((c: Loose) => c.text ?? "").join(""))}</pre>\n`;
     case "ul":
     case "ol":
-      return listToWikitext(el).join("\n");
+      return listToWikitext(el).join("");
     case "table":
       return tableToWikitext(el);
     case "hr":
