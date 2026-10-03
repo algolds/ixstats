@@ -364,18 +364,24 @@ export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
 
     // Notify if this is a reply. Skip replies to any of the caller's own personas (keyed by
     // owning user, not persona).
-    const parentAuthorId = post.parentPost?.account?.clerkUserId;
-    if (parentAuthorId && parentAuthorId !== clerkUserId) {
-      await notificationHooks
-        .onThinkPageActivity({
-          thinkpageId: post.id,
-          title: input.content.substring(0, 50),
-          action: "commented",
-          authorId: account.clerkUserId,
-          authorName: actorName,
-          targetUserId: parentAuthorId,
-        })
-        .catch(logNotifyFailure("reply"));
+    if (input.parentPostId && post.parentPost) {
+      const parentPost = await db.thinkpagesPost.findUnique({
+        where: { id: input.parentPostId },
+        select: { id: true, accountId: true, account: { select: { clerkUserId: true } } },
+      });
+
+      if (parentPost && parentPost.account.clerkUserId !== clerkUserId) {
+        await notificationHooks
+          .onThinkPageActivity({
+            thinkpageId: post.id,
+            title: input.content.substring(0, 50),
+            action: "commented",
+            authorId: account.clerkUserId,
+            authorName: actorName,
+            targetUserId: parentPost.account.clerkUserId,
+          })
+          .catch(logNotifyFailure("reply"));
+      }
     }
 
     const creditsEarned = await awardPostCredits(db, clerkUserId, post, {
