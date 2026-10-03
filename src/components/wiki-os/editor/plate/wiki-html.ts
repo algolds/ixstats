@@ -11,9 +11,7 @@
 
 import type { Descendant } from "slate";
 
-// ─── Node model ─────────────────────────────────────────────────────────────
-
-export type WikiText = {
+type WikiText = {
   text: string;
   bold?: boolean;
   italic?: boolean;
@@ -123,7 +121,7 @@ interface InfoboxBoxEl extends BaseEl {
   /** Canonical MediaWiki invocation — emitted verbatim by serializePlateToWikitext. */ wikitext?: string;
 }
 
-export type WikiElement =
+type WikiElement =
   | PEl
   | HeadingEl
   | QuoteEl
@@ -155,7 +153,6 @@ const VOID_TYPES = new Set([
   "chip-mapembed",
   "media",
   "raw-html",
-  "ref",
   "infobox-box",
 ]);
 
@@ -163,58 +160,48 @@ const VOID_TYPES = new Set([
 const FURNITURE_RE =
   /navbox|metadata|vertical-navbox|mbox|sidebar|sistersitebox|toc|navigation|catlinks|mw-jump/i;
 
+const squish = (s?: string | null) => (s ?? "").replace(/\s+/g, " ").trim();
+
 function parseInfoboxFields(el: Element): {
   title?: string;
   fields: Array<{ label: string; value: string }>;
 } {
+  const title = squish(el.querySelector(".infobox-title, caption, .infobox-above")?.textContent);
   const fields: Array<{ label: string; value: string }> = [];
-  let title: string | undefined;
-  const titleEl = el.querySelector(".infobox-title, caption, .infobox-above") ?? null;
-  if (titleEl?.textContent?.replace(/\s+/g, " ").trim()) {
-    title = titleEl.textContent.replace(/\s+/g, " ").trim();
-  }
 
   el.querySelectorAll("tr").forEach((tr) => {
     // skip rows that are pure media/layout
     if (tr.querySelector("img, figure")) return;
-    const label = tr.querySelector("th")?.textContent?.replace(/\s+/g, " ").trim() ?? "";
-    const data = tr.querySelector("td")?.textContent?.replace(/\s+/g, " ").trim() ?? "";
-    if (label && data) {
-      fields.push({ label, value: data });
-    } else if (!label && data && data.length < 120) {
-      fields.push({ label: "", value: data });
-    }
+    const label = squish(tr.querySelector("th")?.textContent);
+    const value = squish(tr.querySelector("td")?.textContent);
+    if (value && (label || value.length < 120)) fields.push({ label, value });
   });
-  return { title, fields };
+  return { title: title || undefined, fields };
 }
 
-// ─── HTML → Slate ───────────────────────────────────────────────────────────
+type TemplateInfo = { name: string; params: Record<string, string>; dataMw: string };
 
-function parseTemplateData(
-  el: Element
-): { name: string; params: Record<string, string>; dataMw: string } | null {
+function parseTemplateData(el: Element): TemplateInfo | null {
   const raw = el.getAttribute("data-mw");
   if (!raw) return null;
   try {
-    const dataMw = JSON.parse(raw);
-    const tmpl = dataMw?.parts?.[0]?.template;
+    const tmpl = JSON.parse(raw)?.parts?.[0]?.template;
     if (!tmpl) return null;
-    const name = tmpl.target?.wt ?? "Template";
-    const params: Record<string, string> = {};
-    if (tmpl.params) {
-      for (const [k, v] of Object.entries(tmpl.params)) {
-        params[k] = (v as { wt?: string })?.wt ?? String(v);
-      }
-    }
-    return { name, params, dataMw: raw };
+    const params = Object.fromEntries(
+      Object.entries(tmpl.params ?? {}).map(([k, v]) => [
+        k,
+        (v as { wt?: string })?.wt ?? String(v),
+      ])
+    );
+    return { name: tmpl.target?.wt ?? "Template", params, dataMw: raw };
   } catch {
     return null;
   }
 }
 
-function chipInfoFromAnchor(
-  a: HTMLAnchorElement
-): { kind: "coord" | "mapembed"; href: string; title: string; label: string } | null {
+type ChipInfo = { kind: "coord" | "mapembed"; href: string; title: string; label: string };
+
+function chipInfoFromAnchor(a: HTMLAnchorElement): ChipInfo | null {
   const href = a.getAttribute("href") || "";
   const title = a.getAttribute("title") || "";
   let decodedHref = href;
@@ -223,215 +210,136 @@ function chipInfoFromAnchor(
   } catch {
     /* keep */
   }
-  if (/Coords:/i.test(decodedHref) || /Coords:/i.test(title)) {
+  const mentions = (re: RegExp) => re.test(decodedHref) || re.test(title);
+  if (mentions(/Coords:/i)) {
     return { kind: "coord", href, title, label: a.textContent?.trim() || "Location" };
   }
-  if (/MapEmbed:/i.test(decodedHref) || /MapEmbed:/i.test(title)) {
-    return { kind: "mapembed", href, title, label: "Map Embed" };
-  }
+  if (mentions(/MapEmbed:/i)) return { kind: "mapembed", href, title, label: "Map Embed" };
   return null;
+}
+
+/** Build a Slate node of `type` with a fresh id; atomic nodes get an empty text child. */
+function makeNode(
+  type: string,
+  props: Record<string, unknown> = {},
+  children: Descendant[] = [{ text: "" }]
+): Descendant {
+  return { type, ...props, children, id: nextId() } as unknown as Descendant;
+}
+
+function chipNode({ kind, href, title, label }: ChipInfo): Descendant {
+  return kind === "coord"
+    ? makeNode("chip-coord", { href, title, label })
+    : makeNode("chip-mapembed", { href, title });
+}
+
+const MARK_BY_TAG: Record<string, Partial<WikiText>> = {
+  b: { bold: true },
+  strong: { bold: true },
+  i: { italic: true },
+  em: { italic: true },
+  u: { underline: true },
+  s: { strike: true },
+  strike: { strike: true },
+  del: { strike: true },
+  sup: { sup: true },
+  sub: { sub: true },
+  code: { codeMark: true },
+};
+
+const SKIPPED_INLINE_TAGS = new Set(["style", "input", "button", "form", "select"]);
+const SKIPPED_BLOCK_TAGS = new Set([...SKIPPED_INLINE_TAGS, "link", "head", "meta"]);
+
+function pushText(raw: string, marks: Partial<WikiText>, out: Descendant[]): void {
+  const text = raw.replace(/\s+/g, " ");
+  if (text.length > 0 && text !== " ") {
+    out.push({ text, ...marks });
+    return;
+  }
+  // preserve single meaningful space only when between content
+  const last = out.at(-1) as WikiText | undefined;
+  if (/\s/.test(raw) && last && typeof last.text === "string" && !last.text.endsWith(" ")) {
+    out.push({ text: " ", ...marks });
+  }
+}
+
+function convertTransclusion(el: Element): Descendant {
+  const info = parseTemplateData(el);
+  const wt = info?.name ?? "";
+  if (
+    /^(MyCountry|CountryData|BusinessData):/.test(wt) ||
+    el.className.includes("wikios-ve-custom-chip")
+  ) {
+    return makeNode("chip-engine", {
+      name: wt || el.getAttribute("data-wt") || "CountryData",
+      params: info?.params ?? {},
+      dataMw: info?.dataMw ?? "{}",
+      label: el.textContent?.trim() || wt.split(":").pop() || "Chip",
+    });
+  }
+  const anchor = el.querySelector("a");
+  const chip = anchor && chipInfoFromAnchor(anchor);
+  if (chip) return chipNode(chip);
+  return makeNode("template", {
+    name: info?.name ?? "Template",
+    params: info?.params ?? {},
+    dataMw: info?.dataMw ?? "{}",
+    html: el.outerHTML,
+  });
+}
+
+function convertAnchor(el: Element, marks: Partial<WikiText>): Descendant {
+  const chip = chipInfoFromAnchor(el as HTMLAnchorElement);
+  if (chip) return chipNode(chip);
+
+  let href = el.getAttribute("href") || "";
+  if (href.startsWith("./")) href = `/wiki/${href.slice(2)}`;
+  const children: Descendant[] = [];
+  convertInlineNodes(el.childNodes, marks, children);
+  const linkChildren = children.filter((c) => typeof (c as WikiText).text === "string");
+  return {
+    type: "link",
+    url: href,
+    internal: !/^https?:/i.test(href),
+    children: linkChildren.length ? linkChildren : [{ text: el.textContent ?? "", ...marks }],
+  } as unknown as Descendant;
 }
 
 /** Inline conversion: returns array of leaf nodes (text/link/ref). */
 function convertInlineNodes(nodes: NodeList, marks: Partial<WikiText>, out: Descendant[]): void {
   nodes.forEach((n) => {
     if (n.nodeType === Node.TEXT_NODE) {
-      const raw = n.textContent ?? "";
-      const text = raw.replace(/\s+/g, " ");
-      if (text.length === 0 || text === " ") {
-        // preserve single meaningful space only when between content
-        if (/\s/.test(raw) && out.length > 0) {
-          const last = out[out.length - 1] as WikiText;
-          if (last && typeof last.text === "string" && !last.text.endsWith(" ")) {
-            out.push({ text: " ", ...marks });
-          }
-        }
-        return;
-      }
-      out.push({ text, ...marks });
+      pushText(n.textContent ?? "", marks, out);
       return;
     }
     if (n.nodeType !== Node.ELEMENT_NODE) return;
     const el = n as Element;
     const tag = el.tagName.toLowerCase();
 
-    if (
-      el.classList.contains("mw-editsection") ||
-      tag === "style" ||
-      tag === "input" ||
-      tag === "button" ||
-      tag === "form" ||
-      tag === "select"
-    )
-      return;
+    if (el.classList.contains("mw-editsection") || SKIPPED_INLINE_TAGS.has(tag)) return;
     if (tag === "br") {
       out.push({ text: "\n", ...marks });
-      return;
-    }
-
-    if (tag === "a") {
-      // oxlint-disable-next-line eslint/no-unused-vars
-      const hrefAttr = el.getAttribute("href") ?? "";
-      const chipEarly = chipInfoFromAnchor(el as HTMLAnchorElement);
-      void chipEarly;
-    }
-
-    // atomic inline constructs
-    if (el.getAttribute("typeof")?.includes("mw:Transclusion")) {
-      const info = parseTemplateData(el);
-      const wt = info?.name ?? "";
-      const chipClass = el.className || "";
-      if (
-        wt.startsWith("MyCountry:") ||
-        wt.startsWith("CountryData:") ||
-        wt.startsWith("BusinessData:") ||
-        chipClass.includes("wikios-ve-custom-chip")
-      ) {
-        out.push({
-          type: "chip-engine",
-          name: wt || el.getAttribute("data-wt") || "CountryData",
-          params: info?.params ?? {},
-          dataMw: info?.dataMw ?? "{}",
-          label: el.textContent?.trim() || wt.split(":").pop() || "Chip",
-          children: [{ text: "" }],
-          id: nextId(),
-        } as unknown as Descendant);
-        return;
-      }
-      const anchor = el.querySelector("a");
-      const chip = anchor ? chipInfoFromAnchor(anchor) : null;
-      if (chip?.kind === "coord") {
-        out.push({
-          type: "chip-coord",
-          href: chip.href,
-          title: chip.title,
-          label: chip.label,
-          children: [{ text: "" }],
-          id: nextId(),
-        } as unknown as Descendant);
-        return;
-      }
-      if (chip?.kind === "mapembed") {
-        out.push({
-          type: "chip-mapembed",
-          href: chip.href,
-          title: chip.title,
-          children: [{ text: "" }],
-          id: nextId(),
-        } as unknown as Descendant);
-        return;
-      }
-      out.push({
-        type: "template",
-        name: info?.name ?? "Template",
-        params: info?.params ?? {},
-        dataMw: info?.dataMw ?? "{}",
-        html: el.outerHTML,
-        children: [{ text: "" }],
-        id: nextId(),
-      } as unknown as Descendant);
-      return;
-    }
-
-    if (tag === "a") {
-      const chip = chipInfoFromAnchor(el as HTMLAnchorElement);
-      if (chip?.kind === "coord") {
-        out.push({
-          type: "chip-coord",
-          href: chip.href,
-          title: chip.title,
-          label: chip.label,
-          children: [{ text: "" }],
-          id: nextId(),
-        } as unknown as Descendant);
-        return;
-      }
-      if (chip?.kind === "mapembed") {
-        out.push({
-          type: "chip-mapembed",
-          href: chip.href,
-          title: chip.title,
-          children: [{ text: "" }],
-          id: nextId(),
-        } as unknown as Descendant);
-        return;
-      }
-      let href = el.getAttribute("href") || "";
-      if (href.startsWith("./")) href = `/wiki/${href.slice(2)}`;
-      const internal = !/^https?:/i.test(href);
-      const children: Descendant[] = [];
-      convertInlineNodes(el.childNodes, marks, children);
-      const linkChildren = children.filter((c) => typeof (c as WikiText).text === "string");
-      out.push({
-        type: "link",
-        url: href,
-        internal,
-        children: linkChildren.length ? linkChildren : [{ text: el.textContent ?? "", ...marks }],
-      } as unknown as Descendant);
-      return;
-    }
-
-    if (tag === "sup" && el.querySelector("ref")) {
-      out.push({
-        type: "ref",
-        label: el.querySelector("ref")?.textContent?.trim() || "Citation needed",
-        children: [{ text: "" }],
-        id: nextId(),
-      } as unknown as Descendant);
-      return;
-    }
-
-    const nextMarks = { ...marks };
-    let recurse = true;
-    switch (tag) {
-      case "b":
-      case "strong":
-        nextMarks.bold = true;
-        break;
-      case "i":
-      case "em":
-        nextMarks.italic = true;
-        break;
-      case "u":
-        nextMarks.underline = true;
-        break;
-      case "s":
-      case "strike":
-      case "del":
-        nextMarks.strike = true;
-        break;
-      case "sup":
-        nextMarks.sup = true;
-        break;
-      case "sub":
-        nextMarks.sub = true;
-        break;
-      case "code":
-        nextMarks.codeMark = true;
-        break;
-      default:
-        recurse =
-          tag === "span" ||
-          tag === "small" ||
-          tag === "abbr" ||
-          tag === "cite" ||
-          tag === "time" ||
-          tag === "figure-inline" ||
-          tag === "ref";
-    }
-    if (recurse) {
-      convertInlineNodes(el.childNodes, nextMarks, out);
+    } else if (isTransclusion(el)) {
+      // atomic inline constructs
+      out.push(convertTransclusion(el));
+    } else if (tag === "a") {
+      out.push(convertAnchor(el, marks));
+    } else if (tag === "sup" && el.querySelector("ref")) {
+      out.push(
+        makeNode("ref", {
+          label: el.querySelector("ref")?.textContent?.trim() || "Citation needed",
+        })
+      );
     } else if (!VOID_TYPES.has(tag)) {
-      convertInlineNodes(el.childNodes, nextMarks, out);
+      convertInlineNodes(el.childNodes, { ...marks, ...MARK_BY_TAG[tag] }, out);
     }
   });
 }
 
 function isMeaningfulInline(children: Descendant[]): boolean {
-  const text = children
-    .map((c) => (typeof (c as WikiText).text === "string" ? (c as WikiText).text : ""))
-    .join("");
-  return text.trim().length > 0;
+  return children.some(
+    (c) => typeof (c as WikiText).text === "string" && (c as WikiText).text.trim()
+  );
 }
 
 function convertBlockChildren(el: Element): Descendant[] {
@@ -442,10 +350,7 @@ function convertBlockChildren(el: Element): Descendant[] {
 }
 
 /** Collect an [about] sibling group into one raw-html block (infobox tables etc.). */
-function collectAboutGroup(el: Element): {
-  html: string;
-  info: { name: string; params: Record<string, string>; dataMw: string } | null;
-} {
+function collectAboutGroup(el: Element): string {
   const about = el.getAttribute("about")!;
   const parts: string[] = [el.outerHTML];
   let cursor = el.nextElementSibling;
@@ -457,8 +362,185 @@ function collectAboutGroup(el: Element): {
     }
     cursor = next;
   }
-  const dataMwHost = el.matches("[data-mw]") ? el : el.querySelector("[data-mw]");
-  return { html: parts.join("\n"), info: dataMwHost ? parseTemplateData(dataMwHost) : null };
+  return parts.join("\n");
+}
+
+const findDataMwHost = (el: Element) =>
+  el.matches("[data-mw]") ? el : el.querySelector("[data-mw]");
+
+const isTransclusion = (el: Element) => !!el.getAttribute("typeof")?.includes("mw:Transclusion");
+
+/** Space-joined `name="value"` pairs for the attributes an element actually has. */
+function attrString(el: Element, names: string[]): string | undefined {
+  const pairs = names.flatMap((name) => {
+    const value = el.getAttribute(name);
+    return value ? [`${name}="${value}"`] : [];
+  });
+  return pairs.length > 0 ? pairs.join(" ") : undefined;
+}
+
+type Blocks = Descendant[];
+
+/** An atomic, lossless raw-html block; `about` siblings are merged into it. */
+function pushRaw(blocks: Blocks, node: Element, kind: "infobox" | "generic" = "generic"): void {
+  const html = node.hasAttribute("about") ? collectAboutGroup(node) : node.outerHTML;
+  const host = findDataMwHost(node);
+  const info = host ? parseTemplateData(host) : null;
+  blocks.push(
+    makeNode("raw-html", {
+      html,
+      kind: kind === "infobox" || /infobox/i.test(node.className) ? "infobox" : "generic",
+      name: info?.name,
+      params: info?.params,
+      dataMw: info?.dataMw,
+    })
+  );
+}
+
+const headingType = (tag: string) => `h${Math.min(Math.max(parseInt(tag[1]!, 10), 2), 4)}`;
+
+function convertTable(el: Element, blocks: Blocks): void {
+  const cls = el.className || "";
+  if (/infobox/i.test(cls)) {
+    const parsed = parseInfoboxFields(el);
+    if (parsed.fields.length > 0) {
+      blocks.push(
+        makeNode("infobox-box", { html: el.outerHTML, title: parsed.title, fields: parsed.fields })
+      );
+    } else {
+      // layout-only infobox (media/map) → lossless atomic block
+      pushRaw(blocks, el, "infobox");
+    }
+    return;
+  }
+  if (FURNITURE_RE.test(cls)) {
+    pushRaw(blocks, el);
+    return;
+  }
+
+  // real (non-infobox) wikitable → structured table model
+  const rows: Descendant[] = [];
+  el.querySelectorAll("tr").forEach((tr) => {
+    const cells = Array.from(tr.querySelectorAll("th,td")).map((cell) =>
+      makeNode(
+        cell.tagName.toLowerCase(),
+        { attributes: attrString(cell, ["colspan", "rowspan", "style", "class"]) },
+        convertBlockChildren(cell)
+      )
+    );
+    if (cells.length > 0) {
+      rows.push(makeNode("tr", { attributes: attrString(tr, ["class", "style"]) }, cells));
+    }
+  });
+  if (rows.length > 0) {
+    blocks.push(
+      makeNode(
+        "table",
+        {
+          caption: el.querySelector("caption")?.textContent?.trim() || undefined,
+          attributes: attrString(el, ["class", "style"]),
+        },
+        rows
+      )
+    );
+  }
+}
+
+function convertList(el: Element, blocks: Blocks): void {
+  const items = Array.from(el.querySelectorAll(":scope > li")).map((li) =>
+    makeNode("li", {}, convertBlockChildren(li))
+  );
+  if (items.length > 0) blocks.push(makeNode(el.tagName.toLowerCase(), {}, items));
+}
+
+/** Push a paragraph for `el`; false (and nothing pushed) when it has no visible text. */
+function pushParagraph(el: Element, blocks: Blocks): boolean {
+  const kids = convertBlockChildren(el);
+  const meaningful = isMeaningfulInline(kids);
+  if (meaningful) blocks.push(makeNode("p", {}, kids));
+  return meaningful;
+}
+
+const BLOCK_CONVERTERS: Record<string, (el: Element, blocks: Blocks) => void> = {
+  ...Object.fromEntries(
+    ["h1", "h2", "h3", "h4", "h5", "h6"].map((tag) => [
+      tag,
+      (el: Element, blocks: Blocks) =>
+        blocks.push(makeNode(headingType(tag), {}, convertBlockChildren(el))),
+    ])
+  ),
+  p: pushParagraph,
+  blockquote: (el, blocks) => blocks.push(makeNode("blockquote", {}, convertBlockChildren(el))),
+  pre: (el, blocks) => blocks.push(makeNode("code-block", {}, [{ text: el.textContent ?? "" }])),
+  // inline <code> inside <pre> is already part of the code block
+  code: (el, blocks) => {
+    if (!el.closest("pre")) BLOCK_CONVERTERS.pre!(el, blocks);
+  },
+  ul: convertList,
+  ol: convertList,
+  table: convertTable,
+  hr: (_el, blocks) => blocks.push(makeNode("hr")),
+};
+
+function convertBlockElement(el: Element, blocks: Blocks): void {
+  const tag = el.tagName.toLowerCase();
+  // Citizen/skin heading wrappers: <div class="mw-heading"><h3>…<span class="mw-editsection">…
+  if (el.classList.contains("mw-heading")) {
+    el.querySelectorAll(".mw-editsection").forEach((x) => x.remove());
+    const h = el.querySelector("h2, h3, h4, h5, h6, h1");
+    if (h) {
+      blocks.push(makeNode(headingType(h.tagName.toLowerCase()), {}, convertBlockChildren(h)));
+      return;
+    }
+  }
+  if (isTransclusion(el) || el.hasAttribute("about")) {
+    // infobox tables & grouped transclusions stay atomic + lossless
+    pushRaw(blocks, el, /infobox/i.test(el.className) ? "infobox" : "generic");
+    return;
+  }
+  if (el.getAttribute("typeof")?.includes("mw:File") || tag === "figure") {
+    blocks.push(
+      makeNode("media", {
+        html: el.outerHTML,
+        filename: el.querySelector("img")?.getAttribute("alt") ?? undefined,
+      })
+    );
+    return;
+  }
+
+  if (Object.hasOwn(BLOCK_CONVERTERS, tag)) {
+    BLOCK_CONVERTERS[tag]!(el, blocks);
+    return;
+  }
+  // container-ish elements: recurse; everything else preserved raw
+  if (
+    /^(div|section|main|article|center|figcaption|span)$/i.test(tag) &&
+    !el.querySelector("table, figure, p, h1, h2, h3, h4, h5, h6, ul, ol") &&
+    pushParagraph(el, blocks)
+  ) {
+    return;
+  }
+  if (/^(div|section)$/.test(tag)) {
+    walkBlocks(el, blocks);
+  } else {
+    pushRaw(blocks, el);
+  }
+}
+
+function walkBlocks(parent: Element, blocks: Blocks): void {
+  // Live loop: collectAboutGroup removes later siblings while we iterate.
+  for (let i = 0; i < parent.childNodes.length; i++) {
+    const n = parent.childNodes[i]!;
+    if (n.nodeType === Node.TEXT_NODE) {
+      const text = squish(n.textContent);
+      if (text) blocks.push(makeNode("p", {}, [{ text }]));
+    } else if (
+      n.nodeType === Node.ELEMENT_NODE &&
+      !SKIPPED_BLOCK_TAGS.has((n as Element).tagName.toLowerCase())
+    ) {
+      convertBlockElement(n as Element, blocks);
+    }
+  }
 }
 
 /**
@@ -466,270 +548,26 @@ function collectAboutGroup(el: Element): {
  * Anything not explicitly modeled becomes a lossless `raw-html` void block.
  */
 export function deserializeParsoidHtml(html: string): Descendant[] {
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  const body = doc.body;
-  const blocks: Descendant[] = [];
-
-  const pushRaw = (node: Element, kind: "infobox" | "generic" = "generic") => {
-    const about = node.getAttribute("about");
-    let htmlPart = node.outerHTML;
-    let info: ReturnType<typeof parseTemplateData> = null;
-    if (about) {
-      const group = collectAboutGroup(node);
-      htmlPart = group.html;
-      info = group.info;
-    } else {
-      const host = node.matches("[data-mw]") ? node : node.querySelector("[data-mw]");
-      info = host ? parseTemplateData(host) : null;
-    }
-    const isInfobox = kind === "infobox" || /infobox/i.test(node.className);
-    blocks.push({
-      type: "raw-html",
-      html: htmlPart,
-      kind: isInfobox ? "infobox" : "generic",
-      name: info?.name,
-      params: info?.params,
-      dataMw: info?.dataMw,
-      children: [{ text: "" }],
-      id: nextId(),
-    } as unknown as Descendant);
-  };
-
-  const walkBlocks = (parent: Element) => {
-    // oxlint-disable-next-line eslint/no-unused-vars
-    parent.childNodes.forEach((n) => {
-      /* placeholder to satisfy lint on forEach reuse */
-    });
-    for (let i = 0; i < parent.childNodes.length; i++) {
-      const n = parent.childNodes[i];
-      if (n.nodeType === Node.TEXT_NODE) {
-        const t = (n.textContent ?? "").replace(/\s+/g, " ");
-        if (t.trim().length > 0) {
-          blocks.push({
-            type: "p",
-            children: [{ text: t.trim() }],
-            id: nextId(),
-          } as unknown as Descendant);
-        }
-        continue;
-      }
-      if (n.nodeType !== Node.ELEMENT_NODE) continue;
-      const el = n as Element;
-      const tag = el.tagName.toLowerCase();
-      if (
-        tag === "style" ||
-        tag === "link" ||
-        tag === "head" ||
-        tag === "meta" ||
-        tag === "input" ||
-        tag === "form" ||
-        tag === "button" ||
-        tag === "select"
-      )
-        continue;
-      // Citizen/skin heading wrappers: <div class="mw-heading"><h3>…<span class="mw-editsection">…
-      if (el.classList.contains("mw-heading")) {
-        el.querySelectorAll(".mw-editsection").forEach((x) => x.remove());
-        const h = el.querySelector("h2, h3, h4, h5, h6, h1");
-        if (h) {
-          const level = Math.min(Math.max(parseInt(h.tagName[1], 10), 2), 4);
-          blocks.push({
-            type: `h${level}` as "h2",
-            children: convertBlockChildren(h),
-            id: nextId(),
-          } as unknown as Descendant);
-          continue;
-        }
-      }
-      if (el.getAttribute("typeof")?.includes("mw:Transclusion") || el.hasAttribute("about")) {
-        // infobox tables & grouped transclusions stay atomic + lossless
-        pushRaw(el, /infobox/i.test(el.className) ? "infobox" : "generic");
-        continue;
-      }
-      if (el.getAttribute("typeof")?.includes("mw:File") || tag === "figure") {
-        blocks.push({
-          type: "media",
-          html: el.outerHTML,
-          filename: el.querySelector("img")?.getAttribute("alt") ?? undefined,
-          children: [{ text: "" }],
-          id: nextId(),
-        } as unknown as Descendant);
-        continue;
-      }
-      switch (tag) {
-        case "h1":
-        case "h2":
-        case "h3":
-        case "h4":
-        case "h5":
-        case "h6": {
-          const level = Math.min(Math.max(parseInt(tag[1], 10), 2), 4);
-          blocks.push({
-            type: `h${level}` as "h2",
-            children: convertBlockChildren(el),
-            id: nextId(),
-          } as unknown as Descendant);
-          break;
-        }
-        case "p": {
-          const kids = convertBlockChildren(el);
-          if (isMeaningfulInline(kids)) {
-            blocks.push({ type: "p", children: kids, id: nextId() } as unknown as Descendant);
-          }
-          break;
-        }
-        case "blockquote": {
-          blocks.push({
-            type: "blockquote",
-            children: convertBlockChildren(el),
-            id: nextId(),
-          } as unknown as Descendant);
-          break;
-        }
-        case "pre":
-        case "code": {
-          if (tag === "code" && el.closest("pre")) {
-            break;
-          }
-          blocks.push({
-            type: "code-block",
-            children: [{ text: el.textContent ?? "" }],
-            id: nextId(),
-          } as unknown as Descendant);
-          break;
-        }
-        case "ul":
-        case "ol": {
-          const items: Descendant[] = [];
-          el.querySelectorAll(":scope > li").forEach((li) => {
-            items.push({
-              type: "li",
-              children: convertBlockChildren(li),
-              id: nextId(),
-            } as unknown as Descendant);
-          });
-          if (items.length > 0) {
-            blocks.push({ type: tag, children: items, id: nextId() } as unknown as Descendant);
-          }
-          break;
-        }
-        case "table": {
-          const cls = el.className || "";
-          if (/infobox/i.test(cls)) {
-            const parsed = parseInfoboxFields(el);
-            if (parsed.fields.length > 0) {
-              blocks.push({
-                type: "infobox-box",
-                id: nextId(),
-                html: el.outerHTML,
-                title: parsed.title,
-                fields: parsed.fields,
-                children: [{ text: "" }],
-              } as unknown as Descendant);
-            } else {
-              // layout-only infobox (media/map) → lossless atomic block
-              pushRaw(el, "infobox");
-            }
-            break;
-          }
-          if (FURNITURE_RE.test(cls)) {
-            pushRaw(el, "generic");
-            break;
-          }
-          // real (non-infobox) wikitable → structured table model
-          const tableAttrs: string[] = [];
-          if (cls) tableAttrs.push(`class="${cls}"`);
-          const tableStyle = el.getAttribute("style");
-          if (tableStyle) tableAttrs.push(`style="${tableStyle}"`);
-          const caption = el.querySelector("caption")?.textContent?.trim();
-
-          const rows: Descendant[] = [];
-          el.querySelectorAll("tr").forEach((tr) => {
-            const trAttrs: string[] = [];
-            const trClass = tr.getAttribute("class");
-            if (trClass) trAttrs.push(`class="${trClass}"`);
-            const trStyle = tr.getAttribute("style");
-            if (trStyle) trAttrs.push(`style="${trStyle}"`);
-
-            const cells: Descendant[] = [];
-            tr.querySelectorAll("th,td").forEach((cell) => {
-              const attrs: string[] = [];
-              const colspan = cell.getAttribute("colspan");
-              if (colspan) attrs.push(`colspan="${colspan}"`);
-              const rowspan = cell.getAttribute("rowspan");
-              if (rowspan) attrs.push(`rowspan="${rowspan}"`);
-              const cellStyle = cell.getAttribute("style");
-              if (cellStyle) attrs.push(`style="${cellStyle}"`);
-              const classAttr = cell.getAttribute("class");
-              if (classAttr) attrs.push(`class="${classAttr}"`);
-
-              cells.push({
-                type: cell.tagName.toLowerCase(),
-                attributes: attrs.length > 0 ? attrs.join(" ") : undefined,
-                children: convertBlockChildren(cell),
-                id: nextId(),
-              } as unknown as Descendant);
-            });
-            if (cells.length > 0)
-              rows.push({
-                type: "tr",
-                attributes: trAttrs.length > 0 ? trAttrs.join(" ") : undefined,
-                children: cells,
-                id: nextId(),
-              } as unknown as Descendant);
-          });
-          if (rows.length > 0) {
-            blocks.push({
-              type: "table",
-              caption: caption || undefined,
-              attributes: tableAttrs.length > 0 ? tableAttrs.join(" ") : undefined,
-              children: rows,
-              id: nextId(),
-            } as unknown as Descendant);
-          }
-          break;
-        }
-        case "hr": {
-          blocks.push({
-            type: "hr",
-            children: [{ text: "" }],
-            id: nextId(),
-          } as unknown as Descendant);
-          break;
-        }
-        default: {
-          // container-ish elements: recurse; everything else preserved raw
-          if (
-            /^(div|section|main|article|center|figcaption|span)$/i.test(tag) &&
-            !el.querySelector("table, figure, p, h1, h2, h3, h4, h5, h6, ul, ol")
-          ) {
-            const kids = convertBlockChildren(el);
-            if (isMeaningfulInline(kids)) {
-              blocks.push({ type: "p", children: kids, id: nextId() } as unknown as Descendant);
-              break;
-            }
-          }
-          if (/^(div|section)$/.test(tag)) {
-            walkBlocks(el);
-          } else {
-            pushRaw(el, "generic");
-          }
-        }
-      }
-    }
-  };
-
-  walkBlocks(body);
-  if (blocks.length === 0)
-    blocks.push({ type: "p", children: [{ text: "" }], id: nextId() } as unknown as Descendant);
+  const blocks: Blocks = [];
+  walkBlocks(new DOMParser().parseFromString(html, "text/html").body, blocks);
+  if (blocks.length === 0) blocks.push(makeNode("p", {}, [{ text: "" }]));
   return blocks;
 }
 
-// ─── Slate → HTML ───────────────────────────────────────────────────────────
-
-function esc(s: string): string {
+export function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
+
+/** Innermost first, matching the nesting order of the emitted HTML. */
+const LEAF_WRAPS: ReadonlyArray<[keyof WikiText & string, string]> = [
+  ["codeMark", "code"],
+  ["strike", "s"],
+  ["underline", "u"],
+  ["italic", "i"],
+  ["bold", "b"],
+  ["sup", "sup"],
+  ["sub", "sub"],
+];
 
 function serializeLeaves(children: Descendant[]): string {
   let out = "";
@@ -740,15 +578,10 @@ function serializeLeaves(children: Descendant[]): string {
     if (!(t.bold || t.italic || t.underline || t.strike || t.codeMark)) {
       text = text.replace(/\n/g, "<br>");
     }
-    let html = esc(text);
-    if (t.codeMark) html = `<code>${html}</code>`;
-    if (t.strike) html = `<s>${html}</s>`;
-    if (t.underline) html = `<u>${html}</u>`;
-    if (t.italic) html = `<i>${html}</i>`;
-    if (t.bold) html = `<b>${html}</b>`;
-    if (t.sup) html = `<sup>${html}</sup>`;
-    if (t.sub) html = `<sub>${html}</sub>`;
-    out += html;
+    out += LEAF_WRAPS.reduce(
+      (html, [mark, tag]) => (t[mark] ? `<${tag}>${html}</${tag}>` : html),
+      esc(text)
+    );
   }
   return out;
 }

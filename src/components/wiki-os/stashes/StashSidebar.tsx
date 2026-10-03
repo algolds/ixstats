@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/stashes/StashSidebar.tsx
 // Collection navigator for the Stash system.
 // Features Facet glassmorphism, responsive spring animations, inline rename & color curation.
 

@@ -1,4 +1,3 @@
-// src/components/wiki-os/stashes/types.ts
 // Shared types, preset colors, and discriminated models for the Stash system.
 export const PRESET_COLORS = [
   "#3b82f6", // Blue
@@ -12,20 +11,6 @@ export const PRESET_COLORS = [
 ] as const;
 
 export type StashTab = "articles" | "quotes" | "images" | "threads";
-
-export interface CommonsImage {
-  pageid: number;
-  title: string;
-  thumbUrl: string;
-  url: string;
-  descriptionUrl: string;
-  width: number;
-  height: number;
-  mime: string;
-  description: string;
-  artist: string;
-  license: string;
-}
 
 export interface StashHeaderItem {
   id: string;

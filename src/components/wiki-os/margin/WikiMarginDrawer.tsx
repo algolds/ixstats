@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/margin/WikiMarginDrawer.tsx
 // Compact Right Sidebar Inspector for WikiOS (Threads, Markup, Live Sim Fact Inspect)
 // Signature Highlighter Yellow / Warm Amber branding for Margin.
 
@@ -79,8 +78,6 @@ export function WikiMarginDrawer({
   const [proposedEditDraft, setProposedEditDraft] = useState<string | null>(null);
   const dragStartX = useRef(0);
   const dragStartTime = useRef(0);
-
-  const _primaryColor = themeColors?.primary || "var(--wikios-accent, #fef036)";
 
   useEffect(() => {
     // oxlint-disable-next-line
@@ -297,7 +294,6 @@ export function WikiMarginDrawer({
                   onSelectThread={onSelectThread}
                   isAuthenticated={isAuthenticated}
                   onRefetch={refetch}
-                  themeColors={themeColors}
                 />
               )}
 
@@ -308,7 +304,6 @@ export function WikiMarginDrawer({
                   isAuthenticated={isAuthenticated}
                   selectedAnnotationId={selectedAnnotationId}
                   onSelectAnnotation={onSelectAnnotation}
-                  themeColors={themeColors}
                 />
               )}
 

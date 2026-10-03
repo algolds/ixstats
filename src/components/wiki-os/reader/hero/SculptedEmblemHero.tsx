@@ -1,12 +1,8 @@
 "use client";
 
-import React, { useRef, useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import {
-  // oxlint-disable-next-line eslint/no-unused-vars
-  Shuffle,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  MediaImage as ImageIcon,
   Star,
   ChatBubble as MessageSquare,
   ArrowUpRight,
@@ -15,47 +11,20 @@ import {
   ClockRotateRight as History,
   NavArrowLeft as ChevronLeft,
   NavArrowRight as ChevronRight,
-  SunLight as Sun,
-  CloudSunny as CloudSun,
-  Cloud,
-  Rain as CloudRain,
-  HalfMoon as Moon,
-  SnowFlake as Snowflake,
   LightBulb as Lightbulb,
   Trophy as IconoirTrophy,
   OpenBook as IconoirOpenBook,
   Folder as IconoirFolder,
 } from "iconoir-react";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { motion, useSpring, AnimatePresence, useReducedMotion } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { IxWikiLogo } from "~/components/wiki-os/shared/IxWikiLogo";
 import { IxWikiWordmark } from "~/components/wiki-os/shared/IxWikiWordmark";
-import { IxTime } from "~/lib/ixtime/core";
-import { getPrimeMeridianWeather, type WeatherIconType } from "~/lib/ixtime/weather";
 import { HeroSpotlightSearch } from "./HeroSpotlightSearch";
 import { FeaturedArticleCard, FeaturedThumbnailFrame } from "./FeaturedArticle";
 import type { WikiHeroProps } from "./types";
 import { Button } from "~/components/ui/button";
-
-// oxlint-disable-next-line eslint/no-unused-vars
-function WeatherIcon({ icon, className }: { icon: WeatherIconType; className?: string }) {
-  switch (icon) {
-    case "Sun":
-      return <Sun className={className} />;
-    case "CloudSun":
-      return <CloudSun className={className} />;
-    case "Cloud":
-      return <Cloud className={className} />;
-    case "CloudRain":
-      return <CloudRain className={className} />;
-    case "Moon":
-      return <Moon className={className} />;
-    case "Snowflake":
-      return <Snowflake className={className} />;
-  }
-}
 
 const CANON_CHRONICLE_EVENTS = [
   {
@@ -99,71 +68,15 @@ const CANON_CHRONICLE_EVENTS = [
   },
 ];
 
-function getCurrentWeekDays(date: Date) {
-  const current = new Date(date);
-  const dayOfWeek = current.getUTCDay();
-  const sunday = new Date(current);
-  sunday.setUTCDate(current.getUTCDate() - dayOfWeek);
-
-  const days = [];
-  const DAY_NAMES = ["S", "M", "T", "W", "T", "F", "S"];
-
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(sunday);
-    d.setUTCDate(sunday.getUTCDate() + i);
-    days.push({
-      dayName: DAY_NAMES[i],
-      dayNum: d.getUTCDate(),
-      isToday: d.toISOString().slice(0, 10) === current.toISOString().slice(0, 10),
-    });
-  }
-  return days;
-}
-
 export function SculptedEmblemHero({
   siteStats,
   activePrompt,
   featuredArticleHtml,
   featuredArticleData,
-  onOpenSearch,
   onOpenBlurbs,
 }: WikiHeroProps) {
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const containerRef = useRef<HTMLDivElement>(null);
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const [isHovering, setIsHovering] = useState(false);
-  const [clockTime, setClockTime] = useState<Date>(() => new Date(IxTime.getCurrentIxTime()));
   const [chronicleIndex, setChronicleIndex] = useState(0);
   const reduceMotion = useReducedMotion();
-
-  // Live ticking clock with 1-second cadence for IxTime
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setClockTime(new Date(IxTime.getCurrentIxTime()));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const hours = String(clockTime.getUTCHours()).padStart(2, "0");
-  const minutes = String(clockTime.getUTCMinutes()).padStart(2, "0");
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const hoursMinutes = `${hours}:${minutes}`;
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const weekdayShort =
-    ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][clockTime.getUTCDay()] || "SAT";
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const monthShort =
-    ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][
-      clockTime.getUTCMonth()
-    ] || "AUG";
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const dayNum = clockTime.getUTCDate();
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const yearNum = clockTime.getUTCFullYear();
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const calendarWeekDays = getCurrentWeekDays(clockTime);
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const weather = useMemo(() => getPrimeMeridianWeather(clockTime), [clockTime]);
 
   const articleCountStr = siteStats?.articles
     ? `${siteStats.articles.toLocaleString()}+`
@@ -174,23 +87,11 @@ export function SculptedEmblemHero({
     [articleCountStr]
   );
 
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const handleSearchClick = () => {
-    if (onOpenSearch) {
-      onOpenSearch();
-    } else {
-      window.dispatchEvent(
-        new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true })
-      );
-    }
-  };
-
   return (
     <section
       aria-label="WikiOS sculpted emblem hero"
       className="relative flex w-full flex-col items-center justify-center pt-1 pb-2 text-center select-none sm:pb-3"
     >
-      {/* ── 1. The Free-Standing Canonical Laurel Sphere & Typographic Lockup (Centered) ── */}
       <Link
         href={withBasePath("/wiki/Main_Page")}
         aria-label="IxWiki home"
@@ -223,7 +124,6 @@ export function SculptedEmblemHero({
         </div>
       </Link>
 
-      {/* ── 3. Floating Glass Omnisearch Bar ── */}
       <motion.div
         initial={reduceMotion ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -233,7 +133,6 @@ export function SculptedEmblemHero({
         <HeroSpotlightSearch placeholderHints={searchPlaceholders} />
       </motion.div>
 
-      {/* ── 4. Prestigious Quick Navigation Chips (Non-Sidebar Exploratory Actions) ── */}
       <motion.div
         initial={reduceMotion ? false : { opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
@@ -298,7 +197,6 @@ export function SculptedEmblemHero({
         </Link>
       </motion.div>
 
-      {/* ── 5. Standardized 2-Column Live Interaction Deck (Timeline & Community Prompt) ── */}
       <motion.div
         initial={reduceMotion ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -473,7 +371,6 @@ export function SculptedEmblemHero({
         )}
       </motion.div>
 
-      {/* ── 7. Standardized Embedded Featured Article ── */}
       {(featuredArticleData || featuredArticleHtml) && (
         <motion.div
           initial={reduceMotion ? false : { opacity: 0, y: 10 }}

@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/editor/components/StashImageCard.tsx
 // Thumbnail card for Commons images in the Stash Explorer popover.
 
 import React, { useState } from "react";

@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/stashes/StashPagesList.tsx
 // Saved wiki articles view with lead image thumbnail, WikiOS logomark, rich metadata, and quick actions.
 import { useState } from "react";
 import Link from "next/link";

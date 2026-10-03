@@ -24,7 +24,6 @@ interface ComposerActionBarProps {
   setShowVisualizationPanel: (val: boolean) => void;
   isGeneratingVisualization: boolean;
   setShowMediaModal: (val: boolean) => void;
-  isUploadingImage: boolean;
   selectedImages: string[];
   handleInsertGif: (url: string) => void;
   pollDraft: any;
@@ -45,7 +44,6 @@ export function ComposerActionBar({
   setShowVisualizationPanel,
   isGeneratingVisualization,
   setShowMediaModal,
-  isUploadingImage,
   selectedImages,
   handleInsertGif,
   pollDraft,
@@ -113,25 +111,21 @@ export function ComposerActionBar({
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowMediaModal(true)}
-                  disabled={isUploadingImage || selectedImages.length >= 4}
+                  disabled={selectedImages.length >= 4}
                   className="text-tint hover:bg-tint-fill hover:text-tint size-8 p-0"
                   aria-label="Add media or images"
                 >
-                  {isUploadingImage ? (
-                    <Loader2 className="animate-spin" />
-                  ) : (
-                    <div className="relative">
-                      <Image />
-                      {selectedImages.length > 0 && (
-                        <Badge
-                          variant="default"
-                          className="border-background bg-tint text-on-tint text-footnote absolute -top-2 -right-2 flex h-3.5 min-w-3.5 items-center justify-center rounded-full border p-0 font-semibold tabular-nums"
-                        >
-                          {selectedImages.length}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
+                  <div className="relative">
+                    <Image />
+                    {selectedImages.length > 0 && (
+                      <Badge
+                        variant="default"
+                        className="border-background bg-tint text-on-tint text-footnote absolute -top-2 -right-2 flex h-3.5 min-w-3.5 items-center justify-center rounded-full border p-0 font-semibold tabular-nums"
+                      >
+                        {selectedImages.length}
+                      </Badge>
+                    )}
+                  </div>
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="top">Add media / images</TooltipContent>

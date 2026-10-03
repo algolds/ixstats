@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useDebounce } from "~/hooks/useDebounce";
+import { useState, useEffect, useMemo } from "react";
 import {
   NavArrowRight as ChevronRight,
   NavArrowDown as ChevronDown,
@@ -270,10 +271,6 @@ interface CommonsCategoryBrowserProps {
   wiki?: "commons" | "ixwiki" | "iiwiki";
 }
 
-// Flatten all categories for the batch info query (max 20 per call)
-// oxlint-disable-next-line eslint/no-unused-vars
-const ALL_CATEGORIES = CATEGORY_GROUPS.flatMap((g) => g.categories);
-
 export function CommonsCategoryBrowser({
   activeCategories,
   browsingCategory,
@@ -304,17 +301,9 @@ export function CommonsCategoryBrowser({
   }, [groups]);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const debouncedQuery = useDebounce(searchQuery, 300);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(
-    () => () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    },
-    []
-  );
 
   // Reset expansion states when wiki source changes or groups load
   useEffect(() => {
@@ -342,12 +331,6 @@ export function CommonsCategoryBrowser({
       setExpandedGroups((prev) => ({ ...prev, [parentGroup.label]: true }));
     }
   }, [browsingCategory, groups, allCats]);
-
-  const handleSearch = useCallback((val: string) => {
-    setSearchQuery(val);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setDebouncedQuery(val), 300);
-  }, []);
 
   const isSearching = debouncedQuery.length >= 2;
 
@@ -394,7 +377,7 @@ export function CommonsCategoryBrowser({
         <input
           type="text"
           value={searchQuery}
-          onChange={(e) => handleSearch(e.target.value)}
+          onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search categories..."
           className="text-footnote text-label placeholder:text-label-secondary flex-1 border-none bg-transparent outline-none"
         />
@@ -452,10 +435,6 @@ export function CommonsCategoryBrowser({
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Category group section with lazy-loaded counts
-// ---------------------------------------------------------------------------
 
 interface CategoryGroupSectionProps {
   group: CategoryGroup;
@@ -526,10 +505,6 @@ function CategoryGroupSection({
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Category row with optional subcategory expansion
-// ---------------------------------------------------------------------------
 
 function CategoryRow({
   name,

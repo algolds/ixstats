@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/reader/WikiOSMainPage.tsx
 // Custom WikiOS main page
 
 import { cn } from "~/lib/utils";
@@ -38,10 +37,6 @@ const FALLBACK_ALMANAC_PAGES = [
   "List of countries by arable land area",
 ];
 
-// ---------------------------------------------------------------------------
-// Category definitions
-// ---------------------------------------------------------------------------
-
 const CATEGORIES = [
   { name: "Countries", color: "#3b82f6" },
   { name: "Companies", color: "#f97316" },
@@ -56,10 +51,6 @@ const CATEGORIES = [
   { name: "Politics", color: "#8b5cf6" },
   { name: "Technology", color: "#06b6d4" },
 ] as const;
-
-// ---------------------------------------------------------------------------
-// Blurb Modal
-// ---------------------------------------------------------------------------
 
 function BlurbPromptModal({
   open,
@@ -186,10 +177,6 @@ function BlurbPromptModal({
     </Dialog>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Main Page Component
-// ---------------------------------------------------------------------------
 
 export function WikiOSMainPage() {
   const [variant, setVariant] = useState<WikiHeroVariant>("sculpted-emblem");
@@ -455,7 +442,6 @@ export function WikiOSMainPage() {
   return (
     <div className="wikios-main w-full pt-1 pb-3">
       <div className="mx-auto w-full max-w-6xl space-y-4 sm:space-y-5">
-        {/* ── 1. Master Hero & Direction Switcher ── */}
         <header className="wikios-main-hero relative w-full">
           <div className="wikios-main-hero-inner w-full">
             <WikiHeroMaster
@@ -471,7 +457,6 @@ export function WikiOSMainPage() {
           </div>
         </header>
 
-        {/* ── 2. Redesigned Main Content Area (Layout-Aware) ── */}
         <main className="w-full">
           <AnimatePresence mode="wait">
             {variant === "editorial-masthead" ? (
@@ -513,7 +498,6 @@ export function WikiOSMainPage() {
         </main>
       </div>
 
-      {/* ── 3. Blurb Prompt Modal ── */}
       {activePrompt && (
         <BlurbPromptModal
           open={blurbModalOpen}
@@ -524,10 +508,6 @@ export function WikiOSMainPage() {
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Extract featured article from Main_Page HTML
-// ---------------------------------------------------------------------------
 
 function extractFeaturedArticle(html: string): string | null {
   if (!html) return null;

@@ -1,5 +1,4 @@
 "use client";
-// src/app/(forum)/forum/[forumId]/page.tsx
 // Thread list for a specific forum.
 
 import { useState, useEffect } from "react";
@@ -55,10 +54,8 @@ export default function ForumThreadListPage() {
 
   return (
     <ForumLayout>
-      {/* Breadcrumbs */}
       <ForumBreadcrumbs items={forum ? [{ label: forum.title }] : []} />
 
-      {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-large-title text-label">{forum?.title ?? "Loading..."}</h1>
@@ -78,7 +75,6 @@ export default function ForumThreadListPage() {
         </div>
       </div>
 
-      {/* Sort controls */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <span className="text-footnote text-label-secondary">Sort by</span>
         <SegmentedControl
@@ -106,17 +102,14 @@ export default function ForumThreadListPage() {
         </div>
       ) : (
         <Card className="overflow-hidden">
-          {/* Sticky threads */}
           {stickyThreads.map((thread: any) => (
             <ThreadListItem key={thread.threadId} {...thread} />
           ))}
 
-          {/* Divider between sticky and regular */}
           {stickyThreads.length > 0 && regularThreads.length > 0 && (
             <div className="bg-separator mx-4 h-px" />
           )}
 
-          {/* Regular threads */}
           {regularThreads.map((thread: any) => (
             <ThreadListItem key={thread.threadId} {...thread} />
           ))}
@@ -131,7 +124,6 @@ export default function ForumThreadListPage() {
         </Card>
       )}
 
-      {/* Pagination */}
       {pagination && pagination.last_page > 1 && (
         <ForumPagination
           currentPage={pagination.current_page}

@@ -1,5 +1,4 @@
 "use client";
-// src/app/(wiki-os)/wiki/search/page.tsx
 // WikiOS Search Page — full search results
 
 import { useState, useCallback } from "react";

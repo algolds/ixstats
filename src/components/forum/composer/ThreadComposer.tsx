@@ -1,5 +1,4 @@
 "use client";
-// src/components/forum/composer/ThreadComposer.tsx
 // Full-page new thread composer with title, forum selector, and unified GlassPlateEditor.
 
 import { useState, useCallback, useRef } from "react";
@@ -78,7 +77,6 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
 
   return (
     <div className="max-w-4xl">
-      {/* Header */}
       <div className="mb-6 flex items-center gap-3">
         <Link
           href={withBasePath("/forum")}
@@ -99,7 +97,6 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
         </div>
       )}
 
-      {/* Forum selector */}
       <div className="mb-4">
         <label
           htmlFor="forum-thread-forum"
@@ -124,7 +121,6 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
         </Select>
       </div>
 
-      {/* Title */}
       <div className="mb-4">
         <label
           htmlFor="forum-thread-title"
@@ -143,7 +139,6 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
         />
       </div>
 
-      {/* Message Editor */}
       <div className="mb-4">
         <span className="text-subhead text-label-secondary mb-2 block">Message</span>
         <GlassPlateEditor
@@ -159,7 +154,6 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
         />
       </div>
 
-      {/* Submit */}
       <div className="flex items-center justify-between">
         <span className="text-footnote text-label-secondary">⌘+Enter / Ctrl+Enter to submit</span>
         <Button onClick={handleSubmit} disabled={!canSubmit}>

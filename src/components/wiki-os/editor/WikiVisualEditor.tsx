@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/editor/WikiVisualEditor.tsx
 // Visual editor on Plate (Slate).
 // Operates on native WikiAST blocks and lossless wikitext serialization.
 
@@ -279,7 +278,6 @@ export function WikiVisualEditor({
           repulsionProgress={repulsionProgress}
           onSwitchToSource={handleSwitchToSource}
           onCancel={onCancel}
-          onSave={handleSave}
           handleSaveDraft={handleSaveDraft}
           activeFormats={fmt.activeFormats}
           exec={fmt.exec}
@@ -305,7 +303,6 @@ export function WikiVisualEditor({
           onSave={handleSave}
         />
 
-        {/* ─── Plate Editor Canvas ─── */}
         <div className="wikios-ve-editor-wrapper">
           <PlateWikiEditor
             initialHtml={initialContent.html}

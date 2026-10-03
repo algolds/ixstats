@@ -23,7 +23,6 @@ jest.mock("~/components/wiki-os/shared/WikiContext", () => ({
     toggleMargin: mockToggleMargin,
   }),
 }));
-jest.mock("~/components/wiki-os/shared/useWikiSetting", () => ({ useWikiSetting: () => true }));
 jest.mock("~/components/wiki-os/reader/ImageLightbox", () => ({ useImageLightbox: () => null }));
 jest.mock("~/components/wiki-os/reader/AnnotationOverlay", () => ({
   useAnnotationOverlay: () => undefined,
@@ -40,9 +39,6 @@ jest.mock("~/lib/wiki-os/editor/wiki-embed-shared", () => ({
   EMBED_CSS: "",
   EMBED_JS: "",
   EMBED_PREFETCH: "/maps?embed=true",
-}));
-jest.mock("~/components/wiki-os/reader/AppleBooksTocDrawer", () => ({
-  AppleBooksTocDrawer: () => null,
 }));
 jest.mock("~/components/wiki-os/reader/StickyToc", () => ({ StickyToc: () => null }));
 jest.mock("~/components/wiki-os/reader/InfoboxWithMap", () => ({ InfoboxWithMap: () => null }));

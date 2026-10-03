@@ -1,5 +1,4 @@
 "use client";
-// src/app/(wiki-os)/wiki/recent-changes/page.tsx
 // WikiOS Recent Changes — grouped by page, with byte diffs, filters, and collapsible edits.
 
 import { useState, useMemo } from "react";
@@ -17,10 +16,6 @@ import {
   Filter,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 
 interface RawChange {
   title: string;
@@ -40,10 +35,6 @@ interface GroupedPage {
   latestUser: string;
   isNew: boolean;
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function byteDelta(change: RawChange): number {
   if (change.oldLen === 0 && change.newLen > 0) {
@@ -108,10 +99,6 @@ function getSemanticAction(change: RawChange): {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Date range options
-// ---------------------------------------------------------------------------
-
 const DATE_RANGES = [
   { label: "24h", hours: 24 },
   { label: "3d", hours: 72 },
@@ -119,10 +106,6 @@ const DATE_RANGES = [
   { label: "30d", hours: 720 },
   { label: "All", hours: 0 },
 ] as const;
-
-// ---------------------------------------------------------------------------
-// Page component
-// ---------------------------------------------------------------------------
 
 export default function RecentChangesPage() {
   const [dateRange, setDateRange] = useState(168); // 7 days default

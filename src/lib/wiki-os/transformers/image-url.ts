@@ -1,11 +1,27 @@
-// src/lib/wiki-os/image-url.ts
-// Canonical Client-safe Wiki and Wikimedia Commons image URL resolution utilities.
+// Client-safe wiki and Wikimedia Commons image URL resolution utilities.
 
 import { createHash } from "crypto";
 import { withBasePath } from "~/lib/base-path";
 import { DEFAULT_MEDIAWIKI_URL, type WikiSource } from "../config";
 
 type ExtendedWikiSource = WikiSource | "commons";
+
+/** Name fragments of icons, notice badges and system assets that are never article images. */
+const BLOCKED_ICON_TERMS = `
+  ambox red_piston piston underconstruction under_construction under-construction
+  construction road_works roadworks road-works work_in_progress wip stub cleanup
+  padlock lock- edit- magnify-clip nuvola gnome crystal_clear crystal_ commons-logo
+  wikimedia wikipedia disambig question_book wiki_letter symbol_ information_icon
+  info_icon info-icon flag_of_none no_flag traffic_cone barrier caution maintenance
+  inuse in_use in-use spanner wrench shovel worker merge split dialog- system- emblem-
+  p_vip portal- star_icon green_check cross_icon trash delete clock_ arrow
+  external-link
+`
+  .trim()
+  .split(/\s+/);
+
+/** A blocked term at the start of the name or after `_` / `-`. */
+const BLOCKED_ICON_PATTERN = new RegExp(`(?:^|[_-])(?:${BLOCKED_ICON_TERMS.join("|")})`);
 
 /**
  * Checks if a filename or image path corresponds to a maintenance/WIP template,
@@ -31,80 +47,7 @@ export function isNoticeOrUtilityIcon(filenameOrPath: string | null | undefined)
     .toLowerCase()
     .trim();
 
-  const blockedTerms = [
-    "ambox",
-    "red_piston",
-    "piston",
-    "underconstruction",
-    "under_construction",
-    "under-construction",
-    "construction",
-    "road_works",
-    "roadworks",
-    "road-works",
-    "work_in_progress",
-    "wip",
-    "stub",
-    "cleanup",
-    "padlock",
-    "lock-",
-    "edit-",
-    "magnify-clip",
-    "nuvola",
-    "gnome",
-    "crystal_clear",
-    "crystal_",
-    "commons-logo",
-    "wikimedia",
-    "wikipedia",
-    "disambig",
-    "question_book",
-    "wiki_letter",
-    "symbol_",
-    "information_icon",
-    "info_icon",
-    "info-icon",
-    "flag_of_none",
-    "no_flag",
-    "traffic_cone",
-    "barrier",
-    "caution",
-    "maintenance",
-    "inuse",
-    "in_use",
-    "in-use",
-    "spanner",
-    "wrench",
-    "shovel",
-    "worker",
-    "merge",
-    "split",
-    "dialog-",
-    "system-",
-    "emblem-",
-    "p_vip",
-    "portal-",
-    "star_icon",
-    "green_check",
-    "cross_icon",
-    "trash",
-    "delete",
-    "clock_",
-    "arrow",
-    "external-link",
-  ];
-
-  for (const term of blockedTerms) {
-    if (
-      clean.startsWith(term) ||
-      clean.includes(`_${term}`) ||
-      clean.includes(`-${term}`) ||
-      clean === `${term}.svg` ||
-      clean === `${term}.png`
-    ) {
-      return true;
-    }
-  }
+  if (BLOCKED_ICON_PATTERN.test(clean)) return true;
 
   // Generic 12-24px icon names
   if (
@@ -182,6 +125,13 @@ export function isWikimediaCommonsUrl(url: string): boolean {
   );
 }
 
+const commonsFileUrl = (filename: string): string =>
+  withBasePath(
+    `/api/mediawiki/commons/Special:Filepath/${encodeURIComponent(filename.replace(/ /g, "_"))}`
+  );
+
+const restoreSvg = (filename: string): string => filename.replace(/\.svg\.png$/i, ".svg");
+
 /**
  * Converts any Wikimedia Commons / Wikipedia URL to our cached local proxy URL.
  */
@@ -193,27 +143,19 @@ export function getCommonsProxyUrl(url: string): string {
   }
 
   try {
-    const decodedUrl = decodeURIComponent(url);
-
-    // Match /wikipedia/commons/... or /wikipedia/en/... and extract filename
-    const commonsMatch = decodedUrl.match(
+    // /wikipedia/commons/... or /wikipedia/en/... carries the filename after its shard directory
+    const commonsMatch = decodeURIComponent(url).match(
       /\/wikipedia\/(?:commons|en)\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^/]+)/i
     );
     if (commonsMatch && commonsMatch[1]) {
-      const filename = commonsMatch[1].replace(/\.svg\.png$/i, ".svg");
-      return withBasePath(
-        `/api/mediawiki/commons/Special:Filepath/${encodeURIComponent(filename.replace(/ /g, "_"))}`
-      );
+      return commonsFileUrl(restoreSvg(commonsMatch[1]));
     }
 
-    // Fallback: extract last segment if valid image extension
+    // Fallback: the last path segment, when it has an image extension
     const urlObj = new URL(url.startsWith("//") ? `https:${url}` : url);
     const lastSegment = urlObj.pathname.split("/").pop();
     if (lastSegment && /\.(jpg|jpeg|png|gif|svg|webp)$/i.test(lastSegment)) {
-      const cleanSeg = lastSegment.replace(/\.svg\.png$/i, ".svg");
-      return withBasePath(
-        `/api/mediawiki/commons/Special:Filepath/${encodeURIComponent(cleanSeg.replace(/ /g, "_"))}`
-      );
+      return commonsFileUrl(restoreSvg(lastSegment));
     }
   } catch (e) {
     console.error("[Image URL] Error parsing Wikimedia URL:", e);
@@ -259,6 +201,17 @@ export function normalizeWikiImageUrl(rawUrl: string | null | undefined): string
   return url;
 }
 
+/** First <img> in `html` that is not a notice/utility icon or a tiny (under 25px) image, normalized. */
+function firstUsableImage(html: string): string | null {
+  for (const [fullTag, src] of html.matchAll(/<img[^>]+src=["']([^"']+)["'][^>]*>/gi)) {
+    if (!src || isNoticeOrUtilityIcon(src)) continue;
+    if (/\b(?:width|height)=["'](?:1[0-9]|2[0-4]|[1-9])["']/i.test(fullTag)) continue;
+    const normalized = normalizeWikiImageUrl(src);
+    if (normalized) return normalized;
+  }
+  return null;
+}
+
 /**
  * Extracts the genuine lead image URL from MediaWiki / Parsoid article HTML.
  * Strictly ignores maintenance notices, WIP badges, template icons, and grabs
@@ -279,63 +232,21 @@ export function extractLeadImageFromHtml(html: string | null | undefined): strin
     )
     .replace(/<aside[^>]*class=["'][^"']*\b(?:notice|ambox)\b[^"']*["'][\s\S]*?<\/aside>/gi, "");
 
-  // 2. First priority: Infobox image (<table class="infobox">, <aside class="portable-infobox">, .infobox-image)
-  const infoboxMatch = cleanHtml.match(
+  // Infobox image first, then figures and thumbnails, then any remaining <img> in document order
+  const infoboxHtml = cleanHtml.match(
     /<(?:table|aside)[^>]*class=["'][^"']*\b(?:infobox|portable-infobox)\b[^"']*["'][\s\S]*?<\/(?:table|aside)>/i
-  );
-  if (infoboxMatch) {
-    const infoboxHtml = infoboxMatch[0];
-    const infoboxImgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
-    let imgMatch: RegExpExecArray | null;
-    while ((imgMatch = infoboxImgRegex.exec(infoboxHtml)) !== null) {
-      const fullTag = imgMatch[0] || "";
-      const src = imgMatch[1] || "";
-      if (src && !isNoticeOrUtilityIcon(src)) {
-        if (!/\b(?:width|height)=["'](?:1[0-9]|2[0-4]|[1-9])["']/i.test(fullTag)) {
-          const normalized = normalizeWikiImageUrl(src);
-          if (normalized) return normalized;
-        }
-      }
-    }
-  }
+  )?.[0];
+  const fromInfobox = infoboxHtml && firstUsableImage(infoboxHtml);
+  if (fromInfobox) return fromInfobox;
 
-  // 3. Second priority: Figure or Thumbimage (<figure>, <div class="thumb">, <img class="thumbimage">)
   const figureRegex =
     /<(?:figure|div)[^>]*class=["'][^"']*\b(?:thumb|mw-halign|mw-default-size|thumbinner)\b[^"']*["'][\s\S]*?<\/(?:figure|div)>/gi;
-  let figMatch: RegExpExecArray | null;
-  while ((figMatch = figureRegex.exec(cleanHtml)) !== null) {
-    const figHtml = figMatch[0];
-    const figImgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
-    let imgMatch: RegExpExecArray | null;
-    while ((imgMatch = figImgRegex.exec(figHtml)) !== null) {
-      const fullTag = imgMatch[0] || "";
-      const src = imgMatch[1] || "";
-      if (src && !isNoticeOrUtilityIcon(src)) {
-        if (!/\b(?:width|height)=["'](?:1[0-9]|2[0-4]|[1-9])["']/i.test(fullTag)) {
-          const normalized = normalizeWikiImageUrl(src);
-          if (normalized) return normalized;
-        }
-      }
-    }
+  for (const figure of cleanHtml.matchAll(figureRegex)) {
+    const fromFigure = firstUsableImage(figure[0]);
+    if (fromFigure) return fromFigure;
   }
 
-  // 4. Third priority: Scan all remaining <img> tags in document order
-  const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
-  let match: RegExpExecArray | null;
-  while ((match = imgRegex.exec(cleanHtml)) !== null) {
-    const fullTag = match[0] || "";
-    const rawSrc = match[1] || "";
-    if (!rawSrc) continue;
-
-    if (isNoticeOrUtilityIcon(rawSrc)) continue;
-
-    if (!/\b(?:width|height)=["'](?:1[0-9]|2[0-4]|[1-9])["']/i.test(fullTag)) {
-      const normalized = normalizeWikiImageUrl(rawSrc);
-      if (normalized) return normalized;
-    }
-  }
-
-  return null;
+  return firstUsableImage(cleanHtml);
 }
 
 /**
@@ -381,6 +292,13 @@ export function extractLeadImageFromWikitext(wikitext: string | null | undefined
   return null;
 }
 
+/** Proxy route serving `Special:FilePath` for each wiki; ixwiki uses MD5-sharded static storage instead. */
+const FILEPATH_ROUTES: Partial<Record<ExtendedWikiSource, string>> = {
+  commons: "commons/Special:Filepath",
+  iiwiki: "iiwiki/wiki/Special:FilePath",
+  althistory: "althistory/wiki/Special:FilePath",
+};
+
 /**
  * Resolve an image filename to its canonical proxied or direct URL based on wiki source.
  */
@@ -403,26 +321,9 @@ export function resolveImageUrl(
     return normalizeWikiImageUrl(cleanName) ?? cleanName;
   }
 
-  const normalized = cleanName.replace(/ /g, "_");
-
-  if (wikiSource === "commons") {
-    return withBasePath(
-      `/api/mediawiki/commons/Special:Filepath/${encodeURIComponent(normalized)}`
-    );
-  }
-  if (wikiSource === "ixwiki") {
-    return getImageUrl(cleanName);
-  }
-  if (wikiSource === "iiwiki") {
-    return withBasePath(
-      `/api/mediawiki/iiwiki/wiki/Special:FilePath/${encodeURIComponent(normalized)}`
-    );
-  }
-  if (wikiSource === "althistory") {
-    return withBasePath(
-      `/api/mediawiki/althistory/wiki/Special:FilePath/${encodeURIComponent(normalized)}`
-    );
-  }
-
-  return getImageUrl(cleanName);
+  const route = FILEPATH_ROUTES[wikiSource];
+  if (!route) return getImageUrl(cleanName);
+  return withBasePath(
+    `/api/mediawiki/${route}/${encodeURIComponent(cleanName.replace(/ /g, "_"))}`
+  );
 }

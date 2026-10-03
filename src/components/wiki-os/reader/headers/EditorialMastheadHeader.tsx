@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "~/lib/utils";
-import React from "react";
+import type { ComponentType } from "react";
 import Link from "next/link";
 import { User, EditPencil as PenTool, Calendar } from "iconoir-react";
 import { CategoryBreadcrumb } from "../CategoryBreadcrumb";
@@ -18,6 +18,114 @@ interface EditorialMastheadProps extends ArticleHeaderProps {
   setShowPopover: (show: boolean) => void;
 }
 
+/** Pill link to a wiki user page with their avatar, falling back to a role icon. */
+function PersonLink({
+  name,
+  avatar,
+  Icon,
+}: {
+  name: string;
+  avatar?: string | null;
+  Icon: ComponentType<{ className?: string }>;
+}) {
+  return (
+    <Link
+      href={withBasePath(`/wiki/User:${encodeURIComponent(name.replace(/ /g, "_"))}`)}
+      className="text-label border-separator text-caption hover:border-tint/40 hover:bg-tint/10 hover:text-tint inline-flex items-center gap-2 rounded-full border bg-black/5 px-3 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+    >
+      {avatar ? (
+        <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10">
+          <img
+            src={avatar}
+            alt={name}
+            className="aspect-square size-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
+          <Icon className="text-tint absolute inset-0 -z-10 m-auto h-2.5 w-2.5" />
+        </span>
+      ) : (
+        <Icon className="text-tint h-3 w-3 shrink-0" />
+      )}
+      <span>{name}</span>
+    </Link>
+  );
+}
+
+type AwardsBadgeProps = Pick<
+  EditorialMastheadProps,
+  | "awardsData"
+  | "primaryAward"
+  | "badgeConfig"
+  | "showCelebration"
+  | "showPopover"
+  | "setShowPopover"
+>;
+
+function AwardsBadge({
+  awardsData,
+  primaryAward,
+  badgeConfig,
+  showCelebration,
+  showPopover,
+  setShowPopover,
+}: AwardsBadgeProps) {
+  if (!awardsData?.hasAwards || !primaryAward || !badgeConfig) return null;
+  return (
+    <Popover open={showPopover} onOpenChange={setShowPopover}>
+      <PopoverTrigger asChild>
+        <button
+          className={cn(
+            "group text-caption duration-fast relative flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 transition-[background-color,border-color,transform]",
+            badgeConfig.classes,
+            showCelebration && primaryAward.category === "LOREWARD" && "loreward-badge-celebrate"
+          )}
+        >
+          {showCelebration && primaryAward.category === "LOREWARD" && (
+            <div className="pointer-events-none absolute inset-0 overflow-visible">
+              {[...Array(8)].map((_, i) => (
+                <span key={i} className={`loreward-particle loreward-particle-${i + 1}`} />
+              ))}
+            </div>
+          )}
+          <badgeConfig.Icon className={cn("size-3.5 shrink-0", badgeConfig.iconColor)} />
+          {awardsData.awards.length > 1 && (
+            <span className="text-caption leading-none font-semibold tabular-nums opacity-80">
+              +{awardsData.awards.length - 1}
+            </span>
+          )}
+          <span>{badgeConfig.text}</span>
+        </button>
+      </PopoverTrigger>
+
+      <PopoverContent
+        side="bottom"
+        align="end"
+        sideOffset={8}
+        className="text-footnote w-72 space-y-2 p-4"
+      >
+        <div className="text-label-secondary text-eyebrow text-left">Article distinctions</div>
+        <div className="space-y-2">
+          {awardsData.awards.map((award) => (
+            <div
+              key={award.id}
+              className="border-separator space-y-0.5 border-b pb-2 last:border-0 last:pb-0"
+            >
+              <div className="text-label font-semibold">{award.name}</div>
+              {award.description && (
+                <p className="text-label-secondary text-footnote leading-relaxed">
+                  {award.description}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export function EditorialMastheadHeader({
   title,
   lastModified,
@@ -31,16 +139,8 @@ export function EditorialMastheadHeader({
   showPopover,
   setShowPopover,
 }: EditorialMastheadProps) {
-  const creator = authorInfo?.creator;
-  const creatorName =
-    typeof creator === "object"
-      ? (creator as any)?.username
-      : creator || (authorInfo as any)?.author || null;
-  const creatorAvatar = authorInfo?.creatorAvatar || null;
-  const lastEditor = authorInfo?.lastEditor;
-  const lastEditorName =
-    typeof lastEditor === "object" ? (lastEditor as any)?.username : lastEditor || null;
-  const lastEditorAvatar = authorInfo?.lastEditorAvatar || null;
+  const creatorName = authorInfo?.creator || authorInfo?.author;
+  const lastEditorName = authorInfo?.lastEditor;
 
   return (
     <header className="wikios-editorial-masthead border-separator relative mb-8 border-b pt-2 pb-6 select-none">
@@ -67,66 +167,24 @@ export function EditorialMastheadHeader({
       {/* Metadata & Awards Ledger */}
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 pt-1">
         <div className="text-label-secondary text-footnote flex flex-wrap items-center gap-x-4 gap-y-2">
-          {/* Author Attribution */}
           {creatorName && (
             <div className="flex items-center gap-2 font-medium">
               <span className="text-label-secondary text-footnote font-normal">Author:</span>
-              <Link
-                href={withBasePath(
-                  `/wiki/User:${encodeURIComponent(creatorName.replace(/ /g, "_"))}`
-                )}
-                className="group/author text-label border-separator text-caption hover:border-tint/40 hover:bg-tint/10 hover:text-tint inline-flex items-center gap-2 rounded-full border bg-black/5 px-3 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-              >
-                {creatorAvatar ? (
-                  <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10">
-                    <img
-                      src={creatorAvatar}
-                      alt={creatorName}
-                      className="aspect-square size-full object-cover"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLElement).style.display = "none";
-                      }}
-                    />
-                    <User className="text-tint absolute inset-0 -z-10 m-auto h-2.5 w-2.5" />
-                  </span>
-                ) : (
-                  <User className="text-tint h-3 w-3 shrink-0" />
-                )}
-                <span>{creatorName}</span>
-              </Link>
+              <PersonLink name={creatorName} avatar={authorInfo?.creatorAvatar} Icon={User} />
             </div>
           )}
 
-          {/* Most Recent Editor */}
           {lastEditorName &&
             creatorName &&
             lastEditorName.toLowerCase() !== creatorName.toLowerCase() && (
               <div className="flex items-center gap-2 font-medium">
                 <span className="text-label-secondary select-none">•</span>
                 <span className="text-label-secondary text-footnote font-normal">Updated by:</span>
-                <Link
-                  href={withBasePath(
-                    `/wiki/User:${encodeURIComponent(lastEditorName.replace(/ /g, "_"))}`
-                  )}
-                  className="group/editor text-label border-separator text-caption hover:border-tint/40 hover:bg-tint/10 hover:text-tint inline-flex items-center gap-2 rounded-full border bg-black/5 px-3 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-                >
-                  {lastEditorAvatar ? (
-                    <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10">
-                      <img
-                        src={lastEditorAvatar}
-                        alt={lastEditorName}
-                        className="aspect-square size-full object-cover"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLElement).style.display = "none";
-                        }}
-                      />
-                      <PenTool className="text-tint absolute inset-0 -z-10 m-auto h-2.5 w-2.5" />
-                    </span>
-                  ) : (
-                    <PenTool className="text-tint h-3 w-3 shrink-0" />
-                  )}
-                  <span>{lastEditorName}</span>
-                </Link>
+                <PersonLink
+                  name={lastEditorName}
+                  avatar={authorInfo?.lastEditorAvatar}
+                  Icon={PenTool}
+                />
               </div>
             )}
 
@@ -148,63 +206,14 @@ export function EditorialMastheadHeader({
           )}
         </div>
 
-        {/* Awards Badge */}
-        {awardsData?.hasAwards && primaryAward && badgeConfig && (
-          <Popover open={showPopover} onOpenChange={setShowPopover}>
-            <PopoverTrigger asChild>
-              <button
-                className={cn(
-                  "group text-caption duration-fast relative flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 transition-[background-color,border-color,transform]",
-                  badgeConfig.classes,
-                  showCelebration &&
-                    primaryAward.category === "LOREWARD" &&
-                    "loreward-badge-celebrate"
-                )}
-              >
-                {showCelebration && primaryAward.category === "LOREWARD" && (
-                  <div className="pointer-events-none absolute inset-0 overflow-visible">
-                    {[...Array(8)].map((_, i) => (
-                      <span key={i} className={`loreward-particle loreward-particle-${i + 1}`} />
-                    ))}
-                  </div>
-                )}
-                <badgeConfig.Icon className={cn("size-3.5 shrink-0", badgeConfig.iconColor)} />
-                {awardsData.awards.length > 1 && (
-                  <span className="text-caption leading-none font-semibold tabular-nums opacity-80">
-                    +{awardsData.awards.length - 1}
-                  </span>
-                )}
-                <span>{badgeConfig.text}</span>
-              </button>
-            </PopoverTrigger>
-
-            <PopoverContent
-              side="bottom"
-              align="end"
-              sideOffset={8}
-              className="text-footnote w-72 space-y-2 p-4"
-            >
-              <div className="text-label-secondary text-eyebrow text-left">
-                Article distinctions
-              </div>
-              <div className="space-y-2">
-                {awardsData.awards.map((award) => (
-                  <div
-                    key={award.id}
-                    className="border-separator space-y-0.5 border-b pb-2 last:border-0 last:pb-0"
-                  >
-                    <div className="text-label font-semibold">{award.name}</div>
-                    {award.description && (
-                      <p className="text-label-secondary text-footnote leading-relaxed">
-                        {award.description}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-        )}
+        <AwardsBadge
+          awardsData={awardsData}
+          primaryAward={primaryAward}
+          badgeConfig={badgeConfig}
+          showCelebration={showCelebration}
+          showPopover={showPopover}
+          setShowPopover={setShowPopover}
+        />
       </div>
     </header>
   );

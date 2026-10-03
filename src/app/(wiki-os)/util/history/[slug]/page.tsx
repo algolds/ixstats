@@ -1,5 +1,4 @@
 "use client";
-// src/app/(wiki-os)/wiki/history/[slug]/page.tsx
 // WikiOS Page History Hub with Scrubbable Timeline
 
 import { useParams } from "next/navigation";
@@ -49,7 +48,6 @@ export default function HistoryPage() {
         {/* Interactive Scrubbable Timeline */}
         <ScrubbableRevisionTimeline
           title={title}
-          slug={rawSlug}
           revisions={mappedRevisions}
           isLoading={isLoading}
         />

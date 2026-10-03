@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/margin/shared/MarginUserAvatar.tsx
 // Shared, memoized avatar component with country flag micro-badge and initials fallback for Margin.
 // Signature Highlighter Yellow / Warm Amber branding for Margin.
 
@@ -25,7 +24,6 @@ export function getInitials(name: string): string {
 interface MarginUserAvatarProps {
   author: CommentAuthor;
   size?: "xs" | "sm" | "md";
-  primaryColor?: string;
   liveAvatar?: string | null;
   className?: string;
 }
@@ -33,8 +31,6 @@ interface MarginUserAvatarProps {
 export const MarginUserAvatar = memo(function MarginUserAvatar({
   author,
   size = "sm",
-  // oxlint-disable-next-line eslint/no-unused-vars
-  primaryColor = "var(--margin-accent-text, #fef036)",
   liveAvatar,
   className,
 }: MarginUserAvatarProps) {

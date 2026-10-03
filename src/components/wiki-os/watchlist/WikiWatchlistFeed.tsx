@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/watchlist/WikiWatchlistFeed.tsx
 // Native Stash Watchlist Activity Feed with inline DiffViewer & unread indicators
 
 import * as React from "react";

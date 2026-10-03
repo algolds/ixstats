@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/shared/MediaThemeContext.tsx
 // React Context and hooks for WikiOS dynamic & theme-compliant image/media switching.
 // Canonical modes: Auto (Adaptive), Plinth (Frosted Plate).
 

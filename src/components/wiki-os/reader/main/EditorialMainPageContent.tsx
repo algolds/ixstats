@@ -46,7 +46,6 @@ export function EditorialMainPageContent({
 }: MainPageContentProps) {
   return (
     <div className="w-full space-y-5 pb-2 select-none sm:space-y-6">
-      {/* ── 1. Two-Column Grid: Topic Taxonomy + Live Revisions Ledger (Equal Proportion) ── */}
       <div className="grid grid-cols-1 items-stretch gap-6 sm:gap-8 lg:grid-cols-12">
         {/* Left Column (col-span-6): Topic Taxonomy Matrix */}
         <section aria-label="Browse by topic" className="flex h-full flex-col lg:col-span-6">

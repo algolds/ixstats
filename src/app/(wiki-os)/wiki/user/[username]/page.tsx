@@ -1,4 +1,3 @@
-// src/app/(wiki-os)/wiki/user/[username]/page.tsx
 // Wiki user profiles live on the IxnayID passport — redirect to its Work tab.
 
 import { redirect } from "next/navigation";

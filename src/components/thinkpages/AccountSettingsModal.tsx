@@ -13,6 +13,7 @@ import {
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { PersonaTraitControls, type PersonaTraitKey } from "./account/PersonaTraitControls";
 
 interface AccountSettingsModalProps {
   isOpen: boolean;
@@ -21,6 +22,12 @@ interface AccountSettingsModalProps {
   onAccountUpdate: (updatedAccount: any) => void;
 }
 
+const SETTING_KEYS = ["postingFrequency", "politicalLean", "personality", "accountType"] as const;
+
+// Values come straight from the account row, so they keep the mutation's enum typing
+const pickSettings = (account: any): Record<(typeof SETTING_KEYS)[number], any> =>
+  Object.fromEntries(SETTING_KEYS.map((key) => [key, account[key]]));
+
 export function AccountSettingsModal({
   isOpen,
   onClose,
@@ -28,10 +35,7 @@ export function AccountSettingsModal({
   onAccountUpdate,
 }: AccountSettingsModalProps) {
   const notify = useNotify();
-  const [postingFrequency, setPostingFrequency] = useState(account.postingFrequency);
-  const [politicalLean, setPoliticalLean] = useState(account.politicalLean);
-  const [personality, setPersonality] = useState(account.personality);
-  const [accountType, setAccountType] = useState(account.accountType);
+  const [settings, setSettings] = useState(() => pickSettings(account));
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -39,27 +43,12 @@ export function AccountSettingsModal({
     setMounted(true);
   }, []);
 
-  // Lock scroll on body when open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
-
   const updateAccountMutation = api.thinkpages.updateAccount.useMutation();
 
   useEffect(() => {
     if (account) {
       // oxlint-disable-next-line
-      setPostingFrequency(account.postingFrequency);
-      setPoliticalLean(account.politicalLean);
-      setPersonality(account.personality);
-      setAccountType(account.accountType);
+      setSettings(pickSettings(account));
     }
   }, [account]);
 
@@ -67,10 +56,7 @@ export function AccountSettingsModal({
     try {
       const updatedAccount = await updateAccountMutation.mutateAsync({
         accountId: account.id,
-        postingFrequency,
-        politicalLean,
-        personality,
-        accountType,
+        ...settings,
       });
       notify.success("Account updated");
       onAccountUpdate(updatedAccount);
@@ -89,54 +75,13 @@ export function AccountSettingsModal({
           <DialogTitle className="text-title-3">Account settings</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div>
-            <span id="tp-posting-frequency" className="text-subhead text-label mb-2 block">
-              Posting frequency
-            </span>
-            <SegmentedControl
-              aria-labelledby="tp-posting-frequency"
-              fullWidth
-              value={postingFrequency}
-              onValueChange={setPostingFrequency}
-              options={[
-                { value: "low", label: "Low" },
-                { value: "moderate", label: "Moderate" },
-                { value: "active", label: "Active" },
-              ]}
-            />
-          </div>
-          <div>
-            <span id="tp-political-lean" className="text-subhead text-label mb-2 block">
-              Political lean
-            </span>
-            <SegmentedControl
-              aria-labelledby="tp-political-lean"
-              fullWidth
-              value={politicalLean}
-              onValueChange={setPoliticalLean}
-              options={[
-                { value: "left", label: "Left" },
-                { value: "center", label: "Center" },
-                { value: "right", label: "Right" },
-              ]}
-            />
-          </div>
-          <div>
-            <span id="tp-personality" className="text-subhead text-label mb-2 block">
-              Personality
-            </span>
-            <SegmentedControl
-              aria-labelledby="tp-personality"
-              fullWidth
-              value={personality}
-              onValueChange={setPersonality}
-              options={[
-                { value: "serious", label: "Serious" },
-                { value: "casual", label: "Casual" },
-                { value: "satirical", label: "Satirical" },
-              ]}
-            />
-          </div>
+          <PersonaTraitControls
+            idPrefix="tp"
+            values={settings}
+            onChange={(key: PersonaTraitKey, value) =>
+              setSettings((prev) => ({ ...prev, [key]: value }))
+            }
+          />
           <div>
             <span id="tp-account-type" className="text-subhead text-label mb-2 block">
               Account Type (Category)
@@ -144,8 +89,8 @@ export function AccountSettingsModal({
             <SegmentedControl
               aria-labelledby="tp-account-type"
               fullWidth
-              value={accountType}
-              onValueChange={setAccountType}
+              value={settings.accountType}
+              onValueChange={(accountType) => setSettings((prev) => ({ ...prev, accountType }))}
               options={[
                 { value: "government", label: "Government" },
                 { value: "media", label: "Media" },

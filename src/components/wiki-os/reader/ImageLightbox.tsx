@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/reader/ImageLightbox.tsx
 // Lightbox modal for WikiOS.
 // Features a unified frame where the Repository Inspector is physically bolted directly to the image,
 // bottom-docked Facet glass controls, high-resolution original asset resolution, Wikitext generator, and fluid spring physics.
@@ -90,10 +89,6 @@ export function useImageLightbox(containerRef: React.RefObject<HTMLElement | nul
 
   return <ImageLightboxModal image={activeImage} onClose={handleClose} />;
 }
-
-// ---------------------------------------------------------------------------
-// Main Lightbox Modal Component
-// ---------------------------------------------------------------------------
 
 function ImageLightboxModal({
   image,

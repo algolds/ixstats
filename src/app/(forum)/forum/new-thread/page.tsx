@@ -1,5 +1,4 @@
 "use client";
-// src/app/(forum)/forum/new-thread/page.tsx
 // New thread creation page.
 
 import { useSearchParams } from "next/navigation";

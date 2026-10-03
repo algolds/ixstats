@@ -1,10 +1,6 @@
 import { Cache } from "~/lib/cache";
 export type WikiSource = "ixwiki" | "iiwiki" | "althistory";
 
-// ──────────────────────────────────────────────
-// Bridge DTO Interfaces
-// ──────────────────────────────────────────────
-
 export interface WikiSearchResult {
   title: string;
   pageId: number;
@@ -50,9 +46,11 @@ export interface WikiCategoryMembers {
   hasMore: boolean;
   nextOffset?: string;
 }
-// ──────────────────────────────────────────────
-// In-Memory LRU Cache (L1)
-// ──────────────────────────────────────────────
+
+/** Logs an error the bridge swallows (development only). */
+export function warnDev(err: unknown): void {
+  if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+}
 
 const wikiBridgeCache = new Cache<unknown>({
   defaultTtlMs: 30 * 60 * 1000, // 30 minutes

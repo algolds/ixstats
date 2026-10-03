@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/reader/CategoryBreadcrumb.tsx
 // Shows parent category hierarchy above an article for navigation context.
 
 import Link from "next/link";

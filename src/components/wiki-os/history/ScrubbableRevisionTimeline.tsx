@@ -1,6 +1,4 @@
 "use client";
-// src/components/wiki-os/history/ScrubbableRevisionTimeline.tsx
-// Interactive Scrubbable Revision Timeline & Diff Inspection Suite
 
 import { cn } from "~/lib/utils";
 import * as React from "react";
@@ -39,7 +37,6 @@ interface RevisionItem {
 
 interface ScrubbableRevisionTimelineProps {
   title: string;
-  slug: string;
   revisions: RevisionItem[];
   isLoading?: boolean;
 }
@@ -55,10 +52,23 @@ function ByteDelta({ delta }: { delta?: number }) {
   );
 }
 
+/** Edit summary, or a neutral chip for empty / auto-generated sync summaries. */
+function RevisionSummary({ rev }: { rev: RevisionItem }) {
+  const clean = rev.summary?.trim() || "";
+  if (!clean || /live sync/i.test(clean) || /mediawiki/i.test(clean)) {
+    return (
+      <div className="pt-0.5">
+        <span className="text-label-secondary border-separator bg-fill-4 text-caption inline-flex items-center rounded-full border px-2 py-0.5">
+          {rev.minor ? "Minor edit" : "Updated content"}
+        </span>
+      </div>
+    );
+  }
+  return <p className="text-label-secondary text-footnote italic">&ldquo;{clean}&rdquo;</p>;
+}
+
 export function ScrubbableRevisionTimeline({
   title,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  slug,
   revisions,
   isLoading,
 }: ScrubbableRevisionTimelineProps) {
@@ -227,20 +237,7 @@ export function ScrubbableRevisionTimeline({
             <div className="text-label-secondary text-footnote">
               {targetRev && new Date(targetRev.createdAt).toLocaleString()}
             </div>
-            {targetRev &&
-              (() => {
-                const clean = targetRev.summary?.trim() || "";
-                const isSync = !clean || /live sync/i.test(clean) || /mediawiki/i.test(clean);
-                return isSync ? (
-                  <div className="pt-0.5">
-                    <span className="text-label-secondary border-separator bg-fill-4 text-caption inline-flex items-center rounded-full border px-2 py-0.5">
-                      {targetRev.minor ? "Minor edit" : "Updated content"}
-                    </span>
-                  </div>
-                ) : (
-                  <p className="text-label-secondary text-footnote italic">&ldquo;{clean}&rdquo;</p>
-                );
-              })()}
+            {targetRev && <RevisionSummary rev={targetRev} />}
           </div>
 
           {/* Compare Revision (Base Selection) */}
@@ -270,20 +267,7 @@ export function ScrubbableRevisionTimeline({
             <div className="text-label-secondary text-footnote">
               {compareRev && new Date(compareRev.createdAt).toLocaleString()}
             </div>
-            {compareRev &&
-              (() => {
-                const clean = compareRev.summary?.trim() || "";
-                const isSync = !clean || /live sync/i.test(clean) || /mediawiki/i.test(clean);
-                return isSync ? (
-                  <div className="pt-0.5">
-                    <span className="text-label-secondary border-separator bg-fill-4 text-caption inline-flex items-center rounded-full border px-2 py-0.5">
-                      {compareRev.minor ? "Minor edit" : "Updated content"}
-                    </span>
-                  </div>
-                ) : (
-                  <p className="text-label-secondary text-footnote italic">&ldquo;{clean}&rdquo;</p>
-                );
-              })()}
+            {compareRev && <RevisionSummary rev={compareRev} />}
           </div>
         </div>
 

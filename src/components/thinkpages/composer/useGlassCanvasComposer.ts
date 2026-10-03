@@ -1,24 +1,36 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { withBasePath } from "~/lib/base-path";
+import { extractHashtags, extractMentions } from "~/lib/utils";
+import {
+  VISUALIZATION_SPECS,
+  buildVisualization,
+  describeAvailability,
+  type DataVisualization,
+  type VisualizationType,
+} from "./visualizationSpecs";
 
-interface DataVisualization {
-  id: string;
-  type:
-    | "economic_chart"
-    | "diplomatic_map"
-    | "trade_flow"
-    | "gdp_growth"
-    | "demographics"
-    | "budget_debt"
-    | "labor_market"
-    | "national_vitality";
-  title: string;
-  data: any;
-  config: any;
+const MAX_IMAGES = 4;
+
+const fallbackAvatar = (name?: string) =>
+  `https://ui-avatars.com/api/?name=${encodeURIComponent(name || "A")}&background=3B82F6&color=fff&size=128&bold=true`;
+
+interface PollDraft {
+  question: string;
+  pollType: "choice" | "feature-poll";
+  multiple: boolean;
+  options: string[];
+}
+
+const filledOptions = (poll: PollDraft) =>
+  poll.options.map((opt) => opt.trim()).filter((opt) => opt.length > 0);
+
+/** The first problem with a poll draft, if any. */
+function pollError(poll: PollDraft): string | null {
+  if (!poll.question.trim()) return "Please enter a poll question";
+  return filledOptions(poll).length < 2 ? "A poll must have at least 2 options" : null;
 }
 
 interface UseGlassCanvasComposerProps {
@@ -42,6 +54,7 @@ export function useGlassCanvasComposer({
   repostData,
 }: UseGlassCanvasComposerProps) {
   const notify = useNotify();
+  const utils = api.useUtils();
   const isRegularUser = !isOwner && account?.accountType === "citizen";
   const { data: channelTopic } = api.thinkpages.getDiscordChannelTopic.useQuery(undefined, {
     refetchOnWindowFocus: false,
@@ -50,6 +63,7 @@ export function useGlassCanvasComposer({
 
   const [showDiscordTopic, setShowDiscordTopic] = useState(false);
   const editorRef = useRef<any>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
   const [content, setContent] = useState("");
   const [plainText, setPlainText] = useState("");
   const [selectedVisualizations, setSelectedVisualizations] = useState<DataVisualization[]>([]);
@@ -58,95 +72,45 @@ export function useGlassCanvasComposer({
   const [showAccountManager, setShowAccountManager] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [showMediaModal, setShowMediaModal] = useState(false);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [postToDiscord, setPostToDiscord] = useState(true);
   const [isEditorFocused, setIsEditorFocused] = useState(false);
-  const [pollDraft, setPollDraft] = useState<{
-    question: string;
-    pollType: "choice" | "feature-poll";
-    multiple: boolean;
-    options: string[];
-  } | null>(null);
+  const [pollDraft, setPollDraft] = useState<PollDraft | null>(null);
   const [showPollModal, setShowPollModal] = useState(false);
 
   useEffect(() => {
-    if (channelTopic) {
-      const isDev = process.env.NODE_ENV === "development";
-      const shouldShow = isDev || Math.random() < 0.1;
-      if (shouldShow) {
-        // oxlint-disable-next-line
-        setShowDiscordTopic(true);
-      }
+    // Surface the Discord channel topic as the placeholder in dev and for ~10% of sessions
+    if (channelTopic && (process.env.NODE_ENV === "development" || Math.random() < 0.1)) {
+      // oxlint-disable-next-line
+      setShowDiscordTopic(true);
     }
   }, [channelTopic]);
 
   const resolvedPlaceholder = showDiscordTopic && !isEditorFocused ? channelTopic : placeholder;
-
   const accountAvatarUrl = account
-    ? account.profileImageUrl ||
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(account.displayName || "A")}&background=3B82F6&color=fff&size=128&bold=true`
+    ? account.profileImageUrl || fallbackAvatar(account.displayName)
     : "";
+  const getAccountAvatar = (acc: any) => acc.profileImageUrl || fallbackAvatar(acc.displayName);
 
-  const getAccountAvatar = (acc: any) =>
-    acc.profileImageUrl ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(acc.displayName || "A")}&background=3B82F6&color=fff&size=128&bold=true`;
-
-  const handleInsertGif = useCallback(
-    (gifUrl: string) => {
-      if (selectedImages.length >= 4) {
-        notify.error("Maximum 4 images/GIFs per post");
-        return;
-      }
-      setSelectedImages((prev) => [...prev, gifUrl]);
-      notify.success("GIF added to post");
-    },
-    [selectedImages, notify]
-  );
-
-  const composerRef = useRef<HTMLDivElement>(null);
   const hasContent =
     plainText.trim().length > 0 || selectedImages.length > 0 || selectedVisualizations.length > 0;
-
   const showActionBar = isEditorFocused || hasContent || showVisualizationPanel;
 
-  // Get latest economic data for visualizations - live wired
+  const liveQuery = { enabled: !!countryId, refetchOnWindowFocus: false };
   const { data: economicData, isLoading: isLoadingEconomic } =
-    api.countries.getByIdWithEconomicData.useQuery(
-      { id: countryId },
-      { enabled: !!countryId, refetchOnWindowFocus: false }
-    );
+    api.countries.getByIdWithEconomicData.useQuery({ id: countryId }, liveQuery);
   const { data: gdpHistoryData, isLoading: isLoadingHistory } =
-    api.historical.getCountryHistory.useQuery(
-      { countryId, limit: 30 },
-      { enabled: !!countryId, refetchOnWindowFocus: false }
-    );
+    api.historical.getCountryHistory.useQuery({ countryId, limit: 30 }, liveQuery);
   const { data: diplomaticData, isLoading: isLoadingDiplomatic } =
-    api.diplomaticCore.getRelationships.useQuery(
-      { countryId },
-      { enabled: !!countryId, refetchOnWindowFocus: false }
-    );
+    api.diplomaticCore.getRelationships.useQuery({ countryId }, liveQuery);
   const { data: tradeData, isLoading: isLoadingTrade } = api.countries.getTradeData.useQuery(
     { countryId },
-    { enabled: !!countryId, refetchOnWindowFocus: false }
+    liveQuery
   );
   const { data: vitalityData, isLoading: isLoadingVitality } =
-    api.countries.getActivityRingsData.useQuery(
-      { countryId },
-      { enabled: !!countryId, refetchOnWindowFocus: false }
-    );
+    api.countries.getActivityRingsData.useQuery({ countryId }, liveQuery);
 
-  const hasEconomicData = !!economicData;
-  const hasHistoricalData =
-    !!gdpHistoryData &&
-    (gdpHistoryData.length > 0 ||
-      (economicData &&
-        (economicData as any).historical &&
-        (economicData as any).historical.length > 0));
-  const hasDiplomaticData = !!diplomaticData && diplomaticData.length > 0;
-  const hasTradeData = !!tradeData;
-  const hasVitalityData = !!vitalityData;
-
-  const utils = api.useUtils();
+  const sources = { economicData, gdpHistoryData, diplomaticData, tradeData, vitalityData };
+  const availability = describeAvailability(sources);
 
   // A wiki article "repost" (WikiFeedCard / InlineWikiArticlePreview) has no ThinkPages post
   // behind it: its id is `wiki-<title>`, which would fail the repostOf foreign key. Post it as
@@ -165,9 +129,7 @@ export function useGlassCanvasComposer({
       notify.success(repostData ? "Reposted to ThinkPages" : "Post shared successfully!");
       setContent("");
       setPlainText("");
-      if (editorRef.current) {
-        editorRef.current.clear();
-      }
+      editorRef.current?.clear();
       setSelectedVisualizations([]);
       setSelectedImages([]);
       setPollDraft(null);
@@ -187,53 +149,33 @@ export function useGlassCanvasComposer({
     },
   });
 
-  const extractHashtags = (text: string): string[] => {
-    const hashtags = text.match(/#[\w]+/g);
-    return hashtags ? hashtags.map((tag) => tag.substring(1)) : [];
-  };
-
-  const extractMentions = (text: string): string[] => {
-    const mentions = text.match(/@[\w]+/g);
-    return mentions ? mentions.map((mention) => mention.substring(1)) : [];
-  };
-
-  const handleSubmit = useCallback(() => {
-    // oxlint-disable-next-line
+  const handleSubmit = () => {
     if (!account) return;
 
-    if (
+    const isEmpty =
       !plainText.trim() &&
       selectedVisualizations.length === 0 &&
       selectedImages.length === 0 &&
       !pollDraft &&
-      !repostData // a repost needs no comment of its own
-    ) {
-      notify.error("Please add content, a visualization, an image, or a poll");
+      !repostData; // a repost needs no comment of its own
+    const invalid = isEmpty
+      ? "Please add content, a visualization, an image, or a poll"
+      : pollDraft && pollError(pollDraft);
+    if (invalid) {
+      notify.error(invalid);
       return;
     }
 
-    if (pollDraft) {
-      if (!pollDraft.question.trim()) {
-        notify.error("Please enter a poll question");
-        return;
-      }
-      const validOpts = pollDraft.options.map((opt) => opt.trim()).filter((opt) => opt.length > 0);
-      if (validOpts.length < 2) {
-        notify.error("A poll must have at least 2 options");
-        return;
-      }
-    }
-
-    const postData = {
+    createPostMutation.mutate({
       accountId: account.id,
       content: [content.trim(), wikiRepostContent].filter(Boolean).join("\n\n"),
       hashtags: extractHashtags(plainText),
       mentions: extractMentions(plainText),
       visibility: "public" as const,
-      visualizations: selectedVisualizations.map((viz) => ({
-        type: viz.type,
-        title: viz.title,
-        config: viz.config,
+      visualizations: selectedVisualizations.map(({ type, title, config }) => ({
+        type,
+        title,
+        config,
       })),
       mediaUrls: selectedImages,
       repostOfId,
@@ -243,262 +185,44 @@ export function useGlassCanvasComposer({
             question: pollDraft.question.trim(),
             pollType: pollDraft.pollType,
             multiple: pollDraft.multiple,
-            options: pollDraft.options.map((opt) => opt.trim()).filter((opt) => opt.length > 0),
+            options: filledOptions(pollDraft),
           }
         : undefined,
-    };
+    });
+  };
 
-    createPostMutation.mutate(postData);
-  }, [
-    content,
-    plainText,
-    selectedVisualizations,
-    selectedImages,
-    account?.id,
-    createPostMutation,
-    repostData,
-    repostOfId,
-    wikiRepostContent,
-    postToDiscord,
-    pollDraft,
-    notify,
-  ]);
-
-  const addVisualization = (type: DataVisualization["type"]) => {
-    let hasRequiredData = false;
-    let errorMessage = "";
-
-    switch (type) {
-      case "economic_chart":
-        hasRequiredData = hasHistoricalData;
-        errorMessage = "No historical GDP data available for this country";
-        break;
-      case "diplomatic_map":
-        hasRequiredData = hasDiplomaticData;
-        errorMessage = "No diplomatic relationships data available";
-        break;
-      case "trade_flow":
-        hasRequiredData = hasTradeData;
-        errorMessage = "No trade data available for this country";
-        break;
-      case "gdp_growth":
-        hasRequiredData = hasEconomicData;
-        errorMessage = "No economic data available for this country";
-        break;
-      case "demographics":
-        hasRequiredData = hasEconomicData;
-        errorMessage = "No demographics data available for this country";
-        break;
-      case "budget_debt":
-        hasRequiredData = hasEconomicData;
-        errorMessage = "No fiscal budget/debt data available for this country";
-        break;
-      case "labor_market":
-        hasRequiredData = hasEconomicData;
-        errorMessage = "No labor market data available for this country";
-        break;
-      case "national_vitality":
-        hasRequiredData = hasVitalityData;
-        errorMessage = "No activity/vitality data available for this country";
-        break;
-    }
-
-    if (!hasRequiredData) {
-      notify.error(errorMessage);
+  const addVisualization = (type: VisualizationType) => {
+    const { available, missing, title } = VISUALIZATION_SPECS[type];
+    if (!availability[available]) {
+      notify.error(missing);
       return;
     }
 
     setIsGeneratingVisualization(true);
-
     setTimeout(() => {
-      let newVisualization: DataVisualization;
-
-      switch (type) {
-        case "economic_chart":
-          newVisualization = {
-            id: `econ-${Date.now()}`,
-            type: "economic_chart",
-            title: "GDP Growth Trajectory",
-            data:
-              gdpHistoryData && gdpHistoryData.length > 0
-                ? gdpHistoryData
-                : (economicData as any)?.historical?.map((h: any) => ({
-                    ixTimeTimestamp: new Date(h.year, 0, 1),
-                    totalGdp: h.gdp,
-                    population: h.population,
-                  })) || [],
-            config: {
-              chartType: "line",
-              colors: ["#3B82F6", "#10B981"],
-              showGrid: true,
-              timeRange: "6M",
-            },
-          };
-          break;
-        case "diplomatic_map":
-          newVisualization = {
-            id: `diplo-${Date.now()}`,
-            type: "diplomatic_map",
-            title: "Diplomatic relations map",
-            data: diplomaticData!,
-            config: {
-              mapType: "world",
-              showRelationStrength: true,
-              colorScheme: "diplomatic",
-            },
-          };
-          break;
-        case "trade_flow":
-          newVisualization = {
-            id: `trade-${Date.now()}`,
-            type: "trade_flow",
-            title: "Trade flow analysis",
-            data: tradeData!,
-            config: {
-              flowType: "sankey",
-              showVolumes: true,
-              timeframe: "current_quarter",
-            },
-          };
-          break;
-        case "gdp_growth":
-          newVisualization = {
-            id: `gdp-${Date.now()}`,
-            type: "gdp_growth",
-            title: "Economic performance overview",
-            data: economicData!,
-            config: {
-              metrics: ["gdp", "inflation", "unemployment"],
-              displayType: "dashboard",
-              comparison: "regional_average",
-            },
-          };
-          break;
-        case "demographics":
-          newVisualization = {
-            id: `demo-${Date.now()}`,
-            type: "demographics",
-            title: "Demographics profile",
-            data: {
-              lifeExpectancy: economicData.lifeExpectancy,
-              literacyRate: economicData.literacyRate,
-              urbanPopulationPercent: economicData.urbanPopulationPercent,
-              ruralPopulationPercent: economicData.ruralPopulationPercent,
-              population: economicData.currentPopulation || economicData.population,
-            },
-            config: {
-              displayType: "stats_grid",
-              colorScheme: "green",
-            },
-          };
-          break;
-        case "budget_debt":
-          newVisualization = {
-            id: `fiscal-${Date.now()}`,
-            type: "budget_debt",
-            title: "Fiscal & debt analysis",
-            data: {
-              taxRevenueGDPPercent: economicData.taxRevenueGDPPercent,
-              governmentBudgetGDPPercent: economicData.governmentBudgetGDPPercent,
-              totalGovernmentSpending: economicData.totalGovernmentSpending,
-              totalDebtGDPRatio: economicData.totalDebtGDPRatio,
-              budgetDeficitSurplus: economicData.budgetDeficitSurplus,
-            },
-            config: {
-              displayType: "donut",
-              colorScheme: "amber",
-            },
-          };
-          break;
-        case "labor_market":
-          newVisualization = {
-            id: `labor-${Date.now()}`,
-            type: "labor_market",
-            title: "Labor & income profile",
-            data: {
-              unemploymentRate: economicData.unemploymentRate,
-              incomeInequalityGini: economicData.incomeInequalityGini,
-              averageAnnualIncome: economicData.averageAnnualIncome,
-              minimumWage: economicData.minimumWage,
-            },
-            config: {
-              metrics: ["unemployment", "gini", "income"],
-              displayType: "stats_grid",
-              colorScheme: "teal",
-            },
-          };
-          break;
-        case "national_vitality":
-          newVisualization = {
-            id: `vitality-${Date.now()}`,
-            type: "national_vitality",
-            title: "National vitality assessment",
-            data: vitalityData!,
-            config: {
-              metrics: ["economic", "population", "diplomatic", "government"],
-              displayType: "progress_bars",
-              colorScheme: "red",
-            },
-          };
-          break;
-        default:
-          setIsGeneratingVisualization(false);
-          return;
-      }
-
-      setSelectedVisualizations((prev) => [...prev, newVisualization]);
+      setSelectedVisualizations((prev) => [...prev, buildVisualization(type, sources)]);
       setIsGeneratingVisualization(false);
-      notify.success(`${newVisualization.title} added to post`);
+      notify.success(`${title} added to post`);
     }, 800);
   };
 
-  const removeVisualization = (id: string) => {
-    setSelectedVisualizations((prev) => prev.filter((viz) => viz.id !== id));
+  /** Adds an image or GIF unless the post already has the maximum. */
+  const addImage = (url: string, limitMessage: string, addedMessage: string) => {
+    if (selectedImages.length >= MAX_IMAGES) {
+      notify.error(limitMessage);
+      return false;
+    }
+    setSelectedImages((prev) => [...prev, url]);
+    notify.success(addedMessage);
+    return true;
   };
+
+  const handleInsertGif = (gifUrl: string) =>
+    addImage(gifUrl, "Maximum 4 images/GIFs per post", "GIF added to post");
 
   const handleImageSelect = (imageUrl: string) => {
-    if (selectedImages.length >= 4) {
-      notify.error("Maximum 4 images per post");
-      return;
-    }
-    setSelectedImages((prev) => [...prev, imageUrl]);
-    setShowMediaModal(false);
-    notify.success("Image added to post");
-  };
-
-  const removeImage = (imageUrl: string) => {
-    setSelectedImages((prev) => prev.filter((url) => url !== imageUrl));
-  };
-
-  const handleFileUpload = async (file: File) => {
-    if (selectedImages.length >= 4) {
-      notify.error("Maximum 4 images per post");
-      return;
-    }
-
-    setIsUploadingImage(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await fetch(withBasePath("/api/upload/image"), {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setSelectedImages((prev) => [...prev, result.url]);
-        notify.success("Image uploaded");
-      } else {
-        notify.error(result.error || "Failed to upload image");
-      }
-    } catch (error) {
-      console.error("Upload error:", error);
-      notify.error("Failed to upload image");
-    } finally {
-      setIsUploadingImage(false);
+    if (addImage(imageUrl, "Maximum 4 images per post", "Image added to post")) {
+      setShowMediaModal(false);
     }
   };
 
@@ -512,21 +236,16 @@ export function useGlassCanvasComposer({
     plainText,
     setPlainText,
     selectedVisualizations,
-    setSelectedVisualizations,
     showVisualizationPanel,
     setShowVisualizationPanel,
     isGeneratingVisualization,
     showAccountManager,
     setShowAccountManager,
     selectedImages,
-    setSelectedImages,
     showMediaModal,
     setShowMediaModal,
-    isUploadingImage,
-    setIsUploadingImage,
     postToDiscord,
     setPostToDiscord,
-    isEditorFocused,
     setIsEditorFocused,
     pollDraft,
     setPollDraft,
@@ -536,13 +255,8 @@ export function useGlassCanvasComposer({
     accountAvatarUrl,
     getAccountAvatar,
     handleInsertGif,
-    hasContent,
     showActionBar,
-    hasEconomicData,
-    hasHistoricalData,
-    hasDiplomaticData,
-    hasTradeData,
-    hasVitalityData,
+    ...availability,
     isLoadingEconomic,
     isLoadingHistory,
     isLoadingDiplomatic,
@@ -551,10 +265,11 @@ export function useGlassCanvasComposer({
     createPostMutation,
     handleSubmit,
     addVisualization,
-    removeVisualization,
+    removeVisualization: (id: string) =>
+      setSelectedVisualizations((prev) => prev.filter((viz) => viz.id !== id)),
     handleImageSelect,
-    removeImage,
-    handleFileUpload,
+    removeImage: (imageUrl: string) =>
+      setSelectedImages((prev) => prev.filter((url) => url !== imageUrl)),
     economicData,
     gdpHistoryData,
     diplomaticData,

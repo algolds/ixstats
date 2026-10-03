@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { timeAgo } from "~/lib/format/compact";
+import { isGroupMember } from "./groupMembership";
 
 interface ThinktankDirectorySidebarProps {
   groups: any[];
@@ -41,14 +42,7 @@ export function ThinktankDirectorySidebar({
   const availableCategories = useMemo(() => {
     const counts: Record<string, number> = { All: 0 };
     for (const g of groups) {
-      const isUserMember =
-        Boolean(g.isMember) ||
-        Boolean(g.isJoined) ||
-        (Boolean(currentUserId) && g.createdBy === currentUserId) ||
-        (Boolean(currentUserId) && g.members?.some((m: any) => m.userId === currentUserId));
-
-      if (activeTab === "my" && !isUserMember) continue;
-      if (activeTab === "discover" && isUserMember) continue;
+      if (isGroupMember(g, currentUserId) !== (activeTab === "my")) continue;
 
       counts.All = (counts.All || 0) + 1;
       const cat = g.category || "General";
@@ -65,24 +59,12 @@ export function ThinktankDirectorySidebar({
   // Filtering
   const filteredGroups = useMemo(() => {
     return groups.filter((g) => {
-      const isUserMember =
-        Boolean(g.isMember) ||
-        Boolean(g.isJoined) ||
-        // oxlint-disable-next-line
-        (Boolean(currentUserId) && g.createdBy === currentUserId) ||
-        (Boolean(currentUserId) && g.members?.some((m: any) => m.userId === currentUserId));
+      if (isGroupMember(g, currentUserId) !== (activeTab === "my")) return false;
 
-      // 1. Tab filter
-      if (activeTab === "my" && !isUserMember) return false;
-      if (activeTab === "discover" && isUserMember) return false;
-
-      // 2. Category filter
-      if (selectedCategory !== "All") {
-        const groupCat = g.category || "General";
-        if (groupCat !== selectedCategory) return false;
+      if (selectedCategory !== "All" && (g.category || "General") !== selectedCategory) {
+        return false;
       }
 
-      // 3. Search query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchesName = g.name?.toLowerCase().includes(q);
@@ -93,11 +75,10 @@ export function ThinktankDirectorySidebar({
 
       return true;
     });
-  }, [groups, activeTab, selectedCategory, searchQuery]);
+  }, [groups, activeTab, selectedCategory, searchQuery, currentUserId]);
 
   return (
     <div className="flex h-full flex-col">
-      {/* ── Top Header & Actions ── */}
       <div className="border-separator relative flex shrink-0 flex-col gap-3 border-b p-3">
         <div className="flex items-center justify-between gap-2">
           <SegmentedControl
@@ -134,7 +115,6 @@ export function ThinktankDirectorySidebar({
           onValueChange={setSearchQuery}
         />
 
-        {/* Dynamic Category Capsules */}
         {availableCategories.length > 1 && (
           <ToggleGroup
             type="single"
@@ -158,7 +138,6 @@ export function ThinktankDirectorySidebar({
         )}
       </div>
 
-      {/* ── Group List ── */}
       <div className="flex-1 space-y-1 overflow-y-auto p-2">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center gap-2 py-16">
@@ -208,12 +187,10 @@ export function ThinktankDirectorySidebar({
                   isSelected ? "bg-tint-fill" : "hover:bg-fill-4"
                 )}
               >
-                {/* Active Indicator Bar */}
                 {isSelected && (
                   <div className="bg-tint absolute top-2 bottom-2 left-0 w-1 rounded-r-full" />
                 )}
 
-                {/* Avatar with Activity Alert Beacon */}
                 <div className="relative shrink-0">
                   <Avatar className="border-separator rounded-control size-9 shrink-0 border">
                     {g.avatar ? <AvatarImage src={g.avatar} alt={g.name} /> : null}
@@ -231,7 +208,6 @@ export function ThinktankDirectorySidebar({
                   )}
                 </div>
 
-                {/* Content Info */}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-headline text-label truncate">{g.name}</span>

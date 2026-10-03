@@ -1,5 +1,4 @@
 "use client";
-// src/app/(forum)/forum/thread/[threadId]/page.tsx
 // Thread view — SSR shell, then client-side pagination and interactions.
 
 import { useParams } from "next/navigation";

@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/editor/components/WikiEditorSavePanel.tsx
 // Unified save bar containing summary input, minor checkbox, and publish/session button.
 
 import React from "react";

@@ -2,18 +2,7 @@
 
 import React from "react";
 import { Virtuoso } from "react-virtuoso";
-// oxlint-disable-next-line eslint/no-unused-vars
-import {
-  SystemRestart as Loader2,
-  Heart,
-  Emoji as Smile,
-  Emoji as Angry,
-  FireFlame as Flame,
-  ThumbsUp,
-  ThumbsDown,
-  Group as Users,
-  ChatBubble as MessageSquare,
-} from "iconoir-react";
+import { SystemRestart as Loader2, Heart, ChatBubble as MessageSquare } from "iconoir-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -28,6 +17,13 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import {
+  AccountTypeIcon,
+  REACTION_ICONS,
+  accountTypeColor,
+  getDiscordEmojiUrl,
+  getInitials,
+} from "./post/ThinkpagesPostUtils";
 
 interface ReactionsDialogProps {
   postId: string;
@@ -37,14 +33,7 @@ interface ReactionsDialogProps {
   discordMsgId?: string | null;
 }
 
-const REACTION_ICONS: { [key: string]: React.ElementType } = {
-  like: Heart,
-  laugh: Smile,
-  angry: Angry,
-  fire: Flame,
-  thumbsup: ThumbsUp,
-  thumbsdown: ThumbsDown,
-};
+type PostReaction = any;
 
 const REACTION_COLORS: { [key: string]: string } = {
   like: "text-red",
@@ -55,11 +44,125 @@ const REACTION_COLORS: { [key: string]: string } = {
   thumbsdown: "text-label-secondary",
 };
 
-import {
-  ACCOUNT_TYPE_ICONS,
-  ACCOUNT_TYPE_COLORS,
-  getDiscordEmojiUrl,
-} from "./post/ThinkpagesPostUtils";
+function DiscordImportNotice({ discordMsgUrl }: { discordMsgUrl: string }) {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
+      <div className="bg-discord/15 rounded-card flex size-16 items-center justify-center">
+        <DiscordGlyph className="text-discord size-8" />
+      </div>
+
+      <div className="max-w-sm space-y-2">
+        <h4 className="text-headline text-label">Imported from Discord</h4>
+        <p className="text-callout text-label-secondary mx-auto max-w-[280px]">
+          These reactions were synchronized directly from our official{" "}
+          <span className="text-discord font-semibold">#ixtwitter</span> Discord channel! Local
+          profile directories aren't stored on the website, but you can view all reaction profiles
+          directly inside Discord.
+        </p>
+      </div>
+
+      <Button
+        asChild
+        size="lg"
+        className="bg-discord hover:bg-discord-hover w-full max-w-[260px] text-white"
+      >
+        <a href={discordMsgUrl} target="_blank" rel="noopener noreferrer">
+          <MessageSquare aria-hidden="true" />
+          Open original Discord post
+        </a>
+      </Button>
+    </div>
+  );
+}
+
+function ReactionRow({
+  reaction,
+  apiDiscordEmojis,
+  onAccountClick,
+}: {
+  reaction: PostReaction;
+  apiDiscordEmojis?: Array<{ name: string; url: string }>;
+  onAccountClick?: (accountId: string) => void;
+}) {
+  const { account, reactionType } = reaction;
+  const discordUrl = getDiscordEmojiUrl(reactionType, apiDiscordEmojis);
+  const ReactionIcon = REACTION_ICONS[reactionType];
+  const typeColor = accountTypeColor(account.accountType, "text-label-secondary bg-fill-4");
+  const openAccount = account.isDiscordUser ? undefined : () => onAccountClick?.(account.id);
+
+  return (
+    <div className="hover:bg-fill-4 rounded-row mb-2 flex items-center gap-3 p-2 transition-colors">
+      <button
+        type="button"
+        onClick={openAccount}
+        className={cn("shrink-0 transition-transform", account.isDiscordUser && "cursor-default")}
+        disabled={!!account.isDiscordUser}
+      >
+        <Avatar className="border-separator size-10 border">
+          <AvatarImage src={account.profileImageUrl || undefined} />
+          <AvatarFallback className={cn("text-caption", typeColor)}>
+            {getInitials(account.displayName)}
+          </AvatarFallback>
+        </Avatar>
+      </button>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={openAccount}
+            className={cn(
+              "text-headline text-label truncate text-left transition-colors",
+              account.isDiscordUser ? "cursor-default" : "hover:text-tint hover:underline"
+            )}
+            disabled={!!account.isDiscordUser}
+          >
+            {account.displayName}
+          </button>
+          {account.verified && (
+            <span
+              className="text-footnote inline-flex size-4 shrink-0 items-center justify-center leading-none"
+              title="Verified"
+            >
+              ✅
+            </span>
+          )}
+          {account.bio?.startsWith("Former Nation") && (
+            <span className="text-footnote text-label-secondary shrink-0">[Former Nation]</span>
+          )}
+          {account.isDiscordUser ? (
+            <Badge className="bg-discord/15 text-discord" variant="secondary">
+              <DiscordGlyph />
+              <span>Discord</span>
+            </Badge>
+          ) : (
+            <span
+              className={cn(
+                "rounded-control-sm flex shrink-0 items-center justify-center p-0.5",
+                typeColor
+              )}
+            >
+              <AccountTypeIcon type={account.accountType} className="size-3.5" />
+            </span>
+          )}
+        </div>
+        <p className="text-footnote text-label-secondary truncate text-left">@{account.username}</p>
+      </div>
+
+      {discordUrl ? (
+        <div className="bg-fill-3 rounded-full p-2">
+          <img src={discordUrl} alt={reactionType} className="size-4 object-contain" />
+        </div>
+      ) : ReactionIcon ? (
+        <div className={cn("bg-fill-3 rounded-full p-2", REACTION_COLORS[reactionType])}>
+          <ReactionIcon className="size-4" />
+        </div>
+      ) : (
+        <Badge variant="default">{reactionType}</Badge>
+      )}
+    </div>
+  );
+}
 
 export function ReactionsDialog({
   postId,
@@ -81,27 +184,15 @@ export function ReactionsDialog({
   );
   const apiDiscordEmojis = discordEmojisData?.emojis;
 
-  // Group reactions by type
-  type PostReaction = any;
-  const reactionsByType = React.useMemo(() => {
-    if (!allReactions) return {} as Record<string, PostReaction[]>;
-    return allReactions.reduce(
-      (acc: Record<string, PostReaction[]>, reaction: PostReaction) => {
-        if (!acc[reaction.reactionType]) {
-          acc[reaction.reactionType] = [];
-        }
-        acc[reaction.reactionType].push(reaction);
-        return acc;
-      },
-      {} as Record<string, PostReaction[]>
-    );
-  }, [allReactions]);
-
-  // Get filtered reactions based on selected tab
-  const filteredReactions: PostReaction[] = React.useMemo(() => {
-    if (selectedTab === "all") return allReactions || [];
-    return reactionsByType[selectedTab] || [];
-  }, [selectedTab, allReactions, reactionsByType]);
+  const reactionsByType = (allReactions ?? []).reduce<Record<string, PostReaction[]>>(
+    (acc, reaction: PostReaction) => {
+      (acc[reaction.reactionType] ??= []).push(reaction);
+      return acc;
+    },
+    {}
+  );
+  const filteredReactions: PostReaction[] =
+    selectedTab === "all" ? (allReactions ?? []) : (reactionsByType[selectedTab] ?? []);
 
   const discordMsgUrl = discordMsgId
     ? `https://discord.com/channels/552179975769161729/557223534418722818/${discordMsgId}`
@@ -115,33 +206,8 @@ export function ReactionsDialog({
           <DialogDescription>View interactions and reactions</DialogDescription>
         </DialogHeader>
 
-        {discordMsgUrl && (!allReactions || allReactions.length === 0) && !isLoading ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
-            <div className="bg-discord/15 rounded-card flex size-16 items-center justify-center">
-              <DiscordGlyph className="text-discord size-8" />
-            </div>
-
-            <div className="max-w-sm space-y-2">
-              <h4 className="text-headline text-label">Imported from Discord</h4>
-              <p className="text-callout text-label-secondary mx-auto max-w-[280px]">
-                These reactions were synchronized directly from our official{" "}
-                <span className="text-discord font-semibold">#ixtwitter</span> Discord channel!
-                Local profile directories aren't stored on the website, but you can view all
-                reaction profiles directly inside Discord.
-              </p>
-            </div>
-
-            <Button
-              asChild
-              size="lg"
-              className="bg-discord hover:bg-discord-hover w-full max-w-[260px] text-white"
-            >
-              <a href={discordMsgUrl} target="_blank" rel="noopener noreferrer">
-                <MessageSquare aria-hidden="true" />
-                Open original Discord post
-              </a>
-            </Button>
-          </div>
+        {discordMsgUrl && !allReactions?.length && !isLoading ? (
+          <DiscordImportNotice discordMsgUrl={discordMsgUrl} />
         ) : (
           <>
             <ToggleGroup
@@ -156,29 +222,26 @@ export function ReactionsDialog({
               <ToggleGroupItem value="all" className="tabular-nums">
                 All ({allReactions?.length || 0})
               </ToggleGroupItem>
-              {(Object.entries(reactionsByType) as [string, PostReaction[]][]).map(
-                ([type, reactions]) => {
-                  const discordUrl = getDiscordEmojiUrl(type, apiDiscordEmojis);
-                  const Icon = REACTION_ICONS[type];
-                  const colorClass = REACTION_COLORS[type];
+              {Object.entries(reactionsByType).map(([type, reactions]) => {
+                const discordUrl = getDiscordEmojiUrl(type, apiDiscordEmojis);
+                const Icon = REACTION_ICONS[type];
 
-                  return (
-                    <ToggleGroupItem key={type} value={type} className="tabular-nums">
-                      {discordUrl ? (
-                        <img src={discordUrl} alt={type} className="size-3.5 object-contain" />
-                      ) : Icon ? (
-                        React.createElement(Icon, {
-                          className: cn("size-3.5", selectedTab !== type && colorClass),
-                          "aria-label": type,
-                        })
-                      ) : (
-                        <span>{type}</span>
-                      )}
-                      <span>{reactions.length}</span>
-                    </ToggleGroupItem>
-                  );
-                }
-              )}
+                return (
+                  <ToggleGroupItem key={type} value={type} className="tabular-nums">
+                    {discordUrl ? (
+                      <img src={discordUrl} alt={type} className="size-3.5 object-contain" />
+                    ) : Icon ? (
+                      <Icon
+                        className={cn("size-3.5", selectedTab !== type && REACTION_COLORS[type])}
+                        aria-label={type}
+                      />
+                    ) : (
+                      <span>{type}</span>
+                    )}
+                    <span>{reactions.length}</span>
+                  </ToggleGroupItem>
+                );
+              })}
             </ToggleGroup>
 
             <div className="flex-1 p-4">
@@ -197,118 +260,13 @@ export function ReactionsDialog({
                   style={{ height: 350 }}
                   data={filteredReactions}
                   overscan={50}
-                  // oxlint-disable-next-line
-                  itemContent={(_index, reaction: PostReaction) => {
-                    const discordUrl = getDiscordEmojiUrl(reaction.reactionType, apiDiscordEmojis);
-                    const ReactionIcon = REACTION_ICONS[reaction.reactionType];
-                    const reactionColor = REACTION_COLORS[reaction.reactionType];
-                    const AccountTypeIcon =
-                      ACCOUNT_TYPE_ICONS[
-                        reaction.account.accountType as keyof typeof ACCOUNT_TYPE_ICONS
-                      ] || Users;
-                    const accountTypeColor =
-                      ACCOUNT_TYPE_COLORS[
-                        reaction.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS
-                      ] || "text-label-secondary bg-fill-4";
-
-                    return (
-                      <div className="hover:bg-fill-4 rounded-row mb-2 flex items-center gap-3 p-2 transition-colors">
-                        <button
-                          type="button"
-                          onClick={
-                            reaction.account.isDiscordUser
-                              ? undefined
-                              : () => onAccountClick?.(reaction.account.id)
-                          }
-                          className={cn(
-                            "shrink-0 transition-transform",
-                            reaction.account.isDiscordUser && "cursor-default"
-                          )}
-                          disabled={!!reaction.account.isDiscordUser}
-                        >
-                          <Avatar className="border-separator size-10 border">
-                            <AvatarImage src={reaction.account.profileImageUrl || undefined} />
-                            <AvatarFallback className={cn("text-caption", accountTypeColor)}>
-                              {reaction.account.displayName
-                                .split(" ")
-                                .map((n: string) => n[0])
-                                .join("")
-                                .toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                        </button>
-
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={
-                                reaction.account.isDiscordUser
-                                  ? undefined
-                                  : () => onAccountClick?.(reaction.account.id)
-                              }
-                              className={cn(
-                                "text-headline text-label truncate text-left transition-colors",
-                                reaction.account.isDiscordUser
-                                  ? "cursor-default"
-                                  : "hover:text-tint hover:underline"
-                              )}
-                              disabled={!!reaction.account.isDiscordUser}
-                            >
-                              {reaction.account.displayName}
-                            </button>
-                            {reaction.account.verified && (
-                              <span
-                                className="text-footnote inline-flex size-4 shrink-0 items-center justify-center leading-none"
-                                title="Verified"
-                              >
-                                ✅
-                              </span>
-                            )}
-                            {(reaction.account as any).bio?.startsWith("Former Nation") && (
-                              <span className="text-footnote text-label-secondary shrink-0">
-                                [Former Nation]
-                              </span>
-                            )}
-                            {reaction.account.isDiscordUser ? (
-                              <Badge className="bg-discord/15 text-discord" variant="secondary">
-                                <DiscordGlyph />
-                                <span>Discord</span>
-                              </Badge>
-                            ) : (
-                              <span
-                                className={cn(
-                                  "rounded-control-sm flex shrink-0 items-center justify-center p-0.5",
-                                  accountTypeColor
-                                )}
-                              >
-                                <AccountTypeIcon className="size-3.5" aria-hidden="true" />
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-footnote text-label-secondary truncate text-left">
-                            @{reaction.account.username}
-                          </p>
-                        </div>
-
-                        {discordUrl ? (
-                          <div className="bg-fill-3 rounded-full p-2">
-                            <img
-                              src={discordUrl}
-                              alt={reaction.reactionType}
-                              className="size-4 object-contain"
-                            />
-                          </div>
-                        ) : ReactionIcon ? (
-                          <div className={cn("bg-fill-3 rounded-full p-2", reactionColor)}>
-                            {React.createElement(ReactionIcon, { className: "size-4" })}
-                          </div>
-                        ) : (
-                          <Badge variant="default">{reaction.reactionType}</Badge>
-                        )}
-                      </div>
-                    );
-                  }}
+                  itemContent={(_index, reaction: PostReaction) => (
+                    <ReactionRow
+                      reaction={reaction}
+                      apiDiscordEmojis={apiDiscordEmojis}
+                      onAccountClick={onAccountClick}
+                    />
+                  )}
                 />
               )}
             </div>

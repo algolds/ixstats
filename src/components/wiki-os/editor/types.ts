@@ -1,4 +1,3 @@
-// src/components/wiki-os/editor/types.ts
 // Shared TypeScript types for WikiOS Visual and Source editors.
 export type SaveActionType = "publish" | "session";
 

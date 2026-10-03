@@ -59,7 +59,6 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8 pb-16 select-none">
-      {/* ── Masthead Card ── */}
       <div className="bg-surface border-separator shadow-card text-label rounded-card relative overflow-hidden border p-6 sm:p-8">
         <div className="relative z-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
           <div className="flex items-start gap-5 sm:items-center">
@@ -256,10 +255,6 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
 
 function VitalityCard({
   label,

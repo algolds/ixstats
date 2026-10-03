@@ -1,6 +1,4 @@
 "use client";
-// src/app/(wiki-os)/wiki/[slug]/ArticlePageClient.tsx (rendered by page.tsx)
-// WikiOS Article Reader & In-Place Editor with Instant Caching
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -19,8 +17,9 @@ import {
   WIKI_SOURCES,
 } from "~/lib/wiki-os/config";
 import type { ArticleMode } from "~/lib/wiki-os/types";
-import { RESERVED_TOOL_PAGES } from "./reserved-tool-pages";
-import { getWikiProfilePath } from "~/lib/wiki-os/profile-url";
+import { RESERVED_TOOL_PAGES, redirectTarget } from "./reserved-tool-pages";
+import { toReaderAuthorInfo } from "~/components/wiki-os/reader/toReaderAuthorInfo";
+import type { ArticleAuthorInfo as CanonicalAuthorInfo } from "~/lib/wiki-os/types/canonical";
 
 /**
  * `?source=` reads another wiki's page (e.g. a realm's iiwiki lore), read-only (ruling E-l);
@@ -55,16 +54,14 @@ export default function WikiOSArticlePage() {
 
   // Normalized keys for reserved tool detection
   const slugLower = slug.toLowerCase();
-  const slugDashed = slugLower.replace(/[\s_]+/g, "-");
   const titleLower = title.toLowerCase();
-  const titleDashed = titleLower.replace(/[\s_]+/g, "-");
-
-  const targetReservedPath =
-    RESERVED_TOOL_PAGES[slugDashed] ||
-    RESERVED_TOOL_PAGES[titleDashed] ||
-    RESERVED_TOOL_PAGES[slugLower] ||
-    RESERVED_TOOL_PAGES[titleLower] ||
-    null;
+  const reservedKeys = [
+    slugLower.replace(/[\s_]+/g, "-"),
+    titleLower.replace(/[\s_]+/g, "-"),
+    slugLower,
+    titleLower,
+  ];
+  const targetReservedPath = reservedKeys.map((k) => RESERVED_TOOL_PAGES[k]).find(Boolean) ?? null;
 
   // Sync mode with URL
   useEffect(() => {
@@ -80,68 +77,13 @@ export default function WikiOSArticlePage() {
     }
   }, [isMarginParam, setActiveModal]);
 
-  // Redirect Category: pages, User: profiles, Special: pages, or reserved tool routes
+  // Category:, User:, Special: pages and reserved tool routes live elsewhere
+  const redirectPath = redirectTarget(title, targetReservedPath);
   useEffect(() => {
-    if (targetReservedPath) {
-      router.replace(withBasePath(targetReservedPath));
-      return;
-    }
+    if (redirectPath) router.replace(withBasePath(redirectPath));
+  }, [redirectPath, router]);
 
-    if (title.startsWith("Category:")) {
-      const catName = title.slice("Category:".length);
-      router.replace(
-        withBasePath(`/wiki/categories/${encodeURIComponent(catName.replace(/ /g, "_"))}`)
-      );
-    } else if (title.startsWith("User:") || title.startsWith("User_talk:")) {
-      const userName = title.replace(/^User(_talk)?:/i, "").trim();
-      router.replace(withBasePath(getWikiProfilePath(userName.replace(/_/g, " "))));
-    } else if (/^Special:/i.test(title)) {
-      const spec = title.replace(/^Special:/i, "").trim();
-      const specLower = spec.toLowerCase();
-
-      if (specLower === "specialpages" || specLower === "utilities") {
-        router.replace(withBasePath("/util"));
-      } else if (specLower === "recentchanges" || specLower === "recent-changes") {
-        router.replace(withBasePath("/util/recent-changes"));
-      } else if (specLower === "watchlist") {
-        router.replace(withBasePath("/util/watchlist"));
-      } else if (specLower === "random" || specLower === "randompage") {
-        router.replace(withBasePath("/util/random"));
-      } else if (specLower === "categories" || specLower === "categorytree") {
-        router.replace(withBasePath("/util/categories"));
-      } else if (specLower === "search") {
-        router.replace(withBasePath("/util/search"));
-      } else if (specLower === "templates") {
-        router.replace(withBasePath("/util/templates"));
-      } else if (specLower === "diff") {
-        router.replace(withBasePath("/util/diff"));
-      } else if (specLower.startsWith("contributions")) {
-        const user = spec.replace(/^contributions\/?/i, "").trim();
-        router.replace(
-          user
-            ? withBasePath(`/util/contributions/${encodeURIComponent(user)}`)
-            : withBasePath("/util/contributions")
-        );
-      } else if (specLower.startsWith("whatlinkshere")) {
-        const target = spec.replace(/^whatlinkshere\/?/i, "").trim();
-        router.replace(
-          target
-            ? withBasePath(`/util/whatlinkshere/${encodeURIComponent(target)}`)
-            : withBasePath("/util/whatlinkshere")
-        );
-      } else {
-        router.replace(withBasePath("/util"));
-      }
-    }
-  }, [title, targetReservedPath, router]);
-
-  const isCategoryOrSpecialOrMain =
-    isMainPage ||
-    title.startsWith("Category:") ||
-    title.startsWith("User:") ||
-    title.startsWith("User_talk:") ||
-    /^Special:/i.test(title) ||
-    Boolean(targetReservedPath);
+  const isCategoryOrSpecialOrMain = isMainPage || redirectPath !== null;
 
   // Fetch article HTML (strictly disabled on reserved tools, category routes, and special pages)
   const { data, isLoading, error, refetch } = api.wikios.getArticleHtml.useQuery(
@@ -245,44 +187,7 @@ export default function WikiOSArticlePage() {
                 wikiSource={wikiSource}
                 authorInfo={
                   data.authorInfo
-                    ? {
-                        creator:
-                          typeof (data.authorInfo as any).creator === "object"
-                            ? ((data.authorInfo as any).creator?.username ?? null)
-                            : ((data.authorInfo as any).creator ??
-                              (data.authorInfo as any).author ??
-                              null),
-                        creatorAvatar:
-                          (data.authorInfo as any).creator?.avatar ??
-                          (data.authorInfo as any).creatorAvatar ??
-                          null,
-                        createdAt:
-                          (data.authorInfo as any).createdAt ??
-                          (data.authorInfo as any).creator?.timestamp ??
-                          (data.authorInfo as any).createdTimestamp ??
-                          null,
-                        lastEditor:
-                          typeof (data.authorInfo as any).lastEditor === "object"
-                            ? ((data.authorInfo as any).lastEditor?.username ?? null)
-                            : ((data.authorInfo as any).lastEditor ?? null),
-                        lastEditorAvatar:
-                          (data.authorInfo as any).lastEditor?.avatar ??
-                          (data.authorInfo as any).lastEditorAvatar ??
-                          null,
-                        lastEditedAt:
-                          (data.authorInfo as any).lastEditedAt ??
-                          (data.authorInfo as any).lastEditor?.timestamp ??
-                          (data.authorInfo as any).lastModifiedTimestamp ??
-                          null,
-                        contributors:
-                          (data.authorInfo as any).topContributors ??
-                          (data.authorInfo as any).contributors ??
-                          [],
-                        totalContributors:
-                          (data.authorInfo as any).totalContributors ??
-                          (data.authorInfo as any).topContributors?.length ??
-                          0,
-                      }
+                    ? toReaderAuthorInfo(data.authorInfo as CanonicalAuthorInfo)
                     : null
                 }
               />

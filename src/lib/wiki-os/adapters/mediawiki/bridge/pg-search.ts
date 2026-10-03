@@ -8,10 +8,6 @@ import { db } from "~/server/db";
 import { NativeSearchService } from "~/lib/wiki-os/core";
 import type { WikiSearchResult } from "./types";
 
-// ---------------------------------------------------------------------------
-// Search & Spotlight
-// ---------------------------------------------------------------------------
-
 export async function ixwikiSearch(query: string, limit: number = 10): Promise<WikiSearchResult[]> {
   try {
     const results = await NativeSearchService.spotlightSearch(query, "ixwiki", limit);

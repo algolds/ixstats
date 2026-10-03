@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/editor/ImageSearchGrid.tsx
 // Visual image search with card tiles — IxWiki + Wikimedia Commons.
 
 import { useState, useCallback, useRef, useEffect } from "react";
@@ -65,11 +64,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
     { enabled: tab === "ixwiki" && debouncedQuery.length >= 2, staleTime: 60000 }
   );
 
-  const commonsQuery = (api.thinkpages as any).searchWikiCommonsImages?.useQuery?.(
-    { query: debouncedQuery, per_page: 36 },
-    { enabled: tab === "commons" && debouncedQuery.length >= 2, staleTime: 60000 }
-  ) ?? { data: [], isLoading: false };
-
+  // No Commons search procedure is wired up yet, so the Commons tab never has results.
   const results: ImageResult[] =
     tab === "ixwiki"
       ? (ixwikiQuery.data ?? []).map((f: any) => ({
@@ -80,16 +75,9 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
           height: f.height,
           mime: f.mime,
         }))
-      : (commonsQuery.data ?? []).map((f: any) => ({
-          title: f.title ?? "",
-          url: f.url ?? "",
-          thumbUrl: f.thumbUrl ?? f.url,
-          width: f.width,
-          height: f.height,
-          mime: f.mime,
-        }));
+      : [];
 
-  const isLoading = tab === "ixwiki" ? ixwikiQuery.isLoading : commonsQuery.isLoading;
+  const isLoading = tab === "ixwiki" && ixwikiQuery.isLoading;
 
   const handleCopy = useCallback((img: ImageResult) => {
     const name = img.title.replace(/^File:/, "");

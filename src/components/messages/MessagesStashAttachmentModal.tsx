@@ -115,7 +115,6 @@ export function MessagesStashAttachmentModal({
         </DialogHeader>
 
         <div className="space-y-4 pt-2">
-          {/* Search box */}
           <SearchField
             placeholder={selectedStashId ? "Search stashed pages..." : "Search collections..."}
             aria-label={selectedStashId ? "Search stashed pages" : "Search collections"}
@@ -123,7 +122,6 @@ export function MessagesStashAttachmentModal({
             onValueChange={setSearchQuery}
           />
 
-          {/* List display */}
           <div className="max-h-72 scrollbar-thin overflow-y-auto pr-1">
             {selectedStashId ? (
               isLoadingItems ? (

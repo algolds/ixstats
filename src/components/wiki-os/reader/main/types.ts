@@ -1,5 +1,3 @@
-// src/components/wiki-os/reader/main/types.ts
-
 interface RecentChangeItem {
   title: string | null;
   user: string | null;

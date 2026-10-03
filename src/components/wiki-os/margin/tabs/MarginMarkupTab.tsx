@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/margin/tabs/MarginMarkupTab.tsx
 // Displays active text annotations and stashed quotes with jump-to-text scrolling,
 // child page creation, export notes, and message sharing.
 // Signature Highlighter Yellow / Warm Amber branding for Margin.
@@ -33,19 +32,12 @@ interface AnnotationItem {
   createdAt: Date;
 }
 
-interface ThemeColors {
-  primary: string;
-  secondary: string;
-  accent: string;
-}
-
 interface MarginMarkupTabProps {
   articleTitle: string;
   contentRef: React.RefObject<HTMLDivElement | null>;
   isAuthenticated: boolean;
   selectedAnnotationId?: string | null;
   onSelectAnnotation?: (id: string | null) => void;
-  themeColors?: ThemeColors | null;
 }
 
 export function MarginMarkupTab({
@@ -54,7 +46,6 @@ export function MarginMarkupTab({
   isAuthenticated,
   selectedAnnotationId,
   onSelectAnnotation,
-  themeColors,
 }: MarginMarkupTabProps) {
   const notify = useNotify();
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -63,8 +54,6 @@ export function MarginMarkupTab({
     null
   );
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const primaryColor = themeColors?.primary || "var(--wikios-accent, #fef036)";
 
   const {
     data: annotationsData,

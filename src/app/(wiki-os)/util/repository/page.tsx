@@ -1,6 +1,4 @@
 "use client";
-// src/app/(wiki-os)/wiki/repository/page.tsx
-// WikiOS Commons Explorer — category browsing, full-text search, stash integration.
 
 import { useState, useCallback, useRef, useEffect, useMemo, useDeferredValue } from "react";
 import { SegmentedControl } from "~/components/ui/segmented-control";
@@ -15,26 +13,19 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { cn } from "~/lib/utils";
-import { withBasePath } from "~/lib/base-path";
 import { RepositoryWelcomeModal } from "~/components/wiki-os/commons/RepositoryWelcomeModal";
 import { SearchField } from "~/components/ui/search-field";
-
-interface CommonsImage {
-  pageid: number;
-  title: string;
-  thumbUrl: string;
-  url: string;
-  descriptionUrl: string;
-  width: number;
-  height: number;
-  mime: string;
-  description: string;
-  artist: string;
-  license: string;
-}
+import {
+  dedupeImages,
+  matchesImageFilters,
+  wikiFilesToImages,
+  type CommonsImage,
+  type ImageOrientationFilter,
+  type ImageTypeFilter,
+  type WikiSubSource,
+} from "~/components/wiki-os/media-search/types";
 
 type Tab = "commons" | "wiki";
-type WikiSubSource = "ixwiki" | "iiwiki";
 
 const STARTER_CATEGORIES = [
   { label: "Historical Maps", category: "Historical maps" },
@@ -44,30 +35,6 @@ const STARTER_CATEGORIES = [
   { label: "Military Flags", category: "Military flags" },
   { label: "Portrait Paintings", category: "Portrait paintings" },
 ];
-
-function getImageType(mime: string, title: string): "jpg" | "png" | "svg" | "other" {
-  const m = (mime || "").toLowerCase();
-  const t = (title || "").toLowerCase();
-  if (m.includes("jpeg") || m.includes("jpg") || t.endsWith(".jpg") || t.endsWith(".jpeg"))
-    return "jpg";
-  if (m.includes("png") || t.endsWith(".png")) return "png";
-  if (m.includes("svg") || t.endsWith(".svg")) return "svg";
-  return "other";
-}
-
-function getImageOrientation(width: number, height: number): "landscape" | "portrait" | "square" {
-  if (!width || !height) return "landscape";
-  const ratio = width / height;
-  if (ratio > 1.1) return "landscape";
-  if (ratio < 0.9) return "portrait";
-  return "square";
-}
-
-function dedupeImages(existing: CommonsImage[], incoming: CommonsImage[]): CommonsImage[] {
-  const seen = new Set(existing.map((img) => img.pageid));
-  const newOnes = incoming.filter((img) => !seen.has(img.pageid));
-  return [...existing, ...newOnes];
-}
 
 export default function RepositoryPage() {
   usePageTitle({ title: "Image repository" });
@@ -115,10 +82,8 @@ export default function RepositoryPage() {
   }, []);
 
   // Filters state
-  const [fileTypeFilter, setFileTypeFilter] = useState<"all" | "jpg" | "png" | "svg">("all");
-  const [orientationFilter, setOrientationFilter] = useState<
-    "all" | "landscape" | "portrait" | "square"
-  >("all");
+  const [fileTypeFilter, setFileTypeFilter] = useState<ImageTypeFilter>("all");
+  const [orientationFilter, setOrientationFilter] = useState<ImageOrientationFilter>("all");
   const [welcomeOpen, setWelcomeOpen] = useState(false);
 
   const deferredFileTypeFilter = useDeferredValue(fileTypeFilter);
@@ -219,53 +184,7 @@ export default function RepositoryPage() {
         setAllImages([]);
         return;
       }
-      if (wikiFileData) {
-        const isIiwiki = wikiSubSource === "iiwiki";
-        const offset = isIiwiki ? 2000000 : 1000000;
-        const mapped = wikiFileData.map(
-          (
-            img: {
-              name: string;
-              size: number;
-              width: number;
-              height: number;
-              mime?: string;
-              url?: string;
-            },
-            index: number
-          ) => {
-            const rawUrl = img.url || "";
-            const proxiedUrl = rawUrl.includes("iiwiki.com/")
-              ? withBasePath(
-                  rawUrl.replace(/^https?:\/\/(www\.)?iiwiki\.com\//, "/api/mediawiki/iiwiki/")
-                )
-              : rawUrl.includes("ixwiki.com/")
-                ? withBasePath(
-                    rawUrl.replace(/^https?:\/\/(www\.)?ixwiki\.com\//, "/api/mediawiki/ixwiki/")
-                  )
-                : rawUrl;
-
-            return {
-              pageid: index + offset,
-              title: img.name.startsWith("File:") ? img.name : `File:${img.name}`,
-              thumbUrl: proxiedUrl,
-              url: proxiedUrl,
-              descriptionUrl: isIiwiki
-                ? `https://iiwiki.com/wiki/File:${encodeURIComponent(img.name)}`
-                : `https://ixwiki.com/wiki/File:${encodeURIComponent(img.name)}`,
-              width: img.width || 0,
-              height: img.height || 0,
-              mime: img.mime || "image/png",
-              description: isIiwiki
-                ? `External upload on IIWiki. Size: ${(img.size / 1024).toFixed(1)} KB`
-                : `Local upload on IxWiki. Size: ${(img.size / 1024).toFixed(1)} KB`,
-              artist: isIiwiki ? "IIWiki Contributor" : "IxWiki Contributor",
-              license: "CC BY-SA 3.0",
-            };
-          }
-        );
-        setAllImages(mapped);
-      }
+      if (wikiFileData) setAllImages(wikiFilesToImages(wikiFileData, wikiSubSource));
     }
   }, [tab, debouncedQuery, localIsBrowseMode, wikiFileData, wikiSubSource]);
 
@@ -280,13 +199,8 @@ export default function RepositoryPage() {
   }, [tab, isSearchMode, isBrowseMode, searchData?.nextOffset, catData?.nextOffset]);
 
   const hasMore =
-    tab === "commons"
-      ? isSearchMode
-        ? searchData?.nextOffset != null
-        : isBrowseMode
-          ? catData?.nextOffset != null
-          : false
-      : false;
+    tab === "commons" &&
+    (isSearchMode ? searchData?.nextOffset != null : isBrowseMode && catData?.nextOffset != null);
 
   const handleToggleCategory = useCallback((cat: string) => {
     setActiveCategories((prev) =>
@@ -315,17 +229,9 @@ export default function RepositoryPage() {
 
   // Client-side dynamic filtering of results
   const filteredImages = useMemo(() => {
-    return allImages.filter((img) => {
-      if (deferredFileTypeFilter !== "all") {
-        const type = getImageType(img.mime ?? "", img.title);
-        if (type !== deferredFileTypeFilter) return false;
-      }
-      if (deferredOrientationFilter !== "all") {
-        const orient = getImageOrientation(img.width, img.height);
-        if (orient !== deferredOrientationFilter) return false;
-      }
-      return true;
-    });
+    return allImages.filter((img) =>
+      matchesImageFilters(img, deferredFileTypeFilter, deferredOrientationFilter)
+    );
   }, [allImages, deferredFileTypeFilter, deferredOrientationFilter]);
 
   const currentWikiSource = tab === "commons" ? "commons" : wikiSubSource;

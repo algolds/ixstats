@@ -5,20 +5,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { ZoomIn, MediaImage as ImageIcon, RefreshDouble } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-
-interface CommonsImage {
-  pageid: number;
-  title: string;
-  thumbUrl: string;
-  url: string;
-  descriptionUrl: string;
-  width: number;
-  height: number;
-  mime: string;
-  description: string;
-  artist: string;
-  license: string;
-}
+import type { CommonsImage } from "~/components/wiki-os/media-search/types";
 
 interface CommonsResultsGridProps {
   images: CommonsImage[];

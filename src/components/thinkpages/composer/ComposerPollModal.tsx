@@ -59,7 +59,6 @@ export function ComposerPollModal({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Poll Question */}
         <div className="space-y-2">
           <label htmlFor="poll-question" className="text-subhead text-label">
             Question / Topic *
@@ -74,7 +73,6 @@ export function ComposerPollModal({
           />
         </div>
 
-        {/* Poll Type & Multiple Options */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <span className="text-subhead text-label block">Poll type</span>
@@ -114,7 +112,6 @@ export function ComposerPollModal({
           </div>
         </div>
 
-        {/* Blurb Prompt Notice for Regular Users */}
         {isRegularUser && (
           <div className="bg-info/10 text-callout text-label rounded-row flex items-start gap-2 p-3">
             <Info className="text-info mt-0.5 size-4 shrink-0" aria-hidden="true" />
@@ -133,7 +130,6 @@ export function ComposerPollModal({
           </div>
         )}
 
-        {/* Poll Options */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-subhead text-label block">Options * (min 2)</span>
@@ -199,7 +195,6 @@ export function ComposerPollModal({
           )}
         </div>
 
-        {/* Actions */}
         <DialogFooter className="border-separator border-t pt-4">
           <Button
             type="button"

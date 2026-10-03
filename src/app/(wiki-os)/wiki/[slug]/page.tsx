@@ -1,4 +1,3 @@
-// src/app/(wiki-os)/wiki/[slug]/page.tsx
 // Server entry for the article reader. The reader itself is client-rendered
 // (ArticlePageClient); this wrapper exists so crawlers that do not run JavaScript get the
 // article's own canonical URL instead of a site-wide one.

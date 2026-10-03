@@ -1,4 +1,3 @@
-// src/app/(forum)/forum/conversations/page.tsx
 // Redirects to ThinkShare — all private messaging is centralized there.
 
 import { redirect } from "next/navigation";

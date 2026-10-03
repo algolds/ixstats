@@ -1,21 +1,10 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import {
-  Search,
-  User,
-  Crown,
-  Shield,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  MoreHoriz,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  Spark,
-} from "iconoir-react";
+import React, { useState } from "react";
+import { Search, User, Crown, Shield } from "iconoir-react";
 import { Input } from "~/components/ui/input";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Badge } from "~/components/ui/badge";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { cn } from "~/lib/utils";
 
 interface Member {
   id: string;
@@ -38,70 +27,111 @@ interface Member {
 }
 
 interface ThinktankRosterTabProps {
-  groupId: string;
   members: Member[];
   currentUserId: string;
-  userRole?: string | null;
-  onRemoveMember?: (userId: string) => void;
 }
 
-export function ThinktankRosterTab({
-  // oxlint-disable-next-line eslint/no-unused-vars
-  groupId,
-  members,
-  currentUserId,
-  userRole,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  onRemoveMember,
-}: ThinktankRosterTabProps) {
+function RoleBadge({ role }: { role: string }) {
+  switch (role.toLowerCase()) {
+    case "owner":
+      return (
+        <Badge variant="warning">
+          <Crown /> Owner
+        </Badge>
+      );
+    case "admin":
+      return (
+        <Badge variant="secondary">
+          <Shield /> Admin
+        </Badge>
+      );
+    default:
+      return <Badge variant="outline">Member</Badge>;
+  }
+}
+
+function matchesQuery(member: Member, query: string) {
+  const { user } = member;
+  return [
+    user?.displayName,
+    user?.country?.name,
+    user?.forumUsername,
+    user?.wikiUsername,
+    member.userId,
+    member.role,
+  ].some((field) => field?.toLowerCase().includes(query));
+}
+
+function memberIdentity(member: Member) {
+  const { user } = member;
+  const country = user?.country;
+  const displayName =
+    user?.displayName ||
+    country?.name ||
+    user?.forumUsername ||
+    user?.wikiUsername ||
+    `User ${member.userId.slice(-6)}`;
+
+  const subtitle =
+    country?.name && country.name !== displayName
+      ? `${country.flag ? country.flag + " " : ""}${country.name}`
+      : user?.forumUsername
+        ? `@${user.forumUsername}`
+        : country?.name || null;
+
+  return { displayName, subtitle };
+}
+
+function MemberCard({ member, isSelf }: { member: Member; isSelf: boolean }) {
+  const { user } = member;
+  const country = user?.country;
+  const { displayName, subtitle } = memberIdentity(member);
+
+  return (
+    <div className="bg-surface-secondary rounded-row flex items-center justify-between p-3">
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="border-separator bg-tint-fill text-tint rounded-control flex size-10 shrink-0 items-center justify-center overflow-hidden border">
+          {user?.avatarUrl ? (
+            <img src={user.avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+          ) : country?.flag ? (
+            <span className="text-title-3">{country.flag}</span>
+          ) : (
+            <User className="h-5 w-5" />
+          )}
+        </div>
+
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-headline text-label truncate">{displayName}</span>
+            {isSelf && <span className="text-caption text-tint font-semibold">(You)</span>}
+          </div>
+          {subtitle && <p className="text-footnote text-label-secondary truncate">{subtitle}</p>}
+          <div className="mt-1 flex items-center gap-2">
+            <RoleBadge role={member.role} />
+          </div>
+        </div>
+      </div>
+
+      <div className="text-label-secondary text-footnote flex shrink-0 flex-col items-end gap-1">
+        <span>
+          {new Date(member.joinedAt).toLocaleDateString(undefined, {
+            month: "short",
+            year: "numeric",
+          })}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export function ThinktankRosterTab({ members, currentUserId }: ThinktankRosterTabProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredMembers = useMemo(() => {
-    if (!searchQuery.trim()) return members;
-    const q = searchQuery.toLowerCase();
-    return members.filter((m) => {
-      const displayName = m.user?.displayName?.toLowerCase() || "";
-      const countryName = m.user?.country?.name?.toLowerCase() || "";
-      const forumUser = m.user?.forumUsername?.toLowerCase() || "";
-      const wikiUser = m.user?.wikiUsername?.toLowerCase() || "";
-      const userId = m.userId.toLowerCase();
-      const role = m.role.toLowerCase();
-      return (
-        displayName.includes(q) ||
-        countryName.includes(q) ||
-        forumUser.includes(q) ||
-        wikiUser.includes(q) ||
-        userId.includes(q) ||
-        role.includes(q)
-      );
-    });
-  }, [members, searchQuery]);
-
-  const getRoleBadge = (role: string) => {
-    switch (role.toLowerCase()) {
-      case "owner":
-        return (
-          <Badge variant="warning">
-            <Crown /> Owner
-          </Badge>
-        );
-      case "admin":
-        return (
-          <Badge variant="secondary">
-            <Shield /> Admin
-          </Badge>
-        );
-      default:
-        return <Badge variant="outline">Member</Badge>;
-    }
-  };
-
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const isOwnerOrAdmin = userRole === "owner" || userRole === "admin";
+  const query = searchQuery.trim().toLowerCase();
+  const filteredMembers = query ? members.filter((m) => matchesQuery(m, query)) : members;
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 p-4 md:p-6">
-      {/* Search and Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-title-3 text-label">Members ({members.length})</h2>
@@ -121,7 +151,6 @@ export function ThinktankRosterTab({
         </div>
       </div>
 
-      {/* Roster Grid */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {filteredMembers.length === 0 ? (
           <EmptyState
@@ -132,73 +161,13 @@ export function ThinktankRosterTab({
             message="Try a different search."
           />
         ) : (
-          filteredMembers.map((member) => {
-            const country = member.user?.country;
-            const isSelf = member.userId === currentUserId;
-            const displayName =
-              member.user?.displayName ||
-              country?.name ||
-              member.user?.forumUsername ||
-              member.user?.wikiUsername ||
-              `User ${member.userId.slice(-6)}`;
-
-            const subtitle =
-              country?.name && country.name !== displayName
-                ? `${country.flag ? country.flag + " " : ""}${country.name}`
-                : member.user?.forumUsername
-                  ? `@${member.user.forumUsername}`
-                  : country?.name || null;
-
-            const avatarUrl = member.user?.avatarUrl;
-
-            return (
-              <div
-                key={member.id || member.userId}
-                className="bg-surface-secondary rounded-row flex items-center justify-between p-3"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  {/* Avatar / Flag Icon */}
-                  <div className="border-separator bg-tint-fill text-tint rounded-control flex size-10 shrink-0 items-center justify-center overflow-hidden border">
-                    {avatarUrl ? (
-                      <img
-                        src={avatarUrl}
-                        alt={displayName}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : country?.flag ? (
-                      <span className="text-title-3">{country.flag}</span>
-                    ) : (
-                      <User className="h-5 w-5" />
-                    )}
-                  </div>
-
-                  {/* Member Name & Subtitle */}
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-headline text-label truncate">{displayName}</span>
-                      {isSelf && (
-                        <span className="text-caption text-tint font-semibold">(You)</span>
-                      )}
-                    </div>
-                    {subtitle && (
-                      <p className="text-footnote text-label-secondary truncate">{subtitle}</p>
-                    )}
-                    <div className="mt-1 flex items-center gap-2">{getRoleBadge(member.role)}</div>
-                  </div>
-                </div>
-
-                {/* Right: Join Date & Actions */}
-                <div className="text-label-secondary text-footnote flex shrink-0 flex-col items-end gap-1">
-                  <span>
-                    {new Date(member.joinedAt).toLocaleDateString(undefined, {
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </span>
-                </div>
-              </div>
-            );
-          })
+          filteredMembers.map((member) => (
+            <MemberCard
+              key={member.id || member.userId}
+              member={member}
+              isSelf={member.userId === currentUserId}
+            />
+          ))
         )}
       </div>
     </div>

@@ -1,6 +1,4 @@
 "use client";
-// src/components/wiki-os/shared/WikiOSLayout.tsx
-// WikiOS content wrapper with standard DashboardSidebarLayout.
 
 import { type ReactNode, useState, useEffect } from "react";
 import Link from "next/link";
@@ -58,6 +56,25 @@ function isNonArticlePath(cleanPath: string): boolean {
   const slug = decodeURIComponent(wikiSlug);
   return RESERVED_WIKI_SLUGS.has(slug) || /^special:/i.test(slug);
 }
+
+/** First match wins, so the broad `/util` rule shadows the /util/* tools listed after it. */
+const SIDEBAR_ACTIVE_RULES: ReadonlyArray<[id: string, pattern: RegExp]> = [
+  ["talk", /\/talk/],
+  ["edit", /\/edit/],
+  ["categories", /\/(?:util|wiki)\/categories/],
+  ["recent", /\/(?:util|wiki)\/recent/],
+  ["templates", /\/(?:util|wiki)\/templates/],
+  ["utilities", /^\/util|\/wiki\/utilities/],
+  ["lorewards", /\/(?:util|wiki)\/lorewards/],
+  ["blurbs", /\/blurbs/],
+  ["stashes", /\/stashes/],
+  ["images", /\/(?:util|wiki)\/repository/],
+  ["stashes", /\/(?:util|wiki)\/watchlist/],
+  ["random", /\/(?:util|wiki)\/random/],
+  ["search", /\/(?:util|wiki)\/search/],
+  ["history", /\/(?:util|wiki)\/history/],
+  ["main", /^\/wiki(?:\/Main_Page)?$/],
+];
 
 export function WikiOSLayout({
   title,
@@ -123,27 +140,8 @@ export function WikiOSLayout({
 
   const { isSignedIn } = useWikiAuth();
 
-  const getActiveId = () => {
-    const p = stripBasePath(pathname);
-    if (p.includes("/talk")) return "talk";
-    if (p.includes("/edit")) return "edit";
-    if (p.includes("/util/categories") || p.includes("/wiki/categories")) return "categories";
-    if (p.includes("/util/recent") || p.includes("/wiki/recent")) return "recent";
-    if (p.includes("/util/templates") || p.includes("/wiki/templates")) return "templates";
-    if (p === "/util" || p.startsWith("/util") || p.includes("/wiki/utilities")) return "utilities";
-    if (p.includes("/util/lorewards") || p.includes("/wiki/lorewards")) return "lorewards";
-    if (p.includes("/blurbs")) return "blurbs";
-    if (p.includes("/stashes")) return "stashes";
-    if (p.includes("/util/repository") || p.includes("/wiki/repository")) return "images";
-    if (p.includes("/util/watchlist") || p.includes("/wiki/watchlist")) return "stashes";
-    if (p.includes("/util/random") || p.includes("/wiki/random")) return "random";
-    if (p.includes("/util/search") || p.includes("/wiki/search")) return "search";
-    if (p.includes("/util/history") || p.includes("/wiki/history")) return "history";
-    if (p === "/wiki/Main_Page" || p === "/wiki") return "main";
-    return null;
-  };
-
-  const activeId = getActiveId();
+  const activeId =
+    SIDEBAR_ACTIVE_RULES.find(([, re]) => re.test(stripBasePath(pathname)))?.[0] ?? null;
 
   // A "special page" has no page tools: the Main Page, a non-article path, or another wiki's page (read-only).
   const isSpecialPage = readOnly || isMainPage || isNonArticlePath(stripBasePath(pathname));

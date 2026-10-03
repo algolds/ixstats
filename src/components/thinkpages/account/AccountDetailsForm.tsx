@@ -86,7 +86,6 @@ export function AccountDetailsForm({
         </div>
       </div>
 
-      {/* Username Handle */}
       <div>
         <label htmlFor="thinkpages-username" className="text-subhead text-label mb-2 block">
           Username handle
@@ -133,7 +132,6 @@ export function AccountDetailsForm({
         )}
       </div>
 
-      {/* Bio */}
       <div>
         <label htmlFor="thinkpages-bio" className="text-subhead text-label mb-2 block">
           Bio (optional)
@@ -151,7 +149,6 @@ export function AccountDetailsForm({
         </div>
       </div>
 
-      {/* Profile Image Picker */}
       <div>
         <span className="text-subhead text-label mb-2 block">Profile Image (optional)</span>
         <div className="flex items-center gap-4">

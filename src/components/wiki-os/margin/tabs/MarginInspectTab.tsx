@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/margin/tabs/MarginInspectTab.tsx
 // Live simulation inspector and lore topology guide:
 // Classifies article hierarchy according to Lore Theory (Hub, Spoke, Leaf)
 // and validates article assertions against live IxStates simulation data.

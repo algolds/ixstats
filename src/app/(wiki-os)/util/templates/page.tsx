@@ -1,10 +1,8 @@
 "use client";
-// src/app/(wiki-os)/util/templates/page.tsx
 // WikiOS Master Template Registry & Interactive Visual Infobox Suite
 
 import React, { useState, useMemo } from "react";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { ViewGrid, Search, Code, Check, Spark, Packages, Copy, Eye, List } from "iconoir-react";
+import { ViewGrid, Code, Check, Spark, Copy, Eye, List } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { Badge } from "~/components/ui/badge";
@@ -267,7 +265,6 @@ export default function WikiTemplatesPage() {
                 </div>
               )}
 
-              {/* ── View Mode: 1. Visual Infobox Preview ── */}
               {viewMode === "visual" && (
                 <div className="flex flex-col items-start justify-center gap-6 py-2 xl:flex-row">
                   <div className="mx-auto shrink-0 xl:mx-0">
@@ -275,7 +272,6 @@ export default function WikiTemplatesPage() {
                       templateName={selectedTemplateName}
                       variantId={selectedVariantId}
                       variantLabel={activeVariant?.label}
-                      category={templateData?.category || presetMatch?.category}
                       params={previewParams}
                     />
                   </div>
@@ -334,7 +330,6 @@ export default function WikiTemplatesPage() {
                 </div>
               )}
 
-              {/* ── View Mode: 2. Schema Parameters Matrix ── */}
               {viewMode === "schema" && (
                 <div className="space-y-3">
                   <h3 className="text-label-secondary text-subhead">
@@ -372,7 +367,6 @@ export default function WikiTemplatesPage() {
                 </div>
               )}
 
-              {/* ── View Mode: 3. Full Raw Wikitext ── */}
               {viewMode === "wikitext" && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">

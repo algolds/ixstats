@@ -50,7 +50,6 @@ export function SculptedMainPageContent({
 }: MainPageContentProps) {
   return (
     <div className="w-full space-y-5 pb-2 select-none sm:space-y-6">
-      {/* ── 1. Two-Column Grid: Bento Topic Tiles + Liquid Glass Activity Stream (Equal Proportion) ── */}
       <div className="grid grid-cols-1 items-stretch gap-6 sm:gap-8 lg:grid-cols-12">
         {/* Left Column (col-span-6): Expanded Categories Matrix + Live Parsed World Almanac Spotlight Card */}
         <section

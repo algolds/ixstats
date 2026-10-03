@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/margin/modals/MarginHelpModal.tsx
 // Interactive help modal for WikiOS Margin suite.
 // Signature Highlighter Yellow / Warm Amber branding for Margin.
 

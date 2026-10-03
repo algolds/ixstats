@@ -1,11 +1,11 @@
 "use client";
 
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 
-interface UtilityTool {
+export interface UtilityTool {
   id: string;
   title: string;
   description: string;
@@ -51,5 +51,54 @@ export function UtilityToolCard({ tool }: { tool: UtilityTool }) {
         <ArrowRight className="text-label-secondary group-hover:text-tint h-3 w-3 transition-transform duration-200 group-hover:translate-x-1" />
       </div>
     </Link>
+  );
+}
+
+/** Case-insensitive match on a tool's title, description or legacy MediaWiki alias. */
+export const matchesToolQuery = (
+  tool: { title: string; description: string; legacyAlias: string },
+  searchFilter: string
+) => {
+  const query = searchFilter.toLowerCase().trim();
+  return (
+    !query ||
+    tool.title.toLowerCase().includes(query) ||
+    tool.description.toLowerCase().includes(query) ||
+    tool.legacyAlias.toLowerCase().includes(query)
+  );
+};
+
+/** A headed grid of UtilityToolCards, filtered by the deck's search box. */
+export function UtilityToolGroup({
+  icon,
+  heading,
+  tools,
+  searchFilter,
+  gridClass,
+}: {
+  icon: ReactNode;
+  heading: string;
+  tools: UtilityTool[];
+  searchFilter: string;
+  gridClass: string;
+}) {
+  const filtered = tools.filter((t) => matchesToolQuery(t, searchFilter));
+  if (filtered.length === 0) return null;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 px-1">
+        {icon}
+        <h3 className="text-label-secondary text-subhead">
+          {heading} ({filtered.length})
+        </h3>
+      </div>
+
+      <div className={`grid grid-cols-1 gap-3 ${gridClass}`}>
+        {filtered.map((tool) => (
+          <UtilityToolCard key={tool.id} tool={tool} />
+        ))}
+      </div>
+    </div>
   );
 }

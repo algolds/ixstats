@@ -1,6 +1,3 @@
-// src/components/wiki-os/editor/utils/codemirror-wikitext.ts
-// CodeMirror 6 custom decorations, syntax highlighter, and command utilities for Wikitext.
-
 import { Decoration, ViewPlugin } from "@codemirror/view";
 import type { DecorationSet, ViewUpdate, EditorView } from "@codemirror/view";
 import { RangeSetBuilder } from "@codemirror/state";
@@ -14,6 +11,57 @@ const linkDeco = Decoration.mark({ class: "cm-wikitext-link" });
 const extlinkDeco = Decoration.mark({ class: "cm-wikitext-extlink" });
 const templateDeco = Decoration.mark({ class: "cm-wikitext-template" });
 const refDeco = Decoration.mark({ class: "cm-wikitext-ref" });
+
+interface DecoRange {
+  from: number;
+  to: number;
+  deco: Decoration;
+}
+
+/** Inline wikitext patterns; `skip` rejects a hit that is really part of a longer marker (''' vs ''). */
+const INLINE_RULES: ReadonlyArray<{
+  re: RegExp;
+  deco: Decoration;
+  skip?: (text: string, start: number, end: number) => boolean;
+}> = [
+  { re: /'''([^'\n]+?)'''/g, deco: boldDeco },
+  {
+    re: /''([^'\n]+?)''/g,
+    deco: italicDeco,
+    skip: (text, start, end) => text[start - 1] === "'" || text[end] === "'",
+  },
+  { re: /\[\[([^\]\n]+?)\]\]/g, deco: linkDeco },
+  {
+    re: /\[([^[\]\n]+?)\]/g,
+    deco: extlinkDeco,
+    skip: (text, start, end) => text[start - 1] === "[" || text[end] === "]",
+  },
+  { re: /<ref[^>]*>|<\/ref>/gi, deco: refDeco },
+];
+
+/** Decorations for one line: heading or list marker, then inline marks, links and refs. */
+function lineRanges(lineText: string, lineFrom: number): DecoRange[] {
+  const ranges: DecoRange[] = [];
+
+  if (/^(={1,6})\s*(.+?)\s*\1\s*$/.test(lineText)) {
+    ranges.push({ from: lineFrom, to: lineFrom + lineText.length, deco: headingDeco });
+  } else {
+    const listMarker = /^([*#:;]+)/.exec(lineText)?.[1];
+    if (listMarker)
+      ranges.push({ from: lineFrom, to: lineFrom + listMarker.length, deco: listDeco });
+  }
+
+  for (const { re, deco, skip } of INLINE_RULES) {
+    for (const m of lineText.matchAll(re)) {
+      const start = m.index ?? 0;
+      const end = start + m[0].length;
+      if (!skip?.(lineText, start, end)) {
+        ranges.push({ from: lineFrom + start, to: lineFrom + end, deco });
+      }
+    }
+  }
+  return ranges;
+}
 
 export const wikitextHighlightPlugin = ViewPlugin.fromClass(
   class {
@@ -31,134 +79,30 @@ export const wikitextHighlightPlugin = ViewPlugin.fromClass(
 
     buildDecorations(view: EditorView): DecorationSet {
       const builder = new RangeSetBuilder<Decoration>();
-      const docText = view.state.doc.toString();
-      const matches: { from: number; to: number; deco: Decoration }[] = [];
+      const { doc } = view.state;
 
-      // 1. Multiline Balanced Templates Scan (Handles line wraps & multi-line blocks)
-      const { templates } = scanTemplates(docText);
-      for (const tmpl of templates) {
-        matches.push({
-          from: tmpl.source.start,
-          to: tmpl.source.end,
-          deco: templateDeco,
-        });
-      }
+      // Multiline balanced templates (handles line wraps & multi-line blocks)
+      const matches: DecoRange[] = scanTemplates(doc.toString()).templates.map((tmpl) => ({
+        from: tmpl.source.start,
+        to: tmpl.source.end,
+        deco: templateDeco,
+      }));
 
-      // 2. Line-by-line syntax for headings, lists, inline marks, links
       for (const { from, to } of view.visibleRanges) {
-        let pos = from;
-        while (pos < to) {
-          const line = view.state.doc.lineAt(pos);
-          const lineText = line.text;
-          const lineFrom = line.from;
-          const lineTo = line.to;
-
-          // Headings
-          const headingMatch = /^(={1,6})\s*(.+?)\s*\1\s*$/.exec(lineText);
-          if (headingMatch) {
-            matches.push({ from: lineFrom, to: lineTo, deco: headingDeco });
-          } else {
-            // Lists
-            const listMatch = /^([*#:\;]+)/.exec(lineText);
-            if (listMatch) {
-              matches.push({
-                from: lineFrom,
-                to: lineFrom + listMatch[1]!.length,
-                deco: listDeco,
-              });
-            }
-          }
-
-          // Bold: '''text'''
-          const boldRegex = /'''([^'\n]+?)'''/g;
-          let m;
-          while ((m = boldRegex.exec(lineText)) !== null) {
-            matches.push({
-              from: lineFrom + m.index,
-              to: lineFrom + m.index + m[0].length,
-              deco: boldDeco,
-            });
-          }
-
-          // Italic: ''text''
-          const italicRegex = /''([^'\n]+?)''/g;
-          while ((m = italicRegex.exec(lineText)) !== null) {
-            const start = m.index;
-            const end = m.index + m[0].length;
-            const isBoldStart = start > 0 && lineText[start - 1] === "'";
-            const isBoldEnd = end < lineText.length && lineText[end] === "'";
-            if (!isBoldStart && !isBoldEnd) {
-              matches.push({
-                from: lineFrom + start,
-                to: lineFrom + end,
-                deco: italicDeco,
-              });
-            }
-          }
-
-          // Wiki Links: [[Page]] or [[Page|Title]]
-          const wikiLinkRegex = /\[\[([^\]\n]+?)\]\]/g;
-          while ((m = wikiLinkRegex.exec(lineText)) !== null) {
-            matches.push({
-              from: lineFrom + m.index,
-              to: lineFrom + m.index + m[0].length,
-              deco: linkDeco,
-            });
-          }
-
-          // External Links: [URL Title] or [URL]
-          const extLinkRegex = /\[([^[\]\n]+?)\]/g;
-          while ((m = extLinkRegex.exec(lineText)) !== null) {
-            const start = m.index;
-            const end = m.index + m[0].length;
-            const isWikiStart = start > 0 && lineText[start - 1] === "[";
-            const isWikiEnd = end < lineText.length && lineText[end] === "]";
-            if (!isWikiStart && !isWikiEnd) {
-              matches.push({
-                from: lineFrom + start,
-                to: lineFrom + end,
-                deco: extlinkDeco,
-              });
-            }
-          }
-
-          // References: <ref>...</ref>
-          const refRegex = /<ref[^>]*>|<\/ref>/gi;
-          while ((m = refRegex.exec(lineText)) !== null) {
-            matches.push({
-              from: lineFrom + m.index,
-              to: lineFrom + m.index + m[0].length,
-              deco: refDeco,
-            });
-          }
-
+        for (let pos = from; pos < to;) {
+          const line = doc.lineAt(pos);
+          matches.push(...lineRanges(line.text, line.from));
           pos = line.to + 1;
         }
       }
 
-      // Sort matches
-      matches.sort((a, b) => {
-        if (a.from !== b.from) return a.from - b.from;
-        return b.to - a.to;
-      });
-
-      // Filter visible and resolve overlaps
-      const validMatches: typeof matches = [];
+      // Sort, then drop overlaps (the earliest, longest range wins)
+      matches.sort((a, b) => a.from - b.from || b.to - a.to);
       let lastTo = -1;
-
-      for (const match of matches) {
-        if (match.from >= match.to) continue;
-        if (match.from >= lastTo) {
-          validMatches.push(match);
-          lastTo = match.to;
-        }
-      }
-
-      // Add to builder
-      for (const match of validMatches) {
-        if (match.from < match.to && match.from >= 0 && match.to <= view.state.doc.length) {
-          builder.add(match.from, match.to, match.deco);
-        }
+      for (const { from, to, deco } of matches) {
+        if (from >= to || from < lastTo) continue;
+        lastTo = to;
+        if (from >= 0 && to <= doc.length) builder.add(from, to, deco);
       }
 
       return builder.finish();

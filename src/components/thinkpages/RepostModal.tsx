@@ -46,9 +46,9 @@ export function RepostModal({
           countryId={countryId}
           selectedAccount={selectedAccount}
           accounts={accounts}
-          onAccountSelect={onAccountSelect || (() => {})}
-          onAccountSettings={onAccountSettings || (() => {})}
-          onCreateAccount={onCreateAccount || (() => {})}
+          onAccountSelect={onAccountSelect}
+          onAccountSettings={onAccountSettings}
+          onCreateAccount={onCreateAccount}
           isOwner={isOwner}
           onPost={handlePost}
           repostData={{

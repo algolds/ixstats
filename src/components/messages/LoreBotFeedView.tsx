@@ -173,7 +173,6 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Top Filter & Search Controls */}
       <div className="border-separator border-b p-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <SegmentedControl
@@ -202,7 +201,6 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
         </div>
       </div>
 
-      {/* Main Stream */}
       <div
         className="flex-1 scrollbar-none space-y-3 overflow-y-auto p-4"
         style={{ scrollbarWidth: "thin" }}
@@ -242,10 +240,8 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                 transition={springSmooth}
                 className="group bg-surface-secondary rounded-row relative p-4"
               >
-                {/* Top Badge & Author Line */}
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    {/* Source badge */}
                     {item.type === "new" ? (
                       <Badge variant="success">
                         <FilePlus aria-hidden="true" />
@@ -263,7 +259,6 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                       </Badge>
                     )}
 
-                    {/* Delta badge */}
                     {item.delta !== 0 && (
                       <Badge
                         variant={item.delta > 0 ? "success" : "warning"}
@@ -273,7 +268,6 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                       </Badge>
                     )}
 
-                    {/* Watched tag */}
                     {item.isWatched && item.type !== "watchlist" && (
                       <Badge variant="default">
                         <Eye aria-hidden="true" />
@@ -282,14 +276,12 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                     )}
                   </div>
 
-                  {/* Timestamp */}
                   <span className="text-footnote text-label-secondary flex items-center gap-1 tabular-nums">
                     <Clock className="size-3.5" aria-hidden="true" />
                     {formatTimestamp(item.timestamp)}
                   </span>
                 </div>
 
-                {/* Article Header & Excerpt */}
                 <div className="mb-3">
                   <h4 className="text-headline text-label group-hover:text-tint transition-colors">
                     <Link href={titleToWikiOSRoute(item.title)} className="hover:underline">
@@ -305,7 +297,6 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                   )}
                 </div>
 
-                {/* Bottom Action Tray */}
                 <div className="border-separator flex items-center justify-between gap-2 border-t pt-2">
                   <div className="text-footnote text-label-secondary flex items-center gap-1">
                     <User className="size-3.5" aria-hidden="true" />

@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/reader/InfoboxWithMap.tsx
 
 import { useMemo } from "react";
 import Link from "next/link";

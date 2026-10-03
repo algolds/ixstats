@@ -1,15 +1,9 @@
 "use client";
-// src/components/wiki-os/reader/ArticleRenderer.tsx
-// Renders pre-transformed WikiOS article data in reader mode.
-// Composes modular ArticleHeader, ArticleCategories, ArticleFooter, ArticleModals, and ArticlePlaceholders.
-
 import React, { useRef, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { addSectionEditLinks, type TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
-import { AppleBooksTocDrawer } from "~/components/wiki-os/reader/AppleBooksTocDrawer";
 import { StickyToc } from "~/components/wiki-os/reader/StickyToc";
-import { useWikiSetting } from "~/components/wiki-os/shared/useWikiSetting";
 import { InfoboxWithMap } from "~/components/wiki-os/reader/InfoboxWithMap";
 import { useImageLightbox } from "~/components/wiki-os/reader/ImageLightbox";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -22,8 +16,8 @@ import { getFlagColors } from "~/lib/flags/flag-color-extractor";
 import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
 import { EMBED_CSS, EMBED_JS, EMBED_PREFETCH } from "~/lib/wiki-os/editor/wiki-embed-shared";
 import { parseWikiSource } from "~/lib/wiki-os/config";
+import { hexToRgb } from "~/lib/color";
 
-// Subcomponent imports
 import { WikiOSHeader, type ArticleAuthorInfo } from "./ArticleHeader";
 import { QuickHistoryModal, QuickBacklinksModal } from "./ArticleModals";
 import {
@@ -69,12 +63,18 @@ const CoordinatesMapEmbed = dynamic(
   }
 );
 
+/** Accent hue by article category keywords (first match wins); otherwise decided by the title prefix. */
+const HUE_RULES: ReadonlyArray<[hue: number, keywords: string[]]> = [
+  [38, ["history", "politics", "executive", "government"]],
+  [0, ["military", "war", "conflict", "defense"]],
+  [188, ["diplomacy", "geography", "relation"]],
+  [142, ["file", "media", "image"]],
+  [262, ["talk", "discussion"]],
+];
+
 function getRgbaColor(colorStr: string, opacity: number): string {
   if (colorStr.startsWith("#")) {
-    const cleanHex = colorStr.replace("#", "");
-    const r = parseInt(cleanHex.substring(0, 2), 16);
-    const g = parseInt(cleanHex.substring(2, 4), 16);
-    const b = parseInt(cleanHex.substring(4, 6), 16);
+    const { r, g, b } = hexToRgb(colorStr);
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   }
   if (colorStr.startsWith("hsl")) {
@@ -94,12 +94,6 @@ interface ArticleRendererProps {
   wikiSource?: "ixwiki" | "iiwiki" | "althistory";
   authorInfo?: ArticleAuthorInfo | null;
 }
-
-// oxlint-disable-next-line eslint/no-unused-vars
-const WIKI_SOURCE_LABELS: Record<string, { label: string; url: string }> = {
-  iiwiki: { label: "iiwiki.com", url: "https://iiwiki.com/wiki/" },
-  althistory: { label: "althistory.fandom.com", url: "https://althistory.fandom.com/wiki/" },
-};
 
 const EMPTY_STATS_DATA: Record<string, DynamicStatData> = {};
 
@@ -158,9 +152,6 @@ export function ArticleRenderer({
   const readOnly = source !== "ixwiki";
   const marginOpen = isMarginOpen && !readOnly;
   const marginEnabled = !!title && !readOnly;
-  const [tocOpen, setTocOpen] = useState(false);
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const showWikiToc = useWikiSetting("wikios:showWikiToc", true);
   const [companionCollapsed, setCompanionCollapsed] = useState(false);
 
   // Persist companion collapsed preference (xl only)
@@ -180,7 +171,6 @@ export function ArticleRenderer({
     }
   }, [companionCollapsed]);
 
-  // --- WikiOS Margin Suite State ---
   const [marginExpanded, setMarginExpanded] = useState(false);
   const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
   const [draftQuote, setDraftQuote] = useState<string | null>(null);
@@ -191,8 +181,7 @@ export function ArticleRenderer({
   const slug = useMemo(() => encodeURIComponent(title.replace(/ /g, "_")), [title]);
 
   // Query discussions for Gutter Pins & counts
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { data: marginData, refetch: refetchMargin } = api.wikios.getArticleMarginData.useQuery(
+  const { data: marginData } = api.wikios.getArticleMarginData.useQuery(
     { articleTitle: title, status: "ALL" },
     { enabled: marginEnabled, staleTime: 15_000 }
   );
@@ -277,6 +266,7 @@ export function ArticleRenderer({
     );
   };
 
+  // Both open the Margin threads tab with the selection quoted in a new-thread draft.
   const handleOpenThreadDraft = (payload: SelectionPayload) => {
     setActiveAnchor(null);
     setDraftQuote(payload.text);
@@ -303,18 +293,6 @@ export function ArticleRenderer({
 
   const [sharePayload, setSharePayload] = useState<SelectionPayload | null>(null);
 
-  const handleSuggestEdit = (payload: SelectionPayload) => {
-    setActiveAnchor(null);
-    setDraftQuote(payload.text);
-    setMarginTab("threads");
-    setMarginOpen(true);
-  };
-
-  const handleShareQuote = (payload: SelectionPayload) => {
-    setSharePayload(payload);
-  };
-
-  // --- Portal & Dynamic Widgets Setup ---
   const statKeys = useMemo(() => {
     const keys = new Set<string>();
     const regex = /\{\{((?:MyCountry|CountryData|BusinessData):[^}\n]+?)\}\}/gi;
@@ -356,15 +334,20 @@ export function ArticleRenderer({
   useEffect(() => {
     if (typeof document === "undefined") return;
 
-    if (!document.getElementById("ixstats-embed-css")) {
+    const ensureInHead = (id: string, create: () => HTMLElement) => {
+      if (document.getElementById(id)) return;
+      const el = create();
+      el.id = id;
+      document.head.appendChild(el);
+    };
+
+    ensureInHead("ixstats-embed-css", () => {
       const style = document.createElement("style");
-      style.id = "ixstats-embed-css";
       style.textContent = EMBED_CSS;
-      document.head.appendChild(style);
-    }
-    if (!document.getElementById("ixstats-embed-js")) {
+      return style;
+    });
+    ensureInHead("ixstats-embed-js", () => {
       const script = document.createElement("script");
-      script.id = "ixstats-embed-js";
       // The embed iframes load /maps, which lives under the app's base path.
       script.textContent = EMBED_JS.replace(
         `'${EMBED_PREFETCH}'`,
@@ -373,16 +356,15 @@ export function ArticleRenderer({
       // The CSP carries a per-request nonce, so an inline script only runs if it carries it too.
       const nonce = document.querySelector<HTMLScriptElement>("script[nonce]")?.nonce;
       if (nonce) script.nonce = nonce;
-      document.head.appendChild(script);
-    }
-    if (!document.getElementById("ixstats-embed-prefetch")) {
+      return script;
+    });
+    ensureInHead("ixstats-embed-prefetch", () => {
       const link = document.createElement("link");
-      link.id = "ixstats-embed-prefetch";
       link.rel = "prefetch";
       link.href = withBasePath(EMBED_PREFETCH);
       link.setAttribute("as", "document");
-      document.head.appendChild(link);
-    }
+      return link;
+    });
   }, []);
 
   const processedHtml = useMemo(() => {
@@ -401,37 +383,25 @@ export function ArticleRenderer({
     if (!container) return;
 
     const targets: PortalTarget[] = [];
-
-    container.querySelectorAll(".wikios-coords-placeholder").forEach((el) => {
-      const lat = parseFloat(el.getAttribute("data-lat") || "0");
-      const lng = parseFloat(el.getAttribute("data-lng") || "0");
-      const zoom = parseInt(el.getAttribute("data-zoom") || "4", 10);
-      const label = el.getAttribute("data-label") || "Location";
-      targets.push({
-        element: el,
-        type: "coords",
-        data: { lat, lng, zoom, label },
-      });
+    const mapAttrs = (el: Element) => ({
+      lat: parseFloat(el.getAttribute("data-lat") || "0"),
+      lng: parseFloat(el.getAttribute("data-lng") || "0"),
+      zoom: parseInt(el.getAttribute("data-zoom") || "4", 10),
     });
 
-    container.querySelectorAll(".wikios-map-embed-placeholder").forEach((el) => {
-      const lat = parseFloat(el.getAttribute("data-lat") || "0");
-      const lng = parseFloat(el.getAttribute("data-lng") || "0");
-      const zoom = parseInt(el.getAttribute("data-zoom") || "4", 10);
-      const options = el.getAttribute("data-options") || "";
-      targets.push({
-        element: el,
-        type: "map-embed",
-        data: { lat, lng, zoom, options },
-      });
+    container.querySelectorAll(".wikios-coords-placeholder").forEach((element) => {
+      const label = element.getAttribute("data-label") || "Location";
+      targets.push({ element, type: "coords", data: { ...mapAttrs(element), label } });
     });
-
-    container.querySelectorAll(".wikios-stat-placeholder").forEach((el) => {
-      const key = el.getAttribute("data-key") || "";
+    container.querySelectorAll(".wikios-map-embed-placeholder").forEach((element) => {
+      const options = element.getAttribute("data-options") || "";
+      targets.push({ element, type: "map-embed", data: { ...mapAttrs(element), options } });
+    });
+    container.querySelectorAll(".wikios-stat-placeholder").forEach((element) => {
       targets.push({
-        element: el,
+        element,
         type: "stat",
-        data: { key },
+        data: { key: element.getAttribute("data-key") || "" },
       });
     });
 
@@ -449,37 +419,10 @@ export function ArticleRenderer({
       return getFlagColors(countryData.name);
     }
 
-    let hue = 217;
     const catStr = categories.join(" ").toLowerCase();
-    if (
-      catStr.includes("history") ||
-      catStr.includes("politics") ||
-      catStr.includes("executive") ||
-      catStr.includes("government")
-    ) {
-      hue = 38;
-    } else if (
-      catStr.includes("military") ||
-      catStr.includes("war") ||
-      catStr.includes("conflict") ||
-      catStr.includes("defense")
-    ) {
-      hue = 0;
-    } else if (
-      catStr.includes("diplomacy") ||
-      catStr.includes("geography") ||
-      catStr.includes("relation")
-    ) {
-      hue = 188;
-    } else if (catStr.includes("file") || catStr.includes("media") || catStr.includes("image")) {
-      hue = 142;
-    } else if (catStr.includes("talk") || catStr.includes("discussion")) {
-      hue = 262;
-    } else if (title.startsWith("File:")) {
-      hue = 142;
-    } else if (title.startsWith("Talk:")) {
-      hue = 262;
-    }
+    const rule = HUE_RULES.find(([, keywords]) => keywords.some((k) => catStr.includes(k)));
+    const titleHue = title.startsWith("File:") ? 142 : title.startsWith("Talk:") ? 262 : 217;
+    const hue = rule?.[0] ?? titleHue;
 
     return {
       primary: `hsl(${hue}, 80%, 45%)`,
@@ -544,11 +487,6 @@ export function ArticleRenderer({
 
   const lightboxPortal = useImageLightbox(contentRef);
 
-  const _stashQuery = api.wikios.isStashed.useQuery(
-    { pageTitle: title },
-    { enabled: isAuthenticated, retry: false }
-  );
-
   useAnnotationOverlay({
     contentRef,
     annotations: (annotationsData as any) || [],
@@ -611,8 +549,6 @@ export function ArticleRenderer({
           themeColors={themeColors}
           authorInfo={authorInfo}
           awardsData={awardsData}
-          tocLength={toc.length}
-          onTocClick={() => setTocOpen(true)}
         />
         <SourceWikiNote title={title} wikiSource={source} />
 
@@ -708,7 +644,6 @@ export function ArticleRenderer({
               contentRef={contentRef}
               threads={(marginData?.threads as any) || []}
               annotations={(annotationsData as any) || []}
-              themeColors={themeColors}
               isMarginOpen={marginOpen}
               onSelectAnchor={(anchor, id, tab) => {
                 setActiveAnchor(anchor);
@@ -756,8 +691,6 @@ export function ArticleRenderer({
             <ChevronRight className="h-3 w-3" />
           </button>
           <ArticleCompanionHUD
-            title={title}
-            slug={slug}
             contentHtml={contentHtml}
             lastModified={lastModified}
             authorInfo={authorInfo}
@@ -772,8 +705,6 @@ export function ArticleRenderer({
             onOpenHistory={() => setActiveModal("history")}
             onOpenBacklinks={() => setActiveModal("backlinks")}
             narrator={narrator}
-            isAuthenticated={isAuthenticated}
-            isCollapsed={false}
             readOnly={readOnly}
           />
           {toc.length > 0 && (
@@ -798,14 +729,6 @@ export function ArticleRenderer({
         </button>
       )}
 
-      {/* TOC drawer (modal sheet) */}
-      <AppleBooksTocDrawer
-        isOpen={tocOpen}
-        onClose={() => setTocOpen(false)}
-        entries={toc}
-        themeColors={themeColors}
-      />
-
       {lightboxPortal}
       {citeTooltipPortal}
 
@@ -824,9 +747,9 @@ export function ArticleRenderer({
             isAuthenticated={isAuthenticated}
             onAddHighlight={handleAddHighlight}
             onOpenThreadDraft={handleOpenThreadDraft}
-            onSuggestEdit={handleSuggestEdit}
+            onSuggestEdit={handleOpenThreadDraft}
             onStashQuote={handleStashQuote}
-            onShareQuote={handleShareQuote}
+            onShareQuote={setSharePayload}
           />
 
           <WikiMarginDrawer

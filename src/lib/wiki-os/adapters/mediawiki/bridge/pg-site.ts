@@ -6,10 +6,7 @@
 
 import { db } from "~/server/db";
 import { MediaAssetService } from "~/lib/wiki-os/core";
-
-// ---------------------------------------------------------------------------
-// Media & Thumbnails
-// ---------------------------------------------------------------------------
+import { warnDev } from "./types";
 
 export async function batchFetchThumbnails(titles: string[]): Promise<Map<string, string>> {
   const map = new Map<string, string>();
@@ -21,14 +18,10 @@ export async function batchFetchThumbnails(titles: string[]): Promise<Map<string
       }
     }
   } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+    warnDev(err);
   }
   return map;
 }
-
-// ---------------------------------------------------------------------------
-// Miscellaneous & Compatibility Shims
-// ---------------------------------------------------------------------------
 
 export async function ixwikiGetSiteStats(): Promise<{
   articles: number;
@@ -80,7 +73,7 @@ export async function ixwikiGetRandomPage(): Promise<string> {
     });
     if (randomArt?.title) return randomArt.title;
   } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+    warnDev(err);
   }
   return "Ixnay";
 }
@@ -120,7 +113,7 @@ export async function ixwikiGetImageMeta(filename: string): Promise<{
       };
     }
   } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+    warnDev(err);
   }
   return null;
 }

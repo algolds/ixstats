@@ -1,5 +1,4 @@
 "use client";
-// src/components/forum/shared/ForumLayout.tsx
 // Forum content wrapper with icon rail sidebar on desktop, horizontal pills on mobile.
 // The rail and pill bar are chrome (material-thin pill bar); the Forum tint (orange) comes
 // from data-app="forum" on the route layout.
@@ -28,10 +27,6 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "~/compone
 import { SearchField } from "~/components/ui/search-field";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 
-// ---------------------------------------------------------------------------
-// Nav items
-// ---------------------------------------------------------------------------
-
 interface ForumNavItem {
   id: string;
   href: string;
@@ -55,10 +50,6 @@ const NAV_GROUP_2: ForumNavItem[] = [
 const NAV_GROUP_3: ForumNavItem[] = [
   { id: "search", href: "/forum/search", icon: Search, title: "Search" },
 ];
-
-// ---------------------------------------------------------------------------
-// Search Modal
-// ---------------------------------------------------------------------------
 
 function ForumSearchModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
@@ -110,10 +101,6 @@ function ForumSearchModal({ open, onClose }: { open: boolean; onClose: () => voi
     </Dialog>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Layout
-// ---------------------------------------------------------------------------
 
 interface ForumLayoutProps {
   children: ReactNode;
@@ -209,21 +196,18 @@ export function ForumLayout({ children }: ForumLayoutProps) {
         {/* Desktop: icon rail */}
         <aside data-app-subnav="" className="forum-icon-rail hidden lg:flex">
           <nav aria-label="Forum" className="flex flex-col gap-1">
-            {/* Browse */}
             {NAV_GROUP_1.map((item) => (
               <RailIcon key={item.id} item={item} isActive={activeId === item.id} />
             ))}
 
             <div className="bg-separator mx-auto my-2 h-px w-6" />
 
-            {/* Community */}
             {NAV_GROUP_2.map((item) => (
               <RailIcon key={item.id} item={item} isActive={activeId === item.id} />
             ))}
 
             <div className="bg-separator mx-auto my-2 h-px w-6" />
 
-            {/* Search */}
             <RailTooltip label="Search (⌘K)">
               <Button
                 variant="ghost"
@@ -237,7 +221,6 @@ export function ForumLayout({ children }: ForumLayoutProps) {
               </Button>
             </RailTooltip>
 
-            {/* New Thread */}
             <RailIcon
               item={{
                 id: "new-thread",
@@ -260,7 +243,6 @@ export function ForumLayout({ children }: ForumLayoutProps) {
           </nav>
         </aside>
 
-        {/* Content */}
         <main ref={contentRef} className="forum-content min-w-0 flex-1">
           {children}
         </main>
@@ -270,15 +252,10 @@ export function ForumLayout({ children }: ForumLayoutProps) {
         Powered by <strong>IxForum</strong> v{IXFORUM_VERSION}
       </footer>
 
-      {/* Search Modal */}
       <ForumSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Rail icon (desktop)
-// ---------------------------------------------------------------------------
 
 // Rail icons and mobile pills are `ghost` Buttons (links share the classes via `buttonVariants`)
 // with tint selection for the current destination.
@@ -320,10 +297,6 @@ function RailIcon({ item, isActive }: { item: ForumNavItem; isActive: boolean })
     </RailTooltip>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Mobile pill
-// ---------------------------------------------------------------------------
 
 function MobilePill({ item, isActive }: { item: ForumNavItem; isActive: boolean }) {
   const Icon = item.icon;

@@ -126,7 +126,6 @@ export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
           )}
         </PopoverTrigger>
         <PopoverContent align="start" className="w-80 overflow-hidden p-0">
-          {/* Search */}
           <div className="border-separator border-b p-2">
             <SearchField
               size="sm"
@@ -137,7 +136,6 @@ export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
             />
           </div>
 
-          {/* GIFs Grid View Area */}
           <div className="thin-scrollbar h-72 overflow-y-auto p-2">
             {isLoading && gifs.length === 0 ? (
               <div className="text-footnote text-label-secondary flex h-full flex-col items-center justify-center gap-2">

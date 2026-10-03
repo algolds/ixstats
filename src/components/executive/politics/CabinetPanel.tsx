@@ -224,7 +224,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
     setForm((prev) => ({
       ...prev,
       title: dept?.ministerTitle || "Minister",
-      role: "Cabinet Member",
+      role: "Cabinet member",
     }));
     setDialogDepartmentId(departmentId);
   };

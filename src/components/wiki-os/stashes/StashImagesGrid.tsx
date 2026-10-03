@@ -1,8 +1,7 @@
 "use client";
-// src/components/wiki-os/stashes/StashImagesGrid.tsx
 // Saved Wikimedia Commons media grid with interactive lightbox modal.
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   ZoomIn,
   SystemRestart as Loader2,
@@ -16,10 +15,14 @@ import {
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
 import { WikiZoomDialog } from "~/components/wiki-os/shared/WikiZoomDialog";
-import type { CommonsImage } from "./types";
+import {
+  CopyFormatSelector,
+  copyFormatText,
+  type CopyFormat,
+} from "~/components/wiki-os/media-search/CopyFormatSelector";
+import type { CommonsImage } from "~/components/wiki-os/media-search/types";
 
 interface StashedItemMedia {
   id: string;
@@ -123,7 +126,7 @@ function StashedImageModal({
   onClose: () => void;
   onUnstash: () => void;
 }) {
-  const [format, setFormat] = useState<"thumb" | "embed" | "raw" | "url">("thumb");
+  const [format, setFormat] = useState<CopyFormat>("thumb");
   const [copied, setCopied] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   const [copiedImage, setCopiedImage] = useState(false);
@@ -197,22 +200,9 @@ function StashedImageModal({
     }
   };
 
-  const formatText = useMemo(() => {
-    switch (format) {
-      case "thumb":
-        return `[[${image.title}|thumb|${cleanTitle}]]`;
-      case "embed":
-        return `[[${image.title}|250px]]`;
-      case "raw":
-        return `[[${image.title}]]`;
-      case "url":
-        return image.url;
-    }
-  }, [format, image, cleanTitle]);
-
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(formatText);
+      await navigator.clipboard.writeText(copyFormatText(format, image));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -269,22 +259,7 @@ function StashedImageModal({
           )}
         </dl>
 
-        <div className="space-y-2">
-          <Eyebrow>Wikitext copy format</Eyebrow>
-          <SegmentedControl
-            aria-label="Wikitext copy format"
-            size="sm"
-            fullWidth
-            value={format}
-            onValueChange={setFormat}
-            options={[
-              { value: "thumb", label: "Thumb" },
-              { value: "embed", label: "Embed" },
-              { value: "raw", label: "File" },
-              { value: "url", label: "URL" },
-            ]}
-          />
-        </div>
+        <CopyFormatSelector value={format} onValueChange={setFormat} />
 
         <div className="flex flex-col gap-2">
           <div className="grid grid-cols-3 gap-2">

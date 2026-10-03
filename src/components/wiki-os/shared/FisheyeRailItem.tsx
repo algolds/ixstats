@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/shared/FisheyeRailItem.tsx
 // Fisheye magnification icon wrapper.
 
 import { useRef } from "react";
@@ -41,7 +40,6 @@ export const getActiveColorClass = (itemId: string): string => {
 interface FisheyeRailItemProps {
   mouseY: MotionValue<number>;
   isExpanded: boolean;
-  title: string;
   children: React.ReactNode;
   index: number;
   onHover: (index: number | null) => void;

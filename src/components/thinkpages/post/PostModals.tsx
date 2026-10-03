@@ -29,52 +29,37 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { ReactionsDialog } from "../ReactionsDialog";
+import type { PostState } from "./postViewTypes";
 
 interface PostModalsProps {
   post: any;
-  showDeleteConfirm: boolean;
-  setShowDeleteConfirm: (val: boolean) => void;
-  handleConfirmDelete: () => void;
-  isDeletePending?: boolean;
-
-  showFlagDialog: boolean;
-  setShowFlagDialog: (val: boolean) => void;
-  flagReason: string;
-  setFlagReason: (val: string) => void;
-  handleSubmitFlag: () => void;
-  isFlagPending?: boolean;
-
-  showReactionsDialog: boolean;
-  setShowReactionsDialog: (val: boolean) => void;
+  state: PostState;
   onAccountClick?: (accountId: string) => void;
-
-  lightboxMedia: { id: string; url: string } | null;
-  setLightboxMedia: (val: { id: string; url: string } | null) => void;
-  notify: any;
 }
 
-export function PostModals({
-  post,
-  showDeleteConfirm,
-  setShowDeleteConfirm,
-  handleConfirmDelete,
-  isDeletePending,
-  showFlagDialog,
-  setShowFlagDialog,
-  flagReason,
-  setFlagReason,
-  handleSubmitFlag,
-  isFlagPending,
-  showReactionsDialog,
-  setShowReactionsDialog,
-  onAccountClick,
-  lightboxMedia,
-  setLightboxMedia,
-  notify,
-}: PostModalsProps) {
+export function PostModals({ post, state, onAccountClick }: PostModalsProps) {
+  const {
+    showDeleteConfirm,
+    setShowDeleteConfirm,
+    handleConfirmDelete,
+    deletePostMutation,
+    showFlagDialog,
+    setShowFlagDialog,
+    flagReason,
+    setFlagReason,
+    handleSubmitFlag,
+    flagPostMutation,
+    showReactionsDialog,
+    setShowReactionsDialog,
+    lightboxMedia,
+    setLightboxMedia,
+    notify,
+  } = state;
+  const isDeletePending = deletePostMutation.isPending;
+  const isFlagPending = flagPostMutation.isPending;
+
   return (
     <>
-      {/* Delete confirmation */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
@@ -99,7 +84,6 @@ export function PostModals({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Flag / Report Dialog */}
       <Dialog
         open={showFlagDialog}
         onOpenChange={(open) => {
@@ -139,16 +123,12 @@ export function PostModals({
         </DialogContent>
       </Dialog>
 
-      {/* Reactions Detail Dialog */}
       <ReactionsDialog
         postId={post.id}
         isOpen={showReactionsDialog}
         onClose={() => setShowReactionsDialog(false)}
         onAccountClick={onAccountClick}
-        discordMsgId={(() => {
-          const match = post.content?.match(/\[DiscordMsg:(\d+)\]/);
-          return match ? match[1] : null;
-        })()}
+        discordMsgId={post.content?.match(/\[DiscordMsg:(\d+)\]/)?.[1] ?? null}
       />
 
       {/* Lightbox — instant presentation: the shared-element (layoutId) motion is the transition */}

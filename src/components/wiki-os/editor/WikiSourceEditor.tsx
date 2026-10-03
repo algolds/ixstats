@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/editor/WikiSourceEditor.tsx
 // Wikitext source editor — CodeMirror 6 with wikitext toolbar, syntax decorations, and live preview.
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
@@ -414,7 +413,6 @@ export function WikiSourceEditor({
             onSwitchToVisual?.(state.isDirty, currentWikitext);
           }}
           onCancel={onCancel}
-          onSave={handleSave}
           handleSaveDraft={handleSaveDraft}
           handleUndo={handleUndo}
           handleRedo={handleRedo}

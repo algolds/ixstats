@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/shared/StashWelcomeModal.tsx
 // User guide for the Stash System across WikiOS & IxStates.
 // Features unslop writing, 4-tab feature overview.
 

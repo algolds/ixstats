@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/editor/components/WikiEditorModalHost.tsx
 // Centralized modal host for WikiOS Visual and Source editors.
 
 import React, { useState } from "react";
@@ -140,9 +139,6 @@ export function WikiEditorModalHost({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Template Editor Dialog (For editing an active template on click in Visual mode)
-// ---------------------------------------------------------------------------
 function TemplateEditorDialog({
   templateName,
   params,

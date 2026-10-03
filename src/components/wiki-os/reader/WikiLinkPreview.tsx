@@ -11,10 +11,6 @@ import {
 } from "~/components/ui/hover-card";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 
-// ──────────────────────────────────────────────
-// WikiLinkPreview — for React element wrapping
-// ──────────────────────────────────────────────
-
 interface WikiLinkPreviewProps {
   title: string;
   wiki?: "ixwiki" | "iiwiki";
@@ -32,10 +28,6 @@ export function WikiLinkPreview({ title, wiki = "ixwiki", children }: WikiLinkPr
   return <>{children}</>;
 }
 
-// ──────────────────────────────────────────────
-// ForumLinkPreview — for React element wrapping
-// ──────────────────────────────────────────────
-
 interface ForumLinkPreviewProps {
   threadId: number;
   children: React.ReactNode;
@@ -50,11 +42,6 @@ export function ForumLinkPreview({ threadId, children }: ForumLinkPreviewProps) 
 
   return <>{children}</>;
 }
-
-// ──────────────────────────────────────────────
-// WikiHtmlContent — renders raw HTML safely
-// Tooltips are handled by the global provider
-// ──────────────────────────────────────────────
 
 interface WikiHtmlContentProps {
   html: string;
@@ -138,190 +125,189 @@ function renderWikiLink(
   );
 }
 
+const renderChildren = (element: HTMLElement, missing: ReadonlySet<string>) =>
+  Array.from(element.childNodes).map((child, childIdx) => domNodeToReact(child, childIdx, missing));
+
+/** Card for a `data-wikiembed` placeholder. */
+function renderWikiEmbed(element: HTMLElement, index: number): React.ReactNode {
+  const title = element.getAttribute("data-title") || "";
+  const summary = element.getAttribute("data-summary") || "";
+  const imageUrl = element.getAttribute("data-imageurl") || "";
+  const isIiwiki = element.getAttribute("data-source") === "iiwiki";
+  const path = `/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
+
+  return (
+    <div key={index} className="my-3 select-none">
+      <a
+        href={isIiwiki ? `https://iiwiki.com${path}` : path}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="rounded-card border-separator bg-fill-4 hover:border-separator flex items-center gap-4 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
+      >
+        <div className="min-w-0 flex-1 text-left">
+          <div className="mb-1 flex items-center gap-2">
+            <WikiOSLogomark className="text-tint h-3.5 w-3.5 shrink-0" />
+            <span className="text-eyebrow text-label-secondary">
+              {isIiwiki ? "IIWiki Article" : "IxWiki Article"}
+            </span>
+          </div>
+          <h4 className="text-headline text-label truncate leading-snug">{title}</h4>
+          <p className="text-footnote text-label-secondary mt-0.5 line-clamp-2 leading-normal">
+            {summary}
+          </p>
+        </div>
+        {imageUrl && (
+          <img
+            src={imageUrl}
+            className="rounded-row border-separator h-16 w-16 border object-cover"
+            alt=""
+          />
+        )}
+      </a>
+    </div>
+  );
+}
+
+/** Which kind(s) of game entity a link points at. */
+function entityKinds(href: string) {
+  return {
+    isLeague: href.includes("/myleague/"),
+    isClub: href.includes("/myclub/"),
+    isCountry: href.includes("/countries/"),
+    isUser: href.includes("/thinkpages/") || href.includes("/dashboard/"),
+  };
+}
+
+const BADGE_BASE =
+  "inline-flex items-center gap-2 px-3 py-0.5 rounded-full text-caption font-semibold select-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:-translate-y-0.5 border";
+
+// Minimalist glass pills. Appended to BADGE_BASE without a separator, as they always have been.
+const BADGE_TONES = {
+  league: "bg-yellow/6 border-yellow/20 text-yellow hover:bg-yellow/10 hover:border-yellow/30",
+  club: "bg-tint/6 border-tint/20 text-tint hover:bg-tint/10 hover:border-tint/30",
+  country: "bg-green/6 border-green/20 text-green hover:bg-green/10 hover:border-green/30",
+  user: "bg-tint/10 border-tint/30 text-tint hover:bg-tint/20 hover:text-wiki-hover",
+};
+
+/** Entity mention (league, club, country, ThinkPages user) as a pill with a hover profile card. */
+function renderEntityMention(element: HTMLElement, href: string, index: number): React.ReactNode {
+  const { isLeague, isClub, isCountry, isUser } = entityKinds(href);
+  let label = element.textContent || "";
+  if (isUser) {
+    if (!label.startsWith("@")) label = `@${label}`;
+  } else if (label.startsWith("@")) {
+    label = label.substring(1);
+  }
+  const tone = isLeague ? "league" : isClub ? "club" : isCountry ? "country" : "user";
+
+  return (
+    <MentionPopover
+      key={index}
+      href={href}
+      label={label}
+      badgeStyle={BADGE_BASE + BADGE_TONES[tone]}
+      icon={getEntityIcon(label, isLeague, isClub, isCountry) || undefined}
+    />
+  );
+}
+
+const PASSTHROUGH_ATTRS = ["href", "target", "rel", "src", "alt", "title", "scope"];
+
+function elementProps(
+  element: HTMLElement,
+  index: number
+): React.Attributes & Record<string, unknown> {
+  const props: React.Attributes & Record<string, unknown> = { key: index };
+  if (element.className) props.className = element.className;
+  for (const attr of PASSTHROUGH_ATTRS) {
+    const value = element.getAttribute(attr);
+    if (value) props[attr] = value;
+  }
+  for (const [attr, prop] of [
+    ["colspan", "colSpan"],
+    ["rowspan", "rowSpan"],
+  ] as const) {
+    const value = element.getAttribute(attr);
+    if (value) props[prop] = Number(value) || value;
+  }
+  const style = element.getAttribute("style");
+  if (style) props.style = parseStyleString(style);
+  return props;
+}
+
 function domNodeToReact(
   node: Node,
   index: number,
   missing: ReadonlySet<string> = NO_MISSING_PAGES
 ): React.ReactNode {
-  if (node.nodeType === Node.TEXT_NODE) {
-    return node.textContent;
-  }
-
-  if (node.nodeType !== Node.ELEMENT_NODE) {
-    return null;
-  }
+  if (node.nodeType === Node.TEXT_NODE) return node.textContent;
+  if (node.nodeType !== Node.ELEMENT_NODE) return null;
 
   const element = node as HTMLElement;
   const tagName = element.tagName.toLowerCase();
+  const href = element.getAttribute("href") || "";
 
-  // Custom Handler: Wiki Card Embed
   if (tagName === "div" && element.getAttribute("data-wikiembed") === "true") {
-    const title = element.getAttribute("data-title") || "";
-    const summary = element.getAttribute("data-summary") || "";
-    const imageUrl = element.getAttribute("data-imageurl") || "";
-    const source = element.getAttribute("data-source") || "ixwiki";
-
-    return (
-      <div key={index} className="my-3 select-none">
-        <a
-          href={
-            source === "iiwiki"
-              ? `https://iiwiki.com/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`
-              : `/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`
-          }
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-card border-separator bg-fill-4 hover:border-separator flex items-center gap-4 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
-        >
-          <div className="min-w-0 flex-1 text-left">
-            <div className="mb-1 flex items-center gap-2">
-              <WikiOSLogomark className="text-tint h-3.5 w-3.5 shrink-0" />
-              <span className="text-eyebrow text-label-secondary">
-                {source === "iiwiki" ? "IIWiki Article" : "IxWiki Article"}
-              </span>
-            </div>
-            <h4 className="text-headline text-label truncate leading-snug">{title}</h4>
-            <p className="text-footnote text-label-secondary mt-0.5 line-clamp-2 leading-normal">
-              {summary}
-            </p>
-          </div>
-          {imageUrl && (
-            <img
-              src={imageUrl}
-              className="rounded-row border-separator h-16 w-16 border object-cover"
-              alt=""
-            />
-          )}
-        </a>
-      </div>
-    );
+    return renderWikiEmbed(element, index);
   }
 
-  // Custom Handler: Wiki Link
-  if (tagName === "a" && element.getAttribute("href")?.startsWith("/wiki/")) {
-    return renderWikiLink(element, index, missing);
-  }
+  if (tagName === "a") {
+    if (href.startsWith("/wiki/")) return renderWikiLink(element, index, missing);
 
-  // Custom Handler: Hashtag Link
-  if (tagName === "a" && element.getAttribute("href")?.startsWith("/hashtags/")) {
-    const href = element.getAttribute("href") || "";
-    const className = element.className || "text-tint hover:underline cursor-pointer font-medium";
-
-    return (
-      <Link key={index} href={withBasePath(href)} className={className}>
-        {Array.from(element.childNodes).map((child, childIdx) =>
-          domNodeToReact(child, childIdx, missing)
-        )}
-      </Link>
-    );
-  }
-
-  // Custom Handler: Entity Mentions (myleague, myclub, countries, thinkpages)
-  if (tagName === "a" && element.getAttribute("href")) {
-    const href = element.getAttribute("href") || "";
-    const isLeague = href.includes("/myleague/");
-    const isClub = href.includes("/myclub/");
-    const isCountry = href.includes("/countries/");
-    const isThinkpagesUser = href.includes("/thinkpages/") || href.includes("/dashboard/");
-
-    if (isLeague || isClub || isCountry || isThinkpagesUser) {
-      let label = element.textContent || "";
-
-      // Strip leading @ for leagues, clubs, and countries
-      if (!isThinkpagesUser && label.startsWith("@")) {
-        label = label.substring(1);
-      }
-
-      // Ensure leading @ for thinkpages users
-      if (isThinkpagesUser && !label.startsWith("@")) {
-        label = `@${label}`;
-      }
-
-      const icon = getEntityIcon(label, isLeague, isClub, isCountry);
-
-      // Determine style classes: Minimalist Glass Pills with default light and dark mode classes
-      let badgeStyle =
-        "inline-flex items-center gap-2 px-3 py-0.5 rounded-full text-caption font-semibold select-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:-translate-y-0.5 border";
-      if (isLeague) {
-        badgeStyle +=
-          "bg-yellow/6 border-yellow/20 text-yellow hover:bg-yellow/10 hover:border-yellow/30";
-      } else if (isClub) {
-        badgeStyle += "bg-tint/6 border-tint/20 text-tint hover:bg-tint/10 hover:border-tint/30";
-      } else if (isCountry) {
-        badgeStyle +=
-          "bg-green/6 border-green/20 text-green hover:bg-green/10 hover:border-green/30";
-      } else {
-        badgeStyle += "bg-tint/10 border-tint/30 text-tint hover:bg-tint/20 hover:text-wiki-hover";
-      }
-
+    if (href.startsWith("/hashtags/")) {
       return (
-        <MentionPopover
+        <Link
           key={index}
-          href={href}
-          label={label}
-          badgeStyle={badgeStyle}
-          icon={icon || undefined}
-        />
+          href={withBasePath(href)}
+          className={element.className || "text-tint cursor-pointer font-medium hover:underline"}
+        >
+          {renderChildren(element, missing)}
+        </Link>
+      );
+    }
+
+    if (Object.values(entityKinds(href)).some(Boolean)) {
+      return renderEntityMention(element, href, index);
+    }
+
+    // General relative link: intercept full page reloads for client routes
+    if (href.startsWith("/") && !element.getAttribute("target")) {
+      return (
+        <Link
+          key={index}
+          href={withBasePath(href.replace(/^\/projects\/ixstates/, ""))}
+          className={element.className}
+        >
+          {renderChildren(element, missing)}
+        </Link>
       );
     }
   }
 
-  // Custom Handler: General Relative Link (intercept full page reloads for client routes)
-  if (
-    tagName === "a" &&
-    element.getAttribute("href")?.startsWith("/") &&
-    !element.getAttribute("target")
-  ) {
-    const href = element.getAttribute("href") || "";
-    const cleanHref = href.replace(/^\/projects\/ixstates/, "");
-    return (
-      <Link key={index} href={withBasePath(cleanHref)} className={element.className}>
-        {Array.from(element.childNodes).map((child, childIdx) =>
-          domNodeToReact(child, childIdx, missing)
-        )}
-      </Link>
-    );
-  }
-
-  // Filter out whitespace-only text nodes in strict table/form containers to prevent React hydration/DOM nesting errors
-  const childNodes = Array.from(element.childNodes).filter((child) => {
-    if (STRICT_TABLE_ELEMENTS.has(tagName) && child.nodeType === Node.TEXT_NODE) {
-      return Boolean(child.textContent && child.textContent.trim().length > 0);
-    }
-    return true;
-  });
-
-  const children = childNodes
+  // Whitespace-only text nodes inside strict table/form containers trip React hydration/DOM nesting
+  const dropWhitespaceText = STRICT_TABLE_ELEMENTS.has(tagName);
+  const children = Array.from(element.childNodes)
+    .filter(
+      (child) =>
+        !dropWhitespaceText || child.nodeType !== Node.TEXT_NODE || child.textContent?.trim()
+    )
     .map((child, childIdx) => domNodeToReact(child, childIdx, missing))
     .filter((child) => child !== null && child !== undefined);
 
-  const props: any = { key: index };
-
-  if (element.className) props.className = element.className;
-  if (element.getAttribute("href")) props.href = element.getAttribute("href");
-  if (element.getAttribute("target")) props.target = element.getAttribute("target");
-  if (element.getAttribute("rel")) props.rel = element.getAttribute("rel");
-  if (element.getAttribute("src")) props.src = element.getAttribute("src");
-  if (element.getAttribute("alt")) props.alt = element.getAttribute("alt");
-  if (element.getAttribute("title")) props.title = element.getAttribute("title");
-  if (element.getAttribute("scope")) props.scope = element.getAttribute("scope");
-  if (element.getAttribute("colspan")) {
-    props.colSpan = Number(element.getAttribute("colspan")) || element.getAttribute("colspan");
-  }
-  if (element.getAttribute("rowspan")) {
-    props.rowSpan = Number(element.getAttribute("rowspan")) || element.getAttribute("rowspan");
-  }
-
-  if (element.getAttribute("style")) {
-    props.style = parseStyleString(element.getAttribute("style") || "");
-  }
-
-  if (["br", "hr", "img"].includes(tagName)) {
-    return React.createElement(tagName, props);
-  }
-
-  return React.createElement(tagName, props, ...children);
+  const props = elementProps(element, index);
+  return ["br", "hr", "img"].includes(tagName)
+    ? React.createElement(tagName, props)
+    : React.createElement(tagName, props, ...children);
 }
+
+const SPORT_ICONS: ReadonlyArray<[keywords: string[], icon: string]> = [
+  [["hockey"], "🏒"],
+  [["basketball"], "🏀"],
+  [["football", "gridiron"], "🏈"],
+  [["baseball"], "⚾"],
+  [["f1", "racing", "motorsport"], "🏎️"],
+  [["boxing", "fight"], "🥊"],
+];
 
 function getEntityIcon(
   label: string,
@@ -329,39 +315,179 @@ function getEntityIcon(
   isClub: boolean,
   isCountry: boolean
 ): string {
+  if (isCountry && !isLeague && !isClub) return "🌐";
+  if (!isLeague && !isClub) return "";
+
   const lower = label.toLowerCase();
-  if (isLeague) {
-    if (lower.includes("hockey")) return "🏒";
-    if (lower.includes("basketball")) return "🏀";
-    if (lower.includes("football") || lower.includes("gridiron")) return "🏈";
-    if (lower.includes("baseball")) return "⚾";
-    if (lower.includes("f1") || lower.includes("racing") || lower.includes("motorsport"))
-      return "🏎️";
-    if (lower.includes("boxing") || lower.includes("fight")) return "🥊";
-    if (lower.includes("soccer") || lower.includes("football")) return "⚽";
-    return "🏆";
-  }
-  if (isClub) {
-    if (lower.includes("hockey")) return "🏒";
-    if (lower.includes("basketball")) return "🏀";
-    if (lower.includes("football") || lower.includes("gridiron")) return "🏈";
-    if (lower.includes("baseball")) return "⚾";
-    if (lower.includes("f1") || lower.includes("racing") || lower.includes("motorsport"))
-      return "🏎️";
-    if (lower.includes("boxing") || lower.includes("fight")) return "🥊";
-    if (
-      lower.includes("soccer") ||
-      lower.includes("football") ||
-      lower.includes("fc") ||
-      lower.includes("sc")
-    )
-      return "⚽";
-    return "🛡️";
-  }
-  if (isCountry) {
-    return "🌐";
-  }
-  return "";
+  const sport = SPORT_ICONS.find(([keywords]) => keywords.some((k) => lower.includes(k)));
+  if (sport) return sport[1];
+  if (isLeague) return lower.includes("soccer") ? "⚽" : "🏆";
+  return ["soccer", "fc", "sc"].some((k) => lower.includes(k)) ? "⚽" : "🛡️";
+}
+
+const ACTION_TONES = {
+  yellow: "bg-yellow/10 text-yellow hover:bg-yellow/20",
+  tint: "bg-tint/10 text-tint hover:bg-tint/20",
+  green: "bg-green/10 text-green hover:bg-green/20",
+  neutral: "border border-separator bg-surface-secondary text-label hover:bg-fill-3",
+};
+
+interface PopoverCardProps {
+  leading: React.ReactNode;
+  title: React.ReactNode;
+  titleClass: string;
+  subtitle?: React.ReactNode;
+  subtitleClass?: string;
+  actions: Array<{ href: string; label: string; tone: keyof typeof ACTION_TONES }>;
+}
+
+/** Profile summary inside a mention's hover card: leading glyph, title, subtitle and link buttons. */
+function PopoverCard({
+  leading,
+  title,
+  titleClass,
+  subtitle,
+  subtitleClass = "text-footnote text-label-secondary",
+  actions,
+}: PopoverCardProps) {
+  return (
+    <div className="flex flex-col gap-2 text-left">
+      <div className="flex items-center gap-2">
+        {leading}
+        <div>
+          <h4 className={`text-headline ${titleClass}`}>{title}</h4>
+          {subtitle && <p className={subtitleClass}>{subtitle}</p>}
+        </div>
+      </div>
+      <div className="mt-1 flex gap-2">
+        {actions.map((action) => (
+          <Link
+            key={action.href}
+            href={withBasePath(action.href)}
+            className={`rounded-control-sm text-caption flex-1 py-1 text-center font-semibold ${ACTION_TONES[action.tone]}`}
+          >
+            {action.label}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Loads the profile behind a mention link, but only once its hover card is open. */
+function useMentionProfile(open: boolean, href: string) {
+  const { isLeague, isClub, isCountry, isUser } = entityKinds(href);
+  const entityId =
+    /\/(?:myleague|myclub|countries|thinkpages\/u|u)\/([a-zA-Z0-9_-]+)/.exec(href)?.[1] ?? "";
+
+  const league = api.sports.getLeague.useQuery({ id: entityId }, { enabled: open && isLeague });
+  const team = api.sports.getTeam.useQuery({ id: entityId }, { enabled: open && isClub });
+  const country = api.countries.getWikiRichIntro.useQuery(
+    { countryName: entityId },
+    { enabled: open && isCountry }
+  );
+  const author = api.users.resolveWikiAuthor.useQuery(
+    { wikiUsername: entityId },
+    { enabled: open && isUser }
+  );
+
+  return {
+    entityId,
+    isLoading: league.isLoading || team.isLoading || country.isLoading || author.isLoading,
+    leagueData: league.data,
+    teamData: team.data,
+    countryData: country.data,
+    authorData: author.data,
+  };
+}
+
+function MentionProfile({
+  href,
+  label,
+  profile: { entityId, leagueData, teamData, countryData, authorData },
+}: {
+  href: string;
+  label: string;
+  profile: ReturnType<typeof useMentionProfile>;
+}) {
+  const { isLeague, isClub, isCountry, isUser } = entityKinds(href);
+
+  return (
+    <div className="flex flex-col gap-3">
+      {isLeague && leagueData && (
+        <PopoverCard
+          leading={<span className="text-title-3">🏆</span>}
+          title={leagueData.name}
+          titleClass="text-yellow"
+          subtitle={`${leagueData.sportPreset} · ${leagueData.archetype}`}
+          subtitleClass="text-footnote text-label-secondary capitalize"
+          actions={[{ href: `/myleague/${entityId}`, label: "View workspace", tone: "yellow" }]}
+        />
+      )}
+
+      {isClub && teamData && (
+        <PopoverCard
+          leading={
+            <span
+              className="text-title-3"
+              style={{ color: teamData.color || "var(--color-warning-light)" }}
+            >
+              🛡️
+            </span>
+          }
+          title={teamData.name}
+          titleClass="text-tint"
+          subtitle={`Stadium Cap: ${teamData.stadiumCapacity}`}
+          actions={[{ href: `/myclub/${entityId}`, label: "View roster & stats", tone: "tint" }]}
+        />
+      )}
+
+      {isCountry && countryData && (
+        <PopoverCard
+          leading={<span className="text-title-3">🌍</span>}
+          title={(countryData as any)?.title ?? entityId}
+          titleClass="text-green"
+          subtitle={countryData.paragraphs?.[0] || "Explore country details."}
+          subtitleClass="text-footnote text-label-secondary line-clamp-2"
+          actions={[
+            { href: `/countries/${entityId}`, label: "View profile", tone: "green" },
+            { href: "/mycountry/diplomacy", label: "Open embassy", tone: "neutral" },
+          ]}
+        />
+      )}
+
+      {isUser && authorData && (
+        <PopoverCard
+          leading={
+            <div className="bg-tint/10 flex h-8 w-8 items-center justify-center rounded-full">
+              <span className="text-headline text-tint">👤</span>
+            </div>
+          }
+          title={`@${entityId}`}
+          titleClass="text-tint"
+          subtitle={authorData.country && `From ${authorData.country.name}`}
+          actions={[
+            { href: "/dashboard", label: "View feed", tone: "tint" },
+            { href: "/messages", label: "Message", tone: "neutral" },
+          ]}
+        />
+      )}
+
+      {/* Fallback if no data was found or loaded */}
+      {!leagueData && !teamData && !countryData && !authorData && (
+        <div className="flex flex-col gap-2 text-left">
+          <h4 className="text-caption text-label-secondary font-semibold">{label}</h4>
+          <p className="text-footnote text-label-secondary">Explore page profile.</p>
+          <Link
+            href={withBasePath(href)}
+            className="rounded-control-sm border-separator bg-surface-secondary text-caption text-label hover:bg-fill-3 mt-1 border py-1 text-center font-semibold"
+          >
+            Go to page
+          </Link>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function MentionPopover({
@@ -376,38 +502,7 @@ function MentionPopover({
   icon?: string;
 }) {
   const [open, setOpen] = useState(false);
-
-  const isLeague = href.includes("/myleague/");
-  const isClub = href.includes("/myclub/");
-  const isCountry = href.includes("/countries/");
-  const isUser = href.includes("/thinkpages/") || href.includes("/dashboard/");
-
-  // Extract ID or Slug
-  const matchId = href.match(/\/(?:myleague|myclub|countries|thinkpages\/u|u)\/([a-zA-Z0-9_-]+)/);
-  const entityId = matchId ? matchId[1]! : "";
-
-  // Query details dynamically depending on the entity type
-  const { data: leagueData, isLoading: leagueLoading } = api.sports.getLeague.useQuery(
-    { id: entityId },
-    { enabled: open && isLeague }
-  );
-
-  const { data: teamData, isLoading: teamLoading } = api.sports.getTeam.useQuery(
-    { id: entityId },
-    { enabled: open && isClub }
-  );
-
-  const { data: countryData, isLoading: countryLoading } = api.countries.getWikiRichIntro.useQuery(
-    { countryName: entityId },
-    { enabled: open && isCountry }
-  );
-
-  const { data: authorData, isLoading: authorLoading } = api.users.resolveWikiAuthor.useQuery(
-    { wikiUsername: entityId },
-    { enabled: open && isUser }
-  );
-
-  const isLoading = leagueLoading || teamLoading || countryLoading || authorLoading;
+  const profile = useMentionProfile(open, href);
 
   return (
     <HoverCard open={open} onOpenChange={setOpen} openDelay={200} closeDelay={100}>
@@ -418,142 +513,13 @@ function MentionPopover({
         </Link>
       </HoverCardTrigger>
       <HoverCardContent side="top" align="center" sideOffset={6} className="w-64 p-4">
-        {isLoading ? (
+        {profile.isLoading ? (
           <div className="flex flex-col gap-2 py-1">
             <Skeleton className="rounded-control-sm h-4 w-24" />
             <Skeleton className="rounded-control-sm h-3 w-40" />
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            {/* League Popover content */}
-            {isLeague && leagueData && (
-              <div className="flex flex-col gap-2 text-left">
-                <div className="flex items-center gap-2">
-                  <span className="text-title-3">🏆</span>
-                  <div>
-                    <h4 className="text-headline text-yellow">{leagueData.name}</h4>
-                    <p className="text-footnote text-label-secondary capitalize">
-                      {leagueData.sportPreset} · {leagueData.archetype}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-1 flex gap-2">
-                  <Link
-                    href={withBasePath(`/myleague/${entityId}`)}
-                    className="rounded-control-sm bg-yellow/10 text-caption text-yellow hover:bg-yellow/20 flex-1 py-1 text-center font-semibold"
-                  >
-                    View workspace
-                  </Link>
-                </div>
-              </div>
-            )}
-
-            {/* Club/Team Popover content */}
-            {isClub && teamData && (
-              <div className="flex flex-col gap-2 text-left">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="text-title-3"
-                    style={{ color: teamData.color || "var(--color-warning-light)" }}
-                  >
-                    🛡️
-                  </span>
-                  <div>
-                    <h4 className="text-headline text-tint">{teamData.name}</h4>
-                    <p className="text-footnote text-label-secondary">
-                      Stadium Cap: {teamData.stadiumCapacity}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-1 flex gap-2">
-                  <Link
-                    href={withBasePath(`/myclub/${entityId}`)}
-                    className="rounded-control-sm bg-tint/10 text-caption text-tint hover:bg-tint/20 flex-1 py-1 text-center font-semibold"
-                  >
-                    View roster & stats
-                  </Link>
-                </div>
-              </div>
-            )}
-
-            {/* Country Popover content */}
-            {isCountry && countryData && (
-              <div className="flex flex-col gap-2 text-left">
-                <div className="flex items-center gap-2">
-                  <span className="text-title-3">🌍</span>
-                  <div>
-                    <h4 className="text-headline text-green">
-                      {(countryData as any)?.title ?? entityId}
-                    </h4>
-                    <p className="text-footnote text-label-secondary line-clamp-2">
-                      {countryData.paragraphs?.[0] || "Explore country details."}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-1 flex gap-2">
-                  <Link
-                    href={withBasePath(`/countries/${entityId}`)}
-                    className="rounded-control-sm bg-green/10 text-caption text-green hover:bg-green/20 flex-1 py-1 text-center font-semibold"
-                  >
-                    View profile
-                  </Link>
-                  <Link
-                    href={withBasePath(`/mycountry/diplomacy`)}
-                    className="rounded-control-sm border-separator bg-surface-secondary text-caption text-label hover:bg-fill-3 flex-1 border py-1 text-center font-semibold"
-                  >
-                    Open embassy
-                  </Link>
-                </div>
-              </div>
-            )}
-
-            {/* ThinkPages User / Account Popover content */}
-            {isUser && authorData && (
-              <div className="flex flex-col gap-2 text-left">
-                <div className="flex items-center gap-2">
-                  <div className="bg-tint/10 flex h-8 w-8 items-center justify-center rounded-full">
-                    <span className="text-headline text-tint">👤</span>
-                  </div>
-                  <div>
-                    <h4 className="text-headline text-tint">@{entityId}</h4>
-                    {authorData.country && (
-                      <p className="text-footnote text-label-secondary">
-                        From {authorData.country.name}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="mt-1 flex gap-2">
-                  <Link
-                    href={withBasePath(`/dashboard`)}
-                    className="rounded-control-sm bg-tint/10 text-caption text-tint hover:bg-tint/20 flex-1 py-1 text-center font-semibold"
-                  >
-                    View feed
-                  </Link>
-                  <Link
-                    href={withBasePath(`/messages`)}
-                    className="rounded-control-sm border-separator bg-surface-secondary text-caption text-label hover:bg-fill-3 flex-1 border py-1 text-center font-semibold"
-                  >
-                    Message
-                  </Link>
-                </div>
-              </div>
-            )}
-
-            {/* Fallback if no data was found or loaded */}
-            {!isLoading && !leagueData && !teamData && !countryData && !authorData && (
-              <div className="flex flex-col gap-2 text-left">
-                <h4 className="text-caption text-label-secondary font-semibold">{label}</h4>
-                <p className="text-footnote text-label-secondary">Explore page profile.</p>
-                <Link
-                  href={withBasePath(href)}
-                  className="rounded-control-sm border-separator bg-surface-secondary text-caption text-label hover:bg-fill-3 mt-1 border py-1 text-center font-semibold"
-                >
-                  Go to page
-                </Link>
-              </div>
-            )}
-          </div>
+          <MentionProfile href={href} label={label} profile={profile} />
         )}
         <HoverCardArrow className="fill-popover" />
       </HoverCardContent>
@@ -609,5 +575,3 @@ export function WikiHtmlContent({ html, className = "", as: Tag = "div" }: WikiH
 
   return <Tag className={className}>{parsedContent}</Tag>;
 }
-
-// Re-export for backward compat

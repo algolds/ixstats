@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/shared/WikiOSContentWrapper.tsx
 // Animating page transition wrapper for WikiOS routes.
 
 import { useEffect, useRef, type ReactNode } from "react";

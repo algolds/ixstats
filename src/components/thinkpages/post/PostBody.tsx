@@ -51,7 +51,6 @@ export function PostBody({
 
   return (
     <div className={className}>
-      {/* Blurb Header Badge */}
       {blurbMeta?.isBlurb && (
         <div className="text-caption text-tint mb-2 flex items-center gap-2">
           <BookOpen className="size-3.5" aria-hidden="true" />
@@ -79,7 +78,6 @@ export function PostBody({
         </div>
       )}
 
-      {/* Embedded Poll */}
       {poll && (
         <div className="mt-3">
           <FeedPollWidget poll={poll} />

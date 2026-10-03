@@ -5,15 +5,13 @@
  */
 
 import { db } from "~/server/db";
-import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
 import { cleanExcerpt, calculateRawTextBytes } from "~/lib/wiki-os/transformers/wikitext-parser";
-import { fetchMediaWikiPageAuthorsAndRevisions } from "./http-reader";
-import type { WikiRecentChange } from "./types";
+import { fetchIxwikiLive, fetchMediaWikiPageAuthorsAndRevisions } from "./http-reader";
+import { warnDev, type WikiRecentChange } from "./types";
 
-// ---------------------------------------------------------------------------
-// Activity, Contributions & History
-// ---------------------------------------------------------------------------
+const BOT_AUTHORS = ["LorewardsBot", "Maintenance script", "Robot"];
+const UNKNOWN_EDITOR = "MediaWiki Editor";
 
 export async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecentChange[]> {
   try {
@@ -21,18 +19,13 @@ export async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecen
       where: {
         source: "ixwiki",
         article: { namespace: 0 },
-        author: { notIn: ["LorewardsBot", "Maintenance script", "Robot"] },
+        author: { notIn: BOT_AUTHORS },
       },
       orderBy: { createdAt: "desc" },
       take: limit,
       include: {
         article: {
-          select: {
-            title: true,
-            summary: true,
-            leadImageUrl: true,
-            wikitext: true,
-          },
+          select: { title: true, summary: true, leadImageUrl: true, wikitext: true },
         },
       },
     });
@@ -41,19 +34,18 @@ export async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecen
       return revs
         .filter((r) => r.article?.title)
         .map((r) => {
-          const blurb = cleanExcerpt(r.wikitext || r.article.wikitext || r.article.summary, 180);
-          const rawSize = calculateRawTextBytes(r.wikitext || r.article.wikitext);
-          const delta = r.byteDelta !== 0 ? r.byteDelta : rawSize;
-          const oldLen = Math.max(0, rawSize - delta);
-          const newLen = rawSize;
+          const wikitext = r.wikitext || r.article.wikitext;
+          const blurb = cleanExcerpt(wikitext || r.article.summary, 180);
+          const newLen = calculateRawTextBytes(wikitext);
+          const delta = r.byteDelta !== 0 ? r.byteDelta : newLen;
 
           return {
             title: r.article.title,
-            user: r.author || "MediaWiki Editor",
+            user: r.author || UNKNOWN_EDITOR,
             timestamp: new Date(r.createdAt).toISOString(),
             comment: r.summary || "",
-            type: r.minor ? "edit" : "edit",
-            oldLen,
+            type: "edit" as const,
+            oldLen: Math.max(0, newLen - delta),
             newLen,
             blurb: blurb || null,
             thumbnail: r.article.leadImageUrl || null,
@@ -61,31 +53,23 @@ export async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecen
         });
     }
   } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+    warnDev(err);
   }
 
-  // Live HTTP Fallback
+  // Live HTTP fallback
   try {
-    const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
-    const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
-    const params = new URLSearchParams({
-      action: "query",
-      list: "recentchanges",
-      rcnamespace: "0",
-      rcprop: "title|user|timestamp|comment|sizes|flags",
-      rclimit: String(limit),
-      format: "json",
-    });
-
-    const res = await fetch(`${apiEndpoint}?${params.toString()}`, {
-      headers: { "User-Agent": DEFAULT_USER_AGENT },
-      signal: AbortSignal.timeout(6000),
-    });
-
-    if (res.ok) {
-      const data = (await res.json()) as any;
-      const changes = data?.query?.recentchanges || [];
-      return changes.map((rc: any) => ({
+    const data = await fetchIxwikiLive<{ query?: { recentchanges?: any[] } }>(
+      {
+        action: "query",
+        list: "recentchanges",
+        rcnamespace: "0",
+        rcprop: "title|user|timestamp|comment|sizes|flags",
+        rclimit: String(limit),
+      },
+      6000
+    );
+    if (data) {
+      return (data.query?.recentchanges || []).map((rc) => ({
         title: rc.title,
         user: rc.user,
         timestamp: rc.timestamp,
@@ -96,27 +80,37 @@ export async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecen
       }));
     }
   } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+    warnDev(err);
   }
 
   return [];
 }
 
+interface HistoryRow {
+  rev_id: number;
+  rev_timestamp: string;
+  rev_user_text: string;
+  rev_comment: string;
+  rev_len: number;
+  rev_minor_edit: number;
+  diff: number;
+}
+
+const toHistoryRow = (r: any): HistoryRow => ({
+  rev_id: r.mwRevId || 0,
+  rev_timestamp: new Date(r.createdAt).toISOString(),
+  rev_user_text: r.author || UNKNOWN_EDITOR,
+  rev_comment: r.summary || "",
+  rev_len: r.byteSize || 0,
+  rev_minor_edit: r.minor ? 1 : 0,
+  diff: r.byteDelta || 0,
+});
+
 export async function ixwikiGetHistory(
   title: string,
   limit: number = 50,
   _offset?: number
-): Promise<
-  Array<{
-    rev_id: number;
-    rev_timestamp: string;
-    rev_user_text: string;
-    rev_comment: string;
-    rev_len: number;
-    rev_minor_edit: number;
-    diff: number;
-  }>
-> {
+): Promise<HistoryRow[]> {
   try {
     const revs: any[] = await (db as any).wikiRevision.findMany({
       where: {
@@ -139,22 +133,12 @@ export async function ixwikiGetHistory(
       },
     });
 
-    if (revs.length > 1) {
-      return revs.map((r) => ({
-        rev_id: r.mwRevId || 0,
-        rev_timestamp: new Date(r.createdAt).toISOString(),
-        rev_user_text: r.author || "MediaWiki Editor",
-        rev_comment: r.summary || "",
-        rev_len: r.byteSize || 0,
-        rev_minor_edit: r.minor ? 1 : 0,
-        diff: r.byteDelta || 0,
-      }));
-    }
+    if (revs.length > 1) return revs.map(toHistoryRow);
 
-    // If PostgreSQL only has 0 or 1 revision (e.g. from single-revision sync), fetch full history from MediaWiki
+    // With 0 or 1 PostgreSQL revisions (e.g. from a single-revision sync), MediaWiki has the full history.
     const mwData = await fetchMediaWikiPageAuthorsAndRevisions(title, "ixwiki", limit);
     if (mwData && mwData.revisions.length > 0) {
-      return mwData.revisions.map((r: any) => ({
+      return mwData.revisions.map((r) => ({
         rev_id: r.revid,
         rev_timestamp: r.timestamp,
         rev_user_text: r.user,
@@ -165,98 +149,77 @@ export async function ixwikiGetHistory(
       }));
     }
 
-    if (revs.length === 1) {
-      const r = revs[0];
-      return [
-        {
-          rev_id: r.mwRevId || 0,
-          rev_timestamp: new Date(r.createdAt).toISOString(),
-          rev_user_text: r.author || "MediaWiki Editor",
-          rev_comment: r.summary || "",
-          rev_len: r.byteSize || 0,
-          rev_minor_edit: r.minor ? 1 : 0,
-          diff: r.byteDelta || 0,
-        },
-      ];
-    }
+    if (revs.length === 1) return [toHistoryRow(revs[0])];
   } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+    warnDev(err);
   }
 
   return [];
 }
+
+interface UserContribution {
+  rev_id: number;
+  page_title: string;
+  page_namespace: number;
+  rev_timestamp: string;
+  rev_len: number;
+  diff: number;
+  rev_comment: string;
+  rev_minor_edit: number;
+  is_new: boolean;
+}
+
+const liveContribToRow = (c: any): UserContribution => ({
+  rev_id: Number(c.revid || 0),
+  page_title: String(c.title || "").replace(/_/g, " "),
+  page_namespace: Number(c.ns ?? 0),
+  rev_timestamp: String(c.timestamp || new Date().toISOString()),
+  rev_len: Number(c.size || 0),
+  diff: Number(c.sizediff || 0),
+  rev_comment: String(c.comment || ""),
+  rev_minor_edit: c.minor !== undefined ? 1 : 0,
+  is_new: c.new !== undefined,
+});
+
+const pgRevisionToContrib = (r: any): UserContribution => ({
+  rev_id: Number(r.mwRevId || 0),
+  page_title: r.article?.title || "Untitled",
+  page_namespace: Number(r.article?.namespace || 0),
+  rev_timestamp: new Date(r.createdAt).toISOString(),
+  rev_len: Number(r.byteSize || 0),
+  diff: Number(r.byteDelta || 0),
+  rev_comment: String(r.summary || ""),
+  rev_minor_edit: r.minor ? 1 : 0,
+  is_new: Number(r.byteSize || 0) === Number(r.byteDelta || 0),
+});
 
 export async function ixwikiGetUserContribs(
   username: string,
   limit: number = 50,
   _offset?: number,
   namespace: number = 0
-): Promise<
-  Array<{
-    rev_id: number;
-    page_title: string;
-    page_namespace: number;
-    rev_timestamp: string;
-    rev_len: number;
-    diff: number;
-    rev_comment: string;
-    rev_minor_edit: number;
-    is_new: boolean;
-  }>
-> {
-  const results: Array<{
-    rev_id: number;
-    page_title: string;
-    page_namespace: number;
-    rev_timestamp: string;
-    rev_len: number;
-    diff: number;
-    rev_comment: string;
-    rev_minor_edit: number;
-    is_new: boolean;
-  }> = [];
+): Promise<UserContribution[]> {
+  const results: UserContribution[] = [];
 
-  // 1. Live MediaWiki Action API HTTP
+  // Live MediaWiki Action API
   try {
-    const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
-    const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
-    const params = new URLSearchParams({
-      action: "query",
-      list: "usercontribs",
-      ucuser: username,
-      ucnamespace: String(namespace),
-      uclimit: String(Math.min(100, limit)),
-      ucprop: "ids|title|timestamp|comment|size|flags",
-      format: "json",
-    });
-
-    const res = await fetch(`${apiEndpoint}?${params.toString()}`, {
-      headers: { "User-Agent": DEFAULT_USER_AGENT },
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (res.ok) {
-      const data = (await res.json()) as any;
-      const contribs = data?.query?.usercontribs || [];
-      for (const c of contribs) {
-        results.push({
-          rev_id: Number(c.revid || 0),
-          page_title: String(c.title || "").replace(/_/g, " "),
-          page_namespace: Number(c.ns ?? 0),
-          rev_timestamp: String(c.timestamp || new Date().toISOString()),
-          rev_len: Number(c.size || 0),
-          diff: Number(c.sizediff || 0),
-          rev_comment: String(c.comment || ""),
-          rev_minor_edit: c.minor !== undefined ? 1 : 0,
-          is_new: c.new !== undefined,
-        });
-      }
-    }
+    const data = await fetchIxwikiLive<{ query?: { usercontribs?: any[] } }>(
+      {
+        action: "query",
+        list: "usercontribs",
+        ucuser: username,
+        ucnamespace: String(namespace),
+        uclimit: String(Math.min(100, limit)),
+        ucprop: "ids|title|timestamp|comment|size|flags",
+      },
+      8000
+    );
+    results.push(...(data?.query?.usercontribs || []).map(liveContribToRow));
   } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+    warnDev(err);
   }
 
-  // 2. Merge PostgreSQL revisions
+  // Merge PostgreSQL revisions the live API did not return
   try {
     const pgRevs: any[] = await (db as any).wikiRevision.findMany({
       where: {
@@ -265,109 +228,70 @@ export async function ixwikiGetUserContribs(
       },
       orderBy: { createdAt: "desc" },
       take: limit,
-      include: {
-        article: {
-          select: { title: true, namespace: true },
-        },
-      },
+      include: { article: { select: { title: true, namespace: true } } },
     });
 
-    for (const r of pgRevs) {
-      const title = r.article?.title || "Untitled";
-      const revId = Number(r.mwRevId || 0);
-      if (!results.some((existing) => existing.rev_id === revId && revId > 0)) {
-        results.push({
-          rev_id: revId,
-          page_title: title,
-          page_namespace: Number(r.article?.namespace || 0),
-          rev_timestamp: new Date(r.createdAt).toISOString(),
-          rev_len: Number(r.byteSize || 0),
-          diff: Number(r.byteDelta || 0),
-          rev_comment: String(r.summary || ""),
-          rev_minor_edit: r.minor ? 1 : 0,
-          is_new: Number(r.byteSize || 0) === Number(r.byteDelta || 0),
-        });
-      }
+    for (const contrib of pgRevs.map(pgRevisionToContrib)) {
+      const known = contrib.rev_id > 0 && results.some((e) => e.rev_id === contrib.rev_id);
+      if (!known) results.push(contrib);
     }
   } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+    warnDev(err);
   }
 
   results.sort((a, b) => new Date(b.rev_timestamp).getTime() - new Date(a.rev_timestamp).getTime());
   return results.slice(0, limit);
 }
 
+interface CreatedPage {
+  title: string;
+  namespace: number;
+  createdAt: string;
+  byteSize: number;
+}
+
 export async function ixwikiGetUserCreatedPages(
   username: string,
   limit: number = 100
-): Promise<
-  Array<{
-    title: string;
-    namespace: number;
-    createdAt: string;
-    byteSize: number;
-  }>
-> {
-  const pagesMap = new Map<
-    string,
-    { title: string; namespace: number; createdAt: string; byteSize: number }
-  >();
+): Promise<CreatedPage[]> {
+  const pagesMap = new Map<string, CreatedPage>();
 
-  // 1. Live MediaWiki Action API HTTP (new creations)
+  // Live MediaWiki Action API (new creations)
   try {
-    const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
-    const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
-    const params = new URLSearchParams({
-      action: "query",
-      list: "usercontribs",
-      ucuser: username,
-      ucnamespace: "0",
-      ucshow: "new",
-      uclimit: String(Math.min(200, limit)),
-      ucprop: "title|timestamp|size",
-      format: "json",
-    });
-
-    const res = await fetch(`${apiEndpoint}?${params.toString()}`, {
-      headers: { "User-Agent": DEFAULT_USER_AGENT },
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (res.ok) {
-      const data = (await res.json()) as any;
-      const contribs = data?.query?.usercontribs || [];
-      for (const c of contribs) {
-        const title = String(c.title || "").replace(/_/g, " ");
-        pagesMap.set(title.toLowerCase(), {
-          title,
-          namespace: Number(c.ns ?? 0),
-          createdAt: String(c.timestamp || new Date().toISOString()),
-          byteSize: Number(c.size || 0),
-        });
-      }
+    const data = await fetchIxwikiLive<{ query?: { usercontribs?: any[] } }>(
+      {
+        action: "query",
+        list: "usercontribs",
+        ucuser: username,
+        ucnamespace: "0",
+        ucshow: "new",
+        uclimit: String(Math.min(200, limit)),
+        ucprop: "title|timestamp|size",
+      },
+      8000
+    );
+    for (const c of data?.query?.usercontribs || []) {
+      const title = String(c.title || "").replace(/_/g, " ");
+      pagesMap.set(title.toLowerCase(), {
+        title,
+        namespace: Number(c.ns ?? 0),
+        createdAt: String(c.timestamp || new Date().toISOString()),
+        byteSize: Number(c.size || 0),
+      });
     }
   } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+    warnDev(err);
   }
 
-  // 2. Merge PostgreSQL created articles
+  // Merge PostgreSQL created articles
   try {
     const createdArticles: any[] = await (db as any).wikiArticle.findMany({
       where: {
         source: "ixwiki",
-        revisions: {
-          some: {
-            author: { equals: username, mode: "insensitive" },
-          },
-        },
+        revisions: { some: { author: { equals: username, mode: "insensitive" } } },
       },
       take: limit,
-      select: {
-        title: true,
-        namespace: true,
-        createdAt: true,
-        wordCount: true,
-      },
+      select: { title: true, namespace: true, createdAt: true, wordCount: true },
     });
 
     for (const a of createdArticles) {
@@ -382,7 +306,7 @@ export async function ixwikiGetUserCreatedPages(
       }
     }
   } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+    warnDev(err);
   }
 
   return Array.from(pagesMap.values()).slice(0, limit);
@@ -401,49 +325,48 @@ interface IxwikiUserInfo {
   user_registration: string;
 }
 
+function buildUserInfo(
+  exists: boolean,
+  username: string,
+  { userId = 0, editCount = 0, registration = null, groups = [] }: Partial<IxwikiUserInfo> = {}
+): IxwikiUserInfo {
+  return {
+    exists,
+    userId,
+    username,
+    editCount,
+    registration,
+    groups,
+    user_id: userId,
+    user_name: username,
+    user_editcount: editCount,
+    user_registration: registration ?? "",
+  };
+}
+
 /** Live MediaWiki Action API read: the only source of a real user id, edit count and groups. */
 async function fetchLiveUserInfo(cleanUser: string): Promise<IxwikiUserInfo | null> {
   try {
-    const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
-    const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
-    const params = new URLSearchParams({
-      action: "query",
-      list: "users",
-      ususers: cleanUser,
-      usprop: "editcount|registration|groups",
-      format: "json",
-    });
-
-    const res = await fetch(`${apiEndpoint}?${params.toString()}`, {
-      headers: { "User-Agent": DEFAULT_USER_AGENT },
-      signal: AbortSignal.timeout(6000),
-    });
-
-    if (res.ok) {
-      const data = (await res.json()) as any;
-      const u = data?.query?.users?.[0];
-      if (u && !u.missing) {
-        const canonicalName = u.name || cleanUser;
-        const totalEdits = Number(u.editcount || 0);
-        const regDate: string | null = u.registration || null;
-        const groups = Array.isArray(u.groups) ? u.groups : [];
-
-        return {
-          exists: true,
-          userId: Number(u.userid || 0),
-          username: canonicalName,
-          editCount: totalEdits,
-          registration: regDate,
-          groups,
-          user_id: Number(u.userid || 0),
-          user_name: canonicalName,
-          user_editcount: totalEdits,
-          user_registration: regDate ?? "",
-        };
-      }
+    const data = await fetchIxwikiLive<{ query?: { users?: any[] } }>(
+      {
+        action: "query",
+        list: "users",
+        ususers: cleanUser,
+        usprop: "editcount|registration|groups",
+      },
+      6000
+    );
+    const u = data?.query?.users?.[0];
+    if (u && !u.missing) {
+      return buildUserInfo(true, u.name || cleanUser, {
+        userId: Number(u.userid || 0),
+        editCount: Number(u.editcount || 0),
+        registration: u.registration || null,
+        groups: Array.isArray(u.groups) ? u.groups : [],
+      });
     }
   } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+    warnDev(err);
   }
   return null;
 }
@@ -462,50 +385,26 @@ export async function ixwikiGetUserInfo(username: string): Promise<IxwikiUserInf
 
   // Local mirror: proves the name is known (revisions / Lorewards stats) but not its edit count or id.
   try {
+    const byName = { equals: cleanUser, mode: "insensitive" };
     const [revCount, stats, firstRev] = await Promise.all([
-      (db as any).wikiRevision.count({
-        where: { author: { equals: cleanUser, mode: "insensitive" } },
-      }),
+      (db as any).wikiRevision.count({ where: { author: byName } }),
       (db as any).lorewardUserStats.findFirst({
-        where: { username: { equals: cleanUser, mode: "insensitive" } },
+        where: { username: byName },
         select: { username: true },
       }),
       (db as any).wikiRevision.findFirst({
-        where: { author: { equals: cleanUser, mode: "insensitive" } },
+        where: { author: byName },
         orderBy: { createdAt: "asc" },
         select: { author: true },
       }),
     ]);
 
     if (revCount > 0 || stats) {
-      const canonicalName = firstRev?.author || stats?.username || cleanUser;
-      return {
-        exists: true,
-        userId: 0,
-        username: canonicalName,
-        editCount: 0,
-        registration: null,
-        groups: [],
-        user_id: 0,
-        user_name: canonicalName,
-        user_editcount: 0,
-        user_registration: "",
-      };
+      return buildUserInfo(true, firstRev?.author || stats?.username || cleanUser);
     }
   } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+    warnDev(err);
   }
 
-  return {
-    exists: false,
-    userId: 0,
-    username: cleanUser,
-    editCount: 0,
-    registration: null,
-    groups: [],
-    user_id: 0,
-    user_name: cleanUser,
-    user_editcount: 0,
-    user_registration: "",
-  };
+  return buildUserInfo(false, cleanUser);
 }

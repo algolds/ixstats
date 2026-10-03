@@ -67,9 +67,55 @@ export interface ArticleHeaderProps {
       metadata: string | null;
     }>;
   } | null;
-  tocLength: number;
-  onTocClick: () => void;
 }
+
+const YELLOW_BADGE = "border-yellow/20 bg-yellow/10 text-yellow-ink hover:bg-yellow/20";
+
+/** Badge and list styling per award category; `listIconColor` overrides `iconColor` in the popover list. */
+const AWARD_STYLES: Record<
+  string,
+  { Icon: typeof Trophy; text: string; classes: string; iconColor: string; listIconColor?: string }
+> = {
+  LOREWARD: {
+    Icon: Trophy,
+    text: "Loreward winner",
+    classes: YELLOW_BADGE,
+    iconColor: "text-yellow",
+  },
+  FEATURED: {
+    Icon: Star,
+    text: "Featured article",
+    classes: YELLOW_BADGE,
+    iconColor: "text-yellow",
+  },
+  COLLABORATION: {
+    Icon: Users,
+    text: "Collaborative work",
+    classes: "border-green/20 bg-green/10 text-green-ink hover:bg-green/20",
+    iconColor: "text-green",
+  },
+  PEER_REVIEW: {
+    Icon: CheckCircle2,
+    text: "Peer reviewed",
+    classes: "border-tint/20 bg-tint/10 text-tint hover:bg-tint/20",
+    iconColor: "text-blue",
+    listIconColor: "text-tint",
+  },
+  EDITOR_MILESTONE: {
+    Icon: Sparkles,
+    text: "Editor milestone",
+    classes: "border-indigo/20 bg-indigo/10 text-indigo-ink hover:bg-indigo/20",
+    iconColor: "text-indigo",
+  },
+};
+
+const awardStyle = (category: string) =>
+  AWARD_STYLES[category] ?? {
+    Icon: Trophy,
+    text: "Wiki award",
+    classes: YELLOW_BADGE,
+    iconColor: "text-yellow",
+  };
 
 export function WikiOSHeader({
   title,
@@ -80,9 +126,7 @@ export function WikiOSHeader({
   themeColors,
   authorInfo,
   awardsData,
-  _tocLength,
-  _onTocClick,
-}: ArticleHeaderProps & { _tocLength?: number; _onTocClick?: () => void }) {
+}: ArticleHeaderProps) {
   const rawBackdropUrl: string | null =
     typeof countryData?.flagUrl === "string"
       ? countryData.flagUrl
@@ -149,53 +193,7 @@ export function WikiOSHeader({
     return sorted[0]!;
   }, [awardsData]);
 
-  const badgeConfig = useMemo(() => {
-    if (!primaryAward) return null;
-    switch (primaryAward.category) {
-      case "LOREWARD":
-        return {
-          Icon: Trophy,
-          text: "Loreward winner",
-          classes: "border-yellow/20 bg-yellow/10 text-yellow-ink hover:bg-yellow/20",
-          iconColor: "text-yellow",
-        };
-      case "FEATURED":
-        return {
-          Icon: Star,
-          text: "Featured article",
-          classes: "border-yellow/20 bg-yellow/10 text-yellow-ink hover:bg-yellow/20",
-          iconColor: "text-yellow",
-        };
-      case "COLLABORATION":
-        return {
-          Icon: Users,
-          text: "Collaborative work",
-          classes: "border-green/20 bg-green/10 text-green-ink hover:bg-green/20",
-          iconColor: "text-green",
-        };
-      case "PEER_REVIEW":
-        return {
-          Icon: CheckCircle2,
-          text: "Peer reviewed",
-          classes: "border-tint/20 bg-tint/10 text-tint hover:bg-tint/20",
-          iconColor: "text-blue",
-        };
-      case "EDITOR_MILESTONE":
-        return {
-          Icon: Sparkles,
-          text: "Editor milestone",
-          classes: "border-indigo/20 bg-indigo/10 text-indigo-ink hover:bg-indigo/20",
-          iconColor: "text-indigo",
-        };
-      default:
-        return {
-          Icon: Trophy,
-          text: "Wiki award",
-          classes: "border-yellow/20 bg-yellow/10 text-yellow-ink hover:bg-yellow/20",
-          iconColor: "text-yellow",
-        };
-    }
-  }, [primaryAward]);
+  const badgeConfig = primaryAward ? awardStyle(primaryAward.category) : null;
 
   const containerStyle = {
     aspectRatio: aspectRatio ? `${aspectRatio}` : "3.2",
@@ -235,8 +233,6 @@ export function WikiOSHeader({
         themeColors={themeColors}
         authorInfo={authorInfo}
         awardsData={awardsData}
-        tocLength={_tocLength ?? 0}
-        onTocClick={_onTocClick ?? (() => {})}
         primaryAward={primaryAward}
         badgeConfig={badgeConfig}
         showCelebration={showCelebration}
@@ -371,24 +367,9 @@ export function WikiOSHeader({
                   <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
                     {awardsData.awards.map((award: any, idx: number) => {
                       const date = new Date(award.awardedAt || award.createdAt);
-                      let AwardIcon = Trophy;
-                      let iconColor = "text-yellow";
-                      if (award.category === "LOREWARD") {
-                        AwardIcon = Trophy;
-                        iconColor = "text-yellow";
-                      } else if (award.category === "FEATURED") {
-                        AwardIcon = Star;
-                        iconColor = "text-yellow";
-                      } else if (award.category === "COLLABORATION") {
-                        AwardIcon = Users;
-                        iconColor = "text-green";
-                      } else if (award.category === "PEER_REVIEW") {
-                        AwardIcon = CheckCircle2;
-                        iconColor = "text-tint";
-                      } else if (award.category === "EDITOR_MILESTONE") {
-                        AwardIcon = Sparkles;
-                        iconColor = "text-indigo";
-                      }
+                      const style = awardStyle(award.category);
+                      const AwardIcon = style.Icon;
+                      const iconColor = style.listIconColor ?? style.iconColor;
 
                       return (
                         <div

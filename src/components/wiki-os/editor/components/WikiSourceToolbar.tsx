@@ -1,8 +1,5 @@
 "use client";
-// src/components/wiki-os/editor/components/WikiSourceToolbar.tsx
-// Top bar and Wikitext formatting toolbar for WikiOS Source Editor (CodeMirror).
-
-import React from "react";
+import type { ComponentType } from "react";
 import {
   Bold,
   Italic,
@@ -12,7 +9,7 @@ import {
   ArrowDown as Subscript,
   List,
   NumberedListLeft as ListOrdered,
-  Quote as Quote,
+  Quote,
   Link as Link2,
   MediaImage as ImageIcon,
   Puzzle,
@@ -24,7 +21,7 @@ import {
   Table,
   NavArrowDown as ChevronDown,
   Eye,
-  EyeClosed as EyeClosed,
+  EyeClosed,
   Hashtag as Hash,
   OpenNewWindow as ExternalLink,
   Code as FileCode,
@@ -46,7 +43,6 @@ interface WikiSourceToolbarProps {
   setShowPreview: (show: boolean) => void;
   onSwitchToVisual?: () => void;
   onCancel: () => void;
-  onSave: () => void;
   handleSaveDraft: () => void;
 
   handleUndo: () => void;
@@ -57,6 +53,31 @@ interface WikiSourceToolbarProps {
 
   handleInsertStashedImage: (filename: string) => void;
 }
+
+type WrapButton = readonly [
+  icon: ComponentType<{ className?: string }>,
+  title: string,
+  before: string,
+  after: string,
+];
+
+const TEXT_STYLES: readonly WrapButton[] = [
+  [Bold, "Bold ('''text''')", "'''", "'''"],
+  [Italic, "Italic (''text'')", "''", "''"],
+  [Strikethrough, "Strikethrough (<s>text</s>)", "<s>", "</s>"],
+  [Underline, "Underline (<u>text</u>)", "<u>", "</u>"],
+  [Code, "Inline code (<code>text</code>)", "<code>", "</code>"],
+  [Superscript, "Superscript (<sup>text</sup>)", "<sup>", "</sup>"],
+  [Subscript, "Subscript (<sub>text</sub>)", "<sub>", "</sub>"],
+];
+
+const HEADING_LEVELS = [
+  { level: 1, textClass: "text-title-3", iconClass: "text-tint" },
+  { level: 2, textClass: "text-headline", iconClass: "text-indigo" },
+  { level: 3, textClass: "text-caption", iconClass: "text-yellow" },
+  { level: 4, textClass: "text-footnote opacity-80", iconClass: "text-green" },
+  { level: 5, textClass: "text-footnote opacity-60", iconClass: "text-label-secondary" },
+];
 
 export function WikiSourceToolbar({
   title,
@@ -116,43 +137,15 @@ export function WikiSourceToolbar({
         </div>
         <div className="wikios-editor-format-sep" />
 
-        {/* Text formatting */}
         <div className="wikios-editor-format-group">
-          <FmtBtn
-            icon={Bold}
-            title="Bold ('''text''')"
-            onClick={() => wrapSelection("'''", "'''")}
-          />
-          <FmtBtn
-            icon={Italic}
-            title="Italic (''text'')"
-            onClick={() => wrapSelection("''", "''")}
-          />
-          <FmtBtn
-            icon={Strikethrough}
-            title="Strikethrough (<s>text</s>)"
-            onClick={() => wrapSelection("<s>", "</s>")}
-          />
-          <FmtBtn
-            icon={Underline}
-            title="Underline (<u>text</u>)"
-            onClick={() => wrapSelection("<u>", "</u>")}
-          />
-          <FmtBtn
-            icon={Code}
-            title="Inline code (<code>text</code>)"
-            onClick={() => wrapSelection("<code>", "</code>")}
-          />
-          <FmtBtn
-            icon={Superscript}
-            title="Superscript (<sup>text</sup>)"
-            onClick={() => wrapSelection("<sup>", "</sup>")}
-          />
-          <FmtBtn
-            icon={Subscript}
-            title="Subscript (<sub>text</sub>)"
-            onClick={() => wrapSelection("<sub>", "</sub>")}
-          />
+          {TEXT_STYLES.map(([icon, title, before, after]) => (
+            <FmtBtn
+              key={title}
+              icon={icon}
+              title={title}
+              onClick={() => wrapSelection(before, after)}
+            />
+          ))}
         </div>
         <div className="wikios-editor-format-sep" />
 
@@ -167,51 +160,21 @@ export function WikiSourceToolbar({
             </PopoverTrigger>
             <PopoverContent align="start" className="text-label w-44 p-1">
               <div className="text-footnote flex flex-col gap-0.5">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => insertAtLine("= ", " =")}
-                  className="text-label text-title-3 w-full justify-start px-2"
-                >
-                  <Hash className="text-tint h-3.5 w-3.5" />
-                  <span>Heading 1</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => insertAtLine("== ", " ==")}
-                  className="text-label text-headline w-full justify-start px-2"
-                >
-                  <Hash className="text-indigo h-3.5 w-3.5" />
-                  <span>Heading 2</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => insertAtLine("=== ", " ===")}
-                  className="text-label text-caption w-full justify-start px-2"
-                >
-                  <Hash className="text-yellow h-3.5 w-3.5" />
-                  <span>Heading 3</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => insertAtLine("==== ", " ====")}
-                  className="text-label text-footnote w-full justify-start px-2 opacity-80"
-                >
-                  <Hash className="text-green h-3.5 w-3.5" />
-                  <span>Heading 4</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => insertAtLine("===== ", " =====")}
-                  className="text-label text-footnote w-full justify-start px-2 opacity-60"
-                >
-                  <Hash className="text-label-secondary h-3.5 w-3.5" />
-                  <span>Heading 5</span>
-                </Button>
+                {HEADING_LEVELS.map(({ level, textClass, iconClass }) => {
+                  const marks = "=".repeat(level);
+                  return (
+                    <Button
+                      key={level}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => insertAtLine(`${marks} `, ` ${marks}`)}
+                      className={`text-label w-full justify-start px-2 ${textClass}`}
+                    >
+                      <Hash className={`${iconClass} h-3.5 w-3.5`} />
+                      <span>Heading {level}</span>
+                    </Button>
+                  );
+                })}
               </div>
             </PopoverContent>
           </Popover>
@@ -313,7 +276,7 @@ function FmtBtn({
   onClick,
   active,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string }>;
   title: string;
   onClick: () => void;
   active?: boolean;

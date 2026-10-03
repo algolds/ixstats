@@ -13,25 +13,16 @@ import {
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
 import { WikiZoomDialog } from "~/components/wiki-os/shared/WikiZoomDialog";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-
-interface CommonsImage {
-  pageid: number;
-  title: string;
-  thumbUrl: string;
-  url: string;
-  descriptionUrl: string;
-  width: number;
-  height: number;
-  mime: string;
-  description: string;
-  artist: string;
-  license: string;
-}
+import {
+  CopyFormatSelector,
+  copyFormatText,
+  type CopyFormat,
+} from "~/components/wiki-os/media-search/CopyFormatSelector";
+import type { CommonsImage } from "~/components/wiki-os/media-search/types";
 
 interface CommonsDetailPanelProps {
   image: CommonsImage;
@@ -49,7 +40,7 @@ const getIsRegularWidth = () => window.matchMedia(REGULAR_WIDTH_QUERY).matches;
 export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) {
   const [copied, setCopied] = useState(false);
   const [copyImageSuccess, setCopyImageSuccess] = useState(false);
-  const [format, setFormat] = useState<"thumb" | "embed" | "raw" | "url">("thumb");
+  const [format, setFormat] = useState<CopyFormat>("thumb");
   const [isZoomed, setIsZoomed] = useState(false);
   const [previewError, setPreviewError] = useState(false);
   const { user } = useUser();
@@ -74,20 +65,10 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
   const stashMutation = api.wikios.stashPage.useMutation();
 
   const handleCopy = useCallback(() => {
-    let textToCopy = "";
-    if (format === "thumb") {
-      textToCopy = `[[${image.title}|thumb|${cleanTitle}]]`;
-    } else if (format === "embed") {
-      textToCopy = `[[${image.title}|250px]]`;
-    } else if (format === "raw") {
-      textToCopy = `[[${image.title}]]`;
-    } else if (format === "url") {
-      textToCopy = image.url;
-    }
-    navigator.clipboard.writeText(textToCopy);
+    navigator.clipboard.writeText(copyFormatText(format, image));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, [cleanTitle, format, image.title, image.url]);
+  }, [format, image]);
 
   const handleCopyImage = useCallback(async () => {
     try {
@@ -189,22 +170,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
 
       {/* Actions and format selector */}
       <div className="border-separator space-y-3 border-b p-3">
-        <div className="space-y-2">
-          <Eyebrow>Wikitext copy format</Eyebrow>
-          <SegmentedControl
-            aria-label="Wikitext copy format"
-            size="sm"
-            fullWidth
-            value={format}
-            onValueChange={setFormat}
-            options={[
-              { value: "thumb", label: "Thumb" },
-              { value: "embed", label: "Embed" },
-              { value: "raw", label: "File" },
-              { value: "url", label: "URL" },
-            ]}
-          />
-        </div>
+        <CopyFormatSelector value={format} onValueChange={setFormat} />
 
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={handleCopy} className="flex-1">

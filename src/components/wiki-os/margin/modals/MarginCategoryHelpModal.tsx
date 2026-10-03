@@ -1,29 +1,16 @@
 "use client";
-// src/components/wiki-os/margin/modals/MarginCategoryHelpModal.tsx
 // Interactive Category Guide modal for the 5 Ws Thread Categories in WikiOS Margin.
 import { Compass } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "~/components/ui/dialog";
 import { LORE_DIMENSIONS } from "../tabs/MarginThreadsTab";
 
-interface ThemeColors {
-  primary: string;
-  secondary: string;
-  accent: string;
-}
-
 interface MarginCategoryHelpModalProps {
   isOpen: boolean;
   onClose: () => void;
-  themeColors?: ThemeColors | null;
 }
 
-export function MarginCategoryHelpModal({
-  isOpen,
-  onClose,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  themeColors,
-}: MarginCategoryHelpModalProps) {
+export function MarginCategoryHelpModal({ isOpen, onClose }: MarginCategoryHelpModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="flex max-h-[85vh] max-w-lg flex-col gap-0 overflow-hidden p-0">

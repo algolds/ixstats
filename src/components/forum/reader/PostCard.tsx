@@ -1,10 +1,7 @@
 "use client";
-// src/components/forum/reader/PostCard.tsx
-// Renders a single forum post within a thread view.
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
-// oxlint-disable-next-line eslint/no-unused-vars
 import {
   Heart,
   Quote,
@@ -64,21 +61,131 @@ interface PostCardProps {
   onReply?: () => void;
 }
 
-function formatDate(unixTimestamp: number): string {
-  return new Date(unixTimestamp * 1000).toLocaleDateString("en-US", {
+type Attachment = PostCardProps["attachments"][number];
+
+const unixDate = (unixTimestamp: number, options: Intl.DateTimeFormatOptions) =>
+  new Date(unixTimestamp * 1000).toLocaleDateString("en-US", options);
+
+const formatDate = (ts: number) =>
+  unixDate(ts, {
     year: "numeric",
     month: "short",
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
   });
+
+const formatJoinDate = (ts: number) => unixDate(ts, { year: "numeric", month: "short" });
+
+function AttachmentList({ attachments }: { attachments: Attachment[] }) {
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {attachments.map((att) =>
+        att.contentType.startsWith("image/") && att.directUrl ? (
+          <a
+            key={att.id}
+            href={att.directUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block"
+          >
+            <img
+              src={att.thumbnailUrl ?? att.directUrl}
+              alt={att.filename}
+              className="rounded-control border-separator h-20 w-auto border object-cover"
+              loading="lazy"
+            />
+          </a>
+        ) : (
+          <a
+            key={att.id}
+            href={att.directUrl ?? "#"}
+            className="rounded-control border-separator text-footnote text-label-secondary hover:border-tint/30 hover:text-tint flex items-center gap-2 border px-3 py-2"
+            download
+          >
+            {att.filename}
+            <span className="text-label-secondary">({(att.fileSize / 1024).toFixed(0)} KB)</span>
+          </a>
+        )
+      )}
+    </div>
+  );
 }
 
-function formatJoinDate(unixTimestamp: number): string {
-  return new Date(unixTimestamp * 1000).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
+function DeletePostDialog({
+  postId,
+  threadId,
+  open,
+  onOpenChange,
+}: {
+  postId: number;
+  threadId: number;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const utils = api.useUtils();
+  const deleteMutation = api.forum.deletePost.useMutation({
+    onSuccess: () => {
+      onOpenChange(false);
+      utils.forum.getThread.invalidate({ threadId });
+    },
   });
+
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent className="sm:max-w-md">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete this post?</AlertDialogTitle>
+          <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+        </AlertDialogHeader>
+        {deleteMutation.error && (
+          <p className="text-footnote text-destructive">{deleteMutation.error.message}</p>
+        )}
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            variant="destructive"
+            disabled={deleteMutation.isPending}
+            onClick={(event) => {
+              // Stay open while the delete runs; onSuccess closes it.
+              event.preventDefault();
+              deleteMutation.mutate({ postId });
+            }}
+          >
+            <Trash2 aria-hidden="true" />
+            {deleteMutation.isPending ? "Deleting..." : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+/** Stash thread (replaces XenForo bookmarks, uses the LoreStash system). */
+function useThreadStash(threadId: number, threadTitle?: string) {
+  const utils = api.useUtils();
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const stashQuery = api.forum.isThreadStashed.useQuery({ threadId }, { staleTime: 30_000 });
+  const invalidate = () => utils.forum.isThreadStashed.invalidate({ threadId });
+
+  const stashMutation = api.forum.stashThread.useMutation({
+    onMutate: () => setIsBookmarked(true),
+    onSuccess: invalidate,
+    onError: () => setIsBookmarked(false),
+  });
+  const unstashMutation = api.forum.unstashThread.useMutation({
+    onMutate: () => setIsBookmarked(false),
+    onSuccess: invalidate,
+    onError: () => setIsBookmarked(true),
+  });
+
+  const isStashed = stashQuery.data?.stashed ?? isBookmarked;
+  const toggle = () =>
+    isStashed
+      ? unstashMutation.mutate({ threadId })
+      : stashMutation.mutate({ threadId, title: threadTitle ?? `Thread #${threadId}` });
+
+  return { isStashed, toggle };
 }
 
 export function PostCard({
@@ -107,21 +214,21 @@ export function PostCard({
   const [isEditing, setIsEditing] = useState(false);
   const [editMessage, setEditMessage] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
 
   const isOwnPost = currentForumUserId != null && currentForumUserId === authorId;
   const utils = api.useUtils();
   const { chatBadge } = useActiveCosmetics();
   const CrownIcon = (IconoirIcons as any)[chatBadge.icon] || IconoirIcons.Crown;
+  const showBadge = isOwnPost && chatBadge.enabled;
+  const { isStashed, toggle: toggleStash } = useThreadStash(threadId, threadTitle);
+  const memberHref = withBasePath(`/forum/members/${authorId}`);
 
   const reactMutation = api.forum.reactToPost.useMutation({
     onMutate: () => {
-      // Optimistic update
       setHasReacted((prev) => !prev);
       setLocalReactionScore((prev) => (hasReacted ? prev - 1 : prev + 1));
     },
     onError: () => {
-      // Revert on error
       setHasReacted((prev) => !prev);
       setLocalReactionScore(reactionScore);
     },
@@ -134,41 +241,14 @@ export function PostCard({
     },
   });
 
-  const deleteMutation = api.forum.deletePost.useMutation({
-    onSuccess: () => {
-      setShowDeleteConfirm(false);
-      utils.forum.getThread.invalidate({ threadId });
-    },
-  });
+  const handleQuote = () => {
+    // Strip HTML for the quote text
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = contentHtml;
+    onQuote?.(authorName, tempDiv.textContent ?? "");
+  };
 
-  // Stash thread (replaces XenForo bookmarks — uses LoreStash system)
-  const stashQuery = api.forum.isThreadStashed.useQuery({ threadId }, { staleTime: 30_000 });
-  const stashMutation = api.forum.stashThread.useMutation({
-    onMutate: () => setIsBookmarked(true),
-    onSuccess: () => utils.forum.isThreadStashed.invalidate({ threadId }),
-    onError: () => setIsBookmarked(false),
-  });
-  const unstashMutation = api.forum.unstashThread.useMutation({
-    onMutate: () => setIsBookmarked(false),
-    onSuccess: () => utils.forum.isThreadStashed.invalidate({ threadId }),
-    onError: () => setIsBookmarked(true),
-  });
-
-  // Sync local state with query
-  const isStashed = stashQuery.data?.stashed ?? isBookmarked;
-
-  const handleReact = useCallback(() => {
-    reactMutation.mutate({ postId });
-  }, [postId, reactMutation]);
-
-  const handleQuote = useCallback(() => {
-    if (onQuote) {
-      // Strip HTML for quote text
-      const tempDiv = document.createElement("div");
-      tempDiv.innerHTML = contentHtml;
-      onQuote(authorName, tempDiv.textContent ?? "");
-    }
-  }, [onQuote, authorName, contentHtml]);
+  const initial = authorName.charAt(0).toUpperCase();
 
   return (
     <article
@@ -181,7 +261,7 @@ export function PostCard({
     >
       {/* Author sidebar (desktop only) */}
       <div className="forum-post-author">
-        <Link href={withBasePath(`/forum/members/${authorId}`)}>
+        <Link href={memberHref}>
           {authorAvatar ? (
             <img
               src={authorAvatar}
@@ -192,16 +272,13 @@ export function PostCard({
             />
           ) : (
             <div className="forum-post-avatar bg-tint-fill text-tint text-title-3 flex items-center justify-center">
-              {authorName.charAt(0).toUpperCase()}
+              {initial}
             </div>
           )}
         </Link>
-        <Link
-          href={withBasePath(`/forum/members/${authorId}`)}
-          className="forum-post-username flex items-center gap-1"
-        >
+        <Link href={memberHref} className="forum-post-username flex items-center gap-1">
           <span>{authorName}</span>
-          {isOwnPost && chatBadge.enabled && (
+          {showBadge && (
             <CrownIcon className="h-3.5 w-3.5 shrink-0" style={{ color: chatBadge.color }} />
           )}
         </Link>
@@ -213,9 +290,7 @@ export function PostCard({
         </div>
       </div>
 
-      {/* Post body */}
       <div className="forum-post-body">
-        {/* Header: mobile author + date */}
         <div className="forum-post-header">
           {/* Mobile-only inline author */}
           <div className="flex items-center gap-2 md:hidden">
@@ -229,15 +304,15 @@ export function PostCard({
               />
             ) : (
               <div className="bg-tint-fill text-tint text-footnote flex size-6 items-center justify-center rounded-full font-medium">
-                {authorName.charAt(0).toUpperCase()}
+                {initial}
               </div>
             )}
             <Link
-              href={withBasePath(`/forum/members/${authorId}`)}
+              href={memberHref}
               className="text-footnote text-label flex items-center gap-1 font-medium"
             >
               <span>{authorName}</span>
-              {isOwnPost && chatBadge.enabled && (
+              {showBadge && (
                 <CrownIcon className="h-3 w-3 shrink-0" style={{ color: chatBadge.color }} />
               )}
             </Link>
@@ -246,7 +321,6 @@ export function PostCard({
           <span className="text-label-secondary">#{position + 1}</span>
         </div>
 
-        {/* Content — edit mode or rendered HTML */}
         {isEditing ? (
           <div className="space-y-2">
             <Textarea
@@ -278,79 +352,20 @@ export function PostCard({
           />
         )}
 
-        {/* Delete confirmation */}
-        <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-          <AlertDialogContent className="sm:max-w-md">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete this post?</AlertDialogTitle>
-              <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
-            </AlertDialogHeader>
-            {deleteMutation.error && (
-              <p className="text-footnote text-destructive">{deleteMutation.error.message}</p>
-            )}
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                variant="destructive"
-                disabled={deleteMutation.isPending}
-                onClick={(event) => {
-                  // Stay open while the delete runs; onSuccess closes it.
-                  event.preventDefault();
-                  deleteMutation.mutate({ postId });
-                }}
-              >
-                <Trash2 aria-hidden="true" />
-                {deleteMutation.isPending ? "Deleting..." : "Delete"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <DeletePostDialog
+          postId={postId}
+          threadId={threadId}
+          open={showDeleteConfirm}
+          onOpenChange={setShowDeleteConfirm}
+        />
 
-        {/* Attachments */}
-        {attachments.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {attachments.map((att) => {
-              if (att.contentType.startsWith("image/") && att.directUrl) {
-                return (
-                  <a
-                    key={att.id}
-                    href={att.directUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block"
-                  >
-                    <img
-                      src={att.thumbnailUrl ?? att.directUrl}
-                      alt={att.filename}
-                      className="rounded-control border-separator h-20 w-auto border object-cover"
-                      loading="lazy"
-                    />
-                  </a>
-                );
-              }
-              return (
-                <a
-                  key={att.id}
-                  href={att.directUrl ?? "#"}
-                  className="rounded-control border-separator text-footnote text-label-secondary hover:border-tint/30 hover:text-tint flex items-center gap-2 border px-3 py-2"
-                  download
-                >
-                  {att.filename}
-                  <span className="text-label-secondary">
-                    ({(att.fileSize / 1024).toFixed(0)} KB)
-                  </span>
-                </a>
-              );
-            })}
-          </div>
-        )}
+        {attachments.length > 0 && <AttachmentList attachments={attachments} />}
 
-        {/* Reaction bar + actions */}
         <div className="forum-reactions">
           <ActionPill
             size="md"
             pressed={hasReacted}
-            onClick={handleReact}
+            onClick={() => reactMutation.mutate({ postId })}
             icon={<Heart className={cn(hasReacted && "fill-current")} />}
             count={localReactionScore > 0 ? localReactionScore : null}
             aria-label="Like"
@@ -361,13 +376,7 @@ export function PostCard({
             <ActionPill
               size="md"
               pressed={isStashed}
-              onClick={() => {
-                if (isStashed) {
-                  unstashMutation.mutate({ threadId });
-                } else {
-                  stashMutation.mutate({ threadId, title: threadTitle ?? `Thread #${threadId}` });
-                }
-              }}
+              onClick={toggleStash}
               icon={<Bookmark className={cn(isStashed && "fill-current")} />}
               aria-label={isStashed ? "Remove from stash" : "Stash thread"}
               title={isStashed ? "Remove from stash" : "Stash thread"}

@@ -48,6 +48,144 @@ interface GlassCanvasComposerProps {
   hasCountry?: boolean;
 }
 
+function NoAccountsCard({
+  hasCountry,
+  onCreateAccount,
+  onPostAsYourself,
+  isPending,
+}: {
+  hasCountry: boolean;
+  onCreateAccount?: () => void;
+  onPostAsYourself: () => void;
+  isPending: boolean;
+}) {
+  return (
+    <Card padding="lg">
+      <div className="flex items-start justify-between gap-5">
+        <div className="flex items-start gap-3">
+          <div className="bg-tint-fill text-tint rounded-control flex size-9 shrink-0 items-center justify-center">
+            <Newspaper className="size-5" aria-hidden="true" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h4 className="text-headline text-label">
+              Post as yourself, or create a ThinkPages Account
+            </h4>
+            <p className="text-callout text-label-secondary mt-1">
+              Post under your own name, or set up an in-character account for your nation to publish
+              articles and join global community discussions.
+            </p>
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-col gap-2">
+          <Button size="sm" onClick={onPostAsYourself} disabled={isPending}>
+            {isPending ? "Setting up..." : "Post as yourself"}
+          </Button>
+          {hasCountry && (
+            <Button size="sm" variant="outline" onClick={onCreateAccount}>
+              Create account
+            </Button>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function ComposerSkeleton() {
+  return (
+    <Card padding="md" aria-busy="true">
+      <div className="mb-4 flex items-center gap-3">
+        <Skeleton className="size-8 rounded-full" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-3 w-16" />
+        </div>
+      </div>
+      <Skeleton className="rounded-control mb-3 h-16 w-full" />
+      <div className="flex items-center justify-between">
+        <div className="flex gap-2">
+          <Skeleton className="size-7" />
+          <Skeleton className="size-7" />
+          <Skeleton className="size-7" />
+        </div>
+        <Skeleton className="h-7 w-16" />
+      </div>
+    </Card>
+  );
+}
+
+function RepostPreview({ originalPost }: { originalPost: any }) {
+  const author = originalPost.account;
+  return (
+    <div className="bg-surface-secondary rounded-row mb-1 p-3">
+      <div className="text-footnote text-label-secondary mb-2 flex items-center gap-2">
+        <Repeat2 className="size-3.5" aria-hidden="true" />
+        <span>Reposting</span>
+      </div>
+      <div className="mb-2 flex items-center gap-2">
+        <Avatar className="size-5">
+          <AvatarImage src={author?.profileImageUrl} alt={author?.displayName} />
+          <AvatarFallback className="bg-fill-3 text-caption text-label-secondary">
+            {author?.displayName?.charAt(0) || "?"}
+          </AvatarFallback>
+        </Avatar>
+        <span className="text-headline text-label">{author?.displayName || "Unknown"}</span>
+        <span className="text-label-secondary text-footnote">@{author?.username || "unknown"}</span>
+      </div>
+      <div className="text-label-secondary text-footnote line-clamp-2">{originalPost.content}</div>
+    </div>
+  );
+}
+
+function PollSummary({
+  pollDraft,
+  onEdit,
+  onRemove,
+}: {
+  pollDraft: NonNullable<ReturnType<typeof useGlassCanvasComposer>["pollDraft"]>;
+  onEdit: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={springSmooth}
+      className="bg-surface-secondary rounded-row mt-2 flex items-center justify-between p-3"
+    >
+      <div className="flex items-center gap-2">
+        <Vote className="text-tint size-4 shrink-0" aria-hidden="true" />
+        <div className="min-w-0">
+          <p className="text-headline text-label truncate">
+            {pollDraft.question || "Untitled poll"}
+          </p>
+          <p className="text-label-secondary text-footnote">
+            {pollDraft.pollType === "choice" ? "Choice poll" : "Feature poll"} •{" "}
+            {pollDraft.options.filter((o) => o.trim()).length} options
+          </p>
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <Button type="button" variant="secondary" size="sm" onClick={onEdit}>
+          Edit poll
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={onRemove}
+          aria-label="Remove poll"
+          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+        >
+          <X />
+        </Button>
+      </div>
+    </motion.div>
+  );
+}
+
 export function GlassCanvasComposer({
   account,
   accounts,
@@ -64,6 +202,14 @@ export function GlassCanvasComposer({
   isSignedIn = true,
   hasCountry = true,
 }: GlassCanvasComposerProps) {
+  const composer = useGlassCanvasComposer({
+    account,
+    countryId,
+    isOwner,
+    onPost,
+    placeholder,
+    repostData,
+  });
   const {
     notify,
     isRegularUser,
@@ -74,19 +220,11 @@ export function GlassCanvasComposer({
     plainText,
     setPlainText,
     selectedVisualizations,
-    showVisualizationPanel,
-    setShowVisualizationPanel,
-    isGeneratingVisualization,
     showAccountManager,
     setShowAccountManager,
     selectedImages,
     showMediaModal,
     setShowMediaModal,
-    isUploadingImage,
-    postToDiscord,
-    setPostToDiscord,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    isEditorFocused,
     setIsEditorFocused,
     pollDraft,
     setPollDraft,
@@ -95,54 +233,10 @@ export function GlassCanvasComposer({
     resolvedPlaceholder,
     accountAvatarUrl,
     getAccountAvatar,
-    handleInsertGif,
-    showActionBar,
-    hasEconomicData,
-    hasHistoricalData,
-    hasDiplomaticData,
-    hasTradeData,
-    hasVitalityData,
-    isLoadingEconomic,
-    isLoadingHistory,
-    isLoadingDiplomatic,
-    isLoadingTrade,
-    isLoadingVitality,
-    createPostMutation,
-    handleSubmit,
-    addVisualization,
     removeVisualization,
     handleImageSelect,
     removeImage,
-    economicData,
-    gdpHistoryData,
-    diplomaticData,
-    tradeData,
-    vitalityData,
-  } = useGlassCanvasComposer({
-    account,
-    countryId,
-    isOwner,
-    onPost,
-    placeholder,
-    repostData,
-  });
-
-  const getVisualizationPreview = (viz: any) => {
-    return (
-      <LiveDataCard
-        type={viz.type}
-        title={viz.title}
-        countryId={countryId}
-        preloadedData={{
-          economicData,
-          gdpHistoryData,
-          diplomaticData,
-          tradeData,
-          vitalityData,
-        }}
-      />
-    );
-  };
+  } = composer;
 
   const { postAsYourself, isPending: isPostAsYourselfPending } = usePostAsYourself(onAccountSelect);
   const hasPersonalAccount = accounts.some(isPersonalAccount);
@@ -152,60 +246,17 @@ export function GlassCanvasComposer({
 
   if (accounts.length === 0) {
     return (
-      <Card padding="lg">
-        <div className="flex items-start justify-between gap-5">
-          <div className="flex items-start gap-3">
-            <div className="bg-tint-fill text-tint rounded-control flex size-9 shrink-0 items-center justify-center">
-              <Newspaper className="size-5" aria-hidden="true" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h4 className="text-headline text-label">
-                Post as yourself, or create a ThinkPages Account
-              </h4>
-              <p className="text-callout text-label-secondary mt-1">
-                Post under your own name, or set up an in-character account for your nation to
-                publish articles and join global community discussions.
-              </p>
-            </div>
-          </div>
-          <div className="flex shrink-0 flex-col gap-2">
-            <Button size="sm" onClick={postAsYourself} disabled={isPostAsYourselfPending}>
-              {isPostAsYourselfPending ? "Setting up..." : "Post as yourself"}
-            </Button>
-            {hasCountry && (
-              <Button size="sm" variant="outline" onClick={onCreateAccount}>
-                Create account
-              </Button>
-            )}
-          </div>
-        </div>
-      </Card>
+      <NoAccountsCard
+        hasCountry={hasCountry}
+        onCreateAccount={onCreateAccount}
+        onPostAsYourself={postAsYourself}
+        isPending={isPostAsYourselfPending}
+      />
     );
   }
 
   // A personal persona needs no country, so only a missing selection blocks the composer.
-  if (!account) {
-    return (
-      <Card padding="md" aria-busy="true">
-        <div className="mb-4 flex items-center gap-3">
-          <Skeleton className="size-8 rounded-full" />
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="h-3 w-16" />
-          </div>
-        </div>
-        <Skeleton className="rounded-control mb-3 h-16 w-full" />
-        <div className="flex items-center justify-between">
-          <div className="flex gap-2">
-            <Skeleton className="size-7" />
-            <Skeleton className="size-7" />
-            <Skeleton className="size-7" />
-          </div>
-          <Skeleton className="h-7 w-16" />
-        </div>
-      </Card>
-    );
-  }
+  if (!account) return <ComposerSkeleton />;
 
   return (
     <motion.div
@@ -232,34 +283,7 @@ export function GlassCanvasComposer({
 
         {/* Right column: Editor + Previews + Actions */}
         <div className="flex min-w-0 flex-1 flex-col gap-2">
-          {repostData && (
-            <div className="bg-surface-secondary rounded-row mb-1 p-3">
-              <div className="text-footnote text-label-secondary mb-2 flex items-center gap-2">
-                <Repeat2 className="size-3.5" aria-hidden="true" />
-                <span>Reposting</span>
-              </div>
-              <div className="mb-2 flex items-center gap-2">
-                <Avatar className="size-5">
-                  <AvatarImage
-                    src={repostData.originalPost.account?.profileImageUrl}
-                    alt={repostData.originalPost.account?.displayName}
-                  />
-                  <AvatarFallback className="bg-fill-3 text-caption text-label-secondary">
-                    {repostData.originalPost.account?.displayName?.charAt(0) || "?"}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-headline text-label">
-                  {repostData.originalPost.account?.displayName || "Unknown"}
-                </span>
-                <span className="text-label-secondary text-footnote">
-                  @{repostData.originalPost.account?.username || "unknown"}
-                </span>
-              </div>
-              <div className="text-label-secondary text-footnote line-clamp-2">
-                {repostData.originalPost.content}
-              </div>
-            </div>
-          )}
+          {repostData && <RepostPreview originalPost={repostData.originalPost} />}
 
           <div className="space-y-2">
             <GlassPlateEditor
@@ -318,7 +342,18 @@ export function GlassCanvasComposer({
                   </button>
                   <div className="space-y-2">
                     <div className="text-caption text-label">{viz.title}</div>
-                    {getVisualizationPreview(viz)}
+                    <LiveDataCard
+                      type={viz.type}
+                      title={viz.title}
+                      countryId={countryId}
+                      preloadedData={{
+                        economicData: composer.economicData,
+                        gdpHistoryData: composer.gdpHistoryData,
+                        diplomaticData: composer.diplomaticData,
+                        tradeData: composer.tradeData,
+                        vitalityData: composer.vitalityData,
+                      }}
+                    />
                   </div>
                 </div>
               ))}
@@ -326,86 +361,19 @@ export function GlassCanvasComposer({
           )}
 
           {pollDraft && (
-            <motion.div
-              layout
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={springSmooth}
-              className="bg-surface-secondary rounded-row mt-2 flex items-center justify-between p-3"
-            >
-              <div className="flex items-center gap-2">
-                <Vote className="text-tint size-4 shrink-0" aria-hidden="true" />
-                <div className="min-w-0">
-                  <p className="text-headline text-label truncate">
-                    {pollDraft.question || "Untitled poll"}
-                  </p>
-                  <p className="text-label-secondary text-footnote">
-                    {pollDraft.pollType === "choice" ? "Choice poll" : "Feature poll"} •{" "}
-                    {pollDraft.options.filter((o) => o.trim()).length} options
-                  </p>
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setShowPollModal(true)}
-                >
-                  Edit poll
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => setPollDraft(null)}
-                  aria-label="Remove poll"
-                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <X />
-                </Button>
-              </div>
-            </motion.div>
+            <PollSummary
+              pollDraft={pollDraft}
+              onEdit={() => setShowPollModal(true)}
+              onRemove={() => setPollDraft(null)}
+            />
           )}
 
-          {/* Live Data Drawer */}
-          <ComposerLiveDataDrawer
-            showVisualizationPanel={showVisualizationPanel}
-            isGeneratingVisualization={isGeneratingVisualization}
-            isLoadingEconomic={isLoadingEconomic}
-            isLoadingHistory={isLoadingHistory}
-            isLoadingDiplomatic={isLoadingDiplomatic}
-            isLoadingTrade={isLoadingTrade}
-            isLoadingVitality={isLoadingVitality}
-            hasEconomicData={hasEconomicData}
-            hasHistoricalData={hasHistoricalData}
-            hasDiplomaticData={hasDiplomaticData}
-            hasTradeData={hasTradeData}
-            hasVitalityData={hasVitalityData}
-            addVisualization={addVisualization}
-          />
+          <ComposerLiveDataDrawer {...composer} />
 
-          {/* Action Bar */}
           <ComposerActionBar
-            showActionBar={showActionBar}
+            {...composer}
             remainingChars={remainingChars}
-            showVisualizationPanel={showVisualizationPanel}
-            setShowVisualizationPanel={setShowVisualizationPanel}
-            isGeneratingVisualization={isGeneratingVisualization}
-            setShowMediaModal={setShowMediaModal}
-            isUploadingImage={isUploadingImage}
-            selectedImages={selectedImages}
-            handleInsertGif={handleInsertGif}
-            pollDraft={pollDraft}
-            setPollDraft={setPollDraft}
-            setShowPollModal={setShowPollModal}
-            postToDiscord={postToDiscord}
-            setPostToDiscord={setPostToDiscord}
-            handleSubmit={handleSubmit}
-            isPending={createPostMutation.isPending}
-            plainText={plainText}
-            selectedVisualizations={selectedVisualizations}
+            isPending={composer.createPostMutation.isPending}
           />
         </div>
       </div>
