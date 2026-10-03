@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { api } from "~/trpc/react";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import type { useMapRealm } from "~/components/maps/core/MapRealmContext";
@@ -80,13 +80,32 @@ export function useEditorFeatureProperties({
     [mapSelectedCountry, createCountryFromShapeMutation, realm]
   );
 
+  // What the editable fields were last loaded with, to tell unsaved edits from a plain refetch.
+  const syncedRef = useRef({ featureId: "", wikiPageTitle: "", json: "" });
+  const draftRef = useRef({ wikiPageTitle, json: propertiesJsonString });
+  // oxlint-disable-next-line -- latest-value ref read by the details effect
+  draftRef.current = { wikiPageTitle, json: propertiesJsonString };
+
+  // Reload from the server when another feature is selected or nothing was edited; a refetch of
+  // the same feature must not wipe in-progress edits.
   useEffect(() => {
-    setWikiPageTitle(featureDetails?.wikiPageTitle ?? "");
-    setPropertiesJsonString(
-      featureDetails ? JSON.stringify(featureDetails.properties ?? {}, null, 2) : ""
-    );
+    const incoming = {
+      featureId: mapSelectedCountry?.featureId ?? "",
+      wikiPageTitle: featureDetails?.wikiPageTitle ?? "",
+      json: featureDetails ? JSON.stringify(featureDetails.properties ?? {}, null, 2) : "",
+    };
+    const synced = syncedRef.current;
+    const hasUnsavedEdits =
+      draftRef.current.wikiPageTitle !== synced.wikiPageTitle ||
+      draftRef.current.json !== synced.json;
+    if (incoming.featureId === synced.featureId && hasUnsavedEdits) return;
+
+    syncedRef.current = incoming;
+    setWikiPageTitle(incoming.wikiPageTitle);
+    setPropertiesJsonString(incoming.json);
     setIsEditingJson(false);
     setJsonError(null);
+    // oxlint-disable-next-line -- keyed on the loaded details; the selection id is read at that time
   }, [featureDetails]);
 
   useEffect(() => {
