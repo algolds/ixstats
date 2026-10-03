@@ -46,7 +46,7 @@ export const TemplateDropdown = memo(function TemplateDropdown({
           variant="ghost"
           size={triggerContent ? "sm" : "icon-sm"}
           className={cn("text-label-secondary", triggerClassName)}
-          title="Insert Template"
+          title="Insert template"
           aria-label={triggerContent ? undefined : "Insert Template"}
           onClick={onBeforeOpen}
         >
@@ -62,7 +62,7 @@ export const TemplateDropdown = memo(function TemplateDropdown({
             className={itemClass}
           >
             <Puzzle className="text-tint h-3.5 w-3.5" />
-            <span>Infobox Country</span>
+            <span>Infobox country</span>
           </Button>
           <Button
             variant="ghost"
@@ -71,7 +71,7 @@ export const TemplateDropdown = memo(function TemplateDropdown({
             className={itemClass}
           >
             <Sparkles className="text-yellow h-3.5 w-3.5" />
-            <span>Country Stats</span>
+            <span>Country stats</span>
           </Button>
           <Button
             variant="ghost"
@@ -80,7 +80,7 @@ export const TemplateDropdown = memo(function TemplateDropdown({
             className={itemClass}
           >
             <Sparkles className="text-teal h-3.5 w-3.5" />
-            <span>Business Stats</span>
+            <span>Business stats</span>
           </Button>
           <Button
             variant="ghost"

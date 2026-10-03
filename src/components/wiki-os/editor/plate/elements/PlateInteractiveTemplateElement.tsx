@@ -216,7 +216,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
         </div>
       </div>
 
-      {/* ─── Dedicated Apple-Design Dialog Modal ─── */}
+      {/* ─── Dialog ─── */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="bg-surface border-separator shadow-floating rounded-card flex max-h-[85vh] max-w-2xl flex-col overflow-hidden border p-0">
           {/* Header */}
@@ -320,7 +320,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                 {/* Custom / Discovered fields */}
                 {customParamKeys.length > 0 && (
                   <div className="border-separator space-y-3 border-t pt-3">
-                    <div className="text-eyebrow text-label-secondary">Additional Parameters</div>
+                    <div className="text-eyebrow text-label-secondary">Additional parameters</div>
                     {customParamKeys.map((key) => {
                       const val = params[key] ?? "";
                       const inputId = `${fallbackId}-${key}`;
@@ -368,7 +368,11 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                         <Button size="sm" type="submit">
                           Add
                         </Button>
-                        <Button variant="secondary" size="sm" onClick={() => setShowAddParam(false)}>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setShowAddParam(false)}
+                        >
                           Cancel
                         </Button>
                       </form>
@@ -463,7 +467,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
               className="text-red hover:bg-red/10"
             >
               <TrashIcon className="h-3.5 w-3.5" />
-              <span>Remove Template</span>
+              <span>Remove template</span>
             </Button>
 
             <div className="flex items-center gap-2">

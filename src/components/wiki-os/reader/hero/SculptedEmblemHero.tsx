@@ -30,13 +30,12 @@ import {
 import { motion, useSpring, AnimatePresence, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { IxWikiLogo } from "~/components/wiki-os/shared/IxWikiLogo";
 import { IxWikiWordmark } from "~/components/wiki-os/shared/IxWikiWordmark";
 import { IxTime } from "~/lib/ixtime/core";
 import { getPrimeMeridianWeather, type WeatherIconType } from "~/lib/ixtime/weather";
 import { HeroSpotlightSearch } from "./HeroSpotlightSearch";
-import { FeaturedArticleRefractionCard, FeaturedThumbnailFrame } from "./FeaturedImageRefraction";
+import { FeaturedArticleCard, FeaturedThumbnailFrame } from "./FeaturedArticle";
 import type { WikiHeroProps } from "./types";
 import { Button } from "~/components/ui/button";
 
@@ -126,7 +125,6 @@ export function SculptedEmblemHero({
   activePrompt,
   featuredArticleHtml,
   featuredArticleData,
-  refractionMode = "ambient-underglow",
   onOpenSearch,
   onOpenBlurbs,
 }: WikiHeroProps) {
@@ -189,7 +187,7 @@ export function SculptedEmblemHero({
 
   return (
     <section
-      aria-label="WikiOS Sculpted Emblem Hero"
+      aria-label="WikiOS sculpted emblem hero"
       className="relative flex w-full flex-col items-center justify-center pt-1 pb-2 text-center select-none sm:pb-3"
     >
       {/* ── 1. The Free-Standing Canonical Laurel Sphere & Typographic Lockup (Centered) ── */}
@@ -218,8 +216,8 @@ export function SculptedEmblemHero({
             className="group-hover/brand:text-label group-focus-visible/brand:text-label leading-none transition-colors"
           />
           <div className="mt-2 flex items-center justify-center">
-            <span className="text-label-secondary text-eyebrow sm:text-footnote leading-none tracking-[0.18em]">
-              Worldbuilding Encyclopedia
+            <span className="text-label-secondary text-eyebrow sm:text-footnote leading-none">
+              Worldbuilding encyclopedia
             </span>
           </div>
         </div>
@@ -251,7 +249,7 @@ export function SculptedEmblemHero({
             "text-caption flex cursor-pointer items-center gap-2 rounded-full px-3 py-1",
             "material-thin border-separator border",
             "hover:border-yellow/40 hover:bg-yellow/6",
-            "text-label-secondary hover:text-label group facet-press focus-visible:ring-tint focus-visible:ring-2 focus-visible:outline-none"
+            "text-label-secondary hover:text-label group focus-visible:ring-tint focus-visible:ring-2 focus-visible:outline-none"
           )}
         >
           <IconoirTrophy
@@ -270,14 +268,14 @@ export function SculptedEmblemHero({
             "text-caption flex cursor-pointer items-center gap-2 rounded-full px-3 py-1",
             "material-thin border-separator border",
             "hover:border-tint/40 hover:bg-tint-fill",
-            "text-label-secondary hover:text-label group facet-press focus-visible:ring-tint focus-visible:ring-2 focus-visible:outline-none"
+            "text-label-secondary hover:text-label group focus-visible:ring-tint focus-visible:ring-2 focus-visible:outline-none"
           )}
         >
           <IconoirOpenBook
             aria-hidden="true"
             className="text-tint h-3.5 w-3.5 transition-transform motion-safe:group-hover:scale-110 motion-safe:group-focus-visible:scale-110"
           />
-          <span>Getting Started</span>
+          <span>Getting started</span>
         </Link>
 
         {/* Action 3: Resources */}
@@ -289,7 +287,7 @@ export function SculptedEmblemHero({
             "text-caption flex cursor-pointer items-center gap-2 rounded-full px-3 py-1",
             "material-thin border-separator border",
             "hover:border-green/40 hover:bg-green/6",
-            "text-label-secondary hover:text-label group facet-press focus-visible:ring-tint focus-visible:ring-2 focus-visible:outline-none"
+            "text-label-secondary hover:text-label group focus-visible:ring-tint focus-visible:ring-2 focus-visible:outline-none"
           )}
         >
           <IconoirFolder
@@ -311,16 +309,15 @@ export function SculptedEmblemHero({
         <div
           className={cn(
             "rounded-card relative flex min-h-[82px] flex-col justify-between overflow-hidden p-3 sm:min-h-[86px] sm:p-4",
-            "material-hero",
+            "bg-surface border-separator shadow-card border",
             "group text-left"
           )}
         >
-          <TextureOverlay texture="paperGrain" opacity={0.05} />
           <div className="mb-1 flex w-full items-center justify-between">
             <span className="text-eyebrow text-yellow-ink flex items-center gap-2">
               <History aria-hidden="true" className="text-yellow h-3.5 w-3.5" /> Timeline
             </span>
-            {/* Apple-grade stepper pill */}
+            {/* stepper pill */}
             <div className="rounded-control-sm border-separator bg-fill-4 flex items-center gap-0.5 border px-1 py-0.5">
               <Button
                 variant="ghost"
@@ -336,7 +333,7 @@ export function SculptedEmblemHero({
               >
                 <ChevronLeft aria-hidden="true" className="h-3 w-3" />
               </Button>
-              <span className="text-label-secondary text-caption font-data px-1 select-none">
+              <span className="text-label-secondary text-caption px-1 tabular-nums select-none">
                 {chronicleIndex + 1}/{CANON_CHRONICLE_EVENTS.length}
               </span>
               <Button
@@ -372,7 +369,7 @@ export function SculptedEmblemHero({
                   className="group/event rounded-control-sm focus-visible:outline-tint facet-press-subtle block outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="py-0.2 rounded-control-sm border-yellow/20 bg-yellow/10 text-caption text-yellow-ink font-data shrink-0 border px-2 font-semibold">
+                    <span className="py-0.2 rounded-control-sm border-yellow/20 bg-yellow/10 text-caption text-yellow-ink shrink-0 border px-2 font-semibold tabular-nums">
                       {CANON_CHRONICLE_EVENTS[chronicleIndex].year}
                     </span>
                     <span className="text-label text-caption group-hover/event:text-yellow-ink group-focus-visible/event:text-yellow-ink sm:text-callout truncate leading-tight font-semibold transition-colors">
@@ -397,21 +394,20 @@ export function SculptedEmblemHero({
             data-cuelume-hover="tick"
             className={cn(
               "rounded-card relative flex min-h-[82px] flex-col justify-between overflow-hidden p-3 sm:min-h-[86px] sm:p-4",
-              "material-hero facet-lift",
+              "bg-surface border-separator shadow-card facet-lift border",
               "group facet-press facet-press-subtle cursor-pointer text-left"
             )}
           >
-            <TextureOverlay texture="paperGrain" opacity={0.05} />
             <div className="mb-1 flex w-full items-center justify-between">
-              <span className="text-eyebrow text-facet-accent-ink flex items-center gap-2">
+              <span className="text-eyebrow text-tint flex items-center gap-2">
                 <MessageSquare aria-hidden="true" className="text-tint h-3.5 w-3.5" /> Blurb of the
                 Week
               </span>
               <div className="flex items-center gap-1">
                 {activePrompt._count?.responses !== undefined &&
                 activePrompt._count.responses > 0 ? (
-                  <span className="border-tint/20 bg-tint/10 text-caption text-facet-accent-ink group-hover:border-tint/30 group-hover:bg-tint/20 group-focus-visible:border-tint/30 group-focus-visible:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
-                    <span className="font-data">{activePrompt._count.responses}</span>
+                  <span className="border-tint/20 bg-tint/10 text-caption text-tint group-hover:border-tint/30 group-hover:bg-tint/20 group-focus-visible:border-tint/30 group-focus-visible:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
+                    <span className="tabular-nums">{activePrompt._count.responses}</span>
                     <span className="opacity-75">
                       {activePrompt._count.responses === 1 ? "response" : "responses"}
                     </span>
@@ -421,7 +417,7 @@ export function SculptedEmblemHero({
                     />
                   </span>
                 ) : (
-                  <span className="border-tint/20 bg-tint/10 text-caption text-facet-accent-ink group-hover:border-tint/30 group-hover:bg-tint/20 group-focus-visible:border-tint/30 group-focus-visible:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
+                  <span className="border-tint/20 bg-tint/10 text-caption text-tint group-hover:border-tint/30 group-hover:bg-tint/20 group-focus-visible:border-tint/30 group-focus-visible:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
                     <span>Respond now</span>
                     <ArrowUpRight
                       aria-hidden="true"
@@ -448,17 +444,16 @@ export function SculptedEmblemHero({
             data-cuelume-hover="tick"
             className={cn(
               "rounded-card relative flex min-h-[82px] flex-col justify-between overflow-hidden p-3 sm:min-h-[86px] sm:p-4",
-              "material-hero facet-lift",
+              "bg-surface border-separator shadow-card facet-lift border",
               "group facet-press facet-press-subtle cursor-pointer text-left"
             )}
           >
-            <TextureOverlay texture="paperGrain" opacity={0.05} />
             <div className="mb-1 flex w-full items-center justify-between">
-              <span className="text-eyebrow text-facet-accent-ink flex items-center gap-2">
+              <span className="text-eyebrow text-tint flex items-center gap-2">
                 <MessageSquare aria-hidden="true" className="text-tint h-3.5 w-3.5" /> Blurb of the
                 Week
               </span>
-              <span className="border-tint/20 bg-tint/10 text-caption text-facet-accent-ink group-hover:border-tint/30 group-hover:bg-tint/20 group-focus-visible:border-tint/30 group-focus-visible:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
+              <span className="border-tint/20 bg-tint/10 text-caption text-tint group-hover:border-tint/30 group-hover:bg-tint/20 group-focus-visible:border-tint/30 group-focus-visible:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
                 <span>View prompts</span>
                 <ArrowUpRight
                   aria-hidden="true"
@@ -468,7 +463,7 @@ export function SculptedEmblemHero({
             </div>
             <div>
               <span className="text-label group-hover:text-label text-caption sm:text-callout block truncate leading-tight font-semibold transition-colors">
-                Worldbuilding Prompts
+                Worldbuilding prompts
               </span>
               <span className="text-label-secondary text-caption mt-0.5 block truncate">
                 Share your nation's perspective
@@ -478,7 +473,7 @@ export function SculptedEmblemHero({
         )}
       </motion.div>
 
-      {/* ── 7. Standardized Embedded Featured Article (Apple Editorial Standard) ── */}
+      {/* ── 7. Standardized Embedded Featured Article ── */}
       {(featuredArticleData || featuredArticleHtml) && (
         <motion.div
           initial={reduceMotion ? false : { opacity: 0, y: 10 }}
@@ -486,16 +481,13 @@ export function SculptedEmblemHero({
           transition={{ duration: 0.35, delay: 0.2 }}
           className="relative z-10 mt-4 w-full text-left sm:mt-5"
         >
-          <FeaturedArticleRefractionCard
-            imgSrc={featuredArticleData?.imgSrc ?? null}
-            mode={refractionMode}
-          >
-            {/* Seamless Top Bar (No dividing line, airy editorial flow) */}
+          <FeaturedArticleCard>
+            {/* Top bar */}
             <div className="relative z-10 mb-4 flex items-center justify-between gap-2 sm:mb-4">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="border-yellow/20 bg-yellow/10 text-caption text-yellow-ink inline-flex items-center gap-2 rounded-full border px-3 py-0.5 font-semibold">
                   <Star aria-hidden="true" className="fill-yellow text-yellow h-3.5 w-3.5" />
-                  <span>Featured Article</span>
+                  <span>Featured article</span>
                 </div>
                 {/* Live Author / Editorial Byline */}
                 {(() => {
@@ -597,7 +589,7 @@ export function SculptedEmblemHero({
                 dangerouslySetInnerHTML={{ __html: featuredArticleHtml ?? "" }}
               />
             )}
-          </FeaturedArticleRefractionCard>
+          </FeaturedArticleCard>
         </motion.div>
       )}
     </section>

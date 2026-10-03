@@ -165,7 +165,7 @@ export function InventoryTab({
             exit={{ opacity: 0, height: 0 }}
             transition={springSmooth}
           >
-            <Card className="facet-tint-rim flex flex-col gap-6 py-6">
+            <Card className="flex flex-col gap-6 py-6">
               <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
                 <div className="flex items-center gap-2">
                   <CheckSquare className="text-tint h-5 w-5" />
@@ -192,7 +192,7 @@ export function InventoryTab({
                     onClick={() => setSelectedCards(new Set())}
                     className="text-footnote h-8"
                   >
-                    Deselect All
+                    Deselect all
                   </Button>
 
                   <div className="bg-border/60 h-4 w-px" />
@@ -260,11 +260,11 @@ export function InventoryTab({
               <p className="text-label-secondary text-footnote max-w-md text-center">
                 {filters.search || filters.rarity !== "all" || filters.cardType !== "all"
                   ? "Try adjusting your filters to see more results"
-                  : "Import some NS cards or open a pack to get started!"}
+                  : "Import NS cards or open a pack to add cards."}
               </p>
               {(filters.search || filters.rarity !== "all" || filters.cardType !== "all") && (
                 <Button onClick={onResetFilters} className="mt-4" variant="outline">
-                  Reset Filters
+                  Reset filters
                 </Button>
               )}
             </CardContent>

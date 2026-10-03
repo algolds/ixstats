@@ -110,7 +110,7 @@ export function ThinktankDirectorySidebar({
               setSelectedCategory("All");
             }}
             options={[
-              { value: "my", label: "My Groups" },
+              { value: "my", label: "My groups" },
               { value: "discover", label: "Discover" },
             ]}
           />
@@ -134,7 +134,7 @@ export function ThinktankDirectorySidebar({
           onValueChange={setSearchQuery}
         />
 
-        {/* Dynamic Category Capsules (Apple Design) */}
+        {/* Dynamic Category Capsules */}
         {availableCategories.length > 1 && (
           <ToggleGroup
             type="single"
@@ -181,7 +181,7 @@ export function ThinktankDirectorySidebar({
             action={
               activeTab === "my" ? (
                 <Button variant="outline" size="sm" onClick={() => setActiveTab("discover")}>
-                  Discover Groups
+                  Discover groups
                 </Button>
               ) : undefined
             }
@@ -204,7 +204,7 @@ export function ThinktankDirectorySidebar({
                   onSelectGroup(g.id);
                 }}
                 className={cn(
-                  "group rounded-row text-label relative flex w-full items-start gap-3 p-2 text-left transition-[background-color,scale] duration-150 active:scale-[0.98]",
+                  "group rounded-row text-label relative flex w-full items-start gap-3 p-2 text-left transition-colors duration-150",
                   isSelected ? "bg-tint-fill" : "hover:bg-fill-4"
                 )}
               >
@@ -243,14 +243,14 @@ export function ThinktankDirectorySidebar({
                         </Badge>
                       )}
                       {g.type === "private" ? (
-                        <span title="Private Group" className="inline-flex">
+                        <span title="Private group" className="inline-flex">
                           <Lock
                             className="text-label-secondary size-3.5 shrink-0"
                             aria-label="Private"
                           />
                         </span>
                       ) : (
-                        <span title="Public Group" className="inline-flex">
+                        <span title="Public group" className="inline-flex">
                           <Globe
                             className="text-label-secondary size-3.5 shrink-0"
                             aria-label="Public"

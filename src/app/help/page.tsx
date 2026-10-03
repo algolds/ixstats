@@ -23,13 +23,13 @@ const QUICK_LINKS = [
   {
     href: "/help/getting-started/first-country",
     icon: Crown,
-    title: "Build a Nation",
+    title: "Build a nation",
     caption: "Your first country",
   },
   {
     href: "/help/mycountry/overview",
     icon: Globe,
-    title: "Run Your Nation",
+    title: "Run your nation",
     caption: "MyCountry overview",
   },
   {
@@ -56,11 +56,10 @@ const INTRO = (
 export default function HelpPage() {
   return (
     <div className="bg-background min-h-screen">
-      {/* Header: the Facet 3 PageHeader under the new navigation shell (reference adoption,
-          spec §7.4), the original header otherwise. */}
+      {/* PageHeader under the new navigation shell, the original header otherwise. */}
       <ShellGate variant="facet">
         <div className="mx-auto max-w-7xl px-2 pt-2 sm:px-4 lg:px-6">
-          <PageHeader title="Help Center" subtitle={INTRO} />
+          <PageHeader title="Help center" subtitle={INTRO} />
         </div>
       </ShellGate>
       <ShellGate variant="legacy">
@@ -68,7 +67,7 @@ export default function HelpPage() {
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <div className="mb-3 flex items-center gap-3">
               <Book aria-hidden="true" className="text-muted-foreground h-7 w-7" />
-              <h1 className="text-foreground text-3xl font-semibold tracking-tight">Help Center</h1>
+              <h1 className="text-foreground text-3xl font-semibold tracking-tight">Help center</h1>
             </div>
             <p className="text-muted-foreground max-w-2xl">{INTRO}</p>
           </div>

@@ -167,10 +167,10 @@ export default function WikiOSArticlePage() {
   // Canonical link and page title
   useEffect(() => {
     if (isMainPage) {
-      document.title = "IxWiki — WikiOS";
+      document.title = "IxWiki | WikiOS";
     } else if (data?.title) {
       const prefix = mode !== "reading" ? `Editing ${data.title}` : data.title;
-      document.title = `${prefix} — ${WIKI_SOURCES[wikiSource].name}`;
+      document.title = `${prefix} | ${WIKI_SOURCES[wikiSource].name}`;
       let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
       if (!canonical) {
         canonical = document.createElement("link");

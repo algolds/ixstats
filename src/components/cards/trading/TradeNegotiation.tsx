@@ -65,11 +65,11 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
     const respondToTrade = api.trading.respondToTrade.useMutation({
       onSuccess: (data, variables) => {
         if (variables.action === "ACCEPT") {
-          vaultNotify.tradeCompleted("Trade accepted! Cards have been exchanged.");
+          vaultNotify.tradeCompleted("Trade accepted. Cards exchanged.");
         } else if (variables.action === "REJECT") {
           vaultNotify.tradeCompleted("Trade declined.");
         } else {
-          vaultNotify.tradeCompleted("Counter-offer sent!");
+          vaultNotify.tradeCompleted("Counter-offer sent");
         }
         onRefresh?.();
       },
@@ -219,7 +219,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
 
             {/* Total value */}
             <div className="border-separator border-t pt-3">
-              <p className="text-body text-label-secondary">Total Value</p>
+              <p className="text-body text-label-secondary">Total value</p>
               <p className="text-title-2 text-label">{yourValue.toLocaleString()} credits</p>
             </div>
           </div>
@@ -279,7 +279,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
 
             {/* Total value */}
             <div className="border-separator border-t pt-3">
-              <p className="text-body text-label-secondary">Total Value</p>
+              <p className="text-body text-label-secondary">Total value</p>
               <p className="text-title-2 text-label">{theirValue.toLocaleString()} credits</p>
             </div>
           </div>
@@ -316,7 +316,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
                   variant="outline"
                 >
                   <MessageSquare className="mr-2 h-4 w-4" />
-                  Counter Offer
+                  Counter offer
                 </Button>
                 <Button
                   onClick={() =>
@@ -341,7 +341,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
                   className="bg-surface-secondary border-separator hover:bg-red/20 border"
                 >
                   <XCircle className="mr-2 h-4 w-4" />
-                  Cancel Trade
+                  Cancel trade
                 </Button>
               </div>
             )}
@@ -354,7 +354,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
             <div className="flex items-center gap-3">
               <AlertCircle className="text-yellow h-5 w-5" />
               <div>
-                <p className="text-yellow font-medium">Trade Expired</p>
+                <p className="text-yellow font-medium">Trade expired</p>
                 <p className="text-body text-label-secondary">
                   This trade offer has expired and can no longer be accepted
                 </p>

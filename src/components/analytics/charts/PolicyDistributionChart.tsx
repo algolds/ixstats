@@ -32,7 +32,7 @@ export const PolicyDistributionChart = React.memo<PolicyDistributionChartProps>(
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
               <PieChartIcon className="h-5 w-5 text-indigo-600" />
-              Policy Category Distribution
+              Policy category distribution
             </span>
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="sm" onClick={onExportCSV} title="Export to CSV">

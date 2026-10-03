@@ -30,11 +30,7 @@ export interface AtomicCardProps<TType extends string = string> {
   currencyFormatter?: (amount: number) => string;
 }
 
-/**
- * v2 (c5c6b382) colour identity: each component's own `color` paints its icon chip, its category
- * badge and its selected ring — the v2 Tailwind hues mapped onto the Facet system colours, applied
- * as the card's Facet accent (`accent`; the chip and ring read `facet-accent`).
- */
+/** Each component's own `color` picks its category badge. */
 const COMPONENT_HUE: Record<string, BadgeVariant> = {
   emerald: "success",
   green: "success",
@@ -92,7 +88,7 @@ function AtomicCardComponent<TType extends string = string>({
       className={cn(
         "group rounded-row flex flex-col justify-between p-4 text-left transition-[border-color,box-shadow,opacity] duration-150 select-none",
         // A ring, not a border: the card's own `border-separator` wins Tailwind's utility order.
-        isSelected ? "ring-facet-accent/50 ring-2" : "hover:border-separator-opaque",
+        isSelected ? "ring-tint/50 ring-2" : "hover:border-separator-opaque",
         disabled && "pointer-events-none opacity-50",
         !isSelected && !canSelectMore && "opacity-60"
       )}
@@ -103,7 +99,7 @@ function AtomicCardComponent<TType extends string = string>({
           <div className="flex min-w-0 flex-1 items-start gap-3">
             <span
               aria-hidden="true"
-              className="rounded-control bg-facet-accent-fill text-facet-accent flex size-9 shrink-0 items-center justify-center"
+              className="rounded-control bg-fill-3 text-label-secondary flex size-9 shrink-0 items-center justify-center"
             >
               <Icon className="h-5 w-5" />
             </span>

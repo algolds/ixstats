@@ -88,7 +88,7 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
         {responsesLoading && <p className="text-body text-label-secondary">Loading responses...</p>}
 
         {!responsesLoading && responses.length === 0 && (
-          <p className="text-body text-label-secondary">No responses yet. Be the first!</p>
+          <p className="text-body text-label-secondary">No responses yet.</p>
         )}
 
         {responses.map((r) => (

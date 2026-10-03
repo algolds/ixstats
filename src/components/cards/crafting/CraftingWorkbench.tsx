@@ -278,7 +278,7 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
           {/* Success rate */}
           <div className="bg-surface-secondary rounded-row p-4">
             <Stat
-              label="Success Rate"
+              label="Success rate"
               value={
                 <span
                   className={cn(
@@ -310,7 +310,7 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
 
           {/* XP Reward */}
           <div className="bg-surface-secondary rounded-row p-4">
-            <Stat label="XP Reward" value={`+${recipeData.collectorXPGain}`} hint="Collector XP" />
+            <Stat label="XP reward" value={`+${recipeData.collectorXPGain}`} hint="Collector XP" />
           </div>
         </div>
 
@@ -347,7 +347,7 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
       >
         <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Select a Card</DialogTitle>
+            <DialogTitle>Select a card</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {pickableCards.map((card) => (

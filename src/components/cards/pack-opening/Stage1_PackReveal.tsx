@@ -153,7 +153,7 @@ export const Stage1_PackReveal = React.memo<Stage1_PackRevealProps>(
             }}
             className="text-title-2 font-semibold text-white/90"
           >
-            Tap to Open
+            Tap to open
           </motion.div>
           <div className="text-body mt-2 text-white/60">{packType} Pack</div>
         </motion.div>

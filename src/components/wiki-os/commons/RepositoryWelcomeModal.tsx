@@ -62,28 +62,28 @@ const ADVANCED_TIPS = [
   {
     icon: Copy,
     color: "text-blue",
-    title: "Format Selector",
+    title: "Format selector",
     description:
       "Use the Wikitext copy format segmented bar to instantly grab Thumbnail codes, static pixel embeds, raw file links, or absolute image URLs.",
   },
   {
     icon: Sparkles,
     color: "text-yellow",
-    title: "Interactive Lightbox",
+    title: "Interactive lightbox",
     description:
       "Click on any image preview inside the detail sidebar to trigger an immersive fullscreen zoom view for detailed inspection.",
   },
   {
     icon: Info,
     color: "text-teal",
-    title: "Artist & License Tags",
+    title: "Artist & license tags",
     description:
       "Hover or check the metadata section to copy accurate creator attribution and license requirements to remain copyright compliant.",
   },
   {
     icon: Smile,
     color: "text-blue",
-    title: "Keyboard Shortcuts",
+    title: "Keyboard shortcuts",
     description:
       "Close the detail panel by pressing 'Escape'. Use the standard search inputs to instantly filter categories dynamically.",
   },
@@ -145,7 +145,7 @@ export function RepositoryWelcomeModal({
               <Globe className="size-5" aria-hidden="true" />
             </div>
             <div>
-              <DialogTitle className="text-title-3">Image Repository Guide</DialogTitle>
+              <DialogTitle className="text-title-3">Image repository guide</DialogTitle>
               <DialogDescription className="text-footnote">
                 Search, filter, and copy media wikitext embeds.
               </DialogDescription>
@@ -174,7 +174,7 @@ export function RepositoryWelcomeModal({
             {activeTab === 0 && (
               <motion.div key="welcome-tab" {...tabMotion} className="space-y-4 text-left">
                 <div className="space-y-2">
-                  <h3 className="text-headline text-label">Welcome to the Image Repository!</h3>
+                  <h3 className="text-headline text-label">Welcome to the image repository</h3>
                   <p className="text-callout text-label-secondary">
                     The Image Repository serves as a centralized hub to browse media. Editors can
                     quickly fetch assets, view their attributes, and copy formatted MediaWiki
@@ -192,9 +192,8 @@ export function RepositoryWelcomeModal({
                     <span className="text-headline text-label">Visual-First Discovery</span>
                   </div>
                   <p className="text-footnote text-label-secondary">
-                    A visual media explorer is vastly superior to blind markup guessing. Browse
-                    images interactively, filter by size or orientation, and inspect layouts in
-                    real-time before you publish.
+                    Browse images, filter by size or orientation, and check how they will look
+                    before you publish.
                   </p>
                 </div>
               </motion.div>
@@ -268,7 +267,7 @@ export function RepositoryWelcomeModal({
         {/* Footer */}
         <div className="border-separator flex items-center justify-end border-t px-6 py-4">
           <Button size="sm" onClick={handleClose}>
-            Explore Repository
+            Explore repository
           </Button>
         </div>
       </DialogContent>

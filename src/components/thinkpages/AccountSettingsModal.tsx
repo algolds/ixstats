@@ -72,7 +72,7 @@ export function AccountSettingsModal({
         personality,
         accountType,
       });
-      notify.success("Account updated successfully!");
+      notify.success("Account updated");
       onAccountUpdate(updatedAccount);
       onClose();
     } catch (error: any) {
@@ -86,12 +86,12 @@ export function AccountSettingsModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[90vh] sm:max-w-md md:max-w-lg" aria-describedby={undefined}>
         <DialogHeader>
-          <DialogTitle className="text-title-3">Account Settings</DialogTitle>
+          <DialogTitle className="text-title-3">Account settings</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div>
             <span id="tp-posting-frequency" className="text-subhead text-label mb-2 block">
-              Posting Frequency
+              Posting frequency
             </span>
             <SegmentedControl
               aria-labelledby="tp-posting-frequency"
@@ -107,7 +107,7 @@ export function AccountSettingsModal({
           </div>
           <div>
             <span id="tp-political-lean" className="text-subhead text-label mb-2 block">
-              Political Lean
+              Political lean
             </span>
             <SegmentedControl
               aria-labelledby="tp-political-lean"

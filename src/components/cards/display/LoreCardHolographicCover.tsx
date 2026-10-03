@@ -253,7 +253,7 @@ export const LoreCardHolographicCover = React.memo<LoreCardHolographicCoverProps
               {theme.label}
             </p>
             <p className="text-footnote tracking-[0.2em] text-white/15 uppercase">
-              Historical Archive
+              Historical archive
             </p>
           </div>
         </div>

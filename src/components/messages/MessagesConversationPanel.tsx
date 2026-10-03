@@ -152,7 +152,7 @@ export function MessagesConversationPanel({
             <button
               onClick={() => onSelectConversation(SYSTEM_CONVERSATION_ID)}
               className={cn(
-                "group rounded-row relative flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left transition-[background-color,scale] duration-150 select-none active:scale-[0.98]",
+                "group rounded-row relative flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left transition-colors duration-150 select-none",
                 isSystemSelected
                   ? "bg-tint-fill text-label"
                   : "hover:bg-fill-4 text-label hover:text-label"
@@ -175,7 +175,7 @@ export function MessagesConversationPanel({
                         isSystemSelected ? "text-label font-semibold" : "text-label font-medium"
                       )}
                     >
-                      System Messages
+                      System messages
                     </span>
                     <Crown className="text-yellow size-3.5 shrink-0" aria-label="Official" />
                   </div>
@@ -201,7 +201,7 @@ export function MessagesConversationPanel({
             <button
               onClick={() => onSelectConversation(LOREBOT_CONVERSATION_ID)}
               className={cn(
-                "group rounded-row relative flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left transition-[background-color,scale] duration-150 select-none active:scale-[0.98]",
+                "group rounded-row relative flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left transition-colors duration-150 select-none",
                 isLoreBotSelected
                   ? "bg-tint-fill text-label"
                   : "hover:bg-fill-4 text-label hover:text-label"

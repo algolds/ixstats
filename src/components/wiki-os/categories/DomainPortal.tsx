@@ -5,7 +5,6 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Page as FileText, Folder, ArrowLeft } from "iconoir-react";
 
 interface CategoryMember {
@@ -38,28 +37,26 @@ export function DomainPortal({ domain, domainMeta, subcategories, pages }: Domai
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8 pb-16 select-none">
-      {/* ── Apple-Grade Masthead Card ── */}
+      {/* ── Masthead Card ── */}
       <motion.div
         initial={reduceMotion ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
-        className="material-hero text-label relative isolate overflow-hidden rounded-3xl p-6 sm:p-8"
+        className="bg-surface border-separator shadow-card text-label rounded-card relative overflow-hidden border p-6 sm:p-8"
       >
-        <TextureOverlay texture="paperGrain" opacity={0.05} />
-
         <div className="relative z-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
           <div className="max-w-2xl space-y-2">
             {/* Breadcrumb Navigation Pill */}
             <Link
               href={withBasePath("/wiki/categories")}
-              className="group border-tint/20 bg-tint/10 text-caption text-facet-accent-ink hover:bg-tint/15 focus-visible:outline-tint facet-press inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
+              className="group border-tint/20 bg-tint/10 text-caption text-tint hover:bg-tint/15 focus-visible:outline-tint inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
             >
               <ArrowLeft
                 aria-hidden="true"
                 className="h-3 w-3 transition-[translate] duration-200 motion-safe:group-hover:-translate-x-0.5 motion-safe:group-focus-visible:-translate-x-0.5"
               />
               <Folder aria-hidden="true" className="h-3.5 w-3.5" />
-              <span>Category Directory</span>
+              <span>Category directory</span>
               <span aria-hidden="true" className="text-label-secondary">
                 /
               </span>
@@ -201,7 +198,7 @@ export function DomainPortal({ domain, domainMeta, subcategories, pages }: Domai
             className="bg-tint text-on-tint hover:bg-tint/90 rounded-row text-caption mt-2 inline-flex items-center gap-2 px-4 py-2 font-semibold transition-colors"
           >
             <Folder className="h-3.5 w-3.5" />
-            <span>Browse Category Directory</span>
+            <span>Browse category directory</span>
           </Link>
         </div>
       )}

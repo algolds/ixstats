@@ -21,6 +21,7 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Stat } from "~/components/ui/stat";
 import { Card } from "~/components/ui/card";
+import { PageHeader } from "~/components/shell/PageHeader";
 
 function formatDate(unixTimestamp: number): string {
   return new Date(unixTimestamp * 1000).toLocaleDateString("en-US", {
@@ -67,38 +68,30 @@ export default function MemberProfilePage() {
             </Link>
           </div>
 
-          {/* Profile header */}
-          <Card variant="hero" padding="lg" className="mb-4">
-            <div className="flex items-start gap-4">
-              {member.avatarUrl ? (
-                <img
-                  src={member.avatarUrl}
-                  alt={member.username}
-                  className="border-separator h-20 w-20 rounded-full border-2 object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <div className="bg-tint-fill text-tint text-title-1 flex size-20 items-center justify-center rounded-full">
-                  {member.username.charAt(0).toUpperCase()}
+          <PageHeader title={member.username} subtitle={member.userTitle} className="-mx-2" />
+          <div className="mb-4 flex items-center gap-4">
+            {member.avatarUrl ? (
+              <img
+                src={member.avatarUrl}
+                alt={member.username}
+                className="border-separator h-20 w-20 rounded-full border-2 object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="bg-tint-fill text-tint text-title-1 flex size-20 items-center justify-center rounded-full">
+                {member.username.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0 space-y-1">
+              {member.isStaff && <Badge variant="secondary">Staff</Badge>}
+              {member.location && (
+                <div className="text-footnote text-label-secondary flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  {member.location}
                 </div>
               )}
-              <div className="min-w-0 flex-1">
-                <h1 className="text-large-title text-label">{member.username}</h1>
-                {member.userTitle && <p className="text-body text-tint">{member.userTitle}</p>}
-                {member.isStaff && (
-                  <Badge variant="secondary" className="mt-1">
-                    Staff
-                  </Badge>
-                )}
-                {member.location && (
-                  <div className="text-footnote text-label-secondary mt-1 flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    {member.location}
-                  </div>
-                )}
-              </div>
             </div>
-          </Card>
+          </div>
 
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

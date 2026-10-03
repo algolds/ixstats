@@ -1,7 +1,7 @@
 "use client";
 // src/components/forum/shared/ForumLayout.tsx
 // Forum content wrapper with icon rail sidebar on desktop, horizontal pills on mobile.
-// Facet 3: the rail and pill bar are chrome (material-thin pill bar); the Forum tint (orange) comes
+// The rail and pill bar are chrome (material-thin pill bar); the Forum tint (orange) comes
 // from data-app="forum" on the route layout.
 
 import { type ReactNode, useState, useEffect, useRef } from "react";
@@ -79,7 +79,7 @@ function ForumSearchModal({ open, onClose }: { open: boolean; onClose: () => voi
     }
   };
 
-  // Keyboard-invoked (⌘K): instant presentation (spec §8); Escape and the close button dismiss.
+  // Keyboard-invoked (⌘K): instant presentation; Escape and the close button dismiss.
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent

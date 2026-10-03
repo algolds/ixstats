@@ -20,7 +20,7 @@ export function TypeStep({ pageType, setPageType }: TypeStepProps) {
   const items = [
     {
       id: "blank",
-      label: "Blank Page",
+      label: "Blank page",
       icon: FileText,
       desc: "Plain start without preset templates",
     },
@@ -50,13 +50,13 @@ export function TypeStep({ pageType, setPageType }: TypeStepProps) {
     },
     {
       id: "conflict",
-      label: "Military Conflict",
+      label: "Military conflict",
       icon: ShieldAlert,
       desc: "Battles, combatants, commanders",
     },
     {
       id: "politics",
-      label: "Political Party",
+      label: "Political party",
       icon: Landmark,
       desc: "Ideology, leaders, voter stats",
     },

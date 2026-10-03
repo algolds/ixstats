@@ -14,22 +14,15 @@ export interface VaultCardHoldingsCardProps {
   featuredCards: CardInstance[];
   topCardsLoading: boolean;
   onNavigate?: (section: string) => void;
-  getRarityGlow: (rarity?: string | null) => string;
-  getRarityBorder: (rarity?: string | null) => string;
 }
 
 export function VaultCardHoldingsCard({
   featuredCards,
   topCardsLoading,
   onNavigate,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  getRarityGlow,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  getRarityBorder,
 }: VaultCardHoldingsCardProps) {
   return (
-    // v2 (c5c6b382): a glass showcase card with the dot texture.
-    <Card variant="hero" padding="lg" className="overflow-hidden">
+    <Card padding="lg" className="overflow-hidden">
       <div className="border-separator mb-4 flex items-center justify-between border-b pb-3">
         <div className="flex items-center gap-2">
           <div className="rounded-row bg-tint-fill text-tint shadow-card flex h-8 w-8 items-center justify-center border font-medium">
@@ -86,8 +79,6 @@ export function VaultCardHoldingsCard({
           {featuredCards.length > 1 && (
             <div className="border-separator space-y-2 border-t pt-3">
               {featuredCards.slice(1, 3).map((card) => (
-                // Facet 3.1 HIG: the row looked pressable (hover wash, press scale) but did nothing;
-                // it is now a real button into the cards section, with the press physics.
                 <button
                   type="button"
                   key={card.id}
@@ -97,7 +88,7 @@ export function VaultCardHoldingsCard({
                   <span className="text-label max-w-[130px] truncate font-semibold">
                     {card.title}
                   </span>
-                  <span className="text-footnote text-yellow-ink font-data flex items-center gap-0.5 font-semibold tabular-nums">
+                  <span className="text-footnote text-yellow-ink flex items-center gap-0.5 font-semibold tabular-nums">
                     <IxCreditsSymbol aria-hidden className="h-2.5 w-2.5 shrink-0" />
                     {card.marketValue.toLocaleString()}
                   </span>

@@ -71,7 +71,7 @@ function ImportDeckTab() {
         nation: data.nation,
         cards: (data.cards ?? []).map((c: any) => ({
           id: c.id,
-          title: c.title ?? "Unknown Card",
+          title: c.title ?? "Unknown card",
           artwork: c.artwork ?? "/images/cards/placeholder-nation.png",
           rarity: c.rarity ?? "COMMON",
           season: c.season ?? 1,
@@ -122,7 +122,7 @@ function ImportDeckTab() {
           >
             <img
               src={proxyNSImage("https://www.nationstates.net/images/bannertitle.png")}
-              alt="NationStates Logo"
+              alt="NationStates logo"
               className="h-9 w-auto object-contain"
             />
           </div>

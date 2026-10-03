@@ -279,7 +279,7 @@ export function PostCard({
           />
         )}
 
-        {/* Delete confirmation — a destructive decision (AlertDialog, spec §7.3) */}
+        {/* Delete confirmation */}
         <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
           <AlertDialogContent className="sm:max-w-md">
             <AlertDialogHeader>

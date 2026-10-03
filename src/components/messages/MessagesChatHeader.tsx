@@ -254,10 +254,10 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
                 {isDiplomatic && (
                   <Badge variant="warning">
                     <Shield aria-hidden="true" />
-                    Diplomatic Cable
+                    Diplomatic cable
                   </Badge>
                 )}
-                {isGroup && <Badge variant="secondary">Group Chat</Badge>}
+                {isGroup && <Badge variant="secondary">Group chat</Badge>}
               </div>
               <p className="text-footnote text-label-secondary truncate">
                 {isSystemThread
@@ -310,7 +310,7 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
                 {onViewDetails && (
                   <DropdownMenuItem onClick={onViewDetails}>
                     <InfoCircle />
-                    <span>View Details</span>
+                    <span>View details</span>
                   </DropdownMenuItem>
                 )}
                 {onMuteToggle && !isSystemThread && (
@@ -337,7 +337,7 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
                     className="text-destructive focus:text-destructive"
                   >
                     <Refresh />
-                    <span>Clear System Logs</span>
+                    <span>Clear system logs</span>
                   </DropdownMenuItem>
                 ) : (
                   onDeleteConversation && (

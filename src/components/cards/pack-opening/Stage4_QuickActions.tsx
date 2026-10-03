@@ -116,21 +116,25 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
         >
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-title-1 text-label">Cards Received</h2>
+              <h2 className="text-title-1 text-label">Cards received</h2>
               <p className="text-body text-label-secondary mt-1">
                 {cards.length} card{cards.length !== 1 ? "s" : ""}
               </p>
             </div>
 
             <div className="text-right">
-              <div className="text-body text-label-secondary">Estimated Value</div>
+              <div className="text-body text-label-secondary">Estimated value</div>
               <div className="text-title-1 text-yellow">{estimatedValue.toLocaleString()} IC</div>
             </div>
           </div>
 
           {/* Bulk mode toggle */}
           <div className="mt-4 flex items-center gap-4">
-            <Button variant="secondary" aria-pressed={bulkMode} onClick={() => setBulkMode(!bulkMode)}>
+            <Button
+              variant="secondary"
+              aria-pressed={bulkMode}
+              onClick={() => setBulkMode(!bulkMode)}
+            >
               {bulkMode ? "Exit Bulk Mode" : "Bulk Select"}
             </Button>
 
@@ -208,7 +212,7 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
                 onClick={handleCollectAll}
                 className="bg-green/15 text-green hover:bg-green/25"
               >
-                Collect All
+                Collect all
               </Button>
               <Button size="lg" onClick={onComplete}>
                 Done

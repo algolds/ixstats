@@ -31,9 +31,7 @@ import { Badge } from "~/components/ui/badge";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { SearchField } from "~/components/ui/search-field";
 import { Skeleton } from "~/components/ui/skeleton";
-import { TintHairline } from "~/components/ui/facet";
 import { springSmooth, tweenExit } from "~/lib/design/motion";
-import { InteractiveGridPattern } from "~/components/ui/magicui/interactive-grid-pattern";
 import { IxStatsLogo } from "~/components/ui/ixstats-logo";
 import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
 import { Card } from "~/components/ui/card";
@@ -55,9 +53,9 @@ interface CountryOption {
 const setupIntroSteps = [
   {
     title: "Welcome to IxStats",
-    short_description: "Executive-grade economic simulation platform",
+    short_description: "An economic simulation for worldbuilders",
     full_description:
-      "The world's most sophisticated economic simulation platform, featuring atomic government systems, real-time intelligence networks, and comprehensive diplomatic frameworks.",
+      "IxStats simulates your country's economy, government, diplomacy and intelligence, with other players running the rest of the world.",
     media: {
       type: "image" as const,
       src: "/images/ixstats-overview.png",
@@ -65,10 +63,10 @@ const setupIntroSteps = [
     },
   },
   {
-    title: "Choose Your Setup Path",
-    short_description: "Select your nation management approach",
+    title: "Choose how to start",
+    short_description: "Link a country or build a new one",
     full_description:
-      "Choose your path to nation management. Link to an existing country or create a new one with our advanced MyCountry Builder.",
+      "Link an existing country to your account, or create a new one in the MyCountry Builder.",
     media: {
       type: "image" as const,
       src: "/images/setup-options.png",
@@ -76,10 +74,10 @@ const setupIntroSteps = [
     },
   },
   {
-    title: "Understanding IxTime",
-    short_description: "The 2x Speed World Simulator Clock",
+    title: "IxTime",
+    short_description: "The simulation clock runs at 2x speed",
     full_description:
-      "Time in the nation simulator progresses at a rate of 2x real-world speed. This means one month of in-game simulation completes every 15 real days. Plan your budget, department projects, and diplomatic agreements with this progression rate in mind.",
+      "Simulation time runs at 2x real time, so one in-game month passes every 15 real days. Plan budgets, projects and agreements with that pace in mind.",
     media: {
       type: "image" as const,
       src: "/images/ixtime-overview.png",
@@ -87,10 +85,10 @@ const setupIntroSteps = [
     },
   },
   {
-    title: "Connected Accounts via IxnayID",
-    short_description: "Your single sign-on key for all sub-services",
+    title: "IxnayID",
+    short_description: "One sign-in for every IxWiki service",
     full_description:
-      "IxnayID is our unified secure authentication gateway. It links your country profile across our wiki network, interactive maps, and systems. Ensure your profile connections are correctly authenticated in your Account settings.",
+      "IxnayID links your country across the wiki, the maps and IxStats. Check that your connections are verified in your account settings.",
     media: {
       type: "image" as const,
       src: "/images/ixnayid-connections.png",
@@ -98,10 +96,10 @@ const setupIntroSteps = [
     },
   },
   {
-    title: "The Vault & IxCredits",
-    short_description: "Powering the global player economy",
+    title: "The Vault and IxCredits",
+    short_description: "The currency behind trading and the marketplace",
     full_description:
-      "Every nation interacts with the Vault. IxCredits are the premium currency used for trade, trading card pack purchases, and marketplace transactions. Earn credits daily through passive growth, high stability index, or successful trade treaties.",
+      "IxCredits pay for trading, card packs and marketplace purchases. You earn them daily through passive growth, a high stability index and successful trade treaties.",
     media: {
       type: "image" as const,
       src: "/images/vault-credits.png",
@@ -111,7 +109,7 @@ const setupIntroSteps = [
 ];
 
 export default function SetupPage() {
-  usePageTitle({ title: "Country Setup" });
+  usePageTitle({ title: "Country setup" });
 
   const { user, isLoaded, userProfile, isLoading: profileLoading } = useUserCountry();
   const router = useRouter();
@@ -272,15 +270,6 @@ export default function SetupPage() {
         {/* Main Setup Flow */}
         {!showIntro && (
           <div className="bg-background relative min-h-screen">
-            {/* Standard IxStats Interactive Grid Background */}
-            <InteractiveGridPattern
-              width={40}
-              height={40}
-              squares={[50, 40]}
-              className="fixed inset-0 z-0 opacity-20"
-              squaresClassName="fill-label-tertiary stroke-separator transition-[fill,stroke] duration-200 [&:nth-child(4n+1):hover]:fill-tint/40 [&:nth-child(4n+2):hover]:fill-blue/40 [&:nth-child(4n+3):hover]:fill-indigo/40 [&:nth-child(4n+4):hover]:fill-red/40"
-            />
-
             <div className="relative z-10 mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
               <AnimatePresence mode="wait">
                 {/* Welcome Step */}
@@ -298,11 +287,11 @@ export default function SetupPage() {
                       </div>
 
                       <h1 className="text-large-title text-label mb-4">
-                        Welcome to IxStats, {user?.firstName || "User"}!
+                        Welcome to IxStats, {user?.firstName || "User"}
                       </h1>
 
                       <p className="text-body text-label-secondary mx-auto max-w-2xl">
-                        To get started, please choose an option below.
+                        Choose an option to get started.
                       </p>
                     </div>
 
@@ -313,24 +302,23 @@ export default function SetupPage() {
                         className="relative overflow-hidden p-6 text-left md:p-8"
                         interactive
                       >
-                        <TintHairline />
                         <div className="mb-6 flex items-center gap-5">
                           <div className="bg-tint-fill rounded-card shrink-0 p-4">
                             <MyCountryLogo size="lg" variant="icon-only" animated={true} />
                           </div>
                           <div className="space-y-2">
-                            <h2 className="text-title-1 text-label">Create New Country</h2>
-                            <Badge variant="secondary">✨ Recommended</Badge>
+                            <h2 className="text-title-1 text-label">Create a new country</h2>
+                            <Badge variant="secondary">Recommended</Badge>
                           </div>
                         </div>
 
                         <p className="text-body text-label-secondary mb-6">
-                          Start fresh with a new nation. Create your country's government structure,
-                          economy, demographics, and policies to your liking.
+                          Start a new nation. You set its government, economy, demographics and
+                          policies.
                         </p>
 
                         <div className="text-headline text-tint flex items-center gap-2">
-                          <span>Get Started with MyCountry© Builder</span>
+                          <span>Open the MyCountry builder</span>
                           <ArrowRight aria-hidden className="size-5" />
                         </div>
                       </Card>
@@ -344,25 +332,25 @@ export default function SetupPage() {
                             <div className="bg-blue/10 rounded-row p-3">
                               <LinkIcon aria-hidden className="text-blue size-6" />
                             </div>
-                            <h2 className="text-title-2 text-label">Link Existing Country</h2>
+                            <h2 className="text-title-2 text-label">Link an existing country</h2>
                           </div>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => setCurrentStep("link-existing")}
                           >
-                            Use this option →
+                            Use this option
                           </Button>
                         </div>
 
                         <p className="text-body text-label-secondary mb-4">
-                          Connect your account to an existing country in the system. Perfect if
-                          you're taking over management of an established nation.
+                          Connect your account to a country that already exists, for example to take
+                          over an established nation.
                         </p>
 
                         <div role="note" className="bg-caution/10 rounded-row p-3">
                           <p className="text-headline text-label">
-                            ⚠️ Only choose this if told to do so
+                            Only choose this if you were told to
                           </p>
                         </div>
                       </Card>
@@ -383,10 +371,10 @@ export default function SetupPage() {
                         Back to options
                       </Button>
 
-                      <h1 className="text-large-title text-label mb-2">Link to Existing Country</h1>
+                      <h1 className="text-large-title text-label mb-2">Link an existing country</h1>
 
                       <p className="text-body text-label-secondary max-w-2xl">
-                        Search and select an existing country to link to your account.
+                        Select the country to link to your account.
                       </p>
                     </div>
 
@@ -394,18 +382,15 @@ export default function SetupPage() {
                       <div className="mb-6">
                         <h2 className="text-title-2 text-label mb-1 flex items-center gap-3">
                           <Search aria-hidden className="text-blue size-5" />
-                          Search Countries
+                          Search countries
                         </h2>
-                        <p className="text-callout text-label-secondary">
-                          Find your country by name, continent, or region
-                        </p>
                       </div>
 
                       <div className="space-y-6">
                         <SearchField
                           size="lg"
                           aria-label="Search countries"
-                          placeholder="Search by name, continent, or region..."
+                          placeholder="Search by name, continent or region"
                           value={searchTerm}
                           onValueChange={setSearchTerm}
                         />
@@ -445,8 +430,8 @@ export default function SetupPage() {
                           <div role="status" className="bg-surface-secondary rounded-row p-4">
                             <p className="text-headline text-label">Claim submitted</p>
                             <p className="text-body text-label-secondary mt-1">
-                              A moderator will review it. Verify your wiki account under Settings →
-                              IxnayID & Passport → Linked accounts to have claims for nations you
+                              A moderator will review it. Verify your wiki account under Settings,
+                              IxnayID & Passport, Linked accounts to have claims for nations you
                               created approved instantly.
                             </p>
                           </div>
@@ -469,7 +454,7 @@ export default function SetupPage() {
                               ) : (
                                 <>
                                   <LinkIcon aria-hidden />
-                                  Claim Country
+                                  Claim country
                                 </>
                               )}
                             </Button>
@@ -493,7 +478,7 @@ export default function SetupPage() {
                         Back to options
                       </Button>
 
-                      <h1 className="text-large-title text-label">Create New Country</h1>
+                      <h1 className="text-large-title text-label">Create a new country</h1>
                     </div>
 
                     <Card className="space-y-6 p-6 md:p-8">
@@ -503,12 +488,9 @@ export default function SetupPage() {
                           MyCountry® Builder
                         </h2>
                         <p className="text-body text-label-secondary">
-                          Build your country exactly how you want. Our builder allows you to
-                          customize everything from your government structure to your economy and
-                          demographics to your policies and manage diplomatic relations. We use a
-                          multi-layered Economic Engine that models real-world economic behavior
-                          through advanced mathematical models, tier-based growth systems, and
-                          time-synchronized calculations to ensure a dynamic and realistic world.
+                          The builder covers your government structure, economy, demographics,
+                          policies and diplomatic relations. The economic engine models real-world
+                          behavior with tier-based growth and time-synchronized calculations.
                         </p>
                       </div>
 
@@ -517,26 +499,26 @@ export default function SetupPage() {
                           {
                             icon: Building2,
                             color: "text-blue bg-blue/10",
-                            title: "National Identity",
-                            body: "Define your country's name and flag, and assign your country a currency, language, and other essential symbols.",
+                            title: "National identity",
+                            body: "Set your country's name, flag, currency, language and national symbols.",
                           },
                           {
                             icon: Crown,
                             color: "text-purple bg-purple/10",
                             title: "MyGovernment",
-                            body: "Customize everything from your political system to your departments and budgets to policies and more.",
+                            body: "Set your political system, departments, budgets and policies.",
                           },
                           {
                             icon: TrendingUp,
                             color: "text-green bg-green/10",
                             title: "MyEconomy",
-                            body: "Configure your industry sectors, labor markets, income distribution, and trade policies to your liking.",
+                            body: "Configure industry sectors, labor markets, income distribution and trade policy.",
                           },
                           {
                             icon: Users,
                             color: "text-orange bg-orange/10",
-                            title: "Tax Builder",
-                            body: "Our intergrated tax builder allows you to design a comprehensive tax system with brackets, exemptions, and deductions that is connected to your economy.",
+                            title: "Tax builder",
+                            body: "Design a tax system with brackets, exemptions and deductions, connected to your economy.",
                           },
                         ].map(({ icon: Icon, color, title, body }) => (
                           <div
@@ -557,41 +539,41 @@ export default function SetupPage() {
                       <div className="bg-surface-secondary rounded-row p-6">
                         <h3 className="text-title-3 text-label mb-4 flex items-center gap-3">
                           <Star aria-hidden className="text-tint size-5" />
-                          What You'll Get
+                          What you get
                         </h3>
                         <ul className="text-body text-label-secondary space-y-3">
                           {[
                             [
                               "MyCountry: ",
-                              "Manage your country in real-time from your Executive Command Center with briefings and policies, monitor your economy and engage in diplomacy with other nations, and more.",
+                              "Run your country with briefings and policies, watch your economy and deal with other nations.",
                             ],
                             [
                               "MyCountry Builder: ",
-                              "Use our builder to customize your country exactly how you want. Customize everything from your government structure to your economy and demographics to your tax system and more.",
+                              "Customize your government, economy, demographics and tax system.",
                             ],
                             [
                               "MyCountry Defense: ",
-                              "Establish up to 8 military branches, organize units and assets, readiness levels, and manage national security.",
+                              "Set up to 8 military branches and manage units, assets, readiness and national security.",
                             ],
                             [
                               "Diplomacy: ",
-                              "Establish embassies, conduct cultural exchanges, negotiate treaties, and build relationships that enhance trade opportunities and intelligence cooperation",
+                              "Open embassies, run cultural exchanges and negotiate treaties that improve trade and intelligence cooperation.",
                             ],
                             [
-                              "Compete Globally: ",
-                              "Track your nation's ranking across economic, diplomatic, and cultural metrics—unlock achievements and see how you compare to other nations worldwide",
+                              "Rankings: ",
+                              "See how your nation ranks on economic, diplomatic and cultural measures, and earn achievements.",
                             ],
                             [
                               "ThinkPages: ",
-                              "Use ThinkPages to engage as government officials, citizens, or media on our in-world social platform. Collaborate with other players through ThinkTanks and discuss IC or OOC topics.",
+                              "Post as government officials, citizens or media on the in-world social network. Work with other players in ThinkTanks and discuss IC or OOC topics.",
                             ],
                             [
-                              "Wiki Integration: ",
-                              "You can import your country's data/lore from IIWiki or AltHistoryWiki if you want to use it as a base for your country",
+                              "Wiki import: ",
+                              "Import your country's data and lore from IIWiki or AltHistoryWiki as a starting point.",
                             ],
                             [
-                              "Image Repository: ",
-                              "Use our image repository to natively search for images from Wiki Commons, IxWiki, and IIWiki.",
+                              "Image repository: ",
+                              "Search images from Wiki Commons, IxWiki and IIWiki.",
                             ],
                           ].map(([label, text]) => (
                             <li key={label} className="flex items-start gap-3">
@@ -619,12 +601,12 @@ export default function SetupPage() {
                         {isCreating ? (
                           <>
                             <SystemRestart aria-hidden className="animate-spin" />
-                            Starting MyCountry Builder...
+                            Starting the MyCountry Builder...
                           </>
                         ) : (
                           <>
                             <Plus aria-hidden />
-                            Start MyCountry Builder
+                            Start the MyCountry builder
                           </>
                         )}
                       </Button>
@@ -646,17 +628,16 @@ export default function SetupPage() {
                         <CheckCircle aria-hidden className="text-green size-16" />
                       </div>
 
-                      <h1 className="text-display text-label mb-6">Setup Complete!</h1>
+                      <h1 className="text-display text-label mb-6">Setup complete</h1>
 
                       <p className="text-title-3 text-label-secondary mx-auto max-w-2xl">
-                        Your country has been successfully set up. You're now ready to start
-                        managing it and engage in the world of IxStats. Good luck!
+                        Your country is set up and ready to manage.
                       </p>
                     </div>
 
                     <Button onClick={handleComplete} size="lg">
                       <ArrowRight aria-hidden />
-                      Go to Dashboard
+                      Go to dashboard
                     </Button>
                   </motion.div>
                 )}
@@ -671,7 +652,7 @@ export default function SetupPage() {
           <Card className="p-12 text-center">
             <IxStatsLogo size="lg" animated={true} className="mx-auto mb-6" />
             <h1 className="text-large-title text-label mb-2">Welcome to IxStats</h1>
-            <p className="text-body text-label-secondary mb-8">Please sign in to continue</p>
+            <p className="text-body text-label-secondary mb-8">Sign in to continue</p>
             <SignInButton mode="modal" />
           </Card>
         </div>

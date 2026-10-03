@@ -200,7 +200,7 @@ export function WikiOSLayout({
       <footer className="wikios-main-footer text-label-secondary border-separator text-footnote mt-16 flex flex-col items-center justify-center gap-4 border-t pt-8 pb-10 text-center font-[var(--wikios-font-brand)]">
         <Popover>
           <PopoverTrigger asChild>
-            <button className="group flex cursor-pointer flex-col items-center justify-center gap-2 opacity-80 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none hover:opacity-100 active:scale-[0.98]">
+            <button className="group flex cursor-pointer flex-col items-center justify-center gap-2 opacity-80 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none hover:opacity-100">
               <WikiOSLogomark className="text-label h-7 w-auto transition-transform duration-300" />
               <div className="text-label-secondary group-hover:text-label-secondary text-caption flex items-center gap-2 font-[var(--wikios-font-brand)]">
                 <span className="text-label-secondary group-hover:text-label font-semibold">
@@ -218,19 +218,18 @@ export function WikiOSLayout({
               About WikiOS
             </PopoverTitle>
             <PopoverDescription className="text-footnote text-label-secondary leading-relaxed">
-              WikiOS is the next-generation sovereign wiki engine and reading environment for
-              IxStates and worldbuilding communities.
+              WikiOS is the wiki reader and editor for IxStates and other worldbuilding communities.
             </PopoverDescription>
           </PopoverContent>
         </Popover>
 
         <div className="text-label-secondary text-footnote flex items-center justify-center gap-4 font-[var(--wikios-font-ui)]">
           <Link href="/terms" className="hover:text-yellow transition-colors">
-            Terms of Service
+            Terms of service
           </Link>
           <span>•</span>
           <Link href="/privacy" className="hover:text-yellow transition-colors">
-            Privacy Policy
+            Privacy policy
           </Link>
         </div>
       </footer>

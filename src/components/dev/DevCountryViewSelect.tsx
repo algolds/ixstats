@@ -104,7 +104,7 @@ export function DevCountryViewSelect() {
           <SelectItem value="__reset__" className="text-xs text-blue-600">
             <span className="flex items-center gap-1">
               <RotateCcw className="h-3 w-3" />
-              Reset to My Country
+              Reset to my country
             </span>
           </SelectItem>
           <div className="my-1 border-t border-slate-200 dark:border-slate-700" />

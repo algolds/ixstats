@@ -55,7 +55,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
   const upgradeStadium = api.sports.upgradeStadium.useMutation({
     onSuccess: () => {
       refetchTeam();
-      notify.success("Stadium upgraded successfully! Capacity increased by 1,000 seats.");
+      notify.success("Stadium upgraded. Capacity increased by 1,000 seats.");
     },
     onError: (err) => {
       notify.error(err.message || "Failed to upgrade stadium");
@@ -66,7 +66,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
     onSuccess: () => {
       refetchTeam();
       setUpdatingPrice(false);
-      notify.success("Ticket price updated successfully!");
+      notify.success("Ticket price updated");
     },
     onError: (err) => {
       notify.error(err.message || "Failed to set ticket price");
@@ -76,7 +76,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
   const selectSponsor = api.sports.selectSponsor.useMutation({
     onSuccess: () => {
       refetchTeam();
-      notify.success("Sponsorship contract activated successfully!");
+      notify.success("Sponsorship contract activated");
     },
     onError: (err) => {
       notify.error(err.message || "Failed to activate sponsorship");
@@ -88,13 +88,13 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
   const cards = [
     {
       id: 0,
-      title: "Sovereign Wallet & Budget",
+      title: "Sovereign wallet & budget",
       description: "Manage club balances and pricing structures",
       icon: Landmark,
       content: (
         <div className="space-y-4 pt-2">
           <div className="bg-surface rounded-row flex items-center justify-between p-4">
-            <Stat label="Current Ticket Price" value={`₷${team.ticketPrice}`} />
+            <Stat label="Current ticket price" value={`₷${team.ticketPrice}`} />
             <div className="flex items-center gap-2">
               <Input
                 type="number"
@@ -127,14 +127,14 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
     },
     {
       id: 1,
-      title: "Stadium & Expansion Vouchers",
+      title: "Stadium & expansion vouchers",
       description: "Expand seating capacity to maximize ticketing limits",
       icon: ArrowUpRight,
       content: (
         <div className="space-y-4 pt-2">
           <div className="bg-surface rounded-row flex items-center justify-between p-4">
             <Stat
-              label="Current Capacity"
+              label="Current capacity"
               value={`${team.stadiumCapacity?.toLocaleString() ?? "5,000"} seats`}
             />
             <Button
@@ -155,7 +155,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
     },
     {
       id: 2,
-      title: "Sponsorship Contracts",
+      title: "Sponsorship contracts",
       description: "Configure sponsorship packages for baseline and win bonuses",
       icon: Trophy,
       content: (
@@ -163,16 +163,16 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
           {currentSponsor ? (
             <div className="bg-surface rounded-row mb-2 p-4">
               <Badge variant="secondary" className="mb-1">
-                Active Partner
+                Active partner
               </Badge>
               <h5 className="text-headline text-label">{currentSponsor.name}</h5>
               <div className="border-separator mt-2 grid grid-cols-2 gap-2 border-t pt-2">
                 <Stat
                   size="sm"
-                  label="Base Fee"
+                  label="Base fee"
                   value={`₷${currentSponsor.baseFee} / home match`}
                 />
-                <Stat size="sm" label="Win Bonus" value={`₷${currentSponsor.winBonus} / win`} />
+                <Stat size="sm" label="Win bonus" value={`₷${currentSponsor.winBonus} / win`} />
               </div>
             </div>
           ) : (
@@ -240,7 +240,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
       <CardHeader>
         <CardTitle className="text-title-2 flex items-center gap-2">
           <Sparkles className="text-tint size-5" aria-hidden />
-          Club Command Desk
+          Club command desk
         </CardTitle>
         <CardDescription>
           Touch a voucher card below to reveal details and execute operations.

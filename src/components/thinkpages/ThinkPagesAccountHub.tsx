@@ -67,11 +67,11 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
         <Card>
           <EmptyState
             icon={<Users />}
-            title="Country Setup Required"
+            title="Country setup required"
             message="You need a country to create ThinkPages accounts."
             action={
               <Button asChild>
-                <Link href={"/setup"}>Complete Setup</Link>
+                <Link href={"/setup"}>Complete setup</Link>
               </Button>
             }
           />
@@ -92,7 +92,7 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
         </div>
         <Button asChild size="sm" variant="outline">
           <Link href={"/dashboard"}>
-            Go to Dashboard
+            Go to dashboard
             <ArrowRight aria-hidden="true" />
           </Link>
         </Button>
@@ -103,10 +103,10 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
         <div>
           {/* Phones under the new shell get the ShellPageHeader title instead. */}
           <h1 {...shellPageTitleProps} className="text-title-2 text-label">
-            ThinkPages Accounts
+            ThinkPages accounts
           </h1>
           <p className="text-body text-label-secondary">
-            Manage your personas — government officials, media outlets, and citizen voices.
+            Manage your personas: government officials, media outlets and citizen voices.
           </p>
         </div>
         <Button
@@ -118,7 +118,7 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
           type="button"
         >
           <Plus aria-hidden="true" />
-          New Account
+          New account
         </Button>
       </div>
 

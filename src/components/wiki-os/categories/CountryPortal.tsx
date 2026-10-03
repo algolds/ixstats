@@ -64,8 +64,8 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8 pb-16 select-none">
-      {/* ── Apple-Grade Masthead Card ── */}
-      <div className="material-hero text-label relative isolate overflow-hidden rounded-3xl p-6 sm:p-8">
+      {/* ── Masthead Card ── */}
+      <div className="bg-surface border-separator shadow-card text-label rounded-card relative overflow-hidden border p-6 sm:p-8">
         <div className="relative z-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
           <div className="flex items-start gap-5 sm:items-center">
             {country.flagUrl ? (
@@ -103,18 +103,18 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Link
               href={withBasePath(`/wiki/${slug}`)}
-              className="border-separator text-label rounded-row bg-surface text-caption shadow-card hover:border-tint/40 hover:bg-surface inline-flex items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+              className="border-separator text-label rounded-row bg-surface text-caption shadow-card hover:border-tint/40 hover:bg-surface inline-flex items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             >
               <ExternalLink className="text-tint h-3.5 w-3.5" />
-              <span>Wiki Article</span>
+              <span>Wiki article</span>
             </Link>
 
             <Link
               href={withBasePath(`/countries/${country.slug ?? country.id}`)}
-              className="rounded-row bg-tint text-caption text-on-tint shadow-card hover:bg-tint inline-flex items-center gap-2 px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+              className="rounded-row bg-tint text-caption text-on-tint shadow-card hover:bg-tint inline-flex items-center gap-2 px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             >
               <TrendingUp className="h-3.5 w-3.5" />
-              <span>National Dashboard</span>
+              <span>National dashboard</span>
             </Link>
           </div>
         </div>
@@ -151,7 +151,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
             <div className="wikios-portal-metrics">
               <MetricCard
                 icon={<Coins className="h-3.5 w-3.5" />}
-                label="GDP per Capita"
+                label="GDP per capita"
                 value={formatCurrency(metrics.gdpPerCapita)}
               />
               <MetricCard
@@ -161,12 +161,12 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
               />
               <MetricCard
                 icon={<TrendingUp className="h-3.5 w-3.5" />}
-                label="GDP Growth"
+                label="GDP growth"
                 value={`${((growth?.economic ?? 0) * 100).toFixed(1)}%`}
               />
               <MetricCard
                 icon={<Users className="h-3.5 w-3.5" />}
-                label="Pop Growth"
+                label="Pop growth"
                 value={`${((growth?.population ?? 0) * 100).toFixed(2)}%`}
               />
             </div>
@@ -240,7 +240,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
           {/* Blurbs */}
           {blurbs.length > 0 && (
             <div className="wikios-portal-blurbs rounded-card border-separator bg-surface border">
-              <h3 className="wikios-portal-blurbs-title">Country Voices</h3>
+              <h3 className="wikios-portal-blurbs-title">Country voices</h3>
               {blurbs.map((r) => (
                 <Link
                   key={r.id}

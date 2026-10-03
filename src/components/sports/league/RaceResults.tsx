@@ -104,7 +104,7 @@ function DriverStandingsTable({ races }: { races: RaceResultsProps["races"] }) {
           <div className="rounded-row border-separator bg-surface-secondary shadow-card flex h-8 w-8 items-center justify-center border">
             <Zap className="text-yellow h-4 w-4" />
           </div>
-          <h4 className="text-headline text-label">Driver World Championship Standings</h4>
+          <h4 className="text-headline text-label">Driver world championship standings</h4>
         </div>
       </div>
       <Table>
@@ -128,14 +128,14 @@ function DriverStandingsTable({ races }: { races: RaceResultsProps["races"] }) {
                     Pts
                   </span>
                 </TooltipTrigger>
-                <TooltipContent>Championship Points</TooltipContent>
+                <TooltipContent>Championship points</TooltipContent>
               </Tooltip>
             </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {sorted.map((d, i) => (
-            <TableRow key={d.driverId} className="transition-transform active:scale-[0.99]">
+            <TableRow key={d.driverId}>
               <TableCell className="font-semibold">
                 {i === 0 ? (
                   <Badge
@@ -210,7 +210,7 @@ export function RaceResults({ races, className }: RaceResultsProps) {
                 <div className="rounded-card border-separator bg-surface-secondary border p-4">
                   <h4 className="text-label-secondary text-eyebrow mb-3 flex items-center gap-2">
                     <Flag className="text-label h-3.5 w-3.5" />
-                    Starting Grid Positions
+                    Starting grid positions
                   </h4>
                   <Table>
                     <TableHeader>
@@ -241,7 +241,7 @@ export function RaceResults({ races, className }: RaceResultsProps) {
                 <div className="rounded-card border-separator bg-surface-secondary border p-4">
                   <h4 className="text-label-secondary text-eyebrow mb-3 flex items-center gap-2">
                     <Clock className="text-yellow h-3.5 w-3.5" />
-                    Official Grand Prix Classification
+                    Official Grand Prix classification
                   </h4>
                   <Table>
                     <TableHeader>
@@ -281,7 +281,7 @@ export function RaceResults({ races, className }: RaceResultsProps) {
                                   variant="outline"
                                   className="border-indigo/30 bg-indigo/10 text-indigo text-footnote font-semibold"
                                 >
-                                  Fastest Lap
+                                  Fastest lap
                                 </Badge>
                               )}
                             </TableCell>

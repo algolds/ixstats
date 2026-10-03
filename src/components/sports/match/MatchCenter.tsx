@@ -69,7 +69,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
     onSuccess: async (data) => {
       soundCues.success();
       setIsSimulatingState(false);
-      notify.success("Match simulation concluded!");
+      notify.success("Match simulation concluded");
       await utils.sports.getMatchDetails.invalidate({ matchId });
       await utils.sports.getLeague.invalidate();
       await utils.sports.getStandings.invalidate();
@@ -342,11 +342,11 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
         className="w-full space-y-4"
       >
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="surface">Sport Surface</TabsTrigger>
+          <TabsTrigger value="surface">Sport surface</TabsTrigger>
           <TabsTrigger value="timeline">
             Event Timeline <span className="tabular-nums">({trace.length})</span>
           </TabsTrigger>
-          <TabsTrigger value="analysis">Match Analysis</TabsTrigger>
+          <TabsTrigger value="analysis">Match analysis</TabsTrigger>
         </TabsList>
 
         {/* 1. Vector Sport Surface View */}
@@ -418,7 +418,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
               <EmptyState
                 compact
                 icon={<Activity />}
-                title="Simulate this match to generate deterministic analysis facts."
+                title="Simulate this match to see its analysis."
               />
             </Card>
           ) : (
@@ -445,7 +445,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
               <div className="grid grid-cols-2 gap-3">
                 <Card padding="md">
                   <Stat
-                    label="Possession Delta"
+                    label="Possession delta"
                     value={
                       (analysisFacts.possessionDeltaPct ?? 0) > 0
                         ? `+${analysisFacts.possessionDeltaPct}%`
@@ -456,7 +456,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
 
                 <Card padding="md">
                   <Stat
-                    label="Dominant Phase"
+                    label="Dominant phase"
                     value={
                       <span className="capitalize">
                         {analysisFacts.dominantPhase ?? "balanced"}
@@ -472,7 +472,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
                   <div className="flex items-center gap-3">
                     <Trophy className="text-yellow size-6 shrink-0" aria-hidden />
                     <div>
-                      <Eyebrow>Standout Athlete</Eyebrow>
+                      <Eyebrow>Standout athlete</Eyebrow>
                       <p className="text-headline text-label">
                         {analysisFacts.keyPerformer.athleteName} (
                         {analysisFacts.keyPerformer.teamName})

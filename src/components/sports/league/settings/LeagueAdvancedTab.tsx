@@ -86,7 +86,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
 
   const resetSeason = api.sports.resetSeason.useMutation({
     onSuccess: () => {
-      notify.success("Season reset successfully");
+      notify.success("Season reset");
       void utils.sports.getLeague.invalidate({ id: league.id });
     },
     onError: (err) => notify.error(err.message),
@@ -94,7 +94,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
 
   const regenerateSchedule = api.sports.regenerateSchedule.useMutation({
     onSuccess: () => {
-      notify.success("Matches regenerated successfully");
+      notify.success("Matches regenerated");
       void utils.sports.getLeague.invalidate({ id: league.id });
     },
     onError: (err) => notify.error(err.message),
@@ -110,7 +110,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
 
   const transferTeam = api.sports.transferTeam.useMutation({
     onSuccess: () => {
-      notify.success("Team transferred successfully");
+      notify.success("Team transferred");
       setTransferTeamId("");
       setTransferTargetLeagueId("");
       void utils.sports.getLeague.invalidate({ id: league.id });
@@ -196,7 +196,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
               }
             >
               {resetSeason.isPending ? <Loader2 className="animate-spin" /> : <Trash2 />}
-              Reset Current Season
+              Reset current season
             </Button>
 
             <Button
@@ -215,7 +215,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
               }
             >
               {regenerateSchedule.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />}
-              Regenerate Matches
+              Regenerate matches
             </Button>
           </div>
         </div>
@@ -223,11 +223,11 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
 
       {/* 3. Custom Simulation Rules */}
       <div className="border-separator space-y-3 border-t pt-4">
-        <Label className="text-subhead text-label-secondary">Custom Engine Rules</Label>
+        <Label className="text-subhead text-label-secondary">Custom engine rules</Label>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label htmlFor="games-per-season" className="text-footnote">
-              Games Per Season
+              Games per season
             </Label>
             <Input
               id="games-per-season"
@@ -240,7 +240,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
           </div>
           <div className="space-y-2">
             <Label htmlFor="double-rr" className="text-footnote">
-              Double Round Robin
+              Double round robin
             </Label>
             <Select
               value={doubleRoundRobin ? "true" : "false"}
@@ -257,7 +257,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
           </div>
           <div className="space-y-2">
             <Label htmlFor="playoff-format" className="text-footnote">
-              Playoff Format
+              Playoff format
             </Label>
             <Select value={playoffFormat} onValueChange={setPlayoffFormat}>
               <SelectTrigger id="playoff-format" className="text-footnote h-8">
@@ -272,7 +272,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
           </div>
           <div className="space-y-2">
             <Label htmlFor="rng-seed" className="text-footnote">
-              RNG Seed Override
+              RNG seed override
             </Label>
             <Input
               id="rng-seed"
@@ -289,7 +289,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
       {/* 4. Manual Result Override */}
       {activeSeason && activeMatches.length > 0 && (
         <div className="border-separator space-y-3 border-t pt-4">
-          <Label className="text-subhead text-label-secondary">Manual Result Override</Label>
+          <Label className="text-subhead text-label-secondary">Manual result override</Label>
           <div className="space-y-2">
             <Select value={overrideMatchId} onValueChange={setOverrideMatchId}>
               <SelectTrigger className="text-footnote h-9">
@@ -359,7 +359,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
                   className="w-full"
                 >
                   {overrideMatchResult.isPending && <Loader2 className="animate-spin" />}
-                  Save Overridden Score
+                  Save overridden score
                 </Button>
               </div>
             )}
@@ -369,7 +369,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
 
       {/* 5. Transfer / Swap Teams */}
       <div className="border-separator space-y-3 border-t pt-4">
-        <Label className="text-subhead text-label-secondary">Transfer Team to League</Label>
+        <Label className="text-subhead text-label-secondary">Transfer team to league</Label>
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-2">
             <Select value={transferTeamId} onValueChange={setTransferTeamId}>
@@ -423,7 +423,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
             className="w-full"
           >
             {transferTeam.isPending && <Loader2 className="animate-spin" />}
-            Execute Transfer
+            Execute transfer
           </Button>
         </div>
       </div>

@@ -70,7 +70,7 @@ function dedupeImages(existing: CommonsImage[], incoming: CommonsImage[]): Commo
 }
 
 export default function RepositoryPage() {
-  usePageTitle({ title: "Image Repository" });
+  usePageTitle({ title: "Image repository" });
 
   const [tab, setTab] = useState<Tab>("commons");
   const [wikiSubSource, setWikiSubSource] = useState<WikiSubSource>("ixwiki");
@@ -339,9 +339,9 @@ export default function RepositoryPage() {
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label="Open Welcome Guide"
+              aria-label="Open welcome guide"
               onClick={() => setWelcomeOpen(true)}
-              title="Open Welcome Guide"
+              title="Open welcome guide"
               className="text-label-secondary hover:text-tint rounded-full"
             >
               <HelpCircle className="h-4 w-4" />
@@ -358,7 +358,7 @@ export default function RepositoryPage() {
               ]}
             />
 
-            {/* Apple Scope Toggle: IxWiki vs IIWiki */}
+            {/* Scope toggle: IxWiki vs IIWiki */}
             {tab === "wiki" && (
               <SegmentedControl
                 aria-label="Wiki source selection"
@@ -377,8 +377,8 @@ export default function RepositoryPage() {
               variant="outline"
               size="sm"
               onClick={() => setMobileCategoriesOpen(true)}
-              className="text-footnote border-separator hover:bg-fill-3 flex h-8 items-center gap-2 px-3 active:scale-[0.98] lg:hidden"
-              title="Browse Categories"
+              className="text-footnote border-separator hover:bg-fill-3 flex h-8 items-center gap-2 px-3 lg:hidden"
+              title="Browse categories"
             >
               <Folder className="text-tint h-3.5 w-3.5" />
               <span className="text-caption">Categories</span>
@@ -445,7 +445,7 @@ export default function RepositoryPage() {
               onClick={handleClearFilters}
               className="text-label-secondary h-auto px-0"
             >
-              Clear Filters
+              Clear filters
             </Button>
           )}
         </div>
@@ -455,7 +455,7 @@ export default function RepositoryPage() {
           <div className="mb-3 flex flex-wrap items-center gap-2 px-1 py-1">
             <span className="text-eyebrow text-label-secondary mr-1 flex items-center gap-1">
               <Sparkles className="text-yellow h-3 w-3" />
-              Quick Explore:
+              Quick explore:
             </span>
             {STARTER_CATEGORIES.map((cat) => (
               <Button
@@ -550,7 +550,7 @@ export default function RepositoryPage() {
           <SheetHeader className="border-separator border-b p-4">
             <SheetTitle className="text-headline flex items-center gap-2">
               <Folder className="text-tint h-4 w-4" />
-              Browse Categories
+              Browse categories
             </SheetTitle>
           </SheetHeader>
           <div className="h-[calc(100vh-64px)] overflow-y-auto">

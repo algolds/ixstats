@@ -66,7 +66,7 @@ export function InventorySidebarContent({
       {/* Stats */}
       <Card className="rounded-row bg-teal/10 p-3">
         <div className="flex items-center justify-between">
-          <span className="text-label-secondary text-eyebrow">My Cards</span>
+          <span className="text-label-secondary text-eyebrow">My cards</span>
           <Layers className="text-teal h-3.5 w-3.5" />
         </div>
         <div className="mt-2 flex items-baseline gap-1">
@@ -128,11 +128,11 @@ export function InventorySidebarContent({
           <SelectValue placeholder="Rarity" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Rarities</SelectItem>
+          <SelectItem value="all">All rarities</SelectItem>
           <SelectItem value="COMMON">Common</SelectItem>
           <SelectItem value="UNCOMMON">Uncommon</SelectItem>
           <SelectItem value="RARE">Rare</SelectItem>
-          <SelectItem value="ULTRA_RARE">Ultra Rare</SelectItem>
+          <SelectItem value="ULTRA_RARE">Ultra rare</SelectItem>
           <SelectItem value="EPIC">Epic</SelectItem>
           <SelectItem value="LEGENDARY">Legendary</SelectItem>
         </SelectContent>
@@ -155,10 +155,10 @@ export function InventorySidebarContent({
           <SelectValue placeholder="Type" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Types</SelectItem>
-          <SelectItem value="NS_IMPORT">NationStates Import</SelectItem>
-          <SelectItem value="LORE_CARD">Lore Card</SelectItem>
-          <SelectItem value="EVENT_CARD">Event Card</SelectItem>
+          <SelectItem value="all">All types</SelectItem>
+          <SelectItem value="NS_IMPORT">NationStates import</SelectItem>
+          <SelectItem value="LORE_CARD">Lore card</SelectItem>
+          <SelectItem value="EVENT_CARD">Event card</SelectItem>
         </SelectContent>
       </Select>
 
@@ -179,7 +179,7 @@ export function InventorySidebarContent({
           <SelectValue placeholder="Season" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Seasons</SelectItem>
+          <SelectItem value="all">All seasons</SelectItem>
           <SelectItem value="1">Season 1</SelectItem>
           <SelectItem value="2">Season 2</SelectItem>
           <SelectItem value="3">Season 3</SelectItem>
@@ -189,13 +189,13 @@ export function InventorySidebarContent({
       <div className="border-separator space-y-3 border-t pt-3">
         {/* Sort */}
         <div>
-          <p className="text-label-secondary text-eyebrow mb-1">Sort By</p>
+          <p className="text-label-secondary text-eyebrow mb-1">Sort by</p>
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="text-footnote h-7 w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="acquired">Recently Acquired</SelectItem>
+              <SelectItem value="acquired">Recently acquired</SelectItem>
               <SelectItem value="rarity">Rarity (High to Low)</SelectItem>
               <SelectItem value="value">Market Value (High to Low)</SelectItem>
               <SelectItem value="name">Alphabetical</SelectItem>
@@ -249,7 +249,7 @@ export function InventorySidebarContent({
               onCheckedChange={(checked) => setHideValue(checked as boolean)}
               className="h-3.5 w-3.5"
             />
-            <span className="text-footnote font-medium">Hide Card Values</span>
+            <span className="text-footnote font-medium">Hide card values</span>
           </label>
         </div>
       </div>

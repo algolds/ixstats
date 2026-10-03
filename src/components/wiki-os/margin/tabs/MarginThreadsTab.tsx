@@ -536,7 +536,7 @@ function ThreadCard({
               {/* Create Subpage Button */}
               <Link
                 href={`/wiki/edit/${sproutChildSlug}?parent=${encodeURIComponent(thread.articleTitle)}`}
-                className="rounded-control border-green/30 bg-green/10 text-caption text-green hover:bg-green/20 flex cursor-pointer items-center gap-1 border px-2 py-1 font-semibold transition-transform duration-100 active:scale-[0.98]"
+                className="rounded-control border-green/30 bg-green/10 text-caption text-green hover:bg-green/20 flex cursor-pointer items-center gap-1 border px-2 py-1 font-semibold"
                 title="Create a new subpage from this discussion"
               >
                 <Sprout className="h-3 w-3" />
@@ -762,7 +762,7 @@ export function MarginThreadsTab({
               className={cn("shrink-0", MARGIN_FILLED)}
             >
               <Plus className="size-3.5" />
-              <span>New Thread</span>
+              <span>New thread</span>
             </Button>
           )}
         </div>
@@ -816,7 +816,7 @@ export function MarginThreadsTab({
                 className="text-label h-auto px-0"
               >
                 <HelpCircle className="text-yellow size-3" />
-                <span>Category Guide</span>
+                <span>Category guide</span>
               </Button>
             </div>
             <RadioCardGroup

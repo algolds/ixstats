@@ -1,7 +1,7 @@
 "use client";
 // src/components/wiki-os/shared/StashWelcomeModal.tsx
 // User guide for the Stash System across WikiOS & IxStates.
-// Features unslop writing, 4-tab feature overview, and Apple Design modal styling.
+// Features unslop writing, 4-tab feature overview.
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -149,9 +149,9 @@ const FORUM_STEPS = [
 
 const TABS = [
   { label: "Overview", steps: OVERVIEW_STEPS },
-  { label: "Articles & Quotes", steps: ARTICLE_STEPS },
-  { label: "Media Assets", steps: MEDIA_STEPS },
-  { label: "Forum Threads", steps: FORUM_STEPS },
+  { label: "Articles & quotes", steps: ARTICLE_STEPS },
+  { label: "Media assets", steps: MEDIA_STEPS },
+  { label: "Forum threads", steps: FORUM_STEPS },
 ];
 
 export function StashWelcomeModal({
@@ -210,7 +210,7 @@ export function StashWelcomeModal({
               <Bookmark className="size-5" aria-hidden="true" />
             </div>
             <div>
-              <DialogTitle className="text-title-3">Stash Guide</DialogTitle>
+              <DialogTitle className="text-title-3">Stash guide</DialogTitle>
               <DialogDescription className="text-footnote">
                 Save-for-later, built for lore.
               </DialogDescription>
@@ -262,7 +262,7 @@ export function StashWelcomeModal({
         {/* Footer */}
         <div className="border-separator flex items-center justify-end border-t px-6 py-4">
           <Button size="sm" onClick={handleClose}>
-            Start Stashing
+            Start stashing
           </Button>
         </div>
       </DialogContent>

@@ -87,7 +87,7 @@ export function StashManagerModal({
         <DialogHeader className="pr-8">
           <DialogTitle className="text-headline flex items-center gap-2">
             <Bookmark className="text-tint size-4" aria-hidden="true" />
-            Save to Lore Stash
+            Save to lore stash
           </DialogTitle>
           <DialogDescription>
             Choose which stashes to save <strong>{pageTitle.replace(/_/g, " ")}</strong> to:
@@ -212,7 +212,7 @@ export function StashManagerModal({
         <Button asChild variant="ghost" size="sm" className="justify-start">
           <Link href={withBasePath("/stashes")} onClick={onClose}>
             <ChevronRight aria-hidden="true" />
-            Go to My Stashes
+            Go to my stashes
           </Link>
         </Button>
       </DialogContent>

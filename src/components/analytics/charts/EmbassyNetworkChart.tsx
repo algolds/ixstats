@@ -33,7 +33,7 @@ export const EmbassyNetworkChart = React.memo<EmbassyNetworkChartProps>(
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building className="h-5 w-5 text-orange-600" />
-            Embassy Network Growth
+            Embassy network growth
           </CardTitle>
           <CardDescription>Expansion of diplomatic presence</CardDescription>
         </CardHeader>

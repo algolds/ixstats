@@ -40,7 +40,7 @@ export const DiplomaticInfluenceChart = React.memo<DiplomaticInfluenceChartProps
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
               <Globe className="h-5 w-5 text-blue-600" />
-              Diplomatic Influence Over Time
+              Diplomatic influence over time
             </span>
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="sm" onClick={onExportCSV} title="Export to CSV">

@@ -60,7 +60,7 @@ export default function CollectionDetailPage() {
 
   const likeMutation = api.vault.likeCollection.useMutation({
     onSuccess: () => {
-      notify.success("Collection liked!");
+      notify.success("Collection liked");
     },
   });
 
@@ -68,7 +68,7 @@ export default function CollectionDetailPage() {
     onSuccess: () => {
       setCommentText("");
       refetchComments();
-      notify.success("Comment added!");
+      notify.success("Comment added");
     },
   });
 
@@ -80,7 +80,7 @@ export default function CollectionDetailPage() {
         <Card className="flex max-w-md flex-col gap-6 py-6">
           <CardContent className="p-8 text-center">
             <p className="text-title-3 text-label mb-4 font-semibold">Collection not found</p>
-            <Button onClick={() => router.push("/vault/collections")}>Back to Collections</Button>
+            <Button onClick={() => router.push("/vault/collections")}>Back to collections</Button>
           </CardContent>
         </Card>
       </div>
@@ -108,14 +108,14 @@ export default function CollectionDetailPage() {
       isPublic: editPublic,
     });
     setEditModalOpen(false);
-    notify.success("Collection updated successfully");
+    notify.success("Collection updated");
   };
 
   const handleDelete = async () => {
     await deleteCollection(collection.id);
     setDeleteModalOpen(false);
     router.push("/vault/collections");
-    notify.success("Collection deleted successfully");
+    notify.success("Collection deleted");
   };
 
   const handleShare = () => {
@@ -156,7 +156,7 @@ export default function CollectionDetailPage() {
       <Link href="/vault/collections">
         <Button variant="ghost" size="sm">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Collections
+          Back to collections
         </Button>
       </Link>
 
@@ -183,7 +183,7 @@ export default function CollectionDetailPage() {
             )}
           >
             <Grid3x3 className="mr-2 h-4 w-4" />
-            Grid View
+            Grid view
           </TabsTrigger>
           <TabsTrigger
             value="carousel"
@@ -214,7 +214,7 @@ export default function CollectionDetailPage() {
         <TabsContent value="grid">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-title-2 text-label sm:text-title-1">Cards in Collection</h2>
+              <h2 className="text-title-2 text-label sm:text-title-1">Cards in collection</h2>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" className="bg-surface-secondary border">
                   <Filter className="mr-2 h-4 w-4" />
@@ -222,7 +222,7 @@ export default function CollectionDetailPage() {
                 </Button>
                 <Button size="sm" className="text-black">
                   <Plus className="mr-2 h-4 w-4" />
-                  Add Cards
+                  Add cards
                 </Button>
               </div>
             </div>
@@ -230,7 +230,7 @@ export default function CollectionDetailPage() {
             <Card className="flex flex-col gap-6 py-6">
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Grid3x3 className="text-label-tertiary mb-4 h-16 w-16" />
-                <p className="text-title-3 text-label mb-2 font-semibold">CardGrid Component</p>
+                <p className="text-title-3 text-label mb-2 font-semibold">CardGrid component</p>
                 <p className="text-body text-label-secondary">
                   Card grid will display collection cards
                 </p>

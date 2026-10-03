@@ -118,10 +118,10 @@ interface Particle {
 }
 
 const STORE_TABS = [
-  { id: "my-packs" as const, label: "My Packs", icon: Package },
+  { id: "my-packs" as const, label: "My packs", icon: Package },
   { id: "boosters" as const, label: "Marketplace", icon: Store },
   { id: "cosmetics" as const, label: "Cosmetics", icon: Sparkles },
-  { id: "upgrades" as const, label: "Account Upgrades", icon: TrendingUp },
+  { id: "upgrades" as const, label: "Account upgrades", icon: TrendingUp },
 ];
 
 export function VaultStoreTab() {
@@ -148,7 +148,7 @@ export function VaultStoreTab() {
 
   const purchasePackMutation = api.cardPacks.purchasePack.useMutation({
     onSuccess: (data: any) => {
-      notify.success("Card pack purchased successfully!");
+      notify.success("Card pack purchased");
       void utils.vault.getBalance.invalidate();
       void utils.cardPacks.getMyPacks.invalidate();
       const userPackId = data.userPack?.id || data.userPackId;
@@ -167,7 +167,7 @@ export function VaultStoreTab() {
 
   const purchaseStoreItemMutation = api.vault.purchaseStoreItem.useMutation({
     onSuccess: () => {
-      notify.success("Item unlocked successfully!");
+      notify.success("Item unlocked");
       void utils.vault.getBalance.invalidate();
       void utils.vault.getPurchasedItems.invalidate();
       setActiveCheckoutItem(null);
@@ -232,21 +232,21 @@ export function VaultStoreTab() {
 
   const activeConfig = {
     "my-packs": {
-      title: "My Unopened Packs",
+      title: "My unopened packs",
       icon: <Package className="text-blue h-4 w-4" />,
-      description: "Packs you own that are ready to rip open. Reveal rare and legendary cards!",
+      description: "Packs you own that are ready to open.",
       badgeStyle: "border-blue/20 text-blue bg-blue/5",
       statusText: "Inventory",
     },
     boosters: {
-      title: "Booster Packs",
+      title: "Booster packs",
       icon: <Store className="text-tint h-4 w-4" />,
       description: "Purchase new card packs to expand your collection.",
       badgeStyle: "border-yellow/20 text-yellow bg-yellow/5",
       statusText: "Marketplace",
     },
     cosmetics: {
-      title: "Profile Customizations",
+      title: "Profile customizations",
       icon: <Sparkles className="text-indigo h-4 w-4" />,
       description:
         "Exclusive decorations, neon frames, and elite name tags to customize your profile presence.",
@@ -254,39 +254,14 @@ export function VaultStoreTab() {
       statusText: "Cosmetics",
     },
     upgrades: {
-      title: "Vault System Upgrades",
+      title: "Vault system upgrades",
       icon: <TrendingUp className="text-green h-4 w-4" />,
       description:
         "Permanent collection expansion, passive credit yield buffs, and wiki lore submission tokens.",
       badgeStyle: "border-green/20 text-green bg-green/5",
-      statusText: "Account Upgrades",
+      statusText: "Account upgrades",
     },
   }[storeTab];
-
-  const tabColors = {
-    "my-packs": {
-      text: "text-blue",
-      bg: "bg-blue/10 border-blue/20",
-      icon: "text-blue",
-    },
-    boosters: {
-      text: "text-yellow",
-      bg: "bg-yellow/10 border-yellow/20",
-      icon: "text-yellow",
-    },
-    cosmetics: {
-      text: "text-indigo",
-      bg: "bg-indigo/10 border-indigo/20",
-      icon: "text-indigo",
-    },
-    upgrades: {
-      text: "text-green",
-      bg: "bg-green/10 border-green/20",
-      icon: "text-green",
-    },
-  };
-
-  const activeColor = tabColors[storeTab];
 
   return (
     <div className="pb-10">
@@ -297,8 +272,6 @@ export function VaultStoreTab() {
           tabs={STORE_TABS}
           activeTab={storeTab}
           onTabChange={setStoreTab}
-          activeColor={activeColor}
-          tabColors={tabColors}
           myPacksCount={myPacks?.length}
         />
 
@@ -355,7 +328,7 @@ export function VaultStoreTab() {
                                 }
                                 className="h-7 w-full"
                               >
-                                Rip Open Pack
+                                Rip open pack
                               </Button>
                             }
                           />
@@ -366,7 +339,7 @@ export function VaultStoreTab() {
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <Package className="text-label-tertiary mb-3 h-12 w-12" />
-                    <h4 className="text-label text-headline">No Unopened Packs</h4>
+                    <h4 className="text-label text-headline">No unopened packs</h4>
                     <p className="text-label-secondary text-footnote mt-1 mb-4 max-w-xs">
                       You don't have any packs in your inventory right now. Head over to the
                       marketplace to get some!
@@ -417,7 +390,7 @@ export function VaultStoreTab() {
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <Store className="text-label-tertiary mb-3 h-12 w-12" />
-                    <h4 className="text-label text-headline">No Packs Available</h4>
+                    <h4 className="text-label text-headline">No packs available</h4>
                     <p className="text-label-secondary text-footnote mt-1">
                       Check back later for new pack drops and special seasonal releases.
                     </p>
@@ -441,9 +414,9 @@ export function VaultStoreTab() {
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <Sparkles className="text-label-tertiary mb-3 h-12 w-12" />
-                    <h4 className="text-label text-headline">No Cosmetics Listed</h4>
+                    <h4 className="text-label text-headline">No cosmetics listed</h4>
                     <p className="text-label-secondary text-footnote mt-1">
-                      Profile customization cosmetics will appear here soon.
+                      No cosmetics are for sale right now.
                     </p>
                   </div>
                 ))}
@@ -466,9 +439,9 @@ export function VaultStoreTab() {
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <TrendingUp className="text-label-tertiary mb-3 h-12 w-12" />
-                    <h4 className="text-label text-headline">No Upgrades Listed</h4>
+                    <h4 className="text-label text-headline">No upgrades listed</h4>
                     <p className="text-label-secondary text-footnote mt-1">
-                      Account system upgrades will appear here soon.
+                      No upgrades are for sale right now.
                     </p>
                   </div>
                 ))}
@@ -488,8 +461,8 @@ export function VaultStoreTab() {
 
       <VaultParticleExplosionModal
         open={showCelebration}
-        title="Item Unlocked!"
-        subtitle="Your purchase was successful. Check your account settings to apply your new unlock!"
+        title="Item added"
+        subtitle="Apply it from your account settings."
       />
 
       {/* Booster pack opening overlay */}

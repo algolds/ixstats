@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 /**
  * Radix portals (dialogs, sheets, popovers, menus, tooltips) render into <body>, outside the app's
  * `[data-app]` subtree, so they would fall back to the default tint. Rendered inside an app scope, this
- * mirrors the deepest mounted scope onto <body> so portalled content inherits the app tint (Facet 3 §2.2).
+ * mirrors the deepest mounted scope onto <body> so portalled content inherits the app tint.
  */
 const mounted = new Map<symbol, { app: string; depth: number }>();
 

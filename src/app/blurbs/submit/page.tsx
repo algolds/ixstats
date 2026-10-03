@@ -31,7 +31,7 @@ function SubmitPromptForm() {
       <Card className="facet-hierarchy-child flex flex-col gap-6 py-6">
         <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
           <CheckCircle className="h-10 w-10 text-emerald-400" />
-          <h3 className="text-base font-semibold">Prompt Submitted</h3>
+          <h3 className="text-base font-semibold">Prompt submitted</h3>
           <p className="text-muted-foreground text-sm">
             Your prompt has been submitted for review. An admin will publish it once approved.
           </p>
@@ -40,7 +40,7 @@ function SubmitPromptForm() {
               Submit another
             </Button>
             <Link href={withBasePath("/blurbs")}>
-              <Button size="sm">Browse Prompts</Button>
+              <Button size="sm">Browse prompts</Button>
             </Link>
           </div>
         </CardContent>
@@ -89,7 +89,7 @@ function SubmitPromptForm() {
               onClick={() => submitMutation.mutate({ title, question })}
               disabled={!title.trim() || !question.trim() || submitMutation.isPending}
             >
-              {submitMutation.isPending ? "Submitting..." : "Submit Prompt"}
+              {submitMutation.isPending ? "Submitting..." : "Submit prompt"}
             </Button>
           </div>
 
@@ -113,7 +113,7 @@ function SubmitPromptForm() {
 }
 
 export default function SubmitBlurbPage() {
-  usePageTitle({ title: "Submit a Prompt" });
+  usePageTitle({ title: "Submit a prompt" });
   const { isSignedIn } = useAuth();
 
   return (
@@ -121,7 +121,7 @@ export default function SubmitBlurbPage() {
       <div className="mx-auto max-w-3xl py-6">
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold sm:text-2xl">Submit a Prompt</h1>
+            <h1 className="text-xl font-bold sm:text-2xl">Submit a prompt</h1>
             <p className="text-muted-foreground mt-1 text-sm">
               Suggest a prompt for the community. Admins will review and publish it.
             </p>
@@ -135,12 +135,12 @@ export default function SubmitBlurbPage() {
           <Card className="facet-hierarchy-child flex flex-col gap-6 py-6">
             <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
               <User className="text-muted-foreground h-10 w-10" />
-              <h3 className="text-base font-semibold">Sign In Required</h3>
+              <h3 className="text-base font-semibold">Sign in required</h3>
               <p className="text-muted-foreground text-sm">
                 Sign in to submit a prompt suggestion.
               </p>
               <Link href={withBasePath("/setup")}>
-                <Button size="sm">Sign In</Button>
+                <Button size="sm">Sign in</Button>
               </Link>
             </CardContent>
           </Card>

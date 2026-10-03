@@ -166,14 +166,14 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
-            Club Settings
+            Club settings
           </DialogTitle>
           <DialogDescription>Edit branding and appearance details for your club.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="club-name">Club Name</Label>
+            <Label htmlFor="club-name">Club name</Label>
             <Input
               id="club-name"
               value={name}
@@ -184,7 +184,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="club-color">Primary Color</Label>
+            <Label htmlFor="club-color">Primary color</Label>
             <div className="flex items-center gap-2">
               <Input
                 id="club-color"
@@ -204,7 +204,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="team-wiki-slug">Wiki Article Slug</Label>
+            <Label htmlFor="team-wiki-slug">Wiki article slug</Label>
             <Input
               id="team-wiki-slug"
               value={wikiSlug}
@@ -218,7 +218,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
           </div>
 
           <div className="space-y-2">
-            <Label>Club Logo</Label>
+            <Label>Club logo</Label>
             <div className="flex items-start gap-4">
               <div
                 className={cn(
@@ -264,7 +264,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                   className="text-footnote"
                 >
                   <ImageIcon className="mr-2 h-3.5 w-3.5" />
-                  Browse Media
+                  Browse media
                 </Button>
                 {logoPreviewSrc && (
                   <Button
@@ -291,7 +291,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
 
           {/* Cover Image */}
           <div className="space-y-2">
-            <Label>Cover Image</Label>
+            <Label>Cover image</Label>
             <p className="text-label-secondary text-footnote leading-tight">
               Shown as the background banner for your club.
             </p>
@@ -339,7 +339,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                   className="text-footnote"
                 >
                   <ImageIcon className="mr-2 h-3.5 w-3.5" />
-                  Browse Media
+                  Browse media
                 </Button>
                 {coverPreviewSrc && (
                   <Button
@@ -381,7 +381,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
           </Button>
           <Button onClick={handleSave} disabled={updateTeam.isPending}>
             {updateTeam.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
-            Save Changes
+            Save changes
           </Button>
         </DialogFooter>
       </DialogContent>

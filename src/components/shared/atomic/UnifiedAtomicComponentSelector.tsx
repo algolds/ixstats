@@ -273,26 +273,26 @@ export function UnifiedAtomicComponentSelector<T extends string>({
                 <div className="text-label text-title-3">
                   {effectiveness.totalEffectiveness.toFixed(0)}%
                 </div>
-                <div className="text-label-secondary text-footnote">Total Effectiveness</div>
+                <div className="text-label-secondary text-footnote">Total effectiveness</div>
               </div>
 
               <div className="text-center">
                 <div className="text-title-3 text-green">{effectiveness.synergyCount}</div>
-                <div className="text-label-secondary text-footnote">Active Synergies</div>
+                <div className="text-label-secondary text-footnote">Active synergies</div>
               </div>
 
               <div className="text-center">
                 <div className={cn("text-title-3", `text-${themeClasses.primary}`)}>
                   ${(totalImplementationCost / 1000).toFixed(0)}k
                 </div>
-                <div className="text-label-secondary text-footnote">Implementation Cost</div>
+                <div className="text-label-secondary text-footnote">Implementation cost</div>
               </div>
 
               <div className="text-center">
                 <div className={cn("text-title-3", `text-${themeClasses.primary}`)}>
                   ${(totalMaintenanceCost / 1000).toFixed(0)}k
                 </div>
-                <div className="text-label-secondary text-footnote">Annual Cost</div>
+                <div className="text-label-secondary text-footnote">Annual cost</div>
               </div>
             </div>
           </Card>

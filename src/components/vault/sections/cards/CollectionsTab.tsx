@@ -41,7 +41,7 @@ export function CollectionsTab({
 
   const createCollection = api.cards.createCollection.useMutation({
     onSuccess: () => {
-      vaultNotify.success("Collection created!");
+      vaultNotify.success("Collection created");
       onCreateOpenChange(false);
       setNewName("");
       setNewDescription("");
@@ -65,7 +65,7 @@ export function CollectionsTab({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Folder className="text-tint h-3.5 w-3.5" />
-          <span className="text-footnote font-semibold">My Collections</span>
+          <span className="text-footnote font-semibold">My collections</span>
         </div>
       </div>
 
@@ -79,7 +79,7 @@ export function CollectionsTab({
         <Card className="flex flex-col gap-6 py-6">
           <CardContent className="flex flex-col items-center justify-center py-8">
             <Folder className="text-label-tertiary mb-3 h-10 w-10" />
-            <p className="text-label text-headline mb-1">No Collections</p>
+            <p className="text-label text-headline mb-1">No collections</p>
             <p className="text-label-secondary text-footnote max-w-md text-center">
               Create collections to organize cards by theme, rarity, or custom categories.
             </p>
@@ -90,7 +90,7 @@ export function CollectionsTab({
               onClick={() => onCreateOpenChange(true)}
             >
               <Plus className="mr-2 h-3.5 w-3.5" />
-              Create Collection
+              Create collection
             </Button>
           </CardContent>
         </Card>
@@ -179,7 +179,7 @@ export function CollectionsTab({
       <Dialog open={createOpen} onOpenChange={onCreateOpenChange}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-headline">Create Collection</DialogTitle>
+            <DialogTitle className="text-headline">Create collection</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
@@ -189,7 +189,7 @@ export function CollectionsTab({
               <Input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder="My Rare Cards"
+                placeholder="My rare cards"
                 className="text-footnote h-8"
                 maxLength={100}
               />

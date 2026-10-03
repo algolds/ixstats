@@ -72,7 +72,7 @@ export function VaultTradingTab() {
       <div className="grid grid-cols-3 gap-3">
         {[
           {
-            label: "Active Trades",
+            label: "Active trades",
             value: activeTrades?.length || 0,
             color: "text-blue",
             icon: ArrowRightLeft,
@@ -84,7 +84,7 @@ export function VaultTradingTab() {
             icon: History,
           },
           {
-            label: "Success Rate",
+            label: "Success rate",
             value: `${successRate}%`,
             color: "text-yellow",
             icon: TrendingUp,
@@ -147,7 +147,7 @@ export function VaultTradingTab() {
             ) : (
               <div className="border-separator rounded-control flex flex-col items-center justify-center border border-dashed py-10">
                 <ArrowRightLeft className="text-label-tertiary mb-3 h-10 w-10" />
-                <p className="text-label text-footnote font-semibold">No Active Trades</p>
+                <p className="text-label text-footnote font-semibold">No active trades</p>
                 <p className="text-label-secondary text-footnote mt-0.5 mb-3">
                   Start trading by creating a new offer
                 </p>
@@ -171,7 +171,7 @@ export function VaultTradingTab() {
             ) : (
               <div className="border-separator rounded-control flex flex-col items-center justify-center border border-dashed py-10">
                 <Inbox className="text-label-tertiary mb-3 h-10 w-10" />
-                <p className="text-label text-footnote font-semibold">No Incoming Trades</p>
+                <p className="text-label text-footnote font-semibold">No incoming trades</p>
                 <p className="text-label-secondary text-footnote mt-0.5">
                   You don't have any trade offers to review
                 </p>
@@ -192,7 +192,7 @@ export function VaultTradingTab() {
             ) : (
               <div className="border-separator rounded-control flex flex-col items-center justify-center border border-dashed py-10">
                 <Send className="text-label-tertiary mb-3 h-10 w-10" />
-                <p className="text-label text-footnote font-semibold">No Outgoing Trades</p>
+                <p className="text-label text-footnote font-semibold">No outgoing trades</p>
                 <p className="text-label-secondary text-footnote mt-0.5 mb-3">
                   You haven't sent any trade offers yet
                 </p>

@@ -49,7 +49,7 @@ export function MetadataStep({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <label className="text-subhead text-label-secondary block">Template Metadata</label>
+        <label className="text-subhead text-label-secondary block">Template metadata</label>
         <span className="text-footnote text-label-secondary italic">Optional - Skip to create</span>
       </div>
 
@@ -57,7 +57,7 @@ export function MetadataStep({
         {pageType === "person" && (
           <>
             <label className="block space-y-1">
-              <span className="text-footnote text-label-secondary">Birth Date</span>
+              <span className="text-footnote text-label-secondary">Birth date</span>
               <Input
                 type="text"
                 placeholder="e.g. 15 October 1985"
@@ -66,7 +66,7 @@ export function MetadataStep({
               />
             </label>
             <label className="block space-y-1">
-              <span className="text-footnote text-label-secondary">Birth Place</span>
+              <span className="text-footnote text-label-secondary">Birth place</span>
               <Input
                 type="text"
                 placeholder="e.g. London, United Kingdom"
@@ -98,7 +98,7 @@ export function MetadataStep({
         {pageType === "company" && (
           <>
             <label className="block space-y-1">
-              <span className="text-footnote text-label-secondary">Company Type</span>
+              <span className="text-footnote text-label-secondary">Company type</span>
               <Input
                 type="text"
                 placeholder="e.g. Public, Private"
@@ -141,7 +141,7 @@ export function MetadataStep({
         {pageType === "history" && (
           <>
             <label className="block space-y-1">
-              <span className="text-footnote text-label-secondary">Event Date</span>
+              <span className="text-footnote text-label-secondary">Event date</span>
               <Input
                 type="text"
                 placeholder="e.g. June 19, 2026"
@@ -159,7 +159,7 @@ export function MetadataStep({
               />
             </label>
             <label className="block space-y-1">
-              <span className="text-footnote text-label-secondary">Key Participants</span>
+              <span className="text-footnote text-label-secondary">Key participants</span>
               <Input
                 type="text"
                 placeholder="e.g. Allies, Axis"
@@ -193,7 +193,7 @@ export function MetadataStep({
               />
             </label>
             <label className="block space-y-1">
-              <span className="text-footnote text-label-secondary">Government Type</span>
+              <span className="text-footnote text-label-secondary">Government type</span>
               <Input
                 type="text"
                 placeholder="e.g. Parliamentary Republic"
@@ -204,7 +204,7 @@ export function MetadataStep({
               />
             </label>
             <label className="block space-y-1">
-              <span className="text-footnote text-label-secondary">Leader Name</span>
+              <span className="text-footnote text-label-secondary">Leader name</span>
               <Input
                 type="text"
                 placeholder="Current leader..."
@@ -272,7 +272,7 @@ export function MetadataStep({
         {pageType === "politics" && (
           <>
             <label className="block space-y-1">
-              <span className="text-footnote text-label-secondary">Party Leader</span>
+              <span className="text-footnote text-label-secondary">Party leader</span>
               <Input
                 type="text"
                 placeholder="Leader name..."
@@ -299,7 +299,7 @@ export function MetadataStep({
               />
             </label>
             <label className="block space-y-1">
-              <span className="text-footnote text-label-secondary">Party Colors</span>
+              <span className="text-footnote text-label-secondary">Party colors</span>
               <Input
                 type="text"
                 placeholder="e.g. Red and White"
@@ -331,7 +331,7 @@ export function MetadataStep({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-footnote text-label-secondary">Primary Application</span>
+              <span className="text-footnote text-label-secondary">Primary application</span>
               <Input
                 type="text"
                 placeholder="e.g. Computation"

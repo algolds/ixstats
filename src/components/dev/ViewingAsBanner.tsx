@@ -40,7 +40,7 @@ export function ViewingAsBanner() {
         )}
       >
         <ArrowLeft className="h-3 w-3" />
-        Return to My Country
+        Return to my country
       </button>
     </div>
   );

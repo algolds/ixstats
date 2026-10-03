@@ -1,8 +1,6 @@
 "use client";
 // src/components/wiki-os/margin/modals/MarginCategoryHelpModal.tsx
 // Interactive Category Guide modal for the 5 Ws Thread Categories in WikiOS Margin.
-// Apple Design & Lore Theory Standard.
-
 import { Compass } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "~/components/ui/dialog";
@@ -35,7 +33,7 @@ export function MarginCategoryHelpModal({
             <Compass className="size-5" aria-hidden="true" />
           </div>
           <div>
-            <DialogTitle className="text-title-3">Category Guide</DialogTitle>
+            <DialogTitle className="text-title-3">Category guide</DialogTitle>
             <DialogDescription className="text-footnote">
               The 5 Ws classification system for lore discussions
             </DialogDescription>

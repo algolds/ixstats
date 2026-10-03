@@ -33,7 +33,7 @@ export function VaultMilestonesCard({
 
   const milestones = [
     {
-      title: "Novice Collector",
+      title: "Novice collector",
       target: "Collect 10 cards",
       current: totalCards,
       max: 10,
@@ -44,7 +44,7 @@ export function VaultMilestonesCard({
       ),
     },
     {
-      title: "Credit Stash",
+      title: "Credit stash",
       target: (
         <span className="inline-flex items-center gap-0.5">
           Reach 5,000 <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
@@ -52,20 +52,19 @@ export function VaultMilestonesCard({
       ),
       current: creditsBalance,
       max: 5000,
-      reward: "Bronze Badge",
+      reward: "Bronze badge",
     },
     {
-      title: "Master Deck",
+      title: "Master deck",
       target: "Collect 50 cards",
       current: totalCards,
       max: 50,
-      reward: "Special Pack",
+      reward: "Special pack",
     },
   ];
 
   return (
-    // v2 (c5c6b382): a glass showcase card with the dot texture.
-    <Card variant="hero" padding="lg" className="overflow-hidden">
+    <Card padding="lg" className="overflow-hidden">
       <div className="border-separator mb-4 flex items-center justify-between border-b pb-3">
         <div className="flex items-center gap-2">
           <div className="rounded-row bg-tint-fill text-tint shadow-card flex h-8 w-8 items-center justify-center border font-medium">
@@ -75,9 +74,9 @@ export function VaultMilestonesCard({
         </div>
         <span className="text-footnote text-yellow-ink flex items-center gap-1 font-semibold">
           <Award aria-hidden className="h-3.5 w-3.5" />
-          <span className={cn(myRank !== "Unranked" && "font-data tabular-nums")}>{myRank}</span>
+          <span className={cn(myRank !== "Unranked" && "tabular-nums")}>{myRank}</span>
           <span>
-            (<span className="font-data tabular-nums">{totalScore}</span> pts)
+            (<span className="tabular-nums">{totalScore}</span> pts)
           </span>
         </span>
       </div>
@@ -91,7 +90,7 @@ export function VaultMilestonesCard({
             <div key={idx} className="border-separator bg-fill-4 rounded-card space-y-2 border p-3">
               <div className="text-footnote flex items-center justify-between">
                 <span className="text-label font-semibold">{m.title}</span>
-                <span className="text-label-secondary text-footnote font-data font-semibold tabular-nums">
+                <span className="text-label-secondary text-footnote font-semibold tabular-nums">
                   {m.current.toLocaleString()} / {m.max.toLocaleString()}
                 </span>
               </div>

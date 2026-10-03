@@ -147,7 +147,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
             size="icon-sm"
             onClick={onClose}
             title="Close Panel (Esc)"
-            aria-label="Close Panel"
+            aria-label="Close panel"
             className="text-label-secondary shrink-0 rounded-full"
           >
             <X aria-hidden="true" />
@@ -163,7 +163,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
           {previewError ? (
             <span className="flex h-full w-full flex-col items-center justify-center gap-2 p-4 text-center">
               <Image className="text-label-secondary size-8" aria-hidden="true" />
-              <span className="text-caption text-label-secondary">Preview Unavailable</span>
+              <span className="text-caption text-label-secondary">Preview unavailable</span>
               <span className="text-footnote text-label-secondary">
                 Click download to view original source
               </span>
@@ -181,7 +181,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
           <span className="duration-fast pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
             <span className="bg-surface-elevated text-caption text-label shadow-floating flex items-center gap-2 rounded-full px-3 py-2">
               <ZoomIn className="size-3.5" aria-hidden="true" />
-              Click to Zoom
+              Click to zoom
             </span>
           </span>
         </button>
@@ -190,7 +190,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
       {/* Actions and format selector */}
       <div className="border-separator space-y-3 border-b p-3">
         <div className="space-y-2">
-          <Eyebrow>Wikitext Copy Format</Eyebrow>
+          <Eyebrow>Wikitext copy format</Eyebrow>
           <SegmentedControl
             aria-label="Wikitext copy format"
             size="sm"
@@ -213,7 +213,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
             ) : (
               <Copy aria-hidden="true" />
             )}
-            {copied ? "Copied" : format === "url" ? "Copy URL" : "Copy Wikitext"}
+            {copied ? "Copied" : format === "url" ? "Copy URL" : "Copy wikitext"}
           </Button>
           <Button
             size="icon-sm"
@@ -306,7 +306,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
         {panelContent}
       </div>
 
-      {/* Compact width: detail sheet (spec §7.3) */}
+      {/* Compact width: detail sheet */}
       <Sheet open={isCompact} onOpenChange={(open) => !open && onClose()}>
         <SheetContent
           showCloseButton={false}

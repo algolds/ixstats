@@ -39,7 +39,7 @@ export function AccountManagerModal({
         data-dialog-nested="true"
       >
         <DialogHeader className="border-separator shrink-0 border-b px-6 pt-6 pb-4">
-          <DialogTitle className="text-title-3">Account Manager</DialogTitle>
+          <DialogTitle className="text-title-3">Account manager</DialogTitle>
         </DialogHeader>
         <div className="flex-1 overflow-x-hidden overflow-y-auto p-6">
           <EnhancedAccountManager

@@ -112,7 +112,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
                   key={type}
                   type="button"
                   onClick={() => onSelectReaction(type)}
-                  className="text-label-secondary hover:text-label hover:bg-fill-3 rounded-full p-2 transition-[color,background-color,scale] duration-150 hover:scale-125 active:scale-[0.98]"
+                  className="text-label-secondary hover:text-label hover:bg-fill-3 rounded-full p-2 transition-[color,background-color,scale] duration-150 hover:scale-125"
                   title={type}
                   aria-label={type}
                 >
@@ -131,7 +131,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
                 key={emoji.id}
                 type="button"
                 onClick={() => onSelectReaction(`discord:${emoji.name}`)}
-                className="hover:bg-fill-3 rounded-control-sm p-2 transition-[background-color,scale] duration-150 hover:scale-125 active:scale-[0.98]"
+                className="hover:bg-fill-3 rounded-control-sm p-2 transition-[background-color,scale] duration-150 hover:scale-125"
                 title={`:${emoji.name}:`}
                 aria-label={emoji.name}
               >
@@ -159,7 +159,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
                       key={emoji.id}
                       type="button"
                       onClick={() => onSelectReaction(`discord:${emoji.name}`)}
-                      className="hover:bg-fill-3 rounded-control-sm p-2 transition-[background-color,scale] duration-150 hover:scale-125 active:scale-[0.98]"
+                      className="hover:bg-fill-3 rounded-control-sm p-2 transition-[background-color,scale] duration-150 hover:scale-125"
                       title={`:${emoji.name}:`}
                       aria-label={emoji.name}
                     >

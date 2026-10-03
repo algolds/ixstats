@@ -88,7 +88,7 @@ export function WikiSlashMenu({
                       if (editor) item.execute(editor);
                       onSelect(item);
                     }}
-                    className="rounded-control flex cursor-pointer items-center gap-2 px-3 py-2 active:scale-[0.98]"
+                    className="rounded-control flex cursor-pointer items-center gap-2 px-3 py-2"
                   >
                     <span className="text-label-secondary text-footnote w-5 text-center tabular-nums">
                       {item.icon}

@@ -171,7 +171,7 @@ export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
               </div>
             ) : (
               <div className="text-footnote text-label-secondary flex h-full items-center justify-center">
-                No GIFs found. Try searching for something else!
+                No GIFs found. Try another search.
               </div>
             )}
           </div>

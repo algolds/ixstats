@@ -22,7 +22,6 @@ export interface VaultRecentActivityCardProps {
 
 export function VaultRecentActivityCard({ loading, activities }: VaultRecentActivityCardProps) {
   return (
-    // A ledger list: opaque (Facet 3.1 dense data), with v2's dot texture and tinted shadow.
     <Card padding="lg" className="overflow-hidden">
       <div className="border-separator mb-4 flex items-center gap-2 border-b pb-4">
         <div className="text-label-secondary rounded-row border-separator bg-fill-3 shadow-card flex h-8 w-8 items-center justify-center border">
@@ -48,7 +47,7 @@ export function VaultRecentActivityCard({ loading, activities }: VaultRecentActi
             return (
               <div
                 key={activity.id}
-                // A ledger row, not a control: no hover wash or press (Facet 3.1 HIG).
+                // A ledger row, not a control: no hover wash or press.
                 className="border-separator bg-fill-4 rounded-card text-footnote flex items-center justify-between border px-4 py-3"
               >
                 <div className="flex items-center gap-3">
@@ -76,7 +75,7 @@ export function VaultRecentActivityCard({ loading, activities }: VaultRecentActi
                 </div>
                 <span
                   className={cn(
-                    "text-body font-data flex items-center gap-0.5 font-semibold tabular-nums",
+                    "text-body flex items-center gap-0.5 font-semibold tabular-nums",
                     isEarn ? "text-green-ink" : "text-red-ink"
                   )}
                 >

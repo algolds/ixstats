@@ -36,7 +36,7 @@ export default function WikiTemplatesPage() {
   );
 
   const categories = [
-    { id: "all", label: "All Suites" },
+    { id: "all", label: "All suites" },
     { id: "sovereign", label: "🏛️ Sovereign & Lands" },
     { id: "biography", label: "👤 Biographies" },
     { id: "defense", label: "⚔️ Defense & Fleet" },
@@ -102,7 +102,7 @@ export default function WikiTemplatesPage() {
   };
 
   return (
-    <WikiOSLayout title="Template Registry & Infobox Suite">
+    <WikiOSLayout title="Template registry & infobox suite">
       <div className="mx-auto w-full max-w-7xl space-y-6 pb-16">
         {/* Header Banner */}
         <div className="border-separator bg-surface rounded-card border p-6">
@@ -112,7 +112,7 @@ export default function WikiTemplatesPage() {
                 <ViewGrid className="h-6 w-6" />
               </div>
               <div>
-                <h1 className="text-label text-title-2">Template Registry & Infobox Suite</h1>
+                <h1 className="text-label text-title-2">Template registry & infobox suite</h1>
                 <p className="text-label-secondary text-footnote mt-0.5">
                   Unified polymorphic realm factbooks, dynamic variant schemas, and live simulation
                   data connectors
@@ -222,7 +222,7 @@ export default function WikiTemplatesPage() {
                     value={viewMode}
                     onValueChange={setViewMode}
                     options={[
-                      { value: "visual", label: "Visual Preview", icon: <Eye /> },
+                      { value: "visual", label: "Visual preview", icon: <Eye /> },
                       { value: "schema", label: "Parameters", icon: <List /> },
                       { value: "wikitext", label: "Wikitext", icon: <Code /> },
                     ]}
@@ -285,7 +285,7 @@ export default function WikiTemplatesPage() {
                     <div className="border-separator bg-fill-4 rounded-card space-y-3 border p-4">
                       <div className="flex items-center justify-between">
                         <span className="text-label text-caption font-semibold">
-                          Factbook Specification
+                          Factbook specification
                         </span>
                         <Badge
                           variant="outline"
@@ -297,13 +297,13 @@ export default function WikiTemplatesPage() {
 
                       <div className="text-footnote grid grid-cols-2 gap-2">
                         <div className="bg-surface border-separator rounded-row border p-3">
-                          <div className="text-label-secondary text-subhead">Template Class</div>
+                          <div className="text-label-secondary text-subhead">Template class</div>
                           <div className="text-label mt-0.5 font-medium">
                             {templateData?.category || presetMatch?.category || "Factbook"}
                           </div>
                         </div>
                         <div className="bg-surface border-separator rounded-row border p-3">
-                          <div className="text-label-secondary text-eyebrow">Active Subtype</div>
+                          <div className="text-label-secondary text-eyebrow">Active subtype</div>
                           <div className="text-label mt-0.5 font-medium">
                             {activeVariant?.label || "Standard"}
                           </div>
@@ -315,7 +315,7 @@ export default function WikiTemplatesPage() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-label-secondary text-subhead">
-                          Wikitext Invocation
+                          Wikitext invocation
                         </span>
                         <Button
                           variant="link"
@@ -377,7 +377,7 @@ export default function WikiTemplatesPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-label-secondary text-caption font-semibold">
-                      Complete Wikitext Starter Code
+                      Complete wikitext starter code
                     </span>
                     <span className="text-label-secondary text-footnote">
                       Ready to paste into source editor

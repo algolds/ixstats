@@ -1,8 +1,6 @@
 "use client";
 // src/components/wiki-os/stashes/StashThreadsList.tsx
 // Saved forum threads view with rich metadata and direct link to native forum.
-// Apple Design & Facet compliance.
-
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
 import { ChatBubble as MessageSquare, Clock, Xmark as X, ArrowUpRight } from "iconoir-react";
@@ -60,7 +58,7 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
               <div className="flex shrink-0 items-center gap-1">
                 <Link
                   href={withBasePath(forumUrl)}
-                  className="rounded-row border-separator bg-fill-4 text-caption text-label-secondary hover:bg-fill-4 hover:text-label flex items-center gap-1 border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                  className="rounded-row border-separator bg-fill-4 text-caption text-label-secondary hover:bg-fill-4 hover:text-label flex items-center gap-1 border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                   title="Open forum thread"
                 >
                   <span>Open</span>

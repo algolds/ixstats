@@ -215,7 +215,7 @@ export default function ExplorePage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h1 className="text-destructive text-title-1">Error Loading Countries</h1>
+          <h1 className="text-destructive text-title-1">Error loading countries</h1>
           <p className="text-label-secondary mt-2">{error.message}</p>
         </div>
       </div>
@@ -296,7 +296,7 @@ export default function ExplorePage() {
                 <SheetTrigger asChild>
                   <Button variant="secondary" className="w-full">
                     <Filter aria-hidden="true" className="h-4 w-4" />
-                    Show Filters
+                    Show filters
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-full overflow-y-auto sm:max-w-sm">

@@ -114,7 +114,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
 
   const updateTeamTactics = api.sports.updateTeamTactics.useMutation({
     onSuccess: () => {
-      notify.success("Tactics updated successfully");
+      notify.success("Tactics updated");
       void refetchOverview();
     },
     onError: (err) => {
@@ -134,7 +134,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
 
   const listPlayer = api.sports.listPlayerForTransfer.useMutation({
     onSuccess: () => {
-      notify.success("Player listed on the transfer market!");
+      notify.success("Player listed on the transfer market");
       setSelectedPlayer(null);
       void refetchOverview();
     },
@@ -145,7 +145,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
 
   const claimTeam = api.sports.claimTeam.useMutation({
     onSuccess: () => {
-      notify.success("Team claimed successfully!");
+      notify.success("Team claimed");
       void refetchOverview();
       router.refresh();
     },
@@ -223,7 +223,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
                 You own this club. Refreshing session data...
               </p>
               <Button variant="secondary" onClick={() => void refetchOverview()}>
-                Reload Dashboard
+                Reload dashboard
               </Button>
             </div>
           ) : (
@@ -246,11 +246,11 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
           <EmptyState
             icon={<Trophy />}
             title="Club not found"
-            message="The franchise you are looking for does not exist or has been relocated."
+            message="This club does not exist or was removed."
             action={
               <Button onClick={() => router.push(withBasePath("/myclub"))}>
                 <ArrowLeft />
-                Back to MyClub Lobby
+                Back to MyClub lobby
               </Button>
             }
           />
@@ -271,9 +271,8 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
 
   const sportTheme = getSportTheme(team.league?.sportPreset);
 
-  // v2 club header: the glass hero card (no glow: sports stay flat).
   const heroSection = (
-    <Card variant="hero" className="overflow-hidden">
+    <Card className="overflow-hidden">
       {team.coverImage && (
         <div className="bg-fill-3 h-28 overflow-hidden">
           <img src={withBasePath(team.coverImage)} alt="" className="h-full w-full object-cover" />
@@ -320,7 +319,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
         <div className="flex items-center gap-2">
           <Button variant="secondary" size="sm" onClick={() => setSettingsOpen(true)}>
             <Settings />
-            Manage Club
+            Manage club
           </Button>
         </div>
       </div>

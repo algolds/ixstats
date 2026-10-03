@@ -71,7 +71,7 @@ export function MessagesViewDetailsModal({
         <DialogHeader>
           <DialogTitle className="text-title-3 flex items-center gap-2">
             <Info className="text-tint size-5" aria-hidden="true" />
-            Conversation Details
+            Conversation details
           </DialogTitle>
         </DialogHeader>
 

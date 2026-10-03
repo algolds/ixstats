@@ -59,7 +59,7 @@ export function WikiOSUtilitiesDeck({
   }, []);
 
   const domains = [
-    { id: "all", label: "All Utilities", count: 21, icon: Book },
+    { id: "all", label: "All utilities", count: 21, icon: Book },
     { id: "discovery", label: "Discovery", count: 8, icon: Compass },
     { id: "editorial", label: "Editorial", count: 5, icon: EditPencil },
     { id: "diagnostics", label: "Diagnostics", count: 5, icon: Activity },
@@ -70,7 +70,7 @@ export function WikiOSUtilitiesDeck({
     <div className={`space-y-6 ${embedded ? "p-0" : "mx-auto max-w-7xl px-4 py-8 sm:px-6"}`}>
       {/* Spotlight Command Search & Segmented Filter Bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {/* Domain Segmented Control with Apple Spring Pill Physics */}
+        {/* Domain Segmented Control */}
         <SegmentedControl
           aria-label="Utility domain"
           value={selectedDomain}

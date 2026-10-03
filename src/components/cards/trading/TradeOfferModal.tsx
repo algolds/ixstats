@@ -159,7 +159,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
 
     const createTrade = api.trading.createtradeOffer.useMutation({
       onSuccess: () => {
-        vaultNotify.tradeCompleted("Trade offer sent successfully!");
+        vaultNotify.tradeCompleted("Trade offer sent");
         onClose();
       },
       onError: (error: any) => {
@@ -254,7 +254,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
             <DialogHeader className="mb-4 shrink-0">
               <DialogTitle className="text-title-2 text-label sm:text-title-1 flex items-center gap-3">
                 <ArrowRightLeft className="text-tint h-6 w-6" />
-                Create Trade Offer
+                Create trade offer
               </DialogTitle>
             </DialogHeader>
 
@@ -537,7 +537,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                     )}
                   >
                     {fairTrade ? (
-                      <span className="text-green font-semibold">Fair Trade</span>
+                      <span className="text-green font-semibold">Fair trade</span>
                     ) : (
                       <>
                         <AlertCircle className="text-yellow h-4 w-4 shrink-0" />

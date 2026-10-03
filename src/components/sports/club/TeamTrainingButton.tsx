@@ -29,7 +29,7 @@ export function TeamTrainingButton({ teamId, playerCount, onTrained }: TeamTrain
       className="w-full"
     >
       {teamTraining.isPending ? <Loader2 className="animate-spin" /> : <Dumbbell />}
-      Team Training Session
+      Team training session
       <span className="text-label-secondary text-footnote ml-auto tabular-nums">
         <Users className="mr-0.5 inline size-3.5" aria-hidden />
         {playerCount} &middot; 100c

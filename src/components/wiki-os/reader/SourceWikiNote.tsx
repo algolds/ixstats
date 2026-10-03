@@ -11,7 +11,7 @@ export function SourceWikiNote({ title, wikiSource }: { title: string; wikiSourc
   return (
     <p className="text-label-secondary text-footnote mt-2 mb-3 flex items-center gap-2 px-1">
       <Lock className="h-3 w-3 shrink-0" aria-hidden />
-      <span>From {name} — read only ·</span>
+      <span>From {name} (read only) ·</span>
       <a
         href={`${origin}/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`}
         target="_blank"

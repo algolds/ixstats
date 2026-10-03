@@ -7,11 +7,10 @@ import { type Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    template: "%s — IxWiki",
-    default: "IxWiki — WikiOS",
+    template: "%s | IxWiki",
+    default: "IxWiki | WikiOS",
   },
-  description:
-    "IxWiki powered by WikiOS — the modern wiki experience for collaborative worldbuilding",
+  description: "IxWiki, powered by WikiOS: a wiki for collaborative worldbuilding",
   openGraph: {
     siteName: "IxWiki",
     type: "website",

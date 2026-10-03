@@ -292,7 +292,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
   if (!league) {
     return (
       <div className="mx-auto max-w-xl space-y-4 py-20 text-center">
-        <h2 className="text-title-2 text-label">Competition Not Found</h2>
+        <h2 className="text-title-2 text-label">Competition not found</h2>
         <p className="text-footnote text-label-secondary">
           The requested sports league does not exist or has been archived.
         </p>
@@ -300,7 +300,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
           onClick={() => router.push("/myleague")}
           className="rounded-row text-footnote font-semibold"
         >
-          Return to MyLeague Lobby
+          Return to MyLeague lobby
         </Button>
       </div>
     );

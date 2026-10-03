@@ -76,8 +76,7 @@ export function LeagueMasthead({
   return (
     <header
       className={cn(
-        // v2 masthead: the glass hero card (Facet 3.1 glass hero tier). Sports stay flat: no glow.
-        "material-hero text-label relative isolate overflow-hidden rounded-3xl p-6 md:p-8",
+        "bg-surface border-separator shadow-card text-label rounded-card relative overflow-hidden border p-6 md:p-8",
         className
       )}
     >
@@ -86,7 +85,7 @@ export function LeagueMasthead({
         <div className="text-footnote text-label-secondary flex items-center gap-2 font-semibold">
           <Link
             href={withBasePath("/myleague")}
-            className="hover:text-label flex items-center gap-2 transition-colors active:scale-[0.98]"
+            className="hover:text-label flex items-center gap-2 transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Leagues</span>
@@ -102,7 +101,7 @@ export function LeagueMasthead({
         {canManageLeague && onOpenSettings && (
           <Button size="sm" variant="outline" onClick={handleSettingsClick} className="px-3">
             <Settings className="h-3.5 w-3.5" />
-            <span>Manage League</span>
+            <span>Manage league</span>
           </Button>
         )}
       </div>

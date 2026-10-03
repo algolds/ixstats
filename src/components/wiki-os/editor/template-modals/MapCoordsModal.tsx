@@ -302,7 +302,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
       isOpen={isOpen}
       onClose={onClose}
       icon={<MapIcon className="text-green size-5 shrink-0" aria-hidden="true" />}
-      title="Insert Map Coords & Embeds"
+      title="Insert map coords & embeds"
       className="h-[85vh] max-w-5xl"
       bodyClassName="flex overflow-hidden"
     >
@@ -318,8 +318,8 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
             value={activeTab}
             onValueChange={setActiveTab}
             options={[
-              { value: "coords", label: "Coords Link" },
-              { value: "mapembed", label: "Map Embed" },
+              { value: "coords", label: "Coords link" },
+              { value: "mapembed", label: "Map embed" },
             ]}
           />
 
@@ -337,7 +337,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
 
           {/* Markers Picker */}
           <div className="shrink-0 space-y-2">
-            <h4 className="text-subhead text-label block">Quick Select Existing Marker</h4>
+            <h4 className="text-subhead text-label block">Quick select existing marker</h4>
             <div className="border-separator divide-separator bg-fill-4 rounded-control text-footnote max-h-36 scrollbar-thin divide-y overflow-y-auto border">
               {isMapBundleLoading && (
                 <div className="text-label-secondary flex items-center gap-2 p-3">
@@ -426,7 +426,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-subhead text-label block">Embed Width</label>
+                <label className="text-subhead text-label block">Embed width</label>
                 <Input
                   type="text"
                   value={embedWidth}
@@ -469,7 +469,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
             onClick={handleInsertLink}
             disabled={activeTab === "coords" && !label.trim()}
           >
-            Insert Map Feature
+            Insert map feature
           </Button>
         </div>
 

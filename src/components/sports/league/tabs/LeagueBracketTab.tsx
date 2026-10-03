@@ -30,7 +30,7 @@ export function LeagueBracketTab({
     return (
       <Card className="space-y-3 p-12 text-center">
         <Swords className="text-label-tertiary mx-auto h-12 w-12" />
-        <h4 className="text-headline text-label">No Season Initialized</h4>
+        <h4 className="text-headline text-label">No season initialized</h4>
         <p className="text-footnote text-label-secondary">
           Start a season in the Command overview to generate the championship tournament bracket.
         </p>
@@ -52,7 +52,7 @@ export function LeagueBracketTab({
     return (
       <Card className="space-y-3 p-12 text-center">
         <Swords className="text-label-tertiary mx-auto h-12 w-12" />
-        <h4 className="text-headline text-label">No Bracket Matches Generated</h4>
+        <h4 className="text-headline text-label">No bracket matches generated</h4>
         <p className="text-footnote text-label-secondary">
           Tournament brackets will display once qualifying matches are seeded.
         </p>

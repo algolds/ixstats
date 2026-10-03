@@ -38,7 +38,7 @@ export const EconomicOverviewChart = React.memo<EconomicOverviewChartProps>(
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
               <LineChartIcon className="h-5 w-5 text-blue-600" />
-              GDP Per Capita Trend
+              GDP per capita trend
             </span>
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="sm" onClick={onExportCSV} title="Export to CSV">

@@ -116,11 +116,11 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
         if (!loreStats) return null;
         return (
           <div className="bg-surface-secondary border-separator rounded-row space-y-3 border p-4">
-            <h4 className="text-label text-label-secondary text-eyebrow">Historical Metrics</h4>
+            <h4 className="text-label text-label-secondary text-eyebrow">Historical metrics</h4>
             <div className="grid grid-cols-2 gap-3">
               <div className="border-separator bg-surface rounded-control border p-3">
                 <div className="text-label-secondary text-footnote font-medium">
-                  Historical Significance
+                  Historical significance
                 </div>
                 <div className="text-title-2 text-yellow mt-1 tabular-nums">
                   {loreStats.historicalSignificance ?? 0}/100
@@ -128,7 +128,7 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
               </div>
               <div className="border-separator bg-surface rounded-control border p-3">
                 <div className="text-label-secondary text-footnote font-medium">
-                  Cultural Impact
+                  Cultural impact
                 </div>
                 <div className="text-title-2 text-indigo mt-1 tabular-nums">
                   {loreStats.culturalImpact ?? 0}/100

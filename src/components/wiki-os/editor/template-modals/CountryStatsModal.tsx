@@ -20,18 +20,18 @@ import { TemplateModalShell } from "./TemplateModalShell";
 const STAT_FIELDS = [
   { value: "population", label: "Population" },
   { value: "gdp", label: "Total GDP" },
-  { value: "gdpPerCapita", label: "GDP per Capita" },
-  { value: "gdpGrowth", label: "GDP Growth Rate" },
-  { value: "unemployment", label: "Unemployment Rate" },
-  { value: "inflation", label: "Inflation Rate" },
-  { value: "stability", label: "Political Stability" },
-  { value: "tier", label: "Economic Tier" },
-  { value: "leader", label: "Leader Name" },
-  { value: "government", label: "Government Type" },
+  { value: "gdpPerCapita", label: "GDP per capita" },
+  { value: "gdpGrowth", label: "GDP growth rate" },
+  { value: "unemployment", label: "Unemployment rate" },
+  { value: "inflation", label: "Inflation rate" },
+  { value: "stability", label: "Political stability" },
+  { value: "tier", label: "Economic tier" },
+  { value: "leader", label: "Leader name" },
+  { value: "government", label: "Government type" },
   { value: "motto", label: "Motto" },
-  { value: "capital", label: "Capital City" },
+  { value: "capital", label: "Capital city" },
   { value: "currency", label: "Currency" },
-  { value: "currencySymbol", label: "Currency Symbol" },
+  { value: "currencySymbol", label: "Currency symbol" },
 ];
 
 export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
@@ -80,7 +80,7 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
       isOpen={isOpen}
       onClose={onClose}
       icon={<BarChart2 className="text-yellow size-5 shrink-0" aria-hidden="true" />}
-      title="Insert Country Stat"
+      title="Insert country stat"
     >
       {/* Content */}
       <div className="space-y-6 p-6">
@@ -128,7 +128,7 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
                     title={c.name}
                     trailing={
                       viewerCountryId && c.id === viewerCountryId ? (
-                        <Badge variant="success">My Country</Badge>
+                        <Badge variant="success">My country</Badge>
                       ) : undefined
                     }
                   />
@@ -147,7 +147,7 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
         {selectedCountry && (
           <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-3">
             <div>
-              <span className="text-label-secondary text-footnote block">Selected Country</span>
+              <span className="text-label-secondary text-footnote block">Selected country</span>
               <span className="text-label text-headline">{selectedCountry.name}</span>
             </div>
             <Compass className="text-yellow h-5 w-5" />
@@ -189,7 +189,7 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
             Cancel
           </Button>
           <Button onClick={handleInsertStat} disabled={!selectedCountry}>
-            Insert Stat
+            Insert stat
           </Button>
         </div>
       </div>

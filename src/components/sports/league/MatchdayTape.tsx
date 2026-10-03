@@ -54,7 +54,7 @@ export function MatchdayTape({ matches, matchDay, onMatchClick, className }: Mat
     >
       <div className="mb-2 flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
-          <span className="text-eyebrow text-label-secondary">Round Matches</span>
+          <span className="text-eyebrow text-label-secondary">Round matches</span>
           {matchDay && (
             <Badge
               variant="outline"

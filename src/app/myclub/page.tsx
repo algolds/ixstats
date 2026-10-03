@@ -4,7 +4,7 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { EmptyState } from "~/components/ui/empty-state";
-import { Eyebrow } from "~/components/ui/eyebrow";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Stat } from "~/components/ui/stat";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
@@ -18,19 +18,19 @@ import { Card } from "~/components/ui/card";
 const MYCLUB_HELP_STEPS: HeroHelpStep[] = [
   {
     title: "Welcome to MyClub",
-    body: "MyClub is your franchise headquarters. Inspect all the sports clubs you manage across different leagues, tune rosters, and oversee finances.",
+    body: "MyClub lists every club you manage across leagues, with their rosters and finances.",
   },
   {
-    title: "Claim a Franchise",
-    body: "Head over to MyLeague, open a competition, and claim an available team to add it to your managerial portfolio.",
+    title: "Claim a club",
+    body: "Open a competition in MyLeague and claim an available team to add it here.",
   },
   {
-    title: "Squad Tactics & Lineups",
-    body: "Set starting lineups, choose tactical formations, and train athletes to boost their match ratings and physical conditioning.",
+    title: "Squad and lineups",
+    body: "Set starting lineups and formations, and train athletes to raise their match ratings and fitness.",
   },
   {
-    title: "Matchday Economics",
-    body: "Upgrade stadium capacity, set ticket prices to optimize attendance revenue, and activate commercial sponsors.",
+    title: "Matchday finances",
+    body: "Expand the stadium, set ticket prices and sign commercial sponsors.",
   },
 ];
 
@@ -72,37 +72,25 @@ export default function MyClubPage() {
 
   return (
     <div className="container mx-auto max-w-7xl space-y-8 px-4 py-8">
-      {/* ─── FRANCHISE SUITE HEADER ─── v2 glass hero (no glow: sports stay flat) */}
-      <Card variant="hero" padding="lg">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Eyebrow className="text-tint">Franchise management</Eyebrow>
-              <HeroHelpModal
-                title="MyClub Guide"
-                steps={MYCLUB_HELP_STEPS}
-                accentClass="text-tint"
-              />
-            </div>
-            <h1 className="text-label text-large-title">
-              MyClub <span className="text-label-secondary font-normal">Portfolio</span>
-            </h1>
-            <p className="text-label-secondary text-callout max-w-2xl">
-              Take the helm of your sports organizations: set matchday formations, manage athlete
-              rosters, configure ticket prices, and negotiate sponsorships.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <Button variant="secondary" onClick={() => router.push(withBasePath("/myleague"))}>
+      <PageHeader
+        title="MyClub"
+        className="-mx-2"
+        actions={
+          <>
+            <HeroHelpModal title="MyClub guide" steps={MYCLUB_HELP_STEPS} accentClass="text-tint" />
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => router.push(withBasePath("/myleague"))}
+            >
               <Trophy />
-              Browse Competitions
+              Browse competitions
             </Button>
-          </div>
-        </div>
-      </Card>
+          </>
+        }
+      />
 
-      {/* ─── FRANCHISE ROSTER / GRID ─── */}
+      {/* ─── CLUB GRID ─── */}
       <section className="space-y-4" aria-labelledby="managed-clubs">
         <h2
           id="managed-clubs"
@@ -122,11 +110,11 @@ export default function MyClubPage() {
           <Card>
             <EmptyState
               icon={<Shield />}
-              title="No Franchises Claimed Yet"
-              message="Explore active competitions in MyLeague to claim an available team and begin your managerial journey."
+              title="No clubs claimed yet"
+              message="Claim an available team in a MyLeague competition to manage it here."
               action={
                 <Button onClick={() => router.push(withBasePath("/myleague"))}>
-                  Browse Leagues & Claim Club
+                  Browse leagues
                   <ArrowRight />
                 </Button>
               }
@@ -242,7 +230,7 @@ export default function MyClubPage() {
                           router.push(withBasePath(`/myclub/${team.id}`));
                         }}
                       >
-                        Manage Hub
+                        Manage club
                       </Button>
                     </div>
                   </div>

@@ -198,7 +198,7 @@ export function GlassChart({
                   />
                 </svg>
               </div>
-              <p className="text-sm text-[var(--color-error)]">Chart Error</p>
+              <p className="text-sm text-[var(--color-error)]">Chart error</p>
               <p className="text-xs text-[var(--color-text-muted)]">{error}</p>
             </div>
           </div>

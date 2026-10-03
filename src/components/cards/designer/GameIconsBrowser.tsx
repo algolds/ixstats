@@ -194,7 +194,7 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
               {/* Author Filter Dropdown */}
               <Select value={selectedAuthor} onValueChange={setSelectedAuthor}>
                 <SelectTrigger className="text-footnote h-9 w-[160px]">
-                  <SelectValue placeholder="All Authors" />
+                  <SelectValue placeholder="All authors" />
                 </SelectTrigger>
                 <SelectContent>
                   {authors.map((auth) => (

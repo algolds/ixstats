@@ -4,7 +4,7 @@ import type { CardRarity, CardType } from "@prisma/client";
 export type SubTab = "inventory" | "collections" | "gallery";
 
 export const SUB_TABS: { id: SubTab; label: string; icon: typeof Layers }[] = [
-  { id: "gallery", label: "Card Gallery", icon: Globe },
+  { id: "gallery", label: "Card gallery", icon: Globe },
   { id: "inventory", label: "Inventory", icon: Layers },
   { id: "collections", label: "Collections", icon: Folder },
 ];

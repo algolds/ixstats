@@ -42,7 +42,7 @@ export function WikiOSBrandLockup({
           <IxWikiWordmark size={isCompact ? "sm" : "md"} className="text-label" />
           {showSubtitle && !isCompact && (
             <span className="text-footnote text-label-secondary mt-0.5">
-              Worldbuilding Encyclopedia
+              Worldbuilding encyclopedia
             </span>
           )}
         </div>
@@ -50,7 +50,7 @@ export function WikiOSBrandLockup({
     );
   }
 
-  // ── Hero Variant (Apple Editorial Centerpiece for Main Page) ──
+  // ── Hero Variant (centerpiece for the main page) ──
   return (
     <div
       className={cn(
@@ -77,7 +77,7 @@ export function WikiOSBrandLockup({
       {showSubtitle && (
         <div className="mt-1 flex items-center justify-center">
           <span className="text-eyebrow text-label-secondary leading-none">
-            Worldbuilding Encyclopedia
+            Worldbuilding encyclopedia
           </span>
         </div>
       )}

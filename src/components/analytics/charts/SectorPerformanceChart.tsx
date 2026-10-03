@@ -41,7 +41,7 @@ export const SectorPerformanceChart = React.memo<SectorPerformanceChartProps>(
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
               <PieChartIcon className="h-5 w-5 text-blue-600" />
-              Sector Performance Breakdown
+              Sector performance breakdown
             </span>
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="sm" onClick={onExportCSV} title="Export to CSV">

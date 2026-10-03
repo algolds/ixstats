@@ -139,7 +139,7 @@ export function LeagueControlDeck({
             <Shield className="h-4 w-4" />
           </div>
           <div>
-            <h4 className="text-eyebrow text-label">Admin Controls</h4>
+            <h4 className="text-eyebrow text-label">Admin controls</h4>
             <span className="text-footnote text-label-secondary font-semibold">Commissioner</span>
           </div>
         </div>
@@ -153,7 +153,7 @@ export function LeagueControlDeck({
       <div className="rounded-row border-separator bg-fill-4 flex items-center justify-between border p-3">
         <div className="space-y-0.5">
           <span className="text-footnote text-label block font-semibold">
-            Feature on Sports Page
+            Feature on sports page
           </span>
           <span className="text-footnote text-label-secondary block">
             Show at top of leagues list
@@ -170,7 +170,7 @@ export function LeagueControlDeck({
 
       {/* ─── 3. Simulation & Season Runtime ─── */}
       <div className="border-separator space-y-2 border-t pt-1">
-        <span className="text-eyebrow text-label-secondary block">Season Controls</span>
+        <span className="text-eyebrow text-label-secondary block">Season controls</span>
 
         {/* Fast-Forward Full Season */}
         {isSeasonActive && onSimulateFullSeason && (
@@ -181,7 +181,7 @@ export function LeagueControlDeck({
               onSimulateFullSeason();
             }}
             disabled={isSimulatingFullSeason || isSimulatingMatchDay}
-            className="rounded-row border-yellow/30 bg-yellow/10 text-footnote text-yellow hover:bg-yellow/20 h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold active:scale-[0.98]"
+            className="rounded-row border-yellow/30 bg-yellow/10 text-footnote text-yellow hover:bg-yellow/20 h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold"
           >
             {isSimulatingFullSeason ? (
               <>
@@ -191,7 +191,7 @@ export function LeagueControlDeck({
             ) : (
               <>
                 <FastForward className="h-3.5 w-3.5" />
-                <span>Simulate Rest of Season</span>
+                <span>Simulate rest of season</span>
               </>
             )}
           </Button>
@@ -206,7 +206,7 @@ export function LeagueControlDeck({
               regenerateScheduleMutation.mutate({ seasonId: activeSeason.id });
             }}
             disabled={regenerateScheduleMutation.isPending}
-            className="rounded-row border-separator bg-surface text-footnote text-label hover:bg-fill-4 h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold active:scale-[0.98]"
+            className="rounded-row border-separator bg-surface text-footnote text-label hover:bg-fill-4 h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold"
           >
             {regenerateScheduleMutation.isPending ? (
               <>
@@ -216,7 +216,7 @@ export function LeagueControlDeck({
             ) : (
               <>
                 <Refresh className="text-label-secondary h-3.5 w-3.5" />
-                <span>Regenerate Schedule</span>
+                <span>Regenerate schedule</span>
               </>
             )}
           </Button>
@@ -231,7 +231,7 @@ export function LeagueControlDeck({
               onTransitionSeason();
             }}
             disabled={isTransitioningSeason}
-            className="rounded-row border-green/30 bg-green/10 text-footnote text-green hover:bg-green/20 h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold active:scale-[0.98]"
+            className="rounded-row border-green/30 bg-green/10 text-footnote text-green hover:bg-green/20 h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold"
           >
             {isTransitioningSeason ? (
               <>
@@ -256,7 +256,7 @@ export function LeagueControlDeck({
               onStartSeason();
             }}
             disabled={isStartingSeason}
-            className="rounded-row border-green/30 bg-green/10 text-footnote text-green hover:bg-green/20 h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold active:scale-[0.98]"
+            className="rounded-row border-green/30 bg-green/10 text-footnote text-green hover:bg-green/20 h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold"
           >
             {isStartingSeason ? (
               <>
@@ -275,7 +275,7 @@ export function LeagueControlDeck({
 
       {/* ─── 4. Administration & Utilities ─── */}
       <div className="border-separator space-y-2 border-t pt-1">
-        <span className="text-eyebrow text-label-secondary block">League Settings</span>
+        <span className="text-eyebrow text-label-secondary block">League settings</span>
 
         {/* Open Settings Modal */}
         {onOpenSettings && (
@@ -285,10 +285,10 @@ export function LeagueControlDeck({
             onClick={() => {
               onOpenSettings();
             }}
-            className="rounded-row border-separator bg-surface text-footnote text-label hover:bg-fill-3 h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold active:scale-[0.98]"
+            className="rounded-row border-separator bg-surface text-footnote text-label hover:bg-fill-3 h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold"
           >
             <Settings className="text-label-secondary h-3.5 w-3.5" />
-            <span>Rules and Teams</span>
+            <span>Rules and teams</span>
           </Button>
         )}
 
@@ -300,10 +300,10 @@ export function LeagueControlDeck({
             clearCacheMutation.mutate();
           }}
           disabled={clearCacheMutation.isPending}
-          className="rounded-row border-separator bg-surface text-footnote text-label-secondary hover:text-label h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold active:scale-[0.98]"
+          className="rounded-row border-separator bg-surface text-footnote text-label-secondary hover:text-label h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold"
         >
           <Refresh className={cn("h-3.5 w-3.5", clearCacheMutation.isPending && "animate-spin")} />
-          <span>Clear Cache</span>
+          <span>Clear cache</span>
         </Button>
       </div>
     </div>

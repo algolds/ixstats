@@ -28,7 +28,7 @@ export const DOMAIN_CATEGORIES: DomainCategory[] = [
     name: "Countries",
     color: "#3b82f6",
     icon: IconoirGlobe,
-    metric: "Sovereign States & Territories",
+    metric: "Sovereign states & territories",
     description: "Nations, sovereign states, dependent territories, and geopolitical entities.",
   },
   {
@@ -43,7 +43,7 @@ export const DOMAIN_CATEGORIES: DomainCategory[] = [
     name: "Government",
     color: "#6366f1",
     icon: IconoirBank,
-    metric: "Political Systems & Law",
+    metric: "Political systems & law",
     description:
       "Political systems, constitutional structures, governance, and public administration.",
   },
@@ -51,7 +51,7 @@ export const DOMAIN_CATEGORIES: DomainCategory[] = [
     name: "Military",
     color: "#ef4444",
     icon: IconoirShield,
-    metric: "Defense & Armed Forces",
+    metric: "Defense & armed forces",
     description:
       "Armed forces branches, military equipment, defense doctrines, and historic conflicts.",
   },
@@ -59,7 +59,7 @@ export const DOMAIN_CATEGORIES: DomainCategory[] = [
     name: "People",
     color: "#ec4899",
     icon: IconoirGroup,
-    metric: "Demographics & Society",
+    metric: "Demographics & society",
     description:
       "Demographics, ethnic groups, linguistics, notable figures, and social structures.",
   },
@@ -74,14 +74,14 @@ export const DOMAIN_CATEGORIES: DomainCategory[] = [
     name: "History",
     color: "#eab308",
     icon: IconoirTimer,
-    metric: "Timelines & Epochs",
+    metric: "Timelines & epochs",
     description: "Historical events, timelines, ancient eras, revolutions, and world history.",
   },
   {
     name: "Geography",
     color: "#14b8a6",
     icon: IconoirMapPin,
-    metric: "Landforms & Regions",
+    metric: "Landforms & regions",
     description: "Physical geography, continents, mountain ranges, bodies of water, and climates.",
   },
   {
@@ -95,7 +95,7 @@ export const DOMAIN_CATEGORIES: DomainCategory[] = [
     name: "Technology",
     color: "#06b6d4",
     icon: IconoirCpu,
-    metric: "Science & Innovation",
+    metric: "Science & innovation",
     description:
       "Science, technological development, aerospace, transport, and research institutions.",
   },
@@ -103,7 +103,7 @@ export const DOMAIN_CATEGORIES: DomainCategory[] = [
     name: "Companies",
     color: "#f97316",
     icon: IconoirBuilding,
-    metric: "Corporations & Commerce",
+    metric: "Corporations & commerce",
     description:
       "Commercial enterprises, conglomerates, state-owned corporations, and market leaders.",
   },

@@ -9,7 +9,7 @@ import "~/styles/card-art.css";
  * 2. "zodiac": Lore Category Zodiac Ring & Swirl Crest
  * 3. "runes": Twin Category Rune Pillar Columns
  *
- * Apple-Grade Holographic Security Medallion (/apple-design):
+ * Holographic Security Medallion (/apple-design):
  * 3D Embossed Metallic Base Foil Substrate matching Front Card Rarity Palette,
  * Micro-Grating Lines, Color-Dodge Prismatic Diffraction, and Specular Glare Sweeps.
  *

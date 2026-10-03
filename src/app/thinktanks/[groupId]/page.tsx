@@ -9,7 +9,7 @@ interface ThinktankGroupPageProps {
 export async function generateMetadata({ params }: ThinktankGroupPageProps): Promise<Metadata> {
   const { groupId } = await params;
   return {
-    title: `ThinkTank Workspace — ${groupId} | IxStates`,
+    title: `ThinkTank ${groupId} | IxStates`,
     description:
       "Collaborative research, working papers, group thinks, and ThinkShare discussions.",
   };

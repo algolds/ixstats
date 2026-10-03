@@ -192,7 +192,6 @@ export function VaultCardsSection() {
           activeTab={activeTab}
           onTabChange={(tabId) => setActiveTab(tabId as SubTab)}
           maxWidthClass="w-fit"
-          layoutId="cards-subtab-indicator"
         />
       </div>
 

@@ -28,8 +28,8 @@ export const SettingsDropdown = memo(function SettingsDropdown({
           variant="ghost"
           size="icon-sm"
           className="text-label-secondary"
-          title="Editor Settings"
-          aria-label="Editor Settings"
+          title="Editor settings"
+          aria-label="Editor settings"
         >
           <Settings className="size-3.5" />
         </Button>
@@ -37,12 +37,12 @@ export const SettingsDropdown = memo(function SettingsDropdown({
       <PopoverContent align="end" className="text-label w-56 p-2">
         <div className="text-footnote flex flex-col gap-2 p-1">
           <div className="border-separator text-label-secondary mb-1 border-b pb-2 font-semibold">
-            Editor Settings
+            Editor settings
           </div>
 
           {showLineNumbersOption && (
             <div className="flex items-center justify-between select-none">
-              <span className="font-medium">Line Numbers</span>
+              <span className="font-medium">Line numbers</span>
               <Switch
                 checked={modal.showLineNumbers}
                 onCheckedChange={modal.handleToggleLineNumbers}
@@ -53,7 +53,7 @@ export const SettingsDropdown = memo(function SettingsDropdown({
 
           {showWordWrapOption && (
             <div className="flex items-center justify-between select-none">
-              <span className="font-medium">Word Wrap</span>
+              <span className="font-medium">Word wrap</span>
               <Switch
                 checked={modal.enableWordWrap}
                 onCheckedChange={modal.handleToggleWordWrap}

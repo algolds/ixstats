@@ -103,7 +103,7 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
     <div className="space-y-6">
       {/* Wiki Source Selection */}
       <div>
-        <label className="text-body text-label mb-2 block font-medium">Wiki Source</label>
+        <label className="text-body text-label mb-2 block font-medium">Wiki source</label>
         <div className="flex gap-3">
           <SegmentedControl
             fullWidth
@@ -120,7 +120,7 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
 
       {/* Article Search */}
       <div>
-        <label className="text-body text-label mb-2 block font-medium">Search Article</label>
+        <label className="text-body text-label mb-2 block font-medium">Search article</label>
         <ArticleSearch
           wikiSource={selectedWikiSource}
           onSelect={handleArticleSelect}
@@ -145,7 +145,7 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
       <div className="bg-yellow/10 border-yellow/20 rounded-control border p-4">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-body text-label-secondary">Request Cost</div>
+            <div className="text-body text-label-secondary">Request cost</div>
             {tokenBalance > 0 ? (
               <div className="text-yellow text-title-1">Free (Token Available)</div>
             ) : (
@@ -189,7 +189,7 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
       {/* Recent Requests */}
       {myRequests.data && myRequests.data.requests.length > 0 && (
         <div className="bg-fill-3 rounded-control p-4">
-          <h3 className="text-label mb-3 font-semibold">Your Recent Requests</h3>
+          <h3 className="text-label mb-3 font-semibold">Your recent requests</h3>
 
           <div className="space-y-2">
             {myRequests.data.requests.map((request: any) => (

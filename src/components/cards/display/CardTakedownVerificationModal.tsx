@@ -109,7 +109,7 @@ export function CardTakedownVerificationModal({
               <ShieldAlert className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-label text-title-3">Content Removal Request</DialogTitle>
+              <DialogTitle className="text-label text-title-3">Content removal request</DialogTitle>
               <DialogDescription className="text-label-secondary text-footnote">
                 Submit a verified ownership claim to request immediate removal of associated artwork
                 for <span className="text-label font-semibold">{cardTitle}</span>
@@ -189,8 +189,8 @@ export function CardTakedownVerificationModal({
                     3
                   </span>
                   <span>
-                    Paste the token below. It grants <em>verification only</em> — no access to or
-                    control over your nation.
+                    Paste the token below. It grants <em>verification only</em>, with no access to
+                    or control over your nation.
                   </span>
                 </li>
               </ol>
@@ -226,7 +226,7 @@ export function CardTakedownVerificationModal({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={NO_REASON}>— Select a reason —</SelectItem>
+                    <SelectItem value={NO_REASON}>Select a reason</SelectItem>
                     <SelectItem value="I am the nation owner and rights holder of this flag artwork.">
                       I am the rights holder of this flag artwork
                     </SelectItem>
@@ -234,7 +234,7 @@ export function CardTakedownVerificationModal({
                       Created by me, used without my consent
                     </SelectItem>
                     <SelectItem value="Privacy concern: I do not want my nation's flag publicly displayed here.">
-                      Privacy concern — do not display my flag
+                      Privacy concern: do not display my flag
                     </SelectItem>
                     <SelectItem value="custom">Other / Custom reason…</SelectItem>
                   </SelectContent>

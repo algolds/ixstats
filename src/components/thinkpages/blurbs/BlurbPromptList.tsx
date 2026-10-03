@@ -27,7 +27,7 @@ export function BlurbPromptList() {
 
       {!isLoading && prompts.length === 0 && (
         <div className="text-body text-label-secondary py-12 text-center">
-          No active prompts yet. Check back soon!
+          No active prompts yet.
         </div>
       )}
 

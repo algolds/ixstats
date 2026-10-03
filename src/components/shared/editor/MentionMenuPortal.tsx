@@ -73,7 +73,7 @@ export function MentionMenuPortal({
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-xs leading-tight font-bold">{item.name}</div>
-                    <div className="mt-0.5 truncate text-xs font-semibold tracking-wider text-neutral-400 uppercase dark:text-slate-500">
+                    <div className="mt-0.5 truncate text-xs font-semibold text-neutral-400 dark:text-slate-500">
                       {item.description}
                     </div>
                   </div>

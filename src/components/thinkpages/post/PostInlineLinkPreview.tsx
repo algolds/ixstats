@@ -76,7 +76,7 @@ export function InlineForumThreadPreview({ threadId, url }: { threadId: number; 
           <MessageCircle className="text-indigo size-4 shrink-0" aria-hidden="true" />
           <div className="min-w-0">
             <div className="text-headline text-label truncate">
-              {thread?.title ?? "Forum Thread"}
+              {thread?.title ?? "Forum thread"}
             </div>
             {thread && (
               <div className="text-label-secondary text-footnote">

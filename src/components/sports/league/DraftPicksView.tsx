@@ -167,7 +167,7 @@ export function DraftPicksView({
             value={String(selectedRound)}
             onValueChange={(value) => setSelectedRound(value === "all" ? "all" : Number(value))}
             options={[
-              { value: "all", label: "All Rounds" },
+              { value: "all", label: "All rounds" },
               ...rounds.map((round) => ({ value: String(round), label: `Round ${round}` })),
             ]}
           />
@@ -262,7 +262,7 @@ export function DraftPicksView({
                           {overall}
                         </Badge>
                       </TooltipTrigger>
-                      <TooltipContent>Overall Rating</TooltipContent>
+                      <TooltipContent>Overall rating</TooltipContent>
                     </Tooltip>
                   )}
                 </TableCell>

@@ -112,14 +112,14 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogContent className="border-separator bg-surface-elevated text-label max-w-md">
         <DialogHeader>
-          <DialogTitle>Create Auction Listing</DialogTitle>
+          <DialogTitle>Create auction listing</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Step 1: Select Card */}
           <div>
             <label className="text-label-secondary text-eyebrow mb-2 block">
-              Select Card to Sell
+              Select card to sell
             </label>
             {inventoryLoading ? (
               <div className="space-y-2">
@@ -185,8 +185,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
                   </FacetListSection>
                 ) : (
                   <div className="text-footnote text-label-secondary py-6 text-center">
-                    No available cards — all your cards are either already listed or locked in
-                    trades
+                    No cards available. Your cards are all listed or locked in trades.
                   </div>
                 )}
               </div>
@@ -199,7 +198,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-label-secondary text-eyebrow mb-1 flex items-center gap-1">
-                    Starting Bid (<IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />)
+                    Starting bid (<IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />)
                   </label>
                   <Input
                     type="number"
@@ -212,7 +211,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
                 </div>
                 <div>
                   <label className="text-label-secondary text-eyebrow mb-1 block">
-                    Buyout Price (optional)
+                    Buyout price (optional)
                   </label>
                   <Input
                     type="number"
@@ -227,7 +226,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
 
               <div>
                 <label className="text-label-secondary text-eyebrow mb-1 block">
-                  Listing Duration
+                  Listing duration
                 </label>
                 <Select value={duration} onValueChange={(v) => setDuration(v as "30" | "60")}>
                   <SelectTrigger className="border-separator text-label bg-surface-secondary text-footnote h-8 w-full">

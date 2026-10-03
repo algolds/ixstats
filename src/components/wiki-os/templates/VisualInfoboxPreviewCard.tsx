@@ -141,24 +141,24 @@ export function VisualInfoboxPreviewCard({
 
     const sections = [];
     if (historical.length > 0)
-      sections.push({ id: "historical", title: "Historical Timeline", items: historical });
+      sections.push({ id: "historical", title: "Historical timeline", items: historical });
     if (governance.length > 0)
-      sections.push({ id: "governance", title: "Government & Politics", items: governance });
+      sections.push({ id: "governance", title: "Government & politics", items: governance });
     if (demographics.length > 0)
-      sections.push({ id: "demographics", title: "Demographics & Society", items: demographics });
+      sections.push({ id: "demographics", title: "Demographics & society", items: demographics });
     if (geography.length > 0)
-      sections.push({ id: "geography", title: "Geography & Territories", items: geography });
+      sections.push({ id: "geography", title: "Geography & territories", items: geography });
     if (economy.length > 0)
-      sections.push({ id: "economy", title: "Economy & Currency", items: economy });
+      sections.push({ id: "economy", title: "Economy & currency", items: economy });
     if (military.length > 0)
-      sections.push({ id: "military", title: "Military & Service", items: military });
+      sections.push({ id: "military", title: "Military & service", items: military });
     if (technical.length > 0)
-      sections.push({ id: "technical", title: "Technical Specifications", items: technical });
+      sections.push({ id: "technical", title: "Technical specifications", items: technical });
     if (general.length > 0)
-      sections.push({ id: "general", title: "General Information", items: general });
+      sections.push({ id: "general", title: "General information", items: general });
 
     if (sections.length === 0 && activeParams.length > 0) {
-      sections.push({ id: "all", title: "Entity Details", items: activeParams });
+      sections.push({ id: "all", title: "Entity details", items: activeParams });
     }
 
     return sections;
@@ -222,13 +222,13 @@ export function VisualInfoboxPreviewCard({
               >
                 <div className="grid grid-cols-2 gap-2">
                   <div className="border-separator bg-surface rounded-row flex h-20 flex-col items-center justify-center border p-2">
-                    <span className="text-label-secondary text-subhead">National Flag</span>
+                    <span className="text-label-secondary text-subhead">National flag</span>
                     <span className="text-label-secondary text-footnote mt-1 tabular-nums">
                       {customValues.image_flag || "Flag.svg"}
                     </span>
                   </div>
                   <div className="border-separator bg-surface rounded-row flex h-20 flex-col items-center justify-center border p-2">
-                    <span className="text-label-secondary text-eyebrow">Coat of Arms</span>
+                    <span className="text-label-secondary text-eyebrow">Coat of arms</span>
                     <span className="text-label-secondary text-footnote mt-1 tabular-nums">
                       {customValues.image_coat || "Crest.svg"}
                     </span>
@@ -248,7 +248,7 @@ export function VisualInfoboxPreviewCard({
                 className="infobox-image border-separator bg-fill-4 border-b p-3 text-center"
               >
                 <div className="border-separator bg-surface rounded-row flex h-24 flex-col items-center justify-center border p-4">
-                  <span className="text-label-secondary text-subhead">Primary Entity Image</span>
+                  <span className="text-label-secondary text-subhead">Primary entity image</span>
                   <span className="text-label-secondary text-footnote mt-1 tabular-nums">
                     {customValues.image || `${cleanName.replace(/\s+/g, "_")}.jpg`}
                   </span>

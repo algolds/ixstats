@@ -39,7 +39,7 @@ export function ImportNationStep({
       {/* Hero visual / Header */}
       <div className="flex flex-col items-center py-4 text-center">
         <div className="mb-2 flex items-center justify-center gap-2">
-          <h2 className="text-label text-large-title select-none">Trading Cards</h2>
+          <h2 className="text-label text-large-title select-none">Trading cards</h2>
           <div className="relative h-7 w-10 shrink-0 select-none">
             <div className="border-foreground/80 bg-surface shadow-card absolute top-0.5 left-0 h-6.5 w-4 -rotate-12 rounded-[4px] border-2" />
             <div className="border-foreground/80 bg-surface shadow-card absolute top-0 left-3 flex h-6.5 w-4 items-center justify-center rounded-[4px] border-2">
@@ -61,21 +61,21 @@ export function ImportNationStep({
         {[
           {
             step: "1",
-            title: "Enter Nation",
+            title: "Enter nation",
             desc: "Type your NationStates nation name",
             icon: Globe,
             color: "amber",
           },
           {
             step: "2",
-            title: "Visit NS Link",
+            title: "Visit NS link",
             desc: "Open a NationStates verification page",
             icon: ExternalLink,
             color: "cyan",
           },
           {
             step: "3",
-            title: "Paste Code",
+            title: "Paste code",
             desc: "Copy the code NS gives you and paste it here",
             icon: ShieldCheck,
             color: "emerald",
@@ -140,7 +140,7 @@ export function ImportNationStep({
               className="text-headline h-11 w-full"
               size="lg"
             >
-              Get Started
+              Get started
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </motion.div>
@@ -154,7 +154,7 @@ export function ImportNationStep({
           >
             <Card className="rounded-row space-y-3 p-5">
               <div className="flex items-center justify-between">
-                <label className="text-label text-headline">Your Nation Name</label>
+                <label className="text-label text-headline">Your nation name</label>
                 <Button
                   variant="link"
                   size="sm"
@@ -193,7 +193,7 @@ export function ImportNationStep({
                 ) : (
                   <ArrowRight className="mr-2 h-4 w-4" />
                 )}
-                Start Verification
+                Start verification
               </Button>
             </Card>
           </motion.div>

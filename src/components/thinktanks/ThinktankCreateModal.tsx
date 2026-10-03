@@ -50,7 +50,7 @@ export function ThinktankCreateModal({
   const createMutation = api.thinkpages.createThinktank.useMutation({
     onSuccess: (newGroup) => {
       soundEffects.success();
-      notify.success("Group created successfully!");
+      notify.success("Group created");
       void utils.thinkpages.getThinktanks.invalidate();
 
       // If multi-persona posting was toggled on, save setting
@@ -113,7 +113,7 @@ export function ThinktankCreateModal({
                 <Group className="size-5" aria-hidden="true" />
               </div>
               <div>
-                <DialogTitle className="text-title-3">Create a Group</DialogTitle>
+                <DialogTitle className="text-title-3">Create a group</DialogTitle>
                 <DialogDescription>
                   Set up a shared lore hub and discussion workspace.
                 </DialogDescription>
@@ -155,7 +155,7 @@ export function ThinktankCreateModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-subhead text-label">Group Name</label>
+              <label className="text-subhead text-label">Group name</label>
               <Input
                 placeholder="e.g., Grand Vandarch Lore Archive"
                 value={name}

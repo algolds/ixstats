@@ -59,7 +59,7 @@ export function AccountTypeSelector({
   return (
     <div className={cn("space-y-4", className)}>
       <div className="space-y-1">
-        <h3 className="text-headline text-label">Select Account Type</h3>
+        <h3 className="text-headline text-label">Select account type</h3>
         <p className="text-footnote text-label-secondary">
           Choose the role for your new Thinkpages identity.
         </p>

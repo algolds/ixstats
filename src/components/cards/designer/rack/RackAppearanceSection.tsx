@@ -27,7 +27,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
         <div className="flex items-center justify-between">
           <div className="text-label text-footnote flex items-center gap-2 font-semibold">
             <ImageIcon className="text-tint h-4 w-4" />
-            <span>Card Artwork & Media</span>
+            <span>Card artwork & media</span>
           </div>
           {state.artworkUrl && (
             <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2">
@@ -37,7 +37,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
                 onChange={(e) => onChange((p) => ({ ...p, enableArtwork: e.target.checked }))}
                 className="accent-primary rounded-control-sm h-3.5 w-3.5"
               />
-              <span>Show on Card</span>
+              <span>Show on card</span>
             </label>
           )}
         </div>
@@ -98,7 +98,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
         {state.artworkUrl && state.enableArtwork && (
           <div className="flex items-center gap-3 pt-1">
             <span className="text-label-secondary text-footnote shrink-0 font-medium">
-              Artwork Opacity:
+              Artwork opacity:
             </span>
             <input
               type="range"
@@ -121,7 +121,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
         {/* Primary Emblem */}
         <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
           <div className="flex items-center justify-between">
-            <span className="text-label text-footnote font-semibold">Primary Icon</span>
+            <span className="text-label text-footnote font-semibold">Primary icon</span>
             <Button
               variant="outline"
               size="sm"
@@ -181,7 +181,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
           {/* Emblem Color Swatches */}
           <div className="border-separator space-y-2 border-t pt-2">
             <div className="flex items-center justify-between">
-              <span className="text-label text-footnote font-semibold">Emblem Color</span>
+              <span className="text-label text-footnote font-semibold">Emblem color</span>
               <span className="text-tint text-footnote font-mono">
                 {state.emblemColor ? state.emblemColor.toUpperCase() : "Auto"}
               </span>
@@ -209,7 +209,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
               })}
               <label
                 className="border-separator bg-surface relative flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-                title="Custom Hex Color"
+                title="Custom hex color"
               >
                 <input
                   type="color"
@@ -226,7 +226,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
         {/* Watermark Icon */}
         <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
           <div className="flex items-center justify-between">
-            <span className="text-label text-footnote font-semibold">Background Pattern</span>
+            <span className="text-label text-footnote font-semibold">Background pattern</span>
             <Button
               variant="outline"
               size="sm"
@@ -288,7 +288,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
           {/* Watermark Color Swatches */}
           <div className="border-separator space-y-2 border-t pt-2">
             <div className="flex items-center justify-between">
-              <span className="text-label text-footnote font-semibold">Watermark Color</span>
+              <span className="text-label text-footnote font-semibold">Watermark color</span>
               <span className="text-tint text-footnote font-mono">
                 {state.watermarkColor ? state.watermarkColor.toUpperCase() : "Auto"}
               </span>
@@ -316,7 +316,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
               })}
               <label
                 className="border-separator bg-surface relative flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-                title="Custom Hex Color"
+                title="Custom hex color"
               >
                 <input
                   type="color"
@@ -334,7 +334,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
       {/* Custom Hue Override */}
       <div className="border-separator flex items-center justify-between border-t pt-2">
         <div>
-          <span className="text-label text-footnote block font-medium">Custom Hue Override</span>
+          <span className="text-label text-footnote block font-medium">Custom hue override</span>
           <span className="text-label-secondary text-footnote">
             Overrides base material gradient hue
           </span>

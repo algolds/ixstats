@@ -85,7 +85,7 @@ export function ClubResultsCard({ teamId }: { teamId: string }) {
   if (!data || data.recent.length === 0) {
     return (
       <Card padding="lg" className="text-label-secondary text-body text-center">
-        No completed matches yet. Results appear here once the season gets underway.
+        No completed matches yet. Start the season to play fixtures.
       </Card>
     );
   }
@@ -98,7 +98,7 @@ export function ClubResultsCard({ teamId }: { teamId: string }) {
       {/* ── Match Overview (latest result) ───────────────────────── */}
       {lastMatch && (
         <div className="space-y-4">
-          <h3 className="text-headline text-label">Latest Result</h3>
+          <h3 className="text-headline text-label">Latest result</h3>
 
           <div className="bg-surface-secondary rounded-row space-y-3 p-4">
             {[lastMatch.home, lastMatch.away].map((side, i) => {

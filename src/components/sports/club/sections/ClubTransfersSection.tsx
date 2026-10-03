@@ -60,7 +60,7 @@ export function ClubTransfersSection({
 
   const placeBid = api.sports.placeTransferBid.useMutation({
     onSuccess: () => {
-      notify.success("Bid placed successfully!");
+      notify.success("Bid placed");
       refetchBids();
       refetchListings();
       onRefreshOverview?.();
@@ -104,7 +104,7 @@ export function ClubTransfersSection({
       <div className="space-y-6 lg:col-span-2">
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
-            <CardTitle>Transfer Marketplace Search</CardTitle>
+            <CardTitle>Transfer marketplace search</CardTitle>
             <CardDescription className="text-label-secondary">
               Search athletes across leagues to draft or bid.
             </CardDescription>
@@ -181,7 +181,7 @@ export function ClubTransfersSection({
                             </Button>
                           </>
                         ) : (
-                          <Badge variant="default">Not Listed</Badge>
+                          <Badge variant="default">Not listed</Badge>
                         )}
                       </div>
                     </div>
@@ -200,7 +200,7 @@ export function ClubTransfersSection({
         {/* Active Marketplace Listings */}
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
-            <CardTitle>Active Transfer Listings</CardTitle>
+            <CardTitle>Active transfer listings</CardTitle>
             <CardDescription className="text-label-secondary">
               All players currently listed for transfer in the league.
             </CardDescription>
@@ -262,7 +262,7 @@ export function ClubTransfersSection({
                       </Button>
                     </div>
                   ) : (
-                    <Badge variant="default">My Player</Badge>
+                    <Badge variant="default">My player</Badge>
                   )}
                 </div>
               ))
@@ -280,7 +280,7 @@ export function ClubTransfersSection({
         {comparePlayer && squadComparePlayer && (
           <Card className="flex flex-col gap-6 py-6">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-headline text-label">Comparison Detail</CardTitle>
+              <CardTitle className="text-headline text-label">Comparison detail</CardTitle>
               <Button size="sm" variant="ghost" onClick={() => setComparePlayer(null)}>
                 Clear
               </Button>
@@ -371,7 +371,7 @@ export function ClubTransfersSection({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ArrowLeftRight className="text-teal h-4 w-4" />
-              My Outbound Bids
+              My outbound bids
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">

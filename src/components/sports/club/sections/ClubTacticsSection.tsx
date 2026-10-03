@@ -137,7 +137,7 @@ export function ClubTacticsSection({
       <div className="lg:col-span-2">
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
-            <CardTitle>Team Tactics & Strategy</CardTitle>
+            <CardTitle>Team tactics & strategy</CardTitle>
             <CardDescription className="text-label-secondary">
               Select your default tactical intent. Underlying formulas adjust offense, defense, and
               match volatility ratings.
@@ -183,7 +183,7 @@ export function ClubTacticsSection({
       <div>
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
-            <CardTitle>Strategic Weighting</CardTitle>
+            <CardTitle>Strategic weighting</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-stretch space-y-6 py-6">
             {/* Offense Ring */}
@@ -212,7 +212,7 @@ export function ClubTacticsSection({
                 </div>
               </div>
               <div>
-                <h5 className="text-headline text-label">Offense Bias</h5>
+                <h5 className="text-headline text-label">Offense bias</h5>
                 <p className="text-label-secondary text-footnote mt-0.5">
                   Adjusts match scoring chances
                 </p>
@@ -245,7 +245,7 @@ export function ClubTacticsSection({
                 </div>
               </div>
               <div>
-                <h5 className="text-headline text-label">Defense Bias</h5>
+                <h5 className="text-headline text-label">Defense bias</h5>
                 <p className="text-label-secondary text-footnote mt-0.5">
                   Concede probability coefficient
                 </p>
@@ -259,7 +259,7 @@ export function ClubTacticsSection({
               {/* Attack Focus Slider */}
               <div className="space-y-2">
                 <div className="text-footnote flex justify-between font-medium">
-                  <span className="text-label-secondary">Attack Focus</span>
+                  <span className="text-label-secondary">Attack focus</span>
                   <span className="text-tint tabular-nums">{attackFocus}%</span>
                 </div>
                 <Slider
@@ -286,7 +286,7 @@ export function ClubTacticsSection({
               {/* Team Intensity Slider */}
               <div className="space-y-2 pt-2">
                 <div className="text-footnote flex justify-between font-medium">
-                  <span className="text-label-secondary">Team Intensity</span>
+                  <span className="text-label-secondary">Team intensity</span>
                   <span className="text-tint tabular-nums">{teamIntensity}%</span>
                 </div>
                 <Slider

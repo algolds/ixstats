@@ -89,7 +89,7 @@ export function DevCountryViewToolbar() {
             ? "border-amber-500 bg-amber-500/20 text-amber-300"
             : "border-blue-500 bg-blue-500/20 text-blue-300"
         )}
-        title="Developer Country View"
+        title="Developer country view"
       >
         <Eye className="h-4 w-4" />
         <span className="text-xs font-semibold">DEV</span>
@@ -118,7 +118,7 @@ export function DevCountryViewToolbar() {
           <Eye
             className={cn("h-5 w-5", isViewingOtherCountry ? "text-amber-400" : "text-blue-400")}
           />
-          <span className="text-sm font-bold text-white">Dev Country View</span>
+          <span className="text-sm font-bold text-white">Dev country view</span>
         </div>
         <button
           onClick={() => setToolbarExpanded(false)}

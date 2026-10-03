@@ -174,7 +174,7 @@ export function GlassCanvasComposer({
             </Button>
             {hasCountry && (
               <Button size="sm" variant="outline" onClick={onCreateAccount}>
-                Create Account
+                Create account
               </Button>
             )}
           </div>
@@ -338,10 +338,10 @@ export function GlassCanvasComposer({
                 <Vote className="text-tint size-4 shrink-0" aria-hidden="true" />
                 <div className="min-w-0">
                   <p className="text-headline text-label truncate">
-                    {pollDraft.question || "Untitled Poll"}
+                    {pollDraft.question || "Untitled poll"}
                   </p>
                   <p className="text-label-secondary text-footnote">
-                    {pollDraft.pollType === "choice" ? "Choice Poll" : "Feature Poll"} •{" "}
+                    {pollDraft.pollType === "choice" ? "Choice poll" : "Feature poll"} •{" "}
                     {pollDraft.options.filter((o) => o.trim()).length} options
                   </p>
                 </div>
@@ -353,7 +353,7 @@ export function GlassCanvasComposer({
                   size="sm"
                   onClick={() => setShowPollModal(true)}
                 >
-                  Edit Poll
+                  Edit poll
                 </Button>
                 <Button
                   type="button"

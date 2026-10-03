@@ -25,7 +25,7 @@ export default function LoreGeneratorPage() {
       <div className="mx-auto max-w-4xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-large-title text-label mb-2">Wiki Lore Card Generator</h1>
+          <h1 className="text-large-title text-label mb-2">Wiki lore card generator</h1>
           <p className="text-label-secondary">
             Request custom lore cards from IxWiki and IIWiki articles
           </p>
@@ -33,7 +33,7 @@ export default function LoreGeneratorPage() {
 
         {/* Info Panel */}
         <div className="border-separator bg-surface rounded-row mb-6 space-y-4 border p-6">
-          <h2 className="text-title-1 text-label">How It Works</h2>
+          <h2 className="text-title-1 text-label">How it works</h2>
 
           <div className="space-y-3">
             <div className="flex items-start gap-3">
@@ -41,7 +41,7 @@ export default function LoreGeneratorPage() {
                 1
               </div>
               <div>
-                <div className="text-label font-semibold">Search for an Article</div>
+                <div className="text-label font-semibold">Search for an article</div>
                 <div className="text-body text-label-secondary">
                   Find interesting wiki articles from IxWiki or IIWiki
                 </div>
@@ -53,7 +53,7 @@ export default function LoreGeneratorPage() {
                 2
               </div>
               <div>
-                <div className="text-label font-semibold">Submit Your Request</div>
+                <div className="text-label font-semibold">Submit your request</div>
                 <div className="text-body text-label-secondary">
                   Pay 50 IxCredits to request the article become a lore card
                 </div>
@@ -65,7 +65,7 @@ export default function LoreGeneratorPage() {
                 3
               </div>
               <div>
-                <div className="text-label font-semibold">Admin Review</div>
+                <div className="text-label font-semibold">Admin review</div>
                 <div className="text-body text-label-secondary">
                   Admins review your request for quality and appropriateness
                 </div>
@@ -77,7 +77,7 @@ export default function LoreGeneratorPage() {
                 4
               </div>
               <div>
-                <div className="text-label font-semibold">Card Generation</div>
+                <div className="text-label font-semibold">Card generation</div>
                 <div className="text-body text-label-secondary">
                   Once approved, the system automatically generates your lore card with
                   quality-based rarity

@@ -232,7 +232,7 @@ export function DynamicStatSpan({
         </span>
       </PopoverTrigger>
       <PopoverContent className="flex w-60 flex-col gap-3 p-4">
-        <div className="text-subhead text-label-secondary">Simulation Metrics</div>
+        <div className="text-subhead text-label-secondary">Simulation metrics</div>
 
         <div className="flex flex-col text-left">
           <span className="text-caption text-label-secondary">{metadata?.label || "Value"}</span>

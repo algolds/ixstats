@@ -35,7 +35,7 @@ const CATEGORY_OF_NAME: Record<string, SlashItem["category"]> = {
 export const SLASH_ITEMS: SlashItem[] = [
   {
     id: "h2",
-    label: "Heading — Section (== H2 ==)",
+    label: "Heading: section (== H2 ==)",
     keywords: ["heading", "section", "title", "h2"],
     icon: "H2",
     category: "Basic Blocks",
@@ -45,7 +45,7 @@ export const SLASH_ITEMS: SlashItem[] = [
   },
   {
     id: "h3",
-    label: "Heading — Subsection (=== H3 ===)",
+    label: "Heading: subsection (=== H3 ===)",
     keywords: ["heading", "subsection", "h3"],
     icon: "H3",
     category: "Basic Blocks",

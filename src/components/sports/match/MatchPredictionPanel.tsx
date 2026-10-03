@@ -28,7 +28,7 @@ export function MatchPredictionPanel({ matchId, homeName, awayName }: MatchPredi
   const place = api.sports.placePrediction.useMutation({
     onSuccess: () => {
       soundCues.success();
-      notify.success("Prediction placed!");
+      notify.success("Prediction placed");
       void utils.sports.getMatchPredictions.invalidate({ matchId });
     },
     onError: (err) => {

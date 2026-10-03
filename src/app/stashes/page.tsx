@@ -1,8 +1,6 @@
 "use client";
 // src/app/stashes/page.tsx
 // Stash manager — browse, organize, search, and annotate saved wiki pages, quotes, images, and forum threads.
-// Apple Design & WikiOS standard.
-
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
@@ -335,8 +333,8 @@ export default function StashesPage() {
                       variant="ghost"
                       size="icon-sm"
                       onClick={() => setWelcomeOpen(true)}
-                      title="Stash Guide"
-                      aria-label="Stash Guide"
+                      title="Stash guide"
+                      aria-label="Stash guide"
                     >
                       <HelpCircle aria-hidden />
                     </Button>
@@ -528,7 +526,7 @@ export default function StashesPage() {
                                 </p>
                                 <p className="text-footnote text-label-secondary mx-auto max-w-sm">
                                   Highlight text while reading an article and click{" "}
-                                  <strong>Save Quote</strong> in the Margin capsule to curate
+                                  <strong>Save quote</strong> in the Margin capsule to curate
                                   excerpts here.
                                 </p>
                               </div>
@@ -556,7 +554,7 @@ export default function StashesPage() {
                                     href={withBasePath("/wiki/repository")}
                                     className="text-tint font-semibold hover:underline"
                                   >
-                                    Media Repository
+                                    Media repository
                                   </Link>{" "}
                                   and click Stash to curate visual assets.
                                 </p>
@@ -607,7 +605,7 @@ export default function StashesPage() {
               <Bookmark className="h-7 w-7" />
             </div>
             <div>
-              <h2 className="text-title-3">Access Stash</h2>
+              <h2 className="text-title-3">Access stash</h2>
               <p className="text-footnote text-label-secondary mt-1 leading-relaxed">
                 Sign in to manage your saved lore collections, highlights, media assets, and forum
                 bookmarks.

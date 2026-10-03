@@ -108,7 +108,7 @@ export function ThinktankSettingsModal({
   const updateSettingsMutation = api.thinkpages.updateGroupSettings.useMutation({
     onSuccess: () => {
       soundEffects.success();
-      notify.success("Group settings updated successfully!");
+      notify.success("Group settings updated");
       void utils.thinkpages.getThinktankById.invalidate({ groupId });
       void utils.thinkpages.getThinktanks.invalidate();
       onClose();
@@ -205,7 +205,7 @@ export function ThinktankSettingsModal({
                 <Settings className="size-5" aria-hidden="true" />
               </div>
               <div>
-                <DialogTitle className="text-title-3">Group Settings</DialogTitle>
+                <DialogTitle className="text-title-3">Group settings</DialogTitle>
                 <DialogDescription>
                   Configure group identity, branding imagery, and member access.
                 </DialogDescription>
@@ -217,8 +217,8 @@ export function ThinktankSettingsModal({
             {/* ── Visual Branding: Banner & Logo ── */}
             <div className="bg-surface-secondary rounded-row space-y-3 p-4">
               <div className="flex items-center justify-between">
-                <span className="text-subhead text-label">Branding & Artwork</span>
-                <span className="text-label-secondary text-footnote">Media Repository</span>
+                <span className="text-subhead text-label">Branding & artwork</span>
+                <span className="text-label-secondary text-footnote">Media repository</span>
               </div>
 
               {/* Banner Preview */}
@@ -248,7 +248,7 @@ export function ThinktankSettingsModal({
                       variant="ghost"
                       onClick={() => setBannerUrl("")}
                       className="material-thin text-label-secondary hover:text-label size-7 p-0"
-                      title="Remove Banner"
+                      title="Remove banner"
                     >
                       <Xmark />
                     </Button>
@@ -274,7 +274,7 @@ export function ThinktankSettingsModal({
                       onClick={() => setMediaTarget("avatar")}
                     >
                       <MediaImage className="text-tint" />
-                      Select Logo from Repository
+                      Select logo from repository
                     </Button>
                     {avatarUrl && (
                       <Button
@@ -332,7 +332,7 @@ export function ThinktankSettingsModal({
 
             {/* Rules & Guidelines */}
             <div className="space-y-2">
-              <label className="text-subhead text-label">Rules & Guidelines</label>
+              <label className="text-subhead text-label">Rules & guidelines</label>
               <Textarea
                 placeholder="Optional guidelines for posting and discussions..."
                 value={rules}
@@ -345,7 +345,7 @@ export function ThinktankSettingsModal({
             <div className="bg-surface-secondary rounded-row space-y-2 p-4">
               <div className="flex items-center gap-2">
                 <Plus className="text-tint size-4" aria-hidden="true" />
-                <span className="text-subhead text-label">Invite Members</span>
+                <span className="text-subhead text-label">Invite members</span>
               </div>
               <p className="text-footnote text-label-secondary">
                 Search for a player by their ThinkPages username or display name, then send an
@@ -481,7 +481,7 @@ export function ThinktankSettingsModal({
                 className="text-red hover:bg-red/10 hover:text-red h-8.5"
               >
                 <Trash />
-                Delete Group
+                Delete group
               </Button>
 
               <div className="flex items-center gap-2">
@@ -494,7 +494,7 @@ export function ThinktankSettingsModal({
                   disabled={updateSettingsMutation.isPending || updateGroupMutation.isPending}
                 >
                   <Check />
-                  Save Settings
+                  Save settings
                 </Button>
               </div>
             </div>

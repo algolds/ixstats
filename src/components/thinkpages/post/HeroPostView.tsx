@@ -107,10 +107,8 @@ export function HeroPostView({
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={springGentle}
-      className="group material-hero text-label relative isolate space-y-4 overflow-hidden rounded-2xl p-5"
+      className="group bg-surface border-separator shadow-card text-label rounded-card relative space-y-4 overflow-hidden border p-5"
     >
-      {/* v2 hero post: the glass card (Facet 3.1 glass hero tier) with its refraction hairline. */}
-
       {/* Header section */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -203,18 +201,18 @@ export function HeroPostView({
               {canEdit && (
                 <DropdownMenuItem onClick={handleEdit} className="text-label hover:bg-fill-4">
                   <Edit />
-                  <span>Edit Post</span>
+                  <span>Edit post</span>
                 </DropdownMenuItem>
               )}
               {currentUserAccountId && (
                 <>
                   <DropdownMenuItem onClick={handlePin} className="text-label hover:bg-fill-4">
                     <Pin />
-                    <span>{post.pinned ? "Unpin Post" : "Pin Post"}</span>
+                    <span>{post.pinned ? "Unpin post" : "Pin post"}</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleBookmark} className="text-label hover:bg-fill-4">
                     <Bookmark />
-                    <span>Bookmark Post</span>
+                    <span>Bookmark post</span>
                   </DropdownMenuItem>
                 </>
               )}
@@ -224,7 +222,7 @@ export function HeroPostView({
                   className="text-red hover:bg-red/20 hover:text-red"
                 >
                   <Flag />
-                  <span>Report Post</span>
+                  <span>Report post</span>
                 </DropdownMenuItem>
               )}
               {canDelete && (
@@ -235,7 +233,7 @@ export function HeroPostView({
                     className="text-red hover:bg-red/20 hover:text-red font-medium"
                   >
                     <Trash2 />
-                    <span>Delete Post</span>
+                    <span>Delete post</span>
                   </DropdownMenuItem>
                 </>
               )}

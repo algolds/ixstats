@@ -161,7 +161,7 @@ export function FullPlayer({ isOpen, onClose }: { isOpen: boolean; onClose: () =
             onClick={() => setShowQueue(!showQueue)}
           >
             <ListMusic aria-hidden="true" />
-            {showQueue ? "Hide Queue" : "Show Queue"}
+            {showQueue ? "Hide queue" : "Show queue"}
           </Button>
 
           {showQueue && <QueuePanel />}

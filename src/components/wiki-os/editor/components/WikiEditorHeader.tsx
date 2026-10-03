@@ -169,7 +169,7 @@ export function WikiEditorHeader({
                 className="text-body text-label h-auto w-full justify-start px-3 py-2 font-normal"
               >
                 <Save className="text-green h-3.5 w-3.5" />
-                <span>Save and Publish</span>
+                <span>Save and publish</span>
               </Button>
               <Button
                 variant="ghost"
@@ -180,7 +180,7 @@ export function WikiEditorHeader({
                 className="text-body text-label h-auto w-full justify-start px-3 py-2 font-normal"
               >
                 <FileText className="text-tint h-3.5 w-3.5" />
-                <span>Save as Draft</span>
+                <span>Save as draft</span>
               </Button>
               <Button
                 variant="ghost"
@@ -193,7 +193,7 @@ export function WikiEditorHeader({
                 className="text-body text-label h-auto w-full justify-start px-3 py-2 font-normal"
               >
                 <Bookmark className="text-yellow h-3.5 w-3.5" />
-                <span>Save Session</span>
+                <span>Save session</span>
               </Button>
             </div>
           </PopoverContent>

@@ -110,12 +110,12 @@ export function TitleStep({
         >
           <RadioCard
             value="visual"
-            title="Canvas Editor"
+            title="Canvas editor"
             description="Immersive editing experience"
           />
           <RadioCard
             value="source"
-            title="Source Editor"
+            title="Source editor"
             description="Old-school wikitext editing experience"
           />
         </RadioCardGroup>

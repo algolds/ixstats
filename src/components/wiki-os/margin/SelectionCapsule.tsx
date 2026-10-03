@@ -1,8 +1,6 @@
 "use client";
 // src/components/wiki-os/margin/SelectionCapsule.tsx
 // Origin-aware floating selection capsule for inline markup, stash, suggested edits, and discussions.
-// Full Apple Design & Emil Kowalski motion compliance.
-
 import React, { useEffect, useState, useCallback } from "react";
 import {
   ChatBubble as MessageSquare,
@@ -189,7 +187,7 @@ export function SelectionCapsule({
               key={p.color}
               type="button"
               onClick={() => handleHighlight(p.color)}
-              className="border-separator duration-fast size-5 cursor-pointer rounded-full border transition-transform active:scale-[0.98]"
+              className="border-separator duration-fast size-5 cursor-pointer rounded-full border"
               style={{ backgroundColor: p.color }}
               title={`Highlight (${p.label})`}
               aria-label={`Highlight (${p.label})`}
@@ -202,7 +200,7 @@ export function SelectionCapsule({
       <button
         type="button"
         onClick={handleComment}
-        className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-3 transition-[background-color,transform] active:scale-[0.98]"
+        className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-3 transition-[background-color,transform]"
         title="Discuss"
       >
         <MessageSquare className="text-margin-accent h-3.5 w-3.5" />
@@ -214,7 +212,7 @@ export function SelectionCapsule({
         <button
           type="button"
           onClick={handleSuggest}
-          className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-3 transition-[background-color,transform] active:scale-[0.98]"
+          className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-3 transition-[background-color,transform]"
           title="Suggest edit"
         >
           <Edit3 className="text-teal h-3.5 w-3.5" />
@@ -227,7 +225,7 @@ export function SelectionCapsule({
         <button
           type="button"
           onClick={handleStash}
-          className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-3 transition-[background-color,transform] active:scale-[0.98]"
+          className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-3 transition-[background-color,transform]"
           title="Save quote"
         >
           <Bookmark className="text-red h-3.5 w-3.5" />
@@ -239,7 +237,7 @@ export function SelectionCapsule({
       <button
         type="button"
         onClick={handleShare}
-        className="text-label-secondary duration-fast hover:bg-fill-3 hover:text-label flex size-7 cursor-pointer items-center justify-center rounded-full transition-[background-color,color,transform] active:scale-[0.98]"
+        className="text-label-secondary duration-fast hover:bg-fill-3 hover:text-label flex size-7 cursor-pointer items-center justify-center rounded-full transition-[background-color,color,transform]"
         title="Share quote"
         aria-label="Share quote"
       >
@@ -250,7 +248,7 @@ export function SelectionCapsule({
       <button
         type="button"
         onClick={handleCopy}
-        className="text-label-secondary duration-fast hover:bg-fill-3 hover:text-label flex size-7 cursor-pointer items-center justify-center rounded-full transition-[background-color,color,transform] active:scale-[0.98]"
+        className="text-label-secondary duration-fast hover:bg-fill-3 hover:text-label flex size-7 cursor-pointer items-center justify-center rounded-full transition-[background-color,color,transform]"
         title="Copy text"
         aria-label="Copy text"
       >

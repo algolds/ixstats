@@ -34,7 +34,7 @@ const filterOptions: Array<{ value: ActivityFilter; label: string; icon: any; co
 ];
 
 const categoryOptions: Array<{ value: ActivityCategory; label: string }> = [
-  { value: "all", label: "All Sources" },
+  { value: "all", label: "All sources" },
   { value: "game", label: "In-Game" },
   { value: "platform", label: "Platform" },
   { value: "social", label: "Social" },
@@ -51,7 +51,7 @@ export function ActivityFilters({
       {/* Activity Type Filters */}
       <div>
         <h3 id="activity-type-label" className="text-subhead text-label mb-2">
-          Activity Type
+          Activity type
         </h3>
         <ToggleGroup
           type="single"

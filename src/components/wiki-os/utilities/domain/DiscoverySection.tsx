@@ -26,27 +26,27 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
   const tools = [
     {
       id: "recent-changes",
-      title: "Recent Changes & Revision Stream",
+      title: "Recent changes & revision stream",
       description: "Live feed of recent edits, creations, and article revisions across the realm.",
       legacyAlias: "Special:RecentChanges",
       icon: Compass,
       href: "/util/recent-changes",
-      badge: "Real-Time",
+      badge: "Live",
       color: "border-blue/20 bg-blue/10 text-blue",
     },
     {
       id: "watchlist",
-      title: "Personal Watchlist & Stash Feed",
+      title: "Personal watchlist & stash feed",
       description: "Follow changes to your curated lore articles, bookmarks, and starred entities.",
       legacyAlias: "Special:Watchlist",
       icon: BookmarkBook,
       href: "/stashes",
-      badge: "Stash Integrated",
+      badge: "Stash integrated",
       color: "border-yellow/20 bg-yellow/10 text-yellow",
     },
     {
       id: "contributions",
-      title: "User Contributions Ledger",
+      title: "User contributions ledger",
       description: "Audit edits, creations, and revision summaries by editor identity or username.",
       legacyAlias: "Special:Contributions",
       icon: User,
@@ -56,7 +56,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
     },
     {
       id: "random",
-      title: "Random Lore Sprout",
+      title: "Random lore sprout",
       description: "Explore the encyclopedia serendipitously with uniform random article hops.",
       legacyAlias: "Special:Random",
       icon: Shuffle,
@@ -66,7 +66,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
     },
     {
       id: "categories",
-      title: "Taxonomy & Category Graph",
+      title: "Taxonomy & category graph",
       description: "Traverse hierarchical category branches, namespaces, and subtopic trees.",
       legacyAlias: "Special:Categories",
       icon: Folder,
@@ -76,7 +76,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
     },
     {
       id: "media-commons",
-      title: "Media Assets Commons",
+      title: "Media assets Commons",
       description: "Inspect 7,555+ edge-cached images, flags, diagrams, and asset citations.",
       legacyAlias: "Special:ListFiles",
       icon: MediaImage,
@@ -86,7 +86,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
     },
     {
       id: "backlinks",
-      title: "Backlinks & Directed Link Graph",
+      title: "Backlinks & directed link graph",
       description:
         "Query incoming connections, inbound citations, and 'What Links Here' relations in O(1).",
       legacyAlias: "Special:WhatLinksHere",
@@ -97,7 +97,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
     },
     {
       id: "feeds",
-      title: "Atom & JSON Syndication Feeds",
+      title: "Atom & JSON syndication feeds",
       description: "Standards-compliant RSS/Atom XML feeds for RSS readers and external webhooks.",
       legacyAlias: "Special:Feed",
       icon: RssFeed,

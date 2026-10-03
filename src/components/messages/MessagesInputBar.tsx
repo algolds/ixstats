@@ -138,8 +138,8 @@ export function MessagesInputBar({
           size="icon-lg"
           onClick={() => setIsStashModalOpen(true)}
           className="mb-1 shrink-0"
-          title="Attach Lore Stash Link"
-          aria-label="Attach Lore Stash Link"
+          title="Attach lore stash link"
+          aria-label="Attach lore stash link"
         >
           <BookmarkPlus />
         </Button>

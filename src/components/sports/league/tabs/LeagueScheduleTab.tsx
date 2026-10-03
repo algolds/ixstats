@@ -4,7 +4,6 @@ import React, { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { getSportColors, type SportPresetKey } from "~/lib/sports/presets";
 import { EmptyState } from "~/components/ui/empty-state";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { springSmooth } from "~/lib/design/motion";
 import { Button } from "~/components/ui/button";
@@ -135,7 +134,7 @@ export function LeagueScheduleTab({
       <Card>
         <EmptyState
           icon={<Calendar />}
-          title="No Schedule Available"
+          title="No schedule available"
           message="Start a season to generate fixtures."
         />
       </Card>
@@ -174,13 +173,10 @@ export function LeagueScheduleTab({
       <Card padding="md" className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <Eyebrow className="text-tint">Competition timeline</Eyebrow>
-              <span className="text-footnote text-label-secondary tabular-nums">
-                Season {season.seasonNumber} • {allRounds.length} Total Rounds
-              </span>
-            </div>
-            <h3 className="text-title-2 text-label mt-1">Round {selectedRound} Fixtures</h3>
+            <span className="text-footnote text-label-secondary tabular-nums">
+              Season {season.seasonNumber} · {allRounds.length} rounds
+            </span>
+            <h3 className="text-title-2 text-label mt-1">Round {selectedRound} fixtures</h3>
           </div>
 
           <div className="flex items-center gap-2">

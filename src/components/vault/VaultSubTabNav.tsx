@@ -13,18 +13,8 @@ export interface VaultSubTabNavProps<T extends string> {
   tabs: readonly VaultTabConfig<T>[];
   activeTab: T;
   onTabChange: (tabId: T) => void;
-  /** @deprecated Ignored — the selection uses the app tint (Facet 3). */
-  activeColor?: {
-    text: string;
-    bg: string;
-    icon: string;
-  };
-  /** @deprecated Ignored — the selection uses the app tint (Facet 3). */
-  tabColors?: Record<string, { text: string; bg: string; icon: string }>;
   className?: string;
   maxWidthClass?: string;
-  /** @deprecated Ignored (the segmented control animates its own indicator). */
-  layoutId?: string;
 }
 
 /** The vault's in-page section switcher: a full-width `SegmentedControl` exposed as tabs. */

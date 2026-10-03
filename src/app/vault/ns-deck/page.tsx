@@ -37,7 +37,7 @@ export default function NSImportPage() {
       <div className="mx-auto max-w-4xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-large-title text-label mb-2">NationStates Deck Import</h1>
+          <h1 className="text-large-title text-label mb-2">NationStates deck import</h1>
           <p className="text-label-secondary">
             Import your NationStates trading card collection into IxCards
           </p>
@@ -46,7 +46,7 @@ export default function NSImportPage() {
         {!showWizard ? (
           <div className="border-separator bg-surface rounded-row space-y-6 border p-8">
             <div className="space-y-4">
-              <h2 className="text-title-1 text-label">How It Works</h2>
+              <h2 className="text-title-1 text-label">How it works</h2>
 
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
@@ -54,7 +54,7 @@ export default function NSImportPage() {
                     1
                   </div>
                   <div>
-                    <div className="text-label font-semibold">Verify Nation Ownership</div>
+                    <div className="text-label font-semibold">Verify nation ownership</div>
                     <div className="text-body text-label-secondary">
                       Prove you own your NationStates nation with a quick verification process
                     </div>
@@ -66,7 +66,7 @@ export default function NSImportPage() {
                     2
                   </div>
                   <div>
-                    <div className="text-label font-semibold">Preview Your Deck</div>
+                    <div className="text-label font-semibold">Preview your deck</div>
                     <div className="text-body text-label-secondary">
                       See your collection before importing - including total cards, rarity
                       distribution, and deck value
@@ -79,7 +79,7 @@ export default function NSImportPage() {
                     3
                   </div>
                   <div>
-                    <div className="text-label font-semibold">Import Your Cards</div>
+                    <div className="text-label font-semibold">Import your cards</div>
                     <div className="text-body text-label-secondary">
                       Automatically import your entire deck with duplicate handling options
                     </div>
@@ -91,7 +91,7 @@ export default function NSImportPage() {
                     4
                   </div>
                   <div>
-                    <div className="text-label font-semibold">Earn Bonus Credits</div>
+                    <div className="text-label font-semibold">Earn bonus credits</div>
                     <div className="text-body text-label-secondary">
                       Get 10 IxCredits per card imported (max 500{" "}
                       <IxCreditsSymbol className="inline h-3.5 w-3.5 align-middle" /> bonus)
@@ -123,7 +123,7 @@ export default function NSImportPage() {
             </div>
 
             <Button size="lg" onClick={() => setShowWizard(true)} className="w-full">
-              Start Import Wizard
+              Start import wizard
             </Button>
 
             <div className="text-center">

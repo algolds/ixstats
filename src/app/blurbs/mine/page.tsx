@@ -37,7 +37,7 @@ function MyBlurbsList() {
             Browse active prompts and share your country&apos;s perspective.
           </p>
           <Link href={withBasePath("/blurbs")}>
-            <Button size="sm">Browse Prompts</Button>
+            <Button size="sm">Browse prompts</Button>
           </Link>
         </CardContent>
       </Card>
@@ -100,7 +100,7 @@ function MyBlurbsList() {
 }
 
 export default function MyBlurbsPage() {
-  usePageTitle({ title: "My Blurbs" });
+  usePageTitle({ title: "My blurbs" });
   const { isSignedIn } = useAuth();
 
   return (
@@ -108,7 +108,7 @@ export default function MyBlurbsPage() {
       <div className="mx-auto max-w-3xl py-6">
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold sm:text-2xl">My Blurbs</h1>
+            <h1 className="text-xl font-bold sm:text-2xl">My blurbs</h1>
             <p className="text-muted-foreground mt-1 text-sm">Your responses across all prompts.</p>
           </div>
           <BlurbsNav />
@@ -120,10 +120,10 @@ export default function MyBlurbsPage() {
           <Card className="facet-hierarchy-child flex flex-col gap-6 py-6">
             <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
               <User className="text-muted-foreground h-10 w-10" />
-              <h3 className="text-base font-semibold">Sign In Required</h3>
+              <h3 className="text-base font-semibold">Sign in required</h3>
               <p className="text-muted-foreground text-sm">Sign in to see your blurb responses.</p>
               <Link href={withBasePath("/setup")}>
-                <Button size="sm">Sign In</Button>
+                <Button size="sm">Sign in</Button>
               </Link>
             </CardContent>
           </Card>

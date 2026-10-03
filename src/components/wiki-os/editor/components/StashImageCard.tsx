@@ -45,9 +45,9 @@ export function StashImageCard({ imgInfo, cleanTitle, filename, onInsert }: Stas
         <Button
           variant="secondary"
           size="icon-sm"
-          aria-label="Copy Wikitext Link"
+          aria-label="Copy wikitext link"
           onClick={handleCopy}
-          title="Copy Wikitext Link"
+          title="Copy wikitext link"
           className="size-6 bg-black/60 text-white hover:bg-black/80"
         >
           {copied ? <Check className="text-green h-3 w-3" /> : <Copy className="h-3 w-3" />}

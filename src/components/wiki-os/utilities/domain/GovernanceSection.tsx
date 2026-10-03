@@ -65,7 +65,7 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
     },
     {
       id: "logs",
-      title: "System Audit & Event Logs",
+      title: "System audit & event logs",
       description:
         "Immutable transaction logs tracking page moves, deletions, protection, and sync events.",
       legacyAlias: "Special:Log",
@@ -75,11 +75,11 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
     },
     {
       id: "protection",
-      title: "Content Protection & Permissions",
+      title: "Content protection & permissions",
       description: "Administer editing lockouts, sysop restrictions, and edit conflict barriers.",
       legacyAlias: "Special:ProtectedPages",
       icon: Shield,
-      badge: "Sysop Protected",
+      badge: "Sysop protected",
       color: "border-green/20 bg-green/10 text-green",
     },
   ];
@@ -171,20 +171,20 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                   {selectedTab === "archive"
                     ? "Archived Articles (Soft-Delete)"
                     : selectedTab === "logs"
-                      ? "Audit Log Ledger"
-                      : "Content Protection & Permissions"}
+                      ? "Audit log ledger"
+                      : "Content protection & permissions"}
                 </span>
               </span>
               <div className="flex items-center gap-2">
                 <span className="text-label-secondary text-footnote">
-                  Authoritative PostgreSQL Transaction Layer
+                  Authoritative PostgreSQL transaction layer
                 </span>
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  aria-label="Close Console"
+                  aria-label="Close console"
                   onClick={() => setSelectedTab(null)}
-                  title="Close Console"
+                  title="Close console"
                   className="text-label-secondary"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -218,7 +218,7 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                             onClick={() => handleRestore(item.title, item.slug)}
                             disabled={restoringSlug === item.slug}
                           >
-                            {restoringSlug === item.slug ? "Restoring..." : "Restore to Published"}
+                            {restoringSlug === item.slug ? "Restoring..." : "Restore to published"}
                           </Button>
                         </div>
                       ))}
@@ -274,7 +274,7 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
               {selectedTab === "protection" && (
                 <div className="text-footnote flex items-center justify-between p-4">
                   <div>
-                    <h4 className="text-label font-semibold">Protected Namespaces & Permissions</h4>
+                    <h4 className="text-label font-semibold">Protected namespaces & permissions</h4>
                     <p className="text-label-secondary text-footnote">
                       Administer system owner edit locks, sysop barriers, and namespace guardrails.
                     </p>
@@ -283,9 +283,9 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                     href={withBasePath("/admin/wikios-settings")}
                     data-cuelume-press="press"
                     data-cuelume-hover="tick"
-                    className="border-tint/40 bg-tint/10 text-tint hover:bg-tint/20 rounded-control text-caption border px-3 py-2 transition-colors active:scale-[0.98]"
+                    className="border-tint/40 bg-tint/10 text-tint hover:bg-tint/20 rounded-control text-caption border px-3 py-2 transition-colors"
                   >
-                    Open Sysop Panel
+                    Open Sysop panel
                   </Link>
                 </div>
               )}

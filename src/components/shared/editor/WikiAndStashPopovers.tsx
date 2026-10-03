@@ -88,13 +88,13 @@ export function WikiAndStashPopovers({
             size="sm"
             disabled={disabled}
             className={cn(
-              "h-7 w-7 rounded-xl p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95",
+              "h-7 w-7 rounded-xl p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
               isWikiOpen
                 ? "bg-wiki/15 text-wiki ring-wiki/30 ring-1 dark:text-blue-400"
                 : "text-muted-foreground hover:bg-muted hover:text-wiki dark:hover:text-blue-400"
             )}
-            title="Insert Wiki Link or Embed"
-            aria-label="Insert Wiki Link or Embed"
+            title="Insert wiki link or embed"
+            aria-label="Insert wiki link or embed"
           >
             <WikiOSLogomark className="text-wiki h-3.5 w-3.5 dark:text-blue-400" />
           </Button>
@@ -106,7 +106,7 @@ export function WikiAndStashPopovers({
         >
           <div className="space-y-3 text-xs">
             <div className="flex items-center justify-between border-b pb-2">
-              <span className="text-wiki font-semibold">Wiki Integration</span>
+              <span className="text-wiki font-semibold">Wiki integration</span>
               <div className="flex rounded-md bg-neutral-100 p-0.5 dark:bg-white/5">
                 <button
                   type="button"
@@ -114,7 +114,7 @@ export function WikiAndStashPopovers({
                   className={cn(
                     "rounded px-2 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     wikiInsertMode === "link"
-                      ? "bg-white text-wiki shadow-xs dark:bg-wiki dark:text-white"
+                      ? "text-wiki dark:bg-wiki bg-white shadow-xs dark:text-white"
                       : "text-neutral-500 hover:text-neutral-800 dark:text-slate-400"
                   )}
                 >
@@ -126,11 +126,11 @@ export function WikiAndStashPopovers({
                   className={cn(
                     "rounded px-2 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     wikiInsertMode === "embed"
-                      ? "bg-white text-wiki shadow-xs dark:bg-wiki dark:text-white"
+                      ? "text-wiki dark:bg-wiki bg-white shadow-xs dark:text-white"
                       : "text-neutral-500 hover:text-neutral-800 dark:text-slate-400"
                   )}
                 >
-                  Embed Card
+                  Embed card
                 </button>
               </div>
             </div>
@@ -165,7 +165,7 @@ export function WikiAndStashPopovers({
 
             <div className="space-y-1">
               <Label className="text-xs font-medium text-neutral-500 dark:text-slate-400">
-                Article Title or Search
+                Article title or search
               </Label>
               <Input
                 value={wikiTarget}
@@ -209,7 +209,7 @@ export function WikiAndStashPopovers({
             )}
 
             {wikiInsertMode === "embed" && (
-              <div className="space-y-2 rounded-lg border border-border/60 bg-muted/30 p-2">
+              <div className="border-border/60 bg-muted/30 space-y-2 rounded-lg border p-2">
                 <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
                   <Eye className="h-3 w-3" /> Live Embed Preview
                 </div>
@@ -235,7 +235,7 @@ export function WikiAndStashPopovers({
                             className={cn(
                               "h-10 w-10 cursor-pointer rounded border object-cover transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                               selectedWikiImageUrl === img
-                                ? "border-wiki ring-2 ring-wiki/50"
+                                ? "border-wiki ring-wiki/50 ring-2"
                                 : "border-transparent opacity-60 hover:opacity-100"
                             )}
                           />
@@ -270,13 +270,13 @@ export function WikiAndStashPopovers({
             size="sm"
             disabled={disabled}
             className={cn(
-              "h-7 w-7 rounded-xl p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95",
+              "h-7 w-7 rounded-xl p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
               isStashesOpen
                 ? "bg-amber-500/15 text-amber-500 ring-1 ring-amber-500/30"
                 : "text-muted-foreground hover:bg-muted hover:text-amber-500"
             )}
-            title="Attach Lore Stash Media"
-            aria-label="Attach Lore Stash Media"
+            title="Attach lore stash media"
+            aria-label="Attach lore stash media"
           >
             <Bookmark className="h-3.5 w-3.5" />
           </Button>

@@ -46,8 +46,8 @@ export function ComposerAccountSwitcher({
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="group relative cursor-pointer rounded-full transition-transform duration-150 active:scale-[0.98]"
-                aria-label="Switch ThinkPages Account"
+                className="group relative cursor-pointer rounded-full"
+                aria-label="Switch ThinkPages account"
               >
                 <Avatar className="border-separator size-9 border">
                   <AvatarImage src={accountAvatarUrl} alt={account.displayName} />
@@ -85,7 +85,7 @@ export function ComposerAccountSwitcher({
                 className="h-6"
               >
                 <Plus aria-hidden="true" />
-                Add Account
+                Add account
               </Button>
             )}
           </div>

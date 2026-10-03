@@ -48,24 +48,24 @@ export function CardMarketTab({
       <div className="bg-surface-secondary border-separator rounded-control border p-6">
         <h3 className="text-label text-title-3 mb-4 flex items-center gap-2 font-semibold">
           <BarChart3 className="h-5 w-5" />
-          Market History
+          Market history
         </h3>
 
         {/* Market stats */}
         <div className="mb-6 grid grid-cols-3 gap-4">
           <div className="bg-surface-secondary border-separator rounded-control border p-4">
-            <p className="text-label-secondary text-footnote mb-1">Current Value</p>
+            <p className="text-label-secondary text-footnote mb-1">Current value</p>
             <p className={cn("text-title-1 flex items-baseline gap-1", rarityConfig.color)}>
               <IxCreditsSymbol size="1em" variant="ic" />
               {card.marketValue.toLocaleString()}
             </p>
           </div>
           <div className="bg-surface-secondary border-separator rounded-control border p-4">
-            <p className="text-label-secondary text-footnote mb-1">Total Supply</p>
+            <p className="text-label-secondary text-footnote mb-1">Total supply</p>
             <p className="text-label text-title-1">{card.totalSupply.toLocaleString()}</p>
           </div>
           <div className="bg-surface-secondary border-separator rounded-control border p-4">
-            <p className="text-label-secondary text-footnote mb-1">Last Trade</p>
+            <p className="text-label-secondary text-footnote mb-1">Last trade</p>
             <p className="text-label text-headline">
               {card.lastTrade ? new Date(card.lastTrade).toLocaleDateString() : "Never"}
             </p>
@@ -82,7 +82,7 @@ export function CardMarketTab({
       <div className="bg-surface-secondary border-separator rounded-control border p-6">
         <h3 className="text-label text-title-3 mb-4 flex items-center gap-2 font-semibold">
           <History className="text-yellow h-5 w-5" />
-          Provenance & Ownership History
+          Provenance & ownership history
         </h3>
 
         {isLoadingProvenance ? (

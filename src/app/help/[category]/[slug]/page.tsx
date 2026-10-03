@@ -36,7 +36,7 @@ export default async function HelpArticlePage({ params }: { params: Params }) {
   return (
     <DocumentPage
       file={`help/${category}/${slug}.md`}
-      back={{ href: "/help", label: "Help Center" }}
+      back={{ href: "/help", label: "Help center" }}
     />
   );
 }

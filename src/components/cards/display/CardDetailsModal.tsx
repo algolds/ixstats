@@ -205,7 +205,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                 {onDownloadImage && (
                   <Button size="sm" variant="secondary" onClick={() => onDownloadImage(card)}>
                     <Download className="h-3.5 w-3.5" />
-                    Save Image
+                    Save image
                   </Button>
                 )}
               </div>
@@ -226,7 +226,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                 </TabsTrigger>
                 <TabsTrigger value="market">
                   <BarChart3 className="mr-2 h-3.5 w-3.5" />
-                  Market & Provenance
+                  Market & provenance
                 </TabsTrigger>
                 {isNsImportCard && (
                   <TabsTrigger value="stats">

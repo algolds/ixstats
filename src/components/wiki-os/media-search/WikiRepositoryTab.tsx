@@ -19,7 +19,6 @@ import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { CommonsCategoryBrowser } from "~/components/wiki-os/commons/CommonsCategoryBrowser";
 import { CommonsDetailPanel } from "~/components/wiki-os/commons/CommonsDetailPanel";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import type { CommonsImage } from "./types";
 import { getImageType, getImageOrientation } from "./types";
 import { MyStashTab } from "./MyStashTab";
@@ -290,11 +289,11 @@ export function WikiRepositoryTab({
               options={[
                 { value: "commons", label: "Commons", icon: <Globe aria-hidden="true" /> },
                 { value: "wiki", label: "Wiki", icon: <Database aria-hidden="true" /> },
-                { value: "stash", label: "My Stash", icon: <Bookmark aria-hidden="true" /> },
+                { value: "stash", label: "My stash", icon: <Bookmark aria-hidden="true" /> },
               ]}
             />
 
-            {/* Apple Scope Toggle: IxWiki (Local) vs IIWiki (External) */}
+            {/* Scope toggle: IxWiki (Local) vs IIWiki (External) */}
             {wikiSource === "wiki" && (
               <SegmentedControl
                 aria-label="Wiki source selection"
@@ -317,7 +316,7 @@ export function WikiRepositoryTab({
                 size="sm"
                 onClick={() => setIsCategoryExpanded((prev) => !prev)}
                 className={cn(
-                  "text-caption rounded-control flex h-8 cursor-pointer items-center gap-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
+                  "text-caption rounded-control flex h-8 cursor-pointer items-center gap-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
                   isCategoryExpanded
                     ? "border-tint/40 bg-tint-fill text-tint hover:bg-tint-fill"
                     : "border-separator text-label-secondary hover:text-label hover:bg-fill-3"
@@ -393,7 +392,7 @@ export function WikiRepositoryTab({
                     }}
                     className="text-label-secondary h-auto px-0"
                   >
-                    Reset Filters
+                    Reset filters
                   </Button>
                 )}
               </div>
@@ -505,16 +504,6 @@ export function WikiRepositoryTab({
                         )}
                         style={{ contentVisibility: "auto", containIntrinsicSize: "auto 180px" }}
                       >
-                        <TextureOverlay
-                          texture="paperGrain"
-                          opacity={0.05}
-                          className="mix-blend-overlay"
-                        />
-                        <TextureOverlay
-                          texture="dots"
-                          opacity={0.03}
-                          className="mix-blend-overlay"
-                        />
                         <div className="bg-fill-4 relative aspect-[4/3] w-full overflow-hidden">
                           <img
                             src={img.thumbUrl}
@@ -552,7 +541,7 @@ export function WikiRepositoryTab({
                       onClick={handleWikiLoadMore}
                       className="text-footnote h-8"
                     >
-                      Load More Images
+                      Load more images
                     </Button>
                   </div>
                 )}

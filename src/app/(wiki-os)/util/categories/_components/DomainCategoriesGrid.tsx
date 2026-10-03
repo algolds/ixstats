@@ -6,7 +6,6 @@ import { ArrowRight } from "iconoir-react";
 import { motion, useReducedMotion } from "motion/react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import type { DomainCategory } from "./constants";
 
 interface DomainCategoriesGridProps {
@@ -38,8 +37,6 @@ export function DomainCategoriesGrid({ domains, searchQuery }: DomainCategoriesG
                   "facet-press focus-visible:outline-tint outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
                 )}
               >
-                <TextureOverlay texture="dots" opacity={0.03} />
-
                 {/* Header with Icon + Arrow */}
                 <div className="flex w-full items-start justify-between">
                   <div className="flex items-center gap-3">

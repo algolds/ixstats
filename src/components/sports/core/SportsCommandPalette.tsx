@@ -52,7 +52,7 @@ export function SportsCommandPalette({
     <CommandDialog
       open={open}
       onOpenChange={setOpen}
-      title="Sports Command Palette"
+      title="Sports command palette"
       description="Quick actions, navigation, and club search"
       className="border-separator bg-surface rounded-sheet max-w-xl"
     >
@@ -61,14 +61,14 @@ export function SportsCommandPalette({
         <CommandEmpty>No matching commands or clubs found.</CommandEmpty>
 
         {/* Quick Actions */}
-        <CommandGroup heading="Quick Actions">
+        <CommandGroup heading="Quick actions">
           {onSimulateNext && (
             <CommandItem
               onSelect={() => runCommand(onSimulateNext)}
               className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 font-semibold"
             >
               <Play className="text-tint h-4 w-4 fill-current" />
-              <span>Simulate Next Match</span>
+              <span>Simulate next match</span>
             </CommandItem>
           )}
 
@@ -79,7 +79,7 @@ export function SportsCommandPalette({
                 className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 font-semibold"
               >
                 <Trophy className="text-yellow h-4 w-4" />
-                <span>View Standings Matrix</span>
+                <span>View standings matrix</span>
               </CommandItem>
 
               <CommandItem
@@ -87,7 +87,7 @@ export function SportsCommandPalette({
                 className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 font-semibold"
               >
                 <Calendar className="text-teal h-4 w-4" />
-                <span>View Schedule & Fixtures</span>
+                <span>View schedule & fixtures</span>
               </CommandItem>
 
               <CommandItem
@@ -95,7 +95,7 @@ export function SportsCommandPalette({
                 className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 font-semibold"
               >
                 <Book className="text-indigo h-4 w-4" />
-                <span>View Competition Almanac</span>
+                <span>View competition almanac</span>
               </CommandItem>
             </>
           )}

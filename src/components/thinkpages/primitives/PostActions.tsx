@@ -157,11 +157,11 @@ export function PostActions({
       // Show feedback
       const dataAny = data as any;
       if ("removed" in dataAny && dataAny.removed) {
-        notify.success("Reaction removed!");
+        notify.success("Reaction removed");
       } else if ("updated" in dataAny && dataAny.updated) {
-        notify.success("Reaction updated!");
+        notify.success("Reaction updated");
       } else {
-        notify.success("Reaction added!");
+        notify.success("Reaction added");
       }
     },
     onError: (error, variables, context) => {
@@ -257,7 +257,7 @@ export function PostActions({
       return { queriesToBackup };
     },
     onSuccess: () => {
-      notify.success("Reaction removed!");
+      notify.success("Reaction removed");
     },
     onError: (error, variables, context) => {
       console.error("❌ removeReactionMutation ERROR:", error);
@@ -415,22 +415,22 @@ export function PostActions({
     if (typeof navigator !== "undefined" && navigator.share) {
       navigator
         .share({
-          title: "ThinkPages Post",
+          title: "ThinkPages post",
           text: "Check out this post on ThinkPages",
           url: postUrl,
         })
         .catch(() => {
           navigator.clipboard.writeText(postUrl);
-          notify.success("Post link copied to clipboard!");
+          notify.success("Post link copied to clipboard");
         });
     } else if (typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(postUrl);
-      notify.success("Post link copied to clipboard!");
+      notify.success("Post link copied to clipboard");
     }
     onShare?.(postId);
   }, [postId, onShare, notify]);
 
-  // ActionPill (spec §7.2) has two sizes; the large toolbar uses the standalone `md` pill.
+  // ActionPill has two sizes; the large toolbar uses the standalone `md` pill.
   const pillSize = size === "sm" ? "sm" : "md";
 
   return (

@@ -60,8 +60,8 @@ export function WikiOSArticleToolbarWidget({
         {isSignedIn && (
           <Link
             href={withBasePath(`/wiki/${slug}/edit`)}
-            className="rail-glow-blue rail-animate-bounce rounded-row border-tint/20 bg-tint/5 text-tint shadow-card hover:bg-tint/15 flex h-10 w-10 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-            title="Edit Article"
+            className="rounded-row border-tint/20 bg-tint/5 text-tint shadow-card hover:bg-tint/15 flex h-10 w-10 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+            title="Edit article"
           >
             <FileEdit className="size-4.5" />
           </Link>
@@ -75,7 +75,7 @@ export function WikiOSArticleToolbarWidget({
           aria-label="Margin"
           onClick={() => toggleMargin()}
           className={cn(
-            "rail-glow-highlighter rail-animate-wiggle rounded-row shadow-card size-10 border",
+            "rounded-row shadow-card size-10 border",
             isMarginOpen
               ? "border-margin-accent bg-margin-accent/25 text-margin-accent ring-margin-accent/40 shadow-margin-accent/20 ring-2"
               : "border-margin-accent/20 bg-margin-accent/10 text-margin-accent hover:bg-margin-accent/20"
@@ -104,7 +104,6 @@ export function WikiOSArticleToolbarWidget({
   }
 
   return (
-    // v2 (c5c6b382): a CutoutCard with the tinted cutout tab header.
     <CutoutCard variant="card" trackPointerHover={false} className="w-48 rounded-xl">
       <CutoutCardHeader
         as="h2"
@@ -121,7 +120,7 @@ export function WikiOSArticleToolbarWidget({
           <Button asChild variant="ghost" className={toolRowClassName}>
             <Link href={withBasePath(`/wiki/${slug}/edit`)}>
               <FileEdit className="text-tint size-3.5 shrink-0" aria-hidden="true" />
-              <span>Edit Article</span>
+              <span>Edit article</span>
             </Link>
           </Button>
         )}
@@ -139,7 +138,7 @@ export function WikiOSArticleToolbarWidget({
         >
           <span className="flex items-center gap-2">
             <Highlighter className="text-margin-accent size-3.5 shrink-0" aria-hidden="true" />
-            <span>{isMarginOpen ? "Hide Margin" : "Show Margin"}</span>
+            <span>{isMarginOpen ? "Hide margin" : "Show margin"}</span>
           </span>
           <kbd className="rounded-control-sm border-separator bg-fill-4 text-caption text-label-secondary border px-1">
             T
@@ -153,7 +152,7 @@ export function WikiOSArticleToolbarWidget({
           className={toolRowClassName}
         >
           <Clock className="text-label-secondary size-3.5 shrink-0" aria-hidden="true" />
-          <span>Revision History</span>
+          <span>Revision history</span>
         </Button>
 
         {/* Backlinks */}
@@ -163,13 +162,13 @@ export function WikiOSArticleToolbarWidget({
           className={toolRowClassName}
         >
           <Link2 className="text-label-secondary size-3.5 shrink-0" aria-hidden="true" />
-          <span>What Links Here</span>
+          <span>What links here</span>
         </Button>
 
         {/* Media theme */}
         <div className="border-separator mt-2 space-y-2 border-t px-1 pt-2">
           <div className="flex items-center justify-between">
-            <span className="text-subhead text-label-secondary">Media Theme</span>
+            <span className="text-subhead text-label-secondary">Media theme</span>
             <span className="text-caption text-label-secondary capitalize">{mediaThemeMode}</span>
           </div>
           <SegmentedControl

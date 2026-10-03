@@ -50,7 +50,7 @@ export default function PostPage({ params }: PostPageProps) {
   // Mutation for creating replies
   const createPostMutation = api.thinkpages.createPost.useMutation({
     onSuccess: () => {
-      notify.success("Reply posted!");
+      notify.success("Reply posted");
       setReplyText("");
       // Invalidate the post query to fetch new replies instantly
       void utils.thinkpages.getPost.invalidate({ postId });
@@ -95,13 +95,13 @@ export default function PostPage({ params }: PostPageProps) {
       <div className="container mx-auto max-w-2xl px-4 py-8">
         <Card>
           <EmptyState
-            title="Post Not Found"
+            title="Post not found"
             message="This post may have been deleted or the link is incorrect."
             action={
               <Button asChild>
                 <Link href="/thinkpages">
                   <ArrowLeft aria-hidden="true" />
-                  Back to Feed
+                  Back to feed
                 </Link>
               </Button>
             }
@@ -119,7 +119,7 @@ export default function PostPage({ params }: PostPageProps) {
           <Button asChild variant="ghost" size="sm">
             <Link href="/thinkpages">
               <ArrowLeft aria-hidden="true" />
-              Back to Feed
+              Back to feed
             </Link>
           </Button>
         </div>
@@ -151,13 +151,13 @@ export default function PostPage({ params }: PostPageProps) {
                 const postUrl = `${window.location.origin}/thinkpages/post/${post.id}`;
                 if (navigator.share) {
                   navigator.share({
-                    title: "ThinkPages Post",
+                    title: "ThinkPages post",
                     text: "Check out this post on ThinkPages",
                     url: postUrl,
                   });
                 } else {
                   navigator.clipboard.writeText(postUrl);
-                  notify.success("Link copied to clipboard!");
+                  notify.success("Link copied to clipboard");
                 }
               }}
               isHero={true}
@@ -186,13 +186,13 @@ export default function PostPage({ params }: PostPageProps) {
                       const postUrl = `${window.location.origin}/thinkpages/post/${reply.id}`;
                       if (navigator.share) {
                         navigator.share({
-                          title: "ThinkPages Reply",
+                          title: "ThinkPages reply",
                           text: "Check out this reply on ThinkPages",
                           url: postUrl,
                         });
                       } else {
                         navigator.clipboard.writeText(postUrl);
-                        notify.success("Link copied to clipboard!");
+                        notify.success("Link copied to clipboard");
                       }
                     }}
                     compact={true}

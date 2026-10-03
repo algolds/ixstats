@@ -89,7 +89,7 @@ export function ThinktankChatTab({
           href={`/messages?conversation=${encodeURIComponent(conversationId)}`}
           className="text-label-secondary hover:text-label text-footnote flex items-center gap-1"
         >
-          Open in Messages
+          Open in messages
           <OpenNewWindow className="h-3 w-3" />
         </Link>
       </div>

@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { Clock } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -45,8 +44,6 @@ export function AuctionCardItem({
 
   return (
     <div className="border-separator bg-fill-4 rounded-row relative flex gap-3 overflow-hidden border p-3">
-      <TextureOverlay texture="dots" opacity={0.015} />
-
       {/* Artwork thumbnail — click to view details */}
       <button
         type="button"
@@ -103,7 +100,9 @@ export function AuctionCardItem({
       {/* Bidding Actions */}
       <div className="relative z-10 flex flex-col items-end justify-between gap-2 select-none">
         <div className="text-right">
-          <span className="text-label-secondary text-eyebrow block leading-none">Current Bid</span>
+          <span className="text-label-secondary text-stat-label block leading-none">
+            Current bid
+          </span>
           <span className="text-headline text-yellow mt-0.5 flex items-center justify-end gap-0.5 leading-none tabular-nums">
             <IxCreditsSymbol className="h-3 w-3 shrink-0" />
             {currentBid.toLocaleString()}

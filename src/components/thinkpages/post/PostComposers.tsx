@@ -1,6 +1,6 @@
 "use client";
 // src/components/thinkpages/post/PostComposers.tsx
-// Inline edit and reply composer components matching the main GlassCanvasComposer aesthetic with Apple Design physics.
+// Inline edit and reply composer components matching the main GlassCanvasComposer aesthetic.
 
 import { useRef, useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
@@ -169,7 +169,7 @@ export function PostComposers({
                 <div className="text-subhead text-label flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Edit className="text-label-secondary size-4" aria-hidden="true" />
-                    <span>Editing Post</span>
+                    <span>Editing post</span>
                   </div>
                   <span className="text-footnote text-label-secondary">Esc to cancel</span>
                 </div>
@@ -190,7 +190,7 @@ export function PostComposers({
                     onClick={handleSubmitEdit}
                     disabled={!editText.trim() || editText === post.content || isEditPending}
                   >
-                    {isEditPending ? "Saving..." : "Save Changes"}
+                    {isEditPending ? "Saving..." : "Save changes"}
                   </Button>
                 </div>
               </div>
@@ -296,7 +296,7 @@ export function PostComposers({
                         <button
                           onClick={() => handleRemoveImage(index)}
                           type="button"
-                          className="material-thin text-label hover:text-destructive absolute top-1 right-1 z-10 cursor-pointer rounded-full p-1 transition-colors active:scale-[0.98]"
+                          className="material-thin text-label hover:text-destructive absolute top-1 right-1 z-10 cursor-pointer rounded-full p-1 transition-colors"
                           aria-label="Remove image"
                         >
                           <X className="h-3 w-3" />

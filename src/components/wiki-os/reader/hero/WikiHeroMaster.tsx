@@ -4,17 +4,11 @@ import React, { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { WikiHeroProps, WikiHeroVariant } from "./types";
 import { SculptedEmblemHero } from "./SculptedEmblemHero";
-import {
-  type RefractionMode,
-  REFRACTION_STORAGE_KEY,
-  getStoredRefractionMode,
-} from "./FeaturedImageRefraction";
 
 const STORAGE_KEY = "wikios:heroVariant";
 
 export function WikiHeroMaster(props: WikiHeroProps) {
   const [internalVariant, setInternalVariant] = useState<WikiHeroVariant>("sculpted-emblem");
-  const [internalRefraction, setInternalRefraction] = useState<RefractionMode>("ambient-underglow");
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
@@ -26,14 +20,12 @@ export function WikiHeroMaster(props: WikiHeroProps) {
       } else {
         setInternalVariant("sculpted-emblem");
       }
-      setInternalRefraction(getStoredRefractionMode());
     } catch {
       // ignore storage failures
     }
   }, []);
 
   const activeVariant = props.variant ?? internalVariant;
-  const activeRefraction = props.refractionMode ?? internalRefraction;
 
   const handleSelectVariant = useCallback(
     (newVariant: WikiHeroVariant) => {
@@ -52,29 +44,10 @@ export function WikiHeroMaster(props: WikiHeroProps) {
     [props.onSelectVariant]
   );
 
-  const handleSelectRefraction = useCallback(
-    (newMode: RefractionMode) => {
-      if (props.onSelectRefractionMode) {
-        // oxlint-disable-next-line
-        props.onSelectRefractionMode(newMode);
-      } else {
-        setInternalRefraction(newMode);
-      }
-      try {
-        localStorage.setItem(REFRACTION_STORAGE_KEY, newMode);
-      } catch {
-        // ignore
-      }
-    },
-    [props.onSelectRefractionMode]
-  );
-
   const heroProps: WikiHeroProps = {
     ...props,
     variant: activeVariant,
     onSelectVariant: handleSelectVariant,
-    refractionMode: activeRefraction,
-    onSelectRefractionMode: handleSelectRefraction,
   };
 
   const renderActiveHero = () => {
@@ -83,7 +56,7 @@ export function WikiHeroMaster(props: WikiHeroProps) {
 
   return (
     <div className="flex w-full flex-col items-center">
-      {/* ── Active Hero Render with Apple-Grade Spring Morph/Crossfade ── */}
+      {/* ── Active Hero Render with Spring Morph/Crossfade ── */}
       <div className="w-full">
         <AnimatePresence mode="wait">
           <motion.div

@@ -1,6 +1,6 @@
 "use client";
 // src/components/wiki-os/stashes/CreateStashPopover.tsx
-// Apple Design Popover for creating new Lore Stash collections.
+// Popover for creating new Lore Stash collections.
 // Anchored directly to the trigger button with spring physics, 8-color swatch picker, live preview, and keyboard shortcuts.
 
 import { useState, useRef, useEffect } from "react";
@@ -34,7 +34,7 @@ export function CreateStashPopover({
   isCreating = false,
   existingNames = [],
   triggerClassName,
-  triggerLabel = "New Collection",
+  triggerLabel = "New collection",
   triggerVariant,
   children,
 }: CreateStashPopoverProps) {
@@ -115,7 +115,7 @@ export function CreateStashPopover({
           >
             <FolderIcon className="size-3" aria-hidden="true" />
           </div>
-          <h4 className="text-headline text-label">New Collection</h4>
+          <h4 className="text-headline text-label">New collection</h4>
         </div>
 
         {/* Error message */}
@@ -129,7 +129,7 @@ export function CreateStashPopover({
         {/* Name input */}
         <form onSubmit={handleSubmit} className="space-y-3">
           <label className="block space-y-1">
-            <span className="text-subhead text-label-secondary block">Collection Name</span>
+            <span className="text-subhead text-label-secondary block">Collection name</span>
             <Input
               ref={inputRef}
               type="text"
@@ -145,11 +145,11 @@ export function CreateStashPopover({
 
           {/* Colour swatch picker */}
           <div className="rounded-row bg-surface-secondary space-y-2 p-3">
-            <span className="text-subhead text-label-secondary block">Color Tag</span>
+            <span className="text-subhead text-label-secondary block">Color tag</span>
             <div
               className="flex items-center justify-between gap-1"
               role="radiogroup"
-              aria-label="Color Tag"
+              aria-label="Color tag"
             >
               {PRESET_COLORS.map((c) => (
                 <button
@@ -160,7 +160,7 @@ export function CreateStashPopover({
                   aria-label={c}
                   onClick={() => setColor(c)}
                   className={cn(
-                    "duration-fast relative flex size-6 cursor-pointer items-center justify-center rounded-full transition-transform active:scale-[0.98]",
+                    "duration-fast relative flex size-6 cursor-pointer items-center justify-center rounded-full",
                     color === c
                       ? "ring-tint ring-offset-surface-secondary ring-2 ring-offset-2"
                       : "opacity-85 hover:opacity-100"
@@ -188,7 +188,7 @@ export function CreateStashPopover({
                   <span>Creating...</span>
                 </>
               ) : (
-                <span>Create Collection</span>
+                <span>Create collection</span>
               )}
             </Button>
           </div>

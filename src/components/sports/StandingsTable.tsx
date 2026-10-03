@@ -112,7 +112,7 @@ export function StandingsTable({
         const parts: string[] = [];
         if (conference) parts.push(conference);
         if (division) parts.push(division);
-        groups.set(key, { label: parts.join(" — "), standings: [] });
+        groups.set(key, { label: parts.join(" · "), standings: [] });
       }
       groups.get(key)!.standings.push(s);
     }
@@ -156,7 +156,7 @@ export function StandingsTable({
           className="text-label-secondary w-fit"
         >
           <Download className="h-3.5 w-3.5" />
-          <span>Export Matrix</span>
+          <span>Export matrix</span>
         </Button>
       </div>
 
@@ -210,7 +210,7 @@ export function StandingsTable({
                     <tr
                       key={team.id || team.teamId}
                       className={cn(
-                        "group cursor-pointer transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.99]",
+                        "group cursor-pointer transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
                         isLeader && "bg-yellow/5 hover:bg-yellow/10",
                         isPromotion && !isLeader && "bg-green/5 hover:bg-green/10",
                         isRelegation && "bg-red/5 hover:bg-red/10",

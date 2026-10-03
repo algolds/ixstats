@@ -91,7 +91,7 @@ export function ChampionshipRevealOverlay({
         {/* Actions */}
         <div className="mt-8 flex justify-center gap-3">
           <Button size="lg" onClick={onClose}>
-            Continue Campaign
+            Continue campaign
           </Button>
         </div>
       </DialogContent>

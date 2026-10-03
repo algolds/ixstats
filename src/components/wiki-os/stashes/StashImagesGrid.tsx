@@ -227,7 +227,7 @@ export function StashedImageModal({
         aria-describedby={undefined}
       >
         <div className="pr-8">
-          <Eyebrow className="text-tint">Stashed Media</Eyebrow>
+          <Eyebrow>Stashed media</Eyebrow>
           <SheetTitle className="text-title-3 mt-0.5 break-words">{cleanTitle}</SheetTitle>
         </div>
 
@@ -270,7 +270,7 @@ export function StashedImageModal({
         </dl>
 
         <div className="space-y-2">
-          <Eyebrow>Wikitext Copy Format</Eyebrow>
+          <Eyebrow>Wikitext copy format</Eyebrow>
           <SegmentedControl
             aria-label="Wikitext copy format"
             size="sm"
@@ -290,13 +290,13 @@ export function StashedImageModal({
           <div className="grid grid-cols-3 gap-2">
             <Button onClick={handleCopy} className="col-span-2">
               {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
-              {copied ? "Copied" : format === "url" ? "Copy URL" : "Copy Wikitext"}
+              {copied ? "Copied" : format === "url" ? "Copy URL" : "Copy wikitext"}
             </Button>
             <Button
               variant="outline"
               onClick={handleCopyImage}
               disabled={isCopyingImage}
-              title="Copy Image to Clipboard"
+              title="Copy image to clipboard"
             >
               {isCopyingImage ? (
                 <Loader2 className="animate-spin" aria-hidden="true" />

@@ -68,7 +68,7 @@ export function WikiWatchlistFeed() {
               <div className="rounded-control bg-yellow/15 text-yellow flex h-8 w-8 items-center justify-center">
                 <Eye className="h-5 w-5" />
               </div>
-              <h1 className="text-label text-title-2">Stash Watchlist</h1>
+              <h1 className="text-label text-title-2">Stash watchlist</h1>
             </div>
             <p className="text-label-secondary text-footnote">
               Tracking changes across{" "}
@@ -100,10 +100,10 @@ export function WikiWatchlistFeed() {
             <Button
               variant="secondary"
               size="icon"
-              aria-label="Refresh Watchlist"
+              aria-label="Refresh watchlist"
               onClick={() => void refetch()}
               disabled={isRefetching}
-              title="Refresh Watchlist"
+              title="Refresh watchlist"
               className="text-label-secondary"
             >
               <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
@@ -243,7 +243,7 @@ export function WikiWatchlistFeed() {
                       aria-expanded={isExpanded}
                       onClick={() => setExpandedRevId(isExpanded ? null : item.id)}
                     >
-                      {isExpanded ? "Hide Diff" : "Inline Diff"}
+                      {isExpanded ? "Hide diff" : "Inline diff"}
                     </Button>
 
                     <Button

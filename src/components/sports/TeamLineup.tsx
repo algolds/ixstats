@@ -152,7 +152,7 @@ export function TeamLineup({
                     <div className="flex flex-col items-center">
                       {/* Player Circle Token */}
                       <div
-                        className="text-footnote shadow-card relative flex size-10 items-center justify-center rounded-full border-2 border-white/60 font-semibold text-white transition-transform active:scale-95"
+                        className="text-footnote shadow-card relative flex size-10 items-center justify-center rounded-full border-2 border-white/60 font-semibold text-white"
                         style={{ backgroundColor: teamColor }}
                       >
                         {player.number ?? initials}

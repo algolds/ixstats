@@ -33,7 +33,7 @@ export function CollectionCommentsTab({
       {/* Add comment */}
       <Card className="flex flex-col gap-6 py-6">
         <CardContent className="p-4">
-          <h3 className="text-title-3 text-label mb-3 font-semibold">Add a Comment</h3>
+          <h3 className="text-title-3 text-label mb-3 font-semibold">Add a comment</h3>
           <div className="flex gap-2">
             <Input
               placeholder="Share your thoughts..."
@@ -82,9 +82,7 @@ export function CollectionCommentsTab({
           <CardContent className="p-12 text-center">
             <MessageCircle className="text-label-tertiary mx-auto mb-3 h-12 w-12" />
             <p className="text-label-secondary">No comments yet</p>
-            <p className="text-body text-label-secondary mt-1">
-              Be the first to share your thoughts!
-            </p>
+            <p className="text-body text-label-secondary mt-1">No comments yet.</p>
           </CardContent>
         </Card>
       )}

@@ -17,7 +17,7 @@ interface WikiZoomDialogProps {
 }
 
 /**
- * Full-size image zoom for the Repository, Commons and Stash detail views (spec §7.3): a `Dialog`
+ * Full-size image zoom for the Repository, Commons and Stash detail views: a `Dialog`
  * with instant presentation so the image itself is the transition. The content fills the
  * viewport, so a click beside the image dismisses it as the old backdrop did; Escape and the
  * close button also dismiss.
