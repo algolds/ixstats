@@ -1,4 +1,3 @@
-
 /** Climate zone distribution entry for a country */
 export interface ClimateZoneEntry {
   type: string; // Full name e.g. "Tropical Wet (Ar)"
@@ -567,55 +566,41 @@ export function computeEconomicGeoModifiers(profile: GeoProfile): EconomicGeoMod
  * in applyPersonalityDrift().
  */
 export function computeNPCGeoModifiers(profile: GeoProfile): Partial<PersonalityTraits> {
-  const mods: Partial<PersonalityTraits> = {};
-
-  // Island nation → maritime self-sufficiency, insular tendency
-  if (profile.isIsland) {
-    mods.cooperativeness = (mods.cooperativeness ?? 0) - 0.5;
-    mods.isolationism = (mods.isolationism ?? 0) + 0.5;
-  }
-
-  // Landlocked → trade-seeking, cooperation-driven
-  if (profile.isLandlocked) {
-    mods.economicFocus = (mods.economicFocus ?? 0) + 0.5;
-    mods.cooperativeness = (mods.cooperativeness ?? 0) + 0.3;
-  }
-
-  // Desert dominant → scarcity-driven boldness
   const dominant = profile.dominantClimate ?? "";
-  if (dominant.includes("Desert") || dominant.includes("Bw")) {
-    mods.riskTolerance = (mods.riskTolerance ?? 0) + 0.4;
-  }
+  const climateIs = (...needles: string[]) => needles.some((n) => dominant.includes(n));
 
-  // Tropical climate → historical trade crossroads openness
-  if (dominant.includes("Tropical") || dominant.includes("(Ar)") || dominant.includes("(Aw)")) {
-    mods.culturalOpenness = (mods.culturalOpenness ?? 0) + 0.3;
-  }
+  const rules: [applies: boolean, effects: Partial<PersonalityTraits>][] = [
+    // Island nation → maritime self-sufficiency, insular tendency
+    [profile.isIsland, { cooperativeness: -0.5, isolationism: 0.5 }],
+    // Landlocked → trade-seeking, cooperation-driven
+    [profile.isLandlocked, { economicFocus: 0.5, cooperativeness: 0.3 }],
+    // Desert dominant → scarcity-driven boldness
+    [climateIs("Desert", "Bw"), { riskTolerance: 0.4 }],
+    // Tropical climate → historical trade crossroads openness
+    [climateIs("Tropical", "(Ar)", "(Aw)"), { culturalOpenness: 0.3 }],
+    // Many neighbors → crowded neighborhood tension
+    [profile.neighborCount > 4, { assertiveness: 0.3 }],
+    // Mountain terrain → defensive isolation mindset
+    [profile.terrainRoughness > 0.5, { isolationism: 0.3, militarism: 0.3 }],
+    // High coastline → maritime trade orientation
+    [profile.coastlineKm > 500, { economicFocus: 0.3 }],
+    // Boreal/cold climate → self-reliant tendency
+    [climateIs("Boreal", "(E)"), { isolationism: 0.2, ideologicalRigidity: 0.2 }],
+  ];
 
-  // Many neighbors → crowded neighborhood tension
-  if (profile.neighborCount > 4) {
-    mods.assertiveness = (mods.assertiveness ?? 0) + 0.3;
+  const mods: Partial<PersonalityTraits> = {};
+  for (const [applies, effects] of rules) {
+    if (!applies) continue;
+    for (const [trait, delta] of Object.entries(effects) as [keyof PersonalityTraits, number][]) {
+      mods[trait] = (mods[trait] ?? 0) + delta;
+    }
   }
-
-  // Mountain terrain → defensive isolation mindset
-  if (profile.terrainRoughness > 0.5) {
-    mods.isolationism = (mods.isolationism ?? 0) + 0.3;
-    mods.militarism = (mods.militarism ?? 0) + 0.3;
-  }
-
-  // High coastline → maritime trade orientation
-  if (profile.coastlineKm > 500) {
-    mods.economicFocus = (mods.economicFocus ?? 0) + 0.3;
-  }
-
-  // Boreal/cold climate → self-reliant tendency
-  if (dominant.includes("Boreal") || dominant.includes("(E)")) {
-    mods.isolationism = (mods.isolationism ?? 0) + 0.2;
-    mods.ideologicalRigidity = (mods.ideologicalRigidity ?? 0) + 0.2;
-  }
-
   return mods;
 }
+
+/** The value of the first matching tier, else `fallback`. */
+const tiered = (tiers: [matches: boolean, value: number][], fallback: number) =>
+  tiers.find(([matches]) => matches)?.[1] ?? fallback;
 
 /**
  * Compute crisis risk factors from geographic profile.
@@ -624,74 +609,74 @@ export function computeNPCGeoModifiers(profile: GeoProfile): Partial<Personality
  */
 export function computeCrisisRiskFactors(profile: GeoProfile): CrisisRiskFactors {
   const dominant = profile.dominantClimate ?? "";
+  const climateIs = (...needles: string[]) => needles.some((n) => dominant.includes(n));
+  const { arableLandPercent, drainageDensity, terrainRoughness } = profile;
   const hasCoast = profile.coastlineKm > 100;
-
-  // Hurricane risk: tropical + coastal
-  const isTropical =
-    dominant.includes("Tropical") || dominant.includes("(Ar)") || dominant.includes("(Aw)");
-  const hurricane = isTropical && hasCoast ? 0.7 : isTropical ? 0.2 : hasCoast ? 0.1 : 0;
-
-  // Earthquake risk: high terrain roughness (mountain boundary zones)
-  const earthquake =
-    profile.terrainRoughness > 0.5 ? 0.6 : profile.terrainRoughness > 0.3 ? 0.3 : 0.1;
-
-  // Drought risk: arid climate + low arable land
-  const isArid =
-    dominant.includes("Desert") ||
-    dominant.includes("Bw") ||
-    dominant.includes("Steppe") ||
-    dominant.includes("Bs");
-  const drought =
-    isArid && profile.arableLandPercent < 15
-      ? 0.8
-      : isArid
-        ? 0.5
-        : profile.arableLandPercent < 20
-          ? 0.3
-          : 0.1;
-
-  // Flood risk: high drainage density + humid climate
-  const isHumid =
-    dominant.includes("Humid") ||
-    dominant.includes("Cf") ||
-    dominant.includes("Oceanic") ||
-    dominant.includes("Do");
-  const flood =
-    profile.drainageDensity > 0.8 && isHumid
-      ? 0.7
-      : profile.drainageDensity > 0.5
-        ? 0.4
-        : isHumid
-          ? 0.3
-          : 0.1;
-
-  // Wildfire risk: dry summer climate (Mediterranean, steppe)
-  const isDrySummer =
-    dominant.includes("Dry Summer") ||
-    dominant.includes("Cs") ||
-    dominant.includes("Steppe") ||
-    dominant.includes("Bs");
-  const wildfire = isDrySummer ? 0.6 : isArid ? 0.3 : 0.1;
-
-  // Pandemic risk: high population density correlates with tropical + humid
-  const pandemic = isTropical ? 0.4 : isHumid ? 0.3 : 0.2;
-
-  // Famine risk: low arable + low water resources
-  const famine =
-    profile.arableLandPercent < 10 && profile.drainageDensity < 0.3
-      ? 0.7
-      : profile.arableLandPercent < 20
-        ? 0.4
-        : 0.1;
+  const isTropical = climateIs("Tropical", "(Ar)", "(Aw)");
+  const isArid = climateIs("Desert", "Bw", "Steppe", "Bs");
+  const isHumid = climateIs("Humid", "Cf", "Oceanic", "Do");
+  const isDrySummer = climateIs("Dry Summer", "Cs", "Steppe", "Bs");
 
   return {
-    hurricane: Math.round(hurricane * 100) / 100,
-    earthquake: Math.round(earthquake * 100) / 100,
-    drought: Math.round(drought * 100) / 100,
-    flood: Math.round(flood * 100) / 100,
-    wildfire: Math.round(wildfire * 100) / 100,
-    pandemic: Math.round(pandemic * 100) / 100,
-    famine: Math.round(famine * 100) / 100,
+    // Tropical + coastal
+    hurricane: tiered(
+      [
+        [isTropical && hasCoast, 0.7],
+        [isTropical, 0.2],
+        [hasCoast, 0.1],
+      ],
+      0
+    ),
+    // High terrain roughness (mountain boundary zones)
+    earthquake: tiered(
+      [
+        [terrainRoughness > 0.5, 0.6],
+        [terrainRoughness > 0.3, 0.3],
+      ],
+      0.1
+    ),
+    // Arid climate + low arable land
+    drought: tiered(
+      [
+        [isArid && arableLandPercent < 15, 0.8],
+        [isArid, 0.5],
+        [arableLandPercent < 20, 0.3],
+      ],
+      0.1
+    ),
+    // High drainage density + humid climate
+    flood: tiered(
+      [
+        [drainageDensity > 0.8 && isHumid, 0.7],
+        [drainageDensity > 0.5, 0.4],
+        [isHumid, 0.3],
+      ],
+      0.1
+    ),
+    // Dry summer climate (Mediterranean, steppe)
+    wildfire: tiered(
+      [
+        [isDrySummer, 0.6],
+        [isArid, 0.3],
+      ],
+      0.1
+    ),
+    // High population density correlates with tropical + humid
+    pandemic: tiered(
+      [
+        [isTropical, 0.4],
+        [isHumid, 0.3],
+      ],
+      0.2
+    ),
+    // Low arable + low water resources
+    famine: tiered(
+      [
+        [arableLandPercent < 10 && drainageDensity < 0.3, 0.7],
+        [arableLandPercent < 20, 0.4],
+      ],
+      0.1
+    ),
   };
 }
 
