@@ -21,7 +21,6 @@ import {
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils/cn";
 import { GlassChart, chartTheme } from "./GlassChart";
-import { generateChartColors } from "~/lib/builder";
 import type { ChartTooltipProps, ChartPayloadEntry } from "~/types/charts";
 
 interface BaseChartProps<T = Record<string, unknown>> {
@@ -97,7 +96,112 @@ function GlassTooltip({ active, payload, label, labelFormatter, formatter }: Cha
   );
 }
 
-// Glass Bar Chart
+type ChartTheme = NonNullable<BaseChartProps["theme"]>;
+
+/** Per theme: bar gradient stops, line/area stroke and pie slice palette. */
+const THEME_COLORS: Record<ChartTheme, { bar: [string, string]; stroke: string; pie: string[] }> = {
+  default: {
+    bar: ["#94A3B8", "#475569"],
+    stroke: "#94A3B8",
+    pie: ["#94A3B8", "#475569", "#64748B", "#334155"],
+  },
+  blue: {
+    bar: ["#60A5FA", "#2563EB"],
+    stroke: "#3B82F6",
+    pie: ["#60A5FA", "#3B82F6", "#2563EB", "#1D4ED8"],
+  },
+  purple: {
+    bar: ["#C084FC", "#7C3AED"],
+    stroke: "#A855F7",
+    pie: ["#C084FC", "#9333EA", "#7C3AED", "#581C87"],
+  },
+  emerald: {
+    bar: ["#34D399", "#059669"],
+    stroke: "#10B981",
+    pie: ["#34D399", "#10B981", "#059669", "#064E3B"],
+  },
+  gold: {
+    bar: ["#FBBF24", "#D97706"],
+    stroke: "#F59E0B",
+    pie: ["#FBBF24", "#F59E0B", "#D97706", "#78350F"],
+  },
+  cyan: {
+    bar: ["#22D3EE", "#0891B2"],
+    stroke: "#06B6D4",
+    pie: ["#22D3EE", "#06B6D4", "#0891B2", "#164E63"],
+  },
+  red: {
+    bar: ["#F87171", "#DC2626"],
+    stroke: "#EF4444",
+    pie: ["#F87171", "#EF4444", "#DC2626", "#7F1D1D"],
+  },
+};
+
+const AXIS_STYLE = {
+  tick: { fill: chartTheme.text.secondary, fontSize: 10 },
+  axisLine: { stroke: chartTheme.grid.stroke },
+  tickLine: { stroke: chartTheme.grid.stroke },
+};
+
+/** Glass card + responsive container shared by every chart type. */
+function ChartFrame({
+  children,
+  ...frame
+}: Pick<
+  BaseChartProps,
+  "title" | "description" | "height" | "className" | "loading" | "error" | "theme"
+> & {
+  children: React.ReactElement;
+}) {
+  return (
+    <GlassChart {...frame}>
+      <ResponsiveContainer width="100%" height="100%">
+        {children}
+      </ResponsiveContainer>
+    </GlassChart>
+  );
+}
+
+/** Grid, axes, tooltip and legend of the cartesian charts. */
+function cartesianParts(
+  props: Pick<BaseChartProps, "hideGrid" | "hideLegend" | "hideXAxis" | "hideYAxis"> & {
+    xKey: string;
+    tooltip?: React.ReactElement;
+    yTickFormatter?: (value: number | string | unknown) => string;
+  }
+) {
+  return [
+    !props.hideGrid && (
+      <CartesianGrid
+        key="grid"
+        strokeDasharray="3 3"
+        stroke={chartTheme.grid.stroke}
+        opacity={chartTheme.grid.opacity}
+      />
+    ),
+    <XAxis key="x" dataKey={props.xKey} {...AXIS_STYLE} hide={props.hideXAxis} />,
+    <YAxis key="y" {...AXIS_STYLE} tickFormatter={props.yTickFormatter} hide={props.hideYAxis} />,
+    <Tooltip key="tooltip" content={props.tooltip ?? <GlassTooltip />} />,
+    !props.hideLegend && (
+      <Legend key="legend" wrapperStyle={{ color: chartTheme.text.secondary }} />
+    ),
+  ];
+}
+
+const chartMargin = (hideXAxis: boolean, hideYAxis: boolean) => ({
+  top: hideXAxis ? 10 : 20,
+  right: 10,
+  left: hideYAxis ? 10 : 20,
+  bottom: 5,
+});
+
+const compactAxisValue = (value: number) => {
+  if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
+  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
+  if (value >= 1e3) return `${(value / 1e3).toFixed(1)}K`;
+  return value.toFixed(0);
+};
+
 export function GlassBarChart({
   data,
   xKey,
@@ -117,43 +221,18 @@ export function GlassBarChart({
   hideXAxis = false,
   hideYAxis = false,
 }: BarChartProps) {
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const chartColors = useMemo(() => {
-    if (colors) return colors;
-    const keys = Array.isArray(yKey) ? yKey : [yKey];
-    return generateChartColors(keys.length, "primary");
-  }, [colors, yKey]);
+  const formatYAxis = (value: number | string | unknown): string =>
+    typeof value === "number" ? (valueFormatter ?? compactAxisValue)(value) : String(value ?? "");
 
-  const formatYAxis = (value: number | string | unknown): string => {
-    if (typeof value === "number") {
-      if (valueFormatter) return valueFormatter(value);
-      if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
-      if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
-      if (value >= 1e3) return `${(value / 1e3).toFixed(1)}K`;
-      return value.toFixed(0);
-    }
-    return String(value ?? "");
-  };
+  const gradientId = useMemo(() => `bar-grad-${theme}-${crypto.randomUUID()}`, [theme]);
+  const [gradientTop, gradientBottom] = (THEME_COLORS[theme] ?? THEME_COLORS.default).bar;
+  const fillAt = (index: number) =>
+    colors ? colors[index % colors.length] : `url(#${gradientId})`;
 
-  const gradientId = useMemo(
-    // oxlint-disable-next-line
-    () => `bar-grad-${theme}-${crypto.randomUUID()}`,
-    [theme]
-  );
-
-  // Map theme to premium gradient stop colors
-  const themeColors = {
-    default: ["#94A3B8", "#475569"],
-    blue: ["#60A5FA", "#2563EB"],
-    purple: ["#C084FC", "#7C3AED"],
-    emerald: ["#34D399", "#059669"],
-    gold: ["#FBBF24", "#D97706"],
-    cyan: ["#22D3EE", "#0891B2"],
-    red: ["#F87171", "#DC2626"],
-  }[theme] || ["#94A3B8", "#475569"];
+  const keys = Array.isArray(yKey) ? yKey : [yKey];
 
   return (
-    <GlassChart
+    <ChartFrame
       title={title}
       description={description}
       height={height}
@@ -162,85 +241,49 @@ export function GlassBarChart({
       error={error}
       theme={theme}
     >
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={data}
-          margin={{ top: hideXAxis ? 10 : 20, right: 10, left: hideYAxis ? 10 : 20, bottom: 5 }}
-        >
-          <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={themeColors[0]} stopOpacity={1} />
-              <stop offset="100%" stopColor={themeColors[1]} stopOpacity={0.4} />
-            </linearGradient>
-          </defs>
-          {!hideGrid && (
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke={chartTheme.grid.stroke}
-              opacity={chartTheme.grid.opacity}
+      <BarChart data={data} margin={chartMargin(hideXAxis, hideYAxis)}>
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={gradientTop} stopOpacity={1} />
+            <stop offset="100%" stopColor={gradientBottom} stopOpacity={0.4} />
+          </linearGradient>
+        </defs>
+        {cartesianParts({
+          xKey,
+          hideGrid,
+          hideLegend,
+          hideXAxis,
+          hideYAxis,
+          yTickFormatter: formatYAxis,
+          tooltip: (
+            <GlassTooltip
+              formatter={valueFormatter ? (value: number) => valueFormatter(value) : undefined}
             />
-          )}
-          <XAxis
-            dataKey={xKey}
-            tick={{ fill: chartTheme.text.secondary, fontSize: 10 }}
-            axisLine={{ stroke: chartTheme.grid.stroke }}
-            tickLine={{ stroke: chartTheme.grid.stroke }}
-            hide={hideXAxis}
-          />
-          <YAxis
-            tick={{ fill: chartTheme.text.secondary, fontSize: 10 }}
-            axisLine={{ stroke: chartTheme.grid.stroke }}
-            tickLine={{ stroke: chartTheme.grid.stroke }}
-            tickFormatter={formatYAxis}
-            hide={hideYAxis}
-          />
-          <Tooltip
-            content={
-              <GlassTooltip
-                formatter={valueFormatter ? (value: number) => valueFormatter(value) : undefined}
-              />
-            }
-          />
-          {!hideLegend && <Legend wrapperStyle={{ color: chartTheme.text.secondary }} />}
-          {Array.isArray(yKey) ? (
-            yKey.map((key, index) => (
-              <Bar
-                key={key}
-                dataKey={key}
-                fill={colors ? colors[index % colors.length] : `url(#${gradientId})`}
-                stackId={stacked ? "stack" : undefined}
-                radius={[4, 4, 0, 0]}
-              >
-                {!stacked &&
-                  data.map((entry, cellIndex) => (
-                    <Cell
-                      key={`cell-${key}-${cellIndex}`}
-                      fill={colors ? colors[index % colors.length] : `url(#${gradientId})`}
-                    />
-                  ))}
-              </Bar>
-            ))
-          ) : (
-            <Bar
-              dataKey={yKey}
-              fill={colors ? colors[0] : `url(#${gradientId})`}
-              radius={[4, 4, 0, 0]}
-            >
-              {data.map((entry, index) => (
+          ),
+        })}
+        {keys.map((key, index) => (
+          <Bar
+            key={key}
+            dataKey={key}
+            fill={fillAt(Array.isArray(yKey) ? index : 0)}
+            stackId={stacked && Array.isArray(yKey) ? "stack" : undefined}
+            radius={[4, 4, 0, 0]}
+          >
+            {/* Stacked bars take the series colour; otherwise each bar cycles the palette */}
+            {!(stacked && Array.isArray(yKey)) &&
+              data.map((_entry, cellIndex) => (
                 <Cell
-                  key={`cell-${index}`}
-                  fill={colors ? colors[index % colors.length] : `url(#${gradientId})`}
+                  key={`cell-${key}-${cellIndex}`}
+                  fill={fillAt(Array.isArray(yKey) ? index : cellIndex)}
                 />
               ))}
-            </Bar>
-          )}
-        </BarChart>
-      </ResponsiveContainer>
-    </GlassChart>
+          </Bar>
+        ))}
+      </BarChart>
+    </ChartFrame>
   );
 }
 
-// Glass Line Chart
 export function GlassLineChart({
   data,
   xKey,
@@ -260,34 +303,13 @@ export function GlassLineChart({
   hideXAxis = false,
   hideYAxis = false,
 }: LineChartProps) {
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const chartColors = useMemo(() => {
-    if (colors) return colors;
-    const keys = Array.isArray(yKey) ? yKey : [yKey];
-    return generateChartColors(keys.length, "primary");
-  }, [colors, yKey]);
-
+  const gradientId = useMemo(() => `area-grad-${theme}-${crypto.randomUUID()}`, [theme]);
+  const strokeColor = (THEME_COLORS[theme] ?? THEME_COLORS.default).stroke;
   const ChartComponent = area ? AreaChart : LineChart;
-  const gradientId = useMemo(
-    // oxlint-disable-next-line
-    () => `area-grad-${theme}-${crypto.randomUUID()}`,
-    [theme]
-  );
-
-  // Stroke color for the line based on the theme
-  const themeStrokeColor =
-    {
-      default: "#94A3B8",
-      blue: "#3B82F6",
-      purple: "#A855F7",
-      emerald: "#10B981",
-      gold: "#F59E0B",
-      cyan: "#06B6D4",
-      red: "#EF4444",
-    }[theme] || "#94A3B8";
+  const type = curved ? "monotone" : "linear";
 
   return (
-    <GlassChart
+    <ChartFrame
       title={title}
       description={description}
       height={height}
@@ -296,88 +318,44 @@ export function GlassLineChart({
       error={error}
       theme={theme}
     >
-      <ResponsiveContainer width="100%" height="100%">
-        <ChartComponent
-          data={data}
-          margin={{ top: hideXAxis ? 10 : 20, right: 10, left: hideYAxis ? 10 : 20, bottom: 5 }}
-        >
-          <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={themeStrokeColor} stopOpacity={0.4} />
-              <stop offset="95%" stopColor={themeStrokeColor} stopOpacity={0.0} />
-            </linearGradient>
-          </defs>
-          {!hideGrid && (
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke={chartTheme.grid.stroke}
-              opacity={chartTheme.grid.opacity}
-            />
-          )}
-          <XAxis
-            dataKey={xKey}
-            tick={{ fill: chartTheme.text.secondary, fontSize: 10 }}
-            axisLine={{ stroke: chartTheme.grid.stroke }}
-            tickLine={{ stroke: chartTheme.grid.stroke }}
-            hide={hideXAxis}
-          />
-          <YAxis
-            tick={{ fill: chartTheme.text.secondary, fontSize: 10 }}
-            axisLine={{ stroke: chartTheme.grid.stroke }}
-            tickLine={{ stroke: chartTheme.grid.stroke }}
-            hide={hideYAxis}
-          />
-          <Tooltip content={<GlassTooltip />} />
-          {!hideLegend && <Legend wrapperStyle={{ color: chartTheme.text.secondary }} />}
-          {Array.isArray(yKey) ? (
-            yKey.map((key, index) => {
-              const color = colors ? colors[index % colors.length] : themeStrokeColor;
-              return area ? (
-                <Area
-                  key={key}
-                  type={curved ? "monotone" : "linear"}
-                  dataKey={key}
-                  stroke={color}
-                  fill={`url(#${gradientId})`}
-                  strokeWidth={2}
-                />
-              ) : (
-                <Line
-                  key={key}
-                  type={curved ? "monotone" : "linear"}
-                  dataKey={key}
-                  stroke={color}
-                  strokeWidth={2}
-                  dot={{ fill: color, strokeWidth: 2, r: 3 }}
-                  activeDot={{ r: 5, fill: color }}
-                />
-              );
-            })
-          ) : area ? (
+      <ChartComponent data={data} margin={chartMargin(hideXAxis, hideYAxis)}>
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor={strokeColor} stopOpacity={0.4} />
+            <stop offset="95%" stopColor={strokeColor} stopOpacity={0.0} />
+          </linearGradient>
+        </defs>
+        {cartesianParts({ xKey, hideGrid, hideLegend, hideXAxis, hideYAxis })}
+        {(Array.isArray(yKey) ? yKey : [yKey]).map((key, index) => {
+          const color = colors
+            ? colors[Array.isArray(yKey) ? index % colors.length : 0]
+            : strokeColor;
+          return area ? (
             <Area
-              type={curved ? "monotone" : "linear"}
-              dataKey={yKey}
-              stroke={colors ? colors[0] : themeStrokeColor}
+              key={key}
+              type={type}
+              dataKey={key}
+              stroke={color}
               fill={`url(#${gradientId})`}
               strokeWidth={2}
             />
           ) : (
             <Line
-              type={curved ? "monotone" : "linear"}
-              dataKey={yKey}
-              stroke={colors ? colors[0] : themeStrokeColor}
+              key={key}
+              type={type}
+              dataKey={key}
+              stroke={color}
               strokeWidth={2}
-              dot={{ fill: colors ? colors[0] : themeStrokeColor, strokeWidth: 2, r: 3 }}
-              activeDot={{ r: 5, fill: colors ? colors[0] : themeStrokeColor }}
+              dot={{ fill: color, strokeWidth: 2, r: 3 }}
+              activeDot={{ r: 5, fill: color }}
             />
-          )}
-        </ChartComponent>
-      </ResponsiveContainer>
-    </GlassChart>
+          );
+        })}
+      </ChartComponent>
+    </ChartFrame>
   );
 }
 
-// Glass Pie Chart
 export function GlassPieChart({
   data,
   dataKey,
@@ -394,24 +372,10 @@ export function GlassPieChart({
   theme = "default",
   hideLegend = false,
 }: PieChartProps) {
-  const chartColors = useMemo(() => {
-    if (colors) return colors;
-    // Map theme to custom pie palettes for extra premium feel
-    const palettes = {
-      default: ["#94A3B8", "#475569", "#64748B", "#334155"],
-      blue: ["#60A5FA", "#3B82F6", "#2563EB", "#1D4ED8"],
-      purple: ["#C084FC", "#9333EA", "#7C3AED", "#581C87"],
-      emerald: ["#34D399", "#10B981", "#059669", "#064E3B"],
-      gold: ["#FBBF24", "#F59E0B", "#D97706", "#78350F"],
-      cyan: ["#22D3EE", "#06B6D4", "#0891B2", "#164E63"],
-      red: ["#F87171", "#EF4444", "#DC2626", "#7F1D1D"],
-    };
-    const palette = palettes[theme] || palettes.default;
-    return palette;
-  }, [colors, theme]);
+  const chartColors = colors ?? (THEME_COLORS[theme] ?? THEME_COLORS.default).pie;
 
   return (
-    <GlassChart
+    <ChartFrame
       title={title}
       description={description}
       height={height}
@@ -420,26 +384,24 @@ export function GlassPieChart({
       error={error}
       theme={theme}
     >
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            innerRadius={innerRadius}
-            outerRadius={outerRadius}
-            paddingAngle={3} // Added slice spacing!
-            dataKey={dataKey}
-            nameKey={nameKey}
-          >
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
-            ))}
-          </Pie>
-          <Tooltip content={<GlassTooltip />} />
-          {!hideLegend && <Legend wrapperStyle={{ color: chartTheme.text.secondary }} />}
-        </PieChart>
-      </ResponsiveContainer>
-    </GlassChart>
+      <PieChart>
+        <Pie
+          data={data}
+          cx="50%"
+          cy="50%"
+          innerRadius={innerRadius}
+          outerRadius={outerRadius}
+          paddingAngle={3}
+          dataKey={dataKey}
+          nameKey={nameKey}
+        >
+          {data.map((_entry, index) => (
+            <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+          ))}
+        </Pie>
+        <Tooltip content={<GlassTooltip />} />
+        {!hideLegend && <Legend wrapperStyle={{ color: chartTheme.text.secondary }} />}
+      </PieChart>
+    </ChartFrame>
   );
 }
