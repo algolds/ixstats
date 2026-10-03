@@ -147,6 +147,12 @@ function calculateGovernmentEffectivenessScore(componentTypes: ComponentType[]):
   return Math.round(metrics.totalEffectiveness * 100) / 100;
 }
 
+const sumBy = <T>(items: T[], key: (item: T) => string, amount: (item: T) => number) => {
+  const totals: Record<string, number> = {};
+  for (const item of items) totals[key(item)] = (totals[key(item)] || 0) + amount(item);
+  return totals;
+};
+
 /** Deactivates previous government component and broker effects (prevents stacking). */
 async function deactivatePreviousEffects(db: PrismaClient, countryId: string) {
   const prevIds = await db.storytellerEffect.findMany({
@@ -240,14 +246,14 @@ export async function applyGovernmentComponentEffects(
   await deactivatePreviousEffects(db, countryId);
 
   // Count components per category (anything uncategorised is "Other")
-  const categoryCounts: Record<string, number> = {};
-  for (const ct of componentTypes) {
-    const category =
+  const categoryCounts = sumBy(
+    componentTypes,
+    (ct) =>
       Object.entries(COMPONENT_CATEGORIES).find(([, types]) =>
         (types as readonly ComponentType[]).includes(ct)
-      )?.[0] ?? "Other";
-    categoryCounts[category] = (categoryCounts[category] ?? 0) + 1;
-  }
+      )?.[0] ?? "Other",
+    () => 1
+  );
 
   // One StorytellerEffect per category
   const now = new Date(IxTime.getCurrentIxTime());
@@ -283,11 +289,11 @@ export async function applyGovernmentComponentEffects(
   // Calculate allocations to derive brokers
   const allocations =
     preloaded?.allocations ?? (await loadEffectiveBudget(db, countryId)).allocations;
-  const spendByCategory: Record<string, number> = {};
-  allocations.forEach((alloc) => {
-    const cat = alloc.department.category;
-    spendByCategory[cat] = (spendByCategory[cat] || 0) + alloc.allocatedPercent;
-  });
+  const spendByCategory = sumBy(
+    allocations,
+    (a) => a.department.category,
+    (a) => a.allocatedPercent
+  );
 
   const activeComponentTypes = activeComponents.map((c) => c.componentType);
   const activeBrokers = deriveBrokers(activeComponentTypes, spendByCategory);
