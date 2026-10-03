@@ -45,6 +45,61 @@ interface MarginGutterPinsProps {
   isMarginOpen?: boolean;
 }
 
+type PinChild = NonNullable<GutterPinItem["children"]>[number];
+type RawPin = PinChild & { top: number };
+
+const toChild = ({ id, type, title, comment, sectionAnchor, color }: PinChild): PinChild => ({
+  id,
+  type,
+  title,
+  comment,
+  sectionAnchor,
+  color,
+});
+
+/** First text node under `container` containing `snippet`, as its parent element. */
+function findTextParent(container: HTMLElement, snippet: string): HTMLElement | null {
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+  let node: Node | null;
+  while ((node = walker.nextNode())) {
+    if (node.textContent?.includes(snippet) && node.parentElement) return node.parentElement;
+  }
+  return null;
+}
+
+/** Merge pins closer than 28px vertically into numbered clusters (input sorted by `top`). */
+function clusterPins(rawPins: RawPin[]): GutterPinItem[] {
+  const clustered: GutterPinItem[] = [];
+  for (const pin of rawPins) {
+    const last = clustered.at(-1);
+    if (!last || Math.abs(last.top - pin.top) >= 28) {
+      clustered.push({
+        ...toChild(pin),
+        top: pin.top,
+        count: 1,
+        threadCount: pin.type === "thread" ? 1 : 0,
+        annotationCount: pin.type === "annotation" ? 1 : 0,
+      });
+      continue;
+    }
+
+    if (last.type !== "cluster") {
+      const first = toChild(last as PinChild);
+      Object.assign(last, {
+        type: "cluster",
+        children: [first],
+        threadCount: first.type === "thread" ? 1 : 0,
+        annotationCount: first.type === "annotation" ? 1 : 0,
+      });
+    }
+    last.children?.push(toChild(pin));
+    const countKey = pin.type === "thread" ? "threadCount" : "annotationCount";
+    last[countKey] = (last[countKey] || 0) + 1;
+    last.count = (last.count || 1) + 1;
+  }
+  return clustered;
+}
+
 export function MarginGutterPins({
   contentRef,
   threads,
@@ -62,149 +117,55 @@ export function MarginGutterPins({
     const container = contentRef.current;
     if (!container) return;
 
-    const rawPins: Array<{
-      id: string;
-      type: "thread" | "annotation";
-      title: string;
-      comment?: string | null;
-      sectionAnchor?: string | null;
-      color?: string;
-      top: number;
-    }> = [];
-
+    const rawPins: RawPin[] = [];
     const containerRect = container.getBoundingClientRect();
     lastContainerHeight.current = containerRect.height;
+    const topOf = (el: HTMLElement, offset: number) =>
+      Math.max(
+        0,
+        el.getBoundingClientRect().top - containerRect.top + container.scrollTop + offset
+      );
 
-    // 1. Position pins for threads anchored to headings
+    // Threads anchored to headings
     for (const thread of threads) {
-      if (thread.status === "RESOLVED") continue;
-
-      let targetEl: HTMLElement | null = null;
-      if (thread.sectionAnchor) {
-        targetEl = container.querySelector(
-          `#${CSS.escape(thread.sectionAnchor)}, [data-section="${CSS.escape(thread.sectionAnchor)}"]`
-        ) as HTMLElement | null;
-      }
-
+      if (thread.status === "RESOLVED" || !thread.sectionAnchor) continue;
+      const targetEl = container.querySelector<HTMLElement>(
+        `#${CSS.escape(thread.sectionAnchor)}, [data-section="${CSS.escape(thread.sectionAnchor)}"]`
+      );
       if (targetEl) {
-        const elRect = targetEl.getBoundingClientRect();
-        const top = Math.max(0, elRect.top - containerRect.top + container.scrollTop + 12);
         rawPins.push({
           id: thread.id,
           type: "thread",
           title: thread.title,
           sectionAnchor: thread.sectionAnchor,
-          top,
+          top: topOf(targetEl, 12),
         });
       }
     }
 
-    // 2. Position pins for annotations (text highlights)
+    // Annotations (text highlights): the rendered mark element, else the first text node matching a snippet
     for (const ann of annotations) {
       if (!ann.selectedText) continue;
-
-      // First check for direct DOM mark element
-      const markEl = container.querySelector(
+      const markEl = container.querySelector<HTMLElement>(
         `mark[data-annotation-id="${CSS.escape(ann.id)}"], .wikios-annotation-mark[data-annotation-id="${CSS.escape(ann.id)}"]`
-      ) as HTMLElement | null;
+      );
+      const anchorEl = markEl ?? findTextParent(container, ann.selectedText.slice(0, 30));
+      if (!anchorEl) continue;
 
-      if (markEl) {
-        const elRect = markEl.getBoundingClientRect();
-        const top = Math.max(
-          0,
-          elRect.top - containerRect.top + container.scrollTop + elRect.height / 2
-        );
-        rawPins.push({
-          id: ann.id,
-          type: "annotation",
-          title: ann.comment ? `"${ann.comment}"` : ann.selectedText,
-          comment: ann.comment,
-          color: ann.color || "#fef036",
-          top,
-        });
-        continue;
-      }
-
-      // Fallback TreeWalker matching
-      const snippet = ann.selectedText.slice(0, 30);
-      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
-      let node: Node | null;
-      while ((node = walker.nextNode())) {
-        if (node.textContent && node.textContent.includes(snippet)) {
-          const parent = node.parentElement;
-          if (parent) {
-            const elRect = parent.getBoundingClientRect();
-            const top = Math.max(0, elRect.top - containerRect.top + container.scrollTop + 10);
-            rawPins.push({
-              id: ann.id,
-              type: "annotation",
-              title: ann.comment ? `"${ann.comment}"` : ann.selectedText,
-              comment: ann.comment,
-              color: ann.color || "#fef036",
-              top,
-            });
-            break;
-          }
-        }
-      }
+      rawPins.push({
+        id: ann.id,
+        type: "annotation",
+        title: ann.comment ? `"${ann.comment}"` : ann.selectedText,
+        comment: ann.comment,
+        color: ann.color || "#fef036",
+        top: markEl
+          ? topOf(markEl, markEl.getBoundingClientRect().height / 2)
+          : topOf(anchorEl, 10),
+      });
     }
 
-    // Sort by vertical coordinate
     rawPins.sort((a, b) => a.top - b.top);
-
-    // Multi-Pin Cluster Collision Resolution (< 28px distance)
-    const clustered: GutterPinItem[] = [];
-    for (const pin of rawPins) {
-      const last = clustered[clustered.length - 1];
-      if (last && Math.abs(last.top - pin.top) < 28) {
-        if (last.type !== "cluster") {
-          const initialChild = {
-            id: last.id,
-            type: last.type as "thread" | "annotation",
-            title: last.title,
-            comment: last.comment,
-            sectionAnchor: last.sectionAnchor,
-            color: last.color,
-          };
-          last.type = "cluster";
-          last.children = [initialChild];
-          last.threadCount = initialChild.type === "thread" ? 1 : 0;
-          last.annotationCount = initialChild.type === "annotation" ? 1 : 0;
-        }
-
-        last.children?.push({
-          id: pin.id,
-          type: pin.type,
-          title: pin.title,
-          comment: pin.comment,
-          sectionAnchor: pin.sectionAnchor,
-          color: pin.color,
-        });
-
-        if (pin.type === "thread") {
-          last.threadCount = (last.threadCount || 0) + 1;
-        } else {
-          last.annotationCount = (last.annotationCount || 0) + 1;
-        }
-
-        last.count = (last.count || 1) + 1;
-      } else {
-        clustered.push({
-          id: pin.id,
-          type: pin.type,
-          title: pin.title,
-          comment: pin.comment,
-          sectionAnchor: pin.sectionAnchor,
-          color: pin.color,
-          top: pin.top,
-          count: 1,
-          threadCount: pin.type === "thread" ? 1 : 0,
-          annotationCount: pin.type === "annotation" ? 1 : 0,
-        });
-      }
-    }
-
-    setPins(clustered);
+    setPins(clusterPins(rawPins));
   }, [contentRef, threads, annotations]);
 
   // Re-compute pins on mount, resize, and layout changes
