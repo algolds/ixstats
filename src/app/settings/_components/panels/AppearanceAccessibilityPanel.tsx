@@ -86,8 +86,6 @@ export function AppearanceAccessibilityPanel() {
     setReduceAnimations,
     enableTextures,
     setEnableTextures,
-    interactiveHover,
-    setInteractiveHover,
   } = useTheme();
   const sound = useSoundSettings();
   const textSizeLabelId = useId();
@@ -286,18 +284,6 @@ export function AppearanceAccessibilityPanel() {
                 label="Texture overlays"
                 checked={enableTextures}
                 onCheckedChange={setEnableTextures}
-              />
-            }
-          />
-          <FacetRow
-            leading={<CursorPointer className="size-5" />}
-            title="Hover highlight"
-            subtitle="A soft highlight follows the pointer over cards"
-            trailing={
-              <PreferenceSwitch
-                label="Hover highlight"
-                checked={interactiveHover}
-                onCheckedChange={setInteractiveHover}
               />
             }
           />

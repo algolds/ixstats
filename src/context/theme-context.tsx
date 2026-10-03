@@ -24,9 +24,6 @@ interface ThemeContextType {
   enableTextures: boolean;
   setEnableTextures: (enable: boolean) => void;
   toggleEnableTextures: () => void;
-  interactiveHover: boolean;
-  setInteractiveHover: (hover: boolean) => void;
-  toggleInteractiveHover: () => void;
   showNsImporter: boolean;
   setShowNsImporter: (show: boolean) => void;
   toggleShowNsImporter: () => void;
@@ -61,7 +58,6 @@ export function ThemeProvider({
   const [compactMode, setCompactModeState] = useState<boolean>(false);
   const [reduceAnimations, setReduceAnimationsState] = useState<boolean>(false);
   const [enableTextures, setEnableTexturesState] = useState<boolean>(true);
-  const [interactiveHover, setInteractiveHoverState] = useState<boolean>(true);
   const [showNsImporter, setShowNsImporterState] = useState<boolean>(false);
   const [increaseContrast, setIncreaseContrastState] = useState<boolean>(false);
   const [reduceTransparency, setReduceTransparencyState] = useState<boolean>(false);
@@ -90,8 +86,6 @@ export function ThemeProvider({
       if (reduce !== null) setReduceAnimationsState(reduce);
       const textures = readBool(k.enableTextures);
       if (textures !== null) setEnableTexturesState(textures);
-      const hover = readBool(k.interactiveHover);
-      if (hover !== null) setInteractiveHoverState(hover);
       const nsImporter = readBool("ixstats-show-ns-importer");
       if (nsImporter !== null) setShowNsImporterState(nsImporter);
       const contrast = readBool(k.increaseContrast);
@@ -138,7 +132,6 @@ export function ThemeProvider({
       compact: compactMode,
       reduceMotion: reduceAnimations,
       enableTextures,
-      interactiveHover,
       increaseContrast,
       reduceTransparency,
       soundOff,
@@ -156,7 +149,6 @@ export function ThemeProvider({
     compactMode,
     reduceAnimations,
     enableTextures,
-    interactiveHover,
     increaseContrast,
     reduceTransparency,
     soundOff,
@@ -230,20 +222,6 @@ export function ThemeProvider({
     setEnableTextures(!enableTextures);
   }, [enableTextures, setEnableTextures]);
 
-  const setInteractiveHover = useCallback((hover: boolean) => {
-    try {
-      localStorage.setItem(APPEARANCE_STORAGE_KEYS.interactiveHover, hover.toString());
-      setInteractiveHoverState(hover);
-    } catch (error) {
-      console.warn("Failed to save interactive hover to localStorage:", error);
-      setInteractiveHoverState(hover);
-    }
-  }, []);
-
-  const toggleInteractiveHover = useCallback(() => {
-    setInteractiveHover(!interactiveHover);
-  }, [interactiveHover, setInteractiveHover]);
-
   const setShowNsImporter = useCallback((show: boolean) => {
     try {
       localStorage.setItem("ixstats-show-ns-importer", show.toString());
@@ -302,9 +280,6 @@ export function ThemeProvider({
       enableTextures,
       setEnableTextures,
       toggleEnableTextures,
-      interactiveHover,
-      setInteractiveHover,
-      toggleInteractiveHover,
       showNsImporter,
       setShowNsImporter,
       toggleShowNsImporter,
@@ -329,9 +304,6 @@ export function ThemeProvider({
       enableTextures,
       setEnableTextures,
       toggleEnableTextures,
-      interactiveHover,
-      setInteractiveHover,
-      toggleInteractiveHover,
       showNsImporter,
       setShowNsImporter,
       toggleShowNsImporter,

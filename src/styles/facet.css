@@ -2,8 +2,7 @@
    FACET — ENTRYPOINT INDEX
 
    All Facet CSS is layered (`@layer base` for tokens, `@layer components` for classes) so
-   Tailwind utilities always win. Lab-only materials live in `facet/lab.css`, imported by the lab
-   routes, not here.
+   Tailwind utilities always win.
    ========================================================================== */
 
 @import "./facet/core.css";

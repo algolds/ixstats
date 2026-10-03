@@ -21,11 +21,6 @@
     scroll-behavior: auto !important;
   }
 
-  html[data-reduce-animations="true"] .facet-interactive:hover,
-  html[data-reduce-animations="true"] .facet-hierarchy-interactive:hover {
-    transform: none !important;
-  }
-
   /* ─── Reduce Motion: stop looping card-cover layers ─────────────────────
      PackHolographicCover / LoreCardHolographicCover set `animation` inline,
      so only an important declaration can stop them. */
@@ -39,21 +34,7 @@
   /* ─── Reduce Transparency: no backdrop blur on the legacy glass classes ──
      The `material-*` utilities handle themselves (tokens.css). */
 
-  :is(
-      .facet-surface,
-      .facet-base,
-      .facet-floating,
-      .facet-overlay,
-      .facet-depth-1,
-      .facet-depth-2,
-      .facet-depth-3,
-      .facet-depth-4,
-      .facet-hierarchy-parent,
-      .facet-hierarchy-child,
-      .facet-hierarchy-interactive,
-      .facet-material,
-      .facet-modal
-    ) {
+  :is(.facet-hierarchy-child, .facet-modal) {
     @variant transparency-reduced {
       backdrop-filter: none !important;
       -webkit-backdrop-filter: none !important;
@@ -64,12 +45,6 @@
 
   html[data-enable-textures="false"] .texture-overlay {
     display: none !important;
-  }
-
-  /* ─── Interactive hover depth (Settings → data-interactive-hover) ─────── */
-
-  html[data-interactive-hover="false"] .facet-interactive:hover {
-    transform: none !important;
   }
 
   /* ─── Print ───────────────────────────────────────────────────────────── */
