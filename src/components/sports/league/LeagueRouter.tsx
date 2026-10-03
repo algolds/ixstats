@@ -7,6 +7,7 @@ import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { SportsShell } from "~/components/sports/core/SportsShell";
+import { useUrlSyncedSection } from "~/components/sports/core/useUrlSyncedSection";
 import { type SportsNavSection } from "~/components/sports/core/SportsSidebarNav";
 import {
   LeagueControlDeck,
@@ -77,7 +78,10 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
 
   const sectionParam = (searchParams.get("section") ||
     searchParams.get("tab")) as SportsNavSection | null;
-  const [activeSection, setActiveSection] = useState<SportsNavSection>(sectionParam || "overview");
+  const [activeSection, setActiveSection] = useUrlSyncedSection<SportsNavSection>(
+    sectionParam,
+    "overview"
+  );
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [editTeamId, setEditTeamId] = useState<string | null>(null);
@@ -87,12 +91,6 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
     seasonNumber: number;
   } | null>(null);
 
-  // Sync state if search params change externally
-  useEffect(() => {
-    if (sectionParam && sectionParam !== activeSection) {
-      setActiveSection(sectionParam);
-    }
-  }, [sectionParam, activeSection]);
 
   // Client-side instant navigation with URL synchronization
   const handleNavigate = useCallback((section: SportsNavSection) => {

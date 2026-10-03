@@ -23,6 +23,7 @@ import { withBasePath } from "~/lib/base-path";
 import { SPORT_PRESETS } from "~/lib/sports/presets";
 import { SportsShell } from "~/components/sports/core/SportsShell";
 import { SportsCommandBar } from "~/components/sports/core/SportsCommandBar";
+import { useUrlSyncedSection } from "~/components/sports/core/useUrlSyncedSection";
 import { type SportsNavSection, CLUB_NAV_ITEMS } from "~/components/sports/core/SportsSidebarNav";
 import { TeamSettingsModal } from "~/components/sports/league/TeamSettingsModal";
 import { SPORT_EMOJIS, type SportPresetKey } from "~/lib/sports/presets";
@@ -52,18 +53,15 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
 
   const sectionParam = (searchParams.get("section") ||
     searchParams.get("tab")) as SportsNavSection | null;
-  const [activeSection, setActiveSection] = useState<SportsNavSection>(sectionParam || "overview");
+  const [activeSection, setActiveSection] = useUrlSyncedSection<SportsNavSection>(
+    sectionParam,
+    "overview"
+  );
 
   const [selectedPlayer, setSelectedPlayer] = useState<RosterPlayerItem | null>(null);
   const [listPrice, setListPrice] = useState<number>(100);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // Sync state if search params change externally
-  useEffect(() => {
-    if (sectionParam && sectionParam !== activeSection) {
-      setActiveSection(sectionParam);
-    }
-  }, [sectionParam, activeSection]);
 
   // Client-side instant navigation with URL synchronization
   const handleNavigate = useCallback((section: SportsNavSection) => {
