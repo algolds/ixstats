@@ -13,15 +13,17 @@ import {
 } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { useRelativeTime } from "~/hooks/useRelativeTime";
+import { cn } from "~/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 
-export const ACCOUNT_TYPE_ICONS: Record<string, React.ElementType> = {
+const ACCOUNT_TYPE_ICONS: Record<string, React.ElementType> = {
   government: Crown,
   media: Newspaper,
   citizen: Users,
   personal: UserIcon,
 };
 
-export const ACCOUNT_TYPE_COLORS: Record<string, string> = {
+const ACCOUNT_TYPE_COLORS: Record<string, string> = {
   government: "text-yellow bg-yellow/20",
   media: "text-blue bg-blue/20",
   citizen: "text-green bg-green/20",
@@ -37,7 +39,7 @@ export const REACTION_ICONS: Record<string, React.ElementType> = {
   thumbsdown: ThumbsDown,
 };
 
-export const DISCORD_EMOJI_REACTIONS = [
+const DISCORD_EMOJI_REACTIONS = [
   { name: "ixnay", url: "https://cdn.discordapp.com/emojis/559232409451888640.png" },
   { name: "heky_boi", url: "https://cdn.discordapp.com/emojis/580813300733157376.png" },
   { name: "pog", url: "https://cdn.discordapp.com/emojis/739969522139209748.png" },
@@ -102,5 +104,40 @@ export function RelativeTimestamp({ timestamp }: { timestamp: Date | string | nu
     >
       {hoursDiff > 24 ? date.toLocaleDateString() : relativeTime}
     </span>
+  );
+}
+
+export const accountTypeColor = (type?: string) =>
+  ACCOUNT_TYPE_COLORS[type ?? ""] || "bg-fill-2 text-label-secondary";
+
+export function AccountTypeIcon({ type, className }: { type?: string; className?: string }) {
+  const Icon = ACCOUNT_TYPE_ICONS[type ?? ""] || Users;
+  return <Icon className={className} aria-hidden />;
+}
+
+export const getInitials = (name = "U") =>
+  name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase();
+
+/** Account avatar with an initials fallback tinted by account type. */
+export function AccountAvatar({
+  account,
+  className,
+  fallbackClassName,
+}: {
+  account?: { profileImageUrl?: string | null; displayName?: string; accountType?: string } | null;
+  className?: string;
+  fallbackClassName?: string;
+}) {
+  return (
+    <Avatar className={className}>
+      <AvatarImage src={proxyDiscordUrl(account?.profileImageUrl || "")} />
+      <AvatarFallback className={cn(accountTypeColor(account?.accountType), fallbackClassName)}>
+        {getInitials(account?.displayName)}
+      </AvatarFallback>
+    </Avatar>
   );
 }
