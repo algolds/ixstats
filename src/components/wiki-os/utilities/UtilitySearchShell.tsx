@@ -26,7 +26,7 @@ const ACCENTS = {
   },
 } as const;
 
-export type UtilityAccent = keyof typeof ACCENTS;
+type UtilityAccent = keyof typeof ACCENTS;
 
 /** A text box plus the term it last submitted. */
 export function useSearchTerm(initial: string) {

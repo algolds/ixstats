@@ -11,7 +11,7 @@
 
 import type { Descendant } from "slate";
 
-export type WikiText = {
+type WikiText = {
   text: string;
   bold?: boolean;
   italic?: boolean;
@@ -121,7 +121,7 @@ interface InfoboxBoxEl extends BaseEl {
   /** Canonical MediaWiki invocation — emitted verbatim by serializePlateToWikitext. */ wikitext?: string;
 }
 
-export type WikiElement =
+type WikiElement =
   | PEl
   | HeadingEl
   | QuoteEl

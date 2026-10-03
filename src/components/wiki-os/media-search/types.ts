@@ -14,7 +14,7 @@ export interface CommonsImage {
   license: string;
 }
 
-export function getImageType(mime: string, title: string): "jpg" | "png" | "svg" | "other" {
+function getImageType(mime: string, title: string): "jpg" | "png" | "svg" | "other" {
   const m = (mime || "").toLowerCase();
   const t = (title || "").toLowerCase();
   if (m.includes("jpeg") || m.includes("jpg") || t.endsWith(".jpg") || t.endsWith(".jpeg"))
@@ -24,7 +24,7 @@ export function getImageType(mime: string, title: string): "jpg" | "png" | "svg"
   return "other";
 }
 
-export function getImageOrientation(
+function getImageOrientation(
   width: number,
   height: number
 ): "landscape" | "portrait" | "square" {
@@ -57,7 +57,7 @@ export function dedupeImages(existing: CommonsImage[], incoming: CommonsImage[])
 
 export type WikiSubSource = "ixwiki" | "iiwiki";
 
-export interface WikiFileRecord {
+interface WikiFileRecord {
   name: string;
   size: number;
   width: number;
