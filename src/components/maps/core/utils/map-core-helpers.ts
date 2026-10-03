@@ -1,4 +1,5 @@
 import type { Feature } from "geojson";
+import type { Map as MapLibreMap } from "maplibre-gl";
 
 export const COUNTRY_LABEL_OPACITY: unknown = ["coalesce", ["get", "_distFade"], 0];
 
@@ -84,7 +85,12 @@ export function matchesCountry(f: Feature, countryKey: string): boolean {
   );
 }
 
-function setLayersVisible(map: MapLibreMap, layerIds: string[], visible: boolean | undefined) {
+/** Show/hide each of `layerIds` that exists on the map. */
+export function setLayersVisible(
+  map: MapLibreMap,
+  layerIds: string[],
+  visible: boolean | undefined
+) {
   for (const id of layerIds) {
     if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
   }
