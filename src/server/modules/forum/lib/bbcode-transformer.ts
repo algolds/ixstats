@@ -1,6 +1,35 @@
 // Transforms XenForo BBCode post content into sanitized HTML for React rendering.
 // Server-side only — runs in tRPC router, never shipped to client.
 
+/** [tag, replacement] pairs for BBCode tags that map straight onto an HTML wrapper around `$1`. */
+type SimpleTag = readonly [tag: string, replacement: string];
+
+const INLINE_TAGS: SimpleTag[] = [
+  ["b", "<strong>$1</strong>"],
+  ["i", "<em>$1</em>"],
+  ["u", "<u>$1</u>"],
+  ["s", "<del>$1</del>"],
+];
+const ALIGNMENT_TAGS: SimpleTag[] = [
+  ["center", '<div class="text-center">$1</div>'],
+  ["left", '<div class="text-left">$1</div>'],
+  ["right", '<div class="text-right">$1</div>'],
+];
+const TABLE_TAGS: SimpleTag[] = [
+  ["table", '<table class="forum-table">$1</table>'],
+  ["tr", "<tr>$1</tr>"],
+  ["td", "<td>$1</td>"],
+  ["th", "<th>$1</th>"],
+];
+
+function replaceSimpleTags(html: string, tags: SimpleTag[]): string {
+  return tags.reduce(
+    (result, [tag, replacement]) =>
+      result.replace(new RegExp(`\\[${tag}\\]([\\s\\S]*?)\\[\\/${tag}\\]`, "gi"), replacement),
+    html
+  );
+}
+
 interface TransformedPost {
   /** Post body as sanitized HTML */
   contentHtml: string;
@@ -41,10 +70,7 @@ export function transformBBCode(
   html = escapeHtml(html);
 
   // 2. Inline formatting
-  html = html.replace(/\[b\]([\s\S]*?)\[\/b\]/gi, "<strong>$1</strong>");
-  html = html.replace(/\[i\]([\s\S]*?)\[\/i\]/gi, "<em>$1</em>");
-  html = html.replace(/\[u\]([\s\S]*?)\[\/u\]/gi, "<u>$1</u>");
-  html = html.replace(/\[s\]([\s\S]*?)\[\/s\]/gi, "<del>$1</del>");
+  html = replaceSimpleTags(html, INLINE_TAGS);
 
   // 3. Font size — map to relative classes
   html = html.replace(
@@ -146,9 +172,7 @@ export function transformBBCode(
   html = html.replace(/\[hr\]/gi, '<hr class="forum-hr" />');
 
   // 15. Alignment
-  html = html.replace(/\[center\]([\s\S]*?)\[\/center\]/gi, '<div class="text-center">$1</div>');
-  html = html.replace(/\[left\]([\s\S]*?)\[\/left\]/gi, '<div class="text-left">$1</div>');
-  html = html.replace(/\[right\]([\s\S]*?)\[\/right\]/gi, '<div class="text-right">$1</div>');
+  html = replaceSimpleTags(html, ALIGNMENT_TAGS);
 
   // 16. Headings (XenForo 2.x)
   html = html.replace(
@@ -160,10 +184,7 @@ export function transformBBCode(
   );
 
   // 17. Tables
-  html = html.replace(/\[table\]([\s\S]*?)\[\/table\]/gi, '<table class="forum-table">$1</table>');
-  html = html.replace(/\[tr\]([\s\S]*?)\[\/tr\]/gi, "<tr>$1</tr>");
-  html = html.replace(/\[td\]([\s\S]*?)\[\/td\]/gi, "<td>$1</td>");
-  html = html.replace(/\[th\]([\s\S]*?)\[\/th\]/gi, "<th>$1</th>");
+  html = replaceSimpleTags(html, TABLE_TAGS);
 
   // 18. Line breaks — convert newlines to <br> (XenForo stores plain newlines)
   html = html.replace(/\n/g, "<br />");
@@ -208,30 +229,25 @@ function processQuotes(html: string, quotedUsers: string[]): string {
   return result;
 }
 
+function listItems(content: string): string {
+  return content
+    .split(/\[\*\]/)
+    .filter((s) => s.trim())
+    .map((s) => `<li>${s.trim()}</li>`)
+    .join("");
+}
+
 function processLists(html: string): string {
-  let result = html;
-
-  // Ordered lists
-  result = result.replace(/\[list=1\]([\s\S]*?)\[\/list\]/gi, (_m, content: string) => {
-    const items = content
-      .split(/\[\*\]/)
-      .filter((s) => s.trim())
-      .map((s) => `<li>${s.trim()}</li>`)
-      .join("");
-    return `<ol class="forum-list forum-list-ordered">${items}</ol>`;
-  });
-
-  // Unordered lists
-  result = result.replace(/\[list\]([\s\S]*?)\[\/list\]/gi, (_m, content: string) => {
-    const items = content
-      .split(/\[\*\]/)
-      .filter((s) => s.trim())
-      .map((s) => `<li>${s.trim()}</li>`)
-      .join("");
-    return `<ul class="forum-list">${items}</ul>`;
-  });
-
-  return result;
+  return html
+    .replace(
+      /\[list=1\]([\s\S]*?)\[\/list\]/gi,
+      (_m, content: string) =>
+        `<ol class="forum-list forum-list-ordered">${listItems(content)}</ol>`
+    )
+    .replace(
+      /\[list\]([\s\S]*?)\[\/list\]/gi,
+      (_m, content: string) => `<ul class="forum-list">${listItems(content)}</ul>`
+    );
 }
 
 function escapeHtml(str: string): string {
