@@ -3,8 +3,9 @@
 // src/components/admin/equipment/AnalyticsTab.tsx
 // Military equipment analytics: summary cards, charts, and deprecation candidates table.
 
-import { useMemo } from "react";
+import type { ReactElement } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { cn } from "~/lib/utils";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";
 import {
   BarChart,
@@ -35,6 +36,115 @@ import {
   TableCell,
 } from "~/components/ui/table";
 
+const COLORS = Array.from({ length: 8 }, (_, i) => `var(--color-chart-${i + 1})`);
+
+const chartConfig = {
+  count: { label: "Equipment count", color: "var(--color-chart-8)" },
+  value: { label: "Total items", color: "var(--color-chart-1)" },
+  usage: { label: "Usage count", color: "var(--color-chart-2)" },
+  avgTechLevel: { label: "Avg tech level", color: "var(--color-chart-8)" },
+};
+
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+const eraLabel = (era: string) => era.toUpperCase().replace("-", " ");
+
+function StatCard({
+  title,
+  icon: Icon,
+  value,
+  caption,
+}: {
+  title: string;
+  icon: typeof Shield;
+  value: string | number;
+  caption: string;
+}) {
+  return (
+    <Card className="border-red/30 bg-red/10 flex flex-col gap-6 py-6">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-body font-medium">{title}</CardTitle>
+        <Icon className="text-label-secondary h-4 w-4" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-title-1 text-red">{value}</div>
+        <p className="text-label-secondary text-footnote">{caption}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ChartCard({
+  title,
+  description,
+  height,
+  wide = false,
+  children,
+}: {
+  title: string;
+  description: string;
+  height: number;
+  wide?: boolean;
+  children: ReactElement;
+}) {
+  return (
+    <Card className={cn("border-red/30 flex flex-col gap-6 py-6", wide && "col-span-2")}>
+      <CardHeader>
+        <CardTitle className="text-red">{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer config={chartConfig} className="w-full" style={{ height }}>
+          {children}
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+function DistributionPie({ data }: { data: Array<{ name: string; value: number }> }) {
+  return (
+    <PieChart>
+      <Pie
+        data={data}
+        cx="50%"
+        cy="50%"
+        labelLine={false}
+        label={({ name, percent }: { name?: string; percent?: number }) =>
+          `${name ?? ""}: ${((percent ?? 0) * 100).toFixed(0)}%`
+        }
+        outerRadius={80}
+        fill="var(--color-chart-1)"
+        dataKey="value"
+      >
+        {data.map((_, index) => (
+          <Cell key={index} fill={COLORS[index % COLORS.length]} />
+        ))}
+      </Pie>
+      <ChartTooltip content={<ChartTooltipContent />} />
+    </PieChart>
+  );
+}
+
+function CountBarChart({
+  data,
+  fill,
+  labelHeight,
+}: {
+  data: unknown[];
+  fill: string;
+  labelHeight: number;
+}) {
+  return (
+    <BarChart data={data}>
+      <CartesianGrid strokeDasharray="3 3" />
+      <XAxis dataKey="name" angle={-45} textAnchor="end" height={labelHeight} />
+      <YAxis />
+      <ChartTooltip content={<ChartTooltipContent />} />
+      <Bar dataKey="count" fill={fill} radius={[8, 8, 0, 0]} />
+    </BarChart>
+  );
+}
+
 interface AnalyticsTabProps {
   usageStats: any;
   manufacturerStats: any;
@@ -50,67 +160,6 @@ export function AnalyticsTab({
   isLoading,
   error,
 }: AnalyticsTabProps) {
-  // useMemo must be called unconditionally before any early returns
-  const manufacturerLookup = useMemo(
-    () =>
-      new Map<string, any>((manufacturerStats?.manufacturers ?? []).map((m: any) => [m.name, m])),
-    [manufacturerStats?.manufacturers]
-  );
-
-  // Chart data transforms — memoized and hoisted above the early returns so they are
-  // not recomputed on every filter/tab change (and to keep hook order stable). (audit F4)
-  const topEquipmentChartData = useMemo(
-    () =>
-      (usageStats?.topEquipment ?? []).map((eq: any) => ({
-        name: eq.name.length > 30 ? eq.name.substring(0, 30) + "..." : eq.name,
-        fullName: eq.name,
-        count: eq.usageCount,
-        category: eq.category,
-        manufacturer: eq.manufacturer ?? "Unknown",
-      })),
-    [usageStats?.topEquipment]
-  );
-
-  const categoryChartData = useMemo(
-    () =>
-      (usageStats?.byCategory ?? []).map((cat: any) => ({
-        name: cat.category.charAt(0).toUpperCase() + cat.category.slice(1),
-        value: cat._count.id,
-        usage: cat._sum.usageCount || 0,
-      })),
-    [usageStats?.byCategory]
-  );
-
-  const eraChartData = useMemo(
-    () =>
-      (usageStats?.byEra ?? []).map((era: any) => ({
-        name: era.era.toUpperCase().replace("-", " "),
-        value: era._count.id,
-        usage: era._sum.usageCount || 0,
-      })),
-    [usageStats?.byEra]
-  );
-
-  const manufacturerChartData = useMemo(
-    () =>
-      (usageStats?.byManufacturer ?? []).slice(0, 10).map((mfr: any) => {
-        const details = manufacturerLookup.get(mfr.manufacturerName);
-        const displayName =
-          mfr.manufacturerName.length > 25
-            ? mfr.manufacturerName.substring(0, 25) + "..."
-            : mfr.manufacturerName;
-
-        return {
-          name: displayName,
-          fullName: mfr.manufacturerName,
-          count: mfr.equipmentCount,
-          usage: mfr.totalUsage,
-          country: details?.country ?? "Unknown",
-        };
-      }),
-    [usageStats?.byManufacturer, manufacturerLookup]
-  );
-
   if (isLoading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -139,59 +188,60 @@ export function AnalyticsTab({
     return null;
   }
 
-  // Calculate summary statistics
+  const manufacturerCountries = new Map<string, string>(
+    (manufacturerStats.manufacturers ?? []).map((m: any) => [m.name, m.country])
+  );
+  const truncate = (text: string, max: number) =>
+    text.length > max ? `${text.substring(0, max)}...` : text;
+
+  const topEquipmentChartData = (usageStats.topEquipment ?? []).map((eq: any) => ({
+    name: truncate(eq.name, 30),
+    fullName: eq.name,
+    count: eq.usageCount,
+    category: eq.category,
+    manufacturer: eq.manufacturer ?? "Unknown",
+  }));
+  const categoryChartData = (usageStats.byCategory ?? []).map((cat: any) => ({
+    name: capitalize(cat.category),
+    value: cat._count.id,
+    usage: cat._sum.usageCount || 0,
+  }));
+  const eraChartData = (usageStats.byEra ?? []).map((era: any) => ({
+    name: eraLabel(era.era),
+    value: era._count.id,
+    usage: era._sum.usageCount || 0,
+  }));
+  const manufacturerChartData = (usageStats.byManufacturer ?? []).slice(0, 10).map((mfr: any) => ({
+    name: truncate(mfr.manufacturerName, 25),
+    fullName: mfr.manufacturerName,
+    count: mfr.equipmentCount,
+    usage: mfr.totalUsage,
+    country: manufacturerCountries.get(mfr.manufacturerName) ?? "Unknown",
+  }));
+
+  const averageTechLevel = (items: any[]) =>
+    items.length > 0
+      ? items.reduce((sum: number, eq: any) => sum + (eq.technologyLevel ?? 0), 0) / items.length
+      : 0;
   const totalEquipment = allEquipment.length;
   const activeEquipment = allEquipment.filter((eq: any) => eq.isActive).length;
-  const totalManufacturers = manufacturerStats.totalManufacturers;
-  const avgTechLevel =
-    totalEquipment > 0
-      ? allEquipment.reduce((sum: number, eq: any) => sum + (eq.technologyLevel ?? 0), 0) /
-        totalEquipment
-      : 0;
+  const avgTechLevel = averageTechLevel(allEquipment);
 
-  // Technology level progression by era
-  const eraOrder = ["wwi", "wwii", "cold-war", "modern", "future"];
-  const techProgressionData = eraOrder
+  const techProgressionData = ["wwi", "wwii", "cold-war", "modern", "future"]
     .map((era) => {
       const eraEquipment = allEquipment.filter((eq: any) => eq.era === era);
-      const avgTech =
-        eraEquipment.length > 0
-          ? eraEquipment.reduce((sum: number, eq: any) => sum + (eq.technologyLevel ?? 0), 0) /
-            eraEquipment.length
-          : 0;
       return {
-        era: era.toUpperCase().replace("-", " "),
-        avgTechLevel: Math.round(avgTech * 10) / 10,
+        era: eraLabel(era),
+        avgTechLevel: Math.round(averageTechLevel(eraEquipment) * 10) / 10,
         count: eraEquipment.length,
       };
     })
     .filter((item) => item.count > 0);
 
-  // Deprecation candidates (usageCount < 5)
   const deprecationCandidates = allEquipment
     .filter((eq: any) => eq.isActive && eq.usageCount < 5)
     .sort((a: any, b: any) => a.usageCount - b.usageCount)
     .slice(0, 20);
-
-  // Categorical series colours (Facet chart-1…8)
-  const COLORS = [
-    "var(--color-chart-1)",
-    "var(--color-chart-2)",
-    "var(--color-chart-3)",
-    "var(--color-chart-4)",
-    "var(--color-chart-5)",
-    "var(--color-chart-6)",
-    "var(--color-chart-7)",
-    "var(--color-chart-8)",
-  ];
-
-  // Chart configs
-  const chartConfig = {
-    count: { label: "Equipment count", color: "var(--color-chart-8)" },
-    value: { label: "Total items", color: "var(--color-chart-1)" },
-    usage: { label: "Usage count", color: "var(--color-chart-2)" },
-    avgTechLevel: { label: "Avg tech level", color: "var(--color-chart-8)" },
-  };
 
   return (
     <div className="space-y-6">
@@ -201,184 +251,97 @@ export function AnalyticsTab({
         <p className="text-label-secondary">Usage statistics for the military equipment catalog</p>
       </div>
 
-      {/* Summary Statistics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-red/30 bg-red/10 flex flex-col gap-6 py-6">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-body font-medium">Total equipment items</CardTitle>
-            <Shield className="text-label-secondary h-4 w-4" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-title-1 text-red">{totalEquipment}</div>
-            <p className="text-label-secondary text-footnote">Across all categories and eras</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-red/30 bg-red/10 flex flex-col gap-6 py-6">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-body font-medium">Active equipment</CardTitle>
-            <Activity className="text-label-secondary h-4 w-4" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-title-1 text-red">{activeEquipment}</div>
-            <p className="text-label-secondary text-footnote">
-              Currently available for procurement
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-red/30 bg-red/10 flex flex-col gap-6 py-6">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-body font-medium">Total manufacturers</CardTitle>
-            <Factory className="text-label-secondary h-4 w-4" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-title-1 text-red">{totalManufacturers}</div>
-            <p className="text-label-secondary text-footnote">Active equipment producers</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-red/30 bg-red/10 flex flex-col gap-6 py-6">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-body font-medium">Average tech level</CardTitle>
-            <TrendingUp className="text-label-secondary h-4 w-4" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-title-1 text-red">{avgTechLevel.toFixed(1)}</div>
-            <p className="text-label-secondary text-footnote">Across all equipment (1-10 scale)</p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Total equipment items"
+          icon={Shield}
+          value={totalEquipment}
+          caption="Across all categories and eras"
+        />
+        <StatCard
+          title="Active equipment"
+          icon={Activity}
+          value={activeEquipment}
+          caption="Currently available for procurement"
+        />
+        <StatCard
+          title="Total manufacturers"
+          icon={Factory}
+          value={manufacturerStats.totalManufacturers}
+          caption="Active equipment producers"
+        />
+        <StatCard
+          title="Average tech level"
+          icon={TrendingUp}
+          value={avgTechLevel.toFixed(1)}
+          caption="Across all equipment (1-10 scale)"
+        />
       </div>
 
-      {/* Charts Grid */}
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Top 10 Most Used Equipment */}
-        <Card className="border-red/30 col-span-2 flex flex-col gap-6 py-6">
-          <CardHeader>
-            <CardTitle className="text-red">Top 10 Most Used Equipment</CardTitle>
-            <CardDescription>Equipment with the highest procurement usage</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[400px] w-full">
-              <BarChart data={topEquipmentChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={120} />
-                <YAxis />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="count" fill="var(--color-chart-8)" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
+        <ChartCard
+          title="Top 10 Most Used Equipment"
+          description="Equipment with the highest procurement usage"
+          height={400}
+          wide
+        >
+          <CountBarChart
+            data={topEquipmentChartData}
+            fill="var(--color-chart-8)"
+            labelHeight={120}
+          />
+        </ChartCard>
 
-        {/* Equipment by Category */}
-        <Card className="border-red/30 flex flex-col gap-6 py-6">
-          <CardHeader>
-            <CardTitle className="text-red">Equipment by category</CardTitle>
-            <CardDescription>Distribution across equipment categories</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px] w-full">
-              <PieChart>
-                <Pie
-                  data={categoryChartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }: any) =>
-                    `${name ?? ""}: ${((percent ?? 0) * 100).toFixed(0)}%`
-                  }
-                  outerRadius={80}
-                  fill="var(--color-chart-1)"
-                  dataKey="value"
-                >
-                  {categoryChartData.map((entry: unknown, index: number) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <ChartTooltip content={<ChartTooltipContent />} />
-              </PieChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
+        <ChartCard
+          title="Equipment by category"
+          description="Distribution across equipment categories"
+          height={300}
+        >
+          <DistributionPie data={categoryChartData} />
+        </ChartCard>
 
-        {/* Equipment by Era */}
-        <Card className="border-red/30 flex flex-col gap-6 py-6">
-          <CardHeader>
-            <CardTitle className="text-red">Equipment by era</CardTitle>
-            <CardDescription>Distribution across historical eras</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px] w-full">
-              <PieChart>
-                <Pie
-                  data={eraChartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }: any) =>
-                    `${name ?? ""}: ${((percent ?? 0) * 100).toFixed(0)}%`
-                  }
-                  outerRadius={80}
-                  fill="var(--color-chart-1)"
-                  dataKey="value"
-                >
-                  {eraChartData.map((entry: unknown, index: number) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <ChartTooltip content={<ChartTooltipContent />} />
-              </PieChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
+        <ChartCard
+          title="Equipment by era"
+          description="Distribution across historical eras"
+          height={300}
+        >
+          <DistributionPie data={eraChartData} />
+        </ChartCard>
 
-        {/* Equipment Count by Manufacturer */}
-        <Card className="border-red/30 col-span-2 flex flex-col gap-6 py-6">
-          <CardHeader>
-            <CardTitle className="text-red">Equipment Count by Manufacturer (Top 10)</CardTitle>
-            <CardDescription>
-              Manufacturers with the most equipment items in catalog
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[350px] w-full">
-              <BarChart data={manufacturerChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
-                <YAxis />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="count" fill="var(--color-chart-1)" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
+        <ChartCard
+          title="Equipment Count by Manufacturer (Top 10)"
+          description="Manufacturers with the most equipment items in catalog"
+          height={350}
+          wide
+        >
+          <CountBarChart
+            data={manufacturerChartData}
+            fill="var(--color-chart-1)"
+            labelHeight={100}
+          />
+        </ChartCard>
 
-        {/* Technology Level Progression by Era */}
-        <Card className="border-red/30 col-span-2 flex flex-col gap-6 py-6">
-          <CardHeader>
-            <CardTitle className="text-red">Technology level progression by era</CardTitle>
-            <CardDescription>Average technology tier across historical eras</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px] w-full">
-              <LineChart data={techProgressionData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="era" />
-                <YAxis domain={[0, 10]} />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Line
-                  type="monotone"
-                  dataKey="avgTechLevel"
-                  stroke="var(--color-chart-8)"
-                  strokeWidth={3}
-                  dot={{ fill: "var(--color-chart-8)", r: 6 }}
-                  activeDot={{ r: 8 }}
-                />
-              </LineChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
+        <ChartCard
+          title="Technology level progression by era"
+          description="Average technology tier across historical eras"
+          height={300}
+          wide
+        >
+          <LineChart data={techProgressionData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="era" />
+            <YAxis domain={[0, 10]} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Line
+              type="monotone"
+              dataKey="avgTechLevel"
+              stroke="var(--color-chart-8)"
+              strokeWidth={3}
+              dot={{ fill: "var(--color-chart-8)", r: 6 }}
+              activeDot={{ r: 8 }}
+            />
+          </LineChart>
+        </ChartCard>
       </div>
 
       {/* Least Used Equipment Table (Deprecation Candidates) */}
@@ -408,22 +371,18 @@ export function AnalyticsTab({
               </TableHeader>
               <TableBody>
                 {deprecationCandidates.map((equipment: any, index: number) => {
-                  const manufacturerName = (equipment as any).manufacturer ?? "N/A";
-                  const techLevel =
-                    (equipment as any).technologyLevel ??
-                    (equipment as any & { technologyTier?: number }).technologyTier ??
-                    null;
+                  const techLevel = equipment.technologyLevel ?? equipment.technologyTier ?? null;
 
                   return (
                     <TableRow key={equipment.id} className={index % 2 === 0 ? "bg-red/50" : ""}>
                       <TableCell className="text-body px-4 font-medium">{equipment.name}</TableCell>
                       <TableCell className="text-body px-4">
-                        {equipment.category.charAt(0).toUpperCase() + equipment.category.slice(1)}
+                        {capitalize(equipment.category)}
                       </TableCell>
+                      <TableCell className="text-body px-4">{eraLabel(equipment.era)}</TableCell>
                       <TableCell className="text-body px-4">
-                        {equipment.era.toUpperCase().replace("-", " ")}
+                        {equipment.manufacturer ?? "N/A"}
                       </TableCell>
-                      <TableCell className="text-body px-4">{manufacturerName}</TableCell>
                       <TableCell className="text-body px-4 text-center">
                         {techLevel ?? "N/A"}
                       </TableCell>
