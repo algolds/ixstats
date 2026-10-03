@@ -67,10 +67,75 @@ interface CountryActivityPanelProps {
   countryName: string;
 }
 
-interface FilterOption {
+type Icon = typeof Activity;
+
+const isPost = (i: CountryActivityItem) => i.type === "social" || i.source === "thinkpages";
+
+const FILTERS: {
   value: ActivityFilter;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: Icon;
+  test: (i: CountryActivityItem) => boolean;
+}[] = [
+  { value: "all", label: "All", icon: Activity, test: () => true },
+  { value: "posts", label: "Posts", icon: Rss, test: isPost },
+  { value: "economic", label: "Economic", icon: TrendingUp, test: (i) => i.type === "economic" },
+  { value: "diplomatic", label: "Diplomatic", icon: Globe, test: (i) => i.type === "diplomatic" },
+  { value: "social", label: "Social", icon: MessageSquare, test: isPost },
+];
+
+const TYPE_ICON: Record<string, Icon> = {
+  achievement: Trophy,
+  milestone: Trophy,
+  economic: TrendingUp,
+  diplomatic: Globe,
+  social: MessageSquare,
+  event: Zap,
+};
+
+const ENGAGEMENT_ICON = { likes: Heart, comments: MessageSquare, shares: Share2 } as const;
+
+function ActivityRow({ item }: { item: CountryActivityItem }) {
+  const Icon =
+    item.source === "thinkpages" || item.type === "post" ? Rss : (TYPE_ICON[item.type] ?? Activity);
+  return (
+    <li className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <Icon aria-hidden className="text-label-secondary size-4" />
+            <p
+              className="text-headline text-label truncate"
+              dangerouslySetInnerHTML={{ __html: renderWithEmojis(item.title) }}
+            />
+          </div>
+          {item.source === "thinkpages" && <Badge variant="outline">ThinkPages</Badge>}
+        </div>
+        <p className="text-callout text-label-secondary mt-1 line-clamp-2">
+          <span dangerouslySetInnerHTML={{ __html: renderWithEmojis(item.description) }} />
+        </p>
+        <div className="text-footnote text-label-secondary mt-2 flex items-center gap-3 tabular-nums">
+          <span className="flex items-center gap-1">
+            <Clock aria-hidden className="size-3" />
+            {isValid(item.timestamp)
+              ? formatDistanceToNow(item.timestamp, { addSuffix: true })
+              : "recently"}
+          </span>
+          {Object.entries(ENGAGEMENT_ICON).map(([key, EngagementIcon]) => {
+            const count = item.engagement?.[key as keyof typeof ENGAGEMENT_ICON] ?? 0;
+            return (
+              count > 0 && (
+                <span key={key} className="flex items-center gap-1">
+                  <EngagementIcon aria-hidden className="size-3" />
+                  {count}
+                </span>
+              )
+            );
+          })}
+        </div>
+      </div>
+    </li>
+  );
 }
 
 export function CountryActivityPanel({ countryId, countryName }: CountryActivityPanelProps) {
@@ -100,61 +165,15 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
       metadata: activity.metadata as Record<string, unknown> | null,
     }));
 
-    if (filter === "all") return items;
-    if (filter === "posts")
-      return items.filter((i) => i.type === "social" || i.source === "thinkpages");
-    if (filter === "economic") return items.filter((i) => i.type === "economic");
-    if (filter === "diplomatic") return items.filter((i) => i.type === "diplomatic");
-    if (filter === "social")
-      return items.filter((i) => i.type === "social" || i.source === "thinkpages");
-    return items;
+    return items.filter(FILTERS.find((f) => f.value === filter)?.test ?? (() => true));
   }, [activityData, filter]);
-
-  const filterOptions: FilterOption[] = [
-    { value: "all", label: "All", icon: Activity },
-    { value: "posts", label: "Posts", icon: Rss },
-    { value: "economic", label: "Economic", icon: TrendingUp },
-    { value: "diplomatic", label: "Diplomatic", icon: Globe },
-    { value: "social", label: "Social", icon: MessageSquare },
-  ];
-
-  const getItemIcon = (type: string, source: string) => {
-    if (source === "thinkpages" || type === "post")
-      return <Rss aria-hidden className="text-label-secondary size-4" />;
-    switch (type) {
-      case "achievement":
-      case "milestone":
-        return <Trophy aria-hidden className="text-label-secondary size-4" />;
-      case "economic":
-        return <TrendingUp aria-hidden className="text-label-secondary size-4" />;
-      case "diplomatic":
-        return <Globe aria-hidden className="text-label-secondary size-4" />;
-      case "social":
-        return <MessageSquare aria-hidden className="text-label-secondary size-4" />;
-      case "event":
-        return <Zap aria-hidden className="text-label-secondary size-4" />;
-      default:
-        return <Activity aria-hidden className="text-label-secondary size-4" />;
-    }
-  };
-
-  const getSourceBadge = (source: string) => {
-    switch (source) {
-      case "thinkpages":
-        return <Badge variant="outline">ThinkPages</Badge>;
-      default:
-        return null;
-    }
-  };
 
   const summary = [
     { label: "Total items", value: feed.length },
-    {
-      label: "Posts",
-      value: feed.filter((i) => i.type === "social" || i.source === "thinkpages").length,
-    },
-    { label: "Economic", value: feed.filter((i) => i.type === "economic").length },
-    { label: "Diplomatic", value: feed.filter((i) => i.type === "diplomatic").length },
+    ...(["posts", "economic", "diplomatic"] as const).map((value) => {
+      const { label, test } = FILTERS.find((f) => f.value === value)!;
+      return { label, value: feed.filter(test).length };
+    }),
   ];
 
   return (
@@ -184,10 +203,11 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
               size="sm"
               value={filter}
               onValueChange={setFilter}
-              options={filterOptions.map((opt) => {
-                const Icon = opt.icon;
-                return { value: opt.value, label: opt.label, icon: <Icon aria-hidden /> };
-              })}
+              options={FILTERS.map(({ value, label, icon: Icon }) => ({
+                value,
+                label,
+                icon: <Icon aria-hidden />,
+              }))}
             />
           </Card>
 
@@ -207,55 +227,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
             <Card padding="md">
               <ul className="divide-separator divide-y">
                 {feed.map((item) => (
-                  <li key={item.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex min-w-0 flex-1 items-center gap-2">
-                          {getItemIcon(item.type, item.source)}
-                          <p
-                            className="text-headline text-label truncate"
-                            dangerouslySetInnerHTML={{ __html: renderWithEmojis(item.title) }}
-                          />
-                        </div>
-                        {getSourceBadge(item.source)}
-                      </div>
-                      <p className="text-callout text-label-secondary mt-1 line-clamp-2">
-                        <span
-                          dangerouslySetInnerHTML={{ __html: renderWithEmojis(item.description) }}
-                        />
-                      </p>
-                      <div className="text-footnote text-label-secondary mt-2 flex items-center gap-3 tabular-nums">
-                        <span className="flex items-center gap-1">
-                          <Clock aria-hidden className="size-3" />
-                          {isValid(item.timestamp)
-                            ? formatDistanceToNow(item.timestamp, { addSuffix: true })
-                            : "recently"}
-                        </span>
-                        {item.engagement && (
-                          <>
-                            {(item.engagement.likes ?? 0) > 0 && (
-                              <span className="flex items-center gap-1">
-                                <Heart aria-hidden className="size-3" />
-                                {item.engagement.likes}
-                              </span>
-                            )}
-                            {(item.engagement.comments ?? 0) > 0 && (
-                              <span className="flex items-center gap-1">
-                                <MessageSquare aria-hidden className="size-3" />
-                                {item.engagement.comments}
-                              </span>
-                            )}
-                            {item.engagement.shares && item.engagement.shares > 0 && (
-                              <span className="flex items-center gap-1">
-                                <Share2 aria-hidden className="size-3" />
-                                {item.engagement.shares}
-                              </span>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </li>
+                  <ActivityRow key={item.id} item={item} />
                 ))}
               </ul>
 
