@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/reader/AppleBooksTocDrawer.tsx
 
 import { useState, useEffect } from "react";
 import { List } from "iconoir-react";

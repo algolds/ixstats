@@ -1,4 +1,3 @@
-// src/components/wiki-os/stashes/types.ts
 // Shared types, preset colors, and discriminated models for the Stash system.
 export const PRESET_COLORS = [
   "#3b82f6", // Blue

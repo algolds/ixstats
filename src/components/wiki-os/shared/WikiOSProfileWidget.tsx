@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/shared/WikiOSProfileWidget.tsx
 // Sidebar profile widget — pipes the signed-in user's linked wiki profile
 // (username, join date, edits, rank, lorescore/lorewards) into the WikiOS rail.
 // Renders as a glass card when expanded, and as an avatar + rank badge when the
@@ -84,7 +83,6 @@ export function WikiOSProfileWidget({
 
   const profileHref = withBasePath(getWikiProfilePath(displayName));
 
-  // ── Collapsed rail → avatar + rank badge only ──
   if (!expanded && !isLocalHoverExpanded) {
     return (
       <Tooltip>
@@ -104,7 +102,6 @@ export function WikiOSProfileWidget({
     );
   }
 
-  // ── Hovered state in collapsed rail → single row horizontal pill ──
   if (isLocalHoverExpanded) {
     return (
       <Link
@@ -119,7 +116,6 @@ export function WikiOSProfileWidget({
     );
   }
 
-  // ── Expanded (Locked Sidebar) → glass profile card ──
   return (
     <Link
       href={profileHref}

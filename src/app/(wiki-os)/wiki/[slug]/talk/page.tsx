@@ -1,5 +1,4 @@
 "use client";
-// src/app/(wiki-os)/wiki/[slug]/talk/page.tsx
 // Legacy WikiOS Talk Page — redirects to the modern WikiOS Margin split-canvas inspector.
 
 import { useParams, useRouter } from "next/navigation";

@@ -1,4 +1,3 @@
-// src/components/wiki-os/editor/utils/codemirror-wikitext.ts
 // CodeMirror 6 custom decorations, syntax highlighter, and command utilities for Wikitext.
 
 import { Decoration, ViewPlugin } from "@codemirror/view";

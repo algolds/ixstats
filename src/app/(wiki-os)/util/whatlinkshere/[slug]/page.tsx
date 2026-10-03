@@ -1,5 +1,4 @@
 "use client";
-// src/app/(wiki-os)/wiki/whatlinkshere/[slug]/page.tsx
 // WikiOS "What Links Here" — shows pages that link to the given page
 
 import { useParams } from "next/navigation";

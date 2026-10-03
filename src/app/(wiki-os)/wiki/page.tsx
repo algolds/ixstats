@@ -1,5 +1,4 @@
 "use client";
-// src/app/(wiki-os)/wiki/page.tsx
 // WikiOS Main Page entry point
 
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";

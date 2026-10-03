@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/margin/modals/MarginCategoryHelpModal.tsx
 // Interactive Category Guide modal for the 5 Ws Thread Categories in WikiOS Margin.
 import { Compass } from "iconoir-react";
 import { Button } from "~/components/ui/button";

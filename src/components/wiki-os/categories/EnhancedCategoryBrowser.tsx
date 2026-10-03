@@ -61,7 +61,6 @@ export function EnhancedCategoryBrowser({
 
       <SubcategorySection subcategories={subcategories} />
 
-      {/* ── Pages in Category Grid ── */}
       {pages.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center gap-2 px-1">

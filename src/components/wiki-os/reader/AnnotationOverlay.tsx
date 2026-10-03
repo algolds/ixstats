@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/reader/AnnotationOverlay.tsx
 // High-performance DOM highlighter for WikiOS article text annotations.
 import { useEffect, useCallback, type RefObject } from "react";
 
@@ -72,10 +71,6 @@ export function useAnnotationOverlay({
 
   return null;
 }
-
-// ---------------------------------------------------------------------------
-// DOM Highlights Helpers
-// ---------------------------------------------------------------------------
 
 function clearHighlights(container: HTMLElement) {
   const marks = container.querySelectorAll(".wikios-annotation-mark");

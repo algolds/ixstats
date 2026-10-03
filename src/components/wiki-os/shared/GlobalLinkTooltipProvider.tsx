@@ -28,10 +28,6 @@ import {
 } from "iconoir-react";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 
-// ──────────────────────────────────────────────
-// Link detection types
-// ──────────────────────────────────────────────
-
 type DetectedLink =
   { kind: "wiki"; title: string; wiki: "ixwiki" | "iiwiki" } | { kind: "forum"; threadId: number };
 
@@ -96,10 +92,6 @@ function detectLink(href: string): DetectedLink | null {
 
   return null;
 }
-
-// ──────────────────────────────────────────────
-// Tooltip host component
-// ──────────────────────────────────────────────
 
 export function GlobalLinkTooltips() {
   // The detected link and the <a> it came from (the hover card's virtual anchor). Kept after the
@@ -212,10 +204,6 @@ export function GlobalLinkTooltips() {
   );
 }
 
-// ──────────────────────────────────────────────
-// Wiki tooltip body
-// ──────────────────────────────────────────────
-
 function WikiTooltipBody({ title, wiki }: { title: string; wiki: "ixwiki" | "iiwiki" }) {
   const { data: intro } = api.wikios.getIntro.useQuery({ title, wiki }, { staleTime: 30 * 60_000 });
 
@@ -251,10 +239,6 @@ function WikiTooltipBody({ title, wiki }: { title: string; wiki: "ixwiki" | "iiw
     </div>
   );
 }
-
-// ──────────────────────────────────────────────
-// Forum tooltip body
-// ──────────────────────────────────────────────
 
 function ForumTooltipBody({ threadId }: { threadId: number }) {
   const { data: thread } = api.wikios.getForumThreadPreview.useQuery(

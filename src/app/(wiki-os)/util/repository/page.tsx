@@ -1,5 +1,4 @@
 "use client";
-// src/app/(wiki-os)/wiki/repository/page.tsx
 // WikiOS Commons Explorer — category browsing, full-text search, stash integration.
 
 import { useState, useCallback, useRef, useEffect, useMemo, useDeferredValue } from "react";

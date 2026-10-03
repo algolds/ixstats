@@ -56,7 +56,6 @@ export function WikiHeroMaster(props: WikiHeroProps) {
 
   return (
     <div className="flex w-full flex-col items-center">
-      {/* ── Active Hero Render with Spring Morph/Crossfade ── */}
       <div className="w-full">
         <AnimatePresence mode="wait">
           <motion.div

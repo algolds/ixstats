@@ -1,4 +1,3 @@
-// src/app/(wiki-os)/util/page.tsx
 // WikiOS Special Directory & Utilities Deck
 import type { Metadata } from "next";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";

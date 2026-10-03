@@ -390,8 +390,6 @@ export function useWikiVisualFormatting({
     [withEditor, setIsDirty, refreshActiveFormats]
   );
 
-  // ── Block transforms ─────────────────────────────────────────────────────
-
   const setType = useCallback(
     (type: string) => {
       edit((editor) =>
@@ -483,8 +481,6 @@ export function useWikiVisualFormatting({
     settle();
   }, [setType, settle]);
 
-  // ── Links ────────────────────────────────────────────────────────────────
-
   const insertLink = useCallback(() => {
     withEditor((editor) => {
       const selectedText = Editor.string(editor, editor.selection ?? []);
@@ -508,8 +504,6 @@ export function useWikiVisualFormatting({
     edit((editor) => Transforms.unwrapNodes(editor, { match: isTypeIn("link") }));
     editorRef.current?.focus?.();
   }, [edit, editorRef]);
-
-  // ── Insertions ───────────────────────────────────────────────────────────
 
   const insertHR = useCallback(() => {
     edit((editor) => {
@@ -550,8 +544,6 @@ export function useWikiVisualFormatting({
     exec("removeFormat");
     editorRef.current?.focus?.();
   }, [exec, editorRef]);
-
-  // ── Templates & media ────────────────────────────────────────────────────
 
   const handleInsertTemplate = useCallback(
     async (templateName: string, params: Record<string, string>) => {

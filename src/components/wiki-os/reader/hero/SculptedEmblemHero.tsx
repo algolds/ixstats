@@ -190,7 +190,6 @@ export function SculptedEmblemHero({
       aria-label="WikiOS sculpted emblem hero"
       className="relative flex w-full flex-col items-center justify-center pt-1 pb-2 text-center select-none sm:pb-3"
     >
-      {/* ── 1. The Free-Standing Canonical Laurel Sphere & Typographic Lockup (Centered) ── */}
       <Link
         href={withBasePath("/wiki/Main_Page")}
         aria-label="IxWiki home"
@@ -223,7 +222,6 @@ export function SculptedEmblemHero({
         </div>
       </Link>
 
-      {/* ── 3. Floating Glass Omnisearch Bar ── */}
       <motion.div
         initial={reduceMotion ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -233,7 +231,6 @@ export function SculptedEmblemHero({
         <HeroSpotlightSearch placeholderHints={searchPlaceholders} />
       </motion.div>
 
-      {/* ── 4. Prestigious Quick Navigation Chips (Non-Sidebar Exploratory Actions) ── */}
       <motion.div
         initial={reduceMotion ? false : { opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
@@ -298,7 +295,6 @@ export function SculptedEmblemHero({
         </Link>
       </motion.div>
 
-      {/* ── 5. Standardized 2-Column Live Interaction Deck (Timeline & Community Prompt) ── */}
       <motion.div
         initial={reduceMotion ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -473,7 +469,6 @@ export function SculptedEmblemHero({
         )}
       </motion.div>
 
-      {/* ── 7. Standardized Embedded Featured Article ── */}
       {(featuredArticleData || featuredArticleHtml) && (
         <motion.div
           initial={reduceMotion ? false : { opacity: 0, y: 10 }}

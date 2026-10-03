@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/editor/components/WikiVisualToolbar.tsx
 // Top bar and full formatting toolbar for WikiOS Visual Editor.
 
 import React from "react";
@@ -101,7 +100,6 @@ export function WikiVisualToolbar({
         setSummary={modal.setSummary}
       />
 
-      {/* ─── Full Formatting Toolbar ─── */}
       <div className="wikios-ve-toolbar">
         {/* Undo / Redo */}
         <div className="wikios-ve-toolbar-group">

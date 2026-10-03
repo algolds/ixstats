@@ -44,7 +44,6 @@ export function DomainPortal({ domain, domainMeta, subcategories, pages }: Domai
 
       <SubcategorySection subcategories={subcategories} />
 
-      {/* ── Articles Grid ── */}
       {pages.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center gap-2 px-1">
@@ -74,7 +73,6 @@ export function DomainPortal({ domain, domainMeta, subcategories, pages }: Domai
         </div>
       )}
 
-      {/* ── Empty State ── */}
       {subcategories.length === 0 && pages.length === 0 && (
         <div className="border-separator bg-surface rounded-card flex flex-col items-center justify-center space-y-3 border border-dashed p-12 text-center">
           <Folder className="text-label-secondary h-10 w-10" />

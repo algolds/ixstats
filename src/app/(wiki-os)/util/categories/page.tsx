@@ -1,5 +1,4 @@
 "use client";
-// src/app/(wiki-os)/util/categories/page.tsx
 // WikiOS Category Index & Directory Portal — Root category taxonomy, A-Z index & domain hub.
 
 import React, { useState, useMemo } from "react";

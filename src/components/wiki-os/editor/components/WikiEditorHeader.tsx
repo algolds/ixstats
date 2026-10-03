@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/editor/components/WikiEditorHeader.tsx
 // Top titlebar with the mode switcher (a thin-material pill) and Save/Cancel actions.
 
 import React from "react";

@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/shared/FisheyeRailItem.tsx
 // Fisheye magnification icon wrapper.
 
 import { useRef } from "react";

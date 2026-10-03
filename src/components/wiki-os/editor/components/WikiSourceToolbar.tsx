@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/editor/components/WikiSourceToolbar.tsx
 // Top bar and Wikitext formatting toolbar for WikiOS Source Editor (CodeMirror).
 
 import React from "react";

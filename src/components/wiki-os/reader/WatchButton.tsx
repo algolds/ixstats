@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/reader/WatchButton.tsx
 // Watch/Unwatch toggle for an article; watched pages feed the watchlist at /util/watchlist.
 
 import { Eye, EyeClosed } from "iconoir-react";

@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/shared/WikiContext.tsx
 // Context for passing WikiOS state (TOC, current article) to the Dynamic Island.
 // Provides article metadata, TOC entries, and session tracking for wiki mode.
 

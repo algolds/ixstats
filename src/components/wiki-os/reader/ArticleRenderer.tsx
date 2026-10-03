@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/reader/ArticleRenderer.tsx
 // Renders pre-transformed WikiOS article data in reader mode.
 // Composes modular ArticleHeader, ArticleCategories, ArticleFooter, ArticleModals, and ArticlePlaceholders.
 
@@ -180,7 +179,6 @@ export function ArticleRenderer({
     }
   }, [companionCollapsed]);
 
-  // --- WikiOS Margin Suite State ---
   const [marginExpanded, setMarginExpanded] = useState(false);
   const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
   const [draftQuote, setDraftQuote] = useState<string | null>(null);
@@ -314,7 +312,6 @@ export function ArticleRenderer({
     setSharePayload(payload);
   };
 
-  // --- Portal & Dynamic Widgets Setup ---
   const statKeys = useMemo(() => {
     const keys = new Set<string>();
     const regex = /\{\{((?:MyCountry|CountryData|BusinessData):[^}\n]+?)\}\}/gi;

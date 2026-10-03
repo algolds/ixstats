@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/shared/WikiOSUnifiedSidebar.tsx
 // Unified, single-column collapsible sidebar layout with hover handle and keyboard shortcuts.
 
 import { useEffect, useState, useRef, type ReactNode } from "react";

@@ -1,5 +1,3 @@
-// src/components/media-search/types.ts
-
 export interface CommonsImage {
   pageid: number;
   title: string;

@@ -453,10 +453,6 @@ export function CommonsCategoryBrowser({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Category group section with lazy-loaded counts
-// ---------------------------------------------------------------------------
-
 interface CategoryGroupSectionProps {
   group: CategoryGroup;
   isGroupOpen: boolean;
@@ -526,10 +522,6 @@ function CategoryGroupSection({
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Category row with optional subcategory expansion
-// ---------------------------------------------------------------------------
 
 function CategoryRow({
   name,

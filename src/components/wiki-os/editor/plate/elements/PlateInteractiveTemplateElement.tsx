@@ -145,7 +145,6 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
       {/* Hidden children for Slate document invariants */}
       <span className="hidden">{children}</span>
 
-      {/* ─── Compact Space-Saving Inline/Block Badge ─── */}
       <div
         contentEditable={false}
         onDoubleClick={() => !readOnly && setIsModalOpen(true)}
@@ -216,7 +215,6 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
         </div>
       </div>
 
-      {/* ─── Dialog ─── */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="bg-surface border-separator shadow-floating rounded-card flex max-h-[85vh] max-w-2xl flex-col overflow-hidden border p-0">
           {/* Header */}

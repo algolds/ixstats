@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/reader/hero/HeroSpotlightSearch.tsx
 // Inline spotlight search bar for WikiOS Hero with featured thumbnail images, direct DB queries, page creation, and keyboard navigation.
 
 import React, { useState, useEffect, useRef, useDeferredValue, useCallback } from "react";
@@ -161,7 +160,6 @@ export function HeroSpotlightSearch({
 
   return (
     <div ref={containerRef} className={cn("relative w-full select-none", className)}>
-      {/* ── Search Input Frame ── */}
       <div
         onClick={() => {
           inputRef.current?.focus();
@@ -221,7 +219,6 @@ export function HeroSpotlightSearch({
         )}
       </div>
 
-      {/* ── Spotlight Live Dropdown Popover ── */}
       <AnimatePresence>
         {isOpen && (deferredQuery.length >= 1 || query.trim().length > 0) && (
           <motion.div

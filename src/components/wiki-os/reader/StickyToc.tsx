@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/reader/StickyToc.tsx
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {

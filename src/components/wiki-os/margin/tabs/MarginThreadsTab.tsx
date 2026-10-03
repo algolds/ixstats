@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/margin/tabs/MarginThreadsTab.tsx
 // Structured discussion threads aligned with Lore Theory: 5 Ws classification,
 // DiffViewer suggested edits, diplomatic communiqués, quote-in-reply, and child page creation.
 // Signature Highlighter Yellow / Warm Amber branding for Margin.
@@ -126,9 +125,6 @@ interface MarginThreadsTabProps {
   themeColors?: ThemeColors | null;
 }
 
-// ---------------------------------------------------------------------------
-// Subcomponent: HoldToResolveButton
-// ---------------------------------------------------------------------------
 function HoldToResolveButton({
   isResolved,
   onResolveToggle,
@@ -204,9 +200,6 @@ function HoldToResolveButton({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Subcomponent: ThreadCard
-// ---------------------------------------------------------------------------
 function ThreadCard({
   thread,
   isExpanded,
@@ -630,9 +623,6 @@ function ThreadCard({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Main Tab Component
-// ---------------------------------------------------------------------------
 export function MarginThreadsTab({
   articleTitle,
   threads,

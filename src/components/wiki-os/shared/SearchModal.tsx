@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/shared/SearchModal.tsx
 // WikiOS Search Modal with incremental query debouncing and keyboard navigation.
 
 import {

@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/stashes/StashSettingsMenu.tsx
 // Settings popover for Stash collections.
 // Features opaque elevated surface, zero-bleed depth shadow, crisp typography, and fluid spring physics.
 

@@ -1,4 +1,3 @@
-// src/app/(wiki-os)/wiki/layout.tsx
 // WikiOS Layout — wraps all wiki pages with the WikiOS chrome
 // Uses a separate layout from IxStats to provide wiki-specific navigation
 

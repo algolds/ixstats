@@ -1,5 +1,4 @@
 "use client";
-// src/app/(wiki-os)/wiki/random/page.tsx
 // WikiOS Random Page — fetches a random article server-side and redirects
 
 import { useEffect } from "react";

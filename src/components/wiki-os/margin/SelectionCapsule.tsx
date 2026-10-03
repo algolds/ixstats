@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/margin/SelectionCapsule.tsx
 // Origin-aware floating selection capsule for inline markup, stash, suggested edits, and discussions.
 import React, { useEffect, useState, useCallback } from "react";
 import {

@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/margin/shared/MarginUserAvatar.tsx
 // Shared, memoized avatar component with country flag micro-badge and initials fallback for Margin.
 // Signature Highlighter Yellow / Warm Amber branding for Margin.
 

@@ -1,5 +1,4 @@
 "use client";
-// src/components/media-search/WikiRepositoryTab.tsx
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { SegmentedControl } from "~/components/ui/segmented-control";

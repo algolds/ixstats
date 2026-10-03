@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/editor/ImageSearchGrid.tsx
 // Visual image search with card tiles — IxWiki + Wikimedia Commons.
 
 import { useState, useCallback, useRef, useEffect } from "react";
