@@ -10,134 +10,95 @@ import { area } from "@turf/area";
 import { buffer } from "@turf/buffer";
 import type { FeatureCollection } from "geojson";
 
+const isValidRing = (ring: unknown) => Array.isArray(ring) && ring.length >= 4;
+
+/** Drop rings with fewer than 4 positions (and polygons left without rings); null if nothing is left. */
 export function cleanPolygonGeometry(geometry: any): any {
   if (!geometry || typeof geometry !== "object") return null;
 
   if (geometry.type === "Polygon") {
-    const validRings = (geometry.coordinates || []).filter(
-      (ring: any[]) => Array.isArray(ring) && ring.length >= 4
-    );
-    if (validRings.length === 0) return null;
-    return {
-      type: "Polygon",
-      coordinates: validRings,
-    };
+    const coordinates = (geometry.coordinates || []).filter(isValidRing);
+    return coordinates.length > 0 ? { type: "Polygon", coordinates } : null;
   }
 
   if (geometry.type === "MultiPolygon") {
-    const validPolys = (geometry.coordinates || [])
-      .map((poly: any[]) =>
-        (poly || []).filter((ring: any[]) => Array.isArray(ring) && ring.length >= 4)
-      )
+    const coordinates = (geometry.coordinates || [])
+      .map((poly: any[]) => (poly || []).filter(isValidRing))
       .filter((poly: any[]) => poly.length > 0);
-    if (validPolys.length === 0) return null;
-    return {
-      type: "MultiPolygon",
-      coordinates: validPolys,
-    };
+    return coordinates.length > 0 ? { type: "MultiPolygon", coordinates } : null;
   }
 
   return null;
 }
 
+const isDegeneratePolygonError = (err: unknown) =>
+  err instanceof Error && /fewer than 4 points|invalid polygon/i.test(err.message);
+
+/** Simplify a feature and clean its geometry; the input comes back if either step fails. */
+function simplifyAndClean(feature: any, label: string): any {
+  try {
+    const simplified = simplify(feature, { tolerance: 0.0001, highQuality: false });
+    const cleaned = cleanPolygonGeometry(simplified?.geometry);
+    return cleaned ? { ...simplified, geometry: cleaned } : feature;
+  } catch (err) {
+    if (!isDegeneratePolygonError(err)) console.warn(`Failed to simplify ${label} geometry:`, err);
+    return feature;
+  }
+}
+
+/** Union of the subdivision polygons; geometries that fail to merge are skipped. */
+function unionSubdivisions(subdivisions: any[]): any {
+  let unionFeature: any = null;
+  for (const sub of subdivisions) {
+    const subFeature = { type: "Feature" as const, geometry: sub.geometry!, properties: {} };
+    if (!unionFeature) {
+      unionFeature = subFeature;
+      continue;
+    }
+    try {
+      const merged = union(featureCollection([unionFeature, subFeature]));
+      const cleanedMerged = merged && cleanPolygonGeometry(merged.geometry);
+      if (cleanedMerged) unionFeature = { ...merged, geometry: cleanedMerged };
+    } catch (err) {
+      console.warn("Error unioning subdivision geometry:", err);
+    }
+  }
+  return unionFeature;
+}
+
+/** The part of the country not covered by any subdivision (null when none or on failure). */
 export function calculateNegativeSpaceGaps(
   countryFeature: any,
   subdivisions: any[]
 ): FeatureCollection | null {
-  if (!countryFeature || !countryFeature.geometry) return null;
-  if (!subdivisions || subdivisions.length === 0) {
-    return featureCollection([countryFeature]);
-  }
+  if (!countryFeature?.geometry) return null;
 
-  const validSubs = subdivisions.filter(
+  const validSubs = (subdivisions || []).filter(
     (s) => s.geometry && (s.geometry.type === "Polygon" || s.geometry.type === "MultiPolygon")
   );
-
-  if (validSubs.length === 0) {
-    return featureCollection([countryFeature]);
-  }
-
-  let unionFeature: any = null;
-  for (const sub of validSubs) {
-    const subFeature = {
-      type: "Feature" as const,
-      geometry: sub.geometry!,
-      properties: {},
-    };
-    if (!unionFeature) {
-      unionFeature = subFeature;
-    } else {
-      try {
-        const merged = union(featureCollection([unionFeature, subFeature]));
-        if (merged) {
-          const cleanedMerged = cleanPolygonGeometry(merged.geometry);
-          if (cleanedMerged) {
-            unionFeature = {
-              ...merged,
-              geometry: cleanedMerged,
-            };
-          }
-        }
-      } catch (err) {
-        console.warn("Error unioning subdivision geometry:", err);
-      }
-    }
-  }
-
-  if (!unionFeature) {
-    return featureCollection([countryFeature]);
-  }
-
-  let simplifiedCountry = countryFeature;
-  let simplifiedUnion = unionFeature;
-
-  const isDegeneratePolygonError = (err: unknown) =>
-    err instanceof Error && /fewer than 4 points|invalid polygon/i.test(err.message);
+  const unionFeature = validSubs.length > 0 ? unionSubdivisions(validSubs) : null;
+  if (!unionFeature) return featureCollection([countryFeature]);
 
   try {
-    const simplified = simplify(countryFeature, { tolerance: 0.0001, highQuality: false });
-    const cleaned = cleanPolygonGeometry(simplified?.geometry);
-    if (cleaned) {
-      simplifiedCountry = { ...simplified, geometry: cleaned };
-    }
-  } catch (err) {
-    if (!isDegeneratePolygonError(err)) console.warn("Failed to simplify country geometry:", err);
-  }
+    const gap = difference(
+      featureCollection([
+        simplifyAndClean(countryFeature, "country"),
+        simplifyAndClean(unionFeature, "union"),
+      ])
+    );
+    const cleanedGapGeom = gap && cleanPolygonGeometry(gap.geometry);
+    if (!gap || !cleanedGapGeom) return null;
 
-  try {
-    const simplified = simplify(unionFeature, { tolerance: 0.0001, highQuality: false });
-    const cleaned = cleanPolygonGeometry(simplified?.geometry);
-    if (cleaned) {
-      simplifiedUnion = { ...simplified, geometry: cleaned };
-    }
-  } catch (err) {
-    if (!isDegeneratePolygonError(err)) console.warn("Failed to simplify union geometry:", err);
-  }
-
-  try {
-    const gap = difference(featureCollection([simplifiedCountry, simplifiedUnion]));
-    if (gap) {
-      const cleanedGapGeom = cleanPolygonGeometry(gap.geometry);
-      if (!cleanedGapGeom) return null;
-
-      const cleanedGap = {
-        ...gap,
-        geometry: cleanedGapGeom,
-      };
-
-      if (cleanedGap.geometry.type === "MultiPolygon") {
-        const polys = cleanedGap.geometry.coordinates.map((coords: any) => ({
-          type: "Feature" as const,
-          geometry: {
-            type: "Polygon" as const,
-            coordinates: coords,
-          },
-          properties: {},
-        }));
-        return featureCollection(polys);
-      }
-      return featureCollection([cleanedGap]);
-    }
+    // One feature per gap polygon
+    return cleanedGapGeom.type === "MultiPolygon"
+      ? featureCollection(
+          cleanedGapGeom.coordinates.map((coordinates: any) => ({
+            type: "Feature" as const,
+            geometry: { type: "Polygon" as const, coordinates },
+            properties: {},
+          }))
+        )
+      : featureCollection([{ ...gap, geometry: cleanedGapGeom }]);
   } catch (err) {
     console.warn("Error calculating difference gaps:", err);
   }
