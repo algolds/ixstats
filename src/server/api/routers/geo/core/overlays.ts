@@ -8,6 +8,7 @@ import {
   type HealthInput,
 } from "~/lib/maps/overlay-metrics";
 import { parseAffectedCountries } from "~/lib/maps/crisis-affected-countries";
+import { percentileRanks } from "./geometry";
 
 /**
  * Weighted canon sources used by the Canon Density overlay. Each source is
@@ -149,12 +150,9 @@ export const overlayProcedures = {
       if (input.groupBy === "country") {
         // Compute percentile rank (0–1) for each country so colors distribute evenly.
         // Raw values go in rawValue for tooltips. `value` is the normalized rank.
-        const rawValues = countries.map((c) => ({ c, raw: getRankValue(c) }));
-        const sorted = [...rawValues].sort((a, b) => a.raw - b.raw);
-        const rankMap = new Map<string, number>();
-        for (let i = 0; i < sorted.length; i++) {
-          rankMap.set(sorted[i]!.c.id, sorted.length > 1 ? i / (sorted.length - 1) : 0.5);
-        }
+        const rankMap = percentileRanks(
+          countries.map((c) => ({ id: c.id, value: getRankValue(c) }))
+        );
 
         return {
           type: "FeatureCollection" as const,
@@ -339,11 +337,9 @@ export const overlayProcedures = {
     const scores = computeCanonDensityScores(countryIds, sourceCounts);
 
     // Percentile rank across all countries with geometry.
-    const sorted = [...countries].sort((a, b) => (scores.get(a.id) ?? 0) - (scores.get(b.id) ?? 0));
-    const rankMap = new Map<string, number>();
-    for (let i = 0; i < sorted.length; i++) {
-      rankMap.set(sorted[i]!.id, sorted.length > 1 ? i / (sorted.length - 1) : 0.5);
-    }
+    const rankMap = percentileRanks(
+      countries.map((c) => ({ id: c.id, value: scores.get(c.id) ?? 0 }))
+    );
 
     const maxScore = Math.max(1, ...Array.from(scores.values()));
 

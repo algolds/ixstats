@@ -20,7 +20,7 @@ import {
   layerInflight,
   type ZoomBucket,
 } from "./cache";
-import { computeApproxAreaForFeature, computeVisualCenter } from "./geometry";
+import { centroidLngLat, computeApproxAreaForFeature, computeVisualCenter } from "./geometry";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 
 /** Warms IxWorld's layers only — other realms build on first request. */
@@ -301,16 +301,6 @@ type LayerRow = {
   country?: { continent: string | null; region: string | null } | null;
 };
 
-/** Centroid stored as [lng, lat] array or { coordinates: [lng, lat] } GeoJSON Point. */
-function centroidOf(raw: unknown): [number, number] {
-  const centroid = raw as [number, number] | { coordinates?: [number, number] } | null;
-  if (Array.isArray(centroid) && centroid.length >= 2) return [centroid[0], centroid[1]];
-  if (centroid && "coordinates" in centroid && Array.isArray(centroid.coordinates)) {
-    return [centroid.coordinates[0], centroid.coordinates[1]];
-  }
-  return [0, 0];
-}
-
 /** Political feature properties: fill colour (blended toward the root sovereign for subjects) and sovereignty tags. */
 function politicalProperties(
   layer: LayerRow,
@@ -338,7 +328,7 @@ function politicalProperties(
     if (sovereignSet.has(layer.countryId)) extraProps._isSovereign = true;
   }
 
-  const [centroidLng, centroidLat] = centroidOf(layer.centroid);
+  const [centroidLng, centroidLat] = centroidLngLat(layer.centroid);
   return {
     ...layer.properties,
     _id: layer.featureId,
