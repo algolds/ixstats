@@ -58,7 +58,7 @@ export function WikiLinkStatusSection({
       );
     }
 
-    return result.sort((a, b) => a.name.localeCompare(b.name));
+    return [...result].sort((a, b) => a.name.localeCompare(b.name));
   }, [countries, filter, searchQuery]);
 
   const linkedCount = countries.filter((c) => c.wikiPageTitle).length;
