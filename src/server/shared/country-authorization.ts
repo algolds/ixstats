@@ -205,14 +205,24 @@ export async function countriesWithWriteAccess(
 
   const userId = freshWriter?.id ?? ctx.user?.id ?? null;
   const rest = ids.filter((id) => !granted.has(id));
-  if (userId && rest.length > 0 && typeof ctx.db.country?.findMany === "function") {
-    const owned: Array<{ id: string }> = await ctx.db.country.findMany({
-      where: { id: { in: rest }, ownerUserId: userId },
-      select: { id: true },
-    });
-    for (const c of owned) granted.add(c.id);
-  }
+  for (const id of await findOwnedCountryIds(ctx, userId, rest)) granted.add(id);
   return granted;
+}
+
+/** Which of `countryIds` the platform user owns (`Country.ownerUserId`), in one query. */
+async function findOwnedCountryIds(
+  ctx: CountryAuthContext,
+  userId: string | null,
+  countryIds: string[]
+): Promise<string[]> {
+  if (!userId || countryIds.length === 0 || typeof ctx.db.country?.findMany !== "function") {
+    return [];
+  }
+  const owned: Array<{ id: string }> = await ctx.db.country.findMany({
+    where: { id: { in: countryIds }, ownerUserId: userId },
+    select: { id: true },
+  });
+  return owned.map((c) => c.id);
 }
 
 /**
