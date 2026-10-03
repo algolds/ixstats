@@ -1,5 +1,5 @@
 /**
- * src/lib/wiki-os/wikitext/parser.ts — Universal Tolerant MediaWiki Parser.
+ * Universal tolerant MediaWiki parser.
  *
  * Invariant 5: Malformed user input never crashes the parser.
  * Invariant 6: Parse failure is never silent data loss.
@@ -10,18 +10,50 @@ import { scanTemplates } from "./template-parser";
 import { parseWikitable } from "./table-parser";
 import { parseWikiList } from "./list-parser";
 import { parseInlineLinksAndFormatting } from "./link-parser";
-import type {
-  WikiBlockNode,
-  ParseResult,
-  Diagnostic,
-  WikiHeadingBlock,
-  WikiInfoboxBlock,
-  WikiTemplateNode,
-  WikiParserFunctionBlock,
-  DividerBlock,
-  QuoteBlock,
-  ParsedTemplate,
-} from "./types";
+import type { WikiBlockNode, ParseResult, Diagnostic, ParsedTemplate } from "./types";
+
+function templateToBlock(tmpl: ParsedTemplate): WikiBlockNode {
+  const common = {
+    raw: tmpl.raw,
+    rawWikitext: tmpl.raw,
+    source: tmpl.source,
+    parseState: tmpl.parseState,
+    children: [{ text: "" }] as [{ text: "" }],
+  };
+
+  if (tmpl.isParserFunction) {
+    return {
+      type: "parser-function",
+      functionName: tmpl.functionName || tmpl.name,
+      expression: tmpl.expression || "",
+      branches: tmpl.branches || [],
+      ...common,
+    };
+  }
+
+  const templateFields = {
+    templateName: tmpl.name,
+    params: tmpl.params,
+    paramList: tmpl.paramList,
+    positional: tmpl.positional,
+  };
+  if (tmpl.classification === "infobox") {
+    return {
+      type: "infobox",
+      title: tmpl.params["name"] || tmpl.params["title"] || tmpl.name,
+      classification: "infobox",
+      ...templateFields,
+      ...common,
+    };
+  }
+  return {
+    type: "template",
+    name: tmpl.name,
+    classification: tmpl.classification,
+    ...templateFields,
+    ...common,
+  };
+}
 
 export function parse(input: string, options?: { title?: string; slug?: string }): ParseResult {
   const title = options?.title || "";
@@ -36,304 +68,213 @@ export function parse(input: string, options?: { title?: string; slug?: string }
     };
   }
 
-  // 1. Scan for templates and parser functions
   const { templates, diagnostics: tmplDiags } = scanTemplates(input);
   diagnostics.push(...tmplDiags);
 
-  // Partition into block-level templates vs inline templates.
-  // Inline templates remain inside running text and are parsed as inline nodes by parseInlineLinksAndFormatting.
-  const blockTemplates = templates.filter((t) => isBlockTemplate(t, input));
-
-  // Split document into inter-template text intervals and template blocks
+  // Inline templates stay inside running text and are parsed as inline nodes by
+  // parseInlineLinksAndFormatting; only block-level ones become nodes of their own.
   let cursor = 0;
-
-  for (const tmpl of blockTemplates) {
-    // Process text before this template
-    if (tmpl.source.start > cursor) {
-      const textChunk = input.slice(cursor, tmpl.source.start);
-      parseTextBlocks(textChunk, nodes, diagnostics, cursor);
-    }
-
-    // Insert template or parser function block
-    if (tmpl.isParserFunction) {
-      const pfnNode: WikiParserFunctionBlock = {
-        type: "parser-function",
-        functionName: tmpl.functionName || tmpl.name,
-        expression: tmpl.expression || "",
-        branches: tmpl.branches || [],
-        raw: tmpl.raw,
-        rawWikitext: tmpl.raw,
-        source: tmpl.source,
-        parseState: tmpl.parseState,
-        children: [{ text: "" }],
-      };
-      nodes.push(pfnNode);
-    } else if (tmpl.classification === "infobox") {
-      const infoboxNode: WikiInfoboxBlock = {
-        type: "infobox",
-        templateName: tmpl.name,
-        title: tmpl.params["name"] || tmpl.params["title"] || tmpl.name,
-        params: tmpl.params,
-        paramList: tmpl.paramList,
-        positional: tmpl.positional,
-        classification: "infobox",
-        raw: tmpl.raw,
-        rawWikitext: tmpl.raw,
-        source: tmpl.source,
-        parseState: tmpl.parseState,
-        children: [{ text: "" }],
-      };
-      nodes.push(infoboxNode);
-    } else {
-      const tmplNode: WikiTemplateNode = {
-        type: "template",
-        templateName: tmpl.name,
-        name: tmpl.name,
-        params: tmpl.params,
-        paramList: tmpl.paramList,
-        positional: tmpl.positional,
-        classification: tmpl.classification,
-        raw: tmpl.raw,
-        rawWikitext: tmpl.raw,
-        source: tmpl.source,
-        parseState: tmpl.parseState,
-        children: [{ text: "" }],
-      };
-      nodes.push(tmplNode);
-    }
-
+  for (const tmpl of templates.filter((t) => isBlockTemplate(t, input))) {
+    if (tmpl.source.start > cursor) parseTextBlocks(input.slice(cursor, tmpl.source.start), nodes);
+    nodes.push(templateToBlock(tmpl));
     cursor = tmpl.source.end;
   }
-
-  // Process remaining text after last template
-  if (cursor < input.length) {
-    const textChunk = input.slice(cursor);
-    parseTextBlocks(textChunk, nodes, diagnostics, cursor);
-  }
+  if (cursor < input.length) parseTextBlocks(input.slice(cursor), nodes);
 
   return {
-    ast: {
-      title,
-      slug,
-      version: 1,
-      nodes,
-      diagnostics,
-    },
+    ast: { title, slug, version: 1, nodes, diagnostics },
     diagnostics,
   };
 }
 
-function parseTextBlocks(
-  text: string,
-  nodes: WikiBlockNode[],
-  // oxlint-disable-next-line typescript/no-unused-vars
-  diagnostics: Diagnostic[],
-  // oxlint-disable-next-line typescript/no-unused-vars
-  baseOffset: number
-): void {
+const DIVIDER = /^----+$/;
+const LIST_START = /^[*#:;]/;
+const BLOCKQUOTE_START = /^<blockquote[\s>]/i;
+
+/** Lines from `from` through the first one `isLast` accepts (or the end of the text). */
+function takeThrough(lines: string[], from: number, isLast: (line: string) => boolean): string[] {
+  let end = from;
+  while (end < lines.length) {
+    const last = isLast(lines[end]!);
+    end++;
+    if (last) break;
+  }
+  return lines.slice(from, end);
+}
+
+interface BlockMatch {
+  nodes: WikiBlockNode[];
+  /** Index of the first line after the block. */
+  next: number;
+}
+
+type BlockMatcher = (lines: string[], i: number, trimmed: string) => BlockMatch | null;
+
+const paragraph = (text: string): WikiBlockNode => ({
+  type: "paragraph",
+  children: parseInlineLinksAndFormatting(text),
+});
+
+const matchDivider: BlockMatcher = (_lines, i, trimmed) =>
+  DIVIDER.test(trimmed)
+    ? { nodes: [{ type: "divider", children: [{ text: "" }] }], next: i + 1 }
+    : null;
+
+// = ... = to ====== ... ======
+const matchHeading: BlockMatcher = (_lines, i, trimmed) => {
+  const match = /^(={1,6})\s*(.+?)\s*\1$/.exec(trimmed);
+  if (!match) return null;
+  const level = match[1]!.length as 1 | 2 | 3 | 4 | 5 | 6;
+  return {
+    nodes: [{ type: "heading", level, children: parseInlineLinksAndFormatting(match[2]!) }],
+    next: i + 1,
+  };
+};
+
+// {| ... |}, with nested tables balanced
+const matchTable: BlockMatcher = (lines, i, trimmed) => {
+  if (!trimmed.startsWith("{|")) return null;
+  let depth = 1;
+  const tableLines = [
+    lines[i]!,
+    ...takeThrough(lines, i + 1, (line) => {
+      const t = line.trim();
+      if (t.startsWith("{|")) {
+        depth++;
+        return false;
+      }
+      return t.startsWith("|}") && --depth <= 0;
+    }),
+  ];
+  const rawTable = tableLines.join("\n");
+  let node: WikiBlockNode;
+  try {
+    node = parseWikitable(rawTable);
+  } catch {
+    node = {
+      type: "raw",
+      raw: rawTable,
+      rawWikitext: rawTable,
+      reason: "malformed",
+      children: [{ text: "" }],
+    };
+  }
+  return { nodes: [node], next: i + tableLines.length };
+};
+
+// Lists: * or # or : or ;. A switch between bullet and numbered lists starts a new list.
+const matchList: BlockMatcher = (lines, i, trimmed) => {
+  if (!LIST_START.test(trimmed)) return null;
+  const firstChar = trimmed[0]!;
+  const switchesKind = (next: string) =>
+    (firstChar === "*" && next === "#") || (firstChar === "#" && next === "*");
+
+  let end = i + 1;
+  while (end < lines.length) {
+    const next = lines[end]!.trim();
+    if (!LIST_START.test(next) || switchesKind(next[0]!)) break;
+    end++;
+  }
+  return { nodes: [parseWikiList(lines.slice(i, end))], next: end };
+};
+
+// <pre>...</pre>. The first line is not checked for the closing tag.
+const matchPre: BlockMatcher = (lines, i, trimmed) => {
+  if (!trimmed.startsWith("<pre")) return null;
+  const preLines = [lines[i]!, ...takeThrough(lines, i + 1, (line) => line.includes("</pre>"))];
+  const rawPre = preLines.join("\n");
+  const code = /<pre[^>]*>([\s\S]*?)<\/pre>/i.exec(rawPre)?.[1] ?? rawPre;
+  return {
+    nodes: [{ type: "code-block", code, children: [{ text: code }] }],
+    next: i + preLines.length,
+  };
+};
+
+// <blockquote>...</blockquote>, the serializer's output for quote blocks
+const matchBlockquote: BlockMatcher = (lines, i, trimmed) => {
+  if (!BLOCKQUOTE_START.test(trimmed)) return null;
+  const closes = (line: string) => /<\/blockquote>/i.test(line);
+  const quoteLines = [lines[i]!, ...(closes(lines[i]!) ? [] : takeThrough(lines, i + 1, closes))];
+  const rawQuote = quoteLines.join("\n");
+  const next = i + quoteLines.length;
+
+  const quoteMatch = /^\s*<blockquote[^>]*>([\s\S]*?)<\/blockquote>([\s\S]*)$/i.exec(rawQuote);
+  // Unclosed tag: keep the text verbatim rather than drop it
+  if (!quoteMatch) return { nodes: [paragraph(rawQuote)], next };
+
+  const nodes: WikiBlockNode[] = [
+    { type: "blockquote", children: parseInlineLinksAndFormatting(quoteMatch[1]!.trim()) },
+  ];
+  const trailing = quoteMatch[2]!.trim();
+  if (trailing) nodes.push(paragraph(trailing));
+  return { nodes, next };
+};
+
+const BLOCK_MATCHERS = [
+  matchDivider,
+  matchHeading,
+  matchTable,
+  matchList,
+  matchPre,
+  matchBlockquote,
+];
+
+/** True when a trimmed line begins a block of its own, ending any paragraph before it. */
+function startsNewBlock(trimmed: string): boolean {
+  return (
+    trimmed === "" ||
+    /^={1,6}\s/.test(trimmed) ||
+    trimmed.startsWith("{|") ||
+    LIST_START.test(trimmed) ||
+    DIVIDER.test(trimmed) ||
+    trimmed.startsWith("<pre") ||
+    BLOCKQUOTE_START.test(trimmed)
+  );
+}
+
+function parseTextBlocks(text: string, nodes: WikiBlockNode[]): void {
   const lines = text.split("\n");
   let i = 0;
 
   while (i < lines.length) {
-    const line = lines[i]!;
-    const trimmed = line.trim();
-
-    // Empty lines
+    const trimmed = lines[i]!.trim();
     if (trimmed === "") {
       i++;
       continue;
     }
 
-    // 1. Divider: ----
-    if (/^----+$/.test(trimmed)) {
-      const divider: DividerBlock = {
-        type: "divider",
-        children: [{ text: "" }],
-      };
-      nodes.push(divider);
-      i++;
+    let match: BlockMatch | null = null;
+    for (const matcher of BLOCK_MATCHERS) {
+      match = matcher(lines, i, trimmed);
+      if (match) break;
+    }
+    if (match) {
+      nodes.push(...match.nodes);
+      i = match.next;
       continue;
     }
 
-    // 2. Headings: = ... = to ====== ... ======
-    const headingMatch = /^(={1,6})\s*(.+?)\s*\1$/.exec(trimmed);
-    if (headingMatch) {
-      const level = Math.min(6, Math.max(1, headingMatch[1]!.length)) as 1 | 2 | 3 | 4 | 5 | 6;
-      const content = headingMatch[2]!;
-      const inlines = parseInlineLinksAndFormatting(content);
-      const headingNode: WikiHeadingBlock = {
-        type: "heading",
-        level,
-        children: inlines,
-      };
-      nodes.push(headingNode);
-      i++;
-      continue;
-    }
-
-    // 3. Wikitables: {| ... |}
-    if (trimmed.startsWith("{|")) {
-      const tableLines: string[] = [line];
-      let tableDepth = 1;
-      i++;
-      while (i < lines.length) {
-        const curLine = lines[i]!;
-        tableLines.push(curLine);
-        const curTrim = curLine.trim();
-        if (curTrim.startsWith("{|")) {
-          tableDepth++;
-        } else if (curTrim.startsWith("|}") || curTrim === "|}") {
-          tableDepth--;
-          if (tableDepth <= 0) {
-            i++;
-            break;
-          }
-        }
-        i++;
-      }
-      const rawTable = tableLines.join("\n");
-      try {
-        const tableNode = parseWikitable(rawTable);
-        nodes.push(tableNode);
-      } catch (_e) {
-        nodes.push({
-          type: "raw",
-          raw: rawTable,
-          rawWikitext: rawTable,
-          reason: "malformed",
-          children: [{ text: "" }],
-        });
-      }
-      continue;
-    }
-
-    // 4. Lists: * or # or : or ;
-    if (/^[*#:\;]/.test(trimmed)) {
-      const firstChar = trimmed[0]!;
-      const listLines: string[] = [line];
-      i++;
-      while (i < lines.length) {
-        const nextTrimmed = lines[i]!.trim();
-        if (!/^[*#:\;]/.test(nextTrimmed)) break;
-        const nextFirstChar = nextTrimmed[0]!;
-        // Separate transitions between bullet (*) and numbered (#) lists
-        if (
-          (firstChar === "*" && nextFirstChar === "#") ||
-          (firstChar === "#" && nextFirstChar === "*")
-        ) {
-          break;
-        }
-        listLines.push(lines[i]!);
-        i++;
-      }
-      const listNode = parseWikiList(listLines);
-      nodes.push(listNode);
-      continue;
-    }
-
-    // 5. Code block / pre: <pre>...</pre>
-    if (trimmed.startsWith("<pre")) {
-      const preLines: string[] = [line];
-      i++;
-      while (i < lines.length) {
-        const curLine = lines[i]!;
-        preLines.push(curLine);
-        if (curLine.includes("</pre>")) {
-          i++;
-          break;
-        }
-        i++;
-      }
-      const rawPre = preLines.join("\n");
-      const codeMatch = /<pre[^>]*>([\s\S]*?)<\/pre>/i.exec(rawPre);
-      const codeContent = codeMatch ? codeMatch[1]! : rawPre;
-      nodes.push({
-        type: "code-block",
-        code: codeContent,
-        children: [{ text: codeContent }],
-      });
-      continue;
-    }
-
-    // 6. Blockquote: <blockquote>...</blockquote> (the serializer's output for quote blocks)
-    if (/^<blockquote[\s>]/i.test(trimmed)) {
-      const quoteLines: string[] = [line];
-      i++;
-      if (!/<\/blockquote>/i.test(line)) {
-        while (i < lines.length) {
-          const curLine = lines[i]!;
-          quoteLines.push(curLine);
-          i++;
-          if (/<\/blockquote>/i.test(curLine)) break;
-        }
-      }
-      const rawQuote = quoteLines.join("\n");
-      const quoteMatch = /^\s*<blockquote[^>]*>([\s\S]*?)<\/blockquote>([\s\S]*)$/i.exec(rawQuote);
-      if (!quoteMatch) {
-        // Unclosed tag: keep the text verbatim rather than drop it
-        nodes.push({ type: "paragraph", children: parseInlineLinksAndFormatting(rawQuote) });
-        continue;
-      }
-      const quoteNode: QuoteBlock = {
-        type: "blockquote",
-        children: parseInlineLinksAndFormatting(quoteMatch[1]!.trim()),
-      };
-      nodes.push(quoteNode);
-      const trailing = quoteMatch[2]!.trim();
-      if (trailing) {
-        nodes.push({ type: "paragraph", children: parseInlineLinksAndFormatting(trailing) });
-      }
-      continue;
-    }
-
-    // 7. Regular Paragraph: gather consecutive non-empty lines
-    const pLines: string[] = [line];
-    i++;
-    while (
-      i < lines.length &&
-      lines[i]!.trim() !== "" &&
-      !/^={1,6}\s/.test(lines[i]!.trim()) &&
-      !lines[i]!.trim().startsWith("{|") &&
-      !/^[*#:\;]/.test(lines[i]!.trim()) &&
-      !/^----+$/.test(lines[i]!.trim()) &&
-      !lines[i]!.trim().startsWith("<pre") &&
-      !/^<blockquote[\s>]/i.test(lines[i]!.trim())
-    ) {
-      pLines.push(lines[i]!);
-      i++;
-    }
-
-    const pText = pLines.join("\n");
-    const inlines = parseInlineLinksAndFormatting(pText);
-    nodes.push({
-      type: "paragraph",
-      children: inlines,
-    });
+    // Regular paragraph: consecutive lines up to the next block start
+    let end = i + 1;
+    while (end < lines.length && !startsNewBlock(lines[end]!.trim())) end++;
+    nodes.push(paragraph(lines.slice(i, end).join("\n")));
+    i = end;
   }
 }
 
-function isBlockTemplate(
-  tmpl: ParsedTemplate,
-  fullText: string
-): boolean {
-  // Infoboxes are always block-level
+/** A template is block-level when it is alone on its lines (infoboxes always are). */
+function isBlockTemplate(tmpl: ParsedTemplate, fullText: string): boolean {
   if (tmpl.classification === "infobox") return true;
 
-  // Check preceding text on the line
   const lineStart = fullText.lastIndexOf("\n", tmpl.source.start - 1);
   const beforeOnLine = fullText.slice(lineStart === -1 ? 0 : lineStart + 1, tmpl.source.start);
 
-  // Check following text on the line
   const nextNewline = fullText.indexOf("\n", tmpl.source.end);
   const afterOnLine = fullText.slice(
     tmpl.source.end,
     nextNewline === -1 ? fullText.length : nextNewline
   );
 
-  // If there is preceding or trailing non-whitespace text on the same line,
-  // it is embedded inside inline text (paragraph, heading, list item, etc.)
-  if (beforeOnLine.trim() !== "") return false;
-  if (afterOnLine.trim() !== "") return false;
-
-  return true;
+  // Text before or after it on the same line means it is embedded in a paragraph, heading or list item.
+  return beforeOnLine.trim() === "" && afterOnLine.trim() === "";
 }
