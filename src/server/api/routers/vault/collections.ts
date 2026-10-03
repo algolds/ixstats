@@ -11,11 +11,19 @@
  */
 
 import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
 import {
   createTRPCRouter,
   protectedProcedure,
   rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
+
+async function requireOwnCollection(db: PrismaClient, collectionId: string, userId: string) {
+  const existing = await db.cardCollection.findUnique({ where: { id: collectionId } });
+  if (!existing || existing.userId !== userId) {
+    throw new Error("Collection not found or not owned by you");
+  }
+}
 
 export const vaultCollectionsRouter = createTRPCRouter({
   /**
@@ -133,12 +141,7 @@ export const vaultCollectionsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const existing = await ctx.db.cardCollection.findUnique({
-          where: { id: input.collectionId },
-        });
-        if (!existing || existing.userId !== ctx.user.id) {
-          throw new Error("Collection not found or not owned by you");
-        }
+        await requireOwnCollection(ctx.db, input.collectionId, ctx.user.id);
 
         await ctx.db.cardCollection.update({
           where: { id: input.collectionId },
@@ -163,12 +166,7 @@ export const vaultCollectionsRouter = createTRPCRouter({
     .input(z.object({ collectionId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const existing = await ctx.db.cardCollection.findUnique({
-          where: { id: input.collectionId },
-        });
-        if (!existing || existing.userId !== ctx.user.id) {
-          throw new Error("Collection not found or not owned by you");
-        }
+        await requireOwnCollection(ctx.db, input.collectionId, ctx.user.id);
 
         await ctx.db.cardCollection.delete({ where: { id: input.collectionId } });
         return { success: true };
