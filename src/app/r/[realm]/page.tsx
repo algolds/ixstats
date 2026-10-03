@@ -3,7 +3,7 @@
 import { use } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { OpenBook } from "iconoir-react";
+import { Globe, OpenBook } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { createUrl } from "~/lib/utils";
@@ -52,7 +52,19 @@ export default function RealmPage({ params }: { params: Promise<{ realm: string 
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-8">
-      <PageHeader title={realm.name} subtitle={realm.description} />
+      <PageHeader
+        title={realm.name}
+        subtitle={realm.description}
+        leading={
+          <div className="border-separator bg-fill-3 rounded-card flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden border">
+            {realm.thumbnail ? (
+              <img src={realm.thumbnail} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <Globe className="h-7 w-7" />
+            )}
+          </div>
+        }
+      />
 
       <section className="border-separator bg-surface rounded-card border p-6">
         <div className="mb-3 flex items-center justify-between gap-2">

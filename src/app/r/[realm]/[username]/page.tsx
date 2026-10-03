@@ -61,6 +61,20 @@ export default function RealmPassportPage({
       <PageHeader
         title={displayName}
         subtitle={`@${handle} · Realm passport in ${realmName}`}
+        leading={
+          <div className="bg-fill-3 text-label rounded-card text-title-2 flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden border font-mono">
+            {account?.clerkImageUrl ? (
+              <img
+                src={account.clerkImageUrl}
+                alt={displayName}
+                className="h-full w-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              displayName.charAt(0).toUpperCase()
+            )}
+          </div>
+        }
         actions={
           <>
             <Link href={`/r/${encodeURIComponent(realm)}`} className={LINK_CLASS}>

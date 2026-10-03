@@ -33,6 +33,8 @@ export interface PageHeaderProps {
   subtitle?: React.ReactNode;
   /** Back button in the toolbar. */
   back?: { href: string; label?: string };
+  /** Thumbnail or avatar before the large title, centred with it (not in the collapsed title). */
+  leading?: React.ReactNode;
   /** Trailing toolbar actions (buttons, a dropdown menu). */
   actions?: React.ReactNode;
   className?: string;
@@ -69,7 +71,7 @@ function useCollapsed(
   return collapsed;
 }
 
-export function PageHeader({ title, subtitle, back, actions, className }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, back, leading, actions, className }: PageHeaderProps) {
   const toolbarRef = React.useRef<HTMLDivElement>(null);
   const titleRef = React.useRef<HTMLHeadingElement>(null);
   const collapsed = useCollapsed(toolbarRef, titleRef);
@@ -132,13 +134,16 @@ export function PageHeader({ title, subtitle, back, actions, className }: PageHe
         </div>
       </div>
 
-      <div className="flex flex-col gap-1 px-2 pt-2 pb-4">
-        <h1 ref={titleRef} className="text-large-title text-label">
-          {title}
-        </h1>
-        {subtitle != null && subtitle !== false && (
-          <div className="text-callout text-label-secondary max-w-2xl">{subtitle}</div>
-        )}
+      <div className="flex items-center gap-4 px-2 pt-2 pb-4">
+        {leading}
+        <div className="flex min-w-0 flex-col gap-1">
+          <h1 ref={titleRef} className="text-large-title text-label">
+            {title}
+          </h1>
+          {subtitle != null && subtitle !== false && (
+            <div className="text-callout text-label-secondary max-w-2xl">{subtitle}</div>
+          )}
+        </div>
       </div>
     </header>
   );
