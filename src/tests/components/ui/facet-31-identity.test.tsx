@@ -83,8 +83,8 @@ describe("acrylic and hero materials", () => {
 describe("primary actions", () => {
   it("the default Button paints the primary role, not the tint", () => {
     const cls = buttonVariants({ variant: "default" });
-    expect(cls).toContain("bg-primary");
-    expect(cls).toContain("text-primary-foreground");
+    expect(cls).toContain("bg-primary-fill");
+    expect(cls).toContain("text-on-primary");
     expect(cls).not.toMatch(/\bbg-tint\b/);
   });
 
@@ -110,7 +110,7 @@ describe("primary actions", () => {
 
 describe("press and lift physics", () => {
   it("Button presses with a colour change, not a scale", () => {
-    expect(buttonVariants()).toContain("active:bg-primary/80");
+    expect(buttonVariants()).toContain("active:opacity-80");
     expect(buttonVariants()).not.toMatch(/\bfacet-press\b/);
     expect(buttonVariants()).not.toContain("scale-");
   });

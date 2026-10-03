@@ -11,8 +11,8 @@ import { Switch } from "~/components/ui/switch";
 
 describe("Button", () => {
   it("maps styles to role tokens", () => {
-    expect(buttonVariants({ variant: "default" })).toContain("bg-primary");
-    expect(buttonVariants({ variant: "default" })).toContain("text-primary-foreground");
+    expect(buttonVariants({ variant: "default" })).toContain("bg-primary-fill");
+    expect(buttonVariants({ variant: "default" })).toContain("text-on-primary");
     expect(buttonVariants({ variant: "default" })).not.toContain("bg-tint");
     expect(buttonVariants({ variant: "secondary" })).toContain("bg-fill-3");
     expect(buttonVariants({ variant: "outline" })).toContain("border-separator");
