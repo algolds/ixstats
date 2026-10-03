@@ -9,8 +9,7 @@
  * Attributes written: `data-theme` (+ legacy `.light`/`.dark` class), `data-density`
  * (+ legacy `.compact-mode` / `data-compact`), `data-motion="reduced"` (+ legacy
  * `.reduce-animations` / `data-reduce-animations`), `data-contrast="more"`,
- * `data-transparency="reduced"`, `data-sound="off"`, `--text-scale`, `data-enable-textures` and
- * `data-interactive-hover`.
+ * `data-transparency="reduced"`, `data-sound="off"`, `--text-scale`, and `data-enable-textures`.
  *
  * `applyAppearance` and `initAppearanceFromStorage` are serialised with Function#toString into
  * the inline script, so they must stay self-contained: no imports, no outer references, ES5-ish.
@@ -21,7 +20,6 @@ export const APPEARANCE_STORAGE_KEYS = {
   compactMode: "ixstats-compact-mode",
   reduceAnimations: "ixstats-reduce-animations",
   enableTextures: "ixstats-enable-textures",
-  interactiveHover: "ixstats-interactive-hover",
   increaseContrast: "ixstats-increase-contrast",
   reduceTransparency: "ixstats-reduce-transparency",
   textScale: "ixstats-text-scale",
@@ -37,7 +35,6 @@ export interface AppearanceState {
   compact: boolean;
   reduceMotion: boolean;
   enableTextures: boolean;
-  interactiveHover: boolean;
   increaseContrast: boolean;
   reduceTransparency: boolean;
   soundOff: boolean;
@@ -80,7 +77,6 @@ export function applyAppearance(root: HTMLElement, s: AppearanceState): void {
   else root.style.removeProperty("--text-scale");
 
   root.setAttribute("data-enable-textures", String(s.enableTextures));
-  root.setAttribute("data-interactive-hover", String(s.interactiveHover));
 }
 
 /**
@@ -116,7 +112,6 @@ export function initAppearanceFromStorage(
     compact: bool(keys.compactMode, false),
     reduceMotion: bool(keys.reduceAnimations, false),
     enableTextures: bool(keys.enableTextures, true),
-    interactiveHover: bool(keys.interactiveHover, true),
     increaseContrast: bool(keys.increaseContrast, false),
     reduceTransparency: bool(keys.reduceTransparency, false),
     soundOff: read(keys.soundEnabled) === "false",
