@@ -28,9 +28,9 @@ interface PostActionsProps {
   postId: string;
   currentUserAccountId: string;
   post: any;
-  accounts: any[];
-  countryId: string;
-  isOwner: boolean;
+  accounts?: any[];
+  countryId?: string;
+  isOwner?: boolean;
   onAccountSelect?: (account: any) => void;
   onAccountSettings?: (account: any) => void;
   onCreateAccount?: () => void;
@@ -48,9 +48,9 @@ export function PostActions({
   postId,
   currentUserAccountId,
   post,
-  accounts,
-  countryId,
-  isOwner,
+  accounts = [],
+  countryId = "",
+  isOwner = false,
   onAccountSelect,
   onAccountSettings,
   onCreateAccount,

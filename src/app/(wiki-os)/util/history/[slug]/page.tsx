@@ -49,7 +49,6 @@ export default function HistoryPage() {
         {/* Interactive Scrubbable Timeline */}
         <ScrubbableRevisionTimeline
           title={title}
-          slug={rawSlug}
           revisions={mappedRevisions}
           isLoading={isLoading}
         />
