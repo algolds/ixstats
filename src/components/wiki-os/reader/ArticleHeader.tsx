@@ -68,6 +68,9 @@ export interface ArticleHeaderProps {
       metadata: string | null;
     }>;
   } | null;
+  /** Number of headings in the article; the Contents button hides at 0. */
+  tocLength?: number;
+  onTocClick?: () => void;
 }
 
 const YELLOW_BADGE = "border-yellow/20 bg-yellow/10 text-yellow-ink hover:bg-yellow/20";
