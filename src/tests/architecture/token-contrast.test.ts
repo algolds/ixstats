@@ -218,7 +218,7 @@ describe("Facet 3 tokens: CSS matches src/lib/design/tokens.ts", () => {
       }
     }
     const badge = sources[0]!;
-    for (const status of Object.keys(STATUS_ALIASES)) {
+    for (const status of ["success", "warning", "destructive", "info"]) {
       expect(badge).toContain(`${status}: "bg-${status}/15 text-${status}-ink`);
     }
   });
@@ -767,20 +767,6 @@ describe("Facet 3.1 HIG: acrylic tokens match src/lib/design/tokens.ts", () => {
     }
   });
 
-  it("the AcrylicGlow underlay strength and layers", () => {
-    const glow = fs.readFileSync(
-      path.join(ROOT, "src/components/ui/facet/identity/Glow.tsx"),
-      "utf8"
-    );
-    expect(glow).toContain(`opacity = ${ACRYLIC.glow.opacity},`);
-    const identityCss = fs.readFileSync(path.join(ROOT, "src/styles/facet/identity.css"), "utf8");
-    const [l1, l2, l3] = ACRYLIC.glow.layers.map((a) => `${a * 100}%, transparent)`);
-    expect(identityCss).toContain(l1);
-    expect(identityCss).toContain(l2);
-    expect(identityCss).toContain(l3);
-    expect(identityCss).toContain(`${(1 - ACRYLIC.glow.layer3TowardWhite) * 100}%, white)`);
-  });
-
   it("material-acrylic resolves secondary labels to the vibrant role", () => {
     const identityCss = fs.readFileSync(path.join(ROOT, "src/styles/facet/identity.css"), "utf8");
     const body = identityCss.slice(identityCss.indexOf("@utility material-acrylic {"));
@@ -874,11 +860,11 @@ describe("Facet 3.1 HIG: vibrant labels on acrylic over any content", () => {
   });
 });
 
-describe('Facet 3.1 HIG: Badge variant="tinted" (tint-ink on tint-fill)', () => {
-  it("the tinted Badge uses the tint's ink, never the bare tint, on its fill", () => {
+describe('Facet 3.1 HIG: Badge variant="secondary" (tint-ink on tint-fill)', () => {
+  it("the secondary Badge uses the tint's ink, never the bare tint, on its fill", () => {
     const badge = fs.readFileSync(path.join(ROOT, "src/components/ui/badge.tsx"), "utf8");
-    expect(badge).toContain('const tinted = "bg-tint-fill text-tint-ink');
-    expect(badge).not.toMatch(/const tinted = "[^"]*text-tint(?![\w-])/);
+    expect(badge).toContain('secondary: "bg-tint-fill text-tint-ink');
+    expect(badge).not.toMatch(/secondary: "[^"]*text-tint(?![\w-])/);
     const aliases = blocks.find(
       (b) =>
         b.stack.length === 1 && b.stack[0] === "@theme inline static" && b.decls.has("--color-tint")

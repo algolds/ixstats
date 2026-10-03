@@ -3,7 +3,7 @@
 // src/app/labs/onoma/components/nav/OnomaHeader.tsx
 // Onoma page header (Product Model: CREATE · STUDIO · EXPLORE). Facet 3 chrome: the wordmark and
 // utility buttons sit on the grouped page; the pillar console is a thin material toolbar holding the
-// pillar and section tabs (FacetTabs), or the Stash/Settings return bar.
+// pillar and section tabs (SegmentedControl), or the Stash/Settings return bar.
 
 import React from "react";
 import Link from "next/link";

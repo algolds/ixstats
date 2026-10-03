@@ -18,12 +18,7 @@ interface GlassPanelProps {
   children: React.ReactNode;
 }
 
-/**
- * GlassPanel — the v2 (c5c6b382) frosted MyCountry panel on the Facet 3.1 glass hero tier:
- * `FacetCard variant="glass"` with the section `accent` (spec §16.8) re-tinting the glass wash,
- * tinted border and shadow — v2's `ACCENT_CLASSES` border + gradient tint, without a hand-rolled
- * blur. Inside another glass surface it renders opaque (glass never nests).
- */
+/** The frosted MyCountry panel: a hero `Card`. */
 export function GlassPanel({
   accent = "neutral",
   interactive = false,

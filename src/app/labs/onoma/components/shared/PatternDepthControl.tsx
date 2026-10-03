@@ -107,7 +107,7 @@ export function PatternDepthControl({
     PATTERN_DEPTH_LEVELS.find((l) => l.depth === value) ?? PATTERN_DEPTH_LEVELS[1]!;
 
   // Memoize segment items with chromatic thought level themes
-  const depthFacetTabs = useMemo(() => {
+  const depthOptions = useMemo(() => {
     return PATTERN_DEPTH_LEVELS.map((level) => {
       const isSelected = level.depth === value;
       return {
@@ -209,7 +209,7 @@ export function PatternDepthControl({
       )}
 
       <SegmentedControl
-        options={depthFacetTabs}
+        options={depthOptions}
         value={String(value)}
         onValueChange={(id) => onChange(parseInt(id, 10))}
         size="sm"

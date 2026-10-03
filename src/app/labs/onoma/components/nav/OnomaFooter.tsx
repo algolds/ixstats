@@ -1,6 +1,6 @@
 "use client";
 // src/app/labs/onoma/components/nav/OnomaFooter.tsx
-// ⟨ONOMA⟩ footer: an opaque FacetCard with a corner symbol watermark, sitemap and legal links.
+// ⟨ONOMA⟩ footer: an opaque Card with a corner symbol watermark, sitemap and legal links.
 
 import React from "react";
 import Link from "next/link";

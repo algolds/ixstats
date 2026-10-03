@@ -17,7 +17,7 @@ interface PassportStatGridProps {
   onOpenVault: () => void;
 }
 
-/** An inset panel (`FacetCard variant="inset"` styling on a button or link). */
+/** An inset panel (`Card variant="inset"` styling on a button or link). */
 const STAT_CELL = cn("bg-surface-secondary text-label rounded-row", "w-full p-3");
 /** v2 cells: a rim in the cell's accent on hover and keyboard focus, and the press scale. */
 const STAT_CELL_INTERACTIVE =

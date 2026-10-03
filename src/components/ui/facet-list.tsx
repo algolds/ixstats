@@ -27,7 +27,7 @@ import type { SwipeAction, SwipeCommitAction } from "~/components/ui/facet/swipe
 
 /**
  * `"inset"` (default): each section is an opaque rounded group — for grouped pages and sheets.
- * `"plain"`: no group background or radius — for a list inside a `FacetCard`.
+ * `"plain"`: no group background or radius — for a list inside a `Card`.
  */
 export type FacetListVariant = "inset" | "plain";
 

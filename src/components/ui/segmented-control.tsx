@@ -192,6 +192,7 @@ export function SegmentedControl<T extends string = string>({
           {hasBadge && (
             <span
               aria-hidden
+              data-slot="segmented-control-badge"
               className={cn(
                 "text-caption inline-flex min-w-5 items-center justify-center rounded-full px-1 tabular-nums",
                 selected ? "bg-tint-fill text-tint" : "bg-fill-3 text-label-secondary"
@@ -241,7 +242,6 @@ export function SegmentedControl<T extends string = string>({
     <ToggleGroupPrimitive.Root
       ref={trackRef}
       type="single"
-      role="radiogroup"
       value={value ?? ""}
       onValueChange={select}
       disabled={disabled}
