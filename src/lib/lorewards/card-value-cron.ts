@@ -147,10 +147,6 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
         // Calculate current market value
         const currentValue = await getCardMarketValue(db as any, card.id);
 
-        // Calculate sale statistics from recent CardOwnership trades
-        const recentSales = card.CardOwnership.filter(
-          (ownership: any) => ownership.lastSalePrice !== null && ownership.lastSalePrice > 0
-        );
         // Save value history entry
         await db.cardValueHistory.create({
           data: {

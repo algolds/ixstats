@@ -207,7 +207,6 @@ export class IxTimeAccuracyVerifier {
 
     // According to IxTime implementation, the pivot points are hardcoded:
     // July 27, 2025 00:00:00 UTC should equal January 1, 2040 IxTime
-    const PIVOT_POINT_REAL = new Date("2025-07-27T00:00:00.000Z").getTime();
     const PIVOT_POINT_IXTIME = new Date("2040-01-01T00:00:00.000Z").getTime();
 
     // At the exact transition point, the calculated IxTime should equal the pivot
@@ -272,7 +271,6 @@ export class IxTimeAccuracyVerifier {
     const calculatedIxTime = this.calculateExpectedIxTime(testRealTime);
 
     // Calculate expected using pivot point logic
-    const PIVOT_POINT_REAL = new Date("2025-07-27T00:00:00.000Z").getTime();
     const PIVOT_POINT_IXTIME = new Date("2040-01-01T00:00:00.000Z").getTime();
     const realTimeUntilPivot = (PIVOT_POINT_REAL - testRealTime) / 1000;
     const ixTimeBeforePivot = realTimeUntilPivot * 4.0 * 1000; // 4x speed
@@ -303,7 +301,6 @@ export class IxTimeAccuracyVerifier {
     const calculatedIxTime = this.calculateExpectedIxTime(testRealTime);
 
     // Calculate expected using pivot point logic
-    const PIVOT_POINT_REAL = new Date("2025-07-27T00:00:00.000Z").getTime();
     const PIVOT_POINT_IXTIME = new Date("2040-01-01T00:00:00.000Z").getTime();
     const realTimeElapsed = (testRealTime - PIVOT_POINT_REAL) / 1000;
     const ixTimeElapsed = realTimeElapsed * 2.0 * 1000; // 2x speed
@@ -463,7 +460,6 @@ export class IxTimeAccuracyVerifier {
   // Main testing methods
 
   public static runAllTests(): TimeSimulationResult {
-    const startTime = performance.now();
     const results: Array<{ test: TimeAccuracyTest; result: AccuracyResult }> = [];
     const categoryResults: Record<string, { passed: number; failed: number; accuracy: number }> =
       {};
