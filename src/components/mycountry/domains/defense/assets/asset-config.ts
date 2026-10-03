@@ -1,5 +1,3 @@
-// Asset Manager configuration, types and pure helpers (no JSX).
-
 import {
   Airplane as Plane,
   DeliveryTruck as Ship,
@@ -12,7 +10,6 @@ import type { AssetTypeKey, EquipmentPreset } from "~/lib/military/player-catalo
 
 export type { EquipmentPreset } from "~/lib/military/player-catalog";
 
-// Define a more specific type for our asset
 export interface Asset {
   id: string;
   name: string;
@@ -68,9 +65,14 @@ export interface AssetFormData {
   imageUrl: string;
 }
 
+const parseAssetType = (value?: string): AssetTypeKey =>
+  value && isAssetTypeKey(value) ? value : "aircraft";
+const parseAssetStatus = (value?: string): AssetStatusKey =>
+  value && isAssetStatusKey(value) ? value : "operational";
+
 export function toFormData(asset: Asset | null): AssetFormData {
   return {
-    assetType: asset && isAssetTypeKey(asset.assetType) ? asset.assetType : "aircraft",
+    assetType: parseAssetType(asset?.assetType),
     category: asset?.category ?? "",
     name: asset?.name ?? "",
     quantity: asset?.quantity ?? 1,
@@ -78,7 +80,7 @@ export function toFormData(asset: Asset | null): AssetFormData {
     capability: asset?.capability ?? "",
     range: 0,
     payload: 0,
-    status: asset && isAssetStatusKey(asset.status) ? asset.status : "operational",
+    status: parseAssetStatus(asset?.status),
     modernizationLevel: asset?.modernizationLevel ?? 50,
     acquisitionCost: asset?.acquisitionCost ?? 0,
     maintenanceCost: asset?.maintenanceCost ?? 0,
