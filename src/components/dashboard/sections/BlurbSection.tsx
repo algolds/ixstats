@@ -110,6 +110,147 @@ export function BlurbSection() {
   );
 }
 
+type BlurbPrompt = {
+  id: string;
+  title?: string;
+  question: string;
+  slug?: string;
+  _count?: { responses: number };
+};
+
+const MAX_RESPONSE = 1000;
+const SECTION = "border-separator bg-surface-secondary border-b px-5";
+
+/** The draft lives in the modal so it survives closing and reopening it. */
+function BlurbResponseForm({
+  promptId,
+  text,
+  setText,
+}: {
+  promptId: string;
+  text: string;
+  setText: (text: string) => void;
+}) {
+  const utils = api.useUtils();
+  const submit = api.blurbs.submitResponse.useMutation({
+    onSuccess: () => {
+      setText("");
+      utils.blurbs.getResponsesForPrompt.invalidate({ promptId });
+      utils.blurbs.getMyResponse.invalidate({ promptId });
+      utils.blurbs.getActivePrompts.invalidate();
+      utils.blurbs.getBlurbCount.invalidate();
+    },
+  });
+
+  return (
+    <div className={cn(SECTION, "py-4")}>
+      <div className="flex flex-col gap-2">
+        <div className="border-separator bg-surface rounded-row focus-within:border-tint relative border transition-colors">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Write your response"
+            maxLength={MAX_RESPONSE}
+            rows={3}
+            aria-label="Your response"
+            className="text-label placeholder:text-label-tertiary text-body w-full resize-none bg-transparent px-3 py-2 focus:outline-none"
+          />
+          <div className="border-separator text-footnote flex items-center justify-between border-t px-3 py-2">
+            <span
+              className={cn(
+                "tabular-nums transition-colors",
+                text.length > 900 ? "text-caution" : "text-label-secondary"
+              )}
+            >
+              {text.length} / {MAX_RESPONSE}
+            </span>
+            <Button
+              size="sm"
+              variant="default"
+              onClick={() => submit.mutate({ promptId, content: text })}
+              disabled={!text.trim() || text.length > MAX_RESPONSE || submit.isPending}
+            >
+              {submit.isPending ? (
+                <>
+                  <Loader2 aria-hidden className="animate-spin" />
+                  <span>Submitting</span>
+                </>
+              ) : (
+                <>
+                  <Send aria-hidden />
+                  <span>Submit response</span>
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+        {submit.error && (
+          <p role="alert" className="text-footnote text-destructive">
+            {submit.error.message}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function BlurbResponseCard({ response: r }: { response: any }) {
+  const countryName = r.country?.name ?? r.user?.country?.name ?? "Unknown";
+  const countryFlag = r.country?.flag ?? r.user?.country?.flag;
+  const articles: { title: string; url: string }[] = Array.isArray(r.linkedArticles)
+    ? r.linkedArticles
+    : [];
+
+  return (
+    <div
+      className={cn(
+        "rounded-row bg-surface-secondary border p-3",
+        r.featured ? "border-caution/40" : "border-transparent"
+      )}
+    >
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {countryFlag ? (
+            <img src={countryFlag} alt="" className="h-3.5 w-5 rounded-xs object-cover" />
+          ) : (
+            <UnifiedCountryFlag
+              showTooltip={false}
+              countryName={countryName}
+              size="sm"
+              className="shrink-0"
+            />
+          )}
+          <span className="text-label text-headline">{countryName}</span>
+          {r.featured && <Badge variant="warning">Featured</Badge>}
+        </div>
+
+        {r.createdAt && (
+          <span className="text-label-tertiary text-footnote tabular-nums">
+            {formatRelativeTime(r.createdAt)}
+          </span>
+        )}
+      </div>
+
+      <p className="text-label text-callout whitespace-pre-wrap select-text">{r.content}</p>
+
+      {articles.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {articles.map((article, i) => (
+            <Link
+              key={i}
+              href={article.url}
+              className="text-tint text-footnote inline-flex items-center gap-1 underline underline-offset-2"
+            >
+              <ExternalLink aria-hidden className="size-3.5" />
+              {article.title}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function BlurbResponseModal({
   open,
   onCloseAction,
@@ -117,17 +258,10 @@ function BlurbResponseModal({
 }: {
   open: boolean;
   onCloseAction: () => void;
-  prompt: {
-    id: string;
-    title?: string;
-    question: string;
-    slug?: string;
-    _count?: { responses: number };
-  };
+  prompt: BlurbPrompt;
 }) {
-  const [newResponse, setNewResponse] = useState("");
-  const utils = api.useUtils();
   const { isSignedIn } = useUser();
+  const [draft, setDraft] = useState("");
 
   const {
     data: responsesData,
@@ -148,23 +282,12 @@ function BlurbResponseModal({
     { enabled: open && !!isSignedIn }
   );
 
-  const submitMutation = api.blurbs.submitResponse.useMutation({
-    onSuccess: () => {
-      setNewResponse("");
-      utils.blurbs.getResponsesForPrompt.invalidate({ promptId: prompt.id });
-      utils.blurbs.getMyResponse.invalidate({ promptId: prompt.id });
-      utils.blurbs.getActivePrompts.invalidate();
-      utils.blurbs.getBlurbCount.invalidate();
-    },
-  });
-
   const responses = responsesData?.pages.flatMap((p: any) => p.responses) ?? [];
   const totalCount = prompt._count?.responses ?? responses.length;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onCloseAction()}>
       <DialogContent className="flex max-h-[85vh] max-w-lg flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
-        {/* Header */}
         <DialogHeader className="border-separator border-b px-5 py-4 text-left">
           <div className="flex items-start gap-3">
             <Quote aria-hidden className="text-tint mt-1 size-5 shrink-0" />
@@ -180,161 +303,42 @@ function BlurbResponseModal({
           </div>
         </DialogHeader>
 
-        {/* Submission Form (If signed in and not yet responded) */}
-        {isSignedIn && !myResponse && (
-          <div className="border-separator bg-surface-secondary border-b px-5 py-4">
-            <div className="flex flex-col gap-2">
-              <div className="border-separator bg-surface rounded-row focus-within:border-tint relative border transition-colors">
-                <textarea
-                  value={newResponse}
-                  onChange={(e) => setNewResponse(e.target.value)}
-                  placeholder="Write your response"
-                  maxLength={1000}
-                  rows={3}
-                  aria-label="Your response"
-                  className="text-label placeholder:text-label-tertiary text-body w-full resize-none bg-transparent px-3 py-2 focus:outline-none"
-                />
-                <div className="border-separator text-footnote flex items-center justify-between border-t px-3 py-2">
-                  <span
-                    className={cn(
-                      "tabular-nums transition-colors",
-                      newResponse.length > 900 ? "text-caution" : "text-label-secondary"
-                    )}
-                  >
-                    {newResponse.length} / 1000
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="default"
-                    onClick={() =>
-                      submitMutation.mutate({
-                        promptId: prompt.id,
-                        content: newResponse,
-                      })
-                    }
-                    disabled={
-                      !newResponse.trim() || newResponse.length > 1000 || submitMutation.isPending
-                    }
-                  >
-                    {submitMutation.isPending ? (
-                      <>
-                        <Loader2 aria-hidden className="animate-spin" />
-                        <span>Submitting</span>
-                      </>
-                    ) : (
-                      <>
-                        <Send aria-hidden />
-                        <span>Submit response</span>
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-              {submitMutation.error && (
-                <p role="alert" className="text-footnote text-destructive">
-                  {submitMutation.error.message}
-                </p>
-              )}
-            </div>
+        {!isSignedIn ? (
+          <div className={cn(SECTION, "py-3 text-center")}>
+            <p className="text-label-secondary text-footnote">Sign in to respond.</p>
           </div>
-        )}
-
-        {/* User's existing submitted response */}
-        {isSignedIn && myResponse && (
-          <div className="border-separator bg-surface-secondary border-b px-5 py-4">
+        ) : myResponse ? (
+          <div className={cn(SECTION, "py-4")}>
             <div className="text-success text-subhead mb-1 flex items-center gap-2">
               <CheckCircle2 aria-hidden className="size-4" />
               <span>Your response</span>
             </div>
             <p className="text-label text-callout whitespace-pre-wrap">{myResponse.content}</p>
           </div>
+        ) : (
+          <BlurbResponseForm promptId={prompt.id} text={draft} setText={setDraft} />
         )}
 
-        {/* Unauthenticated note */}
-        {!isSignedIn && (
-          <div className="border-separator bg-surface-secondary border-b px-5 py-3 text-center">
-            <p className="text-label-secondary text-footnote">Sign in to respond.</p>
-          </div>
-        )}
-
-        {/* Responses Feed */}
         <div className="flex-1 space-y-2 overflow-y-auto px-5 py-4">
-          {responsesLoading && (
+          {responsesLoading ? (
             <div className="space-y-2 py-4">
               <Skeleton className="rounded-row h-16" />
               <Skeleton className="rounded-row h-16" />
             </div>
+          ) : (
+            responses.length === 0 && (
+              <EmptyState
+                compact
+                icon={<MessageCircle />}
+                title="No responses yet"
+                message="Add the first response."
+              />
+            )
           )}
 
-          {!responsesLoading && responses.length === 0 && (
-            <EmptyState
-              compact
-              icon={<MessageCircle />}
-              title="No responses yet"
-              message="Add the first response."
-            />
-          )}
-
-          {responses.map((r: any) => {
-            const countryName = r.country?.name ?? r.user?.country?.name ?? "Unknown";
-            const countryFlag = r.country?.flag ?? r.user?.country?.flag;
-
-            return (
-              <div
-                key={r.id}
-                className={cn(
-                  "rounded-row bg-surface-secondary border p-3",
-                  r.featured ? "border-caution/40" : "border-transparent"
-                )}
-              >
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    {countryFlag ? (
-                      <img src={countryFlag} alt="" className="h-3.5 w-5 rounded-xs object-cover" />
-                    ) : (
-                      <UnifiedCountryFlag
-                        showTooltip={false}
-                        countryName={countryName}
-                        size="sm"
-                        className="shrink-0"
-                      />
-                    )}
-                    <span className="text-label text-headline">{countryName}</span>
-                    {r.featured && <Badge variant="warning">Featured</Badge>}
-                  </div>
-
-                  {r.createdAt && (
-                    <span className="text-label-tertiary text-footnote tabular-nums">
-                      {formatRelativeTime(r.createdAt)}
-                    </span>
-                  )}
-                </div>
-
-                <p className="text-label text-callout whitespace-pre-wrap select-text">
-                  {r.content}
-                </p>
-
-                {r.linkedArticles &&
-                  Array.isArray(r.linkedArticles) &&
-                  r.linkedArticles.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {r.linkedArticles.map(
-                        (article: { title: string; url: string }, i: number) => (
-                          <Link
-                            key={i}
-                            href={article.url}
-                            className="text-tint text-footnote inline-flex items-center gap-1 underline underline-offset-2"
-                          >
-                            <ExternalLink aria-hidden className="size-3.5" />
-                            {article.title}
-                          </Link>
-                        )
-                      )}
-                    </div>
-                  )}
-              </div>
-            );
-          })}
+          {responses.map((r: any) => (
+            <BlurbResponseCard key={r.id} response={r} />
+          ))}
 
           {hasNextPage && (
             <div className="pt-2 text-center">
@@ -357,7 +361,6 @@ function BlurbResponseModal({
           )}
         </div>
 
-        {/* Footer Navigation */}
         <div className="border-separator flex items-center justify-between border-t px-5 py-3">
           <Link
             href={createUrl(`/blurbs/${prompt.slug ?? prompt.id}`)}
