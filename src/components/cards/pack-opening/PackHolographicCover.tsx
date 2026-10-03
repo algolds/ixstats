@@ -22,14 +22,8 @@ import "~/styles/card-art.css";
 import React, { useMemo, useRef } from "react";
 import { cn } from "~/lib/utils";
 import type { CardRarity } from "@prisma/client";
-import {
-  getRainbowHolographicGradient,
-  getSparkleGridGradient,
-  getPrismaticWaveGradient,
-  getHolofoilTextureGradient,
-  getFoilStampConfig,
-  getEmbossedTextShadow,
-} from "~/lib/themes";
+import { getFoilStampConfig, getEmbossedTextShadow } from "~/lib/themes";
+import { getEffectiveRarity, getHoloGradient } from "~/components/cards/display/holo-helpers";
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -86,28 +80,6 @@ const PACK_THEMES: Record<string, PackTheme> = {
 };
 
 // ─── Rarity helpers ─────────────────────────────────────────────
-
-const VALID_RARITIES = new Set(["COMMON", "UNCOMMON", "RARE", "ULTRA_RARE", "EPIC", "LEGENDARY"]);
-
-function getEffectiveRarity(rarity?: string | null): CardRarity {
-  if (rarity && VALID_RARITIES.has(rarity)) return rarity as CardRarity;
-  return "COMMON";
-}
-
-function getHoloGradient(rarity: CardRarity): string {
-  switch (rarity) {
-    case "LEGENDARY":
-      return `${getSparkleGridGradient()}, ${getPrismaticWaveGradient()}`;
-    case "EPIC":
-      return getSparkleGridGradient();
-    case "ULTRA_RARE":
-      return getPrismaticWaveGradient();
-    case "RARE":
-      return getRainbowHolographicGradient(135);
-    default:
-      return getHolofoilTextureGradient();
-  }
-}
 
 function getSweepSpeed(rarity: CardRarity): number {
   const speeds: Record<CardRarity, number> = {

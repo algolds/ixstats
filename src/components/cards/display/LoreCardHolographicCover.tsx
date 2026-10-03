@@ -19,16 +19,15 @@ import "~/styles/card-art.css";
  *  holo-drift, foil-sweep, geo-spin, lore-ink-flow
  */
 
-import React, { useMemo, useState, useRef, useEffect } from "react";
+import React, { useMemo } from "react";
 import { cn } from "~/lib/utils";
-import type { CardRarity } from "@prisma/client";
+import { getFoilStampConfig } from "~/lib/themes";
 import {
-  getRainbowHolographicGradient,
-  getSparkleGridGradient,
-  getPrismaticWaveGradient,
-  getHolofoilTextureGradient,
-  getFoilStampConfig,
-} from "~/lib/themes";
+  getCoverHoloOpacity,
+  getEffectiveRarity,
+  getHoloGradient,
+  useHoverMousePos,
+} from "./holo-helpers";
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -74,81 +73,18 @@ const LORE_THEMES: Record<string, LoreTheme> = {
   },
 };
 
-// ─── Rarity helpers ─────────────────────────────────────────────
-
-const VALID_RARITIES = new Set(["COMMON", "UNCOMMON", "RARE", "ULTRA_RARE", "EPIC", "LEGENDARY"]);
-
-function getEffectiveRarity(rarity?: string | null): CardRarity {
-  if (rarity && VALID_RARITIES.has(rarity)) return rarity as CardRarity;
-  return "COMMON";
-}
-
-function getHoloGradient(rarity: CardRarity): string {
-  switch (rarity) {
-    case "LEGENDARY":
-      return `${getSparkleGridGradient()}, ${getPrismaticWaveGradient()}`;
-    case "EPIC":
-      return getSparkleGridGradient();
-    case "ULTRA_RARE":
-      return getPrismaticWaveGradient();
-    case "RARE":
-      return getRainbowHolographicGradient(135);
-    default:
-      return getHolofoilTextureGradient();
-  }
-}
-
-function getHoloOpacity(rarity: CardRarity): number {
-  const map: Record<CardRarity, number> = {
-    COMMON: 0.12,
-    UNCOMMON: 0.2,
-    RARE: 0.3,
-    ULTRA_RARE: 0.4,
-    EPIC: 0.5,
-    LEGENDARY: 0.65,
-  };
-  return map[rarity] ?? 0.12;
-}
-
-function _getSweepSpeed(rarity: CardRarity): number {
-  const speeds: Record<CardRarity, number> = {
-    COMMON: 5,
-    UNCOMMON: 4,
-    RARE: 3.5,
-    ULTRA_RARE: 3,
-    EPIC: 2.5,
-    LEGENDARY: 2,
-  };
-  return speeds[rarity] ?? 5;
-}
-
 // ─── Component ──────────────────────────────────────────────────
 
 export const LoreCardHolographicCover = React.memo<LoreCardHolographicCoverProps>(
   ({ rarity: rarityStr, wikiSource, title: _title, isHovered = false, className }) => {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-
-    useEffect(() => {
-      if (!isHovered) return;
-      const handleMouseMove = (e: MouseEvent) => {
-        if (!containerRef.current) return;
-        const rect = containerRef.current.getBoundingClientRect();
-        setMousePos({
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
-        });
-      };
-      window.addEventListener("mousemove", handleMouseMove);
-      return () => window.removeEventListener("mousemove", handleMouseMove);
-    }, [isHovered]);
+    const { containerRef, mousePos } = useHoverMousePos(isHovered);
 
     const themeKey =
       wikiSource === "ixwiki" ? "ixwiki" : wikiSource === "iiwiki" ? "iiwiki" : "default";
     const theme = LORE_THEMES[themeKey]!;
     const rarity = getEffectiveRarity(rarityStr);
     const foilStamp = getFoilStampConfig(rarity);
-    const holoOpacity = isHovered ? getHoloOpacity(rarity) : getHoloOpacity(rarity) * 0.4;
+    const holoOpacity = getCoverHoloOpacity(rarity, isHovered);
     const holoGradient = useMemo(() => getHoloGradient(rarity), [rarity]);
 
     const showMotifs = rarity !== "COMMON";
