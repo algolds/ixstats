@@ -24,8 +24,9 @@ import { Eyebrow } from "~/components/ui/eyebrow";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { STATUS_TEXT } from "./status-tone";
+import { SheetSection } from "./SheetSection";
 import { ThinkPagesShareModal } from "~/components/mycountry/shared/modals/ThinkPagesShareModal";
-import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import { Card } from "~/components/ui/card";
 
 /** Directive tier → semantic text tone (measured is calm, extreme is a warning sign). */
 const TIER_TONE: Record<string, string> = {
@@ -58,37 +59,6 @@ const CATEGORY_BROKER_MAP: Record<
   religion: { name: "Clergy", icon: Landmark },
   foreign: { name: "Cabinet Diplomatic Corps", icon: Globe2 },
 };
-
-/**
- * A section inside the drill sheet. The sheet is the only blurred surface, so every card in it
- * is opaque (`surface="solid"`).
- */
-function SheetSection({
-  title,
-  icon: Icon,
-  accessory,
-  className,
-  children,
-}: {
-  title: string;
-  icon: React.ComponentType<{ className?: string }>;
-  accessory?: React.ReactNode;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Card className={cn("rounded-card", className)}>
-      <CardHeader className="flex-row items-center justify-between gap-2 p-4 pb-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <Icon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
-          <h3 className="text-label text-headline">{title}</h3>
-        </div>
-        {accessory}
-      </CardHeader>
-      <CardContent className="px-4 pb-4">{children}</CardContent>
-    </Card>
-  );
-}
 
 function IntentBranchingTree({
   countryId,

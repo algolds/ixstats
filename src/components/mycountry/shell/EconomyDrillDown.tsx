@@ -23,7 +23,8 @@ import {
   finiteOrNull,
   savedTariffRate,
 } from "~/lib/economy/country-relations";
-import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import { Card } from "~/components/ui/card";
+import { SheetSection } from "./SheetSection";
 
 const BudgetManagementDashboard = dynamic(
   () =>
@@ -70,35 +71,6 @@ const InfrastructureMaintenanceCard = dynamic(
     loading: () => <Skeleton className="rounded-card h-64" />,
   }
 );
-
-/**
- * A section panel inside the Economy drill-down. It renders both inside the drill sheet and on
- * the full page, so it is always opaque (`surface="solid"`): blur never stacks inside the sheet.
- */
-function EconomySection({
-  title,
-  icon: Icon,
-  accessory,
-  children,
-}: {
-  title: string;
-  icon: React.ComponentType<{ className?: string }>;
-  accessory?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <Card className="rounded-card">
-      <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 p-4 pb-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <Icon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
-          <h3 className="text-label text-headline">{title}</h3>
-        </div>
-        {accessory}
-      </CardHeader>
-      <CardContent className="px-4 pb-4">{children}</CardContent>
-    </Card>
-  );
-}
 
 /** A captioned figure: eyebrow label, value, optional footnote. */
 function StatTile({
@@ -199,7 +171,7 @@ function MacroTab({ country, dashboard }: { country: Country; dashboard: Dashboa
         ))}
       </div>
 
-      <EconomySection
+      <SheetSection
         title="Sector output and complexity"
         icon={PieChart}
         accessory={
@@ -234,9 +206,9 @@ function MacroTab({ country, dashboard }: { country: Country; dashboard: Dashboa
             ))}
           </div>
         )}
-      </EconomySection>
+      </SheetSection>
 
-      <EconomySection
+      <SheetSection
         title="Labor market and employment"
         icon={Briefcase}
         accessory={
@@ -267,9 +239,9 @@ function MacroTab({ country, dashboard }: { country: Country; dashboard: Dashboa
             note="Unregulated employment"
           />
         </div>
-      </EconomySection>
+      </SheetSection>
 
-      <EconomySection
+      <SheetSection
         title="Income and wealth equality"
         icon={Scale}
         accessory={
@@ -292,7 +264,7 @@ function MacroTab({ country, dashboard }: { country: Country; dashboard: Dashboa
             value={mobility != null ? `${Math.round(mobility)}/100` : "—"}
           />
         </div>
-      </EconomySection>
+      </SheetSection>
     </div>
   );
 }
@@ -312,7 +284,7 @@ function FiscalTab({ country, countryId }: { country: Country; countryId: string
 
   return (
     <div className="space-y-4">
-      <EconomySection
+      <SheetSection
         title="Revenue integration and budget balance"
         icon={Landmark}
         accessory={<Badge variant="default">Integrated treasury</Badge>}
@@ -335,7 +307,7 @@ function FiscalTab({ country, countryId }: { country: Country; countryId: string
             className="col-span-2 sm:col-span-1"
           />
         </div>
-      </EconomySection>
+      </SheetSection>
 
       <BudgetManagementDashboard countryId={countryId} />
 
