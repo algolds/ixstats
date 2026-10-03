@@ -130,7 +130,7 @@ export function formatDistance(km: number): string {
 }
 
 /** Custom SVG cursor: blue crosshair with center dot */
-export const MEASURE_CURSOR = (() => {
+const MEASURE_CURSOR = (() => {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><line x1="12" y1="2" x2="12" y2="9" stroke="%233b82f6" stroke-width="2"/><line x1="12" y1="15" x2="12" y2="22" stroke="%233b82f6" stroke-width="2"/><line x1="2" y1="12" x2="9" y2="12" stroke="%233b82f6" stroke-width="2"/><line x1="15" y1="12" x2="22" y2="12" stroke="%233b82f6" stroke-width="2"/><circle cx="12" cy="12" r="2" fill="%233b82f6"/></svg>`;
   return `url("data:image/svg+xml,${svg}") 12 12, crosshair`;
 })();
@@ -179,7 +179,7 @@ export function buildMeasureFeatures(pts: Coord[]): Feature[] {
 }
 
 export const MEASURE_SOURCE_ID = "measure-source";
-export const MEASURE_POINT_LAYER_ID = "measure-points";
+const MEASURE_POINT_LAYER_ID = "measure-points";
 
 const ofKind = (kind: string) => ["==", ["get", "kind"], kind];
 

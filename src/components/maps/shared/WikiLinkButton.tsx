@@ -4,7 +4,7 @@ import { OpenNewWindow as ExternalLink } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 
 /** In-app wiki pages (WikiOS paths) open via `Link`; anything else opens in a new tab. */
-export const isInternalWikiUrl = (url: string) => url.startsWith("/") || url.includes("/wiki/");
+const isInternalWikiUrl = (url: string) => url.startsWith("/") || url.includes("/wiki/");
 
 /** Plain wiki link: `Link` for in-app pages, a new-tab anchor otherwise. */
 export function WikiAnchor({

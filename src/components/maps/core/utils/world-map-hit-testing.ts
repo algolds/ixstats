@@ -194,7 +194,7 @@ function syncPoliticalHover(
   onCountryHover?.(toCountry(props));
 }
 
-export interface HoverContext {
+interface HoverContext {
   map: MapLibreMap;
   hover: HoverState;
   popup: Popup | null;

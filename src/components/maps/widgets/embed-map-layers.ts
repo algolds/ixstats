@@ -4,7 +4,7 @@ import { getCountryColor, MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
 import { createStarImage } from "~/components/maps/core/utils/map-core-helpers";
 import type { useCountryMapEmbedState } from "./hooks/useCountryMapEmbedState";
 
-export type EmbedState = ReturnType<typeof useCountryMapEmbedState>;
+type EmbedState = ReturnType<typeof useCountryMapEmbedState>;
 
 export interface EmbedLayerOptions {
   state: EmbedState;
@@ -18,7 +18,7 @@ export interface EmbedLayerOptions {
   onFeatureClick?: (feature: { kind: "city" | "subdivision"; id: string }) => void;
 }
 
-export const EMBED_LAYER_IDS = [
+const EMBED_LAYER_IDS = [
   "world-political-fill",
   "world-political-stroke",
   "neighbor-labels",
@@ -58,13 +58,13 @@ const WORLD_MAP_LAYERS = [
 ];
 
 /** Hide the (empty) base world layers; the embed draws its own. */
-export function hideWorldLayers(map: MapLibreMap) {
+function hideWorldLayers(map: MapLibreMap) {
   for (const id of WORLD_MAP_LAYERS) {
     if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", "none");
   }
 }
 
-export function removeEmbedLayers(map: MapLibreMap) {
+function removeEmbedLayers(map: MapLibreMap) {
   for (const id of EMBED_LAYER_IDS) if (map.getLayer(id)) map.removeLayer(id);
   for (const id of EMBED_SOURCE_IDS) if (map.getSource(id)) map.removeSource(id);
 }

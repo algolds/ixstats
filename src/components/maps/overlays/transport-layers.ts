@@ -8,10 +8,10 @@ import type {
 import type { FeatureCollection } from "geojson";
 import { ROUTE_STYLES, ROUTE_COLORS } from "~/lib/maps/map-config";
 
-export const ROUTES_SOURCE = "transport-routes-source";
-export const HUBS_SOURCE = "transport-hubs-source";
+const ROUTES_SOURCE = "transport-routes-source";
+const HUBS_SOURCE = "transport-hubs-source";
 export const HUBS_LAYER = "transport-hubs-circle";
-export const ROUTES_GLOW_LAYER = "transport-routes-glow";
+const ROUTES_GLOW_LAYER = "transport-routes-glow";
 export const ROUTES_FLOW_LAYER = "transport-routes-flow";
 const ROUTES_INTERNATIONAL_LAYER = "transport-routes-international";
 const ROUTES_ARROWS_LAYER = "transport-routes-arrows";
