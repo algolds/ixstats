@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, memo } from "react";
+import { useMemo, memo } from "react";
 import {
   WarningTriangle as AlertTriangle,
   Globe,
@@ -11,149 +11,140 @@ import {
   StatUp as TrendingUp,
   Trophy,
   Group as Users,
-  OpenBook as BookOpen,
   ChatBubble as MessageCircle,
 } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
-import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
-import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { parseSportsBulletin } from "~/lib/sports/feed-bulletins";
 import { SportsBulletinCard } from "~/components/thinkpages/SportsBulletinCard";
-import { formatThinkpagesContentForDisplay } from "~/lib/utils";
-import { cn } from "~/lib/utils";
-import { WikiAuthorPopover } from "./WikiAuthorPopover";
+import { cn, formatThinkpagesContentForDisplay } from "~/lib/utils";
 import { FeedItemHeader } from "./feed/FeedItemHeader";
 import { FeedGroupedDrawer } from "./feed/FeedGroupedDrawer";
-import { InlineWikiArticlePreview } from "./feed/InlineWikiArticlePreview";
 import { WikiFeedCard } from "./feed/WikiFeedCard";
 import type { ProcessedFeedItem } from "~/types/dashboard-feed";
 import { Card } from "~/components/ui/card";
-const SOURCE_CONFIG: Record<
-  string,
-  { icon: typeof Rss; color: string; bg: string; label: string }
-> = {
-  activity: { icon: Rss, color: "text-blue", bg: "bg-blue/10", label: "Activity" },
-  thinkpages: {
-    icon: Users,
-    color: "text-blue",
-    bg: "bg-blue/10",
-    label: "Social",
-  },
-  wiki: { icon: BookOpen, color: "text-wiki", bg: "bg-wiki/10", label: "Wiki" },
+
+type FeedBadge = { icon: typeof Rss; color: string; bg: string; label: string };
+
+const BLUE = { color: "text-blue", bg: "bg-blue/10" };
+const GREEN = { color: "text-green", bg: "bg-green/10" };
+const RED = { color: "text-red", bg: "bg-red/10" };
+
+const SOURCE_CONFIG: Record<string, FeedBadge> = {
+  activity: { icon: Rss, ...BLUE, label: "Activity" },
+  thinkpages: { icon: Users, ...BLUE, label: "Social" },
   forum: { icon: MessageCircle, color: "text-orange", bg: "bg-orange/10", label: "Forum" },
 };
 
-export function getActivityLabel(activity: any): {
-  label: string;
-  icon: typeof Rss;
-  color: string;
-  bg: string;
-} {
+/** First match wins: a category or a keyword in the title. */
+const ACTIVITY_RULES: (FeedBadge & { cats?: string[]; words: string[] })[] = [
+  { label: "POI", icon: MapIcon, ...GREEN, words: ["point of interest", "poi"] },
+  { label: "City", icon: MapIcon, ...GREEN, words: ["city", "settlement"] },
+  {
+    label: "Subdivision",
+    icon: MapIcon,
+    ...GREEN,
+    words: ["subdivision", "province", "state", "region"],
+  },
+  { label: "Maps", icon: MapIcon, ...GREEN, cats: ["map"], words: ["map", "claim"] },
+  {
+    label: "Economy",
+    icon: TrendingUp,
+    ...GREEN,
+    cats: ["economic"],
+    words: ["gdp", "econom", "trade"],
+  },
+  {
+    label: "Diplomacy",
+    icon: Globe,
+    color: "text-teal",
+    bg: "bg-teal/10",
+    cats: ["diplomatic"],
+    words: ["embassy", "diplom", "treaty"],
+  },
+  {
+    label: "Defense",
+    icon: Shield,
+    ...RED,
+    cats: ["military"],
+    words: ["military", "defense", "deploy"],
+  },
+  {
+    label: "Politics",
+    icon: Landmark,
+    color: "text-indigo",
+    bg: "bg-indigo/10",
+    cats: ["political"],
+    words: ["govern", "politic", "election"],
+  },
+  { label: "Crisis", icon: AlertTriangle, ...RED, cats: ["crisis"], words: ["crisis"] },
+  {
+    label: "Achievement",
+    icon: Trophy,
+    color: "text-yellow",
+    bg: "bg-yellow/10",
+    cats: ["achievement"],
+    words: ["tier", "achieve"],
+  },
+];
+
+export function getActivityLabel(activity: any): FeedBadge {
   const cat = activity.category ?? activity.content?.metadata?.category ?? "";
   const title = (activity.content?.title ?? "").toLowerCase();
-
-  if (title.includes("point of interest") || title.includes("poi"))
-    return { label: "POI", icon: MapIcon, color: "text-green", bg: "bg-green/10" };
-  if (title.includes("city") || title.includes("settlement"))
-    return { label: "City", icon: MapIcon, color: "text-green", bg: "bg-green/10" };
-  if (
-    title.includes("subdivision") ||
-    title.includes("province") ||
-    title.includes("state") ||
-    title.includes("region")
-  )
-    return {
-      label: "Subdivision",
-      icon: MapIcon,
-      color: "text-green",
-      bg: "bg-green/10",
-    };
-  if (cat === "map" || title.includes("map") || title.includes("claim"))
-    return { label: "Maps", icon: MapIcon, color: "text-green", bg: "bg-green/10" };
-  if (
-    cat === "economic" ||
-    title.includes("gdp") ||
-    title.includes("econom") ||
-    title.includes("trade")
-  )
-    return {
-      label: "Economy",
-      icon: TrendingUp,
-      color: "text-green",
-      bg: "bg-green/10",
-    };
-  if (
-    cat === "diplomatic" ||
-    title.includes("embassy") ||
-    title.includes("diplom") ||
-    title.includes("treaty")
-  )
-    return { label: "Diplomacy", icon: Globe, color: "text-teal", bg: "bg-teal/10" };
-  if (
-    cat === "military" ||
-    title.includes("military") ||
-    title.includes("defense") ||
-    title.includes("deploy")
-  )
-    return { label: "Defense", icon: Shield, color: "text-red", bg: "bg-red/10" };
-  if (
-    cat === "political" ||
-    title.includes("govern") ||
-    title.includes("politic") ||
-    title.includes("election")
-  )
-    return { label: "Politics", icon: Landmark, color: "text-indigo", bg: "bg-indigo/10" };
-  if (cat === "crisis" || title.includes("crisis"))
-    return { label: "Crisis", icon: AlertTriangle, color: "text-red", bg: "bg-red/10" };
-  if (cat === "achievement" || title.includes("tier") || title.includes("achieve"))
-    return { label: "Achievement", icon: Trophy, color: "text-yellow", bg: "bg-yellow/10" };
-  return { label: "Activity", icon: Rss, color: "text-blue", bg: "bg-blue/10" };
+  const rule = ACTIVITY_RULES.find(
+    (r) => r.cats?.includes(cat) || r.words.some((word) => title.includes(word))
+  );
+  return rule ?? SOURCE_CONFIG.activity!;
 }
 
-export const UnifiedFeedItem = memo(function UnifiedFeedItem({
-  activity,
-}: {
-  activity: ProcessedFeedItem | any;
-}) {
+function Byline({ activity }: { activity: any }) {
+  if (activity._grouped) {
+    return (
+      <span>
+        <span className="text-label font-medium tabular-nums">{activity._editCount}</span> updates
+        by <span className="text-label font-medium">{activity._editors?.[0] ?? "unknown"}</span>
+      </span>
+    );
+  }
+  const name = activity.user?.name;
+  if (!name || (activity.poll && name === "User")) return null;
+  return (
+    <span>
+      by <span className="text-label font-medium">{name}</span>
+    </span>
+  );
+}
+
+function ActivityBody({ activity, sportsBulletin }: { activity: any; sportsBulletin: any }) {
+  if (activity._grouped) return <FeedGroupedDrawer subEdits={activity._subEdits} />;
+  const description = activity.content?.description || activity.post?.content;
+  return (
+    <>
+      {description && (
+        <WikiHtmlContent
+          html={formatThinkpagesContentForDisplay(description as string)}
+          className="text-label-secondary text-callout pt-0.5 break-words whitespace-pre-wrap"
+        />
+      )}
+      {activity.poll ? (
+        <FeedPollWidget poll={activity.poll} />
+      ) : sportsBulletin ? (
+        <SportsBulletinCard data={sportsBulletin} />
+      ) : null}
+    </>
+  );
+}
+
+function ActivityCard({ activity }: { activity: any }) {
   const source = activity.source ?? "activity";
-  const isWiki = source === "wiki";
-  const isGrouped = !!activity._grouped;
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const [expanded, setExpanded] = useState(false);
-
-  // Dynamic badge for IxStats activities
-  const resolvedConfig = useMemo(() => {
-    if (source === "activity") return getActivityLabel(activity);
-    return SOURCE_CONFIG[source] ?? SOURCE_CONFIG.activity!;
-  }, [source, activity]);
-
-  const Icon = resolvedConfig.icon;
+  const badge =
+    source === "activity"
+      ? getActivityLabel(activity)
+      : (SOURCE_CONFIG[source] ?? SOURCE_CONFIG.activity!);
+  const Icon = badge.icon;
   const metadata = activity.content?.metadata ?? {};
-  const externalUrl = metadata.wikiUrl ?? metadata.forumUrl;
-
-  // Wiki page title for clickable link
-  const wikiPageTitle = metadata.pageTitle as string | undefined;
-  const wikiHref = wikiPageTitle ? titleToWikiOSRoute(wikiPageTitle) : null;
-
-  const titleText = activity.content?.title ?? "";
-  // For wiki items, strip the "Wiki edit: " or "New wiki page: " prefix
-  const displayTitle =
-    isWiki && wikiPageTitle
-      ? activity._isNew
-        ? "New page created"
-        : isGrouped
-          ? ""
-          : titleText.replace(/^(Wiki edit|New wiki page):\s*/i, "")
-      : titleText;
-  const titleHtml = displayTitle ? formatThinkpagesContentForDisplay(displayTitle) : "";
-
-  const descHtml = activity.content?.description
-    ? formatThinkpagesContentForDisplay(activity.content.description)
-    : activity.post?.content
-      ? formatThinkpagesContentForDisplay(activity.post.content as string)
-      : "";
+  const title = activity.content?.title ?? "";
 
   const rawContentText = [
     activity.content?.title,
@@ -162,111 +153,49 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
   ]
     .filter((x): x is string => typeof x === "string" && x.length > 0)
     .join("\n");
-
   const sportsBulletin = useMemo(() => parseSportsBulletin(rawContentText), [rawContentText]);
-
-  // For wiki activities, render the dedicated cohesive WikiFeedCard
-  if (isWiki) {
-    return <WikiFeedCard activity={activity} />;
-  }
 
   return (
     <Card padding="md">
       <div className="flex items-start gap-3">
-        {/* Source icon; wiki uses the W logo */}
         <div
           aria-hidden
           className={cn(
             "rounded-row border-separator mt-0.5 flex size-9 shrink-0 items-center justify-center border",
-            resolvedConfig.bg
+            badge.bg
           )}
         >
-          {isWiki ? (
-            <WikiOSLogomark className="text-wiki size-4.5" />
-          ) : (
-            <Icon className={cn("size-4.5", resolvedConfig.color)} />
-          )}
+          <Icon className={cn("size-4.5", badge.color)} />
         </div>
 
         <div className="min-w-0 flex-1 space-y-2">
-          {/* Header Row: Title on Left, Badges / Timestamp / Open Link on Right */}
           <FeedItemHeader
             activity={activity}
-            resolvedConfig={resolvedConfig}
-            isWiki={isWiki}
-            isGrouped={isGrouped}
+            label={badge.label}
             sportsBulletin={sportsBulletin}
-            wikiPageTitle={wikiPageTitle}
-            wikiHref={wikiHref}
-            displayTitle={displayTitle}
-            titleHtml={titleHtml}
-            externalUrl={externalUrl}
+            titleHtml={title ? formatThinkpagesContentForDisplay(title) : ""}
+            externalUrl={metadata.wikiUrl ?? metadata.forumUrl}
           />
-
-          {/* Subtitle / Author Row */}
           <div className="text-label-secondary text-footnote flex flex-wrap items-center gap-2">
-            {isGrouped ? (
-              isWiki ? (
-                <span>
-                  <span className="text-label font-medium tabular-nums">{activity._editCount}</span>{" "}
-                  edits by{" "}
-                  {activity._editors.map((editor: string, idx: number) => (
-                    <span key={editor}>
-                      {idx > 0 && ", "}
-                      <WikiAuthorPopover username={editor} />
-                    </span>
-                  ))}
-                </span>
-              ) : (
-                <span>
-                  <span className="text-label font-medium tabular-nums">{activity._editCount}</span>{" "}
-                  updates by{" "}
-                  <span className="text-label font-medium">
-                    {activity._editors?.[0] ?? "unknown"}
-                  </span>
-                </span>
-              )
-            ) : (
-              activity.user?.name &&
-              (isWiki ? (
-                <span className="flex items-center gap-1">
-                  <span>by</span> <WikiAuthorPopover username={activity.user.name} />
-                </span>
-              ) : activity.poll && activity.user.name === "User" ? null : (
-                <span>
-                  by <span className="text-label font-medium">{activity.user.name}</span>
-                </span>
-              ))
-            )}
+            <Byline activity={activity} />
           </div>
-
-          {/* Edit description for non-grouped wiki items or standard posts */}
-          {!isGrouped && descHtml && (
-            <WikiHtmlContent
-              html={descHtml}
-              className="text-label-secondary text-callout pt-0.5 break-words whitespace-pre-wrap"
-            />
-          )}
-
-          {/* Inline Wiki Article Lead Snippet Preview */}
-          {isWiki && wikiPageTitle && (
-            <InlineWikiArticlePreview title={wikiPageTitle} wiki="ixwiki" />
-          )}
-
-          {/* Body Content / Poll / Sports Card (non-wiki items) */}
-          {!isWiki &&
-            !isGrouped &&
-            (activity.poll ? (
-              <FeedPollWidget poll={activity.poll} />
-            ) : sportsBulletin ? (
-              <SportsBulletinCard data={sportsBulletin} />
-            ) : null)}
-
-          {/* Grouped sub-items expandable drawer */}
-          {isGrouped && <FeedGroupedDrawer subEdits={activity._subEdits} isWiki={isWiki} />}
+          <ActivityBody activity={activity} sportsBulletin={sportsBulletin} />
         </div>
       </div>
     </Card>
+  );
+}
+
+/** Wiki edits get their own card; every other activity shares one layout. */
+export const UnifiedFeedItem = memo(function UnifiedFeedItem({
+  activity,
+}: {
+  activity: ProcessedFeedItem | any;
+}) {
+  return activity.source === "wiki" ? (
+    <WikiFeedCard activity={activity} />
+  ) : (
+    <ActivityCard activity={activity} />
   );
 });
 
