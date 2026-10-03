@@ -20,8 +20,6 @@ import type { BuilderState } from "~/app/builder/hooks/builderStateTypes";
 import type { GovernmentBuilderState } from "~/types/government";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 
-// ─── Types ───
-
 interface ParsedCountryData extends UnifiedInfoboxData {
   wikiIntro?: string;
 }
@@ -53,15 +51,11 @@ function setBoundedCache(key: string, value: SearchResult[]) {
   searchCache.set(key, value);
 }
 
-// ─── Props ───
-
 interface ImportSectionProps {
   onNavigate: (section: BuilderSection) => void;
   /** Called when import data is ready — populates builder state */
   onImportComplete?: (data: Partial<BuilderState>) => void;
 }
-
-// ─── Component ───
 
 export const ImportSection = React.memo(function ImportSection({
   onNavigate,

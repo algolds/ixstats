@@ -37,19 +37,6 @@ export function getComplexityBadgeVariant(
   }
 }
 
-export function getComplexityColor(complexity: "low" | "medium" | "high"): string {
-  switch (complexity) {
-    case "low":
-      return "bg-green/10 text-green-ink border border-green/20";
-    case "medium":
-      return "bg-yellow/10 text-yellow-ink border border-yellow/20";
-    case "high":
-      return "bg-red/10 text-red-ink border border-red/20";
-    default:
-      return "bg-fill-3 text-label-secondary border border-separator";
-  }
-}
-
 export function getArchetypeIcon(archetypeId: string): React.ComponentType<{ className?: string }> {
   const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
     "silicon-valley": Cpu,

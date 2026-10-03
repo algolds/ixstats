@@ -89,7 +89,6 @@ export function CardImportStudio({
 
   return (
     <div className="space-y-6">
-      {/* ─── Import Studio Subnavigation Header ───────────────────── */}
       <Card className="p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
@@ -133,7 +132,6 @@ export function CardImportStudio({
         </div>
       </Card>
 
-      {/* ─── Active Subtab Content ───────────────────────────────── */}
       <div className="duration-fast transition-opacity">
         {activeSubtab === "wiki" && <LoreCardBatchAdmin />}
         {activeSubtab === "ns" && <NSImportSuiteAdmin />}

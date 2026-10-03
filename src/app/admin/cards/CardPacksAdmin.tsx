@@ -39,8 +39,6 @@ import {
 import { PackHolographicCover } from "~/components/cards/pack-opening/PackHolographicCover";
 import { cn } from "~/lib/utils/cn";
 
-// ─── Pack types & rarity options ─────────────────────────────────
-
 const PACK_TYPES = [
   { value: "BASIC", label: "Basic" },
   { value: "PREMIUM", label: "Premium" },
@@ -67,8 +65,6 @@ const PACK_TYPE_COLORS: Record<string, { bg: string; text: string; border: strin
   LIMITED: { bg: "bg-red/20", text: "text-red", border: "border-red/30" },
 };
 
-// ─── Form data ───────────────────────────────────────────────────
-
 interface PackFormData {
   name: string;
   description: string;
@@ -90,8 +86,6 @@ const INITIAL_FORM: PackFormData = {
   guaranteedRarity: "",
   isActive: true,
 };
-
-// ─── Component ───────────────────────────────────────────────────
 
 export function CardPacksAdmin() {
   const notify = useNotify();

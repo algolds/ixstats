@@ -281,7 +281,6 @@ export function NSImportSuiteAdmin() {
 
   return (
     <div className="space-y-6">
-      {/* ─── Active & Paused Background Sync Jobs ───────────────── */}
       {activeJobs && activeJobs.length > 0 && (
         <Card className="border-blue/30 bg-blue/5 space-y-4 p-6">
           <h2 className="text-label text-title-3 flex items-center gap-2">
@@ -357,7 +356,6 @@ export function NSImportSuiteAdmin() {
         </Card>
       )}
 
-      {/* ─── Bulk Region Import & Discovery Grid ───────────────── */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Region Fetch Card */}
         <Card className="space-y-4 p-6">
@@ -482,7 +480,6 @@ export function NSImportSuiteAdmin() {
         </Card>
       </div>
 
-      {/* ─── Filter CTE Nations Section ────────────────────────── */}
       <Card className="border-yellow/20 bg-yellow/5 space-y-4 p-6">
         <div className="flex items-center gap-2">
           <div className="rounded-row border-yellow/30 bg-yellow/20 border p-2">
@@ -510,7 +507,6 @@ export function NSImportSuiteAdmin() {
         </Button>
       </Card>
 
-      {/* ─── Sync Operations Log & Import Filter Explorer ──────────────── */}
       <Card className="space-y-6 p-6">
         {/* Header toolbar */}
         <div className="border-separator flex flex-col gap-3 border-b pb-4 lg:flex-row lg:items-center lg:justify-between">
@@ -904,7 +900,6 @@ export function NSImportSuiteAdmin() {
         )}
       </Card>
 
-      {/* ─── Confirm Region Fetch Modal ────────────────────────── */}
       <AlertDialog open={!!confirmFetchRegions} onOpenChange={() => setConfirmFetchRegions(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -953,7 +948,6 @@ export function NSImportSuiteAdmin() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ─── Confirm Stop Job Modal ─────────────────────────────── */}
       <AlertDialog open={!!confirmStopJobId} onOpenChange={() => setConfirmStopJobId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -24,10 +24,6 @@ import {
 import { useNotify } from "~/hooks/useNotify";
 import { Card } from "~/components/ui/card";
 
-export function LogsPanel() {
-  return <DedicatedLogsPage />;
-}
-
 export default function DedicatedLogsPage() {
   const notify = useNotify();
   usePageTitle({ title: "Admin - System Logs" });

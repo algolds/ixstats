@@ -87,8 +87,6 @@ function BlurbsPanel() {
   );
 }
 
-// ── Stats Summary ────────────────────────────────────────────────────────────
-
 function BlurbStatsSummary() {
   const { data: blurbCount, isLoading: countLoading } = api.blurbs.getBlurbCount.useQuery();
   const { data: activePrompts, isLoading: activeLoading } = api.blurbs.getAllPrompts.useQuery({
@@ -131,8 +129,6 @@ function BlurbStatsSummary() {
     </div>
   );
 }
-
-// ── Prompt Management Section ────────────────────────────────────────────────
 
 const STATUS_CONFIG = {
   DRAFT: { label: "Draft", icon: FileText, variant: "default" as const },
@@ -439,8 +435,6 @@ function PromptManagementSection() {
     </div>
   );
 }
-
-// ── Response Moderation Section ──────────────────────────────────────────────
 
 function ResponseModerationSection() {
   const notify = useNotify();

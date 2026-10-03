@@ -307,7 +307,6 @@ export function IxTimeVisualizer() {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* === TOP SECTION: Current Time Overview === */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {/* Current IxTime */}
           <div className="rounded-control border-blue/10 bg-blue/5 hover:border-blue/20 duration-fast border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
@@ -382,7 +381,6 @@ export function IxTimeVisualizer() {
           <div className="animate-in fade-in slide-in-from-top-2 duration-fast space-y-6 pt-1">
             <Separator className="border-separator my-1" />
 
-            {/* === MIDDLE SECTION: IRL <-> IxTime Converter === */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <ArrowRightLeft className="text-blue h-4 w-4" />
@@ -488,7 +486,6 @@ export function IxTimeVisualizer() {
 
             <Separator className="border-separator my-1" />
 
-            {/* === VISUAL TIMELINE === */}
             <div className="space-y-3">
               <div className="text-footnote grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div className="rounded-control-sm border-blue/10 bg-blue/5 hover:border-blue/20 border px-3 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]">
@@ -538,7 +535,6 @@ export function IxTimeVisualizer() {
 
             <Separator className="border-separator my-1" />
 
-            {/* === BOTTOM SECTION: Collapsible Diagnostics === */}
             <div className="space-y-4">
               <Button
                 variant="ghost"

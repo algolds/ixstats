@@ -82,7 +82,6 @@ export function TestSuitePanel() {
   const addResult = (msg: string) => setTestResults((prev) => [...prev, msg]);
   const clearResults = () => setTestResults([]);
 
-  // === Trigger preset via useNotify ===
   const triggerPreset = (preset: string) => {
     switch (preset) {
       case "crisis":
@@ -149,7 +148,6 @@ export function TestSuitePanel() {
     }
   };
 
-  // === Fire custom notification simulator ===
   const handleCustomTrigger = () => {
     notify.notify({
       title,
@@ -172,7 +170,6 @@ export function TestSuitePanel() {
     addResult(`📨 Custom "${title}" notification triggered`);
   };
 
-  // === System-level tests via store ===
   const testIntelligence = async () => {
     try {
       await addNotification({

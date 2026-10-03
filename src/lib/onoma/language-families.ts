@@ -10,9 +10,7 @@
 
 import { buildLanguageFamily, type LanguageFamily } from "./markov-naming";
 
-// ──────────────────────────────────────────────
 // Seed Word Lists
-// ──────────────────────────────────────────────
 
 const LATIN_SEEDS = [
   "roma",
@@ -724,9 +722,7 @@ const MESOAMERICAN_SEEDS = [
   "tepatitlan",
 ];
 
-// ──────────────────────────────────────────────
 // Compiled Families
-// ──────────────────────────────────────────────
 
 let _compiledFamilies: LanguageFamily[] | null = null;
 
@@ -740,10 +736,6 @@ export function getLanguageFamilies(): LanguageFamily[] {
       minLength: 4,
       maxLength: 12,
       vowelRatio: [0.35, 0.55],
-      riverTemplates: ["Rio $N", "$N River", "Flumen $N"],
-      lakeTemplates: ["Lago $N", "Lacus $N", "Lake $N"],
-      mountainTemplates: ["Monte $N", "Mons $N", "$N Alps"],
-      seaTemplates: ["Mare $N", "Sea of $N", "$N Sea"],
     }),
 
     buildLanguageFamily("germanic", "Germanic/Nordic", GERMANIC_SEEDS, {
@@ -751,10 +743,6 @@ export function getLanguageFamilies(): LanguageFamily[] {
       minLength: 4,
       maxLength: 14,
       vowelRatio: [0.25, 0.45],
-      riverTemplates: ["$N River", "River $N", "$N Bach"],
-      lakeTemplates: ["$N See", "Lake $N", "$Nsee"],
-      mountainTemplates: ["$Nberg", "Mount $N", "$N Peak"],
-      seaTemplates: ["$N Sea", "Sea of $N", "$N Strait"],
     }),
 
     buildLanguageFamily("slavic", "Slavic/Eastern", SLAVIC_SEEDS, {
@@ -762,10 +750,6 @@ export function getLanguageFamilies(): LanguageFamily[] {
       minLength: 4,
       maxLength: 14,
       vowelRatio: [0.25, 0.45],
-      riverTemplates: ["$N River", "Reka $N"],
-      lakeTemplates: ["Lake $N", "Ozero $N"],
-      mountainTemplates: ["$N Gora", "Mount $N", "$N Mountains"],
-      seaTemplates: ["$N Sea", "Sea of $N", "$N More"],
     }),
 
     buildLanguageFamily("arabic", "Arabic/Semitic", ARABIC_SEEDS, {
@@ -773,10 +757,6 @@ export function getLanguageFamilies(): LanguageFamily[] {
       minLength: 3,
       maxLength: 10,
       vowelRatio: [0.3, 0.5],
-      riverTemplates: ["Wadi $N", "Nahr $N", "$N River"],
-      lakeTemplates: ["Bahr $N", "Lake $N"],
-      mountainTemplates: ["Jabal $N", "Mount $N"],
-      seaTemplates: ["Bahr $N", "Khalij $N", "Sea of $N"],
     }),
 
     buildLanguageFamily("eastasian", "East Asian", EAST_ASIAN_SEEDS, {
@@ -784,10 +764,6 @@ export function getLanguageFamilies(): LanguageFamily[] {
       minLength: 3,
       maxLength: 10,
       vowelRatio: [0.35, 0.55],
-      riverTemplates: ["$N He", "$N Jiang", "$N River"],
-      lakeTemplates: ["$N Hu", "Lake $N", "$N Chi"],
-      mountainTemplates: ["$N Shan", "Mount $N"],
-      seaTemplates: ["$N Hai", "Sea of $N", "$N Ocean"],
     }),
 
     buildLanguageFamily("polynesian", "Polynesian/Oceanic", POLYNESIAN_SEEDS, {
@@ -795,10 +771,6 @@ export function getLanguageFamilies(): LanguageFamily[] {
       minLength: 3,
       maxLength: 12,
       vowelRatio: [0.45, 0.7],
-      riverTemplates: ["Awa $N", "$N Stream"],
-      lakeTemplates: ["Roto $N", "Lake $N"],
-      mountainTemplates: ["Maunga $N", "Mount $N"],
-      seaTemplates: ["Moana $N", "Sea of $N", "$N Waters"],
     }),
 
     buildLanguageFamily("celtic", "Celtic/Gaelic", CELTIC_SEEDS, {
@@ -806,10 +778,6 @@ export function getLanguageFamilies(): LanguageFamily[] {
       minLength: 4,
       maxLength: 13,
       vowelRatio: [0.3, 0.5],
-      riverTemplates: ["Abhainn $N", "$N River", "River $N"],
-      lakeTemplates: ["Loch $N", "Lough $N"],
-      mountainTemplates: ["Ben $N", "Cnoc $N", "Mount $N"],
-      seaTemplates: ["Muir $N", "Sea of $N", "$N Strait"],
     }),
 
     buildLanguageFamily("turkic", "Turkic/Central Asian", TURKIC_SEEDS, {
@@ -817,10 +785,6 @@ export function getLanguageFamilies(): LanguageFamily[] {
       minLength: 3,
       maxLength: 12,
       vowelRatio: [0.3, 0.5],
-      riverTemplates: ["$N Darya", "$N Su", "$N River"],
-      lakeTemplates: ["$N Gol", "Lake $N", "$N Kol"],
-      mountainTemplates: ["$N Dag", "$N Tau", "Mount $N"],
-      seaTemplates: ["$N Deniz", "Sea of $N"],
     }),
 
     buildLanguageFamily("southasian", "South Asian/Indo-Aryan", SOUTH_ASIAN_SEEDS, {
@@ -828,10 +792,6 @@ export function getLanguageFamilies(): LanguageFamily[] {
       minLength: 4,
       maxLength: 13,
       vowelRatio: [0.35, 0.55],
-      riverTemplates: ["$N Nadi", "$N Ganga", "$N River"],
-      lakeTemplates: ["$N Tal", "Lake $N", "$N Sarovar"],
-      mountainTemplates: ["$N Parvat", "Mount $N", "$N Giri"],
-      seaTemplates: ["$N Sagar", "Sea of $N"],
     }),
 
     buildLanguageFamily("african", "African/Sub-Saharan", AFRICAN_SEEDS, {
@@ -839,10 +799,6 @@ export function getLanguageFamilies(): LanguageFamily[] {
       minLength: 3,
       maxLength: 12,
       vowelRatio: [0.35, 0.55],
-      riverTemplates: ["$N River", "River $N"],
-      lakeTemplates: ["Lake $N", "$N Pool"],
-      mountainTemplates: ["Mount $N", "$N Peak"],
-      seaTemplates: ["$N Sea", "Sea of $N", "$N Channel"],
     }),
 
     buildLanguageFamily("mesoamerican", "Mesoamerican/Nahuatl", MESOAMERICAN_SEEDS, {
@@ -850,10 +806,6 @@ export function getLanguageFamilies(): LanguageFamily[] {
       minLength: 4,
       maxLength: 14,
       vowelRatio: [0.35, 0.55],
-      riverTemplates: ["Atoyac $N", "$N River"],
-      lakeTemplates: ["$N Lake", "Lago $N"],
-      mountainTemplates: ["$N Tepetl", "Mount $N"],
-      seaTemplates: ["Sea of $N", "$N Waters"],
     }),
   ];
 

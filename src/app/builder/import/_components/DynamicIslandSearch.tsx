@@ -30,8 +30,6 @@ import { withBasePath } from "~/lib/base-path";
 import type { UnifiedInfoboxData } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import { GOV_PRESETS, SORT_OPTIONS } from "./EligibleCountryGrid";
 
-// ─── Types ───
-
 export interface WikiSite {
   name: string;
   displayName: string;
@@ -53,14 +51,12 @@ export interface SearchResult {
   government?: string;
 }
 
-export type ParsedCountryData = UnifiedInfoboxData;
+type ParsedCountryData = UnifiedInfoboxData;
 const logoMap: Record<string, string> = {
   ixwiki: "/images/ix-logo.svg",
   iiwiki: "/images/IIWikiLogo.png",
   althistory: "/images/althistory-logo.webp",
 };
-
-// ─── Props ───
 
 interface DynamicIslandSearchProps {
   selectedSite: WikiSite;
@@ -86,8 +82,6 @@ interface DynamicIslandSearchProps {
   hasActiveFilters: boolean;
   onClearFilters: () => void;
 }
-
-// ─── Component ───
 
 export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
   selectedSite,
@@ -193,7 +187,6 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
   return (
     <div ref={containerRef} className="relative" onKeyDown={handleKeyDown}>
       <AnimatePresence mode="popLayout">
-        {/* ─── Parsing Pill ─── */}
         {isParsing && (
           <motion.div
             key="parsing"
@@ -226,7 +219,6 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
           </motion.div>
         )}
 
-        {/* ─── Unified Search & Filter Island ─── */}
         {!isParsing && !isParsed && (
           <div className="border-separator bg-surface rounded-card shadow-card relative w-full border p-2 sm:p-3">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -462,8 +454,6 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
     </div>
   );
 };
-
-// ─── Inline Result Item with Apple Tactile Physics ───
 
 interface SearchResultItemInlineProps {
   result: SearchResult;

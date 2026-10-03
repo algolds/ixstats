@@ -344,9 +344,7 @@ export function UsersPanel() {
           </div>
         </div>
 
-        {/* ================================================================= */}
         {/* TAB 1: MASTER IDENTITY MATRIX */}
-        {/* ================================================================= */}
         <TabsContent value="identities" className="mt-4 space-y-4">
           <Card className="p-4">
             <div className="mb-3 flex items-center justify-between">
@@ -523,9 +521,7 @@ export function UsersPanel() {
           </Card>
         </TabsContent>
 
-        {/* ================================================================= */}
         {/* TAB 2: WIKI RECONCILIATION & ALTS */}
-        {/* ================================================================= */}
         <TabsContent value="wiki-reconciliation" className="mt-4 space-y-4">
           <Card className="p-4">
             <div className="mb-4">
@@ -667,9 +663,7 @@ export function UsersPanel() {
           </Card>
         </TabsContent>
 
-        {/* ================================================================= */}
         {/* TAB 3: DISCORD BOT MEMBER SYNC */}
-        {/* ================================================================= */}
         <TabsContent value="discord-sync" className="mt-4 space-y-4">
           <Card className="p-4">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -762,9 +756,7 @@ export function UsersPanel() {
           </Card>
         </TabsContent>
 
-        {/* ================================================================= */}
         {/* TAB 4: COUNTRY CLAIMS & TIERS */}
-        {/* ================================================================= */}
         <TabsContent value="country-claims" className="mt-4 space-y-4">
           <Card className="p-4">
             <div className="mb-4 flex items-center justify-between">

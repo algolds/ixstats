@@ -153,7 +153,6 @@ export default function CardAdminDashboardPage() {
       />
 
       <div className="space-y-6">
-        {/* ─── Facet Navigation Top Header ─────────────────────────── */}
         <Card padding="lg" className="space-y-6">
           {/* Embedded Library Overview / NS Sync Health Metrics (Switches dynamically per active tab) */}
           {(() => {
@@ -303,10 +302,8 @@ export default function CardAdminDashboardPage() {
           />
         </Card>
 
-        {/* ─── TAB: 3D CARD DESIGNER STUDIO ─────────────────────── */}
         {activeTab === "designer" && <CardDesignerStudio />}
 
-        {/* ─── TAB: OVERVIEW & LIBRARY STATISTICS ──────────────────── */}
         {activeTab === "overview" && (
           <div className="space-y-6">
             {/* Operations Log & Audit Trail Card inside Overview */}
@@ -433,12 +430,10 @@ export default function CardAdminDashboardPage() {
           </div>
         )}
 
-        {/* ─── TAB: CARD EXPLORER ──────────────────────────────────── */}
         {activeTab === "explorer" && (
           <AdminCardExplorer initialCategory={selectedExplorerCategory} />
         )}
 
-        {/* ─── TAB: UNIFIED IMPORT STUDIO ─────────────────────────── */}
         {activeTab === "imports" && (
           <CardImportStudio
             initialSubtab={importSubtab}
@@ -446,7 +441,6 @@ export default function CardAdminDashboardPage() {
           />
         )}
 
-        {/* ─── TAB: UNIFIED SETTINGS STUDIO ───────────────────────── */}
         {activeTab === "settings" && (
           <CardSettingsAdmin
             initialSubtab={settingsSubtab}

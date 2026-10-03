@@ -54,8 +54,6 @@ import type { BuilderStep } from "./enhanced/builderConfig";
 import { withBasePath } from "~/lib/base-path";
 import { Card } from "~/components/ui/card";
 
-// ─── Section loading skeleton ───
-
 function SectionSkeleton() {
   return (
     <div className="space-y-4 p-6" role="status" aria-label="Loading section">
@@ -69,15 +67,11 @@ function SectionSkeleton() {
   );
 }
 
-// ─── Lazy-loaded sections ───
-
 // The existing AtomicBuilderPage inner content will be rendered for build steps
 const AtomicBuilderInner = dynamic(
   () => import("./enhanced/AtomicBuilderPage").then((m) => ({ default: m.AtomicBuilderPage })),
   { loading: () => <SectionSkeleton /> }
 );
-
-// ─── Section title map ───
 
 const SECTION_TITLES: Record<BuilderSection, string> = {
   foundation: "Foundation",
@@ -100,8 +94,6 @@ interface BuilderRouterProps {
   mode?: "create" | "edit";
   countryId?: string;
 }
-
-// ─── URL helpers ───
 
 function getSectionFromUrl(mode?: "create" | "edit"): BuilderSection {
   if (typeof window === "undefined") return mode === "edit" ? "identity" : "foundation";
@@ -130,8 +122,6 @@ function WelcomeModalWrapper() {
   const { welcomeModalOpen, setWelcomeModalOpen } = useBuilderFilter();
   return <BuilderWelcomeModal open={welcomeModalOpen} onOpenChange={setWelcomeModalOpen} />;
 }
-
-// ─── Inner Router (consumes BuilderStateContext) ───
 
 function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) {
   const { user } = useUser();
@@ -203,8 +193,6 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       showAdvancedMode: nextIsAdvanced,
     }));
   }, [builderState.showAdvancedMode, filter, setBuilderState]);
-
-  // ─── Editor: save, discard, autosave status ───
 
   const [isEditorSaving, setIsEditorSaving] = useState(false);
   const isEditorSavingRef = useRef(false);
@@ -713,8 +701,6 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     </BuilderGuideProvider>
   );
 }
-
-// ─── Exported Router (provides BuilderStateContext) ───
 
 export function BuilderRouter({ mode = "create", countryId }: BuilderRouterProps) {
   return (

@@ -51,13 +51,6 @@ export interface EnhancedInputProps {
   className?: string;
 }
 
-export interface ChartDataPoint {
-  name: string;
-  value: number;
-  color?: string;
-  [key: string]: string | number | boolean | undefined;
-}
-
 export interface MetricCardProps {
   label: string;
   value: number | string;

@@ -27,7 +27,7 @@ import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { SearchField } from "~/components/ui/search-field";
 
-export const ECONOMIC_TIERS = [
+const ECONOMIC_TIERS = [
   { id: "all", label: "All tiers", description: "Any economic level" },
   { id: "tier-advanced", label: "Advanced", description: "GDP/cap >$50k", color: "text-green" },
   {

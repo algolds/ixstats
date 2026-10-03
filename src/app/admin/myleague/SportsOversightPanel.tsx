@@ -74,8 +74,6 @@ const archetypeMeta: Record<string, { label: string; className: string }> = {
   circuit: { label: "Circuit", className: "bg-yellow/10 text-yellow border-yellow/30" },
 };
 
-// ─── Sub-Component for Advanced Operations ───────────────────────────────
-
 function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: () => void }) {
   const notify = useNotify();
   const utils = api.useUtils();

@@ -292,8 +292,6 @@ export function generateMercenaryBandName(chain?: MarkovChain, options?: Generat
   }
 }
 
-// --- Civic / modern organizations (geopolitical worldbuilding) ---
-
 /** Political party, front, or movement. */
 // oxlint-disable-next-line typescript/no-unused-vars
 export function generatePoliticalPartyName(chain?: MarkovChain, options?: GenerateOptions): string {

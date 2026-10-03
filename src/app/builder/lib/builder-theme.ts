@@ -1,11 +1,7 @@
 /** Builder section and step definitions. */
 
-// ─── Types ───
-
 export type BuilderSection =
   "foundation" | "identity" | "government" | "economics" | "preview" | "import";
-
-// ─── Constants ───
 
 const BUILDER_SECTIONS: BuilderSection[] = [
   "foundation",
@@ -39,8 +35,6 @@ export const BUILDER_THEME: Record<
     flavorSubtitle: "Pull country data from wiki sources",
   },
 };
-
-// ─── Legacy Compatibility ───
 
 /**
  * Map old BuilderStep names to new BuilderSection names.

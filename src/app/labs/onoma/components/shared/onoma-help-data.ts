@@ -89,7 +89,6 @@ export interface SystemGuideItem {
 }
 
 export const SYSTEM_GUIDES: SystemGuideItem[] = [
-  // --- CREATE PILLAR ---
   {
     id: "create",
     title: "Create",
@@ -124,7 +123,6 @@ export const SYSTEM_GUIDES: SystemGuideItem[] = [
     ],
   },
 
-  // --- STUDIO PILLAR ---
   {
     id: "workshop",
     title: "Workshop",
@@ -247,7 +245,6 @@ export const SYSTEM_GUIDES: SystemGuideItem[] = [
     ],
   },
 
-  // --- EXPLORE PILLAR ---
   {
     id: "phonology",
     title: "Acoustics & IPA",
@@ -435,7 +432,6 @@ export const SYSTEM_GUIDES: SystemGuideItem[] = [
     ],
   },
 
-  // --- UTILITY TABS ---
   {
     id: "bank",
     title: "Stash",

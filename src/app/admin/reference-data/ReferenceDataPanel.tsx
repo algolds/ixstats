@@ -29,8 +29,6 @@ import {
   Refresh as RefreshCw,
 } from "iconoir-react";
 
-// ── Data Type Registry ───────────────────────────────────────────────────────
-
 /** Category icon colours (static class names so Tailwind generates them). */
 const CATEGORY_ICON_COLOR: Record<string, string> = {
   cyan: "text-cyan",
@@ -215,8 +213,6 @@ const CATEGORIES = [
     color: "blue",
   },
 ];
-
-// ── Component ────────────────────────────────────────────────────────────────
 
 export default function ReferenceDataPage() {
   usePageTitle({ title: "Admin - Reference Data" });

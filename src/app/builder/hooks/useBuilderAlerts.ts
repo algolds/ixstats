@@ -83,7 +83,6 @@ export function useBuilderAlerts(input: UseBuilderAlertsInput): BuilderAlertResu
   return useMemo(() => {
     const alerts: BuilderAlert[] = [];
 
-    // ── Identity alerts ──
     if (nationalIdentity) {
       if (!nationalIdentity.countryName?.trim()) {
         alerts.push({
@@ -103,7 +102,6 @@ export function useBuilderAlerts(input: UseBuilderAlertsInput): BuilderAlertResu
       }
     }
 
-    // ── Government alerts ──
     if (governmentStructure) {
       // Use the pure helper for GDP cap warning (delta/currency baseline
       // not available in global context — those stay inline-only in GovernmentStep)
@@ -125,7 +123,6 @@ export function useBuilderAlerts(input: UseBuilderAlertsInput): BuilderAlertResu
       }
     }
 
-    // ── Economy alerts ──
     if (economyBuilderState) {
       const econValidation = validateEconomy(economyBuilderState, selectedEconomicComponents);
 
@@ -149,7 +146,6 @@ export function useBuilderAlerts(input: UseBuilderAlertsInput): BuilderAlertResu
       }
     }
 
-    // ── Tax alerts ──
     if (taxSystemData) {
       const taxValidation = validateTaxBuilderState(taxSystemData);
       if (!taxValidation.isValid) {
@@ -181,10 +177,8 @@ export function useBuilderAlerts(input: UseBuilderAlertsInput): BuilderAlertResu
       }
     }
 
-    // ── Compute counts ──
     const counts = countAlerts(alerts);
 
-    // ── Per-section counts ──
     const sectionCounts = {} as Record<BuilderSection, BuilderAlertCounts>;
     for (const s of ALL_SECTIONS) {
       const sectionAlerts = alerts.filter((a) => a.section === s);
@@ -192,7 +186,6 @@ export function useBuilderAlerts(input: UseBuilderAlertsInput): BuilderAlertResu
         sectionAlerts.length > 0 ? countAlerts(sectionAlerts) : { ...EMPTY_COUNTS };
     }
 
-    // ── forSection helper ──
     const forSection = (section: BuilderSection) => alerts.filter((a) => a.section === section);
 
     return { alerts, counts, forSection, sectionCounts };

@@ -12,18 +12,6 @@ const categoryMapping: Record<string, string> = {
   "legal-systems": "government",
 };
 
-// ─── Legacy categories ───
-
-// Define ArchetypeCategory type to match Prisma schema
-export interface ArchetypeCategory {
-  id: string;
-  name: string;
-  description: string;
-  color: string; // Tailwind color class
-  priority: number;
-  isActive: boolean;
-}
-
 // Extend CountryArchetype to include categoryId
 interface CategorizedCountryArchetype extends CountryArchetype {
   priority: number;
@@ -42,8 +30,6 @@ function withConsolidatedCategory<T extends { categoryId: string }>(
     consolidatedCategoryId: categoryMapping[archetype.categoryId] || "economy-size",
   };
 }
-
-// ─── Curated Archetypes for the new panel (trimmed for clarity) ───
 
 // Families live in ./archetype-data; order is economy & size, region, government.
 const rawArchetypes: ArchetypeSeed[] = [

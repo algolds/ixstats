@@ -84,7 +84,6 @@ export function BotControlCard({
     "processes"
   );
 
-  // --- PM2 Processes state ---
   const {
     data: processes,
     refetch: refetchProcesses,
@@ -113,7 +112,6 @@ export function BotControlCard({
     }
   };
 
-  // --- Command simulator state ---
   const { data: commands, isLoading: isCommandsLoading } = api.admin.getBotCommands.useQuery(
     undefined,
     {
@@ -160,13 +158,11 @@ export function BotControlCard({
     }
   };
 
-  // --- Guild Roles state ---
   const { data: roles, isLoading: isRolesLoading } = api.admin.getBotRoles.useQuery(undefined, {
     enabled: activeSubTab === "roles",
     refetchOnWindowFocus: false,
   });
 
-  // --- Logs state ---
   const [logProcess, setLogProcess] = useState<"ixwiki-discord-bot" | "ixstats-ixtwitter">(
     "ixwiki-discord-bot"
   );
@@ -372,7 +368,6 @@ export function BotControlCard({
       </CardHeader>
 
       <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto">
-        {/* --- PROCESS STATUS TAB --- */}
         {activeSubTab === "processes" && (
           <div className="animate-in fade-in duration-fast space-y-4 pt-1">
             {/* PM2 Processes Grid */}
@@ -612,7 +607,6 @@ export function BotControlCard({
           </div>
         )}
 
-        {/* --- COMMAND SIMULATOR TAB --- */}
         {activeSubTab === "commands" && (
           <div className="animate-in fade-in duration-fast space-y-4 pt-1">
             {isCommandsLoading ? (
@@ -923,7 +917,6 @@ export function BotControlCard({
           </div>
         )}
 
-        {/* --- ROLES & PERMISSIONS TAB --- */}
         {activeSubTab === "roles" && (
           <div className="animate-in fade-in duration-fast space-y-4 pt-1">
             {isRolesLoading ? (
@@ -998,7 +991,6 @@ export function BotControlCard({
           </div>
         )}
 
-        {/* --- LIVE LOGS TAB --- */}
         {activeSubTab === "logs" && (
           <div className="animate-in fade-in duration-fast space-y-4 pt-1">
             {/* Filter Controls */}

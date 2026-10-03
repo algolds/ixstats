@@ -56,9 +56,7 @@ export function ThinkPagesSettingsContent() {
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────
 // 1. Platform Settings Tab
-// ────────────────────────────────────────────────────────────────────────
 
 function PlatformSettingsTab() {
   const notify = useNotify();
@@ -243,9 +241,7 @@ function PlatformSettingsTab() {
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────
 // 2. Discord Mirror Tab
-// ────────────────────────────────────────────────────────────────────────
 
 function DiscordMirrorTab() {
   const notify = useNotify();

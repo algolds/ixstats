@@ -138,7 +138,6 @@ function OnomaHelpModal({
 
         {/* Main Modal Body */}
         {isWalkthrough ? (
-          /* --- FOCUSED INTERACTIVE 4-STEP WALKTHROUGH VIEW (NO MODULE REFERENCES) --- */
           <div className="flex flex-1 scrollbar-thin flex-col justify-between overflow-y-auto p-6 sm:p-7">
             <div className="mx-auto w-full max-w-lg space-y-4">
               <div className="flex items-start justify-between gap-3">
@@ -246,7 +245,6 @@ function OnomaHelpModal({
             </div>
           </div>
         ) : (
-          /* --- SPLIT-PANE MODULE REFERENCES VIEW --- */
           <div className="grid flex-1 grid-cols-1 overflow-hidden sm:grid-cols-12">
             {/* Left System Switcher Column (4 cols) */}
             <div className="border-separator bg-surface-secondary flex scrollbar-thin flex-row gap-1 overflow-x-auto border-b p-2 sm:col-span-4 sm:flex-col sm:overflow-y-auto sm:border-r sm:border-b-0">

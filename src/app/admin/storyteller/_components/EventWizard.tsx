@@ -41,8 +41,6 @@ import {
   TableCell,
 } from "~/components/ui/table";
 
-// ── Event Types ──────────────────────────────────────────────────────────────
-
 const EVENT_TYPES = [
   {
     value: "economic_crisis",
@@ -120,8 +118,6 @@ const EVENT_TYPES = [
 
 type EventTypeValue = (typeof EVENT_TYPES)[number]["value"];
 
-// ── Wizard Steps ─────────────────────────────────────────────────────────────
-
 const STEPS = [
   { label: "Event type", number: 1 },
   { label: "Scope & countries", number: 2 },
@@ -129,8 +125,6 @@ const STEPS = [
   { label: "Impact preview", number: 4 },
   { label: "Confirm & schedule", number: 5 },
 ] as const;
-
-// ── Form State ───────────────────────────────────────────────────────────────
 
 interface WizardFormState {
   type: EventTypeValue | "";
@@ -153,8 +147,6 @@ const defaultForm: WizardFormState = {
   duration: 2,
   delayDays: 0,
 };
-
-// ── Component ────────────────────────────────────────────────────────────────
 
 interface EventWizardProps {
   onCreated?: () => void;
@@ -313,8 +305,6 @@ export function EventWizard({ onCreated }: EventWizardProps) {
     </div>
   );
 }
-
-// ── Step Components ──────────────────────────────────────────────────────────
 
 function Step1EventType({
   selected,
