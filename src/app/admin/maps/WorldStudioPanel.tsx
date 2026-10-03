@@ -1,5 +1,4 @@
 "use client";
-export const dynamic = "force-dynamic";
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { PageHeader } from "~/components/shell/PageHeader";
@@ -11,7 +10,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import nextDynamic from "next/dynamic";
 
 // Light tabs — static imports (small bundles, no MapLibre)
-import { EditQueuePanel } from "./_components/EditQueuePanel";
+import { EditQueuePanel } from "~/components/maps/editor/panels/EditQueuePanel";
 import { MapSettingsTab } from "./_components/MapSettingsTab";
 import { Card } from "~/components/ui/card";
 import { SegmentedControl } from "~/components/ui/segmented-control";

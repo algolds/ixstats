@@ -14,6 +14,7 @@
  */
 
 import type { Position, Polygon, MultiPolygon } from "geojson";
+import { boxDistanceSq, distanceDeg, projectPointToSegment } from "../planar";
 import type {
   AffineMatrix,
   ReferencePoint,
@@ -21,10 +22,6 @@ import type {
   ManualTransform,
   ProvinceFeature,
 } from "./types";
-
-// ──────────────────────────────────────────────
-// Identity Transform
-// ──────────────────────────────────────────────
 
 const IDENTITY_MATRIX: AffineMatrix = {
   a: 1,
@@ -34,10 +31,6 @@ const IDENTITY_MATRIX: AffineMatrix = {
   tx: 0,
   ty: 0,
 };
-
-// ──────────────────────────────────────────────
-// Affine Transform from Reference Points
-// ──────────────────────────────────────────────
 
 /**
  * Compute least-squares affine transform from 3+ reference point pairs.
@@ -135,10 +128,6 @@ export function computeAffineFromReferencePoints(points: ReferencePoint[]): Alig
   return { matrix, rmse, matchCount: n };
 }
 
-// ──────────────────────────────────────────────
-// ICP Auto-Alignment
-// ──────────────────────────────────────────────
-
 /**
  * Auto-align province outline to country border using ICP-inspired algorithm.
  *
@@ -205,10 +194,6 @@ export function autoAlignToCountryBorder(
   };
 }
 
-// ──────────────────────────────────────────────
-// Manual Transform
-// ──────────────────────────────────────────────
-
 /**
  * Convert manual transform parameters to an affine matrix.
  * Operations are applied in order: scale → rotate → translate.
@@ -236,10 +221,6 @@ export function manualTransformToMatrix(
     ty: cy * (1 - scale * cos) - cx * scale * sin + translate[1],
   };
 }
-
-// ──────────────────────────────────────────────
-// Geometry Transform Functions
-// ──────────────────────────────────────────────
 
 /** Apply affine transform to a single point. */
 export function applyAffineToPoint(point: Position, matrix: AffineMatrix): Position {
@@ -315,10 +296,6 @@ export function applyAffineToProvinces(
     return { ...p, geometry, centroid, bbox };
   });
 }
-
-// ──────────────────────────────────────────────
-// Boundary Snapping
-// ──────────────────────────────────────────────
 
 /** Information about a snapped vertex */
 interface SnapInfo {
@@ -476,21 +453,8 @@ function snapAndConformRing(
 
     for (let ei = 0; ei < borderEdges.length; ei++) {
       const [a, b] = borderEdges[ei]!;
-      // ponytail: bounding box distance check to prune segment projections
-      const minX = Math.min(a[0]!, b[0]!);
-      const maxX = Math.max(a[0]!, b[0]!);
-      const minY = Math.min(a[1]!, b[1]!);
-      const maxY = Math.max(a[1]!, b[1]!);
-
-      let boxDx = 0;
-      if (px < minX) boxDx = minX - px;
-      else if (px > maxX) boxDx = px - maxX;
-
-      let boxDy = 0;
-      if (py < minY) boxDy = minY - py;
-      else if (py > maxY) boxDy = py - maxY;
-
-      const boxD2 = boxDx * boxDx + boxDy * boxDy;
+      // Prune segments whose bounding box is already out of range
+      const boxD2 = boxDistanceSq(px, py, a, b);
       const maxAllowedD = Math.min(tolerance, bestDist);
       if (boxD2 > maxAllowedD * maxAllowedD) {
         continue;
@@ -615,10 +579,6 @@ function getBorderPathBetween(
 function coordsEqual(a: Position, b: Position): boolean {
   return Math.abs(a[0]! - b[0]!) < 1e-10 && Math.abs(a[1]! - b[1]!) < 1e-10;
 }
-
-// ──────────────────────────────────────────────
-// Internal Helpers
-// ──────────────────────────────────────────────
 
 function computeSimilarityTransform(source: Position[], target: Position[]): AffineMatrix {
   const n = source.length;
@@ -767,21 +727,6 @@ function findNearestPoint(point: Position, candidates: Position[]): Position | n
     }
   }
   return best;
-}
-
-function projectPointToSegment(p: Position, a: Position, b: Position): Position {
-  const dx = b[0]! - a[0]!;
-  const dy = b[1]! - a[1]!;
-  const lenSq = dx * dx + dy * dy;
-  if (lenSq < 1e-20) return a;
-  const t = Math.max(0, Math.min(1, ((p[0]! - a[0]!) * dx + (p[1]! - a[1]!) * dy) / lenSq));
-  return [a[0]! + t * dx, a[1]! + t * dy];
-}
-
-function distanceDeg(a: Position, b: Position): number {
-  const dx = a[0]! - b[0]!;
-  const dy = a[1]! - b[1]!;
-  return Math.sqrt(dx * dx + dy * dy);
 }
 
 /** Solve a 3x3 linear system Ax = b via Cramer's rule. */

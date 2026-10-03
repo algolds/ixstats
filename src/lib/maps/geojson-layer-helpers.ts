@@ -43,7 +43,7 @@ export function setOrUpdateGeoJSONSource(
         data: data as any,
       });
       return true;
-    } catch (_err) {
+    } catch {
       return false;
     }
   }
@@ -64,7 +64,7 @@ export function ensureMapLayer(
     try {
       map.addLayer(layerConfig, beforeLayerId);
       return true;
-    } catch (_err) {
+    } catch {
       return false;
     }
   }
@@ -84,7 +84,7 @@ export function removeLayerAndSource(
   if (map.getLayer(layerId)) {
     try {
       map.removeLayer(layerId);
-    } catch (_err) {
+    } catch {
       // Ignored
     }
   }
@@ -92,7 +92,7 @@ export function removeLayerAndSource(
   if (sourceId && map.getSource(sourceId)) {
     try {
       map.removeSource(sourceId);
-    } catch (_err) {
+    } catch {
       // Ignored
     }
   }

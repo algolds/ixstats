@@ -1,16 +1,10 @@
 "use client";
 
 /**
- * useEditorDraft — keeps in-progress placements and drawings safe across reloads.
- *
- * Every edit that reaches the server is saved immediately (and is undoable), so
- * the only work a reload or crash can lose is what has not been submitted yet:
- * a placed-but-unnamed city, a closed-but-unsaved region, route waypoints, a
- * river path. That draft is mirrored to localStorage per country (debounced)
- * and offered back the next time the editor opens.
- *
- * localStorage is a per-browser convenience here: every read/write is guarded,
- * and the editor works normally when storage is unavailable.
+ * Keeps in-progress placements and drawings (the only work a reload can lose, since every
+ * submitted edit is saved immediately) safe across reloads: the draft is mirrored to
+ * localStorage per country (debounced) and offered back the next time the editor opens.
+ * Every storage access is guarded; the editor works normally without it.
  */
 
 import { useEffect, useRef } from "react";

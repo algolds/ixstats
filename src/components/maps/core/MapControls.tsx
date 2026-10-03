@@ -1,14 +1,5 @@
 "use client";
 
-/**
- * MapControls - Condensed icon toolbar for map layers, overlays, and tools.
- *
- * Layout: Horizontal row of icon buttons. Each opens a dropdown panel on click.
- * Panels auto-close when clicking outside or switching to another panel.
- *
- * Icons: Layers | Analytics | Tools (measure/pin) | Labels toggle
- */
-
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
   Component as Layers,
@@ -59,9 +50,8 @@ interface MapControlsProps {
 
 const TOGGLEABLE_LAYERS: MapLayerType[] = ["political", "climate", "rivers", "lakes"];
 
-// Overlay toggle lists are derived from the declarative registry (grouped by
-// category) instead of hardcoded arrays. "feature" overlays live in the Layers
-// panel; "fill" + "analytics" overlays drive the Analytics panel.
+// Overlay toggles come from the registry: "feature" overlays live in the Layers panel,
+// "fill" + "analytics" overlays in the Analytics panel.
 const OVERLAY_GROUPS = overlaysByCategory();
 const FEATURE_OVERLAYS: { key: keyof OverlayVisibility; label: string }[] = (
   OVERLAY_GROUPS.feature ?? []
@@ -133,14 +123,12 @@ export function MapControls({
       onTouchStart={(e) => e.stopPropagation()}
       onTouchMove={(e) => e.stopPropagation()}
     >
-      {/* Icon button row: one floating Facet toolbar */}
       <FacetMaterial
         material="regular"
         role="toolbar"
         aria-label="Map controls"
         className="rounded-row flex w-fit items-center gap-0.5 p-1"
       >
-        {/* Layers */}
         <IconButton
           icon={<Layers className="h-4 w-4" />}
           label="Layers"
@@ -150,7 +138,6 @@ export function MapControls({
           onClick={() => toggle("layers")}
         />
 
-        {/* Analytics */}
         <IconButton
           icon={<BarChart3 className="h-4 w-4" />}
           label="Analytics"
@@ -171,7 +158,6 @@ export function MapControls({
           />
         )}
 
-        {/* Tool buttons */}
         {toolsVisible && onToggleMeasure && (
           <IconButton
             icon={<Ruler className="h-4 w-4" />}
@@ -191,7 +177,6 @@ export function MapControls({
           />
         )}
 
-        {/* Map Editor shortcut */}
         {canEdit && onEditMap && (
           <IconButton
             icon={<PenTool className="h-4 w-4" />}
@@ -202,7 +187,6 @@ export function MapControls({
           />
         )}
 
-        {/* World Editor button beside edit map icon */}
         {showWorldEditor && onOpenWorldEditor && (
           <IconButton
             icon={<Globe className="h-4 w-4" />}
@@ -214,7 +198,6 @@ export function MapControls({
         )}
       </FacetMaterial>
 
-      {/* Layers panel */}
       {openPanel === "layers" && (
         <DropdownPanel label="Map layers">
           <PanelSection title="Map layers">
@@ -230,14 +213,11 @@ export function MapControls({
 
           {overlayVisibility && onToggleOverlay && (
             <PanelSection title="Features">
-              {FEATURE_OVERLAYS.map((item) => (
-                <CheckboxRow
-                  key={item.key}
-                  label={item.label}
-                  checked={overlayVisibility[item.key]}
-                  onChange={() => onToggleOverlay(item.key)}
-                />
-              ))}
+              <OverlayRows
+                items={FEATURE_OVERLAYS}
+                overlayVisibility={overlayVisibility}
+                onToggleOverlay={onToggleOverlay}
+              />
               <ToggleAllRow
                 overlayVisibility={overlayVisibility}
                 onToggleOverlay={onToggleOverlay}
@@ -245,7 +225,6 @@ export function MapControls({
             </PanelSection>
           )}
 
-          {/* Climate legend */}
           {visibleLayers.has("climate") && (
             <PanelSection title="Climate zones">
               <div className="max-h-40 overflow-y-auto">
@@ -264,26 +243,20 @@ export function MapControls({
         </DropdownPanel>
       )}
 
-      {/* Analytics panel */}
       {openPanel === "analytics" && overlayVisibility && onToggleOverlay && (
         <DropdownPanel label="Analytics overlays">
           <PanelSection title="Analytics overlays">
-            {ANALYTICS_OVERLAYS.map((item) => (
-              <CheckboxRow
-                key={item.key}
-                label={item.label}
-                checked={overlayVisibility[item.key]}
-                onChange={() => onToggleOverlay(item.key)}
-              />
-            ))}
+            <OverlayRows
+              items={ANALYTICS_OVERLAYS}
+              overlayVisibility={overlayVisibility}
+              onToggleOverlay={onToggleOverlay}
+            />
           </PanelSection>
         </DropdownPanel>
       )}
     </div>
   );
 }
-
-// ── Sub-components ──────────────────────────────────────────────────
 
 function IconButton({
   icon,
@@ -356,6 +329,25 @@ function PanelSection({ title, children }: { title: string; children: React.Reac
   );
 }
 
+function OverlayRows({
+  items,
+  overlayVisibility,
+  onToggleOverlay,
+}: {
+  items: { key: keyof OverlayVisibility; label: string }[];
+  overlayVisibility: OverlayVisibility;
+  onToggleOverlay: (key: keyof OverlayVisibility) => void;
+}) {
+  return items.map((item) => (
+    <CheckboxRow
+      key={item.key}
+      label={item.label}
+      checked={overlayVisibility[item.key]}
+      onChange={() => onToggleOverlay(item.key)}
+    />
+  ));
+}
+
 function ToggleAllRow({
   overlayVisibility,
   onToggleOverlay,
@@ -365,16 +357,12 @@ function ToggleAllRow({
 }) {
   const anyFeatureOn = FEATURE_OVERLAYS.some((item) => overlayVisibility[item.key]);
 
-  const handleToggleAll = useCallback(() => {
+  // If any are on, turn all off; if all are off, turn all on
+  const handleToggleAll = () => {
     for (const item of FEATURE_OVERLAYS) {
-      // If any are on, we want to turn all off; if all are off, turn all on
-      if (anyFeatureOn && overlayVisibility[item.key]) {
-        onToggleOverlay(item.key);
-      } else if (!anyFeatureOn && !overlayVisibility[item.key]) {
-        onToggleOverlay(item.key);
-      }
+      if (!!overlayVisibility[item.key] === anyFeatureOn) onToggleOverlay(item.key);
     }
-  }, [anyFeatureOn, overlayVisibility, onToggleOverlay]);
+  };
 
   return (
     <Button

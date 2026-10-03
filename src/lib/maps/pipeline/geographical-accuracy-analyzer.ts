@@ -34,6 +34,9 @@ interface ScientificAuditReport {
   };
 }
 
+const percentOf = (part: number, total: number, fallback: number) =>
+  total > 0 ? Math.round((part / total) * 100) : fallback;
+
 /**
  * Perform an automated scientific audit on a realm map graph & GeoJSON layers.
  */
@@ -43,135 +46,68 @@ export function auditGeographicalAccuracy(
 ): ScientificAuditReport {
   const { cells } = graph;
   const n = cells.n;
+  const allCells = Array.from({ length: n }, (_, i) => i);
+
+  const landFlags = (cells as { isLand?: ArrayLike<number> }).isLand;
+  const isLand = (i: number) => (landFlags ? landFlags[i] === 1 : cells.h[i]! >= 51);
+  const zone = (i: number) => cells.elevZone[i] ?? 0;
 
   // 1. Earth-Like Compatibility Audit
-  let landCellCount = 0;
-  let arableNearWaterCount = 0;
-  let polarColdCount = 0;
-  let totalPolarCount = 0;
+  const landCells = allCells.filter(isLand);
+  // Arable land: zone 0-2 near rivers/lakes
+  const arableNearWaterCount = landCells.filter(
+    (i) =>
+      zone(i) <= 2 &&
+      ((cells.river[i] ?? 0) > 0 || (cells.prec[i] ?? 0) > 30 || (cells.flux[i] ?? 0) > 10)
+  ).length;
+  const polarCells = allCells.filter((i) => Math.abs(cells.p[i * 2 + 1]!) > 65);
+  const polarColdCount = polarCells.filter((i) => (cells.temp[i] ?? 20) <= 5).length;
 
-  for (let i = 0; i < n; i++) {
-    const lat = Math.abs(cells.p[i * 2 + 1]!);
-    const isLandCell =
-      (cells as any).isLand !== undefined ? (cells as any).isLand[i] === 1 : cells.h[i]! >= 51;
-
-    if (isLandCell) {
-      landCellCount++;
-
-      // Arable land check (Zone 0-2 near rivers/lakes)
-      if ((cells.elevZone[i] ?? 0) <= 2) {
-        if ((cells.river[i] ?? 0) > 0 || (cells.prec[i] ?? 0) > 30 || (cells.flux[i] ?? 0) > 10) {
-          arableNearWaterCount++;
-        }
-      }
-    }
-
-    if (lat > 65) {
-      totalPolarCount++;
-      if ((cells.temp[i] ?? 20) <= 5) polarColdCount++;
-    }
-  }
-
-  const landRatioPercent = Math.round((landCellCount / n) * 100);
+  const landRatioPercent = Math.round((landCells.length / n) * 100);
   const landRatioScore = landRatioPercent >= 20 && landRatioPercent <= 45 ? 100 : 75;
 
-  const thermalGradientScore = totalPolarCount > 0 ? (polarColdCount / totalPolarCount) * 100 : 90;
+  const thermalGradientScore =
+    polarCells.length > 0 ? (polarColdCount / polarCells.length) * 100 : 90;
   const arableProximityPercent =
-    landCellCount > 0 ? (arableNearWaterCount / landCellCount) * 100 : 80;
+    landCells.length > 0 ? (arableNearWaterCount / landCells.length) * 100 : 80;
   const earthLikeCompatibilityScore = Math.round(
     landRatioScore * 0.4 +
       thermalGradientScore * 0.3 +
       Math.min(100, arableProximityPercent * 1.5) * 0.3
   );
 
-  // 2. Hydrological Flow Score (Rivers flow downhill along steepest slope)
-  let validRiverSteps = 0;
-  let totalRiverSteps = 0;
-
-  for (let i = 0; i < n; i++) {
-    if ((cells.river[i] ?? 0) > 0) {
-      totalRiverSteps++;
-      // Check neighbors to confirm at least one neighbor has lower or equal height
-      let hasLowerNeighbor = false;
-      for (const nb of cells.neighbors[i]!) {
-        if (cells.h[nb]! <= cells.h[i]! + 5) {
-          hasLowerNeighbor = true;
-          break;
-        }
-      }
-      if (hasLowerNeighbor) validRiverSteps++;
-    }
-  }
-
-  const riverDownhillFlowPercent =
-    totalRiverSteps > 0 ? Math.round((validRiverSteps / totalRiverSteps) * 100) : 95;
+  // 2. Hydrological Flow Score: river cells need a neighbor at or below their height
+  const riverCells = allCells.filter((i) => (cells.river[i] ?? 0) > 0);
+  const validRiverSteps = riverCells.filter((i) =>
+    cells.neighbors[i]!.some((nb) => cells.h[nb]! <= cells.h[i]! + 5)
+  ).length;
+  const riverDownhillFlowPercent = percentOf(validRiverSteps, riverCells.length, 95);
   const hydrologicalFlowScore = Math.max(85, riverDownhillFlowPercent);
 
   // 3. Thermodynamic Altitude Lapse Rate Score
-  let highPeakCount = 0;
-  let coldHighPeakCount = 0;
-
-  for (let i = 0; i < n; i++) {
-    if ((cells.elevZone[i] ?? 0) >= 6) {
-      highPeakCount++;
-      if ((cells.temp[i] ?? 0) <= 15 || cells.h[i]! >= 190) {
-        coldHighPeakCount++;
-      }
-    }
-  }
-
-  const highPeakGlacierPercent =
-    highPeakCount > 0 ? Math.round((coldHighPeakCount / highPeakCount) * 100) : 95;
+  const highPeaks = allCells.filter((i) => zone(i) >= 6);
+  const coldHighPeakCount = highPeaks.filter(
+    (i) => (cells.temp[i] ?? 0) <= 15 || cells.h[i]! >= 190
+  ).length;
+  const highPeakGlacierPercent = percentOf(coldHighPeakCount, highPeaks.length, 95);
   const thermodynamicLapseScore = Math.max(85, highPeakGlacierPercent);
 
-  // 4. Orogenic Rain Shadow Score
-  let rainShadowPassed = 0;
-  let rainShadowTested = 0;
+  // 4. Orogenic Rain Shadow Score: every tested cell (zone >= 4) passes, so it is 100 when any exist
+  const rainShadowScore = allCells.some((i) => zone(i) >= 4) ? 100 : 88;
 
-  for (let i = 0; i < n; i++) {
-    if ((cells.elevZone[i] ?? 0) >= 4) {
-      rainShadowTested++;
-      let maxPrecDiff = 0;
-      for (const nb of cells.neighbors[i]!) {
-        const diff = Math.abs((cells.prec[i] ?? 0) - (cells.prec[nb] ?? 0));
-        if (diff > maxPrecDiff) maxPrecDiff = diff;
-      }
-      if (maxPrecDiff >= 0) rainShadowPassed++;
-    }
-  }
-
-  const rainShadowScore =
-    rainShadowTested > 0 ? Math.round((rainShadowPassed / rainShadowTested) * 100) : 88;
-
-  // 5. Hypsometric Elevation Curve Score
-  const zoneCounts = new Array(9).fill(0);
-  for (let i = 0; i < n; i++) {
-    const isLandCell =
-      (cells as any).isLand !== undefined ? (cells as any).isLand[i] === 1 : cells.h[i]! >= 51;
-    if (isLandCell) {
-      zoneCounts[cells.elevZone[i]!]!++;
-    }
-  }
-
-  let filledZones = 0;
-  for (let z = 0; z < 9; z++) {
-    if (zoneCounts[z]! > 0) filledZones++;
-  }
-
+  // 5. Hypsometric Elevation Curve Score: share of the 9 elevation zones holding land
+  const filledZones = Array.from({ length: 9 }, (_, z) => z).filter((z) =>
+    landCells.some((i) => cells.elevZone[i] === z)
+  ).length;
   const hypsometricCurveScore = Math.max(85, Math.round((filledZones / 9) * 100));
 
   // 6. Vector Smoothness & Topology Score
-  let validLayerCount = 0;
   const expectedLayers = ["background", "altitudes", "climate", "political"];
-  for (const layerKey of expectedLayers) {
-    if (layers[layerKey] && layers[layerKey]!.features && layers[layerKey]!.features.length > 0) {
-      validLayerCount++;
-    }
-  }
-
+  const validLayerCount = expectedLayers.filter(
+    (key) => (layers[key]?.features?.length ?? 0) > 0
+  ).length;
   const vectorSmoothnessScore = Math.round((validLayerCount / expectedLayers.length) * 100);
 
-  // Composite Realism Score Calculation
   const compositeScore = Math.round(
     hydrologicalFlowScore * 0.2 +
       thermodynamicLapseScore * 0.2 +

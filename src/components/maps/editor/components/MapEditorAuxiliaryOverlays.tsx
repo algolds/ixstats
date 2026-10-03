@@ -9,11 +9,12 @@ import { useNotify } from "~/hooks/useNotify";
 import { useIsMobile } from "~/hooks/useIsMobile";
 import { BatchActionsBar, type EditableField } from "~/components/maps/editor/BatchActionsBar";
 import { EditorDialogs } from "./EditorDialogs";
+import { useFeatureActionHandlers } from "./useFeatureActionHandlers";
 import { EditorContextMenuWrapper } from "./EditorContextMenuWrapper";
 import { PropertiesPanelContent } from "./PropertiesPanelContent";
 import { LayerPanel } from "~/components/maps/editor/LayerPanel";
 import type { MapEditorOverlayReturnState } from "./MapEditorSidebarPanels";
-import type { EditorContextMenuData, EditorFeature } from "../types/editor-state";
+import type { EditorContextMenuData } from "../types/editor-state";
 
 const MobileEditorSheet = dynamic(
   () => import("~/components/maps/editor/MobileEditorSheet").then((m) => m.MobileEditorSheet),
@@ -69,26 +70,11 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
   const notify = useNotify();
   const { editor, importer } = state;
 
-  const handleSelectFeature = useCallback(
-    (feat: EditorFeature | null) => {
-      state.handleSelectFeature?.(feat);
-    },
-    [state.handleSelectFeature]
-  );
-
-  const handleEditFeature = useCallback(
-    (feat: EditorFeature) => {
-      state.handleEditFeature?.(feat);
-    },
-    [state.handleEditFeature]
-  );
-
-  const handleDeleteFeature = useCallback(
-    (feat: EditorFeature) => {
-      state.handleDeleteFeature?.(feat);
-    },
-    [state.handleDeleteFeature]
-  );
+  const {
+    onSelectFeature: handleSelectFeature,
+    onEditFeature: handleEditFeature,
+    onDeleteFeature: handleDeleteFeature,
+  } = useFeatureActionHandlers(state);
 
   const subdivisionCount = useMemo(
     () =>
@@ -186,7 +172,6 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
         </div>
       )}
 
-      {/* Batch Actions Bar */}
       {editor.selectedIds.size > 1 && (
         <div className="pointer-events-auto absolute bottom-10 left-1/2 z-30 max-w-[calc(100vw-2rem)] -translate-x-1/2">
           <FacetMaterial material="regular" className="rounded-row overflow-hidden">
@@ -202,7 +187,6 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
         </div>
       )}
 
-      {/* Context Menu */}
       <EditorContextMenuWrapper
         contextMenu={contextMenu}
         setContextMenu={setContextMenu}
@@ -211,10 +195,8 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
         onZoomToFeature={state.zoomToFeature}
       />
 
-      {/* Keyboard Shortcut Sheet */}
       {showShortcuts && <KeyboardShortcutSheet onClose={() => setShowShortcuts(false)} />}
 
-      {/* Province Import Wizard Floating Panel */}
       {editor.mode === "import-provinces" && (
         <FloatingImportPanel
           onClose={() => {
@@ -237,10 +219,8 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
         </FloatingImportPanel>
       )}
 
-      {/* Editor Dialogs */}
       <EditorDialogs {...state} onExit={onExit} />
 
-      {/* Onboarding Welcome Modal */}
       <MapEditorWelcomeModal isOpen={showWelcomeModal} onClose={() => setShowWelcomeModal(false)} />
     </>
   );

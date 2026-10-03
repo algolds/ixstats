@@ -1,7 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
-import React, { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, type ReactNode } from "react";
 import type {
   HeraldryComposition,
   ValidationWarning,
@@ -51,35 +50,23 @@ const VexelEditorContext = createContext<VexelEditorContextType | undefined>(und
 export function VexelEditorProvider({ children }: { children: ReactNode }) {
   const [composition, setComposition] = useState<HeraldryComposition>(DEFAULT_COMPOSITION);
   const [selectedLayerPath, setSelectedLayerPath] = useState<string | null>(null);
-  const [validationWarnings, setValidationWarnings] = useState<ValidationWarning[]>([]);
-  const [blazon, setBlazon] = useState("");
   const [isDirty, setIsDirty] = useState(false);
   const [achievementId, setAchievementId] = useState<string | null>(null);
 
-  // Auto-run validation & blazon generation on composition changes
-  useEffect(() => {
-    const warnings = validateComposition(composition);
-    const textBlazon = generateBlazon(composition);
-    // oxlint-disable-next-line
-    setValidationWarnings(warnings);
-    setBlazon(textBlazon);
-  }, [composition]);
+  const validationWarnings = useMemo(() => validateComposition(composition), [composition]);
+  const blazon = useMemo(() => generateBlazon(composition), [composition]);
 
   // Load draft from sessionStorage on mount
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const draft = sessionStorage.getItem("vexel-draft");
-      if (draft) {
-        try {
-          const parsed = JSON.parse(draft) as HeraldryComposition;
-          // oxlint-disable-next-line
-          setComposition(parsed);
-          setIsDirty(true);
-          sessionStorage.removeItem("vexel-draft");
-        } catch (e) {
-          console.error("Failed to parse vexel-draft", e);
-        }
-      }
+    const draft = sessionStorage.getItem("vexel-draft");
+    if (!draft) return;
+    try {
+      // oxlint-disable-next-line
+      setComposition(JSON.parse(draft) as HeraldryComposition);
+      setIsDirty(true);
+      sessionStorage.removeItem("vexel-draft");
+    } catch (e) {
+      console.error("Failed to parse vexel-draft", e);
     }
   }, []);
 
@@ -90,136 +77,56 @@ export function VexelEditorProvider({ children }: { children: ReactNode }) {
     setSelectedLayerPath(null);
   };
 
-  const markSaved = () => {
-    setIsDirty(false);
-  };
-
   const updateComposition = (comp: HeraldryComposition) => {
     setComposition(comp);
     setIsDirty(true);
   };
 
-  const selectLayer = (path: string | null) => {
-    setSelectedLayerPath(path);
+  const updateShield = (patch: Partial<HeraldryComposition["shield"]>) =>
+    updateComposition({ ...composition, shield: { ...composition.shield, ...patch } });
+
+  /** Deselect the layer if it was the removed item. */
+  const deselectIfRemoved = (collection: "charges" | "ordinaries", index: number) => {
+    if (selectedLayerPath === `shield.${collection}[${index}]`) setSelectedLayerPath(null);
   };
 
-  const addCharge = (charge: ChargeRef) => {
-    updateComposition({
-      ...composition,
-      shield: {
-        ...composition.shield,
-        charges: [...(composition.shield.charges ?? []), charge],
-      },
-    });
+  const charges = composition.shield.charges ?? [];
+  const ordinaries = composition.shield.ordinaries ?? [];
+
+  const value: VexelEditorContextType = {
+    composition,
+    selectedLayerPath,
+    validationWarnings,
+    blazon,
+    isDirty,
+    achievementId,
+    updateComposition,
+    selectLayer: setSelectedLayerPath,
+    addCharge: (charge) => updateShield({ charges: [...charges, charge] }),
+    removeCharge: (index) => {
+      updateShield({ charges: charges.filter((_, idx) => idx !== index) });
+      deselectIfRemoved("charges", index);
+    },
+    updateCharge: (index, updates) =>
+      updateShield({
+        charges: charges.map((c, idx) => (idx === index ? { ...c, ...updates } : c)),
+      }),
+    addOrdinary: (ord) => updateShield({ ordinaries: [...ordinaries, ord] }),
+    removeOrdinary: (index) => {
+      updateShield({ ordinaries: ordinaries.filter((_, idx) => idx !== index) });
+      deselectIfRemoved("ordinaries", index);
+    },
+    updateOrdinary: (index, updates) =>
+      updateShield({
+        ordinaries: ordinaries.map((o, idx) => (idx === index ? { ...o, ...updates } : o)),
+      }),
+    updateField: (field) => updateShield({ field }),
+    updateExternals: (externals) => updateComposition({ ...composition, externals }),
+    setInitialState,
+    markSaved: () => setIsDirty(false),
   };
 
-  const removeCharge = (index: number) => {
-    const nextCharges = (composition.shield.charges ?? []).filter((_, idx) => idx !== index);
-    updateComposition({
-      ...composition,
-      shield: {
-        ...composition.shield,
-        charges: nextCharges,
-      },
-    });
-    if (selectedLayerPath === `shield.charges[${index}]`) {
-      setSelectedLayerPath(null);
-    }
-  };
-
-  const updateCharge = (index: number, updates: Partial<ChargeRef>) => {
-    const nextCharges = (composition.shield.charges ?? []).map((c, idx) =>
-      idx === index ? { ...c, ...updates } : c
-    );
-    updateComposition({
-      ...composition,
-      shield: {
-        ...composition.shield,
-        charges: nextCharges,
-      },
-    });
-  };
-
-  const addOrdinary = (ord: OrdinaryConfig) => {
-    updateComposition({
-      ...composition,
-      shield: {
-        ...composition.shield,
-        ordinaries: [...(composition.shield.ordinaries ?? []), ord],
-      },
-    });
-  };
-
-  const removeOrdinary = (index: number) => {
-    const nextOrdinaries = (composition.shield.ordinaries ?? []).filter((_, idx) => idx !== index);
-    updateComposition({
-      ...composition,
-      shield: {
-        ...composition.shield,
-        ordinaries: nextOrdinaries,
-      },
-    });
-    if (selectedLayerPath === `shield.ordinaries[${index}]`) {
-      setSelectedLayerPath(null);
-    }
-  };
-
-  const updateOrdinary = (index: number, updates: Partial<OrdinaryConfig>) => {
-    const nextOrdinaries = (composition.shield.ordinaries ?? []).map((o, idx) =>
-      idx === index ? { ...o, ...updates } : o
-    );
-    updateComposition({
-      ...composition,
-      shield: {
-        ...composition.shield,
-        ordinaries: nextOrdinaries,
-      },
-    });
-  };
-
-  const updateField = (field: FieldConfig) => {
-    updateComposition({
-      ...composition,
-      shield: {
-        ...composition.shield,
-        field,
-      },
-    });
-  };
-
-  const updateExternals = (ext: ExternalOrnaments) => {
-    updateComposition({
-      ...composition,
-      externals: ext,
-    });
-  };
-
-  return (
-    <VexelEditorContext.Provider
-      value={{
-        composition,
-        selectedLayerPath,
-        validationWarnings,
-        blazon,
-        isDirty,
-        achievementId,
-        updateComposition,
-        selectLayer,
-        addCharge,
-        removeCharge,
-        updateCharge,
-        addOrdinary,
-        removeOrdinary,
-        updateOrdinary,
-        updateField,
-        updateExternals,
-        setInitialState,
-        markSaved,
-      }}
-    >
-      {children}
-    </VexelEditorContext.Provider>
-  );
+  return <VexelEditorContext.Provider value={value}>{children}</VexelEditorContext.Provider>;
 }
 
 export function useVexelEditor() {

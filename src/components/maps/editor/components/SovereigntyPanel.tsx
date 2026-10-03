@@ -37,6 +37,20 @@ interface SovereigntyPanelProps {
   relationsLoading: boolean;
 }
 
+const TEXT_FIELDS = [
+  { key: "establishedDate", label: "Established", placeholder: "e.g. 1920" },
+  { key: "description", label: "Description", placeholder: "Optional notes..." },
+] as const;
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="text-label-secondary mb-0.5 block">{label}</label>
+      {children}
+    </div>
+  );
+}
+
 export const SovereigntyPanel = React.memo(function SovereigntyPanel({
   filteredRelations,
   showSovereigntyForm,
@@ -59,6 +73,8 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
   relationsLoading,
 }: SovereigntyPanelProps) {
   const typeLabel = (t: string) => SOVEREIGNTY_TYPES.find((s) => s.value === t)?.label ?? t;
+  const patch = (changes: Partial<SovereigntyFormData>) =>
+    setSovereigntyForm({ ...sovereigntyForm, ...changes });
 
   return (
     <div className="text-footnote space-y-4 p-3">
@@ -85,13 +101,12 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
             {editingSovereigntyId ? "Edit Sovereignty" : "New Sovereignty Relation"}
           </Eyebrow>
           <div className="text-footnote space-y-2">
-            <div>
-              <label className="text-label-secondary mb-0.5 block">Sovereign (Parent)</label>
+            <Field label="Sovereign (Parent)">
               <OptionSelect
                 aria-label="Sovereign (parent)"
                 disabled={!!editingSovereigntyId}
                 value={sovereigntyForm.sovereignId}
-                onValueChange={(v) => setSovereigntyForm({ ...sovereigntyForm, sovereignId: v })}
+                onValueChange={(sovereignId) => patch({ sovereignId })}
                 options={[
                   { value: "", label: "Select parent..." },
                   ...countries.map((c) => ({ value: c.id, label: c.name })),
@@ -99,79 +114,53 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
                 size="sm"
                 className="w-full"
               />
-            </div>
-            <div>
-              <label className="text-label-secondary mb-0.5 block">Subject (Dependency)</label>
+            </Field>
+            <Field label="Subject (Dependency)">
               <OptionSelect
                 aria-label="Subject country"
                 size="sm"
                 value={sovereigntyForm.subjectId}
-                onValueChange={(v) => setSovereigntyForm({ ...sovereigntyForm, subjectId: v })}
+                onValueChange={(subjectId) => patch({ subjectId })}
                 disabled={!!editingSovereigntyId}
                 options={[
                   { value: "", label: "Select subject..." },
                   ...countries
-                    .filter((c: PropertiesPanelCountry) => c.id !== sovereigntyForm.sovereignId)
-                    .map((c: PropertiesPanelCountry) => ({ value: c.id, label: c.name })),
+                    .filter((c) => c.id !== sovereigntyForm.sovereignId)
+                    .map((c) => ({ value: c.id, label: c.name })),
                 ]}
               />
-            </div>
-            <div>
-              <label className="text-label-secondary mb-0.5 block">Type</label>
+            </Field>
+            <Field label="Type">
               <OptionSelect
                 aria-label="Type"
                 value={sovereigntyForm.relationshipType}
-                onValueChange={(v) =>
-                  setSovereigntyForm({ ...sovereigntyForm, relationshipType: v })
-                }
+                onValueChange={(relationshipType) => patch({ relationshipType })}
                 options={SOVEREIGNTY_TYPES}
                 size="sm"
                 className="w-full"
               />
-            </div>
-            <div>
-              <label className="text-label-secondary mb-0.5 block">
-                Autonomy: {sovereigntyForm.autonomyLevel}%
-              </label>
+            </Field>
+            <Field label={`Autonomy: ${sovereigntyForm.autonomyLevel}%`}>
               <Slider
                 aria-label="Autonomy"
                 min={0}
                 max={100}
                 value={[sovereigntyForm.autonomyLevel]}
-                onValueChange={([v]) =>
-                  v !== undefined &&
-                  setSovereigntyForm({
-                    ...sovereigntyForm,
-                    autonomyLevel: v,
-                  })
-                }
+                onValueChange={([v]) => v !== undefined && patch({ autonomyLevel: v })}
                 className="w-full py-2"
               />
-            </div>
-            <div>
-              <label className="text-label-secondary mb-0.5 block">Established</label>
-              <input
-                type="text"
-                placeholder="e.g. 1920"
-                value={sovereigntyForm.establishedDate}
-                onChange={(e) =>
-                  setSovereigntyForm({ ...sovereigntyForm, establishedDate: e.target.value })
-                }
-                className="border-separator bg-surface focus:ring-tint text-footnote rounded-control-sm w-full border px-2 py-1 focus:ring-1 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="text-label-secondary mb-0.5 block">Description</label>
-              <input
-                type="text"
-                placeholder="Optional notes..."
-                value={sovereigntyForm.description}
-                onChange={(e) =>
-                  setSovereigntyForm({ ...sovereigntyForm, description: e.target.value })
-                }
-                className="border-separator bg-surface focus:ring-tint text-footnote rounded-control-sm w-full border px-2 py-1 focus:ring-1 focus:outline-none"
-              />
-            </div>
+            </Field>
+            {TEXT_FIELDS.map(({ key, label, placeholder }) => (
+              <Field key={key} label={label}>
+                <input
+                  type="text"
+                  placeholder={placeholder}
+                  value={sovereigntyForm[key]}
+                  onChange={(e) => patch({ [key]: e.target.value })}
+                  className="border-separator bg-surface focus:ring-tint text-footnote rounded-control-sm w-full border px-2 py-1 focus:ring-1 focus:outline-none"
+                />
+              </Field>
+            ))}
           </div>
           <div className="border-separator flex justify-end gap-2 border-t pt-2">
             <Button

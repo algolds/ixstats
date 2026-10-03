@@ -33,6 +33,48 @@ interface BorderEditorToolOptionsProps {
   onExit: () => void;
 }
 
+const MODE_HINTS: Partial<Record<string, string>> = {
+  select: "Click a vertex/edge to start editing.",
+  vertex_edit: "Drag vertices. Click midpoints to add vertices.",
+  merge: "Select neighbor subdivisions to merge.",
+  trace: "Click points on river/coast to trace.",
+};
+
+const ADVANCED_OPERATIONS = [
+  {
+    run: (a: BorderEditorActions) => a.repair(),
+    title: "Repair geometry spikes",
+    label: "Repair spikes",
+    toast: "Repaired geometry spikes",
+    icon: Wrench,
+    iconClass: "text-yellow",
+  },
+  {
+    run: (a: BorderEditorActions) => a.smooth(),
+    title: "Soften corners (Chaikin smoothing)",
+    label: "Smooth geometry",
+    toast: "Applied Chaikin smoothing",
+    icon: Spline,
+    iconClass: "text-blue",
+  },
+  {
+    run: (a: BorderEditorActions) => a.naturalize(),
+    title: "Subdivide and randomize for organic coastlines",
+    label: "Naturalize coastline",
+    toast: "Naturalized coastline",
+    icon: Waves,
+    iconClass: "text-cyan",
+  },
+  {
+    run: (a: BorderEditorActions) => a.simplify(),
+    title: "Reduce vertex count (Douglas-Peucker)",
+    label: "Simplify (Reduce Vertices)",
+    toast: "Simplified border vertices",
+    icon: Minimize2,
+    iconClass: "text-indigo",
+  },
+];
+
 export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptions({
   countryName,
   borderState,
@@ -51,7 +93,6 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
       aria-label="Border editor options"
       className="pointer-events-auto flex h-9 shrink-0 items-center justify-between rounded-none px-3"
     >
-      {/* Left Side: Active Tool Options */}
       <div className="flex items-center gap-2">
         <div className="border-separator mr-2 flex items-center gap-2 border-r pr-2">
           <Scissors className="text-label-secondary h-3.5 w-3.5" />
@@ -60,7 +101,6 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
           </span>
         </div>
 
-        {/* Tool-specific configuration */}
         {borderState.mode === "brush" && (
           <div className="flex items-center gap-2">
             <Eyebrow>Brush size</Eyebrow>
@@ -85,34 +125,12 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
           </span>
         )}
 
-        {borderState.mode === "select" && (
-          <span className="text-label-secondary text-footnote">
-            Click a vertex/edge to start editing.
-          </span>
-        )}
-
-        {borderState.mode === "vertex_edit" && (
-          <span className="text-label-secondary text-footnote">
-            Drag vertices. Click midpoints to add vertices.
-          </span>
-        )}
-
-        {borderState.mode === "merge" && (
-          <span className="text-label-secondary text-footnote">
-            Select neighbor subdivisions to merge.
-          </span>
-        )}
-
-        {borderState.mode === "trace" && (
-          <span className="text-label-secondary text-footnote">
-            Click points on river/coast to trace.
-          </span>
+        {MODE_HINTS[borderState.mode] && (
+          <span className="text-label-secondary text-footnote">{MODE_HINTS[borderState.mode]}</span>
         )}
       </div>
 
-      {/* Right Side: Actions (Undo/Redo, Stats, Advanced, Save, Apply, Cancel) */}
       <div className="flex items-center gap-2">
-        {/* Undo / Redo */}
         <div className="flex items-center gap-0.5">
           <Button
             variant="ghost"
@@ -143,7 +161,6 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
 
         <div className="bg-separator h-4 w-px" />
 
-        {/* Area Stats */}
         {borderState.areaKm2 !== null && (
           <span className="text-label-secondary text-caption select-none">
             {borderState.areaKm2 > 1000000
@@ -154,7 +171,6 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
 
         <div className="bg-separator h-4 w-px" />
 
-        {/* Advanced operations popover */}
         <Popover>
           <PopoverTrigger className="bg-fill-3 text-label-secondary hover:bg-fill-3 hover:text-label text-caption rounded-control-sm flex h-6 cursor-pointer items-center gap-1 px-2 transition-colors">
             <Wrench className="h-3 w-3" />
@@ -162,77 +178,31 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
           </PopoverTrigger>
           <PopoverContent className="rounded-control-sm w-48 p-2" align="end">
             <div className="flex flex-col gap-1">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  void borderActions.repair();
-                  notify.info("Repaired geometry spikes", undefined, {
-                    actions: [{ label: "Undo", onClick: () => borderActions.undo() }],
-                  });
-                }}
-                title="Repair geometry spikes"
-                className="text-label-secondary hover:text-label h-auto min-h-(--control-height-sm) w-full justify-start gap-2 py-2 text-left whitespace-normal"
-              >
-                <Wrench className="text-yellow h-3.5 w-3.5" />
-                <span>Repair spikes</span>
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  void borderActions.smooth();
-                  notify.info("Applied Chaikin smoothing", undefined, {
-                    actions: [{ label: "Undo", onClick: () => borderActions.undo() }],
-                  });
-                }}
-                title="Soften corners (Chaikin smoothing)"
-                className="text-label-secondary hover:text-label h-auto min-h-(--control-height-sm) w-full justify-start gap-2 py-2 text-left whitespace-normal"
-              >
-                <Spline className="text-blue h-3.5 w-3.5" />
-                <span>Smooth geometry</span>
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  void borderActions.naturalize();
-                  notify.info("Naturalized coastline", undefined, {
-                    actions: [{ label: "Undo", onClick: () => borderActions.undo() }],
-                  });
-                }}
-                title="Subdivide and randomize for organic coastlines"
-                className="text-label-secondary hover:text-label h-auto min-h-(--control-height-sm) w-full justify-start gap-2 py-2 text-left whitespace-normal"
-              >
-                <Waves className="text-cyan h-3.5 w-3.5" />
-                <span>Naturalize coastline</span>
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  void borderActions.simplify();
-                  notify.info("Simplified border vertices", undefined, {
-                    actions: [{ label: "Undo", onClick: () => borderActions.undo() }],
-                  });
-                }}
-                title="Reduce vertex count (Douglas-Peucker)"
-                className="text-label-secondary hover:text-label h-auto min-h-(--control-height-sm) w-full justify-start gap-2 py-2 text-left whitespace-normal"
-              >
-                <Minimize2 className="text-indigo h-3.5 w-3.5" />
-                <span>Simplify (Reduce Vertices)</span>
-              </Button>
+              {ADVANCED_OPERATIONS.map(({ run, title, label, toast, icon: Icon, iconClass }) => (
+                <Button
+                  key={label}
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    void run(borderActions);
+                    notify.info(toast, undefined, {
+                      actions: [{ label: "Undo", onClick: () => borderActions.undo() }],
+                    });
+                  }}
+                  title={title}
+                  className="text-label-secondary hover:text-label h-auto min-h-(--control-height-sm) w-full justify-start gap-2 py-2 text-left whitespace-normal"
+                >
+                  <Icon className={`${iconClass} h-3.5 w-3.5`} />
+                  <span>{label}</span>
+                </Button>
+              ))}
             </div>
           </PopoverContent>
         </Popover>
 
         <div className="bg-separator h-4 w-px" />
 
-        {/* Save Draft */}
         <Button
           variant="ghost"
           size="xs"
@@ -244,7 +214,6 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
           <span>{isSubmitting ? "Saving..." : "Save"}</span>
         </Button>
 
-        {/* Revert edits */}
         <Button
           variant="ghost"
           size="xs"
@@ -261,7 +230,6 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
           <span>Revert</span>
         </Button>
 
-        {/* Apply & Exit */}
         <Button
           variant="ghost"
           size="xs"
@@ -279,7 +247,6 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
 
         <div className="bg-separator h-4 w-px" />
 
-        {/* Close / Exit Border Editor */}
         <Button variant="secondary" size="xs" onClick={onExit} title="Close border editor">
           <X className="h-3 w-3" />
           <span>Close</span>

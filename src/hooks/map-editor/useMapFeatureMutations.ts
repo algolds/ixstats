@@ -1,5 +1,3 @@
-import { useCallback } from "react";
-import { api } from "~/trpc/react";
 import type {
   EditorFeature,
   EditorMode,
@@ -14,6 +12,8 @@ import type {
 } from "./editor-types";
 
 import type { FeatureType } from "~/types/maps/editor-domain";
+import { createFeatureOps } from "./feature-ops";
+import { useFeatureMutations } from "./feature-mutations";
 import type { EditorAction } from "./useMapHistory";
 
 interface UseMapFeatureMutationsOptions {
@@ -59,544 +59,359 @@ export function useMapFeatureMutations({
   setMutationError,
   pushAction,
 }: UseMapFeatureMutationsOptions) {
-  const createCity = api.geoFeatures.createCity.useMutation();
-  const updateCity = api.geoFeatures.updateCity.useMutation();
-  const deleteCity = api.geoFeatures.deleteCity.useMutation();
+  const m = useFeatureMutations();
 
-  const createSubdivision = api.geoFeatures.createSubdivision.useMutation();
-  const updateSubdivision = api.geoFeatures.updateSubdivision.useMutation();
-  const deleteSubdivision = api.geoFeatures.deleteSubdivision.useMutation();
-
-  const createPOI = api.geoFeatures.createPOI.useMutation();
-  const updatePOI = api.geoFeatures.updatePOI.useMutation();
-  const deletePOI = api.geoFeatures.deletePOI.useMutation();
-
-  const createStoryPin = api.geoFeatures.createStoryPin.useMutation();
-  const updateStoryPin = api.geoFeatures.updateStoryPin.useMutation();
-  const deleteStoryPin = api.geoFeatures.deleteStoryPin.useMutation();
-
-  const createMapLabel = api.geoFeatures.createMapLabel.useMutation();
-  const updateMapLabel = api.geoFeatures.updateMapLabel.useMutation();
-  const deleteMapLabel = api.geoFeatures.deleteMapLabel.useMutation();
-
-  const createPeak = api.geoFeatures.createPeak.useMutation();
-  const updatePeak = api.geoFeatures.updatePeak.useMutation();
-  const deletePeak = api.geoFeatures.deletePeak.useMutation();
-
-  const createNamedRiver = api.geoFeatures.createNamedRiver.useMutation();
-  const updateNamedRiver = api.geoFeatures.updateNamedRiver.useMutation();
-  const deleteNamedRiver = api.geoFeatures.deleteNamedRiver.useMutation();
-
-  const createNamedLake = api.geoFeatures.createNamedLake.useMutation();
-  const updateNamedLake = api.geoFeatures.updateNamedLake.useMutation();
-  const deleteNamedLake = api.geoFeatures.deleteNamedLake.useMutation();
-
-  const deleteRoute = api.transport.deleteRoute.useMutation();
-
-  // prettier-ignore
-  const isMutating = [
-    createCity, updateCity, deleteCity,
-    createSubdivision, updateSubdivision, deleteSubdivision,
-    createPOI, updatePOI, deletePOI,
-    createStoryPin, updateStoryPin, deleteStoryPin,
-    createMapLabel, updateMapLabel, deleteMapLabel,
-    createPeak, updatePeak, deletePeak,
-    createNamedRiver, updateNamedRiver, deleteNamedRiver,
-    createNamedLake, updateNamedLake, deleteNamedLake,
-    deleteRoute,
-  ].some((m) => m.isPending);
-
-  const onSuccess = useCallback(
-    (
-      type?: "create" | "update" | "delete",
-      featureType?: FeatureType,
-      featureId?: string,
-      description?: string,
-      prev?: Record<string, string | number | boolean | object | null | undefined>,
-      next?: Record<string, string | number | boolean | object | null | undefined>
-    ) => {
-      if (type && featureType && featureId && description) {
-        pushAction?.({
-          type,
-          featureType,
-          featureId,
-          description,
-          timestamp: Date.now(),
-          previousData: prev,
-          newData: next,
-        });
-      }
-      resetForm();
-      setMode("view");
-      invalidateAllMapData();
-      debouncedRefetch();
-      setLastSavedAt(new Date());
-      setMutationError(null);
-    },
-    [
-      pushAction,
-      resetForm,
-      setMode,
-      invalidateAllMapData,
-      debouncedRefetch,
-      setLastSavedAt,
-      setMutationError,
-    ]
+  const isMutating = Object.values(m).some((kind) =>
+    Object.values(kind as Record<string, { isPending: boolean }>).some(
+      (mutation) => mutation.isPending
+    )
   );
 
-  const submitCity = useCallback(async () => {
-    if (!countryId || !pendingCoordinates) return;
+  const onSuccess = (
+    type?: "create" | "update" | "delete",
+    featureType?: FeatureType,
+    featureId?: string,
+    description?: string,
+    prev?: Record<string, string | number | boolean | object | null | undefined>,
+    next?: Record<string, string | number | boolean | object | null | undefined>
+  ) => {
+    if (type && featureType && featureId && description) {
+      pushAction?.({
+        type,
+        featureType,
+        featureId,
+        description,
+        timestamp: Date.now(),
+        previousData: prev,
+        newData: next,
+      });
+    }
+    resetForm();
+    setMode("view");
+    invalidateAllMapData();
+    debouncedRefetch();
+    setLastSavedAt(new Date());
+    setMutationError(null);
+  };
+
+  /** Run a mutation; failures surface as the server message, else `fallback`. */
+  const attempt = async (fallback: string, work: () => Promise<void>) => {
     try {
-      const res = await createCity.mutateAsync({
-        countryId,
+      await work();
+    } catch (e) {
+      setMutationError(e instanceof Error && e.message ? e.message : fallback);
+    }
+  };
+
+  /** A kind of editable feature: how it is named in errors and history, and its current form. */
+  const kind = <F extends object>(
+    type: FeatureType,
+    noun: string,
+    label: string,
+    form: F,
+    name: (form: F) => string
+  ) => ({ type, noun, label, form, name });
+  type Kind<F extends object> = ReturnType<typeof kind<F>>;
+
+  /** Fields every mutation needs; spread into its input. */
+  type Scope = { countryId: string };
+
+  /** Create at the pending point ("coordinates") or drawn shape ("geometry"). */
+  const create = async <F extends object, P extends object>(
+    k: Kind<F>,
+    key: "coordinates" | "geometry",
+    pending: P | null,
+    run: (scope: Scope, pending: P) => Promise<{ id: string }>
+  ) => {
+    if (!countryId || !pending) return;
+    await attempt(`Failed to create ${k.noun}`, async () => {
+      const res = await run({ countryId }, pending);
+      onSuccess("create", k.type, res.id, `Created ${k.label} "${k.name(k.form)}"`, undefined, {
+        ...k.form,
+        [key]: pending,
+      });
+    });
+  };
+
+  /** Edit the selected feature; `history` yields the previous and next states for undo/redo. */
+  const edit = async <F extends object>(
+    k: Kind<F>,
+    override: Partial<F> | undefined,
+    run: (scope: Scope, feature: EditorFeature, form: F) => Promise<unknown>,
+    history: (feature: EditorFeature, form: F) => [Record<string, unknown>, Record<string, unknown>]
+  ) => {
+    if (!countryId || !selectedFeature) return;
+    const form = { ...k.form, ...override };
+    await attempt(`Failed to update ${k.noun}`, async () => {
+      await run({ countryId }, selectedFeature, form);
+      const [prev, next] = history(selectedFeature, form);
+      onSuccess(
+        "update",
+        k.type,
+        selectedFeature.id,
+        `Updated ${k.label} "${k.name(form)}"`,
+        prev,
+        next
+      );
+    });
+  };
+
+  // History of edits to features placed at a point, a drawn region, and plain renames
+  const atPoint = (feature: EditorFeature, form: object) => [
+    { ...feature.properties, coordinates: feature.coordinates },
+    { ...form, coordinates: feature.coordinates },
+  ];
+  const atShape = (feature: EditorFeature, form: { geometry?: object }) => [
+    { ...feature.properties, geometry: feature.geometry },
+    { ...form, geometry: feature.geometry || form.geometry },
+  ];
+  const renamed = (feature: EditorFeature, form: object) => [
+    { ...feature.properties },
+    { ...form },
+  ];
+
+  const city = kind("city", "city", "City", cityForm, (f) => f.name);
+  const subdivision = kind("subdivision", "subdivision", "Region", subdivisionForm, (f) => f.name);
+  const poi = kind("poi", "POI", "POI", poiForm, (f) => f.name);
+  const storyPin = kind("storyPin", "story pin", "Story Pin", storyPinForm, (f) => f.title);
+  const mapLabel = kind("mapLabel", "map label", "Label", mapLabelForm, (f) => f.text);
+  const peak = kind("peak", "peak", "Peak", peakForm, (f) => f.name);
+  const river = kind("river", "river", "River", riverForm, (f) => f.name);
+  const lake = kind("lake", "lake", "Lake", lakeForm, (f) => f.name);
+
+  const submitCity = () =>
+    create(city, "coordinates", pendingCoordinates, (scope, coordinates) =>
+      m.city.create.mutateAsync({
+        ...scope,
         name: cityForm.name,
         cityType: cityForm.cityType,
-        coordinates: pendingCoordinates,
+        coordinates,
         population: cityForm.population,
         isNationalCapital: cityForm.isNationalCapital,
         isSubdivisionCapital: cityForm.isSubdivisionCapital,
         subdivisionId: cityForm.subdivisionId,
-      });
-      onSuccess("create", "city", res.id, `Created City "${cityForm.name}"`, undefined, {
-        ...cityForm,
-        coordinates: pendingCoordinates,
-      });
-    } catch (e) {
-      setMutationError(e instanceof Error && e.message ? e.message : "Failed to create city");
-    }
-  }, [countryId, pendingCoordinates, cityForm, createCity, onSuccess, setMutationError]);
+      })
+    );
 
-  const submitEditCity = useCallback(
-    async (overrideForm?: Partial<CityFormData>) => {
-      if (!countryId || !selectedFeature) return;
-      const form = { ...cityForm, ...overrideForm };
-      try {
-        await updateCity.mutateAsync({
-          countryId,
-          cityId: selectedFeature.id,
+  const submitEditCity = (overrideForm?: Partial<CityFormData>) =>
+    edit(
+      city,
+      overrideForm,
+      (scope, feature, form) =>
+        m.city.update.mutateAsync({
+          ...scope,
+          cityId: feature.id,
           name: form.name,
           cityType: form.cityType,
-          coordinates: selectedFeature.coordinates!,
+          coordinates: feature.coordinates!,
           population: form.population,
           isNationalCapital: form.isNationalCapital,
           isSubdivisionCapital: form.isSubdivisionCapital,
-        });
-        onSuccess(
-          "update",
-          "city",
-          selectedFeature.id,
-          `Updated City "${form.name}"`,
-          { ...selectedFeature.properties, coordinates: selectedFeature.coordinates },
-          { ...form, coordinates: selectedFeature.coordinates }
-        );
-      } catch (e) {
-        setMutationError(e instanceof Error && e.message ? e.message : "Failed to update city");
-      }
-    },
-    [countryId, selectedFeature, cityForm, updateCity, onSuccess, setMutationError]
-  );
+        }),
+      atPoint
+    );
 
-  const submitSubdivision = useCallback(async () => {
-    if (!countryId || !pendingGeometry) return;
-    try {
-      const res = await createSubdivision.mutateAsync({
-        countryId,
+  const submitSubdivision = () =>
+    create(subdivision, "geometry", pendingGeometry, (scope, geometry) =>
+      m.subdivision.create.mutateAsync({
+        ...scope,
         name: subdivisionForm.name,
         type: subdivisionForm.type,
         level: subdivisionForm.level,
-        geometry: pendingGeometry as Parameters<
-          typeof createSubdivision.mutateAsync
-        >[0]["geometry"],
+        geometry: geometry as Parameters<typeof m.subdivision.create.mutateAsync>[0]["geometry"],
         capital: subdivisionForm.capital,
         population: subdivisionForm.population,
-      });
-      onSuccess(
-        "create",
-        "subdivision",
-        res.id,
-        `Created Region "${subdivisionForm.name}"`,
-        undefined,
-        { ...subdivisionForm, geometry: pendingGeometry }
-      );
-    } catch (e) {
-      setMutationError(
-        e instanceof Error && e.message ? e.message : "Failed to create subdivision"
-      );
-    }
-  }, [countryId, pendingGeometry, subdivisionForm, createSubdivision, onSuccess, setMutationError]);
+      })
+    );
 
-  const submitEditSubdivision = useCallback(
-    async (overrideForm?: Partial<SubdivisionFormData>) => {
-      if (!countryId || !selectedFeature) return;
-      const form = { ...subdivisionForm, ...overrideForm };
-      try {
-        await updateSubdivision.mutateAsync({
-          countryId,
-          subdivisionId: selectedFeature.id,
+  const submitEditSubdivision = (overrideForm?: Partial<SubdivisionFormData>) =>
+    edit(
+      subdivision,
+      overrideForm,
+      (scope, feature, form) =>
+        m.subdivision.update.mutateAsync({
+          ...scope,
+          subdivisionId: feature.id,
           name: form.name,
           type: form.type,
           level: form.level,
-          geometry: (selectedFeature.geometry || form.geometry) as Parameters<
-            typeof updateSubdivision.mutateAsync
+          geometry: (feature.geometry || form.geometry) as Parameters<
+            typeof m.subdivision.update.mutateAsync
           >[0]["geometry"],
           capital: form.capital,
           population: form.population,
-        });
-        onSuccess(
-          "update",
-          "subdivision",
-          selectedFeature.id,
-          `Updated Region "${form.name}"`,
-          { ...selectedFeature.properties, geometry: selectedFeature.geometry },
-          { ...form, geometry: selectedFeature.geometry || form.geometry }
-        );
-      } catch (e) {
-        setMutationError(
-          e instanceof Error && e.message ? e.message : "Failed to update subdivision"
-        );
-      }
-    },
-    [countryId, selectedFeature, subdivisionForm, updateSubdivision, onSuccess, setMutationError]
-  );
+        }),
+      atShape
+    );
 
-  const submitPOI = useCallback(async () => {
-    if (!countryId || !pendingCoordinates) return;
-    try {
-      const res = await createPOI.mutateAsync({
-        countryId,
+  const submitPOI = () =>
+    create(poi, "coordinates", pendingCoordinates, (scope, coordinates) =>
+      m.poi.create.mutateAsync({
+        ...scope,
         name: poiForm.name,
         category: poiForm.category,
-        coordinates: pendingCoordinates,
+        coordinates,
         description: poiForm.description,
         icon: poiForm.icon,
         wikiPageTitle: poiForm.wikiPageTitle,
-      });
-      onSuccess("create", "poi", res.id, `Created POI "${poiForm.name}"`, undefined, {
-        ...poiForm,
-        coordinates: pendingCoordinates,
-      });
-    } catch (e) {
-      setMutationError(e instanceof Error && e.message ? e.message : "Failed to create POI");
-    }
-  }, [countryId, pendingCoordinates, poiForm, createPOI, onSuccess, setMutationError]);
+      })
+    );
 
-  const submitEditPOI = useCallback(
-    async (overrideForm?: Partial<POIFormData>) => {
-      if (!countryId || !selectedFeature) return;
-      const form = { ...poiForm, ...overrideForm };
-      try {
-        await updatePOI.mutateAsync({
-          countryId,
-          poiId: selectedFeature.id,
+  const submitEditPOI = (overrideForm?: Partial<POIFormData>) =>
+    edit(
+      poi,
+      overrideForm,
+      (scope, feature, form) =>
+        m.poi.update.mutateAsync({
+          ...scope,
+          poiId: feature.id,
           name: form.name,
           category: form.category,
-          coordinates: selectedFeature.coordinates!,
+          coordinates: feature.coordinates!,
           description: form.description,
           icon: form.icon,
           wikiPageTitle: form.wikiPageTitle,
-        });
-        onSuccess(
-          "update",
-          "poi",
-          selectedFeature.id,
-          `Updated POI "${form.name}"`,
-          { ...selectedFeature.properties, coordinates: selectedFeature.coordinates },
-          { ...form, coordinates: selectedFeature.coordinates }
-        );
-      } catch (e) {
-        setMutationError(e instanceof Error && e.message ? e.message : "Failed to update POI");
-      }
-    },
-    [countryId, selectedFeature, poiForm, updatePOI, onSuccess, setMutationError]
-  );
+        }),
+      atPoint
+    );
 
-  const submitStoryPin = useCallback(async () => {
-    if (!countryId || !pendingCoordinates) return;
-    try {
-      const res = await createStoryPin.mutateAsync({
-        countryId,
+  const submitStoryPin = () =>
+    create(storyPin, "coordinates", pendingCoordinates, (scope, coordinates) =>
+      m.storyPin.create.mutateAsync({
+        ...scope,
         title: storyPinForm.title,
-        coordinates: pendingCoordinates,
+        coordinates,
         content: storyPinForm.content,
         ixTimeYear: storyPinForm.ixTimeYear,
         category: storyPinForm.category,
-      });
-      onSuccess(
-        "create",
-        "storyPin",
-        res.id,
-        `Created Story Pin "${storyPinForm.title}"`,
-        undefined,
-        { ...storyPinForm, coordinates: pendingCoordinates }
-      );
-    } catch (e) {
-      setMutationError(e instanceof Error && e.message ? e.message : "Failed to create story pin");
-    }
-  }, [countryId, pendingCoordinates, storyPinForm, createStoryPin, onSuccess, setMutationError]);
+      })
+    );
 
-  const submitEditStoryPin = useCallback(async () => {
-    if (!countryId || !selectedFeature) return;
-    try {
-      await updateStoryPin.mutateAsync({
-        countryId,
-        pinId: selectedFeature.id,
-        title: storyPinForm.title,
-        coordinates: selectedFeature.coordinates!,
-        content: storyPinForm.content,
-        ixTimeYear: storyPinForm.ixTimeYear,
-        category: storyPinForm.category,
-      });
-      onSuccess(
-        "update",
-        "storyPin",
-        selectedFeature.id,
-        `Updated Story Pin "${storyPinForm.title}"`,
-        { ...selectedFeature.properties, coordinates: selectedFeature.coordinates },
-        { ...storyPinForm, coordinates: selectedFeature.coordinates }
-      );
-    } catch (e) {
-      setMutationError(e instanceof Error && e.message ? e.message : "Failed to update story pin");
-    }
-  }, [countryId, selectedFeature, storyPinForm, updateStoryPin, onSuccess, setMutationError]);
+  const submitEditStoryPin = () =>
+    edit(
+      storyPin,
+      undefined,
+      (scope, feature, form) =>
+        m.storyPin.update.mutateAsync({
+          ...scope,
+          pinId: feature.id,
+          title: form.title,
+          coordinates: feature.coordinates!,
+          content: form.content,
+          ixTimeYear: form.ixTimeYear,
+          category: form.category,
+        }),
+      atPoint
+    );
 
-  const submitMapLabel = useCallback(async () => {
-    if (!countryId || !pendingCoordinates) return;
-    try {
-      const res = await createMapLabel.mutateAsync({
-        countryId,
+  const submitMapLabel = () =>
+    create(mapLabel, "coordinates", pendingCoordinates, (scope, coordinates) =>
+      m.mapLabel.create.mutateAsync({
+        ...scope,
         text: mapLabelForm.text,
         labelType: mapLabelForm.labelType,
-        coordinates: pendingCoordinates,
+        coordinates,
         fontSize: mapLabelForm.fontSize,
         color: mapLabelForm.color,
-      });
-      onSuccess("create", "mapLabel", res.id, `Created Label "${mapLabelForm.text}"`, undefined, {
-        ...mapLabelForm,
-        coordinates: pendingCoordinates,
-      });
-    } catch (e) {
-      setMutationError(e instanceof Error && e.message ? e.message : "Failed to create map label");
-    }
-  }, [countryId, pendingCoordinates, mapLabelForm, createMapLabel, onSuccess, setMutationError]);
+      })
+    );
 
-  const submitEditMapLabel = useCallback(async () => {
-    if (!countryId || !selectedFeature) return;
-    try {
-      await updateMapLabel.mutateAsync({
-        countryId,
-        labelId: selectedFeature.id,
-        text: mapLabelForm.text,
-        labelType: mapLabelForm.labelType,
-        coordinates: selectedFeature.coordinates!,
-        fontSize: mapLabelForm.fontSize,
-        color: mapLabelForm.color,
-      });
-      onSuccess(
-        "update",
-        "mapLabel",
-        selectedFeature.id,
-        `Updated Label "${mapLabelForm.text}"`,
-        { ...selectedFeature.properties, coordinates: selectedFeature.coordinates },
-        { ...mapLabelForm, coordinates: selectedFeature.coordinates }
-      );
-    } catch (e) {
-      setMutationError(e instanceof Error && e.message ? e.message : "Failed to update map label");
-    }
-  }, [countryId, selectedFeature, mapLabelForm, updateMapLabel, onSuccess, setMutationError]);
+  const submitEditMapLabel = () =>
+    edit(
+      mapLabel,
+      undefined,
+      (scope, feature, form) =>
+        m.mapLabel.update.mutateAsync({
+          ...scope,
+          labelId: feature.id,
+          text: form.text,
+          labelType: form.labelType,
+          coordinates: feature.coordinates!,
+          fontSize: form.fontSize,
+          color: form.color,
+        }),
+      atPoint
+    );
 
-  const submitPeak = useCallback(async () => {
-    if (!countryId || !pendingCoordinates) return;
-    try {
-      const res = await createPeak.mutateAsync({
-        countryId,
+  const submitPeak = () =>
+    create(peak, "coordinates", pendingCoordinates, (scope, coordinates) =>
+      m.peak.create.mutateAsync({
+        ...scope,
         name: peakForm.name,
         elevation: peakForm.elevation,
-        coordinates: pendingCoordinates,
-      });
-      onSuccess("create", "peak", res.id, `Created Peak "${peakForm.name}"`, undefined, {
-        ...peakForm,
-        coordinates: pendingCoordinates,
-      });
-    } catch (e) {
-      setMutationError(e instanceof Error && e.message ? e.message : "Failed to create peak");
-    }
-  }, [countryId, pendingCoordinates, peakForm, createPeak, onSuccess, setMutationError]);
+        coordinates,
+      })
+    );
 
-  const submitEditPeak = useCallback(
-    async (overrideForm?: Partial<PeakFormData>) => {
-      if (!countryId || !selectedFeature) return;
-      const form = { ...peakForm, ...overrideForm };
-      try {
-        await updatePeak.mutateAsync({
-          countryId,
-          peakId: selectedFeature.id,
+  const submitEditPeak = (overrideForm?: Partial<PeakFormData>) =>
+    edit(
+      peak,
+      overrideForm,
+      (scope, feature, form) =>
+        m.peak.update.mutateAsync({
+          ...scope,
+          peakId: feature.id,
           name: form.name,
           elevation: form.elevation,
-          coordinates: selectedFeature.coordinates!,
-        });
-        onSuccess(
-          "update",
-          "peak",
-          selectedFeature.id,
-          `Updated Peak "${form.name}"`,
-          { ...selectedFeature.properties, coordinates: selectedFeature.coordinates },
-          { ...form, coordinates: selectedFeature.coordinates }
-        );
-      } catch (e) {
-        setMutationError(e instanceof Error && e.message ? e.message : "Failed to update peak");
-      }
-    },
-    [countryId, selectedFeature, peakForm, updatePeak, onSuccess, setMutationError]
-  );
+          coordinates: feature.coordinates!,
+        }),
+      atPoint
+    );
 
-  const submitRiver = useCallback(async () => {
-    if (!countryId || !pendingGeometry) return;
-    try {
-      const res = await createNamedRiver.mutateAsync({
-        countryId,
+  const submitRiver = () =>
+    create(river, "geometry", pendingGeometry, (scope, geometry) =>
+      m.river.create.mutateAsync({
+        ...scope,
         name: riverForm.name,
-        geometry: pendingGeometry as Parameters<typeof createNamedRiver.mutateAsync>[0]["geometry"],
-      });
-      onSuccess("create", "river", res.id, `Created River "${riverForm.name}"`, undefined, {
-        ...riverForm,
-        geometry: pendingGeometry,
-      });
-    } catch (e) {
-      setMutationError(e instanceof Error && e.message ? e.message : "Failed to create river");
-    }
-  }, [countryId, pendingGeometry, riverForm, createNamedRiver, onSuccess, setMutationError]);
+        geometry: geometry as Parameters<typeof m.river.create.mutateAsync>[0]["geometry"],
+      })
+    );
 
-  const submitEditRiver = useCallback(
-    async (overrideForm?: Partial<NamedRiverFormData>) => {
-      if (!countryId || !selectedFeature) return;
-      const form = { ...riverForm, ...overrideForm };
-      try {
-        await updateNamedRiver.mutateAsync({
-          countryId,
-          riverId: selectedFeature.id,
-          name: form.name,
-        });
-        onSuccess(
-          "update",
-          "river",
-          selectedFeature.id,
-          `Updated River "${form.name}"`,
-          { ...selectedFeature.properties },
-          { ...form }
-        );
-      } catch (e) {
-        setMutationError(e instanceof Error && e.message ? e.message : "Failed to update river");
-      }
-    },
-    [countryId, selectedFeature, riverForm, updateNamedRiver, onSuccess, setMutationError]
-  );
+  const submitEditRiver = (overrideForm?: Partial<NamedRiverFormData>) =>
+    edit(
+      river,
+      overrideForm,
+      (scope, feature, form) =>
+        m.river.update.mutateAsync({ ...scope, riverId: feature.id, name: form.name }),
+      renamed
+    );
 
-  const submitLake = useCallback(async () => {
-    if (!countryId || !pendingGeometry) return;
-    try {
-      const res = await createNamedLake.mutateAsync({
-        countryId,
+  const submitLake = () =>
+    create(lake, "geometry", pendingGeometry, (scope, geometry) =>
+      m.lake.create.mutateAsync({
+        ...scope,
         name: lakeForm.name,
-        geometry: pendingGeometry as Parameters<typeof createNamedLake.mutateAsync>[0]["geometry"],
-      });
-      onSuccess("create", "lake", res.id, `Created Lake "${lakeForm.name}"`, undefined, {
-        ...lakeForm,
-        geometry: pendingGeometry,
-      });
-    } catch (e) {
-      setMutationError(e instanceof Error && e.message ? e.message : "Failed to create lake");
-    }
-  }, [countryId, pendingGeometry, lakeForm, createNamedLake, onSuccess, setMutationError]);
+        geometry: geometry as Parameters<typeof m.lake.create.mutateAsync>[0]["geometry"],
+      })
+    );
 
-  const submitEditLake = useCallback(
-    async (overrideForm?: Partial<NamedLakeFormData>) => {
-      if (!countryId || !selectedFeature) return;
-      const form = { ...lakeForm, ...overrideForm };
-      try {
-        await updateNamedLake.mutateAsync({
-          countryId,
-          lakeId: selectedFeature.id,
-          name: form.name,
-        });
-        onSuccess(
-          "update",
-          "lake",
-          selectedFeature.id,
-          `Updated Lake "${form.name}"`,
-          { ...selectedFeature.properties },
-          { ...form }
-        );
-      } catch (e) {
-        setMutationError(e instanceof Error && e.message ? e.message : "Failed to update lake");
-      }
-    },
-    [countryId, selectedFeature, lakeForm, updateNamedLake, onSuccess, setMutationError]
-  );
+  const submitEditLake = (overrideForm?: Partial<NamedLakeFormData>) =>
+    edit(
+      lake,
+      overrideForm,
+      (scope, feature, form) =>
+        m.lake.update.mutateAsync({ ...scope, lakeId: feature.id, name: form.name }),
+      renamed
+    );
 
-  const deleteFeature = useCallback(
-    async (feature: EditorFeature) => {
-      if (!countryId) return;
-      try {
-        switch (feature.type) {
-          case "city":
-            await deleteCity.mutateAsync({ countryId, cityId: feature.id });
-            break;
-          case "subdivision":
-            await deleteSubdivision.mutateAsync({ countryId, subdivisionId: feature.id });
-            break;
-          case "poi":
-            await deletePOI.mutateAsync({ countryId, poiId: feature.id });
-            break;
-          case "storyPin":
-            await deleteStoryPin.mutateAsync({ countryId, pinId: feature.id });
-            break;
-          case "mapLabel":
-            await deleteMapLabel.mutateAsync({ countryId, labelId: feature.id });
-            break;
-          case "peak":
-            await deletePeak.mutateAsync({ countryId, peakId: feature.id });
-            break;
-          case "river":
-            await deleteNamedRiver.mutateAsync({ countryId, riverId: feature.id });
-            break;
-          case "lake":
-            await deleteNamedLake.mutateAsync({ countryId, lakeId: feature.id });
-            break;
-          case "route":
-            await deleteRoute.mutateAsync({ countryId, id: feature.id });
-            break;
+  const deleteFeature = async (feature: EditorFeature) => {
+    if (!countryId) return;
+    await attempt("Failed to delete feature", async () => {
+      await createFeatureOps(m, countryId)[feature.type]?.remove(feature.id);
+      onSuccess(
+        "delete",
+        feature.type as FeatureType,
+        feature.id,
+        `Deleted ${feature.type} "${feature.name}"`,
+        {
+          ...feature.properties,
+          coordinates: feature.coordinates,
+          geometry: feature.geometry,
+          name: feature.name,
         }
-        onSuccess(
-          "delete",
-          feature.type as FeatureType,
-          feature.id,
-          `Deleted ${feature.type} "${feature.name}"`,
-          {
-            ...feature.properties,
-            coordinates: feature.coordinates,
-            geometry: feature.geometry,
-            name: feature.name,
-          }
-        );
-      } catch (e) {
-        setMutationError(e instanceof Error && e.message ? e.message : "Failed to delete feature");
-      }
-    },
-    [
-      countryId,
-      deleteCity,
-      deleteSubdivision,
-      deletePOI,
-      deleteStoryPin,
-      deleteMapLabel,
-      deletePeak,
-      deleteNamedRiver,
-      deleteNamedLake,
-      deleteRoute,
-      onSuccess,
-      setMutationError,
-    ]
-  );
+      );
+    });
+  };
 
   return {
     isMutating,

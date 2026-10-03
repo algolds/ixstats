@@ -2,7 +2,7 @@
 
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { notifyFromStore } from "~/hooks/useNotify";
 import { useVexelEditor } from "./VexelEditorProvider";
 import { api } from "~/trpc/react";
@@ -22,18 +22,15 @@ export default function SaveControls() {
   const [subjectId, setSubjectId] = useState<string | null>(null);
 
   const [isExportOpen, setIsExportOpen] = useState(false);
-  const [isPublishing, setIsPublishing] = useState(false);
 
   const utils = api.useUtils();
 
-  // Load countries for association
   const { data: countriesData } = api.countries.getAll.useQuery(
     { limit: 100 },
     { enabled: subjectType === "COUNTRY" }
   );
   const countries = countriesData?.countries ?? [];
 
-  // Fetch current achievement properties if loaded
   const { data: currentAchievement } = api.heraldry.getAchievement.useQuery(
     { id: achievementId! },
     { enabled: !!achievementId }
@@ -48,7 +45,6 @@ export default function SaveControls() {
     }
   }, [currentAchievement]);
 
-  // Mutations
   const saveMutation = api.heraldry.saveAchievement.useMutation({
     onSuccess: (data) => {
       setInitialState(data.compositionData as any, data.id);
@@ -58,21 +54,17 @@ export default function SaveControls() {
     },
   });
 
+  const refreshPublishState = () => {
+    utils.heraldry.getAchievement.invalidate({ id: achievementId! });
+    utils.heraldry.getRegistry.invalidate();
+  };
   const publishMutation = api.heraldry.publishAchievement.useMutation({
-    onSuccess: () => {
-      utils.heraldry.getAchievement.invalidate({ id: achievementId! });
-      utils.heraldry.getRegistry.invalidate();
-      setIsPublishing(false);
-    },
+    onSuccess: refreshPublishState,
   });
-
   const unpublishMutation = api.heraldry.unpublishAchievement.useMutation({
-    onSuccess: () => {
-      utils.heraldry.getAchievement.invalidate({ id: achievementId! });
-      utils.heraldry.getRegistry.invalidate();
-      setIsPublishing(false);
-    },
+    onSuccess: refreshPublishState,
   });
+  const isPublishing = publishMutation.isPending || unpublishMutation.isPending;
 
   const attachMutation = api.heraldry.attachToCountry.useMutation({
     onSuccess: () => {
@@ -109,27 +101,19 @@ export default function SaveControls() {
 
   const handlePublishToggle = () => {
     if (!achievementId) return;
-    setIsPublishing(true);
-    if (currentAchievement?.isPublished) {
-      unpublishMutation.mutate({ id: achievementId });
-    } else {
-      publishMutation.mutate({ id: achievementId });
-    }
+    const mutation = currentAchievement?.isPublished ? unpublishMutation : publishMutation;
+    mutation.mutate({ id: achievementId });
   };
 
   const handleAttach = () => {
     if (!achievementId || !subjectId) return;
-    attachMutation.mutate({
-      achievementId,
-      countryId: subjectId,
-    });
+    attachMutation.mutate({ achievementId, countryId: subjectId });
   };
 
   return (
     <Card className="mb-6 shrink-0 overflow-hidden">
       <div className="text-label-secondary text-footnote flex flex-wrap items-center justify-between gap-4 p-4">
         <div className="flex flex-1 flex-wrap items-center gap-4">
-          {/* Title Input */}
           <div className="flex min-w-[150px] flex-col gap-1">
             <Eyebrow id="vexel-arms-title">Arms title</Eyebrow>
             <Input
@@ -140,7 +124,6 @@ export default function SaveControls() {
             />
           </div>
 
-          {/* Subject Type */}
           <div className="flex flex-col gap-1">
             <Eyebrow id="vexel-subject-type">Subject type</Eyebrow>
             <OptionSelect
@@ -160,7 +143,6 @@ export default function SaveControls() {
             />
           </div>
 
-          {/* Subject Association (Conditional) */}
           {subjectType === "COUNTRY" && (
             <div className="animate-in fade-in slide-in-from-left-2 flex min-w-[150px] flex-col gap-1 duration-150">
               <Eyebrow id="vexel-subject-country">Select country</Eyebrow>
@@ -177,9 +159,7 @@ export default function SaveControls() {
           )}
         </div>
 
-        {/* Buttons */}
         <div className="flex items-center gap-2">
-          {/* Attach Button (Country only) */}
           {subjectType === "COUNTRY" && achievementId && subjectId && (
             <Button
               variant="outline"
@@ -191,7 +171,6 @@ export default function SaveControls() {
             </Button>
           )}
 
-          {/* Publish Button */}
           {achievementId && (
             <Button
               variant={currentAchievement?.isPublished ? "outline" : "secondary"}
@@ -204,7 +183,6 @@ export default function SaveControls() {
             </Button>
           )}
 
-          {/* Save Button */}
           <Button
             variant="outline"
             size="sm"
@@ -214,7 +192,6 @@ export default function SaveControls() {
             {saveMutation.isPending ? "Saving..." : "Save changes"}
           </Button>
 
-          {/* Export Button */}
           <Button variant="outline" size="sm" onClick={() => setIsExportOpen(true)}>
             Export
           </Button>

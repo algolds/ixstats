@@ -11,7 +11,7 @@
  */
 
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { useNotify } from "~/hooks/useNotify";
@@ -24,6 +24,7 @@ import {
   type RankedColour,
 } from "~/lib/maps/png-realm-map";
 import { ColourNationMapper } from "./ColourNationMapper";
+import { LAYER_TYPES } from "./layer-types";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -65,20 +66,9 @@ import {
 } from "~/components/ui/table";
 import { Card } from "~/components/ui/card";
 
-// ─── Quick Update Types & Helpers ───────────────────────────────────────────
+const QUICK_LAYER_OPTIONS = [{ value: "auto", label: "Auto-detect" }, ...LAYER_TYPES] as const;
 
-const LAYER_TYPES = [
-  { value: "auto", label: "Auto-detect" },
-  { value: "political", label: "Political" },
-  { value: "climate", label: "Climate" },
-  { value: "altitudes", label: "Altitudes" },
-  { value: "rivers", label: "Rivers" },
-  { value: "lakes", label: "Lakes" },
-  { value: "icecaps", label: "Icecaps" },
-  { value: "background", label: "Background" },
-] as const;
-
-type LayerOption = (typeof LAYER_TYPES)[number]["value"];
+type LayerOption = (typeof QUICK_LAYER_OPTIONS)[number]["value"];
 
 const LAYER_KEYWORDS: Record<string, string[]> = {
   political: ["political", "countries", "borders", "nations", "sovereign"],
@@ -124,8 +114,6 @@ interface ProcessResult {
 
 type QuickStage = "select" | "processing" | "review" | "committing" | "done";
 
-// ─── Main Component ─────────────────────────────────────────────────────────
-
 export function PipelineWizard() {
   const [mode, setMode] = useState<"quick" | "full">("quick");
 
@@ -148,7 +136,164 @@ export function PipelineWizard() {
   );
 }
 
-// ─── Quick Update Panel ─────────────────────────────────────────────────────
+const DIFF_BADGES = [
+  { key: "addedCount", icon: Plus, label: "Added", color: "emerald" },
+  { key: "modifiedCount", icon: Pencil, label: "Modified", color: "blue" },
+  { key: "removedCount", icon: Minus, label: "Removed", color: "red" },
+  { key: "unchangedCount", icon: Equal, label: "Unchanged", color: "slate" },
+  { key: "linkagesPreserved", icon: Link2, label: "Links preserved", color: "amber" },
+] as const;
+
+/** Unchanged features are listed only up to this many rows. */
+const MAX_UNCHANGED_ROWS = 20;
+
+function ErrorBanner({
+  children,
+  onDismiss,
+}: {
+  children: React.ReactNode;
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="border-destructive/30 text-destructive rounded-control flex items-center gap-2 border px-4 py-3">
+      <AlertTriangle className="h-4 w-4 shrink-0" />
+      <span className="text-body">{children}</span>
+      <Button variant="ghost" size="sm" className="text-destructive ml-auto" onClick={onDismiss}>
+        &times;
+      </Button>
+    </div>
+  );
+}
+
+function BusyPanel({ color, children }: { color: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col items-center gap-3 py-16">
+      <Loader2 className={`${color} h-8 w-8 animate-spin`} />
+      <p className="text-label-secondary text-body">{children}</p>
+    </div>
+  );
+}
+
+/** Diff summary, linkage warning and per-feature table for a processed upload. */
+function QuickUpdateReview({
+  result,
+  onCommit,
+  onReset,
+}: {
+  result: ProcessResult;
+  onCommit: () => void;
+  onReset: () => void;
+}) {
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
+  const diff = result.diff;
+
+  const rows = diff
+    ? [
+        ...diff.added.map((f) => ({ ...f, status: "added" as const, countryName: undefined })),
+        ...diff.modified.map((f) => ({
+          ...f,
+          status: "modified" as const,
+          countryName: undefined,
+        })),
+        ...diff.removed.map((f) => ({ ...f, status: "removed" as const })),
+        ...diff.unchanged.slice(0, MAX_UNCHANGED_ROWS).map((f) => ({
+          ...f,
+          status: "unchanged" as const,
+          countryName: diff.preservedLinkages.find((l) => l.featureId === f.featureId)?.countryName,
+        })),
+      ]
+    : [];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-label text-title-3">{result.fileName}</h3>
+          <p className="text-label-secondary text-body">
+            Layer:{" "}
+            <Badge variant="outline" className="ml-1">
+              {result.layerType}
+            </Badge>
+            {" · "}
+            {result.featureCount} features parsed
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={onReset}>
+          <RotateCcw className="mr-2 h-3.5 w-3.5" /> Start over
+        </Button>
+      </div>
+
+      {diff?.summary && (
+        <div className="flex flex-wrap gap-3">
+          {DIFF_BADGES.map(({ key, ...badge }) => (
+            <DiffBadge key={key} count={diff.summary[key]} {...badge} />
+          ))}
+        </div>
+      )}
+
+      {diff?.summary && diff.summary.linkagesLost > 0 && (
+        <div className="rounded-control border-yellow/30 text-yellow flex items-center gap-2 border px-4 py-3">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <span className="text-body">
+            {diff.summary.linkagesLost} feature(s) with country linkages will be removed.
+            {diff.removed
+              .filter((r) => r.countryName)
+              .map((r) => ` ${r.displayName} (${r.countryName})`)
+              .join(",")}
+          </span>
+        </div>
+      )}
+
+      <Button variant="ghost" size="sm" onClick={() => setDetailsExpanded(!detailsExpanded)}>
+        {detailsExpanded ? (
+          <ChevronDown className="h-4 w-4" />
+        ) : (
+          <ChevronRight className="h-4 w-4" />
+        )}
+        Feature details
+      </Button>
+
+      {detailsExpanded && diff && (
+        <Table containerClassName="max-h-64">
+          <TableHeader sticky>
+            <TableRow>
+              {["Status", "Feature ID", "Name", "Country link"].map((heading) => (
+                <TableHead key={heading} className="px-3">
+                  {heading}
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((row) => (
+              <DiffRow key={`${row.status}-${row.featureId}`} {...row} />
+            ))}
+            {diff.unchanged.length > MAX_UNCHANGED_ROWS && (
+              <TableRow>
+                <TableCell
+                  colSpan={4}
+                  className="text-label-secondary text-footnote px-3 text-center"
+                >
+                  ...and {diff.unchanged.length - MAX_UNCHANGED_ROWS} more unchanged features
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      )}
+
+      <div className="flex gap-3 pt-2">
+        <Button onClick={onCommit}>
+          <Upload className="mr-2 h-4 w-4" />
+          Apply update
+        </Button>
+        <Button variant="outline" onClick={onReset}>
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 function QuickUpdatePanel() {
   const [stage, setStage] = useState<QuickStage>("select");
@@ -156,83 +301,75 @@ function QuickUpdatePanel() {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ProcessResult | null>(null);
-  const [detailsExpanded, setDetailsExpanded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const utils = api.useUtils();
 
   const processMutation = api.geoAdmin.processSvgUpload.useMutation();
   const commitMutation = api.geoAdmin.commitSvgUpload.useMutation();
 
-  const reset = useCallback(() => {
+  const reset = () => {
     setStage("select");
     setError(null);
     setResult(null);
-    setDetailsExpanded(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
-  }, []);
+  };
 
-  const handleFile = useCallback(
-    async (file: File) => {
-      setError(null);
+  /** Upload the SVG, then process it into a diff against the current layer. */
+  const handleFile = async (file: File) => {
+    setError(null);
 
-      if (!file.name.endsWith(".svg")) {
-        setError("File must be an SVG");
-        return;
+    if (!file.name.endsWith(".svg")) {
+      setError("File must be an SVG");
+      return;
+    }
+
+    const layerType = selectedLayer === "auto" ? detectLayerFromFilename(file.name) : selectedLayer;
+    if (!layerType) {
+      setError(
+        `Could not detect layer type from "${file.name}". Please select a layer type manually.`
+      );
+      return;
+    }
+
+    setStage("processing");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("layerType", layerType);
+
+      const uploadRes = await fetch(withBasePath("/api/admin/upload-svg"), {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({ error: "Upload failed" }));
+        throw new Error(err.error || `Upload failed (${uploadRes.status})`);
       }
 
-      const layerType =
-        selectedLayer === "auto" ? detectLayerFromFilename(file.name) : selectedLayer;
-      if (!layerType) {
-        setError(
-          `Could not detect layer type from "${file.name}". Please select a layer type manually.`
-        );
-        return;
-      }
+      const uploadData = (await uploadRes.json()) as {
+        id: string;
+        layerType: string;
+        fileName: string;
+      };
+      const processResult = await processMutation.mutateAsync({ uploadId: uploadData.id });
 
-      setStage("processing");
+      setResult({
+        uploadId: uploadData.id,
+        fileName: uploadData.fileName,
+        layerType: uploadData.layerType,
+        featureCount: processResult.featureCount,
+        diff: processResult.diff as ProcessResult["diff"],
+      });
+      setStage("review");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Processing failed");
+      setStage("select");
+    }
+  };
 
-      try {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("layerType", layerType);
-
-        const uploadRes = await fetch(withBasePath("/api/admin/upload-svg"), {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!uploadRes.ok) {
-          const err = await uploadRes.json().catch(() => ({ error: "Upload failed" }));
-          throw new Error(err.error || `Upload failed (${uploadRes.status})`);
-        }
-
-        const uploadData = (await uploadRes.json()) as {
-          id: string;
-          layerType: string;
-          fileName: string;
-        };
-
-        const processResult = await processMutation.mutateAsync({
-          uploadId: uploadData.id,
-        });
-
-        setResult({
-          uploadId: uploadData.id,
-          fileName: uploadData.fileName,
-          layerType: uploadData.layerType,
-          featureCount: processResult.featureCount,
-          diff: processResult.diff as ProcessResult["diff"],
-        });
-        setStage("review");
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Processing failed");
-        setStage("select");
-      }
-    },
-    [selectedLayer, processMutation]
-  );
-
-  const handleCommit = useCallback(async () => {
+  const handleCommit = async () => {
     if (!result) return;
     setStage("committing");
     setError(null);
@@ -249,46 +386,18 @@ function QuickUpdatePanel() {
       setError(e instanceof Error ? e.message : "Commit failed");
       setStage("review");
     }
-  }, [result, commitMutation, utils.geoCore, utils.geoFeatures, utils.geoEditor]);
+  };
 
-  const onDragOver = useCallback((e: React.DragEvent) => {
+  const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragging(true);
-  }, []);
-  const onDragLeave = useCallback(() => setIsDragging(false), []);
-  const onDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-      const file = e.dataTransfer.files[0];
-      if (file) void handleFile(file);
-    },
-    [handleFile]
-  );
-  const onFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) void handleFile(file);
-    },
-    [handleFile]
-  );
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) void handleFile(file);
+  };
 
   return (
     <div className="space-y-4">
-      {error && (
-        <div className="border-destructive/30 text-destructive rounded-control flex items-center gap-2 border px-4 py-3">
-          <AlertTriangle className="h-4 w-4 shrink-0" />
-          <span className="text-body">{error}</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-destructive ml-auto"
-            onClick={() => setError(null)}
-          >
-            &times;
-          </Button>
-        </div>
-      )}
+      {error && <ErrorBanner onDismiss={() => setError(null)}>{error}</ErrorBanner>}
 
       {stage === "select" && (
         <div className="space-y-4">
@@ -299,7 +408,7 @@ function QuickUpdatePanel() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {LAYER_TYPES.map((lt) => (
+                {QUICK_LAYER_OPTIONS.map((lt) => (
                   <SelectItem key={lt.value} value={lt.value}>
                     {lt.label}
                   </SelectItem>
@@ -309,8 +418,11 @@ function QuickUpdatePanel() {
           </div>
 
           <div
-            onDragOver={onDragOver}
-            onDragLeave={onDragLeave}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragging(true);
+            }}
+            onDragLeave={() => setIsDragging(false)}
             onDrop={onDrop}
             onClick={() => fileInputRef.current?.click()}
             className={`rounded-row flex cursor-pointer flex-col items-center justify-center gap-3 border-2 border-dashed p-12 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
@@ -334,183 +446,27 @@ function QuickUpdatePanel() {
               type="file"
               accept=".svg"
               className="hidden"
-              onChange={onFileChange}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleFile(file);
+              }}
             />
           </div>
         </div>
       )}
 
       {stage === "processing" && (
-        <div className="flex flex-col items-center gap-3 py-16">
-          <Loader2 className="text-blue h-8 w-8 animate-spin" />
-          <p className="text-label-secondary text-body">
-            Processing SVG... parsing, converting, computing diff
-          </p>
-        </div>
+        <BusyPanel color="text-blue">
+          Processing SVG... parsing, converting, computing diff
+        </BusyPanel>
       )}
 
       {stage === "review" && result && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-label text-title-3">{result.fileName}</h3>
-              <p className="text-label-secondary text-body">
-                Layer:{" "}
-                <Badge variant="outline" className="ml-1">
-                  {result.layerType}
-                </Badge>
-                {" · "}
-                {result.featureCount} features parsed
-              </p>
-            </div>
-            <Button variant="outline" size="sm" onClick={reset}>
-              <RotateCcw className="mr-2 h-3.5 w-3.5" /> Start over
-            </Button>
-          </div>
-
-          {result.diff?.summary && (
-            <div className="flex flex-wrap gap-3">
-              <DiffBadge
-                icon={Plus}
-                label="Added"
-                count={result.diff.summary.addedCount}
-                color="emerald"
-              />
-              <DiffBadge
-                icon={Pencil}
-                label="Modified"
-                count={result.diff.summary.modifiedCount}
-                color="blue"
-              />
-              <DiffBadge
-                icon={Minus}
-                label="Removed"
-                count={result.diff.summary.removedCount}
-                color="red"
-              />
-              <DiffBadge
-                icon={Equal}
-                label="Unchanged"
-                count={result.diff.summary.unchangedCount}
-                color="slate"
-              />
-              <DiffBadge
-                icon={Link2}
-                label="Links preserved"
-                count={result.diff.summary.linkagesPreserved}
-                color="amber"
-              />
-            </div>
-          )}
-
-          {result.diff?.summary && result.diff.summary.linkagesLost > 0 && (
-            <div className="rounded-control border-yellow/30 text-yellow flex items-center gap-2 border px-4 py-3">
-              <AlertTriangle className="h-4 w-4 shrink-0" />
-              <span className="text-body">
-                {result.diff.summary.linkagesLost} feature(s) with country linkages will be removed.
-                {result.diff.removed
-                  .filter((r) => r.countryName)
-                  .map((r) => ` ${r.displayName} (${r.countryName})`)
-                  .join(",")}
-              </span>
-            </div>
-          )}
-
-          <Button
-            variant="ghost"
-            size="sm"
-
-            onClick={() => setDetailsExpanded(!detailsExpanded)}
-          >
-            {detailsExpanded ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
-            )}
-            Feature details
-          </Button>
-
-          {detailsExpanded && result.diff && (
-            <Table containerClassName="max-h-64">
-              <TableHeader sticky>
-                <TableRow>
-                  <TableHead className="px-3">Status</TableHead>
-                  <TableHead className="px-3">Feature ID</TableHead>
-                  <TableHead className="px-3">Name</TableHead>
-                  <TableHead className="px-3">Country link</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {result.diff.added.map((f) => (
-                  <DiffRow
-                    key={f.featureId}
-                    status="added"
-                    featureId={f.featureId}
-                    displayName={f.displayName}
-                  />
-                ))}
-                {result.diff.modified.map((f) => (
-                  <DiffRow
-                    key={f.featureId}
-                    status="modified"
-                    featureId={f.featureId}
-                    displayName={f.displayName}
-                  />
-                ))}
-                {result.diff.removed.map((f) => (
-                  <DiffRow
-                    key={f.featureId}
-                    status="removed"
-                    featureId={f.featureId}
-                    displayName={f.displayName}
-                    countryName={f.countryName}
-                  />
-                ))}
-                {result.diff.unchanged.slice(0, 20).map((f) => {
-                  const link = result.diff!.preservedLinkages.find(
-                    (l) => l.featureId === f.featureId
-                  );
-                  return (
-                    <DiffRow
-                      key={f.featureId}
-                      status="unchanged"
-                      featureId={f.featureId}
-                      displayName={f.displayName}
-                      countryName={link?.countryName}
-                    />
-                  );
-                })}
-                {result.diff.unchanged.length > 20 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={4}
-                      className="text-label-secondary text-footnote px-3 text-center"
-                    >
-                      ...and {result.diff.unchanged.length - 20} more unchanged features
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
-
-          <div className="flex gap-3 pt-2">
-            <Button onClick={handleCommit}>
-              <Upload className="mr-2 h-4 w-4" />
-              Apply update
-            </Button>
-            <Button variant="outline" onClick={reset}>
-              Cancel
-            </Button>
-          </div>
-        </div>
+        <QuickUpdateReview result={result} onCommit={handleCommit} onReset={reset} />
       )}
 
       {stage === "committing" && (
-        <div className="flex flex-col items-center gap-3 py-16">
-          <Loader2 className="text-green h-8 w-8 animate-spin" />
-          <p className="text-label-secondary text-body">Applying update... writing to database</p>
-        </div>
+        <BusyPanel color="text-green">Applying update... writing to database</BusyPanel>
       )}
 
       {stage === "done" && result && (
@@ -531,8 +487,6 @@ function QuickUpdatePanel() {
     </div>
   );
 }
-
-// ─── Full Pipeline Panel (legacy wizard) ────────────────────────────────────
 
 interface WizardPipelineResult {
   layers: Record<string, unknown>;
@@ -576,7 +530,7 @@ function FullPipelinePanel() {
   const targetRealm = realms?.find((r) => r.id === (targetRealmId || DEFAULT_REALM_ID));
   const realmName = targetRealm?.name ?? "IxWorld";
 
-  const loadRasterMap = useCallback(async (selectedFile: File) => {
+  const loadRasterMap = async (selectedFile: File) => {
     if (selectedFile.size > MAX_PNG_BYTES) {
       setError(`PNG maps are limited to ${MAX_PNG_MB} MB.`);
       return;
@@ -587,35 +541,32 @@ function FullPipelinePanel() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not read the file");
     }
-  }, []);
+  };
 
-  const handleFileSelect = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const selectedFile = e.target.files?.[0];
-      if (!selectedFile) return;
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
 
-      setFile(selectedFile);
-      setError(null);
+    setFile(selectedFile);
+    setError(null);
 
-      if (selectedFile.name.endsWith(".svg")) {
-        const text = await selectedFile.text();
-        setSvgContent(text);
-        setStep("detection");
-      } else if (RASTER_MAP_FILE.test(selectedFile.name)) {
-        await loadRasterMap(selectedFile);
-      } else {
-        setError("Unsupported file type. Please upload an SVG, PNG or JPEG file.");
-      }
-    },
-    [loadRasterMap]
-  );
+    if (selectedFile.name.endsWith(".svg")) {
+      const text = await selectedFile.text();
+      setSvgContent(text);
+      setStep("detection");
+    } else if (RASTER_MAP_FILE.test(selectedFile.name)) {
+      await loadRasterMap(selectedFile);
+    } else {
+      setError("Unsupported file type. Please upload an SVG, PNG or JPEG file.");
+    }
+  };
 
-  const handleVectorised = useCallback((result: WizardPipelineResult) => {
+  const handleVectorised = (result: WizardPipelineResult) => {
     setPipelineResult(result);
     setStep("preview");
-  }, []);
+  };
 
-  const handleRunPipeline = useCallback(async () => {
+  const handleRunPipeline = async () => {
     if (!svgContent) return;
 
     setIsProcessing(true);
@@ -633,9 +584,9 @@ function FullPipelinePanel() {
     } finally {
       setIsProcessing(false);
     }
-  }, [svgContent, runPipeline]);
+  };
 
-  const handleImport = useCallback(async () => {
+  const handleImport = async () => {
     if (!pipelineResult) return;
 
     setIsProcessing(true);
@@ -654,9 +605,9 @@ function FullPipelinePanel() {
     } finally {
       setIsProcessing(false);
     }
-  }, [pipelineResult, importPipeline, targetRealmId]);
+  };
 
-  const handleReset = useCallback(() => {
+  const handleReset = () => {
     setStep("upload");
     setFile(null);
     setSvgContent(null);
@@ -665,7 +616,7 @@ function FullPipelinePanel() {
     setImportResult(null);
     setError(null);
     setIsProcessing(false);
-  }, []);
+  };
 
   const steps: Array<{ id: WizardStep; label: string; icon: typeof Upload }> = [
     { id: "upload", label: "Upload", icon: Upload },
@@ -816,8 +767,6 @@ function FullPipelinePanel() {
   );
 }
 
-// ─── Full Pipeline steps ────────────────────────────────────────────────────
-
 function SvgDetectionStep({
   fileName,
   busy,
@@ -950,8 +899,6 @@ function ImportStep({
   );
 }
 
-// ─── PNG colour → nation step ───────────────────────────────────────────────
-
 interface PngColourStepProps {
   pngBase64: string;
   realmSlug: string | undefined;
@@ -1050,15 +997,13 @@ function PngColourStep({
   );
 }
 
-// ─── Shared Sub-Components ──────────────────────────────────────────────────
-
 function DiffBadge({
   icon: Icon,
   label,
   count,
   color,
 }: {
-  icon: any;
+  icon: typeof Plus;
   label: string;
   count: number;
   color: string;

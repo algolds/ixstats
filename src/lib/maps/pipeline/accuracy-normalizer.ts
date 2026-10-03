@@ -12,23 +12,30 @@
  * 5. Lake Coverage: 1% - 5% of total land area
  */
 
+import type { GeoJsonProperties } from "geojson";
 import type { GeneratedWorld } from "~/lib/worldgen/types";
+
+interface MetricResult {
+  value: number;
+  target: string;
+  passed: boolean;
+}
 
 interface AccuracyScoreCard {
   seed: number;
   overallScore: number; // 0 - 100
   isWithinSafeTargets: boolean;
   metrics: {
-    landPercentage: { value: number; target: string; passed: boolean };
-    continentCount: { value: number; target: string; passed: boolean };
-    maxNationSharePercent: { value: number; target: string; passed: boolean };
-    lakeLandSharePercent: { value: number; target: string; passed: boolean };
-    riverDensity: { value: number; target: string; passed: boolean };
+    landPercentage: MetricResult;
+    continentCount: MetricResult;
+    maxNationSharePercent: MetricResult;
+    lakeLandSharePercent: MetricResult;
+    riverDensity: MetricResult;
   };
   warnings: string[];
 }
 
-const SAFE_GEOGRAPHIC_TARGETS = {
+const T = {
   landPercentageMin: 25,
   landPercentageMax: 45,
   continentCountMin: 1,
@@ -38,68 +45,73 @@ const SAFE_GEOGRAPHIC_TARGETS = {
   lakeLandSharePercentMax: 6.0,
 };
 
+const round1 = (x: number) => Math.round(x * 10) / 10;
+
+/** A metric plus the score penalty and warning that apply when it fails. */
+const check = (metric: MetricResult, penalty: number, warning: string) => ({
+  metric,
+  penalty,
+  warning,
+});
+
 /**
  * Audit a generated world against IxWorld & IRL geographic accuracy standards.
  */
 export function evaluateWorldAccuracy(world: GeneratedWorld): AccuracyScoreCard {
-  const warnings: string[] = [];
   const { stats, layers } = world;
 
-  // 1. Evaluate Land Percentage
   const landPercentage = stats.landPercentage;
-  const landPassed =
-    landPercentage >= SAFE_GEOGRAPHIC_TARGETS.landPercentageMin &&
-    landPercentage <= SAFE_GEOGRAPHIC_TARGETS.landPercentageMax;
+  const land = check(
+    {
+      value: landPercentage,
+      target: `${T.landPercentageMin}% - ${T.landPercentageMax}%`,
+      passed: landPercentage >= T.landPercentageMin && landPercentage <= T.landPercentageMax,
+    },
+    20,
+    `Land percentage (${landPercentage}%) is outside safe range [${T.landPercentageMin}%, ${T.landPercentageMax}%]`
+  );
 
-  if (!landPassed) {
-    warnings.push(
-      `Land percentage (${landPercentage}%) is outside safe range [${SAFE_GEOGRAPHIC_TARGETS.landPercentageMin}%, ${SAFE_GEOGRAPHIC_TARGETS.landPercentageMax}%]`
-    );
-  }
-
-  // 2. Evaluate Continent Count from graph features (land components)
+  // Continent count from graph features (land components)
   const landFeatures =
     world.graph?.features?.filter(
       (f) =>
         f.type === "land" || (f.type as string) === "continent" || (f.type as string) === "island"
     ) || [];
   const continentCount = Math.max(1, landFeatures.length);
-  const continentPassed =
-    continentCount >= SAFE_GEOGRAPHIC_TARGETS.continentCountMin &&
-    continentCount <= SAFE_GEOGRAPHIC_TARGETS.continentCountMax;
-
-  if (!continentPassed) {
-    warnings.push(
-      `Continent count (${continentCount}) outside safe range [${SAFE_GEOGRAPHIC_TARGETS.continentCountMin}, ${SAFE_GEOGRAPHIC_TARGETS.continentCountMax}]`
-    );
-  }
-
-  // 3. Evaluate Max Nation Area Share
-  const politicalFeatures = layers.political?.features || [];
-  const totalLandArea = politicalFeatures.reduce(
-    (sum, f) => sum + Number(f.properties?._areaSqKm || f.properties?.areaSqKm || 0),
-    0
+  const continent = check(
+    {
+      value: continentCount,
+      target: `${T.continentCountMin} - ${T.continentCountMax}`,
+      passed: continentCount >= T.continentCountMin && continentCount <= T.continentCountMax,
+    },
+    20,
+    `Continent count (${continentCount}) outside safe range [${T.continentCountMin}, ${T.continentCountMax}]`
   );
 
-  let maxNationShare = 0;
-  if (totalLandArea > 0) {
-    for (const feat of politicalFeatures) {
-      const area = Number(feat.properties?._areaSqKm || feat.properties?.areaSqKm || 0);
-      const share = (area / totalLandArea) * 100;
-      if (share > maxNationShare) maxNationShare = share;
-    }
-  }
+  // Max nation area share
+  const featureArea = (f: { properties: GeoJsonProperties }) =>
+    Number(f.properties?._areaSqKm || f.properties?.areaSqKm || 0);
+  const politicalFeatures = layers.political?.features || [];
+  const totalLandArea = politicalFeatures.reduce((sum, f) => sum + featureArea(f), 0);
+  const maxNationShare =
+    totalLandArea > 0
+      ? politicalFeatures.reduce(
+          (max, f) => Math.max(max, (featureArea(f) / totalLandArea) * 100),
+          0
+        )
+      : 0;
+  const nation = check(
+    {
+      value: round1(maxNationShare),
+      target: `<= ${T.maxNationSharePercentMax}%`,
+      passed: maxNationShare <= T.maxNationSharePercentMax,
+    },
+    20,
+    `Max nation land share (${maxNationShare.toFixed(1)}%) exceeds safe ceiling (${T.maxNationSharePercentMax}%)`
+  );
 
-  const nationSharePassed = maxNationShare <= SAFE_GEOGRAPHIC_TARGETS.maxNationSharePercentMax;
-  if (!nationSharePassed) {
-    warnings.push(
-      `Max nation land share (${maxNationShare.toFixed(1)}%) exceeds safe ceiling (${SAFE_GEOGRAPHIC_TARGETS.maxNationSharePercentMax}%)`
-    );
-  }
-
-  // 4. Evaluate Lake Coverage Share
-  const lakeFeatures = layers.lakes?.features || [];
-  const totalLakeArea = lakeFeatures.reduce(
+  // Lake coverage share (default 2% when either area is unknown)
+  const totalLakeArea = (layers.lakes?.features || []).reduce(
     (sum, f) =>
       sum +
       Number(f.properties?.areaKm2 || f.properties?._areaSqKm || f.properties?.areaSqKm || 500),
@@ -107,71 +119,43 @@ export function evaluateWorldAccuracy(world: GeneratedWorld): AccuracyScoreCard 
   );
   const lakeShare =
     totalLandArea > 0 && totalLakeArea > 0 ? (totalLakeArea / totalLandArea) * 100 : 2.0;
+  const lake = check(
+    {
+      value: round1(lakeShare),
+      target: `${T.lakeLandSharePercentMin}% - ${T.lakeLandSharePercentMax}%`,
+      passed: lakeShare >= T.lakeLandSharePercentMin && lakeShare <= T.lakeLandSharePercentMax,
+    },
+    15,
+    `Lake land share (${lakeShare.toFixed(1)}%) outside safe range [${T.lakeLandSharePercentMin}%, ${T.lakeLandSharePercentMax}%]`
+  );
 
-  const lakePassed =
-    lakeShare >= SAFE_GEOGRAPHIC_TARGETS.lakeLandSharePercentMin &&
-    lakeShare <= SAFE_GEOGRAPHIC_TARGETS.lakeLandSharePercentMax;
-
-  if (!lakePassed) {
-    warnings.push(
-      `Lake land share (${lakeShare.toFixed(1)}%) outside safe range [${SAFE_GEOGRAPHIC_TARGETS.lakeLandSharePercentMin}%, ${SAFE_GEOGRAPHIC_TARGETS.lakeLandSharePercentMax}%]`
-    );
-  }
-
-  // 5. Evaluate River Density
   const riverCount = stats.riverCount || (layers.rivers?.features || []).length;
   const riverDensity = riverCount / Math.max(1, stats.countryCount);
-  const riverPassed = riverDensity >= 0.01 && riverDensity <= 15.0;
+  const river = check(
+    {
+      value: round1(riverDensity),
+      target: "0.5 - 4.0",
+      passed: riverDensity >= 0.01 && riverDensity <= 15.0,
+    },
+    15,
+    `River density (${riverDensity.toFixed(2)} rivers/country) outside target range [0.01, 15.0]`
+  );
 
-  if (!riverPassed) {
-    warnings.push(
-      `River density (${riverDensity.toFixed(2)} rivers/country) outside target range [0.01, 15.0]`
-    );
-  }
-
-  // Compute Overall Score (100 - penalties)
-  let penalty = 0;
-  if (!landPassed) penalty += 20;
-  if (!continentPassed) penalty += 20;
-  if (!nationSharePassed) penalty += 20;
-  if (!lakePassed) penalty += 15;
-  if (!riverPassed) penalty += 15;
-
-  const overallScore = Math.max(0, 100 - penalty);
-  const isWithinSafeTargets = overallScore >= 75;
+  const failed = [land, continent, nation, lake, river].filter((c) => !c.metric.passed);
+  const overallScore = Math.max(0, 100 - failed.reduce((sum, c) => sum + c.penalty, 0));
 
   return {
     seed: world.seed,
     overallScore,
-    isWithinSafeTargets,
+    isWithinSafeTargets: overallScore >= 75,
     metrics: {
-      landPercentage: {
-        value: landPercentage,
-        target: `${SAFE_GEOGRAPHIC_TARGETS.landPercentageMin}% - ${SAFE_GEOGRAPHIC_TARGETS.landPercentageMax}%`,
-        passed: landPassed,
-      },
-      continentCount: {
-        value: continentCount,
-        target: `${SAFE_GEOGRAPHIC_TARGETS.continentCountMin} - ${SAFE_GEOGRAPHIC_TARGETS.continentCountMax}`,
-        passed: continentPassed,
-      },
-      maxNationSharePercent: {
-        value: Math.round(maxNationShare * 10) / 10,
-        target: `<= ${SAFE_GEOGRAPHIC_TARGETS.maxNationSharePercentMax}%`,
-        passed: nationSharePassed,
-      },
-      lakeLandSharePercent: {
-        value: Math.round(lakeShare * 10) / 10,
-        target: `${SAFE_GEOGRAPHIC_TARGETS.lakeLandSharePercentMin}% - ${SAFE_GEOGRAPHIC_TARGETS.lakeLandSharePercentMax}%`,
-        passed: lakePassed,
-      },
-      riverDensity: {
-        value: Math.round(riverDensity * 10) / 10,
-        target: "0.5 - 4.0",
-        passed: riverPassed,
-      },
+      landPercentage: land.metric,
+      continentCount: continent.metric,
+      maxNationSharePercent: nation.metric,
+      lakeLandSharePercent: lake.metric,
+      riverDensity: river.metric,
     },
-    warnings,
+    warnings: failed.map((c) => c.warning),
   };
 }
 
@@ -188,13 +172,7 @@ export function auditWorldGenerationBatch(
   averageScore: number;
   reports: AccuracyScoreCard[];
 } {
-  const reports: AccuracyScoreCard[] = [];
-
-  for (const seed of seeds) {
-    const world = generateFn(seed);
-    const scoreCard = evaluateWorldAccuracy(world);
-    reports.push(scoreCard);
-  }
+  const reports = seeds.map((seed) => evaluateWorldAccuracy(generateFn(seed)));
 
   const passedCount = reports.filter((r) => r.isWithinSafeTargets).length;
   const totalTested = reports.length;

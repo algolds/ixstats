@@ -58,6 +58,15 @@ const VEHICLE_COLORS_RGB: Record<string, [number, number, number]> = {
   military_naval: [127, 29, 29],
 };
 
+/** Economic tier name fragments (or exact short code) and their traffic multiplier; first match wins. */
+const TIER_MULTIPLIERS: { words: string[]; code: string; multiplier: number }[] = [
+  { words: ["superpower", "tier 1"], code: "t1", multiplier: 1.4 },
+  { words: ["developed", "tier 2"], code: "t2", multiplier: 1.15 },
+  { words: ["middle", "tier 3"], code: "t3", multiplier: 1.0 },
+  { words: ["developing", "tier 4"], code: "t4", multiplier: 0.7 },
+  { words: ["emerging", "tier 5"], code: "t5", multiplier: 0.45 },
+];
+
 /**
  * Calculates a dynamic economic traffic coefficient (\kappa_econ) based on live national metrics.
  * Modulates between 0.25x (low income / developing backroads) and 2.5x (superpower economic arterials).
@@ -67,36 +76,22 @@ export function calculateEconomicTrafficCoefficient(context?: RouteEconomicConte
     return 1.0; // neutral default benchmark
   }
 
-  // Economic tier multiplier
-  let tierMult = 1.0;
   const tier = (context.economicTier ?? "").toLowerCase();
-  if (tier.includes("superpower") || tier.includes("tier 1") || tier === "t1") {
-    tierMult = 1.4;
-  } else if (tier.includes("developed") || tier.includes("tier 2") || tier === "t2") {
-    tierMult = 1.15;
-  } else if (tier.includes("middle") || tier.includes("tier 3") || tier === "t3") {
-    tierMult = 1.0;
-  } else if (tier.includes("developing") || tier.includes("tier 4") || tier === "t4") {
-    tierMult = 0.7;
-  } else if (tier.includes("emerging") || tier.includes("tier 5") || tier === "t5") {
-    tierMult = 0.45;
-  }
+  const tierMult =
+    TIER_MULTIPLIERS.find((t) => t.code === tier || t.words.some((w) => tier.includes(w)))
+      ?.multiplier ?? 1.0;
 
   // GDP scaling factor (normalized around $500B national GDP)
-  const gdpFactor = Math.sqrt(Math.max(1, context.totalGdp) / 500);
-  let rawCoeff = gdpFactor * tierMult;
+  let rawCoeff = Math.sqrt(Math.max(1, context.totalGdp) / 500) * tierMult;
 
   // International corridor premium (trade flows)
-  if (context.isInternational) {
-    rawCoeff *= 1.2;
-  }
+  if (context.isInternational) rawCoeff *= 1.2;
 
   // Per capita multiplier for high-value services & tech commerce
   if (context.gdpPerCapita && context.gdpPerCapita > 40_000) {
     rawCoeff *= Math.min(1.25, 1.0 + (context.gdpPerCapita - 40_000) / 120_000);
   }
 
-  // Clamp between 0.25 and 2.5
   return Math.min(2.5, Math.max(0.25, Math.round(rawCoeff * 100) / 100));
 }
 
@@ -107,21 +102,19 @@ export function calculateNetworkAverageEconomicCoefficient(
   segments: TransportSegmentInput[]
 ): number {
   if (segments.length === 0) return 1.0;
-  let total = 0;
-  let count = 0;
-  for (const s of segments) {
-    total += calculateEconomicTrafficCoefficient({
-      totalGdp: s.totalGdp,
-      gdpPerCapita: s.gdpPerCapita,
-      economicTier: s.economicTier,
-      isInternational: s.isInternational,
-    });
-    count++;
-  }
-  return count > 0 ? Math.round((total / count) * 100) / 100 : 1.0;
+  const total = segments.reduce(
+    (sum, s) =>
+      sum +
+      calculateEconomicTrafficCoefficient({
+        totalGdp: s.totalGdp,
+        gdpPerCapita: s.gdpPerCapita,
+        economicTier: s.economicTier,
+        isInternational: s.isInternational,
+      }),
+    0
+  );
+  return Math.round((total / segments.length) * 100) / 100;
 }
-
-const haversineDistKm = distanceKm;
 
 /**
  * Generate simulated vehicle trips along operational transport segments with real-economy dynamic scaling.
@@ -146,7 +139,7 @@ export function generateVehicleTrips(
     // Calculate cumulative distance along coords
     const cumDist: number[] = [0];
     for (let i = 1; i < coords.length; i++) {
-      const segDist = haversineDistKm(coords[i - 1]!, coords[i]!);
+      const segDist = distanceKm(coords[i - 1]!, coords[i]!);
       cumDist.push(cumDist[i - 1]! + segDist);
     }
     const totalDistKm = cumDist[cumDist.length - 1]!;
@@ -164,11 +157,7 @@ export function generateVehicleTrips(
     // Speed in km/h -> km/s
     const speedKmh =
       seg.speedKmh ??
-      (seg.routeType === "air_corridor"
-        ? 800
-        : seg.routeType.includes("rail")
-          ? 120
-          : 80);
+      (seg.routeType === "air_corridor" ? 800 : seg.routeType.includes("rail") ? 120 : 80);
     const speedKmPerSec = Math.max(0.001, speedKmh / 3600);
     const transitDurationSec = Math.max(5, totalDistKm / speedKmPerSec);
 
@@ -257,6 +246,20 @@ export interface GeoJSONCollectionLike {
   features: GeoJSONFeatureLike[];
 }
 
+/** First line of a LineString or MultiLineString geometry (empty for anything else). */
+function lineCoordinates(
+  geometry: NonNullable<GeoJSONFeatureLike["geometry"]>
+): [number, number][] {
+  const { type, coordinates } = geometry;
+  if (!Array.isArray(coordinates)) return [];
+  if (type === "LineString") return coordinates as [number, number][];
+  const firstLine = (coordinates as [number, number][][])[0];
+  return type === "MultiLineString" && Array.isArray(firstLine) ? firstLine : [];
+}
+
+const numberOrNull = (value: string | number | boolean | null | undefined) =>
+  typeof value === "number" ? value : null;
+
 /**
  * Converts a GeoJSON FeatureCollection of routes into TransportSegmentInput array.
  */
@@ -265,49 +268,23 @@ export function featuresToSegments(fc: GeoJSONCollectionLike): TransportSegmentI
   const segments: TransportSegmentInput[] = [];
 
   for (const f of fc.features) {
-    if (!f.geometry) continue;
-    const geomType = f.geometry.type;
-    let coords: [number, number][] = [];
+    const coords = f.geometry ? lineCoordinates(f.geometry) : [];
+    if (coords.length < 2) continue;
 
-    if (geomType === "LineString" && Array.isArray(f.geometry.coordinates)) {
-      coords = f.geometry.coordinates as [number, number][];
-    } else if (geomType === "MultiLineString" && Array.isArray(f.geometry.coordinates)) {
-      const multi = f.geometry.coordinates as [number, number][][];
-      if (multi.length > 0 && Array.isArray(multi[0])) {
-        coords = multi[0];
-      }
-    }
-
-    if (coords.length >= 2) {
-      const props = f.properties ?? {};
-      const segId = String(props.id ?? f.id ?? `seg-${segments.length}`);
-      const routeType = String(props.routeType ?? "road");
-      const status = String(props.status ?? "operational");
-      const speedKmh = typeof props.speedKmh === "number" ? props.speedKmh : null;
-      const capacity = typeof props.capacity === "number" ? props.capacity : null;
-      const totalGdp = typeof props.totalGdp === "number" ? props.totalGdp : null;
-      const gdpPerCapita = typeof props.gdpPerCapita === "number" ? props.gdpPerCapita : null;
-      const economicTier = typeof props.economicTier === "string" ? props.economicTier : null;
-      const isInternational = Boolean(props.isInternational);
-      const population = typeof props.population === "number" ? props.population : null;
-
-      segments.push({
-        id: segId,
-        routeType,
-        geometry: {
-          type: "LineString",
-          coordinates: coords,
-        },
-        status,
-        speedKmh,
-        capacity,
-        totalGdp,
-        gdpPerCapita,
-        economicTier,
-        isInternational,
-        population,
-      });
-    }
+    const props = f.properties ?? {};
+    segments.push({
+      id: String(props.id ?? f.id ?? `seg-${segments.length}`),
+      routeType: String(props.routeType ?? "road"),
+      geometry: { type: "LineString", coordinates: coords },
+      status: String(props.status ?? "operational"),
+      speedKmh: numberOrNull(props.speedKmh),
+      capacity: numberOrNull(props.capacity),
+      totalGdp: numberOrNull(props.totalGdp),
+      gdpPerCapita: numberOrNull(props.gdpPerCapita),
+      economicTier: typeof props.economicTier === "string" ? props.economicTier : null,
+      isInternational: Boolean(props.isInternational),
+      population: numberOrNull(props.population),
+    });
   }
 
   return segments;

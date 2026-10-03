@@ -3,16 +3,25 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Badge } from "~/components/ui/badge";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
-import React, { useState } from "react";
+import { useState } from "react";
+import { isBuiltinCharge } from "./builtin-charges";
 import { useVexelEditor } from "./VexelEditorProvider";
 
 interface ExportDialogProps {
   onClose: () => void;
 }
 
+const SVG_MIME = "image/svg+xml;charset=utf-8";
+
+function download(url: string, filename: string) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+}
+
 export default function ExportDialog({ onClose }: ExportDialogProps) {
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { blazon, composition } = useVexelEditor();
+  const { composition } = useVexelEditor();
   const [exporting, setExporting] = useState(false);
 
   const getSvgString = (): string | null => {
@@ -25,12 +34,8 @@ export default function ExportDialog({ onClose }: ExportDialogProps) {
     const svgString = getSvgString();
     if (!svgString) return;
 
-    const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "coat-of-arms.svg";
-    link.click();
+    const url = URL.createObjectURL(new Blob([svgString], { type: SVG_MIME }));
+    download(url, "coat-of-arms.svg");
     URL.revokeObjectURL(url);
   };
 
@@ -40,8 +45,7 @@ export default function ExportDialog({ onClose }: ExportDialogProps) {
 
     setExporting(true);
 
-    const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(new Blob([svgString], { type: SVG_MIME }));
     const img = new Image();
 
     img.onload = () => {
@@ -52,15 +56,9 @@ export default function ExportDialog({ onClose }: ExportDialogProps) {
         const ctx = canvas.getContext("2d");
 
         if (ctx) {
-          // Fill transparent background or keep transparent depending on choice
           ctx.clearRect(0, 0, size, size);
           ctx.drawImage(img, 0, 0, size, size);
-
-          const pngUrl = canvas.toDataURL("image/png");
-          const link = document.createElement("a");
-          link.href = pngUrl;
-          link.download = `coat-of-arms-${size}px.png`;
-          link.click();
+          download(canvas.toDataURL("image/png"), `coat-of-arms-${size}px.png`);
         }
       } catch (err) {
         console.error("Failed to render PNG", err);
@@ -78,9 +76,8 @@ export default function ExportDialog({ onClose }: ExportDialogProps) {
     img.src = url;
   };
 
-  // Find if custom Commons-imported charges are used
   const customChargesUsed = (composition.shield.charges ?? []).filter(
-    (c) => !["star", "cross", "fleur-de-lis", "lion", "eagle"].includes(c.chargeId)
+    (c) => !isBuiltinCharge(c.chargeId)
   );
 
   return (
@@ -115,7 +112,6 @@ export default function ExportDialog({ onClose }: ExportDialogProps) {
             </FacetListSection>
           </FacetList>
 
-          {/* Commons attribution notice */}
           {customChargesUsed.length > 0 && (
             <div className="rounded-row bg-yellow/15 text-footnote text-yellow-ink p-3 leading-relaxed">
               <span className="mb-1 block font-semibold">Attribution required</span>

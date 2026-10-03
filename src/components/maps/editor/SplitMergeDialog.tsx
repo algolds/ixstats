@@ -45,7 +45,6 @@ export const SplitMergeDialog = React.memo(function SplitMergeDialog(props: Spli
   return (
     <Dialog open onOpenChange={(open) => !open && !props.isLoading && props.onCancel()}>
       <DialogContent className="rounded-card p-5 sm:max-w-md">
-        {/* Header */}
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {props.type === "split" ? (
@@ -107,7 +106,6 @@ export const SplitMergeDialog = React.memo(function SplitMergeDialog(props: Spli
             </div>
           )}
 
-          {/* Actions */}
           <p className="text-footnote text-yellow mt-3 flex items-start gap-2">
             <WarningTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
             {props.type === "split"

@@ -3,13 +3,14 @@
 import { Component } from "iconoir-react";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useVexelEditor } from "../VexelEditorProvider";
 import { api } from "~/trpc/react";
 import { CHARGE_CATEGORIES } from "~/lib/heraldry";
 import { SearchField } from "~/components/ui/search-field";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { Card } from "~/components/ui/card";
+import { BUILTIN_CHARGES } from "../builtin-charges";
 
 interface ChargeLibraryPanelProps {
   onOpenCommons: () => void;
@@ -20,26 +21,15 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("");
 
-  // Fetch paginated charges from backend library
   const { data, isLoading } = api.heraldry.getChargeLibrary.useQuery({
     search: search || undefined,
     category: category ? (category as any) : undefined,
     limit: 30,
   });
 
-  // Local static template charges list
-  const localTemplates = [
-    { id: "star", name: "Star (Mullet)" },
-    { id: "cross", name: "Cross" },
-    { id: "fleur-de-lis", name: "Fleur-de-lis" },
-    { id: "lion", name: "Lion Rampant" },
-    { id: "eagle", name: "Eagle Displayed" },
-  ].filter((c) => {
-    if (search) {
-      return c.name.toLowerCase().includes(search.toLowerCase());
-    }
-    return true;
-  });
+  const localTemplates = BUILTIN_CHARGES.filter(
+    (c) => !search || c.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   const handleAddCharge = (chargeId: string) => {
     addCharge({
@@ -61,7 +51,6 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
           </Button>
         </div>
 
-        {/* Search and Filters */}
         <div className="text-footnote mb-4 space-y-2">
           <SearchField
             aria-label="Search charges"
@@ -79,10 +68,8 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
           />
         </div>
 
-        {/* Grid List */}
         <div className="flex-1 overflow-y-auto pr-1">
           <div className="space-y-4">
-            {/* Local Templates */}
             {localTemplates.length > 0 && (
               <div>
                 <Eyebrow className="mb-2 block">Built-in templates</Eyebrow>
@@ -105,7 +92,6 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
               </div>
             )}
 
-            {/* Database Library */}
             <div>
               <Eyebrow className="mb-2 block">Imported charges</Eyebrow>
 
@@ -127,7 +113,6 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
                       onClick={() => handleAddCharge(item.id)}
                       className="h-auto min-w-0 flex-col gap-1 p-3 whitespace-normal"
                     >
-                      {/* SVG preview */}
                       <div
                         className="text-label-secondary flex h-8 w-8 items-center justify-center overflow-hidden"
                         dangerouslySetInnerHTML={{

@@ -63,7 +63,7 @@ const TransportOverlay = lazy(() =>
   }))
 );
 
-// ── Legend constants (match AnalyticsLegend's original LEGENDS exactly) ──────
+// Legend constants (match AnalyticsLegend's original LEGENDS exactly)
 
 const WEALTH_LEGEND: OverlayLegend = {
   type: "gradient",
@@ -190,7 +190,6 @@ const CANON_DENSITY_LEGEND: OverlayLegend = {
   ],
 };
 
-// ── renderProps adapters ────────────────────────────────────────────────────
 // Bridge the unified render context to each component's concrete prop shape so
 // IxWorldMap can render every overlay from one loop without rewriting components.
 
@@ -215,10 +214,8 @@ function choroplethRenderProps(
   };
 }
 
-// ── Registry ────────────────────────────────────────────────────────────────
-
 const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
-  // ── Feature overlays (managed by IxWorldMap's own layers; default-on) ──
+  // Feature overlays (managed by IxWorldMap's own layers; default-on)
   // No component/fetcher: their visibility is driven by IxWorldMap's overlay
   // visibility effect. Registered so the controls panel is fully data-driven.
   cities: {
@@ -257,7 +254,7 @@ const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
     defaultVisible: true,
   },
 
-  // ── Fill overlays (recolor fill-political; mutually exclusive) ──
+  // Fill overlays (recolor fill-political; mutually exclusive)
   wealth: {
     id: "wealth",
     label: "Wealth Map",
@@ -312,7 +309,7 @@ const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
     legend: CRISES_LEGEND,
   },
 
-  // ── Analytics overlays (independent layers; combinable; default-off) ──
+  // Analytics overlays (independent layers; combinable; default-off)
   diplomacy: {
     id: "diplomacy",
     label: "Diplomatic Network",
@@ -360,7 +357,7 @@ const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
     legend: TRANSPORT_LEGEND,
   },
 
-  // ── NEW overlays — prove the ~30-line registry path (reuse ChoroplethOverlay) ──
+  // NEW overlays — prove the ~30-line registry path (reuse ChoroplethOverlay)
   economicTier: {
     id: "economicTier",
     label: "Economic Tier",

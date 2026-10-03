@@ -1,29 +1,20 @@
 "use client";
 
-/**
- * CountryInfoPanel - Slide-out panel for country details on the map.
- *
- * Desktop: Right-side panel. Mobile: Snap bottom sheet.
- * Shows economic data (clickable for modals), wiki intro, wiki sections TOC,
- * media gallery, sovereignty, and neighbors.
- */
-
 import { memo } from "react";
 import { Xmark as X } from "iconoir-react";
-import type { SelectedCountry } from "./IxWorldMap";
+import type { NeighborTarget, SelectedCountry } from "./IxWorldMap";
 import { SnapBottomSheet } from "./SnapBottomSheet";
 import { useIsMobile } from "~/hooks/useIsMobile";
 import { Button } from "~/components/ui/button";
 import { FacetMaterial } from "~/components/ui/facet";
 import { CountryInfoContent, CountryPeekContent } from "./CountryInfoContent";
 
-// Lazy import modals and geo profile to avoid bloating the initial map bundle
 import dynamic from "next/dynamic";
 
-// Extracted subcomponents, hooks, and helpers
 import { useCountryInfoPanelState } from "~/components/maps/core/hooks/useCountryInfoPanelState";
 import { ImageLightbox } from "~/components/maps/core/components/ImageLightbox";
 
+// Lazy so the metric modals stay out of the initial map bundle
 const GdpDetailsModal = dynamic(
   () =>
     import("~/components/mycountry/shared/modals/metric-details/GdpDetailsModal").then((m) => ({
@@ -44,13 +35,7 @@ const PopulationDetailsModal = dynamic(
 interface CountryInfoPanelProps {
   country: SelectedCountry;
   onClose: () => void;
-  onNeighborClick?: (neighbor: {
-    featureId: string;
-    countryId: string | null;
-    displayName: string;
-    centroidLng?: number;
-    centroidLat?: number;
-  }) => void;
+  onNeighborClick?: (neighbor: NeighborTarget) => void;
   onGeographyFilter?: (filter: { type: "continent" | "region"; value: string } | null) => void;
   onEditMap?: () => void;
 }
@@ -79,7 +64,6 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
       style={{ animation: "slideInRight 0.25s ease-out" }}
     >
       <FacetMaterial material="regular" className="flex h-full flex-col rounded-none">
-        {/* Header */}
         <div className="border-separator flex shrink-0 items-center justify-between border-b px-4 py-3">
           <div className="flex items-center gap-2 overflow-hidden">
             {state.flagUrl ? (
@@ -121,10 +105,8 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
 
   return (
     <>
-      {/* Desktop View */}
       {!isMobile && desktopContent}
 
-      {/* Mobile View */}
       {isMobile && (
         <SnapBottomSheet onClose={onClose} peekContent={<CountryPeekContent state={state} />}>
           <CountryInfoContent
@@ -136,12 +118,10 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
         </SnapBottomSheet>
       )}
 
-      {/* Image lightbox */}
       {state.lightboxSrc && (
         <ImageLightbox src={state.lightboxSrc} onClose={() => state.setLightboxSrc(null)} />
       )}
 
-      {/* Metric detail modals */}
       {state.activeModal === "gdp" && state.summary && (
         <GdpDetailsModal
           isOpen

@@ -1,51 +1,33 @@
 import { Hexagon, Droplet } from "iconoir-react";
-import type { MapEditorPlugin, MapEditorContextType } from "./types";
-import { isKeyboardInputTarget } from "../hooks/drag-utils";
+import type { MapEditorPlugin, ToolbarItem } from "./types";
+import { toolShortcuts } from "./shortcuts";
+
+const toolbarItems: ToolbarItem[] = [
+  {
+    id: "tool-region",
+    mode: "add-subdivision",
+    icon: Hexagon,
+    label: "Region",
+    shortcut: "R",
+    group: 1,
+    order: 1,
+  },
+  {
+    id: "tool-lake",
+    mode: "add-lake",
+    icon: Droplet,
+    label: "Lake",
+    shortcut: "J",
+    group: 3,
+    order: 3,
+  },
+];
 
 export const SubdivisionDrawPlugin: MapEditorPlugin = {
   id: "subdivision-draw",
   name: "Subdivision Drawing",
-  global: true, // Keydown listens globally to R/J keys
+  global: true,
   modes: ["add-subdivision", "add-lake"],
-
-  toolbarItems: [
-    {
-      id: "tool-region",
-      mode: "add-subdivision",
-      icon: Hexagon,
-      label: "Region",
-      shortcut: "R",
-      group: 1,
-      order: 1,
-    },
-    {
-      id: "tool-lake",
-      mode: "add-lake",
-      icon: Droplet,
-      label: "Lake",
-      shortcut: "J",
-      group: 3,
-      order: 3,
-    },
-  ],
-
-  onKeyDown(e: KeyboardEvent, context: MapEditorContextType) {
-    if (isKeyboardInputTarget(e.target) || isKeyboardInputTarget(document.activeElement)) {
-      return false;
-    }
-    if (e.ctrlKey || e.metaKey || e.altKey) {
-      return false;
-    }
-
-    const key = e.key.toLowerCase();
-    if (key === "r") {
-      context.onModeChange("add-subdivision");
-      return true;
-    }
-    if (key === "j") {
-      context.onModeChange("add-lake");
-      return true;
-    }
-    return false;
-  },
+  toolbarItems,
+  onKeyDown: toolShortcuts(toolbarItems),
 };

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
+import type { ProjectionMode } from "~/lib/maps/map-config";
 import { Play, Refresh as RefreshCw, Component as Layers, Compass } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -22,9 +23,28 @@ interface MapPipelineControlsProps {
   isGenerating: boolean;
   activeLayers: Record<string, boolean>;
   onToggleLayer: (layer: string) => void;
-  projectionMode: "dynamic" | "globe" | "mercator";
-  onChangeProjection: (mode: "dynamic" | "globe" | "mercator") => void;
+  projectionMode: ProjectionMode;
+  onChangeProjection: (mode: ProjectionMode) => void;
 }
+
+const SLIDERS = [
+  {
+    key: "countryCount",
+    label: "Nations generated",
+    min: 3,
+    max: 30,
+    format: (v: number) => `${v} nations`,
+  },
+  { key: "landCoverage", label: "Land ratio", min: 15, max: 65, format: (v: number) => `${v}%` },
+] as const;
+
+const LAYER_TOGGLES = [
+  { id: "political", label: "Political borders", desc: "Nation polygons and territories" },
+  { id: "altitudes", label: "Altitudes & topography", desc: "9 elevation zones" },
+  { id: "climate", label: "Climate zones", desc: "Trewartha 12 climate types" },
+  { id: "rivers", label: "Hydrographic rivers", desc: "Vectorized river channels" },
+  { id: "lakes", label: "Waterbodies / Lakes", desc: "Inland lakes and basins" },
+];
 
 export function MapPipelineControls({
   config,
@@ -44,7 +64,6 @@ export function MapPipelineControls({
 
   return (
     <div className="bg-surface border-separator text-label text-body flex h-full flex-col border-r">
-      {/* Header */}
       <div className="border-separator flex items-center justify-between border-b p-4">
         <div>
           <h2 className="text-tint text-title-3 flex items-center gap-2">
@@ -54,7 +73,6 @@ export function MapPipelineControls({
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="border-separator border-b p-2">
         <SegmentedControl
           aria-label="Pipeline section"
@@ -69,11 +87,9 @@ export function MapPipelineControls({
         />
       </div>
 
-      {/* Tab Content */}
       <div className="flex-1 space-y-6 overflow-y-auto p-4">
         {activeTab === "generate" && (
           <div className="space-y-4">
-            {/* Projection Mode Toggle */}
             <div className="space-y-2">
               <span id="pipeline-projection" className="text-label text-caption">
                 Map projection
@@ -83,7 +99,7 @@ export function MapPipelineControls({
                 fullWidth
                 size="sm"
                 value={projectionMode}
-                onValueChange={(v) => onChangeProjection(v as "dynamic" | "globe" | "mercator")}
+                onValueChange={(v) => onChangeProjection(v as ProjectionMode)}
                 options={[
                   { value: "globe", label: "Globe" },
                   { value: "dynamic", label: "Auto" },
@@ -92,7 +108,6 @@ export function MapPipelineControls({
               />
             </div>
 
-            {/* Seed */}
             <div className="space-y-2">
               <div className="text-label text-caption flex items-center justify-between">
                 <label htmlFor="pipeline-seed">World seed</label>
@@ -109,7 +124,6 @@ export function MapPipelineControls({
               />
             </div>
 
-            {/* Mesh Engine Indicator */}
             <div className="border-tint/20 bg-tint-fill text-label rounded-control-sm text-caption flex items-center justify-between border p-2">
               <span className="flex items-center gap-2">
                 <Layers className="text-tint h-3.5 w-3.5" /> Mesh engine
@@ -119,43 +133,25 @@ export function MapPipelineControls({
               </span>
             </div>
 
-            {/* Country Count */}
-            <div className="space-y-2">
-              <label className="text-label text-caption flex justify-between">
-                <span>Nations generated</span>
-                <span className="text-tint tabular-nums">{config.countryCount} nations</span>
-              </label>
-              <Slider
-                aria-label="Nations generated"
-                min={3}
-                max={30}
-                value={[config.countryCount]}
-                onValueChange={([v]) =>
-                  v !== undefined && onChangeConfig({ ...config, countryCount: v })
-                }
-                className="w-full py-2"
-              />
-            </div>
+            {SLIDERS.map(({ key, label, min, max, format }) => (
+              <div key={key} className="space-y-2">
+                <label className="text-label text-caption flex justify-between">
+                  <span>{label}</span>
+                  <span className="text-tint tabular-nums">{format(config[key])}</span>
+                </label>
+                <Slider
+                  aria-label={label}
+                  min={min}
+                  max={max}
+                  value={[config[key]]}
+                  onValueChange={([v]) =>
+                    v !== undefined && onChangeConfig({ ...config, [key]: v })
+                  }
+                  className="w-full py-2"
+                />
+              </div>
+            ))}
 
-            {/* Land Coverage */}
-            <div className="space-y-2">
-              <label className="text-label text-caption flex justify-between">
-                <span>Land ratio</span>
-                <span className="text-tint tabular-nums">{config.landCoverage}%</span>
-              </label>
-              <Slider
-                aria-label="Land ratio"
-                min={15}
-                max={65}
-                value={[config.landCoverage]}
-                onValueChange={([v]) =>
-                  v !== undefined && onChangeConfig({ ...config, landCoverage: v })
-                }
-                className="w-full py-2"
-              />
-            </div>
-
-            {/* Generate Button */}
             <Button
               type="button"
               size="lg"
@@ -181,17 +177,7 @@ export function MapPipelineControls({
             <p className="text-label-secondary text-footnote">
               Toggle active map layers in the viewport:
             </p>
-            {[
-              {
-                id: "political",
-                label: "Political borders",
-                desc: "Nation polygons and territories",
-              },
-              { id: "altitudes", label: "Altitudes & topography", desc: "9 elevation zones" },
-              { id: "climate", label: "Climate zones", desc: "Trewartha 12 climate types" },
-              { id: "rivers", label: "Hydrographic rivers", desc: "Vectorized river channels" },
-              { id: "lakes", label: "Waterbodies / Lakes", desc: "Inland lakes and basins" },
-            ].map((layer) => (
+            {LAYER_TOGGLES.map((layer) => (
               <label
                 key={layer.id}
                 className="border-separator bg-surface hover:bg-fill-3 rounded-control-sm flex cursor-pointer items-start gap-3 border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform]"

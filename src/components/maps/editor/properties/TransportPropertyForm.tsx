@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo } from "react";
 import { NetworkLeft, PathArrow as RouteIcon, MapPin, Xmark as X } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { RouteFilterList } from "./transport/RouteFilterList";
@@ -13,7 +13,7 @@ import { RouteNodeInspector } from "./transport/RouteNodeInspector";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 
-interface TransportPropertyFormProps {
+export interface TransportPropertyFormProps {
   countryId?: string;
   onCancel: () => void;
   routeWaypoints?: [number, number][];
@@ -29,6 +29,42 @@ interface TransportPropertyFormProps {
   onRouteEditCommit?: () => Promise<void> | void;
   onRouteEditCancel?: () => void;
   onFlyToCoords?: (coord: [number, number]) => void;
+}
+
+function PanelHeader({
+  title,
+  closeLabel,
+  closeTitle,
+  onClose,
+  closeClassName,
+  iconClassName,
+}: {
+  title: string;
+  closeLabel: string;
+  closeTitle?: string;
+  onClose: () => void;
+  closeClassName: string;
+  iconClassName: string;
+}) {
+  return (
+    <div className="border-separator flex items-center justify-between border-b px-3 py-2">
+      <div className="text-caption flex items-center gap-2 font-semibold">
+        <RouteIcon className="text-tint h-4 w-4" />
+        <span>{title}</span>
+      </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        onClick={onClose}
+        title={closeTitle}
+        aria-label={closeLabel}
+        className={closeClassName}
+      >
+        <X className={iconClassName} />
+      </Button>
+    </div>
+  );
 }
 
 export const TransportPropertyForm = React.memo(function TransportPropertyForm({
@@ -51,27 +87,28 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
   const [userTab, setUserTab] = useState<"routes" | "draw" | "generate" | null>(null);
   const tab = userTab ?? (routeWaypoints.length > 0 ? "draw" : "routes");
 
-  // Generate state
   const [selectedTypes, setSelectedTypes] = useState<GeneratableRouteType[]>(["rail", "highway"]);
   const [clearExisting, setClearExisting] = useState(false);
   const [generateNotice, setGenerateNotice] = useState<string | null>(null);
 
-  // Draw state
   const [routeName, setRouteName] = useState("");
   const [manualRouteType, setManualRouteType] = useState<string>("road");
   const [isSavingManual, setIsSavingManual] = useState(false);
   const [manualError, setManualError] = useState<string | null>(null);
 
-  // Routes filter state
   const [searchQuery, setSearchQuery] = useState("");
 
   const utils = api.useUtils();
 
+  const invalidateRoutes = () => {
+    void utils.transport.getCountryRoutes.invalidate();
+    void utils.transport.getAllRoutesGeoJSON.invalidate();
+    void utils.transport.getTransportStats.invalidate();
+  };
+
   const generateRoutes = api.transport.generateRoutes.useMutation({
     onSuccess: () => {
-      void utils.transport.getCountryRoutes.invalidate();
-      void utils.transport.getAllRoutesGeoJSON.invalidate();
-      void utils.transport.getTransportStats.invalidate();
+      invalidateRoutes();
       setGenerateNotice("Routes generated successfully!");
       setUserTab("routes");
     },
@@ -79,12 +116,8 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
 
   const deleteRoute = api.transport.deleteRoute.useMutation({
     onSuccess: (_, variables) => {
-      void utils.transport.getCountryRoutes.invalidate();
-      void utils.transport.getAllRoutesGeoJSON.invalidate();
-      void utils.transport.getTransportStats.invalidate();
-      if (selectedRouteId === variables.id) {
-        onSelectRouteId?.(null);
-      }
+      invalidateRoutes();
+      if (selectedRouteId === variables.id) onSelectRouteId?.(null);
     },
   });
 
@@ -113,59 +146,47 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
     });
   }, [routeData, countryId]);
 
-  const handleFinishRoute = useCallback(
-    async (type?: string, name?: string) => {
-      if (!finishRoute) return;
-      try {
-        setIsSavingManual(true);
-        setManualError(null);
-        await finishRoute(type, name);
-        setRouteName("");
-        setUserTab("routes");
-      } catch (err) {
-        setManualError(err instanceof Error ? err.message : "Failed to commit route");
-      } finally {
-        setIsSavingManual(false);
-      }
-    },
-    [finishRoute]
-  );
+  const handleFinishRoute = async (type?: string, name?: string) => {
+    if (!finishRoute) return;
+    try {
+      setIsSavingManual(true);
+      setManualError(null);
+      await finishRoute(type, name);
+      setRouteName("");
+      setUserTab("routes");
+    } catch (err) {
+      setManualError(err instanceof Error ? err.message : "Failed to commit route");
+    } finally {
+      setIsSavingManual(false);
+    }
+  };
 
-  const handleGenerate = useCallback(() => {
-    if (!countryId) return;
-    generateRoutes.mutate({
-      countryId,
-      routeTypes: selectedTypes,
-      clearExisting,
-    });
-  }, [countryId, selectedTypes, clearExisting, generateRoutes]);
+  const handleGenerate = () => {
+    if (countryId) generateRoutes.mutate({ countryId, routeTypes: selectedTypes, clearExisting });
+  };
+
+  const handleDeleteRoute = (id: string) => {
+    const targetCountryId = routes.find((r) => r.id === id)?.countryId ?? countryId;
+    if (targetCountryId) deleteRoute.mutate({ id, countryId: targetCountryId });
+  };
 
   const activeRouteId = editingRouteId || selectedRouteId;
+  const closeEdit = () => {
+    onRouteEditCancel?.();
+    onSelectRouteId?.(null);
+  };
 
   if (activeRouteId) {
     return (
       <div className="bg-surface text-label flex h-full flex-col">
-        {/* Header */}
-        <div className="border-separator flex items-center justify-between border-b px-3 py-2">
-          <div className="text-caption flex items-center gap-2 font-semibold">
-            <RouteIcon className="text-tint h-4 w-4" />
-            <span>Edit route path</span>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => {
-              onRouteEditCancel?.();
-              onSelectRouteId?.(null);
-            }}
-            title="Close edit mode"
-            aria-label="Close edit mode"
-            className="text-label-secondary hover:bg-fill-3 hover:text-label rounded-control-sm size-6"
-          >
-            <X className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+        <PanelHeader
+          title="Edit route path"
+          closeLabel="Close edit mode"
+          onClose={closeEdit}
+          closeTitle="Close edit mode"
+          closeClassName="text-label-secondary hover:bg-fill-3 hover:text-label rounded-control-sm size-6"
+          iconClassName="h-3.5 w-3.5"
+        />
 
         <div className="flex-1 overflow-y-auto p-3">
           <RouteNodeInspector
@@ -174,16 +195,8 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
             editingRouteVertices={editingRouteVertices}
             onRouteVerticesUpdate={onRouteVerticesUpdate}
             onCommit={onRouteEditCommit}
-            onCancel={() => {
-              onRouteEditCancel?.();
-              onSelectRouteId?.(null);
-            }}
-            onDeleteRoute={(id) => {
-              const targetCountryId = routes.find((r) => r.id === id)?.countryId ?? countryId;
-              if (targetCountryId) {
-                deleteRoute.mutate({ id, countryId: targetCountryId });
-              }
-            }}
+            onCancel={closeEdit}
+            onDeleteRoute={handleDeleteRoute}
             onFlyToCoords={onFlyToCoords}
           />
         </div>
@@ -193,25 +206,14 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
 
   return (
     <div className="bg-surface text-label flex h-full flex-col">
-      {/* Header */}
-      <div className="border-separator flex items-center justify-between border-b px-3 py-2">
-        <div className="text-caption flex items-center gap-2 font-semibold">
-          <RouteIcon className="text-tint h-4 w-4" />
-          <span>Transport network</span>
-        </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          onClick={onCancel}
-          aria-label="Close transport network"
-          className="text-label-secondary"
-        >
-          <X className="size-3.5" />
-        </Button>
-      </div>
+      <PanelHeader
+        title="Transport network"
+        closeLabel="Close transport network"
+        onClose={onCancel}
+        closeClassName="text-label-secondary"
+        iconClassName="size-3.5"
+      />
 
-      {/* Tabs */}
       <div className="border-separator border-b p-2">
         <SegmentedControl
           aria-label="Transport network"
@@ -236,7 +238,6 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
         />
       </div>
 
-      {/* Content */}
       <div className="flex-1 overflow-y-auto p-3">
         {tab === "routes" && (
           <RouteFilterList
@@ -247,12 +248,7 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
             selectedRouteId={selectedRouteId}
             onSelectRouteId={onSelectRouteId}
             onEditRoute={onEditRoute}
-            onDeleteRoute={(id) => {
-              const targetCountryId = routes.find((r) => r.id === id)?.countryId ?? countryId;
-              if (targetCountryId) {
-                deleteRoute.mutate({ id, countryId: targetCountryId });
-              }
-            }}
+            onDeleteRoute={handleDeleteRoute}
           />
         )}
         {tab === "draw" && (

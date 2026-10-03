@@ -8,28 +8,22 @@ import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 
 const GENERATABLE_ROUTE_TYPES = [
-  // Rail
   "rail",
   "high_speed_rail",
   "freight_rail",
   "commuter_rail",
-  // Road
   "motorway",
   "highway",
   "trunk",
   "road",
   "secondary",
-  // Maritime
   "shipping_lane",
   "canal",
   "ferry",
-  // Air
   "air_corridor",
-  // Utility
   "pipeline",
   "power_grid",
   "fiber",
-  // Military
   "military_supply",
   "military_naval",
 ] as const;

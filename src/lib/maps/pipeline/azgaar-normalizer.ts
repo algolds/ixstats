@@ -51,102 +51,92 @@ export interface NormalizedMapData {
   };
 }
 
-/**
- * Normalize a PackedGraph output into structured realm map layers and entity datasets.
- */
-export function normalizeAzgaarGraph(graph: PackedGraph, seed = 42): NormalizedMapData {
-  // 1. Export 7 GeoJSON layers sharing 100% identical cell topology & boundary alignment
-  const rawLayers = exportToGeoJSON(graph as any);
+/** First truthy value, mirroring a chain of `||` fallbacks. */
+const firstTruthy = <T>(...values: T[]): T | undefined => values.find(Boolean);
 
-  // 2. Extract country metadata from states and political layer
-  const countries: NormalizedCountryPayload[] = [];
-  const politicalLayer = rawLayers.political;
-
-  if (politicalLayer && politicalLayer.features) {
-    for (const feat of politicalLayer.features) {
+/** Countries from the political layer, else from the graph's states. */
+function extractCountries(
+  politicalLayer: FeatureCollection | undefined,
+  graph: PackedGraph
+): NormalizedCountryPayload[] {
+  const countries: NormalizedCountryPayload[] = (politicalLayer?.features ?? []).map(
+    (feat, i): NormalizedCountryPayload => {
       const props = feat.properties || {};
-      const featureId = String(
-        props.id || props.featureId || props._id || `state_${countries.length}`
-      );
-      const name = String(props.name || props._displayName || `Nation ${countries.length + 1}`);
-      const color = String(props.fill || props._fillColor || "#3b82f6");
-      const areaSqKm = Number(props.areaSqKm || props._areaSqKm || 50000);
-      const centroid: [number, number] = [
-        Number(props._centroidLng ?? props.centroidLng ?? 0),
-        Number(props._centroidLat ?? props.centroidLat ?? 0),
-      ];
-      const bbox = (props.boundingBox as [number, number, number, number]) || [-180, -90, 180, 90];
-
-      countries.push({
-        featureId,
-        name,
-        color,
-        areaSqKm,
-        centroid,
-        boundingBox: bbox,
+      return {
+        featureId: String(firstTruthy(props.id, props.featureId, props._id) ?? `state_${i}`),
+        name: String(firstTruthy(props.name, props._displayName) ?? `Nation ${i + 1}`),
+        color: String(firstTruthy(props.fill, props._fillColor) ?? "#3b82f6"),
+        areaSqKm: Number(firstTruthy(props.areaSqKm, props._areaSqKm) ?? 50000),
+        centroid: [
+          Number(props._centroidLng ?? props.centroidLng ?? 0),
+          Number(props._centroidLat ?? props.centroidLat ?? 0),
+        ],
+        boundingBox: (props.boundingBox as [number, number, number, number]) || [
+          -180, -90, 180, 90,
+        ],
         capitalName: props.capitalName ? String(props.capitalName) : undefined,
-      });
+      };
     }
-  }
+  );
+  if (countries.length > 0) return countries;
 
-  // Fallback if no states generated
-  if (countries.length === 0 && graph.states) {
-    for (const state of graph.states) {
-      if (!state || !state.id || !state.name) continue; // skip invalid/unclaimed
-      countries.push({
-        featureId: `state_${state.id}`,
-        name: state.name,
-        color: state.color || "#6366f1",
-        areaSqKm: state.area || 100000,
-        centroid: [0, 0],
-        boundingBox: [-180, -90, 180, 90],
-      });
-    }
-  }
+  // Fallback if no states generated: skip invalid/unclaimed states
+  return (graph.states ?? [])
+    .filter((state) => state?.id && state.name)
+    .map((state) => ({
+      featureId: `state_${state.id}`,
+      name: state.name,
+      color: state.color || "#6366f1",
+      areaSqKm: state.area || 100000,
+      centroid: [0, 0],
+      boundingBox: [-180, -90, 180, 90],
+    }));
+}
 
-  // 3. Extract city markers from settlements or burgs
-  const cities: NormalizedCityPayload[] = [];
+/** City markers from settlements or burgs. */
+function extractCities(graph: PackedGraph, fallbackCountryId: string): NormalizedCityPayload[] {
   const burgList = (graph as any).settlements || graph.burgs || [];
-  for (const burg of burgList) {
-    if (!burg || !burg.name) continue;
-    const countryFeatureId = burg.state
-      ? `state_${burg.state}`
-      : countries[0]?.featureId || "unclaimed";
-    cities.push({
+  return burgList
+    .filter((burg: any) => burg?.name)
+    .map((burg: any): NormalizedCityPayload => ({
       name: burg.name,
       type: burg.isCapital ? "national_capital" : "city",
       coordinates: [burg.lng ?? 0, burg.lat ?? 0],
       population: Math.round(burg.population || 50000),
       isCapital: Boolean(burg.isCapital),
-      countryFeatureId,
-    });
-  }
+      countryFeatureId: burg.state ? `state_${burg.state}` : fallbackCountryId,
+    }));
+}
 
-  // 4. Extract named rivers
-  const rivers: NormalizedRiverPayload[] = [];
-  if (graph.rivers) {
-    for (const river of graph.rivers) {
-      if (!river || !river.name || !river.cells) continue;
-      const coordinates = Array.isArray(river.cells)
-        ? river.cells.map((ci: any) =>
-            typeof ci === "number"
-              ? [cellLng(graph as any, ci), cellLat(graph as any, ci)]
-              : ci
-          )
-        : [];
-      rivers.push({
-        name: river.name,
-        geometry: {
-          type: "LineString",
-          coordinates,
-        },
-        lengthKm: Math.round((river as any).lengthKm || (river as any).length || 100),
-      });
-    }
-  }
+function extractRivers(graph: PackedGraph): NormalizedRiverPayload[] {
+  return (graph.rivers ?? [])
+    .filter((river) => river?.name && river.cells)
+    .map((river) => ({
+      name: river.name,
+      geometry: {
+        type: "LineString",
+        coordinates: Array.isArray(river.cells)
+          ? river.cells.map((ci: any) =>
+              typeof ci === "number" ? [cellLng(graph as any, ci), cellLat(graph as any, ci)] : ci
+            )
+          : [],
+      },
+      lengthKm: Math.round((river as any).lengthKm || (river as any).length || 100),
+    }));
+}
+
+/**
+ * Normalize a PackedGraph output into structured realm map layers and entity datasets.
+ */
+export function normalizeAzgaarGraph(graph: PackedGraph, seed = 42): NormalizedMapData {
+  // 7 GeoJSON layers sharing identical cell topology and boundary alignment
+  const layers = exportToGeoJSON(graph as any);
+  const countries = extractCountries(layers.political, graph);
+  const cities = extractCities(graph, countries[0]?.featureId || "unclaimed");
+  const rivers = extractRivers(graph);
 
   return {
-    layers: rawLayers,
+    layers,
     countries,
     cities,
     rivers,

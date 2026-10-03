@@ -11,7 +11,6 @@ import { acquireSurface } from "~/lib/maps/map-engine";
 // Overlay components + their wiring
 import { OVERLAY_LIST } from "~/lib/maps/overlay-registry";
 
-// Hooks & Helpers
 import { useWorldMapLayers } from "./hooks/useWorldMapLayers";
 import { useWorldMapInteractions } from "./hooks/useWorldMapInteractions";
 import { useWorldMapOverlayFeatures } from "./hooks/useWorldMapOverlayFeatures";
@@ -28,6 +27,15 @@ export interface SelectedCountry {
   centroidLng: number;
   centroidLat: number;
   countryId: string | null;
+}
+
+/** A neighbouring country picked from a panel; centroid is optional (looked up when absent). */
+export interface NeighborTarget {
+  featureId: string;
+  countryId: string | null;
+  displayName: string;
+  centroidLng?: number;
+  centroidLat?: number;
 }
 
 export interface SelectedFeature {
@@ -156,7 +164,6 @@ const IxWorldMap = memo(
     const fullLayerDataRef = useRef<Map<string, FeatureCollection>>(new Map());
     const labelFeaturesRef = useRef<FeatureCollection | null>(null);
 
-    // Expose imperative methods
     useImperativeHandle(ref, () => ({
       flyTo: (lng: number, lat: number, zoom = 4) => {
         mapRef.current?.flyTo({ center: [lng, lat], zoom, duration: 1500 });
@@ -167,13 +174,10 @@ const IxWorldMap = memo(
       getMap: () => mapRef.current,
     }));
 
-    // ── 1. Hook: Manage Interactions & Event Listeners ──
     const { updateDistanceFade } = useWorldMapInteractions({
       map: mapRef.current,
       isLoaded,
       layers,
-      overlayVisibility,
-      labelsVisible,
       geographyFilter,
       topCountryNames,
       selectedCountryId,
@@ -187,7 +191,6 @@ const IxWorldMap = memo(
       tooltipPopupRef,
     });
 
-    // ── 2. Hook: Manage Base Topography & Boundaries Layers ──
     useWorldMapLayers({
       map: mapRef.current,
       isLoaded,
@@ -202,7 +205,6 @@ const IxWorldMap = memo(
       labelsVisible,
     });
 
-    // ── 3. Hook: Manage Capitals & subdivisions Overlays ──
     useWorldMapOverlayFeatures({
       map: mapRef.current,
       isLoaded,
@@ -212,7 +214,6 @@ const IxWorldMap = memo(
       selectedCountryId,
     });
 
-    // ── 4. Hook: Manage Story Pins, Labels & Data Overlays ──
     useWorldMapDataOverlays({
       map: mapRef.current,
       isLoaded,
@@ -346,7 +347,6 @@ const IxWorldMap = memo(
           </div>
         )}
 
-        {/* Dynamic Overlay Components */}
         {isLoaded && (
           <Suspense fallback={null}>
             {OVERLAY_LIST.map((def) => {

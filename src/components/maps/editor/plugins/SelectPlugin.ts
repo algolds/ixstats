@@ -1,55 +1,35 @@
 import { CursorPointer as MousePointer2, SelectWindow as LassoSelect } from "iconoir-react";
-import type { MapEditorPlugin, MapEditorContextType } from "./types";
-import { isKeyboardInputTarget } from "../hooks/drag-utils";
+import type { MapEditorPlugin, ToolbarItem } from "./types";
+import { toolShortcuts } from "./shortcuts";
 
+const toolbarItems: ToolbarItem[] = [
+  {
+    id: "tool-select",
+    mode: "view",
+    icon: MousePointer2,
+    label: "Select",
+    shortcut: "V",
+    group: 0,
+    order: 1,
+  },
+  {
+    id: "tool-lasso",
+    mode: "lasso-select",
+    icon: LassoSelect,
+    label: "Lasso Select",
+    shortcut: "M",
+    group: 0,
+    order: 2,
+  },
+];
+
+// Undo/redo is owned by the editor's single keyboard handler (useEditorKeyboardShortcuts)
+// so one keypress never undoes twice.
 export const SelectPlugin: MapEditorPlugin = {
   id: "select",
   name: "Selection",
-  global: true, // Listens globally to V/M keys to switch tools
+  global: true,
   modes: ["view", "lasso-select"],
-
-  toolbarItems: [
-    {
-      id: "tool-select",
-      mode: "view",
-      icon: MousePointer2,
-      label: "Select",
-      shortcut: "V",
-      group: 0,
-      order: 1,
-    },
-    {
-      id: "tool-lasso",
-      mode: "lasso-select",
-      icon: LassoSelect,
-      label: "Lasso Select",
-      shortcut: "M",
-      group: 0,
-      order: 2,
-    },
-  ],
-
-  onKeyDown(e: KeyboardEvent, context: MapEditorContextType) {
-    if (isKeyboardInputTarget(e.target) || isKeyboardInputTarget(document.activeElement)) {
-      return false;
-    }
-
-    // Undo/redo is owned by the editor's single keyboard handler
-    // (useMapEditorOverlayState) so one keypress never undoes twice.
-    const key = e.key.toLowerCase();
-
-    if (e.ctrlKey || e.metaKey || e.altKey) {
-      return false;
-    }
-
-    if (key === "v") {
-      context.onModeChange("view");
-      return true;
-    }
-    if (key === "m") {
-      context.onModeChange("lasso-select");
-      return true;
-    }
-    return false;
-  },
+  toolbarItems,
+  onKeyDown: toolShortcuts(toolbarItems),
 };

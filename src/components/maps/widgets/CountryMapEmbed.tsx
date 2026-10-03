@@ -10,7 +10,6 @@
 
 import { MapPin, SystemRestart as Loader2 } from "iconoir-react";
 
-// Extracted subcomponents, hooks, and helpers
 import { useCountryMapEmbedState } from "~/components/maps/widgets/hooks/useCountryMapEmbedState";
 import { useCountryMapEmbedLayers } from "~/components/maps/widgets/hooks/useCountryMapEmbedLayers";
 
@@ -71,7 +70,6 @@ export function CountryMapEmbed({
     boundsPadding,
   });
 
-  // ── Loading state ──
   if (state.isLoading) {
     return (
       <div className={`bg-fill-3 flex items-center justify-center ${height} ${className}`}>
@@ -80,7 +78,6 @@ export function CountryMapEmbed({
     );
   }
 
-  // ── No geometry fallback ──
   if (!state.hasGeometry) {
     return (
       <div
@@ -99,7 +96,6 @@ export function CountryMapEmbed({
         className="absolute inset-0"
         style={{ width: "100%", height: "100%" }}
       />
-      // oxlint-disable-next-line
       {!state.mapReady && (
         <div className="bg-fill-3 absolute inset-0 flex items-center justify-center">
           <Loader2 className="text-label-secondary h-5 w-5 animate-spin" />

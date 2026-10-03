@@ -36,14 +36,12 @@ export const dynamic = "force-dynamic";
 export default function WorldMapPage() {
   const searchParams = useSearchParams();
 
-  // --- Embed mode: chromeless for wiki iframe embedding ---
   const isEmbed = searchParams.get("embed") === "true";
 
   usePageTitle({
     title: isEmbed ? "World Map" : isStandalone ? "IxMaps" : "World Map",
   });
 
-  // --- Country resolution: by ID or by name ---
   const countryIdParam = searchParams.get("country") || undefined;
   const countryNameParam = searchParams.get("name") || undefined;
 
@@ -55,7 +53,6 @@ export default function WorldMapPage() {
 
   const initialCountryId = countryIdParam || resolvedCountry?.id || undefined;
 
-  // --- Coordinate deep-linking ---
   // Memoised so the map container (and its memoised map) doesn't see a new array every render.
   const latParam = searchParams.get("lat");
   const lngParam = searchParams.get("lng");
@@ -67,7 +64,6 @@ export default function WorldMapPage() {
     return !isNaN(lng) && !isNaN(lat) ? ([lng, lat] as [number, number]) : undefined;
   }, [latParam, lngParam]);
 
-  // --- Layer selection via URL ---
   const layerParam = searchParams.get("layer") as MapLayerType | null;
   const layersParam = searchParams.get("layers");
   const initialLayers = useMemo(
@@ -80,10 +76,8 @@ export default function WorldMapPage() {
     [layersParam, layerParam]
   );
 
-  // --- Embed with controls override ---
   const embedControls = searchParams.get("controls") === "true";
 
-  // --- Realm: whose map this is (ruling E-h) ---
   const realm = searchParams.get("realm") || undefined;
 
   // In embed mode: hide navigation, controls, use full viewport

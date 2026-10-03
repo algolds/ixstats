@@ -21,6 +21,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Keyframe as Keyboard, Xmark as X } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { FacetMaterial } from "~/components/ui/facet";
+import type { Map as MapLibreMap } from "maplibre-gl";
 import type { IxWorldMapRef } from "./IxWorldMap";
 import { MAP_DEFAULTS, type ProjectionMode } from "~/lib/maps/map-config";
 
@@ -55,6 +56,26 @@ const SHORTCUTS = [
   { keys: "?", desc: "Show shortcuts" },
 ];
 
+const keyed = <T,>(keys: string[], value: T): [string, T][] => keys.map((k) => [k, value]);
+
+/** Pan direction per key, as a unit vector scaled by PAN_AMOUNT. */
+const PAN_STEPS: Record<string, [number, number]> = Object.fromEntries([
+  ...keyed<[number, number]>(["w", "W", "ArrowUp"], [0, -1]),
+  ...keyed<[number, number]>(["s", "S", "ArrowDown"], [0, 1]),
+  ...keyed<[number, number]>(["a", "A", "ArrowLeft"], [-1, 0]),
+  ...keyed<[number, number]>(["d", "D", "ArrowRight"], [1, 0]),
+]);
+
+const MAP_ACTIONS: Record<string, (map: MapLibreMap) => void> = Object.fromEntries([
+  ...keyed(["+", "="], (map: MapLibreMap) => map.zoomIn({ duration: 200 })),
+  ...keyed(["-", "_"], (map: MapLibreMap) => map.zoomOut({ duration: 200 })),
+  ...keyed(["r", "R"], (map: MapLibreMap) =>
+    map.flyTo({ center: MAP_DEFAULTS.center, zoom: MAP_DEFAULTS.zoom, duration: 1200 })
+  ),
+]);
+
+const PROJECTION_CYCLE: ProjectionMode[] = ["dynamic", "globe", "mercator"];
+
 export function MapKeyboardControls({
   mapRef,
   onEscapePress,
@@ -74,82 +95,31 @@ export function MapKeyboardControls({
       const map = mapRef.current?.getMap();
       if (!map) return;
 
-      switch (e.key) {
-        // Pan
-        case "w":
-        case "W":
-        case "ArrowUp":
-          e.preventDefault();
-          map.panBy([0, -PAN_AMOUNT], { duration: 200 });
-          break;
-        case "s":
-        case "S":
-        case "ArrowDown":
-          e.preventDefault();
-          map.panBy([0, PAN_AMOUNT], { duration: 200 });
-          break;
-        case "a":
-        case "A":
-        case "ArrowLeft":
-          e.preventDefault();
-          map.panBy([-PAN_AMOUNT, 0], { duration: 200 });
-          break;
-        case "d":
-        case "D":
-        case "ArrowRight":
-          e.preventDefault();
-          map.panBy([PAN_AMOUNT, 0], { duration: 200 });
-          break;
+      const pan = PAN_STEPS[e.key];
+      const mapAction = MAP_ACTIONS[e.key];
+      const cycleProjection = () => {
+        if (!onProjectionChange || !projectionMode) return;
+        const nextIdx = (PROJECTION_CYCLE.indexOf(projectionMode) + 1) % PROJECTION_CYCLE.length;
+        onProjectionChange(PROJECTION_CYCLE[nextIdx]!);
+      };
+      // Esc closes the help overlay first, then panels
+      const escape = () => (showHelp ? setShowHelp(false) : onEscapePress?.());
+      const stateActions: Record<string, () => void> = {
+        p: cycleProjection,
+        P: cycleProjection,
+        "?": () => setShowHelp((v) => !v),
+        Escape: escape,
+      };
 
-        // Zoom
-        case "+":
-        case "=":
-          e.preventDefault();
-          map.zoomIn({ duration: 200 });
-          break;
-        case "-":
-        case "_":
-          e.preventDefault();
-          map.zoomOut({ duration: 200 });
-          break;
-
-        // Reset
-        case "r":
-        case "R":
-          e.preventDefault();
-          map.flyTo({
-            center: MAP_DEFAULTS.center,
-            zoom: MAP_DEFAULTS.zoom,
-            duration: 1200,
-          });
-          break;
-
-        // Cycle projection
-        case "p":
-        case "P":
-          e.preventDefault();
-          if (onProjectionChange && projectionMode) {
-            const modes: ProjectionMode[] = ["dynamic", "globe", "mercator"];
-            const nextIdx = (modes.indexOf(projectionMode) + 1) % modes.length;
-            onProjectionChange(modes[nextIdx]);
-          }
-          break;
-
-        // Help
-        case "?":
-          e.preventDefault();
-          setShowHelp((v) => !v);
-          break;
-
-        // Esc closes panels and overlays
-        case "Escape":
-          e.preventDefault();
-          if (showHelp) {
-            setShowHelp(false);
-          } else {
-            onEscapePress?.();
-          }
-          break;
+      if (pan) {
+        e.preventDefault();
+        map.panBy([pan[0] * PAN_AMOUNT, pan[1] * PAN_AMOUNT], { duration: 200 });
+      } else if (mapAction) {
+        e.preventDefault();
+        mapAction(map);
+      } else if (stateActions[e.key]) {
+        e.preventDefault();
+        stateActions[e.key]!();
       }
     },
     [mapRef, showHelp, onEscapePress, projectionMode, onProjectionChange]
@@ -192,7 +162,6 @@ export function MapKeyboardControls({
         </FacetMaterial>
       </div>
 
-      {/* Help overlay */}
       {showHelp && (
         <div
           className={`absolute right-12 bottom-12 z-20 w-56 ${sidePanelOpen ? "sm:right-[25rem]" : ""}`}

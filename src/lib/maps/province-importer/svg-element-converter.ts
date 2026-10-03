@@ -8,175 +8,102 @@
  * Server-side only (operates on @xmldom Elements).
  */
 
-import { createRequire } from "module";
 import { pathCommandsToRings } from "~/lib/flags/svg-parser";
-import type { SvgPathCommand } from "~/lib/flags/svg-parser";
+import { parseAbsolutePath } from "~/lib/flags/svg/xml";
+import { attrOrZero, svgTag, type XmlElement } from "./svg-dom";
 
-const _require = createRequire(import.meta.url);
-const { parseSVG, makeAbsolute } = _require("svg-path-parser") as {
-  parseSVG: (d: string) => SvgPathCommand[];
-  makeAbsolute: (cmds: SvgPathCommand[]) => SvgPathCommand[];
-};
-
-// @xmldom/xmldom@0.9's Element type is no longer structurally assignable to the
-// global lib.dom Element (it was in 0.8). All "Element" values in this file are
-// xmldom-parsed nodes, never real DOM elements, so alias to the package's own type.
-type XmlElement = import("@xmldom/xmldom").Element;
-
-// ──────────────────────────────────────────────
-// Main dispatcher
-// ──────────────────────────────────────────────
+type Ring = [number, number][];
 
 /**
  * Convert any SVG shape element to coordinate rings.
  * Returns empty array for unsupported/degenerate elements.
  */
-export function elementToRings(el: XmlElement, bezierSegments: number = 8): [number, number][][] {
-  const tag = el.localName ?? el.tagName?.split(":").pop() ?? "";
-
-  switch (tag) {
+export function elementToRings(el: XmlElement, bezierSegments: number = 8): Ring[] {
+  switch (svgTag(el)) {
     case "path":
       return pathToRings(el, bezierSegments);
     case "polygon":
-      return polygonToRings(el);
+      return pointsToRings(el, (first, last) => first[0] !== last[0] || first[1] !== last[1]);
     case "polyline":
-      return polylineToRings(el);
+      // Close if endpoints are far apart (polylines are often used as polygons)
+      return pointsToRings(
+        el,
+        (first, last) => Math.hypot(first[0] - last[0], first[1] - last[1]) > 0.001
+      );
     case "rect":
       return rectToRings(el);
     case "circle":
-      return circleToRings(el);
+      return ellipseToRings(el, "r", "r");
     case "ellipse":
-      return ellipseToRings(el);
+      return ellipseToRings(el, "rx", "ry");
     default:
       return [];
   }
 }
 
-// ──────────────────────────────────────────────
-// Individual converters
-// ──────────────────────────────────────────────
-
-/** Convert a <path> element using the existing SVG path parser pipeline. */
-function pathToRings(el: XmlElement, bezierSegments: number): [number, number][][] {
+function pathToRings(el: XmlElement, bezierSegments: number): Ring[] {
   const d = el.getAttribute("d");
   if (!d) return [];
 
   try {
-    const commands = makeAbsolute(parseSVG(d));
-    return pathCommandsToRings(commands, bezierSegments);
+    return pathCommandsToRings(parseAbsolutePath(d), bezierSegments);
   } catch {
     return [];
   }
 }
 
-/** Parse a `points` attribute into an array of [x, y] pairs. */
-function parsePoints(pointsAttr: string): [number, number][] {
-  const coords: [number, number][] = [];
-  // Points can be separated by whitespace and/or commas: "x1,y1 x2,y2" or "x1 y1 x2 y2"
+/** Parse a `points` attribute ("x1,y1 x2,y2" or "x1 y1 x2 y2") into a ring, closing it when `needsClose` says so. */
+function pointsToRings(
+  el: XmlElement,
+  needsClose: (first: [number, number], last: [number, number]) => boolean
+): Ring[] {
+  const pointsAttr = el.getAttribute("points");
+  if (!pointsAttr) return [];
+
   const nums = pointsAttr
     .trim()
     .split(/[\s,]+/)
     .map(Number);
+  const pts: Ring = [];
   for (let i = 0; i + 1 < nums.length; i += 2) {
-    const x = nums[i]!;
-    const y = nums[i + 1]!;
-    if (!isFinite(x) || !isFinite(y)) continue;
-    coords.push([x, y]);
+    if (isFinite(nums[i]!) && isFinite(nums[i + 1]!)) pts.push([nums[i]!, nums[i + 1]!]);
   }
-  return coords;
-}
-
-/** Convert a <polygon> element (auto-closed ring). */
-function polygonToRings(el: XmlElement): [number, number][][] {
-  const pointsAttr = el.getAttribute("points");
-  if (!pointsAttr) return [];
-
-  const pts = parsePoints(pointsAttr);
   if (pts.length < 3) return [];
 
-  // Close the ring
   const first = pts[0]!;
-  const last = pts[pts.length - 1]!;
-  if (first[0] !== last[0] || first[1] !== last[1]) {
-    pts.push([first[0], first[1]]);
-  }
-
+  if (needsClose(first, pts[pts.length - 1]!)) pts.push([first[0], first[1]]);
   return [pts];
 }
 
-/** Convert a <polyline> element (not auto-closed). */
-function polylineToRings(el: XmlElement): [number, number][][] {
-  const pointsAttr = el.getAttribute("points");
-  if (!pointsAttr) return [];
-
-  const pts = parsePoints(pointsAttr);
-  if (pts.length < 3) return [];
-
-  // Close if endpoints are very close (common for polylines used as polygons)
-  const first = pts[0]!;
-  const last = pts[pts.length - 1]!;
-  const dist = Math.hypot(first[0] - last[0], first[1] - last[1]);
-  if (dist > 0.001) {
-    pts.push([first[0], first[1]]);
-  }
-
-  return [pts];
-}
-
-/** Convert a <rect> element to a 4-corner rectangle ring. */
-function rectToRings(el: XmlElement): [number, number][][] {
-  const x = parseFloat(el.getAttribute("x") || "0");
-  const y = parseFloat(el.getAttribute("y") || "0");
-  const w = parseFloat(el.getAttribute("width") || "0");
-  const h = parseFloat(el.getAttribute("height") || "0");
-
-  if (w <= 0 || h <= 0) return [];
-
-  // Ignore rx/ry for simplicity — treat rounded rects as sharp corners
+/** Rounded corners (rx/ry) are ignored: rects become sharp-cornered rings. */
+function rectToRings(el: XmlElement): Ring[] {
+  const [x, y, w, h] = ["x", "y", "width", "height"].map((name) => attrOrZero(el, name));
+  if (w! <= 0 || h! <= 0) return [];
   return [
     [
-      [x, y],
-      [x + w, y],
-      [x + w, y + h],
-      [x, y + h],
-      [x, y], // close
+      [x!, y!],
+      [x! + w!, y!],
+      [x! + w!, y! + h!],
+      [x!, y! + h!],
+      [x!, y!],
     ],
   ];
 }
 
-/** Approximate a <circle> as a polygon with N segments. */
-function circleToRings(el: XmlElement, segments: number = 32): [number, number][][] {
-  const cx = parseFloat(el.getAttribute("cx") || "0");
-  const cy = parseFloat(el.getAttribute("cy") || "0");
-  const r = parseFloat(el.getAttribute("r") || "0");
-
-  if (r <= 0) return [];
-
-  const pts: [number, number][] = [];
-  for (let i = 0; i <= segments; i++) {
-    const angle = (2 * Math.PI * i) / segments;
-    pts.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
-  }
-
-  return [pts];
-}
-
-/** Approximate an <ellipse> as a polygon with N segments. */
-function ellipseToRings(el: XmlElement, segments: number = 32): [number, number][][] {
-  const cx = parseFloat(el.getAttribute("cx") || "0");
-  const cy = parseFloat(el.getAttribute("cy") || "0");
-  const rx = parseFloat(el.getAttribute("rx") || "0");
-  const ry = parseFloat(el.getAttribute("ry") || "0");
-
+/** Approximate a <circle> or <ellipse> as a 32-segment polygon (radii read from `rxAttr`/`ryAttr`). */
+function ellipseToRings(el: XmlElement, rxAttr: string, ryAttr: string, segments = 32): Ring[] {
+  const cx = attrOrZero(el, "cx");
+  const cy = attrOrZero(el, "cy");
+  const rx = attrOrZero(el, rxAttr);
+  const ry = attrOrZero(el, ryAttr);
   if (rx <= 0 || ry <= 0) return [];
 
-  const pts: [number, number][] = [];
-  for (let i = 0; i <= segments; i++) {
-    const angle = (2 * Math.PI * i) / segments;
-    pts.push([cx + rx * Math.cos(angle), cy + ry * Math.sin(angle)]);
-  }
-
-  return [pts];
+  return [
+    Array.from({ length: segments + 1 }, (_, i): [number, number] => {
+      const angle = (2 * Math.PI * i) / segments;
+      return [cx + rx * Math.cos(angle), cy + ry * Math.sin(angle)];
+    }),
+  ];
 }
 
 /** Set of SVG shape element tag names we can convert. */

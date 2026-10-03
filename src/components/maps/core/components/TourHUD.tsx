@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Play,
@@ -33,6 +32,41 @@ interface TourHUDProps {
 import { formatPopulation, formatCurrency } from "~/lib/utils/format-utils";
 import { Card } from "~/components/ui/card";
 
+const STALE_TIME = { staleTime: 30 * 60_000 };
+
+/** First two sentences of the wiki intro's first paragraph, with link markup stripped. */
+const condenseIntro = (paragraphs: string[] | undefined) =>
+  paragraphs?.[0]
+    ?.replace(/<[^>]+>/g, "")
+    .split(/(?<=[.!?])\s+/)
+    .slice(0, 2)
+    .join(" ") || null;
+
+/** Country record, summary stats and wiki intro for the current tour stop. */
+function useTourStepData(name: string | undefined) {
+  const { data: countryData, isLoading: isCountryLoading } =
+    api.countries.getByNameWithAtomic.useQuery(
+      { name: name ?? "" },
+      { enabled: !!name, ...STALE_TIME }
+    );
+  const { data: stats, isLoading: isStatsLoading } = api.countries.getMapSummary.useQuery(
+    { countryId: countryData?.id ?? "" },
+    { enabled: !!countryData?.id, ...STALE_TIME }
+  );
+  const { data: wikiIntro, isLoading: isWikiLoading } = api.countries.getWikiRichIntro.useQuery(
+    { countryName: name ?? "" },
+    { enabled: !!name, ...STALE_TIME }
+  );
+
+  return {
+    stats,
+    statsLoading: isCountryLoading || isStatsLoading,
+    isWikiLoading,
+    condensedIntro: condenseIntro(wikiIntro?.paragraphs),
+    capital: stats?.capitalCity || countryData?.nationalIdentity?.capitalCity || null,
+  };
+}
+
 export function TourHUD({
   tourState,
   currentStepIndex,
@@ -45,47 +79,12 @@ export function TourHUD({
   currentStepData,
   totalSteps,
 }: TourHUDProps) {
+  const { stats, statsLoading, isWikiLoading, condensedIntro, capital } = useTourStepData(
+    currentStepData?.name
+  );
   const isVisible = tourState !== "idle" && tourState !== "completed" && currentStepData;
-
-  // 1. Fetch country ID by name
-  const { data: countryData, isLoading: isCountryLoading } =
-    api.countries.getByNameWithAtomic.useQuery(
-      { name: currentStepData?.name ?? "" },
-      { enabled: !!currentStepData?.name, staleTime: 30 * 60_000 }
-    );
-
-  // 2. Fetch country stats by ID
-  const { data: stats, isLoading: isStatsLoading } = api.countries.getMapSummary.useQuery(
-    { countryId: countryData?.id ?? "" },
-    { enabled: !!countryData?.id, staleTime: 30 * 60_000 }
-  );
-
-  // 3. Fetch wiki intro by name
-  const { data: wikiIntro, isLoading: isWikiLoading } = api.countries.getWikiRichIntro.useQuery(
-    { countryName: currentStepData?.name ?? "" },
-    { enabled: !!currentStepData?.name, staleTime: 30 * 60_000 }
-  );
-
-  const capital = useMemo(() => {
-    return stats?.capitalCity || countryData?.nationalIdentity?.capitalCity || null;
-  }, [stats, countryData]);
-
-  const wikiParagraphs = wikiIntro?.paragraphs;
-  const condensedIntro = useMemo(() => {
-    if (!wikiParagraphs || wikiParagraphs.length === 0) return null;
-    const firstParagraph = wikiParagraphs[0];
-
-    // Strip HTML links tags to extract clean text sentences
-    const cleanText = firstParagraph.replace(/<[^>]+>/g, "");
-
-    const sentences = cleanText.split(/(?<=[.!?])\s+/);
-    const plainCondensed = sentences.slice(0, 2).join(" ");
-    return plainCondensed;
-  }, [wikiParagraphs]);
-
   if (!isVisible || !currentStepData) return null;
 
-  const statsLoading = isCountryLoading || isStatsLoading;
   const quickStats = [
     { icon: MapPin, label: "Capital", value: capital || "—" },
     { icon: Users, label: "Population", value: formatPopulation(stats?.population) },
@@ -102,7 +101,6 @@ export function TourHUD({
         className="fixed bottom-6 left-6 z-40 w-[calc(100%-3rem)] max-w-[380px]"
       >
         <FacetMaterial material="regular" className="rounded-card overflow-hidden">
-          {/* HUD Header */}
           <div className="border-separator flex items-start justify-between border-b px-5 py-4">
             <div className="flex items-center gap-3">
               {statsLoading ? (
@@ -134,7 +132,6 @@ export function TourHUD({
             </Button>
           </div>
 
-          {/* HUD Content / Lore */}
           <div className="space-y-4 px-5 py-4">
             {isWikiLoading ? (
               <div className="space-y-2 py-1">
@@ -148,7 +145,6 @@ export function TourHUD({
               </p>
             )}
 
-            {/* Quick stats */}
             <dl className="border-separator grid grid-cols-3 gap-2 border-t pt-3">
               {quickStats.map(({ icon: Icon, label, value }) => (
                 <Card variant="inset" key={label} className="space-y-1 p-2 text-center">
@@ -170,7 +166,6 @@ export function TourHUD({
             </dl>
           </div>
 
-          {/* Playback controls */}
           <div className="border-separator flex items-center justify-between border-t px-5 py-3">
             <div className="flex items-center gap-2">
               <Button
@@ -200,7 +195,6 @@ export function TourHUD({
             </Button>
           </div>
 
-          {/* Progress */}
           <div className="bg-fill-3 h-1 w-full">
             <div
               className="bg-blue h-full origin-left transition-transform duration-100"

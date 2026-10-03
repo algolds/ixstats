@@ -171,143 +171,106 @@ export interface NamedLakeFormData {
 
 const DUPLICATE_OFFSET_DEG = 0.05;
 
-interface OffsettableGeometry {
-  type: "Polygon" | "MultiPolygon" | string;
-  coordinates: [number, number][][] | [number, number][][][];
+type DuplicateInput = Record<string, string | number | boolean | object | null | undefined>;
+
+const offsetCoords = ([lng, lat]: [number, number]): [number, number] => [
+  lng + DUPLICATE_OFFSET_DEG,
+  lat + DUPLICATE_OFFSET_DEG,
+];
+const offsetRings = (rings: [number, number][][]) => rings.map((ring) => ring.map(offsetCoords));
+
+/** Shift a Polygon / MultiPolygon; other geometries come back unchanged. */
+function offsetGeometry(geometry: object): object {
+  const geom = geometry as {
+    type?: unknown;
+    coordinates: [number, number][][] & [number, number][][][];
+  };
+  if (geom?.type === "Polygon") {
+    return { ...geom, coordinates: offsetRings(geom.coordinates) };
+  }
+  if (geom?.type === "MultiPolygon") {
+    return { ...geom, coordinates: geom.coordinates.map(offsetRings) };
+  }
+  return geometry;
 }
 
-export function buildDuplicateInput(
-  feature: EditorFeature
-): Record<string, string | number | boolean | object | null | undefined> {
+/** Input for creating a copy of `feature`, nudged aside so it doesn't sit on the original. */
+export function buildDuplicateInput(feature: EditorFeature): DuplicateInput {
   const name = `${feature.name} (copy)`;
+  const p = feature.properties;
+  const coordinates = feature.coordinates ? offsetCoords(feature.coordinates) : undefined;
+  const geometry = feature.geometry ? offsetGeometry(feature.geometry) : undefined;
 
-  const offsetCoords = (coords: [number, number]): [number, number] => [
-    coords[0] + DUPLICATE_OFFSET_DEG,
-    coords[1] + DUPLICATE_OFFSET_DEG,
-  ];
-
-  const offsetGeometry = (geometry: object): object => {
-    if (!geometry || !("type" in geometry) || typeof (geometry as { type: string }).type !== "string") {
-      return geometry;
-    }
-    const geom = geometry as OffsettableGeometry;
-    if (geom.type === "Polygon") {
-      return {
-        ...geom,
-        coordinates: (geom.coordinates as [number, number][][]).map((ring: [number, number][]) =>
-          ring.map(offsetCoords)
-        ),
-      };
-    }
-    if (geom.type === "MultiPolygon") {
-      return {
-        ...geom,
-        coordinates: (geom.coordinates as [number, number][][][]).map(
-          (polygon: [number, number][][]) =>
-            polygon.map((ring: [number, number][]) => ring.map(offsetCoords))
-        ),
-      };
-    }
-    return geom;
+  const builders: Partial<Record<FeatureType, () => DuplicateInput>> = {
+    city: () => ({
+      name,
+      type: (p.cityType as string) ?? "city",
+      coordinates,
+      population: p.population ?? undefined,
+      elevation: p.elevation ?? undefined,
+      foundedYear: p.foundedYear ?? undefined,
+      isNationalCapital: false,
+      isSubdivisionCapital: false,
+      wikiPageTitle: undefined,
+    }),
+    subdivision: () => ({
+      name,
+      type: (p.type as string) ?? "province",
+      level: (p.level as number) ?? 1,
+      color: (p.color as string) ?? undefined,
+      geometry,
+      population: p.population ?? undefined,
+      areaSqKm: p.areaSqKm ?? undefined,
+    }),
+    poi: () => ({
+      name,
+      category: (p.category as string) ?? "landmark",
+      coordinates,
+      description: (p.description as string) ?? undefined,
+      icon: (p.icon as string) ?? undefined,
+      wikiPageTitle: undefined,
+    }),
+    storyPin: () => ({
+      title: name,
+      content: (p.content as string) ?? "",
+      category: (p.category as string) ?? "cultural",
+      importance: (p.importance as number) ?? 3,
+      coordinates,
+      ixTimeYear: p.ixTimeYear ?? undefined,
+      eraLabel: (p.eraLabel as string) ?? undefined,
+      contentFormat: (p.contentFormat as "plain" | "markdown") ?? "markdown",
+      wikiPageTitle: undefined,
+    }),
+    mapLabel: () => ({
+      text: name,
+      labelType: (p.labelType as string) ?? "geographic",
+      coordinates,
+      fontSize: (p.fontSize as number) ?? 14,
+      color: (p.color as string) ?? "#333333",
+      rotation: (p.rotation as number) ?? 0,
+      letterSpacing: (p.letterSpacing as number) ?? 0,
+      fontWeight: (p.fontWeight as string) ?? "normal",
+      opacity: (p.opacity as number) ?? 1.0,
+      minZoom: (p.minZoom as number) ?? 0,
+      maxZoom: (p.maxZoom as number) ?? 24,
+      wikiPageTitle: undefined,
+    }),
+    peak: () => ({
+      name,
+      elevation: (p.elevation as number) ?? 1000,
+      prominence: p.prominence ?? undefined,
+      coordinates,
+      subdivisionId: p.subdivisionId ?? undefined,
+      wikiPageTitle: undefined,
+    }),
+    river: () => ({ name, geometry, wikiPageTitle: undefined }),
+    lake: () => ({
+      name,
+      waterType: (p.waterType as string) ?? "freshwater",
+      geometry,
+      wikiPageTitle: undefined,
+    }),
   };
 
-  switch (feature.type) {
-    case "city": {
-      const p = feature.properties;
-      return {
-        name,
-        type: (p.cityType as string) ?? "city",
-        coordinates: feature.coordinates ? offsetCoords(feature.coordinates) : undefined,
-        population: p.population ?? undefined,
-        elevation: p.elevation ?? undefined,
-        foundedYear: p.foundedYear ?? undefined,
-        isNationalCapital: false,
-        isSubdivisionCapital: false,
-        wikiPageTitle: undefined,
-      };
-    }
-    case "subdivision": {
-      const p = feature.properties;
-      return {
-        name,
-        type: (p.type as string) ?? "province",
-        level: (p.level as number) ?? 1,
-        color: (p.color as string) ?? undefined,
-        geometry: feature.geometry ? offsetGeometry(feature.geometry) : undefined,
-        population: p.population ?? undefined,
-        areaSqKm: p.areaSqKm ?? undefined,
-      };
-    }
-    case "poi": {
-      const p = feature.properties;
-      return {
-        name,
-        category: (p.category as string) ?? "landmark",
-        coordinates: feature.coordinates ? offsetCoords(feature.coordinates) : undefined,
-        description: (p.description as string) ?? undefined,
-        icon: (p.icon as string) ?? undefined,
-        wikiPageTitle: undefined,
-      };
-    }
-    case "storyPin": {
-      const p = feature.properties;
-      return {
-        title: name,
-        content: (p.content as string) ?? "",
-        category: (p.category as string) ?? "cultural",
-        importance: (p.importance as number) ?? 3,
-        coordinates: feature.coordinates ? offsetCoords(feature.coordinates) : undefined,
-        ixTimeYear: p.ixTimeYear ?? undefined,
-        eraLabel: (p.eraLabel as string) ?? undefined,
-        contentFormat: (p.contentFormat as "plain" | "markdown") ?? "markdown",
-        wikiPageTitle: undefined,
-      };
-    }
-    case "mapLabel": {
-      const p = feature.properties;
-      return {
-        text: name,
-        labelType: (p.labelType as string) ?? "geographic",
-        coordinates: feature.coordinates ? offsetCoords(feature.coordinates) : undefined,
-        fontSize: (p.fontSize as number) ?? 14,
-        color: (p.color as string) ?? "#333333",
-        rotation: (p.rotation as number) ?? 0,
-        letterSpacing: (p.letterSpacing as number) ?? 0,
-        fontWeight: (p.fontWeight as string) ?? "normal",
-        opacity: (p.opacity as number) ?? 1.0,
-        minZoom: (p.minZoom as number) ?? 0,
-        maxZoom: (p.maxZoom as number) ?? 24,
-        wikiPageTitle: undefined,
-      };
-    }
-    case "peak": {
-      const p = feature.properties;
-      return {
-        name,
-        elevation: (p.elevation as number) ?? 1000,
-        prominence: p.prominence ?? undefined,
-        coordinates: feature.coordinates ? offsetCoords(feature.coordinates) : undefined,
-        subdivisionId: p.subdivisionId ?? undefined,
-        wikiPageTitle: undefined,
-      };
-    }
-    case "river": {
-      return {
-        name,
-        geometry: feature.geometry ? offsetGeometry(feature.geometry) : undefined,
-        wikiPageTitle: undefined,
-      };
-    }
-    case "lake": {
-      const p = feature.properties;
-      return {
-        name,
-        waterType: (p.waterType as string) ?? "freshwater",
-        geometry: feature.geometry ? offsetGeometry(feature.geometry) : undefined,
-        wikiPageTitle: undefined,
-      };
-    }
-    default:
-      return { name };
-  }
+  return builders[feature.type]?.() ?? { name };
 }
