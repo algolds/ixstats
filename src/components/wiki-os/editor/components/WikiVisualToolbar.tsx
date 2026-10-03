@@ -11,7 +11,7 @@ import {
   ArrowDown as Subscript,
   List,
   NumberedListLeft as ListOrdered,
-  Quote as Quote,
+  Quote,
   Link as Link2,
   LinkSlash as Unlink,
   MediaImage as ImageIcon,
