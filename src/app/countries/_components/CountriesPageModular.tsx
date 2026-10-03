@@ -211,7 +211,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
 
   return (
     <div className="bg-background relative min-h-screen">
-      <div className="relative z-10 container mx-auto px-4 pt-16 pb-8 sm:pt-20">
+      <div className="relative z-10 container mx-auto px-4 pt-4 pb-8">
         <CountriesHeader
           searchInput={searchInput}
           onSearchChange={setSearchInput}

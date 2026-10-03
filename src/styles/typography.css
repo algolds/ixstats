@@ -272,6 +272,53 @@
   descent-override: 24%;
   line-gap-override: 0%;
 }
+/* Schibsted's `tnum` widens . , : to figure width. These subsets carry no layout tables, so
+   `tabular-nums` aligns digits while punctuation keeps its normal width. Declared last to win. */
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/schibsted-punct-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 98%;
+  unicode-range: U+002C, U+002E, U+003A;
+}
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/schibsted-punct-500.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 98%;
+  unicode-range: U+002C, U+002E, U+003A;
+}
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/schibsted-punct-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 98%;
+  unicode-range: U+002C, U+002E, U+003A;
+}
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/schibsted-punct-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 98%;
+  unicode-range: U+002C, U+002E, U+003A;
+}
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/schibsted-punct-800.woff2") format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 98%;
+  unicode-range: U+002C, U+002E, U+003A;
+}
 
 /* --- 5. Azeret Mono --- */
 @font-face {
