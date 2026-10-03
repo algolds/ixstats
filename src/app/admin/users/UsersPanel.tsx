@@ -24,7 +24,6 @@ import {
   DialogFooter,
 } from "~/components/ui/dialog";
 import {
-  Group as Users,
   Link as LinkIcon,
   Search,
   Sparks as Sparkles,
@@ -41,7 +40,7 @@ import {
   Dashboard as LayoutDashboard,
 } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import {
   Table,
@@ -232,10 +231,9 @@ export function UsersPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Users}
-        title="User Identity & Accounts Hub"
-        description="Comprehensive cross-platform identity management: MediaWiki reconciliation, Discord bot sync, nation linkage, and system roles."
+      <PageHeader
+        title="Users and accounts"
+        subtitle="MediaWiki reconciliation, Discord sync, nation links and system roles."
       />
 
       {/* Active Impersonation Session Banner */}
@@ -248,8 +246,8 @@ export function UsersPanel() {
             </span>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-eyebrow text-red">Active Admin Impersonation Session</span>
-                <Badge variant="destructive">Playing As</Badge>
+                <span className="text-eyebrow text-red">Active admin impersonation session</span>
+                <Badge variant="destructive">Playing as</Badge>
               </div>
               <p className="text-footnote text-label mt-0.5">
                 Simulating user identity:{" "}
@@ -257,10 +255,11 @@ export function UsersPanel() {
                 {activeImpersonatedIdentity?.country?.name && (
                   <span className="text-label-secondary">
                     {" "}
-                    — Claimed Nation:{" "}
+                    (claimed nation:{" "}
                     <strong className="text-label">
                       {activeImpersonatedIdentity.country.name}
                     </strong>
+                    )
                   </span>
                 )}
               </p>
@@ -277,7 +276,7 @@ export function UsersPanel() {
               className="gap-2"
             >
               <LayoutDashboard className="h-3.5 w-3.5" />
-              Open Dashboard
+              Open dashboard
             </Button>
             <Button
               variant="outline"
@@ -292,7 +291,7 @@ export function UsersPanel() {
             </Button>
             <Button variant="destructive" size="sm" onClick={handleStopPlayAs} className="gap-2">
               <LogOut className="h-3.5 w-3.5" />
-              Stop Impersonation
+              Stop impersonation
             </Button>
           </div>
         </div>
@@ -303,19 +302,19 @@ export function UsersPanel() {
           <TabsList className="bg-fill-3 border-separator h-9 p-1">
             <TabsTrigger value="identities" className="text-footnote">
               <Shield className="mr-2 h-3.5 w-3.5" />
-              Master Identity Matrix
+              Master identity matrix
             </TabsTrigger>
             <TabsTrigger value="wiki-reconciliation" className="text-footnote">
               <WikiIcon className="mr-2 h-3.5 w-3.5" />
-              Wiki Reconciliation & Alts
+              Wiki reconciliation & alts
             </TabsTrigger>
             <TabsTrigger value="discord-sync" className="text-footnote">
               <DiscordIcon className="mr-2 h-3.5 w-3.5" />
-              Discord Bot Member Sync
+              Discord bot member sync
             </TabsTrigger>
             <TabsTrigger value="country-claims" className="text-footnote">
               <Crown className="mr-2 h-3.5 w-3.5" />
-              Country Claims & Tiers
+              Country claims & tiers
             </TabsTrigger>
           </TabsList>
 
@@ -352,7 +351,7 @@ export function UsersPanel() {
           <Card className="p-4">
             <div className="mb-3 flex items-center justify-between">
               <div>
-                <h3 className="text-label text-headline">Registered User Identities</h3>
+                <h3 className="text-label text-headline">Registered user identities</h3>
                 <p className="text-label-secondary text-footnote">
                   Showing {filteredIdentities?.length ?? 0} registered user profiles with unified
                   cross-platform linkages.
@@ -371,10 +370,10 @@ export function UsersPanel() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>User / Clerk ID</TableHead>
-                    <TableHead>Claimed Nation</TableHead>
+                    <TableHead>Claimed nation</TableHead>
                     <TableHead>MediaWiki Account</TableHead>
-                    <TableHead>Discord Identity</TableHead>
-                    <TableHead>Role & Tier</TableHead>
+                    <TableHead>Discord identity</TableHead>
+                    <TableHead>Role & tier</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -488,7 +487,7 @@ export function UsersPanel() {
                               className="gap-1"
                             >
                               <Play className="text-tint h-3 w-3 fill-current" />
-                              Play As
+                              Play as
                             </Button>
                           )}
                           <Button
@@ -500,7 +499,7 @@ export function UsersPanel() {
                               setIsWikiDialogOpen(true);
                             }}
                           >
-                            Wiki Link
+                            Wiki link
                           </Button>
                           <Button
                             variant="ghost"
@@ -550,8 +549,8 @@ export function UsersPanel() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>MediaWiki Account</TableHead>
-                    <TableHead>Target Nation</TableHead>
-                    <TableHead>Status & Confidence</TableHead>
+                    <TableHead>Target nation</TableHead>
+                    <TableHead>Status & confidence</TableHead>
                     <TableHead>Matched IxStates User</TableHead>
                     <TableHead>Notes / Aliases</TableHead>
                     <TableHead className="text-right">Action</TableHead>
@@ -569,7 +568,7 @@ export function UsersPanel() {
                       <TableCell>
                         {e.status === "ALREADY_LINKED" && (
                           <Badge variant="success" className="gap-1">
-                            <CheckCircle className="h-3 w-3" /> Linked & Verified
+                            <CheckCircle className="h-3 w-3" /> Linked & verified
                           </Badge>
                         )}
                         {e.status === "ALT_MERGED" && (
@@ -579,12 +578,12 @@ export function UsersPanel() {
                         )}
                         {e.status === "READY_TO_LINK" && (
                           <Badge variant="warning" className="gap-1">
-                            <WarningCircle className="h-3 w-3" /> Ready to Link
+                            <WarningCircle className="h-3 w-3" /> Ready to link
                           </Badge>
                         )}
                         {e.status === "UNMATCHED_USER" && (
                           <Badge variant="outline" className="text-label-secondary">
-                            Awaiting User Claim
+                            Awaiting user claim
                           </Badge>
                         )}
                       </TableCell>
@@ -626,7 +625,7 @@ export function UsersPanel() {
                                 title={`Play as ${e.matchedUser.clerkUserId}`}
                               >
                                 <Play className="text-tint h-2.5 w-2.5 fill-current" />
-                                Play As
+                                Play as
                               </Button>
                             ))}
                           {e.matchedUser && e.status === "READY_TO_LINK" && (
@@ -675,7 +674,7 @@ export function UsersPanel() {
           <Card className="p-4">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-label text-headline">Discord Server Member Discovery</h3>
+                <h3 className="text-label text-headline">Discord server member discovery</h3>
                 <p className="text-label-secondary text-footnote">
                   Queries Ixnay Discord guild via bot token, parses server nicknames like{" "}
                   <code>[Urcea] John</code>, and matches them to nations.
@@ -751,7 +750,7 @@ export function UsersPanel() {
                               });
                             }}
                           >
-                            Accept Link
+                            Accept link
                           </Button>
                         </div>
                       ))}
@@ -770,14 +769,14 @@ export function UsersPanel() {
           <Card className="p-4">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h3 className="text-label text-headline">Country Claims & Player Overrides</h3>
+                <h3 className="text-label text-headline">Country claims & player overrides</h3>
                 <p className="text-label-secondary text-footnote">
                   Manage direct country assignments and VIP executive privileges.
                 </p>
               </div>
               <Button size="sm" onClick={() => setIsAssignDialogOpen(true)} className="gap-2">
                 <LinkIcon className="h-3.5 w-3.5" />
-                Assign User to Nation
+                Assign user to nation
               </Button>
             </div>
 
@@ -785,7 +784,7 @@ export function UsersPanel() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nation</TableHead>
-                  <TableHead>Assigned User</TableHead>
+                  <TableHead>Assigned user</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -820,7 +819,7 @@ export function UsersPanel() {
                               className="gap-1"
                             >
                               <Play className="text-tint h-2.5 w-2.5 fill-current" />
-                              Play As
+                              Play as
                             </Button>
                           )}
                           <Button
@@ -880,7 +879,7 @@ export function UsersPanel() {
               }}
               disabled={linkWikiMutation.isPending}
             >
-              Save Link
+              Save link
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -890,7 +889,7 @@ export function UsersPanel() {
       <Dialog open={isDiscordDialogOpen} onOpenChange={setIsDiscordDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Link Discord Identity</DialogTitle>
+            <DialogTitle>Link Discord identity</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <p className="text-label-secondary text-footnote">
@@ -925,7 +924,7 @@ export function UsersPanel() {
               }}
               disabled={linkDiscordMutation.isPending}
             >
-              Save Discord Link
+              Save Discord link
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -935,7 +934,7 @@ export function UsersPanel() {
       <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Assign Country to User</DialogTitle>
+            <DialogTitle>Assign country to user</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <Select value={selectedUser} onValueChange={setSelectedUser}>

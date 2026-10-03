@@ -8,12 +8,11 @@ import {
   Microphone as Mic,
   SystemRestart as Loader2,
   Play,
-  Translate as Languages,
   Flash as Zap,
   Activity,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { AdminHeader } from "./AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
@@ -239,10 +238,9 @@ export function OnomaAdminPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Languages}
-        title="Onoma Voice & Phonology"
-        description="Configure Kokoro natural voice synthesis, phonetic translation rules, and per-culture voice mappings."
+      <PageHeader
+        title="Onoma voice and phonology"
+        subtitle="Kokoro voice synthesis, phonetic translation rules and per-culture voices."
       />
 
       {isLoadingKokoro ? (
@@ -263,7 +261,7 @@ export function OnomaAdminPanel() {
           <div className="space-y-4">
             <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
               <div className="space-y-0.5">
-                <Label className="text-label text-caption">Enable Kokoro Voice</Label>
+                <Label className="text-label text-caption">Enable Kokoro voice</Label>
                 <p className="text-label-secondary text-footnote">
                   Activate the natural voice button across the naming lab.
                 </p>
@@ -277,7 +275,7 @@ export function OnomaAdminPanel() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label className="text-label text-caption">Engine & Status</Label>
+                <Label className="text-label text-caption">Engine & status</Label>
                 <div className="flex items-center gap-2">
                   {healthData && (
                     <span className="text-caption flex items-center gap-1">
@@ -389,7 +387,7 @@ export function OnomaAdminPanel() {
                 autoComplete="off"
                 placeholder={
                   kokoroData?.hasApiKey && !clearKokoroApiKey
-                    ? `Saved (${kokoroData.apiKeyHint}) — leave blank to keep`
+                    ? `Saved (${kokoroData.apiKeyHint}). Leave blank to keep`
                     : "API Key (optional)"
                 }
                 value={kokoroApiKey}
@@ -417,7 +415,7 @@ export function OnomaAdminPanel() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <Label className="text-label text-caption">Default Voice</Label>
+                <Label className="text-label text-caption">Default voice</Label>
                 <Select value={kokoroVoice} onValueChange={(v) => setKokoroVoice(v)}>
                   <SelectTrigger size="sm" className="w-full">
                     <SelectValue />
@@ -449,7 +447,7 @@ export function OnomaAdminPanel() {
             </div>
 
             <LabeledSlider
-              label="Speed Multiplier"
+              label="Speed multiplier"
               value={kokoroSpeed}
               min={0.2}
               max={5.0}

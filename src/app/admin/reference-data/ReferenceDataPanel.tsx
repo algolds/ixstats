@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 import { cn } from "~/lib/utils";
 import Link from "next/link";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
@@ -59,7 +59,7 @@ const DATA_TYPES: DataTypeConfig[] = [
   // Diplomacy
   {
     key: "diplomatic-options",
-    label: "Diplomatic Options",
+    label: "Diplomatic options",
     href: "/admin/diplomatic-options",
     icon: Flag,
     description: "Strategic priorities, partnership goals, key achievements",
@@ -68,7 +68,7 @@ const DATA_TYPES: DataTypeConfig[] = [
   },
   {
     key: "diplomatic-scenarios",
-    label: "Diplomatic Scenarios",
+    label: "Diplomatic scenarios",
     href: "/admin/diplomatic-scenarios",
     icon: Drama,
     description: "Event templates with response options and outcomes",
@@ -79,7 +79,7 @@ const DATA_TYPES: DataTypeConfig[] = [
   // Military & Defense
   {
     key: "military-equipment",
-    label: "Military Equipment",
+    label: "Military equipment",
     href: "/admin/military-equipment",
     icon: Rocket,
     description: "Equipment catalog, manufacturers, specifications",
@@ -90,7 +90,7 @@ const DATA_TYPES: DataTypeConfig[] = [
   // Governance & Politics
   {
     key: "government-components",
-    label: "Government Components",
+    label: "Government components",
     href: "/admin/government-components",
     icon: Building,
     description: "9 categories of governance system components",
@@ -108,7 +108,7 @@ const DATA_TYPES: DataTypeConfig[] = [
   },
   {
     key: "national-issues",
-    label: "National Issues",
+    label: "National issues",
     href: "/admin/national-issues",
     icon: Newspaper,
     description: "Issue templates across 7 domains with consequences",
@@ -119,7 +119,7 @@ const DATA_TYPES: DataTypeConfig[] = [
   // Economy
   {
     key: "economic-components",
-    label: "Economic Components",
+    label: "Economic components",
     href: "/admin/economic-components",
     icon: TrendingUp,
     description: "5 categories of economic system components",
@@ -128,7 +128,7 @@ const DATA_TYPES: DataTypeConfig[] = [
   },
   {
     key: "economic-archetypes",
-    label: "Economic Archetypes",
+    label: "Economic archetypes",
     href: "/admin/economic-archetypes",
     icon: Layers,
     description: "Archetype definitions with traits and modifiers",
@@ -139,7 +139,7 @@ const DATA_TYPES: DataTypeConfig[] = [
   // Content & Intelligence
   {
     key: "intelligence-templates",
-    label: "Intelligence Templates",
+    label: "Intelligence templates",
     href: "/admin/intelligence-templates",
     icon: FileText,
     description: "Briefing templates for economic, political, security reports",
@@ -148,7 +148,7 @@ const DATA_TYPES: DataTypeConfig[] = [
   },
   {
     key: "card-packs",
-    label: "Card Packs",
+    label: "Card packs",
     href: "/admin/cards?tab=packs",
     icon: CreditCard,
     description: "Pack configurations and rarity distributions",
@@ -157,7 +157,7 @@ const DATA_TYPES: DataTypeConfig[] = [
   },
   {
     key: "lore-cards",
-    label: "Lore Cards",
+    label: "Lore cards",
     href: "/admin/cards?tab=lore",
     icon: BookOpen,
     description: "Wiki-based lore card generation and management",
@@ -180,37 +180,37 @@ const DATA_TYPES: DataTypeConfig[] = [
 const CATEGORIES = [
   {
     key: "diplomacy" as const,
-    label: "Diplomacy & Relations",
+    label: "Diplomacy & relations",
     icon: Swords,
     color: "cyan",
   },
   {
     key: "military" as const,
-    label: "Military & Defense",
+    label: "Military & defense",
     icon: Rocket,
     color: "red",
   },
   {
     key: "governance" as const,
-    label: "Governance & Politics",
+    label: "Governance & politics",
     icon: Building,
     color: "purple",
   },
   {
     key: "economy" as const,
-    label: "Economy & Trade",
+    label: "Economy & trade",
     icon: TrendingUp,
     color: "green",
   },
   {
     key: "content" as const,
-    label: "Content & Intelligence",
+    label: "Content & intelligence",
     icon: Brain,
     color: "amber",
   },
   {
     key: "system" as const,
-    label: "System & Sync",
+    label: "System & sync",
     icon: Database,
     color: "blue",
   },
@@ -259,18 +259,19 @@ export default function ReferenceDataPage() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Database}
-        title="Reference Data"
-        description="Manage all platform reference data types"
-      >
-        {totalRecords > 0 && (
-          <Badge variant="outline" className="text-body">
-            {totalRecords.toLocaleString()}+ records across{" "}
-            {Object.values(counts).filter((c) => c != null).length} tracked types
-          </Badge>
-        )}
-      </AdminHeader>
+      <PageHeader
+        title="Reference data"
+        actions={
+          <>
+            {totalRecords > 0 && (
+              <Badge variant="outline" className="text-body">
+                {totalRecords.toLocaleString()}+ records across{" "}
+                {Object.values(counts).filter((c) => c != null).length} tracked types
+              </Badge>
+            )}
+          </>
+        }
+      />
 
       {/* Grouped categories */}
       <div className="space-y-6">
@@ -288,7 +289,7 @@ export default function ReferenceDataPage() {
                     CATEGORY_ICON_COLOR[category.color] ?? "text-label-secondary"
                   )}
                 />
-                <h2 className="text-label text-headline uppercase">{category.label}</h2>
+                <h2 className="text-label text-headline">{category.label}</h2>
                 <div className="bg-separator h-px flex-1" />
               </div>
 

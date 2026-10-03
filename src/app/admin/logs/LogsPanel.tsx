@@ -2,7 +2,7 @@
 
 import { useState, useDeferredValue } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { api } from "~/trpc/react";
 import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/admin/log-viewer";
 import { Button } from "~/components/ui/button";
@@ -16,7 +16,6 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import {
-  Terminal,
   Refresh as RefreshCw,
   Trash as Trash2,
   Search,
@@ -131,20 +130,19 @@ export default function DedicatedLogsPage() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Terminal}
-        title="System Logs Console"
-        description="Search, filter, and audit database-backed logs, runtime exceptions, and Next.js client-side rejections."
+      <PageHeader
+        title="System logs"
+        subtitle="Search and filter database logs, runtime exceptions and client-side rejections."
       />
 
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Fetched Logs</p>
+          <p className="text-label-secondary text-stat-label">Fetched logs</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">{entries.length}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Errors / Warnings</p>
+          <p className="text-label-secondary text-stat-label">Errors / warnings</p>
           <p
             className={`text-title-2 mt-1 tabular-nums ${errorCount > 0 ? "text-red" : "text-green"}`}
           >
@@ -152,13 +150,13 @@ export default function DedicatedLogsPage() {
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Auto-Refresh</p>
+          <p className="text-label-secondary text-stat-label">Auto-Refresh</p>
           <p className="text-title-2 text-teal mt-1 tabular-nums">
             {autoRefresh ? "8s Live" : "Paused"}
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Level Scope</p>
+          <p className="text-label-secondary text-stat-label">Level scope</p>
           <p className="text-title-2 text-purple mt-1 tabular-nums">{selectedLevel}</p>
         </Card>
       </div>
@@ -178,11 +176,11 @@ export default function DedicatedLogsPage() {
 
           <Select value={selectedLevel} onValueChange={setSelectedLevel}>
             <SelectTrigger size="sm" className="w-32">
-              <SelectValue placeholder="All Levels" />
+              <SelectValue placeholder="All levels" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL" className="text-footnote">
-                All Levels
+                All levels
               </SelectItem>
               <SelectItem value="DEBUG" className="text-footnote">
                 DEBUG
@@ -207,11 +205,11 @@ export default function DedicatedLogsPage() {
 
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger size="sm" className="w-36">
-              <SelectValue placeholder="All Categories" />
+              <SelectValue placeholder="All categories" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL" className="text-footnote">
-                All Categories
+                All categories
               </SelectItem>
               {LOG_CATEGORIES.map((cat) => (
                 <SelectItem key={cat} value={cat} className="text-footnote">
@@ -223,11 +221,11 @@ export default function DedicatedLogsPage() {
 
           <Select value={selectedUser} onValueChange={setSelectedUser}>
             <SelectTrigger size="sm" className="w-36">
-              <SelectValue placeholder="All Users" />
+              <SelectValue placeholder="All users" />
             </SelectTrigger>
             <SelectContent className="max-h-56">
               <SelectItem value="ALL" className="text-footnote">
-                All Users
+                All users
               </SelectItem>
               {usersData?.map((u) => (
                 <SelectItem key={u.id} value={u.id} className="text-footnote">
@@ -275,7 +273,7 @@ export default function DedicatedLogsPage() {
             disabled={clearLogsMutation.isPending}
           >
             <Trash2 className="mr-2 h-3.5 w-3.5" />
-            Purge Logs
+            Purge logs
           </Button>
         </div>
       </div>

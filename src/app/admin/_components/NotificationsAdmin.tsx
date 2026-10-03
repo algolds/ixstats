@@ -3,9 +3,9 @@
 
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "./AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Bell, NumberedListLeft as ListTree, ScanQrCode as ScanEye, Send } from "iconoir-react";
+import { NumberedListLeft as ListTree, ScanQrCode as ScanEye, Send } from "iconoir-react";
 import {
   EventsRegistryPanel,
   NotificationBrowser,
@@ -21,10 +21,9 @@ export function NotificationsAdmin() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Bell}
-        title="Notification Settings"
-        description="Notification hooks, alert rules, message logs, and test triggers."
+      <PageHeader
+        title="Notification settings"
+        subtitle="Hooks, alert rules, message logs and test triggers."
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -34,21 +33,21 @@ export function NotificationsAdmin() {
             className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
           >
             <ListTree className="h-3.5 w-3.5" />
-            Rules & Event Hooks
+            Rules & event hooks
           </TabsTrigger>
           <TabsTrigger
             value="log"
             className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
           >
             <ScanEye className="h-3.5 w-3.5" />
-            Logs & Inbox
+            Logs & inbox
           </TabsTrigger>
           <TabsTrigger
             value="testing"
             className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
           >
             <Send className="h-3.5 w-3.5" />
-            Testing & Composition
+            Testing & composition
           </TabsTrigger>
         </TabsList>
 

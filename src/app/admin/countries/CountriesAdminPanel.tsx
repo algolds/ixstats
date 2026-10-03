@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Globe, Search, Page as FileText } from "iconoir-react";
 import { CountryAdminPanel } from "../_components/CountryAdminPanel";
@@ -27,10 +27,9 @@ export function CountriesAdminPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Globe}
-        title="Country Administration & God-Mode"
-        description="Edit live nation attributes, inspect formula simulation states, and import roster updates."
+      <PageHeader
+        title="Country administration"
+        subtitle="Edit live nation attributes, inspect formula states and import roster updates."
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -40,21 +39,21 @@ export function CountriesAdminPanel() {
             className="rounded-control text-caption flex items-center gap-2"
           >
             <Globe className="h-4 w-4" />
-            Live Country Grid
+            Live country grid
           </TabsTrigger>
           <TabsTrigger
             value="inspector"
             className="rounded-control text-caption flex items-center gap-2"
           >
             <Search className="h-4 w-4" />
-            Country Inspector & Formulas
+            Country inspector & formulas
           </TabsTrigger>
           <TabsTrigger
             value="import"
             className="rounded-control text-caption flex items-center gap-2"
           >
             <FileText className="h-4 w-4" />
-            Roster Import & Sync
+            Roster import & sync
           </TabsTrigger>
         </TabsList>
 

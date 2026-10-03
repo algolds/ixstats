@@ -4,13 +4,13 @@
 
 import { useEffect, useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "./AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Folder as FolderHeart, FloppyDisk as Save } from "iconoir-react";
+import { FloppyDisk as Save } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
 import { Card } from "~/components/ui/card";
@@ -60,16 +60,15 @@ export function StashSettingsContent() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={FolderHeart}
-        title="Stash & Wiki Caching Controls"
-        description="Configure WikiOS article stash parameters, offline storage, highlights tracker, and welcome modals."
+      <PageHeader
+        title="Stash and wiki caching"
+        subtitle="WikiOS article stash, offline storage, highlights tracker and welcome modals."
       />
 
       {/* Real Stats Metric Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Total Stashed Articles</p>
+          <p className="text-label-secondary text-eyebrow">Total stashed articles</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
@@ -80,7 +79,7 @@ export function StashSettingsContent() {
         </Card>
 
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Text Highlight Marks</p>
+          <p className="text-label-secondary text-eyebrow">Text highlight marks</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
@@ -106,7 +105,7 @@ export function StashSettingsContent() {
       <Card className="space-y-5 p-5">
         <div className="border-separator flex items-center justify-between border-b pb-4">
           <div>
-            <h3 className="text-label text-caption">Stash Configuration Parameters</h3>
+            <h3 className="text-label text-caption">Stash configuration parameters</h3>
             <p className="text-label-secondary text-footnote mt-0.5">
               Client storage policies and offline synchronization settings
             </p>
@@ -139,7 +138,7 @@ export function StashSettingsContent() {
           {/* Offline Sync */}
           <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
-              <Label className="text-label text-caption">Offline Storage Syncing</Label>
+              <Label className="text-label text-caption">Offline storage syncing</Label>
               <p className="text-label-secondary text-footnote">
                 Cache stashed articles locally in browser IndexedDB storage
               </p>
@@ -154,7 +153,7 @@ export function StashSettingsContent() {
           {/* Auto Category */}
           <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
-              <Label className="text-label text-caption">Automatic Image Categorization</Label>
+              <Label className="text-label text-caption">Automatic image categorization</Label>
               <p className="text-label-secondary text-footnote">
                 Group stashed images by orientation and type filters automatically
               </p>
@@ -169,7 +168,7 @@ export function StashSettingsContent() {
           {/* Highlight Tracker */}
           <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
-              <Label className="text-label text-caption">Text Highlight Tracking</Label>
+              <Label className="text-label text-caption">Text highlight tracking</Label>
               <p className="text-label-secondary text-footnote">
                 Persist user annotations and text highlights across sessions
               </p>

@@ -3,8 +3,8 @@
 // Achievements & Awards Admin Panel
 
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
-import { Medal } from "iconoir-react";
+import { PageHeader } from "~/components/shell/PageHeader";
+
 import { AwardsManagerSection } from "../wiki/components";
 
 export function AchievementsPanel() {
@@ -12,10 +12,9 @@ export function AchievementsPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Medal}
-        title="Achievements & Awards"
-        description="Configure custom article badges, achievement score rules, and system awards."
+      <PageHeader
+        title="Achievements and awards"
+        subtitle="Article badges, achievement score rules and system awards."
       />
 
       <AwardsManagerSection />

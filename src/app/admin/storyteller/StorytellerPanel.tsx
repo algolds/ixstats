@@ -5,14 +5,13 @@ export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { EventWizard } from "./_components/EventWizard";
 import { WorldTimeline } from "./_components/WorldTimeline";
 import { ActiveInterventions } from "./_components/ActiveInterventions";
 import { StorytellerHistory } from "./_components/StorytellerHistory";
 import { SandboxMode } from "./_components/SandboxMode";
 import {
-  Gamepad as Gamepad2,
   MagicWand as Wand2,
   Clock,
   Flash as Zap,
@@ -25,8 +24,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 type StorytellerTab = "wizard" | "timeline" | "interventions" | "sandbox" | "history";
 
 const TABS: { id: StorytellerTab; label: string; icon: typeof Wand2 }[] = [
-  { id: "wizard", label: "Event Wizard", icon: Wand2 },
-  { id: "timeline", label: "World Timeline", icon: Clock },
+  { id: "wizard", label: "Event wizard", icon: Wand2 },
+  { id: "timeline", label: "World timeline", icon: Clock },
   { id: "interventions", label: "Interventions", icon: Zap },
   { id: "sandbox", label: "Sandbox", icon: FlaskConical },
   { id: "history", label: "History", icon: History },
@@ -38,11 +37,7 @@ export function StorytellerPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Gamepad2}
-        title="Storyteller™ Control Panel"
-        description="World events, narrative tools, interventions, and simulation"
-      />
+      <PageHeader title="Storyteller" />
 
       <Tabs
         value={activeTab}

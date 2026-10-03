@@ -17,16 +17,8 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useNotify } from "~/hooks/useNotify";
-import {
-  Search,
-  Plus,
-  EditPencil as Pencil,
-  Trash as Trash2,
-  Copy,
-  User,
-  Globe,
-} from "iconoir-react";
-import { AdminHeader } from "../_components/AdminHeader";
+import { Search, Plus, EditPencil as Pencil, Trash as Trash2, Copy, Globe } from "iconoir-react";
+import { PageHeader } from "~/components/shell/PageHeader";
 import {
   NPCPersonalityFormDialog,
   type PersonalityFormData,
@@ -276,34 +268,33 @@ export function NPCPersonalitiesPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={User}
-        title="NPC Personality Archetypes"
-        description="Configure automated diplomatic behavior profiles, strategic decision parameters, and nation assignments."
+      <PageHeader
+        title="NPC personalities"
+        subtitle="Diplomatic behavior profiles, decision parameters and nation assignments."
       />
 
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
-          <div className="text-label-secondary text-eyebrow">Total Archetypes</div>
+          <div className="text-label-secondary text-stat-label">Total archetypes</div>
           <div className="text-label text-title-2 mt-1 tabular-nums">
             {personalities?.length ?? 0}
           </div>
         </Card>
         <Card className="p-4">
-          <div className="text-label-secondary text-eyebrow">Active Profiles</div>
+          <div className="text-label-secondary text-stat-label">Active profiles</div>
           <div className="text-title-2 text-green mt-1 tabular-nums">
             {personalities?.filter((p: any) => p.isActive).length ?? 0}
           </div>
         </Card>
         <Card className="p-4">
-          <div className="text-label-secondary text-eyebrow">Total Assignments</div>
+          <div className="text-label-secondary text-stat-label">Total assignments</div>
           <div className="text-title-2 text-teal mt-1 tabular-nums">
             {personalities?.reduce((acc: number, p: any) => acc + (p.usageCount || 0), 0) ?? 0}
           </div>
         </Card>
         <Card className="p-4">
-          <div className="text-label-secondary text-eyebrow">Filtered Roster</div>
+          <div className="text-label-secondary text-stat-label">Filtered roster</div>
           <div className="text-title-2 text-purple mt-1 tabular-nums">
             {filteredPersonalities.length}
           </div>
@@ -325,10 +316,10 @@ export function NPCPersonalitiesPanel() {
 
           <Select value={archetypeFilter} onValueChange={setArchetypeFilter}>
             <SelectTrigger size="sm" className="w-44">
-              <SelectValue placeholder="All Archetypes" />
+              <SelectValue placeholder="All archetypes" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Archetypes</SelectItem>
+              <SelectItem value="all">All archetypes</SelectItem>
               {ARCHETYPES.map((arch) => (
                 <SelectItem key={arch.value} value={arch.value} className="text-footnote">
                   {arch.label}
@@ -355,7 +346,7 @@ export function NPCPersonalitiesPanel() {
           }}
         >
           <Plus className="mr-2 h-3.5 w-3.5" />
-          Add Personality
+          Add personality
         </Button>
       </div>
 
@@ -375,9 +366,9 @@ export function NPCPersonalitiesPanel() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="px-4">Personality & Basis</TableHead>
+                <TableHead className="px-4">Personality & basis</TableHead>
                 <TableHead className="px-4">Archetype</TableHead>
-                <TableHead className="px-4">Core Traits</TableHead>
+                <TableHead className="px-4">Core traits</TableHead>
                 <TableHead className="px-4">Usage</TableHead>
                 <TableHead className="px-4">Status</TableHead>
                 <TableHead className="px-4 text-right">Actions</TableHead>
@@ -434,13 +425,13 @@ export function NPCPersonalitiesPanel() {
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        aria-label="Assign to Country"
+                        aria-label="Assign to country"
                         onClick={() => {
                           setAssigningPersonality(p);
                           setIsAssignDialogOpen(true);
                         }}
 
-                        title="Assign to Country"
+                        title="Assign to country"
                       >
                         <Globe className="h-3.5 w-3.5" />
                       </Button>

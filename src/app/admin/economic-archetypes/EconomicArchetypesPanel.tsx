@@ -20,12 +20,10 @@ import {
   EditPencil as Pencil,
   Trash as Trash2,
   Copy,
-  Search,
-  // oxlint-disable-next-line eslint/no-unused-vars
+  Search, // oxlint-disable-next-line eslint/no-unused-vars
   EyeClosed as EyeOff,
-  StatUp as TrendingUp,
 } from "iconoir-react";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import {
   EconomicArchetypeFormDialog,
   type ArchetypeFormData,
@@ -195,32 +193,31 @@ export function EconomicArchetypesPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={TrendingUp}
-        title="Economic Archetypes"
-        description="Comprehensive macroeconomic policy models, structural component templates, and simulation archetypes."
+      <PageHeader
+        title="Economic archetypes"
+        subtitle="Macroeconomic policy models, component templates and simulation archetypes."
       />
 
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
-          <div className="text-label-secondary text-eyebrow">Total Archetypes</div>
+          <div className="text-label-secondary text-stat-label">Total archetypes</div>
           <div className="text-label text-title-2 mt-1 tabular-nums">{archetypes?.length ?? 0}</div>
         </Card>
         <Card className="p-4">
-          <div className="text-label-secondary text-eyebrow">Modern Policy</div>
+          <div className="text-label-secondary text-stat-label">Modern policy</div>
           <div className="text-title-2 text-blue mt-1 tabular-nums">
             {archetypes?.filter((a: any) => a.era === "modern").length ?? 0}
           </div>
         </Card>
         <Card className="p-4">
-          <div className="text-label-secondary text-eyebrow">Historical Models</div>
+          <div className="text-label-secondary text-stat-label">Historical models</div>
           <div className="text-title-2 text-yellow mt-1 tabular-nums">
             {archetypes?.filter((a: any) => a.era === "historical").length ?? 0}
           </div>
         </Card>
         <Card className="p-4">
-          <div className="text-label-secondary text-eyebrow">Filtered Roster</div>
+          <div className="text-label-secondary text-stat-label">Filtered roster</div>
           <div className="text-title-2 text-purple mt-1 tabular-nums">
             {filteredArchetypes.length}
           </div>
@@ -242,11 +239,11 @@ export function EconomicArchetypesPanel() {
 
           <Select value={selectedEra} onValueChange={(v: any) => setSelectedEra(v)}>
             <SelectTrigger size="sm" className="w-36">
-              <SelectValue placeholder="All Eras" />
+              <SelectValue placeholder="All eras" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all" className="text-footnote">
-                All Eras
+                All eras
               </SelectItem>
               <SelectItem value="modern" className="text-footnote">
                 Modern
@@ -259,11 +256,11 @@ export function EconomicArchetypesPanel() {
 
           <Select value={selectedRegion} onValueChange={setSelectedRegion}>
             <SelectTrigger size="sm" className="w-36">
-              <SelectValue placeholder="All Regions" />
+              <SelectValue placeholder="All regions" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all" className="text-footnote">
-                All Regions
+                All regions
               </SelectItem>
               {regions.map((region) => (
                 <SelectItem key={region} value={region} className="text-footnote">
@@ -275,11 +272,11 @@ export function EconomicArchetypesPanel() {
 
           <Select value={selectedComplexity} onValueChange={setSelectedComplexity}>
             <SelectTrigger size="sm" className="w-40">
-              <SelectValue placeholder="All Complexities" />
+              <SelectValue placeholder="All complexities" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all" className="text-footnote">
-                All Complexities
+                All complexities
               </SelectItem>
               {COMPLEXITY_LEVELS.map((level) => (
                 <SelectItem key={level} value={level} className="text-footnote">
@@ -297,7 +294,7 @@ export function EconomicArchetypesPanel() {
           }}
         >
           <Plus className="mr-2 h-3.5 w-3.5" />
-          Add Archetype
+          Add archetype
         </Button>
       </div>
 
@@ -319,8 +316,8 @@ export function EconomicArchetypesPanel() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="px-4">Model & Focus</TableHead>
-                <TableHead className="px-4">Era & Region</TableHead>
+                <TableHead className="px-4">Model & focus</TableHead>
+                <TableHead className="px-4">Era & region</TableHead>
                 <TableHead className="px-4">Complexity</TableHead>
                 <TableHead className="px-4">Usage</TableHead>
                 <TableHead className="px-4 text-right">Actions</TableHead>

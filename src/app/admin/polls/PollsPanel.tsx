@@ -1,9 +1,9 @@
 "use client";
 
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { CheckSquare as Vote, PlusCircle, Settings } from "iconoir-react";
+import { PlusCircle, Settings } from "iconoir-react";
 import { PollComposer } from "./_components/PollComposer";
 import { PollManager } from "./_components/PollManager";
 import { useState } from "react";
@@ -14,10 +14,9 @@ export function PollsPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Vote}
-        title="Polls Management"
-        description="Create and manage global or targeted polls, view results, and toggle active states."
+      <PageHeader
+        title="Polls"
+        subtitle="Create global or targeted polls, view results and switch them on or off."
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -27,14 +26,14 @@ export function PollsPanel() {
             className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
           >
             <Settings className="h-3.5 w-3.5" />
-            Manage Polls
+            Manage polls
           </TabsTrigger>
           <TabsTrigger
             value="composer"
             className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
           >
             <PlusCircle className="h-3.5 w-3.5" />
-            Create Poll
+            Create poll
           </TabsTrigger>
         </TabsList>
 

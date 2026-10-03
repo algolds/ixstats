@@ -4,6 +4,7 @@ import { useState } from "react";
 import { api } from "~/trpc/react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
 import {
   Activity,
@@ -111,43 +112,40 @@ export function AutosaveMonitoringDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="text-large-title text-label">Autosave Monitoring</h1>
-          <p className="text-label-secondary">System health and performance metrics</p>
-        </div>
+      <PageHeader
+        title="Autosave monitoring"
+        actions={
+          <>
+            {/* Auto-refresh toggle */}
+            <Button
+              variant={autoRefresh ? "default" : "outline"}
+              size="sm"
+              onClick={() => setAutoRefresh(!autoRefresh)}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw
+                className={cn("h-4 w-4", autoRefresh && "animate-spin motion-reduce:animate-none")}
+              />
+              {autoRefresh ? "Auto-refresh on" : "Auto-refresh off"}
+            </Button>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          {/* Auto-refresh toggle */}
-          <Button
-            variant={autoRefresh ? "default" : "outline"}
-            size="sm"
-            onClick={() => setAutoRefresh(!autoRefresh)}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw
-              className={cn("h-4 w-4", autoRefresh && "animate-spin motion-reduce:animate-none")}
-            />
-            {autoRefresh ? "Auto-refresh ON" : "Auto-refresh OFF"}
-          </Button>
+            {/* Manual refresh */}
+            <Button variant="outline" size="sm" onClick={handleRefreshAll}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
 
-          {/* Manual refresh */}
-          <Button variant="outline" size="sm" onClick={handleRefreshAll}>
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-
-          {/* Time Range Selector */}
-          <Tabs value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)}>
-            <TabsList>
-              <TabsTrigger value="1h">1 Hour</TabsTrigger>
-              <TabsTrigger value="24h">24 Hours</TabsTrigger>
-              <TabsTrigger value="7d">7 Days</TabsTrigger>
-              <TabsTrigger value="30d">30 Days</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-      </div>
+            {/* Time Range Selector */}
+            <Tabs value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)}>
+              <TabsList>
+                <TabsTrigger value="1h">1 hour</TabsTrigger>
+                <TabsTrigger value="24h">24 hours</TabsTrigger>
+                <TabsTrigger value="7d">7 days</TabsTrigger>
+                <TabsTrigger value="30d">30 days</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </>
+        }
+      />
 
       {/* System Health Badge */}
       <Card className="flex flex-col gap-6 py-6">
@@ -191,26 +189,26 @@ export function AutosaveMonitoringDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
-          title="Total Autosaves"
+          title="Total autosaves"
           value={stats?.totalAutosaves.toLocaleString() || "0"}
           icon={<Activity className="h-5 w-5" />}
           color="blue"
         />
         <StatsCard
-          title="Success Rate"
+          title="Success rate"
           value={`${stats?.successRate.toFixed(1) || "0"}%`}
           icon={<CheckCircle className="h-5 w-5" />}
           color={stats?.successRate && stats.successRate >= 95 ? "green" : "red"}
           trend={stats?.successRate && stats.successRate >= 95 ? "good" : "bad"}
         />
         <StatsCard
-          title="Avg Duration"
+          title="Avg duration"
           value={`${stats?.averageDuration.toFixed(0) || "0"}ms`}
           icon={<TrendingUp className="h-5 w-5" />}
           color="purple"
         />
         <StatsCard
-          title="Active Users"
+          title="Active users"
           value={activeUsers?.users.length.toString() || "0"}
           icon={<Users className="h-5 w-5" />}
           color="indigo"
@@ -222,7 +220,7 @@ export function AutosaveMonitoringDashboard() {
         {/* Time Series Chart */}
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
-            <CardTitle>Autosave Activity</CardTitle>
+            <CardTitle>Autosave activity</CardTitle>
             <CardDescription>Autosaves over time</CardDescription>
           </CardHeader>
           <CardContent>
@@ -233,7 +231,7 @@ export function AutosaveMonitoringDashboard() {
         {/* Section Breakdown */}
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
-            <CardTitle>Section Breakdown</CardTitle>
+            <CardTitle>Section breakdown</CardTitle>
             <CardDescription>Autosaves by builder section</CardDescription>
           </CardHeader>
           <CardContent>
@@ -257,7 +255,7 @@ export function AutosaveMonitoringDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="text-yellow h-5 w-5" />
-              Failure Analysis
+              Failure analysis
             </CardTitle>
             <CardDescription>Most common errors and failures</CardDescription>
           </CardHeader>
@@ -288,7 +286,7 @@ export function AutosaveMonitoringDashboard() {
       {/* Active Users Table */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
-          <CardTitle>Active Users</CardTitle>
+          <CardTitle>Active users</CardTitle>
           <CardDescription>Users with recent autosave activity</CardDescription>
         </CardHeader>
         <CardContent>
@@ -487,7 +485,7 @@ function ActiveUsersTable({ users }: ActiveUsersTableProps) {
       <TableHeader>
         <TableRow>
           <TableHead className="px-4">User</TableHead>
-          <TableHead className="px-4">Last Autosave</TableHead>
+          <TableHead className="px-4">Last autosave</TableHead>
           <TableHead className="px-4">Section</TableHead>
           <TableHead className="px-4 text-right">Count</TableHead>
         </TableRow>

@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
@@ -20,7 +20,6 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import {
-  Sparks as Sparkles,
   Settings,
   Database,
   Play,
@@ -134,10 +133,9 @@ export function NarratorPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Sparkles}
-        title="AI Narrator & Flavorization Console"
-        description="Configure LLM endpoints, manage global system prompts, test Paradox-style card narration with custom metrics, and monitor cache state."
+      <PageHeader
+        title="AI narrator"
+        subtitle="LLM endpoints, system prompts, card narration tests and cache state."
       />
 
       <Tabs defaultValue="config" className="w-full">
@@ -161,7 +159,7 @@ export function NarratorPanel() {
             className="text-caption flex flex-1 items-center justify-center gap-2"
           >
             <Database className="text-green h-4 w-4" />
-            Cache Lab
+            Cache lab
           </TabsTrigger>
         </TabsList>
 
@@ -193,7 +191,7 @@ export function NarratorPanel() {
               {/* Enable Switch */}
               <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
                 <div>
-                  <Label className="text-label text-caption">Enable Flavor Cards Globally</Label>
+                  <Label className="text-label text-caption">Enable flavor cards globally</Label>
                   <p className="text-label-secondary text-footnote">
                     Enable or disable AI flavorization cards globally across all events and issues.
                   </p>
@@ -249,7 +247,7 @@ export function NarratorPanel() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-label-secondary text-subhead">Model Name</Label>
+                  <Label className="text-label-secondary text-subhead">Model name</Label>
                   <Input
                     type="text"
                     value={modelName}
@@ -272,7 +270,7 @@ export function NarratorPanel() {
                   }}
                   placeholder={
                     settingsData?.hasApiKey && !clearApiKey
-                      ? `Saved (${settingsData.apiKeyHint}) — leave blank to keep`
+                      ? `Saved (${settingsData.apiKeyHint}). Leave blank to keep`
                       : "Fallback to SPORTS_LLM_API_KEY if empty"
                   }
                   className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
@@ -296,7 +294,7 @@ export function NarratorPanel() {
               {/* System Prompt Editor */}
               <div className="space-y-2 pt-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-label-secondary text-subhead">Global System Prompt</Label>
+                  <Label className="text-label-secondary text-subhead">Global system prompt</Label>
                   <Button
                     type="button"
                     variant="link"
@@ -312,7 +310,7 @@ export function NarratorPanel() {
                     }}
                     className="text-yellow h-auto px-0"
                   >
-                    Reset to Default
+                    Reset to default
                   </Button>
                 </div>
                 <Textarea

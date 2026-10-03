@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -159,25 +160,10 @@ export default function SportsSeederPanel() {
 
   return (
     <div className="space-y-6">
-      {/* Visual Header */}
-      <div className="border-separator bg-surface rounded-row relative overflow-hidden border p-6">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-          <div className="flex items-center gap-4">
-            <div className="border-separator bg-fill-4 rounded-row text-indigo flex h-12 w-12 items-center justify-center border">
-              <Database className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="text-label text-title-1 flex items-center gap-2">
-                Data Lab & Seeder
-                <Badge variant="secondary">ADMIN TOOLS</Badge>
-              </h1>
-              <p className="text-label-secondary text-body">
-                Configure, initialize, and re-seed the canonical database sports structures.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Data lab and seeder"
+        subtitle="Initialize and re-seed the canonical sports structures in the database."
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Seeding Configuration Panel (Left) */}
@@ -186,7 +172,7 @@ export default function SportsSeederPanel() {
             <CardHeader className="pb-2">
               <CardTitle className="text-body flex items-center gap-2">
                 <RefreshCw className="text-indigo h-4 w-4" />
-                Configurable Reseeding Pipeline
+                Configurable reseeding pipeline
               </CardTitle>
               <CardDescription>
                 Select which canonical leagues should be injected into the simulation.
@@ -201,7 +187,7 @@ export default function SportsSeederPanel() {
                     className="text-headline text-red flex cursor-pointer items-center gap-2"
                   >
                     <Trash2 className="h-4 w-4" />
-                    Wipe Existing Canonical Records First
+                    Wipe existing canonical records first
                   </Label>
                   <span className="text-label-secondary text-footnote block">
                     Removes all existing canonical leagues and cascade-clears all dependent seasons,
@@ -218,7 +204,7 @@ export default function SportsSeederPanel() {
 
               {/* Leagues selector grid */}
               <div className="space-y-3">
-                <Label className="text-label-secondary text-subhead block">Leagues to Seed</Label>
+                <Label className="text-label-secondary text-subhead block">Leagues to seed</Label>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   {leaguePresets.map((preset) => (
                     <div
@@ -275,7 +261,7 @@ export default function SportsSeederPanel() {
                 ) : (
                   <>
                     <Sparkles className="h-4 w-4" />
-                    Trigger Reseeding Pipeline
+                    Trigger reseeding pipeline
                   </>
                 )}
               </Button>
@@ -290,7 +276,7 @@ export default function SportsSeederPanel() {
             <CardHeader className="pb-2">
               <CardTitle className="text-headline flex items-center gap-2">
                 <Layers className="text-yellow h-4 w-4" />
-                Cache Optimization
+                Cache optimization
               </CardTitle>
               <CardDescription>
                 Flushes the Redis query and tRPC endpoints cache layer.
@@ -316,7 +302,7 @@ export default function SportsSeederPanel() {
                 ) : (
                   <>
                     <Trash2 className="h-3.5 w-3.5" />
-                    Purge All Sports Cache
+                    Purge all sports cache
                   </>
                 )}
               </Button>
@@ -328,7 +314,7 @@ export default function SportsSeederPanel() {
             <CardHeader className="pb-2">
               <CardTitle className="text-headline flex items-center gap-2">
                 <Activity className="text-green h-4 w-4" />
-                Simulation Diagnostics
+                Simulation diagnostics
               </CardTitle>
               <CardDescription>Live health checks of the sports engine components.</CardDescription>
             </CardHeader>
@@ -336,7 +322,7 @@ export default function SportsSeederPanel() {
               <div className="border-separator text-footnote flex items-center justify-between border-b pb-2">
                 <span className="text-label-secondary flex items-center gap-2">
                   <Cpu className="text-green h-3.5 w-3.5" />
-                  Sports Presets Engine
+                  Sports presets engine
                 </span>
                 <Badge variant="success" className="text-eyebrow">
                   Operational
@@ -354,7 +340,7 @@ export default function SportsSeederPanel() {
               <div className="border-separator text-footnote flex items-center justify-between border-b pb-2">
                 <span className="text-label-secondary flex items-center gap-2">
                   <Database className="text-green h-3.5 w-3.5" />
-                  Redis Cache Connection
+                  Redis cache connection
                 </span>
                 <Badge variant="success" className="text-eyebrow">
                   Online
@@ -363,10 +349,10 @@ export default function SportsSeederPanel() {
               <div className="text-footnote flex items-center justify-between">
                 <span className="text-label-secondary flex items-center gap-2">
                   <Trophy className="text-green h-3.5 w-3.5" />
-                  Simulation Kernel Status
+                  Simulation kernel status
                 </span>
                 <Badge variant="success" className="text-eyebrow">
-                  Active Loop
+                  Active loop
                 </Badge>
               </div>
             </CardContent>

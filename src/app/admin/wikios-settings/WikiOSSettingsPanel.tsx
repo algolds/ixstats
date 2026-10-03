@@ -3,8 +3,8 @@
 // WikiOS Base Settings Admin Panel
 
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
-import { OpenBook as BookOpen } from "iconoir-react";
+import { PageHeader } from "~/components/shell/PageHeader";
+
 import { api } from "~/trpc/react";
 import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import {
@@ -25,10 +25,7 @@ export function WikiOSSettingsPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={BookOpen}
-        title="WikiOS Settings"
-      />
+      <PageHeader title="WikiOS settings" />
 
       <WikiOSUtilitiesDeck embedded={true} defaultDomain="diagnostics" />
 

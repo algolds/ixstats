@@ -6,7 +6,7 @@ import { useMemo } from "react";
 import { api } from "~/trpc/react";
 import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { HealthRing } from "~/components/ui/health-ring";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { Activity, StatsReport as BarChart3, Heart, Shield } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
@@ -149,10 +149,9 @@ export function RingsAuditPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Activity}
-        title="Vitality Rings Calibration"
-        description="Audit ring math convergence across economic, population, diplomatic, and governmental dimensions."
+      <PageHeader
+        title="Vitality rings calibration"
+        subtitle="Check ring math convergence across economic, population, diplomatic and government dimensions."
       />
 
       <div className="space-y-4">

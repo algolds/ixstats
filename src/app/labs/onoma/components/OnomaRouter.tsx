@@ -2,7 +2,6 @@
 
 // src/app/labs/onoma/components/OnomaRouter.tsx
 // Onoma Lab — Unified Workspace & Master Single-Page Router (Product Model: CREATE · STUDIO · EXPLORE)
-// Facet 3: grouped page, opaque workspace card, thin-material header console (Labs sky tint).
 
 import React from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
@@ -65,9 +64,7 @@ export function OnomaRouter() {
           onNavigateExplore={handleNavigateExplore}
         />
 
-        {/* Workspace canvas: the v2 satin canvas as the glass hero tier (Onoma azure wash and
-            border from the scoped tint); sections inside stay opaque (surface-secondary insets). */}
-        <Card variant="hero" padding="lg" className="relative overflow-hidden">
+        <Card padding="lg" className="relative overflow-hidden">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={`${activeSection}-${activeSection === "studio" ? activeSubTab : activeSection === "explore" ? activeExploreSubTab : ""}`}

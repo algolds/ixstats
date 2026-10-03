@@ -3,8 +3,8 @@
 // WikiOS Commons Repository Cache Admin Panel
 
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
-import { MediaImage as ImageIcon } from "iconoir-react";
+import { PageHeader } from "~/components/shell/PageHeader";
+
 import { UnifiedMediaServiceAdmin } from "../_components/UnifiedMediaServiceAdmin";
 
 export function ImageRepoPanel() {
@@ -12,10 +12,9 @@ export function ImageRepoPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={ImageIcon}
-        title="WikiOS Commons Repository Cache"
-        description="Synchronize Wikimedia Commons graphics, initialize SVG flag caches, and verify CDN assets."
+      <PageHeader
+        title="Commons image cache"
+        subtitle="Sync Wikimedia Commons images, build SVG flag caches and check CDN assets."
       />
 
       <UnifiedMediaServiceAdmin />

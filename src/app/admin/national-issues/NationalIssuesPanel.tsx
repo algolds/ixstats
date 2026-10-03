@@ -24,7 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
 import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { TemplateEditorSheet } from "./TemplateEditorSheet";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import {
   Table,
@@ -157,34 +157,33 @@ export function NationalIssuesPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Newspaper}
-        title="National Issues Management"
-        description="Configure dynamic decision trees, conditional generation triggers, and storyteller injections."
+      <PageHeader
+        title="National issues"
+        subtitle="Decision trees, generation triggers and storyteller injections."
       />
 
       {/* Global Stat Bar */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Total Evaluations</p>
+          <p className="text-label-secondary text-stat-label">Total evaluations</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">
             {stats?.totalEvaluations ?? "—"}
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Generated (7d)</p>
+          <p className="text-label-secondary text-stat-label">Generated (7d)</p>
           <p className="text-title-2 text-teal mt-1 tabular-nums">
             {stats?.totalIssuesGenerated ?? "—"}
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Avg Exec Time</p>
+          <p className="text-label-secondary text-stat-label">Avg exec time</p>
           <p className="text-title-2 text-green mt-1 tabular-nums">
             {stats?.avgExecutionTime ? `${stats.avgExecutionTime}ms` : "—"}
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Top Domain</p>
+          <p className="text-label-secondary text-stat-label">Top domain</p>
           <p className="text-title-2 text-purple mt-1 tabular-nums">
             {stats?.domainStats?.[0]?.domain
               ? String(stats.domainStats[0].domain).toUpperCase()
@@ -219,14 +218,14 @@ export function NationalIssuesPanel() {
               className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
             >
               <Sliders className="text-yellow h-3.5 w-3.5" />
-              Engine Configuration
+              Engine configuration
             </TabsTrigger>
           </TabsList>
 
           {activeTab === "templates" && (
             <Button size="sm" onClick={() => setEditorSheet({ isOpen: true, templateId: null })}>
               <Plus className="mr-2 h-3.5 w-3.5" />
-              New Template
+              New template
             </Button>
           )}
         </div>
@@ -244,11 +243,11 @@ export function NationalIssuesPanel() {
             </div>
             <Select value={domainFilter} onValueChange={setDomainFilter}>
               <SelectTrigger size="sm" className="w-44">
-                <SelectValue placeholder="All Domains" />
+                <SelectValue placeholder="All domains" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all" className="text-footnote">
-                  All Domains
+                  All domains
                 </SelectItem>
                 <SelectItem value="economic" className="text-footnote">
                   Economic
@@ -290,7 +289,7 @@ export function NationalIssuesPanel() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="px-4">Issue Title & Description</TableHead>
+                    <TableHead className="px-4">Issue title & description</TableHead>
                     <TableHead className="px-4">Domain</TableHead>
                     <TableHead className="px-4">Severity</TableHead>
                     <TableHead className="px-4">Active</TableHead>
@@ -327,7 +326,7 @@ export function NationalIssuesPanel() {
                             toggleTemplate.mutate({ id: t.id, isActive })
                           }
                           aria-label={`Active: ${t.title}`}
-                          title="Toggle Status"
+                          title="Toggle status"
                         />
                       </TableCell>
                       <TableCell className="px-4 text-right">
@@ -378,7 +377,7 @@ export function NationalIssuesPanel() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="px-4">Issue Title & Description</TableHead>
+                    <TableHead className="px-4">Issue title & description</TableHead>
                     <TableHead className="px-4">Nation</TableHead>
                     <TableHead className="px-4">Status</TableHead>
                   </TableRow>
@@ -416,7 +415,7 @@ export function NationalIssuesPanel() {
             <Card className="space-y-4 p-5">
               <h3 className="text-label text-subhead flex items-center gap-2">
                 <Sliders className="text-yellow h-4 w-4" />
-                Issue Generation Engine Limits
+                Issue generation engine limits
               </h3>
               <div className="text-footnote space-y-3">
                 <div>
@@ -454,7 +453,7 @@ export function NationalIssuesPanel() {
             <Card className="space-y-4 p-5">
               <h3 className="text-label text-subhead flex items-center gap-2">
                 <Play className="text-green h-4 w-4" />
-                Live Criteria Evaluation Test
+                Live criteria evaluation test
               </h3>
               <div className="text-footnote space-y-3">
                 <Select value={evalCountryId} onValueChange={setEvalCountryId}>

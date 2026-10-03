@@ -24,8 +24,8 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useNotify } from "~/hooks/useNotify";
-import { Plus, EditPencil as Pencil, Trash as Trash2, Eye, Shield, Search } from "iconoir-react";
-import { AdminHeader } from "../_components/AdminHeader";
+import { Plus, EditPencil as Pencil, Trash as Trash2, Eye, Search } from "iconoir-react";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
   Table,
@@ -181,32 +181,31 @@ export function IntelligenceTemplatesPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Shield}
-        title="Intelligence Report Templates"
-        description="Configure structured analytical templates, classification clearance rules, and findings formats."
+      <PageHeader
+        title="Intelligence report templates"
+        subtitle="Analytical templates, classification rules and findings formats."
       />
 
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Total Templates</p>
+          <p className="text-label-secondary text-stat-label">Total templates</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">{templates?.length || 0}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Restricted Clearance</p>
+          <p className="text-label-secondary text-stat-label">Restricted clearance</p>
           <p className="text-title-2 text-yellow mt-1 tabular-nums">
             {templates?.filter((t: any) => t.classification === "RESTRICTED").length || 0}
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Public Briefings</p>
+          <p className="text-label-secondary text-stat-label">Public briefings</p>
           <p className="text-title-2 text-teal mt-1 tabular-nums">
             {templates?.filter((t: any) => t.classification === "PUBLIC").length || 0}
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Active Registry</p>
+          <p className="text-label-secondary text-stat-label">Active registry</p>
           <p className="text-title-2 text-green mt-1 tabular-nums">
             {templates?.filter((t: any) => t.isActive).length || 0}
           </p>
@@ -228,31 +227,31 @@ export function IntelligenceTemplatesPanel() {
 
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger size="sm" className="w-44">
-              <SelectValue placeholder="All Report Types" />
+              <SelectValue placeholder="All report types" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all" className="text-footnote">
-                All Report Types
+                All report types
               </SelectItem>
               <SelectItem value="economic" className="text-footnote">
-                Economic Report
+                Economic report
               </SelectItem>
               <SelectItem value="political" className="text-footnote">
-                Political Report
+                Political report
               </SelectItem>
               <SelectItem value="security" className="text-footnote">
-                Security Report
+                Security report
               </SelectItem>
             </SelectContent>
           </Select>
 
           <Select value={classificationFilter} onValueChange={setClassificationFilter}>
             <SelectTrigger size="sm" className="w-36">
-              <SelectValue placeholder="All Clearances" />
+              <SelectValue placeholder="All clearances" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all" className="text-footnote">
-                All Clearances
+                All clearances
               </SelectItem>
               <SelectItem value="PUBLIC" className="text-footnote">
                 PUBLIC
@@ -271,7 +270,7 @@ export function IntelligenceTemplatesPanel() {
           }}
         >
           <Plus className="mr-2 h-3.5 w-3.5" />
-          Add Template
+          Add template
         </Button>
       </div>
 
@@ -293,7 +292,7 @@ export function IntelligenceTemplatesPanel() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="px-4">Report Type & Summary</TableHead>
+                <TableHead className="px-4">Report type & summary</TableHead>
                 <TableHead className="px-4">Classification</TableHead>
                 <TableHead className="px-4">Clearance</TableHead>
                 <TableHead className="px-4">Confidence</TableHead>
@@ -407,7 +406,7 @@ export function IntelligenceTemplatesPanel() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-label text-caption mb-2 block">Report Type</label>
+                <label className="text-label text-caption mb-2 block">Report type</label>
                 <Select
                   value={formData.reportType}
                   onValueChange={(val: any) =>
@@ -418,9 +417,9 @@ export function IntelligenceTemplatesPanel() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="economic">Economic Report</SelectItem>
-                    <SelectItem value="political">Political Report</SelectItem>
-                    <SelectItem value="security">Security Report</SelectItem>
+                    <SelectItem value="economic">Economic report</SelectItem>
+                    <SelectItem value="political">Political report</SelectItem>
+                    <SelectItem value="security">Security report</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -445,7 +444,7 @@ export function IntelligenceTemplatesPanel() {
             </div>
 
             <div>
-              <label className="text-label text-caption mb-2 block">Summary Template</label>
+              <label className="text-label text-caption mb-2 block">Summary template</label>
               <Textarea
                 value={formData.summaryTemplate}
                 onChange={(e) =>
@@ -458,7 +457,7 @@ export function IntelligenceTemplatesPanel() {
             </div>
 
             <div>
-              <label className="text-label text-caption mb-2 block">Findings Template</label>
+              <label className="text-label text-caption mb-2 block">Findings template</label>
               <Textarea
                 value={formData.findingsTemplate}
                 onChange={(e) =>
@@ -472,7 +471,7 @@ export function IntelligenceTemplatesPanel() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-label text-caption mb-2 block">Minimum Level Required</label>
+                <label className="text-label text-caption mb-2 block">Minimum level required</label>
                 <Input
                   type="number"
                   min={1}
@@ -530,7 +529,7 @@ export function IntelligenceTemplatesPanel() {
         <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Template Preview</DialogTitle>
+              <DialogTitle>Template preview</DialogTitle>
               <DialogDescription>
                 {REPORT_TYPE_LABELS[previewTemplate.reportType]} ({previewTemplate.classification})
               </DialogDescription>
@@ -538,14 +537,14 @@ export function IntelligenceTemplatesPanel() {
 
             <div className="text-footnote space-y-4">
               <div className="bg-surface border-separator rounded-row border p-4">
-                <h4 className="text-label mb-1 font-semibold">Summary Structure</h4>
+                <h4 className="text-label mb-1 font-semibold">Summary structure</h4>
                 <p className="text-label-secondary whitespace-pre-wrap">
                   {previewTemplate.summaryTemplate}
                 </p>
               </div>
 
               <div className="bg-surface border-separator rounded-row border p-4">
-                <h4 className="text-label mb-1 font-semibold">Findings Structure</h4>
+                <h4 className="text-label mb-1 font-semibold">Findings structure</h4>
                 <p className="text-label-secondary whitespace-pre-wrap">
                   {previewTemplate.findingsTemplate}
                 </p>

@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
 import { Slider } from "~/components/ui/slider";
@@ -164,7 +165,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
 
         {activeSeason && (
           <Button variant="outline" size="sm" onClick={() => setMatchOverrideOpen(true)}>
-            Override Match Score
+            Override match score
           </Button>
         )}
 
@@ -188,13 +189,13 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
       <Dialog open={matchOverrideOpen} onOpenChange={setMatchOverrideOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Override Match Result</DialogTitle>
+            <DialogTitle>Override match result</DialogTitle>
             <DialogDescription>Input manual scores for any matchday.</DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleOverrideScore} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-label-secondary text-subhead block">Select Match</label>
+              <label className="text-label-secondary text-subhead block">Select match</label>
               <Select value={selectedMatchId} onValueChange={setSelectedMatchId} required>
                 <SelectTrigger size="sm" className="w-full">
                   <SelectValue placeholder="-- Choose Match --" />
@@ -211,7 +212,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-label-secondary text-subhead block">Home Score</label>
+                <label className="text-label-secondary text-subhead block">Home score</label>
                 <Input
                   type="number"
                   min="0"
@@ -222,7 +223,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-label-secondary text-subhead block">Away Score</label>
+                <label className="text-label-secondary text-subhead block">Away score</label>
                 <Input
                   type="number"
                   min="0"
@@ -478,7 +479,7 @@ function AINarratorLab() {
           {/* Controls & Inputs (Left) */}
           <div className="space-y-4 md:col-span-6">
             <div className="space-y-2">
-              <label className="text-label-secondary text-subhead block">Sport Preset</label>
+              <label className="text-label-secondary text-subhead block">Sport preset</label>
               <Select value={sport} onValueChange={(v) => handleLoadTemplate(v)}>
                 <SelectTrigger size="sm" className="w-full">
                   <SelectValue />
@@ -573,7 +574,7 @@ function AINarratorLab() {
 
                 <label className="rounded-control border-separator bg-surface flex cursor-pointer items-center justify-between gap-3 border p-2">
                   <span>
-                    <span className="text-label-secondary text-eyebrow block">Reasoning Mode</span>
+                    <span className="text-label-secondary text-eyebrow block">Reasoning mode</span>
                     <span className="text-label-secondary text-footnote block">
                       Higher quality, much slower. Off = fast commentary.
                     </span>
@@ -602,7 +603,7 @@ function AINarratorLab() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-label-secondary text-subhead block">Model Name</label>
+                  <label className="text-label-secondary text-subhead block">Model name</label>
                   <Input
                     type="text"
                     value={modelName}
@@ -635,7 +636,7 @@ function AINarratorLab() {
                   </span>
                   <div className="flex gap-2">
                     <Button type="button" variant="destructive" onClick={handleResetConfig}>
-                      Reset Defaults
+                      Reset defaults
                     </Button>
                     <Button
                       type="button"
@@ -725,7 +726,7 @@ function AINarratorLab() {
               ) : (
                 <>
                   <Sparkles className="h-4 w-4" />
-                  Run Live Commentary Test
+                  Run live commentary test
                 </>
               )}
             </Button>
@@ -735,7 +736,7 @@ function AINarratorLab() {
           <div className="space-y-4 md:col-span-6">
             <div className="flex items-center justify-between select-none">
               <label className="text-label-secondary text-subhead">
-                Generated Broadcast Output
+                Generated broadcast output
               </label>
               {latency != null && (
                 <Badge variant="info">Latency: {latency.toLocaleString()}ms</Badge>
@@ -1051,7 +1052,7 @@ export default function SportsOversightPanel() {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleView(league.id)}
-                      title="View Main League Page"
+                      title="View main league page"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -1082,50 +1083,43 @@ export default function SportsOversightPanel() {
 
   return (
     <div className="space-y-6">
+      <PageHeader
+        title="Sports oversight"
+        subtitle="Canonical league creation and simulated state audit."
+        actions={
+          <Button size="sm" onClick={() => setCreatorOpen(true)}>
+            <Plus />
+            Create canonical
+          </Button>
+        }
+      />
+
       <NotificationSettingsCard />
 
       {/* Overview stats cards */}
       <div className="border-separator bg-surface rounded-row border p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="border-separator bg-fill-4 rounded-row text-purple flex h-12 w-12 items-center justify-center border">
-              <Trophy className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="text-label text-title-1">Sports Admin Oversight</h1>
-              <p className="text-label-secondary text-body">
-                System oversight, canonical league creation and simulated state auditing
-              </p>
-            </div>
-          </div>
-          <Button onClick={() => setCreatorOpen(true)} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Create Canonical
-          </Button>
-        </div>
-
         {/* Global stats row */}
-        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
           <div className="bg-surface-secondary border-separator rounded-control border p-3">
-            <span className="text-label-secondary text-eyebrow">Total Leagues</span>
+            <span className="text-label-secondary text-stat-label">Total leagues</span>
             <div className="text-label text-title-2 mt-0.5 tabular-nums">
               {globalStats?.totalLeagues ?? 0}
             </div>
           </div>
           <div className="bg-surface-secondary border-separator rounded-control border p-3">
-            <span className="text-label-secondary text-eyebrow">Simulated Matches</span>
+            <span className="text-label-secondary text-stat-label">Simulated matches</span>
             <div className="text-title-2 text-purple mt-0.5 tabular-nums">
               {globalStats?.totalMatches ?? 0}
             </div>
           </div>
           <div className="bg-surface-secondary border-separator rounded-control border p-3">
-            <span className="text-label-secondary text-eyebrow">Total Players</span>
+            <span className="text-label-secondary text-stat-label">Total players</span>
             <div className="text-title-2 text-green mt-0.5 tabular-nums">
               {globalStats?.totalPlayers ?? 0}
             </div>
           </div>
           <div className="bg-surface-secondary border-separator rounded-control border p-3">
-            <span className="text-label-secondary text-eyebrow">LLM News Auto-Posts</span>
+            <span className="text-label-secondary text-stat-label">LLM news Auto-Posts</span>
             <div className="text-title-2 text-yellow mt-0.5 tabular-nums">
               {globalStats?.llmPosts ?? 0}
             </div>
@@ -1141,7 +1135,7 @@ export default function SportsOversightPanel() {
             onClick={() => setManagedLeagueId(null)}
             className="absolute top-4 right-4"
           >
-            <ArrowLeft className="mr-2 h-3.5 w-3.5" /> Back to List
+            <ArrowLeft className="mr-2 h-3.5 w-3.5" /> Back to list
           </Button>
 
           <div className="space-y-6">
@@ -1151,9 +1145,9 @@ export default function SportsOversightPanel() {
                   {getSportIcon(managedLeague.sportPreset)} {managedLeague.sportPreset}
                 </Badge>
                 {managedLeague.isCanonical ? (
-                  <Badge variant="secondary">Canonical League</Badge>
+                  <Badge variant="secondary">Canonical league</Badge>
                 ) : (
-                  <Badge variant="default">User Created</Badge>
+                  <Badge variant="default">User created</Badge>
                 )}
               </div>
               <h2 className="text-label text-title-1 mt-2">{managedLeague.name}</h2>
@@ -1177,7 +1171,7 @@ export default function SportsOversightPanel() {
                     )}
                   />
                   {managedLeague.id === featuredId
-                    ? "Featured on Lobby — Unset"
+                    ? "Featured on Lobby: Unset"
                     : "Set as Featured League"}
                 </Button>
                 <p className="text-label-secondary text-footnote mt-2">
@@ -1189,9 +1183,9 @@ export default function SportsOversightPanel() {
 
             <Tabs defaultValue="actions" className="w-full">
               <TabsList className="grid w-full grid-cols-3 md:w-96">
-                <TabsTrigger value="actions">Advanced Admin</TabsTrigger>
-                <TabsTrigger value="info">Info Preview</TabsTrigger>
-                <TabsTrigger value="danger">Danger Zone</TabsTrigger>
+                <TabsTrigger value="actions">Advanced admin</TabsTrigger>
+                <TabsTrigger value="info">Info preview</TabsTrigger>
+                <TabsTrigger value="danger">Danger zone</TabsTrigger>
               </TabsList>
 
               <TabsContent value="actions" className="mt-6 space-y-4">
@@ -1207,7 +1201,7 @@ export default function SportsOversightPanel() {
                     </span>
                   </div>
                   <div className="bg-fill-4 border-separator rounded-row border p-4">
-                    <span className="text-label-secondary text-eyebrow block">Teams Count</span>
+                    <span className="text-label-secondary text-eyebrow block">Teams count</span>
                     <span className="text-label text-headline">
                       {managedLeague.teamCount} Teams
                     </span>
@@ -1229,7 +1223,7 @@ export default function SportsOversightPanel() {
 
               <TabsContent value="danger" className="mt-6 space-y-4">
                 <div className="rounded-card border-red/20 bg-red/10 border p-4">
-                  <h3 className="text-headline text-red">Destructive Actions</h3>
+                  <h3 className="text-headline text-red">Destructive actions</h3>
                   <p className="text-label-secondary text-footnote mt-1">
                     These operations are irreversibly destructive and will wipe out season matches,
                     standings or the league completely.
@@ -1265,9 +1259,9 @@ export default function SportsOversightPanel() {
         /* Standard Tabs List View */
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-4 w-full justify-start">
-            <TabsTrigger value="all">All Leagues</TabsTrigger>
-            <TabsTrigger value="canonical">Canonical Leagues</TabsTrigger>
-            <TabsTrigger value="create">Create Canonical</TabsTrigger>
+            <TabsTrigger value="all">All leagues</TabsTrigger>
+            <TabsTrigger value="canonical">Canonical leagues</TabsTrigger>
+            <TabsTrigger value="create">Create canonical</TabsTrigger>
             <TabsTrigger value="narrator" className="text-yellow gap-2">
               <Sparkles className="h-3.5 w-3.5" />
               AI Narrator Lab
@@ -1277,7 +1271,7 @@ export default function SportsOversightPanel() {
           <TabsContent value="all">
             <Card className="flex flex-col gap-6 py-6">
               <CardHeader className="pb-2">
-                <CardTitle className="text-body">All Leagues</CardTitle>
+                <CardTitle className="text-body">All leagues</CardTitle>
               </CardHeader>
               <CardContent>{renderTable(leagues, true)}</CardContent>
             </Card>
@@ -1286,7 +1280,7 @@ export default function SportsOversightPanel() {
           <TabsContent value="canonical">
             <Card className="flex flex-col gap-6 py-6">
               <CardHeader className="pb-2">
-                <CardTitle className="text-body">Canonical Leagues</CardTitle>
+                <CardTitle className="text-body">Canonical leagues</CardTitle>
               </CardHeader>
               <CardContent>{renderTable(canonicalLeagues, true)}</CardContent>
             </Card>
@@ -1295,7 +1289,7 @@ export default function SportsOversightPanel() {
           <TabsContent value="create">
             <Card className="flex flex-col gap-6 py-6">
               <CardHeader className="pb-2">
-                <CardTitle className="text-body">Create Canonical League</CardTitle>
+                <CardTitle className="text-body">Create canonical league</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
@@ -1303,13 +1297,13 @@ export default function SportsOversightPanel() {
                     <Shield className="text-tint h-8 w-8" />
                   </div>
                   <div>
-                    <h3 className="text-label text-headline">Standard League Builder</h3>
+                    <h3 className="text-label text-headline">Standard league builder</h3>
                     <p className="text-label-secondary text-footnote mt-1 max-w-[280px]">
                       Construct a custom canonical league structure bound to the global system
                       presets.
                     </p>
                   </div>
-                  <Button onClick={() => setCreatorOpen(true)}>Open Creator Dialog</Button>
+                  <Button onClick={() => setCreatorOpen(true)}>Open creator dialog</Button>
                 </div>
               </CardContent>
             </Card>
@@ -1337,7 +1331,7 @@ export default function SportsOversightPanel() {
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-red">Irreversible Deletion</DialogTitle>
+            <DialogTitle className="text-red">Irreversible deletion</DialogTitle>
             <DialogDescription>
               Are you absolutely certain you want to delete{" "}
               <span className="text-label font-semibold">"{deleteTarget?.name}"</span>? All
