@@ -2,7 +2,7 @@ import { MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
 import type { SourcelessLayer } from "./map-helpers";
 
 type LayerOf<T extends SourcelessLayer["type"]> = Extract<SourcelessLayer, { type: T }>;
-type Filter = LayerOf<"circle">["filter"];
+type Filter = NonNullable<LayerOf<"circle">["filter"]>;
 type SymbolPaint = NonNullable<LayerOf<"symbol">["paint"]>;
 type CirclePaint = NonNullable<LayerOf<"circle">["paint"]>;
 

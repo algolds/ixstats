@@ -161,7 +161,6 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
                 onSelectFeature={handleSelectFeature}
                 onEditFeature={handleEditFeature}
                 onDeleteFeature={handleDeleteFeature}
-                isLoading={editor.featuresLoading}
                 selectedIds={editor.selectedIds}
                 onToggleSelect={editor.toggleSelectId}
               />

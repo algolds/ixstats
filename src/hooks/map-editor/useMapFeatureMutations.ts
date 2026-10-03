@@ -16,6 +16,9 @@ import { createFeatureOps } from "./feature-ops";
 import { useFeatureMutations } from "./feature-mutations";
 import type { EditorAction } from "./useMapHistory";
 
+type HistoryEntry = Record<string, string | number | boolean | object | null | undefined>;
+type HistoryPair = [HistoryEntry, HistoryEntry];
+
 interface UseMapFeatureMutationsOptions {
   countryId: string | undefined;
   selectedFeature: EditorFeature | null;
@@ -138,7 +141,7 @@ export function useMapFeatureMutations({
     k: Kind<F>,
     override: Partial<F> | undefined,
     run: (scope: Scope, feature: EditorFeature, form: F) => Promise<unknown>,
-    history: (feature: EditorFeature, form: F) => [Record<string, unknown>, Record<string, unknown>]
+    history: (feature: EditorFeature, form: F) => HistoryPair
   ) => {
     if (!countryId || !selectedFeature) return;
     const form = { ...k.form, ...override };
@@ -157,15 +160,15 @@ export function useMapFeatureMutations({
   };
 
   // History of edits to features placed at a point, a drawn region, and plain renames
-  const atPoint = (feature: EditorFeature, form: object) => [
+  const atPoint = (feature: EditorFeature, form: object): HistoryPair => [
     { ...feature.properties, coordinates: feature.coordinates },
     { ...form, coordinates: feature.coordinates },
   ];
-  const atShape = (feature: EditorFeature, form: { geometry?: object }) => [
+  const atShape = (feature: EditorFeature, form: { geometry?: object }): HistoryPair => [
     { ...feature.properties, geometry: feature.geometry },
     { ...form, geometry: feature.geometry || form.geometry },
   ];
-  const renamed = (feature: EditorFeature, form: object) => [
+  const renamed = (feature: EditorFeature, form: object): HistoryPair => [
     { ...feature.properties },
     { ...form },
   ];

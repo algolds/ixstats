@@ -1,7 +1,8 @@
-import type { Map as MapLibreMap } from "maplibre-gl";
+import type { ExpressionSpecification, Map as MapLibreMap } from "maplibre-gl";
+import { matchExpression } from "~/lib/maps/match-expression";
 
 export const POLITICAL_LAYER_ID = "fill-political";
-const ORIGINAL_FILL_COLOR = ["coalesce", ["get", "_fillColor"], "#e8e5da"];
+const ORIGINAL_FILL_COLOR: ExpressionSpecification = ["coalesce", ["get", "_fillColor"], "#e8e5da"];
 
 export type ColorStops = [number, string][];
 
@@ -34,12 +35,11 @@ export function interpolateColor(value: number, stops: ColorStops): string {
  */
 export function colorPoliticalFill(map: MapLibreMap, colors: [id: string, color: string][]) {
   if (colors.length === 0) return false;
-  map.setPaintProperty(POLITICAL_LAYER_ID, "fill-color", [
-    "match",
-    ["get", "_countryId"],
-    ...colors.flat(),
-    "#e8e5da",
-  ]);
+  map.setPaintProperty(
+    POLITICAL_LAYER_ID,
+    "fill-color",
+    matchExpression(["get", "_countryId"], colors, "#e8e5da")
+  );
   return true;
 }
 
