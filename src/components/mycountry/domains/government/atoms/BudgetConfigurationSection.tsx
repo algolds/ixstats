@@ -35,6 +35,119 @@ const ADVANCED_BUDGET_DEFAULTS = {
   debtLimit: "5%",
 };
 
+type Details = Record<string, { label?: string; desc: string; tooltip: string }>;
+type ConfigKey = "stance" | "audit" | "reserve" | "debt";
+
+/** Fields packed into `fiscalYear` as "stance | audit | reserve | debt", in order. */
+const CONFIG_FIELDS: {
+  key: ConfigKey;
+  id: string;
+  label: string;
+  help: string;
+  placeholder: string;
+  valid: string[];
+  fallback: string;
+  details: Details;
+}[] = [
+  {
+    key: "stance",
+    id: "fiscalStance",
+    label: "Fiscal stance & strategy",
+    help: "Determines the overriding objective of the government's annual budget plan, impacting public savings, economic growth, and austerity directives.",
+    placeholder: "Select budget stance",
+    valid: validStances,
+    fallback: "Balanced Budget Directive",
+    details: stanceDetails,
+  },
+  {
+    key: "audit",
+    id: "auditLevel",
+    label: "Auditing & transparency",
+    help: "Defines the degree of access and oversight of national accounts, balancing anti-corruption measures against covert and strategic intelligence flexibility.",
+    placeholder: "Select transparency level",
+    valid: validAudits,
+    fallback: ADVANCED_BUDGET_DEFAULTS.auditLevel,
+    details: auditDetails,
+  },
+  {
+    key: "reserve",
+    id: "reserveTarget",
+    label: "Emergency reserve target",
+    help: "The portion of annual revenues systematically allocated to sovereign wealth or contingency reserve accounts to mitigate economic shocks.",
+    placeholder: "Select reserve target",
+    valid: validReserves,
+    fallback: ADVANCED_BUDGET_DEFAULTS.reserveTarget,
+    details: reserveDetails,
+  },
+  {
+    key: "debt",
+    id: "debtLimit",
+    label: "Debt financing limit",
+    help: "The statutory maximum limit for annual borrowing to finance capital projects or deficits, expressed as a percent of the total budget.",
+    placeholder: "Select debt limit",
+    valid: validDebts,
+    fallback: ADVANCED_BUDGET_DEFAULTS.debtLimit,
+    details: debtDetails,
+  },
+];
+
+function parseFiscalYear(fiscalYear: string): Record<ConfigKey, string> {
+  const parts = fiscalYear.split(" | ");
+  const values = Object.fromEntries(CONFIG_FIELDS.map((f) => [f.key, f.fallback])) as Record<
+    ConfigKey,
+    string
+  >;
+  if (parts.length === 2 && !validStances.includes(parts[0]!) && validStances.includes(parts[1]!)) {
+    return { ...values, stance: parts[1]! };
+  }
+  CONFIG_FIELDS.forEach((f, i) => {
+    const part = parts[i];
+    if (part && f.valid.includes(part)) values[f.key] = part;
+  });
+  return values;
+}
+
+/** Deficit bands as [upper bound (% of GDP), border/text classes, label]. */
+const DEFICIT_BANDS: [number, string, string][] = [
+  [0, "border-green/30 text-green", "Fully Funded"],
+  [5, "border-yellow/30 text-yellow", "Mild Deficit"],
+  [15, "border-orange/30 text-orange", "Moderate Deficit"],
+  [Infinity, "border-destructive/30 text-destructive", "Critical Deficit"],
+];
+
+function ConfigSelect({
+  field,
+  value,
+  disabled,
+  onSelect,
+}: {
+  field: (typeof CONFIG_FIELDS)[number];
+  value: string;
+  disabled: boolean;
+  onSelect: (value: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={field.id} className="text-label text-headline flex items-center gap-2">
+        {field.label}
+        <FieldHelpTooltip content={field.help} title={field.label} />
+      </Label>
+      <Select value={value} onValueChange={onSelect} disabled={disabled}>
+        <SelectTrigger>
+          <SelectValue placeholder={field.placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {Object.entries(field.details).map(([val, info]) => (
+            <SelectItem key={val} value={val} title={info.tooltip} description={info.desc}>
+              {info.label ?? val}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 interface BudgetConfigurationSectionProps {
   data: GovernmentStructureInput;
   onChange: (field: keyof GovernmentStructureInput, value: string | number) => void;
@@ -55,33 +168,11 @@ export function BudgetConfigurationSection({
   gdpData,
   asGlassCard = false,
 }: BudgetConfigurationSectionProps) {
-  const parts = data.fiscalYear.includes(" | ") ? data.fiscalYear.split(" | ") : [data.fiscalYear];
+  const config = parseFiscalYear(data.fiscalYear);
 
-  let fiscalStance = "Balanced Budget Directive";
-  let auditLevel = ADVANCED_BUDGET_DEFAULTS.auditLevel;
-  let reserveTarget = ADVANCED_BUDGET_DEFAULTS.reserveTarget;
-  let debtLimit = ADVANCED_BUDGET_DEFAULTS.debtLimit;
-
-  const isLegacyComposite =
-    parts.length === 2 &&
-    !validStances.includes(parts[0] || "") &&
-    validStances.includes(parts[1] || "");
-
-  if (isLegacyComposite) {
-    fiscalStance = parts[1]!;
-  } else {
-    if (parts[0] && validStances.includes(parts[0])) fiscalStance = parts[0];
-    if (parts[1] && validAudits.includes(parts[1])) auditLevel = parts[1];
-    if (parts[2] && validReserves.includes(parts[2])) reserveTarget = parts[2];
-    if (parts[3] && validDebts.includes(parts[3])) debtLimit = parts[3];
-  }
-
-  const handleConfigChange = (field: "stance" | "audit" | "reserve" | "debt", value: string) => {
-    const newStance = field === "stance" ? value : fiscalStance;
-    const newAudit = field === "audit" ? value : auditLevel;
-    const newReserve = field === "reserve" ? value : reserveTarget;
-    const newDebt = field === "debt" ? value : debtLimit;
-    onChange("fiscalYear", `${newStance} | ${newAudit} | ${newReserve} | ${newDebt}`);
+  const handleConfigChange = (field: ConfigKey, value: string) => {
+    const next = { ...config, [field]: value };
+    onChange("fiscalYear", CONFIG_FIELDS.map((f) => next[f.key]).join(" | "));
   };
 
   const ratio =
@@ -97,26 +188,26 @@ export function BudgetConfigurationSection({
 
   const deficitSurplus = ratio - taxPercent;
 
-  let colorClass = "";
-  let statusText = "";
-  if (deficitSurplus <= 0) {
-    colorClass = "border-green/30 text-green";
-    statusText = `Fully Funded (Surplus: ${Math.abs(deficitSurplus).toFixed(1)}% of GDP)`;
-  } else if (deficitSurplus <= 5) {
-    colorClass = "border-yellow/30 text-yellow";
-    statusText = `Mild Deficit (+${deficitSurplus.toFixed(1)}% of GDP)`;
-  } else if (deficitSurplus <= 15) {
-    colorClass = "border-orange/30 text-orange";
-    statusText = `Moderate Deficit (+${deficitSurplus.toFixed(1)}% of GDP)`;
-  } else {
-    colorClass = "border-destructive/30 text-destructive";
-    statusText = `Critical Deficit (+${deficitSurplus.toFixed(1)}% of GDP)`;
-  }
+  const [, colorClass, bandLabel] = DEFICIT_BANDS.find(([max]) => deficitSurplus <= max)!;
+  const statusText =
+    deficitSurplus <= 0
+      ? `${bandLabel} (Surplus: ${Math.abs(deficitSurplus).toFixed(1)}% of GDP)`
+      : `${bandLabel} (+${deficitSurplus.toFixed(1)}% of GDP)`;
+
+  const [stanceField, ...advancedFields] = CONFIG_FIELDS;
+  const renderSelect = (field: (typeof CONFIG_FIELDS)[number]) => (
+    <ConfigSelect
+      key={field.key}
+      field={field}
+      value={config[field.key]}
+      disabled={isReadOnly}
+      onSelect={(value) => handleConfigChange(field.key, value)}
+    />
+  );
 
   const content = (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Total Budget */}
         <div className="space-y-2">
           <EnhancedNumberInput
             label="Total budget limit"
@@ -148,132 +239,22 @@ export function BudgetConfigurationSection({
             )}
           </div>
         </div>
-
-        {/* Fiscal Stance & Strategy */}
-        <div className="space-y-2">
-          <Label
-            htmlFor="fiscalStance"
-            className="text-label text-headline flex items-center gap-2"
-          >
-            Fiscal stance & strategy
-            <FieldHelpTooltip
-              content="Determines the overriding objective of the government's annual budget plan, impacting public savings, economic growth, and austerity directives."
-              title="Fiscal stance & strategy"
-            />
-          </Label>
-          <Select
-            value={fiscalStance}
-            onValueChange={(value) => handleConfigChange("stance", value)}
-            disabled={isReadOnly}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select budget stance" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(stanceDetails).map(([val, info]) => (
-                <SelectItem key={val} value={val} title={info.tooltip} description={info.desc}>
-                  {val}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {renderSelect(stanceField!)}
       </div>
 
       {/* Audit, reserve and debt limits (advanced tier in FIELD_IMPORTANCE.government) */}
       <AdvancedFieldsDisclosure
         section="government"
         id="budget"
-        values={{ auditLevel, reserveTarget, debtLimit }}
+        values={{
+          auditLevel: config.audit,
+          reserveTarget: config.reserve,
+          debtLimit: config.debt,
+        }}
         defaults={ADVANCED_BUDGET_DEFAULTS}
       >
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {/* Auditing & Transparency */}
-          <div className="space-y-2">
-            <Label
-              htmlFor="auditLevel"
-              className="text-label text-headline flex items-center gap-2"
-            >
-              Auditing & transparency
-              <FieldHelpTooltip
-                content="Defines the degree of access and oversight of national accounts, balancing anti-corruption measures against covert and strategic intelligence flexibility."
-                title="Auditing & transparency"
-              />
-            </Label>
-            <Select
-              value={auditLevel}
-              onValueChange={(value) => handleConfigChange("audit", value)}
-              disabled={isReadOnly}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select transparency level" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(auditDetails).map(([val, info]) => (
-                  <SelectItem key={val} value={val} title={info.tooltip} description={info.desc}>
-                    {val}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Emergency Reserve Target */}
-          <div className="space-y-2">
-            <Label
-              htmlFor="reserveTarget"
-              className="text-label text-headline flex items-center gap-2"
-            >
-              Emergency reserve target
-              <FieldHelpTooltip
-                content="The portion of annual revenues systematically allocated to sovereign wealth or contingency reserve accounts to mitigate economic shocks."
-                title="Emergency reserve target"
-              />
-            </Label>
-            <Select
-              value={reserveTarget}
-              onValueChange={(value) => handleConfigChange("reserve", value)}
-              disabled={isReadOnly}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select reserve target" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(reserveDetails).map(([val, info]) => (
-                  <SelectItem key={val} value={val} title={info.tooltip} description={info.desc}>
-                    {info.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Debt Financing Limit */}
-          <div className="space-y-2">
-            <Label htmlFor="debtLimit" className="text-label text-headline flex items-center gap-2">
-              Debt financing limit
-              <FieldHelpTooltip
-                content="The statutory maximum limit for annual borrowing to finance capital projects or deficits, expressed as a percent of the total budget."
-                title="Debt financing limit"
-              />
-            </Label>
-            <Select
-              value={debtLimit}
-              onValueChange={(value) => handleConfigChange("debt", value)}
-              disabled={isReadOnly}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select debt limit" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(debtDetails).map(([val, info]) => (
-                  <SelectItem key={val} value={val} title={info.tooltip} description={info.desc}>
-                    {info.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {advancedFields.map(renderSelect)}
         </div>
       </AdvancedFieldsDisclosure>
     </div>
