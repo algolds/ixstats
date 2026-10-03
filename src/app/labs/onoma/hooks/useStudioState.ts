@@ -12,7 +12,7 @@ import { translateToIPA } from "~/lib/onoma/phonology";
 import { transcribeToScript } from "~/lib/onoma/orthography";
 import { getMorphologyDetails } from "~/lib/onoma/morphology";
 
-export interface UseStudioStateProps {
+interface UseStudioStateProps {
   initialWords?: string[];
   initialTitle?: string;
   onClearInitial?: () => void;

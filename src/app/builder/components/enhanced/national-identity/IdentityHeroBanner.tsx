@@ -29,7 +29,7 @@ import {
   IMAGE_SCRIM_TOUCH_CLUSTER,
 } from "~/app/builder/lib/image-scrim";
 
-export interface IdentityHeroBannerProps {
+interface IdentityHeroBannerProps {
   countryName: string;
   officialName?: string;
   motto?: string;

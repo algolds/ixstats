@@ -101,5 +101,3 @@ export function StudioVisualizer({ state }: StudioVisualizerProps) {
     </div>
   );
 }
-
-export default StudioVisualizer;

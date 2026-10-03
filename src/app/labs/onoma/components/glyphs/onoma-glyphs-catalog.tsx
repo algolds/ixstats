@@ -30,7 +30,7 @@ export type OnomaGlyphName =
   | "system-writing"
   | "system-frame";
 
-export interface GlyphRenderProps {
+interface GlyphRenderProps {
   className?: string;
   strokeWidth?: number;
 }

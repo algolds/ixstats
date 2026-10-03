@@ -87,5 +87,3 @@ export function CountriesAdminPanel() {
     </div>
   );
 }
-
-export default CountriesAdminPanel;

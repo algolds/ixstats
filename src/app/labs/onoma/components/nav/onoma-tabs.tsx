@@ -1,7 +1,4 @@
 "use client";
-
-import { Flash } from "iconoir-react";
-
 // src/app/labs/onoma/components/nav/onoma-tabs.tsx
 // Tab definitions, color schemas, feature descriptions, and Onoma Glyphs for Onoma navigation
 // Product Model: CREATE · STUDIO · EXPLORE (Apple SF Symbols × IPA × Linguistic Notation)
@@ -62,17 +59,6 @@ const createGlyphAdapter = (name: OnomaGlyphName) => {
 };
 
 // Linguistic Glyph Adapters for backward-compatibility with downstream components
-export const ScienceGameIcon = (props: { className?: string }) => <Flash {...props} />;
-export const GeographyGameIcon = createGlyphAdapter("sound-vowel-quad");
-export const PeopleGameIcon = createGlyphAdapter("sound-articulation");
-export const GovernmentGameIcon = createGlyphAdapter("struct-syntax");
-export const CultureGameIcon = createGlyphAdapter("compose-morphology");
-export const EconomyGameIcon = createGlyphAdapter("memory-dataset");
-export const HistoryGameIcon = createGlyphAdapter("transform-shift");
-export const SpecialGameIcon = createGlyphAdapter("emerge-branch");
-export const DiplomacyGameIcon = createGlyphAdapter("sound-acoustic");
-export const NationGameIcon = createGlyphAdapter("compose-lexicon");
-
 /**
  * Master Product Pillar tabs (CREATE · STUDIO · EXPLORE)
  */
@@ -97,7 +83,7 @@ export const ONOMA_PILLAR_TABS = [
 /**
  * Domain category tabs displayed in the CREATE pillar alongside the Quick Generator anchor.
  */
-export const CREATE_DOMAIN_TABS = [
+const CREATE_DOMAIN_TABS = [
   {
     id: "places",
     label: "Places",

@@ -8,5 +8,3 @@ export function EconomicComponentsPanel() {
   usePageTitle({ title: "Admin - Economic Components" });
   return <AtomicComponentManager domain="economy" />;
 }
-
-export default EconomicComponentsPanel;

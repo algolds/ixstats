@@ -19,7 +19,7 @@ import {
   Eye,
 } from "iconoir-react";
 
-export interface GuideRuleItem {
+interface GuideRuleItem {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   description: string;

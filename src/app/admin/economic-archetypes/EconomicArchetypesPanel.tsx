@@ -421,5 +421,3 @@ export function EconomicArchetypesPanel() {
     </div>
   );
 }
-
-export default EconomicArchetypesPanel;

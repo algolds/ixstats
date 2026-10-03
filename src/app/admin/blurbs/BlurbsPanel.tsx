@@ -44,7 +44,7 @@ import {
 import { useNotify } from "~/hooks/useNotify";
 import { Card } from "~/components/ui/card";
 
-export function BlurbsPanel() {
+function BlurbsPanel() {
   usePageTitle({ title: "Admin - Blurbs & Prompts" });
   const [activeTab, setActiveTab] = useState("prompts");
 

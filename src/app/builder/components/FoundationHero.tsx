@@ -15,7 +15,7 @@ import { getHighResFlagUrl, getStepLabel } from "./enhanced/steps/foundation/fou
 import type { BuilderStep } from "./enhanced/builderConfig";
 import { Card, CardContent } from "~/components/ui/card";
 
-export type FoundationPath = "template" | "archetype" | "country" | "scratch" | "import";
+type FoundationPath = "template" | "archetype" | "country" | "scratch" | "import";
 
 interface FoundationHeroProps {
   onSelectPath: (path: FoundationPath) => void;

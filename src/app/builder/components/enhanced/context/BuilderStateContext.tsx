@@ -8,12 +8,12 @@ import type { RealCountryData } from "../../../lib/economy-data-service";
 /**
  * AutoSync function type - returns a promise that resolves when sync is complete
  */
-export type AutoSyncFunction = () => Promise<void>;
+type AutoSyncFunction = () => Promise<void>;
 
 /**
  * AutoSync registry for managing database sync functions across all builder sections
  */
-export interface AutoSyncRegistry {
+interface AutoSyncRegistry {
   nationalIdentity?: AutoSyncFunction;
   government?: AutoSyncFunction;
   taxSystem?: AutoSyncFunction;

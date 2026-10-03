@@ -35,11 +35,7 @@ interface StashSectionProps {
   onNavigateStudio?: (tab: StudioSubTab, words?: string[], title?: string) => void;
 }
 
-export function StashSection({
-  onLoadToStudio,
-  onNavigateExplore,
-  onNavigateStudio,
-}: StashSectionProps) {
+function StashSection({ onLoadToStudio, onNavigateExplore, onNavigateStudio }: StashSectionProps) {
   const bank = useNameBank();
   const studioState = useStudioState();
 

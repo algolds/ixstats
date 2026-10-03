@@ -517,5 +517,3 @@ export function NPCPersonalitiesPanel() {
     </div>
   );
 }
-
-export default NPCPersonalitiesPanel;

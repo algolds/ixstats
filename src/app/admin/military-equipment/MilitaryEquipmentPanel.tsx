@@ -152,5 +152,3 @@ export function MilitaryEquipmentPanel() {
     </div>
   );
 }
-
-export default MilitaryEquipmentPanel;

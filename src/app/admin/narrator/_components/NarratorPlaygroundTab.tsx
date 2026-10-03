@@ -348,5 +348,3 @@ export function NarratorPlaygroundTab() {
     </div>
   );
 }
-
-export default NarratorPlaygroundTab;

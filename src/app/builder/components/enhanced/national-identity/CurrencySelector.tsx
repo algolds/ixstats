@@ -16,18 +16,9 @@ import { getCurrencyInfo, isValidCurrency } from "~/lib/utils";
 import { cn } from "~/lib/utils";
 
 import { NavArrowDown, Check } from "iconoir-react";
-import {
-  type CurrencyOption,
-  UNIFIED_CURRENCIES,
-  ALL_FIAT_CURRENCIES,
-  ALL_CRYPTO_CURRENCIES,
-  ALL_SOVEREIGN_CURRENCIES,
-} from "./currencyData";
+import { type CurrencyOption, UNIFIED_CURRENCIES } from "./currencyData";
 
 export type { CurrencyOption };
-export const FIAT_CURRENCIES = ALL_FIAT_CURRENCIES;
-export const CRYPTO_CURRENCIES = ALL_CRYPTO_CURRENCIES;
-export const SOVEREIGN_CURRENCIES = ALL_SOVEREIGN_CURRENCIES;
 export { UNIFIED_CURRENCIES };
 
 const ALL_CURRENCY_OPTIONS = UNIFIED_CURRENCIES;

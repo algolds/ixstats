@@ -11,7 +11,7 @@ import type { DemographicsConfiguration } from "~/types/economy-builder";
 /**
  * Derived demographic metrics calculated from base population data
  */
-export interface DerivedDemographicMetrics {
+interface DerivedDemographicMetrics {
   /** Working age population (15-64 years) */
   workingAge: number;
   /** Youth population (under 15 years) */

@@ -568,5 +568,3 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
     </div>
   );
 }
-
-export default StudioPhonology;

@@ -126,37 +126,4 @@ export class AdminErrorBoundary extends Component<Props, State> {
 }
 
 // Simple functional error fallback for lighter use cases
-export function AdminErrorFallback({
-  error,
-  onRetry,
-}: {
-  error?: Error | null;
-  onRetry?: () => void;
-}) {
-  return (
-    <div className="rounded-row border-destructive/20 bg-destructive/10 border p-6">
-      <div className="flex items-center">
-        <AlertTriangle className="text-red mr-2 h-5 w-5" />
-        <h3 className="text-body text-red font-medium">Component error</h3>
-      </div>
-      <div className="mt-2">
-        <p className="text-body text-red">
-          {error?.message || "An unexpected error occurred in this component."}
-        </p>
-        {onRetry && (
-          <Button variant="destructive" size="sm" onClick={onRetry} className="mt-3">
-            Retry
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // Hook for using error boundaries in functional components
-export function useErrorHandler() {
-  return (error: Error, errorInfo?: ErrorInfo) => {
-    console.error("Component error:", error, errorInfo);
-    // You could also send to an error reporting service here
-  };
-}

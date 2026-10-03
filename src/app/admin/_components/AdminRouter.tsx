@@ -311,5 +311,3 @@ export function AdminRouter() {
 
   return renderContent();
 }
-
-export default AdminRouter;

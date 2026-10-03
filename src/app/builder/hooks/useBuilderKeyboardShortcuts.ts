@@ -3,7 +3,7 @@
 import { useEffect, useEffectEvent } from "react";
 import { soundEffects } from "~/lib/sound/cuelume";
 
-export interface UseBuilderKeyboardShortcutsOptions {
+interface UseBuilderKeyboardShortcutsOptions {
   onSave?: (() => void | Promise<void>) | null;
   onReset?: () => void;
   onToggleAdvanced?: () => void;

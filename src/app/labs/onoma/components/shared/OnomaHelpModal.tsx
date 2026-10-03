@@ -21,7 +21,7 @@ import {
   type SystemGuideItem,
 } from "./onoma-help-data";
 
-export interface OnomaHelpModalProps {
+interface OnomaHelpModalProps {
   isOpen: boolean;
   onClose: () => void;
   activeSection?: OnomaSection;
@@ -30,7 +30,7 @@ export interface OnomaHelpModalProps {
   initialMode?: "walkthrough" | "module";
 }
 
-export function OnomaHelpModal({
+function OnomaHelpModal({
   isOpen,
   onClose,
   activeSection = "overview",

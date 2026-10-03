@@ -18,7 +18,7 @@ import { Button } from "~/components/ui/button";
 import { Toggle } from "~/components/ui/toggle";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 
-export interface PatternDepthLevel {
+interface PatternDepthLevel {
   depth: number;
   label: string;
   editorialTier: string;
@@ -31,7 +31,7 @@ export interface PatternDepthLevel {
   dotClassName: string;
 }
 
-export const PATTERN_DEPTH_LEVELS: PatternDepthLevel[] = [
+const PATTERN_DEPTH_LEVELS: PatternDepthLevel[] = [
   {
     depth: 1,
     label: "Fluid",

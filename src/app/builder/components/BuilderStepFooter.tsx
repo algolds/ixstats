@@ -25,7 +25,7 @@ const SECTION_LABELS: Record<BuilderSection, string> = {
   import: "Wiki import",
 };
 
-export interface BuilderStepFooterProps {
+interface BuilderStepFooterProps {
   activeSection: BuilderSection;
   mode: "create" | "edit";
   onNavigate: (section: BuilderSection) => void;

@@ -17,7 +17,7 @@ import {
   Activity,
 } from "iconoir-react";
 
-export interface WalkthroughStep {
+interface WalkthroughStep {
   title: string;
   subtitle: string;
   quote?: string;

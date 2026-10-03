@@ -280,5 +280,3 @@ export function CalculationEditor() {
     </div>
   );
 }
-
-export default CalculationEditor;

@@ -338,5 +338,3 @@ export function NarratorPanel() {
     </div>
   );
 }
-
-export default NarratorPanel;

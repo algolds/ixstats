@@ -21,5 +21,3 @@ export function AchievementsPanel() {
     </div>
   );
 }
-
-export default AchievementsPanel;

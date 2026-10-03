@@ -157,7 +157,7 @@ interface MarkovVisualizerProps {
   onCompleteName?: (completedName: string) => void;
 }
 
-export function MarkovVisualizerInner({
+function MarkovVisualizerInner({
   chain,
   activePrefix,
   onChangePrefix,
@@ -385,5 +385,3 @@ export function MarkovVisualizer(props: MarkovVisualizerProps) {
     </ReactFlowProvider>
   );
 }
-
-export default MarkovVisualizer;

@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import type { SectionId, SectionColorScheme, PrimitiveTheme } from "./types";
 
 // Section to theme mapping based on the existing design system
-export const SECTION_THEME_MAP: Record<SectionId, PrimitiveTheme> = {
+const SECTION_THEME_MAP: Record<SectionId, PrimitiveTheme> = {
   symbols: "gold", // National Symbols - Gold/Warning theme
   core: "blue", // Core Indicators - Blue/Primary theme
   labor: "emerald", // Labor & Employment - Green/Success theme
@@ -17,7 +17,7 @@ export const SECTION_THEME_MAP: Record<SectionId, PrimitiveTheme> = {
 };
 
 // Section color schemes as CSS custom properties
-export const SECTION_COLOR_SCHEMES: Record<PrimitiveTheme, SectionColorScheme> = {
+const SECTION_COLOR_SCHEMES: Record<PrimitiveTheme, SectionColorScheme> = {
   gold: {
     primary: "var(--color-warning)",
     secondary: "color-mix(in srgb, var(--color-warning) 80%, transparent)",
@@ -75,7 +75,7 @@ export const SECTION_COLOR_SCHEMES: Record<PrimitiveTheme, SectionColorScheme> =
 };
 
 // Surface depth configurations
-export const GLASS_DEPTHS = {
+const GLASS_DEPTHS = {
   // Opaque surface roles by depth.
   base: {
     backdrop: "",
@@ -121,14 +121,6 @@ export function useSectionTheme(sectionId?: SectionId, overrideTheme?: Primitive
 }
 
 // Utility to get section colors without hook
-export function getSectionColors(
-  sectionId?: SectionId,
-  theme?: PrimitiveTheme
-): SectionColorScheme {
-  const resolvedTheme = theme || (sectionId ? SECTION_THEME_MAP[sectionId] : "default");
-  return SECTION_COLOR_SCHEMES[resolvedTheme as PrimitiveTheme] || SECTION_COLOR_SCHEMES["default"];
-}
-
 // Opaque surface classes for a depth level
 export function getGlassClasses(depth: "base" | "elevated" | "modal" = "base"): string {
   const glassConfig = GLASS_DEPTHS[depth];
@@ -146,4 +138,3 @@ export function getGlassClasses(depth: "base" | "elevated" | "modal" = "base"): 
 }
 
 // Export section theme mapping for external use
-export type SectionTheme = typeof SECTION_THEME_MAP;

@@ -31,7 +31,7 @@ const TABS: { id: StorytellerTab; label: string; icon: typeof Wand2 }[] = [
   { id: "history", label: "History", icon: History },
 ];
 
-export function StorytellerPanel() {
+function StorytellerPanel() {
   usePageTitle({ title: "Admin - Storyteller" });
   const [activeTab, setActiveTab] = useState<StorytellerTab>("wizard");
 

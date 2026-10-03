@@ -286,5 +286,3 @@ export function DomainControlBar({
     </Card>
   );
 }
-
-export default DomainControlBar;

@@ -32,13 +32,6 @@ const NATURAL_PROFILES = [
   { value: "uralic", label: "Uralic" },
 ];
 
-export interface CorpusOption {
-  id: string;
-  label: string;
-  type: "natural" | "template" | "stash" | "studio";
-  wordsCount?: number;
-}
-
 interface CorpusSelectorProps {
   value: string;
   onChange: (value: string) => void;
@@ -150,5 +143,3 @@ export function CorpusSelector({
     </div>
   );
 }
-
-export default CorpusSelector;

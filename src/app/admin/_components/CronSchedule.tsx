@@ -308,4 +308,4 @@ function CronSchedule({
   );
 }
 
-export { CronSchedule, type CronScheduleProps };
+export { CronSchedule };

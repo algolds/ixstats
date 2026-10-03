@@ -58,7 +58,7 @@ const SECTION_LABELS: Record<BuilderSection, string> = {
   import: "Wiki import",
 };
 
-export interface BuilderStudioHeaderProps {
+interface BuilderStudioHeaderProps {
   activeSection: BuilderSection;
   completedSteps: Set<BuilderSection>;
   accessibleSteps: Set<BuilderSection>;

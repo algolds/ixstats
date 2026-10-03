@@ -13,7 +13,7 @@ import type { EconomicComponentType } from "~/components/mycountry/domains/econo
 /**
  * Derived labor market metrics calculated from base labor configuration
  */
-export interface DerivedLaborMetrics {
+interface DerivedLaborMetrics {
   /** Number of employed workers */
   employed: number;
   /** Number of unemployed workers */

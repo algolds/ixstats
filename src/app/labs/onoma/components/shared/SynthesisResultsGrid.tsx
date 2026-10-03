@@ -375,5 +375,3 @@ export function SynthesisResultsGrid({
     </div>
   );
 }
-
-export default SynthesisResultsGrid;

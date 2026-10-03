@@ -13,22 +13,7 @@ export interface Glyph {
 
 export type ScriptTypology = "alphabet" | "syllabary" | "abjad" | "logographic";
 export type ScriptDirection = "ltr" | "rtl" | "ttb";
-
-export interface WritingSystemData {
-  id?: string;
-  name: string;
-  scriptType: ScriptTypology;
-  direction: ScriptDirection;
-  glyphs: Glyph[];
-  ligatures?: Array<{ id: string; phonemes: string[]; svgPath: string }>;
-  glyphSize: number;
-  baselineOffset: number;
-  letterSpacing?: number;
-  wordSpacing?: number;
-  strokeWidth?: number;
-}
-
-export type GuideLevel = "all" | "baseline" | "minimal" | "none";
+type GuideLevel = "all" | "baseline" | "minimal" | "none";
 
 export interface CanvasGuideSettings {
   showGrid: boolean;

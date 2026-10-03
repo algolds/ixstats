@@ -8,10 +8,3 @@ export { GlassSelectBox } from "./GlassSelectBox";
 
 // Composite Components
 export { MetricCard } from "./MetricCard";
-
-// Theme and Utilities
-export { useSectionTheme, getSectionColors, type SectionTheme } from "./theme-utils";
-export { useAnimatedValue, type AnimationConfig } from "./animation-utils";
-
-// Types
-export type { EnhancedInputProps, PrimitiveTheme, SectionColorScheme } from "./types";

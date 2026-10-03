@@ -3,7 +3,7 @@ import { WhiteFlag, City, StatUp, CheckCircle } from "iconoir-react";
 import type { BuilderSection } from "../../lib/builder-theme";
 import type { EditorSection } from "../../lib/edit-changes";
 
-export interface EditorNavItem {
+interface EditorNavItem {
   section: Extract<BuilderSection, "identity" | "government" | "economics" | "preview">;
   /** Section whose saved fields this item edits; Review edits none. */
   changeSection: EditorSection | null;
@@ -49,11 +49,6 @@ export const EDITOR_SECTION_LABELS: Record<EditorSection, string> = {
   government: "Government",
   economics: "Economy",
 };
-
-export function editorNavItem(section: BuilderSection): EditorNavItem | undefined {
-  return EDITOR_NAV.find((item) => item.section === section);
-}
-
 /** "Saving…", "Saved at 10:42", … — the editor's autosave state in words. */
 export type EditorSaveStatus = "saved" | "pending" | "saving" | "error";
 

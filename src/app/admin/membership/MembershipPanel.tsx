@@ -135,5 +135,3 @@ export function MembershipPanel() {
     </div>
   );
 }
-
-export default MembershipPanel;

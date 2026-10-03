@@ -28,5 +28,3 @@ export function LoreScannerPanel() {
     </div>
   );
 }
-
-export default LoreScannerPanel;

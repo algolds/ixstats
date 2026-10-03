@@ -51,14 +51,6 @@ export interface EnhancedInputProps {
   className?: string;
 }
 
-export interface NumberFlowConfig {
-  format?: (value: number) => string;
-  duration?: number;
-  easing?: string;
-  transformOnChange?: boolean;
-  willChange?: boolean;
-}
-
 export interface ChartDataPoint {
   name: string;
   value: number;
@@ -89,11 +81,4 @@ export interface AnimationConfig {
   easing?: "easeInOut" | "easeIn" | "easeOut" | "linear";
   delay?: number;
   stagger?: number;
-}
-
-export interface ValidationState {
-  isValid: boolean;
-  errors?: string[];
-  warnings?: string[];
-  info?: string[];
 }

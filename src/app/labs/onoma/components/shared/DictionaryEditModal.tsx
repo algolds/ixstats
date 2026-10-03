@@ -206,5 +206,3 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
     </Dialog>
   );
 }
-
-export default DictionaryEditModal;

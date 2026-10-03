@@ -21,5 +21,3 @@ export function ImageRepoPanel() {
     </div>
   );
 }
-
-export default ImageRepoPanel;

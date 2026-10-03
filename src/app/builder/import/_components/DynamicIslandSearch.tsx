@@ -54,8 +54,6 @@ export interface SearchResult {
 }
 
 export type ParsedCountryData = UnifiedInfoboxData;
-export type PreviewCountryData = SearchResult & Partial<ParsedCountryData>;
-
 const logoMap: Record<string, string> = {
   ixwiki: "/images/ix-logo.svg",
   iiwiki: "/images/IIWikiLogo.png",
@@ -64,7 +62,7 @@ const logoMap: Record<string, string> = {
 
 // ─── Props ───
 
-export interface DynamicIslandSearchProps {
+interface DynamicIslandSearchProps {
   selectedSite: WikiSite;
   wikiSites: WikiSite[];
   onSelectSite: (site: WikiSite) => void;

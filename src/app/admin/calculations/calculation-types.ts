@@ -33,7 +33,7 @@ export interface CalculationModule {
   version: string;
 }
 
-export interface TestCase {
+interface TestCase {
   id: string;
   name: string;
   inputs: Record<string, number | string | string[]>;

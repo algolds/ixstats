@@ -379,5 +379,3 @@ export function NotificationTestCard() {
     </Card>
   );
 }
-
-export default NotificationTestCard;

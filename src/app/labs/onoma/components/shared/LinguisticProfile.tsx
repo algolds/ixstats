@@ -321,5 +321,3 @@ export function LinguisticProfile({
     </div>
   );
 }
-
-export default LinguisticProfile;

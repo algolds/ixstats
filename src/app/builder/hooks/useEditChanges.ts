@@ -22,7 +22,7 @@ interface UseEditChangesArgs {
   setBuilderState: React.Dispatch<React.SetStateAction<BuilderState>>;
 }
 
-export interface EditChanges {
+interface EditChanges {
   /** Fields that differ from the baseline (the country as opened, or as of the last Save). */
   changes: readonly FieldChange[];
   canUndo: boolean;

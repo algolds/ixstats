@@ -176,5 +176,3 @@ export function RingsAuditPanel() {
     </div>
   );
 }
-
-export default RingsAuditPanel;

@@ -9,7 +9,7 @@ import { useBuilderActions } from "../../../hooks/useBuilderActions";
 import { FoundationStep } from "../steps/FoundationStep";
 import { GovernmentStep } from "../steps/GovernmentStep";
 import { NationalIdentitySection } from "../NationalIdentitySection";
-import { EconomyBuilderPage } from "../index";
+import { EconomyBuilderPage } from "../EconomyBuilderPage";
 import { BuilderPreviewStep } from "./BuilderPreviewStep";
 import type { RealCountryData, EconomicInputs } from "../../../lib/economy-data-service";
 import type { GovernmentBuilderState } from "~/types/government";

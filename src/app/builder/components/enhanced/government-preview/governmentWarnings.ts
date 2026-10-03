@@ -7,7 +7,7 @@
  * All functions are pure: no hooks, no state, no side effects.
  */
 
-export interface GovernmentWarnings {
+interface GovernmentWarnings {
   gdpCapWarning: string | null;
   deltaWarning: string | null;
   currencyChangeWarning: string | null;

@@ -1,7 +1,7 @@
 // Enhanced Animation Utilities for NumberFlow and Smooth Transitions
 
-import { useSpring, useMotionValue, useTransform, MotionValue } from "motion/react";
-import { useEffect, useMemo } from "react";
+import { useSpring, useMotionValue, useTransform } from "motion/react";
+import { useEffect } from "react";
 import type { AnimationConfig } from "./types";
 
 export type { AnimationConfig };
@@ -35,7 +35,7 @@ export const DEFAULT_ANIMATIONS: Record<string, AnimationConfig> = {
 };
 
 // Hook for animated number values with smooth transitions
-export function useAnimatedValue(targetValue: number, config?: AnimationConfig) {
+function useAnimatedValue(targetValue: number, config?: AnimationConfig) {
   const safeConfig = config ?? DEFAULT_ANIMATIONS.numberFlow;
   const safeTargetValue = typeof targetValue === "number" && !isNaN(targetValue) ? targetValue : 0;
   const motionValue = useMotionValue(safeTargetValue);
@@ -96,91 +96,6 @@ export function useFormattedAnimatedValue(
   return formattedValue;
 }
 
-// Hook for percentage animations with proper formatting
-export function useAnimatedPercentage(
-  targetValue: number,
-  precision: number = 1,
-  config?: AnimationConfig
-) {
-  const animatedValue = useAnimatedValue(targetValue, config);
-
-  const formattedPercentage = useTransform(
-    animatedValue,
-    (value) => `${value.toFixed(precision)}%`
-  );
-
-  return formattedPercentage;
-}
-
-// Hook for currency animations with proper formatting
-export function useAnimatedCurrency(
-  targetValue: number,
-  currency: string = "$",
-  precision: number = 0,
-  config?: AnimationConfig
-) {
-  const animatedValue = useAnimatedValue(targetValue, config);
-
-  const formattedCurrency = useTransform(animatedValue, (value) => {
-    const absValue = Math.abs(value);
-    let formattedNumber: string;
-
-    if (absValue >= 1000000000) {
-      formattedNumber = `${(absValue / 1000000000).toFixed(1)}B`;
-    } else if (absValue >= 1000000) {
-      formattedNumber = `${(absValue / 1000000).toFixed(1)}M`;
-    } else if (absValue >= 1000) {
-      formattedNumber = `${(absValue / 1000).toFixed(1)}K`;
-    } else {
-      formattedNumber = absValue.toFixed(precision);
-    }
-
-    return `${currency}${value < 0 ? "-" : ""}${formattedNumber}`;
-  });
-
-  return formattedCurrency;
-}
-
-// Hook for staggered animations in lists
-export function useStaggeredAnimation(
-  itemCount: number,
-  baseDelay: number = 0,
-  stagger: number = 100
-): AnimationConfig[] {
-  return useMemo(
-    () =>
-      Array.from({ length: itemCount }, (_, index) => ({
-        enabled: true,
-        duration: 500,
-        easing: "easeOut" as const,
-        delay: baseDelay + index * stagger,
-      })),
-    [itemCount, baseDelay, stagger]
-  );
-}
-
-// Easing function mappings for consistent animations
-export const EASING_FUNCTIONS = {
-  linear: [0, 0, 1, 1] as [number, number, number, number],
-  easeIn: [0.4, 0, 1, 1] as [number, number, number, number],
-  easeOut: [0, 0, 0.2, 1] as [number, number, number, number],
-  easeInOut: [0.4, 0, 0.2, 1] as [number, number, number, number],
-};
-
-// Utility for creating smooth value transitions
-// NOTE: This is a hook wrapper - must be called from a React component
-export function useSmoothTransition(
-  motionValue: MotionValue<number>,
-  targetValue: number,
-  _duration: number = 800
-) {
-  return useTransform(motionValue, [0, targetValue], [0, targetValue]);
-}
-
-// Deprecated: Use useSmoothTransition instead
-// Kept for backwards compatibility but logs a warning
-export const createSmoothTransition = useSmoothTransition;
-
 // Animation variants for common chart and UI elements
 export const MOTION_VARIANTS = {
   fadeIn: {
@@ -216,21 +131,3 @@ export const MOTION_VARIANTS = {
 };
 
 // Utility for conditional animations
-export function getAnimationProps(
-  variant: keyof typeof MOTION_VARIANTS,
-  enabled: boolean = true,
-  config?: AnimationConfig
-) {
-  if (!enabled) {
-    return {};
-  }
-
-  return {
-    ...MOTION_VARIANTS[variant],
-    transition: {
-      duration: (config?.duration || 500) / 1000,
-      ease: EASING_FUNCTIONS[config?.easing || "easeInOut"],
-      delay: (config?.delay || 0) / 1000,
-    },
-  };
-}

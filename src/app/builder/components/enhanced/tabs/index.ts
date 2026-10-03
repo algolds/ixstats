@@ -8,25 +8,10 @@
 import { lazy } from "react";
 
 // Lazy load tab components
-export const DemographicsPopulationTab = lazy(() =>
-  import("./DemographicsPopulationTab").then((module) => ({
-    default: module.DemographicsPopulationTab,
-  }))
-);
-
-export const LaborEmploymentTab = lazy(() =>
-  import("./LaborEmploymentTab").then((module) => ({ default: module.LaborEmploymentTab }))
-);
-
 export const EconomySectorsTab = lazy(() =>
   import("./EconomySectorsTab").then((module) => ({ default: module.EconomySectorsTab }))
-);
-
-export const EconomyPreviewTab = lazy(() =>
-  import("./EconomyPreviewTab").then((module) => ({ default: module.EconomyPreviewTab }))
 );
 
 export const WorkforceSocietyTab = lazy(() =>
   import("./WorkforceSocietyTab").then((module) => ({ default: module.WorkforceSocietyTab }))
 );
-

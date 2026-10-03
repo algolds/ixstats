@@ -39,7 +39,7 @@ import { cn } from "~/lib/utils/cn";
 import { SearchField } from "~/components/ui/search-field";
 import { buttonVariants } from "~/components/ui/button";
 
-export interface NavItem {
+interface NavItem {
   label: string;
   href: string;
   icon: typeof LayoutDashboard;
@@ -49,12 +49,12 @@ export interface NavItem {
   section: string;
 }
 
-export interface NavSubgroup {
+interface NavSubgroup {
   subtitle: string;
   items: NavItem[];
 }
 
-export interface NavGroup {
+interface NavGroup {
   title: string;
   icon?: typeof LayoutDashboard;
   subgroups: NavSubgroup[];
@@ -662,5 +662,3 @@ export function AdminSidebarNavWidget({
     </aside>
   );
 }
-
-export default AdminSidebarNavWidget;

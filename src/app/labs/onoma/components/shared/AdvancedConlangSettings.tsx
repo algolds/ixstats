@@ -399,5 +399,3 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
     </div>
   );
 }
-
-export default AdvancedConlangSettings;

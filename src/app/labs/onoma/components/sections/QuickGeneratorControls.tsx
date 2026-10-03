@@ -28,7 +28,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { getOnomaDomainIcon } from "../shared/onoma-icon-families";
 import {
   loadCustomDictionaries,
   saveCustomDictionary,
@@ -44,8 +43,6 @@ import { Textarea } from "~/components/ui/textarea";
 import { Button } from "~/components/ui/button";
 import { Toggle } from "~/components/ui/toggle";
 import { Checkbox } from "~/components/ui/checkbox";
-
-export const getDictionaryCategoryIcon = getOnomaDomainIcon;
 
 interface QuickGeneratorControlsProps {
   selectedDictId: string;
@@ -672,5 +669,3 @@ export function QuickGeneratorControls({
     </div>
   );
 }
-
-export default QuickGeneratorControls;

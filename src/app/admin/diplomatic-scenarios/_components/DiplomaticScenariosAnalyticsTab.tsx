@@ -161,5 +161,3 @@ export function DiplomaticScenariosAnalyticsTab() {
     </div>
   );
 }
-
-export default DiplomaticScenariosAnalyticsTab;

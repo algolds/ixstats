@@ -10,7 +10,7 @@ import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
 import { Card, CardContent } from "~/components/ui/card";
 
-export interface WorkforceSocietyTabProps {
+interface WorkforceSocietyTabProps {
   economyBuilder: EconomyBuilderState;
   onEconomyBuilderChange: (builder: EconomyBuilderState) => void;
   selectedComponents: EconomicComponentType[];

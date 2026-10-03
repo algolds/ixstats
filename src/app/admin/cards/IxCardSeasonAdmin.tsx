@@ -126,5 +126,3 @@ export function IxCardSeasonAdmin() {
     </div>
   );
 }
-
-export default IxCardSeasonAdmin;

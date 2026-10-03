@@ -9,7 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip
 import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { useBuilderFilter } from "./builder-filter-context";
 
-export interface BuilderModeToggleProps {
+interface BuilderModeToggleProps {
   className?: string;
 }
 

@@ -8,7 +8,7 @@ import { PollComposer } from "./_components/PollComposer";
 import { PollManager } from "./_components/PollManager";
 import { useState } from "react";
 
-export function PollsPanel() {
+function PollsPanel() {
   usePageTitle({ title: "Admin - Polls" });
   const [activeTab, setActiveTab] = useState("manager");
 

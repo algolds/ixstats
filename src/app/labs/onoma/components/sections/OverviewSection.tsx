@@ -18,7 +18,7 @@ import type { NameCategory, GenerateOptions } from "~/lib/onoma/types";
 import { QuickGeneratorControls } from "./QuickGeneratorControls";
 import { SynthesisResultsGrid } from "../shared/SynthesisResultsGrid";
 
-export function OverviewSection() {
+function OverviewSection() {
   const bank = useNameBank();
   const utils = api.useUtils();
   const logActivityMutation = api.onoma.logGeneration.useMutation();

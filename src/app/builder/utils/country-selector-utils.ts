@@ -9,31 +9,7 @@ export interface CountryArchetype {
   filter: (country: RealCountryData) => boolean;
 }
 
-export interface CountryPreview {
-  country: RealCountryData;
-  economicScore: number;
-  stabilityScore: number;
-  potentialScore: number;
-}
-
 export { formatNumber } from "~/lib/utils";
-
-export const generateCountryPreview = (country: RealCountryData): CountryPreview => {
-  const economicScore = Math.min(100, ((country.gdpPerCapita || 0) / 80000) * 100);
-  const stabilityScore = Math.max(
-    20,
-    100 - (country.unemploymentRate || 0) * 5 - Math.abs((country.inflationRate || 2) - 2) * 10
-  );
-  const potentialScore = Math.min(100, (country.growthRate || 0) * 20 + 60);
-
-  return {
-    country,
-    economicScore,
-    stabilityScore,
-    potentialScore,
-  };
-};
-
 const REGIONS_AND_GROUPS = new Set([
   "world",
   "north america",

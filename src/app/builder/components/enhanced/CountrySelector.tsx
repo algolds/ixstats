@@ -38,7 +38,6 @@ export function CountrySelector({
     clearSelection,
     confirmHandlerRef,
     setGridWidth,
-    setWelcomeModalOpen,
   } = useBuilderFilter();
 
   const handleSelectEconomicTier = useCallback(
@@ -190,7 +189,6 @@ export function CountrySelector({
             onClearFilters={handleClearFilters}
             softSelectedCountryId={softSelectedCountry?.countryCode || null}
             flagUrls={effectiveFlagUrls}
-            onOpenFullGuide={() => setWelcomeModalOpen(true)}
           />
         </div>
       </div>

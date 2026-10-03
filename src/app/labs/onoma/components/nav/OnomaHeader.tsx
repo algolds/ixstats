@@ -343,5 +343,3 @@ export function OnomaHeader({
     </header>
   );
 }
-
-export default OnomaHeader;

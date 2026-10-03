@@ -138,5 +138,3 @@ export function DiplomaticScenariosPanel() {
     </div>
   );
 }
-
-export default DiplomaticScenariosPanel;

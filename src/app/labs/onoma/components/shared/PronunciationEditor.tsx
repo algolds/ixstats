@@ -160,5 +160,3 @@ export function PronunciationEditor({
     </div>
   );
 }
-
-export default PronunciationEditor;

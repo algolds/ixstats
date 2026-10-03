@@ -109,5 +109,3 @@ export function LexiconDefinitionForm({
     </div>
   );
 }
-
-export default LexiconDefinitionForm;

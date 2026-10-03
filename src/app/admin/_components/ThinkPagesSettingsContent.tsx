@@ -300,5 +300,3 @@ function DiscordMirrorTab() {
     </Card>
   );
 }
-
-export default ThinkPagesSettingsContent;

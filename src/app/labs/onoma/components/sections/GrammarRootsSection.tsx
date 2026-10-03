@@ -10,7 +10,7 @@ import { SegmentedControl } from "~/components/ui/segmented-control";
 import EtymologySection from "./EtymologySection";
 import SyntaxSection from "./SyntaxSection";
 
-export type GrammarMode = "roots" | "syntax";
+type GrammarMode = "roots" | "syntax";
 
 export function GrammarRootsSection() {
   const [mode, setMode] = useState<GrammarMode>("roots");
@@ -59,5 +59,3 @@ export function GrammarRootsSection() {
     </div>
   );
 }
-
-export default GrammarRootsSection;

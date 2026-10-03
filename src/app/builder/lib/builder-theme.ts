@@ -7,7 +7,7 @@ export type BuilderSection =
 
 // ─── Constants ───
 
-export const BUILDER_SECTIONS: BuilderSection[] = [
+const BUILDER_SECTIONS: BuilderSection[] = [
   "foundation",
   "identity",
   "government",

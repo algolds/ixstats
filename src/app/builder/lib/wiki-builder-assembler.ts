@@ -37,7 +37,7 @@ import { matchComponents } from "./wiki-attribute-matcher";
 import { detectWikiImportConflicts } from "./wiki-conflict-detector";
 import { parseWikiNumericValue, normalizeGovernmentType } from "./builder-parsers";
 
-export interface WikiImportResult {
+interface WikiImportResult {
   economicInputs: EconomicInputs;
   governmentStructure: Partial<GovernmentBuilderState>;
   economyBuilderState: Partial<EconomyBuilderState>;

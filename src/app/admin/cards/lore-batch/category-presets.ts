@@ -19,7 +19,7 @@ import {
 import { LoreCategory, CATEGORY_SYNONYMS } from "~/lib/cards/category-enums";
 import rawCategoryPresets from "./category-presets.json";
 
-export interface CategoryPreset {
+interface CategoryPreset {
   name: string;
   tag: LoreCategory;
   categoryName: string;

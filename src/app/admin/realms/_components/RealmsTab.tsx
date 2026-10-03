@@ -401,5 +401,3 @@ export function RealmsTab() {
     </div>
   );
 }
-
-export default RealmsTab;

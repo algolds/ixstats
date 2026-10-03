@@ -452,5 +452,3 @@ export function AcousticFormantVisualizer({
     </div>
   );
 }
-
-export default AcousticFormantVisualizer;

@@ -148,7 +148,7 @@ const nodeTypes = {
   calcNode: CalcNode,
 };
 
-export interface CountryFormulaFlowProps {
+interface CountryFormulaFlowProps {
   nodes: Node[];
   edges: Edge[];
   onNodesChange: OnNodesChange;
@@ -156,7 +156,7 @@ export interface CountryFormulaFlowProps {
   onNodeClick: (event: React.MouseEvent, node: Node) => void;
 }
 
-export function CountryFormulaFlow({
+function CountryFormulaFlow({
   nodes,
   edges,
   onNodesChange,

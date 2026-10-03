@@ -127,5 +127,3 @@ export function NarratorCacheTab() {
     </div>
   );
 }
-
-export default NarratorCacheTab;

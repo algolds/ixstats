@@ -184,36 +184,3 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
     return this.props.children;
   }
 }
-
-/**
- * Hook version of error boundary for functional components
- *
- * @param onError - Optional error handler callback
- * @returns Error state and reset function
- */
-export function useBuilderErrorBoundary(onError?: (error: Error) => void) {
-  const [error, setError] = React.useState<Error | null>(null);
-
-  const resetError = React.useCallback(() => {
-    setError(null);
-  }, []);
-
-  const captureError = React.useCallback(
-    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'error' is intentional in this scope
-    (error: Error) => {
-      setError(error);
-      onError?.(error);
-    },
-    [onError]
-  );
-
-  React.useEffect(() => {
-    if (error) {
-      throw error;
-    }
-  }, [error]);
-
-  return { captureError, resetError };
-}
-
-export default BuilderErrorBoundary;

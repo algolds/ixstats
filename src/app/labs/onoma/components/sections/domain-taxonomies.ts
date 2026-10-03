@@ -3,14 +3,14 @@
 
 import type { NameCategory } from "~/lib/onoma/types";
 
-export interface DomainTaxonomyTab {
+interface DomainTaxonomyTab {
   id: NameCategory;
   label: string;
   desc: string;
   subTypes?: Array<{ value: string; label: string }>;
 }
 
-export interface DomainConfig {
+interface DomainConfig {
   domain: string;
   defaultTab: NameCategory;
   tabs: DomainTaxonomyTab[];

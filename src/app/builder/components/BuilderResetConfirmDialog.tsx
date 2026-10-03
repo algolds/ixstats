@@ -14,7 +14,7 @@ import {
 import { buttonVariants } from "~/components/ui/button";
 import { soundEffects } from "~/lib/sound/cuelume";
 
-export interface BuilderResetConfirmDialogProps {
+interface BuilderResetConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mode: "create" | "edit";

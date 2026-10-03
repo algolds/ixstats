@@ -253,5 +253,3 @@ export function PlatformSettingsPanel({ defaultTab = "general" }: PlatformSettin
     </div>
   );
 }
-
-export default PlatformSettingsPanel;

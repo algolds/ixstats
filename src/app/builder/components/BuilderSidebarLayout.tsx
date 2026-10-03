@@ -141,5 +141,3 @@ export function BuilderSidebarLayout({
     </div>
   );
 }
-
-export { BuilderSidebarLayout as BuilderStudioLayout };

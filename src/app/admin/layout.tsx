@@ -4,7 +4,7 @@
 
 import { AdminErrorBoundary } from "./_components/ErrorBoundary";
 import { AdminSidebarLayout } from "./_components/AdminSidebarLayout";
-import { AdminNavigationProvider } from "./_components";
+import { AdminNavigationProvider } from "./_components/AdminNavigationContext";
 import { SignInButton, useUser, useAuth } from "~/context/auth-context";
 import { isSystemOwner } from "~/lib/auth";
 import { Button } from "~/components/ui/button";

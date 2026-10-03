@@ -368,5 +368,3 @@ export function SavedDictionaryCard({
     </Card>
   );
 }
-
-export default SavedDictionaryCard;

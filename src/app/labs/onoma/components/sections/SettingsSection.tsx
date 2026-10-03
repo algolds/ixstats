@@ -14,7 +14,7 @@ import {
 import { VoiceSandboxPanel } from "./settings/VoiceSandboxPanel";
 import { ConlangDataManagerPanel } from "./settings/ConlangDataManagerPanel";
 
-export function SettingsSection() {
+function SettingsSection() {
   const notify = useNotify();
 
   // Load public speech config (including Kokoro settings)

@@ -92,5 +92,3 @@ export function LexiconAnalysis({ selectedTerm, stashedEntry, originLabel }: Lex
     </div>
   );
 }
-
-export default LexiconAnalysis;

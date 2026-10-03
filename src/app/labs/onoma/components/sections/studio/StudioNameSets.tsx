@@ -610,5 +610,3 @@ export function StudioNameSets() {
     </div>
   );
 }
-
-export default StudioNameSets;

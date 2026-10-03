@@ -419,5 +419,3 @@ export function NameResultCard({
     </Card>
   );
 }
-
-export default NameResultCard;

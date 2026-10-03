@@ -15,7 +15,7 @@ export interface CurrencyOption {
 /**
  * World reserve and national fiat currencies (ISO 4217).
  */
-export const ALL_FIAT_CURRENCIES: CurrencyOption[] = [
+const ALL_FIAT_CURRENCIES: CurrencyOption[] = [
   // Major Reserve & Global Fiat
   { code: "USD", name: "US Dollar", symbol: "$", category: "fiat" },
   { code: "EUR", name: "Euro", symbol: "€", category: "fiat" },
@@ -177,7 +177,7 @@ export const ALL_FIAT_CURRENCIES: CurrencyOption[] = [
 /**
  * Entire ccy-icons cryptocurrency and digital asset collection.
  */
-export const ALL_CRYPTO_CURRENCIES: CurrencyOption[] = [
+const ALL_CRYPTO_CURRENCIES: CurrencyOption[] = [
   // Top Market Cap & Primary CCY Glyphs
   { code: "BTC", name: "Bitcoin", symbol: "₿", category: "crypto" },
   { code: "ETH", name: "Ethereum", symbol: "Ξ", category: "crypto" },
@@ -529,7 +529,7 @@ export const ALL_CRYPTO_CURRENCIES: CurrencyOption[] = [
 /**
  * Sovereign, historical, and worldbuilding currency presets.
  */
-export const ALL_SOVEREIGN_CURRENCIES: CurrencyOption[] = [
+const ALL_SOVEREIGN_CURRENCIES: CurrencyOption[] = [
   { code: "Crown", name: "Imperial Crown", symbol: "👑", category: "sovereign" },
   { code: "Taler", name: "Sovereign Taler", symbol: "₮", category: "sovereign" },
   { code: "Mark", name: "Sovereign Mark", symbol: "ℳ", category: "sovereign" },

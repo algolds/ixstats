@@ -343,5 +343,3 @@ export function UserRolesPanel() {
     </div>
   );
 }
-
-export default UserRolesPanel;

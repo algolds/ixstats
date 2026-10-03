@@ -61,5 +61,3 @@ export function RealmsPanel({ defaultTab = "realms" }: RealmsPanelProps) {
     </div>
   );
 }
-
-export default RealmsPanel;

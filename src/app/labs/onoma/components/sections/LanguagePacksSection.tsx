@@ -406,5 +406,3 @@ export function LanguagePacksSection({
     </div>
   );
 }
-
-export default LanguagePacksSection;

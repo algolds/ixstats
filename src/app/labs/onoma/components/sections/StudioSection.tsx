@@ -19,7 +19,7 @@ interface StudioSectionProps {
   setActiveSubTab?: (tab: StudioSubTab) => void;
 }
 
-export function StudioSection({
+function StudioSection({
   initialWords,
   initialTitle,
   onClearInitial,

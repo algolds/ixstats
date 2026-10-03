@@ -9,7 +9,7 @@
 import { isEqual } from "~/lib/utils";
 import type { BuilderState } from "../hooks/builderStateTypes";
 
-export const TRACKED_FIELDS = [
+const TRACKED_FIELDS = [
   "economicInputs",
   "governmentComponents",
   "taxSystemData",

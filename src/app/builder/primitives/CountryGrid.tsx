@@ -50,7 +50,7 @@ export const ECONOMIC_TIERS = [
   },
 ] as const;
 
-export const FILTER_PRESETS = [
+const FILTER_PRESETS = [
   { id: "all", label: "All" },
   { id: "region-europe", label: "Europe" },
   { id: "region-asia", label: "Asia" },
@@ -81,7 +81,6 @@ interface CountryGridProps {
   softSelectedCountryId?: string | null;
   onScroll?: (position: number) => void;
   flagUrls?: Record<string, string | null>;
-  onOpenFullGuide?: () => void;
 }
 
 export function CountryGrid({
@@ -100,9 +99,7 @@ export function CountryGrid({
   softSelectedCountryId,
   onScroll,
   flagUrls = {},
-  onOpenFullGuide,
 }: CountryGridProps) {
-  const [activeRegion, setActiveRegion] = useState("all");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);

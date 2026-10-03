@@ -22,7 +22,7 @@ On commit, `api.countries.createCountry` (create mode) or `api.countries.updateC
 ## Key features
 
 - **Atomic components** — Government, economic, and tax component catalogs (with synergies/conflicts) drive both setup and live simulation. The catalogs are static client data (`src/components/mycountry/domains/government/atoms/`, `src/lib/economy/data/`, `src/lib/government/tax/atomic-tax-components.ts`); selectors live under `components/enhanced/`. Synergies/conflicts are re-checked server-side on save (`src/lib/government/synergy.ts`).
-- **Wiki import** — `ImportSection` searches a wiki and parses infoboxes/flags to pre-fill a build; `WikiDeepScanPanel` runs a deeper scan. Backed by `api.countries.searchWiki`, `api.countries.parseInfobox`, `api.countries.getWikiPageImages`, and `api.wikiCache.builderDeepScan` (cached).
+- **Wiki import** — `ImportSection` searches a wiki and parses infoboxes/flags to pre-fill a build; Backed by `api.countries.searchWiki`, `api.countries.parseInfobox`, `api.countries.getWikiPageImages`, and `api.wikiCache.builderDeepScan` (cached).
 - **Economy inputs** — Builder economy state is persisted and synced server-side, with cross-syncing between economy, government, and tax so changes stay consistent.
 - **Economic archetypes** — Reusable economy presets (`src/lib/economy/archetypes/`); usage tracked via `api.economicArchetypes.incrementArchetypeUsage`.
 - **Custom government types** — User-defined government types and field values via `api.customTypes.*`.
@@ -39,7 +39,7 @@ On commit, `api.countries.createCountry` (create mode) or `api.countries.updateC
 | `components/enhanced/AtomicBuilderPage.tsx` | Inner build-step content (foundation → preview), create/edit submit logic |
 | `components/enhanced/` | Atomic selectors, economy builder, national identity, government preview, context, `steps/`, `tabs/`, `sections/` (step renderer, preview) |
 | `components/sections/ImportSection.tsx` | Wiki import flow |
-| `import/_components/` | `EligibleCountryGrid`, `WikiDeepScanPanel`, and related import UI |
+| `import/_components/` | `EligibleCountryGrid` and related import UI |
 | `components/` | Sidebar layout, studio header/stepper, step footer, guide sheet + context, mode toggle, welcome modal, editor save bar |
 | `hooks/` | `useBuilderState`, `useBuilderActions`, `useBuilderAlerts`, `useBuilderPersistence`, `useBuilderSync`, `useBuilderEditMode`, `useEditChanges`, `useStepCompletion`, `useBuilderKeyboardShortcuts` |
 | `lib/builder-theme.ts` | Section and step definitions, section↔legacy-step mapping |

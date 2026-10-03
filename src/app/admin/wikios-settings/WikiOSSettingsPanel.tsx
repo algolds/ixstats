@@ -37,5 +37,3 @@ export function WikiOSSettingsPanel() {
     </div>
   );
 }
-
-export default WikiOSSettingsPanel;

@@ -190,5 +190,3 @@ export function OnomaFooter({
     </footer>
   );
 }
-
-export default OnomaFooter;

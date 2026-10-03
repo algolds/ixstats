@@ -20,7 +20,7 @@ export interface RecoveredDraft {
   savedAt: Date;
 }
 
-export const draftStorageKeys = (countryId: string) => ({
+const draftStorageKeys = (countryId: string) => ({
   state: `builder_state_${countryId}`,
   savedAt: `builder_last_saved_${countryId}`,
 });

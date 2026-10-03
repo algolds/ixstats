@@ -7,7 +7,7 @@ import { isScratchOrImportOrigin } from "../lib/builder-theme";
  * Return value interface for useBuilderActions hook.
  * Provides navigation methods and progress tracking.
  */
-export interface UseBuilderActionsReturn {
+interface UseBuilderActionsReturn {
   /** Navigate to next tab or step based on current position */
   handleContinue: () => void;
   /** Navigate to previous step in workflow */
@@ -134,10 +134,7 @@ export function useBuilderActions({
   mode = "create",
   viewMode = "standard",
 }: UseBuilderActionsProps): UseBuilderActionsReturn {
-  const isScratchOrImport = useMemo(
-    () => isScratchOrImportOrigin(builderState),
-    [builderState]
-  );
+  const isScratchOrImport = useMemo(() => isScratchOrImportOrigin(builderState), [builderState]);
 
   // Dynamic step lists based on mode and creation origin
   const steps = useMemo(() => {
@@ -319,7 +316,14 @@ export function useBuilderActions({
         }));
       }
     },
-    [builderState.step, builderState.completedSteps, setBuilderState, mode, steps, isScratchOrImport]
+    [
+      builderState.step,
+      builderState.completedSteps,
+      setBuilderState,
+      mode,
+      steps,
+      isScratchOrImport,
+    ]
   );
 
   // Check if navigation to a specific step is allowed

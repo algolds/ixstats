@@ -9,7 +9,7 @@
  * Keys are the real field names the builder forms read and write.
  */
 
-export type FieldImportance = "primary" | "secondary" | "advanced";
+type FieldImportance = "primary" | "secondary" | "advanced";
 
 export const FIELD_IMPORTANCE: Record<string, Record<string, FieldImportance>> = {
   identity: {
@@ -78,7 +78,7 @@ export function getFieldImportance(section: string, field: string): FieldImporta
 
 export type FieldValue = string | number | boolean | null | undefined;
 
-export interface AutoOpenOptions<K extends string> {
+interface AutoOpenOptions<K extends string> {
   /** Baseline values; an advanced field only counts as filled when it differs from its default. */
   defaults?: Readonly<Partial<Record<K, FieldValue>>>;
   /** Fields that currently have a validation error. */

@@ -3,7 +3,7 @@ import { SYNERGY_RULES, CONFLICT_RULES } from "~/lib/builder";
 import type { WikiGovernmentAttributes } from "./wiki-government-parser";
 import type { WikiEconomyAttributes } from "./wiki-economy-parser";
 
-export interface ComponentMatch {
+interface ComponentMatch {
   component: ComponentType;
   score: number;
   reasons: string[];

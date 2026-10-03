@@ -230,54 +230,6 @@ export function getSectorConstraints(
   return constraints;
 }
 
-/**
- * Tax optimization info derived from selected atomic components
- */
-export interface TaxOptimization {
-  optimalCorporateRate: number;
-  optimalIncomeRate: number;
-  revenueEfficiency: number;
-  componentCount: number;
-}
-
-/**
- * Compute optimal tax rates from selected atomic components
- *
- * Averages the taxImpact values across all selected components to
- * determine the most compatible tax rate range for the current build.
- *
- * @param selectedComponents - Array of selected economic component types
- * @returns Tax optimization info with recommended rates and efficiency
- */
-export function getTaxOptimization(
-  selectedComponents: EconomicComponentType[]
-): TaxOptimization | null {
-  if (selectedComponents.length === 0) return null;
-
-  let corporateSum = 0;
-  let incomeSum = 0;
-  let efficiencySum = 0;
-  let count = 0;
-
-  selectedComponents.forEach((compType) => {
-    const component = ATOMIC_ECONOMIC_COMPONENTS[compType];
-    if (!component?.taxImpact) return;
-    corporateSum += component.taxImpact.optimalCorporateRate;
-    incomeSum += component.taxImpact.optimalIncomeRate;
-    efficiencySum += component.taxImpact.revenueEfficiency;
-    count++;
-  });
-
-  if (count === 0) return null;
-
-  return {
-    optimalCorporateRate: Math.round(corporateSum / count),
-    optimalIncomeRate: Math.round(incomeSum / count),
-    revenueEfficiency: Math.round((efficiencySum / count) * 100) / 100,
-    componentCount: count,
-  };
-}
-
 export function calculateSectorTotals(sectors: SectorConfiguration[]) {
   const avgGrowthRate =
     sectors.length > 0

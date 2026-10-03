@@ -590,5 +590,3 @@ export function DiplomaticOptionsPanel() {
     </div>
   );
 }
-
-export default DiplomaticOptionsPanel;

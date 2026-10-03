@@ -109,5 +109,3 @@ export function PhysicsPullFooter({ children }: PhysicsPullFooterProps) {
     </div>
   );
 }
-
-export default PhysicsPullFooter;

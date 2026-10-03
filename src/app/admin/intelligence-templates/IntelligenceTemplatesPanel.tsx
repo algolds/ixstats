@@ -560,5 +560,3 @@ export function IntelligenceTemplatesPanel() {
     </div>
   );
 }
-
-export default IntelligenceTemplatesPanel;

@@ -132,7 +132,7 @@ export const DEFAULT_SECTORS: SectorConfiguration[] = [
   },
 ];
 
-export const DEFAULT_DEMOGRAPHICS: EconomyBuilderState["demographics"] = {
+const DEFAULT_DEMOGRAPHICS: EconomyBuilderState["demographics"] = {
   totalPopulation: 0,
   populationGrowthRate: 0,
   ageDistribution: { under15: 20, age15to64: 65, over65: 15 },
@@ -303,7 +303,7 @@ export function mergeEconomyBuilderIntoInputs(
   return safeBase;
 }
 
-export interface RevenueAdjustmentContext {
+interface RevenueAdjustmentContext {
   taxBurdenRatio: number;
   revenueToGDPRatio: number;
   gdp: number;
@@ -510,4 +510,6 @@ export function createDefaultEconomyBuilderState(
  * A fresh builder with no reference country: the baseline the economy tabs'
  * "advanced options" disclosures compare against to decide whether a field was changed.
  */
-export const BASELINE_ECONOMY_BUILDER = createDefaultEconomyBuilderState(createDefaultEconomicInputs());
+export const BASELINE_ECONOMY_BUILDER = createDefaultEconomyBuilderState(
+  createDefaultEconomicInputs()
+);

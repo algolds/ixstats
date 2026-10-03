@@ -15,7 +15,7 @@ import { OnomaSectionRenderer } from "./OnomaSectionRenderer";
 import OnomaHelpModal from "./shared/OnomaHelpModal";
 import { Card } from "~/components/ui/card";
 
-export function OnomaRouter() {
+function OnomaRouter() {
   const {
     fontLink,
     activeSection,

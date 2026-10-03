@@ -3,14 +3,14 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 import type { BuilderSection } from "../lib/builder-theme";
 
-export type GuideTab = "milestones" | "rules";
+type GuideTab = "milestones" | "rules";
 
-export interface GuideOpenOptions {
+interface GuideOpenOptions {
   tab?: GuideTab;
   section?: BuilderSection;
 }
 
-export interface BuilderGuideContextValue {
+interface BuilderGuideContextValue {
   guideOpen: boolean;
   activeTab: GuideTab;
   activeSection: BuilderSection;
@@ -32,10 +32,7 @@ interface BuilderGuideProviderProps {
   currentSection: BuilderSection;
 }
 
-export function BuilderGuideProvider({
-  children,
-  currentSection,
-}: BuilderGuideProviderProps) {
+export function BuilderGuideProvider({ children, currentSection }: BuilderGuideProviderProps) {
   const [guideOpen, setGuideOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<GuideTab>("milestones");
   const [overrideSection, setOverrideSection] = useState<BuilderSection | null>(null);
@@ -61,24 +58,21 @@ export function BuilderGuideProvider({
     }
   }, []);
 
-  const openGuide = useCallback(
-    (options?: GuideOpenOptions) => {
-      if (options?.section) {
-        setOverrideSection(options.section);
-      } else {
-        setOverrideSection(null);
-      }
+  const openGuide = useCallback((options?: GuideOpenOptions) => {
+    if (options?.section) {
+      setOverrideSection(options.section);
+    } else {
+      setOverrideSection(null);
+    }
 
-      if (options?.tab) {
-        setActiveTab(options.tab);
-      } else {
-        setActiveTab("milestones");
-      }
+    if (options?.tab) {
+      setActiveTab(options.tab);
+    } else {
+      setActiveTab("milestones");
+    }
 
-      setGuideOpen(true);
-    },
-    []
-  );
+    setGuideOpen(true);
+  }, []);
 
   const closeGuide = useCallback(() => {
     setGuideOpen(false);
@@ -98,22 +92,10 @@ export function BuilderGuideProvider({
       isSectionSeen,
       markSectionSeen,
     }),
-    [
-      guideOpen,
-      activeTab,
-      activeSection,
-      openGuide,
-      closeGuide,
-      isSectionSeen,
-      markSectionSeen,
-    ]
+    [guideOpen, activeTab, activeSection, openGuide, closeGuide, isSectionSeen, markSectionSeen]
   );
 
-  return (
-    <BuilderGuideContext.Provider value={value}>
-      {children}
-    </BuilderGuideContext.Provider>
-  );
+  return <BuilderGuideContext.Provider value={value}>{children}</BuilderGuideContext.Provider>;
 }
 
 export function useBuilderGuide(): BuilderGuideContextValue {

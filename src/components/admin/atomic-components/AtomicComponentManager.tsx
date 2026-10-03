@@ -87,5 +87,3 @@ export function AtomicComponentManager({ domain }: AtomicComponentManagerProps) 
     </div>
   );
 }
-
-export default AtomicComponentManager;

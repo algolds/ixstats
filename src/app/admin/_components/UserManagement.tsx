@@ -16,5 +16,3 @@ export function UserManagement({ mode = "users" }: UserManagementProps) {
   }
   return <UsersPanel />;
 }
-
-export default UserManagement;

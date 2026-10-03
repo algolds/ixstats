@@ -722,5 +722,3 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
     </div>
   );
 }
-
-export default StudioSoundShifts;

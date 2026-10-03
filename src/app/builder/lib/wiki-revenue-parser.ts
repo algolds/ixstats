@@ -3,7 +3,7 @@
  * Extremely strict — only matches explicit, unambiguous statements about government revenue sources.
  */
 
-export interface ParsedRevenueSource {
+interface ParsedRevenueSource {
   name: string;
   category: "Direct Tax" | "Indirect Tax" | "Non-Tax Revenue" | "Fees and Fines" | "Other";
   confidence: number;

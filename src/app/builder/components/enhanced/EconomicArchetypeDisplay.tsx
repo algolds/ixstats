@@ -16,7 +16,7 @@ import type { EconomyBuilderState } from "~/types/economy-builder";
 import { useArchetypes } from "~/hooks/useArchetypes";
 import { ArchetypeCard, ArchetypeDetailsModal } from "./archetypes";
 
-export interface EconomicArchetypeDisplayProps {
+interface EconomicArchetypeDisplayProps {
   className?: string;
   currentState?: EconomyBuilderState;
   onArchetypeApplied?: (

@@ -63,7 +63,7 @@ const STATUS_COLORS: Record<string, string> = {
   dismissed: "bg-fill-3 text-label-secondary border-separator",
 };
 
-export function NationalIssuesPanel() {
+function NationalIssuesPanel() {
   usePageTitle({ title: "Admin - National Issues" });
 
   const [activeTab, setActiveTab] = useState<"templates" | "issues" | "engine">("templates");

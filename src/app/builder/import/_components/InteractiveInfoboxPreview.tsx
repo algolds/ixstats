@@ -21,7 +21,7 @@ import { Badge } from "~/components/ui/badge";
 import { sanitizeWikiContent, formatNumber } from "~/lib/utils";
 import type { UnifiedInfoboxData } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 
-export interface LoreScanStatus {
+interface LoreScanStatus {
   isScanning: boolean;
   pagesFound?: number;
   categoryUsed?: string | null;

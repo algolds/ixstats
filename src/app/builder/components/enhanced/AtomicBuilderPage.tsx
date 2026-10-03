@@ -21,7 +21,7 @@ import { StepRenderer } from "./sections/StepRenderer";
 import { BuilderStepLoading } from "../GlobalBuilderLoading";
 import { useBuilderSubmit, BuilderConfirmModal, useBuilderTutorials } from "./atomic-builder";
 
-export interface AtomicBuilderPageProps {
+interface AtomicBuilderPageProps {
   onBackToIntro?: () => void;
   mode?: "create" | "edit";
   countryId?: string;

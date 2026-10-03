@@ -13,7 +13,7 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { IMAGE_SCRIM } from "~/app/builder/lib/image-scrim";
 
-export interface EligibleCountry {
+interface EligibleCountry {
   pageName: string;
   displayName: string;
   completeness: number;
@@ -41,7 +41,7 @@ export interface EligibleCountry {
   officialName?: string;
 }
 
-export interface EligibleCountryGridProps {
+interface EligibleCountryGridProps {
   site: "iiwiki" | "althistory";
   /** When non-empty, filters the grid cards by displayName (case-insensitive substring). */
   searchFilter?: string;

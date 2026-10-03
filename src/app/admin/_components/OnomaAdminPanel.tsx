@@ -609,5 +609,3 @@ export function OnomaAdminPanel() {
     </div>
   );
 }
-
-export default OnomaAdminPanel;

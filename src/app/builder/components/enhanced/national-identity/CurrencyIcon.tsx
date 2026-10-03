@@ -4,7 +4,7 @@ import React from "react";
 import { Coins } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
-export interface CurrencyIconProps extends React.HTMLAttributes<HTMLSpanElement> {
+interface CurrencyIconProps extends React.HTMLAttributes<HTMLSpanElement> {
   code?: string | null;
   symbol?: string | null;
   className?: string;

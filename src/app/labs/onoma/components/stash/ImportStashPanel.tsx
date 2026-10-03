@@ -71,5 +71,3 @@ export function ImportStashPanel() {
     </div>
   );
 }
-
-export default ImportStashPanel;

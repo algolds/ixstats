@@ -172,5 +172,3 @@ export function UseNameDialog({ isOpen, onClose, name, category }: UseNameDialog
     </Dialog>
   );
 }
-
-export default UseNameDialog;
