@@ -44,9 +44,6 @@ interface DerivedLaborMetrics {
  * Computes absolute numbers of employed, unemployed, and underemployed workers,
  * as well as the effective unemployment rate that accounts for underemployment.
  *
- * @param laborMarket - Base labor market configuration with rates
- * @returns Calculated labor metrics in absolute numbers
- *
  * @example
  * ```ts
  * const labor = {
@@ -95,9 +92,6 @@ export function calculateDerivedLabor(laborMarket: LaborConfiguration): DerivedL
  * Returns a predefined color for consistent visualization of employment types
  * in charts and UI components.
  *
- * @param type - Employment type identifier (e.g., 'fullTime', 'partTime')
- * @returns Tailwind color name
- *
  * @example
  * ```ts
  * const color = getEmploymentTypeColor('fullTime'); // 'blue'
@@ -121,9 +115,6 @@ export function getEmploymentTypeColor(type: string): string {
  *
  * Returns a predefined color for consistent visualization of economic sectors
  * across charts and UI components.
- *
- * @param sector - Sector identifier (e.g., 'agriculture', 'manufacturing')
- * @returns Tailwind color name
  *
  * @example
  * ```ts
@@ -157,9 +148,6 @@ export function getSectorColor(sector: string): string {
  *
  * Returns a predefined color for consistent visualization of labor protections
  * in UI components showing worker rights and regulations.
- *
- * @param protection - Protection type identifier (e.g., 'jobSecurity', 'wageProtection')
- * @returns Tailwind color name
  *
  * @example
  * ```ts
@@ -198,9 +186,6 @@ export interface LaborBounds {
  * - unemploymentModifier → narrows/broadens unemployment rate range
  * - participationModifier → shifts participation rate range
  * - wageGrowthModifier → adjusts wage slider ranges
- *
- * @param selectedComponents - Array of selected economic component types
- * @returns Bounds overrides for labor sliders (undefined fields use defaults)
  */
 export function getLaborBounds(selectedComponents: EconomicComponentType[]): LaborBounds {
   if (selectedComponents.length === 0) return {};

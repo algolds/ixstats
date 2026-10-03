@@ -28,15 +28,6 @@ import { ProtectionsSection } from "./labor/ProtectionsSection";
 import { LaborVisualizations } from "./labor/LaborVisualizations";
 import { Card, CardContent } from "~/components/ui/card";
 
-/**
- * Props for the LaborEmploymentTab component
- *
- * @interface LaborEmploymentTabProps
- * @property {EconomyBuilderState} economyBuilder - Current economy builder state containing labor market configuration
- * @property {function} onEconomyBuilderChange - Callback to update economy builder state when labor values change
- * @property {EconomicComponentType[]} selectedComponents - Array of atomic economic components affecting labor market
- * @property {boolean} [showAdvanced=false] - Optional flag to display advanced labor configuration options
- */
 interface LaborEmploymentTabProps {
   economyBuilder: EconomyBuilderState;
   onEconomyBuilderChange: (builder: EconomyBuilderState) => void;
@@ -44,38 +35,6 @@ interface LaborEmploymentTabProps {
   showAdvanced?: boolean;
 }
 
-/**
- * LaborEmploymentTab - Comprehensive labor market and employment configuration interface
- *
- * This component provides a multi-section interface for configuring all aspects of a nation's labor market,
- * including workforce composition, employment rates, wage structures, and worker protections. It displays
- * real-time impact assessments from selected atomic economic components and validates labor market configurations.
- *
- * The tab organizes labor configuration into four main sections:
- * - Workforce: Labor force participation, total workforce size, and demographic workforce breakdowns
- * - Employment: Employment/unemployment rates, sector distribution, and employment type breakdowns
- * - Income & Wages: Minimum wage, living wage, average workweek hours, and income structures
- * - Worker Rights: Unionization rates, worker protections, collective bargaining, and labor rights indices
- *
- * @component
- * @param {LaborEmploymentTabProps} props - Component props
- * @param {EconomyBuilderState} props.economyBuilder - The economy builder state with labor market data
- * @param {function} props.onEconomyBuilderChange - Callback to update economy builder state with labor changes
- * @param {EconomicComponentType[]} props.selectedComponents - Atomic components that may modify labor market metrics
- * @param {boolean} [props.showAdvanced=false] - Whether to show advanced labor configuration options
- *
- * @returns {JSX.Element} Rendered labor and employment configuration tab with metrics and visualizations
- *
- * @example
- * ```tsx
- * <LaborEmploymentTab
- *   economyBuilder={economyBuilderState}
- *   onEconomyBuilderChange={handleEconomyChange}
- *   selectedComponents={['STRONG_LABOR_UNIONS', 'MINIMUM_WAGE_LAWS']}
- *   showAdvanced={false}
- * />
- * ```
- */
 const SECTIONS = [
   { id: "workforce", label: "Workforce", icon: Users },
   { id: "employment", label: "Employment", icon: Briefcase },
@@ -90,6 +49,7 @@ const SECTION_TITLES = {
   protections: "Worker protections",
 } as const satisfies Record<(typeof SECTIONS)[number]["id"], string>;
 
+/** Labor market settings: workforce, employment, income and wages, and worker protections. */
 export function LaborEmploymentTab({
   economyBuilder,
   onEconomyBuilderChange,

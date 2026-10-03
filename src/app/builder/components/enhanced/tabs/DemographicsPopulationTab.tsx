@@ -53,15 +53,6 @@ const clampToRange = (value: number, min: number, max: number) => {
   return Math.min(Math.max(value, min), max);
 };
 
-/**
- * Props for the DemographicsPopulationTab component
- *
- * @interface DemographicsPopulationTabProps
- * @property {EconomyBuilderState} economyBuilder - Current state of the economy builder containing all demographic configurations
- * @property {function} onEconomyBuilderChange - Callback to update the economy builder state when demographic values change
- * @property {EconomicComponentType[]} selectedComponents - Array of selected atomic economic components that may affect demographics
- * @property {boolean} [showAdvanced=false] - Optional flag to show advanced demographic configuration options
- */
 interface DemographicsPopulationTabProps {
   economyBuilder: EconomyBuilderState;
   onEconomyBuilderChange: (builder: EconomyBuilderState) => void;
@@ -69,38 +60,6 @@ interface DemographicsPopulationTabProps {
   showAdvanced?: boolean;
 }
 
-/**
- * DemographicsPopulationTab - Comprehensive demographic and population configuration interface for the economy builder
- *
- * This component provides a tabbed interface for configuring all aspects of a nation's demographic profile,
- * including population structure, age distribution, geographic distribution, and social indicators. It displays
- * real-time metrics, visualizations, and impact assessments from selected atomic economic components.
- *
- * The tab organizes demographic configuration into four main sections:
- * - Population: Total population, growth rates, and basic demographic structure
- * - Age Structure: Age distribution breakdowns (under 15, 15-64, 65+) with dependency ratios
- * - Geographic: Regional distribution, urban/rural split, and geographic population patterns
- * - Social Indicators: Life expectancy, literacy rates, education levels, and health metrics
- *
- * @component
- * @param {DemographicsPopulationTabProps} props - Component props
- * @param {EconomyBuilderState} props.economyBuilder - The current economy builder state containing demographic data
- * @param {function} props.onEconomyBuilderChange - Callback function to update economy builder state with demographic changes
- * @param {EconomicComponentType[]} props.selectedComponents - Array of selected atomic economic components that may impact demographics
- * @param {boolean} [props.showAdvanced=false] - Whether to display advanced configuration options
- *
- * @returns {JSX.Element} Rendered demographics configuration tab with metrics, forms, and visualizations
- *
- * @example
- * ```tsx
- * <DemographicsPopulationTab
- *   economyBuilder={economyBuilderState}
- *   onEconomyBuilderChange={handleEconomyChange}
- *   selectedComponents={['UNIVERSAL_HEALTHCARE', 'PUBLIC_EDUCATION']}
- *   showAdvanced={true}
- * />
- * ```
- */
 const SECTIONS = [
   { id: "population", label: "Population", icon: Users },
   { id: "age", label: "Age structure", icon: Baby },
@@ -115,6 +74,7 @@ const SECTION_TITLES = {
   social: "Social Indicators",
 } as const satisfies Record<(typeof SECTIONS)[number]["id"], string>;
 
+/** Demographic and population settings: population, age structure, geography and social indicators. */
 export function DemographicsPopulationTab({
   economyBuilder,
   onEconomyBuilderChange,

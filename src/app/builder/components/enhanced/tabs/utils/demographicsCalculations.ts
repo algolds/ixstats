@@ -36,9 +36,6 @@ interface DerivedDemographicMetrics {
  * Computes absolute population counts for different age groups and urban/rural
  * splits based on percentage distributions and total population.
  *
- * @param demographics - Base demographics configuration with percentages
- * @returns Calculated absolute population metrics
- *
  * @example
  * ```ts
  * const demographics = {
@@ -79,9 +76,6 @@ export function calculateDerivedDemographics(
  *
  * Returns a cyclical color from a predefined palette for consistent
  * region visualization in charts and maps.
- *
- * @param index - Zero-based region index
- * @returns Tailwind color name (e.g., 'blue', 'green')
  *
  * @example
  * ```ts

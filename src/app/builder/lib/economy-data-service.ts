@@ -3,8 +3,6 @@
  *
  * Data transformation and parsing utilities for economic data.
  * Handles real-world country data, economic inputs, and data persistence.
- *
- * @module economy-data-service
  */
 
 import type { RealCountryData } from "~/types/builder";

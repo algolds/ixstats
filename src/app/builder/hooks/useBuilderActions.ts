@@ -47,18 +47,6 @@ interface UseBuilderActionsProps {
  *
  * Works in conjunction with useBuilderState to manage workflow progression.
  *
- * @hook
- * @param {UseBuilderActionsProps} props - Builder state and setter
- * @param {BuilderState} props.builderState - Current builder state
- * @param {Function} props.setBuilderState - State setter function
- * @returns {UseBuilderActionsReturn} Navigation methods and progress tracking
- * @returns {Function} returns.handleContinue - Progress to next tab/step
- * @returns {Function} returns.handlePreviousStep - Go back one step
- * @returns {Function} returns.handleStepClick - Jump to specific step
- * @returns {Function} returns.handleTabChange - Switch tabs within step
- * @returns {Function} returns.canNavigateToStep - Check step accessibility
- * @returns {number} returns.progressPercentage - Workflow completion (0-100)
- *
  * @example
  * ```tsx
  * function BuilderNavigation() {
