@@ -83,7 +83,7 @@ function addCountryLabelLayer(map: MapLibreMap) {
       "text-halo-color": "#ffffff",
       "text-halo-width": 1.8,
       "text-halo-blur": 0.5,
-      "text-opacity": COUNTRY_LABEL_OPACITY as unknown as number,
+      "text-opacity": COUNTRY_LABEL_OPACITY,
     },
     minzoom: 1.5,
   });
@@ -347,7 +347,7 @@ function applyLayerVisibility(map: MapLibreMap, layers: MapLayerData[], labelsVi
       map.setPaintProperty(
         "country-name-labels",
         "text-opacity",
-        isVisible ? (COUNTRY_LABEL_OPACITY as unknown as number) : 0
+        isVisible ? COUNTRY_LABEL_OPACITY : 0
       );
     }
   }

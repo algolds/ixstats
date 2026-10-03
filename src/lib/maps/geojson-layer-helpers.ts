@@ -16,10 +16,15 @@ import type { FeatureCollection, Geometry } from "geojson";
  * it silently skipped their setup — or their cleanup, leaving layers behind — whenever they
  * were toggled mid-pan.
  */
-export function isMapStyleReady(map: MapLibreMap | null | undefined): map is MapLibreMap {
+export function isMapStyleLoaded(map: MapLibreMap | null | undefined): boolean {
   if (!map) return false;
   const style = (map as unknown as { style?: { _loaded?: boolean } }).style;
   return !!style && style._loaded !== false;
+}
+
+/** Type-guard form of {@link isMapStyleLoaded} for code that holds a nullable map. */
+export function isMapStyleReady(map: MapLibreMap | null | undefined): map is MapLibreMap {
+  return isMapStyleLoaded(map);
 }
 
 /**

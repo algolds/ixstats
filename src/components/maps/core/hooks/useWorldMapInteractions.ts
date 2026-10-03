@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef } from "react";
-import type { Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
+import type { ExpressionSpecification, Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
 import type { SelectedCountry, SelectedFeature, HoveredCountry, MapLayerData } from "../IxWorldMap";
 import { COUNTRY_LABEL_OPACITY } from "../utils/map-core-helpers";
@@ -101,11 +101,9 @@ function applyGeographyFilter(
   map: MapLibreMap,
   filter: UseWorldMapInteractionsProps["geographyFilter"]
 ) {
-  const matches = filter && [
-    "==",
-    ["get", filter.type === "continent" ? "_continent" : "_region"],
-    filter.value,
-  ];
+  const matches: ExpressionSpecification | undefined = filter
+    ? ["==", ["get", filter.type === "continent" ? "_continent" : "_region"], filter.value]
+    : undefined;
   map.setPaintProperty(
     "fill-political",
     "fill-opacity",

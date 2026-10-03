@@ -19,7 +19,7 @@ import { useEffect, useRef, useCallback, useMemo } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
 import { LazyDeckTransportOverlay } from "~/components/maps/overlays/LazyDeckTransportOverlay";
-import { isMapStyleReady } from "~/lib/maps/geojson-layer-helpers";
+import { isMapStyleLoaded, isMapStyleReady } from "~/lib/maps/geojson-layer-helpers";
 import {
   featuresToSegments,
   calculateNetworkAverageEconomicCoefficient,
@@ -213,7 +213,7 @@ export function TransportOverlay({
     };
 
     map.on("styledata", setupLayers);
-    if (isMapStyleReady(map)) {
+    if (isMapStyleLoaded(map)) {
       setupLayers();
     } else {
       map.once("style.load", setupLayers);

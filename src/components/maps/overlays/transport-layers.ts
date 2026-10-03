@@ -7,6 +7,7 @@ import type {
 } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
 import { ROUTE_STYLES, ROUTE_COLORS } from "~/lib/maps/map-config";
+import { matchExpression } from "~/lib/maps/match-expression";
 
 const ROUTES_SOURCE = "transport-routes-source";
 const HUBS_SOURCE = "transport-hubs-source";
@@ -101,20 +102,14 @@ const DIMMED_STATUS_OPACITY: Record<string, number> = {
   abandoned: 0.15,
 };
 
-const matchExpression = (
+const matchProperty = (
   property: string,
   table: Record<string, string | number>,
   fallback: string | number
-) =>
-  [
-    "match",
-    ["get", property],
-    ...Object.entries(table).flat(),
-    fallback,
-  ] as ExpressionSpecification;
+) => matchExpression(["get", property], Object.entries(table), fallback);
 
-const COLOR_EXPRESSION = matchExpression("routeType", ROUTE_COLORS, "#888888");
-const TYPE_WIDTH_EXPRESSION = matchExpression(
+const COLOR_EXPRESSION = matchProperty("routeType", ROUTE_COLORS, "#888888");
+const TYPE_WIDTH_EXPRESSION = matchProperty(
   "routeType",
   Object.fromEntries(Object.entries(ROUTE_STYLES).map(([type, style]) => [type, style.width])),
   1.5
@@ -135,11 +130,11 @@ const opacityExpression = (selectedRouteId: string | null | undefined) =>
     isSelected(selectedRouteId),
     1.0,
     selectedRouteId
-      ? matchExpression("status", DIMMED_STATUS_OPACITY, 0.35)
-      : matchExpression("status", STATUS_OPACITY, 0.8),
+      ? matchProperty("status", DIMMED_STATUS_OPACITY, 0.35)
+      : matchProperty("status", STATUS_OPACITY, 0.8),
   ] as ExpressionSpecification;
 
-const radiusByConnections = (one: number, five: number, ten: number) => [
+const radiusByConnections = (one: number, five: number, ten: number): ExpressionSpecification => [
   "interpolate",
   ["linear"],
   ["coalesce", ["get", "connections"], 1],
@@ -151,7 +146,7 @@ const radiusByConnections = (one: number, five: number, ten: number) => [
   ten,
 ];
 
-const HUB_RADIUS_EXPRESSION = [
+const HUB_RADIUS_EXPRESSION: ExpressionSpecification = [
   "interpolate",
   ["linear"],
   ["zoom"],
@@ -161,7 +156,7 @@ const HUB_RADIUS_EXPRESSION = [
   radiusByConnections(4.5, 7.5, 11),
   14,
   radiusByConnections(7, 12, 18),
-] as ExpressionSpecification;
+];
 
 /** Dash pattern that slides by `offset`, giving the animated "flow" effect on a fixed dash cycle. */
 export function buildFlowDashArray(offset: number): [number, number, number, number] {
@@ -294,7 +289,7 @@ function buildLayerSpecs({
       source: HUBS_SOURCE,
       paint: {
         "circle-radius": HUB_RADIUS_EXPRESSION,
-        "circle-color": matchExpression("hubType", HUB_COLORS, "#64748b"),
+        "circle-color": matchProperty("hubType", HUB_COLORS, "#64748b"),
         "circle-stroke-color": "#ffffff",
         "circle-stroke-width": 1.5,
         "circle-opacity": 0.9,

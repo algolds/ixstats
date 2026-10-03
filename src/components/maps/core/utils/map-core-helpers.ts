@@ -1,7 +1,7 @@
 import type { Feature } from "geojson";
-import type { Map as MapLibreMap } from "maplibre-gl";
+import type { ExpressionSpecification, Map as MapLibreMap } from "maplibre-gl";
 
-export const COUNTRY_LABEL_OPACITY: unknown = ["coalesce", ["get", "_distFade"], 0];
+export const COUNTRY_LABEL_OPACITY: ExpressionSpecification = ["coalesce", ["get", "_distFade"], 0];
 
 /** Escape HTML entities for safe insertion into popup innerHTML */
 export function escHtml(s: string): string {
