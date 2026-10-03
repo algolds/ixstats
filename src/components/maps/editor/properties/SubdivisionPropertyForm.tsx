@@ -6,19 +6,10 @@ import { Label } from "~/components/ui/label";
 import { ColorPickerInput } from "~/components/ui/color-picker";
 import { Ruler } from "iconoir-react";
 import type { SubdivisionFormData } from "~/hooks/useMapEditor";
-import { capitalizedOptions, inputClasses, WikiLinkField } from "./fields";
+import { SUBDIVISION_TYPE_OPTIONS } from "../optionLists";
+import { inputClasses, WikiLinkField } from "./fields";
 import { geometryAreaSqKm } from "~/lib/maps/geo-math";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
-
-const SUBDIVISION_TYPE_OPTIONS = capitalizedOptions([
-  "province",
-  "state",
-  "region",
-  "territory",
-  "district",
-  "county",
-  "department",
-]);
 
 interface SubdivisionPropertyFormProps {
   form: SubdivisionFormData;

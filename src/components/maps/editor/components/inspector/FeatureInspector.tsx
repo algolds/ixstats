@@ -12,6 +12,7 @@ import { LakeHydrologySection } from "./LakeHydrologySection";
 import { RouteInspectorSection } from "./RouteInspectorSection";
 import { InspectorSection, ReadoutRow } from "./InspectorPrimitives";
 import { getFeatureIcon } from "../featureTypeIcons";
+import { CITY_TYPES } from "../../optionLists";
 import { resolveRouteBaseSpeed } from "~/lib/economy/travel-time";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
@@ -58,8 +59,6 @@ interface FeatureInspectorProps {
   onTogglePickLocation?: () => void;
   isMutating?: boolean;
 }
-
-const CITY_TYPES = ["capital", "city", "town", "village", "hamlet", "port", "fortress"];
 
 const SUBDIVISION_LEVEL_OPTIONS = [
   { value: "1", label: "Province / State (Tier 1)" },

@@ -7,23 +7,8 @@ import { ModernTv as Mountain, SystemRestart as Loader2 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Checkbox } from "~/components/ui/checkbox";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
-import {
-  capitalizedOptions,
-  inputClasses,
-  SubdivisionSelect,
-  WikiLinkField,
-  type PointFormProps,
-} from "./fields";
-
-const CITY_TYPE_OPTIONS = capitalizedOptions([
-  "capital",
-  "city",
-  "town",
-  "village",
-  "hamlet",
-  "port",
-  "fortress",
-]);
+import { CITY_TYPE_OPTIONS } from "../optionLists";
+import { inputClasses, SubdivisionSelect, WikiLinkField, type PointFormProps } from "./fields";
 
 const CAPITAL_FLAGS = [
   { key: "isNationalCapital", label: "National capital" },

@@ -4,6 +4,7 @@ import { Button } from "~/components/ui/button";
 import React, { useState, useCallback } from "react";
 import { Trash as Trash2, Xmark as X, EditPencil as Pencil, Check } from "iconoir-react";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { SUBDIVISION_TYPE_OPTIONS } from "./optionLists";
 
 // Whitelisted editable attributes — intentionally excludes name, id, capital flags.
 const EDITABLE_FIELDS = [
@@ -14,16 +15,6 @@ const EDITABLE_FIELDS = [
 ] as const;
 
 export type EditableField = (typeof EDITABLE_FIELDS)[number]["value"];
-
-const SUBDIVISION_TYPES = [
-  { value: "province", label: "Province" },
-  { value: "state", label: "State" },
-  { value: "region", label: "Region" },
-  { value: "territory", label: "Territory" },
-  { value: "district", label: "District" },
-  { value: "county", label: "County" },
-  { value: "department", label: "Department" },
-];
 
 interface BatchActionsBarProps {
   selectedCount: number;
@@ -143,7 +134,7 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
               disabled={pending}
               value={value}
               onValueChange={(v) => setValue(v)}
-              options={SUBDIVISION_TYPES}
+              options={SUBDIVISION_TYPE_OPTIONS}
               size="sm"
               className="w-full"
             />

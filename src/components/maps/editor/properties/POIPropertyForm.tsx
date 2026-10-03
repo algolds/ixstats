@@ -3,27 +3,14 @@ import React from "react";
 import type { POIFormData } from "~/hooks/useMapEditor";
 import { CoordinatePicker } from "./CoordinatePicker";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { POI_CATEGORY_OPTIONS } from "../optionLists";
 import {
-  capitalizedOptions,
   Field,
   inputClasses,
   SubdivisionSelect,
   WikiLinkField,
   type PointFormProps,
 } from "./fields";
-
-const POI_CATEGORY_OPTIONS = capitalizedOptions([
-  "landmark",
-  "historical",
-  "natural",
-  "religious",
-  "military",
-  "cultural",
-  "economic",
-  "educational",
-  "monument",
-  "ruins",
-]);
 
 const POI_ICONS = [
   { value: "castle", emoji: "\u{1F3F0}", label: "Castle" },

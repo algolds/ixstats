@@ -18,13 +18,6 @@ export interface PointFormProps<T> {
   setIsPickingLocation?: (active: boolean) => void;
 }
 
-export function capitalizedOptions(values: readonly string[]) {
-  return values.map((value) => ({
-    value,
-    label: value.charAt(0).toUpperCase() + value.slice(1),
-  }));
-}
-
 export function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>

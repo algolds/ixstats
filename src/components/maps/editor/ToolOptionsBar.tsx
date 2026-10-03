@@ -26,6 +26,7 @@ import { FacetMaterial } from "~/components/ui/facet";
 import { ROUTE_STYLES, ROUTE_TYPE_KEYS } from "~/lib/maps/map-config";
 
 import { CityTransformationsPopover } from "./toolbars/options/ScatterToolOptions";
+import { CITY_TYPE_OPTIONS, POI_CATEGORY_OPTIONS } from "./optionLists";
 import { SubdivisionOptions } from "./toolbars/options/SubdivisionOptions";
 import { RulerOptions } from "./toolbars/options/RulerOptions";
 import {
@@ -108,24 +109,6 @@ interface ToolOptionsBarProps {
   lassoTool?: "freehand" | "rect";
   onLassoToolChange?: (tool: "freehand" | "rect") => void;
 }
-
-const toOptions = (values: string[]) =>
-  values.map((value) => ({ value, label: value.charAt(0).toUpperCase() + value.slice(1) }));
-
-const CITY_TYPES = toOptions(["capital", "city", "town", "village", "hamlet", "port", "fortress"]);
-
-const POI_CATEGORIES = toOptions([
-  "landmark",
-  "historical",
-  "natural",
-  "religious",
-  "military",
-  "cultural",
-  "economic",
-  "educational",
-  "monument",
-  "ruins",
-]);
 
 const ROUTE_TYPE_OPTIONS = ROUTE_TYPE_KEYS.map((k) => ({
   value: k,
@@ -280,7 +263,7 @@ function CityOptions(props: ToolOptionsBarProps) {
         aria-label="City type"
         value={props.cityType ?? "city"}
         onValueChange={(v) => props.onCityTypeChange?.(v)}
-        options={CITY_TYPES}
+        options={CITY_TYPE_OPTIONS}
         size="sm"
         className="w-auto"
       />
@@ -324,7 +307,7 @@ function PoiOptions(props: ToolOptionsBarProps) {
         aria-label="Point of interest category"
         value={props.poiCategory ?? "landmark"}
         onValueChange={(v) => props.onPoiCategoryChange?.(v)}
-        options={POI_CATEGORIES}
+        options={POI_CATEGORY_OPTIONS}
         size="sm"
         className="w-auto"
       />
