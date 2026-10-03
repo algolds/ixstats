@@ -1,15 +1,78 @@
-// src/server/api/routers/economics.ts
-// FIXED: Core economic data management router matching Prisma schema exactly
 // SECURITY: All mutation endpoints validate country ownership
 
 import { z } from "zod";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 
-const economicsBuilderRouter = createTRPCRouter({
-  // ==================== ECONOMY BUILDER LIVE WIRING ====================
-  // Real-time economy builder configuration management
+type SectorRow = Record<string, any>;
 
+function parseSectorBreakdown(json: string | null | undefined): SectorRow[] {
+  if (!json) return [];
+  try {
+    const parsed = JSON.parse(json);
+    return Array.isArray(parsed)
+      ? parsed.filter((x): x is SectorRow => x !== null && typeof x === "object")
+      : [];
+  } catch (e) {
+    console.error("[Economics Builder] Failed to parse sectorBreakdown:", e);
+    return [];
+  }
+}
+
+const sectorView = (s: SectorRow) => ({
+  id: s.name.toLowerCase().replace(/\s+/g, "_"),
+  name: s.name,
+  category: s.category || "Tertiary",
+  gdpContribution: s.gdp || 0,
+  employmentShare: s.employment || 0,
+  productivity: s.productivity || 75,
+  growthRate: s.growthRate || 2.0,
+  exports: 15,
+  imports: 18,
+  technologyLevel: "Modern" as const,
+  automation: 20,
+  regulation: "Moderate" as const,
+  subsidy: 5,
+  innovation: 50,
+  sustainability: 70,
+  competitiveness: 60,
+});
+
+/** Labour-market figures with the builder's defaults for anything not recorded yet. */
+function laborMarketView(
+  country: {
+    laborForceParticipationRate: number | null;
+    unemploymentRate: number | null;
+    laborMarket: {
+      youthUnemploymentRate: number | null;
+      femaleParticipationRate: number | null;
+    } | null;
+  },
+  totalPopulation: number
+) {
+  const participation = country.laborForceParticipationRate || 65;
+  const unemployment = country.unemploymentRate || 5;
+  return {
+    totalWorkforce: Math.round((totalPopulation * participation) / 100),
+    laborForceParticipationRate: participation,
+    employmentRate: 100 - unemployment,
+    unemploymentRate: unemployment,
+    underemploymentRate: unemployment * 0.6,
+    youthUnemploymentRate: country.laborMarket?.youthUnemploymentRate || 10,
+    seniorEmploymentRate: 55,
+    femaleParticipationRate: country.laborMarket?.femaleParticipationRate || 60,
+    maleParticipationRate: participation * 1.15,
+    averageWorkweekHours: 38.5,
+    minimumWageHourly: 12.5,
+    livingWageHourly: 18.75,
+    unionizationRate: 12.5,
+    collectiveBargainingCoverage: 18.0,
+    workplaceSafetyIndex: 72,
+    laborRightsScore: 68,
+  };
+}
+
+const economicsBuilderRouter = createTRPCRouter({
   // Get economy builder state with all related data
   getEconomyBuilderState: publicProcedure
     .input(
@@ -44,82 +107,28 @@ const economicsBuilderRouter = createTRPCRouter({
         250000000000;
 
       // Transform database data back to economy builder format
-      let sectorBreakdown: any[] = [];
-      if (country.economicProfile?.sectorBreakdown) {
-        try {
-          const parsed = JSON.parse(country.economicProfile.sectorBreakdown);
-          if (Array.isArray(parsed)) {
-            sectorBreakdown = parsed.filter(
-              (x): x is Record<string, any> => x !== null && typeof x === "object"
-            );
-          }
-        } catch (e) {
-          console.error("[Economics Builder] Failed to parse sectorBreakdown:", e);
-        }
-      }
+      const sectorBreakdown = parseSectorBreakdown(country.economicProfile?.sectorBreakdown);
+      const sectorNames = (category: string) =>
+        sectorBreakdown.filter((s) => s.category === category).map((s) => s.name);
+      const urban = country.urbanPopulationPercent || 50;
 
       return {
         structure: {
           economicModel: "Mixed Economy",
-          primarySectors: sectorBreakdown
-            .filter((s: any) => s.category === "Primary")
-            .map((s: any) => s.name),
-          secondarySectors: sectorBreakdown
-            .filter((s: any) => s.category === "Secondary")
-            .map((s: any) => s.name),
-          tertiarySectors: sectorBreakdown
-            .filter((s: any) => s.category === "Tertiary")
-            .map((s: any) => s.name),
+          primarySectors: sectorNames("Primary"),
+          secondarySectors: sectorNames("Secondary"),
+          tertiarySectors: sectorNames("Tertiary"),
           totalGDP,
           gdpCurrency: country.nationalIdentity?.currency || "USD",
           economicTier: country.economicTier || "Developing",
           growthStrategy: "Balanced",
         },
-        sectors: sectorBreakdown.map((s: any) => ({
-          id: s.name.toLowerCase().replace(/\s+/g, "_"),
-          name: s.name,
-          category: s.category || "Tertiary",
-          gdpContribution: s.gdp || 0,
-          employmentShare: s.employment || 0,
-          productivity: s.productivity || 75,
-          growthRate: s.growthRate || 2.0,
-          exports: 15,
-          imports: 18,
-          technologyLevel: "Modern" as const,
-          automation: 20,
-          regulation: "Moderate" as const,
-          subsidy: 5,
-          innovation: 50,
-          sustainability: 70,
-          competitiveness: 60,
-        })),
-        laborMarket: {
-          totalWorkforce: Math.round(
-            (totalPopulation * (country.laborForceParticipationRate || 65)) / 100
-          ),
-          laborForceParticipationRate: country.laborForceParticipationRate || 65,
-          employmentRate: 100 - (country.unemploymentRate || 5),
-          unemploymentRate: country.unemploymentRate || 5,
-          underemploymentRate: (country.unemploymentRate || 5) * 0.6,
-          youthUnemploymentRate: country.laborMarket?.youthUnemploymentRate || 10,
-          seniorEmploymentRate: 55,
-          femaleParticipationRate: country.laborMarket?.femaleParticipationRate || 60,
-          maleParticipationRate: (country.laborForceParticipationRate || 65) * 1.15,
-          averageWorkweekHours: 38.5,
-          minimumWageHourly: 12.5,
-          livingWageHourly: 18.75,
-          unionizationRate: 12.5,
-          collectiveBargainingCoverage: 18.0,
-          workplaceSafetyIndex: 72,
-          laborRightsScore: 68,
-        },
+        sectors: sectorBreakdown.map(sectorView),
+        laborMarket: laborMarketView(country, totalPopulation),
         demographics: {
           totalPopulation,
           populationGrowthRate: country.populationGrowthRate || 0,
-          urbanRuralSplit: {
-            urban: country.urbanPopulationPercent || 50,
-            rural: 100 - (country.urbanPopulationPercent || 50),
-          },
+          urbanRuralSplit: { urban, rural: 100 - urban },
           lifeExpectancy: country.lifeExpectancy || 75,
           literacyRate: country.literacyRate || 90,
           netMigrationRate: 2.5,
