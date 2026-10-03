@@ -1,5 +1,4 @@
 "use client";
-// Unified, single-column collapsible sidebar layout with hover handle and keyboard shortcuts.
 
 import { useEffect, useState, useRef, type ReactNode } from "react";
 import Link from "next/link";
@@ -50,6 +49,22 @@ const NAV_GROUP_1 = [
   { id: "random", href: "/util/random", icon: Shuffle, title: "Random" },
 ];
 
+/** Paths under /wiki/ that are tools rather than articles. */
+const NON_ARTICLE_WIKI_PATHS = new Set([
+  "/wiki/Main_Page",
+  "/wiki/recent-changes",
+  "/wiki/random",
+  "/wiki/repository",
+  "/wiki/search",
+]);
+
+const NAV_TONES: Record<string, string> = {
+  categories: "border-green/20 bg-green/5 text-green hover:bg-green/15",
+  recent: "border-yellow/20 bg-yellow/5 text-yellow hover:bg-yellow/15",
+  random: "border-indigo/20 bg-indigo/5 text-indigo hover:bg-indigo/15",
+};
+const DEFAULT_NAV_TONE = "border-tint/20 bg-tint/5 text-tint hover:bg-tint/15";
+
 interface WikiOSUnifiedSidebarProps {
   activeId: string | null;
   onSearchClick: () => void;
@@ -86,13 +101,7 @@ export function WikiOSUnifiedSidebar({
   const utils = api.useUtils();
 
   const isArticlePage =
-    !isSpecialPage &&
-    pathname.startsWith("/wiki/") &&
-    pathname !== "/wiki/Main_Page" &&
-    pathname !== "/wiki/recent-changes" &&
-    pathname !== "/wiki/random" &&
-    pathname !== "/wiki/repository" &&
-    pathname !== "/wiki/search";
+    !isSpecialPage && pathname.startsWith("/wiki/") && !NON_ARTICLE_WIKI_PATHS.has(pathname);
 
   // Dynamic in-page stash query for current article
   const stashQuery = api.wikios.isStashed.useQuery(
@@ -101,29 +110,22 @@ export function WikiOSUnifiedSidebar({
   );
   const isCurrentPageStashed = stashQuery.data?.stashed ?? false;
 
-  const stashMutation = api.wikios.stashPage.useMutation({
+  const readableTitle = title.replace(/_/g, " ");
+  const stashOutcome = (done: string, failure: string) => ({
     onSuccess: () => {
-      notify.success(`Saved "${title.replace(/_/g, " ")}" to Stash`);
+      notify.success(done);
       utils.wikios.isStashed.invalidate({ pageTitle: title });
       utils.wikios.getStashes.invalidate();
       utils.wikios.getArticleMarginData.invalidate({ articleTitle: title });
     },
-    onError: (err) => {
-      notify.error(err.message || "Failed to stash article");
-    },
+    onError: (err: { message?: string }) => notify.error(err.message || failure),
   });
-
-  const unstashMutation = api.wikios.unstashPage.useMutation({
-    onSuccess: () => {
-      notify.success(`Removed "${title.replace(/_/g, " ")}" from Stash`);
-      utils.wikios.isStashed.invalidate({ pageTitle: title });
-      utils.wikios.getStashes.invalidate();
-      utils.wikios.getArticleMarginData.invalidate({ articleTitle: title });
-    },
-    onError: (err) => {
-      notify.error(err.message || "Failed to unstash article");
-    },
-  });
+  const stashMutation = api.wikios.stashPage.useMutation(
+    stashOutcome(`Saved "${readableTitle}" to Stash`, "Failed to stash article")
+  );
+  const unstashMutation = api.wikios.unstashPage.useMutation(
+    stashOutcome(`Removed "${readableTitle}" from Stash`, "Failed to unstash article")
+  );
 
   const handleToggleCurrentPageStash = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -253,23 +255,6 @@ export function WikiOSUnifiedSidebar({
       isActive ? "bg-fill-4" : ""
     );
 
-    if (href) {
-      return (
-        <FisheyeRailItem
-          key={id}
-          mouseY={mouseY}
-          isExpanded={isRowExpanded}
-          title={title}
-          index={index}
-          onHover={setHoveredIndex}
-        >
-          <Link href={href} className={wrapperClass}>
-            {content}
-          </Link>
-        </FisheyeRailItem>
-      );
-    }
-
     return (
       <FisheyeRailItem
         key={id}
@@ -279,19 +264,17 @@ export function WikiOSUnifiedSidebar({
         index={index}
         onHover={setHoveredIndex}
       >
-        <button onClick={onClick} className={wrapperClass} type="button">
-          {content}
-        </button>
+        {href ? (
+          <Link href={href} className={wrapperClass}>
+            {content}
+          </Link>
+        ) : (
+          <button onClick={onClick} className={wrapperClass} type="button">
+            {content}
+          </button>
+        )}
       </FisheyeRailItem>
     );
-  };
-
-  const getToggleTitle = () => {
-    return isCollapsedReal ? "Lock sidebar" : "Unlock sidebar";
-  };
-
-  const handleToggleClick = () => {
-    toggleCollapsed();
   };
 
   let rowIndex = 0;
@@ -355,29 +338,16 @@ export function WikiOSUnifiedSidebar({
           <div className="border-separator my-0.5 w-full border-t" />
 
           {/* Navigation Group (Categories/Utilities hidden on article pages) */}
-          {NAV_GROUP_1.filter((item) => !(isArticlePage && item.id === "categories")).map(
-            (item) => {
-              let toneClass = "border-tint/20 bg-tint/5 text-tint hover:bg-tint/15";
-              if (item.id === "categories") {
-                toneClass = "border-green/20 bg-green/5 text-green hover:bg-green/15";
-              } else if (item.id === "recent") {
-                toneClass = "border-yellow/20 bg-yellow/5 text-yellow hover:bg-yellow/15";
-              } else if (item.id === "utilities") {
-                toneClass = "border-tint/30 bg-tint/10 text-tint hover:bg-tint/20";
-              } else if (item.id === "random") {
-                toneClass = "border-indigo/20 bg-indigo/5 text-indigo hover:bg-indigo/15";
-              }
-
-              return renderRow({
-                id: item.id,
-                href: withBasePath(item.href),
-                icon: item.icon,
-                title: item.title,
-                toneClass,
-                isActive: activeId === item.id,
-                index: rowIndex++,
-              });
-            }
+          {NAV_GROUP_1.filter((item) => !(isArticlePage && item.id === "categories")).map((item) =>
+            renderRow({
+              id: item.id,
+              href: withBasePath(item.href),
+              icon: item.icon,
+              title: item.title,
+              toneClass: NAV_TONES[item.id] ?? DEFAULT_NAV_TONE,
+              isActive: activeId === item.id,
+              index: rowIndex++,
+            })
           )}
 
           <div className="border-separator my-0.5 w-full border-t" />
@@ -637,9 +607,9 @@ export function WikiOSUnifiedSidebar({
         {/* Toggle Lock Button */}
         {renderRow({
           id: "toggle-more",
-          onClick: handleToggleClick,
+          onClick: toggleCollapsed,
           icon: isCollapsedReal ? PanelLeftOpen : PanelLeftClose,
-          title: getToggleTitle(),
+          title: isCollapsedReal ? "Lock sidebar" : "Unlock sidebar",
           toneClass: "border-separator bg-fill-4 text-label-secondary hover:bg-fill-3",
           isActive: false,
           index: rowIndex++,
