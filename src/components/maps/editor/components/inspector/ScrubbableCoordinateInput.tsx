@@ -1,6 +1,6 @@
 "use client";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { Pin as Crosshair } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils/cn";
@@ -40,9 +40,13 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
 
   const resetTexts = () => setTexts({ lng: current.lng.toFixed(4), lat: current.lat.toFixed(4) });
 
-  useEffect(() => {
-    if (!activeScrub) setTexts({ lng: current.lng.toFixed(4), lat: current.lat.toFixed(4) });
-  }, [current.lng, current.lat, activeScrub]);
+  // Re-sync the text fields from the coordinates, except while a label is being scrubbed.
+  const syncKey = activeScrub ? null : `${current.lng},${current.lat}`;
+  const [syncedKey, setSyncedKey] = useState(syncKey);
+  if (syncedKey !== syncKey) {
+    setSyncedKey(syncKey);
+    if (syncKey) resetTexts();
+  }
 
   /** Clamps and applies a new value for one axis, keeping the other axis unchanged. */
   const commit = (axis: Axis, value: number) => {

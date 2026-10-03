@@ -3,7 +3,7 @@
 import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
-import React, { memo, useState, useEffect, useMemo } from "react";
+import React, { memo, useState, useMemo } from "react";
 import {
   NavArrowLeft as ArrowLeft,
   Check,
@@ -314,16 +314,16 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
     { staleTime: 30_000 }
   );
 
-  const [form, setForm] = useState<RouteForm>(DEFAULT_FORM);
+  const [form, setForm] = useState<RouteForm>(() => (route ? toForm(route) : DEFAULT_FORM));
+  const [syncedRoute, setSyncedRoute] = useState(route);
+  if (route !== syncedRoute) {
+    setSyncedRoute(route);
+    if (route) setForm(toForm(route));
+  }
   const patch = (changes: Partial<RouteForm>) => setForm((f) => ({ ...f, ...changes }));
   const { name, routeType, status, isInternational, speedKmh } = form;
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Re-seed the form whenever the fetched route changes
-  useEffect(() => {
-    if (route) setForm(toForm(route));
-  }, [route]);
 
   const invalidateRoutes = (includeStats: boolean) => {
     void utils.transport.getRouteById.invalidate({ id: routeId });

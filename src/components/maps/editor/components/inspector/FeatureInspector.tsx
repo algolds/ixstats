@@ -1,7 +1,7 @@
 "use client";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Xmark as Close, Check, OpenNewWindow as ExternalLink } from "iconoir-react";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import { ScrubbableCoordinateInput } from "./ScrubbableCoordinateInput";
@@ -231,7 +231,11 @@ export const FeatureInspector = React.memo(function FeatureInspector({
   isMutating = false,
 }: FeatureInspectorProps) {
   const [fields, setFields] = useState(() => readFields(feature));
-  useEffect(() => setFields(readFields(feature)), [feature]);
+  const [syncedFeature, setSyncedFeature] = useState(feature);
+  if (syncedFeature !== feature) {
+    setSyncedFeature(feature);
+    setFields(readFields(feature));
+  }
 
   /** Applies a change locally and persists it. */
   const commit = (local: Partial<Fields>, updates: FeaturePropertyUpdates) => {

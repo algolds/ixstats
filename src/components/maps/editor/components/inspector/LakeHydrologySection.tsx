@@ -1,6 +1,6 @@
 "use client";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import { Droplet } from "iconoir-react";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import { geometryAreaSqKm, geometryAreaSqMi, ringPerimeterKm } from "~/lib/maps/geo-math";
@@ -77,10 +77,13 @@ function useMaxDepthInput(
 ) {
   const rawDepth = feature.properties?.maxDepthM;
   const currentDepth = typeof rawDepth === "number" ? rawDepth : null;
-  const [depthInput, setDepthInput] = useState(currentDepth == null ? "" : String(currentDepth));
-  useEffect(() => {
-    setDepthInput(currentDepth == null ? "" : String(currentDepth));
-  }, [currentDepth]);
+  const depthText = currentDepth == null ? "" : String(currentDepth);
+  const [depthInput, setDepthInput] = useState(depthText);
+  const [syncedDepth, setSyncedDepth] = useState(currentDepth);
+  if (syncedDepth !== currentDepth) {
+    setSyncedDepth(currentDepth);
+    setDepthInput(depthText);
+  }
 
   const handleDepthBlur = () => {
     const parsed = parseFloat(depthInput);
