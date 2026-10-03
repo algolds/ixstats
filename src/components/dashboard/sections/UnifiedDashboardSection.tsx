@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "motion/react";
 
 import {
@@ -20,10 +20,10 @@ import {
 } from "~/components/mycountry/shared/primitives/tabs/TabMotionConfig";
 import { useUser } from "~/context/auth-context";
 import { api, type RouterOutputs } from "~/trpc/react";
-type ThinkpagesAccountItem = RouterOutputs["thinkpages"]["getMyAccounts"][number];
-
 import dynamic from "next/dynamic";
 import { useNotify } from "~/hooks/useNotify";
+
+type ThinkpagesAccountItem = RouterOutputs["thinkpages"]["getMyAccounts"][number];
 
 const GlassCanvasComposer = dynamic(
   () => import("~/components/thinkpages/GlassCanvasComposer").then((m) => m.GlassCanvasComposer),
@@ -53,14 +53,12 @@ const RepostModal = dynamic(
   { ssr: false }
 );
 
-import { UnifiedFeedContent, FollowingFeedContent } from "./UnifiedFeedContent";
+import { UnifiedFeedContent, FollowingFeedContent, type FeedHandlers } from "./UnifiedFeedContent";
 import { TrendingFeedContent } from "./TrendingFeedContent";
 import { TrendingSectionWidget } from "./TrendingSectionWidget";
 import { BlurbSection } from "./BlurbSection";
 import { CountriesToExploreCard } from "./CountriesToExploreCard";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-
-// ─── Config ──────────────────────────────────────────────────────
 
 type FeedTab = "all" | "following" | "trending" | "community";
 
@@ -71,7 +69,8 @@ const BASE_TABS: { value: FeedTab; label: string; icon: React.ReactNode }[] = [
   { value: "community", label: "Community", icon: <BookOpen /> },
 ];
 
-// ─── Props ───────────────────────────────────────────────────────
+// Likes and reactions are handled globally by PostActions.
+const noop = () => {};
 
 interface UnifiedDashboardSectionProps {
   globalStats?: {
@@ -85,7 +84,87 @@ interface UnifiedDashboardSectionProps {
   };
 }
 
-// ─── Main Component ──────────────────────────────────────────────
+function PostingAs({
+  account,
+  onSwitch,
+}: {
+  account: ThinkpagesAccountItem;
+  onSwitch: () => void;
+}) {
+  return (
+    <div className="text-footnote flex items-center gap-2 px-1">
+      <span className="text-label-secondary">Posting as</span>
+      <div className="text-label flex items-center gap-2 font-medium">
+        <span>@{account.username}</span>
+        <span className="text-label-secondary text-footnote font-normal">
+          ({account.accountType})
+        </span>
+      </div>
+      <Button variant="link" size="sm" onClick={onSwitch} className="ml-2 h-auto px-0">
+        Switch account
+      </Button>
+    </div>
+  );
+}
+
+function EconomicTiersCard({ tiers }: { tiers: Record<string, number> }) {
+  return (
+    <Card padding="md">
+      <h2 className="text-headline text-label mb-3">Economic tiers</h2>
+      <div className="flex flex-wrap items-center gap-1">
+        {Object.entries(tiers).map(([tier, count]) => (
+          <Badge key={tier} variant="default">
+            <span>{tier}</span>
+            <span className="text-label tabular-nums">{count}</span>
+          </Badge>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+/** The viewer's country and ThinkPages accounts, with the first account auto-selected. */
+function useViewerAccounts(userId: string | undefined) {
+  const [selectedAccount, setSelectedAccount] = useState<ThinkpagesAccountItem | null>(null);
+  const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
+    enabled: !!userId,
+    staleTime: 300_000,
+  });
+  const countryId = userProfile?.countryId ?? "";
+  const { data: countryData } = api.countries.getByIdAtTime.useQuery(
+    { id: countryId },
+    { enabled: !!countryId.trim(), retry: false, staleTime: 60_000 }
+  );
+
+  // Accounts the user owns, for posting.
+  const { data: accountsData } = api.thinkpages.getMyAccounts.useQuery(undefined, {
+    enabled: !!userId,
+    staleTime: 120_000,
+  });
+  const accounts = useMemo(() => accountsData || [], [accountsData]);
+  const hasCountry = !!countryId;
+
+  useEffect(() => {
+    // oxlint-disable-next-line
+    if (!selectedAccount && accounts.length > 0) setSelectedAccount(accounts[0]);
+  }, [accounts, selectedAccount]);
+
+  const isCountryDataReady = !!(
+    userProfile &&
+    countryData?.newStats?.name?.trim() &&
+    countryId.trim()
+  );
+
+  return {
+    countryId,
+    hasCountry,
+    countryData,
+    accounts,
+    selectedAccount,
+    setSelectedAccount,
+    isCountryDataReady,
+  };
+}
 
 export function UnifiedDashboardSection({
   globalStats: propGlobalStats,
@@ -94,119 +173,92 @@ export function UnifiedDashboardSection({
   const notify = useNotify();
   const utils = api.useUtils();
 
-  // ── Feed state ──
   const [activeTab, setActiveTab] = useState<FeedTab>("all");
-  const [selectedAccount, setSelectedAccount] = useState<ThinkpagesAccountItem | null>(null);
   const [showAccountCreation, setShowAccountCreation] = useState(false);
-  const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [settingsAccount, setSettingsAccount] = useState<ThinkpagesAccountItem | null>(null);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
   const [repostingPost, setRepostingPost] = useState<any>(null);
 
-  // ── World Economics ──
   const { data: queriedGlobalStats } = api.countries.getGlobalStats.useQuery(undefined, {
     enabled: !propGlobalStats,
     staleTime: 300_000,
   });
   const globalStats = propGlobalStats ?? queriedGlobalStats;
 
-  // ── Profile / User data ──
-  const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
-    enabled: !!user?.id,
-    staleTime: 300_000,
-  });
-  const { data: countryData } = api.countries.getByIdAtTime.useQuery(
-    { id: userProfile?.countryId || "" },
-    {
-      enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== "",
-      retry: false,
-      staleTime: 60_000,
-    }
-  );
-
-  // Fetch accounts user owns for posting
-  const { data: accountsData } = api.thinkpages.getMyAccounts.useQuery(undefined, {
-    enabled: !!user?.id,
-    staleTime: 120_000,
-  });
-  const accounts = useMemo(() => accountsData || [], [accountsData]);
-
-  const hasCountry = !!userProfile?.countryId;
-
-  // ── Auto-select account ──
-  useEffect(() => {
-    // oxlint-disable-next-line
-    if (!selectedAccount && accounts.length > 0) setSelectedAccount(accounts[0]);
-  }, [accounts, selectedAccount]);
-
-  const isCountryDataReady =
-    userProfile &&
-    countryData &&
-    userProfile.countryId?.trim() &&
-    countryData.newStats?.name?.trim();
+  const {
+    countryId,
+    hasCountry,
+    countryData,
+    accounts,
+    selectedAccount,
+    setSelectedAccount,
+    isCountryDataReady,
+  } = useViewerAccounts(user?.id);
 
   // Anyone signed in can follow ThinkPages accounts, so Following no longer needs a country.
-  const TABS = useMemo(
-    () => (isSignedIn ? BASE_TABS : BASE_TABS.filter((t) => t.value !== "following")),
-    [isSignedIn]
-  );
+  const tabs = isSignedIn ? BASE_TABS : BASE_TABS.filter((t) => t.value !== "following");
 
-  // ── ThinkPages Action Handlers ──
+  const openAccountSettings = (account: ThinkpagesAccountItem) => setSettingsAccount(account);
+  const openAccountCreation = () => setShowAccountCreation(true);
+  const openAccountManager = () => setIsAccountModalOpen(true);
+  const refetchFeeds = (following: boolean) => {
+    utils.activities.getGlobalFeed.refetch();
+    if (following) utils.activities.getFollowingFeed.refetch();
+  };
 
-  const handleLike = useCallback((_postId: string) => {
-    // Handled globally by PostActions
-  }, []);
+  const handleRepost = (post: any) => {
+    if (!selectedAccount) return notify.error("Select an account first");
+    if (!post) return notify.error("Could not find the original post.");
+    setRepostingPost(post);
+    setIsRepostModalOpen(true);
+  };
 
-  const handleRepost = useCallback(
-    (post: any) => {
-      if (selectedAccount) {
-        if (post) {
-          setRepostingPost(post);
-          setIsRepostModalOpen(true);
-        } else {
-          notify.error("Could not find the original post.");
-        }
-      } else {
-        notify.error("Select an account first");
-      }
-    },
-    [selectedAccount, notify]
-  );
+  const handleReply = () => {
+    if (selectedAccount) return;
+    if (accounts.length === 0 && isCountryDataReady) openAccountCreation();
+    else openAccountManager();
+    notify.error("Select or create an account to reply");
+  };
 
-  const handleReply = useCallback(
-    (_postId: string) => {
-      if (!selectedAccount) {
-        if (accounts.length === 0 && isCountryDataReady) {
-          setShowAccountCreation(true);
-        } else {
-          setIsAccountModalOpen(true);
-        }
-        notify.error("Select or create an account to reply");
-      }
-    },
-    [selectedAccount, accounts.length, isCountryDataReady, notify]
-  );
+  const handleShare = () => {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      navigator.share({
+        title: "ThinkPages Post",
+        text: "A post on ThinkPages",
+        url: window.location.href,
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      notify.success("Link copied");
+    }
+  };
 
-  const handleShare = useCallback(
-    (_postId: string) => {
-      if (typeof navigator !== "undefined" && navigator.share) {
-        navigator.share({
-          title: "ThinkPages Post",
-          text: "A post on ThinkPages",
-          url: window.location.href,
-        });
-      } else {
-        navigator.clipboard.writeText(window.location.href);
-        notify.success("Link copied");
-      }
-    },
-    [notify]
-  );
-
-  const handleReaction = useCallback((_postId: string, _reactionType: string) => {
-    // Handled globally by PostActions
-  }, []);
+  const feedHandlers: FeedHandlers = {
+    currentUserAccountId: selectedAccount?.id || "",
+    accounts,
+    countryId,
+    isOwner: hasCountry,
+    onAccountSelectAction: setSelectedAccount,
+    onAccountSettingsAction: openAccountSettings,
+    onCreateAccountAction: openAccountCreation,
+    onLikeAction: noop,
+    onRepostAction: handleRepost,
+    onReactionAction: noop,
+    onReplyAction: handleReply,
+    onShareAction: handleShare,
+  };
+  const accountProps = {
+    countryId,
+    accounts,
+    selectedAccount,
+    onAccountSelect: setSelectedAccount,
+    onAccountSettings: openAccountSettings,
+    onCreateAccount: openAccountCreation,
+    isOwner: hasCountry,
+  };
+  const tierDistribution = (globalStats as UnifiedDashboardSectionProps["globalStats"])
+    ?.economicTierDistribution;
 
   return (
     <motion.div
@@ -215,27 +267,23 @@ export function UnifiedDashboardSection({
       animate="show"
       className="space-y-5 pb-16 sm:pb-20 md:space-y-7 md:pb-24"
     >
-      {/* Feed + Sidebar Grid Layout */}
       <motion.div variants={staggerItem}>
         <div className="facet-layout-grid-3">
-          {/* Feed stream (left 2/3) */}
           <div className="facet-layout-main-span-2 space-y-5">
-            {/* Feed Tab Bar - ticks on change incl Community */}
             <motion.div variants={staggerItem} className="flex items-center gap-2">
               <SegmentedControl
-                options={TABS}
+                options={tabs}
                 value={activeTab}
                 onValueChange={(tabId) => setActiveTab(tabId as FeedTab)}
                 size="md"
                 className="flex-1"
                 asTabs
               />
-              {/* Settings gear */}
               {isSignedIn && (
                 <Button
                   variant="secondary"
                   size="icon"
-                  onClick={() => setIsAccountModalOpen(true)}
+                  onClick={openAccountManager}
                   className="shrink-0"
                   title="Feed and account settings"
                   aria-label="Feed and account settings"
@@ -245,200 +293,77 @@ export function UnifiedDashboardSection({
               )}
             </motion.div>
 
-            {/* ThinkPages Composer integrated on top of the stream */}
             {activeTab !== "community" && isSignedIn && (
               <div className="mb-4 space-y-2">
                 <GlassCanvasComposer
                   account={selectedAccount}
                   onAccountSelect={setSelectedAccount}
-                  onPost={() => {
-                    // The composer shows the success toast.
-                    utils.activities.getGlobalFeed.refetch();
-                    utils.activities.getFollowingFeed.refetch();
-                  }}
+                  onPost={() => refetchFeeds(true)}
                   placeholder="Write a post"
-                  countryId={userProfile?.countryId ?? ""}
+                  countryId={countryId}
                   accounts={accounts}
                   isOwner={hasCountry}
                   isSignedIn={isSignedIn}
                   hasCountry={hasCountry}
-                  onCreateAccount={() => setIsAccountModalOpen(true)}
+                  onCreateAccount={openAccountManager}
                 />
                 {hasCountry && accounts.length > 1 && selectedAccount && (
-                  <div className="text-footnote flex items-center gap-2 px-1">
-                    <span className="text-label-secondary">Posting as</span>
-                    <div className="text-label flex items-center gap-2 font-medium">
-                      <span>@{selectedAccount.username}</span>
-                      <span className="text-label-secondary text-footnote font-normal">
-                        ({selectedAccount.accountType})
-                      </span>
-                    </div>
-                    <Button
-                      variant="link"
-                      size="sm"
-                      onClick={() => setIsAccountModalOpen(true)}
-                      className="ml-2 h-auto px-0"
-                    >
-                      Switch account
-                    </Button>
-                  </div>
+                  <PostingAs account={selectedAccount} onSwitch={openAccountManager} />
                 )}
               </div>
             )}
 
             {activeTab === "following" ? (
-              <FollowingFeedContent
-                currentUserAccountId={selectedAccount?.id || ""}
-                accounts={accounts}
-                countryId={userProfile?.countryId || ""}
-                isOwner={hasCountry}
-                onAccountSelectAction={setSelectedAccount}
-                onAccountSettingsAction={(account: any) => {
-                  setSettingsAccount(account);
-                  setShowAccountSettings(true);
-                }}
-                onCreateAccountAction={() => setShowAccountCreation(true)}
-                onLikeAction={handleLike}
-                onRepostAction={handleRepost}
-                onReactionAction={handleReaction}
-                onReplyAction={handleReply}
-                onShareAction={handleShare}
-              />
+              <FollowingFeedContent {...feedHandlers} />
             ) : activeTab === "trending" ? (
-              <TrendingFeedContent
-                currentUserAccountId={selectedAccount?.id || ""}
-                accounts={accounts}
-                countryId={userProfile?.countryId || ""}
-                isOwner={hasCountry}
-                onAccountSelectAction={setSelectedAccount}
-                onAccountSettingsAction={(account: any) => {
-                  setSettingsAccount(account);
-                  setShowAccountSettings(true);
-                }}
-                onCreateAccountAction={() => setShowAccountCreation(true)}
-                onLikeAction={handleLike}
-                onRepostAction={handleRepost}
-                onReactionAction={handleReaction}
-                onReplyAction={handleReply}
-                onShareAction={handleShare}
-              />
+              <TrendingFeedContent {...feedHandlers} />
             ) : (
-              <UnifiedFeedContent
-                activeTab={activeTab}
-                currentUserAccountId={selectedAccount?.id || ""}
-                accounts={accounts}
-                countryId={userProfile?.countryId || ""}
-                isOwner={hasCountry}
-                onAccountSelectAction={setSelectedAccount}
-                onAccountSettingsAction={(account: any) => {
-                  setSettingsAccount(account);
-                  setShowAccountSettings(true);
-                }}
-                onCreateAccountAction={() => setShowAccountCreation(true)}
-                onLikeAction={handleLike}
-                onRepostAction={handleRepost}
-                onReactionAction={handleReaction}
-                onReplyAction={handleReply}
-                onShareAction={handleShare}
-              />
+              <UnifiedFeedContent activeTab={activeTab} {...feedHandlers} />
             )}
           </div>
 
-          {/* Sidebar (right 1/3): Community widgets */}
           <div className="facet-layout-sidebar-span-1 space-y-4 md:sticky md:top-(--shell-top-offset) md:self-start">
-            {/* Trending now */}
             <TrendingSectionWidget />
-
-            {/* Blurb of the Day Widget */}
             <BlurbSection />
-
-            {/* Countries to Explore */}
-            <CountriesToExploreCard currentUserCountryId={userProfile?.countryId ?? ""} />
-
-            {/* Economic Tier Distribution */}
-            {(globalStats as any)?.economicTierDistribution && (
-              <Card padding="md">
-                <h2 className="text-headline text-label mb-3">Economic tiers</h2>
-                <div className="flex flex-wrap items-center gap-1">
-                  {Object.entries((globalStats as any).economicTierDistribution).map(
-                    ([tier, count]) => (
-                      <Badge key={tier} variant="default">
-                        <span>{tier}</span>
-                        <span className="text-label tabular-nums">{count as number}</span>
-                      </Badge>
-                    )
-                  )}
-                </div>
-              </Card>
-            )}
+            <CountriesToExploreCard currentUserCountryId={countryId} />
+            {tierDistribution && <EconomicTiersCard tiers={tierDistribution} />}
           </div>
         </div>
       </motion.div>
 
-      {/* Account Modals */}
       {showAccountCreation && isCountryDataReady && (
         <AccountCreationModal
           countryId={countryData!.id}
           countryName={countryData!.name}
           existingAccountCount={accounts.length}
-          isOpen={showAccountCreation}
+          isOpen
           onClose={() => setShowAccountCreation(false)}
           onAccountCreated={() => setShowAccountCreation(false)}
         />
       )}
-      {showAccountSettings && settingsAccount && (
+      {settingsAccount && (
         <AccountSettingsModal
           account={settingsAccount}
-          isOpen={showAccountSettings}
-          onClose={() => {
-            setShowAccountSettings(false);
-            setSettingsAccount(null);
-          }}
-          onAccountUpdate={() => {
-            setShowAccountSettings(false);
-            setSettingsAccount(null);
-          }}
+          isOpen
+          onClose={() => setSettingsAccount(null)}
+          onAccountUpdate={() => setSettingsAccount(null)}
         />
       )}
 
-      {/* Account Manager Modal */}
       <AccountManagerModal
         isOpen={isAccountModalOpen}
         onClose={() => setIsAccountModalOpen(false)}
-        countryId={userProfile?.countryId ?? ""}
-        accounts={accounts}
-        selectedAccount={selectedAccount}
-        onAccountSelect={setSelectedAccount}
-        onAccountSettings={(account: any) => {
-          setSettingsAccount(account);
-          setShowAccountSettings(true);
-        }}
-        onCreateAccount={() => setShowAccountCreation(true)}
-        isOwner={hasCountry}
+        {...accountProps}
       />
 
-      {/* Repost Modal */}
       {repostingPost && (
         <RepostModal
           open={isRepostModalOpen}
           onOpenChange={setIsRepostModalOpen}
           originalPost={repostingPost}
-          countryId={userProfile?.countryId ?? ""}
-          selectedAccount={selectedAccount}
-          accounts={accounts}
-          onAccountSelect={setSelectedAccount}
-          onAccountSettings={(account: any) => {
-            setSettingsAccount(account);
-            setShowAccountSettings(true);
-          }}
-          onCreateAccount={() => setShowAccountCreation(true)}
-          isOwner={hasCountry}
+          {...accountProps}
           onPost={() => {
-            // The composer shows the success toast.
-            utils.activities.getGlobalFeed.refetch();
-            if (hasCountry) {
-              utils.activities.getFollowingFeed.refetch();
-            }
+            refetchFeeds(hasCountry);
             setIsRepostModalOpen(false);
             setRepostingPost(null);
           }}
