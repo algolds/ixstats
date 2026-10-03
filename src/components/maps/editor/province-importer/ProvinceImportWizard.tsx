@@ -40,6 +40,65 @@ const STEP_CONFIG: { key: ImportStep; label: string; icon: typeof Upload }[] = [
   { key: "commit", label: "Commit", icon: Save },
 ];
 
+const SCOPE_TITLES: Partial<Record<string, string>> = {
+  cities: "Import Cities",
+  provinces: "Import Provinces",
+};
+
+type Importer = ProvinceImportWizardProps["importer"];
+
+function WizardFooter({ importer, onCommit }: { importer: Importer; onCommit: () => void }) {
+  const isCities = importer.importScope === "cities";
+  return (
+    <div className="border-separator flex items-center justify-between border-t px-4 py-3">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="text-label-secondary"
+        onClick={importer.goBack}
+        disabled={!importer.canGoBack || importer.isProcessing}
+      >
+        <ChevronLeft className="h-3.5 w-3.5" />
+        Back
+      </Button>
+
+      <div className="text-label-secondary text-footnote">
+        {isCities
+          ? `${importer.alignedCities.length} city/cities aligned`
+          : `${importer.includedCount} province${importer.includedCount !== 1 ? "s" : ""} selected`}
+      </div>
+
+      {importer.step !== "commit" ? (
+        <Button
+          size="sm"
+          onClick={importer.goNext}
+          disabled={
+            !importer.canGoNext ||
+            importer.isProcessing ||
+            (importer.step === "upload" &&
+              (isCities ? importer.rawCityPoints : importer.rawProvinces).length === 0)
+          }
+        >
+          Next
+          <ChevronRight className="h-3.5 w-3.5" />
+        </Button>
+      ) : (
+        <Button
+          size="sm"
+          onClick={onCommit}
+          disabled={
+            importer.isProcessing ||
+            (isCities ? importer.alignedCities.length === 0 : importer.includedCount === 0)
+          }
+        >
+          {importer.isProcessing ? "Importing..." : isCities ? "Import Cities" : "Import Provinces"}
+          <Save className="h-3.5 w-3.5" />
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export const ProvinceImportWizard = memo(function ProvinceImportWizard({
   importer,
   onClose,
@@ -57,14 +116,9 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
 
   return (
     <div className="bg-surface flex h-full flex-col">
-      {/* Header */}
       <div className="border-separator flex items-center justify-between border-b px-4 py-3">
         <h2 className="text-label text-headline">
-          {importer.importScope === "cities"
-            ? "Import Cities"
-            : importer.importScope === "provinces"
-              ? "Import Provinces"
-              : "Import Provinces & Cities"}
+          {SCOPE_TITLES[importer.importScope] ?? "Import Provinces & Cities"}
         </h2>
         <Button
           variant="ghost"
@@ -76,7 +130,6 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
         </Button>
       </div>
 
-      {/* Step Indicator */}
       <StepIndicator
         aria-label="Import steps"
         className="border-separator border-b px-3 py-2"
@@ -93,7 +146,6 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
         compactOnPhones
       />
 
-      {/* Step Content */}
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {importer.error && (
           <div className="bg-destructive/10 text-destructive rounded-control text-footnote mb-3 px-3 py-2">
@@ -109,62 +161,7 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
         {importer.step === "commit" && <CommitStep importer={importer} onCommit={handleCommit} />}
       </div>
 
-      {/* Footer Navigation */}
-      <div className="border-separator flex items-center justify-between border-t px-4 py-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-label-secondary"
-          onClick={importer.goBack}
-          disabled={!importer.canGoBack || importer.isProcessing}
-        >
-          <ChevronLeft className="h-3.5 w-3.5" />
-          Back
-        </Button>
-
-        <div className="text-label-secondary text-footnote">
-          {importer.importScope === "cities"
-            ? `${importer.alignedCities.length} city/cities aligned`
-            : `${importer.includedCount} province${importer.includedCount !== 1 ? "s" : ""} selected`}
-        </div>
-
-        {importer.step !== "commit" ? (
-          <Button
-            size="sm"
-            onClick={importer.goNext}
-            disabled={
-              !importer.canGoNext ||
-              importer.isProcessing ||
-              (importer.step === "upload" &&
-                (importer.importScope === "cities"
-                  ? importer.rawCityPoints.length === 0
-                  : importer.rawProvinces.length === 0))
-            }
-          >
-            Next
-            <ChevronRight className="h-3.5 w-3.5" />
-          </Button>
-        ) : (
-          <Button
-            size="sm"
-            onClick={handleCommit}
-            disabled={
-              importer.isProcessing ||
-              (importer.importScope === "cities"
-                ? importer.alignedCities.length === 0
-                : importer.includedCount === 0)
-            }
-          >
-            {importer.isProcessing
-              ? "Importing..."
-              : importer.importScope === "cities"
-                ? "Import Cities"
-                : "Import Provinces"}
-            <Save className="h-3.5 w-3.5" />
-          </Button>
-        )}
-      </div>
-      {/* Border conformance warning modal */}
+      <WizardFooter importer={importer} onCommit={handleCommit} />
       <BorderConformanceModal
         open={importer.showConformanceModal}
         onClose={() => importer.setShowConformanceModal(false)}

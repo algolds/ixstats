@@ -21,9 +21,46 @@ interface NameDetectionStepProps {
   importer: ReturnType<typeof useProvinceImporter>;
 }
 
+const SELECTION_ACTIONS = [
+  { label: "Select all", target: true },
+  { label: "Deselect all", target: false },
+];
+
+type CityLayer = ReturnType<typeof useProvinceImporter>["cityLayers"][number];
+const markerCountLabel = (layer: CityLayer) => `${layer.name} (${layer.markerCount} points)`;
+
 export const NameDetectionStep = memo(function NameDetectionStep({
   importer,
 }: NameDetectionStepProps) {
+  const { citiesLayerId, capitalLayerId, cityNameLayerId, setLayer } = importer;
+  const cityLayerSelects = [
+    {
+      title: "Cities layer",
+      ariaLabel: "Cities layer",
+      emptyLabel: "-- Auto-detect --",
+      value: citiesLayerId,
+      onChange: (v: string) => setLayer(v, capitalLayerId, cityNameLayerId),
+      optionLabel: markerCountLabel,
+    },
+    {
+      title: "Capitals Layer (Optional)",
+      ariaLabel: "Capitals layer",
+      emptyLabel: "-- None --",
+      value: capitalLayerId,
+      onChange: (v: string) => setLayer(citiesLayerId, v, cityNameLayerId),
+      optionLabel: markerCountLabel,
+    },
+    {
+      title: "City Names (Optional)",
+      ariaLabel: "City name layer",
+      emptyLabel: "-- None (Auto) --",
+      value: cityNameLayerId,
+      onChange: (v: string) => setLayer(citiesLayerId, capitalLayerId, v),
+      optionLabel: (layer: CityLayer) =>
+        `${layer.name} (${layer.textCount} label${layer.textCount !== 1 ? "s" : ""})`,
+    },
+  ];
+
   return (
     <div className="space-y-3">
       <div>
@@ -100,28 +137,20 @@ export const NameDetectionStep = memo(function NameDetectionStep({
           {importer.includedCount} of {importer.rawProvinces.length} provinces selected
         </span>
         <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() =>
-              importer.rawProvinces.forEach((p) => {
-                if (!p.included) importer.toggleProvinceIncluded(p.sourceId);
-              })
-            }
-          >
-            Select all
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() =>
-              importer.rawProvinces.forEach((p) => {
-                if (p.included) importer.toggleProvinceIncluded(p.sourceId);
-              })
-            }
-          >
-            Deselect all
-          </Button>
+          {SELECTION_ACTIONS.map(({ label, target }) => (
+            <Button
+              key={label}
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                importer.rawProvinces.forEach((p) => {
+                  if (p.included !== target) importer.toggleProvinceIncluded(p.sourceId);
+                })
+              }
+            >
+              {label}
+            </Button>
+          ))}
         </div>
       </div>
 
@@ -144,62 +173,24 @@ export const NameDetectionStep = memo(function NameDetectionStep({
           {importer.importCities && (
             <div className="space-y-2">
               <div className="text-footnote grid grid-cols-3 gap-2">
-                <div className="space-y-1">
-                  <Eyebrow className="block">Cities layer</Eyebrow>
-                  <OptionSelect
-                    aria-label="Cities layer"
-                    size="sm"
-                    value={importer.citiesLayerId}
-                    onValueChange={(v) =>
-                      importer.setLayer(v, importer.capitalLayerId, importer.cityNameLayerId)
-                    }
-                    options={[
-                      { value: "", label: "-- Auto-detect --" },
-                      ...importer.cityLayers.map((layer) => ({
-                        value: layer.id,
-                        label: `${layer.name} (${layer.markerCount} points)`,
-                      })),
-                    ]}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Eyebrow className="block">Capitals Layer (Optional)</Eyebrow>
-                  <OptionSelect
-                    aria-label="Capitals layer"
-                    size="sm"
-                    value={importer.capitalLayerId}
-                    onValueChange={(v) =>
-                      importer.setLayer(importer.citiesLayerId, v, importer.cityNameLayerId)
-                    }
-                    options={[
-                      { value: "", label: "-- None --" },
-                      ...importer.cityLayers.map((layer) => ({
-                        value: layer.id,
-                        label: `${layer.name} (${layer.markerCount} points)`,
-                      })),
-                    ]}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Eyebrow className="block">City Names (Optional)</Eyebrow>
-                  <OptionSelect
-                    aria-label="City name layer"
-                    size="sm"
-                    value={importer.cityNameLayerId}
-                    onValueChange={(v) =>
-                      importer.setLayer(importer.citiesLayerId, importer.capitalLayerId, v)
-                    }
-                    options={[
-                      { value: "", label: "-- None (Auto) --" },
-                      ...importer.cityLayers.map((layer) => ({
-                        value: layer.id,
-                        label: `${layer.name} (${layer.textCount} label${layer.textCount !== 1 ? "s" : ""})`,
-                      })),
-                    ]}
-                  />
-                </div>
+                {cityLayerSelects.map((select) => (
+                  <div key={select.ariaLabel} className="space-y-1">
+                    <Eyebrow className="block">{select.title}</Eyebrow>
+                    <OptionSelect
+                      aria-label={select.ariaLabel}
+                      size="sm"
+                      value={select.value}
+                      onValueChange={select.onChange}
+                      options={[
+                        { value: "", label: select.emptyLabel },
+                        ...importer.cityLayers.map((layer) => ({
+                          value: layer.id,
+                          label: select.optionLabel(layer),
+                        })),
+                      ]}
+                    />
+                  </div>
+                ))}
               </div>
 
               {importer.snappedCitiesCount > 0 && (
