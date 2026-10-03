@@ -1,10 +1,6 @@
 import { Globe as Globe2, Shield, Bank as Landmark, StatUp as TrendingUp } from "iconoir-react";
 
-/**
- * Single source of truth for the four v2 domain drill-downs.
- * Shared by the right-side drill sheets (V2DrillSheets) and the full-page
- * domain surfaces (V2DomainSurface) so theming stays consistent.
- */
+/** The four domain drill-downs, shared by the drill sheets and the full-page domain surfaces. */
 export type V2Domain = "relations" | "defense" | "politics" | "economy";
 
 export const DOMAIN_META: Record<
@@ -13,7 +9,6 @@ export const DOMAIN_META: Record<
     title: string;
     sheetTitle: string;
     icon: React.ComponentType<{ className?: string; strokeWidth?: number | string }>;
-    accent: string;
     blurb: string;
     section: "diplomacy" | "defense" | "politics" | "economy";
     href: string;
@@ -24,9 +19,7 @@ export const DOMAIN_META: Record<
     title: "Diplomacy",
     sheetTitle: "Foreign Relations",
     icon: Globe2,
-    accent: "text-cyan",
-    blurb:
-      "Forge alliances, establish embassies, negotiate trade pacts, and project diplomatic influence.",
+    blurb: "Relations, embassies, alliances and trade agreements.",
     section: "diplomacy",
     href: "/mycountry/diplomacy",
     prefilledGoal: "Fund foreign ministry diplomatic consular service and trade promotion",
@@ -35,9 +28,7 @@ export const DOMAIN_META: Record<
     title: "Defense",
     sheetTitle: "National Security",
     icon: Shield,
-    accent: "text-red",
-    blurb:
-      "Deploy military forces, monitor regional threat vectors, fortify defenses, and maintain strategic warfare readiness.",
+    blurb: "Forces, readiness and regional threats.",
     section: "defense",
     href: "/mycountry/defense",
     prefilledGoal: "Strengthen national defense and military readiness",
@@ -46,9 +37,7 @@ export const DOMAIN_META: Record<
     title: "Politics",
     sheetTitle: "Governance Configuration",
     icon: Landmark,
-    accent: "text-indigo",
-    blurb:
-      "Enact legislative policies, manage political faction dynamics, shape governance structures, and secure electoral dominance.",
+    blurb: "Legislation, factions, governance and elections.",
     section: "politics",
     href: "/mycountry/politics",
     prefilledGoal: "Reform domestic governance and political institutions",
@@ -57,9 +46,7 @@ export const DOMAIN_META: Record<
     title: "Economy & Budget",
     sheetTitle: "Economy & Budget",
     icon: TrendingUp,
-    accent: "text-green",
-    blurb:
-      "Manage national budget allocation, optimize trade revenue, control inflation, and build a booming powerhouse economy.",
+    blurb: "Budget, taxes, trade and growth.",
     section: "economy",
     href: "/mycountry/economy",
     prefilledGoal: "Stabilize the national economy and improve the fiscal outlook",

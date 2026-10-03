@@ -37,7 +37,7 @@ export function CommandNavToggle({
 
   const mainNav: { id: V2Mode; label: string; icon: typeof LayoutGrid }[] = [
     { id: "home", label: "Home", icon: LayoutGrid },
-    { id: "executive", label: "Declare a Directive", icon: Command },
+    { id: "executive", label: "Declare Directive", icon: Command },
   ];
 
   const isHomeSection =

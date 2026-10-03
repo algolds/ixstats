@@ -17,7 +17,6 @@ import { consequenceFieldLabel } from "~/lib/intent/consequence-labels";
 import type { V2Drill } from "~/components/mycountry/shell/DrillSheets";
 import { CATEGORY_STYLE } from "./ExecutiveActionCards";
 import { STATUS_TEXT } from "./status-tone";
-import { HUE_BADGE, hueAccentStyle } from "./domain-hue";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Card } from "~/components/ui/card";
 
@@ -279,18 +278,13 @@ export function ExecutiveRecordFeed({
                       aria-controls={panelId}
                       onClick={() => setExpandedId((prev) => (prev === item.id ? null : item.id))}
                       className={cn(
-                        "group h-auto w-full items-start justify-start gap-3 rounded-none px-3 py-3 text-left font-normal whitespace-normal focus-visible:ring-inset active:scale-100",
+                        "group h-auto w-full items-start justify-start gap-3 rounded-none px-3 py-3 text-left font-normal whitespace-normal focus-visible:ring-inset",
                         isExpanded && "bg-fill-3"
                       )}
                     >
-                      {/* v2 category badge: the category glyph in its domain hue. */}
                       <span
                         aria-hidden="true"
-                        style={hueAccentStyle(meta.hue)}
-                        className={cn(
-                          "flex size-7 shrink-0 items-center justify-center rounded-lg border",
-                          HUE_BADGE
-                        )}
+                        className="bg-fill-3 text-label-secondary flex size-7 shrink-0 items-center justify-center rounded-lg"
                       >
                         <meta.icon className="size-3.5" />
                       </span>

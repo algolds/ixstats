@@ -183,6 +183,7 @@ export function MyCountrySidebarNav({
       <Card className="overflow-hidden p-2">
         <nav
           aria-label="MyCountry sections"
+          data-app-subnav
           className="hide-scrollbar flex items-center gap-2 overflow-x-auto"
         >
           {renderItem(
@@ -237,7 +238,7 @@ export function MyCountrySidebarNav({
   if (variant === "expanded") {
     return (
       <Card className="flex w-full flex-col gap-1 p-2">
-        <nav aria-label="MyCountry sections" className="flex w-full flex-col gap-1">
+        <nav aria-label="MyCountry sections" data-app-subnav className="flex w-full flex-col gap-1">
           <div className="border-separator mb-2 flex w-full items-center justify-between border-b px-1 pb-1">
             {renderItem(
               "overview",
@@ -288,7 +289,11 @@ export function MyCountrySidebarNav({
   /* ── Desktop: icon rail with tooltip labels ── */
   return (
     <Card className="p-2">
-      <nav aria-label="MyCountry sections" className="flex flex-col items-center gap-2">
+      <nav
+        aria-label="MyCountry sections"
+        data-app-subnav
+        className="flex flex-col items-center gap-2"
+      >
         <Tooltip content={isPremium ? "Overview · Premium" : "Overview"} side="right">
           {renderItem(
             "overview",

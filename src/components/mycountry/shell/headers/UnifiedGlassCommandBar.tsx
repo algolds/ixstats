@@ -73,11 +73,9 @@ function DirectiveStatusLine({ countryId }: { countryId?: string }) {
 }
 
 /**
- * The MyCountry command bar, restored from c5c6b382 on the Facet 3.1 glass hero: the gold-rimmed
- * glass shell (v2 translucent blurred card → `FacetCard variant="glass"` with the
- * gold tint glow), the MyCountry logo and a quiet toolbar (Profile, Editor) with the one gold
- * Declare Directive button, the country's large title, then either the four domain tiles in their
- * v2 hues (overview) or a section switcher (domain surfaces and the directive console).
+ * The MyCountry header: logo, a quiet toolbar (Profile, Editor) with the one Declare Directive
+ * button, the country's name, then the domain tiles (overview) or a section switcher (domain
+ * pages and the Directives page).
  */
 export function UnifiedGlassCommandBar({
   mode,
@@ -112,8 +110,7 @@ export function UnifiedGlassCommandBar({
   const activeTab = isExecutiveMode ? "" : activeSection;
 
   return (
-    <Card variant="hero" className="flex w-full flex-col gap-4 p-4 sm:gap-5 sm:p-5">
-      {/* Top row (v2): the MyCountry logo, then the tools and the one gold primary action */}
+    <Card className="flex w-full flex-col gap-4 p-4 sm:gap-5 sm:p-5">
       <div className="relative flex flex-wrap items-center justify-between gap-3">
         <MyCountryLogo size="md" variant="full" animated />
 
@@ -137,8 +134,7 @@ export function UnifiedGlassCommandBar({
               aria-label="Edit country"
               title="Edit country and territory"
             >
-              {/* v2: the editor tool carries the green "build" glyph. */}
-              <Edit3 aria-hidden="true" className="text-green" />
+              <Edit3 aria-hidden="true" />
               <span className="hidden md:inline">Editor</span>
             </Button>
             <Button
@@ -163,7 +159,6 @@ export function UnifiedGlassCommandBar({
         </div>
       </div>
 
-      {/* Large title: flag + country name, with a calm identity footnote */}
       {country?.name ? (
         <header className="relative flex min-w-0 items-center gap-4">
           <span className="border-separator bg-fill-3 rounded-row shadow-card flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden border sm:h-14 sm:w-20">
@@ -188,9 +183,9 @@ export function UnifiedGlassCommandBar({
       ) : null}
 
       {isOverview ? (
-        /* Domain destinations: the v2 action tiles in their domain hues */
         <nav
           aria-label="MyCountry domains"
+          data-app-subnav
           className="relative grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
         >
           {DOMAIN_TILES.map((tile) => (
@@ -213,6 +208,7 @@ export function UnifiedGlassCommandBar({
         /* Section switcher */
         <nav
           aria-label="MyCountry sections"
+          data-app-subnav
           className="relative -mx-1 scrollbar-none overflow-x-auto px-1"
         >
           <SegmentedControl

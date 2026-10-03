@@ -107,7 +107,6 @@ function CommandSurfaceComponent({
           onDeclare={declare}
           onOpenIntent={openIntent}
           onOpenDrill={openDrill}
-          onNavigate={onNavigate}
         />
       )}
 

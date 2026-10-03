@@ -38,7 +38,6 @@ import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { DOMAIN_META, type V2Domain } from "./domain-meta";
 import { STATUS_TEXT } from "./status-tone";
-import { HUE_BADGE, hueAccentStyle, hueOf } from "./domain-hue";
 import { ThinkPagesShareModal } from "~/components/mycountry/shared/modals/ThinkPagesShareModal";
 import { IssueDetailBrief } from "~/components/mycountry/shared/headers/IssueDetailBrief";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
@@ -494,7 +493,7 @@ function IntentDetail({
                 className="text-footnote flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0"
               >
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className="border-tint/20 bg-tint/10 text-tint font-data flex size-6 shrink-0 items-center justify-center rounded-lg border font-semibold tabular-nums">
+                  <span className="border-tint/20 bg-tint/10 text-tint flex size-6 shrink-0 items-center justify-center rounded-lg border font-semibold tabular-nums">
                     {idx + 1}
                   </span>
                   <span className="text-label font-medium">{change.label}</span>
@@ -607,17 +606,7 @@ function DrillSheetsComponent({
         <SheetHeader className="mb-4">
           <div className="flex items-center justify-between gap-2">
             <SheetTitle className="text-headline flex items-center gap-3">
-              {/* v2: the sheet's glyph in its domain hue (gold for directives and issues) */}
-              <span
-                aria-hidden="true"
-                style={hueAccentStyle(hueOf(drill?.kind) ?? "yellow")}
-                className={cn(
-                  "flex size-8 shrink-0 items-center justify-center rounded-lg border",
-                  HUE_BADGE
-                )}
-              >
-                <Icon className="h-4 w-4" />
-              </span>
+              <Icon aria-hidden="true" className="text-label-secondary size-5 shrink-0" />
               {title}
             </SheetTitle>
             {drill && drill.kind !== "intent" && drill.kind !== "issue" && (
