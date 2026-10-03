@@ -3,12 +3,7 @@ import { z } from "zod";
 // Object values may be undefined: superjson preserves `undefined` keys from the client
 // (e.g. `parentDepartmentId: undefined`); JSON serialization drops them on write.
 type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue | undefined };
+  string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue | undefined };
 
 const jsonLiteralSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
 
