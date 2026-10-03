@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Globe,
@@ -20,6 +19,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "~/compone
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { tweenFast } from "~/lib/design/motion";
 import { WIKIOS_VERSION } from "~/lib/buildVersion";
+import { useWelcomeModal } from "~/components/wiki-os/shared/useWelcomeModal";
 
 const STORAGE_KEY = "wikios-repository-welcome-seen";
 
@@ -96,42 +96,12 @@ export function RepositoryWelcomeModal({
   open?: boolean;
   onOpenChangeAction?: (open: boolean) => void;
 }) {
-  const [show, setShow] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
-  useEffect(() => {
-    if (open !== undefined) {
-      // oxlint-disable-next-line
-      setShow(open);
-      if (open) {
-        setActiveTab(0);
-      }
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (open === undefined) {
-      try {
-        const seen = localStorage.getItem(STORAGE_KEY);
-        if (!seen || seen !== WIKIOS_VERSION) {
-          const timer = setTimeout(() => setShow(true), 800);
-          return () => clearTimeout(timer);
-        }
-      } catch {
-        // localStorage unavailable
-      }
-    }
-    return;
-  }, [open]);
-
-  const handleClose = useCallback(() => {
-    setShow(false);
-    onOpenChangeAction?.(false);
-    try {
-      localStorage.setItem(STORAGE_KEY, WIKIOS_VERSION);
-    } catch {
-      // storage unavailable (private mode) — preference is not persisted
-    }
-  }, [onOpenChangeAction]);
+  const { show, activeTab, setActiveTab, handleClose } = useWelcomeModal({
+    open,
+    onOpenChangeAction,
+    storageKey: STORAGE_KEY,
+    version: WIKIOS_VERSION,
+  });
 
   const TABS = ["Getting Started", "Features", "Tips", "FAQ Guide"];
 

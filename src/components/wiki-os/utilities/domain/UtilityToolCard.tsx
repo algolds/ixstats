@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowRight } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 
-export interface UtilityTool {
+interface UtilityTool {
   id: string;
   title: string;
   description: string;

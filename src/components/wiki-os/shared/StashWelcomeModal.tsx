@@ -3,7 +3,6 @@
 // User guide for the Stash System across WikiOS & IxStates.
 // Features unslop writing, 4-tab feature overview.
 
-import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Bookmark,
@@ -27,6 +26,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "~/compone
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { tweenFast } from "~/lib/design/motion";
 import { STASHES_WELCOME_VERSION } from "~/lib/buildVersion";
+import { useWelcomeModal } from "~/components/wiki-os/shared/useWelcomeModal";
 
 const STORAGE_KEY = "wikios-stashes-welcome-seen";
 
@@ -161,42 +161,12 @@ export function StashWelcomeModal({
   open?: boolean;
   onOpenChangeAction?: (open: boolean) => void;
 }) {
-  const [show, setShow] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
-  useEffect(() => {
-    if (open !== undefined) {
-      // oxlint-disable-next-line
-      setShow(open);
-      if (open) {
-        setActiveTab(0);
-      }
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (open === undefined) {
-      try {
-        const seen = localStorage.getItem(STORAGE_KEY);
-        if (!seen || seen !== STASHES_WELCOME_VERSION) {
-          const timer = setTimeout(() => setShow(true), 800);
-          return () => clearTimeout(timer);
-        }
-      } catch {
-        // localStorage unavailable
-      }
-    }
-    return;
-  }, [open]);
-
-  const handleClose = useCallback(() => {
-    setShow(false);
-    onOpenChangeAction?.(false);
-    try {
-      localStorage.setItem(STORAGE_KEY, STASHES_WELCOME_VERSION);
-    } catch {
-      // storage unavailable (private mode) — preference is not persisted
-    }
-  }, [onOpenChangeAction]);
+  const { show, activeTab, setActiveTab, handleClose } = useWelcomeModal({
+    open,
+    onOpenChangeAction,
+    storageKey: STORAGE_KEY,
+    version: STASHES_WELCOME_VERSION,
+  });
 
   const currentSteps = TABS[activeTab]?.steps ?? OVERVIEW_STEPS;
 

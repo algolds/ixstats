@@ -40,7 +40,7 @@ interface QuoteEl extends BaseEl {
 interface ListEl extends BaseEl {
   type: "ul" | "ol";
 }
-export interface ListItemEl extends BaseEl {
+interface ListItemEl extends BaseEl {
   type: "li";
   level?: number;
   prefix?: string;
@@ -53,11 +53,11 @@ interface TableEl extends BaseEl {
   caption?: string;
   attributes?: string;
 }
-export interface RowEl extends BaseEl {
+interface RowEl extends BaseEl {
   type: "tr";
   attributes?: string;
 }
-export interface CellEl extends BaseEl {
+interface CellEl extends BaseEl {
   type: "td" | "th";
   attributes?: string;
   isHeader?: boolean;
