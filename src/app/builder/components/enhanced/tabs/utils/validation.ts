@@ -41,6 +41,16 @@ export function validateEconomy(
 ): EconomyValidationResult {
   const messages: ValidationMessage[] = [];
   const byTab: EconomyValidationResult["byTab"] = { sectors: [], labor: [], demographics: [] };
+  const report = (
+    tab: keyof EconomyValidationResult["byTab"] | null,
+    field: string,
+    message: string,
+    severity: ValidationMessage["severity"]
+  ) => {
+    const msg: ValidationMessage = { field, message, severity };
+    messages.push(msg);
+    if (tab) byTab[tab].push(msg);
+  };
 
   // Sector checks
   const sectorSum = economyBuilder.sectors.reduce((sum, s) => sum + s.gdpContribution, 0);
@@ -50,112 +60,82 @@ export function validateEconomy(
   for (const sector of economyBuilder.sectors) {
     const isZeroGdp = sector.gdpContribution === 0;
     const isZeroEmployment = sector.employmentShare === 0;
-    if (isZeroGdp || isZeroEmployment) {
-      hasZeroContribution.push({
-        id: sector.id,
-        name: sector.name,
-        gdpContribution: sector.gdpContribution,
-        employmentShare: sector.employmentShare,
-        isZeroGdp,
-        isZeroEmployment,
-      });
-    }
+    if (!isZeroGdp && !isZeroEmployment) continue;
+    hasZeroContribution.push({
+      id: sector.id,
+      name: sector.name,
+      gdpContribution: sector.gdpContribution,
+      employmentShare: sector.employmentShare,
+      isZeroGdp,
+      isZeroEmployment,
+    });
   }
 
   if (Math.abs(sectorSum - 100) > 1) {
-    const msg: ValidationMessage = {
-      field: "sectors",
-      message: `Sector GDP contributions must sum to 100% (currently ${sectorSum.toFixed(1)}%)`,
-      severity: "error",
-    };
-    messages.push(msg);
-    byTab.sectors.push(msg);
+    report(
+      "sectors",
+      "sectors",
+      `Sector GDP contributions must sum to 100% (currently ${sectorSum.toFixed(1)}%)`,
+      "error"
+    );
   }
-
   if (Math.abs(employmentSum - 100) > 1) {
-    const msg: ValidationMessage = {
-      field: "sectors",
-      message: `Employment shares must sum to 100% (currently ${employmentSum.toFixed(1)}%)`,
-      severity: "error",
-    };
-    messages.push(msg);
-    byTab.sectors.push(msg);
+    report(
+      "sectors",
+      "sectors",
+      `Employment shares must sum to 100% (currently ${employmentSum.toFixed(1)}%)`,
+      "error"
+    );
   }
 
   for (const sc of hasZeroContribution) {
-    if (sc.isZeroGdp || sc.isZeroEmployment) {
-      const parts: string[] = [];
-      if (sc.isZeroGdp) parts.push("0% GDP");
-      if (sc.isZeroEmployment) parts.push("0% employment");
-      const msg: ValidationMessage = {
-        field: sc.id,
-        message: `${sc.name} has ${parts.join(", ")}`,
-        severity: "warning",
-      };
-      messages.push(msg);
-      byTab.sectors.push(msg);
-    }
+    const parts = [sc.isZeroGdp && "0% GDP", sc.isZeroEmployment && "0% employment"].filter(
+      Boolean
+    );
+    report("sectors", sc.id, `${sc.name} has ${parts.join(", ")}`, "warning");
   }
 
   // Labor checks
-  if (economyBuilder.laborMarket.laborForceParticipationRate > 95) {
-    const msg: ValidationMessage = {
-      field: "participationRate",
-      message: "Labor force participation rate seems too high",
-      severity: "warning",
-    };
-    messages.push(msg);
-    byTab.labor.push(msg);
+  const { laborForceParticipationRate, unemploymentRate } = economyBuilder.laborMarket;
+  if (laborForceParticipationRate > 95) {
+    report(
+      "labor",
+      "participationRate",
+      "Labor force participation rate seems too high",
+      "warning"
+    );
   }
-
-  if (economyBuilder.laborMarket.laborForceParticipationRate < 20) {
-    const msg: ValidationMessage = {
-      field: "participationRate",
-      message: "Labor force participation rate seems too low",
-      severity: "warning",
-    };
-    messages.push(msg);
-    byTab.labor.push(msg);
+  if (laborForceParticipationRate < 20) {
+    report("labor", "participationRate", "Labor force participation rate seems too low", "warning");
   }
-
-  if (
-    economyBuilder.laborMarket.unemploymentRate < 0 ||
-    economyBuilder.laborMarket.unemploymentRate > 50
-  ) {
-    const msg: ValidationMessage = {
-      field: "unemploymentRate",
-      message: "Unemployment rate seems unrealistic",
-      severity: "error",
-    };
-    messages.push(msg);
-    byTab.labor.push(msg);
+  if (unemploymentRate < 0 || unemploymentRate > 50) {
+    report("labor", "unemploymentRate", "Unemployment rate seems unrealistic", "error");
   }
 
   // Demographics checks
   const ageDist = economyBuilder.demographics.ageDistribution;
-  const ageSum = (ageDist?.under15 || 0) + (ageDist?.age15to64 || 0) + (ageDist?.over65 || 0);
-
-  if (Math.abs(ageSum - 100) > 1) {
-    const msg: ValidationMessage = {
-      field: "ageDistribution",
-      message: `Age distribution must sum to 100% (currently ${ageSum.toFixed(1)}%)`,
-      severity: "error",
-    };
-    messages.push(msg);
-    byTab.demographics.push(msg);
+  const ageSum = [ageDist?.under15, ageDist?.age15to64, ageDist?.over65].reduce<number>(
+    (sum, share) => sum + (share || 0),
+    0
+  );
+  const hasValidAgeDist = Math.abs(ageSum - 100) <= 1;
+  if (!hasValidAgeDist) {
+    report(
+      "demographics",
+      "ageDistribution",
+      `Age distribution must sum to 100% (currently ${ageSum.toFixed(1)}%)`,
+      "error"
+    );
   }
 
-  const hasValidAgeDist = Math.abs(ageSum - 100) <= 1;
-
-  // Component impact info
-  const hasComponentImpact = selectedComponents.length > 0;
-  if (hasComponentImpact) {
-    const msg: ValidationMessage = {
-      field: "components",
-      message: `${selectedComponents.length} atomic component${selectedComponents.length === 1 ? "" : "s"} active — modifiers applied across all tabs`,
-      severity: "info",
-    };
-    messages.push(msg);
+  const componentCount = selectedComponents.length;
+  if (componentCount > 0) {
+    report(
+      null,
+      "components",
+      `${componentCount} atomic component${componentCount === 1 ? "" : "s"} active — modifiers applied across all tabs`,
+      "info"
+    );
   }
 
   const status: EconomyValidationResult["status"] = messages.some((m) => m.severity === "error")
