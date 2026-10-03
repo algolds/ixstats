@@ -54,6 +54,38 @@ async function runLimited<T>(
   return { successCount, failCount };
 }
 
+type PlannedFeature = ReturnType<typeof planGeoJSONImport>["features"][number];
+
+const ofType = <T>(value: unknown, type: "string" | "number", fallback?: T) =>
+  typeof value === type ? (value as T) : fallback;
+
+/** History snapshot used to create a feature imported from GeoJSON, with defaults for missing properties. */
+function importedFeatureData(f: PlannedFeature): HistoryData {
+  const p = f.properties;
+  if (f.kind === "subdivision") {
+    return {
+      name: f.name,
+      type: ofType(p.type, "string", "province"),
+      level: ofType(p.level, "number", 1),
+      geometry: f.geometry,
+    };
+  }
+  if (f.kind === "city") {
+    return {
+      name: f.name,
+      cityType: ofType(p.cityType, "string", "city"),
+      coordinates: f.coordinates,
+      population: ofType(p.population, "number"),
+    };
+  }
+  return {
+    name: f.name,
+    category: ofType(p.category, "string", "landmark"),
+    coordinates: f.coordinates,
+    description: ofType(p.description, "string"),
+  };
+}
+
 interface UseMapEditorBulkOpsProps {
   countryId?: string;
   /** Raw country features query result (for the gap computation). */
@@ -99,12 +131,41 @@ export function useMapEditorBulkOps({
   const [isBulkBusy, setIsBulkBusy] = useState(false);
   const [gapRecalcTick, setGapRecalcTick] = useState(0);
 
-  const bulkDeleteSelected = useCallback(async () => {
-    if (!countryId || selectedIds.size === 0) return { successCount: 0, failCount: 0 };
-    const toDelete = allFeatures.filter((f) => selectedIds.has(f.id) && f.type !== "gap");
-    const subActions: EditorAction[] = [];
+  const noResult = { successCount: 0, failCount: 0 };
+
+  /** Run a bulk operation with the busy flag set. */
+  const withBusy = async <T>(work: () => Promise<T>): Promise<T> => {
     setIsBulkBusy(true);
     try {
+      return await work();
+    } finally {
+      setIsBulkBusy(false);
+    }
+  };
+
+  /** Record the sub-actions as one undo step (nothing when none succeeded). */
+  const pushBatch = (
+    subActions: EditorAction[],
+    description: string,
+    head?: { type: FeatureType; id: string }
+  ) => {
+    if (subActions.length === 0) return;
+    pushAction({
+      type: "batch",
+      featureType: head?.type ?? subActions[0]!.featureType,
+      featureId: head?.id ?? subActions[0]!.featureId,
+      description,
+      subActions,
+    });
+  };
+
+  const plural = (n: number, noun: string) => `${n} ${noun}${n === 1 ? "" : "s"}`;
+
+  const bulkDeleteSelected = async () => {
+    if (!countryId || selectedIds.size === 0) return noResult;
+    const toDelete = allFeatures.filter((f) => selectedIds.has(f.id) && f.type !== "gap");
+    const subActions: EditorAction[] = [];
+    return withBusy(async () => {
       const result = await runLimited(toDelete, 4, async (feat) => {
         await historyExecutor.deleteFeatureById(feat.type, feat.id);
         subActions.push({
@@ -121,15 +182,7 @@ export function useMapEditorBulkOps({
           },
         });
       });
-      if (subActions.length > 0) {
-        pushAction({
-          type: "batch",
-          featureType: toDelete[0]!.type,
-          featureId: toDelete[0]!.id,
-          description: `Deleted ${subActions.length} feature${subActions.length === 1 ? "" : "s"}`,
-          subActions,
-        });
-      }
+      pushBatch(subActions, `Deleted ${plural(subActions.length, "feature")}`, toDelete[0]);
       if (selectedFeature && selectedIds.has(selectedFeature.id)) resetForm();
       clearMultiSelect();
       afterWrite();
@@ -137,77 +190,49 @@ export function useMapEditorBulkOps({
         setMutationError(`${result.failCount} of ${toDelete.length} deletions failed`);
       }
       return result;
-    } finally {
-      setIsBulkBusy(false);
-    }
-  }, [
-    countryId,
-    selectedIds,
-    allFeatures,
-    historyExecutor,
-    pushAction,
-    selectedFeature,
-    resetForm,
-    clearMultiSelect,
-    afterWrite,
-  ]);
+    });
+  };
 
   /** Applies one attribute to every selected region (one undo step). */
-  const bulkEditSelected = useCallback(
-    async (
-      fieldArg?: string[] | string,
-      valueArg?: Record<string, string | number | boolean | null> | string | number | boolean | null
-    ): Promise<{ successCount: number; failCount: number }> => {
-      const field = (Array.isArray(fieldArg) ? fieldArg[0] : fieldArg) as BulkEditField | undefined;
-      if (
-        !countryId ||
-        !field ||
-        valueArg === undefined ||
-        valueArg === null ||
-        typeof valueArg === "object"
-      ) {
-        return { successCount: 0, failCount: 0 };
-      }
-      const regions = allFeatures.filter((f) => selectedIds.has(f.id) && f.type === "subdivision");
-      const subActions: EditorAction[] = [];
-      setIsBulkBusy(true);
-      try {
-        const result = await runLimited(regions, 4, async (r) => {
-          const base: HistoryData = {
-            type: (r.properties.type as string) || "region",
-            level: Number(r.properties.level) || 1,
-          };
-          const prev: HistoryData = { ...base, [field]: r.properties[field] ?? null };
-          const next: HistoryData = { ...base, [field]: valueArg };
-          const action: EditorAction = {
-            type: "update",
-            featureType: "subdivision",
-            featureId: r.id,
-            description: `Set ${field} on "${r.name}"`,
-            timestamp: Date.now(),
-            previousData: prev,
-            newData: next,
-          };
-          await historyExecutor.applyForwardAction(action);
-          subActions.push(action);
-        });
-        if (subActions.length > 0) {
-          pushAction({
-            type: "batch",
-            featureType: "subdivision",
-            featureId: subActions[0]!.featureId,
-            description: `Set ${field} on ${subActions.length} region${subActions.length === 1 ? "" : "s"}`,
-            subActions,
-          });
-        }
-        afterWrite();
-        return result;
-      } finally {
-        setIsBulkBusy(false);
-      }
-    },
-    [countryId, allFeatures, selectedIds, historyExecutor, pushAction, afterWrite]
-  );
+  const bulkEditSelected = async (
+    fieldArg?: string[] | string,
+    valueArg?: Record<string, string | number | boolean | null> | string | number | boolean | null
+  ): Promise<{ successCount: number; failCount: number }> => {
+    const field = (Array.isArray(fieldArg) ? fieldArg[0] : fieldArg) as BulkEditField | undefined;
+    if (
+      !countryId ||
+      !field ||
+      valueArg === undefined ||
+      valueArg === null ||
+      typeof valueArg === "object"
+    ) {
+      return noResult;
+    }
+    const regions = allFeatures.filter((f) => selectedIds.has(f.id) && f.type === "subdivision");
+    const subActions: EditorAction[] = [];
+    return withBusy(async () => {
+      const result = await runLimited(regions, 4, async (r) => {
+        const base: HistoryData = {
+          type: (r.properties.type as string) || "region",
+          level: Number(r.properties.level) || 1,
+        };
+        const action: EditorAction = {
+          type: "update",
+          featureType: "subdivision",
+          featureId: r.id,
+          description: `Set ${field} on "${r.name}"`,
+          timestamp: Date.now(),
+          previousData: { ...base, [field]: r.properties[field] ?? null },
+          newData: { ...base, [field]: valueArg },
+        };
+        await historyExecutor.applyForwardAction(action);
+        subActions.push(action);
+      });
+      pushBatch(subActions, `Set ${field} on ${plural(subActions.length, "region")}`);
+      afterWrite();
+      return result;
+    });
+  };
 
   // Gaps & empty regions (computed only while the overlay is on)
   const gapFeatures = useMemo<FeatureCollection | null>(() => {
@@ -246,104 +271,84 @@ export function useMapEditorBulkOps({
   }, []);
 
   /** Creates several cities and records them as one undo step. */
-  const createCitiesBatch = useCallback(
-    async (
-      cities: Array<{
-        name: string;
-        cityType: string;
-        coordinates: [number, number];
-        subdivisionId?: string;
-        isSubdivisionCapital?: boolean;
-      }>,
-      description: string
-    ) => {
-      if (!countryId || cities.length === 0) return { successCount: 0, failCount: 0 };
-      const subActions: EditorAction[] = [];
-      setIsBulkBusy(true);
-      try {
-        const result = await runLimited(cities, 4, async (c) => {
-          const data: HistoryData = { ...c };
-          const id = await historyExecutor.recreateFeature("city", data);
-          if (id) {
-            subActions.push({
-              type: "create",
-              featureType: "city",
-              featureId: id,
-              description: `Created City "${c.name}"`,
-              timestamp: Date.now(),
-              newData: data,
-            });
-          }
-        });
-        if (subActions.length > 0) {
-          pushAction({
-            type: "batch",
+  const createCitiesBatch = async (
+    cities: Array<{
+      name: string;
+      cityType: string;
+      coordinates: [number, number];
+      subdivisionId?: string;
+      isSubdivisionCapital?: boolean;
+    }>,
+    description: string
+  ) => {
+    if (!countryId || cities.length === 0) return noResult;
+    const subActions: EditorAction[] = [];
+    return withBusy(async () => {
+      const result = await runLimited(cities, 4, async (c) => {
+        const data: HistoryData = { ...c };
+        const id = await historyExecutor.recreateFeature("city", data);
+        if (id) {
+          subActions.push({
+            type: "create",
             featureType: "city",
-            featureId: subActions[0]!.featureId,
-            description,
-            subActions,
+            featureId: id,
+            description: `Created City "${c.name}"`,
+            timestamp: Date.now(),
+            newData: data,
           });
         }
-        afterWrite();
-        return result;
-      } finally {
-        setIsBulkBusy(false);
-      }
-    },
-    [countryId, historyExecutor, pushAction, afterWrite]
-  );
-
-  const scatterCities = useCallback(
-    async (count?: number, type?: string, prefix?: string) => {
-      const region =
-        selectedFeature?.type === "subdivision"
-          ? allFeatures.find((f) => f.id === selectedFeature.id)
-          : undefined;
-      if (!region || !isPolygonal(region.geometry)) {
-        setMutationError("Select a region first — cities are scattered inside it.");
-        return;
-      }
-      const n = Math.max(1, Math.min(50, Math.round(count ?? 5)));
-      const pts = randomPointsInPolygon(region.geometry, n);
-      const label = (prefix?.trim() || region.name).slice(0, 90);
-      await createCitiesBatch(
-        pts.map((coordinates, i) => ({
-          name: `${label} ${i + 1}`,
-          cityType: type || "town",
-          coordinates,
-          subdivisionId: region.id,
-        })),
-        `Scattered ${pts.length} cities in "${region.name}"`
-      );
-    },
-    [selectedFeature, allFeatures, createCitiesBatch]
-  );
-
-  const createCentroidCities = useCallback(
-    async (_countryId?: string) => {
-      const regions = showGaps ? emptyRegions : findEmptyRegions(allFeatures);
-      const cities = regions.flatMap((r) => {
-        const p = isPolygonal(r.geometry) ? interiorPoint(r.geometry) : null;
-        return p
-          ? [
-              {
-                name: r.name,
-                cityType: "city",
-                coordinates: p,
-                subdivisionId: r.id,
-                isSubdivisionCapital: true,
-              },
-            ]
-          : [];
       });
-      if (cities.length === 0) {
-        setMutationError("Every region already has a city.");
-        return;
-      }
-      await createCitiesBatch(cities, `Created ${cities.length} regional capitals`);
-    },
-    [showGaps, emptyRegions, allFeatures, createCitiesBatch]
-  );
+      pushBatch(subActions, description);
+      afterWrite();
+      return result;
+    });
+  };
+
+  const scatterCities = async (count?: number, type?: string, prefix?: string) => {
+    const region =
+      selectedFeature?.type === "subdivision"
+        ? allFeatures.find((f) => f.id === selectedFeature.id)
+        : undefined;
+    if (!region || !isPolygonal(region.geometry)) {
+      setMutationError("Select a region first — cities are scattered inside it.");
+      return;
+    }
+    const n = Math.max(1, Math.min(50, Math.round(count ?? 5)));
+    const pts = randomPointsInPolygon(region.geometry, n);
+    const label = (prefix?.trim() || region.name).slice(0, 90);
+    await createCitiesBatch(
+      pts.map((coordinates, i) => ({
+        name: `${label} ${i + 1}`,
+        cityType: type || "town",
+        coordinates,
+        subdivisionId: region.id,
+      })),
+      `Scattered ${pts.length} cities in "${region.name}"`
+    );
+  };
+
+  const createCentroidCities = async (_countryId?: string) => {
+    const regions = showGaps ? emptyRegions : findEmptyRegions(allFeatures);
+    const cities = regions.flatMap((r) => {
+      const p = isPolygonal(r.geometry) ? interiorPoint(r.geometry) : null;
+      return p
+        ? [
+            {
+              name: r.name,
+              cityType: "city",
+              coordinates: p,
+              subdivisionId: r.id,
+              isSubdivisionCapital: true,
+            },
+          ]
+        : [];
+    });
+    if (cities.length === 0) {
+      setMutationError("Every region already has a city.");
+      return;
+    }
+    await createCitiesBatch(cities, `Created ${cities.length} regional capitals`);
+  };
 
   const resolveCity = useCallback(
     (cityId?: string) => {
@@ -391,73 +396,29 @@ export function useMapEditorBulkOps({
     [resolveCity, worldMapLayers, updatePointCoordinates]
   );
 
-  const importGeoJSON = useCallback(
-    async (doc: unknown) => {
-      if (!countryId) return { created: 0, skipped: 0, failed: 0 };
-      const plan = planGeoJSONImport(doc);
-      const subActions: EditorAction[] = [];
-      setIsBulkBusy(true);
-      try {
-        const result = await runLimited(plan.features, 3, async (f) => {
-          const data: HistoryData =
-            f.kind === "subdivision"
-              ? {
-                  name: f.name,
-                  type: typeof f.properties.type === "string" ? f.properties.type : "province",
-                  level: typeof f.properties.level === "number" ? f.properties.level : 1,
-                  geometry: f.geometry,
-                }
-              : f.kind === "city"
-                ? {
-                    name: f.name,
-                    cityType:
-                      typeof f.properties.cityType === "string" ? f.properties.cityType : "city",
-                    coordinates: f.coordinates,
-                    population:
-                      typeof f.properties.population === "number"
-                        ? f.properties.population
-                        : undefined,
-                  }
-                : {
-                    name: f.name,
-                    category:
-                      typeof f.properties.category === "string"
-                        ? f.properties.category
-                        : "landmark",
-                    coordinates: f.coordinates,
-                    description:
-                      typeof f.properties.description === "string"
-                        ? f.properties.description
-                        : undefined,
-                  };
-          const id = await historyExecutor.recreateFeature(f.kind, data);
-          if (!id) throw new Error("Create returned no id");
-          subActions.push({
-            type: "create",
-            featureType: f.kind,
-            featureId: id,
-            description: `Imported ${f.kind} "${f.name}"`,
-            timestamp: Date.now(),
-            newData: data,
-          });
+  const importGeoJSON = async (doc: unknown) => {
+    if (!countryId) return { created: 0, skipped: 0, failed: 0 };
+    const plan = planGeoJSONImport(doc);
+    const subActions: EditorAction[] = [];
+    return withBusy(async () => {
+      const result = await runLimited(plan.features, 3, async (f) => {
+        const data = importedFeatureData(f);
+        const id = await historyExecutor.recreateFeature(f.kind, data);
+        if (!id) throw new Error("Create returned no id");
+        subActions.push({
+          type: "create",
+          featureType: f.kind,
+          featureId: id,
+          description: `Imported ${f.kind} "${f.name}"`,
+          timestamp: Date.now(),
+          newData: data,
         });
-        if (subActions.length > 0) {
-          pushAction({
-            type: "batch",
-            featureType: subActions[0]!.featureType,
-            featureId: subActions[0]!.featureId,
-            description: `Imported ${subActions.length} feature${subActions.length === 1 ? "" : "s"} from GeoJSON`,
-            subActions,
-          });
-        }
-        afterWrite();
-        return { created: result.successCount, failed: result.failCount, skipped: plan.skipped };
-      } finally {
-        setIsBulkBusy(false);
-      }
-    },
-    [countryId, historyExecutor, pushAction, afterWrite]
-  );
+      });
+      pushBatch(subActions, `Imported ${plural(subActions.length, "feature")} from GeoJSON`);
+      afterWrite();
+      return { created: result.successCount, failed: result.failCount, skipped: plan.skipped };
+    });
+  };
 
   return {
     isBulkBusy,
