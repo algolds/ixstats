@@ -25,6 +25,28 @@ interface GeometryActionsBarProps {
   disabled?: boolean;
 }
 
+const PATHFINDER_OPS = [
+  { op: "union", label: "Union" },
+  { op: "subtract", label: "Subtract" },
+  { op: "intersect", label: "Intersect" },
+] as const;
+
+function ActionButton({
+  icon,
+  label,
+  ...props
+}: { icon: React.ReactNode; label: string } & Omit<
+  React.ComponentProps<typeof Button>,
+  "variant" | "size" | "children" | "type"
+>) {
+  return (
+    <Button variant="outline" size="sm" className="justify-center" type="button" {...props}>
+      {icon}
+      <span>{label}</span>
+    </Button>
+  );
+}
+
 export const GeometryActionsBar = React.memo(function GeometryActionsBar({
   feature,
   onCenter,
@@ -39,81 +61,54 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const isCity = feature.type === "city";
-  const isRegion = feature.type === "subdivision";
-  const isRoute = feature.type === "route";
   const isCapital = isCity && feature.properties?.isNationalCapital === true;
 
   return (
     <div className="space-y-2 select-none">
       <div className="grid grid-cols-2 gap-2">
         {onCenter && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="justify-center"
-            type="button"
+          <ActionButton
+            icon={<Eye className="text-tint h-3.5 w-3.5" />}
+            label="Center on map"
             onClick={onCenter}
             disabled={disabled}
-          >
-            <Eye className="text-tint h-3.5 w-3.5" />
-            <span>Center on map</span>
-          </Button>
+          />
         )}
 
         {onDuplicate && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="justify-center"
-            type="button"
+          <ActionButton
+            icon={<Copy className="h-3.5 w-3.5 opacity-70" />}
+            label="Duplicate"
             onClick={onDuplicate}
             disabled={disabled}
-          >
-            <Copy className="h-3.5 w-3.5 opacity-70" />
-            <span>Duplicate</span>
-          </Button>
+          />
         )}
 
         {isCity && onPromoteCapital && !isCapital && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="justify-center"
-            type="button"
+          <ActionButton
+            icon={<Crown className="h-3.5 w-3.5" />}
+            label="Make capital"
             onClick={onPromoteCapital}
             disabled={disabled}
-          >
-            <Crown className="h-3.5 w-3.5" />
-            <span>Make capital</span>
-          </Button>
+          />
         )}
 
         {isCity && onSnapCoastline && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="justify-center"
-            type="button"
+          <ActionButton
+            icon={<Waves className="text-cyan h-3.5 w-3.5" />}
+            label="Snap coast"
             onClick={onSnapCoastline}
             disabled={disabled}
-          >
-            <Waves className="text-cyan h-3.5 w-3.5" />
-            <span>Snap coast</span>
-          </Button>
+          />
         )}
 
-        {isRoute && onReverseRoute && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="justify-center"
-            type="button"
+        {feature.type === "route" && onReverseRoute && (
+          <ActionButton
+            icon={<Reverse className="text-blue h-3.5 w-3.5" />}
+            label="Reverse"
             onClick={onReverseRoute}
             disabled={disabled}
-          >
-            <Reverse className="text-blue h-3.5 w-3.5" />
-            <span>Reverse</span>
-          </Button>
+          />
         )}
 
         {onDelete && (
@@ -160,37 +155,22 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
         )}
       </div>
 
-      {isRegion && onPathfinderOperation && (
+      {feature.type === "subdivision" && onPathfinderOperation && (
         <Card className="space-y-2 p-2">
           <Eyebrow>Combine regions</Eyebrow>
           <div className="grid grid-cols-3 gap-1">
-            <Button
-              variant="outline"
-              size="xs"
-              type="button"
-              onClick={() => onPathfinderOperation("union")}
-              disabled={disabled}
-            >
-              Union
-            </Button>
-            <Button
-              variant="outline"
-              size="xs"
-              type="button"
-              onClick={() => onPathfinderOperation("subtract")}
-              disabled={disabled}
-            >
-              Subtract
-            </Button>
-            <Button
-              variant="outline"
-              size="xs"
-              type="button"
-              onClick={() => onPathfinderOperation("intersect")}
-              disabled={disabled}
-            >
-              Intersect
-            </Button>
+            {PATHFINDER_OPS.map(({ op, label }) => (
+              <Button
+                key={op}
+                variant="outline"
+                size="xs"
+                type="button"
+                onClick={() => onPathfinderOperation(op)}
+                disabled={disabled}
+              >
+                {label}
+              </Button>
+            ))}
           </div>
         </Card>
       )}
