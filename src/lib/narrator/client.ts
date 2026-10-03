@@ -1,14 +1,6 @@
 import { db } from "~/server/db";
 import { isAllowedLlmApiUrl } from "./llm-url";
-
-interface LLMConfig {
-  provider?: string;
-  apiKey?: string;
-  apiUrl?: string;
-  modelName?: string;
-  temperature?: number;
-  reasoning?: boolean; // off by default — reasoning/thinking mode is the main latency source
-}
+import { chatCompletion, resolveLlmEndpoint, type LLMConfig } from "./llm-chat";
 
 export async function getLLMConfig(): Promise<LLMConfig | null> {
   // Try loading from database first
@@ -16,34 +8,25 @@ export async function getLLMConfig(): Promise<LLMConfig | null> {
     const configs = await db.systemConfig.findMany({
       where: {
         key: {
-          in: [
-            "narrator:llm:provider",
-            "narrator:llm:apiKey",
-            "narrator:llm:apiUrl",
-            "narrator:llm:modelName",
-            "narrator:llm:temperature",
-            "narrator:llm:reasoning",
-          ],
+          in: ["provider", "apiKey", "apiUrl", "modelName", "temperature", "reasoning"].map(
+            (k) => `narrator:llm:${k}`
+          ),
         },
       },
     });
+    const get = (name: string) => configs.find((c) => c.key === `narrator:llm:${name}`)?.value;
 
     // Narrator keys only: the sports LLM key must never be used implicitly for narrator calls.
-    const apiKey = configs.find((c) => c.key === "narrator:llm:apiKey")?.value;
-
+    const apiKey = get("apiKey");
     if (apiKey) {
-      const provider = configs.find((c) => c.key === "narrator:llm:provider")?.value;
-      const apiUrl = configs.find((c) => c.key === "narrator:llm:apiUrl")?.value;
-      const modelName = configs.find((c) => c.key === "narrator:llm:modelName")?.value;
-      const tempVal = configs.find((c) => c.key === "narrator:llm:temperature")?.value;
-
+      const temperature = get("temperature");
       return {
-        provider: provider || undefined,
-        apiKey: apiKey || undefined,
-        apiUrl: apiUrl || undefined,
-        modelName: modelName || undefined,
-        temperature: tempVal ? parseFloat(tempVal) : undefined,
-        reasoning: configs.find((c) => c.key === "narrator:llm:reasoning")?.value === "true",
+        provider: get("provider") || undefined,
+        apiKey,
+        apiUrl: get("apiUrl") || undefined,
+        modelName: get("modelName") || undefined,
+        temperature: temperature ? parseFloat(temperature) : undefined,
+        reasoning: get("reasoning") === "true",
       };
     }
   } catch (e) {
@@ -80,27 +63,11 @@ export async function queryLLM(
     return "";
   }
 
-  const provider = config.provider || "nvidia";
-  const apiKey = config.apiKey;
-  let apiUrl = config.apiUrl || "";
-  let modelName = config.modelName || "";
-
-  if (provider === "nvidia") {
-    apiUrl = apiUrl || "https://integrate.api.nvidia.com/v1/chat/completions";
-    // Fast non-reasoning default; switch to a deepseek model + reasoning flag for quality.
-    modelName = modelName || "meta/llama-3.1-70b-instruct";
-  } else if (provider === "openrouter") {
-    apiUrl = apiUrl || "https://openrouter.ai/api/v1/chat/completions";
-    modelName = modelName || "meta-llama/llama-3.1-70b-instruct";
-  } else {
-    apiUrl = apiUrl || "https://api.openai.com/v1/chat/completions";
-    modelName = modelName || "gpt-4o-mini";
-  }
-
-  // Auto-append chat completions path if only the base URL was configured
-  if (apiUrl && !apiUrl.endsWith("/chat/completions")) {
-    apiUrl = apiUrl.replace(/\/$/, "") + "/chat/completions";
-  }
+  const { provider, apiUrl, modelName } = resolveLlmEndpoint(
+    config.provider || "nvidia",
+    config.apiUrl || "",
+    config.modelName || ""
+  );
 
   // Prevent SSRF / API key exfiltration to an arbitrary admin-set host.
   if (!isAllowedLlmApiUrl(apiUrl)) {
@@ -111,53 +78,22 @@ export async function queryLLM(
   // Reasoning/thinking mode is the dominant latency cost — opt-in only.
   const reasoning = config.reasoning === true;
 
-  const controller = new AbortController();
-  // Long timeout only when actually reasoning; flavor text should return fast.
-  const timeoutMs = reasoning ? 60000 : 15000;
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
   try {
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: modelName,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: options?.temperature ?? config.temperature ?? 0.7,
-        // ponytail: flavor text is short; 16k tokens only made the slow path slower
-        max_tokens: reasoning ? 16384 : options?.jsonMode ? 2048 : 1024,
-        ...(options?.jsonMode &&
-          provider !== "nvidia" && { response_format: { type: "json_object" } }),
-        ...(reasoning &&
-          provider === "nvidia" && {
-            top_p: 0.95,
-            chat_template_kwargs: { thinking: true, reasoning_effort: "high" },
-          }),
-      }),
-      signal: controller.signal,
+    const content = await chatCompletion({
+      provider,
+      apiUrl,
+      modelName,
+      apiKey: config.apiKey,
+      systemPrompt,
+      userPrompt,
+      temperature: options?.temperature ?? config.temperature ?? 0.7,
+      reasoning,
+      jsonMode: options?.jsonMode === true,
+      // Long timeout only when actually reasoning; flavor text should return fast.
+      timeoutMs: reasoning ? 60000 : 15000,
     });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error(`API response error status ${response.status}`);
-    }
-
-    const data = await response.json();
-    let content = data.choices?.[0]?.message?.content || "";
-
     // Clean up DeepSeek/Nvidia reasoning thinking tags
-    if (content && content.includes("</thinking>")) {
-      content = content.split("</thinking>").pop()!.trim();
-    }
-
-    return content;
+    return content.includes("</thinking>") ? content.split("</thinking>").pop()!.trim() : content;
   } catch (err) {
     console.error(`[narrator-client] LLM query failed:`, err);
     return "";

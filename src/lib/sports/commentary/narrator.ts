@@ -1,5 +1,79 @@
 import type { EventTraceStep } from "../resolver";
 import { isAllowedLlmApiUrl } from "~/lib/narrator/llm-url";
+import { chatCompletion, resolveLlmEndpoint, type LLMConfig } from "~/lib/narrator/llm-chat";
+
+const isLlmEnabled = (config?: LLMConfig) =>
+  config?.apiKey ? true : process.env.SPORTS_LLM_COMMENTARY === "true";
+
+/** Explicit config first, then the SPORTS_LLM_* environment. */
+function resolveSportsLlm(config?: LLMConfig) {
+  const endpoint = resolveLlmEndpoint(
+    config?.provider || process.env.SPORTS_LLM_PROVIDER || "nvidia",
+    config?.apiUrl || process.env.SPORTS_LLM_API_URL || "",
+    config?.modelName || process.env.SPORTS_LLM_MODEL || ""
+  );
+  return {
+    ...endpoint,
+    apiKey: config?.apiKey || process.env.SPORTS_LLM_API_KEY,
+    temperature: config?.temperature ?? 0.7,
+    reasoning: config?.reasoning === true, // opt-in: thinking mode is the dominant latency cost
+  };
+}
+
+const COMMENTARY_SYSTEM_PROMPT = (
+  sport: string
+) => `You are a professional sports commentator for a ${sport} match.
+You will receive a JSON array of event descriptions. 
+Your task is to rewrite each event to add realistic play-by-play color commentary, drama, and sport-specific vocabulary, while maintaining the same outcome and actor name.
+You MUST return a JSON array of strings of the exact same length as the input array.
+Do not wrap your output in markdown code blocks. Return ONLY the raw JSON string array under a "commentary" key in a JSON object.
+Example Input: ["Match begins. Home team using neutral tactics.", "GOAL! John Smith scores!"]
+Example Output: { "commentary": ["The referee blows the whistle and we are underway under the floodlights!", "GOAL! John Smith unleashes a thunderous volley into the top corner!"] }`;
+
+/** Isolates the JSON payload from model output (thinking tags, markdown fences, surrounding prose). */
+function extractJsonCandidate(content: string): string {
+  let text = content.trim();
+  if (text.includes("</thinking>")) text = text.split("</thinking>").pop()!.trim();
+
+  const fenced = /```(?:json)?\s*([\s\S]*?)\s*```/.exec(text)?.[1];
+  if (fenced) text = fenced.trim();
+
+  const firstBrace = text.indexOf("{");
+  const firstBracket = text.indexOf("[");
+  const lastBrace = text.lastIndexOf("}");
+  const lastBracket = text.lastIndexOf("]");
+  if (firstBrace !== -1 && lastBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+    return text.substring(firstBrace, lastBrace + 1);
+  }
+  if (firstBracket !== -1 && lastBracket !== -1)
+    return text.substring(firstBracket, lastBracket + 1);
+  return text;
+}
+
+/** The commentary array from a model reply: a bare array, or the first array-valued key of an object. */
+function parseCommentary(content: string): unknown[] | null {
+  try {
+    const parsed = JSON.parse(extractJsonCandidate(content));
+    if (Array.isArray(parsed)) return parsed;
+    if (typeof parsed === "object" && parsed !== null) {
+      return (Object.values(parsed).find(Array.isArray) as unknown[] | undefined) ?? null;
+    }
+    return null;
+  } catch (parseErr) {
+    console.warn(
+      "[sports-narrator] Standard JSON parse failed, attempting regex array matching...",
+      parseErr
+    );
+  }
+  const match = /\[\s*"[\s\S]*"\s*\]/.exec(content);
+  if (!match) return null;
+  try {
+    return JSON.parse(match[0]);
+  } catch (err) {
+    console.warn("[sports-narrator] Regex fallback JSON parse failed:", err);
+    return null;
+  }
+}
 
 /**
  * narrateEvents turns a list of match event steps into play-by-play commentary.
@@ -8,174 +82,36 @@ import { isAllowedLlmApiUrl } from "~/lib/narrator/llm-url";
  */
 export async function narrateEvents(
   events: EventTraceStep[],
-  options: {
-    sport: string;
-    config?: {
-      provider?: string;
-      apiKey?: string;
-      apiUrl?: string;
-      modelName?: string;
-      temperature?: number;
-      reasoning?: boolean; // off by default — thinking mode is the main latency source
-    };
-  }
+  options: { sport: string; config?: LLMConfig }
 ): Promise<string[]> {
   const fallback = events.map((e) => e.description);
+  if (!isLlmEnabled(options.config) || events.length === 0) return fallback;
 
-  const config = options.config;
-  const isEnabled = config?.apiKey ? true : process.env.SPORTS_LLM_COMMENTARY === "true";
-  if (!isEnabled || events.length === 0) {
-    return fallback;
-  }
-
-  const provider = config?.provider || process.env.SPORTS_LLM_PROVIDER || "nvidia";
-  const apiKey = config?.apiKey || process.env.SPORTS_LLM_API_KEY;
-
-  if (!apiKey) {
+  const llm = resolveSportsLlm(options.config);
+  if (!llm.apiKey) {
     console.warn(
       "[sports-narrator] SPORTS_LLM_API_KEY is not configured; falling back to templates."
     );
     return fallback;
   }
 
-  let apiUrl = config?.apiUrl || process.env.SPORTS_LLM_API_URL || "";
-  let modelName = config?.modelName || process.env.SPORTS_LLM_MODEL || "";
-
-  if (provider === "nvidia") {
-    apiUrl = apiUrl || "https://integrate.api.nvidia.com/v1/chat/completions";
-    // Fast non-reasoning default; switch to a deepseek model + reasoning flag for quality.
-    modelName = modelName || "meta/llama-3.1-70b-instruct";
-  } else if (provider === "openrouter") {
-    apiUrl = apiUrl || "https://openrouter.ai/api/v1/chat/completions";
-    modelName = modelName || "meta-llama/llama-3.1-70b-instruct";
-  } else {
-    apiUrl = apiUrl || "https://api.openai.com/v1/chat/completions";
-    modelName = modelName || "gpt-4o-mini";
-  }
-
-  // Auto-append chat completions path if only the base URL was configured
-  if (apiUrl && !apiUrl.endsWith("/chat/completions")) {
-    apiUrl = apiUrl.replace(/\/$/, "") + "/chat/completions";
-  }
-
-  // Reasoning/thinking mode is the dominant latency cost — opt-in only.
-  const reasoning = config?.reasoning === true;
-
   try {
-    const inputDescriptions = events.map((e) => e.description);
-    const systemPrompt = `You are a professional sports commentator for a ${options.sport} match.
-You will receive a JSON array of event descriptions. 
-Your task is to rewrite each event to add realistic play-by-play color commentary, drama, and sport-specific vocabulary, while maintaining the same outcome and actor name.
-You MUST return a JSON array of strings of the exact same length as the input array.
-Do not wrap your output in markdown code blocks. Return ONLY the raw JSON string array under a "commentary" key in a JSON object.
-Example Input: ["Match begins. Home team using neutral tactics.", "GOAL! John Smith scores!"]
-Example Output: { "commentary": ["The referee blows the whistle and we are underway under the floodlights!", "GOAL! John Smith unleashes a thunderous volley into the top corner!"] }`;
-
-    const controller = new AbortController();
-    // Long timeout only when actually reasoning.
-    const timeoutMs = reasoning ? 60000 : 8000;
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: modelName,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: JSON.stringify(inputDescriptions) },
-        ],
-        temperature: config?.temperature ?? 0.7,
-        max_tokens: reasoning ? 16384 : 2048,
-        ...(provider !== "nvidia" && { response_format: { type: "json_object" } }),
-        ...(reasoning &&
-          provider === "nvidia" && {
-            top_p: 0.95,
-            chat_template_kwargs: { thinking: true, reasoning_effort: "high" },
-          }),
-      }),
-      signal: controller.signal,
+    const content = await chatCompletion({
+      ...llm,
+      apiKey: llm.apiKey,
+      systemPrompt: COMMENTARY_SYSTEM_PROMPT(options.sport),
+      userPrompt: JSON.stringify(fallback),
+      jsonMode: true,
+      timeoutMs: llm.reasoning ? 60000 : 8000,
     });
+    if (!content) throw new Error("Empty model response");
 
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error(`API response error status ${response.status}`);
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
-    if (!content) {
-      throw new Error("Empty model response");
-    }
-
-    let results: any = null;
-    try {
-      let jsonText = content.trim();
-
-      // Strip <thinking>...</thinking> tags if present
-      if (jsonText.includes("</thinking>")) {
-        jsonText = jsonText.split("</thinking>").pop()!.trim();
-      }
-
-      // Match and extract any ```json ... ``` or ``` ... ``` block
-      const mdJsonMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-      if (mdJsonMatch && mdJsonMatch[1]) {
-        jsonText = mdJsonMatch[1].trim();
-      }
-
-      // Find first occurrence of { or [ and last occurrence of } or ] to isolate the raw JSON block
-      const firstBrace = jsonText.indexOf("{");
-      const firstBracket = jsonText.indexOf("[");
-      const lastBrace = jsonText.lastIndexOf("}");
-      const lastBracket = jsonText.lastIndexOf("]");
-
-      let candidate = jsonText;
-      if (
-        firstBrace !== -1 &&
-        lastBrace !== -1 &&
-        (firstBracket === -1 || firstBrace < firstBracket)
-      ) {
-        candidate = jsonText.substring(firstBrace, lastBrace + 1);
-      } else if (firstBracket !== -1 && lastBracket !== -1) {
-        candidate = jsonText.substring(firstBracket, lastBracket + 1);
-      }
-
-      const parsed = JSON.parse(candidate);
-      if (Array.isArray(parsed)) {
-        results = parsed;
-      } else if (typeof parsed === "object" && parsed !== null) {
-        const firstArrayKey = Object.keys(parsed).find((k) => Array.isArray(parsed[k]));
-        if (firstArrayKey) {
-          results = parsed[firstArrayKey];
-        }
-      }
-    } catch (parseErr) {
-      console.warn(
-        "[sports-narrator] Standard JSON parse failed, attempting regex array matching...",
-        parseErr
-      );
-      const match = content.match(/\[\s*"[\s\S]*"\s*\]/);
-      if (match) {
-        try {
-          results = JSON.parse(match[0]);
-        } catch (err) {
-          console.warn("[sports-narrator] Regex fallback JSON parse failed:", err);
-        }
-      }
-    }
-
-    if (Array.isArray(results) && results.length === events.length) {
-      return results.map((r) => String(r));
-    } else {
-      console.warn(
-        `[sports-narrator] LLM returned array of size ${results?.length ?? "non-array"}, expected ${events.length}. Falling back.`
-      );
-      return fallback;
-    }
+    const results = parseCommentary(content);
+    if (results?.length === events.length) return results.map((r) => String(r));
+    console.warn(
+      `[sports-narrator] LLM returned array of size ${results?.length ?? "non-array"}, expected ${events.length}. Falling back.`
+    );
+    return fallback;
   } catch (err) {
     console.error(`[sports-narrator] LLM narration failed:`, err);
     return fallback;
@@ -189,18 +125,11 @@ async function queryLLM(
   systemPrompt: string,
   userPrompt: string,
   jsonMode = false,
-  config?: {
-    provider?: string;
-    apiKey?: string;
-    apiUrl?: string;
-    modelName?: string;
-    temperature?: number;
-    reasoning?: boolean;
-  }
+  config?: LLMConfig
 ): Promise<string> {
   // Prevent SSRF and API key exfiltration
   if (config?.apiUrl) {
-    if (!config?.apiKey) {
+    if (!config.apiKey) {
       console.warn("[sports-narrator] Custom API URL provided without matching API key.");
       return "";
     }
@@ -209,80 +138,23 @@ async function queryLLM(
       return "";
     }
   }
+  if (!isLlmEnabled(config)) return "";
 
-  const isEnabled = config?.apiKey ? true : process.env.SPORTS_LLM_COMMENTARY === "true";
-  if (!isEnabled) {
-    return "";
-  }
-
-  const provider = config?.provider || process.env.SPORTS_LLM_PROVIDER || "nvidia";
-  const apiKey = config?.apiKey || process.env.SPORTS_LLM_API_KEY;
-
-  if (!apiKey) {
+  const llm = resolveSportsLlm(config);
+  if (!llm.apiKey) {
     console.warn("[sports-narrator] SPORTS_LLM_API_KEY is not configured.");
     return "";
   }
 
-  let apiUrl = config?.apiUrl || process.env.SPORTS_LLM_API_URL || "";
-  let modelName = config?.modelName || process.env.SPORTS_LLM_MODEL || "";
-
-  if (provider === "nvidia") {
-    apiUrl = apiUrl || "https://integrate.api.nvidia.com/v1/chat/completions";
-    // Fast non-reasoning default; switch to a deepseek model + reasoning flag for quality.
-    modelName = modelName || "meta/llama-3.1-70b-instruct";
-  } else if (provider === "openrouter") {
-    apiUrl = apiUrl || "https://openrouter.ai/api/v1/chat/completions";
-    modelName = modelName || "meta-llama/llama-3.1-70b-instruct";
-  } else {
-    apiUrl = apiUrl || "https://api.openai.com/v1/chat/completions";
-    modelName = modelName || "gpt-4o-mini";
-  }
-
-  // Auto-append chat completions path if only the base URL was configured
-  if (apiUrl && !apiUrl.endsWith("/chat/completions")) {
-    apiUrl = apiUrl.replace(/\/$/, "") + "/chat/completions";
-  }
-
-  // Reasoning/thinking mode is the dominant latency cost — opt-in only.
-  const reasoning = config?.reasoning === true;
-
-  const controller = new AbortController();
-  const timeoutMs = reasoning ? 60000 : 12000;
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
   try {
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: modelName,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: config?.temperature ?? 0.7,
-        max_tokens: reasoning ? 16384 : jsonMode ? 2048 : 1024,
-        ...(jsonMode && provider !== "nvidia" && { response_format: { type: "json_object" } }),
-        ...(reasoning &&
-          provider === "nvidia" && {
-            top_p: 0.95,
-            chat_template_kwargs: { thinking: true, reasoning_effort: "high" },
-          }),
-      }),
-      signal: controller.signal,
+    return await chatCompletion({
+      ...llm,
+      apiKey: llm.apiKey,
+      systemPrompt,
+      userPrompt,
+      jsonMode,
+      timeoutMs: llm.reasoning ? 60000 : 12000,
     });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error(`API response error status ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content || "";
   } catch (err) {
     console.error(`[sports-narrator] LLM query failed:`, err);
     return "";
@@ -298,14 +170,7 @@ export async function narrateBulletin(
     sport: string;
     leagueName: string;
     matchDay: number;
-    config?: {
-      provider?: string;
-      apiKey?: string;
-      apiUrl?: string;
-      modelName?: string;
-      temperature?: number;
-      reasoning?: boolean;
-    };
+    config?: LLMConfig;
   }
 ): Promise<string> {
   const matchesSummary = matches
@@ -317,6 +182,11 @@ export async function narrateBulletin(
 
   return queryLLM(systemPrompt, userPrompt, false, options.config);
 }
+
+const goalsAndAssists = (ps: { goals?: number; assists?: number; [key: string]: any }) => ({
+  goals: ps.goals ?? ps.stats?.goals ?? 0,
+  assists: ps.assists ?? ps.stats?.assists ?? 0,
+});
 
 /**
  * generateMatchReport writes a detailed newspaper-style report of a simulated match.
@@ -334,20 +204,12 @@ export async function generateMatchReport(matchData: {
     assists?: number;
     [key: string]: any;
   }>;
-  config?: {
-    provider?: string;
-    apiKey?: string;
-    apiUrl?: string;
-    modelName?: string;
-    temperature?: number;
-    reasoning?: boolean;
-  };
+  config?: LLMConfig;
 }): Promise<string> {
   const eventsSummary = matchData.events.map((e) => `[${e.t}'] ${e.description}`).join("\n");
   const playerStatsSummary = matchData.playerStats
     .map((ps) => {
-      const goals = ps.goals ?? ps.stats?.goals ?? 0;
-      const assists = ps.assists ?? ps.stats?.assists ?? 0;
+      const { goals, assists } = goalsAndAssists(ps);
       return `${ps.player.firstName} ${ps.player.lastName}: Goals: ${goals}, Assists: ${assists}`;
     })
     .join(", ");
@@ -375,8 +237,7 @@ ${playerStatsSummary}`;
       ? `Key performances include ${matchData.playerStats
           .slice(0, 3)
           .map((ps) => {
-            const goals = ps.goals ?? ps.stats?.goals ?? 0;
-            const assists = ps.assists ?? ps.stats?.assists ?? 0;
+            const { goals, assists } = goalsAndAssists(ps);
             return `${ps.player.firstName} ${ps.player.lastName} (${goals} Goals, ${assists} Assists)`;
           })
           .join(", ")}.`
@@ -390,8 +251,7 @@ ${playerStatsSummary}`;
           .join("; ")}.`
       : `The defensive lines held firm for major parts of the game, keeping clear chances to a minimum.`;
 
-  const report = `# ${headline}\n\n${paragraph1}\n\n${keyPerformers} ${chronologicalDetails}\n\nFans left the stadium reflecting on a match that displayed great sportsmanship and strategic depth.`;
-  return report;
+  return `# ${headline}\n\n${paragraph1}\n\n${keyPerformers} ${chronologicalDetails}\n\nFans left the stadium reflecting on a match that displayed great sportsmanship and strategic depth.`;
 }
 
 /**
@@ -402,14 +262,7 @@ export async function generateMatchPreview(
   awayTeam: { name: string; position?: number },
   sport: string,
   standingsContext?: string,
-  config?: {
-    provider?: string;
-    apiKey?: string;
-    apiUrl?: string;
-    modelName?: string;
-    temperature?: number;
-    reasoning?: boolean;
-  }
+  config?: LLMConfig
 ): Promise<string> {
   const systemPrompt = `You are a sports analyst. Write a concise pre-match preview and prediction for an upcoming ${sport} match between ${homeTeam.name} and ${awayTeam.name}. Give a 1-2 paragraph preview highlighting who is favored based on their standing position and form, and finish with a bold scoreline prediction.`;
   const userPrompt = `Home Team: ${homeTeam.name} (Standings Rank: ${homeTeam.position ?? "N/A"})
@@ -428,14 +281,7 @@ export async function generateSeasonSummary(
   championName: string,
   standings: Array<{ teamName: string; points: number; wins: number; losses: number }>,
   sport: string,
-  config?: {
-    provider?: string;
-    apiKey?: string;
-    apiUrl?: string;
-    modelName?: string;
-    temperature?: number;
-    reasoning?: boolean;
-  }
+  config?: LLMConfig
 ): Promise<string> {
   const standingsSummary = standings
     .map((s, idx) => `${idx + 1}. ${s.teamName} (Points: ${s.points}, W-L: ${s.wins}-${s.losses})`)
@@ -475,23 +321,15 @@ export async function generateAudioBroadcast(
   }
 
   try {
-    const text = commentary.join(" ... ");
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout for TTS
-
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         ...(apiKey && { Authorization: `Bearer ${apiKey}` }),
       },
-      body: JSON.stringify({
-        inputs: text,
-      }),
-      signal: controller.signal,
+      body: JSON.stringify({ inputs: commentary.join(" ... ") }),
+      signal: AbortSignal.timeout(15000), // 15s timeout for TTS
     });
-
-    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`TTS API response error status ${response.status}`);
