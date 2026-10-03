@@ -24,6 +24,7 @@ import {
 import { globalCache } from "~/lib/cache";
 import { type VaultTransactionType } from "@prisma/client";
 import { resolveVaultUserId } from "./_resolveUserId";
+import { toggleEquippedCosmetic } from "./_equippedCosmetics";
 import { vaultTransactionTypeEnum } from "./_transactionType";
 
 const STORE_SPEND_TYPES: VaultTransactionType[] = ["SPEND_COSMETIC", "SPEND_BOOST"];
@@ -244,17 +245,7 @@ export const vaultStoreRouter = createTRPCRouter({
           select: { metadata: true },
         });
 
-        const ownsItem = transactions.some((tx) => {
-          let meta = tx.metadata;
-          if (typeof meta === "string") {
-            try {
-              meta = JSON.parse(meta);
-            } catch {
-              // non-JSON metadata — treated as no item match
-            }
-          }
-          return meta && typeof meta === "object" && (meta as any).itemId === input.itemId;
-        });
+        const ownsItem = (countStorePurchases(transactions)[input.itemId] ?? 0) > 0;
 
         // 2. Fetch current equipped list
         const vault = await ctx.db.myVault.findUnique({
@@ -274,30 +265,7 @@ export const vaultStoreRouter = createTRPCRouter({
           throw new Error("You do not own this cosmetic item");
         }
 
-        const equipped = vault.equippedCosmetics
-          ? vault.equippedCosmetics.split(",").filter(Boolean)
-          : [];
-
-        const index = equipped.indexOf(input.itemId);
-        let isEquipped = false;
-        if (index > -1) {
-          equipped.splice(index, 1);
-        } else {
-          equipped.push(input.itemId);
-          isEquipped = true;
-        }
-
-        const nextEquipped = equipped.join(",");
-        await ctx.db.myVault.update({
-          where: { id: vault.id },
-          data: { equippedCosmetics: nextEquipped },
-        });
-
-        return {
-          success: true,
-          isEquipped,
-          equipped,
-        };
+        return await toggleEquippedCosmetic(ctx.db, vault, input.itemId);
       } catch (error) {
         console.error("[Vault Router] toggleEquipCosmetic error:", error);
         throw new Error(

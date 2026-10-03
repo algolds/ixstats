@@ -14,7 +14,7 @@ import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
-import type { FeatureCollection } from "geojson";
+import type { FeatureCollection, Geometry } from "geojson";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { getZoneByColor } from "~/lib/maps/elevation-config";
 import { clearLayerCache, extractAllPositions } from "../core";
@@ -23,6 +23,30 @@ import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 
 /** SVG uploads carry no realm: the Quick Update commit/rollback flow reads and replaces IxWorld's layers only. */
 const SVG_REALM = { realmId: DEFAULT_REALM_ID };
+
+/** Mean-position centroid and [minX, minY, maxX, maxY] bounds of a geometry (null when empty). */
+function centroidAndBbox(geometry: Geometry): { centroid: number[] | null; bbox: number[] | null } {
+  const coords = extractAllPositions(geometry);
+  if (coords.length === 0) return { centroid: null, bbox: null };
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
+  let sumX = 0,
+    sumY = 0;
+  for (const [x, y] of coords) {
+    sumX += x;
+    sumY += y;
+    if (x < minX) minX = x;
+    if (y < minY) minY = y;
+    if (x > maxX) maxX = x;
+    if (y > maxY) maxY = y;
+  }
+  return {
+    centroid: [sumX / coords.length, sumY / coords.length],
+    bbox: [minX, minY, maxX, maxY],
+  };
+}
 
 // ──────────────────────────────────────────────
 // Router
@@ -133,28 +157,7 @@ export const geoAdminCommitsRouter = createTRPCRouter({
         );
         const displayName = String(feature.properties?.name ?? featureIdToDisplayName(featureId));
         const countryId = countryMap.get(featureId) ?? null;
-        const coords = extractAllPositions(feature.geometry);
-        const centroid =
-          coords.length > 0
-            ? [
-                coords.reduce((s, c) => s + c[0]!, 0) / coords.length,
-                coords.reduce((s, c) => s + c[1]!, 0) / coords.length,
-              ]
-            : null;
-        let bbox: number[] | null = null;
-        if (coords.length > 0) {
-          let minX = Infinity,
-            minY = Infinity,
-            maxX = -Infinity,
-            maxY = -Infinity;
-          for (const c of coords) {
-            if (c[0]! < minX) minX = c[0]!;
-            if (c[1]! < minY) minY = c[1]!;
-            if (c[0]! > maxX) maxX = c[0]!;
-            if (c[1]! > maxY) maxY = c[1]!;
-          }
-          bbox = [minX, minY, maxX, maxY];
-        }
+        const { centroid, bbox } = centroidAndBbox(feature.geometry);
         return {
           featureId,
           displayName,
@@ -345,28 +348,7 @@ export const geoAdminCommitsRouter = createTRPCRouter({
               feature.properties?.name ?? featureIdToDisplayName(featureId)
             );
             const countryId = linkageMap.get(featureId) ?? null;
-            const coords = extractAllPositions(feature.geometry);
-            const centroid =
-              coords.length > 0
-                ? [
-                    coords.reduce((s, c) => s + c[0]!, 0) / coords.length,
-                    coords.reduce((s, c) => s + c[1]!, 0) / coords.length,
-                  ]
-                : null;
-            let bbox: number[] | null = null;
-            if (coords.length > 0) {
-              let minX = Infinity,
-                minY = Infinity,
-                maxX = -Infinity,
-                maxY = -Infinity;
-              for (const c of coords) {
-                if (c[0]! < minX) minX = c[0]!;
-                if (c[1]! < minY) minY = c[1]!;
-                if (c[0]! > maxX) maxX = c[0]!;
-                if (c[1]! > maxY) maxY = c[1]!;
-              }
-              bbox = [minX, minY, maxX, maxY];
-            }
+            const { centroid, bbox } = centroidAndBbox(feature.geometry);
             return {
               layerType: targetUpload.layerType,
               featureId,

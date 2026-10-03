@@ -39,6 +39,28 @@ import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 // Register host-app template data provider
 registerTemplateProvider(ixstatsTemplateProvider);
 
+/** Pre-resolve custom templates (CountryData, BusinessData); falls back to the untouched HTML. */
+async function resolveArticleTemplates(
+  ctx: Parameters<typeof resolveActiveCountryId>[0],
+  transformed: ReturnType<typeof transformArticleHtml>
+) {
+  let resolvedMap: Map<string, ResolvedTemplate> | undefined;
+  try {
+    const myCountryId = await resolveActiveCountryId(ctx);
+    resolvedMap = await resolveTemplates(extractTemplateKeys(transformed.contentHtml), {
+      activeCountryId: myCountryId,
+    });
+  } catch {
+    resolvedMap = undefined;
+  }
+  const apply = (html: string) => (resolvedMap ? applyResolvedTemplates(html, resolvedMap) : html);
+  return {
+    contentHtml: apply(transformed.contentHtml),
+    infoboxHtml: transformed.infoboxHtml && apply(transformed.infoboxHtml),
+    noticesHtml: transformed.noticesHtml && apply(transformed.noticesHtml),
+  };
+}
+
 export const wikiosPageContentRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
   // Reader endpoints
@@ -203,28 +225,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
 
         const transformed = transformArticleHtml(stripConflictingStyles(rawHtml), "", "ixwiki");
 
-        const templateKeys = extractTemplateKeys(transformed.contentHtml);
-        let resolvedMap: Map<string, ResolvedTemplate> | undefined;
-        try {
-          const myCountryId = await resolveActiveCountryId(ctx);
-          resolvedMap = await resolveTemplates(templateKeys, {
-            activeCountryId: myCountryId,
-          });
-        } catch {
-          resolvedMap = undefined;
-        }
-
-        const contentHtml = resolvedMap
-          ? applyResolvedTemplates(transformed.contentHtml, resolvedMap)
-          : transformed.contentHtml;
-        const infoboxHtml =
-          resolvedMap && transformed.infoboxHtml
-            ? applyResolvedTemplates(transformed.infoboxHtml, resolvedMap)
-            : transformed.infoboxHtml;
-        const noticesHtml =
-          resolvedMap && transformed.noticesHtml
-            ? applyResolvedTemplates(transformed.noticesHtml, resolvedMap)
-            : transformed.noticesHtml;
+        // Pre-resolve custom templates (CountryData, BusinessData) server-side
+        const { contentHtml, infoboxHtml, noticesHtml } = await resolveArticleTemplates(ctx, transformed);
 
         const authorInfo = await getArticleAuthors(resolvedTitle, "ixwiki");
 
@@ -258,28 +260,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
         );
 
         // Pre-resolve custom templates (CountryData, BusinessData) server-side
-        const templateKeys = extractTemplateKeys(transformed.contentHtml);
-        let resolvedMap: Map<string, ResolvedTemplate> | undefined;
-        try {
-          const myCountryId = await resolveActiveCountryId(ctx);
-          resolvedMap = await resolveTemplates(templateKeys, {
-            activeCountryId: myCountryId,
-          });
-        } catch {
-          resolvedMap = undefined;
-        }
-
-        const contentHtml = resolvedMap
-          ? applyResolvedTemplates(transformed.contentHtml, resolvedMap)
-          : transformed.contentHtml;
-        const infoboxHtml =
-          resolvedMap && transformed.infoboxHtml
-            ? applyResolvedTemplates(transformed.infoboxHtml, resolvedMap)
-            : transformed.infoboxHtml;
-        const noticesHtml =
-          resolvedMap && transformed.noticesHtml
-            ? applyResolvedTemplates(transformed.noticesHtml, resolvedMap)
-            : transformed.noticesHtml;
+        const { contentHtml, infoboxHtml, noticesHtml } = await resolveArticleTemplates(ctx, transformed);
 
         return {
           contentHtml,
@@ -341,28 +322,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
       const transformed = transformArticleHtml(stripConflictingStyles(article.html), "", "ixwiki");
 
       // Pre-resolve custom templates (CountryData, BusinessData) server-side
-      const templateKeys = extractTemplateKeys(transformed.contentHtml);
-      let resolvedMap: Map<string, ResolvedTemplate> | undefined;
-      try {
-        const myCountryId = await resolveActiveCountryId(ctx);
-        resolvedMap = await resolveTemplates(templateKeys, {
-          activeCountryId: myCountryId,
-        });
-      } catch {
-        resolvedMap = undefined;
-      }
-
-      const contentHtml = resolvedMap
-        ? applyResolvedTemplates(transformed.contentHtml, resolvedMap)
-        : transformed.contentHtml;
-      const infoboxHtml =
-        resolvedMap && transformed.infoboxHtml
-          ? applyResolvedTemplates(transformed.infoboxHtml, resolvedMap)
-          : transformed.infoboxHtml;
-      const noticesHtml =
-        resolvedMap && transformed.noticesHtml
-          ? applyResolvedTemplates(transformed.noticesHtml, resolvedMap)
-          : transformed.noticesHtml;
+      const { contentHtml, infoboxHtml, noticesHtml } = await resolveArticleTemplates(ctx, transformed);
 
       // Phase 8: Backfill HTML shadow cache with complete raw Parsoid HTML so subsequent reads preserve infoboxes
       if (article.html) {

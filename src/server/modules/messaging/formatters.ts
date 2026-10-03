@@ -10,6 +10,39 @@ import { UNKNOWN_DISPLAY_NAME } from "~/server/shared/display-names";
 
 // ─── Formatters for `api.messages` ───────────────────────────────────────────
 
+/** Stand-in account for a participant the account lookup did not resolve. */
+function fallbackAccount(userId: string) {
+  return {
+    id: userId,
+    username: userId,
+    displayName: userId.startsWith("forum:")
+      ? "Forum User"
+      : userId.startsWith("wiki:")
+        ? "Wiki User"
+        : UNKNOWN_DISPLAY_NAME,
+    profileImageUrl: null,
+    countryFlag: null,
+    countryName: null,
+    accountType: "country" as const,
+  };
+}
+
+function formatLastMessage(conv: any, accountMap: Map<string, UserAccount>) {
+  const lastMsg = conv.messages?.[0] || conv.lastMessage;
+  if (!lastMsg) return null;
+  const senderAccount = accountMap.get(lastMsg.userId);
+  const isDeleted = Boolean(lastMsg.deletedAt || lastMsg.isDeleted);
+  return {
+    id: lastMsg.id,
+    content: isDeleted ? "This message was deleted" : lastMsg.content,
+    senderId: lastMsg.userId,
+    senderName: senderAccount?.displayName ?? lastMsg.senderName ?? "Unknown",
+    senderAvatar: senderAccount?.profileImageUrl ?? lastMsg.senderAvatar ?? null,
+    createdAt: new Date(lastMsg.ixTimeTimestamp || lastMsg.createdAt || Date.now()),
+    isDeleted,
+  };
+}
+
 interface MessagesConversationResult {
   id: string;
   type: string;
@@ -53,19 +86,7 @@ export function formatMessagesConversation(
   const otherParts = participants.filter((p) => p.userId !== actorId);
 
   const otherAccounts: any[] = otherParts.map((p) => {
-    const acc = accountMap.get(p.userId) || {
-      id: p.userId,
-      username: p.userId,
-      displayName: p.userId.startsWith("forum:")
-        ? "Forum User"
-        : p.userId.startsWith("wiki:")
-          ? "Wiki User"
-          : UNKNOWN_DISPLAY_NAME,
-      profileImageUrl: null,
-      countryFlag: null,
-      countryName: null,
-      accountType: "country" as const,
-    };
+    const acc = accountMap.get(p.userId) || fallbackAccount(p.userId);
     return {
       ...acc,
       id: p.id || p.userId,
@@ -77,19 +98,7 @@ export function formatMessagesConversation(
   // If no account found but other participants exist, generate fallback
   if (otherAccounts.length === 0 && otherParts.length > 0) {
     const firstId = otherParts[0]!.userId;
-    const fallbackAcc = {
-      id: firstId,
-      username: firstId,
-      displayName: firstId.startsWith("forum:")
-        ? "Forum User"
-        : firstId.startsWith("wiki:")
-          ? "Wiki User"
-          : UNKNOWN_DISPLAY_NAME,
-      profileImageUrl: null,
-      countryFlag: null,
-      countryName: null,
-      accountType: "country" as const,
-    };
+    const fallbackAcc = fallbackAccount(firstId);
     otherAccounts.push({
       ...fallbackAcc,
       id: firstId,
@@ -98,21 +107,7 @@ export function formatMessagesConversation(
     });
   }
 
-  let lastMessageFormatted = null;
-  const lastMsg = conv.messages?.[0] || conv.lastMessage;
-  if (lastMsg) {
-    const senderAccount = accountMap.get(lastMsg.userId);
-    const isDeleted = Boolean(lastMsg.deletedAt || lastMsg.isDeleted);
-    lastMessageFormatted = {
-      id: lastMsg.id,
-      content: isDeleted ? "This message was deleted" : lastMsg.content,
-      senderId: lastMsg.userId,
-      senderName: senderAccount?.displayName ?? lastMsg.senderName ?? "Unknown",
-      senderAvatar: senderAccount?.profileImageUrl ?? lastMsg.senderAvatar ?? null,
-      createdAt: new Date(lastMsg.ixTimeTimestamp || lastMsg.createdAt || Date.now()),
-      isDeleted,
-    };
-  }
+  const lastMessageFormatted = formatLastMessage(conv, accountMap);
 
   const isGroupConv = conv.type === "group" || conv.source === "thinktank" || Boolean(conv.isGroup);
 
@@ -165,21 +160,7 @@ export function formatThinkpagesConversation(
     accountType: "country" as const,
   };
 
-  let lastMessageFormatted = null;
-  const lastMsg = conv.messages?.[0] || conv.lastMessage;
-  if (lastMsg) {
-    const senderAccount = accountMap.get(lastMsg.userId);
-    const isDeleted = Boolean(lastMsg.deletedAt || lastMsg.isDeleted);
-    lastMessageFormatted = {
-      id: lastMsg.id,
-      content: isDeleted ? "This message was deleted" : lastMsg.content,
-      senderId: lastMsg.userId,
-      senderName: senderAccount?.displayName ?? lastMsg.senderName ?? "Unknown",
-      senderAvatar: senderAccount?.profileImageUrl ?? lastMsg.senderAvatar ?? null,
-      createdAt: new Date(lastMsg.ixTimeTimestamp || lastMsg.createdAt || Date.now()),
-      isDeleted,
-    };
-  }
+  const lastMessageFormatted = formatLastMessage(conv, accountMap);
 
   return {
     id: conv.id,

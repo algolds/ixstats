@@ -29,6 +29,17 @@ import {
 /**
  * Trade offer creation schema
  */
+/** Drop the cached vault stats and balances (keyed by both DB and Clerk id) of the given users. */
+async function clearVaultCaches(...users: Array<{ id: string; clerkUserId?: string | null }>) {
+  await Promise.all(
+    users.flatMap((user) => [
+      globalCache.delete(`user_vault_stats:${user.id}`),
+      globalCache.delete(`user_vault_balance:${user.id}`),
+      ...(user.clerkUserId ? [globalCache.delete(`user_vault_balance:${user.clerkUserId}`)] : []),
+    ])
+  );
+}
+
 const createtradeOfferSchema = z.object({
   recipientId: z.string().min(1, "Recipient ID is required"),
   initiatorCardIds: z.array(z.string()).min(1, "At least one card must be offered"),
@@ -230,11 +241,7 @@ export const tradingOffersRouter = createTRPCRouter({
         console.warn("[Notifications] trading.createtradeOffer:", e);
       }
 
-      await Promise.all([
-        globalCache.delete(`user_vault_stats:${initiatorDbId}`),
-        globalCache.delete(`user_vault_balance:${initiatorDbId}`),
-        ...(ctx.auth?.userId ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)] : []),
-      ]);
+      await clearVaultCaches({ id: initiatorDbId, clerkUserId: ctx.auth?.userId });
 
       return trade;
     }),
@@ -318,13 +325,7 @@ export const tradingOffersRouter = createTRPCRouter({
           return await tx.tradeOffer.findUniqueOrThrow({ where: { id: input.tradeId } });
         });
 
-        await Promise.all([
-          globalCache.delete(`user_vault_stats:${trade.initiatorId}`),
-          globalCache.delete(`user_vault_balance:${trade.initiatorId}`),
-          ...(trade.initiator.clerkUserId
-            ? [globalCache.delete(`user_vault_balance:${trade.initiator.clerkUserId}`)]
-            : []),
-        ]);
+        await clearVaultCaches(trade.initiator);
 
         return result;
       }
@@ -409,18 +410,7 @@ export const tradingOffersRouter = createTRPCRouter({
           });
         });
 
-        await Promise.all([
-          globalCache.delete(`user_vault_stats:${trade.initiatorId}`),
-          globalCache.delete(`user_vault_stats:${trade.recipientId}`),
-          globalCache.delete(`user_vault_balance:${trade.initiatorId}`),
-          globalCache.delete(`user_vault_balance:${trade.recipientId}`),
-          ...(trade.initiator.clerkUserId
-            ? [globalCache.delete(`user_vault_balance:${trade.initiator.clerkUserId}`)]
-            : []),
-          ...(trade.recipient.clerkUserId
-            ? [globalCache.delete(`user_vault_balance:${trade.recipient.clerkUserId}`)]
-            : []),
-        ]);
+        await clearVaultCaches(trade.initiator, trade.recipient);
 
         return result;
       }
@@ -513,18 +503,7 @@ export const tradingOffersRouter = createTRPCRouter({
         console.error("[Trading] Background op failed:", (err as Error).message);
       });
 
-      await Promise.all([
-        globalCache.delete(`user_vault_stats:${trade.initiatorId}`),
-        globalCache.delete(`user_vault_stats:${trade.recipientId}`),
-        globalCache.delete(`user_vault_balance:${trade.initiatorId}`),
-        globalCache.delete(`user_vault_balance:${trade.recipientId}`),
-        ...(trade.initiator.clerkUserId
-          ? [globalCache.delete(`user_vault_balance:${trade.initiator.clerkUserId}`)]
-          : []),
-        ...(trade.recipient.clerkUserId
-          ? [globalCache.delete(`user_vault_balance:${trade.recipient.clerkUserId}`)]
-          : []),
-      ]);
+      await clearVaultCaches(trade.initiator, trade.recipient);
 
       // Notify initiator that their trade was accepted
       try {
@@ -587,11 +566,7 @@ export const tradingOffersRouter = createTRPCRouter({
         return await tx.tradeOffer.findUniqueOrThrow({ where: { id: input.tradeId } });
       });
 
-      await Promise.all([
-        globalCache.delete(`user_vault_stats:${userId}`),
-        globalCache.delete(`user_vault_balance:${userId}`),
-        ...(ctx.auth?.userId ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)] : []),
-      ]);
+      await clearVaultCaches({ id: userId, clerkUserId: ctx.auth?.userId });
 
       return result;
     }),

@@ -26,26 +26,29 @@ export function storePrerequisiteMet(
 }
 
 /**
- * Count store purchases per item from SPEND_COSMETIC / SPEND_BOOST transaction
- * metadata. Metadata is stored as a JSON string or an object; rows without an
- * `itemId` are ignored.
+ * The store item a SPEND_COSMETIC / SPEND_BOOST transaction bought. Metadata is stored as a
+ * JSON string or an object; rows without an `itemId` yield null.
  */
+export function purchasedItemId(metadata: unknown): string | null {
+  let meta = metadata;
+  if (typeof meta === "string") {
+    try {
+      meta = JSON.parse(meta);
+    } catch {
+      return null;
+    }
+  }
+  const itemId =
+    meta && typeof meta === "object" ? (meta as Record<string, unknown>).itemId : undefined;
+  return typeof itemId === "string" && itemId ? itemId : null;
+}
+
+/** Count store purchases per item from SPEND_COSMETIC / SPEND_BOOST transaction metadata. */
 export function countStorePurchases(rows: { metadata: unknown }[]): Record<string, number> {
   const counts: Record<string, number> = {};
   for (const row of rows) {
-    let meta = row.metadata;
-    if (typeof meta === "string") {
-      try {
-        meta = JSON.parse(meta);
-      } catch {
-        continue;
-      }
-    }
-    const itemId =
-      meta && typeof meta === "object" ? (meta as Record<string, unknown>).itemId : undefined;
-    if (typeof itemId === "string" && itemId) {
-      counts[itemId] = (counts[itemId] ?? 0) + 1;
-    }
+    const itemId = purchasedItemId(row.metadata);
+    if (itemId) counts[itemId] = (counts[itemId] ?? 0) + 1;
   }
   return counts;
 }

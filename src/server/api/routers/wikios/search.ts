@@ -21,6 +21,32 @@ import {
 } from "~/lib/wiki-os/core/native-search-service";
 import { db } from "~/server/db";
 
+const searchWikiTitles = publicProcedure
+  .input(
+    z.object({
+      query: z.string().min(1).max(200),
+      limit: z.number().min(1).max(50).default(10),
+      wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+    })
+  )
+  .query(async ({ input }) => {
+    const source = input.wiki as WikiSource;
+    if (source === "ixwiki") {
+      const shadowResults = await searchShadowArticles(input.query, input.limit, source);
+      if (shadowResults.length > 0) {
+        return shadowResults.map((r) => ({
+          title: r.title,
+          pageId: 0,
+          length: 0,
+          snippet: r.snippet,
+          source: "ixwiki" as const,
+        }));
+      }
+    }
+    const live = await searchPages(input.query, input.limit, source);
+    return live.map((r) => ({ ...r, source }));
+  });
+
 export const wikiosSearchRouter = createTRPCRouter({
   /**
    * Search articles by title prefix.
@@ -154,62 +180,11 @@ export const wikiosSearchRouter = createTRPCRouter({
       };
     }),
 
-  /**
-   * Search articles with PostgreSQL shadow full-text/trigram engine for ixwiki.
-   */
-  searchArticles: publicProcedure
-    .input(
-      z.object({
-        query: z.string().min(1).max(200),
-        limit: z.number().min(1).max(50).default(10),
-        wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
-      })
-    )
-    .query(async ({ input }) => {
-      const source = input.wiki as WikiSource;
-      if (source === "ixwiki") {
-        const shadowResults = await searchShadowArticles(input.query, input.limit, source);
-        if (shadowResults.length > 0) {
-          return shadowResults.map((r) => ({
-            title: r.title,
-            pageId: 0,
-            length: 0,
-            snippet: r.snippet,
-            source: "ixwiki" as const,
-          }));
-        }
-      }
-      const live = await searchPages(input.query, input.limit, source);
-      return live.map((r) => ({ ...r, source }));
-    }),
+  /** Search articles with the PostgreSQL shadow full-text/trigram engine (ixwiki), else the live wiki. */
+  searchArticles: searchWikiTitles,
 
-  /**
-   * Search pages alias for backward compatibility.
-   */
-  searchPages: publicProcedure
-    .input(
-      z.object({
-        query: z.string().min(1).max(200),
-        limit: z.number().min(1).max(50).default(10),
-        wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
-      })
-    )
-    .query(async ({ input }) => {
-      const source = input.wiki as WikiSource;
-      if (source === "ixwiki") {
-        const shadowResults = await searchShadowArticles(input.query, input.limit, source);
-        if (shadowResults.length > 0) {
-          return shadowResults.map((r) => ({
-            title: r.title,
-            pageId: 0,
-            length: 0,
-            snippet: r.snippet,
-            source: "ixwiki" as const,
-          }));
-        }
-      }
-      return searchPages(input.query, input.limit, source);
-    }),
+  /** Same search, kept under its older name for existing callers. */
+  searchPages: searchWikiTitles,
 
   /**
    * Search wiki files/images by name prefix or category.

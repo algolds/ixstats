@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
+import { countStorePurchases, purchasedItemId } from "~/lib/vault/store-purchases";
+import { toggleEquippedCosmetic } from "../_equippedCosmetics";
 
 export const vaultAdminItemsRouter = createTRPCRouter({
   adminGetPurchaseLogs: adminProcedure.query(async ({ ctx }) => {
@@ -31,26 +33,13 @@ export const vaultAdminItemsRouter = createTRPCRouter({
       });
 
       return txs.map((tx: any) => {
-        let itemId = "";
-        let meta = tx.metadata;
-        if (typeof meta === "string") {
-          try {
-            meta = JSON.parse(meta);
-          } catch {
-            // non-JSON metadata — treated as no item match
-          }
-        }
-        if (meta && typeof meta === "object") {
-          const metaObj = meta as Record<string, any>;
-          itemId = metaObj.itemId || "";
-        }
         return {
           id: tx.id,
           credits: tx.credits,
           balanceAfter: tx.balanceAfter,
           type: tx.type,
           source: tx.source,
-          itemId,
+          itemId: purchasedItemId(tx.metadata) ?? "",
           createdAt: tx.createdAt,
           user: {
             id: tx.vault.user?.id,
@@ -86,27 +75,9 @@ export const vaultAdminItemsRouter = createTRPCRouter({
           },
         });
 
-        const purchasedItemIds = new Set<string>();
-        for (const tx of transactions) {
-          let meta = tx.metadata;
-          if (typeof meta === "string") {
-            try {
-              meta = JSON.parse(meta);
-            } catch {
-              // non-JSON metadata — treated as no item match
-            }
-          }
-          if (meta && typeof meta === "object") {
-            const metaObj = meta as Record<string, any>;
-            if (metaObj.itemId && typeof metaObj.itemId === "string") {
-              purchasedItemIds.add(metaObj.itemId);
-            }
-          }
-        }
-
         return {
           success: true,
-          purchasedItemIds: Array.from(purchasedItemIds),
+          purchasedItemIds: Object.keys(countStorePurchases(transactions)),
         };
       } catch (error) {
         console.error("[Vault Admin Router] Error getting user purchased items:", error);
@@ -139,17 +110,7 @@ export const vaultAdminItemsRouter = createTRPCRouter({
           },
         });
 
-        const alreadyOwned = transactions.some((tx) => {
-          let meta = tx.metadata;
-          if (typeof meta === "string") {
-            try {
-              meta = JSON.parse(meta);
-            } catch {
-              // non-JSON metadata — treated as no item match
-            }
-          }
-          return meta && typeof meta === "object" && (meta as any).itemId === input.itemId;
-        });
+        const alreadyOwned = (countStorePurchases(transactions)[input.itemId] ?? 0) > 0;
 
         if (alreadyOwned) {
           throw new Error("User already owns this item");
@@ -271,46 +232,11 @@ export const vaultAdminItemsRouter = createTRPCRouter({
           select: { metadata: true },
         });
 
-        const ownsItem = transactions.some((tx) => {
-          let meta = tx.metadata;
-          if (typeof meta === "string") {
-            try {
-              meta = JSON.parse(meta);
-            } catch {
-              // non-JSON metadata — treated as no item match
-            }
-          }
-          return meta && typeof meta === "object" && (meta as any).itemId === input.itemId;
-        });
-
-        if (!ownsItem) {
+        if ((countStorePurchases(transactions)[input.itemId] ?? 0) === 0) {
           throw new Error("User does not own this cosmetic item");
         }
 
-        const equipped = vault.equippedCosmetics
-          ? vault.equippedCosmetics.split(",").filter(Boolean)
-          : [];
-
-        const index = equipped.indexOf(input.itemId);
-        let isEquipped = false;
-        if (index > -1) {
-          equipped.splice(index, 1);
-        } else {
-          equipped.push(input.itemId);
-          isEquipped = true;
-        }
-
-        const nextEquipped = equipped.join(",");
-        await ctx.db.myVault.update({
-          where: { id: vault.id },
-          data: { equippedCosmetics: nextEquipped },
-        });
-
-        return {
-          success: true,
-          isEquipped,
-          equipped,
-        };
+        return await toggleEquippedCosmetic(ctx.db, vault, input.itemId);
       } catch (error) {
         console.error("[Vault Admin Router] adminToggleEquipCosmetic error:", error);
         throw new Error(

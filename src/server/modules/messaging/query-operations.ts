@@ -30,6 +30,46 @@ export class MessagingQueryOperations {
     this.telemetry = dependencies.telemetry;
   }
 
+  /** Accounts for the actor, every listed participant and every last-message sender. */
+  private resolveListAccounts(conversations: any[], actorId: string) {
+    const userIds: string[] = [actorId];
+    for (const conv of conversations) {
+      for (const p of conv.participants) userIds.push(p.userId);
+      if (conv.messages?.[0]) userIds.push(conv.messages[0].userId);
+    }
+    return batchResolveMessagingAccounts(userIds, this.db);
+  }
+
+  /** Unread message count per conversation (messages from others after the actor's last read). */
+  private async unreadCounts(conversationIds: string[], actorId: string) {
+    const unreadMap = new Map<string, number>();
+    if (conversationIds.length === 0) return unreadMap;
+
+    const myParticipants =
+      (await this.db.conversationParticipant.findMany({
+        where: { conversationId: { in: conversationIds }, userId: actorId },
+      })) ?? [];
+    for (const mp of myParticipants) unreadMap.set(mp.conversationId, 0);
+    if (myParticipants.length === 0) return unreadMap;
+
+    const unreadMessages =
+      (await this.db.thinkshareMessage.findMany({
+        where: {
+          OR: myParticipants.map((mp: any) => ({
+            conversationId: mp.conversationId,
+            ixTimeTimestamp: { gt: mp.lastReadAt || new Date(0) },
+          })),
+          userId: { not: actorId },
+          deletedAt: null,
+        },
+        select: { conversationId: true },
+      })) ?? [];
+    for (const msg of unreadMessages) {
+      unreadMap.set(msg.conversationId, (unreadMap.get(msg.conversationId) ?? 0) + 1);
+    }
+    return unreadMap;
+  }
+
   public async getConversationsByFolder(actorId: string, input: GetConversationsByFolderInput) {
     const startTime = Date.now();
     try {
@@ -108,49 +148,11 @@ export class MessagingQueryOperations {
         nextCursor = nextItem.lastActivity ? nextItem.lastActivity.toISOString() : null;
       }
 
-      const userIdsToResolve: string[] = [actorId];
-      const conversationIds = conversations.map((c: any) => c.id);
-
-      for (const conv of conversations) {
-        for (const p of conv.participants) userIdsToResolve.push(p.userId);
-        if (conv.messages?.[0]) userIdsToResolve.push(conv.messages[0].userId);
-      }
-
-      const accountMap = await batchResolveMessagingAccounts(userIdsToResolve, this.db);
-
-      const unreadMap = new Map<string, number>();
-      if (conversationIds.length > 0) {
-        const myParticipants =
-          (await this.db.conversationParticipant.findMany({
-            where: {
-              conversationId: { in: conversationIds },
-              userId: actorId,
-            },
-          })) ?? [];
-
-        for (const mp of myParticipants) {
-          unreadMap.set(mp.conversationId, 0);
-        }
-
-        if (myParticipants.length > 0) {
-          const unreadMessages =
-            (await this.db.thinkshareMessage.findMany({
-              where: {
-                OR: myParticipants.map((mp: any) => ({
-                  conversationId: mp.conversationId,
-                  ixTimeTimestamp: { gt: mp.lastReadAt || new Date(0) },
-                })),
-                userId: { not: actorId },
-                deletedAt: null,
-              },
-              select: { conversationId: true },
-            })) ?? [];
-
-          for (const msg of unreadMessages) {
-            unreadMap.set(msg.conversationId, (unreadMap.get(msg.conversationId) ?? 0) + 1);
-          }
-        }
-      }
+      const accountMap = await this.resolveListAccounts(conversations, actorId);
+      const unreadMap = await this.unreadCounts(
+        conversations.map((c: any) => c.id),
+        actorId
+      );
 
       const formatted = conversations.map((conv: any) =>
         formatMessagesConversation(conv, actorId, accountMap, unreadMap.get(conv.id) ?? 0)
@@ -386,37 +388,11 @@ export class MessagingQueryOperations {
         nextCursor = nextItem.lastActivity ? nextItem.lastActivity.toISOString() : undefined;
       }
 
-      const userIdsToResolve: string[] = [actorId];
-      const conversationIds = conversations.map((c: any) => c.id);
-
-      for (const conv of conversations) {
-        for (const p of conv.participants) userIdsToResolve.push(p.userId);
-        if (conv.messages?.[0]) userIdsToResolve.push(conv.messages[0].userId);
-      }
-
-      const accountMap = await batchResolveMessagingAccounts(userIdsToResolve, this.db);
-
-      const unreadMap = new Map<string, number>();
-      if (conversationIds.length > 0) {
-        const myParticipants = await this.db.conversationParticipant.findMany({
-          where: {
-            conversationId: { in: conversationIds },
-            userId: actorId,
-          },
-        });
-
-        for (const mp of myParticipants) {
-          const count = await this.db.thinkshareMessage.count({
-            where: {
-              conversationId: mp.conversationId,
-              ixTimeTimestamp: { gt: mp.lastReadAt || new Date(0) },
-              userId: { not: actorId },
-              deletedAt: null,
-            },
-          });
-          unreadMap.set(mp.conversationId, count);
-        }
-      }
+      const accountMap = await this.resolveListAccounts(conversations, actorId);
+      const unreadMap = await this.unreadCounts(
+        conversations.map((c: any) => c.id),
+        actorId
+      );
 
       const formatted = conversations.map((conv: any) =>
         formatThinkpagesConversation(conv, actorId, accountMap, unreadMap.get(conv.id) ?? 0)

@@ -1,6 +1,7 @@
 import { z } from "zod/v4";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import type { PrismaClient } from "@prisma/client";
 import { compositionSchema } from "~/lib/heraldry/composition-schema";
 import { validateComposition } from "~/lib/heraldry/validation";
 import { generateBlazon } from "~/lib/heraldry/blazon";
@@ -8,6 +9,22 @@ import { isSystemOwner } from "~/lib/auth";
 import { invalidateCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+
+/** The achievement, or NOT_FOUND / FORBIDDEN unless the caller owns it (or is a system owner). */
+async function loadOwnedAchievement(
+  ctx: { db: PrismaClient; auth: { userId: string } },
+  id: string,
+  forbiddenMessage: string
+) {
+  const achievement = await ctx.db.heraldryAchievement.findUnique({ where: { id } });
+  if (!achievement) {
+    throw new TRPCError({ code: "NOT_FOUND", message: `Achievement with ID ${id} not found` });
+  }
+  if (achievement.ownerId !== ctx.auth.userId && !isSystemOwner(ctx.auth.userId)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: forbiddenMessage });
+  }
+  return achievement;
+}
 
 export const heraldryMutationsRouter = createTRPCRouter({
   saveAchievement: protectedProcedure
@@ -28,23 +45,11 @@ export const heraldryMutationsRouter = createTRPCRouter({
       let achievement;
 
       if (input.id) {
-        const existing = await ctx.db.heraldryAchievement.findUnique({
-          where: { id: input.id },
-        });
-
-        if (!existing) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: `Achievement with ID ${input.id} not found`,
-          });
-        }
-
-        if (existing.ownerId !== ctx.auth.userId && !isSystemOwner(ctx.auth.userId)) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "You do not have permission to update this achievement.",
-          });
-        }
+        await loadOwnedAchievement(
+          ctx,
+          input.id,
+          "You do not have permission to update this achievement."
+        );
 
         achievement = await ctx.db.heraldryAchievement.update({
           where: { id: input.id },
@@ -86,23 +91,11 @@ export const heraldryMutationsRouter = createTRPCRouter({
   publishAchievement: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const existing = await ctx.db.heraldryAchievement.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!existing) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Achievement with ID ${input.id} not found`,
-        });
-      }
-
-      if (existing.ownerId !== ctx.auth.userId && !isSystemOwner(ctx.auth.userId)) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have permission to publish this achievement.",
-        });
-      }
+      await loadOwnedAchievement(
+        ctx,
+        input.id,
+        "You do not have permission to publish this achievement."
+      );
 
       return ctx.db.heraldryAchievement.update({
         where: { id: input.id },
@@ -116,23 +109,11 @@ export const heraldryMutationsRouter = createTRPCRouter({
   unpublishAchievement: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const existing = await ctx.db.heraldryAchievement.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!existing) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Achievement with ID ${input.id} not found`,
-        });
-      }
-
-      if (existing.ownerId !== ctx.auth.userId && !isSystemOwner(ctx.auth.userId)) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have permission to unpublish this achievement.",
-        });
-      }
+      await loadOwnedAchievement(
+        ctx,
+        input.id,
+        "You do not have permission to unpublish this achievement."
+      );
 
       return ctx.db.heraldryAchievement.update({
         where: { id: input.id },
@@ -212,23 +193,11 @@ export const heraldryMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const achievement = await ctx.db.heraldryAchievement.findUnique({
-        where: { id: input.achievementId },
-      });
-
-      if (!achievement) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Achievement with ID ${input.achievementId} not found`,
-        });
-      }
-
-      if (achievement.ownerId !== ctx.auth.userId && !isSystemOwner(ctx.auth.userId)) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not own this achievement.",
-        });
-      }
+      const achievement = await loadOwnedAchievement(
+        ctx,
+        input.achievementId,
+        "You do not own this achievement."
+      );
 
       await assertCountryWriteAccess(ctx, input.countryId);
 
