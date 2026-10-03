@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useId } from "react";
 import {
   BarChart,
   Bar,
@@ -224,7 +224,7 @@ export function GlassBarChart({
   const formatYAxis = (value: number | string | unknown): string =>
     typeof value === "number" ? (valueFormatter ?? compactAxisValue)(value) : String(value ?? "");
 
-  const gradientId = useMemo(() => `bar-grad-${theme}-${crypto.randomUUID()}`, [theme]);
+  const gradientId = `bar-grad-${theme}-${useId().replace(/:/g, "")}`;
   const [gradientTop, gradientBottom] = (THEME_COLORS[theme] ?? THEME_COLORS.default).bar;
   const fillAt = (index: number) =>
     colors ? colors[index % colors.length] : `url(#${gradientId})`;
@@ -303,7 +303,7 @@ export function GlassLineChart({
   hideXAxis = false,
   hideYAxis = false,
 }: LineChartProps) {
-  const gradientId = useMemo(() => `area-grad-${theme}-${crypto.randomUUID()}`, [theme]);
+  const gradientId = `area-grad-${theme}-${useId().replace(/:/g, "")}`;
   const strokeColor = (THEME_COLORS[theme] ?? THEME_COLORS.default).stroke;
   const ChartComponent = area ? AreaChart : LineChart;
   const type = curved ? "monotone" : "linear";
