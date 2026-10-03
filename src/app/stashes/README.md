@@ -18,7 +18,6 @@ Signed-out visitors see a sign-in prompt instead of the manager.
 |---------|-------------------|
 | Color-coded stashes | Named collections with a preset color and optional icon; max **25** per user (`createStash`) |
 | Default stash | Auto-created "My Stash" when a user first stashes anything (`stashPage`) |
-| One-click save | `StashButton` saves the current page to the default stash, or to specific stashes via a popover / manager modal |
 | Text annotations | Selection-based highlights with anchor/focus selectors, selected text, optional comment, and color (`addAnnotation`) |
 | Organization | Rename / recolor / set icon (`updateStash`) |
 | Collection settings | `StashSettingsMenu`: rename, 8-swatch color picker, Markdown / JSON export, copy link, delete |
@@ -29,7 +28,6 @@ Signed-out visitors see a sign-in prompt instead of the manager.
 | Piece | Location | Role |
 |-------|----------|------|
 | Page | `src/app/stashes/page.tsx` | Manager UI; tabs filter items by `pageTitle` prefix (`commons:` = image, `forum:thread:` = thread, else wiki page); the Quotes tab flattens each article's annotations. Sections live in `src/components/wiki-os/stashes/` (`StashSidebar`, `StashPagesList`, `StashQuotesList`, `StashImagesGrid` with `StashedImageModal`, `StashThreadsList`, `StashSettingsMenu`, `CreateStashPopover`) |
-| Stash button | `src/components/wiki-os/reader/StashButton.tsx` | Save toggle + popover + `StashManagerModal` |
 | Welcome modal | `src/components/wiki-os/shared/StashWelcomeModal.tsx` | First-run help (localStorage `wikios-stashes-welcome-seen`) |
 | Other entry points | `src/components/wiki-os/media-search/MyStashTab.tsx`, `src/components/messages/MessagesStashAttachmentModal.tsx` | Stash access from media search and messaging |
 | Styles | `src/styles/wiki-os/components.css` (aggregated by `src/styles/wiki-os.css`) | `wikios-stash-*` classes |
