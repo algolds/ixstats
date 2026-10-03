@@ -1,8 +1,3 @@
-/**
- * lorewards.ts — Lorewards tRPC router.
- * Public endpoints for leaderboards, user stats, award history, and article badges.
- */
-
 import { z } from "zod/v4";
 import {
   createTRPCRouter,
@@ -12,36 +7,75 @@ import {
 } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import * as fs from "fs";
-import { fullSync } from "~/lib/lorewards";
-import { scoreDailyWikiOS } from "~/lib/lorewards";
+import { fullSync, scoreDailyWikiOS } from "~/lib/lorewards";
+
+const OVERRIDE_FIELDS = {
+  winnerUser: z.string().nullable().optional(),
+  winnerPage: z.string().nullable().optional(),
+  winnerScore: z.number().nullable().optional(),
+  winnerBytes: z.number().nullable().optional(),
+  runnerUpUser: z.string().nullable().optional(),
+  runnerUpPage: z.string().nullable().optional(),
+  runnerUpScore: z.number().nullable().optional(),
+  runnerUpBytes: z.number().nullable().optional(),
+};
+
+/** POSTs to the Discord bot; `failure` prefixes the error raised when the bot or the call fails. */
+async function postToBot<T>(
+  path: string,
+  body: unknown,
+  failure: string,
+  onOk: (res: Response) => T | Promise<T>
+): Promise<T> {
+  const botUrl = process.env.IXTIME_BOT_URL || "http://localhost:3001";
+  try {
+    const res = await fetch(`${botUrl}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      throw new Error(`Bot returned status ${res.status}`);
+    }
+    return await onOk(res);
+  } catch (err) {
+    throw new Error(`${failure}: ${err instanceof Error ? err.message : String(err)}`, {
+      cause: err,
+    });
+  }
+}
 
 export const lorewardsAdminRouter = createTRPCRouter({
   /** Admin: trigger full sync from state file + OOL page. */
-  triggerSync: adminProcedure.mutation(async () => {
-    const result = await fullSync();
-    return result;
-  }),
-
-  // ---------------------------------------------------------------------------
-  // WikiOS Scoring Engine + Cross-Validation
-  // ---------------------------------------------------------------------------
+  triggerSync: adminProcedure.mutation(() => fullSync()),
 
   /** Cross-validate: compare bot picks vs WikiOS picks for a date. */
   crossValidate: adminProcedure
     .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
     .mutation(async ({ input }) => {
-      // Get bot result from database
       const botEntry = await db.lorewardEntry.findUnique({
         where: { date_type: { date: input.date, type: "daily" } },
       });
-
-      // Run WikiOS scoring
       const wikios = await scoreDailyWikiOS(input.date);
 
       const winnersAgree = (botEntry?.winnerUser ?? null) === (wikios.winner?.user ?? null);
       const runnerUpsAgree = (botEntry?.runnerUpUser ?? null) === (wikios.runnerUp?.user ?? null);
+      const candidates = wikios.candidates.map((c) => ({
+        user: c.user,
+        page: c.page,
+        score: c.finalScore,
+        breakdown: c.scoreBreakdown,
+      }));
+      const wikiosFields = {
+        wikiosWinner: wikios.winner?.user ?? null,
+        wikiosWinnerPage: wikios.winner?.page ?? null,
+        wikiosWinnerScore: wikios.winner?.finalScore ?? null,
+        wikiosRunnerUp: wikios.runnerUp?.user ?? null,
+        winnersAgree,
+        runnerUpsAgree,
+        wikiosCandidates: JSON.stringify(candidates),
+      };
 
-      // Store cross-validation result
       await db.lorewardCrossValidation.upsert({
         where: { date: input.date },
         create: {
@@ -50,38 +84,10 @@ export const lorewardsAdminRouter = createTRPCRouter({
           botWinnerPage: botEntry?.winnerPage ?? null,
           botWinnerScore: botEntry?.winnerScore ?? null,
           botRunnerUp: botEntry?.runnerUpUser ?? null,
-          wikiosWinner: wikios.winner?.user ?? null,
-          wikiosWinnerPage: wikios.winner?.page ?? null,
-          wikiosWinnerScore: wikios.winner?.finalScore ?? null,
-          wikiosRunnerUp: wikios.runnerUp?.user ?? null,
-          winnersAgree,
-          runnerUpsAgree,
-          wikiosCandidates: JSON.stringify(
-            wikios.candidates.map((c) => ({
-              user: c.user,
-              page: c.page,
-              score: c.finalScore,
-              breakdown: c.scoreBreakdown,
-            }))
-          ),
           botCandidates: botEntry?.metadata ?? null,
+          ...wikiosFields,
         },
-        update: {
-          wikiosWinner: wikios.winner?.user ?? null,
-          wikiosWinnerPage: wikios.winner?.page ?? null,
-          wikiosWinnerScore: wikios.winner?.finalScore ?? null,
-          wikiosRunnerUp: wikios.runnerUp?.user ?? null,
-          winnersAgree,
-          runnerUpsAgree,
-          wikiosCandidates: JSON.stringify(
-            wikios.candidates.map((c) => ({
-              user: c.user,
-              page: c.page,
-              score: c.finalScore,
-              breakdown: c.scoreBreakdown,
-            }))
-          ),
-        },
+        update: wikiosFields,
       });
 
       return {
@@ -95,18 +101,13 @@ export const lorewardsAdminRouter = createTRPCRouter({
           runnerUp: botEntry?.runnerUpUser ?? null,
         },
         wikios: {
-          winner: wikios.winner?.user ?? null,
-          winnerPage: wikios.winner?.page ?? null,
-          score: wikios.winner?.finalScore ?? null,
-          runnerUp: wikios.runnerUp?.user ?? null,
+          winner: wikiosFields.wikiosWinner,
+          winnerPage: wikiosFields.wikiosWinnerPage,
+          score: wikiosFields.wikiosWinnerScore,
+          runnerUp: wikiosFields.wikiosRunnerUp,
           breakdown: wikios.winner?.scoreBreakdown ?? null,
         },
-        candidates: wikios.candidates.slice(0, 5).map((c) => ({
-          user: c.user,
-          page: c.page,
-          score: c.finalScore,
-          breakdown: c.scoreBreakdown,
-        })),
+        candidates: candidates.slice(0, 5),
       };
     }),
 
@@ -166,24 +167,11 @@ export const lorewardsAdminRouter = createTRPCRouter({
         expiryDate: z.string().nullable().optional(),
       })
     )
-    .mutation(async ({ input }) => {
-      const botUrl = process.env.IXTIME_BOT_URL || "http://localhost:3001";
-      try {
-        const res = await fetch(`${botUrl}/lorewards/blacklist`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(input),
-        });
-        if (!res.ok) {
-          throw new Error(`Bot returned status ${res.status}`);
-        }
-        return await res.json();
-      } catch (err: any) {
-        throw new Error(`Failed to sync blacklist with Discord bot: ${err.message}`, {
-          cause: err,
-        });
-      }
-    }),
+    .mutation(({ input }) =>
+      postToBot("/lorewards/blacklist", input, "Failed to sync blacklist with Discord bot", (res) =>
+        res.json()
+      )
+    ),
 
   /** Override past winner or runner-up */
   overrideWinner: adminProcedure
@@ -191,57 +179,27 @@ export const lorewardsAdminRouter = createTRPCRouter({
       z.object({
         date: z.string().min(1),
         type: z.enum(["daily", "weekly", "monthly"]),
-        winnerUser: z.string().nullable().optional(),
-        winnerPage: z.string().nullable().optional(),
-        winnerScore: z.number().nullable().optional(),
-        winnerBytes: z.number().nullable().optional(),
-        runnerUpUser: z.string().nullable().optional(),
-        runnerUpPage: z.string().nullable().optional(),
-        runnerUpScore: z.number().nullable().optional(),
-        runnerUpBytes: z.number().nullable().optional(),
+        ...OVERRIDE_FIELDS,
       })
     )
     .mutation(async ({ input }) => {
+      const fields = Object.fromEntries(
+        Object.keys(OVERRIDE_FIELDS).map((key) => [
+          key,
+          input[key as keyof typeof OVERRIDE_FIELDS] || null,
+        ])
+      ) as { [K in keyof typeof OVERRIDE_FIELDS]: NonNullable<(typeof input)[K]> | null };
       await db.lorewardEntry.upsert({
         where: { date_type: { date: input.date, type: input.type } },
-        create: {
-          date: input.date,
-          type: input.type,
-          winnerUser: input.winnerUser || null,
-          winnerPage: input.winnerPage || null,
-          winnerScore: input.winnerScore || null,
-          winnerBytes: input.winnerBytes || null,
-          runnerUpUser: input.runnerUpUser || null,
-          runnerUpPage: input.runnerUpPage || null,
-          runnerUpScore: input.runnerUpScore || null,
-          runnerUpBytes: input.runnerUpBytes || null,
-          status: "approved",
-        },
-        update: {
-          winnerUser: input.winnerUser || null,
-          winnerPage: input.winnerPage || null,
-          winnerScore: input.winnerScore || null,
-          winnerBytes: input.winnerBytes || null,
-          runnerUpUser: input.runnerUpUser || null,
-          runnerUpPage: input.runnerUpPage || null,
-          runnerUpScore: input.runnerUpScore || null,
-          runnerUpBytes: input.runnerUpBytes || null,
-        },
+        create: { date: input.date, type: input.type, ...fields, status: "approved" },
+        update: fields,
       });
 
-      const botUrl = process.env.IXTIME_BOT_URL || "http://localhost:3001";
-      try {
-        const res = await fetch(`${botUrl}/lorewards/override`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(input),
-        });
-        if (!res.ok) {
-          throw new Error(`Bot returned status ${res.status}`);
-        }
-        return { success: true };
-      } catch (err: any) {
-        throw new Error(`Failed to sync override with Discord bot: ${err.message}`, { cause: err });
-      }
+      return postToBot(
+        "/lorewards/override",
+        input,
+        "Failed to sync override with Discord bot",
+        () => ({ success: true })
+      );
     }),
 });
