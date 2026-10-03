@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Group, Plus } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
@@ -24,151 +24,41 @@ interface ThinktankWorkspaceProps {
   initialGroupId?: string;
 }
 
-export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWorkspaceProps = {}) {
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const router = useRouter();
-  const searchParams = useSearchParams();
+const lastSelectedKey = (userId: string) => `ix_thinktanks_last_selected_${userId || "guest"}`;
+
+/** The remembered group, else a group the user belongs to, else the first one. */
+function pickDefaultGroup(groups: any[], currentUserId: string): string {
+  try {
+    const lastGroupId = localStorage.getItem(lastSelectedKey(currentUserId));
+    if (lastGroupId && groups.some((g) => g.id === lastGroupId)) return lastGroupId;
+  } catch {
+    // storage unavailable (private mode): fall back to the default group
+  }
+
+  const mine = groups.find(
+    (g) =>
+      Boolean(g.isMember) ||
+      Boolean(g.isJoined) ||
+      (Boolean(currentUserId) &&
+        (g.createdBy === currentUserId || g.members?.some((m: any) => m.userId === currentUserId)))
+  );
+  return (mine ?? groups[0]).id;
+}
+
+function useThinktankMembership(groupId: string | null, currentUserId: string) {
   const notify = useNotify();
   const utils = api.useUtils();
-  const { user } = useUser();
-  const currentUserId = user?.id ?? "";
 
-  // ── Query State Sync ──
-  const initialGroupId = propGroupId || searchParams.get("group") || null;
-  const tabParam = searchParams.get("tab");
-  const initialTab: ThinktankTab =
-    tabParam === "roster" || tabParam === "docs" || tabParam === "chat" ? tabParam : "feed";
+  const refresh = () => {
+    if (groupId) void utils.thinkpages.getThinktankById.invalidate({ groupId });
+    void utils.thinkpages.getThinktanks.invalidate();
+  };
 
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(initialGroupId);
-  const [activeTab, setActiveTab] = useState<ThinktankTab>(initialTab);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
-  // Sync selected group and tab to URL without full page reload
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    let changed = false;
-
-    if (selectedGroupId) {
-      if (params.get("group") !== selectedGroupId) {
-        params.set("group", selectedGroupId);
-        changed = true;
-      }
-    } else {
-      if (params.has("group")) {
-        params.delete("group");
-        changed = true;
-      }
-    }
-
-    if (activeTab && activeTab !== "feed") {
-      if (params.get("tab") !== activeTab) {
-        params.set("tab", activeTab);
-        changed = true;
-      }
-    } else {
-      if (params.has("tab")) {
-        params.delete("tab");
-        changed = true;
-      }
-    }
-
-    if (changed) {
-      const newUrl = `${window.location.pathname}?${params.toString()}`;
-      window.history.replaceState(null, "", newUrl);
-    }
-  }, [selectedGroupId, activeTab]);
-
-  // ── Queries ──
-  const { data: allGroupsData, isLoading: isLoadingGroups } = api.thinkpages.getThinktanks.useQuery(
-    { type: "all" },
-    { staleTime: 15000 }
-  );
-
-  const groups = useMemo(() => (allGroupsData as any[]) ?? [], [allGroupsData]);
-
-  // Auto-select most recent group user is in (or last viewed group from localStorage)
-  useEffect(() => {
-    if (selectedGroupId || groups.length === 0) return;
-
-    if (initialGroupId) {
-      // oxlint-disable-next-line
-      setSelectedGroupId(initialGroupId);
-      return;
-    }
-
-    // 1. Check localStorage for last viewed group
-    try {
-      const lastGroupId = localStorage.getItem(
-        `ix_thinktanks_last_selected_${currentUserId || "guest"}`
-      );
-      if (lastGroupId && groups.some((g) => g.id === lastGroupId)) {
-        setSelectedGroupId(lastGroupId);
-        return;
-      }
-    } catch {
-      // storage unavailable (private mode) — fall back to the default group
-    }
-
-    // 2. Prioritize most recent group user is a member of
-    const myGroups = groups.filter(
-      (g) =>
-        Boolean(g.isMember) ||
-        Boolean(g.isJoined) ||
-        (Boolean(currentUserId) && g.createdBy === currentUserId) ||
-        (Boolean(currentUserId) && g.members?.some((m: any) => m.userId === currentUserId))
-    );
-
-    if (myGroups.length > 0) {
-      setSelectedGroupId(myGroups[0].id);
-      return;
-    }
-
-    // 3. Fallback to first available group
-    setSelectedGroupId(groups[0].id);
-  }, [groups, selectedGroupId, initialGroupId, currentUserId]);
-
-  // Persist selected group in localStorage
-  useEffect(() => {
-    if (selectedGroupId) {
-      try {
-        localStorage.setItem(
-          `ix_thinktanks_last_selected_${currentUserId || "guest"}`,
-          selectedGroupId
-        );
-      } catch {
-        // storage unavailable (private mode) — preference is not persisted
-      }
-    }
-  }, [selectedGroupId, currentUserId]);
-
-  // Selected Group Details
-  const { data: activeGroupData, isLoading: isLoadingActiveGroup } =
-    api.thinkpages.getThinktankById.useQuery(
-      { groupId: selectedGroupId! },
-      { enabled: !!selectedGroupId, staleTime: 10000 }
-    );
-
-  const activeGroup = activeGroupData ?? null;
-
-  // Auto-switch to feed if user is not a member of the selected group
-  useEffect(() => {
-    if (activeGroup && !activeGroup.isMember && activeTab !== "feed") {
-      // oxlint-disable-next-line
-      setActiveTab("feed");
-    }
-  }, [activeGroup, activeTab]);
-
-  // ── Mutations ──
   const joinMutation = api.thinkpages.joinThinktank.useMutation({
     onSuccess: () => {
       soundEffects.success();
       notify.success("Joined group");
-      if (selectedGroupId) {
-        void utils.thinkpages.getThinktankById.invalidate({ groupId: selectedGroupId });
-      }
-      void utils.thinkpages.getThinktanks.invalidate();
+      refresh();
     },
     onError: (err) => {
       soundEffects.error();
@@ -180,10 +70,7 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
     onSuccess: () => {
       soundEffects.release();
       notify.success("Left group.");
-      if (selectedGroupId) {
-        void utils.thinkpages.getThinktankById.invalidate({ groupId: selectedGroupId });
-      }
-      void utils.thinkpages.getThinktanks.invalidate();
+      refresh();
     },
     onError: (err) => {
       soundEffects.error();
@@ -191,23 +78,132 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
     },
   });
 
-  const handleJoin = () => {
-    if (!selectedGroupId || !currentUserId) return;
+  const join = () => {
+    if (!groupId || !currentUserId) return;
     soundEffects.press();
-    joinMutation.mutate({ groupId: selectedGroupId });
+    joinMutation.mutate({ groupId });
   };
 
-  const handleLeave = () => {
-    if (!selectedGroupId || !currentUserId) return;
+  const leave = () => {
+    if (!groupId || !currentUserId) return;
     if (confirm("Are you sure you want to leave this group?")) {
       soundEffects.press();
-      leaveMutation.mutate({ groupId: selectedGroupId });
+      leaveMutation.mutate({ groupId });
     }
   };
 
-  const handleTabChange = (tab: ThinktankTab) => {
-    setActiveTab(tab);
-  };
+  return { join, leave, isJoining: joinMutation.isPending, isLeaving: leaveMutation.isPending };
+}
+
+interface GroupContentProps {
+  group: any;
+  activeTab: ThinktankTab;
+  currentUserId: string;
+  onJoin: () => void;
+}
+
+function GroupContent({ group, activeTab, currentUserId, onJoin }: GroupContentProps) {
+  const isMember = Boolean(group.isMember);
+
+  switch (activeTab) {
+    case "feed":
+      return (
+        <ThinktankFeedTab
+          groupId={group.id}
+          groupName={group.name}
+          isMember={isMember}
+          canReadFeed={isMember || group.type === "public"}
+          allowPersonaPosting={Boolean(group.settings?.allowPersonaPosting)}
+          canModerate={group.userRole === "owner" || group.userRole === "admin"}
+          currentUserId={currentUserId}
+          onJoin={onJoin}
+        />
+      );
+    case "roster":
+      return <ThinktankRosterTab members={group.members || []} currentUserId={currentUserId} />;
+    case "docs":
+      return <ThinktankPapersTab groupId={group.id} isMember={isMember} />;
+    case "chat":
+      return (
+        <ThinktankChatTab
+          conversationId={group.conversationId}
+          groupName={group.name}
+          currentUserId={currentUserId}
+        />
+      );
+  }
+}
+
+export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWorkspaceProps = {}) {
+  const searchParams = useSearchParams();
+  const utils = api.useUtils();
+  const { user } = useUser();
+  const currentUserId = user?.id ?? "";
+
+  const initialGroupId = propGroupId || searchParams.get("group") || null;
+  const tabParam = searchParams.get("tab");
+  const initialTab: ThinktankTab =
+    tabParam === "roster" || tabParam === "docs" || tabParam === "chat" ? tabParam : "feed";
+
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(initialGroupId);
+  const [activeTab, setActiveTab] = useState<ThinktankTab>(initialTab);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Mirror the selected group and tab into the URL without a page reload
+  useEffect(() => {
+    const current = new URLSearchParams(window.location.search);
+    const next = new URLSearchParams(current);
+    if (selectedGroupId) next.set("group", selectedGroupId);
+    else next.delete("group");
+    if (activeTab !== "feed") next.set("tab", activeTab);
+    else next.delete("tab");
+
+    if (next.toString() !== current.toString()) {
+      window.history.replaceState(null, "", `${window.location.pathname}?${next.toString()}`);
+    }
+  }, [selectedGroupId, activeTab]);
+
+  const { data: allGroupsData, isLoading: isLoadingGroups } = api.thinkpages.getThinktanks.useQuery(
+    { type: "all" },
+    { staleTime: 15000 }
+  );
+
+  const groups = useMemo(() => (allGroupsData as any[]) ?? [], [allGroupsData]);
+
+  useEffect(() => {
+    if (selectedGroupId || groups.length === 0) return;
+    // oxlint-disable-next-line
+    setSelectedGroupId(initialGroupId ?? pickDefaultGroup(groups, currentUserId));
+  }, [groups, selectedGroupId, initialGroupId, currentUserId]);
+
+  useEffect(() => {
+    if (!selectedGroupId) return;
+    try {
+      localStorage.setItem(lastSelectedKey(currentUserId), selectedGroupId);
+    } catch {
+      // storage unavailable (private mode): the preference is not persisted
+    }
+  }, [selectedGroupId, currentUserId]);
+
+  const { data: activeGroupData, isLoading: isLoadingActiveGroup } =
+    api.thinkpages.getThinktankById.useQuery(
+      { groupId: selectedGroupId! },
+      { enabled: !!selectedGroupId, staleTime: 10000 }
+    );
+
+  const activeGroup = activeGroupData ?? null;
+
+  // Only members see the other tabs
+  useEffect(() => {
+    if (activeGroup && !activeGroup.isMember && activeTab !== "feed") {
+      // oxlint-disable-next-line
+      setActiveTab("feed");
+    }
+  }, [activeGroup, activeTab]);
+
+  const membership = useThinktankMembership(selectedGroupId, currentUserId);
 
   return (
     <>
@@ -222,7 +218,6 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
             onSelectGroup={(id) => {
               soundEffects.press();
               setSelectedGroupId(id);
-              // Auto-collapse sidebar on selecting/entering a group
               setIsSidebarCollapsed(true);
             }}
             onCreateGroup={() => setShowCreateModal(true)}
@@ -236,66 +231,30 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
             </div>
           ) : activeGroup ? (
             <div className="flex h-full flex-col overflow-hidden">
-              {/* Workspace Header with Group Identity & Actions */}
               <ThinktankHeader
                 group={activeGroup}
                 activeTab={activeTab}
-                onTabChange={handleTabChange}
+                onTabChange={setActiveTab}
                 onOpenSettings={() => setShowSettingsModal(true)}
-                onJoin={handleJoin}
-                onLeave={handleLeave}
+                onJoin={membership.join}
+                onLeave={membership.leave}
                 onBack={() => setIsSidebarCollapsed(false)}
-                isJoining={joinMutation.isPending}
-                isLeaving={leaveMutation.isPending}
+                isJoining={membership.isJoining}
+                isLeaving={membership.isLeaving}
                 isSidebarCollapsed={isSidebarCollapsed}
                 onToggleSidebar={() => setIsSidebarCollapsed((prev) => !prev)}
               />
 
-              {/* Group Content Canvas */}
               <div className="min-h-0 flex-1 overflow-y-auto">
-                {activeTab === "feed" && (
-                  <ThinktankFeedTab
-                    groupId={activeGroup.id}
-                    groupName={activeGroup.name}
-                    isMember={Boolean(activeGroup.isMember)}
-                    canReadFeed={Boolean(activeGroup.isMember) || activeGroup.type === "public"}
-                    allowPersonaPosting={Boolean(activeGroup.settings?.allowPersonaPosting)}
-                    canModerate={
-                      activeGroup.userRole === "owner" || activeGroup.userRole === "admin"
-                    }
-                    currentUserId={currentUserId}
-                    onJoin={handleJoin}
-                  />
-                )}
-
-                {activeTab === "roster" && (
-                  <ThinktankRosterTab
-                    groupId={activeGroup.id}
-                    members={activeGroup.members || []}
-                    currentUserId={currentUserId}
-                    userRole={activeGroup.userRole}
-                  />
-                )}
-
-                {activeTab === "docs" && (
-                  <ThinktankPapersTab
-                    groupId={activeGroup.id}
-                    groupName={activeGroup.name}
-                    isMember={Boolean(activeGroup.isMember)}
-                  />
-                )}
-
-                {activeTab === "chat" && (
-                  <ThinktankChatTab
-                    conversationId={activeGroup.conversationId}
-                    groupName={activeGroup.name}
-                    currentUserId={currentUserId}
-                  />
-                )}
+                <GroupContent
+                  group={activeGroup}
+                  activeTab={activeTab}
+                  currentUserId={currentUserId}
+                  onJoin={membership.join}
+                />
               </div>
             </div>
           ) : (
-            /* Empty State */
             <EmptyState
               className="h-full"
               icon={<Group />}
@@ -317,7 +276,6 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
         }
       />
 
-      {/* ── Settings Modal ── */}
       {activeGroup && showSettingsModal && (
         <ThinktankSettingsModal
           isOpen={showSettingsModal}
@@ -336,14 +294,11 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
         />
       )}
 
-      {/* ── Create Modal ── */}
       {showCreateModal && (
         <ThinktankCreateModal
           isOpen={showCreateModal}
           onClose={() => setShowCreateModal(false)}
-          onCreated={(newId) => {
-            setSelectedGroupId(newId);
-          }}
+          onCreated={setSelectedGroupId}
         />
       )}
     </>

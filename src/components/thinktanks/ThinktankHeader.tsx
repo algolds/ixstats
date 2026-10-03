@@ -55,6 +55,48 @@ interface ThinktankHeaderProps {
   onToggleSidebar?: () => void;
 }
 
+const TABS: Array<{
+  id: ThinktankTab;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}> = [
+  { id: "feed", label: "Feed", icon: RssFeed },
+  { id: "roster", label: "Members", icon: Group },
+  { id: "docs", label: "Docs", icon: Book },
+  { id: "chat", label: "Chat", icon: ChatBubble },
+];
+
+const withPress = (action: () => void) => () => {
+  soundEffects.press();
+  action();
+};
+
+function ShareButton({ groupId }: { groupId: string }) {
+  const notify = useNotify();
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyLink = () => {
+    soundEffects.press();
+    void navigator.clipboard.writeText(`${window.location.origin}/thinktanks/${groupId}`);
+    setCopied(true);
+    notify.success("Group link copied to clipboard");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={handleCopyLink}
+      className="text-label-secondary hover:text-label"
+      title="Share group link"
+    >
+      {copied ? <Check className="text-success" /> : <ShareAndroid />}
+      <span className="hidden sm:inline">{copied ? "Copied" : "Share"}</span>
+    </Button>
+  );
+}
+
 export function ThinktankHeader({
   group,
   activeTab,
@@ -68,37 +110,12 @@ export function ThinktankHeader({
   isSidebarCollapsed = false,
   onToggleSidebar,
 }: ThinktankHeaderProps) {
-  const notify = useNotify();
-  const [copied, setCopied] = useState(false);
-
   const isOwnerOrAdmin = group.userRole === "owner" || group.userRole === "admin";
-  const allowPersona = Boolean(group.settings?.allowPersonaPosting);
-
-  const handleCopyLink = () => {
-    soundEffects.press();
-    const url = `${window.location.origin}/thinktanks/${group.id}`;
-    void navigator.clipboard.writeText(url);
-    setCopied(true);
-    notify.success("Group link copied to clipboard");
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   const isMember = Boolean(group.isMember);
-
-  const tabs: Array<{
-    id: ThinktankTab;
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-  }> = [
-    { id: "feed", label: "Feed", icon: RssFeed },
-    { id: "roster", label: "Members", icon: Group },
-    { id: "docs", label: "Docs", icon: Book },
-    { id: "chat", label: "Chat", icon: ChatBubble },
-  ];
+  const sidebarLabel = isSidebarCollapsed ? "Show Directory Sidebar" : "Collapse Sidebar for Focus";
 
   return (
     <div className="border-separator bg-surface relative flex shrink-0 flex-col overflow-hidden border-b">
-      {/* ── Optional Group Banner Backdrop ── */}
       {group.settings?.bannerUrl && (
         <div
           aria-hidden="true"
@@ -114,18 +131,13 @@ export function ThinktankHeader({
         </div>
       )}
 
-      {/* ── Top Bar: Identity & Actions ── */}
       <div className="relative z-10 flex items-center justify-between gap-3 px-4 py-3 md:px-5">
-        {/* Left: Back / Sidebar toggle & Group Avatar + Title */}
         <div className="flex min-w-0 items-center gap-2">
           {onBack && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                soundEffects.press();
-                onBack();
-              }}
+              onClick={withPress(onBack)}
               className="text-label-secondary hover:text-label size-8 shrink-0 p-0 md:hidden"
               title="Back to directory"
               aria-label="Back to directory"
@@ -138,15 +150,10 @@ export function ThinktankHeader({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                soundEffects.press();
-                onToggleSidebar();
-              }}
+              onClick={withPress(onToggleSidebar)}
               className="text-label-secondary hover:text-label hidden size-8 shrink-0 p-0 lg:flex"
-              title={isSidebarCollapsed ? "Show Directory Sidebar" : "Collapse Sidebar for Focus"}
-              aria-label={
-                isSidebarCollapsed ? "Show Directory Sidebar" : "Collapse Sidebar for Focus"
-              }
+              title={sidebarLabel}
+              aria-label={sidebarLabel}
             >
               {isSidebarCollapsed ? <SidebarExpand /> : <SidebarCollapse />}
             </Button>
@@ -177,7 +184,7 @@ export function ThinktankHeader({
               <span className="text-label font-medium">{group.category || "General"}</span>
               <span aria-hidden="true">·</span>
               <span className="tabular-nums">{group.memberCount ?? 1} members</span>
-              {allowPersona && (
+              {group.settings?.allowPersonaPosting && (
                 <>
                   <span aria-hidden="true">·</span>
                   <span className="flex items-center gap-1 font-medium">
@@ -189,29 +196,14 @@ export function ThinktankHeader({
           </div>
         </div>
 
-        {/* Right: Actions */}
         <div className="flex shrink-0 items-center gap-2">
-          {/* Share button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleCopyLink}
-            className="text-label-secondary hover:text-label"
-            title="Share group link"
-          >
-            {copied ? <Check className="text-success" /> : <ShareAndroid />}
-            <span className="hidden sm:inline">{copied ? "Copied" : "Share"}</span>
-          </Button>
+          <ShareButton groupId={group.id} />
 
-          {/* Group Settings Trigger */}
-          {isOwnerOrAdmin && onOpenSettings && (
+          {isOwnerOrAdmin && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                soundEffects.press();
-                onOpenSettings();
-              }}
+              onClick={withPress(onOpenSettings)}
               className="text-label-secondary hover:text-label size-8 p-0"
               title="Group settings"
               aria-label="Group settings"
@@ -220,7 +212,6 @@ export function ThinktankHeader({
             </Button>
           )}
 
-          {/* Join / Leave Button */}
           {isMember ? (
             <Button
               variant="ghost"
@@ -241,7 +232,6 @@ export function ThinktankHeader({
         </div>
       </div>
 
-      {/* ── Bottom Bar: section tabs (members only) ── */}
       {isMember && (
         <div className="border-separator relative z-10 border-t px-4 py-2 md:px-5">
           <SegmentedControl
@@ -252,7 +242,7 @@ export function ThinktankHeader({
               soundEffects.press();
               onTabChange(id as ThinktankTab);
             }}
-            options={tabs.map(({ id, label, icon: Icon }) => ({
+            options={TABS.map(({ id, label, icon: Icon }) => ({
               value: id,
               label,
               icon: <Icon />,
