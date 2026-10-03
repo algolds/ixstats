@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
 import { AppError } from "~/lib/app-error";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import type { TaxBuilderState } from "~/types/builder/tax-builder";
@@ -54,6 +55,107 @@ function validateBracketsState(
   });
 
   return errors.length === 0 ? { ok: true } : { ok: false, errors };
+}
+
+const TAX_SYSTEM_INCLUDE = {
+  taxCategories: {
+    include: {
+      taxBrackets: true,
+      taxExemptions: true,
+      taxDeductions: true,
+    },
+  },
+} as const;
+
+/** Row data (including nested categories, brackets, exemptions and deductions) for a tax system write. */
+function taxSystemWriteData(data: TaxBuilderState, countryId: string) {
+  return {
+    taxSystemName: data.taxSystem.taxSystemName,
+    taxAuthority: data.taxSystem.taxAuthority,
+    fiscalYear: data.taxSystem.fiscalYear,
+    taxCode: data.taxSystem.taxCode,
+    baseRate: data.taxSystem.baseRate,
+    progressiveTax: data.taxSystem.progressiveTax,
+    flatTaxRate: data.taxSystem.flatTaxRate,
+    alternativeMinTax: data.taxSystem.alternativeMinTax,
+    alternativeMinRate: data.taxSystem.alternativeMinRate,
+    complianceRate: data.taxSystem.complianceRate,
+    collectionEfficiency: data.taxSystem.collectionEfficiency,
+    taxCategories: {
+      create: data.categories.map((cat, catIdx) => ({
+        categoryName: cat.categoryName,
+        categoryType: cat.categoryType,
+        description: cat.description,
+        baseRate: cat.baseRate,
+        calculationMethod: cat.calculationMethod,
+        taxBrackets: {
+          create: (data.brackets[catIdx.toString()] || []).map((bracket) => ({
+            minIncome: bracket.minIncome,
+            maxIncome: bracket.maxIncome,
+            rate: bracket.rate,
+            flatAmount: bracket.flatAmount,
+            marginalRate: bracket.marginalRate,
+            taxSystem: { connect: { countryId } },
+          })),
+        },
+        taxExemptions: {
+          create: data.exemptions
+            .filter((ex) => ex.exemptionName)
+            .map((exemption) => ({
+              exemptionName: exemption.exemptionName,
+              exemptionType: exemption.exemptionType,
+              description: exemption.description,
+              exemptionAmount: exemption.exemptionAmount,
+              exemptionRate: exemption.exemptionRate,
+              qualifications: exemption.qualifications,
+              endDate: exemption.endDate,
+              taxSystem: { connect: { countryId } },
+            })),
+        },
+        taxDeductions: {
+          create: (data.deductions[catIdx.toString()] || []).map((deduction) => ({
+            deductionName: deduction.deductionName,
+            deductionType: deduction.deductionType,
+            description: deduction.description,
+            maximumAmount: deduction.maximumAmount,
+            percentage: deduction.percentage,
+          })),
+        },
+      })),
+    },
+  };
+}
+
+/** Drop a country's tax categories (their brackets, exemptions and deductions go with them). */
+async function clearTaxCategories(
+  db: Pick<PrismaClient, "taxSystem" | "taxCategory">,
+  countryId: string
+) {
+  const systems = await db.taxSystem.findMany({
+    where: { countryId },
+    take: 5,
+    select: { id: true },
+  });
+  await db.taxCategory.deleteMany({ where: { taxSystemId: { in: systems.map((ts) => ts.id) } } });
+}
+
+/** Replace a country's selected atomic tax components. */
+async function replaceTaxComponents(
+  db: Pick<PrismaClient, "taxComponent">,
+  countryId: string,
+  componentIds: readonly string[] | undefined
+) {
+  if (!componentIds) return;
+  await db.taxComponent.deleteMany({ where: { countryId } });
+  if (componentIds.length === 0) return;
+  await db.taxComponent.createMany({
+    data: componentIds.map((id) => ({
+      countryId,
+      componentType: mapIdToTaxComponentType(id) as any,
+      effectivenessScore: 50,
+      isActive: true,
+    })),
+  });
 }
 
 export const taxSystemCrudRouter = createTRPCRouter({
@@ -196,192 +298,24 @@ export const taxSystemCrudRouter = createTRPCRouter({
       let taxSystem;
       try {
         taxSystem = await ctx.db.taxSystem.create({
-          data: {
-            countryId: input.countryId,
-            taxSystemName: data.taxSystem.taxSystemName,
-            taxAuthority: data.taxSystem.taxAuthority,
-            fiscalYear: data.taxSystem.fiscalYear,
-            taxCode: data.taxSystem.taxCode,
-            baseRate: data.taxSystem.baseRate,
-            progressiveTax: data.taxSystem.progressiveTax,
-            flatTaxRate: data.taxSystem.flatTaxRate,
-            alternativeMinTax: data.taxSystem.alternativeMinTax,
-            alternativeMinRate: data.taxSystem.alternativeMinRate,
-            complianceRate: data.taxSystem.complianceRate,
-            collectionEfficiency: data.taxSystem.collectionEfficiency,
-            taxCategories: {
-              create: data.categories.map(
-                (cat: TaxBuilderState["categories"][number], catIdx: number) => ({
-                  categoryName: cat.categoryName,
-                  categoryType: cat.categoryType,
-                  description: cat.description,
-                  baseRate: cat.baseRate,
-                  calculationMethod: cat.calculationMethod,
-                  taxBrackets: {
-                    create: (data.brackets[catIdx.toString()] || []).map(
-                      (bracket: TaxBuilderState["brackets"][string][number]) => ({
-                        minIncome: bracket.minIncome,
-                        maxIncome: bracket.maxIncome,
-                        rate: bracket.rate,
-                        flatAmount: bracket.flatAmount,
-                        marginalRate: bracket.marginalRate,
-                        taxSystem: {
-                          connect: { countryId: input.countryId },
-                        },
-                      })
-                    ),
-                  },
-                  taxExemptions: {
-                    create: data.exemptions
-                      .filter((ex: TaxBuilderState["exemptions"][number]) => ex.exemptionName)
-                      .map((exemption: TaxBuilderState["exemptions"][number]) => ({
-                        exemptionName: exemption.exemptionName,
-                        exemptionType: exemption.exemptionType,
-                        description: exemption.description,
-                        exemptionAmount: exemption.exemptionAmount,
-                        exemptionRate: exemption.exemptionRate,
-                        qualifications: exemption.qualifications,
-                        endDate: exemption.endDate,
-                        taxSystem: { connect: { countryId: input.countryId } },
-                      })),
-                  },
-                  taxDeductions: {
-                    create: (data.deductions[catIdx.toString()] || []).map(
-                      (deduction: TaxBuilderState["deductions"][string][number]) => ({
-                        deductionName: deduction.deductionName,
-                        deductionType: deduction.deductionType,
-                        description: deduction.description,
-                        maximumAmount: deduction.maximumAmount,
-                        percentage: deduction.percentage,
-                      })
-                    ),
-                  },
-                })
-              ),
-            },
-          },
-          include: {
-            taxCategories: {
-              include: {
-                taxBrackets: true,
-                taxExemptions: true,
-                taxDeductions: true,
-              },
-            },
-          },
+          data: { countryId: input.countryId, ...taxSystemWriteData(data, input.countryId) },
+          include: TAX_SYSTEM_INCLUDE,
         });
       } catch (e: any) {
         if (!(e instanceof AppError && e.code === "CONFLICT")) {
           throw e;
         }
         // Unique on countryId exists already: perform update path
-        await ctx.db.taxCategory.deleteMany({
-          where: {
-            taxSystemId: {
-              in: (
-                await ctx.db.taxSystem.findMany({
-                  where: { countryId: input.countryId },
-                  take: 5,
-                  select: { id: true },
-                })
-              ).map((ts) => ts.id),
-            },
-          },
-        });
+        await clearTaxCategories(ctx.db, input.countryId);
 
         taxSystem = await ctx.db.taxSystem.update({
           where: { countryId: input.countryId },
-          data: {
-            taxSystemName: data.taxSystem.taxSystemName,
-            taxAuthority: data.taxSystem.taxAuthority,
-            fiscalYear: data.taxSystem.fiscalYear,
-            taxCode: data.taxSystem.taxCode,
-            baseRate: data.taxSystem.baseRate,
-            progressiveTax: data.taxSystem.progressiveTax,
-            flatTaxRate: data.taxSystem.flatTaxRate,
-            alternativeMinTax: data.taxSystem.alternativeMinTax,
-            alternativeMinRate: data.taxSystem.alternativeMinRate,
-            complianceRate: data.taxSystem.complianceRate,
-            collectionEfficiency: data.taxSystem.collectionEfficiency,
-            taxCategories: {
-              create: data.categories.map(
-                (cat: TaxBuilderState["categories"][number], catIdx: number) => ({
-                  categoryName: cat.categoryName,
-                  categoryType: cat.categoryType,
-                  description: cat.description,
-                  baseRate: cat.baseRate,
-                  calculationMethod: cat.calculationMethod,
-                  taxBrackets: {
-                    create: (data.brackets[catIdx.toString()] || []).map(
-                      (bracket: TaxBuilderState["brackets"][string][number]) => ({
-                        minIncome: bracket.minIncome,
-                        maxIncome: bracket.maxIncome,
-                        rate: bracket.rate,
-                        flatAmount: bracket.flatAmount,
-                        marginalRate: bracket.marginalRate,
-                        taxSystem: {
-                          connect: { countryId: input.countryId },
-                        },
-                      })
-                    ),
-                  },
-                  taxExemptions: {
-                    create: data.exemptions
-                      .filter((ex: TaxBuilderState["exemptions"][number]) => ex.exemptionName)
-                      .map((exemption: TaxBuilderState["exemptions"][number]) => ({
-                        exemptionName: exemption.exemptionName,
-                        exemptionType: exemption.exemptionType,
-                        description: exemption.description,
-                        exemptionAmount: exemption.exemptionAmount,
-                        exemptionRate: exemption.exemptionRate,
-                        qualifications: exemption.qualifications,
-                        endDate: exemption.endDate,
-                        taxSystem: { connect: { countryId: input.countryId } },
-                      })),
-                  },
-                  taxDeductions: {
-                    create: (data.deductions[catIdx.toString()] || []).map(
-                      (deduction: TaxBuilderState["deductions"][string][number]) => ({
-                        deductionName: deduction.deductionName,
-                        deductionType: deduction.deductionType,
-                        description: deduction.description,
-                        maximumAmount: deduction.maximumAmount,
-                        percentage: deduction.percentage,
-                      })
-                    ),
-                  },
-                })
-              ),
-            },
-          },
-          include: {
-            taxCategories: {
-              include: {
-                taxBrackets: true,
-                taxExemptions: true,
-                taxDeductions: true,
-              },
-            },
-          },
+          data: taxSystemWriteData(data, input.countryId),
+          include: TAX_SYSTEM_INCLUDE,
         });
       }
 
-      // Save tax components
-      if (data.selectedAtomicTaxComponents) {
-        await ctx.db.taxComponent.deleteMany({
-          where: { countryId: input.countryId },
-        });
-        if (data.selectedAtomicTaxComponents.length > 0) {
-          await ctx.db.taxComponent.createMany({
-            data: data.selectedAtomicTaxComponents.map((id) => ({
-              countryId: input.countryId,
-              componentType: mapIdToTaxComponentType(id) as any,
-              effectivenessScore: 50,
-              isActive: true,
-            })),
-          });
-        }
-      }
+      await replaceTaxComponents(ctx.db, input.countryId, data.selectedAtomicTaxComponents);
 
       // Sync with FiscalSystem table
       const syncResult = await syncTaxData(ctx.db as any, input.countryId, data);
@@ -449,107 +383,15 @@ export const taxSystemCrudRouter = createTRPCRouter({
       });
 
       // Delete existing categories and recreate (easier than updating)
-      await ctx.db.taxCategory.deleteMany({
-        where: {
-          taxSystemId: {
-            in: (
-              await ctx.db.taxSystem.findMany({
-                where: { countryId: input.countryId },
-                take: 5,
-                select: { id: true },
-              })
-            ).map((ts) => ts.id),
-          },
-        },
-      });
+      await clearTaxCategories(ctx.db, input.countryId);
 
-      // Update tax system
       const taxSystem = await ctx.db.taxSystem.update({
         where: { countryId: input.countryId },
-        data: {
-          taxSystemName: data.taxSystem.taxSystemName,
-          taxAuthority: data.taxSystem.taxAuthority,
-          fiscalYear: data.taxSystem.fiscalYear,
-          taxCode: data.taxSystem.taxCode,
-          baseRate: data.taxSystem.baseRate,
-          progressiveTax: data.taxSystem.progressiveTax,
-          flatTaxRate: data.taxSystem.flatTaxRate,
-          alternativeMinTax: data.taxSystem.alternativeMinTax,
-          alternativeMinRate: data.taxSystem.alternativeMinRate,
-          complianceRate: data.taxSystem.complianceRate,
-          collectionEfficiency: data.taxSystem.collectionEfficiency,
-          taxCategories: {
-            create: data.categories.map((cat, catIdx) => ({
-              categoryName: cat.categoryName,
-              categoryType: cat.categoryType,
-              description: cat.description,
-              baseRate: cat.baseRate,
-              calculationMethod: cat.calculationMethod,
-              taxBrackets: {
-                create: (data.brackets[catIdx.toString()] || []).map((bracket) => ({
-                  minIncome: bracket.minIncome,
-                  maxIncome: bracket.maxIncome,
-                  rate: bracket.rate,
-                  flatAmount: bracket.flatAmount,
-                  marginalRate: bracket.marginalRate,
-                  taxSystem: {
-                    connect: { countryId: input.countryId },
-                  },
-                })),
-              },
-              taxExemptions: {
-                create: data.exemptions
-                  .filter((ex) => ex.exemptionName)
-                  .map((exemption) => ({
-                    exemptionName: exemption.exemptionName,
-                    exemptionType: exemption.exemptionType,
-                    description: exemption.description,
-                    exemptionAmount: exemption.exemptionAmount,
-                    exemptionRate: exemption.exemptionRate,
-                    qualifications: exemption.qualifications,
-                    endDate: exemption.endDate,
-                    taxSystem: { connect: { countryId: input.countryId } },
-                  })),
-              },
-              taxDeductions: {
-                create: (data.deductions[catIdx.toString()] || []).map((deduction) => ({
-                  deductionName: deduction.deductionName,
-                  deductionType: deduction.deductionType,
-                  description: deduction.description,
-                  maximumAmount: deduction.maximumAmount,
-                  percentage: deduction.percentage,
-                })),
-              },
-            })),
-          },
-        },
-        include: {
-          taxCategories: {
-            include: {
-              taxBrackets: true,
-              taxExemptions: true,
-              taxDeductions: true,
-            },
-          },
-        },
+        data: taxSystemWriteData(data, input.countryId),
+        include: TAX_SYSTEM_INCLUDE,
       });
 
-      // Save tax components
-      if (data.selectedAtomicTaxComponents) {
-        await ctx.db.taxComponent.deleteMany({
-          where: { countryId: input.countryId },
-        });
-        if (data.selectedAtomicTaxComponents.length > 0) {
-          await ctx.db.taxComponent.createMany({
-            data: data.selectedAtomicTaxComponents.map((id) => ({
-              countryId: input.countryId,
-              componentType: mapIdToTaxComponentType(id) as any,
-              effectivenessScore: 50,
-              isActive: true,
-            })),
-          });
-        }
-      }
+      await replaceTaxComponents(ctx.db, input.countryId, data.selectedAtomicTaxComponents);
 
       // Sync with FiscalSystem table
       const syncResult = await syncTaxData(ctx.db as any, input.countryId, data);
