@@ -3,7 +3,7 @@
  * Resides in src/server/shared so country routers stay lightweight and decoupled.
  */
 
-import type { Prisma } from "@prisma/client";
+import type { GovernmentComponent, Prisma } from "@prisma/client";
 import { checkComponentSynergy } from "~/lib/government/synergy";
 import { currentBudgetYear } from "~/lib/government/budget-year";
 
@@ -431,7 +431,7 @@ export async function syncGovernmentComponents(
 
   await tx.governmentComponent.deleteMany({ where: { countryId } });
 
-  const componentRecords = [];
+  const componentRecords: GovernmentComponent[] = [];
   for (const componentInput of componentsInput) {
     componentRecords.push(
       await tx.governmentComponent.create({

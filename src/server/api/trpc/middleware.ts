@@ -83,7 +83,7 @@ export const countryOwnerMiddleware = t.middleware(async ({ ctx, next, path }) =
   // evaluates the *target* (the intended play-as behavior), `ctx.auth.userId` is the target's ID
   // (impersonation.ts rebuilds `auth` without spreading), and decidePlayAs already guarantees the
   // target cannot outrank the impersonator or carry the impersonator's session claims.
-  const userRole = getRoleName(ctx.user, (ctx.auth as any)?.sessionClaims);
+  const userRole = getRoleName(ctx.user, ctx.auth?.sessionClaims);
   const isAdmin = isPrivilegedCountryWriter(ctx.auth.userId, userRole);
   if (isAdmin) {
     return next({
@@ -310,7 +310,7 @@ export const premiumMiddleware = t.middleware(async ({ ctx, next }) => {
     throw new Error("UNAUTHORIZED: Authentication required");
   }
 
-  const membershipTier = (ctx.user as any).membershipTier || "basic";
+  const membershipTier = ctx.user.membershipTier || "basic";
   // hasPremiumTier also honours NEXT_PUBLIC_PREMIUM_FOR_ALL (test builds).
   const isPremium = hasPremiumTier(membershipTier);
 
@@ -360,9 +360,9 @@ export const adminMiddleware = t.middleware(async ({ ctx, next }) => {
     return next({ ctx: { ...ctx, user } });
   }
 
-  if (!(user as any).role) {
+  if (!user.role) {
     console.error(
-      `[ADMIN_MIDDLEWARE] User ${ctx.auth.userId} has no role assigned (roleId: ${(user as any).roleId}).`
+      `[ADMIN_MIDDLEWARE] User ${ctx.auth.userId} has no role assigned (roleId: ${user.roleId}).`
     );
     throw new ForbiddenError(
       "Your account has no assigned role. Please contact support. " +
@@ -371,8 +371,8 @@ export const adminMiddleware = t.middleware(async ({ ctx, next }) => {
   }
 
   const adminRoles = ["owner", "admin", "staff"];
-  const roleLevel = (user as any).role?.level ?? 999;
-  const roleName = (user as any).role?.name || "NO_ROLE";
+  const roleLevel = user.role?.level ?? 999;
+  const roleName = user.role?.name || "NO_ROLE";
   const isAdmin = adminRoles.includes(roleName) || roleLevel <= 20;
 
   if (!isAdmin) {
