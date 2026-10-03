@@ -5,7 +5,6 @@
 import { useEffect, useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { PageHeader } from "~/components/shell/PageHeader";
-import { ImportPreviewDialog } from "../_components/ImportPreviewDialog";
 import { NavigationSettings } from "../_components/NavigationSettings";
 import { IxTimeVisualizer } from "../_components/IxTimeVisualizer";
 import { SystemValidationDashboard } from "../_components/SystemValidationDashboard";
@@ -194,23 +193,12 @@ export function PlatformSettingsPanel({ defaultTab = "general" }: PlatformSettin
             />
 
             <DataImportCard
+              importState={importState}
               onFileSelect={handleFileSelect}
-              isUploading={importState.isUploading}
-              isAnalyzing={importState.isAnalyzing}
-              analyzeError={importState.analyzeError}
-              importError={importState.importError}
+              onImportClose={handleImportClose}
+              onImportConfirm={handleImportConfirm}
             />
           </div>
-
-          {importState.showPreview && importState.previewData && (
-            <ImportPreviewDialog
-              isOpen={importState.showPreview}
-              onClose={handleImportClose}
-              onConfirm={handleImportConfirm}
-              changes={importState.previewData.changes}
-              isLoading={importState.isUploading}
-            />
-          )}
 
           <CalculationLogsCard
             logs={calculationLogs}

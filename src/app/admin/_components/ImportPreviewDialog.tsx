@@ -38,7 +38,7 @@ interface ImportChange {
   }>;
 }
 
-interface ImportPreviewDialogProps {
+export interface ImportPreviewDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (replaceExisting: boolean, syncEpoch?: boolean, targetEpoch?: number) => void;
