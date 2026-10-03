@@ -23,8 +23,10 @@ import {
   LONG_PRESS_MS,
   canvasPoint,
   createListeners,
+  nearbyMarker,
   queryNear,
 } from "./map-interaction";
+import { useLatest } from "./useLatest";
 
 type Vertex = [number, number];
 
@@ -32,7 +34,6 @@ interface UseRouteEditProps {
   map: MapLibreMap | null;
   isLoaded: boolean;
   mode: EditorMode;
-  routeWaypoints?: Vertex[];
   editingRouteVertices?: Vertex[];
   onRouteVerticesUpdate?: (vertices: Vertex[]) => void;
 }
@@ -50,21 +51,9 @@ interface RouteDrag {
 
 const VERTEX_LAYER = "editor-route-edit-vertices-layer";
 const MIDPOINT_LAYER = "editor-route-edit-midpoints-layer";
-const SNAP_LAYERS = ["editor-points-capital", "editor-points-city", "editor-points-poi"];
 
 const replaceAt = (vertices: Vertex[], index: number, vertex: Vertex) =>
   vertices.map((v, i) => (i === index ? vertex : v));
-
-/** The position of a nearby city/POI marker, or `fallback` when none is within reach. */
-function snapToNearbyPoint(
-  map: MapLibreMap,
-  point: { x: number; y: number },
-  fallback: Vertex
-): Vertex {
-  const hit = queryNear(map, point, 15, SNAP_LAYERS)[0];
-  const coords = hit && getFeatureCoords(hit.geometry);
-  return coords ? [coords[0], coords[1]] : fallback;
-}
 
 export function useRouteEdit({
   map,
@@ -75,17 +64,11 @@ export function useRouteEdit({
 }: UseRouteEditProps) {
   const dragRef = useRef<RouteDrag | null>(null);
 
-  // Latest props for the stable event callbacks.
-  const editingRouteVerticesRef = useRef(editingRouteVertices);
-  // oxlint-disable-next-line
-  editingRouteVerticesRef.current = editingRouteVertices;
-  const onRouteVerticesUpdateRef = useRef(onRouteVerticesUpdate);
-  // oxlint-disable-next-line
-  onRouteVerticesUpdateRef.current = onRouteVerticesUpdate;
+  const latest = useLatest({ editingRouteVertices, onRouteVerticesUpdate });
 
   const updateRouteEditVis = useCallback(
     (overrideVertices?: Vertex[]) => {
-      const vertices = overrideVertices ?? editingRouteVerticesRef.current;
+      const vertices = overrideVertices ?? latest.current.editingRouteVertices;
       if (!map || !vertices || vertices.length === 0) return;
 
       getGeoJSONSource(map, "editor-route-edit-line")?.setData(collection([lineFeature(vertices)]));
@@ -137,9 +120,9 @@ export function useRouteEdit({
 
     /** Removes a vertex (a route keeps at least two). */
     const deleteVertex = (index: number) => {
-      const vertices = editingRouteVerticesRef.current;
+      const vertices = latest.current.editingRouteVertices;
       if (vertices && vertices.length > 2) {
-        onRouteVerticesUpdateRef.current?.(vertices.filter((_, i) => i !== index));
+        latest.current.onRouteVerticesUpdate?.(vertices.filter((_, i) => i !== index));
       }
     };
 
@@ -157,7 +140,7 @@ export function useRouteEdit({
       if (!f) return;
 
       const index = f.properties.vertexIndex as number;
-      const vertices = editingRouteVerticesRef.current;
+      const vertices = latest.current.editingRouteVertices;
       const vertex = vertices?.[index];
       dragRef.current = {
         index,
@@ -180,11 +163,11 @@ export function useRouteEdit({
 
       const startIndex = f.properties.startIndex as number;
       const midCoord = getFeatureCoords(f.geometry) as Vertex;
-      const vertices = editingRouteVerticesRef.current;
-      if (onRouteVerticesUpdateRef.current && vertices) {
+      const vertices = latest.current.editingRouteVertices;
+      if (latest.current.onRouteVerticesUpdate && vertices) {
         const next = [...vertices];
         next.splice(startIndex + 1, 0, midCoord);
-        onRouteVerticesUpdateRef.current(next);
+        latest.current.onRouteVerticesUpdate(next);
       }
     };
 
@@ -209,12 +192,12 @@ export function useRouteEdit({
         drag.axis = null;
       }
 
-      target = snapToNearbyPoint(map, e.point, target);
+      target = nearbyMarker(map, e.point) ?? target;
 
       const didSnap = target[0] !== origTarget[0] || target[1] !== origTarget[1];
       updateSnapGuide(map, didSnap ? origTarget : null, didSnap ? target : null);
 
-      const baseVertices = drag.liveVertices ?? editingRouteVerticesRef.current;
+      const baseVertices = drag.liveVertices ?? latest.current.editingRouteVertices;
       if (baseVertices) {
         drag.liveVertices = replaceAt(baseVertices, drag.index, target);
         // Straight to the map sources at 60fps, no React re-render.
@@ -226,7 +209,7 @@ export function useRouteEdit({
       const drag = dragRef.current;
       if (!drag) return;
       if (drag.liveVertices && drag.exceededHysteresis) {
-        onRouteVerticesUpdateRef.current?.(drag.liveVertices);
+        latest.current.onRouteVerticesUpdate?.(drag.liveVertices);
       }
       endDrag();
     };
@@ -236,7 +219,7 @@ export function useRouteEdit({
       if (e.key !== "Escape" || !drag) return;
       if (drag.initialVertices) {
         updateRouteEditVis(drag.initialVertices);
-        onRouteVerticesUpdateRef.current?.(drag.initialVertices);
+        latest.current.onRouteVerticesUpdate?.(drag.initialVertices);
       }
       endDrag();
     };
@@ -309,10 +292,10 @@ export function useRouteEdit({
       }
 
       const lngLat = map.unproject([point.x, point.y]);
-      const target = snapToNearbyPoint(map, point, [lngLat.lng, lngLat.lat]);
-      const vertices = editingRouteVerticesRef.current;
-      if (onRouteVerticesUpdateRef.current && vertices) {
-        onRouteVerticesUpdateRef.current(replaceAt(vertices, drag.index, target));
+      const target = nearbyMarker(map, point) ?? [lngLat.lng, lngLat.lat];
+      const vertices = latest.current.editingRouteVertices;
+      if (latest.current.onRouteVerticesUpdate && vertices) {
+        latest.current.onRouteVerticesUpdate(replaceAt(vertices, drag.index, target));
       }
       e.preventDefault();
     };

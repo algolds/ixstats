@@ -17,6 +17,7 @@ import {
   type ScreenPoint,
 } from "./drag-utils";
 import { createListeners, queryNear } from "./map-interaction";
+import { useLatest } from "./useLatest";
 
 const POINT_TYPES = ["city", "poi", "storyPin", "mapLabel", "peak"] as const;
 type PointType = (typeof POINT_TYPES)[number];
@@ -86,22 +87,13 @@ export function usePointDrag({
   const cachedPointFeaturesRef = useRef<ReturnType<typeof buildPointFeatures> | null>(null);
   const activeFeatureIndexRef = useRef<number>(-1);
 
-  // Latest props for the stable event callbacks.
-  const featuresRef = useRef(features);
-  // oxlint-disable-next-line
-  featuresRef.current = features;
-  const selectedFeatureRef = useRef(selectedFeature);
-  // oxlint-disable-next-line
-  selectedFeatureRef.current = selectedFeature;
-  const modeRef = useRef(mode);
-  // oxlint-disable-next-line
-  modeRef.current = mode;
-  const onFeatureSelectRef = useRef(onFeatureSelect);
-  // oxlint-disable-next-line
-  onFeatureSelectRef.current = onFeatureSelect;
-  const updatePointCoordinatesRef = useRef(updatePointCoordinates);
-  // oxlint-disable-next-line
-  updatePointCoordinatesRef.current = updatePointCoordinates;
+  const latest = useLatest({
+    features,
+    selectedFeature,
+    mode,
+    onFeatureSelect,
+    updatePointCoordinates,
+  });
 
   useEffect(() => {
     if (!map || !isLoaded) return;
@@ -123,7 +115,7 @@ export function usePointDrag({
 
       const override =
         activeId && activeCoords ? { id: activeId, coordinates: activeCoords } : undefined;
-      source.setData(collection(buildPointFeatures(featuresRef.current, override)));
+      source.setData(collection(buildPointFeatures(latest.current.features, override)));
     };
 
     const setGhost = (coords: [number, number] | null) => {
@@ -139,13 +131,13 @@ export function usePointDrag({
     };
 
     const onMouseDown = (e: MapLayerMouseEvent) => {
-      if (isPlacementMode(modeRef.current)) return;
+      if (isPlacementMode(latest.current.mode)) return;
 
       const id = queryNear(map, e.point, 8, DRAGGABLE_LAYERS)[0]?.properties?.id;
       if (!id) return;
 
       // Drag by id so the canonical feature (not the rendered copy) is the source of truth.
-      const feature = featuresRef.current.find((f) => f.id === id);
+      const feature = latest.current.features.find((f) => f.id === id);
       if (!feature?.coordinates || feature.type === "peak" || !isPointType(feature.type)) return;
 
       // Prevent default map behaviors (like box zoom / canvas text selection)
@@ -161,11 +153,11 @@ export function usePointDrag({
         lockedAxis: null,
       };
 
-      const allPointFeatures = buildPointFeatures(featuresRef.current);
+      const allPointFeatures = buildPointFeatures(latest.current.features);
       cachedPointFeaturesRef.current = allPointFeatures;
       activeFeatureIndexRef.current = allPointFeatures.findIndex((f) => f.properties.id === id);
 
-      onFeatureSelectRef.current?.(feature);
+      latest.current.onFeatureSelect?.(feature);
     };
 
     const onMouseMove = (e: MapLayerMouseEvent) => {
@@ -214,7 +206,7 @@ export function usePointDrag({
       finishDrag();
       const { featureId, featureType, originalCoords, currentCoords } = drag;
       if (originalCoords[0] !== currentCoords[0] || originalCoords[1] !== currentCoords[1]) {
-        await updatePointCoordinatesRef.current?.(featureId, featureType, currentCoords);
+        await latest.current.updatePointCoordinates?.(featureId, featureType, currentCoords);
       }
     };
 
@@ -242,7 +234,7 @@ export function usePointDrag({
       ) {
         return;
       }
-      const sel = selectedFeatureRef.current;
+      const sel = latest.current.selectedFeature;
       if (!sel?.coordinates || !isPointType(sel.type)) return;
 
       e.preventDefault();
@@ -262,7 +254,7 @@ export function usePointDrag({
       const nudgeId = sel.id;
       nudgeTimer = setTimeout(() => {
         nudgeTimer = null;
-        void updatePointCoordinatesRef.current?.(nudgeId, nudgeType, newCoords);
+        void latest.current.updatePointCoordinates?.(nudgeId, nudgeType, newCoords);
       }, 400);
     };
 

@@ -1,35 +1,33 @@
 import { PathArrow as Route, SeaWaves as Waves } from "iconoir-react";
-import type { MapEditorPlugin, MapEditorContextType } from "./types";
-import { isKeyboardInputTarget } from "../hooks/drag-utils";
+import type { MapEditorPlugin, ToolbarItem } from "./types";
+import { toolShortcuts } from "./shortcuts";
+
+const toolbarItems: ToolbarItem[] = [
+  {
+    id: "tool-route",
+    mode: "add-route",
+    icon: Route,
+    label: "Route",
+    shortcut: "T",
+    group: 2,
+    order: 1,
+  },
+  {
+    id: "tool-river",
+    mode: "add-river",
+    icon: Waves,
+    label: "River",
+    shortcut: "Y",
+    group: 3,
+    order: 2,
+  },
+];
 
 export const RouteEditPlugin: MapEditorPlugin = {
   id: "route-edit",
   name: "Route & Transport Path Editor",
-  global: true, // Listens globally to T/Y keys
+  global: true,
   modes: ["add-route", "edit-route", "add-river"],
-
-  toolbarItems: [
-    { id: "tool-route", mode: "add-route", icon: Route, label: "Route", shortcut: "T", group: 2, order: 1 },
-    { id: "tool-river", mode: "add-river", icon: Waves, label: "River", shortcut: "Y", group: 3, order: 2 },
-  ],
-
-  onKeyDown(e: KeyboardEvent, context: MapEditorContextType) {
-    if (isKeyboardInputTarget(e.target) || isKeyboardInputTarget(document.activeElement)) {
-      return false;
-    }
-    if (e.ctrlKey || e.metaKey || e.altKey) {
-      return false;
-    }
-
-    const key = e.key.toLowerCase();
-    if (key === "t") {
-      context.onModeChange("add-route");
-      return true;
-    }
-    if (key === "y") {
-      context.onModeChange("add-river");
-      return true;
-    }
-    return false;
-  },
+  toolbarItems,
+  onKeyDown: toolShortcuts(toolbarItems),
 };
