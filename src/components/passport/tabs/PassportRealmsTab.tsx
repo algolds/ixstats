@@ -12,8 +12,6 @@ import {
   Group as Users,
   Dollar as DollarSign,
   Heart,
-  ScaleFrameEnlarge as Scale,
-  Flash as Zap,
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -135,18 +133,9 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
 
       <div className="grid grid-cols-1 gap-4">
         {realms.map((item) => {
-          const country: any = item.country;
+          const country = item.country;
           const countryName = country?.name ? country.name.replace(/_/g, " ") : null;
           const flagUrl = country?.flagUrl;
-
-          // Approval, stability and capacity, with fallbacks when the country has none
-          const rawApproval = country?.currentPublicApproval ?? 74;
-          const approvalPct = Math.round(rawApproval > 1 ? rawApproval : rawApproval * 100);
-
-          const rawStability = country?.currentStability ?? 0.82;
-          const stabilityPct = Math.round(rawStability > 1 ? rawStability : rawStability * 100);
-
-          const capacityPct = 85;
 
           return (
             <article
@@ -253,21 +242,11 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                       />
                     </div>
 
-                    <div className="divide-separator grid grid-cols-3 gap-2 divide-x">
-                      <RealmMetric icon={<Heart />} label="Approval" value={`${approvalPct}%`} />
-                      <RealmMetric
-                        icon={<Scale />}
-                        label="Stability"
-                        value={`${stabilityPct}%`}
-                        className="pl-2"
-                      />
-                      <RealmMetric
-                        icon={<Zap />}
-                        label="Capacity"
-                        value={`${capacityPct}%`}
-                        className="pl-2"
-                      />
-                    </div>
+                    <RealmMetric
+                      icon={<Heart />}
+                      label="Approval"
+                      value={`${Math.round(country.currentPublicApproval)}%`}
+                    />
                   </div>
                 )}
               </div>

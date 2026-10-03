@@ -109,6 +109,7 @@ describe("ExecutiveAgenda", () => {
     mockIssues = [issue("a"), issue("b", { severity: "critical" })];
     mockIntents = [{ id: "i1", goal: "Cut red tape", status: "active", tier: "measured" }];
     mockElections = [];
+    window.localStorage.clear();
   });
 
   afterEach(() => {
@@ -139,6 +140,15 @@ describe("ExecutiveAgenda", () => {
   it("hides an item once it is marked done", () => {
     render(<ExecutiveAgenda countryId="c1" />);
     fireEvent.click(screen.getByRole("button", { name: "Mark done: Issue a" }));
+    expect(screen.queryByText("Issue a")).toBeNull();
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+  });
+
+  it("keeps a dismissed item hidden after remount", () => {
+    const first = render(<ExecutiveAgenda countryId="c1" />);
+    fireEvent.click(screen.getByRole("button", { name: "Mark done: Issue a" }));
+    first.unmount();
+    render(<ExecutiveAgenda countryId="c1" />);
     expect(screen.queryByText("Issue a")).toBeNull();
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
   });

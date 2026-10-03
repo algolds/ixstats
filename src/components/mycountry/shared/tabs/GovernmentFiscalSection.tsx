@@ -20,6 +20,8 @@ export function GovernmentFiscalSection({
   economyData,
   currency,
 }: GovernmentFiscalSectionProps): React.JSX.Element {
+  const taxEfficiency = economyData?.fiscal?.taxEfficiency ?? null;
+
   return (
     <div className="flex flex-col">
       <div className="flex">
@@ -55,7 +57,7 @@ export function GovernmentFiscalSection({
         }`}
       >
         <div className="relative z-10 space-y-4 p-4">
-          <div className="bg-fill-3 rounded-row grid grid-cols-2 gap-4 p-3 md:grid-cols-4">
+          <div className="bg-fill-3 rounded-row grid grid-cols-2 gap-4 p-3 md:grid-cols-3">
             <div className="min-w-0">
               <span className="text-stat-label text-label-secondary block">Tax Revenue % GDP</span>
               <p className="text-label text-headline mt-0.5">
@@ -82,11 +84,6 @@ export function GovernmentFiscalSection({
               </p>
               <p className="text-label-secondary text-footnote mt-0.5">Relative to economic size</p>
             </div>
-            <div className="min-w-0">
-              <span className="text-stat-label text-label-secondary block">Sovereign rating</span>
-              <p className="text-headline text-green mt-0.5">AAA</p>
-              <p className="text-label-secondary text-footnote mt-0.5">Credit worthiness rating</p>
-            </div>
           </div>
 
           <SectorBreakdownCard
@@ -95,36 +92,30 @@ export function GovernmentFiscalSection({
             layout="list"
             showProgressBars={true}
             sectors={[
-              {
-                id: "tax-compliance",
-                name: "Tax compliance rate",
-                value: 0,
-                percentage:
-                  economyData?.fiscal?.taxEfficiency != null
-                    ? Math.round(economyData.fiscal.taxEfficiency * 100)
-                    : 88,
-                color: "emerald",
-              },
+              ...(taxEfficiency != null
+                ? [
+                    {
+                      id: "tax-compliance",
+                      name: "Tax compliance rate",
+                      value: 0,
+                      percentage: Math.round(taxEfficiency * 100),
+                      color: "emerald" as const,
+                    },
+                  ]
+                : []),
               {
                 id: "inflation",
                 name: "Annual inflation rate",
                 value: 0,
-                percentage: economyData?.core?.inflationRate ?? 2.4,
+                percentage: economyData?.core?.inflationRate ?? 0,
                 color: "blue",
               },
               {
                 id: "interest",
                 name: "Central bank interest rate",
                 value: 0,
-                percentage: economyData?.fiscal?.interestRates ?? 4.25,
+                percentage: economyData?.fiscal?.interestRates ?? 0,
                 color: "indigo",
-              },
-              {
-                id: "reserves",
-                name: "Foreign Exchange Reserves % GDP",
-                value: 0,
-                percentage: economyData?.fiscal?.fiscalBalanceGDPPercent ?? 18,
-                color: "cyan",
               },
             ]}
           />

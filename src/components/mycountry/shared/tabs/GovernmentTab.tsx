@@ -132,8 +132,8 @@ export function GovernmentTab({
                       className="text-label text-headline max-w-full truncate"
                     >
                       {metricView.structure === "government"
-                        ? governmentStructure?.headOfGovernment || "Executive Leader"
-                        : governmentStructure?.headOfState || "State Leader"}
+                        ? governmentStructure?.headOfGovernment || "Not recorded"
+                        : governmentStructure?.headOfState || "Not recorded"}
                     </motion.p>
                   </AnimatePresence>
                 </div>
@@ -322,7 +322,9 @@ export function GovernmentTab({
                   <div className="min-w-0">
                     <Eyebrow className="block">Branches</Eyebrow>
                     <p className="text-label text-caption mt-0.5 font-semibold">
-                      {governmentStructure?.branches?.length || 3} Branches
+                      {governmentStructure?.branches?.length
+                        ? `${governmentStructure.branches.length} Branches`
+                        : "Not recorded"}
                     </p>
                     <p className="text-label-secondary text-footnote mt-0.5">
                       Separation of powers
@@ -343,7 +345,7 @@ export function GovernmentTab({
                         value: 0,
                         percentage: 100,
                         color: "amber",
-                        description: governmentStructure?.headOfState || "State Leader",
+                        description: governmentStructure?.headOfState || "Not recorded",
                       },
                       {
                         id: "hog",
@@ -351,7 +353,7 @@ export function GovernmentTab({
                         value: 0,
                         percentage: 100,
                         color: "blue",
-                        description: governmentStructure?.headOfGovernment || "Executive Leader",
+                        description: governmentStructure?.headOfGovernment || "Not recorded",
                       },
                     ]}
                   />
@@ -367,7 +369,7 @@ export function GovernmentTab({
                         value: 0,
                         percentage: 100,
                         color: "indigo",
-                        description: governmentStructure?.legislatureName || "Assembly",
+                        description: governmentStructure?.legislatureName || "Not recorded",
                       },
                       {
                         id: "jud",
@@ -375,7 +377,7 @@ export function GovernmentTab({
                         value: 0,
                         percentage: 100,
                         color: "cyan",
-                        description: governmentStructure?.judicialName || "Supreme Court",
+                        description: governmentStructure?.judicialName || "Not recorded",
                       },
                       // Lore-first: append any branches beyond the standard three (e.g.
                       // Faneria's Audit + Fiscal "Quaternalist" branches) so non-tripartite
