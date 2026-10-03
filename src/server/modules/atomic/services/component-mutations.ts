@@ -192,7 +192,11 @@ function bulkUpdateComponentsTx<T extends string>(
         results.push(updated);
       } else {
         const created = await tx[model].create({
-          data: { countryId, ...componentData, implementationDate: new Date() },
+          data: {
+            ...componentData,
+            countryId: componentData.countryId ?? countryId,
+            implementationDate: new Date(),
+          },
         });
 
         await logComponentChange(tx, kind, {

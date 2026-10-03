@@ -183,6 +183,12 @@ function parseArchetypeJson<T>(raw: string, field: string): T | null {
   }
 }
 
+/** Archetype row; `economicStructure` / `economicModel` are optional extras the schema does not store. */
+type ArchetypeWithEconomy = EconomicArchetype & {
+  economicStructure?: string | null;
+  economicModel?: string | null;
+};
+
 function archetypeTaxSystem(archetype: EconomicArchetype): TaxInput | undefined {
   const profile = parseArchetypeJson<{
     incomeRate?: number;
@@ -230,9 +236,10 @@ const DEFAULT_DEPARTMENTS = [
 ] as const;
 
 function archetypeEconomyState(
-  archetype: EconomicArchetype,
+  archetype: ArchetypeWithEconomy,
   base: Baseline
 ): EconomyBuilderInput | undefined {
+  if (!archetype.economicStructure) return undefined;
   const parsed = parseArchetypeJson<{
     tradeOpenness?: number;
     economicFreedom?: number;
@@ -270,7 +277,7 @@ function archetypeComponents(archetype: EconomicArchetype): GovernmentComponentI
 
 /** Fills the sub-system payloads the builder left empty from the chosen archetype. */
 function withArchetypeDefaults(
-  archetype: EconomicArchetype,
+  archetype: ArchetypeWithEconomy,
   payload: FoundingPayload,
   name: string,
   base: Baseline

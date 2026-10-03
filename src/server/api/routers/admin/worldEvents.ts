@@ -466,7 +466,7 @@ export const adminWorldEventsRouter = createTRPCRouter({
             affectedCountries: input.affectedCountryIds.length,
           }),
           adminId: userId,
-          adminName: ctx.user?.firstName ?? "Admin",
+          adminName: "Admin",
           timestamp: new Date(),
         },
       });

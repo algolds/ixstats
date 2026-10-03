@@ -139,6 +139,10 @@ async function searchLocalLore(db: PrismaClient, query: string) {
 type SearchHit = { title: string; pageId?: number | string; length?: number };
 
 /** Runs `load` and logs a warning instead of failing; `fallback` stands in for the result. */
+type LegacyPreview = Awaited<
+  ReturnType<typeof wikiLoreCardGenerator.fetchArticleMetadataBatch>
+>[number] & { excerpt?: string; description?: string; rarity?: string; marketValue?: number };
+
 async function warnOnError<T>(label: string, fallback: T, load: () => Promise<T>): Promise<T> {
   try {
     return await load();
@@ -293,7 +297,8 @@ async function searchRemoteLore(query: string, wikiSrc: WikiSource) {
           wikiLoreCardGenerator.fetchArticleMetadataBatch(titlesToFetch.slice(0, 25), wikiSrc)
         )
       : [];
-  const previewMap = new Map(
+  // `excerpt`, `description`, `rarity` and `marketValue` are not part of the preview, so they stay undefined.
+  const previewMap = new Map<string, LegacyPreview>(
     previews.filter((p) => p.title).map((p) => [p.title.toLowerCase(), p])
   );
 

@@ -4,6 +4,7 @@
  */
 
 import { getAuth, verifyToken } from "@clerk/nextjs/server";
+import type { PrismaClient } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { db, isDatabaseReadOnly } from "~/server/db";
 import { Cache } from "~/lib/cache";
@@ -14,9 +15,18 @@ import { resolveRateLimitIdentifier } from "./rate-limit-identity";
 
 const VERBOSE = process.env.TRPC_VERBOSE === "true";
 
+/** The acting user: `User` with its role, plus the active nation when the lookup selected it. */
+type ContextUser = NonNullable<Awaited<ReturnType<UserManagementService["getOrCreateUser"]>>> & {
+  country?: { id: string; name: string; flag: string | null; realmId: string } | null;
+};
+
+type ClerkAuth = ReturnType<typeof getAuth>;
+/** Clerk's auth object, or the `{ userId }` rebuilt from a Bearer token or a granted play-as. */
+type RequestAuth = ClerkAuth | { userId: string; sessionClaims?: undefined };
+
 // Short-lived user context cache to avoid redundant DB queries during parallel tRPC calls.
 // TTL of 5 seconds is short enough that role/permission changes propagate quickly.
-const userContextCache = new Cache({
+const userContextCache = new Cache<ContextUser>({
   defaultTtlMs: 5000, // 5 seconds
   maxSize: 50,
 });
@@ -41,8 +51,7 @@ const READ_ONLY_USER_SELECT = {
 } as const;
 
 interface AuthState {
-  /** Clerk auth object, or `{ userId }` once rebuilt; routers read `userId` and `sessionClaims` off it. */
-  auth: any;
+  auth: RequestAuth | null;
   impersonatorId?: string;
 }
 
@@ -71,7 +80,7 @@ async function authFromBearerToken(headers: Headers): Promise<{ userId: string }
 
 /** The user requesting play-as mode, via the short-lived context cache. */
 async function loadRequester(clerkUserId: string) {
-  let requester = userContextCache.get(clerkUserId);
+  let requester: ContextUser | null | undefined = userContextCache.get(clerkUserId);
   if (!requester) {
     requester = await db.user.findUnique({ where: { clerkUserId }, include: { role: true } });
     if (requester) userContextCache.set(clerkUserId, requester);
@@ -138,20 +147,20 @@ async function applyPlayAs(headers: Headers, state: AuthState, realUserId: strin
 }
 
 /** Loads the acting user: context cache first, then a read-only lookup or the get-or-create service. */
-async function loadContextUser(userId: string) {
+async function loadContextUser(userId: string): Promise<ContextUser | null> {
   const cached = userContextCache.get(userId);
   if (cached) {
     debug(`[TRPC Context] User ${userId} served from context cache`);
     return cached;
   }
 
-  let user;
+  let user: ContextUser | null;
   if (isDatabaseReadOnly) {
     // In read-only mode, only look up existing users (no creation)
-    user = await db.user.findUnique({
+    user = (await db.user.findUnique({
       where: { clerkUserId: userId },
       select: READ_ONLY_USER_SELECT,
-    });
+    })) as unknown as ContextUser | null;
     if (!user) {
       console.warn(
         `[TRPC Context] Read-only mode: User ${userId} not found in database (cannot create)`
@@ -159,7 +168,7 @@ async function loadContextUser(userId: string) {
     }
   } else {
     // Normal mode: use centralized user management service to ensure correct role
-    user = await new UserManagementService(db as any).getOrCreateUser(userId);
+    user = await new UserManagementService(db as unknown as PrismaClient).getOrCreateUser(userId);
   }
 
   if (!user) {
@@ -168,18 +177,20 @@ async function loadContextUser(userId: string) {
   }
   userContextCache.set(userId, user);
   debug(
-    `[TRPC Context] User loaded: ${userId}, role: ${(user as any).role?.name || "NO_ROLE"}, roleId: ${(user as any).roleId || "NULL"}, roleLevel: ${(user as any).role?.level ?? "NULL"}`
+    `[TRPC Context] User loaded: ${userId}, role: ${user.role?.name || "NO_ROLE"}, roleId: ${user.roleId || "NULL"}, roleLevel: ${user.role?.level ?? "NULL"}`
   );
   return user;
 }
 
 export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequest }) => {
   const state: AuthState = { auth: null };
-  let user = null;
+  let user: ContextUser | null = null;
 
   try {
     // Try to get auth from request first (for app router)
-    if (opts.req) state.auth = (opts.req as any).auth ?? getAuth(opts.req);
+    if (opts.req) {
+      state.auth = (opts.req as NextRequest & { auth?: ClerkAuth }).auth ?? getAuth(opts.req);
+    }
     // Otherwise from the authorization header (for API routes)
     if (!state.auth?.userId) state.auth = (await authFromBearerToken(opts.headers)) ?? state.auth;
 
