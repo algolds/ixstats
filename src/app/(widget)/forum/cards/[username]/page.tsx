@@ -1,5 +1,5 @@
 /**
- * Full Card Showcase — Server-rendered page showing a user's complete card collection.
+ * Full card showcase. Server-rendered page showing a user's complete card collection.
  * Can be visited directly or iframed into XenForo as a dedicated cards page.
  *
  * Route: /forum/cards/[username]
@@ -78,7 +78,7 @@ export default async function ForumCardsPage({
           rel="noopener noreferrer"
           style={{ ...styles.link, marginTop: 12, display: "inline-block" }}
         >
-          Visit IxStats to start collecting
+          Start collecting on IxStats
         </a>
       </div>
     );
@@ -93,9 +93,9 @@ export default async function ForumCardsPage({
             <img src={user.country.flag} alt={user.country.name ?? ""} style={styles.flag} />
           )}
           <div>
-            <h1 style={styles.title}>{user.forumUsername}&apos;s Collection</h1>
+            <h1 style={styles.title}>{user.forumUsername}&apos;s collection</h1>
             <p style={styles.subtitle}>
-              {user.country?.name ?? "Unknown Nation"} · Collector Lvl {user.collectorLevel}
+              {user.country?.name ?? "Unknown nation"} · Collector level {user.collectorLevel}
             </p>
           </div>
         </div>
@@ -129,7 +129,7 @@ export default async function ForumCardsPage({
           rel="noopener noreferrer"
           style={styles.link}
         >
-          Open Vault
+          Open IxVault
         </a>
       </div>
     </div>

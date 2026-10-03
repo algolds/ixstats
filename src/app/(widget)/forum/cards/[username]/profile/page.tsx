@@ -1,5 +1,5 @@
 /**
- * Profile Widget — Medium-size card showcase for XenForo user profiles.
+ * Profile widget. Medium-size card showcase for XenForo user profiles.
  * Shows top 6 rarest cards in a 3×2 grid with summary stats.
  *
  * Route: /forum/cards/[username]/profile
@@ -33,7 +33,7 @@ export default async function ForumProfileWidget({
   });
 
   if (!user) {
-    return <div style={styles.empty}>No IxStats account linked.</div>;
+    return <div style={styles.empty}>No IxStats account is linked to this forum user.</div>;
   }
 
   // Get all ownerships for summary, but only show top 6
