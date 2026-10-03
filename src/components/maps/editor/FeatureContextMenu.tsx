@@ -1,7 +1,7 @@
 "use client";
 
 import { FacetMaterial } from "~/components/ui/facet";
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 import {
   EditPencil as Pencil,
@@ -57,103 +57,58 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
   onSplitCity,
   onZoomTo,
 }: FeatureContextMenuProps) {
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    },
-    [onClose]
-  );
-
-  const handleClickOutside = useCallback(
-    (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest("[data-context-menu]")) {
-        onClose();
-      }
-    },
-    [onClose]
-  );
-
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest("[data-context-menu]")) onClose();
+    };
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [handleKeyDown, handleClickOutside]);
+  }, [onClose]);
 
-  const primaryItems: MenuItem[] = [];
-  const secondaryItems: MenuItem[] = [];
+  const isGap = feature.type === "gap";
+  const isCity = feature.type === "city";
+  const hasWiki = !!feature.wikiPageTitle;
+  const items = (list: (MenuItem | false | undefined)[]) => list.filter((i): i is MenuItem => !!i);
 
-  if (feature.type === "gap") {
-    if (onCreateFromGap) {
-      primaryItems.push({
-        label: "Create region from gap",
-        icon: Plus,
-        onClick: onCreateFromGap,
-      });
-    }
-  } else {
-    primaryItems.push(
-      { label: "Edit properties", icon: Pencil, onClick: onEdit },
-      { label: "Duplicate", icon: Copy, onClick: onDuplicate }
-    );
-    if (onZoomTo) primaryItems.push({ label: "Zoom to", icon: ZoomIn, onClick: onZoomTo });
+  const primaryItems = isGap
+    ? items([
+        onCreateFromGap && {
+          label: "Create region from gap",
+          icon: Plus,
+          onClick: onCreateFromGap,
+        },
+      ])
+    : items([
+        { label: "Edit properties", icon: Pencil, onClick: onEdit },
+        { label: "Duplicate", icon: Copy, onClick: onDuplicate },
+        onZoomTo && { label: "Zoom to", icon: ZoomIn, onClick: onZoomTo },
+        isCity && onSplitCity && { label: "Split city", icon: Scissors, onClick: onSplitCity },
+        { label: "Delete", icon: Trash2, onClick: onDelete, danger: true },
+      ]);
+  const secondaryItems = isGap
+    ? []
+    : items([
+        onCopyCoords && { label: "Copy coordinates", icon: MapPin, onClick: onCopyCoords },
+        isCity &&
+          onSnapToBorder && {
+            label: "Snap to nearest border",
+            icon: MapPin,
+            onClick: onSnapToBorder,
+          },
+        isCity &&
+          onSnapToCoast && { label: "Snap to coastline", icon: MapPin, onClick: onSnapToCoast },
+        hasWiki &&
+          onOpenWiki && { label: "Open wiki page", icon: ExternalLink, onClick: onOpenWiki },
+        !hasWiki && { label: "Link to wiki", icon: BookOpen, onClick: onEdit },
+      ]);
 
-    if (feature.type === "city" && onSplitCity) {
-      primaryItems.push({
-        label: "Split city",
-        icon: Scissors,
-        onClick: onSplitCity,
-      });
-    }
-
-    primaryItems.push({ label: "Delete", icon: Trash2, onClick: onDelete, danger: true });
-
-    if (onCopyCoords) {
-      secondaryItems.push({
-        label: "Copy coordinates",
-        icon: MapPin,
-        onClick: onCopyCoords,
-      });
-    }
-
-    if (feature.type === "city") {
-      if (onSnapToBorder) {
-        secondaryItems.push({
-          label: "Snap to nearest border",
-          icon: MapPin,
-          onClick: onSnapToBorder,
-        });
-      }
-      if (onSnapToCoast) {
-        secondaryItems.push({
-          label: "Snap to coastline",
-          icon: MapPin,
-          onClick: onSnapToCoast,
-        });
-      }
-    }
-
-    if (feature.wikiPageTitle && onOpenWiki) {
-      secondaryItems.push({
-        label: "Open wiki page",
-        icon: ExternalLink,
-        onClick: onOpenWiki,
-      });
-    }
-
-    if (!feature.wikiPageTitle) {
-      secondaryItems.push({
-        label: "Link to wiki",
-        icon: BookOpen,
-        onClick: onEdit,
-      });
-    }
-  }
-
-  // Clamp position to viewport
   const menuWidth = 208;
   const menuHeight = (primaryItems.length + secondaryItems.length + 1) * 32 + 8;
   const clampedX =
