@@ -20,9 +20,6 @@ export const SPRING_PRESETS = {
   gentle: SPRING_GENTLE,
   fluid: SPRING_FLUID,
 } as const;
-
-export type SpringPreset = keyof typeof SPRING_PRESETS;
-
 // ── Shared Drag Settings ───────────────────────────────────────────────────
 
 export const DRAG_ELASTICITY = 0.32;

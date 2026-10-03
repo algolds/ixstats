@@ -197,48 +197,6 @@ export interface RegionDistribution {
 // ============================================
 // TRADE CONFIGURATION
 // ============================================
-
-interface TradeConfiguration {
-  totalExports: number; // USD
-  totalImports: number; // USD
-  tradeBalance: number; // USD
-  exportsGDPPercent: number; // percentage
-  importsGDPPercent: number; // percentage
-
-  tradeOpenness: "Closed" | "Limited" | "Moderate" | "Open" | "Very Open";
-  averageTariffRate: number; // percentage
-  nonTariffBarriers: number; // index 0-100
-  tradeAgreements: string[];
-
-  exportComposition: {
-    primary: number; // percentage
-    manufactured: number;
-    services: number;
-    highTech: number;
-  };
-
-  importComposition: {
-    primary: number; // percentage
-    manufactured: number;
-    services: number;
-    energy: number;
-  };
-
-  majorExportDestinations: TradePartner[];
-  majorImportSources: TradePartner[];
-
-  tradeCompetitivenessIndex: number; // 0-100
-  exportDiversificationIndex: number; // 0-100
-  importDependencyIndex: number; // 0-100
-}
-
-interface TradePartner {
-  country: string;
-  share: number; // percentage of total trade
-  tradeValue: number; // USD
-  relationship: "Strategic" | "Important" | "Standard" | "Limited";
-}
-
 // ============================================
 // PRODUCTIVITY CONFIGURATION
 // ============================================
@@ -286,27 +244,6 @@ export interface EconomicHealthMetrics {
 // ============================================
 // ARCHETYPE TEMPLATES
 // ============================================
-
-export interface EconomicArchetype {
-  id: string;
-  name: string;
-  description: string;
-  category: "Developed" | "Emerging" | "Developing" | "Transitional";
-  atomicComponents: EconomicComponentType[];
-  sectorTemplate: Partial<SectorConfiguration>[];
-  laborTemplate: Partial<LaborConfiguration>;
-  tradeTemplate: Partial<TradeConfiguration>;
-  typicalMetrics: {
-    gdpPerCapita: number;
-    growthRate: number;
-    unemploymentRate: number;
-    inflationRate: number;
-    giniCoefficient: number;
-  };
-  realWorldExamples: string[];
-  effectiveness: number; // 0-100
-}
-
 // ============================================
 // UTILITY TYPES
 // ============================================

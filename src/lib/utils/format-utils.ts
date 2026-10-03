@@ -303,21 +303,6 @@ export function formatNumber(num: number, decimals: number = 1): string {
 }
 
 /**
- * Format percentage with optional decimal places
- *
- * @param value - The decimal value (e.g., 0.15 for 15%)
- * @param decimals - Number of decimal places (default: 1)
- * @returns Formatted percentage string
- *
- * @example
- * formatPercentage(0.155) → "15.5%"
- * formatPercentage(0.8, 0) → "80%"
- */
-export function formatPercentage(value: number, decimals: number = 1): string {
-  return (value * 100).toFixed(decimals) + "%";
-}
-
-/**
  * Format percentage from raw percentage value (already multiplied by 100)
  *
  * @param value - The percentage value (e.g., 15 for 15%)

@@ -48,9 +48,9 @@ interface ToastQueueActions {
   resumeAutoDismiss: (id: string) => void;
 }
 
-export type ToastQueueStore = ToastQueueState & ToastQueueActions;
+type ToastQueueStore = ToastQueueState & ToastQueueActions;
 
-export type ToastCustomRenderer = (toast: ToastQueueItem, onDismiss: () => void) => ReactElement;
+type ToastCustomRenderer = (toast: ToastQueueItem, onDismiss: () => void) => ReactElement;
 
 let toastRenderer: ToastCustomRenderer | null = null;
 
@@ -151,5 +151,3 @@ if (typeof window !== "undefined") {
     }
   });
 }
-
-export default useToastQueueStore;

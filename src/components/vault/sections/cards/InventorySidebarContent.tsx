@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import NumberFlow from "~/components/ui/number-flow";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import type { CardRarity, CardType } from "@prisma/client";
 import type { FilterState, ViewMode } from "./types";
 import { Card } from "~/components/ui/card";
@@ -78,7 +78,7 @@ export function InventorySidebarContent({
           <div className="flex items-center gap-1">
             <IxCreditsSymbol className="text-yellow h-3 w-3 shrink-0" />
             <span className="text-yellow font-semibold">
-              <NumberFlow value={totalValue} />
+              <NumberFlowDisplay value={totalValue} />
             </span>
           </div>
         </div>

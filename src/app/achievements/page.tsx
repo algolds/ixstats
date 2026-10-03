@@ -11,7 +11,7 @@ import { useUser } from "~/context/auth-context";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Stat } from "~/components/ui/stat";
-import NumberFlow from "~/components/ui/number-flow";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
 
 // Subcomponents
 import { AllAchievementsTab } from "~/components/achievements/tabs/AllAchievementsTab";
@@ -119,13 +119,16 @@ export default function AchievementsPage() {
         {isMounted && userProfile && (
           <Card padding="lg">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <Stat label="Achievements unlocked" value={<NumberFlow value={totalUnlocked} />} />
+              <Stat
+                label="Achievements unlocked"
+                value={<NumberFlowDisplay value={totalUnlocked} />}
+              />
               <Stat
                 label="Achievement points"
                 value={
                   <span className="flex items-baseline gap-1">
                     <span className="text-success-ink">
-                      <NumberFlow value={gameplayPoints} />
+                      <NumberFlowDisplay value={gameplayPoints} />
                     </span>
                     <span className="text-footnote text-label-secondary">pts</span>
                   </span>
@@ -136,7 +139,7 @@ export default function AchievementsPage() {
                 value={
                   globalRank > 0 ? (
                     <span className="flex items-baseline">
-                      #<NumberFlow value={globalRank} />
+                      #<NumberFlowDisplay value={globalRank} />
                     </span>
                   ) : (
                     "—"

@@ -44,7 +44,7 @@ function calculateDelay(attempt: number, options: RetryOptions): number {
   return Math.min(delay, maxDelayMs);
 }
 
-export async function attempt<T>(
+async function attempt<T>(
   fn: (signal?: AbortSignal) => Promise<T>,
   options?: Partial<RetryOptions>
 ): Promise<AttemptResult<T>> {

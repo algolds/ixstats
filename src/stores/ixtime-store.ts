@@ -122,10 +122,3 @@ export const useIxTimeStore = create<IxTimeStore>()((set, get) => ({
     }));
   },
 }));
-
-// Selector hooks for granular subscriptions — components only re-render when their value changes
-export const useIxTimeTimestamp = () => useIxTimeStore((s) => s.ixTimeTimestamp);
-export const useIxTimeFormatted = () => useIxTimeStore((s) => s.ixTimeFormatted);
-export const useIxTimeGameYear = () => useIxTimeStore((s) => s.gameYear);
-export const useIxTimeMultiplier = () => useIxTimeStore((s) => s.multiplier);
-export const useIxTimeIsPaused = () => useIxTimeStore((s) => s.isPaused);

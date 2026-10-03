@@ -14,8 +14,6 @@ import { extractCountriesList } from "./types";
 import { useActiveDIPlugin } from "./plugin-context";
 import { CORE_COMMANDS, CORE_FEATURES } from "./halo-registry";
 
-export { CORE_COMMANDS as commands, CORE_FEATURES as features } from "./halo-registry";
-
 /**
  * Shared state management hook for the Halo (Dynamic Island) system.
  * Handles mode transitions, debounced search, keyboard navigation shortcuts,

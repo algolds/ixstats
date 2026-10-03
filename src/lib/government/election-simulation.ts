@@ -53,12 +53,12 @@ function fptpAllocation(
 // Lore-first: how a chamber's members are chosen (not every legislature is party-elected).
 // Stored as the 4th positional field of the serialized chamberType blob.
 // See plans/mycountry-lore-alignment*.md.
-export type SelectionMethod =
+type SelectionMethod =
   "elected" | "appointed" | "sortition" | "hereditary" | "ex-officio" | "corporatist";
 
 type ElectoralSystem = "proportional" | "fptp" | "mixed";
 
-export interface ChamberConfig {
+interface ChamberConfig {
   name: string;
   seats: number;
   electoralSystem: ElectoralSystem;

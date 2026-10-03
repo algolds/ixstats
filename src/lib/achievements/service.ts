@@ -130,7 +130,7 @@ async function unlockAchievement(
   return true;
 }
 
-export class AchievementService {
+class AchievementService {
   private workerInterval: any = null;
   private workerBusy = false;
 

@@ -464,15 +464,6 @@ export class IxTimeAccuracyVerifier {
   }
 
   // Main testing methods
-  public static runSingleTest(
-    testId: string
-  ): { test: TimeAccuracyTest; result: AccuracyResult } | null {
-    const test = this.ACCURACY_TESTS.find((t) => t.id === testId);
-    if (!test) return null;
-
-    const result = test.testFunction();
-    return { test, result };
-  }
 
   public static runAllTests(): TimeSimulationResult {
     // oxlint-disable-next-line typescript/no-unused-vars
@@ -539,55 +530,6 @@ export class IxTimeAccuracyVerifier {
       criticalIssues,
       detailedResults: results,
     };
-  }
-
-  public static runContinuousTest(duration: number = 60000): Promise<TimeSimulationResult> {
-    return new Promise((resolve) => {
-      const startTime = Date.now();
-      const results: Array<{ test: TimeAccuracyTest; result: AccuracyResult }> = [];
-      // oxlint-disable-next-line typescript/no-unused-vars
-      let iterations = 0;
-
-      const runIteration = () => {
-        // Run a subset of critical tests each iteration
-        const criticalTests = this.ACCURACY_TESTS.filter((t) => t.criticality === "critical");
-
-        for (const test of criticalTests) {
-          const result = test.testFunction();
-          results.push({ test, result });
-        }
-
-        iterations++;
-
-        if (Date.now() - startTime < duration) {
-          setTimeout(runIteration, 1000); // Run every second
-        } else {
-          // Process results
-          let totalPassed = 0;
-          let totalFailed = 0;
-          let totalAccuracy = 0;
-
-          for (const { result } of results) {
-            if (result.passed) totalPassed++;
-            else totalFailed++;
-            totalAccuracy += result.accuracy;
-          }
-
-          resolve({
-            totalTests: results.length,
-            passedTests: totalPassed,
-            failedTests: totalFailed,
-            overallAccuracy: totalAccuracy / results.length,
-            averageExecutionTime: 0,
-            categoryResults: {},
-            criticalIssues: results.filter((r) => !r.result.passed).map((r) => r.result),
-            detailedResults: results,
-          });
-        }
-      };
-
-      runIteration();
-    });
   }
 
   public static getAccuracyStatus(): {

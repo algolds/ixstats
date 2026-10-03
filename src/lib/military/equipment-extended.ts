@@ -10,5 +10,3 @@ export const HELICOPTERS = rawEquipment.HELICOPTERS as Record<string, any>;
 export const NAVAL_SHIPS = rawEquipment.NAVAL_SHIPS as Record<string, any>;
 export const TRANSPORT_AIRCRAFT = rawEquipment.TRANSPORT_AIRCRAFT as Record<string, any>;
 export const WEAPON_SYSTEMS_EXTENDED = rawEquipment.WEAPON_SYSTEMS_EXTENDED as Record<string, any>;
-
-export default rawEquipment;

@@ -443,16 +443,6 @@ export interface BudgetAllocationInput {
   notes?: string;
 }
 
-interface SubBudgetInput {
-  name: string;
-  description?: string;
-  amount: number;
-  percent: number;
-  budgetType: BudgetType;
-  isRecurring: boolean;
-  priority: BudgetPriority;
-}
-
 export interface RevenueSourceInput {
   name: string;
   category: RevenueCategory;
@@ -508,29 +498,4 @@ export interface GovernmentBuilderState {
     annualMaintenanceCost: number;
     implementationCost: number;
   };
-}
-
-interface DepartmentTemplate {
-  name: string;
-  shortName?: string;
-  category: DepartmentCategory;
-  description: string;
-  ministerTitle: string;
-  organizationalLevel: OrganizationalLevel;
-  icon: string;
-  color: string;
-  priority: number;
-  functions: string[];
-  typicalBudgetPercent: number;
-  subBudgets: Omit<SubBudgetInput, "amount">[];
-  kpis: Omit<KeyPerformanceIndicator, "id" | "currentValue">[];
-}
-
-export interface GovernmentTemplate {
-  name: string;
-  governmentType: GovernmentType;
-  description: string;
-  departments: DepartmentTemplate[];
-  fiscalYear: string;
-  typicalRevenueSources: Omit<RevenueSourceInput, "revenueAmount">[];
 }

@@ -564,5 +564,3 @@ useNotificationStore.subscribe(
     }
   }
 );
-
-export default useNotificationStore;

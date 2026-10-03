@@ -554,7 +554,7 @@ export const APPS: readonly AppDefinition[] = [
 ];
 
 /** Order in which apps claim the TabBar's four slots (the fifth is "More"). */
-export const TAB_BAR_PRIORITY: readonly AppId[] = [
+const TAB_BAR_PRIORITY: readonly AppId[] = [
   "home",
   "mycountry",
   "maps",
@@ -573,7 +573,7 @@ export const TAB_BAR_SLOTS = 4;
  * Routes that stay chromeless with the shell: no sidebar, no tab bar (Maps keeps
  * its own wayfinding; the full-screen map editors cover the viewport).
  */
-export const CHROMELESS_PREFIXES: readonly string[] = [
+const CHROMELESS_PREFIXES: readonly string[] = [
   "/maps",
   "/mycountry/map-editor",
   "/admin/maps/editor",

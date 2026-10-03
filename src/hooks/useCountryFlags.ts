@@ -35,7 +35,7 @@ interface UseCountryFlagsReturn {
   };
 }
 
-export function useCountryFlags(options: UseCountryFlagsOptions): UseCountryFlagsReturn {
+function useCountryFlags(options: UseCountryFlagsOptions): UseCountryFlagsReturn {
   const { countries } = options;
   const placeholderUrl = useMemo(() => withBasePath("/images/flags/placeholder.svg"), []);
 

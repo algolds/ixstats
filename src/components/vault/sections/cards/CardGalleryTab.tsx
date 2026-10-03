@@ -14,7 +14,7 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { CardDisplay } from "~/components/cards/display/CardDisplay";
-import NumberFlow from "~/components/ui/number-flow";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import type { CardInstance } from "~/types/cards-display";
 import type { CardRarity } from "@prisma/client";
 import type { GallerySource } from "./types";
@@ -194,7 +194,7 @@ export function CardGalleryTab({
           <div className="flex items-center gap-2">
             <Layers className="text-tint h-3.5 w-3.5" />
             <span className="text-footnote text-label font-semibold">
-              <NumberFlow value={libraryStats.totalCards} />
+              <NumberFlowDisplay value={libraryStats.totalCards} />
             </span>
             <span className="text-label-secondary text-footnote">cards in library</span>
           </div>

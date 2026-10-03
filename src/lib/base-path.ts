@@ -10,7 +10,7 @@ export function getBasePath(): string {
     : process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "";
 }
 
-export const BASE_PATH = getBasePath();
+const BASE_PATH = getBasePath();
 
 /**
  * An image/asset URL ready for `src`: absolute (http/https, protocol-relative), data: and blob:

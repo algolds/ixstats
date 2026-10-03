@@ -60,8 +60,6 @@ export class IxTimeSyncManager {
   // Drift tolerance settings
   private static readonly DRIFT_WARNING_THRESHOLD = 1000; // 1 second
   private static readonly DRIFT_CRITICAL_THRESHOLD = 5000; // 5 seconds
-  private static readonly ACCURACY_THRESHOLD = 99.99; // 99.99%
-
   // Default sync targets
   private static readonly DEFAULT_TARGETS: Omit<
     SyncTarget,
@@ -99,71 +97,6 @@ export class IxTimeSyncManager {
         lastError: null,
       });
     }
-  }
-
-  public addSyncTarget(target: Omit<SyncTarget, "lastSync" | "isHealthy" | "lastError">): void {
-    this.syncTargets.set(target.id, {
-      ...target,
-      lastSync: null,
-      isHealthy: true,
-      lastError: null,
-    });
-  }
-
-  public async checkTargetHealth(targetId: string): Promise<{
-    available: boolean;
-    error?: string;
-    responseTime?: number;
-  }> {
-    const target = this.syncTargets.get(targetId);
-    if (!target) {
-      return { available: false, error: "Target not found" };
-    }
-
-    const startTime = Date.now();
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
-
-      const endpoint =
-        target.type === "discord-bot" ? `${target.endpoint}/health` : `${target.endpoint}/status`;
-
-      const response = await fetch(endpoint, {
-        method: "GET",
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-      const responseTime = Date.now() - startTime;
-
-      if (!response.ok && response.status !== 404) {
-        return {
-          available: false,
-          error: `HTTP ${response.status}`,
-          responseTime,
-        };
-      }
-
-      return { available: true, responseTime };
-    } catch (error) {
-      const responseTime = Date.now() - startTime;
-      if (error instanceof Error) {
-        if (error.name === "AbortError") {
-          return { available: false, error: "Timeout", responseTime };
-        }
-        if (error.message.includes("fetch")) {
-          return { available: false, error: "Network unreachable", responseTime };
-        }
-        return { available: false, error: error.message, responseTime };
-      }
-      return { available: false, error: "Unknown error", responseTime };
-    }
-  }
-
-  public removeSyncTarget(targetId: string): void {
-    this.syncTargets.delete(targetId);
-    this.syncStatuses.delete(targetId);
   }
 
   private get isBrowser(): boolean {
@@ -466,10 +399,6 @@ export class IxTimeSyncManager {
     return this.masterState;
   }
 
-  public getSyncTargets(): SyncTarget[] {
-    return Array.from(this.syncTargets.values());
-  }
-
   public getSyncStatuses(): SyncStatus[] {
     return Array.from(this.syncStatuses.values());
   }
@@ -478,51 +407,9 @@ export class IxTimeSyncManager {
     return this.syncStatuses.get(targetId) || null;
   }
 
-  public async forceSyncTarget(targetId: string): Promise<SyncStatus | null> {
-    const target = this.syncTargets.get(targetId);
-    if (!target) return null;
-
-    await this.syncTarget(targetId);
-    return this.getSyncStatus(targetId);
-  }
-
   public async forceSyncAll(): Promise<void> {
     await this.updateMasterState();
     await this.syncAllTargets();
-  }
-
-  public getHealthSummary(): {
-    healthy: number;
-    unhealthy: number;
-    total: number;
-    criticalIssues: string[];
-  } {
-    const targets = Array.from(this.syncTargets.values());
-    const healthy = targets.filter((t) => t.isHealthy).length;
-    const unhealthy = targets.filter((t) => !t.isHealthy).length;
-    const criticalIssues: string[] = [];
-
-    // Check for critical issues
-    for (const status of this.syncStatuses.values()) {
-      if (
-        status.status === "error" ||
-        Math.abs(status.drift) > IxTimeSyncManager.DRIFT_CRITICAL_THRESHOLD
-      ) {
-        const target = this.syncTargets.get(status.target);
-        if (target && target.priority === "critical") {
-          criticalIssues.push(
-            `${target.name}: ${status.status === "error" ? "Connection failed" : `Critical drift: ${status.drift}ms`}`
-          );
-        }
-      }
-    }
-
-    return {
-      healthy,
-      unhealthy,
-      total: targets.length,
-      criticalIssues,
-    };
   }
 
   public async runComprehensiveSync(): Promise<{

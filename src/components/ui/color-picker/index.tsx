@@ -64,7 +64,7 @@ type ColorPickerProps = Omit<HTMLAttributes<HTMLDivElement>, "onChange"> & {
   onChange?: (value: [number, number, number, number]) => void;
 };
 
-export const ColorPicker = ({
+const ColorPicker = ({
   value,
   defaultValue = "#000000",
   onChange,

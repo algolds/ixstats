@@ -327,15 +327,6 @@ export interface Country {
   updatedAt: Date;
 }
 
-export interface SystemConfig {
-  id: string;
-  key: string;
-  value: string;
-  description?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export interface CalculationLog {
   id: string;
   timestamp: Date;

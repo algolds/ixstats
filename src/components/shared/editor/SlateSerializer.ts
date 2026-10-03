@@ -3,7 +3,7 @@
 
 import { Editor, Transforms } from "slate";
 
-export function escapeAttr(str: string): string {
+function escapeAttr(str: string): string {
   return str
     .replace(/&/g, "&amp;")
     .replace(/"/g, "&quot;")

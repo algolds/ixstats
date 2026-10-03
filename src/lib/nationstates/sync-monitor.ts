@@ -6,7 +6,6 @@
  */
 
 import { db } from "~/server/db";
-import { env } from "~/env";
 
 interface SyncMetrics {
   totalSyncs: number;
@@ -32,9 +31,6 @@ interface SyncHealthStats {
 
 export class SyncHealthMonitor {
   private static ERROR_RATE_THRESHOLD = 0.1; // 10%
-  private static WEBHOOK_ENABLED =
-    env.DISCORD_WEBHOOK_ENABLED === "true" && process.env.NODE_ENV !== "test";
-  private static WEBHOOK_URL = env.DISCORD_WEBHOOK_URL;
 
   /**
    * Get comprehensive health statistics across all sync operations
@@ -107,88 +103,6 @@ export class SyncHealthMonitor {
     } catch (error) {
       console.error("[NS Sync Monitor] Failed to get health stats:", error);
       throw error;
-    }
-  }
-
-  /**
-   * Send alert to Discord webhook with detailed context
-   */
-  static async sendAlert(params: {
-    title: string;
-    message: string;
-    stats?: SyncHealthStats;
-    severity: "low" | "medium" | "high";
-  }): Promise<void> {
-    if (!this.WEBHOOK_ENABLED || !this.WEBHOOK_URL) {
-      console.warn("[NS Sync Monitor] Discord webhook not configured, skipping alert");
-      return;
-    }
-
-    const { title, message, stats, severity } = params;
-
-    const color = severity === "high" ? 0xff0000 : severity === "medium" ? 0xffa500 : 0xffff00;
-
-    const embed = {
-      title,
-      description: message,
-      color,
-      timestamp: new Date().toISOString(),
-      fields: [] as Array<{ name: string; value: string; inline?: boolean }>,
-    };
-
-    if (stats) {
-      embed.fields.push({
-        name: "Overall Metrics",
-        value: [
-          `Total Syncs: ${stats.overall.totalSyncs}`,
-          `Success Rate: ${(stats.overall.successRate * 100).toFixed(1)}%`,
-          `Error Rate: ${(stats.overall.errorRate * 100).toFixed(1)}%`,
-          `Avg Cards/Sync: ${stats.overall.avgCardsProcessed.toFixed(0)}`,
-        ].join("\n"),
-        inline: false,
-      });
-
-      if (stats.recentErrors.length > 0) {
-        const recentError = stats.recentErrors[0]!;
-        embed.fields.push({
-          name: "Latest Error",
-          value: [
-            `Type: ${recentError.type}`,
-            `Error: ${recentError.error.substring(0, 200)}`,
-            `Time: ${recentError.timestamp.toISOString()}`,
-          ].join("\n"),
-          inline: false,
-        });
-      }
-
-      if (stats.alerts.length > 0) {
-        embed.fields.push({
-          name: "Active Alerts",
-          value: stats.alerts.slice(0, 5).join("\n"),
-          inline: false,
-        });
-      }
-    }
-
-    try {
-      const response = await fetch(this.WEBHOOK_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: "IxStats NS Sync Monitor",
-          embeds: [embed],
-        }),
-      });
-
-      if (!response.ok) {
-        console.error("[NS Sync Monitor] Discord webhook failed:", await response.text());
-      } else {
-        console.log("[NS Sync Monitor] Alert sent to Discord successfully");
-      }
-    } catch (error) {
-      console.error("[NS Sync Monitor] Failed to send Discord alert:", error);
     }
   }
 }

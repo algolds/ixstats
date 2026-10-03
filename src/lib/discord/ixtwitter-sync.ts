@@ -1099,7 +1099,7 @@ function decodeHtmlEntities(str: string): string {
     .replace(/&nbsp;/g, " ");
 }
 
-export function autoCloseHtmlTags(html: string): string {
+function autoCloseHtmlTags(html: string): string {
   const tags = [
     "strong",
     "b",

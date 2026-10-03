@@ -76,7 +76,7 @@ interface ConsequenceInput {
   durationDays?: number;
 }
 
-export interface AppliedConsequence {
+interface AppliedConsequence {
   targetModel: string;
   targetField: string;
   previousValue: number;

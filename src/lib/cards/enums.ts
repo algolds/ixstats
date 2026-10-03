@@ -34,25 +34,10 @@ export const CardType = {
 } as const;
 
 export type CardType = (typeof CardType)[keyof typeof CardType];
-
-/**
- * Pack types
- */
-const PackType = {
-  BASIC: "BASIC",
-  PREMIUM: "PREMIUM",
-  ELITE: "ELITE",
-  THEMED: "THEMED",
-  SEASONAL: "SEASONAL",
-  EVENT: "EVENT",
-} as const;
-
-type PackType = (typeof PackType)[keyof typeof PackType];
-
 /**
  * How a card was acquired
  */
-export const AcquireMethod = {
+const AcquireMethod = {
   PACK: "PACK",
   TRADE: "TRADE",
   AUCTION: "AUCTION",
@@ -64,27 +49,3 @@ export const AcquireMethod = {
 } as const;
 
 export type AcquireMethod = (typeof AcquireMethod)[keyof typeof AcquireMethod];
-
-/**
- * Auction status
- */
-const AuctionStatus = {
-  ACTIVE: "ACTIVE",
-  COMPLETED: "COMPLETED",
-  CANCELLED: "CANCELLED",
-} as const;
-
-type AuctionStatus = (typeof AuctionStatus)[keyof typeof AuctionStatus];
-
-/**
- * Trade status
- */
-const TradeStatus = {
-  PENDING: "PENDING",
-  ACCEPTED: "ACCEPTED",
-  REJECTED: "REJECTED",
-  CANCELLED: "CANCELLED",
-  EXPIRED: "EXPIRED",
-} as const;
-
-type TradeStatus = (typeof TradeStatus)[keyof typeof TradeStatus];

@@ -49,7 +49,7 @@ import {
 // Types
 // ============================================================================
 
-export interface PollOption {
+interface PollOption {
   /** Unique identifier for the option */
   id: string;
   /** Display label for the option */

@@ -23,7 +23,7 @@ export interface StatDelta {
   label?: string;
 }
 
-export interface StatProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
+interface StatProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
   label: React.ReactNode;
   value: React.ReactNode;
   delta?: StatDelta;

@@ -101,13 +101,6 @@ export function getComplexityBgColor(complexity: "Low" | "Medium" | "High"): str
 
 // ==================== EFFECTIVENESS COLORS ====================
 
-export function getEffectivenessColor(effectiveness: number): string {
-  if (effectiveness >= 85) return "text-green";
-  if (effectiveness >= 70) return "text-blue";
-  if (effectiveness >= 55) return "text-yellow";
-  return "text-red";
-}
-
 export function getEffectivenessBgColor(effectiveness: number): string {
   if (effectiveness >= 85) return "bg-green/10";
   if (effectiveness >= 70) return "bg-blue/10";

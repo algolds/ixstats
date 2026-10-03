@@ -19,7 +19,7 @@ export interface PoolEntry {
   outcome: PredictionOutcome | string;
   stake: number;
 }
-export interface Settlement {
+interface Settlement {
   id: string;
   status: "won" | "lost" | "void";
   payout: number;

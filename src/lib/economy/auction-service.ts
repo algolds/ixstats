@@ -1140,68 +1140,6 @@ export class AuctionService {
   }
 
   /**
-   * Get market trends and analytics
-   *
-   * Calculates market statistics for a time range
-   *
-   * @param params Analytics parameters
-   * @param db Prisma client
-   * @returns Market trend data
-   */
-  async getMarketTrends(
-    params: {
-      cardId?: string;
-      timeRange: "24h" | "7d" | "30d";
-    },
-    db: PrismaClient
-  ) {
-    const timeRangeMs = {
-      "24h": 24 * 60 * 60 * 1000,
-      "7d": 7 * 24 * 60 * 60 * 1000,
-      "30d": 30 * 24 * 60 * 60 * 1000,
-    };
-
-    const since = new Date(Date.now() - timeRangeMs[params.timeRange]);
-
-    const sales = await db.cardAuction.findMany({
-      where: {
-        status: "COMPLETED",
-        finalPrice: { not: null },
-        updatedAt: { gte: since },
-      },
-      include: {
-        CardOwnership: {
-          include: {
-            cards: true,
-          },
-        },
-      },
-      orderBy: { updatedAt: "desc" },
-    });
-
-    // Filter by cardId if provided
-    const filteredSales = params.cardId
-      ? sales.filter((s) => s.CardOwnership?.cards?.id === params.cardId)
-      : sales;
-
-    const totalVolume = filteredSales.reduce((sum, s) => sum + (s.finalPrice ?? 0), 0);
-    const averagePrice = filteredSales.length > 0 ? totalVolume / filteredSales.length : 0;
-
-    return {
-      totalSales: filteredSales.length,
-      totalVolume,
-      averagePrice: Math.round(averagePrice * 100) / 100,
-      priceHistory: filteredSales.map((s) => ({
-        timestamp: s.updatedAt.toISOString(),
-        price: s.finalPrice ?? 0,
-        cardId: s.CardOwnership?.cards?.id ?? "",
-        cardTitle: s.CardOwnership?.cards?.title ?? "Unknown",
-        cardRarity: s.CardOwnership?.cards?.rarity ?? "COMMON",
-      })),
-    };
-  }
-
-  /**
    * Get active auctions with filters
    *
    * @param params Query parameters

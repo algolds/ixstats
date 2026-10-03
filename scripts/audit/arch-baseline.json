@@ -16,7 +16,6 @@
   "src/app/builder/components/enhanced/EconomyBuilderPage.tsx": {},
   "src/lib/diplomacy/npc-personality.ts": {},
   "src/components/admin/sports-labs/SportsLabsInspector.tsx": {},
-  "src/lib/builder/client-calculations.ts": {},
   "src/components/maps/editor/EditorMap.tsx": {},
   "src/components/maps/editor/hooks/useMapEditorOverlayState.ts": {},
   "src/lib/cards/lore-card-generator.ts": {},

@@ -27,7 +27,6 @@ const EconomicClassSchema = z.enum([
   "UpperMiddleClass",
   "UpperClass",
 ]);
-export type EconomicClass = z.infer<typeof EconomicClassSchema>;
 const TaxBracketSchema = z.enum(["Low", "Middle", "High", "Top"]);
 const CorporateSizeSchema = z.enum(["Small", "Medium", "Large", "Multinational"]);
 // ===============================
@@ -424,15 +423,6 @@ const DemographicsDataSchema = DemographicsSchema.extend({
 // ===============================
 
 // STRICT schema — for template validation
-const EconomySchema = z.object({
-  core: CoreEconomicIndicatorsSchema,
-  labor: LaborEmploymentSchema,
-  fiscal: FiscalSystemSchema,
-  income: IncomeWealthSchema,
-  spending: GovernmentSpendingSchema,
-  demographics: DemographicsSchema,
-});
-
 // FULL DATA schema — for UI consumption (includes all extended nullable fields)
 export const EconomyDataSchema = z.object({
   core: CoreEconomicIndicatorsDataSchema,
@@ -448,13 +438,8 @@ export const EconomyDataSchema = z.object({
 // ===============================
 
 // Strict types (for templates / factory presets)
-export type Economy = z.infer<typeof EconomySchema>;
-export type CoreEconomicIndicators = z.infer<typeof CoreEconomicIndicatorsSchema>;
-export type Demographics = z.infer<typeof DemographicsSchema>;
-
 // Extended types (for UI / mapper — imported by consumers)
 export type EconomyData = z.infer<typeof EconomyDataSchema>;
-export type LaborEmploymentData = z.infer<typeof LaborEmploymentDataSchema>;
 export type FiscalSystemData = z.infer<typeof FiscalSystemDataSchema>;
 export type GovernmentSpendingData = z.infer<typeof GovernmentSpendingDataSchema>;
 export type DemographicsData = z.infer<typeof DemographicsDataSchema>;

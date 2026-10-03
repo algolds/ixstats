@@ -921,37 +921,6 @@ export function getAchievementById(id: string): AchievementDefinition | undefine
 }
 
 /**
- * Check which achievements should be unlocked for given data
- * @param data Extended country and relational data
- * @param alreadyUnlocked Set of already unlocked achievement IDs
- * @returns Array of achievement IDs that should be unlocked
- */
-export function checkAchievements(
-  data: ExtendedAchievementData,
-  alreadyUnlocked: Set<string>
-): string[] {
-  const toUnlock: string[] = [];
-
-  for (const achievement of ACHIEVEMENT_DEFINITIONS) {
-    // Skip if already unlocked
-    if (alreadyUnlocked.has(achievement.id)) {
-      continue;
-    }
-
-    // Check condition
-    try {
-      if (achievement.condition(data)) {
-        toUnlock.push(achievement.id);
-      }
-    } catch (error) {
-      console.error(`Error checking achievement ${achievement.id}:`, error);
-    }
-  }
-
-  return toUnlock;
-}
-
-/**
  * Get achievement statistics
  */
 export function getAchievementStats() {

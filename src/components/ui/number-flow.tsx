@@ -328,5 +328,3 @@ export const CurrencyFlow = (props: Omit<NumberFlowDisplayProps, "format">) => (
 export const PercentageFlow = (props: Omit<NumberFlowDisplayProps, "format">) => (
   <NumberFlowDisplay {...props} format="percentage" />
 );
-// Export default as the main component
-export default NumberFlowDisplay;

@@ -32,18 +32,3 @@ export interface ChartTooltipProps<T = number, P = Record<string, unknown>> {
   ) => React.ReactNode;
   className?: string;
 }
-
-/**
- * Config for a single series line/area/bar in the chart
- */
-interface ChartSeriesConfig {
-  label: string;
-  color: string;
-  unit?: string;
-  icon?: React.ComponentType<{ className?: string }>;
-}
-
-/**
- * Full chart series dictionary configuration
- */
-export type ChartConfig = Record<string, ChartSeriesConfig>;
