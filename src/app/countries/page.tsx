@@ -13,6 +13,33 @@ import { WarningTriangle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 
+/** Card fields that stay `undefined` (never `null`) when the country has no value. */
+const OPTIONAL_FIELDS = [
+  "landArea",
+  "populationDensity",
+  "gdpDensity",
+  "adjustedGdpGrowth",
+  "populationGrowthRate",
+  "continent",
+  "region",
+  "governmentType",
+  "leader",
+  "religion",
+  "lifeExpectancy",
+  "literacyRate",
+  "unemploymentRate",
+  "inflationRate",
+  "povertyRate",
+  "totalDebtGDPRatio",
+  "realGDPGrowthRate",
+] as const;
+
+function nullsToUndefined<T extends object, K extends keyof T>(source: T, keys: readonly K[]) {
+  return Object.fromEntries(keys.map((key) => [key, source[key] ?? undefined])) as {
+    [P in K]: NonNullable<T[P]> | undefined;
+  };
+}
+
 export default function CountriesPage() {
   usePageTitle({ title: "Countries" });
 
@@ -40,9 +67,10 @@ export default function CountriesPage() {
   );
 
   // Get all country names for flag caching
-  const countryNames = useMemo(() => {
-    return countriesResult?.countries?.map((c) => c.name) || [];
-  }, [countriesResult]);
+  const countryNames = useMemo(
+    () => countriesResult?.countries?.map((c) => c.name) || [],
+    [countriesResult]
+  );
 
   // Bulk fetch flags
   const { flagUrls, isLoading: flagsLoading } = useBulkFlags(countryNames);
@@ -60,29 +88,10 @@ export default function CountriesPage() {
       currentTotalGdp: country.currentTotalGdp || 0,
       economicTier: country.economicTier || "Unknown",
       populationTier: country.populationTier || "Unknown",
-      landArea: country.landArea ?? undefined,
-      populationDensity: country.populationDensity ?? undefined,
-      gdpDensity: country.gdpDensity ?? undefined,
-      adjustedGdpGrowth: country.adjustedGdpGrowth ?? undefined,
-      populationGrowthRate: country.populationGrowthRate ?? undefined,
       // Use database flag first, then cached/resolved flag, then undefined
       flagUrl:
         normalizeFlagUrl(country.flag) || normalizeFlagUrl(flagUrls[country.name]) || undefined,
-      // Identity & Governance
-      continent: country.continent ?? undefined,
-      region: country.region ?? undefined,
-      governmentType: country.governmentType ?? undefined,
-      leader: country.leader ?? undefined,
-      religion: country.religion ?? undefined,
-      // Social Indicators
-      lifeExpectancy: country.lifeExpectancy ?? undefined,
-      literacyRate: country.literacyRate ?? undefined,
-      unemploymentRate: country.unemploymentRate ?? undefined,
-      inflationRate: country.inflationRate ?? undefined,
-      povertyRate: country.povertyRate ?? undefined,
-      // Fiscal
-      totalDebtGDPRatio: country.totalDebtGDPRatio ?? undefined,
-      realGDPGrowthRate: country.realGDPGrowthRate ?? undefined,
+      ...nullsToUndefined(country, OPTIONAL_FIELDS),
     }));
   }, [countriesResult, flagUrls]);
 
