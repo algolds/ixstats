@@ -18,7 +18,9 @@ import {
   ancestorElements,
   attrNumber,
   elementChildren,
+  groupName,
   inkscapeLabel,
+  sanitizeSvg,
   svgTag,
   type XmlElement,
 } from "~/lib/maps/province-importer/svg-dom";
@@ -87,14 +89,6 @@ const CITY_NAME_LAYER_NAMES = ["names", "labels", "text", "captions", "annotatio
 const ANY_LABEL_LAYER_NAMES = /city|town|place|label|name|text/;
 
 const num = (el: XmlElement, attr: string) => parseFloat(el.getAttribute(attr) || "0");
-
-function sanitizeSvg(svgContent: string): string {
-  return svgContent
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*')/gi, "")
-    .replace(/href\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, "")
-    .replace(/xlink:href\s*=\s*(?:"https?:\/\/[^"]*"|'https?:\/\/[^']*')/gi, "");
-}
 
 function extractViewBoxWidth(svgRoot: XmlElement): number {
   const parts =
@@ -210,7 +204,7 @@ function enumerateLayers(svgRoot: XmlElement, viewBoxWidth: number): SvgLayerInf
       // Duplicate ids shouldn't happen in valid SVG, but skip the entry and still recurse
       if (!seenIds.has(id)) {
         seenIds.add(id);
-        const name = inkscapeLabel(child) || child.getAttribute("data-name") || id;
+        const name = groupName(child) || id;
         layers.push(info(child, id, name, depth));
       }
       enumerateGroups(child, depth + 1);

@@ -15,7 +15,7 @@ import {
   attrNumber,
   ancestorElements,
   elementChildren,
-  inkscapeLabel,
+  groupName,
   styleDeclares,
   svgTag,
   type XmlElement,
@@ -103,7 +103,7 @@ export function detectProvinceLayer(svgRoot: XmlElement): {
   [...svgRoot.getElementsByTagNameNS(SVG_NS, "g")].forEach((g, i) => {
     if (isInsideExcludedContainer(g) || isHiddenByClass(g, hiddenClasses)) return;
 
-    const name = getGroupName(g);
+    const name = groupName(g);
     const score = scoreGroup(g, name, svgRoot);
     if (score > 0 || isInkscapeLayer(g)) {
       candidates.push({
@@ -411,10 +411,6 @@ function isDecorativeElement(el: XmlElement, tag: string): boolean {
 
   // White fill with no stroke is likely a mask
   return ["#ffffff", "#fff", "white"].includes(fill) && strokeNone;
-}
-
-function getGroupName(g: XmlElement): string {
-  return inkscapeLabel(g) || g.getAttribute("data-name") || g.getAttribute("id") || "";
 }
 
 function countDirectShapeChildren(g: XmlElement): number {

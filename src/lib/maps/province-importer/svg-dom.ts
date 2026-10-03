@@ -37,3 +37,17 @@ export function styleDeclares(style: string, prop: string, value: string): boole
 export function attrNumber(el: XmlElement, ...names: string[]): number {
   return parseFloat(names.map((n) => el.getAttribute(n)).find((v) => v != null) ?? "0");
 }
+
+/** Display name of a group: Inkscape label, then data-name, then id ("" if none). */
+export function groupName(el: XmlElement): string {
+  return inkscapeLabel(el) || el.getAttribute("data-name") || el.getAttribute("id") || "";
+}
+
+/** Strip scripts, inline event handlers and external/javascript hrefs from uploaded SVG text. */
+export function sanitizeSvg(svgContent: string): string {
+  return svgContent
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*')/gi, "")
+    .replace(/href\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, "")
+    .replace(/xlink:href\s*=\s*(?:"https?:\/\/[^"]*"|'https?:\/\/[^']*')/gi, "");
+}
