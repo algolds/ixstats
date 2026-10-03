@@ -29,7 +29,7 @@ export function GlobalStatsOverview({ globalStats, isLoading }: GlobalStatsOverv
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Globe className="h-5 w-5" />
-            Global Statistics
+            Global statistics
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -50,35 +50,27 @@ export function GlobalStatsOverview({ globalStats, isLoading }: GlobalStatsOverv
   const stats = [
     {
       icon: Users,
-      label: "Total Population",
+      label: "Total population",
       value: formatPopulation(globalStats.totalPopulation),
       subValue: `${globalStats.countryCount} countries`,
-      color: "text-blue",
-      bgColor: "bg-blue/10",
     },
     {
       icon: DollarSign,
       label: "Total GDP",
       value: formatCurrency(globalStats.totalGdp),
-      subValue: `Avg: ${formatCurrency(globalStats.averageGdpPerCapita)}/capita`,
-      color: "text-green",
-      bgColor: "bg-green/10",
+      subValue: `Average ${formatCurrency(globalStats.averageGdpPerCapita)} per capita`,
     },
     {
       icon: TrendingUp,
-      label: "Global Growth",
+      label: "Global growth",
       value: formatGrowthRateFromDecimal(globalStats.globalGrowthRate),
       subValue: "Annual rate",
-      color: "text-purple",
-      bgColor: "bg-purple/10",
     },
     {
       icon: Building2,
-      label: "Economic Activity",
+      label: "Economic activity",
       value: `${globalStats.countryCount}`,
       subValue: "Active economies",
-      color: "text-orange",
-      bgColor: "bg-orange/10",
     },
   ];
 
@@ -87,9 +79,9 @@ export function GlobalStatsOverview({ globalStats, isLoading }: GlobalStatsOverv
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Globe className="h-5 w-5" />
-          Global Statistics
+          Global statistics
           <Badge variant="default" className="ml-auto">
-            Live Data
+            Live data
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -97,10 +89,8 @@ export function GlobalStatsOverview({ globalStats, isLoading }: GlobalStatsOverv
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {stats.map((stat, index) => (
             <div key={index} className="text-center">
-              <div
-                className={`rounded-control mb-3 inline-flex h-12 w-12 items-center justify-center ${stat.bgColor}`}
-              >
-                <stat.icon className={`h-6 w-6 ${stat.color}`} />
+              <div className="bg-fill-3 rounded-control mb-3 inline-flex h-12 w-12 items-center justify-center">
+                <stat.icon aria-hidden className="text-label-secondary h-6 w-6" />
               </div>
               <div className="text-label text-title-1">{stat.value}</div>
               <div className="text-label-secondary text-body font-medium">{stat.label}</div>
@@ -109,13 +99,12 @@ export function GlobalStatsOverview({ globalStats, isLoading }: GlobalStatsOverv
           ))}
         </div>
 
-        {/* Additional metrics */}
         <div className="mt-6 border-t pt-6">
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
             <div className="flex items-center gap-3">
               <MapPin className="text-label-secondary h-4 w-4" />
               <div>
-                <div className="text-body font-medium">Avg Population Density</div>
+                <div className="text-body font-medium">Average population density</div>
                 <div className="text-label-secondary text-footnote">
                   {globalStats.averagePopulationDensity.toLocaleString()}/km²
                 </div>
@@ -124,7 +113,7 @@ export function GlobalStatsOverview({ globalStats, isLoading }: GlobalStatsOverv
             <div className="flex items-center gap-3">
               <Activity className="text-label-secondary h-4 w-4" />
               <div>
-                <div className="text-body font-medium">Avg GDP Density</div>
+                <div className="text-body font-medium">Average GDP density</div>
                 <div className="text-label-secondary text-footnote">
                   {formatCurrency(globalStats.averageGdpDensity)}/km²
                 </div>
@@ -133,7 +122,7 @@ export function GlobalStatsOverview({ globalStats, isLoading }: GlobalStatsOverv
             <div className="flex items-center gap-3">
               <Target className="text-label-secondary h-4 w-4" />
               <div>
-                <div className="text-body font-medium">Last Updated</div>
+                <div className="text-body font-medium">Last updated</div>
                 <div className="text-label-secondary text-footnote">
                   {new Date(globalStats.timestamp).toLocaleTimeString()}
                 </div>

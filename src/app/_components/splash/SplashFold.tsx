@@ -103,12 +103,9 @@ export function SplashFold() {
       className="mx-auto mb-16 max-w-7xl md:mb-20"
     >
       <div className="mb-8 text-center">
-        <h2 className={`text-large-title mb-2 ${splashGold.headline}`}>
-          There&apos;s more in the box
-        </h2>
+        <h2 className={`text-large-title mb-2 ${splashGold.headline}`}>More to explore</h2>
         <p className="text-label-secondary mx-auto max-w-2xl leading-relaxed">
-          Lore feeds, component labs, diplomacy tools, Discord — slide in when you&apos;re past the
-          opening act.
+          ThinkPages, government components, the shared world, diplomacy and the community Discord.
         </p>
       </div>
 
@@ -136,7 +133,7 @@ export function SplashFold() {
         </div>
 
         <TabsContent value="thinkpages">
-          <div className="material-hero text-label rounded-2xl p-6 md:p-8">
+          <div className="bg-surface text-label border-separator rounded-card shadow-card border p-6 md:p-8">
             <div className="relative z-10">
               <div className="mb-6 flex items-center gap-4">
                 <div className={`h-14 w-14 ${splashGold.iconWrap}`}>
@@ -144,24 +141,20 @@ export function SplashFold() {
                 </div>
                 <div>
                   <h3 className="text-label text-title-1 md:text-large-title">ThinkPages</h3>
-                  <p className="text-label-secondary text-title-3 md:text-title-2">
-                    25 Voices, One Nation
-                  </p>
                 </div>
               </div>
 
               <p className="text-label-secondary text-body md:text-title-3 mb-8 max-w-3xl">
-                Your nation isn&apos;t a spreadsheet—it&apos;s a society. Create voices from leaders
-                to protesters; each shapes your story and feeds the feed.
+                Create ThinkPages accounts for the people in your country, from officials to
+                opposition groups and journalists. Their posts appear in the shared feed.
               </p>
 
               <SplashThinkPagesPeek />
 
               <div className="border-separator bg-fill-3 rounded-row border p-4">
                 <p className="text-label-secondary text-body leading-relaxed">
-                  <strong className="text-label font-medium">Roleplay with depth:</strong>{" "}
-                  opposition parties, news beats, protests — worldbuilding becomes interactive
-                  storytelling.
+                  <strong className="text-label font-medium">Roleplay:</strong> run opposition
+                  parties, news outlets and protest movements.
                 </p>
               </div>
             </div>
@@ -172,12 +165,12 @@ export function SplashFold() {
           <div className="space-y-8">
             <div className="text-center">
               <h3 className="text-label text-title-1 md:text-large-title mb-3">
-                Atomic components, full system
+                Government components
               </h3>
               <p className="text-label-secondary mx-auto max-w-3xl">
-                {atomicCounts.total} live components spanning governance, policy, and
-                administration. Mix them, and the engine computes synergies, tradeoffs, and
-                downstream pressure across your nation.
+                {atomicCounts.total} components covering governance, policy and administration.
+                Combine them and the engine calculates their synergies, tradeoffs and effects on
+                your nation.
               </p>
             </div>
 
@@ -241,20 +234,20 @@ export function SplashFold() {
             <div className="mx-auto max-w-4xl space-y-4">
               <div className="bg-surface-secondary rounded-row p-4">
                 <p className="text-label-secondary text-body leading-relaxed">
-                  <strong className="text-label font-medium">Interactions:</strong> Components
-                  combine for synergy — or clash for story tension.
+                  <strong className="text-label font-medium">Interactions:</strong> Components can
+                  reinforce or conflict with each other.
                 </p>
               </div>
               <div className="bg-surface-secondary rounded-row p-4">
                 <p className="text-label-secondary text-body leading-relaxed">
-                  <strong className="text-label font-medium">Economy:</strong> Policy mixes change
-                  GDP, employment, and welfare trajectories over time.
+                  <strong className="text-label font-medium">Economy:</strong> Your mix of
+                  components changes GDP, employment and welfare over time.
                 </p>
               </div>
               <div className="bg-surface-secondary rounded-row p-4">
                 <p className="text-label-secondary text-body leading-relaxed">
-                  <strong className="text-label font-medium">Systems:</strong> Governance, taxes,
-                  and social outcomes interact in one model.
+                  <strong className="text-label font-medium">Systems:</strong> Governance, taxes and
+                  social outcomes interact in one model.
                 </p>
               </div>
             </div>
@@ -262,7 +255,7 @@ export function SplashFold() {
         </TabsContent>
 
         <TabsContent value="world">
-          <div className="material-hero text-label rounded-2xl p-6 md:p-8">
+          <div className="bg-surface text-label border-separator rounded-card shadow-card border p-6 md:p-8">
             <div className="relative z-10">
               <div className="mb-6 flex items-center gap-4">
                 <div className={`h-14 w-14 ${splashGold.iconWrap}`}>
@@ -270,16 +263,12 @@ export function SplashFold() {
                 </div>
                 <div>
                   <h3 className="text-label text-title-1 md:text-large-title">Shared world</h3>
-                  <p className="text-label-secondary text-title-3 md:text-title-2">
-                    Players move, systems answer
-                  </p>
                 </div>
               </div>
 
               <p className="text-label-secondary text-body md:text-title-3 mb-8 max-w-3xl">
-                Your actions route through one shared clock. Policy edits, issue responses,
-                diplomacy, and posting all echo through connected systems, so every player push
-                creates visible world response.
+                Everything runs on one shared clock. Policy changes, issue responses, diplomacy and
+                posts all feed the same simulation, so other players see the effects.
               </p>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -291,8 +280,7 @@ export function SplashFold() {
                     <h4 className="text-headline">Shared timeline</h4>
                   </div>
                   <p className="text-label-secondary text-body">
-                    Deadlines, events, and responses resolve on one timeline, so players stay
-                    synchronized by design.
+                    Deadlines, events and responses resolve on one timeline.
                   </p>
                 </div>
 
@@ -301,11 +289,10 @@ export function SplashFold() {
                     <div className="bg-fill-3 border-separator rounded-control flex h-10 w-10 items-center justify-center border">
                       <TrendingUp className="text-label h-6 w-6" />
                     </div>
-                    <h4 className="text-headline">Growing nations</h4>
+                    <h4 className="text-headline">Nation growth</h4>
                   </div>
                   <p className="text-label-secondary text-body">
-                    National issues and policies feed economic and social systems with measurable
-                    consequences.
+                    National issues and policies change economic and social stats.
                   </p>
                 </div>
 
@@ -314,11 +301,11 @@ export function SplashFold() {
                     <div className="bg-fill-3 border-separator rounded-control flex h-10 w-10 items-center justify-center border">
                       <Network className="text-label h-6 w-6" />
                     </div>
-                    <h4 className="text-headline">Impact</h4>
+                    <h4 className="text-headline">Effects on other nations</h4>
                   </div>
                   <p className="text-label-secondary text-body">
-                    Trade, elections, missions, and feed activity propagate between nations in near
-                    real time.
+                    Trade, elections, missions and feed activity reach other nations in near real
+                    time.
                   </p>
                 </div>
               </div>
@@ -327,7 +314,7 @@ export function SplashFold() {
         </TabsContent>
 
         <TabsContent value="diplomacy">
-          <div className="material-hero text-label rounded-2xl p-6 md:p-8">
+          <div className="bg-surface text-label border-separator rounded-card shadow-card border p-6 md:p-8">
             <div className="relative z-10">
               <div className="mb-6 flex items-center gap-4">
                 <div className={`h-14 w-14 ${splashGold.iconWrap}`}>
@@ -335,16 +322,12 @@ export function SplashFold() {
                 </div>
                 <div>
                   <h3 className="text-label text-title-1 md:text-large-title">Diplomacy</h3>
-                  <p className="text-label-secondary text-title-3 md:text-title-2">
-                    Relations &amp; outreach
-                  </p>
                 </div>
               </div>
 
               <p className="text-label-secondary text-body md:text-title-3 mb-8 max-w-3xl">
-                Embassies, missions, alliances, and foreign policy — built for long-running arcs
-                from your <strong className="text-label font-medium">MyCountry</strong> diplomacy
-                workspace.
+                Manage embassies, missions, alliances and foreign policy from the diplomacy section
+                of <strong className="text-label font-medium">MyCountry</strong>.
               </p>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -356,7 +339,7 @@ export function SplashFold() {
                     <h4 className="text-headline">Embassies &amp; missions</h4>
                   </div>
                   <p className="text-label-secondary text-body">
-                    Post diplomats, run missions, coordinate during crises or culture weeks.
+                    Post diplomats, run missions and coordinate during crises.
                   </p>
                 </div>
 
@@ -368,7 +351,7 @@ export function SplashFold() {
                     <h4 className="text-headline">Private communications</h4>
                   </div>
                   <p className="text-label-secondary text-body">
-                    Secure channels for treaties, intel swaps, or quiet coordination.
+                    Private messages for treaties and coordination.
                   </p>
                 </div>
 
@@ -380,7 +363,7 @@ export function SplashFold() {
                     <h4 className="text-headline">Relationships</h4>
                   </div>
                   <p className="text-label-secondary text-body">
-                    Strength and stance tracking for regional storytelling.
+                    Track the strength of your relations with each nation.
                   </p>
                 </div>
               </div>
@@ -390,13 +373,12 @@ export function SplashFold() {
 
         <TabsContent value="community">
           <div className="space-y-8">
-            <div className="material-hero text-label mx-auto max-w-4xl rounded-2xl p-6 text-center md:p-8">
+            <div className="bg-surface text-label border-separator rounded-card shadow-card mx-auto max-w-4xl border p-6 text-center md:p-8">
               <h3 className={`text-title-1 md:text-large-title mb-4 ${splashGold.headline}`}>
                 Community
               </h3>
               <p className="text-label-secondary text-body md:text-title-3 mx-auto mb-6 max-w-2xl leading-relaxed">
-                Patch notes, feature chat, and other players building the world alongside your
-                MyCountry arc.
+                Patch notes, feature discussion and other players.
               </p>
               <Button
                 asChild
@@ -415,15 +397,15 @@ export function SplashFold() {
               className={`bg-surface-secondary rounded-row mx-auto max-w-4xl p-5 text-center md:p-6 ${splashGold.subtlePanel}`}
             >
               <p className="text-label-secondary text-body md:text-body">
-                Collect lore cards, earn IxCredits, and unlock achievements in the{" "}
+                Collect lore cards and earn IxCredits in the{" "}
                 <Link href="/vault" className={splashGold.link}>
-                  MyVault
+                  IxVault
                 </Link>
-                . Play NationStates? You can{" "}
+                . If you play NationStates, you can{" "}
                 <Link href="/vault/import" className={splashGold.link}>
                   import your deck
-                </Link>{" "}
-                too.
+                </Link>
+                .
               </p>
             </div>
           </div>

@@ -99,13 +99,10 @@ export function SplashIssuesTeaser() {
       className="mx-auto mb-16 max-w-7xl md:mb-20"
     >
       <div className="mb-8 text-center">
-        <h2 className={`text-large-title mb-2 ${splashGold.headline}`}>
-          Some mail won&apos;t wait
-        </h2>
+        <h2 className={`text-large-title mb-2 ${splashGold.headline}`}>National issues</h2>
         <p className="text-label-secondary text-body mx-auto max-w-xl leading-relaxed">
-          National issues are live mail from the realm — choose a path, absorb the outcome, fold it
-          back into canon. One clock for every capital; when a neighbor moves, your timeline already
-          knows.
+          Nations receive issues to resolve. Each one offers a few responses, and the one you choose
+          changes your country.
         </p>
       </div>
 
@@ -120,8 +117,7 @@ export function SplashIssuesTeaser() {
           <Clock className="h-5 w-5" aria-hidden />
         </motion.div>
         <p className="text-label-secondary text-body md:text-body text-center leading-relaxed md:text-left">
-          IxTime moves faster than the everyday clock — enough runway for arcs, not enough for
-          endless waiting. Deadlines respect the shared calendar.
+          IxTime runs at twice the speed of real time, and issue deadlines follow it.
         </p>
       </div>
 
@@ -129,8 +125,7 @@ export function SplashIssuesTeaser() {
         <Skeleton className="rounded-row mx-auto min-h-56 max-w-2xl" />
       ) : issues.length === 0 ? (
         <p className="text-label-secondary text-body text-center leading-relaxed">
-          Open issues will surface here as nations receive new mail — the realm is quiet for the
-          moment.
+          No open issues right now.
         </p>
       ) : (
         <div

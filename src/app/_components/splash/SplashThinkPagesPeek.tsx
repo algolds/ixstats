@@ -88,7 +88,7 @@ export function SplashThinkPagesPeek() {
   if (posts.length === 0) {
     return (
       <p className="text-label-secondary text-body leading-relaxed">
-        Public ThinkPages posts appear here as soon as someone publishes — the feed is live.
+        No public ThinkPages posts yet.
       </p>
     );
   }

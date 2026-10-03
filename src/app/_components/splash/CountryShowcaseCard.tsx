@@ -13,7 +13,6 @@ import {
 import { OpenNewWindow as ExternalLink } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
-import { useFlag } from "~/hooks/useUnifiedFlags";
 import { formatCurrency, formatPopulation } from "~/lib/utils";
 import { splashGold } from "~/lib/splash/mycountry-gold";
 import { Eyebrow } from "~/components/ui/eyebrow";
@@ -21,7 +20,6 @@ import { Eyebrow } from "~/components/ui/eyebrow";
 /** Country row from getAll — intentionally loose for carousel display */
 export function CountryShowcaseCard({ country }: { country: Record<string, unknown> }) {
   const name = String(country.name ?? "");
-  const { flagUrl } = useFlag(name);
   const [wikiIntro, setWikiIntro] = React.useState<string>("");
   const [coatOfArmsUrl, setCoatOfArmsUrl] = React.useState<string>("");
   const trpcUtils = api.useUtils();
@@ -109,18 +107,6 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
 
   return (
     <div className="relative h-full w-full overflow-y-auto p-6 md:p-8">
-      {flagUrl && (
-        <div className="absolute inset-0 opacity-10">
-          <img
-            src={flagUrl}
-            alt={displayName}
-            loading="lazy"
-            decoding="async"
-            className="h-full w-full object-cover"
-          />
-        </div>
-      )}
-
       <div className="relative z-10 space-y-5">
         <div className="flex items-start gap-4">
           <div className="flex-1">
@@ -210,7 +196,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             <div className="bg-surface-secondary rounded-row p-3">
               <div className="mb-1 flex items-center gap-2">
                 <TrendingUp className={`h-3 w-3 ${splashGold.text}`} />
-                <Eyebrow>Total GDP</Eyebrow>
+                <span className="text-stat-label text-label-secondary">Total GDP</span>
               </div>
               <div className={`text-title-3 ${splashGold.text}`}>
                 {formatCurrency(currentTotalGdp)}
@@ -219,7 +205,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             <div className="bg-surface-secondary rounded-row p-3">
               <div className="mb-1 flex items-center gap-2">
                 <Users className={`h-3 w-3 ${splashGold.text}`} />
-                <Eyebrow>Population</Eyebrow>
+                <span className="text-stat-label text-label-secondary">Population</span>
               </div>
               <div className={`text-title-3 ${splashGold.text}`}>
                 {formatPopulation(currentPopulation)}
@@ -228,7 +214,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             <div className="bg-surface-secondary rounded-row p-3">
               <div className="mb-1 flex items-center gap-2">
                 <BarChart3 className={`h-3 w-3 ${splashGold.text}`} />
-                <Eyebrow>Per Capita</Eyebrow>
+                <span className="text-stat-label text-label-secondary">Per capita</span>
               </div>
               <div className={`text-title-3 ${splashGold.text}`}>
                 {formatCurrency(currentGdpPerCapita)}
@@ -239,7 +225,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
                 <Activity
                   className={`h-3 w-3 ${growthPositive ? splashGold.text : "text-destructive"}`}
                 />
-                <Eyebrow>Growth</Eyebrow>
+                <span className="text-stat-label text-label-secondary">Growth</span>
               </div>
               <div
                 className={`text-title-3 ${growthPositive ? splashGold.text : "text-destructive"}`}
@@ -253,7 +239,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
           <div className="bg-surface-secondary rounded-row grid grid-cols-4 gap-2 p-3">
             {landArea != null && (
               <div className="text-center">
-                <div className="text-label-secondary text-footnote">Land Area</div>
+                <div className="text-label-secondary text-footnote">Land area</div>
                 <div className="text-label text-caption font-semibold">
                   {landArea > 1000000
                     ? `${(landArea / 1000000).toFixed(2)}M km²`
@@ -358,7 +344,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             { label: "Economy", value: economicHealth },
             { label: "Development", value: developmentIndex },
             { label: "Growth", value: economicGrowth },
-            { label: "Global Impact", value: globalRelevance },
+            { label: "Global impact", value: globalRelevance },
           ];
 
           return (
@@ -366,7 +352,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Activity className="text-label-secondary h-4 w-4" />
-                  <Eyebrow>Country Health</Eyebrow>
+                  <Eyebrow>Country health</Eyebrow>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className={`text-title-1 ${healthColor}`}>{overallHealth}</span>

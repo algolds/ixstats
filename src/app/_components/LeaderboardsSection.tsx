@@ -52,14 +52,14 @@ const leaderboardConfig = {
     description: "Largest economies by total GDP",
   },
   perCapita: {
-    title: "GDP per Capita",
+    title: "GDP per capita",
     icon: Crown,
     sortKey: "currentGdpPerCapita" as keyof LeaderboardCountry,
     formatValue: (value: number) => formatCurrency(value),
     description: "Highest standard of living",
   },
   growth: {
-    title: "Economic Growth",
+    title: "Economic growth",
     icon: TrendingUp,
     sortKey: "adjustedGdpGrowth" as keyof LeaderboardCountry,
     formatValue: (value: number) => formatGrowthRateFromDecimal(value),
@@ -123,7 +123,7 @@ const CountryFlag = ({
       alt={`${countryName} flag`}
       className={`${className} border-separator rounded-sm border object-cover`}
       onError={(e) => {
-        // Hide the broken image and show placeholder
+        // Swap a broken image for a placeholder
         e.currentTarget.style.display = "none";
         const parent = e.currentTarget.parentElement;
         if (parent) {
@@ -191,7 +191,7 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
             <Link
               key={country.id}
               href={createUrl(`/countries/${country.slug}`)}
-              className="hover:bg-fill-3 group rounded-control hover:shadow-floating flex items-center gap-4 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.02]"
+              className="hover:bg-fill-3 group rounded-control flex items-center gap-4 border p-4 transition-colors"
             >
               <div className="bg-fill-3 flex h-8 w-8 items-center justify-center rounded-full">
                 {getRankIcon(rank)}
@@ -235,11 +235,11 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
   };
 
   return (
-    <Card className="group/card flex flex-col gap-6 py-6">
+    <Card className="flex flex-col gap-6 py-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Trophy aria-hidden className="text-yellow h-5 w-5" />
-          Global Leaderboards
+          Global leaderboards
           <Badge variant="default" className="ml-auto">
             Top 7
           </Badge>

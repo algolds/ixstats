@@ -166,35 +166,27 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
     ? [
         {
           icon: Users,
-          label: "Total Population",
+          label: "Total population",
           value: formatPopulation(globalStats.totalPopulation),
           subValue: `${globalStats.countryCount} countries`,
-          color: "text-blue",
-          bgColor: "bg-blue/20",
         },
         {
           icon: DollarSign,
           label: "Total GDP",
           value: formatCurrency(globalStats.totalGdp),
-          subValue: `Avg: ${formatCurrency(globalStats.averageGdpPerCapita)}/capita`,
-          color: "text-green",
-          bgColor: "bg-green/20",
+          subValue: `Average ${formatCurrency(globalStats.averageGdpPerCapita)} per capita`,
         },
         {
           icon: TrendingUp,
-          label: "Global Growth",
+          label: "Global growth",
           value: formatGrowthRateFromDecimal(globalStats.globalGrowthRate),
           subValue: "Annual rate",
-          color: "text-purple",
-          bgColor: "bg-purple/20",
         },
         {
           icon: Building2,
-          label: "Economic Activity",
+          label: "Economic activity",
           value: `${globalStats.countryCount}`,
           subValue: "Active economies",
-          color: "text-orange",
-          bgColor: "bg-orange/20",
         },
       ]
     : [];
@@ -202,7 +194,6 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
   return (
     <div className="border-separator bg-surface text-label relative border-b">
       <div className="container mx-auto px-4 py-4 sm:px-6 lg:px-8">
-        {/* GlassCard overlay for main info/time block */}
         <div className="relative z-10 mx-auto mb-6 max-w-2xl">
           <Card className="flex flex-col items-center justify-between gap-4 gap-6 p-6 py-6 lg:flex-row">
             {/* Game Time Section */}
@@ -218,11 +209,10 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
                 </div>
               </div>
             </div>
-            {/* Refresh Button with glass effect */}
             <div className="flex items-center gap-4">
               <Button onClick={handleRefresh} disabled={isLoading} size="sm" variant="secondary">
                 <RefreshCw aria-hidden className={isLoading ? "animate-spin" : ""} />
-                Refresh All
+                Refresh
               </Button>
             </div>
           </Card>
@@ -245,10 +235,8 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
             <div className="grid grid-cols-2 gap-4">
               {stats.map((stat, index) => (
                 <div key={index} className="text-center">
-                  <div
-                    className={`rounded-control mb-2 inline-flex h-8 w-8 items-center justify-center ${stat.bgColor}`}
-                  >
-                    <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                  <div className="rounded-control bg-fill-3 mb-2 inline-flex h-8 w-8 items-center justify-center">
+                    <stat.icon aria-hidden className="text-label-secondary h-4 w-4" />
                   </div>
                   <div className="text-headline">{stat.value}</div>
                   <div className="text-caption text-label-secondary">{stat.label}</div>
@@ -259,26 +247,25 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
           </div>
         )}
 
-        {/* Left Side Additional Metrics Row - Desktop */}
+        {/* Metrics row, desktop */}
         {globalStats && (
           <div className="border-separator mt-4 hidden border-t pt-4 lg:block">
             <div className="flex items-center justify-between">
-              {/* Left side - Icons with stats */}
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-control bg-blue/20 inline-flex h-8 w-8 items-center justify-center">
-                    <Users className="text-blue h-4 w-4" />
+                  <div className="rounded-control bg-fill-3 inline-flex h-8 w-8 items-center justify-center">
+                    <Users className="text-label-secondary h-4 w-4" />
                   </div>
                   <div>
-                    <div className="text-body font-medium">Global Population</div>
+                    <div className="text-body font-medium">Global population</div>
                     <div className="text-footnote text-label-secondary">
                       {formatPopulation(globalStats.totalPopulation)}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="rounded-control bg-green/20 inline-flex h-8 w-8 items-center justify-center">
-                    <DollarSign className="text-green h-4 w-4" />
+                  <div className="rounded-control bg-fill-3 inline-flex h-8 w-8 items-center justify-center">
+                    <DollarSign className="text-label-secondary h-4 w-4" />
                   </div>
                   <div>
                     <div className="text-body font-medium">Global GDP</div>
@@ -288,8 +275,8 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="rounded-control bg-purple/20 inline-flex h-8 w-8 items-center justify-center">
-                    <TrendingUp className="text-purple h-4 w-4" />
+                  <div className="rounded-control bg-fill-3 inline-flex h-8 w-8 items-center justify-center">
+                    <TrendingUp className="text-label-secondary h-4 w-4" />
                   </div>
                   <div>
                     <div className="text-body font-medium">Global Growth</div>
@@ -299,11 +286,11 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="rounded-control bg-orange/20 inline-flex h-8 w-8 items-center justify-center">
-                    <Building2 className="text-orange h-4 w-4" />
+                  <div className="rounded-control bg-fill-3 inline-flex h-8 w-8 items-center justify-center">
+                    <Building2 className="text-label-secondary h-4 w-4" />
                   </div>
                   <div>
-                    <div className="text-body font-medium">Active Economies</div>
+                    <div className="text-body font-medium">Active economies</div>
                     <div className="text-footnote text-label-secondary">
                       {globalStats.countryCount} countries
                     </div>
@@ -330,14 +317,13 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
           </div>
         )}
 
-        {/* Additional Metrics Row - Mobile */}
+        {/* Metrics row, mobile */}
         {globalStats && (
           <div className="border-separator mt-3 border-t pt-3 lg:hidden">
             <div className="grid grid-cols-2 gap-3">
-              {/* Icons with stats */}
               <div className="flex items-center gap-3">
-                <div className="rounded-control bg-blue/20 inline-flex h-8 w-8 items-center justify-center">
-                  <Users className="text-blue h-4 w-4" />
+                <div className="rounded-control bg-fill-3 inline-flex h-8 w-8 items-center justify-center">
+                  <Users className="text-label-secondary h-4 w-4" />
                 </div>
                 <div>
                   <div className="text-body font-medium">Population</div>
@@ -347,8 +333,8 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="rounded-control bg-green/20 inline-flex h-8 w-8 items-center justify-center">
-                  <DollarSign className="text-green h-4 w-4" />
+                <div className="rounded-control bg-fill-3 inline-flex h-8 w-8 items-center justify-center">
+                  <DollarSign className="text-label-secondary h-4 w-4" />
                 </div>
                 <div>
                   <div className="text-body font-medium">GDP</div>
@@ -358,8 +344,8 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="rounded-control bg-purple/20 inline-flex h-8 w-8 items-center justify-center">
-                  <TrendingUp className="text-purple h-4 w-4" />
+                <div className="rounded-control bg-fill-3 inline-flex h-8 w-8 items-center justify-center">
+                  <TrendingUp className="text-label-secondary h-4 w-4" />
                 </div>
                 <div>
                   <div className="text-body font-medium">Growth</div>
@@ -369,8 +355,8 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="rounded-control bg-orange/20 inline-flex h-8 w-8 items-center justify-center">
-                  <Building2 className="text-orange h-4 w-4" />
+                <div className="rounded-control bg-fill-3 inline-flex h-8 w-8 items-center justify-center">
+                  <Building2 className="text-label-secondary h-4 w-4" />
                 </div>
                 <div>
                   <div className="text-body font-medium">Activity</div>
@@ -382,7 +368,7 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
               <div className="flex items-center gap-3">
                 <MapPin className="text-label-secondary h-4 w-4" />
                 <div>
-                  <div className="text-body font-medium">Avg Population Density</div>
+                  <div className="text-body font-medium">Average population density</div>
                   <div className="text-footnote text-label-secondary">
                     {globalStats.averagePopulationDensity.toLocaleString()}/km²
                   </div>
@@ -391,7 +377,7 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
               <div className="flex items-center gap-3">
                 <Activity className="text-label-secondary h-4 w-4" />
                 <div>
-                  <div className="text-body font-medium">Avg GDP Density</div>
+                  <div className="text-body font-medium">Average GDP density</div>
                   <div className="text-footnote text-label-secondary">
                     {formatCurrency(globalStats.averageGdpDensity)}/km²
                   </div>
@@ -400,7 +386,7 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
               <div className="flex items-center gap-3">
                 <Target className="text-label-secondary h-4 w-4" />
                 <div>
-                  <div className="text-body font-medium">Last Updated</div>
+                  <div className="text-body font-medium">Last updated</div>
                   <div className="text-footnote text-label-secondary">
                     {new Date(globalStats.timestamp).toLocaleTimeString()}
                   </div>
