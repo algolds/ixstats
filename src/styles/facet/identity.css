@@ -5,8 +5,8 @@
    Utilities are `@utility`, classes live in `@layer components`, nothing is unlayered and nothing
    uses `!important`, so a Tailwind utility on the same element always wins. Everything here paints
    only: no position, z-index, radius, margin or letter-spacing. Anything that mixes `--tint` is
-   composed here, at the element, and reads `--facet-accent` first so the `accent` prop recolours a
-   single card.
+   composed here, at the element, and reads `--facet-accent` first so a scoped accent recolours a
+   single element.
    ========================================================================== */
 
 /* The standard control transition. Do not add another `transition-*` utility next to these. They
@@ -120,7 +120,7 @@
 }
 
 @layer components {
-  /* Flag watermark. The hover host is the nearest `.group`, FacetCard or CutoutCard. */
+  /* Flag watermark. The hover host is the nearest `.group` or CutoutCard. */
   .facet-flag-watermark {
     --watermark-opacity: 0.14;
     pointer-events: none;

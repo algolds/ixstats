@@ -1,5 +1,5 @@
 /* ==========================================================================
-   FACET — PRODUCTION MATERIALS, REFRACTION & TEXTURES
+   FACET — PRODUCTION MATERIALS & TEXTURES
 
    Layered in `@layer components`; no `!important` (utilities on an element win). Lab-only
    materials, textures and the magnetic/glow interaction profiles live in `facet/lab.css`,
@@ -33,7 +33,7 @@
   }
 
   /* ──────────────────────────────────────────────────────────────────────────
-     1. SATIN: Frosted glass backing, dynamic white sheen, refraction highlights
+     1. SATIN: Frosted glass backing, dynamic white sheen
      ────────────────────────────────────────────────────────────────────────── */
   .facet-material-satin {
     background: linear-gradient(
@@ -114,111 +114,6 @@
     box-shadow: 
       0 2px 4px rgba(0, 0, 0, 0.2),
       var(--pointer-offset-x, 0px) var(--pointer-offset-y, 0px) 24px rgba(0, 0, 0, 0.4);
-  }
-
-  /* ─── 2. Refraction sheen ────────────────────────────────────────────── */
-
-  /* The hairline is an absolutely positioned ::after, so the host needs a
-     containing block; zero specificity keeps positioning utilities in charge. */
-  :where(.facet-refraction) {
-    position: relative;
-  }
-
-  /* 1px gradient sheen highlighting light refraction at edges */
-  .facet-refraction {
-    transition:
-      transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
-      box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1),
-      border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
-    backdrop-filter: blur(var(--blur-moderate, 16px)) saturate(150%);
-    -webkit-backdrop-filter: blur(var(--blur-moderate, 16px)) saturate(150%);
-    box-shadow:
-      inset 0 1px 0 var(--facet-refraction-shadow-inset, rgba(255, 255, 255, 0.08)),
-      0 8px 32px var(--facet-refraction-shadow-ambient-1, rgba(0, 0, 0, 0.08));
-
-    --refraction-opacity: var(--refraction-opacity-base, 0.06);
-  }
-
-  .facet-refraction:hover {
-    --refraction-opacity: var(--refraction-opacity-hover, 0.1);
-  }
-
-  /* No mask-composite ::before (GPU clipping / hover jitter) */
-  .facet-refraction::before {
-    display: none;
-  }
-
-  .facet-refraction::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.2) 20%,
-      rgba(255, 255, 255, 0.35) 50%,
-      rgba(255, 255, 255, 0.2) 80%,
-      transparent 100%
-    );
-    border-radius: inherit;
-    pointer-events: none;
-    opacity: var(--refraction-opacity);
-    transition: opacity 160ms cubic-bezier(0.23, 1, 0.32, 1);
-  }
-
-  .dark .facet-refraction::after,
-  [data-theme="dark"] .facet-refraction::after {
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.04) 20%,
-      rgba(255, 255, 255, 0.08) 50%,
-      rgba(255, 255, 255, 0.04) 80%,
-      transparent 100%
-    );
-  }
-
-  /* Refraction-free variant: inputs and dense containers keep a flat, legible
-     surface (no sheen pseudo-elements). */
-  .facet-refraction-none {
-    backdrop-filter: blur(var(--blur-moderate, 16px)) saturate(180%);
-    -webkit-backdrop-filter: blur(var(--blur-moderate, 16px)) saturate(180%);
-  }
-
-  .dark .facet-refraction-none,
-  [data-theme="dark"] .facet-refraction-none {
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.08),
-      0 8px 32px rgba(0, 0, 0, 0.3),
-      0 4px 16px rgba(0, 0, 0, 0.2);
-    border-color: rgba(255, 255, 255, 0.08);
-  }
-
-  .light .facet-refraction-none,
-  [data-theme="light"] .facet-refraction-none {
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.5),
-      0 8px 32px rgba(0, 0, 0, 0.04),
-      0 4px 16px rgba(0, 0, 0, 0.02);
-    border-color: rgba(0, 0, 0, 0.08);
-  }
-
-  /* Text fields stay flat to avoid typing latency */
-  input.facet-refraction-none,
-  textarea.facet-refraction-none,
-  select.facet-refraction-none,
-  [contenteditable].facet-refraction-none {
-    backdrop-filter: blur(var(--blur-subtle, 8px)) saturate(100%);
-    -webkit-backdrop-filter: blur(var(--blur-subtle, 8px)) saturate(100%);
-  }
-
-  .facet-refraction-none::before,
-  .facet-refraction-none::after {
-    display: none;
-    content: none;
   }
 
   /* ─── 3. Tactile interaction ─────────────────────────────────────────── */
@@ -493,7 +388,6 @@
     .facet-interactive,
     .facet-cutout-card,
     .facet-hierarchy-interactive,
-    .facet-refraction,
     .facet-material,
     .facet-material-satin::before,
     .facet-depth-1,

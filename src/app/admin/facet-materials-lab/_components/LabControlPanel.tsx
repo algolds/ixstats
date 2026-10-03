@@ -285,11 +285,11 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
           )}
         </div>
 
-        {/* ── Glass & Refraction ── */}
+        {/* ── Glass ── */}
         <div className="border-separator space-y-3 border-t pt-4">
           <div className="flex items-center gap-2">
             <GlassWater className="h-3 w-3" style={{ color: config.customAccent }} />
-            <h4 className="text-label-secondary text-subhead">Glass & refraction</h4>
+            <h4 className="text-label-secondary text-subhead">Glass</h4>
           </div>
 
           <div className="space-y-2">
@@ -319,19 +319,6 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
               value={[config.saturationBoost]}
               onValueChange={(val) => onChange({ saturationBoost: val[0] ?? 180 })}
               className="py-2"
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-label text-caption">Edge refraction</span>
-              <span className="text-label-secondary text-footnote">
-                Gradient sheen at material borders
-              </span>
-            </div>
-            <Switch
-              checked={config.refractionEnabled}
-              onCheckedChange={(val) => onChange({ refractionEnabled: val })}
             />
           </div>
         </div>

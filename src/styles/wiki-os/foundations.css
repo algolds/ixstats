@@ -1,11 +1,10 @@
 /* ===========================================================================
-   WIKIOS FOUNDATIONS — MEDIA THEME, RAIL MICRO-INTERACTIONS & CELEBRATIONS
+   WIKIOS FOUNDATIONS — MEDIA THEME, RAIL ICON LIFT & CELEBRATIONS
 
    Token definitions moved to wiki-os/tokens.css (always loaded from
    globals.css) because navigation, stashes and blurbs read them outside /wiki.
 
-   Layering: rules are in `@layer components`, except the rail icon-box and
-   rail-glow modifiers, which are explicit opt-in state classes applied next
+   Layering: rules are in `@layer components`, except the rail icon-box rules, which sit next
    to base utilities (`border-*`, `bg-*`, `text-*`, `transition-*`) they are
    meant to override on hover. They live in `@layer utilities` and win by
    specificity/order there, with no `!important`.
@@ -173,7 +172,7 @@
 
 @layer utilities {
   /* ===========================================================================
-     WikiOS Left Rail Custom Animations & Hover Glows
+     WikiOS left rail icon lift
      =========================================================================== */
 
   /* Centralized spring transition for rail icons */
@@ -203,155 +202,6 @@
     transform: translateX(3px);
   }
 
-  .group:hover .rail-animate-bounce svg,
-  .rail-animate-bounce:hover svg {
-    animation: rail-bounce 0.4s ease-in-out;
-  }
-
-  .group:hover .rail-animate-wiggle svg,
-  .rail-animate-wiggle:hover svg {
-    animation: rail-wiggle 0.3s ease-in-out;
-  }
-
-  .group:hover .rail-animate-spin svg,
-  .rail-animate-spin:hover svg {
-    animation: rail-spin 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .group:hover .rail-animate-pulse svg,
-  .rail-animate-pulse:hover svg {
-    animation: rail-pulse 0.6s ease-in-out;
-  }
-
-  /* Custom glows */
-
-  .rail-glow-blue:hover,
-  .group:hover .rail-glow-blue {
-    border-color: color-mix(in srgb, var(--tint) 45%, transparent);
-    box-shadow: var(--shadow-card);
-    background-color: color-mix(in srgb, var(--tint) 8%, transparent);
-    color: var(--tint);
-  }
-
-  .rail-glow-amber:hover,
-  .group:hover .rail-glow-amber {
-    border-color: color-mix(in srgb, var(--color-yellow) 45%, transparent);
-    box-shadow: var(--shadow-card);
-    background-color: color-mix(in srgb, var(--color-yellow) 8%, transparent);
-    color: var(--color-yellow);
-  }
-
-  .rail-glow-highlighter:hover,
-  .group:hover .rail-glow-highlighter {
-    border-color: color-mix(in srgb, var(--color-yellow) 70%, transparent);
-    box-shadow: var(--shadow-card);
-    background-color: var(--margin-accent);
-    color: var(--margin-badge-text);
-  }
-
-  .rail-glow-green:hover,
-  .group:hover .rail-glow-green {
-    border-color: color-mix(in srgb, var(--color-green) 45%, transparent);
-    box-shadow: var(--shadow-card);
-    background-color: color-mix(in srgb, var(--color-green) 8%, transparent);
-    color: var(--color-green);
-  }
-
-  .rail-glow-gray:hover,
-  .group:hover .rail-glow-gray {
-    border-color: var(--color-separator);
-    box-shadow: var(--shadow-card);
-    background-color: var(--color-fill-4);
-    color: var(--wikios-text);
-  }
-
-  [data-theme="light"] .rail-glow-gray:hover,
-  .light .rail-glow-gray:hover,
-  [data-theme="light"] .group:hover .rail-glow-gray,
-  .light .group:hover .rail-glow-gray {
-    border-color: var(--color-separator);
-    box-shadow: var(--shadow-card);
-    background-color: var(--color-fill-4);
-    color: var(--wikios-text);
-  }
-
-  .rail-glow-di:hover,
-  .group:hover .rail-glow-di {
-    border-color: color-mix(in srgb, var(--color-purple) 40%, transparent);
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--tint) 10%, transparent),
-      color-mix(in srgb, var(--color-purple) 10%, transparent),
-      color-mix(in srgb, var(--color-teal) 5%, transparent)
-    );
-    box-shadow: var(--shadow-card);
-    color: var(--color-purple);
-  }
-
-  [data-theme="light"] .rail-glow-di:hover,
-  .light .rail-glow-di:hover,
-  [data-theme="light"] .group:hover .rail-glow-di,
-  .light .group:hover .rail-glow-di {
-    border-color: color-mix(in srgb, var(--color-purple) 30%, transparent);
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--tint) 8%, transparent),
-      color-mix(in srgb, var(--color-purple) 8%, transparent)
-    );
-    box-shadow: var(--shadow-card);
-    color: var(--color-purple);
-  }
-
-  .rail-glow-rose:hover,
-  .group:hover .rail-glow-rose {
-    border-color: color-mix(in srgb, var(--color-red) 45%, transparent);
-    box-shadow: var(--shadow-card);
-    background-color: color-mix(in srgb, var(--color-red) 8%, transparent);
-    color: var(--color-red);
-  }
-
-  [data-theme="light"] .rail-glow-rose:hover,
-  .light .rail-glow-rose:hover,
-  [data-theme="light"] .group:hover .rail-glow-rose,
-  .light .group:hover .rail-glow-rose {
-    border-color: color-mix(in srgb, var(--color-red) 30%, transparent);
-    box-shadow: var(--shadow-card);
-    background-color: color-mix(in srgb, var(--color-red) 5%, transparent);
-    color: var(--color-red);
-  }
-
-  /* Light mode overrides for existing rail glows */
-
-  [data-theme="light"] .rail-glow-blue:hover,
-  .light .rail-glow-blue:hover,
-  [data-theme="light"] .group:hover .rail-glow-blue,
-  .light .group:hover .rail-glow-blue {
-    border-color: color-mix(in srgb, var(--tint) 30%, transparent);
-    box-shadow: var(--shadow-card);
-    background-color: color-mix(in srgb, var(--tint) 5%, transparent);
-    color: var(--tint);
-  }
-
-  [data-theme="light"] .rail-glow-amber:hover,
-  .light .rail-glow-amber:hover,
-  [data-theme="light"] .group:hover .rail-glow-amber,
-  .light .group:hover .rail-glow-amber {
-    border-color: color-mix(in srgb, var(--color-orange) 30%, transparent);
-    box-shadow: var(--shadow-card);
-    background-color: color-mix(in srgb, var(--color-orange) 5%, transparent);
-    color: var(--color-orange);
-  }
-
-  [data-theme="light"] .rail-glow-green:hover,
-  .light .rail-glow-green:hover,
-  [data-theme="light"] .group:hover .rail-glow-green,
-  .light .group:hover .rail-glow-green {
-    border-color: color-mix(in srgb, var(--color-green) 30%, transparent);
-    box-shadow: var(--shadow-card);
-    background-color: color-mix(in srgb, var(--color-green) 5%, transparent);
-    color: var(--color-green);
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .wikios-sidebar-icon-box,
     .wikios-sidebar span {
@@ -362,56 +212,6 @@
     .group:hover .wikios-sidebar span {
       transform: none;
     }
-
-    .group:hover
-      :is(.rail-animate-bounce, .rail-animate-wiggle, .rail-animate-spin, .rail-animate-pulse)
-      svg,
-    :is(.rail-animate-bounce, .rail-animate-wiggle, .rail-animate-spin, .rail-animate-pulse):hover
-      svg {
-      animation: none;
-    }
-  }
-}
-
-@keyframes rail-bounce {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-3px);
-  }
-}
-
-@keyframes rail-wiggle {
-  0%,
-  100% {
-    transform: rotate(0deg) translateX(0);
-  }
-  25% {
-    transform: rotate(-8deg) translateX(-1px);
-  }
-  75% {
-    transform: rotate(8deg) translateX(1px);
-  }
-}
-
-@keyframes rail-spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes rail-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.12);
   }
 }
 

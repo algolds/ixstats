@@ -6,7 +6,7 @@
 /* ===================================
    FORUM
    `--forum-*` are aliases of the Facet roles plus the Forum tint (orange, from
-   `data-app="forum"`). Surfaces are opaque (FacetCard / FacetList in the
+   `data-app="forum"`). Surfaces are opaque (Card / FacetList in the
    components); only the mobile pill bar and the reply composer are chrome
    (material-thin, set in the components). These classes style layout and the
    BBCode/XenForo post HTML the forum renders.
@@ -122,7 +122,7 @@
   }
 
   /* ---------------------------------------------------------------------------
-     Forum rows (inside FacetCard lists)
+     Forum rows (inside Card lists)
      --------------------------------------------------------------------------- */
 
   .forum-category-card {
@@ -175,7 +175,7 @@
   }
 
   /* ---------------------------------------------------------------------------
-     Post cards (FacetCard surface set in PostCard)
+     Post cards (Card surface set in PostCard)
      --------------------------------------------------------------------------- */
 
   .forum-post-card {

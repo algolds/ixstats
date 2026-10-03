@@ -133,7 +133,7 @@ export function FacetShowcase() {
       <section>
         <SectionTitle
           title="Surfaces and materials"
-          description="Dense content is opaque (FacetCard on the grouped background); glass is for floating chrome and, since 3.1, hero/feature cards. "
+          description="Dense content is opaque (Card on the grouped background); glass is for floating chrome and, since 3.1, hero/feature cards. "
         />
         <div className="grid gap-4 lg:grid-cols-2">
           <Card padding="md" className="space-y-3">

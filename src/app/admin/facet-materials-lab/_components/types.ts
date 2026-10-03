@@ -49,7 +49,6 @@ export interface LabConfig {
   blurStrength: number;
   saturationBoost: number;
   glowIntensity: number;
-  refractionEnabled: boolean;
   bgStyle: BgStyleType;
   bgCustomColor: string;
   patternScale: number;

@@ -71,7 +71,7 @@ export function HelpExplorer({ sections = helpSections }: { sections?: HelpSecti
             placeholder="Search the help center (e.g. taxes, embassy, daily reward)"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="facet-refraction-none h-12 rounded-xl pr-12 pl-12 text-base"
+            className="h-12 rounded-xl pr-12 pl-12 text-base"
           />
           {searchQuery && (
             <Button

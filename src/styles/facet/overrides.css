@@ -52,7 +52,6 @@
       .facet-hierarchy-child,
       .facet-hierarchy-interactive,
       .facet-material,
-      .facet-refraction,
       .facet-modal
     ) {
     @variant transparency-reduced {

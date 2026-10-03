@@ -31,7 +31,6 @@ const DEFAULT_CONFIG: LabConfig = {
   blurStrength: 16,
   saturationBoost: 180,
   glowIntensity: 50,
-  refractionEnabled: true,
   bgStyle: "refraction",
   bgCustomColor: "#000000",
   patternScale: 100,
@@ -87,17 +86,12 @@ export default function FacetMaterialsLabPage() {
       classes.push("facet-glow-accent");
     }
 
-    if (config.refractionEnabled) {
-      classes.push("facet-refraction");
-    }
-
     return classes.join(" ");
   }, [
     config.material,
     config.depth,
     config.variant,
     config.interactivity,
-    config.refractionEnabled,
   ]);
 
   // Custom CSS variables for material effects

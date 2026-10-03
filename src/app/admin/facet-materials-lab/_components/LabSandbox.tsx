@@ -130,7 +130,6 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
     blurStrength,
     saturationBoost,
     glowIntensity,
-    refractionEnabled,
     dofStrength,
   } = config;
 
@@ -250,7 +249,6 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
     blurStrength,
     saturationBoost,
     glowIntensity,
-    refractionEnabled,
   ]);
 
   const dynamicStyles: React.CSSProperties = {
