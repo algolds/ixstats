@@ -15,7 +15,7 @@ import { Input } from "~/components/ui/input";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
-import React, { useState } from "react";
+import { useState } from "react";
 import { api } from "~/trpc/react";
 import { CHARGE_CATEGORIES } from "~/lib/heraldry";
 
@@ -25,15 +25,42 @@ interface CommonsBrowserPanelProps {
 }
 
 const COMMONS_SUGGESTED_CATEGORIES = [
-  { label: "Lions in heraldry", value: "Lions in heraldry" },
-  { label: "Eagles in heraldry", value: "Eagles in heraldry" },
-  { label: "Fleur-de-lis in heraldry", value: "Fleur-de-lis in heraldry" },
-  { label: "Crosses in heraldry", value: "Crosses in heraldry" },
-  { label: "Crowns in heraldry", value: "Crowns in heraldry" },
-  { label: "Stars in heraldry", value: "Stars in heraldry" },
-  { label: "Castles in heraldry", value: "Castles in heraldry" },
-  { label: "Swords in heraldry", value: "Swords in heraldry" },
+  "Lions",
+  "Eagles",
+  "Fleur-de-lis",
+  "Crosses",
+  "Crowns",
+  "Stars",
+  "Castles",
+  "Swords",
+].map((name) => ({ label: `${name} in heraldry`, value: `${name} in heraldry` }));
+
+/** First matching keyword group picks the charge category for a Commons category. */
+const CHARGE_CATEGORY_KEYWORDS: [keywords: string[], category: string][] = [
+  [["lion", "animal"], "ANIMALS"],
+  [["eagle", "bird"], "BIRDS"],
+  [["crown"], "CROWNS"],
+  [["star"], "CELESTIAL"],
+  [["castle", "building"], "BUILDINGS"],
+  [["sword", "weapon"], "WEAPONS"],
+  [["cross"], "RELIGIOUS"],
 ];
+
+const guessChargeCategory = (commonsCategory: string) => {
+  const lower = commonsCategory.toLowerCase();
+  return (
+    CHARGE_CATEGORY_KEYWORDS.find(([words]) => words.some((w) => lower.includes(w)))?.[1] ??
+    "MISCELLANEOUS"
+  );
+};
+
+/** "File:Lion-rampant_gules.svg" → "Lion rampant gules" */
+const getSanitizedTitle = (title: string) =>
+  title
+    .replace(/^File:/i, "")
+    .replace(/\.svg$/i, "")
+    .replace(/[-_]/g, " ")
+    .trim();
 
 export default function CommonsBrowserPanel({
   onClose,
@@ -43,7 +70,6 @@ export default function CommonsBrowserPanel({
   const [selectedCategory, setSelectedCategory] = useState("Lions in heraldry");
   const [activeTab, setActiveTab] = useState<"category" | "search">("category");
 
-  // Form states for importing
   const [importingId, setImportingId] = useState<number | null>(null);
   const [importName, setImportName] = useState("");
   const [importCategory, setImportCategory] = useState("ANIMALS");
@@ -52,20 +78,17 @@ export default function CommonsBrowserPanel({
   const importMutation = api.heraldry.importCommonsCharge.useMutation({
     onSuccess: () => {
       setImportingId(null);
-      // Invalidate charge library queries to refresh list
       utils.heraldry.getChargeLibrary.invalidate();
       onImportSuccess?.();
     },
   });
 
-  // Query Category Files
   const { data: categoryData, isLoading: isCategoryLoading } =
     api.commons.getCategoryFiles.useQuery(
       { category: selectedCategory, limit: 30 },
       { enabled: activeTab === "category" }
     );
 
-  // Query Search Files
   const { data: searchData, isLoading: isSearchLoading } = api.commons.search.useQuery(
     { query: search.toLowerCase().includes(".svg") ? search : `${search} filetype:svg`, limit: 30 },
     { enabled: activeTab === "search" && search.length > 2 }
@@ -79,48 +102,10 @@ export default function CommonsBrowserPanel({
     (img: any) => img.title.toLowerCase().endsWith(".svg") || img.mime === "image/svg+xml"
   );
 
-  const getSanitizedTitle = (title: string) => {
-    // Strip "File:" prefix and ".svg" extension
-    let clean = title.replace(/^File:/i, "").replace(/\.svg$/i, "");
-    // Replace hyphens/underscores with spaces
-    clean = clean.replace(/[-_]/g, " ");
-    return clean.trim();
-  };
-
   const handleStartImport = (img: any) => {
     setImportingId(img.pageid);
     setImportName(getSanitizedTitle(img.title));
-
-    // Auto-map category based on selected Commons category if possible
-    if (
-      selectedCategory.toLowerCase().includes("lion") ||
-      selectedCategory.toLowerCase().includes("animal")
-    ) {
-      setImportCategory("ANIMALS");
-    } else if (
-      selectedCategory.toLowerCase().includes("eagle") ||
-      selectedCategory.toLowerCase().includes("bird")
-    ) {
-      setImportCategory("BIRDS");
-    } else if (selectedCategory.toLowerCase().includes("crown")) {
-      setImportCategory("CROWNS");
-    } else if (selectedCategory.toLowerCase().includes("star")) {
-      setImportCategory("CELESTIAL");
-    } else if (
-      selectedCategory.toLowerCase().includes("castle") ||
-      selectedCategory.toLowerCase().includes("building")
-    ) {
-      setImportCategory("BUILDINGS");
-    } else if (
-      selectedCategory.toLowerCase().includes("sword") ||
-      selectedCategory.toLowerCase().includes("weapon")
-    ) {
-      setImportCategory("WEAPONS");
-    } else if (selectedCategory.toLowerCase().includes("cross")) {
-      setImportCategory("RELIGIOUS");
-    } else {
-      setImportCategory("MISCELLANEOUS");
-    }
+    setImportCategory(guessChargeCategory(selectedCategory));
   };
 
   const handleConfirmImport = (img: any) => {
@@ -140,7 +125,6 @@ export default function CommonsBrowserPanel({
         side="right"
         className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-[450px]"
       >
-        {/* Panel Header */}
         <SheetHeader className="border-separator border-b px-6 py-3 pr-12 text-left">
           <SheetTitle className="text-body">Wikimedia Commons</SheetTitle>
           <SheetDescription className="text-footnote">
@@ -148,7 +132,6 @@ export default function CommonsBrowserPanel({
           </SheetDescription>
         </SheetHeader>
 
-        {/* Tabs */}
         <div className="border-separator border-b px-4 py-2">
           <SegmentedControl
             aria-label="Browse Commons by"
@@ -164,7 +147,6 @@ export default function CommonsBrowserPanel({
           />
         </div>
 
-        {/* Controls Area */}
         <div className="border-separator bg-surface border-b p-4">
           {activeTab === "category" ? (
             <div className="space-y-1">
@@ -192,7 +174,6 @@ export default function CommonsBrowserPanel({
           )}
         </div>
 
-        {/* Results View */}
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
           {isLoading ? (
             <div className="text-label-secondary text-footnote flex flex-col items-center justify-center gap-3 py-20">
@@ -215,7 +196,6 @@ export default function CommonsBrowserPanel({
                     key={img.pageid}
                     className="group border-separator bg-fill-3 rounded-control relative flex flex-col gap-2 overflow-hidden border p-2"
                   >
-                    {/* Thumbnail Image Box */}
                     <div className="bg-surface rounded-control-sm relative flex h-28 items-center justify-center overflow-hidden p-2">
                       <img
                         src={img.thumbUrl}
@@ -228,7 +208,6 @@ export default function CommonsBrowserPanel({
                       </Badge>
                     </div>
 
-                    {/* Title / Info */}
                     <div className="text-footnote space-y-0.5">
                       <p className="text-label-secondary truncate font-medium" title={img.title}>
                         {getSanitizedTitle(img.title)}
@@ -238,7 +217,6 @@ export default function CommonsBrowserPanel({
                       </p>
                     </div>
 
-                    {/* Action buttons or Inline import form */}
                     {isImportingThis ? (
                       <div className="border-separator text-footnote space-y-2 border-t p-1">
                         <div>
