@@ -1,86 +1,14 @@
 /**
- * Global Formatting Utilities for IxStats
- *
- * Provides consistent number, currency, and data formatting across the entire application.
- * All formatting functions automatically scale to K/M/B/T for better readability.
- * Supports both ISO 4217 currency codes and custom currencies.
+ * Global formatting utilities: numbers, currencies (ISO 4217 and custom) and populations, scaled
+ * to K/M/B/T for readability.
  */
 
-// ISO 4217 currency codes for validation
-const ISO_CURRENCY_CODES = new Set([
-  "USD",
-  "EUR",
-  "GBP",
-  "JPY",
-  "AUD",
-  "CAD",
-  "CHF",
-  "CNY",
-  "SEK",
-  "NZD",
-  "MXN",
-  "SGD",
-  "HKD",
-  "NOK",
-  "TRY",
-  "RUB",
-  "INR",
-  "BRL",
-  "ZAR",
-  "KRW",
-  "PLN",
-  "TWD",
-  "THB",
-  "DKK",
-  "CZK",
-  "HUF",
-  "ILS",
-  "CLP",
-  "PHP",
-  "AED",
-  "COP",
-  "SAR",
-  "MYR",
-  "RON",
-  "BGN",
-  "HRK",
-  "ISK",
-  "UAH",
-  "QAR",
-  "KWD",
-  "BHD",
-  "OMR",
-  "JOD",
-  "LBP",
-  "EGP",
-  "MAD",
-  "TND",
-  "DZD",
-  "LYD",
-  "SDG",
-  "ETB",
-  "KES",
-  "UGX",
-  "TZS",
-  "ZMW",
-  "BWP",
-  "SZL",
-  "LSL",
-  "NAD",
-  "MUR",
-  "SCR",
-  "KMF",
-  "DJF",
-  "RWF",
-  "BIF",
-  "CDF",
-  "AOA",
-  "XAF",
-  "XOF",
-  "XPF",
-]);
+const ISO_CURRENCY_CODES = new Set(
+  "USD EUR GBP JPY AUD CAD CHF CNY SEK NZD MXN SGD HKD NOK TRY RUB INR BRL ZAR KRW PLN TWD THB DKK CZK HUF ILS CLP PHP AED COP SAR MYR RON BGN HRK ISK UAH QAR KWD BHD OMR JOD LBP EGP MAD TND DZD LYD SDG ETB KES UGX TZS ZMW BWP SZL LSL NAD MUR SCR KMF DJF RWF BIF CDF AOA XAF XOF XPF".split(
+    " "
+  )
+);
 
-// Custom currency configurations
 interface CustomCurrency {
   code: string;
   symbol: string;
@@ -114,155 +42,78 @@ export function registerCustomCurrency(
   DYNAMIC_CUSTOM_CURRENCIES[code] = { code, symbol, name, decimalPlaces };
 }
 
-/**
- * Check if a currency code is a valid ISO 4217 code
- */
-function isISOCurrency(currency: string): boolean {
-  return ISO_CURRENCY_CODES.has(currency.toUpperCase());
-}
+const SCALES = [
+  [1e12, "T"],
+  [1e9, "B"],
+  [1e6, "M"],
+  [1e3, "K"],
+] as const;
 
-/**
- * Get custom currency configuration
- */
+const isMissing = (value: number | null | undefined): value is null | undefined =>
+  value === null || value === undefined || Number.isNaN(value);
+
+const localeNumber = (value: number, minDigits: number, maxDigits = minDigits) =>
+  value.toLocaleString("en-US", {
+    minimumFractionDigits: minDigits,
+    maximumFractionDigits: maxDigits,
+  });
+
+const currencyFormat = (currency: string, minDigits: number, maxDigits = minDigits) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: minDigits,
+    maximumFractionDigits: maxDigits,
+  });
+
+const isISOCurrency = (currency: string) => ISO_CURRENCY_CODES.has(currency.toUpperCase());
+
+/** A built-in or registered custom currency, matched case-insensitively. */
 function getCustomCurrency(currency: string): CustomCurrency | null {
   if (!currency) return null;
   const upper = currency.toUpperCase();
-  const customKey = Object.keys(CUSTOM_CURRENCIES).find((k) => k.toUpperCase() === upper);
-  if (customKey) return CUSTOM_CURRENCIES[customKey] || null;
-
-  const dynamicKey = Object.keys(DYNAMIC_CUSTOM_CURRENCIES).find((k) => k.toUpperCase() === upper);
-  if (dynamicKey) return DYNAMIC_CUSTOM_CURRENCIES[dynamicKey] || null;
-
+  for (const table of [CUSTOM_CURRENCIES, DYNAMIC_CUSTOM_CURRENCIES]) {
+    const key = Object.keys(table).find((k) => k.toUpperCase() === upper);
+    if (key) return table[key] || null;
+  }
   return null;
 }
 
-/**
- * Format currency with custom currency support
- */
-function formatCustomCurrency(
-  amount: number,
-  currency: string,
-  forceDecimals: boolean = false
-): string {
-  if (amount === null || amount === undefined || Number.isNaN(amount)) {
-    return "N/A";
-  }
-  const customCurrency = getCustomCurrency(currency);
-  let symbol = customCurrency?.symbol;
-
-  if (!symbol) {
-    // If format is like "Perlasian Stollar (P$)", extract the symbol "P$"
-    const match = currency.match(/\(([^)]+)\)/);
-    if (match && match[1]) {
-      symbol = match[1].trim();
-    } else {
-      symbol = currency.trim();
-    }
-  }
-
-  const absAmount = Math.abs(amount);
+/** Scaled custom-currency format, e.g. "₮1.2K". Unknown codes use the code (or its "(P$)" symbol) as the prefix. */
+function formatCustomCurrency(amount: number, currency: string, forceDecimals = false): string {
+  if (isMissing(amount)) return "N/A";
+  const symbol =
+    getCustomCurrency(currency)?.symbol ||
+    currency.match(/\(([^)]+)\)/)?.[1]?.trim() ||
+    currency.trim();
   const prefix = symbol ? (symbol.length <= 3 ? symbol : `${symbol} `) : "";
 
-  if (absAmount >= 1e12) {
-    const scaled = amount / 1e12;
-    return `${prefix}${scaled.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}T`;
-  } else if (absAmount >= 1e9) {
-    const scaled = amount / 1e9;
-    return `${prefix}${scaled.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}B`;
-  } else if (absAmount >= 1e6) {
-    const scaled = amount / 1e6;
-    return `${prefix}${scaled.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}M`;
-  } else if (absAmount >= 1e3) {
-    const scaled = amount / 1e3;
-    return `${prefix}${scaled.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}K`;
-  } else {
-    return `${prefix}${amount.toLocaleString("en-US", {
-      minimumFractionDigits: forceDecimals ? 2 : 0,
-      maximumFractionDigits: forceDecimals ? 2 : 0,
-    })}`;
-  }
+  const scale = SCALES.find(([limit]) => Math.abs(amount) >= limit);
+  if (!scale) return `${prefix}${localeNumber(amount, forceDecimals ? 2 : 0)}`;
+  const [limit, suffix] = scale;
+  return `${prefix}${localeNumber(amount / limit, 1, suffix === "K" ? 1 : 2)}${suffix}`;
 }
 
 /**
  * Format currency with automatic scaling (K/M/B/T)
  *
- * @param amount - The currency amount to format
- * @param currency - ISO 4217 currency code (default: 'USD')
- * @param forceDecimals - Force showing decimals even for small amounts
- * @returns Formatted currency string with K/M/B/T suffix
- *
  * @example
  * formatCurrency(1234) → "$1.2K"
- * formatCurrency(5678900000) → "$5.7B"
  * formatCurrency(1200000000000) → "$1.2T"
  */
 export function formatCurrency(
   amount: number,
   currency: string = "USD",
-  forceDecimals: boolean = false
+  forceDecimals = false
 ): string {
-  if (amount === null || amount === undefined || Number.isNaN(amount)) {
-    return "N/A";
-  }
-  // Handle custom currencies
-  if (!isISOCurrency(currency)) {
-    return formatCustomCurrency(amount, currency, forceDecimals);
-  }
-
-  const absAmount = Math.abs(amount);
+  if (isMissing(amount)) return "N/A";
+  if (!isISOCurrency(currency)) return formatCustomCurrency(amount, currency, forceDecimals);
 
   try {
-    if (absAmount >= 1e12) {
-      // Trillions
-      return (
-        new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency,
-          minimumFractionDigits: 1,
-          maximumFractionDigits: 1,
-        }).format(amount / 1e12) + "T"
-      );
-    } else if (absAmount >= 1e9) {
-      // Billions
-      return (
-        new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency,
-          minimumFractionDigits: 1,
-          maximumFractionDigits: 1,
-        }).format(amount / 1e9) + "B"
-      );
-    } else if (absAmount >= 1e6) {
-      // Millions
-      return (
-        new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency,
-          minimumFractionDigits: 1,
-          maximumFractionDigits: 1,
-        }).format(amount / 1e6) + "M"
-      );
-    } else if (absAmount >= 1e3) {
-      // Thousands
-      return (
-        new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency,
-          minimumFractionDigits: 1,
-          maximumFractionDigits: 1,
-        }).format(amount / 1e3) + "K"
-      );
-    } else {
-      // Less than 1000
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency,
-        minimumFractionDigits: forceDecimals ? 2 : 0,
-        maximumFractionDigits: forceDecimals ? 2 : 0,
-      }).format(amount);
-    }
+    const scale = SCALES.find(([limit]) => Math.abs(amount) >= limit);
+    if (!scale) return currencyFormat(currency, forceDecimals ? 2 : 0).format(amount);
+    return currencyFormat(currency, 1).format(amount / scale[0]) + scale[1];
   } catch (error) {
-    // Fallback to custom currency formatting if Intl.NumberFormat fails
     console.warn(
       `Failed to format currency ${currency}, falling back to custom formatting:`,
       error
@@ -274,132 +125,63 @@ export function formatCurrency(
 /**
  * Format plain numbers with automatic scaling (K/M/B/T)
  *
- * @param num - The number to format
- * @param decimals - Number of decimal places (default: 1)
- * @returns Formatted number string with K/M/B/T suffix
- *
  * @example
  * formatNumber(1234) → "1.2K"
- * formatNumber(5678900) → "5.7M"
  * formatNumber(125000) → "125.0K"
  */
 export function formatNumber(num: number, decimals: number = 1): string {
-  const absNum = Math.abs(num);
-
-  if (absNum >= 1e12) {
-    return (num / 1e12).toFixed(decimals) + "T";
-  } else if (absNum >= 1e9) {
-    return (num / 1e9).toFixed(decimals) + "B";
-  } else if (absNum >= 1e6) {
-    return (num / 1e6).toFixed(decimals) + "M";
-  } else if (absNum >= 1e3) {
-    return (num / 1e3).toFixed(decimals) + "K";
-  } else {
-    return num.toLocaleString("en-US", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: decimals,
-    });
-  }
+  const scale = SCALES.find(([limit]) => Math.abs(num) >= limit);
+  return scale ? (num / scale[0]).toFixed(decimals) + scale[1] : localeNumber(num, 0, decimals);
 }
 
 /**
- * Format percentage from raw percentage value (already multiplied by 100)
- *
- * @param value - The percentage value (e.g., 15 for 15%)
- * @param decimals - Number of decimal places (default: 1)
- * @returns Formatted percentage string
+ * Format a raw percentage value (already multiplied by 100)
  *
  * @example
  * formatPercent(15.5) → "15.5%"
- * formatPercent(80, 0) → "80%"
  */
 export function formatPercent(value: number, decimals: number = 1): string {
   return value.toFixed(decimals) + "%";
 }
 
+/** Whole-unit amount in a custom currency: its symbol, or the raw code as a prefix when unknown. */
+function formatExactCustom(amount: number, currency: string): string {
+  const custom = getCustomCurrency(currency);
+  return `${custom ? custom.symbol : `${currency} `}${localeNumber(amount, 0)}`;
+}
+
 /**
  * Format currency with full precision (no scaling)
- * Useful for exact financial displays
- *
- * @param amount - The currency amount to format
- * @param currency - ISO 4217 currency code (default: 'USD')
- * @returns Formatted currency string without scaling
  *
  * @example
  * formatExactCurrency(1234567890) → "$1,234,567,890"
  */
 export function formatExactCurrency(amount: number, currency: string = "USD"): string {
-  if (amount === null || amount === undefined || Number.isNaN(amount)) {
-    return "N/A";
-  }
-  // Handle custom currencies
-  if (!isISOCurrency(currency)) {
-    const customCurrency = getCustomCurrency(currency);
-    if (customCurrency) {
-      return `${customCurrency.symbol}${amount.toLocaleString("en-US", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      })}`;
-    } else {
-      return `${currency} ${amount.toLocaleString("en-US", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      })}`;
-    }
-  }
-
+  if (isMissing(amount)) return "N/A";
+  if (!isISOCurrency(currency)) return formatExactCustom(amount, currency);
   try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+    return currencyFormat(currency, 0).format(amount);
   } catch (error) {
-    // Fallback to custom currency formatting if Intl.NumberFormat fails
     console.warn(
       `Failed to format exact currency ${currency}, falling back to custom formatting:`,
       error
     );
-    const customCurrency = getCustomCurrency(currency);
-    if (customCurrency) {
-      return `${customCurrency.symbol}${amount.toLocaleString("en-US", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      })}`;
-    } else {
-      return `${currency} ${amount.toLocaleString("en-US", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      })}`;
-    }
+    return formatExactCustom(amount, currency);
   }
 }
 
 /**
- * Get the scaled value without formatting
- *
- * @param num - The number to scale
- * @returns Object with scaled value and suffix
+ * The scaled value without formatting
  *
  * @example
  * getScaledValue(1234567) → { value: 1.2, suffix: 'M' }
  */
 export function getScaledValue(num: number): { value: number; suffix: string } {
-  const absNum = Math.abs(num);
-  // oxlint-disable-next-line typescript/no-unused-vars
-  const sign = num < 0 ? -1 : 1;
-
-  if (absNum >= 1e12) return { value: num / 1e12, suffix: "T" };
-  if (absNum >= 1e9) return { value: num / 1e9, suffix: "B" };
-  if (absNum >= 1e6) return { value: num / 1e6, suffix: "M" };
-  if (absNum >= 1e3) return { value: num / 1e3, suffix: "K" };
-  return { value: num, suffix: "" };
+  const scale = SCALES.find(([limit]) => Math.abs(num) >= limit);
+  return scale ? { value: num / scale[0], suffix: scale[1] } : { value: num, suffix: "" };
 }
 
-/**
- * Get all available currency codes (ISO + custom)
- */
+/** All available currency codes (ISO + custom) */
 export function getAvailableCurrencies(): string[] {
   return [
     ...ISO_CURRENCY_CODES,
@@ -449,41 +231,26 @@ const ISO_CURRENCY_SYMBOLS: Record<string, string> = {
   UAH: "₴",
 };
 
-/**
- * Get currency information
- */
+/** Currency information (symbol and, for custom currencies, name) */
 export function getCurrencyInfo(currency: string): {
   isISO: boolean;
   symbol?: string;
   name?: string;
 } {
-  const upper = currency.toUpperCase();
   if (isISOCurrency(currency)) {
-    return { isISO: true, symbol: ISO_CURRENCY_SYMBOLS[upper] };
+    return { isISO: true, symbol: ISO_CURRENCY_SYMBOLS[currency.toUpperCase()] };
   }
-
   const customCurrency = getCustomCurrency(currency);
-  if (customCurrency) {
-    return {
-      isISO: false,
-      symbol: customCurrency.symbol,
-      name: customCurrency.name,
-    };
-  }
-
-  return { isISO: false };
+  return customCurrency
+    ? { isISO: false, symbol: customCurrency.symbol, name: customCurrency.name }
+    : { isISO: false };
 }
 
-/**
- * Validate currency code
- */
 export function isValidCurrency(currency: string): boolean {
   return isISOCurrency(currency) || getCustomCurrency(currency) !== null;
 }
 
-/**
- * Safe currency formatting with fallback
- */
+/** Currency formatting that falls back to another currency (then plain digits) instead of failing */
 export function safeFormatCurrency(
   amount: number,
   currency: string = "USD",
@@ -491,9 +258,7 @@ export function safeFormatCurrency(
   fallbackCurrency: string = "USD"
 ): string {
   try {
-    if (!isValidCurrency(currency)) {
-      throw new Error(`Invalid currency code: ${currency}`);
-    }
+    if (!isValidCurrency(currency)) throw new Error(`Invalid currency code: ${currency}`);
     return formatCurrency(amount, currency, forceDecimals);
   } catch (error) {
     console.warn(
@@ -503,100 +268,49 @@ export function safeFormatCurrency(
     try {
       return formatCurrency(amount, fallbackCurrency, forceDecimals);
     } catch {
-      return `${currency} ${amount.toLocaleString("en-US", {
-        minimumFractionDigits: forceDecimals ? 2 : 0,
-        maximumFractionDigits: forceDecimals ? 2 : 0,
-      })}`;
+      return `${currency} ${localeNumber(amount, forceDecimals ? 2 : 0)}`;
     }
   }
 }
 
+const SUFFIX_MULTIPLIERS: Record<string, number> = { K: 1e3, M: 1e6, B: 1e9, T: 1e12 };
+
 /**
  * Parse user input into a number, handling various formats
- * Supports: "1.5M", "50k", "1,000,000", "1500", "$50k", etc.
- *
- * @param input - The string input to parse
- * @returns Parsed number or NaN if invalid
- *
- * @example
- * parseNumberInput("1.5M") → 1500000
- * parseNumberInput("50k") → 50000
- * parseNumberInput("1,000,000") → 1000000
- * parseNumberInput("$25.5k") → 25500
+ * ("1.5M", "50k", "1,000,000", "$25.5k"); NaN when invalid.
  */
 export function parseNumberInput(input: string | number): number {
-  // If already a number, return it
-  if (typeof input === "number") {
-    return input;
-  }
+  if (typeof input === "number") return input;
 
-  // Remove currency symbols (including custom ones), spaces, and convert to uppercase
+  // Strip currency symbols (including custom ones) and spaces
   const cleaned = input.replace(/[^-\d.KMBTkmbt]/g, "").toUpperCase();
-
-  // Check for suffix multipliers
-  const suffixMultipliers: Record<string, number> = {
-    K: 1e3,
-    M: 1e6,
-    B: 1e9,
-    T: 1e12,
-  };
-
-  // Extract number and suffix
   const match = cleaned.match(/^(-?[\d.]+)([KMBT])?$/);
-
-  if (!match) {
-    // Try parsing as plain number
-    const parsed = parseFloat(cleaned);
-    return isNaN(parsed) ? NaN : parsed;
-  }
+  if (!match) return parseFloat(cleaned);
 
   const [, numStr, suffix] = match;
   const baseNum = parseFloat(numStr!);
-
-  if (isNaN(baseNum)) {
-    return NaN;
-  }
-
-  // Apply multiplier if suffix exists
-  const multiplier = suffix ? suffixMultipliers[suffix] || 1 : 1;
-  return baseNum * multiplier;
+  return suffix ? baseNum * (SUFFIX_MULTIPLIERS[suffix] || 1) : baseNum;
 }
 
 /**
- * Format number with compact notation (K/M/B/T) using Intl.NumberFormat
- * Provides null/undefined safety with configurable fallback
- *
- * @param value - The number to format
- * @param fallback - Fallback string for null/undefined/NaN values (default: "N/A")
- * @returns Formatted compact number string
+ * Compact notation (K/M/B/T) via Intl.NumberFormat, with a fallback for null/undefined/NaN
  *
  * @example
  * formatCompactNumber(1234567) → "1.2M"
  * formatCompactNumber(null) → "N/A"
- * formatCompactNumber(5000, "Unknown") → "5K"
  */
 export function formatCompactNumber(value: number | null | undefined, fallback = "N/A"): string {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return fallback;
-  }
-  return new Intl.NumberFormat("en-US", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(value);
+  if (isMissing(value)) return fallback;
+  return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(
+    value
+  );
 }
 
 /**
- * Format currency with compact notation (K/M/B/T) using Intl.NumberFormat
- * Provides null/undefined safety with configurable fallback
- *
- * @param value - The currency amount to format
- * @param fallback - Fallback string for null/undefined/NaN values (default: "N/A")
- * @param currency - ISO 4217 currency code (default: "USD")
- * @returns Formatted compact currency string
+ * Currency in compact notation via Intl.NumberFormat, with a fallback for null/undefined/NaN
  *
  * @example
  * formatCompactCurrency(1234567) → "$1.2M"
- * formatCompactCurrency(null) → "N/A"
  * formatCompactCurrency(5000, "Unknown", "EUR") → "€5K"
  */
 export function formatCompactCurrency(
@@ -604,30 +318,16 @@ export function formatCompactCurrency(
   fallback = "N/A",
   currency = "USD"
 ): string {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return fallback;
-  }
+  if (isMissing(value)) return fallback;
 
-  // Handle custom currencies
   if (!isISOCurrency(currency)) {
-    const customCurrency = getCustomCurrency(currency);
-    if (customCurrency) {
-      const absValue = Math.abs(value);
-      if (absValue >= 1e12) {
-        return `${customCurrency.symbol}${(value / 1e12).toFixed(1)}T`;
-      } else if (absValue >= 1e9) {
-        return `${customCurrency.symbol}${(value / 1e9).toFixed(1)}B`;
-      } else if (absValue >= 1e6) {
-        return `${customCurrency.symbol}${(value / 1e6).toFixed(1)}M`;
-      } else if (absValue >= 1e3) {
-        return `${customCurrency.symbol}${(value / 1e3).toFixed(1)}K`;
-      } else {
-        return `${customCurrency.symbol}${value.toFixed(0)}`;
-      }
-    } else {
-      // Fallback for unregistered custom currencies to avoid RangeError from Intl.NumberFormat
-      return `${currency} ${formatCompactNumber(value, fallback)}`;
-    }
+    const custom = getCustomCurrency(currency);
+    // Unregistered custom currencies avoid the RangeError Intl.NumberFormat would throw
+    if (!custom) return `${currency} ${formatCompactNumber(value, fallback)}`;
+    const scale = SCALES.find(([limit]) => Math.abs(value) >= limit);
+    return scale
+      ? `${custom.symbol}${(value / scale[0]).toFixed(1)}${scale[1]}`
+      : `${custom.symbol}${value.toFixed(0)}`;
   }
 
   try {
@@ -644,51 +344,26 @@ export function formatCompactCurrency(
 }
 
 /**
- * Format time duration in years
- * Provides null/undefined safety with configurable fallback
- *
- * @param value - The number of years
- * @param fallback - Fallback string for null/undefined/NaN values (default: "N/A")
- * @returns Formatted years string
+ * Time duration in years
  *
  * @example
  * formatYears(5.5) → "5.5 yrs"
- * formatYears(null) → "N/A"
- * formatYears(10.2, "Unknown") → "10.2 yrs"
  */
 export function formatYears(value: number | null | undefined, fallback = "N/A"): string {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return fallback;
-  }
-  return `${value.toFixed(1)} yrs`;
+  return isMissing(value) ? fallback : `${value.toFixed(1)} yrs`;
 }
 
 /**
- * Format population numbers with appropriate scaling
- * Optimized for demographic data visualization
- *
- * @param population - The population number to format
- * @param fallback - Fallback string for null/undefined/NaN values (default: "N/A")
- * @returns Formatted population string
+ * Population with whole-number scaling (B/M/K)
  *
  * @example
- * formatPopulation(1234567) → "1.2M"
- * formatPopulation(5678) → "5.7K"
- * formatPopulation(null) → "N/A"
+ * formatPopulation(1234567) → "1M"
+ * formatPopulation(5678) → "6K"
  */
 export function formatPopulation(population: number | null | undefined, fallback = "N/A"): string {
-  if (population === null || population === undefined || Number.isNaN(population)) {
-    return fallback;
-  }
-  const absPopulation = Math.abs(population);
-  if (absPopulation >= 1e9) {
-    return `${Math.round(population / 1e9)}B`;
-  }
-  if (absPopulation >= 1e6) {
-    return `${Math.round(population / 1e6)}M`;
-  }
-  if (absPopulation >= 1e3) {
-    return `${Math.round(population / 1e3)}K`;
-  }
-  return Math.round(population).toString();
+  if (isMissing(population)) return fallback;
+  const scale = SCALES.slice(1).find(([limit]) => Math.abs(population) >= limit);
+  return scale
+    ? `${Math.round(population / scale[0])}${scale[1]}`
+    : Math.round(population).toString();
 }
