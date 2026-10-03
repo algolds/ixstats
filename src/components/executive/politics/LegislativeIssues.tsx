@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { WarningTriangle as AlertTriangle, CheckCircle as CheckCircle2 } from "iconoir-react";
+import { CheckCircle as CheckCircle2 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { IssueCard } from "~/components/executive/issues";
 import {
@@ -58,10 +58,9 @@ export function LegislativeIssues({ countryId, onSelectIssue }: LegislativeIssue
   return (
     <div className="border-separator rounded-row space-y-3 border p-4">
       <div className="flex items-center gap-2">
-        <AlertTriangle className="text-yellow h-4 w-4" />
-        <span className="text-headline">Governance Issues</span>
+        <span className="text-headline">Governance issues</span>
         {governanceIssues.length > 0 && (
-          <span className="text-caption text-yellow ml-auto">
+          <span className="text-caption text-label-secondary ml-auto">
             {governanceIssues.length} pending
           </span>
         )}
@@ -80,18 +79,16 @@ export function LegislativeIssues({ countryId, onSelectIssue }: LegislativeIssue
         </div>
       ) : (
         <div className="text-label-secondary flex flex-col items-center justify-center gap-2 py-6 text-center">
-          <CheckCircle2 className="text-green h-8 w-8 opacity-50" />
+          <CheckCircle2 aria-hidden className="h-8 w-8 opacity-50" />
           <p className="text-body">No active governance issues</p>
-          <p className="text-footnote">Your legislative agenda is clear.</p>
         </div>
       )}
 
-      {/* Slide-over sheet for issue resolution */}
       <Sheet open={!!selectedIssueId} onOpenChange={(open) => !open && setSelectedIssueId(null)}>
         <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
           <SheetHeader className="sr-only">
-            <SheetTitle>Governance Issue Resolution</SheetTitle>
-            <SheetDescription>Deliberate and resolve national legislative issue</SheetDescription>
+            <SheetTitle>Resolve governance issue</SheetTitle>
+            <SheetDescription>Review and resolve this governance issue</SheetDescription>
           </SheetHeader>
           {selectedIssueId && (
             <IssueDetailBrief issueId={selectedIssueId} onClose={() => setSelectedIssueId(null)} />

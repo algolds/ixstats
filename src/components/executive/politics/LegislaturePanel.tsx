@@ -162,12 +162,9 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
     // oxlint-disable-next-line
   }, [parliament, activeChamberSeats, chambers]);
 
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const hasParliamentData = parliament && parliament.seats.length > 0;
-
   return (
     <div className="space-y-4">
-      {/* ─── Legislature Setup (default: expanded) ─── */}
+      {/* ─── Legislature setup (default: expanded) ─── */}
       <section className="space-y-3">
         <div className="rounded-control-sm flex w-full items-center justify-between px-1 py-0.5">
           <button
@@ -176,13 +173,13 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
             className="hover:bg-fill-3 rounded-control-sm flex flex-1 items-center gap-2 py-0.5 transition-colors"
             onClick={() => setSetupExpanded(!setupExpanded)}
           >
-            <Landmark className="text-indigo h-4 w-4" />
-            <h3 className="text-headline">Legislature Setup</h3>
+            <Landmark aria-hidden className="text-label-secondary h-4 w-4" />
+            <h3 className="text-headline">Legislature setup</h3>
           </button>
           <div className="flex items-center gap-1">
             <SectionHelpIcon
-              title="Legislature Setup"
-              content="Configure your parliament's name, chamber structure, seat count, electoral system, term length, and election cycle type."
+              title="Legislature setup"
+              content="Set the legislature's name, chambers, seat count, electoral system, term length and election cycle."
             />
             <Button
               type="button"
@@ -207,7 +204,7 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
 
       <Separator />
 
-      {/* ─── Political Metrics (default: collapsed) ─── */}
+      {/* ─── Political metrics (default: collapsed) ─── */}
       <section className="space-y-3">
         <div className="rounded-control-sm flex w-full items-center justify-between px-1 py-0.5">
           <button
@@ -216,13 +213,13 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
             className="hover:bg-fill-3 rounded-control-sm flex flex-1 items-center gap-2 py-0.5 transition-colors"
             onClick={() => setMetricsExpanded(!metricsExpanded)}
           >
-            <BarChart2 className="text-indigo h-4 w-4" />
-            <h3 className="text-headline">Political Metrics</h3>
+            <BarChart2 aria-hidden className="text-label-secondary h-4 w-4" />
+            <h3 className="text-headline">Political metrics</h3>
           </button>
           <div className="flex items-center gap-1">
             <SectionHelpIcon
-              title="Political Metrics"
-              content="Baseline political indices drawn from your government structure — stability, democracy score, polarization, effectiveness, rule of law, and corruption. These are modified by in-game events."
+              title="Political metrics"
+              content="Baseline indices from your government structure: stability, democracy, polarization, effectiveness, rule of law and corruption. Events change them over time."
             />
             <Button
               type="button"
@@ -249,11 +246,7 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
 
       <Separator />
 
-      <Separator />
-
-      {/* ─── Governance Issues (default: collapsed) ─── */}
-
-      {/* ─── Governance Issues (default: collapsed) ─── */}
+      {/* ─── Governance issues (default: collapsed) ─── */}
       <section className="space-y-3">
         <div className="rounded-control-sm flex w-full items-center justify-between px-1 py-0.5">
           <button
@@ -262,13 +255,13 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
             className="hover:bg-fill-3 rounded-control-sm flex flex-1 items-center gap-2 py-0.5 transition-colors"
             onClick={() => setIssuesExpanded(!issuesExpanded)}
           >
-            <AlertTriangle className="text-yellow h-4 w-4" />
-            <h3 className="text-headline">Governance Issues</h3>
+            <AlertTriangle aria-hidden className="text-label-secondary h-4 w-4" />
+            <h3 className="text-headline">Governance issues</h3>
           </button>
           <div className="flex items-center gap-1">
             <SectionHelpIcon
-              title="Governance Issues"
-              content="Pending political and governance decisions requiring legislative attention. Filtered from your national issues inbox."
+              title="Governance issues"
+              content="Pending political decisions that need the legislature, taken from your national issues."
             />
             <Button
               type="button"

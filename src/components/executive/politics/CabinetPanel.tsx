@@ -1,13 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  Suitcase as Briefcase,
-  SystemRestart as Loader2,
-  Plus,
-  Group as Users,
-  Xmark as X,
-} from "iconoir-react";
+import { SystemRestart as Loader2, Plus, Group as Users, Xmark as X } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -133,19 +127,14 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
 
   return (
     <>
-      <Card className="border-indigo/60 flex flex-col gap-6 py-6">
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader className="pb-4">
           <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="rounded-control bg-indigo/10 flex h-9 w-9 items-center justify-center">
-                <Briefcase className="text-indigo h-5 w-5" />
-              </div>
-              <div>
-                <CardTitle className="text-body">Cabinet</CardTitle>
-                <CardDescription className="text-body">
-                  Appoint officials to lead government departments
-                </CardDescription>
-              </div>
+            <div>
+              <CardTitle className="text-body">Cabinet</CardTitle>
+              <CardDescription className="text-body">
+                Appoint officials to lead each department.
+              </CardDescription>
             </div>
             {departments.length > 0 && (
               <Badge variant="default" className="shrink-0">
@@ -163,9 +152,9 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
           ) : departments.length === 0 ? (
             <div className="text-label-secondary text-body flex flex-col items-center justify-center py-8 text-center">
               <Users className="mb-2 h-8 w-8 opacity-40" />
-              <p>No government departments configured yet.</p>
+              <p>No government departments yet.</p>
               <p className="text-footnote mt-1">
-                Create a government structure to start staffing your cabinet.
+                Create a government structure, then appoint officials here.
               </p>
             </div>
           ) : (
@@ -182,7 +171,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
                         "group rounded-control border p-3 transition-colors",
                         isVacant
                           ? "border-separator bg-fill-2 border-dashed"
-                          : "border-indigo/20 bg-indigo/30"
+                          : "border-separator bg-surface-secondary"
                       )}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -211,7 +200,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-indigo/20 text-footnote text-indigo hover:bg-indigo/10 hover:text-indigo h-7 gap-1"
+                            className="text-footnote h-7 gap-1"
                             onClick={() => openAppointDialog(dept.id)}
                           >
                             <Plus className="h-3.5 w-3.5" />
@@ -273,7 +262,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
             <DialogDescription>
               {selectedDepartment
                 ? `Appoint a ${selectedDepartment.ministerTitle || "Minister"} to ${selectedDepartment.name}`
-                : "Appoint a new cabinet official"}
+                : "Appoint a cabinet official"}
             </DialogDescription>
           </DialogHeader>
 
@@ -306,7 +295,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
                 id="official-role"
                 value={form.role}
                 onChange={(e) => setForm((prev) => ({ ...prev, role: e.target.value }))}
-                placeholder="e.g. Cabinet Member"
+                placeholder="e.g. Cabinet member"
                 required
               />
             </div>
@@ -347,7 +336,6 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
               type="submit"
               form="appoint-official-form"
               disabled={!canSubmit || appoint.isPending}
-              className="bg-indigo text-on-indigo hover:bg-indigo"
             >
               {appoint.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

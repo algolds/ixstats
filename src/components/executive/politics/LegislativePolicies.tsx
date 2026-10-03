@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Page as ScrollText, Plus, Page as FileText } from "iconoir-react";
+import { Plus, Page as FileText } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
@@ -65,8 +65,7 @@ export function LegislativePolicies({ countryId }: LegislativePoliciesProps) {
     <div className="border-separator rounded-row space-y-3 border p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ScrollText className="text-green h-4 w-4" />
-          <span className="text-headline">Laws & Active Policies</span>
+          <span className="text-headline">Laws and active policies</span>
           {policies && policies.length > 0 && (
             <Badge variant="outline" className="text-footnote">
               {policies.length} total
@@ -80,7 +79,7 @@ export function LegislativePolicies({ countryId }: LegislativePoliciesProps) {
           onClick={() => setCreatorOpen(true)}
         >
           <Plus className="h-3 w-3" />
-          New Policy
+          New policy
         </Button>
       </div>
 
@@ -123,9 +122,8 @@ export function LegislativePolicies({ countryId }: LegislativePoliciesProps) {
         </div>
       ) : (
         <div className="text-label-secondary flex flex-col items-center justify-center gap-2 py-6 text-center">
-          <ScrollText className="h-8 w-8 opacity-30" />
           <p className="text-body">No policies enacted</p>
-          <p className="text-footnote">Create your first bill using the button above.</p>
+          <p className="text-footnote">Use New policy to create the first one.</p>
         </div>
       )}
 

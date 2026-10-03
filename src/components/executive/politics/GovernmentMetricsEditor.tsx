@@ -1,7 +1,6 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
-import { StatsReport as BarChart2 } from "iconoir-react";
 import { api } from "~/trpc/react";
 
 interface GovernmentMetricsEditorProps {
@@ -21,39 +20,39 @@ interface MetricConfig {
 const METRICS: MetricConfig[] = [
   {
     key: "politicalStability",
-    label: "Political Stability",
-    description: "Affects investment confidence, growth, and crisis frequency.",
+    label: "Political stability",
+    description: "Affects investment confidence, growth and crisis frequency.",
   },
   {
     key: "democracyIndex",
-    label: "Democracy Index",
-    description: "Higher values unlock diplomatic bonuses and reduce sanctions risk.",
+    label: "Democracy index",
+    description: "Higher values give diplomatic bonuses and lower sanctions risk.",
   },
   {
     key: "politicalPolarization",
-    label: "Political Polarization",
-    description: "Ideological divide in the legislature — high values increase gridlock.",
+    label: "Political polarization",
+    description: "Ideological divide in the legislature. High values increase gridlock.",
     invertedScale: true,
   },
   {
     key: "governmentEffectiveness",
-    label: "Govt. Effectiveness",
+    label: "Government effectiveness",
     description: "How well the government converts policy decisions into outcomes.",
   },
   {
     key: "ruleOfLaw",
-    label: "Rule of Law",
+    label: "Rule of law",
     description: "Strength of legal institutions and judicial independence.",
   },
   {
     key: "corruptionIndex",
-    label: "Corruption Index",
+    label: "Corruption index",
     description: "Higher values reduce government effectiveness and foreign investment.",
     invertedScale: true,
   },
   {
     key: "electionCycle",
-    label: "Election Cycle",
+    label: "Election cycle",
     description: "Baseline interval between general elections.",
     isYears: true,
   },
@@ -89,22 +88,17 @@ export function GovernmentMetricsEditor({ countryId }: GovernmentMetricsEditorPr
   return (
     <Card className="flex flex-col gap-6 py-6">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart2 className="text-indigo h-4 w-4" />
-          Political Metrics
-        </CardTitle>
-        <CardDescription>
-          Live government indices — updated automatically by elections, policies, and events.
-        </CardDescription>
+        <CardTitle className="flex items-center gap-2">Political metrics</CardTitle>
+        <CardDescription>Updated by elections, policies and events.</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <div className="text-label-secondary text-body flex items-center justify-center py-6">
-            Loading metrics…
+            Loading metrics
           </div>
         ) : !govStructure ? (
           <p className="text-label-secondary text-body py-4 text-center">
-            No government structure configured yet.
+            No government structure yet.
           </p>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

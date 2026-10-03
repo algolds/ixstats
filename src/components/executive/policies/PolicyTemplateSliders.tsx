@@ -22,7 +22,7 @@ export function PolicyTemplateSliders({
     <div className="rounded-row bg-surface-secondary space-y-4 p-4">
       <h4 className="text-subhead text-label flex items-center gap-2">
         <Sliders className="text-label-secondary h-3.5 w-3.5" aria-hidden />
-        Policy strategy configurations
+        Strategy options
       </h4>
 
       {currentTemplate.sliders.map((slider: any) => (

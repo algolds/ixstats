@@ -22,10 +22,8 @@ export function PolicyReconBanner({
       {targetDepartment && (
         <div className="bg-fill-3 border-separator rounded-control flex items-center justify-between border p-3">
           <div className="flex items-center gap-2">
-            <span className="text-caption">Managing Department:</span>
-            <Badge variant="outline" className="text-eyebrow">
-              {targetDepartment.name || departmentKey}
-            </Badge>
+            <span className="text-caption">Managing department</span>
+            <Badge variant="outline">{targetDepartment.name || departmentKey}</Badge>
           </div>
           <div className="text-label-secondary text-footnote">
             Efficiency:{" "}
@@ -37,8 +35,8 @@ export function PolicyReconBanner({
         <div className="rounded-control border-yellow/20 bg-yellow/5 text-footnote text-yellow-ink flex gap-2 border p-3">
           <AlertTriangle className="text-yellow h-4 w-4 shrink-0" />
           <div>
-            <span className="font-semibold">Capacity Warning:</span> Preview estimates may be
-            inaccurate due to overloaded Civil Service capacity.
+            <span className="font-semibold">Over capacity.</span> The civil service is overloaded,
+            so preview estimates may be off.
           </div>
         </div>
       )}
@@ -46,8 +44,8 @@ export function PolicyReconBanner({
         <div className="rounded-control border-yellow/20 bg-yellow/5 text-footnote text-yellow-ink flex gap-2 border p-3">
           <AlertTriangle className="text-yellow h-4 w-4 shrink-0" />
           <div>
-            <span className="font-semibold">Detail Tracking Obscured:</span> Government efficiency
-            is too low (&lt;45%). Estimates are highly speculative.
+            <span className="font-semibold">Low efficiency.</span> Government efficiency is below
+            45%, so treat estimates as rough guesses.
           </div>
         </div>
       )}

@@ -52,7 +52,7 @@ export function PolicyTargetMetrics({ metrics, onChange }: PolicyTargetMetricsPr
 
   return (
     <div className="border-separator space-y-3 border-t pt-3">
-      <Label className="text-caption font-semibold">Target Simulation Metrics</Label>
+      <Label className="text-caption font-semibold">Target metrics</Label>
 
       {metrics.length > 0 && (
         <div className="space-y-2">
@@ -66,7 +66,7 @@ export function PolicyTargetMetrics({ metrics, onChange }: PolicyTargetMetricsPr
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{opt?.label ?? m.metric}</span>
                   <span className="text-label-secondary">→</span>
-                  <span className="text-indigo font-semibold">
+                  <span className="font-semibold">
                     {m.value}
                     {opt?.unit ?? ""}
                   </span>
@@ -118,10 +118,10 @@ export function PolicyTargetMetrics({ metrics, onChange }: PolicyTargetMetricsPr
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="6months">6 Months</SelectItem>
-              <SelectItem value="1year">1 Year</SelectItem>
-              <SelectItem value="2years">2 Years</SelectItem>
-              <SelectItem value="5years">5 Years</SelectItem>
+              <SelectItem value="6months">6 months</SelectItem>
+              <SelectItem value="1year">1 year</SelectItem>
+              <SelectItem value="2years">2 years</SelectItem>
+              <SelectItem value="5years">5 years</SelectItem>
             </SelectContent>
           </Select>
         </div>

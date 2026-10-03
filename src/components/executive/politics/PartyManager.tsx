@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
@@ -20,20 +20,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { Plus, Group as Users, Trash as Trash2, EditPencil as Pencil } from "iconoir-react";
+import { Plus, Trash as Trash2, EditPencil as Pencil } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useScrollToFocus } from "~/hooks/useScrollToFocus";
 import { ColorPickerInput } from "~/components/ui/color-picker";
 import { Slider } from "~/components/ui/slider";
 
 const IDEOLOGY_OPTIONS = [
-  { value: "far_left", label: "Far Left", color: "#dc2626" },
+  { value: "far_left", label: "Far left", color: "#dc2626" },
   { value: "left", label: "Left", color: "#f97316" },
-  { value: "center_left", label: "Center-Left", color: "#eab308" },
+  { value: "center_left", label: "Center-left", color: "#eab308" },
   { value: "center", label: "Center", color: "#a855f7" },
-  { value: "center_right", label: "Center-Right", color: "#3b82f6" },
+  { value: "center_right", label: "Center-right", color: "#3b82f6" },
   { value: "right", label: "Right", color: "#1d4ed8" },
-  { value: "far_right", label: "Far Right", color: "#1e3a5f" },
+  { value: "far_right", label: "Far right", color: "#1e3a5f" },
 ] as const;
 
 interface PartyManagerProps {
@@ -150,10 +150,7 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
     <Card className="flex flex-col gap-6 py-6">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span className="flex items-center gap-2">
-            <Users className="text-yellow h-4 w-4" />
-            Political Parties
-          </span>
+          <span className="flex items-center gap-2">Political parties</span>
           <Dialog
             open={dialogOpen}
             onOpenChange={(open) => {
@@ -166,17 +163,17 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
           >
             <DialogTrigger asChild>
               <Button size="sm" className="gap-1">
-                <Plus className="h-3 w-3" /> Add Party
+                <Plus className="h-3 w-3" /> Add party
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>{editingParty ? "Edit Party" : "Create Political Party"}</DialogTitle>
+                <DialogTitle>{editingParty ? "Edit party" : "Create political party"}</DialogTitle>
               </DialogHeader>
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label>Party Name</Label>
+                    <Label>Party name</Label>
                     <Input
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -184,7 +181,7 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
                     />
                   </div>
                   <div>
-                    <Label>Short Name</Label>
+                    <Label>Short name</Label>
                     <Input
                       value={formData.shortName}
                       onChange={(e) => setFormData({ ...formData, shortName: e.target.value })}
@@ -223,7 +220,7 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
                     </Select>
                   </div>
                   <div>
-                    <Label>Party Color</Label>
+                    <Label>Party color</Label>
                     <ColorPickerInput
                       value={formData.color}
                       onChange={(val) => setFormData({ ...formData, color: val })}
@@ -232,7 +229,7 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label>Party Leader</Label>
+                    <Label>Party leader</Label>
                     <Input
                       value={formData.leaderName}
                       onChange={(e) => setFormData({ ...formData, leaderName: e.target.value })}
@@ -240,7 +237,7 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
                     />
                   </div>
                   <div>
-                    <Label>Base Support ({formData.baseSupport}%)</Label>
+                    <Label>Base support ({formData.baseSupport}%)</Label>
                     <Slider
                       aria-label="Base support"
                       min={1}
@@ -258,21 +255,17 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
                   disabled={!formData.name || createParty.isPending || updateParty.isPending}
                   className="w-full"
                 >
-                  {editingParty ? "Update Party" : "Create Party"}
+                  {editingParty ? "Update party" : "Create party"}
                 </Button>
               </div>
             </DialogContent>
           </Dialog>
         </CardTitle>
-        <CardDescription>Manage your nation&apos;s political parties</CardDescription>
       </CardHeader>
       <CardContent>
         {parties.length === 0 ? (
           <div className="text-label-secondary py-6 text-center">
-            <Users className="mx-auto mb-3 h-8 w-8 opacity-50" />
-            <p className="text-body">
-              No political parties yet. Create your first party to get started.
-            </p>
+            <p className="text-body">No political parties yet. Use Add party to create one.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -313,6 +306,7 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => startEdit(party)}
+                    aria-label={`Edit ${party.name}`}
                     className="h-7 w-7 p-0"
                   >
                     <Pencil className="h-3 w-3" />
@@ -321,6 +315,7 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => deleteParty.mutate({ id: party.id })}
+                    aria-label={`Delete ${party.name}`}
                     className="text-red hover:text-red h-7 w-7 p-0"
                   >
                     <Trash2 className="h-3 w-3" />

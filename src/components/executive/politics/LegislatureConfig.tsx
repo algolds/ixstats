@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Bank as Landmark, FloppyDisk as Save, CheckCircle } from "iconoir-react";
+import { FloppyDisk as Save, CheckCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
 
 type SelectionMethod =
@@ -282,21 +282,13 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
   return (
     <Card className="flex flex-col gap-6 py-6">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Landmark className="text-yellow h-4 w-4" />
-          Legislature Configuration
-        </CardTitle>
-        <CardDescription>
-          {legislature
-            ? "Modify your parliament structure"
-            : "Set up your nation's legislative body"}
-        </CardDescription>
+        <CardTitle>Legislature configuration</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <Label>Legislature Name</Label>
+              <Label>Legislature name</Label>
               <Input
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -304,16 +296,16 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
               />
             </div>
             <div>
-              <Label>Chamber Type</Label>
+              <Label>Chamber type</Label>
               <Select value={formData.chamberType} onValueChange={handleChamberTypeChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="unicameral">Unicameral (Single chamber)</SelectItem>
-                  <SelectItem value="bicameral">Bicameral (Two chambers)</SelectItem>
-                  <SelectItem value="tricameral">Tricameral (Three chambers)</SelectItem>
-                  <SelectItem value="tetracameral">Tetracameral (Four chambers)</SelectItem>
+                  <SelectItem value="unicameral">Unicameral (one chamber)</SelectItem>
+                  <SelectItem value="bicameral">Bicameral (two chambers)</SelectItem>
+                  <SelectItem value="tricameral">Tricameral (three chambers)</SelectItem>
+                  <SelectItem value="tetracameral">Tetracameral (four chambers)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -321,7 +313,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <Label>Total Seats</Label>
+              <Label>Total seats</Label>
               <Input
                 type="number"
                 min={1}
@@ -340,13 +332,11 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                 }}
               />
               <p className="text-label-secondary text-footnote mt-1">
-                {isMultiChamber
-                  ? "Calculated as sum of all chambers (up to 10,000)"
-                  : "1-5,000 seats"}
+                {isMultiChamber ? "Sum of all chambers, up to 10,000" : "1 to 5,000 seats"}
               </p>
             </div>
             <div>
-              <Label>Electoral System</Label>
+              <Label>Electoral system</Label>
               <Select
                 value={formData.electoralSystem}
                 disabled={isMultiChamber}
@@ -357,18 +347,16 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="proportional">Proportional (D&apos;Hondt)</SelectItem>
-                  <SelectItem value="fptp">First Past the Post</SelectItem>
+                  <SelectItem value="fptp">First past the post</SelectItem>
                   <SelectItem value="mixed">Mixed (50/50)</SelectItem>
                 </SelectContent>
               </Select>
               {isMultiChamber && (
-                <p className="text-label-secondary text-footnote mt-1">
-                  Configured individually per chamber below
-                </p>
+                <p className="text-label-secondary text-footnote mt-1">Set per chamber below</p>
               )}
             </div>
             <div>
-              <Label>Term Length (years)</Label>
+              <Label>Term length (years)</Label>
               <Input
                 type="number"
                 min={1}
@@ -380,7 +368,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
               />
             </div>
             <div>
-              <Label>Election Cycle</Label>
+              <Label>Election cycle</Label>
               <Select
                 value={formData.electionCycle}
                 onValueChange={(v) => setFormData({ ...formData, electionCycle: v as any })}
@@ -389,20 +377,19 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="fixed">Fixed Term</SelectItem>
+                  <SelectItem value="fixed">Fixed term</SelectItem>
                   <SelectItem value="variable">Variable (snap elections)</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-label-secondary text-footnote mt-1">
-                Fixed = strict schedule; Variable = parliament may dissolve early
+                Fixed follows a strict schedule. Variable lets parliament dissolve early.
               </p>
             </div>
           </div>
 
-          {/* Chamber Layout & Customizations */}
           {isMultiChamber && chambers.length > 0 && (
             <div className="rounded-control border-separator bg-fill-2 space-y-3 border p-3">
-              <h4 className="text-eyebrow text-label-tertiary">Chamber Layout & Settings</h4>
+              <h4 className="text-eyebrow text-label-tertiary">Chamber layout and settings</h4>
               <div className="space-y-3">
                 {chambers.map((chamber, index) => (
                   <div
@@ -411,7 +398,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                   >
                     <div className="space-y-1">
                       <Label className="text-footnote text-label-secondary">
-                        Chamber {index + 1} Name
+                        Chamber {index + 1} name
                       </Label>
                       <Input
                         value={chamber.name}
@@ -422,7 +409,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                     </div>
                     <div className="space-y-1">
                       <Label className="text-footnote text-label-secondary">
-                        Seats (10 - 5,000)
+                        Seats (10 to 5,000)
                       </Label>
                       <Input
                         type="number"
@@ -435,7 +422,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                       />
                     </div>
                     <div className="min-w-0 space-y-1">
-                      <Label className="text-footnote text-label-secondary">Electoral System</Label>
+                      <Label className="text-footnote text-label-secondary">Electoral system</Label>
                       <Select
                         value={chamber.electoralSystem}
                         onValueChange={(v) => updateChamber(index, "electoralSystem", v)}
@@ -445,13 +432,13 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="proportional">Proportional (D&apos;Hondt)</SelectItem>
-                          <SelectItem value="fptp">First Past the Post</SelectItem>
+                          <SelectItem value="fptp">First past the post</SelectItem>
                           <SelectItem value="mixed">Mixed (50/50)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="min-w-0 space-y-1">
-                      <Label className="text-footnote text-label-secondary">Selection Method</Label>
+                      <Label className="text-footnote text-label-secondary">Selection method</Label>
                       <Select
                         value={chamber.selectionMethod || "elected"}
                         onValueChange={(v) => updateChamber(index, "selectionMethod", v)}
@@ -489,12 +476,12 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
             {saved ? (
               <>
                 <CheckCircle className="h-4 w-4" />
-                Saved!
+                Saved
               </>
             ) : (
               <>
                 <Save className="h-4 w-4" />
-                {legislature ? "Update Legislature" : "Create Legislature"}
+                {legislature ? "Update legislature" : "Create legislature"}
               </>
             )}
           </Button>

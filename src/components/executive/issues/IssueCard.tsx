@@ -103,7 +103,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
     const remaining = deadlineReal - nowReal;
     const daysRemaining = remaining / (24 * 60 * 60 * 1000);
     if (daysRemaining <= 0) {
-      timeRemainingText = "EXPIRED";
+      timeRemainingText = "Expired";
       isUrgent = true;
     } else if (daysRemaining < 3) {
       timeRemainingText = `${Math.ceil(daysRemaining)}d left`;
@@ -132,7 +132,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
             </h4>
             {isNew && (
               <Badge variant="warning" className="shrink-0">
-                NEW
+                New
               </Badge>
             )}
           </div>
@@ -144,8 +144,8 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
           )}
 
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className={`text-footnote px-2 py-0 ${badgeStyle}`}>
-              {issue.severity.toUpperCase()}
+            <Badge variant="outline" className={`text-footnote px-2 py-0 capitalize ${badgeStyle}`}>
+              {issue.severity.toLowerCase()}
             </Badge>
             <span className={`text-footnote ${domainConfig.color}`}>{domainConfig.label}</span>
 
