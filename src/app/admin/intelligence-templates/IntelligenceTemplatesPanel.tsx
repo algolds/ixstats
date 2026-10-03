@@ -97,7 +97,6 @@ export function IntelligenceTemplatesPanel() {
     confidenceBase: 70,
   });
 
-  // Mutations
   const createMutation = api.intelligence.createTemplate.useMutation({
     onSuccess: () => {
       notify.success("Success", "Intelligence template created successfully");

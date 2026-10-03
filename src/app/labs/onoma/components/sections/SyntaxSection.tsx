@@ -74,7 +74,6 @@ export default function SyntaxSection() {
   // Queries
   const { data: profiles } = api.onoma.listProfiles.useQuery();
 
-  // Mutations
   const saveProfileMutation = api.onoma.saveProfile.useMutation({
     onSuccess: (data) => {
       notify.success(`Profile '${data.name}' saved.`);

@@ -115,7 +115,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
     }
   };
 
-  // Add Epoch
   const handleAddEpoch = () => {
     const newEpoch: SoundShiftEpoch = {
       id: `epoch-${Date.now()}`,
@@ -134,7 +133,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
     setEpochs([...epochs, newEpoch]);
   };
 
-  // Remove Epoch
   const handleRemoveEpoch = (epochIdx: number) => {
     setEpochs(epochs.filter((_, i) => i !== epochIdx));
   };
@@ -171,7 +169,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
     }
   };
 
-  // Move Rule
   const handleMoveRule = (epochIdx: number, ruleIdx: number, direction: "up" | "down") => {
     const updated = [...epochs];
     const rules = updated[epochIdx]?.rules;
@@ -212,7 +209,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
       .filter(Boolean);
   }, [inputWordsText]);
 
-  // Compute Evolution Results
   const evolutionResults: WordEvolutionResult[] = useMemo(() => {
     return applySoundShifts(parsedWords, epochs);
   }, [parsedWords, epochs]);
@@ -241,7 +237,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
     notify.success(`Copied "${word}" to clipboard.`);
   };
 
-  // Save to Stash
   const handleSaveToStash = async (res: WordEvolutionResult) => {
     try {
       await saveEntry({

@@ -88,7 +88,6 @@ export function VaultStoreControl() {
       { enabled: !!selectedItemId }
     );
 
-  // Mutations
   const createMutation = api.vault.adminCreateStoreItem.useMutation({
     onSuccess: () => {
       notify.success("Success", "Store item created successfully");
@@ -120,7 +119,6 @@ export function VaultStoreControl() {
     onError: (err) => notify.error("Toggle Failed", err.message),
   });
 
-  // Resets
   const resetForm = () => {
     setEditingItem(null);
     setFormData({

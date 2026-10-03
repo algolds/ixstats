@@ -109,7 +109,6 @@ export function TemplateEditorSheet({
     { enabled: isOpen && isEdit }
   );
 
-  // Mutations
   const createMutation = api.nationalIssues.createTemplate.useMutation();
   const updateMutation = api.nationalIssues.updateTemplate.useMutation();
 

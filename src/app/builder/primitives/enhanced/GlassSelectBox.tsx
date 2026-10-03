@@ -67,7 +67,6 @@ export function GlassSelectBox({
       )
     : options;
 
-  // Get selected option
   const selectedOption = options.find((option) => option.value === value);
 
   // Handle click outside

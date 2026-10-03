@@ -885,7 +885,6 @@ export default function SportsOversightPanel() {
 
   const { data: featuredId, refetch: refetchFeatured } = api.sports.getFeaturedLeagueId.useQuery();
 
-  // Mutations
   const deleteMutation = api.sports.deleteLeague.useMutation({
     onSuccess: () => {
       notify.success("League Deleted", `${deleteTarget?.name ?? "League"} has been removed.`);

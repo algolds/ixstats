@@ -190,7 +190,6 @@ export function VaultUserDirectory() {
     onError: (err) => notify.error("Failed to revoke", err.message),
   });
 
-  // Resets
   const resetAdjustForm = () => {
     setAdjustAmount("");
     setAdjustType("ADMIN_ADJUSTMENT");

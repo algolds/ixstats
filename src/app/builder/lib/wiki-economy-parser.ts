@@ -116,7 +116,6 @@ export function parseEconomyAttributes(
     result.hasFreeTradeZones = true;
   });
 
-  // Central bank
   const centralBankPattern =
     /central bank (?:of|is|called|named)?\s*(?:the\s+)?([A-Z][a-zA-Z\s]+?)(?:,|\.|is|was)/gi;
   const cbMatch = centralBankPattern.exec(combinedContent);

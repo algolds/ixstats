@@ -65,7 +65,6 @@ export default function EtymologySection() {
     { enabled: !!selectedRootId }
   );
 
-  // Mutations
   const createRootMutation = api.onoma.createRoot.useMutation({
     onSuccess: (data: any) => {
       notify.success(`Root word '${data.root}' created.`);

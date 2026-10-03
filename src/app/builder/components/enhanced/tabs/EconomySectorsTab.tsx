@@ -189,7 +189,6 @@ export function EconomySectorsTab({
     });
   };
 
-  // Remove sector
   const removeSector = (sectorId: string) => {
     const updatedSectors = economyBuilder.sectors.filter((sector) => sector.id !== sectorId);
     if (updatedSectors.length === 0) {

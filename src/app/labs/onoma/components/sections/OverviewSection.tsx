@@ -238,7 +238,6 @@ function OverviewSection() {
     }
   };
 
-  // Save batch as dictionary
   const handleSaveBatchAsDictionary = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!dictionaryTitle.trim() || generatedNames.length === 0) return;

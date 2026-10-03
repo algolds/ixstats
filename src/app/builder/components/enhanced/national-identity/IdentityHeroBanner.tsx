@@ -77,7 +77,6 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
   const displayFlag = getHighResFlagUrl(flagUrl || foundationCountry?.flagUrl || "");
   const displayCoa = coatOfArmsUrl || foundationCountry?.coatOfArmsUrl || "";
 
-  // Handle flag upload
   const handleFlagUpload = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
@@ -128,7 +127,6 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
     [notify, onFlagUrlChange]
   );
 
-  // Handle coat of arms upload
   const handleCoatOfArmsUpload = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];

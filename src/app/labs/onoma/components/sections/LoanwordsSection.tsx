@@ -92,7 +92,6 @@ export default function LoanwordsSection() {
     [packsData, sourcePackId]
   );
 
-  // Mutations
   const saveContactMutation = api.onoma.saveContact.useMutation({
     onSuccess: (data: { id: string }) => {
       notify.success("Language contact registry saved.");

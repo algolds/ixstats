@@ -621,7 +621,6 @@ export async function assembleWikiImport(input: AssembleInput): Promise<WikiImpo
     budgetAllocations: allocations,
   });
 
-  // Calculate completeness
   const sectionCompleteness = calculateCompleteness(infoboxData, matchResult);
   const overallCompleteness = Math.round(
     Object.values(sectionCompleteness).reduce((a, b) => a + b, 0) /

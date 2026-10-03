@@ -70,7 +70,6 @@ export function EconomicArchetypesPanel() {
 
   const archetypes = archetypesData?.archetypes || [];
 
-  // Mutations
   const createMutation = api.economicArchetypes.createArchetype.useMutation({
     onSuccess: () => {
       notify.success("Success", "Archetype created successfully");
@@ -115,7 +114,6 @@ export function EconomicArchetypesPanel() {
     // oxlint-disable-next-line
   }, [archetypes]);
 
-  // Filtered archetypes
   const filteredArchetypes = useMemo(() => {
     return archetypes.filter((archetype: any) => {
       if (selectedEra !== "all" && archetype.era !== selectedEra) return false;

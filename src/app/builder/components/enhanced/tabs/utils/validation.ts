@@ -52,7 +52,6 @@ export function validateEconomy(
     if (tab) byTab[tab].push(msg);
   };
 
-  // Sector checks
   const sectorSum = economyBuilder.sectors.reduce((sum, s) => sum + s.gdpContribution, 0);
   const employmentSum = economyBuilder.sectors.reduce((sum, s) => sum + s.employmentShare, 0);
 

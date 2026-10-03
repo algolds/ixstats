@@ -67,7 +67,6 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
     }
   };
 
-  // Suggest IPA for sandbox
   const handleSuggestSandboxIpa = async () => {
     try {
       const res = await suggestMutation.mutateAsync({ text: sandboxText });

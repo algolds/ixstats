@@ -77,7 +77,6 @@ export function IxTimeVisualizer() {
   const [converterInput, setConverterInput] = useState("");
   const [converterResult, setConverterResult] = useState<string | null>(null);
 
-  // Update time data
   const updateTimeData = useCallback(() => {
     try {
       const currentIxTime = IxTime.getCurrentIxTime();

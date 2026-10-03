@@ -44,7 +44,6 @@ export default function WritingSection({ studioWords = [] }: WritingSectionProps
   // Queries
   const { data: systems, isLoading: listLoading } = api.onoma.listSystems.useQuery();
 
-  // Mutations
   const saveSystemMutation = api.onoma.saveSystem.useMutation({
     onSuccess: (data) => {
       notify.success(`Writing system '${data.name}' saved.`);
@@ -198,7 +197,6 @@ export default function WritingSection({ studioWords = [] }: WritingSectionProps
     setEditingGlyph(null);
   };
 
-  // Remove a glyph
   const handleRemoveGlyph = (id: string) => {
     const updated = glyphs.filter((g) => g.id !== id);
     persistChanges(updated);

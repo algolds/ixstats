@@ -57,7 +57,6 @@ export function CommonsFlagImporterAdmin() {
     { enabled: Boolean(activeCategory), refetchOnWindowFocus: false }
   );
 
-  // Mutation to import
   const importMutation = api.cards.importCommonsFlags.useMutation({
     onSuccess: (data) => {
       notify.success("Flags Imported", data.message || `Imported ${data.imported} flag(s).`);

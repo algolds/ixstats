@@ -34,7 +34,6 @@ export default function SportsSeederPanel() {
   const [seedF1, setSeedF1] = useState(true);
   const [seedBoxing, setSeedBoxing] = useState(true);
 
-  // Mutations
   const reseedMutation = api.sports.reseedSportsData.useMutation({
     onSuccess: (data) => {
       notify.success(

@@ -126,7 +126,6 @@ export function UsersPanel() {
   const { data: countriesWithUsers, refetch: refetchCountries } =
     api.admin.listCountriesWithUsers.useQuery();
 
-  // Mutations
   const linkWikiMutation = api.admin.linkUserWiki.useMutation({
     onSuccess: () => {
       notify.success("Success", "MediaWiki account successfully linked");
@@ -208,7 +207,6 @@ export function UsersPanel() {
     onError: (err) => notify.error("Error", err.message || "Failed to update membership tier"),
   });
 
-  // Filtered identities
   const filteredIdentities = userIdentities?.filter((user) => {
     if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();

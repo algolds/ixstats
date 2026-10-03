@@ -104,7 +104,6 @@ export function DiplomaticOptionsPanel() {
   // Queries
   const { data: options, isLoading, refetch } = api.admin.getDiplomaticOptions.useQuery();
 
-  // Mutations
   const createMutation = api.admin.createDiplomaticOption.useMutation({
     onSuccess: () => {
       notify.success("Success", "Diplomatic option created successfully");

@@ -83,7 +83,6 @@ export function NPCPersonalitiesPanel() {
     orderBy: "usageCount",
   });
 
-  // Mutations
   const createMutation = api.npcPersonalities.createPersonality.useMutation({
     onSuccess: () => {
       notify.success("Success", "Personality created successfully");

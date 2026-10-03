@@ -197,7 +197,6 @@ export function CountryInspector() {
     const cfgDiminishingFactor = globalConfig?.diminishingReturnsFactor || 0.5;
     const cfgMinGrowthFloor = globalConfig?.minGrowthFloor || -0.1;
 
-    // Base rates
     const popBaseRate = countryData.populationGrowthRate || 0.01;
     const gdpBaseRate = countryData.adjustedGdpGrowth || 0.02;
 
@@ -771,7 +770,6 @@ export function CountryInspector() {
     setNewEffectDesc("");
   };
 
-  // Remove mock effect
   const handleRemoveMockEffect = (id: string) => {
     setMockEffects((prev) => prev.filter((eff) => eff.id !== id));
   };

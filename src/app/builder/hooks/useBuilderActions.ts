@@ -264,7 +264,6 @@ export function useBuilderActions({
     [builderState.step, builderState.completedSteps, mode, steps, isScratchOrImport]
   );
 
-  // Calculate progress percentage
   const progressPercentage = useMemo(() => {
     const currentIndex = steps.indexOf(builderState.step);
     if (currentIndex === -1) return 0;

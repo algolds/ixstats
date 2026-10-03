@@ -86,7 +86,6 @@ export function LorewardsBotSection() {
   // Blacklist query
   const { data: blacklist, refetch: refetchBlacklist } = api.lorewards.getBlacklist.useQuery();
 
-  // Blacklist Mutation
   const updateBlacklistMutation = api.lorewards.updateBlacklist.useMutation({
     onSuccess: () => {
       notify.success(
@@ -100,7 +99,6 @@ export function LorewardsBotSection() {
     },
   });
 
-  // Override Winner Mutation
   const overrideWinnerMutation = api.lorewards.overrideWinner.useMutation({
     onSuccess: () => {
       notify.success("Winner Overridden", "The winner override has been successfully synced.");
@@ -123,7 +121,6 @@ export function LorewardsBotSection() {
     },
   });
 
-  // Cross validate mutation
   const crossValidateMutation = api.lorewards.crossValidate.useMutation({
     onSuccess: (data) => {
       setValidationResult(data);

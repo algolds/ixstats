@@ -188,7 +188,6 @@ export function NotificationComposer() {
     realm: ALL_REALMS,
   });
 
-  // Mutations
   const createNotificationMutation = api.notifications.createNotification.useMutation({
     onSuccess: () => {
       notify.success("Platform alert broadcasted successfully");
