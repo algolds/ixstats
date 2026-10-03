@@ -12,6 +12,7 @@ import {
 } from "~/components/ui/select";
 import { TIER_FILTER_OPTIONS, isTierFilter, type TierFilter } from "~/lib/economic-tier-filter";
 import { Card } from "~/components/ui/card";
+import type { PopulationRange } from "./filters";
 
 export default function CountriesFilterSidebar({
   searchTerm,
@@ -36,8 +37,8 @@ export default function CountriesFilterSidebar({
   onContinentFilterChange: (continent: string) => void;
   regionFilter: string;
   onRegionFilterChange: (region: string) => void;
-  populationRange: { min?: number; max?: number };
-  onPopulationRangeChange: (range: { min?: number; max?: number }) => void;
+  populationRange: PopulationRange;
+  onPopulationRangeChange: (range: PopulationRange) => void;
   availableContinents: string[];
   availableRegions: string[];
   onClearAll: () => void;
@@ -171,9 +172,6 @@ export default function CountriesFilterSidebar({
             className="flex-1"
           />
         </div>
-        {/*
-        <Slider ... />
-        */}
       </div>
     </Card>
   );

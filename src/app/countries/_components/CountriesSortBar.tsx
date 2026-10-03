@@ -10,19 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuItem,
 } from "~/components/ui/dropdown-menu";
+import { SORT_OPTIONS, type SortDirection, type SortField } from "./filters";
 import { SortUp as SortAsc, SortDown as SortDesc, CheckCircle, Search } from "iconoir-react";
-
-const sortOptions = [
-  { value: "name", label: "Country name" },
-  { value: "population", label: "Population" },
-  { value: "gdpPerCapita", label: "GDP per capita" },
-  { value: "totalGdp", label: "Total GDP" },
-  { value: "economicTier", label: "Economic tier" },
-  { value: "continent", label: "Continent" },
-  { value: "region", label: "Region" },
-  { value: "landArea", label: "Land area" },
-  { value: "populationDensity", label: "Population density" },
-];
 
 export default function CountriesSortBar({
   sortField,
@@ -32,30 +21,9 @@ export default function CountriesSortBar({
   searchTerm,
   onSearchChange,
 }: {
-  sortField:
-    | "name"
-    | "population"
-    | "gdpPerCapita"
-    | "totalGdp"
-    | "economicTier"
-    | "continent"
-    | "region"
-    | "landArea"
-    | "populationDensity";
-  sortDirection: "asc" | "desc";
-  onSortChange: (
-    field:
-      | "name"
-      | "population"
-      | "gdpPerCapita"
-      | "totalGdp"
-      | "economicTier"
-      | "continent"
-      | "region"
-      | "landArea"
-      | "populationDensity",
-    direction: "asc" | "desc"
-  ) => void;
+  sortField: SortField;
+  sortDirection: SortDirection;
+  onSortChange: (field: SortField, direction: SortDirection) => void;
   onCompare?: () => void;
   searchTerm?: string;
   onSearchChange?: (value: string) => void;
@@ -71,17 +39,17 @@ export default function CountriesSortBar({
               ) : (
                 <SortDesc aria-hidden="true" className="h-4 w-4" />
               )}
-              <span>{sortOptions.find((o) => o.value === sortField)?.label || "Sort"}</span>
+              <span>{SORT_OPTIONS.find((o) => o.value === sortField)?.label || "Sort"}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             <DropdownMenuGroup>
               <DropdownMenuGroupLabel>Sort by</DropdownMenuGroupLabel>
               <DropdownMenuSeparator />
-              {sortOptions.map((opt) => (
+              {SORT_OPTIONS.map((opt) => (
                 <DropdownMenuItem
                   key={opt.value}
-                  onClick={() => onSortChange(opt.value as any, sortDirection)}
+                  onClick={() => onSortChange(opt.value, sortDirection)}
                 >
                   {opt.label}
                   {sortField === opt.value && <CheckCircle className="text-tint ml-auto h-4 w-4" />}

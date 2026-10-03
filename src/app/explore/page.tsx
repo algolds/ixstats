@@ -9,7 +9,7 @@ import type {
   SortDirection,
   TierFilter,
   PopulationRange,
-} from "../countries/_components/CountriesSearch";
+} from "../countries/_components/filters";
 import CountriesFilterSidebar from "../countries/_components/CountriesFilterSidebar";
 import CountriesSortBar from "../countries/_components/CountriesSortBar";
 import { CountryComparisonModal } from "../countries/_components/CountryComparisonModal";
