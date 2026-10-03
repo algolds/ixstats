@@ -64,6 +64,244 @@ const BUSINESS_FIELDS: Record<
   founded: { key: "founded", label: "Year Founded", format: String },
 };
 
+type CountryRecord = RankRow & Record<string, any>;
+type RankLists = { pop: readonly RankRow[]; gdp: readonly RankRow[] };
+
+const pct = (v: unknown) => (v != null ? `${(Number(v) * 100).toFixed(1)}%` : "N/A");
+const str = (v: unknown) => (v != null ? String(v) : "N/A");
+const text = (v: unknown) => (v != null && String(v).trim() ? String(v) : "N/A");
+const optional = (v: unknown) => (v != null ? String(v) : "");
+
+interface CountryFieldSpec {
+  /** Lower-cased field names that resolve to this spec. */
+  aliases: string[];
+  label: string;
+  read: (c: CountryRecord) => unknown;
+  format: (v: unknown) => string;
+  rank?: keyof RankLists;
+}
+
+const COUNTRY_FIELDS: CountryFieldSpec[] = [
+  {
+    aliases: ["currentpopulation", "population"],
+    label: "Population",
+    read: (c) => c.currentPopulation,
+    format: (v) => formatNumber(Number(v ?? 0)),
+    rank: "pop",
+  },
+  {
+    aliases: ["currenttotalgdp", "gdp"],
+    label: "Total GDP",
+    read: (c) => c.currentTotalGdp,
+    format: (v) => formatCurrency(Number(v ?? 0)),
+    rank: "gdp",
+  },
+  {
+    aliases: ["currentgdppercapita", "gdppercapita", "gdp_per_capita"],
+    label: "GDP per Capita",
+    read: (c) =>
+      c.currentGdpPerCapita ??
+      (c.currentTotalGdp && c.currentPopulation ? c.currentTotalGdp / c.currentPopulation : 0),
+    format: (v) => formatCurrency(Number(v ?? 0)),
+  },
+  {
+    aliases: ["adjustedgdpgrowth", "gdpgrowth", "gdp_growth"],
+    label: "GDP Growth",
+    read: (c) => c.adjustedGdpGrowth ?? 0,
+    format: pct,
+  },
+  {
+    aliases: ["unemploymentrate", "unemployment"],
+    label: "Unemployment Rate",
+    read: (c) => c.unemploymentRate,
+    format: pct,
+  },
+  {
+    aliases: ["inflationrate", "inflation"],
+    label: "Inflation Rate",
+    read: (c) => c.inflationRate,
+    format: pct,
+  },
+  {
+    aliases: ["politicalstability", "stability"],
+    label: "Political Stability",
+    read: (c) => c.politicalStability,
+    format: str,
+  },
+  {
+    aliases: ["economictier", "tier"],
+    label: "Economic Tier",
+    read: (c) => c.economicTier,
+    format: str,
+  },
+  {
+    aliases: ["populationtier"],
+    label: "Population Tier",
+    read: (c) => c.populationTier,
+    format: str,
+  },
+  { aliases: ["leader", "leadername"], label: "Leader", read: (c) => c.leader, format: text },
+  {
+    aliases: ["governmenttype", "government"],
+    label: "Government Type",
+    read: (c) => c.governmentType ?? c.nationalIdentity?.governmentType,
+    format: text,
+  },
+  { aliases: ["motto"], label: "Motto", read: (c) => c.nationalIdentity?.motto, format: text },
+  {
+    aliases: ["capitalcity", "capital"],
+    label: "Capital City",
+    read: (c) => c.nationalIdentity?.capitalCity,
+    format: text,
+  },
+  {
+    aliases: ["currency"],
+    label: "Currency",
+    read: (c) => c.nationalIdentity?.currency,
+    format: text,
+  },
+  {
+    aliases: ["currencysymbol"],
+    label: "Currency Symbol",
+    read: (c) => c.nationalIdentity?.currencySymbol,
+    format: optional,
+  },
+  {
+    aliases: ["land_area", "landarea"],
+    label: "Land Area",
+    read: (c) => c.landArea,
+    format: (v) => `${formatNumber(Number(v ?? 0))} km\u00B2`,
+  },
+  {
+    aliases: ["flag_url", "flagurl", "flag"],
+    label: "Flag URL",
+    read: (c) => c.flag,
+    format: optional,
+  },
+  { aliases: ["name"], label: "Name", read: (c) => c.name, format: str },
+];
+
+const COUNTRY_FIELD_BY_ALIAS = new Map(
+  COUNTRY_FIELDS.flatMap((spec) => spec.aliases.map((alias) => [alias, spec] as const))
+);
+
+/** Falls back to any raw column on the country or its national identity. */
+function readRawCountryField(country: CountryRecord, field: string) {
+  if (country[field] !== undefined) {
+    const val: unknown = country[field];
+    return { val, formatted: typeof val === "number" ? formatNumber(val) : String(val ?? "N/A") };
+  }
+  const identityVal: unknown = country.nationalIdentity?.[field];
+  if (identityVal !== undefined) return { val: identityVal, formatted: str(identityVal) };
+  return null;
+}
+
+function resolveCountryField(
+  placeholder: string,
+  country: CountryRecord,
+  field: string,
+  ranks: RankLists
+): CanonicalPlaceholderResult {
+  const spec = COUNTRY_FIELD_BY_ALIAS.get(field.toLowerCase());
+  let val: unknown = null;
+  let formatted = "Unknown Field";
+  let label = field;
+  let status: PlaceholderStatus = "unknown-field";
+
+  if (spec) {
+    val = spec.read(country);
+    formatted = spec.format(val);
+    label = spec.label;
+    status = "resolved";
+  } else {
+    const raw = readRawCountryField(country, field);
+    if (raw) {
+      val = raw.val;
+      formatted = raw.formatted;
+      status = "resolved";
+    }
+  }
+
+  const numericVal = typeof val === "number" ? val : 0;
+  const isGrowth = field.includes("Growth");
+  const isGdp = field === "gdp" || field === "currentTotalGdp";
+
+  return {
+    key: placeholder,
+    value: formatted,
+    rawVal: val,
+    status,
+    metadata: {
+      label,
+      countryName: country.name,
+      growthTrend: isGrowth && numericVal < 0 ? "down" : isGrowth && numericVal > 0 ? "up" : "flat",
+      growthRate: isGdp ? `${((country.adjustedGdpGrowth ?? 0) * 100).toFixed(1)}%` : undefined,
+      lastCalculated:
+        country.lastCalculated instanceof Date
+          ? country.lastCalculated.toISOString()
+          : new Date().toISOString(),
+      detailsUrl: `/countries/${country.id}`,
+      comparisonRank: spec?.rank && realmRankLabel(ranks[spec.rank], country),
+    },
+  };
+}
+
+const failure = (
+  key: string,
+  value: string,
+  status: PlaceholderStatus
+): CanonicalPlaceholderResult => ({ key, value, rawVal: null, status });
+
+/** The `Name_With_Underscores` segment of a `Kind:Name:field` placeholder, spaced. */
+const placeholderName = (p: string) => p.split(":")[1]?.replace(/_/g, " ");
+
+const nameKey = (name: string) => name.toLowerCase();
+
+function resolveBusinessField(
+  p: string,
+  pois: PoiRecord[],
+  countries: CountryRecord[]
+): CanonicalPlaceholderResult {
+  const companyName = placeholderName(p);
+  const field = p.split(":")[2];
+  if (!companyName || !field) return failure(p, "Unknown Field", "malformed");
+
+  const poi = pois.find((item) => nameKey(item.name) === nameKey(companyName));
+  if (!poi) return failure(p, "Unknown Company", "not-found");
+
+  const spec = BUSINESS_FIELDS[field.toLowerCase()];
+  if (!spec) return failure(p, "Unknown Field", "unknown-field");
+
+  // Business figures exist only when recorded on the point of interest; none are derived.
+  const recorded = (poi.metadata as Record<string, unknown> | null)?.[spec.key];
+  const rawVal =
+    typeof recorded === "number" || (typeof recorded === "string" && recorded.trim() !== "")
+      ? recorded
+      : null;
+  if (rawVal === null) return failure(p, "—", "not-found");
+
+  const parentCountry = countries.find((c) => c.id === poi.countryId) || poi.country;
+  const lastCalculated =
+    parentCountry?.lastCalculated instanceof Date
+      ? parentCountry.lastCalculated.toISOString()
+      : undefined;
+  return {
+    key: p,
+    value: spec.format(rawVal),
+    rawVal,
+    status: "resolved",
+    metadata: {
+      label: spec.label,
+      companyName,
+      countryName: parentCountry?.name,
+      ...(spec.timed && lastCalculated ? { lastCalculated } : {}),
+      detailsUrl: `/countries/${poi.countryId}`,
+    },
+  };
+}
+
+type PoiRecord = { name: string; countryId: string; metadata: unknown; country?: any };
+
 export async function resolveWikiPlaceholderValues(
   placeholders: readonly string[],
   db: Prisma.TransactionClient | any,
@@ -71,308 +309,78 @@ export async function resolveWikiPlaceholderValues(
 ): Promise<CanonicalPlaceholderResult[]> {
   if (placeholders.length === 0) return [];
 
-  const countryNames = new Set<string>();
-  const companyNames = new Set<string>();
-
-  for (const p of placeholders) {
-    if (p.startsWith("CountryData:")) {
-      const parts = p.split(":");
-      if (parts[1]) countryNames.add(parts[1].replace(/_/g, " ").toLowerCase());
-    } else if (p.startsWith("BusinessData:")) {
-      const parts = p.split(":");
-      if (parts[1]) companyNames.add(parts[1].replace(/_/g, " ").toLowerCase());
-    }
-  }
+  const namesFor = (prefix: string) => [
+    ...new Set(
+      placeholders
+        .filter((p) => p.startsWith(prefix))
+        .map((p) => placeholderName(p))
+        .filter((name): name is string => !!name)
+        .map(nameKey)
+    ),
+  ];
+  const countryNames = namesFor("CountryData:");
+  const companyNames = namesFor("BusinessData:");
 
   // Fetch all required countries in a single query
-  const countries = await db.country.findMany({
+  const countries: CountryRecord[] = await db.country.findMany({
     where: {
       OR: [
         ...(activeCountryId ? [{ id: activeCountryId }] : []),
         // CountryData:<name> names an IxWorld nation — names repeat across realms (ruling E-p).
-        ...(countryNames.size > 0
-          ? [
-              {
-                realmId: DEFAULT_REALM_ID,
-                name: { in: Array.from(countryNames), mode: "insensitive" },
-              },
-            ]
+        ...(countryNames.length > 0
+          ? [{ realmId: DEFAULT_REALM_ID, name: { in: countryNames, mode: "insensitive" } }]
           : []),
       ],
     },
-    include: {
-      nationalIdentity: true,
-    },
+    include: { nationalIdentity: true },
   });
-
-  const userCountry = activeCountryId ? countries.find((c: any) => c.id === activeCountryId) : null;
+  const userCountry = activeCountryId ? countries.find((c) => c.id === activeCountryId) : null;
 
   // Fetch all POIs for businesses in a single query
-  const pois =
-    companyNames.size > 0
+  const pois: PoiRecord[] =
+    companyNames.length > 0
       ? await db.pointOfInterest.findMany({
-          where: {
-            name: { in: Array.from(companyNames), mode: "insensitive" },
-            status: "approved",
-          },
-          include: {
-            country: true,
-          },
+          where: { name: { in: companyNames, mode: "insensitive" }, status: "approved" },
+          include: { country: true },
         })
       : [];
 
-  // Fetch all countries sorted to calculate rank
-  let allCountriesSortedGdp: Array<RankRow & { currentTotalGdp: number | null }> = [];
-  let allCountriesSortedPop: Array<RankRow & { currentPopulation: number | null }> = [];
+  // Country rank lists are only needed for gdp/population placeholders
+  const hasRankNeed = placeholders.some((p) => /gdp|population/i.test(p));
+  const [gdp, pop]: RankRow[][] = hasRankNeed
+    ? await Promise.all([
+        db.country.findMany({
+          select: { id: true, realmId: true, currentTotalGdp: true },
+          orderBy: { currentTotalGdp: "desc" },
+        }),
+        db.country.findMany({
+          select: { id: true, realmId: true, currentPopulation: true },
+          orderBy: { currentPopulation: "desc" },
+        }),
+      ])
+    : [[], []];
+  const ranks: RankLists = { gdp, pop };
 
-  const hasRankNeed = placeholders.some(
-    (p) =>
-      p.includes("gdp") || p.includes("GDP") || p.includes("population") || p.includes("Population")
-  );
-
-  if (hasRankNeed) {
-    [allCountriesSortedGdp, allCountriesSortedPop] = await Promise.all([
-      db.country.findMany({
-        select: { id: true, realmId: true, currentTotalGdp: true },
-        orderBy: { currentTotalGdp: "desc" },
-      }),
-      db.country.findMany({
-        select: { id: true, realmId: true, currentPopulation: true },
-        orderBy: { currentPopulation: "desc" },
-      }),
-    ]);
-  }
-
-  const results: CanonicalPlaceholderResult[] = [];
-
-  for (const p of placeholders) {
+  return placeholders.map((p) => {
     if (p.startsWith("MyCountry:")) {
       const field = p.split(":")[1];
-      if (!field) {
-        results.push({ key: p, value: "Unknown Field", rawVal: null, status: "malformed" });
-        continue;
-      }
-      if (!userCountry) {
-        results.push({
-          key: p,
-          value: "No Country Loaded",
-          rawVal: null,
-          status: "missing-context",
-        });
-        continue;
-      }
-      results.push(resolveCountryField(p, userCountry, field));
-    } else if (p.startsWith("CountryData:")) {
-      const parts = p.split(":");
-      const cName = parts[1]?.replace(/_/g, " ");
-      const field = parts[2];
-      if (!cName || !field) {
-        results.push({ key: p, value: "Unknown Field", rawVal: null, status: "malformed" });
-        continue;
-      }
+      if (!field) return failure(p, "Unknown Field", "malformed");
+      if (!userCountry) return failure(p, "No Country Loaded", "missing-context");
+      return resolveCountryField(p, userCountry, field, ranks);
+    }
+    if (p.startsWith("CountryData:")) {
+      const cName = placeholderName(p);
+      const field = p.split(":")[2];
+      if (!cName || !field) return failure(p, "Unknown Field", "malformed");
       const country = countries.find(
-        (c: any) => c.realmId === DEFAULT_REALM_ID && c.name.toLowerCase() === cName.toLowerCase()
+        (c) => c.realmId === DEFAULT_REALM_ID && nameKey(c.name) === nameKey(cName)
       );
-      if (!country) {
-        results.push({ key: p, value: "Unknown Country", rawVal: null, status: "not-found" });
-        continue;
-      }
-      results.push(resolveCountryField(p, country, field));
-    } else if (p.startsWith("BusinessData:")) {
-      const parts = p.split(":");
-      const companyName = parts[1]?.replace(/_/g, " ");
-      const field = parts[2];
-      if (!companyName || !field) {
-        results.push({ key: p, value: "Unknown Field", rawVal: null, status: "malformed" });
-        continue;
-      }
-
-      const poi = pois.find(
-        (poiItem: any) => poiItem.name.toLowerCase() === companyName.toLowerCase()
-      );
-      if (!poi) {
-        results.push({ key: p, value: "Unknown Company", rawVal: null, status: "not-found" });
-        continue;
-      }
-
-      const parentCountry = countries.find((c: any) => c.id === poi.countryId) || poi.country;
-      const fLower = field.toLowerCase();
-      const spec = BUSINESS_FIELDS[fLower];
-      if (!spec) {
-        results.push({ key: p, value: "Unknown Field", rawVal: null, status: "unknown-field" });
-        continue;
-      }
-
-      // Business figures exist only when recorded on the point of interest; none are derived.
-      const recorded = (poi.metadata as Record<string, unknown> | null)?.[spec.key];
-      const rawVal =
-        typeof recorded === "number" || (typeof recorded === "string" && recorded.trim() !== "")
-          ? recorded
-          : null;
-      if (rawVal === null) {
-        results.push({ key: p, value: "—", rawVal: null, status: "not-found" });
-        continue;
-      }
-
-      const lastCalculated =
-        parentCountry?.lastCalculated instanceof Date
-          ? parentCountry.lastCalculated.toISOString()
-          : undefined;
-      results.push({
-        key: p,
-        value: spec.format(rawVal),
-        rawVal,
-        status: "resolved",
-        metadata: {
-          label: spec.label,
-          companyName,
-          countryName: parentCountry?.name,
-          ...(spec.timed && lastCalculated ? { lastCalculated } : {}),
-          detailsUrl: `/countries/${poi.countryId}`,
-        },
-      });
-    } else {
-      results.push({ key: p, value: "Unknown Field", rawVal: null, status: "malformed" });
+      if (!country) return failure(p, "Unknown Country", "not-found");
+      return resolveCountryField(p, country, field, ranks);
     }
-  }
-
-  function resolveCountryField(
-    placeholder: string,
-    country: any,
-    field: string
-  ): CanonicalPlaceholderResult {
-    let val: unknown = null;
-    let formattedVal = "";
-    let label = field;
-    let rank: string | undefined;
-    let status: PlaceholderStatus = "resolved";
-
-    const f = field.toLowerCase();
-
-    if (f === "currentpopulation" || f === "population") {
-      val = country.currentPopulation;
-      formattedVal = formatNumber(Number(val ?? 0));
-      label = "Population";
-      rank = realmRankLabel(allCountriesSortedPop, country);
-    } else if (f === "currenttotalgdp" || f === "gdp") {
-      val = country.currentTotalGdp;
-      formattedVal = formatCurrency(Number(val ?? 0));
-      label = "Total GDP";
-      rank = realmRankLabel(allCountriesSortedGdp, country);
-    } else if (f === "currentgdppercapita" || f === "gdppercapita" || f === "gdp_per_capita") {
-      val =
-        country.currentGdpPerCapita ??
-        (country.currentTotalGdp && country.currentPopulation
-          ? country.currentTotalGdp / country.currentPopulation
-          : 0);
-      formattedVal = formatCurrency(Number(val ?? 0));
-      label = "GDP per Capita";
-    } else if (f === "adjustedgdpgrowth" || f === "gdpgrowth" || f === "gdp_growth") {
-      val = country.adjustedGdpGrowth ?? 0;
-      formattedVal = `${(Number(val) * 100).toFixed(1)}%`;
-      label = "GDP Growth";
-    } else if (f === "unemploymentrate" || f === "unemployment") {
-      val = country.unemploymentRate;
-      formattedVal = val != null ? `${(Number(val) * 100).toFixed(1)}%` : "N/A";
-      label = "Unemployment Rate";
-    } else if (f === "inflationrate" || f === "inflation") {
-      val = country.inflationRate;
-      formattedVal = val != null ? `${(Number(val) * 100).toFixed(1)}%` : "N/A";
-      label = "Inflation Rate";
-    } else if (f === "politicalstability" || f === "stability") {
-      val = country.politicalStability;
-      formattedVal = val != null ? String(val) : "N/A";
-      label = "Political Stability";
-    } else if (f === "economictier" || f === "tier") {
-      val = country.economicTier;
-      formattedVal = val != null ? String(val) : "N/A";
-      label = "Economic Tier";
-    } else if (f === "populationtier") {
-      val = country.populationTier;
-      formattedVal = val != null ? String(val) : "N/A";
-      label = "Population Tier";
-    } else if (f === "leader" || f === "leadername") {
-      val = country.leader;
-      formattedVal = val != null && String(val).trim() ? String(val) : "N/A";
-      label = "Leader";
-    } else if (f === "governmenttype" || f === "government") {
-      val = country.governmentType ?? country.nationalIdentity?.governmentType;
-      formattedVal = val != null && String(val).trim() ? String(val) : "N/A";
-      label = "Government Type";
-    } else if (f === "motto") {
-      val = country.nationalIdentity?.motto;
-      formattedVal = val != null && String(val).trim() ? String(val) : "N/A";
-      label = "Motto";
-    } else if (f === "capitalcity" || f === "capital") {
-      val = country.nationalIdentity?.capitalCity;
-      formattedVal = val != null && String(val).trim() ? String(val) : "N/A";
-      label = "Capital City";
-    } else if (f === "currency") {
-      val = country.nationalIdentity?.currency;
-      formattedVal = val != null && String(val).trim() ? String(val) : "N/A";
-      label = "Currency";
-    } else if (f === "currencysymbol") {
-      val = country.nationalIdentity?.currencySymbol;
-      formattedVal = val != null ? String(val) : "";
-      label = "Currency Symbol";
-    } else if (f === "land_area" || f === "landarea") {
-      val = country.landArea;
-      formattedVal = formatNumber(Number(val ?? 0)) + " km\u00B2";
-      label = "Land Area";
-    } else if (f === "flag_url" || f === "flagurl" || f === "flag") {
-      val = country.flag;
-      formattedVal = val != null ? String(val) : "";
-      label = "Flag URL";
-    } else if (f === "name") {
-      val = country.name;
-      formattedVal = val != null ? String(val) : "N/A";
-      label = "Name";
-    } else if ((country as Record<string, unknown>)[field] !== undefined) {
-      val = (country as Record<string, unknown>)[field];
-      formattedVal = typeof val === "number" ? formatNumber(val) : String(val ?? "N/A");
-    } else if (
-      country.nationalIdentity &&
-      (country.nationalIdentity as Record<string, unknown>)[field] !== undefined
-    ) {
-      val = (country.nationalIdentity as Record<string, unknown>)[field];
-      formattedVal = val != null ? String(val) : "N/A";
-    } else {
-      formattedVal = "Unknown Field";
-      status = "unknown-field";
-    }
-
-    const numericVal = typeof val === "number" ? val : 0;
-    const lastCalcStr =
-      country.lastCalculated instanceof Date
-        ? country.lastCalculated.toISOString()
-        : new Date().toISOString();
-
-    return {
-      key: placeholder,
-      value: formattedVal,
-      rawVal: val,
-      status,
-      metadata: {
-        label,
-        countryName: country.name,
-        growthTrend:
-          field.includes("Growth") && numericVal < 0
-            ? "down"
-            : field.includes("Growth") && numericVal > 0
-              ? "up"
-              : "flat",
-        growthRate:
-          field === "gdp" || field === "currentTotalGdp"
-            ? `${((country.adjustedGdpGrowth ?? 0) * 100).toFixed(1)}%`
-            : undefined,
-        lastCalculated: lastCalcStr,
-        detailsUrl: `/countries/${country.id}`,
-        comparisonRank: rank,
-      },
-    };
-  }
-
-  return results;
+    if (p.startsWith("BusinessData:")) return resolveBusinessField(p, pois, countries);
+    return failure(p, "Unknown Field", "malformed");
+  });
 }
 
 export async function resolveWikiPlaceholdersInternal(
@@ -380,22 +388,9 @@ export async function resolveWikiPlaceholdersInternal(
   ctx: { db: Prisma.TransactionClient | typeof import("~/server/db").db } & WikiAuthContext,
   activeCountryId?: string
 ): Promise<Record<string, { value: string; rawVal: unknown; metadata?: WikiPlaceholderMetadata }>> {
-  let userCountryId = activeCountryId;
-  if (!userCountryId) {
-    userCountryId = (await resolveActiveCountryId(ctx)) ?? undefined;
-  }
-
+  const userCountryId = activeCountryId ?? (await resolveActiveCountryId(ctx)) ?? undefined;
   const results = await resolveWikiPlaceholderValues(placeholders, ctx.db, userCountryId);
-  const out: Record<
-    string,
-    { value: string; rawVal: unknown; metadata?: WikiPlaceholderMetadata }
-  > = {};
-  for (const item of results) {
-    out[item.key] = {
-      value: item.value,
-      rawVal: item.rawVal,
-      metadata: item.metadata,
-    };
-  }
-  return out;
+  return Object.fromEntries(
+    results.map(({ key, value, rawVal, metadata }) => [key, { value, rawVal, metadata }])
+  );
 }
