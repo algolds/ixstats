@@ -123,7 +123,7 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
                   Historical significance
                 </div>
                 <div className="text-title-2 text-yellow mt-1 tabular-nums">
-                  {loreStats.historicalSignificance ?? 0}/100
+                  {loreStats.historicalSignificance ?? "—"}/100
                 </div>
               </div>
               <div className="border-separator bg-surface rounded-control border p-3">
@@ -131,7 +131,7 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
                   Cultural impact
                 </div>
                 <div className="text-title-2 text-indigo mt-1 tabular-nums">
-                  {loreStats.culturalImpact ?? 0}/100
+                  {loreStats.culturalImpact ?? "—"}/100
                 </div>
               </div>
             </div>

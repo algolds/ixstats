@@ -32,6 +32,51 @@ interface VaultYieldProjectionsCardProps {
   socialCapData?: { cap: number; remaining: number } | null;
 }
 
+/** Daily earning allowance: credits used of the cap, or a dash when the cap is not loaded. */
+function CapProgress({
+  label,
+  data,
+  loading,
+  symbolClassName,
+  barClassName,
+}: {
+  label: string;
+  data?: { cap: number; remaining: number } | null;
+  loading?: boolean;
+  symbolClassName: string;
+  barClassName: string;
+}) {
+  const used = data ? Math.round(data.cap - data.remaining) : null;
+
+  return (
+    <div className="space-y-2">
+      <div className="text-footnote flex justify-between font-semibold">
+        <span className="text-label-secondary">{label}</span>
+        <span className="text-label text-footnote flex items-center gap-0.5 font-semibold tabular-nums">
+          {loading ? (
+            "..."
+          ) : data ? (
+            <>
+              <IxCreditsSymbol aria-hidden className={`${symbolClassName} h-2.5 w-2.5 shrink-0`} />
+              {used} / {data.cap}
+            </>
+          ) : (
+            <span aria-label="Not recorded">—</span>
+          )}
+        </span>
+      </div>
+      <div className="border-separator bg-fill-3 h-2 w-full overflow-hidden rounded-full border p-0.5">
+        <div
+          className={`${barClassName} ease-out-facet h-full rounded-full transition-[width] duration-500`}
+          style={{
+            width: `${data && data.cap > 0 ? ((data.cap - data.remaining) / data.cap) * 100 : 0}%`,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function VaultYieldProjectionsCard({
   loading,
   canClaimDailyBonus,
@@ -95,27 +140,27 @@ export function VaultYieldProjectionsCard({
                   <span className="text-label-secondary font-medium">Daily treasury yield</span>
                   <span className="text-blue-ink flex items-center gap-0.5 font-semibold tabular-nums">
                     +<IxCreditsSymbol aria-hidden className="h-3 w-3 shrink-0" />
-                    {passiveIncomeData?.dailyDividend
-                      ? Math.round(passiveIncomeData.dailyDividend).toLocaleString()
-                      : "0"}
+                    {passiveIncomeData
+                      ? Math.round(passiveIncomeData.dailyDividend ?? 0).toLocaleString()
+                      : "—"}
                   </span>
                 </div>
                 <div className="text-footnote flex items-center justify-between">
                   <span className="text-label-secondary font-medium">Weekly treasury yield</span>
                   <span className="text-label flex items-center gap-0.5 font-semibold tabular-nums">
                     ~<IxCreditsSymbol aria-hidden className="h-3 w-3 shrink-0" />
-                    {passiveIncomeData?.weeklyDividend
-                      ? Math.round(passiveIncomeData.weeklyDividend).toLocaleString()
-                      : "0"}
+                    {passiveIncomeData
+                      ? Math.round(passiveIncomeData.weeklyDividend ?? 0).toLocaleString()
+                      : "—"}
                   </span>
                 </div>
                 <div className="text-footnote flex items-center justify-between">
                   <span className="text-label-secondary font-medium">Monthly treasury yield</span>
                   <span className="text-label flex items-center gap-0.5 font-semibold tabular-nums">
                     ~<IxCreditsSymbol aria-hidden className="h-3 w-3 shrink-0" />
-                    {passiveIncomeData?.monthlyDividend
-                      ? Math.round(passiveIncomeData.monthlyDividend).toLocaleString()
-                      : "0"}
+                    {passiveIncomeData
+                      ? Math.round(passiveIncomeData.monthlyDividend ?? 0).toLocaleString()
+                      : "—"}
                   </span>
                 </div>
               </div>
@@ -168,61 +213,20 @@ export function VaultYieldProjectionsCard({
               Daily allowance progress
             </span>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              {/* Active Gameplay Cap */}
-              <div className="space-y-2">
-                <div className="text-footnote flex justify-between font-semibold">
-                  <span className="text-label-secondary">Active gameplay</span>
-                  <span className="text-label text-footnote flex items-center gap-0.5 font-semibold tabular-nums">
-                    {activeCapLoading ? (
-                      "..."
-                    ) : (
-                      <>
-                        <IxCreditsSymbol aria-hidden className="text-green h-2.5 w-2.5 shrink-0" />
-                        {Math.round(
-                          (activeCapData?.cap ?? 100) - (activeCapData?.remaining ?? 100)
-                        )}{" "}
-                        / {activeCapData?.cap ?? 100}
-                      </>
-                    )}
-                  </span>
-                </div>
-                <div className="border-separator bg-fill-3 h-2 w-full overflow-hidden rounded-full border p-0.5">
-                  <div
-                    className="bg-green ease-out-facet h-full rounded-full transition-[width] duration-500"
-                    style={{
-                      width: `${activeCapData ? ((activeCapData.cap - activeCapData.remaining) / activeCapData.cap) * 100 : 0}%`,
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Social Earning Cap */}
-              <div className="space-y-2">
-                <div className="text-footnote flex justify-between font-semibold">
-                  <span className="text-label-secondary">Social engagement</span>
-                  <span className="text-label text-footnote flex items-center gap-0.5 font-semibold tabular-nums">
-                    {socialCapLoading ? (
-                      "..."
-                    ) : (
-                      <>
-                        <IxCreditsSymbol aria-hidden className="text-indigo h-2.5 w-2.5 shrink-0" />
-                        {Math.round(
-                          (socialCapData?.cap ?? 50) - (socialCapData?.remaining ?? 50)
-                        )}{" "}
-                        / {socialCapData?.cap ?? 50}
-                      </>
-                    )}
-                  </span>
-                </div>
-                <div className="border-separator bg-fill-3 h-2 w-full overflow-hidden rounded-full border p-0.5">
-                  <div
-                    className="bg-indigo ease-out-facet h-full rounded-full transition-[width] duration-500"
-                    style={{
-                      width: `${socialCapData ? ((socialCapData.cap - socialCapData.remaining) / socialCapData.cap) * 100 : 0}%`,
-                    }}
-                  />
-                </div>
-              </div>
+              <CapProgress
+                label="Active gameplay"
+                data={activeCapData}
+                loading={activeCapLoading}
+                symbolClassName="text-green"
+                barClassName="bg-green"
+              />
+              <CapProgress
+                label="Social engagement"
+                data={socialCapData}
+                loading={socialCapLoading}
+                symbolClassName="text-indigo"
+                barClassName="bg-indigo"
+              />
             </div>
           </div>
         </div>
