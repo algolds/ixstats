@@ -45,7 +45,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
   const [form, setForm] = useState<AppointFormState>({
     name: "",
     title: "",
-    role: "Cabinet Member",
+    role: "Cabinet member",
     appointedDate: formatDateInput(new Date()),
     bio: "",
   });
@@ -68,7 +68,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
       setForm({
         name: "",
         title: "",
-        role: "Cabinet Member",
+        role: "Cabinet member",
         appointedDate: formatDateInput(new Date()),
         bio: "",
       });
@@ -101,7 +101,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
     setForm((prev) => ({
       ...prev,
       title: dept?.ministerTitle || "Minister",
-      role: "Cabinet Member",
+      role: "Cabinet member",
     }));
     setDialogDepartmentId(departmentId);
   };
