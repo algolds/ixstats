@@ -15,6 +15,7 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { auctionService } from "~/lib/economy/auction-service";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/cache";
+import { assertAuthUserId, AUCTION_WITH_SELLER_INCLUDE } from "./_shared";
 
 /**
  * Card Market Router
@@ -34,12 +35,7 @@ export const cardMarketBidsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        if (!ctx.auth?.userId) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "User ID not found in authentication context",
-          });
-        }
+        assertAuthUserId(ctx);
 
         const auctionBefore = await ctx.db.cardAuction.findUnique({
           where: { id: input.auctionId },
@@ -131,12 +127,7 @@ export const cardMarketBidsRouter = createTRPCRouter({
    */
   getMyActiveBids: protectedProcedure.query(async ({ ctx }) => {
     try {
-      if (!ctx.auth?.userId) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "User ID not found in authentication context",
-        });
-      }
+      assertAuthUserId(ctx);
 
       // Get auctions where user is current bidder
       const auctions = await ctx.db.cardAuction.findMany({
@@ -144,26 +135,7 @@ export const cardMarketBidsRouter = createTRPCRouter({
           currentBidderId: ctx.user.id,
           status: "ACTIVE",
         },
-        include: {
-          CardOwnership: {
-            include: {
-              cards: {
-                select: {
-                  id: true,
-                  title: true,
-                  artwork: true,
-                  rarity: true,
-                },
-              },
-            },
-          },
-          User: {
-            select: {
-              id: true,
-              clerkUserId: true,
-            },
-          },
-        },
+        include: AUCTION_WITH_SELLER_INCLUDE,
         orderBy: { endTime: "asc" },
       });
 

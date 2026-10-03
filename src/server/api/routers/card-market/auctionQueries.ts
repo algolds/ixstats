@@ -13,6 +13,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { auctionService } from "~/lib/economy/auction-service";
+import { assertAuthUserId, AUCTION_WITH_SELLER_INCLUDE, AUCTION_CARD_INCLUDE } from "./_shared";
 
 /**
  * Card Market Router
@@ -72,12 +73,7 @@ export const cardMarketAuctionQueriesRouter = createTRPCRouter({
    */
   getMyActiveAuctions: protectedProcedure.query(async ({ ctx }) => {
     try {
-      if (!ctx.auth?.userId) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "User ID not found in authentication context",
-        });
-      }
+      assertAuthUserId(ctx);
 
       const auctions = await ctx.db.cardAuction.findMany({
         where: {
@@ -85,18 +81,7 @@ export const cardMarketAuctionQueriesRouter = createTRPCRouter({
           status: "ACTIVE",
         },
         include: {
-          CardOwnership: {
-            include: {
-              cards: {
-                select: {
-                  id: true,
-                  title: true,
-                  artwork: true,
-                  rarity: true,
-                },
-              },
-            },
-          },
+          ...AUCTION_CARD_INCLUDE,
           AuctionBid: {
             orderBy: { createdAt: "desc" },
             take: 1,
@@ -141,26 +126,7 @@ export const cardMarketAuctionQueriesRouter = createTRPCRouter({
               lte: soon,
             },
           },
-          include: {
-            CardOwnership: {
-              include: {
-                cards: {
-                  select: {
-                    id: true,
-                    title: true,
-                    artwork: true,
-                    rarity: true,
-                  },
-                },
-              },
-            },
-            User: {
-              select: {
-                id: true,
-                clerkUserId: true,
-              },
-            },
-          },
+          include: AUCTION_WITH_SELLER_INCLUDE,
           orderBy: { endTime: "asc" },
           take: input.limit,
         });
