@@ -1,6 +1,6 @@
 "use client";
 
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -23,6 +23,8 @@ import {
 } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 
+type IconType = React.ComponentType<{ className?: string }>;
+
 interface EmbassyDetailSheetProps {
   embassyId: string | null;
   onClose: () => void;
@@ -37,7 +39,7 @@ function InfoRow({
 }: {
   label: string;
   value: string | React.ReactNode;
-  icon?: typeof Building2;
+  icon?: IconType;
 }) {
   return (
     <div className="flex items-start justify-between gap-2">
@@ -63,6 +65,129 @@ function StatBar({ label, value, max }: { label: string; value: number; max: num
   );
 }
 
+const STATUS_BADGES: Record<
+  string,
+  { variant: "success" | "destructive" | "warning"; icon: IconType; label: string }
+> = {
+  active: { variant: "success", icon: CheckCircle, label: "Active" },
+  closed: { variant: "destructive", icon: XCircle, label: "Closed" },
+  under_construction: { variant: "warning", icon: Clock, label: "Building" },
+};
+
+const LEVEL_LABELS: Record<number, string> = {
+  1: "Consulate",
+  2: "Standard Embassy",
+  3: "Grand Embassy",
+};
+
+function StatusBadge({ status }: { status: string | undefined }) {
+  const s = status?.toLowerCase() ?? "active";
+  const badge = STATUS_BADGES[s];
+  if (!badge) return <Badge variant="outline">{s}</Badge>;
+  return (
+    <Badge variant={badge.variant}>
+      <badge.icon />
+      {badge.label}
+    </Badge>
+  );
+}
+
+function SectionTitle({ icon: Icon, children }: { icon: IconType; children: React.ReactNode }) {
+  return (
+    <Eyebrow className="mb-2 flex items-center gap-2">
+      <Icon className="h-3.5 w-3.5" />
+      {children}
+    </Eyebrow>
+  );
+}
+
+type EmbassyDetails = NonNullable<RouterOutputs["diplomaticEmbassies"]["getEmbassyDetails"]>;
+
+function EmbassyBody({ embassy }: { embassy: EmbassyDetails }) {
+  const activeMissions = (embassy.missions ?? []).filter((m) => m.status === "active");
+  return (
+    <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
+      <div className="space-y-2">
+        <InfoRow
+          label="Host country"
+          value={embassy.hostCountryName ?? embassy.hostCountryId}
+          icon={MapPin}
+        />
+        <InfoRow
+          label="Guest country"
+          value={embassy.guestCountryName ?? embassy.guestCountryId}
+          icon={Building2}
+        />
+        {embassy.ambassadorName && (
+          <InfoRow label="Ambassador" value={embassy.ambassadorName} icon={User} />
+        )}
+        {embassy.location && <InfoRow label="Location" value={embassy.location} icon={MapPin} />}
+        <InfoRow label="Staff" value={`${embassy.staffCount ?? 0} personnel`} icon={Users} />
+        {/* Served only to the nation that runs the embassy. */}
+        {embassy.budget != null && (
+          <InfoRow
+            label="Budget"
+            value={`$${embassy.budget.toLocaleString()}/mo`}
+            icon={DollarSign}
+          />
+        )}
+      </div>
+
+      <Separator />
+
+      <div>
+        <SectionTitle icon={TrendingUp}>Performance</SectionTitle>
+        <div className="space-y-2">
+          <StatBar label="Effectiveness" value={embassy.effectiveness ?? 0} max={100} />
+          <StatBar label="Influence" value={embassy.influence ?? 0} max={100} />
+          <StatBar label="Reputation" value={embassy.reputation ?? 0} max={100} />
+          <StatBar label="Experience" value={embassy.experience ?? 0} max={1000} />
+        </div>
+      </div>
+
+      {activeMissions.length > 0 && (
+        <>
+          <Separator />
+          <div>
+            <SectionTitle icon={Zap}>Active Missions ({activeMissions.length})</SectionTitle>
+            <div className="space-y-2">
+              {activeMissions.map((m) => (
+                <div
+                  key={m.id}
+                  className="border-separator bg-surface rounded-control text-footnote border p-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-label font-medium">{m.name}</span>
+                    <Badge variant="outline">{m.type}</Badge>
+                  </div>
+                  {m.progress != null && (
+                    <div className="mt-2">
+                      <Progress value={m.progress} className="h-1" />
+                      <span className="text-label-secondary text-footnote mt-0.5 block">
+                        {m.progress}% complete
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {embassy.specialization && (
+        <>
+          <Separator />
+          <div>
+            <SectionTitle icon={Star}>Specialization</SectionTitle>
+            <Badge variant="default">{embassy.specialization}</Badge>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function EmbassyDetailSheet({
   embassyId,
   onClose,
@@ -70,88 +195,63 @@ export function EmbassyDetailSheet({
   onEmbassyChanged,
 }: EmbassyDetailSheetProps) {
   const notify = useNotify();
-  const isOpen = embassyId !== null;
 
   const { data: embassy, isLoading } = api.diplomaticEmbassies.getEmbassyDetails.useQuery(
     { embassyId: embassyId! },
     { enabled: !!embassyId }
   );
 
-  const closeMutation = api.diplomaticEmbassies.closeEmbassy.useMutation({
+  const mutationOptions = (success: string, failure: string) => ({
     onSuccess: () => {
-      notify.success("Embassy closed.");
+      notify.success(success);
       onEmbassyChanged?.();
       onClose();
     },
-    onError: (error) => {
-      notify.error(`Failed to close embassy: ${error.message}`);
-    },
+    onError: (error: { message: string }) => notify.error(`Failed to ${failure}: ${error.message}`),
   });
+  const closeMutation = api.diplomaticEmbassies.closeEmbassy.useMutation(
+    mutationOptions("Embassy closed.", "close embassy")
+  );
+  const reopenMutation = api.diplomaticEmbassies.reopenEmbassy.useMutation(
+    mutationOptions("Embassy reopened.", "reopen embassy")
+  );
+  const severMutation = api.diplomaticEmbassies.deleteEmbassy.useMutation(
+    mutationOptions("Diplomatic relations severed and embassy deleted.", "sever relations")
+  );
 
-  const reopenMutation = api.diplomaticEmbassies.reopenEmbassy.useMutation({
-    onSuccess: () => {
-      notify.success("Embassy reopened.");
-      onEmbassyChanged?.();
-      onClose();
-    },
-    onError: (error) => {
-      notify.error(`Failed to reopen embassy: ${error.message}`);
-    },
-  });
-
-  const severMutation = api.diplomaticEmbassies.deleteEmbassy.useMutation({
-    onSuccess: () => {
-      notify.success("Diplomatic relations severed and embassy deleted.");
-      onEmbassyChanged?.();
-      onClose();
-    },
-    onError: (error) => {
-      notify.error(`Failed to sever relations: ${error.message}`);
-    },
-  });
-
-  const getStatusBadge = (status: string | undefined) => {
-    const s = status?.toLowerCase() ?? "active";
-    if (s === "active")
-      return (
-        <Badge variant="success">
-          <CheckCircle />
-          Active
-        </Badge>
-      );
-    if (s === "closed")
-      return (
-        <Badge variant="destructive">
-          <XCircle />
-          Closed
-        </Badge>
-      );
-    if (s === "under_construction")
-      return (
-        <Badge variant="warning">
-          <Clock />
-          Building
-        </Badge>
-      );
-    return <Badge variant="outline">{s}</Badge>;
-  };
-
-  const getLevelBadge = (level: number | undefined) => {
-    const labels: Record<number, string> = {
-      1: "Consulate",
-      2: "Standard Embassy",
-      3: "Grand Embassy",
-    };
-    const l = level ?? 1;
-    return <Badge variant="default">{labels[l] ?? `Level ${l}`}</Badge>;
-  };
-
-  const missions = embassy?.missions ?? [];
-  const activeMissions = missions.filter((m) => m.status === "active");
+  /** Footer actions by embassy status. */
+  const actions = {
+    active: [
+      {
+        label: "Close Embassy",
+        pendingLabel: "Closing…",
+        variant: "destructive",
+        icon: XCircle,
+        mutation: closeMutation,
+      },
+    ],
+    closed: [
+      {
+        label: "Reopen Embassy",
+        pendingLabel: "Reopening…",
+        variant: "default",
+        icon: CheckCircle,
+        mutation: reopenMutation,
+      },
+      {
+        label: "Sever Relations",
+        pendingLabel: "Severing…",
+        variant: "destructive",
+        icon: XCircle,
+        mutation: severMutation,
+      },
+    ],
+  } as const;
+  const statusActions = embassy ? (actions[embassy.status as keyof typeof actions] ?? []) : [];
 
   return (
     <Sheet
-      open={isOpen}
+      open={embassyId !== null}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -166,8 +266,10 @@ export function EmbassyDetailSheet({
           </SheetTitle>
           {embassy && (
             <div className="flex flex-wrap items-center gap-2 pt-1">
-              {getStatusBadge(embassy.status)}
-              {getLevelBadge(embassy.level)}
+              <StatusBadge status={embassy.status} />
+              <Badge variant="default">
+                {LEVEL_LABELS[embassy.level ?? 1] ?? `Level ${embassy.level ?? 1}`}
+              </Badge>
             </div>
           )}
         </SheetHeader>
@@ -180,148 +282,25 @@ export function EmbassyDetailSheet({
           </div>
         ) : embassy ? (
           <>
-            <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
-              {/* Countries Info */}
-              <div className="space-y-2">
-                <InfoRow
-                  label="Host country"
-                  value={embassy.hostCountryName ?? embassy.hostCountryId}
-                  icon={MapPin}
-                />
-                <InfoRow
-                  label="Guest country"
-                  value={embassy.guestCountryName ?? embassy.guestCountryId}
-                  icon={Building2}
-                />
-                {embassy.ambassadorName && (
-                  <InfoRow label="Ambassador" value={embassy.ambassadorName} icon={User} />
-                )}
-                {embassy.location && (
-                  <InfoRow label="Location" value={embassy.location} icon={MapPin} />
-                )}
-                <InfoRow
-                  label="Staff"
-                  value={`${embassy.staffCount ?? 0} personnel`}
-                  icon={Users}
-                />
-                {/* Served only to the nation that runs the embassy. */}
-                {embassy.budget != null && (
-                  <InfoRow
-                    label="Budget"
-                    value={`$${embassy.budget.toLocaleString()}/mo`}
-                    icon={DollarSign}
-                  />
-                )}
-              </div>
+            <EmbassyBody embassy={embassy} />
 
-              <Separator />
-
-              {/* Performance Stats */}
-              <div>
-                <Eyebrow className="mb-2 flex items-center gap-2">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  Performance
-                </Eyebrow>
-                <div className="space-y-2">
-                  <StatBar label="Effectiveness" value={embassy.effectiveness ?? 0} max={100} />
-                  <StatBar label="Influence" value={embassy.influence ?? 0} max={100} />
-                  <StatBar label="Reputation" value={embassy.reputation ?? 0} max={100} />
-                  <StatBar label="Experience" value={embassy.experience ?? 0} max={1000} />
-                </div>
-              </div>
-
-              {/* Active Missions */}
-              {activeMissions.length > 0 && (
-                <>
-                  <Separator />
-                  <div>
-                    <Eyebrow className="mb-2 flex items-center gap-2">
-                      <Zap className="h-3.5 w-3.5" />
-                      Active Missions ({activeMissions.length})
-                    </Eyebrow>
-                    <div className="space-y-2">
-                      {activeMissions.map((m) => (
-                        <div
-                          key={m.id}
-                          className="border-separator bg-surface rounded-control text-footnote border p-2"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-label font-medium">{m.name}</span>
-                            <Badge variant="outline">{m.type}</Badge>
-                          </div>
-                          {m.progress != null && (
-                            <div className="mt-2">
-                              <Progress value={m.progress} className="h-1" />
-                              <span className="text-label-secondary text-footnote mt-0.5 block">
-                                {m.progress}% complete
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* Specialization / Synergies */}
-              {embassy.specialization && (
-                <>
-                  <Separator />
-                  <div>
-                    <Eyebrow className="mb-2 flex items-center gap-2">
-                      <Star className="h-3.5 w-3.5" />
-                      Specialization
-                    </Eyebrow>
-                    <Badge variant="default">{embassy.specialization}</Badge>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Footer */}
             <SheetFooter className="border-separator border-t px-6 py-4">
               <Button variant="outline" size="sm" onClick={onClose}>
                 Close
               </Button>
-              {embassy.status === "active" && (
-                <>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="gap-2"
-                    onClick={() => closeMutation.mutate({ embassyId: embassy.id })}
-                    disabled={closeMutation.isPending}
-                  >
-                    <XCircle className="h-3 w-3" />
-                    {closeMutation.isPending ? "Closing…" : "Close Embassy"}
-                  </Button>
-                </>
-              )}
-              {embassy.status === "closed" && (
-                <>
-                  <Button
-                    size="sm"
-                    variant="default"
-                    className="gap-2"
-                    onClick={() => reopenMutation.mutate({ embassyId: embassy.id })}
-                    disabled={reopenMutation.isPending}
-                  >
-                    <CheckCircle className="h-3 w-3" />
-                    {reopenMutation.isPending ? "Reopening…" : "Reopen Embassy"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="gap-2"
-                    onClick={() => severMutation.mutate({ embassyId: embassy.id })}
-                    disabled={severMutation.isPending}
-                  >
-                    <XCircle className="h-3 w-3" />
-                    {severMutation.isPending ? "Severing…" : "Sever Relations"}
-                  </Button>
-                </>
-              )}
+              {statusActions.map(({ label, pendingLabel, variant, icon: Icon, mutation }) => (
+                <Button
+                  key={label}
+                  size="sm"
+                  variant={variant}
+                  className="gap-2"
+                  onClick={() => mutation.mutate({ embassyId: embassy.id })}
+                  disabled={mutation.isPending}
+                >
+                  <Icon className="h-3 w-3" />
+                  {mutation.isPending ? pendingLabel : label}
+                </Button>
+              ))}
             </SheetFooter>
           </>
         ) : (
