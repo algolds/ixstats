@@ -339,7 +339,7 @@ export function LaborTab({
                   title="Employment by sector"
                   subtitle="Distribution of workforce across economic sectors"
                   layout="grid"
-                  showTrends={true}
+                  showTrends={false}
                   showSectorImages={true}
                   valueAsPeople={true}
                   sectors={[
@@ -351,7 +351,6 @@ export function LaborTab({
                         ((economyData?.labor?.employmentBySector?.agriculture ?? 0) / 100),
                       percentage: economyData?.labor?.employmentBySector?.agriculture ?? 0,
                       color: "green",
-                      trend: "stable",
                       description: "Farming, forestry, fishing",
                       imageKeyword: "labor_primary",
                     },
@@ -363,7 +362,6 @@ export function LaborTab({
                         ((economyData?.labor?.employmentBySector?.industry ?? 0) / 100),
                       percentage: economyData?.labor?.employmentBySector?.industry ?? 0,
                       color: "blue",
-                      trend: "stable",
                       description: "Manufacturing, construction",
                       imageKeyword: "labor_secondary",
                     },
@@ -375,8 +373,6 @@ export function LaborTab({
                         ((economyData?.labor?.employmentBySector?.services ?? 0) / 100),
                       percentage: economyData?.labor?.employmentBySector?.services ?? 0,
                       color: "purple",
-                      trend: "up",
-                      trendValue: 1.5,
                       description: "Trade, finance, healthcare",
                       imageKeyword: "labor_tertiary",
                     },
@@ -604,30 +600,23 @@ export function LaborTab({
                       id: "literacy",
                       name: "Adult literacy rate",
                       value: 0,
-                      percentage: economyData?.demographics?.literacyRate ?? 95,
+                      percentage: economyData?.demographics?.literacyRate ?? 0,
                       color: "emerald",
                     },
                     {
-                      id: "stem",
-                      name: "STEM graduate share",
+                      id: "tertiary",
+                      name: "Tertiary education rate",
                       value: 0,
                       percentage:
-                        economyData?.labor?.skillsAndProductivity?.tertiaryEducationRate ?? 24,
+                        economyData?.labor?.skillsAndProductivity?.tertiaryEducationRate ?? 0,
                       color: "blue",
                     },
                     {
-                      id: "brain-drain",
-                      name: "Brain drain index",
+                      id: "skills-gap",
+                      name: "Skills gap index",
                       value: 0,
-                      percentage: economyData?.labor?.skillsAndProductivity?.skillsGapIndex ?? 32,
+                      percentage: economyData?.labor?.skillsAndProductivity?.skillsGapIndex ?? 0,
                       color: "purple",
-                    },
-                    {
-                      id: "digital",
-                      name: "Digital literacy rate",
-                      value: 0,
-                      percentage: economyData?.demographics?.literacyRate ?? 78,
-                      color: "cyan",
                     },
                   ]}
                 />

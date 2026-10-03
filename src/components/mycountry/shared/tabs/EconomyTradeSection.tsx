@@ -4,6 +4,7 @@ import React from "react";
 import { motion } from "motion/react";
 import { Globe, NavArrowRight as ChevronRight } from "iconoir-react";
 import { formatCompactCurrency } from "~/lib/utils";
+import { tradeFigures } from "~/lib/economy/trade-figures";
 import type { MappedEconomyData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
 
 interface EconomyTradeSectionProps {
@@ -49,12 +50,9 @@ export function EconomyTradeSection({
   economyData,
   currency,
 }: EconomyTradeSectionProps): React.JSX.Element {
-  const gdp = economyData?.core.nominalGDP ?? 0;
+  const { exports, imports, balance } = tradeFigures(economyData?.core);
   const exportsPct = economyData?.core.exportsGDPPercent ?? null;
   const importsPct = economyData?.core.importsGDPPercent ?? null;
-  const exports = gdp > 0 && exportsPct != null ? (gdp * exportsPct) / 100 : null;
-  const imports = gdp > 0 && importsPct != null ? (gdp * importsPct) / 100 : null;
-  const balance = exports != null && imports != null ? exports - imports : null;
 
   return (
     <div className="flex flex-col">

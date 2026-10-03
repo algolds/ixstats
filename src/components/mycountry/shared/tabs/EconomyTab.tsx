@@ -24,8 +24,13 @@ import type {
 import type { extractCountryImageData } from "~/lib/media";
 import type { MyCountryMetricView } from "~/hooks/useMyCountryMetrics";
 import type { MetricType } from "~/hooks/useMetricDetailsModal";
+import { tradeFigures } from "~/lib/economy/trade-figures";
+import { parseSectorBreakdown } from "~/lib/economy/sector-breakdown";
 import { EconomyTradeSection } from "./EconomyTradeSection";
 import { Card, CardContent } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
+
+const SECTOR_COLORS = ["green", "blue", "purple", "cyan", "amber", "indigo"];
 
 export function EconomyTab({
   country,
@@ -47,6 +52,10 @@ export function EconomyTab({
   const [expandedSection, setExpandedSection] = React.useState<string | null>("sectors");
   const currency = country?.nationalIdentity?.currency || "USD";
   const { isPublicReadOnly } = useCountryData();
+  const trade = tradeFigures(economyData?.core);
+  const tradeAmount = metricView.trade === "imports" ? trade.imports : trade.exports;
+  const sectors = parseSectorBreakdown(economyData?.core.sectorBreakdown);
+  const gdp = economyData?.core.nominalGDP ?? 0;
 
   const toggleSection = (sectionId: string) => {
     setExpandedSection(expandedSection === sectionId ? null : sectionId);
@@ -161,7 +170,7 @@ export function EconomyTab({
                 </div>
                 <p className="text-label-secondary text-caption truncate">
                   {metricView.economyGdp === "perCapita"
-                    ? `${country.economicTier || "Developing"} · ${formatCompactCurrency(economyData?.core.nominalGDP ?? 0, "N/A", currency)} total`
+                    ? `${country.economicTier ? `${country.economicTier} · ` : ""}${formatCompactCurrency(economyData?.core.nominalGDP ?? 0, "N/A", currency)} total`
                     : `Per capita: ${formatExactCurrency(economyData?.core.gdpPerCapita ?? 0, currency)}`}
                 </p>
               </Button>
@@ -249,22 +258,20 @@ export function EconomyTab({
                       transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                       className="text-label text-title-3 hover:underline"
                     >
-                      {metricView.trade === "imports"
-                        ? formatCompactCurrency(
-                            (economyData?.core.nominalGDP ?? 0) * 0.32,
-                            "N/A",
-                            currency
-                          )
-                        : formatCompactCurrency(
-                            (economyData?.core.nominalGDP ?? 0) * 0.35,
-                            "N/A",
-                            currency
-                          )}
+                      {tradeAmount == null ? (
+                        <span role="img" aria-label="Not recorded">
+                          —
+                        </span>
+                      ) : (
+                        formatCompactCurrency(tradeAmount, "N/A", currency)
+                      )}
                     </motion.p>
                   </AnimatePresence>
                 </div>
                 <p className="text-label-secondary text-footnote mt-0.5 truncate">
-                  Net Balance: +3.0% (Surplus)
+                  {trade.balance == null
+                    ? "Net balance not recorded"
+                    : `Net balance: ${trade.balance >= 0 ? "Surplus" : "Deficit"}`}
                 </p>
               </Button>
             </div>
@@ -312,59 +319,28 @@ export function EconomyTab({
               }`}
             >
               <div className="relative z-10 space-y-4 p-4">
-                <SectorBreakdownCard
-                  title="Economic structure"
-                  subtitle="GDP distribution across major economic sectors"
-                  layout="grid"
-                  showTrends={true}
-                  showSectorImages={true}
-                  sectors={[
-                    {
-                      id: "primary",
-                      name: "Primary sector",
-                      value: (economyData?.core.nominalGDP ?? 0) * 0.05,
-                      percentage: 5.0,
-                      color: "green",
-                      trend: "stable",
-                      description: "Agriculture, Mining",
-                      imageKeyword: "economy_primary",
-                    },
-                    {
-                      id: "secondary",
-                      name: "Secondary sector",
-                      value: (economyData?.core.nominalGDP ?? 0) * 0.25,
-                      percentage: 25.0,
-                      color: "blue",
-                      trend: "up",
-                      trendValue: 1.2,
-                      description: "Manufacturing",
-                      imageKeyword: "economy_secondary",
-                    },
-                    {
-                      id: "tertiary",
-                      name: "Tertiary sector",
-                      value: (economyData?.core.nominalGDP ?? 0) * 0.55,
-                      percentage: 55.0,
-                      color: "purple",
-                      trend: "up",
-                      trendValue: 2.1,
-                      description: "Services",
-                      imageKeyword: "economy_tertiary",
-                    },
-                    {
-                      id: "quaternary",
-                      name: "Quaternary sector",
-                      value: (economyData?.core.nominalGDP ?? 0) * 0.15,
-                      percentage: 15.0,
-                      color: "cyan",
-                      trend: "up",
-                      trendValue: 3.5,
-                      description: "Knowledge, Tech",
-                      imageKeyword: "economy_quaternary",
-                    },
-                  ]}
-                  totalValue={economyData?.core.nominalGDP ?? 0}
-                />
+                {sectors.length > 0 ? (
+                  <SectorBreakdownCard
+                    title="Economic structure"
+                    subtitle="Recorded share of GDP by sector"
+                    layout="grid"
+                    showTrends={false}
+                    sectors={sectors.map((sector, i) => ({
+                      id: sector.name,
+                      name: sector.name,
+                      value: (gdp * sector.share) / 100,
+                      percentage: sector.share,
+                      color: SECTOR_COLORS[i % SECTOR_COLORS.length]!,
+                    }))}
+                    totalValue={gdp}
+                  />
+                ) : (
+                  <EmptyState
+                    compact
+                    title="No sector breakdown recorded"
+                    message="This nation has not recorded how its GDP splits across sectors."
+                  />
+                )}
               </div>
             </motion.div>
           </div>
