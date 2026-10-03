@@ -8,7 +8,7 @@
 import type { UserAccount } from "./contracts";
 import { UNKNOWN_DISPLAY_NAME } from "~/server/shared/display-names";
 
-// ─── Formatters for `api.messages` ───────────────────────────────────────────
+const toDate = (value: Date | string | number | null | undefined) => new Date(value || Date.now());
 
 /** Stand-in account for a participant the account lookup did not resolve. */
 function fallbackAccount(userId: string) {
@@ -38,7 +38,7 @@ function formatLastMessage(conv: any, accountMap: Map<string, UserAccount>) {
     senderId: lastMsg.userId,
     senderName: senderAccount?.displayName ?? lastMsg.senderName ?? "Unknown",
     senderAvatar: senderAccount?.profileImageUrl ?? lastMsg.senderAvatar ?? null,
-    createdAt: new Date(lastMsg.ixTimeTimestamp || lastMsg.createdAt || Date.now()),
+    createdAt: toDate(lastMsg.ixTimeTimestamp || lastMsg.createdAt),
     isDeleted,
   };
 }
@@ -76,6 +76,20 @@ interface MessagesConversationResult {
   } | null;
 }
 
+function conversationDescriptor(conv: any) {
+  return {
+    id: conv.id,
+    name: conv.name ?? conv.subject ?? conv.thinktankGroup?.name ?? null,
+    avatar: conv.avatar ?? conv.thinktankGroup?.avatar ?? null,
+    subject: conv.subject ?? null,
+    channelId: conv.channelId ?? null,
+    sourceId: conv.sourceId ?? conv.thinktankGroup?.id ?? null,
+    conversationType: conv.conversationType ?? null,
+    diplomaticClassification: conv.diplomaticClassification ?? null,
+    priority: conv.priority ?? null,
+  };
+}
+
 export function formatMessagesConversation(
   conv: any,
   actorId: string,
@@ -83,61 +97,34 @@ export function formatMessagesConversation(
   unreadCount = 0
 ): MessagesConversationResult {
   const participants: any[] = conv.participants || [];
-  const otherParts = participants.filter((p) => p.userId !== actorId);
 
-  const otherAccounts: any[] = otherParts.map((p) => {
-    const acc = accountMap.get(p.userId) || fallbackAccount(p.userId);
-    return {
-      ...acc,
-      id: p.id || p.userId,
-      accountId: p.userId,
-      account: acc,
-    };
-  });
-
-  // If no account found but other participants exist, generate fallback
-  if (otherAccounts.length === 0 && otherParts.length > 0) {
-    const firstId = otherParts[0]!.userId;
-    const fallbackAcc = fallbackAccount(firstId);
-    otherAccounts.push({
-      ...fallbackAcc,
-      id: firstId,
-      accountId: firstId,
-      account: fallbackAcc,
+  const otherAccounts: any[] = participants
+    .filter((p) => p.userId !== actorId)
+    .map((p) => {
+      const acc = accountMap.get(p.userId) || fallbackAccount(p.userId);
+      return { ...acc, id: p.id || p.userId, accountId: p.userId, account: acc };
     });
-  }
-
-  const lastMessageFormatted = formatLastMessage(conv, accountMap);
 
   const isGroupConv = conv.type === "group" || conv.source === "thinktank" || Boolean(conv.isGroup);
+  const lastActivity = toDate(conv.lastActivity || conv.updatedAt);
 
   return {
-    id: conv.id,
+    ...conversationDescriptor(conv),
     type: isGroupConv ? "group" : (conv.type ?? "direct"),
-    name: conv.name ?? conv.subject ?? conv.thinktankGroup?.name ?? null,
-    avatar: conv.avatar ?? conv.thinktankGroup?.avatar ?? null,
-    subject: conv.subject ?? null,
     isGroup: isGroupConv,
-    channelId: conv.channelId ?? null,
-    createdAt: new Date(conv.createdAt || Date.now()),
-    updatedAt: new Date(conv.updatedAt || Date.now()),
-    lastActivity: new Date(conv.lastActivity || conv.updatedAt || Date.now()),
-    lastMessageAt: new Date(conv.lastActivity || conv.updatedAt || Date.now()),
+    createdAt: toDate(conv.createdAt),
+    updatedAt: toDate(conv.updatedAt),
+    lastActivity,
+    lastMessageAt: lastActivity,
     source: conv.source || "thinkshare",
-    sourceId: conv.sourceId ?? conv.thinktankGroup?.id ?? null,
-    conversationType: conv.conversationType ?? null,
-    diplomaticClassification: conv.diplomaticClassification ?? null,
-    priority: conv.priority ?? null,
     isActive: conv.isActive ?? true,
     participantCount: participants.length,
     unreadCount,
     otherParticipants: otherAccounts,
     otherParticipant: otherAccounts[0]?.account ?? otherAccounts[0],
-    lastMessage: lastMessageFormatted,
+    lastMessage: formatLastMessage(conv, accountMap),
   };
 }
-
-// ─── Formatters for `api.thinkpages.messaging` ───────────────────────────────
 
 export function formatThinkpagesConversation(
   conv: any,
@@ -160,18 +147,16 @@ export function formatThinkpagesConversation(
     accountType: "country" as const,
   };
 
-  const lastMessageFormatted = formatLastMessage(conv, accountMap);
-
   return {
     id: conv.id,
-    createdAt: new Date(conv.createdAt || Date.now()),
-    updatedAt: new Date(conv.updatedAt || Date.now()),
-    lastMessageAt: new Date(conv.lastActivity || conv.updatedAt || Date.now()),
+    createdAt: toDate(conv.createdAt),
+    updatedAt: toDate(conv.updatedAt),
+    lastMessageAt: toDate(conv.lastActivity || conv.updatedAt),
     channelId: conv.channelId ?? undefined,
     isGroup: Boolean(conv.isGroup),
     subject: conv.subject ?? undefined,
     otherParticipants: otherAccounts,
-    lastMessage: lastMessageFormatted,
+    lastMessage: formatLastMessage(conv, accountMap),
     unreadCount,
     accountId: actorId,
     account: actorAccount,

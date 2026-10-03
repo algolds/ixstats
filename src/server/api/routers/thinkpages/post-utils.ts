@@ -102,6 +102,38 @@ export const pollInclude = {
   },
 };
 
+/** Persona fields shown next to a post or comment. */
+const accountSelect = {
+  id: true,
+  username: true,
+  displayName: true,
+  profileImageUrl: true,
+  accountType: true,
+  verified: true,
+  clerkUserId: true,
+  countryId: true,
+  country: { select: { id: true, name: true, flag: true } },
+} as const;
+
+export const accountInclude = { account: { select: accountSelect } };
+
+/** A post with its author and the authors of the post it replies to or reposts. */
+export const postAuthorsInclude = {
+  ...accountInclude,
+  parentPost: { include: accountInclude },
+  repostOf: { include: accountInclude },
+};
+
+/** Everything the feed and post-detail reads load for a post. */
+export const postInclude = {
+  ...postAuthorsInclude,
+  reactions: true,
+  mediaAttachments: true,
+  ...pollInclude,
+  reposts: { select: { accountId: true } },
+  _count: { select: { replies: true, reposts: true } },
+};
+
 /** Post as the client reads it: parsed hashtags and reaction counts, formatted poll and a display timestamp. */
 export function transformPost(p: any) {
   if (!p) return p;

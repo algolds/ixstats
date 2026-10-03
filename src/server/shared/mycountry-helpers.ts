@@ -29,8 +29,6 @@ export async function setMyCountryCache(key: string, data: any, ttl = 60000): Pr
   await globalCache.set(key, data, { ttl: Math.round(ttl / 1000) });
 }
 
-// ==================== DIPLOMATIC STANDING ====================
-
 /** The real diplomatic record a Diplomatic Standing score is computed from. */
 interface DiplomaticStandingInputs {
   /** `DiplomaticRelation.strength` (0-100) of every relation the country is party to. */
@@ -192,8 +190,6 @@ export async function computeDiplomaticStanding(
   return { score: scoreDiplomaticStanding(inputs), inputs };
 }
 
-// ==================== GOVERNMENTAL EFFICIENCY ====================
-
 /**
  * Governmental Efficiency (0-100) is `GovernmentStructure.governmentEffectiveness`, which
  * national issues and the government builder move. Null when no government is set up.
@@ -218,8 +214,6 @@ async function loadGovernmentEffectiveness(
   });
   return structure?.governmentEffectiveness ?? null;
 }
-
-// ==================== VITALITY ====================
 
 /** Data outside the Country row that some vitality scores need. */
 interface VitalityExtras {
@@ -288,8 +282,6 @@ export async function loadVitalityExtras(
     diplomaticInputs: diplomatic.inputs,
   };
 }
-
-// ==================== WORLD CENSUS RANKINGS ====================
 
 /** One realm country's census values (null = no data, so it is left out of that ranking). */
 interface CensusRow {

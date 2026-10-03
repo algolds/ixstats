@@ -1,8 +1,16 @@
-// src/app/api/ixtime/sync-from-bot/route.ts
 import { NextResponse } from "next/server";
 import { IxTime } from "~/lib/ixtime";
 import type { BotTimeResponse } from "~/types/ixstats";
 import { bearerMatches } from "~/lib/security/safe-equal";
+
+const currentIxState = () => ({
+  ixTimeTimestamp: IxTime.getCurrentIxTime(),
+  ixTimeFormatted: IxTime.formatIxTime(IxTime.getCurrentIxTime(), true),
+  multiplier: IxTime.getTimeMultiplier(),
+  isPaused: IxTime.isPaused(),
+  gameYear: IxTime.getCurrentGameYear(),
+  isNaturalProgression: IxTime.isMultiplierNatural(),
+});
 
 export async function POST(request: Request) {
   try {
@@ -42,14 +50,7 @@ export async function POST(request: Request) {
         // (keep the speed); `/time speed` sends its current time and new speed
         IxTime.adoptBotClock(ixTimeMs, multiplier);
 
-        const currentState = {
-          ixTimeTimestamp: IxTime.getCurrentIxTime(),
-          ixTimeFormatted: IxTime.formatIxTime(IxTime.getCurrentIxTime(), true),
-          multiplier: IxTime.getTimeMultiplier(),
-          isPaused: IxTime.isPaused(),
-          gameYear: IxTime.getCurrentGameYear(),
-          isNaturalProgression: IxTime.isMultiplierNatural(),
-        };
+        const currentState = currentIxState();
 
         return NextResponse.json({
           success: true,
@@ -82,14 +83,7 @@ export async function POST(request: Request) {
     } catch {
       // Bot is not available, return graceful fallback
       console.warn("Discord bot is not available, using local time state");
-      const currentState = {
-        ixTimeTimestamp: IxTime.getCurrentIxTime(),
-        ixTimeFormatted: IxTime.formatIxTime(IxTime.getCurrentIxTime(), true),
-        multiplier: IxTime.getTimeMultiplier(),
-        isPaused: IxTime.isPaused(),
-        gameYear: IxTime.getCurrentGameYear(),
-        isNaturalProgression: IxTime.isMultiplierNatural(),
-      };
+      const currentState = currentIxState();
 
       return NextResponse.json({
         success: true,
@@ -126,14 +120,7 @@ export async function POST(request: Request) {
     });
 
     // Get the current state after sync
-    const currentState = {
-      ixTimeTimestamp: IxTime.getCurrentIxTime(),
-      ixTimeFormatted: IxTime.formatIxTime(IxTime.getCurrentIxTime(), true),
-      multiplier: IxTime.getTimeMultiplier(),
-      isPaused: IxTime.isPaused(),
-      gameYear: IxTime.getCurrentGameYear(),
-      isNaturalProgression: IxTime.isMultiplierNatural(),
-    };
+    const currentState = currentIxState();
 
     return NextResponse.json({
       success: true,

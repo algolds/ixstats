@@ -16,6 +16,7 @@ import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~
 import { EconomicComponentType } from "@prisma/client";
 import { ECONOMIC_TEMPLATES } from "~/lib/economy/atomic-data";
 
+import { getAllComponentsSchema, listCatalogComponents } from "~/server/shared/component-catalog";
 import { getLibraryComponents } from "./serializer";
 
 // ============================================================================
@@ -23,13 +24,6 @@ import { getLibraryComponents } from "./serializer";
 // ============================================================================
 
 const economicComponentTypeSchema = z.nativeEnum(EconomicComponentType);
-
-const getAllComponentsSchema = z
-  .object({
-    category: z.string().optional(),
-    isActive: z.boolean().optional(),
-  })
-  .optional();
 
 const incrementUsageSchema = z.object({
   componentType: economicComponentTypeSchema,
@@ -94,33 +88,19 @@ export const economicComponentsCatalogRouter = createTRPCRouter({
    *   taxImpact, sectorImpact, employmentImpact)
    * - Automatic fallback to hardcoded data
    */
-  getAllComponents: publicProcedure.input(getAllComponentsSchema).query(async ({ ctx, input }) => {
-    // The code library is the only catalog: the builder, editor and calculations read it
-    // directly. Every component is active; the database only keeps usage counts.
-    let components = (input?.isActive === false ? [] : getLibraryComponents())
-      .filter((comp) => !input?.category || comp.category === input.category)
-      .sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
-
-    try {
-      await ensureSeeded(ctx.db);
-      const usage = await ctx.db.economicComponentData.findMany({
-        select: { componentType: true, usageCount: true },
-      });
-      const usageByType = new Map(usage.map((row) => [row.componentType, row.usageCount]));
-      components = components.map((comp) => ({
-        ...comp,
-        usageCount: usageByType.get(comp.type) ?? 0,
-      }));
-    } catch (error) {
-      console.error("[economicComponents] Failed to read usage counts:", error);
-    }
-
-    return {
-      success: true,
-      components,
-      count: components.length,
-    };
-  }),
+  getAllComponents: publicProcedure.input(getAllComponentsSchema).query(({ ctx, input }) =>
+    listCatalogComponents({
+      label: "economicComponents",
+      library: getLibraryComponents,
+      input,
+      loadUsage: async () => {
+        await ensureSeeded(ctx.db);
+        return ctx.db.economicComponentData.findMany({
+          select: { componentType: true, usageCount: true },
+        });
+      },
+    })
+  ),
 
   /**
    * Increment component usage count for analytics

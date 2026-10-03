@@ -22,3 +22,16 @@ export function cronAuthError(request: NextRequest): NextResponse | null {
 
   return null;
 }
+
+/** The 500 response for a failed cron job, after logging it under `label`. */
+export function cronFailureResponse(label: string, error: unknown): NextResponse {
+  console.error(label, error);
+  return NextResponse.json(
+    {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+      timestamp: new Date().toISOString(),
+    },
+    { status: 500 }
+  );
+}

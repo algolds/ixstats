@@ -123,6 +123,101 @@ async function loadVerifiedWikiName(userId: string | undefined): Promise<string 
   return link?.username ?? null;
 }
 
+type LoreStats = Awaited<ReturnType<typeof loadLoreStats>>;
+type ClerkProfile = Awaited<ReturnType<typeof loadClerkProfile>>;
+
+function toLorewards(stats: LoreStats, rank: number | null): PassportLorewards | null {
+  if (!stats) return null;
+  const { totalScore, totalBytes, dailyWins, dailyRunnerUps, weeklyWins, monthlyWins } = stats;
+  const { currentStreak, longestStreak } = stats;
+  return {
+    totalScore,
+    totalBytes,
+    rank,
+    dailyWins,
+    dailyRunnerUps,
+    weeklyWins,
+    monthlyWins,
+    currentStreak,
+    longestStreak,
+  };
+}
+
+function toForumStats(member: IdentityForumMember | null): PassportForumStats | null {
+  if (!member) return null;
+  return {
+    userTitle: member.user_title ?? null,
+    messageCount: member.message_count ?? 0,
+    reactionScore: member.reaction_score ?? 0,
+    trophyPoints: member.trophy_points ?? 0,
+  };
+}
+
+function passportAccount(
+  identity: ResolvedIdentity,
+  clerk: ClerkProfile,
+  signature: string | null
+) {
+  const { user } = identity;
+  return {
+    userId: user?.id ?? null,
+    roleName: user?.role?.displayName ?? user?.role?.name ?? null,
+    isOwner: identity.isOwner,
+    createdAt: (user?.createdAt ?? clerk?.createdAt)?.toISOString() ?? null,
+    clerkUsername: clerk?.username ?? null,
+    clerkDisplayName: clerk?.displayName ?? null,
+    clerkImageUrl: clerk?.imageUrl ?? null,
+    signature,
+  };
+}
+
+function passportWiki(
+  identity: ResolvedIdentity,
+  wikiInfo: WikiInfo,
+  verifiedWikiName: string | null,
+  sections: Pick<ReturnType<typeof redactPassportSections>, "lorewards" | "awardHistory">
+) {
+  const live = hasLiveWikiData(wikiInfo);
+  return {
+    // A user's wiki is "linked" only through a verified link: `wikiName` may be a country name, which
+    // proves nothing. A handle with no user and no country is an external wiki name, linked if it exists.
+    linked: identity.user
+      ? Boolean(verifiedWikiName)
+      : !identity.country && Boolean(wikiInfo?.exists),
+    username: identity.wikiName,
+    // MediaWiki's own numbers, or null / empty when they could not be read (never estimated).
+    editCount: live ? wikiInfo.editCount : null,
+    groups: live ? wikiInfo.groups : [],
+    lorewards: sections.lorewards,
+    awardHistory: sections.awardHistory,
+  };
+}
+
+function passportForum(
+  identity: ResolvedIdentity,
+  member: IdentityForumMember | null,
+  /** Counters; null when hidden or when the forum member could not be read. */
+  stats: PassportForumStats | null
+) {
+  return {
+    linked: Boolean(member || identity.forumUserId),
+    username: member?.username ?? identity.forumUsername,
+    isStaff: Boolean(member?.is_staff),
+    joinedDate: member?.register_date ?? null,
+    stats,
+  };
+}
+
+function passportThinkpages(account: Awaited<ReturnType<typeof loadThinkpagesAccount>>) {
+  return {
+    linked: Boolean(account),
+    username: account?.username ?? null,
+    bio: account?.bio ?? null,
+    postCount: account?.postCount ?? 0,
+    followerCount: account?.followerCount ?? 0,
+  };
+}
+
 /**
  * Tab 1 — identity essentials, featured realm, linked platforms, civic stature and the showcase
  * (achievements, ribbons, collection highlight, Lorewards). Sections the owner hid in their passport
@@ -163,82 +258,36 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
   const loreRank = loreStats ? await loadLoreRank(loreStats.totalScore) : null;
   syncLinkedAccounts(identity, member);
 
-  const lorewards: PassportLorewards | null = loreStats
-    ? {
-        totalScore: loreStats.totalScore,
-        totalBytes: loreStats.totalBytes,
-        rank: loreRank,
-        dailyWins: loreStats.dailyWins,
-        dailyRunnerUps: loreStats.dailyRunnerUps,
-        weeklyWins: loreStats.weeklyWins,
-        monthlyWins: loreStats.monthlyWins,
-        currentStreak: loreStats.currentStreak,
-        longestStreak: loreStats.longestStreak,
-      }
-    : null;
-  const forumStats: PassportForumStats | null = member
-    ? {
-        userTitle: member.user_title ?? null,
-        messageCount: member.message_count ?? 0,
-        reactionScore: member.reaction_score ?? 0,
-        trophyPoints: member.trophy_points ?? 0,
-      }
-    : null;
+  const forumStats = toForumStats(member);
   // Loaders above already skip most hidden sections; the redaction is the single enforcement point.
   const sections = redactPassportSections(
-    { lorewards, awardHistory: toAwardHistory(awards, wikiName), forumStats, vault, achievements },
+    {
+      lorewards: toLorewards(loreStats, loreRank),
+      awardHistory: toAwardHistory(awards, wikiName),
+      forumStats,
+      vault,
+      achievements,
+    },
     shown
   );
 
   const realms = membershipsOf(identity, nations);
   return {
     handle: identity.handle,
-    account: {
-      userId: user?.id ?? null,
-      roleName: user?.role?.displayName ?? user?.role?.name ?? null,
-      isOwner: identity.isOwner,
-      createdAt: (user?.createdAt ?? clerk?.createdAt)?.toISOString() ?? null,
-      clerkUsername: clerk?.username ?? null,
-      clerkDisplayName: clerk?.displayName ?? null,
-      clerkImageUrl: clerk?.imageUrl ?? null,
-      signature: settings.signature,
-    },
+    account: passportAccount(identity, clerk, settings.signature),
     /** Which sections the owner shows; a false section is absent from this payload. */
     privacy: shown,
     featuredRealm: realms.find((r) => r.isFeatured) ?? realms[0] ?? null,
     realmCount: realms.length,
-    wiki: {
-      // A user's wiki is "linked" only through a verified link: `wikiName` may be a country name, which
-      // proves nothing. A handle with no user and no country is an external wiki name, linked if it exists.
-      linked: user ? Boolean(verifiedWikiName) : !identity.country && Boolean(wikiInfo?.exists),
-      username: wikiName,
-      // MediaWiki's own numbers, or null / empty when they could not be read (never estimated).
-      editCount: hasLiveWikiData(wikiInfo) ? wikiInfo.editCount : null,
-      groups: hasLiveWikiData(wikiInfo) ? wikiInfo.groups : [],
-      lorewards: sections.lorewards,
-      awardHistory: sections.awardHistory,
-    },
-    forum: {
-      linked: Boolean(member || forumUserId),
-      username: member?.username ?? identity.forumUsername,
-      isStaff: Boolean(member?.is_staff),
-      joinedDate: member?.register_date ?? null,
-      /** Counters; null when hidden or when the forum member could not be read. */
-      stats: sections.forumStats,
-    },
+    wiki: passportWiki(identity, wikiInfo, verifiedWikiName, sections),
+    forum: passportForum(identity, member, sections.forumStats),
     /** Credits and collection; null when the owner hides them. */
     vault: sections.vault,
     showcase: {
       /** Unlocked achievements and their ribbons; null when the owner hides them. */
       achievements: sections.achievements,
     },
-    thinkpages: {
-      linked: Boolean(thinkpages),
-      username: thinkpages?.username ?? null,
-      bio: thinkpages?.bio ?? null,
-      postCount: thinkpages?.postCount ?? 0,
-      followerCount: thinkpages?.followerCount ?? 0,
-    },
+    thinkpages: passportThinkpages(thinkpages),
     discord: {
       linked: Boolean(user?.discordUserId),
       username: user?.discordUsername ?? null,
@@ -268,7 +317,13 @@ interface IdentityWork {
 export async function getWork(query: IdentityQuery): Promise<IdentityWork> {
   const identity = await resolveIdentity(query.handle, query.viewerClerkId);
   if (!identity) {
-    return { authoredArticles: [], conlangs: [], sportTeams: [], directives: [], wikiActivityFeed: [] };
+    return {
+      authoredArticles: [],
+      conlangs: [],
+      sportTeams: [],
+      directives: [],
+      wikiActivityFeed: [],
+    };
   }
   const [nations, settings] = await Promise.all([
     resolveIdentityNations(identity),
@@ -338,7 +393,10 @@ async function rackOf(
   const settings = await loadPassportSettings(user.id);
   if (!settings.visibility.achievements) return EMPTY_RACK;
   const ribbons = toRibbons(await loadUnlocks(user.clerkUserId), settings.pinnedRibbonKeys);
-  return { ribbons: limit === undefined ? ribbons : ribbons.slice(0, limit), total: ribbons.length };
+  return {
+    ribbons: limit === undefined ? ribbons : ribbons.slice(0, limit),
+    total: ribbons.length,
+  };
 }
 
 /** Every ribbon a passport holder earned: pinned first, then rarest, then newest. */

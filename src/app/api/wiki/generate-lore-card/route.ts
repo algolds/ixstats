@@ -1,59 +1,32 @@
-// src/app/api/wiki/generate-lore-card/route.ts
 // API endpoint to generate and save a lore card from a wiki article
 
 import { NextResponse } from "next/server";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
-import type { WikiSource } from "~/lib/wiki-os/config";
-import { auth } from "@clerk/nextjs/server";
-import { isSystemOwner } from "~/lib/auth";
+import { invalidSourceResponse, parseWikiSource } from "../article-candidates";
+import { requireAdminSession } from "~/server/shared/route-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    // Check authentication
-    const session = await auth();
-    const userId = session?.userId;
-
-    if (!userId) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    }
-
-    // Check admin permissions
-    const allowedRoles = new Set(["admin", "owner", "staff"]);
-    const isOwner = isSystemOwner(userId);
-    const hasAdminRole =
-      session?.sessionClaims?.metadata &&
-      typeof session.sessionClaims.metadata === "object" &&
-      "role" in session.sessionClaims.metadata &&
-      typeof session.sessionClaims.metadata.role === "string" &&
-      allowedRoles.has(session.sessionClaims.metadata.role);
-
-    if (!isOwner && !hasAdminRole) {
-      return NextResponse.json({ error: "Admin permissions required" }, { status: 403 });
-    }
+    const denied = await requireAdminSession("Admin permissions required");
+    if (denied instanceof NextResponse) return denied;
 
     const body = await request.json();
-    const { articleTitle, wikiSource } = body;
+    const { articleTitle } = body;
+    const wikiSource = parseWikiSource(body.wikiSource);
 
     if (!articleTitle || typeof articleTitle !== "string") {
       return NextResponse.json({ error: "Article title is required" }, { status: 400 });
     }
 
-    if (!wikiSource || !["ixwiki", "iiwiki"].includes(wikiSource)) {
-      return NextResponse.json(
-        { error: "Invalid wiki source. Must be 'ixwiki' or 'iiwiki'" },
-        { status: 400 }
-      );
-    }
+    if (!wikiSource) return invalidSourceResponse();
 
     // Generate card candidate (require image)
-    const candidate = await wikiLoreCardGenerator.generateCard(
-      articleTitle,
-      wikiSource as WikiSource,
-      { requireImage: true }
-    );
+    const candidate = await wikiLoreCardGenerator.generateCard(articleTitle, wikiSource, {
+      requireImage: true,
+    });
 
     if (!candidate) {
       return NextResponse.json(

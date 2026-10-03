@@ -1,15 +1,5 @@
-/**
- * Geographic Map Router
- *
- * tRPC router for the IxEarth world map system.
- * Handles map layer data, country geometry, spatial queries,
- * and country-feature linking.
- *
- * Data source: PostgreSQL + PostGIS (map_layers table),
- * with file-based fallback for initial load.
- */
-
 import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
@@ -48,15 +38,112 @@ function centroidAndBbox(geometry: Geometry): { centroid: number[] | null; bbox:
   };
 }
 
-// ──────────────────────────────────────────────
-// Router
-// ──────────────────────────────────────────────
+/**
+ * Feature -> country linkages, in three layers: existing DB linkages, auto-matches for NEW
+ * features (political layer only), then manual overrides (which always win).
+ */
+async function buildCountryMap(
+  db: PrismaClient,
+  layerType: string,
+  geojson: FeatureCollection,
+  manualMappings: Array<{ featureId: string; countryId: string }> | undefined
+) {
+  const countryMap = new Map<string, string>();
+  const existingLinked = await db.mapLayer.findMany({
+    where: { layerType, countryId: { not: null }, ...SVG_REALM },
+    select: { featureId: true, countryId: true },
+  });
+  for (const existing of existingLinked) countryMap.set(existing.featureId, existing.countryId!);
+
+  // Track all existing featureIds (even unlinked) to identify truly new features
+  const allExisting = await db.mapLayer.findMany({
+    where: { layerType, ...SVG_REALM },
+    select: { featureId: true },
+  });
+  const existingFeatureIds = new Set([
+    ...existingLinked.map((e) => e.featureId),
+    ...allExisting.map((e) => e.featureId),
+  ]);
+
+  if (layerType === "political") {
+    const { matchFeaturesToCountries } = await import("~/lib/flags/svg-parser");
+    const countries = await db.country.findMany({
+      where: SVG_REALM,
+      select: { id: true, name: true, slug: true },
+    });
+
+    const newFeatures = geojson.features
+      .filter((f) => {
+        const fId = String(f.id ?? f.properties?.id ?? "");
+        return fId && !existingFeatureIds.has(fId);
+      })
+      .map((f) => ({
+        featureId: String(f.id ?? f.properties?.id ?? ""),
+        displayName: String(f.properties?.name ?? f.id ?? ""),
+        geometry: f.geometry,
+        properties: f.properties ?? {},
+        centroid: [0, 0] as [number, number],
+        boundingBox: [0, 0, 0, 0] as [number, number, number, number],
+        areaSqKm: 0,
+      }));
+
+    if (newFeatures.length > 0) {
+      for (const [fId, match] of matchFeaturesToCountries(newFeatures as any, countries)) {
+        countryMap.set(fId, match.countryId);
+      }
+    }
+  }
+
+  for (const mapping of manualMappings ?? []) countryMap.set(mapping.featureId, mapping.countryId);
+  return { countryMap, linkagesPreserved: existingLinked.length };
+}
+
+/** Auto-enriches altitude features with their elevation-zone metadata (unless already enriched). */
+function enrichAltitudeProperties(properties: Record<string, unknown>) {
+  if (properties.elevationMin != null) return;
+  const fillColor = (properties.fill ?? properties.fillColor ?? properties.color) as
+    string | undefined;
+  const zone = fillColor ? getZoneByColor(fillColor) : null;
+  if (!zone) return;
+  properties.zoneId = zone.zoneId;
+  properties.zoneName = zone.zoneName;
+  properties.elevationMin = zone.elevationMin;
+  properties.elevationMax = zone.elevationMax;
+  properties.elevationLabel = `${zone.elevationMin}-${zone.elevationMax}m`;
+}
+
+/** Layer records for the upload's features, deduplicated by featureId (last occurrence wins). */
+function buildLayerRecords(
+  geojson: FeatureCollection,
+  layerType: string,
+  countryMap: Map<string, string>
+) {
+  const records = geojson.features.map((feature) => {
+    const featureId = String(feature.id ?? feature.properties?.id ?? `unknown_${Math.random()}`);
+    const { centroid, bbox } = centroidAndBbox(feature.geometry);
+    return {
+      featureId,
+      displayName: String(feature.properties?.name ?? featureIdToDisplayName(featureId)),
+      countryId: countryMap.get(featureId) ?? null,
+      geometry: feature.geometry,
+      properties: (feature.properties ?? {}) as Record<string, unknown>,
+      centroid,
+      bbox,
+    };
+  });
+
+  const lastIndexById = new Map(records.map((r, i) => [r.featureId, i]));
+  const deduped = [...lastIndexById.values()].sort((a, b) => a - b).map((i) => records[i]!);
+  if (deduped.length < records.length) {
+    console.warn(
+      `[commitSvgUpload] Deduplicated ${records.length - deduped.length} duplicate featureIds`
+    );
+  }
+  if (layerType === "altitudes") deduped.forEach((r) => enrichAltitudeProperties(r.properties));
+  return deduped;
+}
 
 export const geoAdminCommitsRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // SVG Upload & Processing Pipeline
-  // ──────────────────────────────────────────────
-
   /** Commit a processed SVG upload to the MapLayer table */
   commitSvgUpload: adminProcedure
     .input(
@@ -92,114 +179,13 @@ export const geoAdminCommitsRouter = createTRPCRouter({
         });
       }
 
-      // 3-layer country mapping: existing DB linkages → auto-match NEW features → manual overrides
-      const countryMap = new Map<string, string>();
-
-      // Layer 1: Preserve ALL existing featureId→countryId linkages from DB
-      const existingLinked = await ctx.db.mapLayer.findMany({
-        where: { layerType: upload.layerType, countryId: { not: null }, ...SVG_REALM },
-        select: { featureId: true, countryId: true },
-      });
-      const existingFeatureIds = new Set<string>();
-      for (const existing of existingLinked) {
-        countryMap.set(existing.featureId, existing.countryId!);
-        existingFeatureIds.add(existing.featureId);
-      }
-      // Also track all existing featureIds (even unlinked) to identify truly new features
-      const allExisting = await ctx.db.mapLayer.findMany({
-        where: { layerType: upload.layerType, ...SVG_REALM },
-        select: { featureId: true },
-      });
-      for (const e of allExisting) existingFeatureIds.add(e.featureId);
-
-      // Layer 2: Auto-match only NEW features (not in existing DB)
-      if (upload.layerType === "political") {
-        const { matchFeaturesToCountries } = await import("~/lib/flags/svg-parser");
-        const countries = await ctx.db.country.findMany({
-          where: SVG_REALM,
-          select: { id: true, name: true, slug: true },
-        });
-
-        const newFeatures = geojson.features
-          .filter((f) => {
-            const fId = String(f.id ?? f.properties?.id ?? "");
-            return fId && !existingFeatureIds.has(fId);
-          })
-          .map((f) => ({
-            featureId: String(f.id ?? f.properties?.id ?? ""),
-            displayName: String(f.properties?.name ?? f.id ?? ""),
-            geometry: f.geometry,
-            properties: f.properties ?? {},
-            centroid: [0, 0] as [number, number],
-            boundingBox: [0, 0, 0, 0] as [number, number, number, number],
-            areaSqKm: 0,
-          }));
-
-        if (newFeatures.length > 0) {
-          const autoMatches = matchFeaturesToCountries(newFeatures as any, countries);
-          for (const [fId, match] of autoMatches) {
-            countryMap.set(fId, match.countryId);
-          }
-        }
-      }
-
-      // Layer 3: Manual overrides always win
-      if (input.countryMappings) {
-        for (const mapping of input.countryMappings) {
-          countryMap.set(mapping.featureId, mapping.countryId);
-        }
-      }
-
-      // Pre-compute all record data outside the transaction
-      const records = geojson.features.map((feature) => {
-        const featureId = String(
-          feature.id ?? feature.properties?.id ?? `unknown_${Math.random()}`
-        );
-        const displayName = String(feature.properties?.name ?? featureIdToDisplayName(featureId));
-        const countryId = countryMap.get(featureId) ?? null;
-        const { centroid, bbox } = centroidAndBbox(feature.geometry);
-        return {
-          featureId,
-          displayName,
-          countryId,
-          geometry: feature.geometry,
-          properties: (feature.properties ?? {}) as Record<string, unknown>,
-          centroid,
-          bbox,
-        };
-      });
-
-      // Deduplicate by featureId (last occurrence wins) to avoid unique constraint violations
-      const seenIds = new Map<string, number>();
-      for (let i = 0; i < records.length; i++) {
-        seenIds.set(records[i]!.featureId, i);
-      }
-      const dedupedRecords = [...seenIds.values()].sort((a, b) => a - b).map((i) => records[i]!);
-      if (dedupedRecords.length < records.length) {
-        console.warn(
-          `[commitSvgUpload] Deduplicated ${records.length - dedupedRecords.length} duplicate featureIds`
-        );
-      }
-
-      // Altitude enrichment: auto-enrich altitude features with zone metadata
-      if (upload.layerType === "altitudes") {
-        for (const r of dedupedRecords) {
-          const props = r.properties as Record<string, unknown>;
-          // Skip already-enriched features
-          if (props.elevationMin != null) continue;
-          const fillColor = (props.fill ?? props.fillColor ?? props.color) as string | undefined;
-          if (fillColor) {
-            const zone = getZoneByColor(fillColor);
-            if (zone) {
-              props.zoneId = zone.zoneId;
-              props.zoneName = zone.zoneName;
-              props.elevationMin = zone.elevationMin;
-              props.elevationMax = zone.elevationMax;
-              props.elevationLabel = `${zone.elevationMin}-${zone.elevationMax}m`;
-            }
-          }
-        }
-      }
+      const { countryMap, linkagesPreserved } = await buildCountryMap(
+        ctx.db,
+        upload.layerType,
+        geojson,
+        input.countryMappings
+      );
+      const dedupedRecords = buildLayerRecords(geojson, upload.layerType, countryMap);
 
       // Fast transaction: bulk delete + bulk create (2 queries instead of 233 upserts)
       await ctx.db.$transaction(
@@ -241,7 +227,7 @@ export const geoAdminCommitsRouter = createTRPCRouter({
               isActive: true,
               status: "committed",
               svgMetadata: {
-                ...((upload.svgMetadata as Record<string, unknown>) ?? {}),
+                ...(upload.svgMetadata as Record<string, unknown> | null),
                 countryLinkages,
               },
             },
@@ -293,7 +279,7 @@ export const geoAdminCommitsRouter = createTRPCRouter({
         layerType: upload.layerType,
         featuresCommitted: dedupedRecords.length,
         countriesLinked: countryMap.size,
-        linkagesPreserved: existingLinked.length,
+        linkagesPreserved,
       };
     }),
 

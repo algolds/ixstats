@@ -102,9 +102,26 @@ function normalizeTitle(title: string): string {
   return title.replace(/_/g, " ").trim();
 }
 
-// ---------------------------------------------------------------------------
-// Router
-// ---------------------------------------------------------------------------
+/** One page of Commons file search results (thumbnails + metadata) with the continuation offset. */
+async function searchCommonsFiles(gsrsearch: string, page: { limit: number; offset: number }) {
+  const data = await commonsApiFetch({
+    action: "query",
+    generator: "search",
+    gsrsearch,
+    gsrnamespace: 6,
+    gsrlimit: page.limit,
+    gsroffset: page.offset,
+    prop: "imageinfo",
+    iiprop: "url|extmetadata|size|mime",
+    iiurlwidth: 300,
+  });
+
+  const images = parseImagePages(data);
+  const nextOffset = data?.continue?.gsroffset != null ? (data.continue.gsroffset as number) : null;
+  const totalHits = data?.query?.searchinfo?.totalhits ?? null;
+
+  return { images, nextOffset, totalHits };
+}
 
 export const commonsRouter = createTRPCRouter({
   /**
@@ -120,24 +137,7 @@ export const commonsRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const data = await commonsApiFetch({
-        action: "query",
-        generator: "search",
-        gsrsearch: input.query,
-        gsrnamespace: 6,
-        gsrlimit: input.limit,
-        gsroffset: input.offset,
-        prop: "imageinfo",
-        iiprop: "url|extmetadata|size|mime",
-        iiurlwidth: 300,
-      });
-
-      const images = parseImagePages(data);
-      const nextOffset =
-        data?.continue?.gsroffset != null ? (data.continue.gsroffset as number) : null;
-      const totalHits = data?.query?.searchinfo?.totalhits ?? null;
-
-      return { images, nextOffset, totalHits };
+      return searchCommonsFiles(input.query, input);
     }),
 
   /**
@@ -153,24 +153,7 @@ export const commonsRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const data = await commonsApiFetch({
-        action: "query",
-        generator: "search",
-        gsrsearch: `deepcat:"${input.category}"`,
-        gsrnamespace: 6,
-        gsrlimit: input.limit,
-        gsroffset: input.offset,
-        prop: "imageinfo",
-        iiprop: "url|extmetadata|size|mime",
-        iiurlwidth: 300,
-      });
-
-      const images = parseImagePages(data);
-      const nextOffset =
-        data?.continue?.gsroffset != null ? (data.continue.gsroffset as number) : null;
-      const totalHits = data?.query?.searchinfo?.totalhits ?? null;
-
-      return { images, nextOffset, totalHits };
+      return searchCommonsFiles(`deepcat:"${input.category}"`, input);
     }),
 
   /**

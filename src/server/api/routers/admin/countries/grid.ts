@@ -6,10 +6,6 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 
 export const adminCountriesGridRouter = createTRPCRouter({
-  // ============================================================================
-  // PHASE 2: COUNTRY GRID & UPCOMING EVENTS
-  // ============================================================================
-
   /**
    * Get all countries with key metrics for the admin country grid.
    * Supports sorting, filtering, and search.

@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
 import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { getTerrainForArea } from "~/lib/country-geo";
 import { clipAndValidatePolygon, checkNameUniqueness } from "~/lib/maps/geo-validation";
 import { syncGeographicDemographics } from "~/lib/country-geo/sync";
+import { assertFound, assertOwnCountry } from "../../core/shared";
 
 export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
   /**
@@ -25,10 +25,7 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
       // Validate containment + clip polygon to country borders
       const clippedGeometry = await clipAndValidatePolygon(
@@ -110,17 +107,14 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
-      const sub = await ctx.db.subdivision.findFirst({
-        where: { id: input.subdivisionId, countryId: input.countryId },
-      });
-      if (!sub) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Subdivision not found" });
-      }
+      assertFound(
+        await ctx.db.subdivision.findFirst({
+          where: { id: input.subdivisionId, countryId: input.countryId },
+        }),
+        "Subdivision not found"
+      );
 
       // Validate new geometry if provided
       let clippedGeometry = undefined;
@@ -192,17 +186,14 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
-      const sub = await ctx.db.subdivision.findFirst({
-        where: { id: input.subdivisionId, countryId: input.countryId },
-      });
-      if (!sub) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Subdivision not found" });
-      }
+      assertFound(
+        await ctx.db.subdivision.findFirst({
+          where: { id: input.subdivisionId, countryId: input.countryId },
+        }),
+        "Subdivision not found"
+      );
 
       await ctx.db.subdivision.delete({ where: { id: input.subdivisionId } });
       await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS);

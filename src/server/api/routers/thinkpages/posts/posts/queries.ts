@@ -1,53 +1,13 @@
 import { z } from "zod";
 import { createTRPCRouter, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { canViewPost, pollInclude, transformPost } from "../../post-utils";
-
-const accountSelect = {
-  id: true,
-  username: true,
-  displayName: true,
-  profileImageUrl: true,
-  accountType: true,
-  verified: true,
-  clerkUserId: true,
-  countryId: true,
-  country: {
-    select: {
-      id: true,
-      name: true,
-      flag: true,
-    },
-  },
-} as const;
-
-const accountInclude = {
-  account: {
-    select: accountSelect,
-  },
-};
-
-const postInclude = {
-  ...accountInclude,
-  parentPost: {
-    include: accountInclude,
-  },
-  repostOf: {
-    include: accountInclude,
-  },
-  reactions: true,
-  mediaAttachments: true,
-  ...pollInclude,
-  reposts: {
-    select: { accountId: true },
-  },
-  _count: {
-    select: {
-      replies: true,
-      reposts: true,
-    },
-  },
-};
+import {
+  accountInclude,
+  canViewPost,
+  pollInclude,
+  postInclude,
+  transformPost,
+} from "../../post-utils";
 
 export const thinkpagesPostsPostsQueriesRouter = createTRPCRouter({
   // Get post details with replies

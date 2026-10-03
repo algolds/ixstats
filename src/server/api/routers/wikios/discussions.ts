@@ -1,48 +1,61 @@
-/**
- * discussions.ts — WikiOS Margin Discussions & Threaded Discourse Router.
- *
- * Provides high-performance, indexed endpoints for WikiOS Margin:
- * - Thread creation, querying, resolution, and comments
- * - Margin gutter pin anchors & text-anchored commentary
- * - Author & country hydration for discussion threads
- */
-
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import { requireWikiUserId, isWikiAdmin } from "~/lib/wiki-os/auth";
+import { requireWikiUserId, isWikiAdmin, type WikiAuthContext } from "~/lib/wiki-os/auth";
 import { db } from "~/server/db";
 import { TRPCError } from "@trpc/server";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
-interface HydratedComment {
-  id: string;
-  threadId: string;
-  userId: string;
-  countryId: string | null;
-  content: string;
-  suggestedEdit: string | null;
-  reactions: unknown;
-  createdAt: Date;
-  updatedAt: Date;
+type PosterContext = Parameters<typeof assertCountryWriteAccess>[0] & WikiAuthContext;
+
+/** Identity a comment/thread is written under; posting "as" a country needs write access to it. */
+async function resolvePoster(ctx: PosterContext, countryId: string | undefined) {
+  const authUserId = requireWikiUserId(ctx);
+  if (countryId) await assertCountryWriteAccess(ctx, countryId);
+  return {
+    userId: ctx.user?.id || authUserId,
+    countryId: countryId || ctx.user?.countryId || null,
+  };
 }
 
-interface HydratedThread {
-  id: string;
-  articleTitle: string;
-  status: "OPEN" | "RESOLVED" | "ARCHIVED";
-  title: string;
-  sectionAnchor: string | null;
-  selectedText: string | null;
-  anchorOffset: number | null;
-  resolvedAt: Date | null;
-  resolvedBy: string | null;
-  createdBy: string;
-  countryId: string | null;
-  teamId: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  comments: HydratedComment[];
+function commentData(
+  threadId: string,
+  poster: { userId: string; countryId: string | null },
+  input: { content: string; suggestedEdit?: string }
+) {
+  return {
+    threadId,
+    userId: poster.userId,
+    countryId: poster.countryId,
+    content: input.content.trim(),
+    suggestedEdit: input.suggestedEdit?.trim() || null,
+  };
 }
+
+async function requireThread(threadId: string) {
+  const thread = await db.wikiDiscussionThread.findUnique({ where: { id: threadId } });
+  if (!thread) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Thread not found" });
+  }
+  return thread;
+}
+
+type Person =
+  | {
+      wikiUsername?: string | null;
+      discordUsername?: string | null;
+      country?: { name: string } | null;
+    }
+  | null
+  | undefined;
+
+function displayName(person: Person, rawId: string | null) {
+  const fallback = rawId?.startsWith("user_") ? rawId.slice(0, 12) : rawId;
+  return (
+    person?.wikiUsername || person?.discordUsername || person?.country?.name || fallback || "User"
+  );
+}
+
+const normalizeTitle = (title: string) => title.trim().replace(/ /g, "_");
 
 export const wikiosDiscussionsRouter = createTRPCRouter({
   /**
@@ -56,50 +69,33 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const normalizedTitle = input.articleTitle.trim().replace(/ /g, "_");
-
-      const whereClause: {
-        articleTitle: string;
-        status?: "OPEN" | "RESOLVED" | "ARCHIVED";
-      } = {
-        articleTitle: normalizedTitle,
-      };
-
-      if (input.status !== "ALL") {
-        whereClause.status = input.status;
-      }
-
-      // Fetch threads + comments
-      const prismaClient = db as any;
-      const threads: HydratedThread[] = await prismaClient.wikiDiscussionThread.findMany({
-        where: whereClause,
-        include: {
-          comments: {
-            orderBy: { createdAt: "asc" },
-          },
+      const threads = await db.wikiDiscussionThread.findMany({
+        where: {
+          articleTitle: normalizeTitle(input.articleTitle),
+          ...(input.status !== "ALL" && { status: input.status }),
         },
+        include: { comments: { orderBy: { createdAt: "asc" } } },
         orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
       });
 
       // Collect all unique user IDs for batch hydration
-      const userIds = new Set<string>();
-      for (const t of threads) {
-        if (t.createdBy) userIds.add(t.createdBy);
-        if (t.resolvedBy) userIds.add(t.resolvedBy);
-        for (const c of t.comments) {
-          if (c.userId) userIds.add(c.userId);
-        }
-      }
+      const ids = [
+        ...new Set(
+          threads
+            .flatMap((t) => [t.createdBy, t.resolvedBy, ...t.comments.map((c) => c.userId)])
+            .filter((id): id is string => Boolean(id))
+        ),
+      ];
 
       const users =
-        userIds.size > 0
+        ids.length > 0
           ? await db.user.findMany({
               where: {
                 OR: [
-                  { id: { in: Array.from(userIds) } },
-                  { clerkUserId: { in: Array.from(userIds) } },
-                  { wikiUsername: { in: Array.from(userIds) } },
-                  { discordUserId: { in: Array.from(userIds) } },
+                  { id: { in: ids } },
+                  { clerkUserId: { in: ids } },
+                  { wikiUsername: { in: ids } },
+                  { discordUserId: { in: ids } },
                 ],
               },
               select: {
@@ -108,49 +104,22 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
                 wikiUsername: true,
                 discordUserId: true,
                 discordUsername: true,
-                role: {
-                  select: {
-                    name: true,
-                    displayName: true,
-                  },
-                },
-                country: {
-                  select: {
-                    id: true,
-                    name: true,
-                    flag: true,
-                  },
-                },
+                role: { select: { name: true, displayName: true } },
+                country: { select: { id: true, name: true, flag: true } },
               },
             })
           : [];
 
       const userMap = new Map<string, (typeof users)[0]>();
       for (const u of users) {
-        userMap.set(u.id, u);
-        if (u.clerkUserId) userMap.set(u.clerkUserId, u);
-        if (u.wikiUsername) userMap.set(u.wikiUsername, u);
-        if (u.discordUserId) userMap.set(u.discordUserId, u);
+        for (const key of [u.id, u.clerkUserId, u.wikiUsername, u.discordUserId]) {
+          if (key) userMap.set(key, u);
+        }
       }
 
-      // Hydrate threads with author data
-      const hydratedThreads = threads.map((t: HydratedThread) => {
+      const hydratedThreads = threads.map((t) => {
         const creator = userMap.get(t.createdBy);
         const resolver = t.resolvedBy ? userMap.get(t.resolvedBy) : null;
-        const creatorName =
-          creator?.wikiUsername ||
-          creator?.discordUsername ||
-          creator?.country?.name ||
-          (t.createdBy.startsWith("user_") ? t.createdBy.slice(0, 12) : t.createdBy) ||
-          "User";
-        const resolverName =
-          resolver?.wikiUsername ||
-          resolver?.discordUsername ||
-          resolver?.country?.name ||
-          (t.resolvedBy && t.resolvedBy.startsWith("user_")
-            ? t.resolvedBy.slice(0, 12)
-            : t.resolvedBy) ||
-          "User";
 
         return {
           id: t.id,
@@ -162,14 +131,11 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
           anchorOffset: t.anchorOffset,
           resolvedAt: t.resolvedAt,
           resolvedBy: resolver
-            ? {
-                id: resolver.id,
-                username: resolverName,
-              }
+            ? { id: resolver.id, username: displayName(resolver, t.resolvedBy) }
             : null,
           createdBy: {
             id: t.createdBy,
-            username: creatorName,
+            username: displayName(creator, t.createdBy),
             avatar: null,
             role: creator?.role || null,
             country: creator?.country || null,
@@ -177,15 +143,8 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
           teamId: t.teamId,
           createdAt: t.createdAt,
           updatedAt: t.updatedAt,
-          comments: t.comments.map((c: HydratedComment) => {
+          comments: t.comments.map((c) => {
             const author = userMap.get(c.userId);
-            const authorName =
-              author?.wikiUsername ||
-              author?.discordUsername ||
-              author?.country?.name ||
-              (c.userId.startsWith("user_") ? c.userId.slice(0, 12) : c.userId) ||
-              "User";
-
             return {
               id: c.id,
               threadId: c.threadId,
@@ -196,7 +155,7 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
               updatedAt: c.updatedAt,
               author: {
                 id: c.userId,
-                username: authorName,
+                username: displayName(author, c.userId),
                 avatar: null,
                 role: author?.role || null,
                 country: author?.country || null,
@@ -231,38 +190,25 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const authUserId = requireWikiUserId(ctx);
-      // Posting "as" a country is only allowed for a country the caller may write to.
-      if (input.countryId) await assertCountryWriteAccess(ctx, input.countryId);
-      const dbUser = ctx.user as any;
-      const effectiveUserId = dbUser?.id || authUserId;
-      const effectiveCountryId = input.countryId || dbUser?.countryId || null;
-      const normalizedTitle = input.articleTitle.trim().replace(/ /g, "_");
+      const poster = await resolvePoster(ctx, input.countryId);
 
       return db.$transaction(async (tx) => {
-        const client = tx as any;
-        const thread = await client.wikiDiscussionThread.create({
+        const thread = await tx.wikiDiscussionThread.create({
           data: {
-            articleTitle: normalizedTitle,
+            articleTitle: normalizeTitle(input.articleTitle),
             title: input.title.trim(),
             sectionAnchor: input.sectionAnchor || null,
             selectedText: input.selectedText || null,
             anchorOffset: input.anchorOffset || null,
             teamId: input.teamId || null,
-            countryId: effectiveCountryId,
-            createdBy: effectiveUserId,
+            countryId: poster.countryId,
+            createdBy: poster.userId,
             status: "OPEN",
           },
         });
 
-        const initialComment = await client.wikiDiscussionComment.create({
-          data: {
-            threadId: thread.id,
-            userId: effectiveUserId,
-            countryId: effectiveCountryId,
-            content: input.content.trim(),
-            suggestedEdit: input.suggestedEdit?.trim() || null,
-          },
+        const initialComment = await tx.wikiDiscussionComment.create({
+          data: commentData(thread.id, poster, input),
         });
 
         return {
@@ -286,36 +232,16 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const authUserId = requireWikiUserId(ctx);
-      // Posting "as" a country is only allowed for a country the caller may write to.
-      if (input.countryId) await assertCountryWriteAccess(ctx, input.countryId);
-      const dbUser = ctx.user as any;
-      const effectiveUserId = dbUser?.id || authUserId;
-      const effectiveCountryId = input.countryId || dbUser?.countryId || null;
-      const prismaClient = db as any;
-
-      const thread = await prismaClient.wikiDiscussionThread.findUnique({
-        where: { id: input.threadId },
-      });
-
-      if (!thread) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Thread not found" });
-      }
+      const poster = await resolvePoster(ctx, input.countryId);
+      const thread = await requireThread(input.threadId);
 
       return db.$transaction(async (tx) => {
-        const client = tx as any;
-        const comment = await client.wikiDiscussionComment.create({
-          data: {
-            threadId: thread.id,
-            userId: effectiveUserId,
-            countryId: effectiveCountryId,
-            content: input.content.trim(),
-            suggestedEdit: input.suggestedEdit?.trim() || null,
-          },
+        const comment = await tx.wikiDiscussionComment.create({
+          data: commentData(thread.id, poster, input),
         });
 
         // Touch parent thread's updatedAt
-        await client.wikiDiscussionThread.update({
+        await tx.wikiDiscussionThread.update({
           where: { id: thread.id },
           data: { updatedAt: new Date() },
         });
@@ -336,17 +262,9 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const userId = requireWikiUserId(ctx);
-      const prismaClient = db as any;
+      await requireThread(input.threadId);
 
-      const thread = await prismaClient.wikiDiscussionThread.findUnique({
-        where: { id: input.threadId },
-      });
-
-      if (!thread) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Thread not found" });
-      }
-
-      return prismaClient.wikiDiscussionThread.update({
+      return db.wikiDiscussionThread.update({
         where: { id: input.threadId },
         data: {
           status: input.resolved ? "RESOLVED" : "OPEN",
@@ -365,15 +283,7 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const userId = requireWikiUserId(ctx);
       const admin = isWikiAdmin(ctx);
-      const prismaClient = db as any;
-
-      const thread = await prismaClient.wikiDiscussionThread.findUnique({
-        where: { id: input.threadId },
-      });
-
-      if (!thread) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Thread not found" });
-      }
+      const thread = await requireThread(input.threadId);
 
       if (thread.createdBy !== userId && !admin) {
         throw new TRPCError({
@@ -382,9 +292,7 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
         });
       }
 
-      await prismaClient.wikiDiscussionThread.delete({
-        where: { id: input.threadId },
-      });
+      await db.wikiDiscussionThread.delete({ where: { id: input.threadId } });
 
       return { success: true };
     }),

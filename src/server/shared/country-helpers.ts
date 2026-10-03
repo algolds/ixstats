@@ -9,6 +9,16 @@ const validateGrowthRate = (value: number | null | undefined): number => {
   return Math.min(Math.max(numValue, -0.5), 0.5);
 };
 
+const COMPONENT_DEFAULTS = {
+  activeGovComponents: [],
+  activeEconComponents: [],
+  activeTaxComponents: [],
+  implementingGovComponents: [],
+  implementingEconComponents: [],
+  implementingTaxComponents: [],
+  activePolicyMaintenanceCost: 0,
+} as const;
+
 export const prepareBaseCountryData = (country: any, componentsData?: any): BaseCountryData => ({
   country: country.name,
   continent: country.continent,
@@ -34,13 +44,12 @@ export const prepareBaseCountryData = (country: any, componentsData?: any): Base
   unemploymentRate: country.unemploymentRate ?? 5,
   inflationRate: country.inflationRate ?? 0.02,
 
-  activeGovComponents: componentsData?.activeGovComponents ?? [],
-  activeEconComponents: componentsData?.activeEconComponents ?? [],
-  activeTaxComponents: componentsData?.activeTaxComponents ?? [],
-  implementingGovComponents: componentsData?.implementingGovComponents ?? [],
-  implementingEconComponents: componentsData?.implementingEconComponents ?? [],
-  implementingTaxComponents: componentsData?.implementingTaxComponents ?? [],
-  activePolicyMaintenanceCost: componentsData?.activePolicyMaintenanceCost ?? 0,
+  ...(Object.fromEntries(
+    Object.entries(COMPONENT_DEFAULTS).map(([key, fallback]) => [
+      key,
+      componentsData?.[key] ?? fallback,
+    ])
+  ) as Pick<BaseCountryData, keyof typeof COMPONENT_DEFAULTS>),
 });
 
 export async function getCountryComponentsStatsData(db: any, countryId: string) {

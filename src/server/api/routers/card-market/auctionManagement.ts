@@ -16,6 +16,7 @@ import { auctionService } from "~/lib/economy/auction-service";
 import { notificationAPI } from "~/lib/notifications/api";
 import { grantCardXp } from "~/lib/cards/xp-utils";
 import { globalCache } from "~/lib/cache";
+import { assertAuthUserId } from "./_shared";
 
 /**
  * Card Market Router
@@ -38,12 +39,7 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        if (!ctx.auth?.userId) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "User ID not found in authentication context",
-          });
-        }
+        assertAuthUserId(ctx);
 
         // Validate buyout price if provided
         if (input.buyoutPrice && input.buyoutPrice <= input.startingPrice) {
@@ -121,12 +117,7 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        if (!ctx.auth?.userId) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "User ID not found in authentication context",
-          });
-        }
+        assertAuthUserId(ctx);
 
         const auctionInfo = await ctx.db.cardAuction.findUnique({
           where: { id: input.auctionId },
@@ -232,12 +223,7 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        if (!ctx.auth?.userId) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "User ID not found in authentication context",
-          });
-        }
+        assertAuthUserId(ctx);
 
         // Get bidder before cancellation (fire-and-forget notification)
         let currentBidderClerkId: string | null = null;

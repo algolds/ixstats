@@ -1,7 +1,78 @@
 // Feed-item builders shared by the global and following feeds.
 
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { formatPollForClient } from "../../thinkpages/post-utils";
+
+/** Poll with per-option vote counts, as both feeds include it. */
+export const POLL_INCLUDE = {
+  include: { options: { include: { _count: { select: { votes: true } } } } },
+} satisfies Prisma.PollDefaultArgs;
+
+export const FEED_ACCOUNT_SELECT = {
+  id: true,
+  username: true,
+  displayName: true,
+  profileImageUrl: true,
+  accountType: true,
+  verified: true,
+} satisfies Prisma.ThinkpagesAccountSelect;
+
+/** Stored reactionCounts JSON baseline plus live per-type counts. */
+export function mergeReactionCounts(
+  stored: string | null | undefined,
+  live: Record<string, number> | undefined
+): Record<string, number> {
+  let baseline: Record<string, number> = {};
+  try {
+    if (stored) baseline = (JSON.parse(stored) as Record<string, number> | null) ?? {};
+  } catch {
+    // ignore
+  }
+  for (const [type, count] of Object.entries(live ?? {})) {
+    baseline[type] = (baseline[type] || 0) + count;
+  }
+  return baseline;
+}
+
+/** Parses a stored JSON column, falling back (with a warning) when it is malformed or absent. */
+export function parseStoredJson<T>(raw: string | null | undefined, fallback: T, what: string): T {
+  if (!raw) return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch (e) {
+    console.warn(`Failed to parse ${what}:`, e);
+    return fallback;
+  }
+}
+
+const RANGE_MS = {
+  "24h": 24 * 60 * 60 * 1000,
+  "7d": 7 * 24 * 60 * 60 * 1000,
+  "30d": 30 * 24 * 60 * 60 * 1000,
+  "90d": 90 * 24 * 60 * 60 * 1000,
+};
+
+/** Start of a "24h" | "7d" | "30d" | "90d" window ending now. */
+export function rangeStart(range: keyof typeof RANGE_MS) {
+  return new Date(Date.now() - RANGE_MS[range]);
+}
+
+/** Restores the Date fields JSON caching flattened to strings. */
+export function hydrateCachedActivity<
+  T extends { timestamp: string | Date; rawPost?: { createdAt: string; ixTimeTimestamp: string } },
+>(act: T) {
+  return {
+    ...act,
+    timestamp: new Date(act.timestamp),
+    rawPost: act.rawPost
+      ? {
+          ...act.rawPost,
+          createdAt: new Date(act.rawPost.createdAt),
+          ixTimeTimestamp: new Date(act.rawPost.ixTimeTimestamp),
+        }
+      : undefined,
+  };
+}
 
 /** Feed author for an activity row: its country when it has one, the platform otherwise. */
 export function countryFeedUser(country: any) {

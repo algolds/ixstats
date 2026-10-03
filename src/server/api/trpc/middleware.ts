@@ -5,7 +5,7 @@
 
 import { t } from "./init";
 import { rateLimiter } from "~/lib/cache";
-import { db, isDatabaseReadOnly } from "~/server/db";
+import { isDatabaseReadOnly } from "~/server/db";
 import { isSystemOwner } from "~/lib/auth";
 import { hasPremiumTier } from "~/lib/auth/premium";
 import { getRoleName, isPrivilegedCountryWriter } from "~/server/shared/country-authorization";
@@ -179,6 +179,79 @@ export const rateLimitMiddleware = createRateLimitMiddleware({
   namespace: "default",
 });
 
+function auditSecurityLevel(path: string, isMutation: boolean) {
+  if (path.includes("execute")) return "HIGH";
+  return isMutation || path.includes("Intelligence") ? "MEDIUM" : "LOW";
+}
+
+function buildAuditEntry(
+  ctx: {
+    auth?: { userId?: string | null } | null;
+    user?: { countryId?: string | null } | null;
+    headers?: Headers;
+    impersonatorId?: string;
+  },
+  call: {
+    path: string;
+    type: string;
+    input: unknown;
+    duration: number;
+    failure: unknown;
+    securityLevel: string;
+  }
+) {
+  const { input, failure } = call;
+  const failed = failure !== null && failure !== undefined;
+  return {
+    timestamp: new Date().toISOString(),
+    userId: ctx.auth?.userId || "anonymous",
+    action: call.path,
+    method: "tRPC",
+    type: call.type,
+    success: !failed,
+    duration: call.duration,
+    errorMessage: failed ? (failure instanceof Error ? failure.message : String(failure)) : null,
+    countryId: (input as { countryId?: string } | null)?.countryId || ctx.user?.countryId || null,
+    userAgent: ctx.headers?.get("user-agent")?.slice(0, 200) || null,
+    ip: ctx.headers?.get("cf-connecting-ip") || ctx.headers?.get("x-real-ip") || null,
+    inputSummary: input && typeof input === "object" ? Object.keys(input).join(",") : null,
+    securityLevel: call.securityLevel,
+    impersonatorId: ctx.impersonatorId || null,
+  };
+}
+
+type AuditEntry = ReturnType<typeof buildAuditEntry>;
+
+async function persistAuditLog(ctx: { db: typeof import("~/server/db").db }, entry: AuditEntry) {
+  try {
+    await ctx.db.auditLog.create({
+      data: {
+        userId: entry.userId,
+        action: entry.action,
+        entityType: "trpc_admin",
+        ipAddress: entry.ip,
+        userAgent: entry.userAgent,
+        details: JSON.stringify({
+          method: entry.method,
+          type: entry.type,
+          duration: entry.duration,
+          securityLevel: entry.securityLevel,
+          ip: entry.ip,
+          userAgent: entry.userAgent,
+          countryId: entry.countryId,
+          inputSummary: entry.inputSummary,
+          impersonatorId: entry.impersonatorId,
+        }),
+        success: entry.success,
+        error: entry.errorMessage,
+        timestamp: new Date(),
+      },
+    });
+  } catch (dbError) {
+    console.error("[AUDIT_DB] Failed to persist audit log:", dbError);
+  }
+}
+
 /**
  * Audit log for admin procedures (applied in `adminProcedure`, after the admin check).
  *
@@ -200,89 +273,34 @@ export const auditLogMiddleware = t.middleware(async ({ ctx, next, path, input, 
     thrown = err;
     throw err;
   } finally {
-    const endTime = Date.now();
-    const duration = endTime - startTime;
+    const duration = Date.now() - startTime;
     if (duration > 500) {
       console.log(`[TRPC] ${path} took ${duration}ms to execute`);
     }
 
     const failure: unknown = thrown ?? (result && !result.ok ? result.error : null);
     const failed = failure !== null && failure !== undefined;
-    const errorMessage = failed
-      ? failure instanceof Error
-        ? failure.message
-        : String(failure)
-      : null;
     const isMutation = type === "mutation";
+    const securityLevel = auditSecurityLevel(path, isMutation);
 
-    const securityLevel = path.includes("execute")
-      ? "HIGH"
-      : isMutation
-        ? "MEDIUM"
-        : path.includes("Intelligence")
-          ? "MEDIUM"
-          : "LOW";
-
-    const shouldPersist = isMutation || failed || securityLevel === "HIGH";
-
-    const auditEntry = {
-      timestamp: new Date().toISOString(),
-      userId: ctx.auth?.userId || "anonymous",
-      action: path,
-      method: "tRPC",
+    const auditEntry = buildAuditEntry(ctx, {
+      path,
       type,
-      success: !failed,
+      input,
       duration,
-      errorMessage,
-      countryId: (input as any)?.countryId || ctx.user?.countryId || null,
-      userAgent: ctx.headers?.get("user-agent")?.slice(0, 200) || null,
-      ip: ctx.headers?.get("cf-connecting-ip") || ctx.headers?.get("x-real-ip") || null,
-      inputSummary:
-        input && typeof input === "object" ? Object.keys(input as object).join(",") : null,
+      failure,
       securityLevel,
-      impersonatorId: (ctx as any).impersonatorId || null,
-    };
+    });
 
-    if (shouldPersist) {
-      if (failed || securityLevel === "HIGH") {
-        console.error("[SECURITY_AUDIT]", auditEntry);
-      } else if (VERBOSE) {
-        console.log("[AUDIT]", auditEntry);
-      }
-
-      if (!isDatabaseReadOnly) {
-        try {
-          await ctx.db.auditLog.create({
-            data: {
-              userId: auditEntry.userId,
-              action: auditEntry.action,
-              entityType: "trpc_admin",
-              ipAddress: auditEntry.ip,
-              userAgent: auditEntry.userAgent,
-              details: JSON.stringify({
-                method: auditEntry.method,
-                type: auditEntry.type,
-                duration: auditEntry.duration,
-                securityLevel: auditEntry.securityLevel,
-                ip: auditEntry.ip,
-                userAgent: auditEntry.userAgent,
-                countryId: auditEntry.countryId,
-                inputSummary: auditEntry.inputSummary,
-                impersonatorId: auditEntry.impersonatorId,
-              }),
-              success: auditEntry.success,
-              error: auditEntry.errorMessage,
-              timestamp: new Date(),
-            },
-          });
-        } catch (dbError) {
-          console.error("[AUDIT_DB] Failed to persist audit log:", dbError);
-        }
-      } else if (VERBOSE) {
-        console.log("[AUDIT_DB] Skipping database write (read-only mode)");
-      }
+    if (failed || securityLevel === "HIGH") {
+      console.error("[SECURITY_AUDIT]", auditEntry);
     } else if (VERBOSE) {
       console.log("[AUDIT]", auditEntry);
+    }
+
+    if (isMutation || failed || securityLevel === "HIGH") {
+      if (!isDatabaseReadOnly) await persistAuditLog(ctx, auditEntry);
+      else if (VERBOSE) console.log("[AUDIT_DB] Skipping database write (read-only mode)");
     }
   }
 });
@@ -331,49 +349,15 @@ export const adminMiddleware = t.middleware(async ({ ctx, next }) => {
     );
   }
 
-  let user = ctx.user;
-  if (!user) {
-    try {
-      user = await db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-        include: {
-          country: true,
-          role: {
-            include: {
-              rolePermissions: {
-                include: {
-                  permission: true,
-                },
-              },
-            },
-          },
-        },
-      });
-    } catch (error) {
-      console.error(`[ADMIN_MIDDLEWARE] Failed to load user:`, error);
-      throw new UnauthorizedError("Failed to load user");
-    }
-  }
+  const user = ctx.user;
 
-  const isSystemOwnerUser = isSystemOwner(ctx.auth.userId);
-
-  if (isSystemOwnerUser) {
+  if (isSystemOwner(ctx.auth.userId)) {
     if (VERBOSE) {
       console.log(
         `[ADMIN_MIDDLEWARE] System owner detected: ${ctx.auth.userId} - bypassing role checks`
       );
     }
-    return next({
-      ctx: {
-        ...ctx,
-        user,
-      },
-    });
-  }
-
-  if (!user) {
-    console.error(`[ADMIN_MIDDLEWARE] User ${ctx.auth.userId} not found in database`);
-    throw new UnauthorizedError("User not found");
+    return next({ ctx: { ...ctx, user } });
   }
 
   if (!(user as any).role) {

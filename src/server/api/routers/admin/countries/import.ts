@@ -52,149 +52,142 @@ export const adminCountriesImportRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      try {
-        const fileBuffer = new Uint8Array(input.fileData).buffer;
-        const countries = await parseRosterFile(fileBuffer, input.fileName);
+      const fileBuffer = new Uint8Array(input.fileData).buffer;
+      const countries = await parseRosterFile(fileBuffer, input.fileName);
 
-        if (countries.length === 0) {
-          throw new Error("No valid countries found in the file");
-        }
-
-        // Check for existing countries (the roster is IxWorld's; names repeat across realms)
-        const existingCountries = await ctx.db.country.findMany({
-          where: {
-            realmId: DEFAULT_REALM_ID,
-            name: { in: countries.map((c) => c.country) },
-          },
-          select: {
-            name: true,
-            continent: true,
-            region: true,
-            governmentType: true,
-            religion: true,
-            leader: true,
-            areaSqMi: true,
-            baselinePopulation: true,
-            baselineGdpPerCapita: true,
-            maxGdpGrowthRate: true,
-            adjustedGdpGrowth: true,
-            populationGrowthRate: true,
-            landArea: true,
-            projected2040Population: true,
-            projected2040Gdp: true,
-            projected2040GdpPerCapita: true,
-            localGrowthFactor: true,
-          },
-        });
-
-        const existingMap = new Map(existingCountries.map((c) => [c.name, c]));
-
-        const changes = countries.map((country) => {
-          const existing = existingMap.get(country.country);
-
-          if (!existing) {
-            return {
-              type: "new" as const,
-              country,
-            };
-          } else {
-            // Compare significant fields
-            const fieldChanges = [];
-
-            if (Math.abs(existing.baselinePopulation - country.population) > 1000) {
-              fieldChanges.push({
-                field: "population",
-                fieldLabel: "Population",
-                oldValue: existing.baselinePopulation,
-                newValue: country.population,
-              });
-            }
-
-            if (Math.abs(existing.baselineGdpPerCapita - country.gdpPerCapita) > 100) {
-              fieldChanges.push({
-                field: "gdpPerCapita",
-                fieldLabel: "GDP per Capita",
-                oldValue: existing.baselineGdpPerCapita,
-                newValue: country.gdpPerCapita,
-              });
-            }
-
-            if (Math.abs(existing.maxGdpGrowthRate - country.maxGdpGrowthRate) > 0.001) {
-              fieldChanges.push({
-                field: "maxGdpGrowthRate",
-                fieldLabel: "Max GDP Growth Rate",
-                oldValue: existing.maxGdpGrowthRate,
-                newValue: country.maxGdpGrowthRate,
-              });
-            }
-
-            if (Math.abs(existing.adjustedGdpGrowth - country.adjustedGdpGrowth) > 0.001) {
-              fieldChanges.push({
-                field: "adjustedGdpGrowth",
-                fieldLabel: "Adjusted GDP Growth",
-                oldValue: existing.adjustedGdpGrowth,
-                newValue: country.adjustedGdpGrowth,
-              });
-            }
-
-            if (Math.abs(existing.populationGrowthRate - country.populationGrowthRate) > 0.001) {
-              fieldChanges.push({
-                field: "populationGrowthRate",
-                fieldLabel: "Population Growth Rate",
-                oldValue: existing.populationGrowthRate,
-                newValue: country.populationGrowthRate,
-              });
-            }
-
-            // Transform existing data to match BaseCountryData interface
-            const existingBaseData: BaseCountryData = {
-              country: existing.name,
-              continent: existing.continent,
-              region: existing.region,
-              governmentType: existing.governmentType,
-              religion: existing.religion,
-              leader: existing.leader,
-              population: existing.baselinePopulation,
-              gdpPerCapita: existing.baselineGdpPerCapita,
-              landArea: existing.landArea,
-              areaSqMi: existing.areaSqMi,
-              maxGdpGrowthRate: existing.maxGdpGrowthRate,
-              adjustedGdpGrowth: existing.adjustedGdpGrowth,
-              populationGrowthRate: existing.populationGrowthRate,
-              actualGdpGrowth: existing.adjustedGdpGrowth, // Use adjusted as fallback
-              projected2040Population: existing.projected2040Population || 0,
-              projected2040Gdp: existing.projected2040Gdp || 0,
-              projected2040GdpPerCapita: existing.projected2040GdpPerCapita || 0,
-              localGrowthFactor: existing.localGrowthFactor || 1.0,
-            };
-
-            return {
-              type: "update" as const,
-              country,
-              existingData: existingBaseData,
-              changes: fieldChanges,
-            };
-          }
-        });
-
-        const analysis: ImportAnalysis = {
-          totalCountries: countries.length,
-          newCountries: changes.filter((c) => c.type === "new").length,
-          updatedCountries: changes.filter((c) => c.type === "update").length,
-          unchangedCountries: changes.filter(
-            (c) => c.type === "update" && (!c.changes || c.changes.length === 0)
-          ).length,
-          changes,
-          analysisTime: Date.now(),
-        };
-
-        return analysis;
-      } catch (error) {
-        console.error("Failed to analyze import:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to analyze import file", {
-          cause: error,
-        });
+      if (countries.length === 0) {
+        throw new Error("No valid countries found in the file");
       }
+
+      // Check for existing countries (the roster is IxWorld's; names repeat across realms)
+      const existingCountries = await ctx.db.country.findMany({
+        where: {
+          realmId: DEFAULT_REALM_ID,
+          name: { in: countries.map((c) => c.country) },
+        },
+        select: {
+          name: true,
+          continent: true,
+          region: true,
+          governmentType: true,
+          religion: true,
+          leader: true,
+          areaSqMi: true,
+          baselinePopulation: true,
+          baselineGdpPerCapita: true,
+          maxGdpGrowthRate: true,
+          adjustedGdpGrowth: true,
+          populationGrowthRate: true,
+          landArea: true,
+          projected2040Population: true,
+          projected2040Gdp: true,
+          projected2040GdpPerCapita: true,
+          localGrowthFactor: true,
+        },
+      });
+
+      const existingMap = new Map(existingCountries.map((c) => [c.name, c]));
+
+      const changes = countries.map((country) => {
+        const existing = existingMap.get(country.country);
+
+        if (!existing) {
+          return {
+            type: "new" as const,
+            country,
+          };
+        } else {
+          // Compare significant fields
+          const fieldChanges = [];
+
+          if (Math.abs(existing.baselinePopulation - country.population) > 1000) {
+            fieldChanges.push({
+              field: "population",
+              fieldLabel: "Population",
+              oldValue: existing.baselinePopulation,
+              newValue: country.population,
+            });
+          }
+
+          if (Math.abs(existing.baselineGdpPerCapita - country.gdpPerCapita) > 100) {
+            fieldChanges.push({
+              field: "gdpPerCapita",
+              fieldLabel: "GDP per Capita",
+              oldValue: existing.baselineGdpPerCapita,
+              newValue: country.gdpPerCapita,
+            });
+          }
+
+          if (Math.abs(existing.maxGdpGrowthRate - country.maxGdpGrowthRate) > 0.001) {
+            fieldChanges.push({
+              field: "maxGdpGrowthRate",
+              fieldLabel: "Max GDP Growth Rate",
+              oldValue: existing.maxGdpGrowthRate,
+              newValue: country.maxGdpGrowthRate,
+            });
+          }
+
+          if (Math.abs(existing.adjustedGdpGrowth - country.adjustedGdpGrowth) > 0.001) {
+            fieldChanges.push({
+              field: "adjustedGdpGrowth",
+              fieldLabel: "Adjusted GDP Growth",
+              oldValue: existing.adjustedGdpGrowth,
+              newValue: country.adjustedGdpGrowth,
+            });
+          }
+
+          if (Math.abs(existing.populationGrowthRate - country.populationGrowthRate) > 0.001) {
+            fieldChanges.push({
+              field: "populationGrowthRate",
+              fieldLabel: "Population Growth Rate",
+              oldValue: existing.populationGrowthRate,
+              newValue: country.populationGrowthRate,
+            });
+          }
+
+          // Transform existing data to match BaseCountryData interface
+          const existingBaseData: BaseCountryData = {
+            country: existing.name,
+            continent: existing.continent,
+            region: existing.region,
+            governmentType: existing.governmentType,
+            religion: existing.religion,
+            leader: existing.leader,
+            population: existing.baselinePopulation,
+            gdpPerCapita: existing.baselineGdpPerCapita,
+            landArea: existing.landArea,
+            areaSqMi: existing.areaSqMi,
+            maxGdpGrowthRate: existing.maxGdpGrowthRate,
+            adjustedGdpGrowth: existing.adjustedGdpGrowth,
+            populationGrowthRate: existing.populationGrowthRate,
+            actualGdpGrowth: existing.adjustedGdpGrowth, // Use adjusted as fallback
+            projected2040Population: existing.projected2040Population || 0,
+            projected2040Gdp: existing.projected2040Gdp || 0,
+            projected2040GdpPerCapita: existing.projected2040GdpPerCapita || 0,
+            localGrowthFactor: existing.localGrowthFactor || 1.0,
+          };
+
+          return {
+            type: "update" as const,
+            country,
+            existingData: existingBaseData,
+            changes: fieldChanges,
+          };
+        }
+      });
+
+      const analysis: ImportAnalysis = {
+        totalCountries: countries.length,
+        newCountries: changes.filter((c) => c.type === "new").length,
+        updatedCountries: changes.filter((c) => c.type === "update").length,
+        unchangedCountries: changes.filter(
+          (c) => c.type === "update" && (!c.changes || c.changes.length === 0)
+        ).length,
+        changes,
+        analysisTime: Date.now(),
+      };
+
+      return analysis;
     }),
 
   // Import roster data

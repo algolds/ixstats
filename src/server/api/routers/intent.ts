@@ -117,6 +117,125 @@ async function cooldownStatus(db: PrismaClient, countryId: string) {
   };
 }
 
+type IntentPackage = ReturnType<typeof assemblePackages>["packages"][number];
+
+/** The draft being upgraded must be this country's and still a draft. */
+async function assertCommittableDraft(db: PrismaClient, intentId: string, countryId: string) {
+  // Re-committing an already-active row would re-apply the package without a new row counting
+  // against the weekly cap.
+  const draft = await db.intent.findUnique({
+    where: { id: intentId },
+    select: { countryId: true, status: true },
+  });
+  if (!draft || draft.countryId !== countryId) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Intent not found." });
+  }
+  if (draft.status !== "proposed") {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Only a proposed intent can be committed.",
+    });
+  }
+}
+
+async function assertUnderWeeklyCap(db: PrismaClient, countryId: string) {
+  const status = await cooldownStatus(db, countryId);
+  if (status.canCommit) return;
+  const until = status.cooldownUntil
+    ? ` Next available around ${IxTime.formatIxTime?.(status.cooldownUntil) ?? new Date(status.cooldownUntil).toISOString()}.`
+    : "";
+  throw new TRPCError({
+    code: "TOO_MANY_REQUESTS",
+    message: `Your government is still executing this week's agenda (${status.usedThisWeek}/${status.cap}).${until}`,
+  });
+}
+
+/** Creates the active intent, or upgrades the proposed draft (conditionally, so concurrent commits cannot both apply). */
+async function saveActiveIntent(
+  db: PrismaClient,
+  args: {
+    countryId: string;
+    goal: string;
+    tier: Tier;
+    category: Category;
+    parentId?: string;
+    intentId?: string;
+    pkg: IntentPackage;
+    summary: string;
+    now: number;
+  }
+) {
+  const { countryId, goal, tier, category, intentId, pkg, summary, now } = args;
+  const active = {
+    tier,
+    status: "active",
+    changesJson: JSON.stringify(pkg.changes),
+    summary,
+    cooldownUntil: now + COOLDOWN_MS,
+    createdIxTime: now,
+    riskRating: TIER_RISK[tier],
+    // Held against CivCap while the directive executes (lib/government/civcap.ts).
+    civCapCost: pkg.civCapCost,
+  };
+
+  if (!intentId) {
+    return db.intent.create({
+      data: {
+        ...active,
+        countryId,
+        goal,
+        category,
+        target: null,
+        parentId: args.parentId ?? null,
+      },
+    });
+  }
+  const upgraded = await db.intent.updateMany({
+    where: { id: intentId, countryId, status: "proposed" },
+    data: active,
+  });
+  if (upgraded.count !== 1) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Only a proposed intent can be committed.",
+    });
+  }
+  return db.intent.findUniqueOrThrow({ where: { id: intentId } });
+}
+
+/** Structured budget deltas (bounded; never a core stat). Best-effort: a missing row leaves the line descriptive only. */
+async function applyBudgetChanges(
+  db: PrismaClient,
+  countryId: string,
+  changes: IntentPackage["changes"]
+) {
+  for (const bc of changes.filter((c) => c.kind === "budget" && c.deptCategory && c.deltaPercent)) {
+    try {
+      const alloc = await db.budgetAllocation.findFirst({
+        where: {
+          governmentStructure: { countryId },
+          department: { category: bc.deptCategory! },
+        },
+        // most-recent budget year, then the largest line in that category
+        orderBy: [{ budgetYear: "desc" }, { allocatedPercent: "desc" }],
+      });
+      if (alloc) {
+        await db.budgetAllocation.update({
+          where: { id: alloc.id },
+          data: {
+            allocatedPercent: Math.max(
+              0,
+              Math.min(BUDGET_PCT_MAX, alloc.allocatedPercent + bc.deltaPercent!)
+            ),
+          },
+        });
+      }
+    } catch {
+      /* budget row missing / structure absent — line stays descriptive only */
+    }
+  }
+}
+
 export const intentRouter = createTRPCRouter({
   /**
    * Propose Measured/Moderate/Extreme packages for a plain-language goal. Owner / privileged
@@ -311,94 +430,27 @@ export const intentRouter = createTRPCRouter({
       const pkg = packages.find((p) => p.tier === (input.tier as Tier));
       if (!pkg) throw new TRPCError({ code: "BAD_REQUEST", message: "Unknown tier." });
 
-      // Upgrading a draft: it must be this country's and still a draft. Only input.countryId is
-      // authorised above, and re-committing an already-active row would re-apply the package
-      // without a new row counting against the weekly cap.
-      if (input.intentId) {
-        const draft = await ctx.db.intent.findUnique({
-          where: { id: input.intentId },
-          select: { countryId: true, status: true },
-        });
-        if (!draft || draft.countryId !== input.countryId) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Intent not found." });
-        }
-        if (draft.status !== "proposed") {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Only a proposed intent can be committed.",
-          });
-        }
-      }
-
-      // Weekly cooldown + cap.
-      const status = await cooldownStatus(ctx.db, input.countryId);
-      if (!status.canCommit) {
-        const until = status.cooldownUntil
-          ? ` Next available around ${IxTime.formatIxTime?.(status.cooldownUntil) ?? new Date(status.cooldownUntil).toISOString()}.`
-          : "";
-        throw new TRPCError({
-          code: "TOO_MANY_REQUESTS",
-          message: `Your government is still executing this week's agenda (${status.usedThisWeek}/${status.cap}).${until}`,
-        });
-      }
+      if (input.intentId) await assertCommittableDraft(ctx.db, input.intentId, input.countryId);
+      await assertUnderWeeklyCap(ctx.db, input.countryId);
 
       // Auto-summation prose — ThinkPages draft-ready (push deferred to phase 6).
       const country = await ctx.db.country.findUnique({
         where: { id: input.countryId },
         select: { name: true },
       });
-      const nm = country?.name ?? "The government";
       const summary =
-        `${nm} pursued "${input.goal}" via a ${input.tier} course: ` +
+        `${country?.name ?? "The government"} pursued "${input.goal}" via a ${input.tier} course: ` +
         pkg.changes.map((c) => c.label).join("; ") +
         ".";
 
-      let intent;
-      if (input.intentId) {
-        // Upgrade existing proposed intent to active. Conditional on it still being this
-        // country's draft, so two concurrent commits of the same draft cannot both apply.
-        const upgraded = await ctx.db.intent.updateMany({
-          where: { id: input.intentId, countryId: input.countryId, status: "proposed" },
-          data: {
-            tier: input.tier,
-            status: "active",
-            changesJson: JSON.stringify(pkg.changes),
-            summary,
-            cooldownUntil: now + COOLDOWN_MS,
-            createdIxTime: now,
-            riskRating: TIER_RISK[input.tier as Tier],
-            // Held against CivCap while the directive executes (lib/government/civcap.ts).
-            civCapCost: pkg.civCapCost,
-          },
-        });
-        if (upgraded.count !== 1) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Only a proposed intent can be committed.",
-          });
-        }
-        intent = await ctx.db.intent.findUniqueOrThrow({ where: { id: input.intentId } });
-      } else {
-        // Create new active intent directly
-        intent = await ctx.db.intent.create({
-          data: {
-            countryId: input.countryId,
-            goal: input.goal,
-            tier: input.tier,
-            category,
-            target: null,
-            status: "active",
-            changesJson: JSON.stringify(pkg.changes),
-            summary,
-            parentId: input.parentId ?? null,
-            cooldownUntil: now + COOLDOWN_MS,
-            createdIxTime: now,
-            riskRating: TIER_RISK[input.tier as Tier],
-            // Held against CivCap while the directive executes (lib/government/civcap.ts).
-            civCapCost: pkg.civCapCost,
-          },
-        });
-      }
+      const intent = await saveActiveIntent(ctx.db, {
+        ...input,
+        tier: input.tier as Tier,
+        category,
+        pkg,
+        summary,
+        now,
+      });
 
       // Apply the package through the spine (bounded + audited + narrated), linked to the
       // Intent row so the ledger entries trace back to this directive.
@@ -439,34 +491,7 @@ export const intentRouter = createTRPCRouter({
         });
       }
 
-      // Apply structured budget deltas (bounded; never a core stat). Best-effort.
-      const budgetChanges = pkg.changes.filter(
-        (c) => c.kind === "budget" && c.deptCategory && c.deltaPercent
-      );
-      for (const bc of budgetChanges) {
-        try {
-          const alloc = await ctx.db.budgetAllocation.findFirst({
-            where: {
-              governmentStructure: { countryId: input.countryId },
-              department: { category: bc.deptCategory! },
-            },
-            // most-recent budget year, then the largest line in that category
-            orderBy: [{ budgetYear: "desc" }, { allocatedPercent: "desc" }],
-          });
-          if (alloc) {
-            const next = Math.max(
-              0,
-              Math.min(BUDGET_PCT_MAX, alloc.allocatedPercent + bc.deltaPercent!)
-            );
-            await ctx.db.budgetAllocation.update({
-              where: { id: alloc.id },
-              data: { allocatedPercent: next },
-            });
-          }
-        } catch {
-          /* budget row missing / structure absent — line stays descriptive only */
-        }
-      }
+      await applyBudgetChanges(ctx.db, input.countryId, pkg.changes);
 
       // Deterministic resistance spawn: never fails the commit (try/catch inside).
       if (input.tier === "moderate" || input.tier === "extreme") {

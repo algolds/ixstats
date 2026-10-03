@@ -200,6 +200,30 @@ async function enactForeignPolicyEffects(
 }
 
 // Helper functions for cultural exchange <-> embassy mission integration
+/** Relationship-strength gates: no free trade with a hostile nation, no embargo or blockade on a close ally. */
+function assertRelationAllowsAction(actionType: string, strength: number) {
+  if (actionType === "free_trade" && strength < 20) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Cannot sign a free trade agreement with a hostile nation (relationship < 20).",
+    });
+  }
+  if ((actionType === "embargo" || actionType === "blockade") && strength > 80) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Cannot impose embargo/blockade on a close ally (relationship > 80).",
+    });
+  }
+}
+
+const impactParty = (country: {
+  currentGdpPerCapita: number | null;
+  currentPopulation: number | null;
+}) => ({
+  gdpPerCapita: country.currentGdpPerCapita ?? 10000,
+  population: country.currentPopulation ?? 1000000,
+});
+
 export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
   // ============================================================
   // Foreign Policy Actions (Phase 2)
@@ -281,21 +305,7 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
         },
       });
 
-      const strength = relation?.strength ?? 50;
-
-      // Validation: can't FTA with hostile nation, can't embargo ally
-      if (input.actionType === "free_trade" && strength < 20) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Cannot sign a free trade agreement with a hostile nation (relationship < 20).",
-        });
-      }
-      if ((input.actionType === "embargo" || input.actionType === "blockade") && strength > 80) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Cannot impose embargo/blockade on a close ally (relationship > 80).",
-        });
-      }
+      assertRelationAllowsAction(input.actionType, relation?.strength ?? 50);
 
       // Stale pending proposals must not block a fresh one.
       await expireStaleDiplomaticProposals(ctx.db, { countryId: initiatorId });
@@ -318,16 +328,14 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
       }
 
       // Get both countries for GDP calculations
-      const [initiator, target] = await Promise.all([
-        ctx.db.country.findUnique({
-          where: { id: initiatorId },
-          select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
-        }),
-        ctx.db.country.findUnique({
-          where: { id: input.targetId },
-          select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
-        }),
-      ]);
+      const [initiator, target] = await Promise.all(
+        [initiatorId, input.targetId].map((id) =>
+          ctx.db.country.findUnique({
+            where: { id },
+            select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
+          })
+        )
+      );
 
       if (!initiator || !target) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
@@ -345,22 +353,12 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
 
       // Target-scaled impact (shared pure fn — see plans/statecraft-stage2.md).
       const impact = computeForeignPolicyImpact({
-        initiator: {
-          gdpPerCapita: initiator.currentGdpPerCapita ?? 10000,
-          population: initiator.currentPopulation ?? 1000000,
-        },
-        target: {
-          gdpPerCapita: target.currentGdpPerCapita ?? 10000,
-          population: target.currentPopulation ?? 1000000,
-        },
+        initiator: impactParty(initiator),
+        target: impactParty(target),
         actionType: input.actionType,
         severity: input.severity,
         tradeVolume: trade?.tradeVolume ?? undefined,
       });
-      const initiatorGdpImpact = impact.initiatorGdpImpact;
-      const targetGdpImpact = impact.targetGdpImpact;
-      const relationshipDelta = impact.relationshipDelta;
-      const category = impact.category;
 
       // Cooperative actions await the target's consent; hostile ones are unilateral.
       const cooperative = COOPERATIVE_FP.has(input.actionType);
@@ -370,12 +368,12 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
           initiatorId,
           targetId: input.targetId,
           actionType: input.actionType,
-          category,
+          category: impact.category,
           severity: input.severity,
           status: cooperative ? "proposed" : "active",
-          initiatorGdpImpact,
-          targetGdpImpact,
-          relationshipDelta,
+          initiatorGdpImpact: impact.initiatorGdpImpact,
+          targetGdpImpact: impact.targetGdpImpact,
+          relationshipDelta: impact.relationshipDelta,
           reason: input.reason,
           description: input.description,
         },

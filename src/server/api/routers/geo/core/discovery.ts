@@ -4,7 +4,7 @@ import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import type { LayerInfoItemDto } from "~/types/geo.dto";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { MAP_LAYER_TYPES } from "~/lib/maps/map-config";
-import { computeVisualCenter } from "./geometry";
+import { centroidLngLat, computeVisualCenter } from "./geometry";
 import { getColorForFeature } from "./layer-loader";
 
 export const discoveryProcedures = {
@@ -37,16 +37,7 @@ export const discoveryProcedures = {
           areaSqKm: number | null;
           centroid: unknown;
         }) => {
-          const raw = l.centroid as [number, number] | { coordinates?: [number, number] } | null;
-          let cLng = 0,
-            cLat = 0;
-          if (Array.isArray(raw) && raw.length >= 2) {
-            cLng = raw[0];
-            cLat = raw[1];
-          } else if (raw && "coordinates" in raw && Array.isArray(raw.coordinates)) {
-            cLng = raw.coordinates[0];
-            cLat = raw.coordinates[1];
-          }
+          const [cLng, cLat] = centroidLngLat(l.centroid);
           return {
             featureId: l.featureId,
             displayName: l.displayName || featureIdToDisplayName(l.featureId),
@@ -133,16 +124,7 @@ export const discoveryProcedures = {
         });
 
         for (const f of features) {
-          const raw = f.centroid as [number, number] | { coordinates?: [number, number] } | null;
-          let cLng = 0,
-            cLat = 0;
-          if (Array.isArray(raw) && raw.length >= 2) {
-            cLng = raw[0];
-            cLat = raw[1];
-          } else if (raw && "coordinates" in raw && Array.isArray(raw.coordinates)) {
-            cLng = raw.coordinates[0];
-            cLat = raw.coordinates[1];
-          }
+          const [cLng, cLat] = centroidLngLat(f.centroid);
           results.push({
             type: "country",
             id: f.featureId,

@@ -1,14 +1,3 @@
-/**
- * Geographic Map Router
- *
- * tRPC router for the IxEarth world map system.
- * Handles map layer data, country geometry, spatial queries,
- * and country-feature linking.
- *
- * Data source: PostgreSQL + PostGIS (map_layers table),
- * with file-based fallback for initial load.
- */
-
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
@@ -64,15 +53,7 @@ function decodeFailureAsBadRequest(error: Error): never {
   throw error;
 }
 
-// ──────────────────────────────────────────────
-// Router
-// ──────────────────────────────────────────────
-
 export const geoEditorProceduralRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // Map Pipeline Endpoints
-  // ──────────────────────────────────────────────
-
   /**
    * Run the map conversion pipeline (SVG, procedural or flat-colour PNG input — decisions 10–11).
    * A PNG run without pngConfig.colorMapping returns the detected colours for the colour → nation step.

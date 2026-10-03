@@ -1,14 +1,8 @@
-// src/server/api/routers/economics.ts
-// FIXED: Core economic data management router matching Prisma schema exactly
-// SECURITY: All mutation endpoints validate country ownership
-
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { ECONOMY_INCLUDE, parseSectorBreakdown } from "./_shared";
 
 const economicsConfigRouter = createTRPCRouter({
-  // ==================== ECONOMY BUILDER CONFIGURATION ====================
-  // Comprehensive save endpoint for the entire economy builder state
-
   // Get complete economy configuration
   getEconomyConfiguration: publicProcedure
     .input(
@@ -19,14 +13,7 @@ const economicsConfigRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const country = await ctx.db.country.findUnique({
         where: { id: input.countryId },
-        include: {
-          economicProfile: true,
-          laborMarket: true,
-          fiscalSystem: true,
-          incomeDistribution: true,
-          economicModel: true,
-          nationalIdentity: true,
-        },
+        include: ECONOMY_INCLUDE,
       });
 
       if (!country) {
@@ -34,19 +21,12 @@ const economicsConfigRouter = createTRPCRouter({
       }
 
       // Transform database data back to builder configuration format
-      let sectorBreakdown: any[] = [];
-      if (country.economicProfile?.sectorBreakdown) {
-        try {
-          const parsed = JSON.parse(country.economicProfile.sectorBreakdown);
-          if (Array.isArray(parsed)) {
-            sectorBreakdown = parsed.filter(
-              (x): x is Record<string, any> => x !== null && typeof x === "object"
-            );
-          }
-        } catch (e) {
-          console.error("[Economics Config] Failed to parse sectorBreakdown:", e);
-        }
-      }
+      const sectorBreakdown = parseSectorBreakdown(
+        country.economicProfile?.sectorBreakdown,
+        "Economics Config"
+      );
+
+      const urban = country.urbanPopulationPercent || 50;
 
       return {
         structure: {
@@ -72,10 +52,7 @@ const economicsConfigRouter = createTRPCRouter({
         demographics: {
           totalPopulation: country.currentPopulation || 0,
           populationGrowthRate: country.populationGrowthRate || 0,
-          urbanRuralSplit: {
-            urban: country.urbanPopulationPercent || 50,
-            rural: 100 - (country.urbanPopulationPercent || 50),
-          },
+          urbanRuralSplit: { urban, rural: 100 - urban },
           lifeExpectancy: country.lifeExpectancy || 75,
           literacyRate: country.literacyRate || 90,
         },

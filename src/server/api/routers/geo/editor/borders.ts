@@ -1,14 +1,3 @@
-/**
- * Geographic Map Router
- *
- * tRPC router for the IxEarth world map system.
- * Handles map layer data, country geometry, spatial queries,
- * and country-feature linking.
- *
- * Data source: PostgreSQL + PostGIS (map_layers table),
- * with file-based fallback for initial load.
- */
-
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
@@ -19,40 +8,30 @@ import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { validateGeometryValid } from "~/lib/maps/geo-validation";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
-
-// ──────────────────────────────────────────────
-// Router
-// ──────────────────────────────────────────────
+import { assertFound, neighbourFeatures } from "../core/shared";
 
 export const geoEditorBordersRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // Border Editor
-  // ──────────────────────────────────────────────
-
   /** Start a border editing session for a feature. Returns geometry + neighbor info. */
   startBorderEditSession: adminProcedure
     .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
     .mutation(async ({ ctx, input }) => {
       const realmId = await viewerRealmId(ctx, input.realm);
-      const feature = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
-        select: {
-          id: true,
-          featureId: true,
-          displayName: true,
-          geometry: true,
-          centroid: true,
-          boundingBox: true,
-          areaSqKm: true,
-          countryId: true,
-        },
-      });
-      if (!feature) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Feature not found: ${input.featureId}`,
-        });
-      }
+      const feature = assertFound(
+        await ctx.db.mapLayer.findFirst({
+          where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
+          select: {
+            id: true,
+            featureId: true,
+            displayName: true,
+            geometry: true,
+            centroid: true,
+            boundingBox: true,
+            areaSqKm: true,
+            countryId: true,
+          },
+        }),
+        `Feature not found: ${input.featureId}`
+      );
 
       // Find neighboring features by bounding box overlap
       const bbox = feature.boundingBox as number[] | null;
@@ -78,24 +57,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
               geometry: true,
             },
           })
-          .then((layers) =>
-            layers
-              .filter((l) => {
-                const nb = l.boundingBox as number[] | null;
-                if (!nb || nb.length !== 4) return false;
-                return (
-                  nb[0]! < bbox[2]! + pad &&
-                  nb[2]! > bbox[0]! - pad &&
-                  nb[1]! < bbox[3]! + pad &&
-                  nb[3]! > bbox[1]! - pad
-                );
-              })
-              .map((l) => ({
-                featureId: l.featureId,
-                displayName: l.displayName,
-                geometry: l.geometry,
-              }))
-          );
+          .then((layers) => neighbourFeatures(layers, bbox, pad));
       }
 
       // Create or resume session
@@ -170,16 +132,13 @@ export const geoEditorBordersRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const realmId = await viewerRealmId(ctx, input.realm);
-      const feature = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
-        select: { id: true, geometry: true, countryId: true, displayName: true, areaSqKm: true },
-      });
-      if (!feature) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Feature not found: ${input.featureId}`,
-        });
-      }
+      const feature = assertFound(
+        await ctx.db.mapLayer.findFirst({
+          where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
+          select: { id: true, geometry: true, countryId: true, displayName: true, areaSqKm: true },
+        }),
+        `Feature not found: ${input.featureId}`
+      );
 
       if (input.applyDirectly) {
         // Admin direct apply — update geometry immediately
@@ -318,15 +277,12 @@ export const geoEditorBordersRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const realmId = await viewerRealmId(ctx, input.realm);
-      const feature = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
-      });
-      if (!feature) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Feature not found: ${input.featureId}`,
-        });
-      }
+      const feature = assertFound(
+        await ctx.db.mapLayer.findFirst({
+          where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
+        }),
+        `Feature not found: ${input.featureId}`
+      );
 
       const { splitPolygon, calculateArea, calculateCentroid, calculateBBox } =
         await import("~/lib/maps/border-editor");

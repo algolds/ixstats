@@ -1,15 +1,24 @@
-// src/server/api/routers/activities.ts
-// Activities router for live activity feed system
-
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { globalCache } from "~/lib/cache";
 import {
   activityFeedItem,
   countryFeedUser,
+  FEED_ACCOUNT_SELECT,
+  hydrateCachedActivity,
+  mergeReactionCounts,
+  parseStoredJson,
+  POLL_INCLUDE,
+  rangeStart,
   thinkpagesFeedItem,
   withViewerPollVotes,
 } from "./shared";
+
+function countReactionTypes(reactions: Array<{ reactionType: string }>) {
+  const counts: Record<string, number> = {};
+  for (const { reactionType } of reactions) counts[reactionType] = (counts[reactionType] ?? 0) + 1;
+  return counts;
+}
 
 export const activitiesFeedPersonalRouter = createTRPCRouter({
   // Get feed from the countries the user's country follows and the personas the user follows
@@ -50,20 +59,9 @@ export const activitiesFeedPersonalRouter = createTRPCRouter({
         if (cachedData) {
           // Hydrate Date objects from JSON cache
           combinedActivities = cachedData.combinedActivities.map((act) => ({
-            ...act,
-            timestamp: new Date(act.timestamp),
-            rawPost: act.rawPost
-              ? {
-                  ...act.rawPost,
-                  createdAt: new Date(act.rawPost.createdAt),
-                  ixTimeTimestamp: new Date(act.rawPost.ixTimeTimestamp),
-                }
-              : undefined,
+            ...hydrateCachedActivity(act),
             poll: act.poll
-              ? {
-                  ...act.poll,
-                  endDate: act.poll.endDate ? new Date(act.poll.endDate) : null,
-                }
+              ? { ...act.poll, endDate: act.poll.endDate ? new Date(act.poll.endDate) : null }
               : null,
           }));
           followingCount = cachedData.followingCount;
@@ -74,19 +72,7 @@ export const activitiesFeedPersonalRouter = createTRPCRouter({
                 where: { countryId: { in: followedIds } },
                 orderBy: { createdAt: "desc" },
                 take: input.limit,
-                include: {
-                  poll: {
-                    include: {
-                      options: {
-                        include: {
-                          _count: {
-                            select: { votes: true },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
+                include: { poll: POLL_INCLUDE },
               })
             : [];
 
@@ -104,43 +90,12 @@ export const activitiesFeedPersonalRouter = createTRPCRouter({
             include: {
               account: {
                 select: {
-                  id: true,
-                  username: true,
-                  displayName: true,
-                  profileImageUrl: true,
-                  accountType: true,
-                  verified: true,
+                  ...FEED_ACCOUNT_SELECT,
                   country: { select: { id: true, name: true, flag: true } },
                 },
               },
-              parentPost: {
-                include: {
-                  account: {
-                    select: {
-                      id: true,
-                      username: true,
-                      displayName: true,
-                      profileImageUrl: true,
-                      accountType: true,
-                      verified: true,
-                    },
-                  },
-                },
-              },
-              repostOf: {
-                include: {
-                  account: {
-                    select: {
-                      id: true,
-                      username: true,
-                      displayName: true,
-                      profileImageUrl: true,
-                      accountType: true,
-                      verified: true,
-                    },
-                  },
-                },
-              },
+              parentPost: { include: { account: { select: FEED_ACCOUNT_SELECT } } },
+              repostOf: { include: { account: { select: FEED_ACCOUNT_SELECT } } },
               reactions: true,
               mediaAttachments: true,
               reposts: {
@@ -172,12 +127,7 @@ export const activitiesFeedPersonalRouter = createTRPCRouter({
 
           // Transform ActivityFeed entries (excluding user-specific votes)
           for (const activity of activityFeedEntries) {
-            let metadata: any = {};
-            try {
-              if (activity.metadata) metadata = JSON.parse(activity.metadata);
-            } catch (err) {
-              console.warn("Failed to parse activity metadata:", activity.id, err);
-            }
+            const metadata = parseStoredJson(activity.metadata, {}, "activity metadata");
 
             const country = activity.countryId ? countryMap.get(activity.countryId) : null;
 
@@ -193,23 +143,10 @@ export const activitiesFeedPersonalRouter = createTRPCRouter({
               rawPost: {
                 ...post,
                 hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],
-                reactionCounts: (() => {
-                  let baseline: Record<string, number> = {};
-                  try {
-                    if (post.reactionCounts) {
-                      baseline =
-                        typeof post.reactionCounts === "string"
-                          ? JSON.parse(post.reactionCounts)
-                          : post.reactionCounts;
-                    }
-                  } catch {
-                    // ignore
-                  }
-                  return (post as any).reactions.reduce((acc: any, reaction: any) => {
-                    acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
-                    return acc;
-                  }, baseline);
-                })(),
+                reactionCounts: mergeReactionCounts(
+                  post.reactionCounts,
+                  countReactionTypes(post.reactions)
+                ),
                 timestamp: post.isAutoGenerated
                   ? post.ixTimeTimestamp.toISOString()
                   : post.createdAt.toISOString(),
@@ -258,24 +195,7 @@ export const activitiesFeedPersonalRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        // Calculate time range
-        const now = new Date();
-        let fromDate: Date;
-
-        switch (input.timeRange) {
-          case "24h":
-            fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-            break;
-          case "7d":
-            fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            break;
-          case "30d":
-            fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-            break;
-          case "90d":
-            fromDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-            break;
-        }
+        const fromDate = rangeStart(input.timeRange);
 
         // Get country data for context
         const country = await ctx.db.country.findUnique({

@@ -20,13 +20,14 @@ import {
   NativeSearchService,
 } from "~/lib/wiki-os/core/native-search-service";
 import { db } from "~/server/db";
+import { wikiSourceSchema } from "./_shared";
 
 const searchWikiTitles = publicProcedure
   .input(
     z.object({
       query: z.string().min(1).max(200),
       limit: z.number().min(1).max(50).default(10),
-      wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+      wiki: wikiSourceSchema,
     })
   )
   .query(async ({ input }) => {
@@ -196,7 +197,7 @@ export const wikiosSearchRouter = createTRPCRouter({
         category: z.string().max(200).optional(),
         limit: z.number().min(1).max(50).default(20),
         fileTypes: z.array(z.string()).optional(),
-        wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki"),
+        wiki: wikiSourceSchema,
       })
     )
     .query(async ({ input }) => {

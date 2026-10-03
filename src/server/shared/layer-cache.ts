@@ -1,6 +1,5 @@
 import type { FeatureCollection } from "geojson";
 
-// ──────────────────────────────────────────────
 // Shared in-memory cache for assembled map FeatureCollections.
 //
 // This is a cross-domain primitive: the geo router populates/reads it, and the
@@ -8,8 +7,6 @@ import type { FeatureCollection } from "geojson";
 // src/server/shared so neither router imports the other (arch.md: no
 // cross-router imports). Geo-specific TTL/compression config stays in
 // routers/geo/core/cache.ts, which re-exports these for its siblings.
-// ──────────────────────────────────────────────
-
 export const layerCache = new Map<string, { data: FeatureCollection; timestamp: number }>();
 
 /** In-flight layer builds keyed like layerCache, so concurrent requests share one build. */

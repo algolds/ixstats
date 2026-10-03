@@ -17,6 +17,15 @@ import { formatMessagesConversation, formatThinkpagesConversation } from "./form
 import { recordMessagingTelemetry } from "./telemetry";
 import { batchResolveMessagingAccounts } from "./account-resolver";
 
+const FOLDER_SOURCES = new Set(["diplomatic", "wiki", "forum"]);
+const COUNTED_SOURCES = ["thinktank", "diplomatic", "wiki", "forum"] as const;
+
+const CONVERSATION_DETAIL_INCLUDE = {
+  participants: { where: { isActive: true } },
+  thinktankGroup: { include: { members: { where: { isActive: true } } } },
+  messages: { take: 1, orderBy: { ixTimeTimestamp: "desc" } },
+} as const;
+
 export class MessagingQueryOperations {
   private db: any;
   private forumBridge?: any;
@@ -70,9 +79,38 @@ export class MessagingQueryOperations {
     return unreadMap;
   }
 
-  public async getConversationsByFolder(actorId: string, input: GetConversationsByFolderInput) {
+  /** Runs a list query and records its success/failure telemetry. */
+  private async withTelemetry<T>(
+    surface: "messages" | "thinkpages",
+    procedure: string,
+    actorId: string,
+    run: () => Promise<T>
+  ): Promise<T> {
     const startTime = Date.now();
+    const record = (authenticated: boolean, success: boolean) =>
+      recordMessagingTelemetry(
+        { surface, procedure, authenticated, success, durationMs: Date.now() - startTime },
+        this.telemetry
+      );
+
     try {
+      const result = await run();
+      record(true, true);
+      return result;
+    } catch (err) {
+      record(Boolean(actorId), false);
+      throw err;
+    }
+  }
+
+  /** Removes the look-ahead row from a `limit + 1` page and returns its lastActivity as the next cursor. */
+  private popNextCursor(conversations: any[], limit: number): string | undefined {
+    if (conversations.length <= limit) return undefined;
+    return conversations.pop()!.lastActivity?.toISOString();
+  }
+
+  public getConversationsByFolder(actorId: string, input: GetConversationsByFolderInput) {
+    return this.withTelemetry("messages", "getConversationsByFolder", actorId, async () => {
       if (this.forumBridge?.syncInbound) {
         await this.forumBridge.syncInbound(actorId, this.db).catch(() => {});
       }
@@ -82,47 +120,21 @@ export class MessagingQueryOperations {
 
       const limit = input.limit ?? 20;
       const { folder, cursor } = input;
+      const isMember = { userId: actorId, isActive: true };
 
-      const where: any = {};
-
-      if (folder === "thinktank" || folder === "groups") {
-        where.source = "thinktank";
-        where.OR = [
-          {
-            participants: {
-              some: {
-                userId: actorId,
-                isActive: true,
-              },
-            },
-          },
-          {
-            thinktankGroup: {
-              members: {
-                some: {
-                  userId: actorId,
-                  isActive: true,
-                },
-              },
-            },
-          },
-        ];
-      } else {
-        where.participants = {
-          some: {
-            userId: actorId,
-            isActive: true,
-          },
-        };
-        where.source = { not: "thinktank" };
-        if (folder === "diplomatic") {
-          where.source = "diplomatic";
-        } else if (folder === "wiki") {
-          where.source = "wiki";
-        } else if (folder === "forum") {
-          where.source = "forum";
-        }
-      }
+      const where: any =
+        folder === "thinktank" || folder === "groups"
+          ? {
+              source: "thinktank",
+              OR: [
+                { participants: { some: isMember } },
+                { thinktankGroup: { members: { some: isMember } } },
+              ],
+            }
+          : {
+              participants: { some: isMember },
+              source: FOLDER_SOURCES.has(folder) ? folder : { not: "thinktank" },
+            };
 
       if (cursor) {
         where.lastActivity = { lt: new Date(cursor) };
@@ -142,11 +154,7 @@ export class MessagingQueryOperations {
         },
       });
 
-      let nextCursor: string | null = null;
-      if (conversations.length > limit) {
-        const nextItem = conversations.pop()!;
-        nextCursor = nextItem.lastActivity ? nextItem.lastActivity.toISOString() : null;
-      }
+      const nextCursor = this.popNextCursor(conversations, limit) ?? null;
 
       const accountMap = await this.resolveListAccounts(conversations, actorId);
       const unreadMap = await this.unreadCounts(
@@ -154,38 +162,13 @@ export class MessagingQueryOperations {
         actorId
       );
 
-      const formatted = conversations.map((conv: any) =>
-        formatMessagesConversation(conv, actorId, accountMap, unreadMap.get(conv.id) ?? 0)
-      );
-
-      recordMessagingTelemetry(
-        {
-          surface: "messages",
-          procedure: "getConversationsByFolder",
-          authenticated: true,
-          success: true,
-          durationMs: Date.now() - startTime,
-        },
-        this.telemetry
-      );
-
       return {
-        conversations: formatted,
+        conversations: conversations.map((conv: any) =>
+          formatMessagesConversation(conv, actorId, accountMap, unreadMap.get(conv.id) ?? 0)
+        ),
         nextCursor,
       };
-    } catch (err) {
-      recordMessagingTelemetry(
-        {
-          surface: "messages",
-          procedure: "getConversationsByFolder",
-          authenticated: Boolean(actorId),
-          success: false,
-          durationMs: Date.now() - startTime,
-        },
-        this.telemetry
-      );
-      throw err;
-    }
+    });
   }
 
   public async getFolderCounts(actorId: string) {
@@ -231,10 +214,7 @@ export class MessagingQueryOperations {
       if (unread === 0) continue;
       counts.inbox += unread;
       const src = p.conversation?.source;
-      if (src === "thinktank") counts.thinktank += unread;
-      else if (src === "diplomatic") counts.diplomatic += unread;
-      else if (src === "wiki") counts.wiki += unread;
-      else if (src === "forum") counts.forum += unread;
+      if (COUNTED_SOURCES.includes(src)) counts[src as (typeof COUNTED_SOURCES)[number]] += unread;
     }
 
     return counts;
@@ -250,18 +230,7 @@ export class MessagingQueryOperations {
           { thinktankGroup: { conversationId: conversationId } },
         ],
       },
-      include: {
-        participants: { where: { isActive: true } },
-        thinktankGroup: {
-          include: {
-            members: { where: { isActive: true } },
-          },
-        },
-        messages: {
-          take: 1,
-          orderBy: { ixTimeTimestamp: "desc" },
-        },
-      },
+      include: CONVERSATION_DETAIL_INCLUDE,
     });
 
     // Auto-create/heal ThinkTank conversation if missing
@@ -299,18 +268,7 @@ export class MessagingQueryOperations {
 
         conv = await this.db.thinkshareConversation.findUnique({
           where: { id: newConv.id },
-          include: {
-            participants: { where: { isActive: true } },
-            thinktankGroup: {
-              include: {
-                members: { where: { isActive: true } },
-              },
-            },
-            messages: {
-              take: 1,
-              orderBy: { ixTimeTimestamp: "desc" },
-            },
-          },
+          include: CONVERSATION_DETAIL_INCLUDE,
         });
       }
     }
@@ -354,9 +312,8 @@ export class MessagingQueryOperations {
     return formatMessagesConversation(conv, actorId, accountMap, unreadCount);
   }
 
-  public async getConversationsLegacy(actorId: string, input: GetConversationsLegacyInput) {
-    const startTime = Date.now();
-    try {
+  public getConversationsLegacy(actorId: string, input: GetConversationsLegacyInput) {
+    return this.withTelemetry("thinkpages", "getConversations", actorId, async () => {
       const limit = input.limit ?? 20;
       const where: any = {
         participants: {
@@ -382,11 +339,7 @@ export class MessagingQueryOperations {
         },
       });
 
-      let nextCursor: string | undefined = undefined;
-      if (conversations.length > limit) {
-        const nextItem = conversations.pop()!;
-        nextCursor = nextItem.lastActivity ? nextItem.lastActivity.toISOString() : undefined;
-      }
+      const nextCursor = this.popNextCursor(conversations, limit);
 
       const accountMap = await this.resolveListAccounts(conversations, actorId);
       const unreadMap = await this.unreadCounts(
@@ -394,38 +347,13 @@ export class MessagingQueryOperations {
         actorId
       );
 
-      const formatted = conversations.map((conv: any) =>
-        formatThinkpagesConversation(conv, actorId, accountMap, unreadMap.get(conv.id) ?? 0)
-      );
-
-      recordMessagingTelemetry(
-        {
-          surface: "thinkpages",
-          procedure: "getConversations",
-          authenticated: true,
-          success: true,
-          durationMs: Date.now() - startTime,
-        },
-        this.telemetry
-      );
-
       return {
-        conversations: formatted,
+        conversations: conversations.map((conv: any) =>
+          formatThinkpagesConversation(conv, actorId, accountMap, unreadMap.get(conv.id) ?? 0)
+        ),
         nextCursor,
       };
-    } catch (err) {
-      recordMessagingTelemetry(
-        {
-          surface: "thinkpages",
-          procedure: "getConversations",
-          authenticated: Boolean(actorId),
-          success: false,
-          durationMs: Date.now() - startTime,
-        },
-        this.telemetry
-      );
-      throw err;
-    }
+    });
   }
 
   public async getConversationMessages(actorId: string, input: GetConversationMessagesInput) {
@@ -523,25 +451,5 @@ export class MessagingQueryOperations {
       profileImageUrl: u.country?.flag ?? null,
       accountType: "country" as const,
     }));
-  }
-
-  public async getPresenceForUsers(userIds: string[]) {
-    if (userIds.length === 0) return {};
-
-    const presenceList = await this.db.userPresence.findMany({
-      where: { userId: { in: userIds } },
-    });
-
-    const result: Record<string, any> = {};
-    for (const p of presenceList) {
-      result[p.userId] = {
-        status: p.status,
-        lastSeenAt: p.lastSeenAt,
-        currentCountryId: p.currentCountryId,
-        customStatus: p.customStatus,
-      };
-    }
-
-    return result;
   }
 }

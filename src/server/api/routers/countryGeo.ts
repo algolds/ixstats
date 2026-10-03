@@ -4,17 +4,15 @@ import {
   cachedPublicProcedure,
   standardMutationCountryOwnerProcedure,
 } from "~/server/api/trpc";
+import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { getArticleWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { parseEntityAttributesFromWiki } from "~/lib/wiki-os/adapters/ixstates/entity-parser";
 import {
-  parseEntityAttributesFromWiki,
-  type EntityKind,
-} from "~/lib/wiki-os/adapters/ixstates/entity-parser";
-import { checkGeoCompliance } from "~/lib/country-geo";
-import { getTerrainAtPoint } from "~/lib/country-geo";
-import {
+  checkGeoCompliance,
+  getTerrainAtPoint,
   getCountryGeoBundle,
   upsertCity,
   upsertSubdivision,
@@ -23,6 +21,61 @@ import {
   rebaseNationalFromGeography,
   distributeSubdivisionDemographicsToCities,
 } from "~/lib/country-geo";
+
+const GEO_CACHE_KEYS = [
+  "geoCore.getCountryFeatures",
+  "geoCore.getMapBundle",
+  "geoCore.getWorldMap",
+  "geoCore.getAllMapFeatures",
+  "countryGeo.getCountryGeoBundle",
+];
+const GEO_ECONOMY_CACHE_KEYS = [...GEO_CACHE_KEYS, "countries.getByIdWithEconomicData"];
+
+function assertOwnCountry(ctx: { country?: unknown }, countryId: string) {
+  const owned = ctx.country as { id: string } | null | undefined;
+  if (owned && owned.id !== countryId) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
+  }
+}
+
+const submitterId = (ctx: {
+  auth?: { userId?: string | null } | null;
+  user?: { clerkUserId?: string | null } | null;
+}) => ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system";
+
+type EntityWhere = { id: string; countryId: string };
+
+/** Per-kind lookup and upsert wiring for populateFromWiki: `keep` fields are copied, `merge` fields take the wiki value when present. */
+const POPULATE_KINDS = {
+  city: {
+    label: "City",
+    find: (db: PrismaClient, where: EntityWhere) => db.city.findFirst({ where }),
+    upsert: upsertCity,
+    keep: ["id", "name", "type", "coordinates", "wikiPageTitle"],
+    merge: [
+      "population",
+      "gdpContribution",
+      "mayorName",
+      "specialization",
+      "elevation",
+      "foundedYear",
+    ],
+  },
+  subdivision: {
+    label: "Subdivision",
+    find: (db: PrismaClient, where: EntityWhere) => db.subdivision.findFirst({ where }),
+    upsert: upsertSubdivision,
+    keep: ["id", "name", "type", "level"],
+    merge: ["population", "gdpContribution", "governorName", "areaSqKm", "capital"],
+  },
+  poi: {
+    label: "POI",
+    find: (db: PrismaClient, where: EntityWhere) => db.pointOfInterest.findFirst({ where }),
+    upsert: upsertPoi,
+    keep: ["id", "name", "category", "coordinates", "icon", "wikiPageTitle"],
+    merge: ["description"],
+  },
+} as const;
 
 export const countryGeoRouter = createTRPCRouter({
   /**
@@ -144,24 +197,13 @@ export const countryGeoRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
-
+      assertOwnCountry(ctx, input.countryId);
       const city = await upsertCity(ctx.db, input.countryId, {
         ...input,
-        submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
+        submittedBy: submitterId(ctx),
       });
 
-      // Invalidate caches
-      await invalidateCache([
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "geoCore.getWorldMap",
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-      ]);
+      await invalidateCache(GEO_CACHE_KEYS);
       if (input.isNationalCapital || city.isNationalCapital) {
         await invalidateCache(["geoCore.getCapitalCities"]);
       }
@@ -198,10 +240,7 @@ export const countryGeoRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
       // Name is optional on the schema to allow partial (geometry-only) updates,
       // but it is mandatory when creating a new subdivision.
       if (!input.id && !input.name?.trim()) {
@@ -213,16 +252,10 @@ export const countryGeoRouter = createTRPCRouter({
 
       const subdivision = await upsertSubdivision(ctx.db, input.countryId, {
         ...input,
-        submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
+        submittedBy: submitterId(ctx),
       });
 
-      await invalidateCache([
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "geoCore.getWorldMap",
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-      ]);
+      await invalidateCache(GEO_CACHE_KEYS);
       broadcastMapUpdate("subdivision", input.countryId);
 
       return subdivision;
@@ -239,22 +272,10 @@ export const countryGeoRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
-
+      assertOwnCountry(ctx, input.countryId);
       const updated = await updateGeoRollupMode(ctx.db, input.countryId, input.mode);
 
-      // Invalidate caches
-      await invalidateCache([
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "geoCore.getWorldMap",
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-        "countries.getByIdWithEconomicData",
-      ]);
+      await invalidateCache(GEO_ECONOMY_CACHE_KEYS);
       broadcastMapUpdate("rollup-mode", input.countryId);
 
       return updated;
@@ -270,22 +291,10 @@ export const countryGeoRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
-
+      assertOwnCountry(ctx, input.countryId);
       const updated = await rebaseNationalFromGeography(ctx.db, input.countryId);
 
-      // Invalidate caches
-      await invalidateCache([
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "geoCore.getWorldMap",
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-        "countries.getByIdWithEconomicData",
-      ]);
+      await invalidateCache(GEO_ECONOMY_CACHE_KEYS);
       broadcastMapUpdate("national-rebase", input.countryId);
 
       return updated;
@@ -302,26 +311,14 @@ export const countryGeoRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
-
+      assertOwnCountry(ctx, input.countryId);
       const result = await distributeSubdivisionDemographicsToCities(
         ctx.db,
         input.countryId,
         input.scaleExisting
       );
 
-      // Invalidate caches
-      await invalidateCache([
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "geoCore.getWorldMap",
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-        "countries.getByIdWithEconomicData",
-      ]);
+      await invalidateCache(GEO_ECONOMY_CACHE_KEYS);
       broadcastMapUpdate("cities-distribution", input.countryId);
 
       return result;
@@ -351,31 +348,16 @@ export const countryGeoRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
-
+      assertOwnCountry(ctx, input.countryId);
       const { countryId, kind, id } = input;
-      const kindTyped = kind as EntityKind;
+      const config = POPULATE_KINDS[kind];
 
       // 1. Fetch the entity (so we can resolve its wiki title + existing values).
-      let existing: any;
-      let wikiTitle: string | null = null;
-      if (kind === "city") {
-        existing = await ctx.db.city.findFirst({ where: { id, countryId } });
-        if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "City not found" });
-        wikiTitle = existing.wikiPageTitle?.trim() || existing.name;
-      } else if (kind === "subdivision") {
-        existing = await ctx.db.subdivision.findFirst({ where: { id, countryId } });
-        if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Subdivision not found" });
-        wikiTitle = existing.wikiPageTitle?.trim() || existing.name;
-      } else {
-        existing = await ctx.db.pointOfInterest.findFirst({ where: { id, countryId } });
-        if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "POI not found" });
-        wikiTitle = existing.wikiPageTitle?.trim() || existing.name;
+      const existing = (await config.find(ctx.db, { id, countryId })) as Record<string, any> | null;
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: `${config.label} not found` });
       }
-
+      const wikiTitle: string | null = existing.wikiPageTitle?.trim() || existing.name;
       if (!wikiTitle) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "No wiki title to look up." });
       }
@@ -395,69 +377,20 @@ export const countryGeoRouter = createTRPCRouter({
       }
 
       // 3. Parse the infobox and build the diff.
-      const result = parseEntityAttributesFromWiki(wikitext, kindTyped, wikiTitle, existing);
-
+      const result = parseEntityAttributesFromWiki(wikitext, kind, wikiTitle, existing);
       if (!result.hasChanges) {
         return result;
       }
 
       // 4. Apply via the existing upsert path (preserves validation + caching).
-      const applied: Record<string, unknown> = {};
-      for (const f of result.applied) {
-        applied[f.field] = f.newValue;
-      }
-
-      if (kind === "city") {
-        await upsertCity(ctx.db, countryId, {
-          id: existing.id,
-          name: existing.name,
-          type: existing.type,
-          coordinates: existing.coordinates,
-          population: (applied.population as number) ?? existing.population,
-          gdpContribution: (applied.gdpContribution as number) ?? existing.gdpContribution,
-          mayorName: (applied.mayorName as string) ?? existing.mayorName,
-          specialization: (applied.specialization as string) ?? existing.specialization,
-          elevation: (applied.elevation as number) ?? existing.elevation,
-          foundedYear: (applied.foundedYear as number) ?? existing.foundedYear,
-          wikiPageTitle: existing.wikiPageTitle,
-          submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
-        });
-        broadcastMapUpdate("city", countryId);
-      } else if (kind === "subdivision") {
-        await upsertSubdivision(ctx.db, countryId, {
-          id: existing.id,
-          name: existing.name,
-          type: existing.type,
-          level: existing.level,
-          population: (applied.population as number) ?? existing.population,
-          gdpContribution: (applied.gdpContribution as number) ?? existing.gdpContribution,
-          governorName: (applied.governorName as string) ?? existing.governorName,
-          areaSqKm: (applied.areaSqKm as number) ?? existing.areaSqKm,
-          capital: (applied.capital as string) ?? existing.capital,
-          submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
-        });
-        broadcastMapUpdate("subdivision", countryId);
-      } else {
-        await upsertPoi(ctx.db, countryId, {
-          id: existing.id,
-          name: existing.name,
-          category: existing.category,
-          coordinates: existing.coordinates,
-          description: (applied.description as string) ?? existing.description,
-          icon: existing.icon,
-          wikiPageTitle: existing.wikiPageTitle,
-          submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
-        });
-        broadcastMapUpdate("poi", countryId);
-      }
-
-      await invalidateCache([
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "geoCore.getWorldMap",
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-      ]);
+      const applied = Object.fromEntries(result.applied.map((f) => [f.field, f.newValue]));
+      await config.upsert(ctx.db, countryId, {
+        ...Object.fromEntries(config.keep.map((f) => [f, existing[f]])),
+        ...Object.fromEntries(config.merge.map((f) => [f, applied[f] ?? existing[f]])),
+        submittedBy: submitterId(ctx),
+      });
+      broadcastMapUpdate(kind, countryId);
+      await invalidateCache(GEO_CACHE_KEYS);
 
       return result;
     }),

@@ -1,7 +1,7 @@
 import type { ComponentType } from "@prisma/client";
 import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 
-export interface ParsedComponent {
+interface ParsedComponent {
   id: string;
   type: ComponentType;
   name: string;

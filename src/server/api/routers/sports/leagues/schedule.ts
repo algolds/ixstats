@@ -6,9 +6,10 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { persistSeasonSchedule } from "~/lib/sports";
-import { isSystemOwner } from "~/lib/auth";
 import { IxTime } from "~/lib/ixtime";
 import { recalculateStandings } from "./helpers";
+import { TEAM_BADGE } from "~/server/api/routers/sports/_shared";
+import { assertOwnsLeague } from "~/server/api/routers/sports/league-access";
 
 export const leaguesScheduleRouter = createTRPCRouter({
   getSchedule: publicProcedure
@@ -35,26 +36,8 @@ export const leaguesScheduleRouter = createTRPCRouter({
         const matches = await ctx.db.sportMatch.findMany({
           where: { seasonId: input.seasonId },
           include: {
-            homeTeam: {
-              select: {
-                id: true,
-                name: true,
-                shortName: true,
-                color: true,
-                logo: true,
-                wikiSlug: true,
-              },
-            },
-            awayTeam: {
-              select: {
-                id: true,
-                name: true,
-                shortName: true,
-                color: true,
-                logo: true,
-                wikiSlug: true,
-              },
-            },
+            homeTeam: TEAM_BADGE,
+            awayTeam: TEAM_BADGE,
           },
           orderBy: [{ matchDay: "asc" }, { scheduledIxTime: "asc" }],
         });
@@ -103,9 +86,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
           include: { league: true },
         });
         if (!season) throw new TRPCError({ code: "NOT_FOUND", message: "Season not found" });
-        if (season.league.createdByUserId !== ctx.user.id && !isSystemOwner(ctx.auth.userId)) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this league" });
-        }
+        assertOwnsLeague(ctx, season.league);
 
         await ctx.db.sportMatch.deleteMany({ where: { seasonId: input.seasonId } });
         await ctx.db.sportStanding.deleteMany({ where: { seasonId: input.seasonId } });
@@ -139,12 +120,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
           include: { season: { include: { league: true } } },
         });
         if (!match) throw new TRPCError({ code: "NOT_FOUND", message: "Match not found" });
-        if (
-          match.season.league.createdByUserId !== ctx.user.id &&
-          !isSystemOwner(ctx.auth.userId)
-        ) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this league" });
-        }
+        assertOwnsLeague(ctx, match.season.league);
 
         const updatedMatch = await ctx.db.sportMatch.update({
           where: { id: input.matchId },
@@ -181,9 +157,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
           },
         });
         if (!season) throw new TRPCError({ code: "NOT_FOUND", message: "Season not found" });
-        if (season.league.createdByUserId !== ctx.user.id && !isSystemOwner(ctx.auth.userId)) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this league" });
-        }
+        assertOwnsLeague(ctx, season.league);
 
         const completedMatch = await ctx.db.sportMatch.findFirst({
           where: { seasonId: input.seasonId, status: "completed" },

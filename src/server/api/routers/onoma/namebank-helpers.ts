@@ -92,62 +92,59 @@ export function cleanRawValues(rawValues: unknown): string[] {
   return [];
 }
 
+const asString = (v: unknown) => (typeof v === "string" ? v : null);
+
+/** Best-effort read of a note that failed schema validation: keep whichever fields are well-formed. */
+function parseLooseNote(obj: Record<string, unknown>): ParsedStashNote {
+  const ld = obj.lexiconDefinition;
+  const lexicon = ld && typeof ld === "object" ? (ld as Record<string, string>) : null;
+  return {
+    category: asString(obj.category),
+    role: asString(obj.role),
+    gender: asString(obj.gender),
+    setName: asString(obj.setName),
+    lexiconDefinition: lexicon && {
+      partOfSpeech: lexicon.partOfSpeech || "Noun",
+      root: lexicon.root || "",
+      meaning: lexicon.meaning || "",
+      origin: lexicon.origin || "",
+    },
+    values: Array.isArray(obj.values) ? cleanRawValues(obj.values) : [],
+  };
+}
+
 /**
  * Parse JSON note metadata stored on a StashItem.
  */
 export function parseStashItemNote(note: string | null, contentType?: string): ParsedStashNote {
-  let category: string | null = null;
-  let role: string | null = null;
-  let gender: string | null = null;
-  let setName: string | null = null;
-  let lexiconDefinition: LexiconDef | null = null;
-  let values: string[] = [];
-
-  if (note) {
-    try {
-      const raw = JSON.parse(note);
-      const parsed = StashNoteMetadataSchema.safeParse(raw);
-      if (parsed.success) {
-        category = parsed.data.category || null;
-        role = parsed.data.role || null;
-        gender = parsed.data.gender || null;
-        setName = parsed.data.setName || null;
-        lexiconDefinition = parsed.data.lexiconDefinition || null;
-        values = cleanRawValues(parsed.data.values || []);
-      } else if (raw && typeof raw === "object") {
-        const obj = raw as Record<string, unknown>;
-        category = typeof obj.category === "string" ? obj.category : null;
-        role = typeof obj.role === "string" ? obj.role : null;
-        gender = typeof obj.gender === "string" ? obj.gender : null;
-        setName = typeof obj.setName === "string" ? obj.setName : null;
-        if (obj.lexiconDefinition && typeof obj.lexiconDefinition === "object") {
-          const ld = obj.lexiconDefinition as Record<string, string>;
-          lexiconDefinition = {
-            partOfSpeech: ld.partOfSpeech || "Noun",
-            root: ld.root || "",
-            meaning: ld.meaning || "",
-            origin: ld.origin || "",
-          };
-        }
-        if (Array.isArray(obj.values)) {
-          values = cleanRawValues(obj.values);
-        }
-      }
-    } catch {
-      if (contentType === "dictionary") {
-        values = cleanRawValues(note);
-      }
-    }
-  }
-
-  return {
-    category,
-    role,
-    gender,
-    setName,
-    lexiconDefinition,
-    values,
+  const empty: ParsedStashNote = {
+    category: null,
+    role: null,
+    gender: null,
+    setName: null,
+    lexiconDefinition: null,
+    values: [],
   };
+  if (!note) return empty;
+
+  try {
+    const raw = JSON.parse(note);
+    const parsed = StashNoteMetadataSchema.safeParse(raw);
+    if (parsed.success) {
+      const { data } = parsed;
+      return {
+        category: data.category || null,
+        role: data.role || null,
+        gender: data.gender || null,
+        setName: data.setName || null,
+        lexiconDefinition: data.lexiconDefinition || null,
+        values: cleanRawValues(data.values || []),
+      };
+    }
+    return raw && typeof raw === "object" ? parseLooseNote(raw as Record<string, unknown>) : empty;
+  } catch {
+    return contentType === "dictionary" ? { ...empty, values: cleanRawValues(note) } : empty;
+  }
 }
 
 /**

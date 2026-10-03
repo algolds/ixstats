@@ -9,6 +9,13 @@ import { requireWikiAuthId, requireWikiUserId } from "~/lib/wiki-os/auth";
 import { findWikiUserByAuthId } from "~/lib/wiki-os/storage";
 import { db } from "~/server/db";
 import { TRPCError } from "@trpc/server";
+import {
+  cursorPageInput,
+  cursorPageArgs,
+  trimCursorPage,
+  PROMPT_SUMMARY,
+  COUNTRY_BADGE,
+} from "./_shared";
 
 export const blurbsRespondRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
@@ -19,8 +26,7 @@ export const blurbsRespondRouter = createTRPCRouter({
   getMyBlurbs: protectedProcedure
     .input(
       z.object({
-        limit: z.number().min(1).max(50).default(20),
-        cursor: z.string().optional(),
+        ...cursorPageInput,
       })
     )
     .query(async ({ ctx, input }) => {
@@ -30,20 +36,15 @@ export const blurbsRespondRouter = createTRPCRouter({
       const responses = await db.blurbResponse.findMany({
         where: { userId: user.id },
         orderBy: { createdAt: "desc" },
-        take: input.limit + 1,
-        ...(input.cursor && { cursor: { id: input.cursor }, skip: 1 }),
+        ...cursorPageArgs(input),
         include: {
-          prompt: { select: { id: true, title: true, question: true, slug: true } },
-          country: { select: { id: true, name: true, flag: true } },
+          prompt: PROMPT_SUMMARY,
+          country: COUNTRY_BADGE,
         },
       });
 
-      let nextCursor: string | undefined;
-      if (responses.length > input.limit) {
-        nextCursor = responses.pop()!.id;
-      }
-
-      return { responses, nextCursor };
+      const page = trimCursorPage(responses, input.limit);
+      return { responses: page.rows, nextCursor: page.nextCursor };
     }),
 
   /** Check if current user already responded to a prompt. */

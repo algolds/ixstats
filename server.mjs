@@ -6,60 +6,10 @@
 
 import { createServer } from "http";
 import { parse } from "url";
-import { existsSync, readFileSync } from "fs";
-import { resolve } from "path";
+import { loadEnvVariables } from "./load-env.mjs";
 import next from "next";
 
-function loadEnvVariables() {
-  const envFiles = [];
-  const cwd = process.cwd();
-  const mode = process.env.NODE_ENV || "development";
-
-  if (mode === "development") {
-    envFiles.push(".env.local.dev");
-    envFiles.push(".env.local");
-  } else if (mode === "production") {
-    envFiles.push(".env.production");
-    envFiles.push(".env.local");
-    // Prod secrets live here (same list as ws-backend.mjs); first file wins.
-    envFiles.push(".env.production.local");
-  }
-
-  envFiles.push(".env");
-
-  for (const file of envFiles) {
-    const absolutePath = resolve(cwd, file);
-    if (!existsSync(absolutePath)) continue;
-
-    try {
-      const content = readFileSync(absolutePath, "utf8");
-      for (const rawLine of content.split(/\r?\n/)) {
-        const line = rawLine.trim();
-        if (!line || line.startsWith("#")) continue;
-
-        const equalsIndex = line.indexOf("=");
-        if (equalsIndex === -1) continue;
-
-        const key = line.slice(0, equalsIndex).trim();
-        let value = line.slice(equalsIndex + 1).trim();
-
-        if (
-          (value.startsWith('"') && value.endsWith('"')) ||
-          (value.startsWith("'") && value.endsWith("'"))
-        ) {
-          value = value.slice(1, -1);
-        }
-
-        if (Object.prototype.hasOwnProperty.call(process.env, key)) continue;
-        process.env[key] = value;
-      }
-    } catch (error) {
-      console.warn(`[Server] Failed to load environment file ${file}:`, error);
-    }
-  }
-}
-
-loadEnvVariables();
+loadEnvVariables("[Server]");
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = process.env.HOSTNAME || "localhost";

@@ -1,18 +1,8 @@
-/**
- * P2P Trading Router
- *
- * Provides endpoints for peer-to-peer card trading:
- * - Create trade offers
- * - Accept/decline/counter trades
- * - View active trades
- * - View trade history
- * - Cancel pending trades
- */
-
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { TradeStatus } from "@prisma/client";
+import { TRADE_PARTIES_INCLUDE, assertTradingOpen } from "./_shared";
 import { syncUserToForum } from "~/server/modules/forum";
 import { notificationAPI } from "~/lib/notifications/api";
 import { getVaultConfig } from "~/lib/vault/vault-service";
@@ -26,9 +16,6 @@ import {
   unlockCardsTx,
 } from "~/lib/vault/trade-settlement";
 
-/**
- * Trade offer creation schema
- */
 /** Drop the cached vault stats and balances (keyed by both DB and Clerk id) of the given users. */
 async function clearVaultCaches(...users: Array<{ id: string; clerkUserId?: string | null }>) {
   await Promise.all(
@@ -49,9 +36,6 @@ const createtradeOfferSchema = z.object({
   message: z.string().max(500).optional(),
 });
 
-/**
- * Trade response schema
- */
 const respondToTradeSchema = z.object({
   tradeId: z.string().min(1),
   action: z.enum(["ACCEPT", "REJECT", "COUNTER"]),
@@ -73,18 +57,7 @@ export const tradingOffersRouter = createTRPCRouter({
       const initiatorDbId = ctx.user.id;
 
       const config = await getVaultConfig(ctx.db);
-      if (config.isMaintenanceMode) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Vault economy is currently in maintenance mode.",
-        });
-      }
-      if (!config.isTradingEnabled) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "P2P card trading is currently disabled globally.",
-        });
-      }
+      assertTradingOpen(config);
 
       // Resolve recipient's clerkUserId to database CUID
       const recipientUser = await ctx.db.user.findUnique({
@@ -193,32 +166,7 @@ export const tradingOffersRouter = createTRPCRouter({
             status: "PENDING",
             expiresAt,
           },
-          include: {
-            initiator: {
-              select: {
-                id: true,
-                clerkUserId: true,
-                country: {
-                  select: {
-                    name: true,
-                    flag: true,
-                  },
-                },
-              },
-            },
-            recipient: {
-              select: {
-                id: true,
-                clerkUserId: true,
-                country: {
-                  select: {
-                    name: true,
-                    flag: true,
-                  },
-                },
-              },
-            },
-          },
+          include: TRADE_PARTIES_INCLUDE,
         });
       });
 
@@ -255,18 +203,7 @@ export const tradingOffersRouter = createTRPCRouter({
       const userId = ctx.user.id;
 
       const config = await getVaultConfig(ctx.db);
-      if (config.isMaintenanceMode) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Vault economy is currently in maintenance mode.",
-        });
-      }
-      if (!config.isTradingEnabled) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "P2P card trading is currently disabled globally.",
-        });
-      }
+      assertTradingOpen(config);
 
       // Get the trade offer
       const trade = await ctx.db.tradeOffer.findUnique({

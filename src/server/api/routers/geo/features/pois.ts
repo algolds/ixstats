@@ -1,17 +1,5 @@
-/**
- * Geographic Map Router
- *
- * tRPC router for the IxEarth world map system.
- * Handles map layer data, country geometry, spatial queries,
- * and country-feature linking.
- *
- * Data source: PostgreSQL + PostGIS (map_layers table),
- * with file-based fallback for initial load.
- */
-
 import { z } from "zod";
 import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
 import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { ActivityGenerator } from "~/lib/activity";
@@ -21,24 +9,10 @@ import {
   checkNameUniqueness,
 } from "~/lib/maps/geo-validation";
 
-/** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
-const coordinatesSchema = z
-  .tuple([z.number(), z.number()])
-  .refine(([lng, lat]) => lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90, {
-    message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)",
-  });
-
 import { syncResourcePoolModifiers } from "~/server/shared/geo-resource-sync";
-
-// ──────────────────────────────────────────────
-// Router
-// ──────────────────────────────────────────────
+import { assertFound, assertOwnCountry, coordinatesSchema } from "../core/shared";
 
 export const geoFeaturesPoisRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // User map editor endpoints (country owners)
-  // ──────────────────────────────────────────────
-
   /**
    * Create a point of interest within the user's country.
    * Auto-approved if point is inside borders.
@@ -57,10 +31,7 @@ export const geoFeaturesPoisRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
       // Validate containment + collision + name uniqueness
       await validatePointContainment(
@@ -95,7 +66,6 @@ export const geoFeaturesPoisRouter = createTRPCRouter({
       });
 
       try {
-        // oxlint-disable-next-line eslint/no-shadow -- shadowed 'country' is intentional in this scope
         const country = await ctx.db.country.findUnique({
           where: { id: input.countryId },
           select: { name: true },
@@ -148,17 +118,14 @@ export const geoFeaturesPoisRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
-      const poi = await ctx.db.pointOfInterest.findFirst({
-        where: { id: input.poiId, countryId: input.countryId },
-      });
-      if (!poi) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Point of interest not found" });
-      }
+      const poi = assertFound(
+        await ctx.db.pointOfInterest.findFirst({
+          where: { id: input.poiId, countryId: input.countryId },
+        }),
+        "Point of interest not found"
+      );
 
       if (input.coordinates) {
         await validatePointContainment(
@@ -215,17 +182,14 @@ export const geoFeaturesPoisRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
-      const poi = await ctx.db.pointOfInterest.findFirst({
-        where: { id: input.poiId, countryId: input.countryId },
-      });
-      if (!poi) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Point of interest not found" });
-      }
+      const poi = assertFound(
+        await ctx.db.pointOfInterest.findFirst({
+          where: { id: input.poiId, countryId: input.countryId },
+        }),
+        "Point of interest not found"
+      );
 
       await ctx.db.pointOfInterest.delete({ where: { id: input.poiId } });
       await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS);

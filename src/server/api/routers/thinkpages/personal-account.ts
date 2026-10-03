@@ -61,6 +61,25 @@ function isUniqueViolation(err: unknown): err is Prisma.PrismaClientKnownRequest
   return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
 }
 
+/** Username stem and display name for a new personal persona: explicit prefs, then the user's forum/wiki names. */
+function initialNames(
+  prefs: PersonalAccountPreferences,
+  user: { forumUsername: string | null; wikiUsername: string | null } | null
+) {
+  const base =
+    toUsernameBase(prefs.username) ??
+    toUsernameBase(user?.forumUsername) ??
+    toUsernameBase(user?.wikiUsername) ??
+    FALLBACK_USERNAME_BASE;
+  const displayName =
+    prefs.displayName?.trim().slice(0, 50) ||
+    user?.forumUsername ||
+    user?.wikiUsername ||
+    prefs.username?.trim() ||
+    base;
+  return { base, displayName };
+}
+
 /**
  * Return the caller's personal persona, creating it on first use. Never attaches a country.
  * A deactivated personal persona is reactivated, because asking to act "as yourself" is explicit.
@@ -83,17 +102,7 @@ export async function ensurePersonalAccount(
     where: { clerkUserId },
     select: { forumUsername: true, wikiUsername: true },
   });
-  const base =
-    toUsernameBase(prefs.username) ??
-    toUsernameBase(user?.forumUsername) ??
-    toUsernameBase(user?.wikiUsername) ??
-    FALLBACK_USERNAME_BASE;
-  const displayName =
-    prefs.displayName?.trim().slice(0, 50) ||
-    user?.forumUsername ||
-    user?.wikiUsername ||
-    prefs.username?.trim() ||
-    base;
+  const { base, displayName } = initialNames(prefs, user);
 
   // The fallback stem is generic, so skip straight to a suffixed name for it.
   const firstAttempt = base === FALLBACK_USERNAME_BASE ? 2 : 0;

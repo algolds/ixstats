@@ -1,15 +1,6 @@
 import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
-
-/**
- * Card Images Router
- *
- * Handles CRUD operations for card background images including:
- * - Get images by country and card type
- * - Upsert custom or preset images
- * - Delete/reset to default preset
- * - Batch operations for multiple cards
- */
 
 const cardImageTypeSchema = z.enum([
   "national_identity",
@@ -27,6 +18,24 @@ const cardImageTypeSchema = z.enum([
   "diplomacy",
 ]);
 
+/** The signed-in user must belong to the country whose card images they change. */
+async function requireOwnedCountry(
+  ctx: { auth?: { userId?: string | null } | null; db: PrismaClient },
+  countryId: string
+) {
+  const clerkUserId = ctx.auth?.userId;
+  if (!clerkUserId) {
+    throw new Error("Not authenticated");
+  }
+
+  const country = await ctx.db.country.findFirst({
+    where: { id: countryId, users: { some: { clerkUserId } } },
+  });
+  if (!country) {
+    throw new Error("Country not found or you do not have permission to modify it");
+  }
+}
+
 export const cardImagesRouter = createTRPCRouter({
   /**
    * Get a single card background image by country and type
@@ -39,16 +48,11 @@ export const cardImagesRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const image = await ctx.db.cardBackgroundImage.findUnique({
+      return ctx.db.cardBackgroundImage.findUnique({
         where: {
-          countryId_cardType: {
-            countryId: input.countryId,
-            cardType: input.cardType,
-          },
+          countryId_cardType: { countryId: input.countryId, cardType: input.cardType },
         },
       });
-
-      return image;
     }),
 
   /**
@@ -90,50 +94,19 @@ export const cardImagesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.auth?.userId) {
-        throw new Error("Not authenticated");
-      }
-
-      // Verify user owns this country
-      const country = await ctx.db.country.findFirst({
-        where: {
-          id: input.countryId,
-          users: {
-            some: {
-              clerkUserId: ctx.auth.userId,
-            },
-          },
-        },
-      });
-
-      if (!country) {
-        throw new Error("Country not found or you do not have permission to modify it");
-      }
+      await requireOwnedCountry(ctx, input.countryId);
 
       // Upsert the card image
-      const image = await ctx.db.cardBackgroundImage.upsert({
-        where: {
-          countryId_cardType: {
-            countryId: input.countryId,
-            cardType: input.cardType,
-          },
-        },
-        update: {
-          imageUrl: input.imageUrl,
-          isCustom: input.isCustom,
-          presetKey: input.presetKey,
-          uploadedAt: new Date(),
-        },
-        create: {
-          countryId: input.countryId,
-          cardType: input.cardType,
-          imageUrl: input.imageUrl,
-          isCustom: input.isCustom,
-          presetKey: input.presetKey,
-        },
-      });
+      const { imageUrl, isCustom, presetKey } = input;
+      const fields = { imageUrl, isCustom, presetKey };
 
-      return image;
+      return ctx.db.cardBackgroundImage.upsert({
+        where: {
+          countryId_cardType: { countryId: input.countryId, cardType: input.cardType },
+        },
+        update: { ...fields, uploadedAt: new Date() },
+        create: { countryId: input.countryId, cardType: input.cardType, ...fields },
+      });
     }),
 
   /**
@@ -147,25 +120,7 @@ export const cardImagesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.auth?.userId) {
-        throw new Error("Not authenticated");
-      }
-
-      // Verify user owns this country
-      const country = await ctx.db.country.findFirst({
-        where: {
-          id: input.countryId,
-          users: {
-            some: {
-              clerkUserId: ctx.auth.userId,
-            },
-          },
-        },
-      });
-
-      if (!country) {
-        throw new Error("Country not found or you do not have permission to modify it");
-      }
+      await requireOwnedCountry(ctx, input.countryId);
 
       // Delete the card image
       await ctx.db.cardBackgroundImage.delete({

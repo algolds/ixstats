@@ -6,6 +6,7 @@ import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clipAndValidatePolygon } from "~/lib/maps/geo-validation";
 import { generateProvinces } from "~/lib/maps/province-generator";
 import { syncGeographicDemographics } from "~/lib/country-geo/sync";
+import { assertOwnCountry } from "../../core/shared";
 
 export const geoFeaturesSubdivisionsGenerationRouter = createTRPCRouter({
   /**
@@ -21,10 +22,7 @@ export const geoFeaturesSubdivisionsGenerationRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
       const subdivisions = await ctx.db.subdivision.findMany({
         where: { countryId: input.countryId },
@@ -102,10 +100,7 @@ export const geoFeaturesSubdivisionsGenerationRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
       // Load country geometry from the map_layers table (needed for the pure-math generator)
       const rows = await ctx.db.$queryRawUnsafe<Array<{ geom_geojson: string }>>(

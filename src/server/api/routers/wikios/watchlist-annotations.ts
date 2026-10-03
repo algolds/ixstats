@@ -1,15 +1,20 @@
-/**
- * wikios.ts — WikiOS tRPC router.
- *
- * Provides endpoints for WikiOS article rendering, editing, history, search,
- * template registry, watchlist, advanced search, and category tree.
- */
-
 import { z } from "zod/v4";
+import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { requireWikiUserId, requireWikiUserIds } from "~/lib/wiki-os/auth";
 
 import { db } from "~/server/db";
+import { getOrCreateDefaultStash } from "~/server/shared/default-stash";
+
+/** The ixwiki article (id only) for a page title, matching with or without underscores. */
+const findIxwikiArticleId = (client: PrismaClient, pageTitle: string) =>
+  client.wikiArticle.findFirst({
+    where: {
+      source: "ixwiki",
+      OR: [{ title: pageTitle }, { title: pageTitle.replace(/_/g, " ") }],
+    },
+    select: { id: true },
+  });
 
 export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
   /** Add a text-selection annotation to a stashed page (or directly by pageTitle). */
@@ -34,15 +39,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
 
       if (!targetItemId) {
         if (!input.pageTitle) throw new Error("Either itemId or pageTitle is required");
-        let defaultStash = await db.stash.findFirst({
-          where: { userId: { in: userIds }, isDefault: true },
-          orderBy: { createdAt: "asc" },
-        });
-        if (!defaultStash) {
-          defaultStash = await db.stash.create({
-            data: { userId, name: "My Stash", color: "#3b82f6", isDefault: true },
-          });
-        }
+        const defaultStash = await getOrCreateDefaultStash(db, userIds, userId);
         const pageSlug = encodeURIComponent(input.pageTitle.replace(/ /g, "_"));
         const item = await db.stashItem.upsert({
           where: { stashId_pageTitle: { stashId: defaultStash.id, pageTitle: input.pageTitle } },
@@ -121,13 +118,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
       const userId = requireWikiUserId(ctx);
 
       // 1. Find article in PostgreSQL
-      const article = await ctx.db.wikiArticle.findFirst({
-        where: {
-          source: "ixwiki",
-          OR: [{ title: input.pageTitle }, { title: input.pageTitle.replace(/_/g, " ") }],
-        },
-        select: { id: true },
-      });
+      const article = await findIxwikiArticleId(ctx.db, input.pageTitle);
 
       if (article) {
         await ctx.db.wikiWatchlist.upsert({
@@ -171,13 +162,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
       const userId = requireWikiUserId(ctx);
 
       // 1. Remove from WikiWatchlist
-      const article = await ctx.db.wikiArticle.findFirst({
-        where: {
-          source: "ixwiki",
-          OR: [{ title: input.pageTitle }, { title: input.pageTitle.replace(/_/g, " ") }],
-        },
-        select: { id: true },
-      });
+      const article = await findIxwikiArticleId(ctx.db, input.pageTitle);
 
       if (article) {
         await ctx.db.wikiWatchlist.deleteMany({
@@ -325,13 +310,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const userId = requireWikiUserId(ctx);
 
-      const article = await ctx.db.wikiArticle.findFirst({
-        where: {
-          source: "ixwiki",
-          OR: [{ title: input.pageTitle }, { title: input.pageTitle.replace(/_/g, " ") }],
-        },
-        select: { id: true },
-      });
+      const article = await findIxwikiArticleId(ctx.db, input.pageTitle);
 
       if (article) {
         const entry = await ctx.db.wikiWatchlist.findUnique({
