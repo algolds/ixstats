@@ -1,14 +1,14 @@
 "use client";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
-import React, { useCallback, useMemo, memo } from "react";
+import React, { memo } from "react";
 import { BorderEditorPanel } from "~/components/maps/editor/BorderEditorPanel";
 import { FeaturePropertyPanel } from "~/components/maps/editor/FeaturePropertyPanel";
 import { FeatureInspector, type FeaturePropertyUpdates } from "./inspector/FeatureInspector";
 import { DocumentInspector } from "./inspector/DocumentInspector";
 import { WorldCountryProfile } from "./WorldCountryProfile";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 
 import type { Polygon, MultiPolygon } from "geojson";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
@@ -91,284 +91,208 @@ interface PropertiesPanelContentProps {
   handleDeleteFeature?: (feature: EditorFeature) => void | Promise<void>;
 }
 
-export const PropertiesPanelContent = memo(function PropertiesPanelContent({
-  isWorldMode,
-  activeEditorMode,
-  activeCountryId,
-  mapSelectedCountry,
-  borderState,
-  borderActions,
-  editor,
-  selectedCountryName,
-  countryInfo,
-  featureDetails,
-  wikiPageTitle,
-  setWikiPageTitle,
-  handleLinkFeature: _handleLinkFeature,
-  updatePropertiesMutation,
-  isEditingJson,
-  setIsEditingJson,
-  propertiesJsonString,
-  setPropertiesJsonString,
-  jsonError,
-  setJsonError,
-  parsedProperties,
-  handleSaveFeatureProperties,
-  selectedRouteId,
-  setSelectedRouteId,
-  handleSubmit,
-  enterBorderEdit,
-  isUnclaimed,
-  createCountryFromShapeAction,
-  createCountryFromShapePending,
-  assignCountryId,
-  setAssignCountryId,
-  handleAssignLink,
-  assignMutation,
-  availableCountries,
-  brushTargetId,
-  setBrushTargetId,
-  editableFeatureName,
-  setEditableFeatureName,
-  editableCountryLinkageId,
-  setEditableCountryLinkageId,
-  countries,
-  onEditRoute,
-  handleEditRoute,
-  handleDeleteFeature,
-}: PropertiesPanelContentProps) {
-  const effectiveOnEditRoute = onEditRoute ?? handleEditRoute;
+const asString = (v: unknown) => (typeof v === "string" ? v : undefined);
+const asNumber = (v: unknown) => (typeof v === "number" ? v : undefined);
+const asBoolean = (v: unknown) => (typeof v === "boolean" ? v : undefined);
+
+type RouteStatus = "planned" | "under_construction" | "operational" | "abandoned";
+
+type PendingPointInfoSource = RouterOutputs["geoCore"]["getPointInfo"];
+
+/** Terrain under a freshly placed point (feeds the placement summary and smart suggestions). */
+function usePendingPointInfo(editor: MapEditorInstance) {
   const realm = useMapRealm();
-
-  // Terrain under a freshly placed point (feeds the placement summary and smart suggestions).
-  const pendingCoords = editor.pendingCoordinates;
-  const wantsPointInfo =
-    !!pendingCoords &&
+  const coords = editor.pendingCoordinates;
+  const enabled =
+    !!coords &&
     (editor.mode === "add-city" || editor.mode === "add-poi" || editor.mode === "add-peak");
-  const { data: rawPendingPointInfo, isFetching: isPendingPointInfoLoading } =
-    api.geoCore.getPointInfo.useQuery(
-      { lng: pendingCoords?.[0] ?? 0, lat: pendingCoords?.[1] ?? 0, realm },
-      { enabled: wantsPointInfo, staleTime: 5 * 60_000 }
-    );
-  const pendingPointInfo = useMemo(() => {
-    if (!wantsPointInfo || !rawPendingPointInfo) return null;
-    const elev = rawPendingPointInfo.elevation as
-      | { zoneName?: string | null; color?: string | null; elevationMeters?: number | null }
-      | null
-      | undefined;
-    const clim = rawPendingPointInfo.climate as
-      { climateName?: string | null; color?: string | null } | null | undefined;
-    return {
-      elevation: elev
-        ? {
-            zoneName: elev.zoneName ?? null,
-            elevationLabel:
-              typeof elev.elevationMeters === "number"
-                ? `${Math.round(elev.elevationMeters).toLocaleString()} m`
-                : null,
-            color: elev.color ?? null,
-          }
-        : null,
-      climate: clim ? { climateName: clim.climateName ?? null, color: clim.color ?? null } : null,
-    };
-  }, [wantsPointInfo, rawPendingPointInfo]);
-  const utils = api.useUtils();
-  const updateRouteMutation = api.transport.updateRoute.useMutation({
-    onSuccess: () => {
-      void utils.transport.getCountryRoutes.invalidate();
-      void utils.transport.getAllRoutesGeoJSON.invalidate();
-      void utils.transport.getTransportStats.invalidate();
-    },
-  });
-
-  const resolvedCountryName = useMemo(() => {
-    return (
-      countryInfo?.name ||
-      editor.countryGeo?.country?.name ||
-      editor.countryGeo?.displayName ||
-      (editor.countryGeo?.featureId ? featureIdToDisplayName(editor.countryGeo.featureId) : "") ||
-      selectedCountryName ||
-      countries?.find((c) => c.id === activeCountryId)?.name ||
-      availableCountries?.find((c) => c.id === activeCountryId)?.name ||
-      mapSelectedCountry?.displayName ||
-      (activeCountryId ? featureIdToDisplayName(activeCountryId) : "") ||
-      ""
-    );
-  }, [
-    countryInfo?.name,
-    editor.countryGeo?.country?.name,
-    editor.countryGeo?.displayName,
-    editor.countryGeo?.featureId,
-    selectedCountryName,
-    countries,
-    availableCountries,
-    activeCountryId,
-    mapSelectedCountry?.displayName,
-  ]);
-
-  const handleFeatureInspectorUpdate = useCallback(
-    async (updates: FeaturePropertyUpdates) => {
-      if (!editor.selectedFeature) return;
-      const feat = editor.selectedFeature;
-
-      if ("wikiPageTitle" in updates && updatePropertiesMutation) {
-        await updatePropertiesMutation.mutateAsync({
-          featureId: feat.id,
-          displayName: typeof updates.name === "string" ? updates.name : feat.name,
-          wikiPageTitle: (updates.wikiPageTitle as string | null) ?? null,
-          realm,
-        });
-      }
-
-      if (feat.type === "city") {
-        await editor.submitEditCity({
-          name: typeof updates.name === "string" ? updates.name : undefined,
-          cityType: typeof updates.cityType === "string" ? updates.cityType : undefined,
-          population: typeof updates.population === "number" ? updates.population : undefined,
-          isNationalCapital:
-            typeof updates.isNationalCapital === "boolean" ? updates.isNationalCapital : undefined,
-          isSubdivisionCapital:
-            typeof updates.isSubdivisionCapital === "boolean"
-              ? updates.isSubdivisionCapital
-              : undefined,
-          subdivisionId:
-            typeof updates.subdivisionId === "string" ? updates.subdivisionId : undefined,
-        });
-      } else if (feat.type === "subdivision") {
-        await editor.submitEditSubdivision({
-          name: typeof updates.name === "string" ? updates.name : undefined,
-          type: typeof updates.type === "string" ? updates.type : undefined,
-          level: typeof updates.level === "number" ? updates.level : undefined,
-          capital: typeof updates.capital === "string" ? updates.capital : undefined,
-          population: typeof updates.population === "number" ? updates.population : undefined,
-        });
-      } else if (feat.type === "poi" || feat.type === "storyPin") {
-        await editor.submitEditPOI({
-          name: typeof updates.name === "string" ? updates.name : undefined,
-          category: typeof updates.category === "string" ? updates.category : undefined,
-          description: typeof updates.description === "string" ? updates.description : undefined,
-        });
-      } else if (feat.type === "peak") {
-        if (editor.submitEditPeak) {
-          await editor.submitEditPeak({
-            name: typeof updates.name === "string" ? updates.name : undefined,
-            elevation:
-              typeof updates.elevationMeters === "number" ? updates.elevationMeters : undefined,
-          });
-        }
-      } else if (feat.type === "river") {
-        if (editor.submitEditRiver) {
-          await editor.submitEditRiver({
-            name: typeof updates.name === "string" ? updates.name : undefined,
-          });
-        }
-      } else if (feat.type === "lake") {
-        if (editor.submitEditLake) {
-          await editor.submitEditLake({
-            name: typeof updates.name === "string" ? updates.name : undefined,
-          });
-        }
-      } else if (feat.type === "route") {
-        const effectiveCountryId =
-          activeCountryId ?? (feat.properties?.countryId as string | undefined);
-        if (effectiveCountryId) {
-          await updateRouteMutation.mutateAsync({
-            id: feat.id,
-            countryId: effectiveCountryId,
-            name: typeof updates.name === "string" ? updates.name : undefined,
-            routeType: typeof updates.routeType === "string" ? updates.routeType : undefined,
-            status:
-              typeof updates.status === "string"
-                ? (updates.status as "planned" | "under_construction" | "operational" | "abandoned")
-                : undefined,
-            isInternational:
-              typeof updates.isInternational === "boolean" ? updates.isInternational : undefined,
-          });
-          editor.setSelectedFeature({
-            ...feat,
-            name: typeof updates.name === "string" ? updates.name : feat.name,
-            properties: {
-              ...feat.properties,
-              ...updates,
-            },
-          });
-        }
-      }
-    },
-    [editor, updatePropertiesMutation, activeCountryId, updateRouteMutation, realm]
+  const { data, isFetching } = api.geoCore.getPointInfo.useQuery(
+    { lng: coords?.[0] ?? 0, lat: coords?.[1] ?? 0, realm },
+    { enabled, staleTime: 5 * 60_000 }
   );
+  return {
+    pendingPointInfo: enabled && data ? toPointInfo(data) : null,
+    isLoading: enabled && isFetching,
+  };
+}
 
-  // 1. Multi-feature selection (Pathfinder and batch overview)
-  if (editor.selectedIds.size > 1) {
-    const selectedSubdivisions = editor.allFeatures.filter(
-      (f: EditorFeature) => f.type === "subdivision" && editor.selectedIds.has(f.id)
-    );
+function toPointInfo(raw: PendingPointInfoSource) {
+  const elev = raw.elevation as
+    | { zoneName?: string | null; color?: string | null; elevationMeters?: number | null }
+    | null
+    | undefined;
+  const clim = raw.climate as
+    { climateName?: string | null; color?: string | null } | null | undefined;
+  return {
+    elevation: elev
+      ? {
+          zoneName: elev.zoneName ?? null,
+          elevationLabel:
+            typeof elev.elevationMeters === "number"
+              ? `${Math.round(elev.elevationMeters).toLocaleString()} m`
+              : null,
+          color: elev.color ?? null,
+        }
+      : null,
+    climate: clim ? { climateName: clim.climateName ?? null, color: clim.color ?? null } : null,
+  };
+}
 
-    return (
-      <div className="space-y-4 px-3 py-3">
-        <div className="flex items-center justify-between">
-          <Eyebrow>Selection</Eyebrow>
-          <span className="bg-tint-fill text-tint text-caption rounded-control-sm px-2 py-0.5">
-            {editor.selectedIds.size} features selected
-          </span>
-        </div>
+type RouteMutation = ReturnType<typeof api.transport.updateRoute.useMutation>;
 
-        {selectedSubdivisions.length > 1 && (
-          <Card className="space-y-3 p-3">
-            <div className="flex flex-col gap-1">
-              <span className="text-label text-caption font-semibold">Combine regions</span>
-              <span className="text-label-secondary text-footnote">
-                Merge, subtract, or find overlapping areas of selected regions.
-              </span>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
+/** Persists an inspector edit through the editor's per-type submit functions (or the route mutation). */
+async function applyFeatureUpdate(
+  editor: MapEditorInstance,
+  feat: EditorFeature,
+  updates: FeaturePropertyUpdates,
+  updateRoute: RouteMutation,
+  activeCountryId: string | null
+) {
+  const name = asString(updates.name);
+  switch (feat.type) {
+    case "city":
+      await editor.submitEditCity({
+        name,
+        cityType: asString(updates.cityType),
+        population: asNumber(updates.population),
+        isNationalCapital: asBoolean(updates.isNationalCapital),
+        isSubdivisionCapital: asBoolean(updates.isSubdivisionCapital),
+        subdivisionId: asString(updates.subdivisionId),
+      });
+      return;
+    case "subdivision":
+      await editor.submitEditSubdivision({
+        name,
+        type: asString(updates.type),
+        level: asNumber(updates.level),
+        capital: asString(updates.capital),
+        population: asNumber(updates.population),
+      });
+      return;
+    case "poi":
+    case "storyPin":
+      await editor.submitEditPOI({
+        name,
+        category: asString(updates.category),
+        description: asString(updates.description),
+      });
+      return;
+    case "peak":
+      await editor.submitEditPeak?.({ name, elevation: asNumber(updates.elevationMeters) });
+      return;
+    case "river":
+      await editor.submitEditRiver?.({ name });
+      return;
+    case "lake":
+      await editor.submitEditLake?.({ name });
+      return;
+    case "route": {
+      const countryId = activeCountryId ?? (feat.properties?.countryId as string | undefined);
+      if (!countryId) return;
+      await updateRoute.mutateAsync({
+        id: feat.id,
+        countryId,
+        name,
+        routeType: asString(updates.routeType),
+        status: asString(updates.status) as RouteStatus | undefined,
+        isInternational: asBoolean(updates.isInternational),
+      });
+      editor.setSelectedFeature({
+        ...feat,
+        name: name ?? feat.name,
+        properties: { ...feat.properties, ...updates },
+      });
+      return;
+    }
+    default:
+  }
+}
+
+function MultiSelectionPanel({ editor }: { editor: MapEditorInstance }) {
+  const selected = editor.allFeatures.filter((f: EditorFeature) => editor.selectedIds.has(f.id));
+  const subdivisionCount = selected.filter((f) => f.type === "subdivision").length;
+
+  return (
+    <div className="space-y-4 px-3 py-3">
+      <div className="flex items-center justify-between">
+        <Eyebrow>Selection</Eyebrow>
+        <span className="bg-tint-fill text-tint text-caption rounded-control-sm px-2 py-0.5">
+          {editor.selectedIds.size} features selected
+        </span>
+      </div>
+
+      {subdivisionCount > 1 && (
+        <Card className="space-y-3 p-3">
+          <div className="flex flex-col gap-1">
+            <span className="text-label text-caption font-semibold">Combine regions</span>
+            <span className="text-label-secondary text-footnote">
+              Merge, subtract, or find overlapping areas of selected regions.
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {PATHFINDER_OPERATIONS.map(({ op, label, title, variant }) => (
               <Button
+                key={op}
+                variant={variant}
                 size="sm"
-                onClick={() => editor.pathfinderOperation("union")}
-                title="Merge selected regions into one"
+                onClick={() => editor.pathfinderOperation(op)}
+                title={title}
               >
-                Union
+                {label}
               </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => editor.pathfinderOperation("subtract")}
-                title="Subtract subsequent regions from the first"
-              >
-                Subtract
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => editor.pathfinderOperation("intersect")}
-                title="Keep only the overlapping parts"
-              >
-                Intersect
-              </Button>
-            </div>
-          </Card>
-        )}
-
-        <Card className="space-y-2 p-3">
-          <Eyebrow className="block">Selected items</Eyebrow>
-          <div className="max-h-48 space-y-1 overflow-y-auto">
-            {editor.allFeatures
-              .filter((f: EditorFeature) => editor.selectedIds.has(f.id))
-              .map((f: EditorFeature) => (
-                <div key={f.id} className="text-footnote flex items-center justify-between">
-                  <span className="text-label-secondary max-w-[180px] truncate">
-                    {f.name || f.id}
-                  </span>
-                  <Eyebrow>{f.type}</Eyebrow>
-                </div>
-              ))}
+            ))}
           </div>
         </Card>
-      </div>
-    );
-  }
+      )}
 
-  const renderFeaturePropertyPanel = () => (
+      <Card className="space-y-2 p-3">
+        <Eyebrow className="block">Selected items</Eyebrow>
+        <div className="max-h-48 space-y-1 overflow-y-auto">
+          {selected.map((f: EditorFeature) => (
+            <div key={f.id} className="text-footnote flex items-center justify-between">
+              <span className="text-label-secondary max-w-[180px] truncate">{f.name || f.id}</span>
+              <Eyebrow>{f.type}</Eyebrow>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+const PATHFINDER_OPERATIONS = [
+  { op: "union", label: "Union", title: "Merge selected regions into one", variant: "default" },
+  {
+    op: "subtract",
+    label: "Subtract",
+    title: "Subtract subsequent regions from the first",
+    variant: "secondary",
+  },
+  {
+    op: "intersect",
+    label: "Intersect",
+    title: "Keep only the overlapping parts",
+    variant: "secondary",
+  },
+] as const;
+
+function EditorFeaturePanel({
+  editor,
+  activeCountryId,
+  selectedRouteId,
+  setSelectedRouteId,
+  onEditRoute,
+  handleSubmit,
+}: {
+  editor: MapEditorInstance;
+  activeCountryId: string | null;
+  selectedRouteId: string | null;
+  setSelectedRouteId: (id: string | null) => void;
+  onEditRoute: ((routeId: string) => void) | undefined;
+  handleSubmit: () => void;
+}) {
+  const pointInfo = usePendingPointInfo(editor);
+  return (
     <FeaturePropertyPanel
       mode={editor.mode}
       cityForm={editor.cityForm}
@@ -391,8 +315,8 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
       lastSavedAt={editor.lastSavedAt ? editor.lastSavedAt.getTime() : null}
       onSubmit={handleSubmit}
       onCancel={editor.resetForm}
-      pendingPointInfo={pendingPointInfo}
-      isPendingPointInfoLoading={wantsPointInfo && isPendingPointInfoLoading}
+      pendingPointInfo={pointInfo.pendingPointInfo}
+      isPendingPointInfoLoading={pointInfo.isLoading}
       countryId={activeCountryId ?? undefined}
       routeWaypoints={editor.routeWaypoints}
       finishRoute={editor.finishRoute}
@@ -400,7 +324,7 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
       clearRouteWaypoints={editor.clearRouteWaypoints}
       selectedRouteId={selectedRouteId}
       onSelectRouteId={setSelectedRouteId}
-      onEditRoute={effectiveOnEditRoute}
+      onEditRoute={onEditRoute}
       editingRouteId={editor.editingRouteId}
       editingRouteVertices={editor.editingRouteVertices}
       onRouteVerticesUpdate={editor.setEditingRouteVertices}
@@ -411,148 +335,209 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
       setIsPickingLocation={editor.setIsPickingLocation}
     />
   );
+}
 
-  // 1.5. Route editing or creation mode active: Route directly to TransportPropertyForm
-  if (editor.mode === "add-route" || editor.mode === "edit-route") {
-    return renderFeaturePropertyPanel();
-  }
+function SelectedFeatureInspector({
+  editor,
+  feature,
+  activeCountryId,
+  updatePropertiesMutation,
+  onEditRoute,
+  onDeleteFeature,
+}: {
+  editor: MapEditorInstance;
+  feature: EditorFeature;
+  activeCountryId: string | null;
+  updatePropertiesMutation: PropertiesPanelContentProps["updatePropertiesMutation"];
+  onEditRoute: ((routeId: string) => void) | undefined;
+  onDeleteFeature: PropertiesPanelContentProps["handleDeleteFeature"];
+}) {
+  const realm = useMapRealm();
+  const utils = api.useUtils();
+  const updateRouteMutation = api.transport.updateRoute.useMutation({
+    onSuccess: () => {
+      void utils.transport.getCountryRoutes.invalidate();
+      void utils.transport.getAllRoutesGeoJSON.invalidate();
+      void utils.transport.getTransportStats.invalidate();
+    },
+  });
 
-  // 2. Single-feature selected: Desktop Pro Inspector (replaces modal barrier)
+  const handleUpdate = async (updates: FeaturePropertyUpdates) => {
+    if ("wikiPageTitle" in updates && updatePropertiesMutation) {
+      await updatePropertiesMutation.mutateAsync({
+        featureId: feature.id,
+        displayName: typeof updates.name === "string" ? updates.name : feature.name,
+        wikiPageTitle: (updates.wikiPageTitle as string | null) ?? null,
+        realm,
+      });
+    }
+    await applyFeatureUpdate(editor, feature, updates, updateRouteMutation, activeCountryId);
+  };
+
+  return (
+    <FeatureInspector
+      feature={feature}
+      allFeatures={editor.allFeatures}
+      onClose={() => {
+        editor.setSelectedFeature(null);
+        editor.setMode("view");
+      }}
+      onUpdateFeature={handleUpdate}
+      onUpdateCoordinates={(coords) =>
+        editor.updatePointCoordinates(feature.type as FeatureType, feature.id, coords)
+      }
+      onDelete={() => void (onDeleteFeature ?? editor.handleDeleteFeature)(feature)}
+      onSnapCoastline={
+        feature.type === "city" ? () => void editor.snapCityToCoastline(feature.id) : undefined
+      }
+      onDuplicate={() => editor.duplicateFeature(feature)}
+      onPromoteCapital={editor.promoteCapital}
+      onReverseRoute={editor.reverseRoute}
+      onEditRoute={onEditRoute}
+      onPathfinderOperation={editor.pathfinderOperation}
+      isPickingLocation={editor.isPickingLocation}
+      onTogglePickLocation={() => editor.setIsPickingLocation(!editor.isPickingLocation)}
+      isMutating={editor.isMutating}
+    />
+  );
+}
+
+function resolveCountryName(props: PropertiesPanelContentProps, geoDisplayName: string | null) {
+  const { editor, activeCountryId } = props;
+  const featureId = editor.countryGeo?.featureId;
+  return (
+    [
+      props.countryInfo?.name,
+      geoDisplayName,
+      featureId && featureIdToDisplayName(featureId),
+      props.selectedCountryName,
+      props.countries?.find((c) => c.id === activeCountryId)?.name,
+      props.availableCountries?.find((c) => c.id === activeCountryId)?.name,
+      props.mapSelectedCountry?.displayName,
+      activeCountryId && featureIdToDisplayName(activeCountryId),
+    ].find(Boolean) || ""
+  );
+}
+
+function BorderEditing({
+  borderState,
+  borderActions,
+  selectedCountryName,
+  brushTargetId,
+  setBrushTargetId,
+}: PropertiesPanelContentProps) {
+  return (
+    <BorderEditorPanel
+      featureId={borderState.featureId}
+      displayName={selectedCountryName || borderState.featureId || ""}
+      geometry={borderState.geometry}
+      neighbors={borderState.neighbors}
+      mergeTargets={borderState.mergeTargets}
+      onToggleMergeTarget={borderActions.toggleMergeTarget}
+      mode={borderState.mode}
+      areaKm2={borderState.areaKm2}
+      isDirty={borderState.isDirty}
+      brushTargetId={brushTargetId ?? null}
+      onBrushTargetChange={setBrushTargetId ?? (() => {})}
+    />
+  );
+}
+
+function CountryOverview(props: PropertiesPanelContentProps & { flagUrl?: string | null }) {
+  const { editor, activeCountryId } = props;
+  const { countryGeo } = editor;
+  const geoDisplayName = countryGeo?.country?.name || countryGeo?.displayName || null;
+  return (
+    <DocumentInspector
+      countryName={resolveCountryName(props, geoDisplayName)}
+      countryId={activeCountryId ?? undefined}
+      countryGeoDisplayName={geoDisplayName}
+      flagUrl={props.flagUrl}
+      allFeatures={editor.allFeatures}
+      areaKm2={countryGeo?.areaSqKm ?? null}
+      onModeChange={editor.setMode}
+    />
+  );
+}
+
+export const PropertiesPanelContent = memo(function PropertiesPanelContent(
+  props: PropertiesPanelContentProps
+) {
+  const {
+    isWorldMode,
+    activeEditorMode,
+    activeCountryId,
+    mapSelectedCountry,
+    editor,
+    countryInfo,
+    featureDetails,
+    updatePropertiesMutation,
+    selectedRouteId,
+    setSelectedRouteId,
+    handleSubmit,
+    onEditRoute,
+    handleEditRoute,
+    handleDeleteFeature,
+  } = props;
+  const effectiveOnEditRoute = onEditRoute ?? handleEditRoute;
+  const { countryGeo } = editor;
+
+  if (editor.selectedIds.size > 1) return <MultiSelectionPanel editor={editor} />;
+
+  const featurePanel = (
+    <EditorFeaturePanel
+      editor={editor}
+      activeCountryId={activeCountryId}
+      selectedRouteId={selectedRouteId}
+      setSelectedRouteId={setSelectedRouteId}
+      onEditRoute={effectiveOnEditRoute}
+      handleSubmit={handleSubmit}
+    />
+  );
+  // Route editing or creation: straight to the transport form.
+  if (editor.mode === "add-route" || editor.mode === "edit-route") return featurePanel;
+
   if (editor.selectedFeature) {
     return (
-      <FeatureInspector
+      <SelectedFeatureInspector
+        editor={editor}
         feature={editor.selectedFeature}
-        allFeatures={editor.allFeatures}
-        onClose={() => {
-          editor.setSelectedFeature(null);
-          editor.setMode("view");
-        }}
-        onUpdateFeature={handleFeatureInspectorUpdate}
-        onUpdateCoordinates={(coords) =>
-          editor.updatePointCoordinates(
-            editor.selectedFeature?.type as FeatureType,
-            editor.selectedFeature?.id,
-            coords
-          )
-        }
-        onDelete={() => {
-          const feat = editor.selectedFeature;
-          if (!feat) return;
-          if (handleDeleteFeature) void handleDeleteFeature(feat);
-          else void editor.handleDeleteFeature(feat);
-        }}
-        onSnapCoastline={
-          editor.selectedFeature?.type === "city"
-            ? () => void editor.snapCityToCoastline(editor.selectedFeature!.id)
-            : undefined
-        }
-        onDuplicate={() => editor.duplicateFeature(editor.selectedFeature!)}
-        onPromoteCapital={editor.promoteCapital}
-        onReverseRoute={editor.reverseRoute}
+        activeCountryId={activeCountryId}
+        updatePropertiesMutation={updatePropertiesMutation}
         onEditRoute={effectiveOnEditRoute}
-        onPathfinderOperation={editor.pathfinderOperation}
-        isPickingLocation={editor.isPickingLocation}
-        onTogglePickLocation={() => editor.setIsPickingLocation(!editor.isPickingLocation)}
-        isMutating={editor.isMutating}
+        onDeleteFeature={handleDeleteFeature}
       />
     );
   }
 
-  // 3. World mode specialized views
   if (isWorldMode) {
     if (activeEditorMode === "border_edit") {
-      return (
-        <BorderEditorPanel
-          featureId={borderState.featureId}
-          displayName={selectedCountryName || borderState.featureId || ""}
-          geometry={borderState.geometry}
-          neighbors={borderState.neighbors}
-          mergeTargets={borderState.mergeTargets}
-          onToggleMergeTarget={borderActions.toggleMergeTarget}
-          mode={borderState.mode}
-          areaKm2={borderState.areaKm2}
-          isDirty={borderState.isDirty}
-          brushTargetId={brushTargetId ?? null}
-          onBrushTargetChange={setBrushTargetId ?? (() => {})}
-        />
-      );
+      return <BorderEditing {...props} />;
     }
 
-    if (editor.mode !== "view") {
-      return renderFeaturePropertyPanel();
-    }
+    if (editor.mode !== "view") return featurePanel;
 
     if (mapSelectedCountry) {
       return (
         <WorldCountryProfile
+          {...props}
           mapSelectedCountry={mapSelectedCountry}
-          isUnclaimed={isUnclaimed}
-          selectedCountryName={selectedCountryName}
-          editableFeatureName={editableFeatureName}
-          setEditableFeatureName={setEditableFeatureName}
-          editableCountryLinkageId={editableCountryLinkageId}
-          setEditableCountryLinkageId={setEditableCountryLinkageId}
-          countries={countries}
-          wikiPageTitle={wikiPageTitle}
-          setWikiPageTitle={setWikiPageTitle}
           featureDetails={featureDetails ?? null}
-          handleSaveFeatureProperties={handleSaveFeatureProperties}
-          updatePropertiesMutation={updatePropertiesMutation}
-          isEditingJson={isEditingJson}
-          setIsEditingJson={setIsEditingJson}
-          propertiesJsonString={propertiesJsonString}
-          setPropertiesJsonString={setPropertiesJsonString}
-          jsonError={jsonError}
-          setJsonError={setJsonError}
-          parsedProperties={parsedProperties}
-          assignCountryId={assignCountryId}
-          setAssignCountryId={setAssignCountryId}
-          handleAssignLink={handleAssignLink}
-          assignMutation={assignMutation}
-          availableCountries={availableCountries}
-          createCountryFromShapeAction={createCountryFromShapeAction}
-          createCountryFromShapePending={createCountryFromShapePending}
-          enterBorderEdit={enterBorderEdit}
-          countryGeometry={(editor?.countryGeo?.geometry as Polygon | MultiPolygon | null) ?? null}
+          countryGeometry={(countryGeo?.geometry as Polygon | MultiPolygon | null) ?? null}
           countryId={activeCountryId ?? ""}
         />
       );
     }
 
-    return (
-      <DocumentInspector
-        countryName={resolvedCountryName}
-        countryId={activeCountryId ?? undefined}
-        countryGeoDisplayName={
-          editor.countryGeo?.country?.name || editor.countryGeo?.displayName || null
-        }
-        allFeatures={editor.allFeatures}
-        areaKm2={editor.countryGeo?.areaSqKm ?? null}
-        onModeChange={editor.setMode}
-      />
-    );
+    return <CountryOverview {...props} />;
   }
 
-  // 4. Creation / drawing mode active (non-world mode)
-  if (editor.mode !== "view") {
-    return renderFeaturePropertyPanel();
-  }
-
-  // 5. Empty-state: Canvas Document Inspector
-  const resolvedFlagUrl =
-    countryInfo?.flagUrl || countryInfo?.flag || editor.countryGeo?.country?.flag || null;
+  if (editor.mode !== "view") return featurePanel;
 
   return (
-    <DocumentInspector
-      countryName={resolvedCountryName}
-      countryId={activeCountryId ?? undefined}
-      countryGeoDisplayName={
-        editor.countryGeo?.country?.name || editor.countryGeo?.displayName || null
-      }
-      flagUrl={resolvedFlagUrl}
-      allFeatures={editor.allFeatures}
-      areaKm2={editor.countryGeo?.areaSqKm ?? null}
-      onModeChange={editor.setMode}
+    <CountryOverview
+      {...props}
+      flagUrl={countryInfo?.flagUrl || countryInfo?.flag || countryGeo?.country?.flag || null}
     />
   );
 });

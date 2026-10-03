@@ -2,11 +2,7 @@
 
 import { Badge } from "~/components/ui/badge";
 import React from "react";
-import {
-  ClockRotateRight as History,
-  Map,
-  KeyCommand,
-} from "iconoir-react";
+import { ClockRotateRight as History, Map, KeyCommand } from "iconoir-react";
 import type { EditorAction, EditorHistory } from "~/hooks/map-editor/useMapHistory";
 import { timeAgo } from "~/lib/format/compact";
 import { getFeatureIcon } from "./featureTypeIcons";
