@@ -238,7 +238,6 @@ export function MapDynamicIsland({
     user,
     isLoaded,
     theme,
-    effectiveTheme,
     setTheme,
     router,
     greeting,
@@ -308,13 +307,7 @@ export function MapDynamicIsland({
 
   const compactControls = (
     <>
-      <AuthSection
-        user={user}
-        isLoaded={isLoaded}
-        greeting={greeting}
-        countryName={countryName}
-        router={router}
-      />
+      <AuthSection user={user} isLoaded={isLoaded} greeting={greeting} countryName={countryName} />
 
       <IslandIconButton label="Search the map" title="Search (⌘K)" onClick={openSearch}>
         <Search aria-hidden className="size-3.5" />
@@ -340,9 +333,7 @@ export function MapDynamicIsland({
         projectionMode={projectionMode}
         onProjectionChange={onProjectionChange}
         theme={theme}
-        effectiveTheme={effectiveTheme}
         setTheme={setTheme}
-        router={router}
       />
     </>
   );

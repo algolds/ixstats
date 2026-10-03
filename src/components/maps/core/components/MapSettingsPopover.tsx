@@ -43,25 +43,20 @@ interface MapSettingsPopoverProps {
   projectionMode: ProjectionMode;
   onProjectionChange: (mode: ProjectionMode) => void;
   theme: Theme;
-  effectiveTheme: string;
   setTheme: (t: Theme) => void;
-  router: ReturnType<typeof useRouter>;
 }
 
 export function MapSettingsPopover({
   projectionMode,
   onProjectionChange,
   theme,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  effectiveTheme,
   setTheme,
-  router,
 }: MapSettingsPopoverProps) {
+  const router = useRouter();
   const isAdmin = useIsAdmin();
   const [snapEnabled, setSnapEnabledState] = useState(getSnapEnabled);
   const [snapTol, setSnapTolState] = useState(getSnapTolerance);
 
-  // Keep state in sync across renders (other instances may write prefs)
   useEffect(() => {
     // oxlint-disable-next-line
     setSnapEnabledState(getSnapEnabled());
@@ -90,7 +85,6 @@ export function MapSettingsPopover({
         className="rounded-card mt-2 w-60 p-3"
         sideOffset={8}
       >
-        {/* Theme */}
         <div className="space-y-2">
           <Eyebrow id="map-settings-theme" className="block">
             Theme
@@ -105,7 +99,6 @@ export function MapSettingsPopover({
           />
         </div>
 
-        {/* Projection */}
         <div className="mt-3 space-y-2">
           <Eyebrow id="map-settings-projection" className="block">
             Projection
@@ -120,7 +113,6 @@ export function MapSettingsPopover({
           />
         </div>
 
-        {/* Snap Controls */}
         <div className="mt-3 space-y-2">
           <div className="flex items-center justify-between">
             <Eyebrow className="flex items-center gap-2">
@@ -158,7 +150,6 @@ export function MapSettingsPopover({
           )}
         </div>
 
-        {/* User Settings */}
         <div className="border-separator mt-3 border-t pt-2">
           <Button
             variant="ghost"

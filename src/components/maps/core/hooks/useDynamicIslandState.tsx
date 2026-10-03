@@ -31,7 +31,7 @@ export function useDynamicIslandState({ onSearchResult, realm }: UseDynamicIslan
   // Select only the greeting string: subscribing to the raw IxTime timestamp re-rendered the
   // island (and re-measured its motion `layout` animations) every second.
   const greeting = useIxTimeStore((st) => getGreeting(st.ixTimeTimestamp));
-  const { theme, effectiveTheme, setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const router = useRouter();
 
   // Profile data for greeting
@@ -175,7 +175,6 @@ export function useDynamicIslandState({ onSearchResult, realm }: UseDynamicIslan
     user,
     isLoaded,
     theme,
-    effectiveTheme,
     setTheme,
     router,
     greeting,
