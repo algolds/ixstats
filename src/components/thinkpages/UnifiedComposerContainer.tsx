@@ -41,23 +41,30 @@ export function UnifiedComposerContainer({
     selectedAccount ? "compose" : "accounts"
   );
 
-  // If hiding accounts tab, show only composer without tabs
+  const handlers = {
+    onAccountSelect: onAccountSelect || (() => {}),
+    onAccountSettings: onAccountSettings || (() => {}),
+    onCreateAccount: onCreateAccount || (() => {}),
+  };
+  const renderComposer = (emptyPlaceholder: string) => (
+    <GlassCanvasComposer
+      {...handlers}
+      account={selectedAccount}
+      accounts={accounts}
+      isOwner={isOwner}
+      onPost={onPost}
+      placeholder={repostData ? "Add a comment to your repost..." : emptyPlaceholder}
+      countryId={countryId}
+      repostData={repostData}
+    />
+  );
+
+  // Without the accounts tab, show only the composer
   if (hideAccountsTab) {
     return (
       <div>
         {selectedAccount ? (
-          <GlassCanvasComposer
-            account={selectedAccount}
-            accounts={accounts}
-            onAccountSelect={onAccountSelect || (() => {})}
-            onAccountSettings={onAccountSettings || (() => {})}
-            onCreateAccount={onCreateAccount || (() => {})}
-            isOwner={isOwner}
-            onPost={onPost}
-            placeholder={repostData ? "Add a comment to your repost..." : "What's happening?"}
-            countryId={countryId}
-            repostData={repostData}
-          />
+          renderComposer("What's happening?")
         ) : (
           <Card>
             <EmptyState
@@ -93,20 +100,7 @@ export function UnifiedComposerContainer({
 
         <TabsContent value="compose" className="m-0 p-0">
           {selectedAccount ? (
-            <GlassCanvasComposer
-              account={selectedAccount}
-              accounts={accounts}
-              onAccountSelect={onAccountSelect || (() => {})}
-              onAccountSettings={onAccountSettings || (() => {})}
-              onCreateAccount={onCreateAccount || (() => {})}
-              isOwner={isOwner}
-              onPost={onPost}
-              placeholder={
-                repostData ? "Add a comment to your repost..." : "What's happening in your nation?"
-              }
-              countryId={countryId}
-              repostData={repostData}
-            />
+            renderComposer("What's happening in your nation?")
           ) : (
             <EmptyState
               icon={<Users />}
@@ -124,11 +118,9 @@ export function UnifiedComposerContainer({
 
         <TabsContent value="accounts" className="m-0 p-0">
           <EnhancedAccountManager
+            {...handlers}
             accounts={accounts}
             selectedAccount={selectedAccount}
-            onAccountSelect={onAccountSelect || (() => {})}
-            onAccountSettings={onAccountSettings || (() => {})}
-            onCreateAccount={onCreateAccount || (() => {})}
             isOwner={isOwner}
           />
         </TabsContent>
