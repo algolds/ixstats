@@ -10,14 +10,14 @@ type MyNationsDb = {
   country: Pick<PrismaClient["country"], "findMany" | "findFirst">;
 };
 
-export interface MyNation {
+interface MyNation {
   id: string;
   name: string;
   slug: string | null;
   flag: string | null;
 }
 
-export interface MyNationsRealm {
+interface MyNationsRealm {
   id: string;
   slug: string | null;
   name: string;

@@ -6,9 +6,9 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { isSystemOwner } from "~/lib/auth";
 import { capReachedMessage, nationCapacity } from "./realms.nation-cap";
 
-export type OwnershipTx = Pick<Prisma.TransactionClient, "country" | "user">;
+type OwnershipTx = Pick<Prisma.TransactionClient, "country" | "user">;
 
-export type NationOwnershipErrorCode = "COUNTRY_NOT_FOUND" | "ALREADY_OWNED" | "CAP_REACHED";
+type NationOwnershipErrorCode = "COUNTRY_NOT_FOUND" | "ALREADY_OWNED" | "CAP_REACHED";
 
 export class NationOwnershipError extends Error {
   constructor(
@@ -20,14 +20,18 @@ export class NationOwnershipError extends Error {
   }
 }
 
-const alreadyOwned = () => new NationOwnershipError("ALREADY_OWNED", "This nation already belongs to another player");
+const alreadyOwned = () =>
+  new NationOwnershipError("ALREADY_OWNED", "This nation already belongs to another player");
 
 /**
  * Give `countryId` to `userId`, within their nation cap in its realm (min(realm cap, tier cap) — nationCapacity).
  * It becomes their active nation only when they have none (ruling F-1): a player
  * acting as a nation of another realm keeps acting as it until they choose "Play as" (activateOwnedNation).
  */
-export async function assignNation(tx: OwnershipTx, input: { userId: string; countryId: string }): Promise<void> {
+export async function assignNation(
+  tx: OwnershipTx,
+  input: { userId: string; countryId: string }
+): Promise<void> {
   const country = await tx.country.findUnique({
     where: { id: input.countryId },
     select: { id: true, realmId: true, ownerUserId: true, realm: { select: { settings: true } } },
@@ -40,7 +44,8 @@ export async function assignNation(tx: OwnershipTx, input: { userId: string; cou
       realmId: country.realmId,
       settings: country.realm?.settings,
     });
-    if (!capacity.canTakeAnother) throw new NationOwnershipError("CAP_REACHED", capReachedMessage(capacity));
+    if (!capacity.canTakeAnother)
+      throw new NationOwnershipError("CAP_REACHED", capReachedMessage(capacity));
     // Conditional write: at READ COMMITTED a concurrent assignment may have taken the nation since the read above.
     const { count } = await tx.country.updateMany({
       where: { id: country.id, ownerUserId: null },
@@ -48,7 +53,10 @@ export async function assignNation(tx: OwnershipTx, input: { userId: string; cou
     });
     if (count === 0) throw alreadyOwned();
   }
-  await tx.user.updateMany({ where: { id: input.userId, countryId: null }, data: { countryId: country.id } });
+  await tx.user.updateMany({
+    where: { id: input.userId, countryId: null },
+    data: { countryId: country.id },
+  });
 }
 
 /** Take the nation away from its owner; anyone acting as it stops doing so. */
@@ -58,7 +66,11 @@ export async function releaseNation(tx: OwnershipTx, countryId: string): Promise
 }
 
 /** Move only the active pointer. Used for the system-owner override and for un-pointing without releasing. */
-export async function pointActiveNation(tx: OwnershipTx, userId: string, countryId: string | null): Promise<void> {
+export async function pointActiveNation(
+  tx: OwnershipTx,
+  userId: string,
+  countryId: string | null
+): Promise<void> {
   await tx.user.update({ where: { id: userId }, data: { countryId } });
 }
 
@@ -71,7 +83,10 @@ export async function activateOwnedNation(
   tx: OwnershipTx,
   input: { userId: string; countryId: string }
 ): Promise<boolean> {
-  const country = await tx.country.findUnique({ where: { id: input.countryId }, select: { ownerUserId: true } });
+  const country = await tx.country.findUnique({
+    where: { id: input.countryId },
+    select: { ownerUserId: true },
+  });
   if (country?.ownerUserId !== input.userId) return false;
   await pointActiveNation(tx, input.userId, input.countryId);
   return true;
@@ -97,7 +112,10 @@ export async function adminAssignNation(
       await pointActiveNation(tx, user.id, input.countryId);
       return;
     }
-    const target = await tx.country.findUnique({ where: { id: input.countryId }, select: { id: true } });
+    const target = await tx.country.findUnique({
+      where: { id: input.countryId },
+      select: { id: true },
+    });
     if (!target) throw new NationOwnershipError("COUNTRY_NOT_FOUND", "Country not found");
     await releaseNation(tx, input.countryId);
     await assignNation(tx, { userId: user.id, countryId: input.countryId });

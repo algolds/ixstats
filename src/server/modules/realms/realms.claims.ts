@@ -20,7 +20,7 @@ import { canModerateRealm, isSiteAdmin, type RealmActor } from "./realms.access"
 import { assignNation, NationOwnershipError } from "./realms.ownership";
 import { capReachedMessage, nationCapacity } from "./realms.nation-cap";
 
-export type ClaimErrorCode =
+type ClaimErrorCode =
   "NOT_FOUND" | "ALREADY_OWNED" | "CAP_REACHED" | "FORBIDDEN" | "NOT_PENDING" | "REASON_REQUIRED";
 
 export class ClaimError extends Error {
@@ -40,7 +40,7 @@ export interface NationAssignedEvent {
   countryName: string;
 }
 
-export interface ClaimsDeps {
+interface ClaimsDeps {
   fetchPageCreator: (source: ProofSource, title: string) => Promise<string | null>;
   /** Side effects linkCountry used to run: notification, one-time new-player bonus, profile cache. Runs after commit. */
   onNationAssigned: (event: NationAssignedEvent) => Promise<void>;
@@ -91,7 +91,9 @@ const autoApproval = () => ({
 /** Known alt accounts (KNOWN_WIKI_ALTS) are ixwiki accounts: on any other wiki the same name is someone else. */
 const canonical = (source: ProofSource, name: string) => {
   const normalized = normalizeWikiUsername(name);
-  return source === "ixwiki" ? normalizeWikiUsername(resolvePrimaryWikiUsername(normalized)) : normalized;
+  return source === "ixwiki"
+    ? normalizeWikiUsername(resolvePrimaryWikiUsername(normalized))
+    : normalized;
 };
 const notPending = () => new ClaimError("NOT_PENDING", "This claim was already decided");
 const pending = (claimId: string) => ({ claimId, status: "pending" as const, autoApproved: false });
@@ -382,7 +384,13 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     });
     return fileClaim(
       actor,
-      { realmId, userId: actor.id, countryId: null, wikiSource: page.wikiSource, wikiPageTitle: title },
+      {
+        realmId,
+        userId: actor.id,
+        countryId: null,
+        wikiSource: page.wikiSource,
+        wikiPageTitle: title,
+      },
       { realmId, wikiPageTitle: title },
       { kind: "page", page },
       verified
