@@ -13,6 +13,7 @@ import { exchangeService } from "~/lib/vault/exchange-service";
 import { teamWageBill } from "~/lib/sports";
 import { IxTime } from "~/lib/ixtime";
 import type { LiveTraceEvent } from "~/lib/sports/live-match";
+import { requireOwnedTeam } from "~/server/api/routers/sports/_shared";
 
 const TEAM_OVERVIEW_INCLUDE = {
   players: { where: { isActive: true }, orderBy: { position: "asc" } },
@@ -92,15 +93,7 @@ export const sportsClubRouter = createTRPCRouter({
     .input(z.object({ teamId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const team = await ctx.db.sportTeam.findUnique({
-          where: { id: input.teamId },
-        });
-        if (!team) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
-        }
-        if (team.ownerUserId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not manage this team" });
-        }
+        await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "manage");
         const spend = await exchangeService.spend(
           ctx.user.id,
           1000,
@@ -131,15 +124,7 @@ export const sportsClubRouter = createTRPCRouter({
     .input(z.object({ teamId: z.string(), price: z.number().min(1) }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const team = await ctx.db.sportTeam.findUnique({
-          where: { id: input.teamId },
-        });
-        if (!team) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
-        }
-        if (team.ownerUserId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not manage this team" });
-        }
+        await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "manage");
         return ctx.db.sportTeam.update({
           where: { id: input.teamId },
           data: { ticketPrice: input.price },
@@ -175,15 +160,7 @@ export const sportsClubRouter = createTRPCRouter({
     .input(z.object({ teamId: z.string(), saintName: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const team = await ctx.db.sportTeam.findUnique({
-          where: { id: input.teamId },
-        });
-        if (!team) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
-        }
-        if (team.ownerUserId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not manage this team" });
-        }
+        const team = await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "manage");
         const spend = await exchangeService.spend(
           ctx.user.id,
           100,
@@ -238,11 +215,7 @@ export const sportsClubRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
-        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
-        if (team.ownerUserId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
-        }
+        const team = await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "own");
 
         const lineup = (team.lineup as Record<string, unknown> | null) ?? {};
         const updatedLineup = {
@@ -274,11 +247,7 @@ export const sportsClubRouter = createTRPCRouter({
     .input(z.object({ teamId: z.string(), sponsorType: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
-        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
-        if (team.ownerUserId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
-        }
+        await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "own");
 
         const sponsors: Record<string, { name: string; baseFee: number; winBonus: number }> = {
           conservative: { name: "SafeState Insurance", baseFee: 100, winBonus: 0 },
@@ -349,11 +318,7 @@ export const sportsClubRouter = createTRPCRouter({
     .input(z.object({ teamId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
-        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
-        if (team.ownerUserId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
-        }
+        await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "own");
 
         const spend = await exchangeService.spend(
           ctx.user.id,
@@ -407,11 +372,7 @@ export const sportsClubRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
-        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
-        if (team.ownerUserId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
-        }
+        await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "own");
         const lineup = {
           starters: input.starters,
           captainId: input.captainId ?? null,

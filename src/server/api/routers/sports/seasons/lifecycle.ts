@@ -15,7 +15,7 @@ import {
 } from "~/server/api/routers/sports/league-access";
 import { IxTime } from "~/lib/ixtime";
 import { computeMatchRevenue } from "~/lib/sports/match-revenue";
-import { TEAM_BADGE } from "~/server/api/routers/sports/_shared";
+import { TEAM_BADGE, requireOwnedTeam } from "~/server/api/routers/sports/_shared";
 import { persistSeasonSchedule, transitionSeasonAction } from "~/lib/sports";
 
 /** Completed matches of `teamId` whose revenue that side hasn't collected yet. */
@@ -102,11 +102,7 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
   previewMatchRevenue: protectedProcedure
     .input(z.object({ teamId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
-      if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
-      if (team.ownerUserId !== ctx.user.id) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
-      }
+      const team = await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "own");
       return computeMatchRevenue(team, await uncollectedMatches(ctx.db, team.id));
     }),
 
@@ -121,11 +117,7 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
         return await ctx.db.$transaction(async (tx) => {
           // Serialize collections per team so two clicks can't both pay the same matches
           await tx.$queryRaw`SELECT id FROM "sport_teams" WHERE id = ${input.teamId} FOR UPDATE`;
-          const team = await tx.sportTeam.findUnique({ where: { id: input.teamId } });
-          if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
-          if (team.ownerUserId !== ctx.user.id) {
-            throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
-          }
+          const team = await requireOwnedTeam(tx, input.teamId, ctx.user.id, "own");
 
           const matches = await uncollectedMatches(tx, team.id);
           const revenue = computeMatchRevenue(team, matches);
