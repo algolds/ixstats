@@ -1,8 +1,5 @@
 "use client";
 
-// src/app/labs/onoma/components/shared/AdvancedConlangSettings.tsx
-// Onoma Custom Studio Workshop — Advanced Generator Settings Component
-
 import { Switch } from "~/components/ui/switch";
 import { PatternDepthControl } from "./PatternDepthControl";
 import {
@@ -12,8 +9,43 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import type { NameCategory } from "~/lib/onoma/types";
+import type { GenerateOptions, NameCategory } from "~/lib/onoma/types";
 import { Input } from "~/components/ui/input";
+import {
+  CvTemplateField,
+  LengthFields,
+  OptionSwitches,
+  OptionText,
+  SyllableFields,
+  type OptionFieldContext,
+} from "./GenerateOptionFields";
+
+const TITLE_PREFIXES = [
+  "King",
+  "Queen",
+  "Prince",
+  "Princess",
+  "Lord",
+  "Lady",
+  "Sir",
+  "General",
+  "President",
+  "Governor",
+  "Minister",
+  "Dr.",
+];
+
+const NAME_SUFFIXES = [
+  "Association",
+  "Committee",
+  "Society",
+  "Alliance",
+  "Union",
+  "Club",
+  "Company",
+  "Party",
+  "Organization",
+];
 
 interface AdvancedConlangSettingsProps {
   gen: {
@@ -27,30 +59,78 @@ interface AdvancedConlangSettingsProps {
     setSelectedSuffix: (v: string) => void;
     customSuffix: string;
     setCustomSuffix: (v: string) => void;
-    options: {
-      minLength?: number;
-      maxLength?: number;
-      startsWith?: string;
-      endsWith?: string;
-      minSyllables?: number;
-      maxSyllables?: number;
-      cvTemplate?: string;
-      mustEndWithVowel?: boolean;
-      mustEndWithConsonant?: boolean;
-      noInitialClusters?: boolean;
-      noFinalClusters?: boolean;
-    };
-    setOptions: (opts: any) => void;
+    options: GenerateOptions;
+    setOptions: (opts: GenerateOptions) => void;
     order: number;
     setOrder: (v: number) => void;
   };
   category: NameCategory;
 }
 
+interface AffixSelectProps {
+  label: string;
+  borderClassName?: string;
+  value: string;
+  onValueChange: (value: string) => void;
+  placeholder: string;
+  options: readonly string[];
+  customLabel: string;
+  customValue: string;
+  onCustomChange: (value: string) => void;
+  customPlaceholder: string;
+  labelClassName: string;
+  customInputClassName: string;
+}
+
+/** A "none / presets / custom" select; choosing custom reveals a free-text input. */
+function AffixSelect(props: AffixSelectProps) {
+  return (
+    <div className="border-separator space-y-2 border-b pb-3">
+      <label className={props.labelClassName}>{props.label}</label>
+      <Select
+        value={props.value || "none"}
+        onValueChange={(val) => props.onValueChange(val === "none" ? "" : val)}
+      >
+        <SelectTrigger className="text-footnote w-full">
+          <SelectValue placeholder={props.placeholder} />
+        </SelectTrigger>
+        <SelectContent className="max-h-[250px]">
+          {[
+            { value: "none", label: "None" },
+            ...props.options.map((option) => ({ value: option, label: option })),
+            { value: "custom", label: props.customLabel },
+          ].map(({ value, label }) => (
+            <SelectItem key={value} value={value} className="text-footnote">
+              {label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {props.value === "custom" && (
+        <Input
+          type="text"
+          placeholder={props.customPlaceholder}
+          value={props.customValue}
+          onChange={(e) => props.onCustomChange(e.target.value)}
+          className={props.customInputClassName}
+        />
+      )}
+    </div>
+  );
+}
+
 export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettingsProps) {
+  const ctx: OptionFieldContext = {
+    options: gen.options,
+    onChange: gen.setOptions,
+    look: "inspector",
+  };
+  const hasSuffix =
+    category === "organization" || category === "country" || category === "province";
+
   return (
     <div className="animate-in fade-in mt-4 space-y-4 duration-200">
-      {/* Include Live World Data Toggle */}
       <div className="border-separator flex items-center justify-between border-b pb-3">
         <div className="space-y-0.5 pr-2">
           <label className="text-label-secondary text-subhead">Include live world data</label>
@@ -65,199 +145,57 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
         />
       </div>
 
-      {/* Category-aware Prefix Title Select (Person Category only) */}
       {category === "person" && (
-        <div className="border-separator space-y-2 border-b pb-3">
-          <label className="text-label-secondary text-subhead">Title prefix</label>
-          <Select
-            value={gen.selectedPrefix || "none"}
-            onValueChange={(val) => gen.setSelectedPrefix(val === "none" ? "" : val)}
-          >
-            <SelectTrigger className="text-footnote w-full">
-              <SelectValue placeholder="Select prefix" />
-            </SelectTrigger>
-            <SelectContent className="max-h-[250px]">
-              <SelectItem value="none" className="text-footnote">
-                None
-              </SelectItem>
-              <SelectItem value="King" className="text-footnote">
-                King
-              </SelectItem>
-              <SelectItem value="Queen" className="text-footnote">
-                Queen
-              </SelectItem>
-              <SelectItem value="Prince" className="text-footnote">
-                Prince
-              </SelectItem>
-              <SelectItem value="Princess" className="text-footnote">
-                Princess
-              </SelectItem>
-              <SelectItem value="Lord" className="text-footnote">
-                Lord
-              </SelectItem>
-              <SelectItem value="Lady" className="text-footnote">
-                Lady
-              </SelectItem>
-              <SelectItem value="Sir" className="text-footnote">
-                Sir
-              </SelectItem>
-              <SelectItem value="General" className="text-footnote">
-                General
-              </SelectItem>
-              <SelectItem value="President" className="text-footnote">
-                President
-              </SelectItem>
-              <SelectItem value="Governor" className="text-footnote">
-                Governor
-              </SelectItem>
-              <SelectItem value="Minister" className="text-footnote">
-                Minister
-              </SelectItem>
-              <SelectItem value="Dr." className="text-footnote">
-                Dr.
-              </SelectItem>
-              <SelectItem value="custom" className="text-footnote">
-                Custom Prefix...
-              </SelectItem>
-            </SelectContent>
-          </Select>
-
-          {gen.selectedPrefix === "custom" && (
-            <Input
-              type="text"
-              placeholder="e.g. Grand Duke"
-              value={gen.customPrefix}
-              onChange={(e) => gen.setCustomPrefix(e.target.value)}
-              className="text-footnote mt-1 w-full"
-            />
-          )}
-        </div>
+        <AffixSelect
+          label="Title prefix"
+          labelClassName="text-label-secondary text-subhead"
+          value={gen.selectedPrefix}
+          onValueChange={gen.setSelectedPrefix}
+          placeholder="Select prefix"
+          options={TITLE_PREFIXES}
+          customLabel="Custom Prefix..."
+          customValue={gen.customPrefix}
+          onCustomChange={gen.setCustomPrefix}
+          customPlaceholder="e.g. Grand Duke"
+          customInputClassName="text-footnote mt-1 w-full"
+        />
       )}
 
-      {/* Category-aware Suffix Select (Organization, Country, Province categories only) */}
-      {(category === "organization" || category === "country" || category === "province") && (
-        <div className="border-separator space-y-2 border-b pb-3">
-          <label className="text-caption text-label block font-medium">Name suffix</label>
-          <Select
-            value={gen.selectedSuffix || "none"}
-            onValueChange={(val) => gen.setSelectedSuffix(val === "none" ? "" : val)}
-          >
-            <SelectTrigger className="text-footnote w-full">
-              <SelectValue placeholder="Select suffix" />
-            </SelectTrigger>
-            <SelectContent className="max-h-[250px]">
-              <SelectItem value="none" className="text-footnote">
-                None
-              </SelectItem>
-              <SelectItem value="Association" className="text-footnote">
-                Association
-              </SelectItem>
-              <SelectItem value="Committee" className="text-footnote">
-                Committee
-              </SelectItem>
-              <SelectItem value="Society" className="text-footnote">
-                Society
-              </SelectItem>
-              <SelectItem value="Alliance" className="text-footnote">
-                Alliance
-              </SelectItem>
-              <SelectItem value="Union" className="text-footnote">
-                Union
-              </SelectItem>
-              <SelectItem value="Club" className="text-footnote">
-                Club
-              </SelectItem>
-              <SelectItem value="Company" className="text-footnote">
-                Company
-              </SelectItem>
-              <SelectItem value="Party" className="text-footnote">
-                Party
-              </SelectItem>
-              <SelectItem value="Organization" className="text-footnote">
-                Organization
-              </SelectItem>
-              <SelectItem value="custom" className="text-footnote">
-                Custom Suffix...
-              </SelectItem>
-            </SelectContent>
-          </Select>
-
-          {gen.selectedSuffix === "custom" && (
-            <Input
-              type="text"
-              placeholder="e.g. Guild"
-              value={gen.customSuffix}
-              onChange={(e) => gen.setCustomSuffix(e.target.value)}
-              className="text-footnote mt-1 w-full font-mono"
-            />
-          )}
-        </div>
+      {hasSuffix && (
+        <AffixSelect
+          label="Name suffix"
+          labelClassName="text-caption text-label block font-medium"
+          value={gen.selectedSuffix}
+          onValueChange={gen.setSelectedSuffix}
+          placeholder="Select suffix"
+          options={NAME_SUFFIXES}
+          customLabel="Custom Suffix..."
+          customValue={gen.customSuffix}
+          onCustomChange={gen.setCustomSuffix}
+          customPlaceholder="e.g. Guild"
+          customInputClassName="text-footnote mt-1 w-full font-mono"
+        />
       )}
 
+      <LengthFields ctx={ctx} />
+
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <label className="text-caption text-label block font-medium">Min length</label>
-          <Input
-            type="number"
-            min={1}
-            max={20}
-            value={gen.options.minLength || 4}
-            onChange={(e) =>
-              gen.setOptions({
-                ...gen.options,
-                minLength: parseInt(e.target.value) || 0,
-              })
-            }
-            className="text-footnote w-full font-mono"
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="text-caption text-label block font-medium">Max length</label>
-          <Input
-            type="number"
-            min={1}
-            max={30}
-            value={gen.options.maxLength || 12}
-            onChange={(e) =>
-              gen.setOptions({
-                ...gen.options,
-                maxLength: parseInt(e.target.value) || 0,
-              })
-            }
-            className="text-footnote w-full font-mono"
-          />
-        </div>
+        <OptionText
+          ctx={ctx}
+          field="startsWith"
+          label="Starts with"
+          hint="(#_)"
+          placeholder="e.g. Ae"
+        />
+        <OptionText
+          ctx={ctx}
+          field="endsWith"
+          label="Ends with"
+          hint="(_#)"
+          placeholder="e.g. th"
+        />
       </div>
 
-      {/* Substring constraint filters */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <label className="text-caption text-label block font-medium">
-            Starts with <span className="text-label-secondary text-caption font-mono">(#_)</span>
-          </label>
-          <Input
-            type="text"
-            placeholder="e.g. Ae"
-            value={gen.options.startsWith || ""}
-            onChange={(e) => gen.setOptions({ ...gen.options, startsWith: e.target.value })}
-            className="text-footnote w-full font-mono"
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="text-caption text-label block font-medium">
-            Ends with <span className="text-label-secondary text-caption font-mono">(_#)</span>
-          </label>
-          <Input
-            type="text"
-            placeholder="e.g. th"
-            value={gen.options.endsWith || ""}
-            onChange={(e) => gen.setOptions({ ...gen.options, endsWith: e.target.value })}
-            className="text-footnote w-full font-mono"
-          />
-        </div>
-      </div>
-
-      {/* Pattern Depth Control */}
       <PatternDepthControl
         value={gen.order}
         onChange={(val) => gen.setOrder(val)}
@@ -265,136 +203,19 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
         className="pb-1"
       />
 
-      {/* Advanced conlang & phonotactics */}
       <div className="border-separator space-y-4 border-t pt-4">
         <h5 className="text-subhead text-label">Advanced conlang & phonotactics</h5>
-
-        {/* Syllable Counts */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <label className="text-caption text-label block font-medium">Min syllables</label>
-            <Input
-              type="number"
-              min={0}
-              max={5}
-              value={gen.options.minSyllables || 0}
-              onChange={(e) =>
-                gen.setOptions({
-                  ...gen.options,
-                  minSyllables: parseInt(e.target.value) || 0,
-                })
-              }
-              className="text-footnote w-full font-mono"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-caption text-label block font-medium">Max syllables</label>
-            <Input
-              type="number"
-              min={-1}
-              max={10}
-              placeholder="No limit"
-              value={
-                gen.options.maxSyllables === undefined || gen.options.maxSyllables === -1
-                  ? ""
-                  : gen.options.maxSyllables
-              }
-              onChange={(e) =>
-                gen.setOptions({
-                  ...gen.options,
-                  maxSyllables: e.target.value === "" ? -1 : parseInt(e.target.value) || -1,
-                })
-              }
-              className="text-footnote w-full font-mono"
-            />
-          </div>
-        </div>
-
-        {/* CV Template Input */}
-        <div className="space-y-1">
-          <label className="text-caption text-label block font-medium">Strict CV Template</label>
-          <Input
-            type="text"
-            placeholder="e.g. CVCV (C=consonant, V=vowel)"
-            value={gen.options.cvTemplate || ""}
-            onChange={(e) =>
-              gen.setOptions({
-                ...gen.options,
-                cvTemplate: e.target.value.replace(/[^cvCV]/g, "").toUpperCase(),
-              })
-            }
-            className="w-full font-mono"
-          />
-        </div>
-
-        {/* Switches Grid */}
-        <div className="grid gap-3 sm:grid-cols-2">
-          {/* Must End With Vowel */}
-          <div className="flex items-center justify-between">
-            <span className="text-caption text-label font-medium">Must end with vowel</span>
-            <Switch
-              checked={gen.options.mustEndWithVowel || false}
-              onCheckedChange={(checked) =>
-                gen.setOptions({
-                  ...gen.options,
-                  mustEndWithVowel: checked,
-                  mustEndWithConsonant: checked ? false : gen.options.mustEndWithConsonant,
-                })
-              }
-              size="sm"
-            />
-          </div>
-
-          {/* Must End With Consonant */}
-          <div className="flex items-center justify-between">
-            <span className="text-caption text-label font-medium">Must end with consonant</span>
-            <Switch
-              checked={gen.options.mustEndWithConsonant || false}
-              onCheckedChange={(checked) =>
-                gen.setOptions({
-                  ...gen.options,
-                  mustEndWithConsonant: checked,
-                  mustEndWithVowel: checked ? false : gen.options.mustEndWithVowel,
-                })
-              }
-              size="sm"
-            />
-          </div>
-
-          {/* No Initial Clusters */}
-          <div className="flex items-center justify-between">
-            <span className="text-caption text-label font-medium">
-              No Initial Clusters (e.g. "str-")
-            </span>
-            <Switch
-              checked={gen.options.noInitialClusters || false}
-              onCheckedChange={(checked) =>
-                gen.setOptions({
-                  ...gen.options,
-                  noInitialClusters: checked,
-                })
-              }
-              size="sm"
-            />
-          </div>
-
-          {/* No Final Clusters */}
-          <div className="flex items-center justify-between">
-            <span className="text-caption text-label font-medium">
-              No Final Clusters (e.g. "-rts")
-            </span>
-            <Switch
-              checked={gen.options.noFinalClusters || false}
-              onCheckedChange={(checked) =>
-                gen.setOptions({
-                  ...gen.options,
-                  noFinalClusters: checked,
-                })
-              }
-              size="sm"
-            />
-          </div>
-        </div>
+        <SyllableFields ctx={ctx} />
+        <CvTemplateField ctx={ctx} />
+        <OptionSwitches
+          ctx={ctx}
+          labels={{
+            mustEndWithVowel: "Must end with vowel",
+            mustEndWithConsonant: "Must end with consonant",
+            noInitialClusters: 'No Initial Clusters (e.g. "str-")',
+            noFinalClusters: 'No Final Clusters (e.g. "-rts")',
+          }}
+        />
       </div>
     </div>
   );

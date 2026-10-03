@@ -16,6 +16,7 @@ import {
   Xmark as X,
 } from "iconoir-react";
 import { GenerateCountPill } from "../shared/GenerateCountPill";
+import { LengthFields, OptionText, type OptionFieldContext } from "../shared/GenerateOptionFields";
 import { PatternDepthControl } from "../shared/PatternDepthControl";
 import {
   Select,
@@ -83,6 +84,7 @@ export function QuickGeneratorControls({
   isGenerating,
   handleGenerate,
 }: QuickGeneratorControlsProps) {
+  const ctx: OptionFieldContext = { options, onChange: setOptions, look: "inspector" };
   // Custom Dictionaries from LocalStorage
   const [customDicts, setCustomDicts] = useState<CustomDictionary[]>([]);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
@@ -510,88 +512,27 @@ export function QuickGeneratorControls({
       {showAdvanced && (
         <div className="animate-in fade-in slide-in-from-top-1 border-separator space-y-3 border-t pt-4 duration-200">
           <div className="space-y-2">
-            {/* Length Range */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <label className="text-caption text-label block font-medium">Min length</label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={options.minLength || 4}
-                  onChange={(e) =>
-                    setOptions({ ...options, minLength: parseInt(e.target.value) || 0 })
-                  }
-                  className="text-footnote w-full font-mono"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-caption text-label block font-medium">Max length</label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={30}
-                  value={options.maxLength || 12}
-                  onChange={(e) =>
-                    setOptions({ ...options, maxLength: parseInt(e.target.value) || 0 })
-                  }
-                  className="text-footnote w-full font-mono"
-                />
-              </div>
-            </div>
-
-            {/* Prefix / Suffix Affixes */}
-            <div className="space-y-1">
-              <label className="text-caption text-label block font-medium">
-                Starts With{" "}
-                <span className="text-label-secondary text-caption font-mono">(#_)</span>
-              </label>
-              <Input
-                type="text"
-                placeholder="#_"
-                value={options.startsWith || ""}
-                onChange={(e) => setOptions({ ...options, startsWith: e.target.value })}
-                className="text-footnote w-full font-mono"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-caption text-label block font-medium">
-                Ends with <span className="text-label-secondary text-caption font-mono">(_#)</span>
-              </label>
-              <Input
-                type="text"
-                placeholder="_#"
-                value={options.endsWith || ""}
-                onChange={(e) => setOptions({ ...options, endsWith: e.target.value })}
-                className="text-footnote w-full font-mono"
-              />
-            </div>
-
-            {/* Contains Filter */}
-            <div className="space-y-1">
-              <label className="text-caption text-label block font-medium">Contains pattern</label>
-              <Input
-                type="text"
-                placeholder="e.g. 'an'"
-                value={options.contains || ""}
-                onChange={(e) => setOptions({ ...options, contains: e.target.value })}
-                className="text-footnote w-full font-mono"
-              />
-            </div>
-
-            {/* Excludes Filter */}
-            <div className="space-y-1">
-              <label className="text-caption text-label block font-medium">Excludes pattern</label>
-              <Input
-                type="text"
-                placeholder="e.g. 'xx'"
-                value={options.excludes || ""}
-                onChange={(e) => setOptions({ ...options, excludes: e.target.value })}
-                className="text-footnote w-full font-mono"
-              />
-            </div>
+            <LengthFields ctx={ctx} className="grid grid-cols-2 gap-2" />
+            <OptionText
+              ctx={ctx}
+              field="startsWith"
+              label="Starts With"
+              hint="(#_)"
+              placeholder="#_"
+            />
+            <OptionText ctx={ctx} field="endsWith" label="Ends with" hint="(_#)" placeholder="_#" />
+            <OptionText
+              ctx={ctx}
+              field="contains"
+              label="Contains pattern"
+              placeholder="e.g. 'an'"
+            />
+            <OptionText
+              ctx={ctx}
+              field="excludes"
+              label="Excludes pattern"
+              placeholder="e.g. 'xx'"
+            />
 
             {/* Permit Seed Duplicates */}
             <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border px-3 py-2">
