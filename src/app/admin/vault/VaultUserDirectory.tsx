@@ -205,7 +205,7 @@ export function VaultUserDirectory() {
   };
 
   // Handlers
-  const handleOpenAdjust = (user: any) => {
+  const openDialogFor = (user: any, open: () => void) => {
     setSelectedUser({
       id: user.id,
       clerkUserId: user.clerkUserId,
@@ -213,30 +213,11 @@ export function VaultUserDirectory() {
       country: user.country,
       credits: user.vault.credits,
     });
-    setIsAdjustOpen(true);
+    open();
   };
-
-  const handleOpenPack = (user: any) => {
-    setSelectedUser({
-      id: user.id,
-      clerkUserId: user.clerkUserId,
-      displayName: user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
-      country: user.country,
-      credits: user.vault.credits,
-    });
-    setIsPackOpen(true);
-  };
-
-  const handleOpenCosmetics = (user: any) => {
-    setSelectedUser({
-      id: user.id,
-      clerkUserId: user.clerkUserId,
-      displayName: user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
-      country: user.country,
-      credits: user.vault.credits,
-    });
-    setIsCosmeticsOpen(true);
-  };
+  const handleOpenAdjust = (user: any) => openDialogFor(user, () => setIsAdjustOpen(true));
+  const handleOpenPack = (user: any) => openDialogFor(user, () => setIsPackOpen(true));
+  const handleOpenCosmetics = (user: any) => openDialogFor(user, () => setIsCosmeticsOpen(true));
 
   const handleAdjustSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -421,33 +402,19 @@ export function VaultUserDirectory() {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => {
-                    setSelectedUser({
-                      id: user.id,
-                      clerkUserId: user.clerkUserId,
-                      displayName: user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
-                      country: user.country,
-                      credits: user.vault.credits,
-                    });
-                    setIsStreakOpen(true);
-                    setStreakDelta(0);
-                  }}
+                  onClick={() =>
+                    openDialogFor(user, () => {
+                      setIsStreakOpen(true);
+                      setStreakDelta(0);
+                    })
+                  }
                   className="cursor-pointer gap-2 py-2"
                 >
                   <Flame className="text-orange h-3.5 w-3.5" />
                   <span>Adjust streak</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => {
-                    setSelectedUser({
-                      id: user.id,
-                      clerkUserId: user.clerkUserId,
-                      displayName: user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
-                      country: user.country,
-                      credits: user.vault.credits,
-                    });
-                    setIsHistoryOpen(true);
-                  }}
+                  onClick={() => openDialogFor(user, () => setIsHistoryOpen(true))}
                   className="cursor-pointer gap-2 py-2"
                 >
                   <History className="text-label-secondary h-3.5 w-3.5" />
