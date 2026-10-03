@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils/cn";
 import { chartColorPalette } from "~/lib/builder";
@@ -17,83 +17,6 @@ interface GlassChartProps {
   error?: string;
   actions?: React.ReactNode;
   theme?: "default" | "gold" | "blue" | "emerald" | "indigo" | "purple" | "cyan" | "red";
-}
-
-interface ChartSkeletonProps {
-  height?: number | string;
-  type?: "bar" | "line" | "pie" | "area" | "scatter";
-}
-
-// oxlint-disable-next-line eslint/no-unused-vars
-function ChartSkeleton({ height = 300, type = "bar" }: ChartSkeletonProps) {
-  const elements = useMemo((): React.ReactElement | React.ReactElement[] => {
-    switch (type) {
-      case "bar":
-        return Array.from({ length: 6 }, (_, i) => (
-          <motion.div
-            key={i}
-            className="rounded-sm bg-[var(--color-bg-secondary)]/30"
-            style={{
-              // oxlint-disable-next-line
-              height: `${Math.random() * 60 + 20}%`,
-              width: "12%",
-              marginLeft: i === 0 ? "0" : "2%",
-            }}
-            initial={{ height: 0 }}
-            // oxlint-disable-next-line
-            animate={{ height: `${Math.random() * 60 + 20}%` }}
-            transition={{ delay: i * 0.1, duration: 0.5, ease: "easeOut" }}
-          />
-        ));
-      case "line":
-        return (
-          <motion.svg
-            className="h-full w-full"
-            viewBox="0 0 400 200"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 1, ease: "easeOut" }}
-          >
-            <motion.path
-              d="M20,150 Q100,100 200,120 T380,80"
-              stroke="var(--color-brand-primary)"
-              strokeWidth="3"
-              fill="none"
-              strokeLinecap="round"
-              className="opacity-60"
-            />
-          </motion.svg>
-        );
-      case "pie":
-        return (
-          <motion.div
-            className="mx-auto h-32 w-32 rounded-full"
-            style={{
-              background: `conic-gradient(
-                var(--color-brand-primary) 0deg 120deg,
-                var(--color-success) 120deg 200deg,
-                var(--color-warning) 200deg 280deg,
-                var(--color-error) 280deg 360deg
-              )`,
-            }}
-            initial={{ scale: 0.8, opacity: 0, rotate: 0 }}
-            animate={{ scale: 1, opacity: 1, rotate: 360 }}
-            transition={{ duration: 1, ease: "easeOut" }}
-          />
-        );
-      default:
-        return [];
-    }
-  }, [type]);
-
-  return (
-    <div
-      className="flex items-end justify-center p-6"
-      style={{ height: typeof height === "number" ? `${height}px` : height }}
-    >
-      {elements}
-    </div>
-  );
 }
 
 export function GlassChart({
