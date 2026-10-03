@@ -1,11 +1,12 @@
 "use client";
 import { SearchField } from "~/components/ui/search-field";
 import { Button } from "~/components/ui/button";
-import React, { useState } from "react";
+import { useState } from "react";
 import { api } from "~/trpc/react";
 import AchievementCard from "./AchievementCard";
 import { Card } from "~/components/ui/card";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { LoadingBlock } from "../LoadingBlock";
 
 const REGISTRY_TABS = [
   { value: "ALL", label: "All" },
@@ -22,7 +23,6 @@ export default function RegistryBrowser() {
   const [search, setSearch] = useState("");
   const [limit, setLimit] = useState(16);
 
-  // Fetch from router
   const { data, isLoading } = api.heraldry.getRegistry.useQuery({
     subjectType: activeTab === "ALL" ? undefined : activeTab,
     limit,
@@ -31,7 +31,6 @@ export default function RegistryBrowser() {
   const achievements = data?.items ?? [];
   const totalCount = data?.total ?? 0;
 
-  // Client side search filter
   const filteredAchievements = achievements.filter((ach) => {
     if (!search) return true;
     const query = search.toLowerCase();
@@ -44,7 +43,6 @@ export default function RegistryBrowser() {
 
   return (
     <div className="space-y-6">
-      {/* Sub-navigation & search toolbar */}
       <Card className="flex flex-col justify-between gap-4 p-4 md:flex-row md:items-center">
         <SegmentedControl
           options={[...REGISTRY_TABS]}
@@ -69,10 +67,7 @@ export default function RegistryBrowser() {
       </Card>
 
       {isLoading ? (
-        <div className="text-label-secondary text-footnote flex flex-col items-center justify-center gap-3 py-32">
-          <div className="border-tint h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" />
-          <span>Consulting the Heraldic rolls...</span>
-        </div>
+        <LoadingBlock message="Consulting the Heraldic rolls..." />
       ) : filteredAchievements.length === 0 ? (
         <div className="border-separator bg-fill-3 text-label-secondary rounded-row text-footnote border p-20 text-center italic">
           No achievements registered.

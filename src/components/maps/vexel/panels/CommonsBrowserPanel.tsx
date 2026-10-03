@@ -18,6 +18,7 @@ import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { CHARGE_CATEGORIES } from "~/lib/heraldry";
+import { LoadingBlock } from "../LoadingBlock";
 
 interface CommonsBrowserPanelProps {
   onClose: () => void;
@@ -176,10 +177,11 @@ export default function CommonsBrowserPanel({
 
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
           {isLoading ? (
-            <div className="text-label-secondary text-footnote flex flex-col items-center justify-center gap-3 py-20">
-              <div className="border-tint h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
-              <span>Fetching Wikimedia library...</span>
-            </div>
+            <LoadingBlock
+              message="Fetching Wikimedia library..."
+              className="py-20"
+              spinnerClassName="h-6 w-6"
+            />
           ) : svgImages.length === 0 ? (
             <div className="text-label-secondary text-footnote py-20 text-center italic">
               {activeTab === "search" && search.length < 3

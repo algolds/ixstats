@@ -1,7 +1,7 @@
 "use client";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import ShieldRenderer from "../renderer/ShieldRenderer";
@@ -13,7 +13,6 @@ interface AchievementDetailProps {
   achievementId: string;
 }
 
-// Child component to resolve country name dynamically
 function CountryNameResolver({ countryId }: { countryId: string }) {
   const { data: country } = api.countries.getByIdAtTime.useQuery({ id: countryId });
   return <span className="text-label font-semibold">{country?.name || countryId.slice(0, 8)}</span>;
@@ -23,7 +22,6 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
   const router = useRouter();
   const [copied, setCopied] = useState(false);
 
-  // Fetch Achievement details
   const {
     data: achievement,
     isLoading,
@@ -68,7 +66,6 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
 
   return (
     <div className="text-label-secondary text-footnote grid grid-cols-1 items-start gap-8 md:grid-cols-[1fr_350px]">
-      {/* Left Column: Canvas & Description */}
       <div className="space-y-6">
         <Card className="relative flex aspect-video max-h-[450px] items-center justify-center overflow-hidden p-8">
           <div className="relative flex aspect-square max-h-full max-w-full items-center justify-center">
@@ -107,7 +104,6 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
         </Card>
       </div>
 
-      {/* Right Column: Metadata & History */}
       <div className="space-y-6">
         <Card className="flex flex-col gap-4 p-5">
           <div className="border-separator border-b pb-3">

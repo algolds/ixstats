@@ -12,6 +12,7 @@ import { generateBlazon } from "~/lib/heraldry/blazon";
 import type { HeraldryComposition } from "~/lib/heraldry";
 import { api } from "~/trpc/react";
 import { Card } from "~/components/ui/card";
+import { LoadingBlock } from "./LoadingBlock";
 
 type FilterKey = "cultureGroup" | "religion" | "governmentType";
 
@@ -135,10 +136,7 @@ export default function GalleryMode() {
       </Card>
 
       {isLoading ? (
-        <div className="text-label-secondary text-footnote flex flex-col items-center justify-center gap-3 py-32">
-          <div className="border-tint h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" />
-          <span>Forging procedural arms...</span>
-        </div>
+        <LoadingBlock message="Forging procedural arms..." />
       ) : compositions.length === 0 ? (
         <div className="text-label-secondary text-footnote py-20 text-center italic">
           No candidates generated.
