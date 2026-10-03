@@ -27,7 +27,6 @@ export function InlineWikiArticlePreview({
     }
   }, [title]);
 
-  // ─── Queries ─────────────────────────────────────────────────────────────────
   // Article text intro
   const { data: intro } = api.wikios.getIntro.useQuery(
     { title: cleanTitle, wiki },

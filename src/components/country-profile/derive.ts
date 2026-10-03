@@ -17,8 +17,6 @@ function ratePercent(value: number | null): number | null {
   return Math.abs(value) < 1 ? value * 100 : value;
 }
 
-// ─── National pulse ─────────────────────────────────────────────────────────
-
 export type PulseTone = "success" | "info" | "warning" | "default";
 
 interface PulseStatus {
@@ -56,8 +54,6 @@ function joinList(parts: string[]): string {
   if (parts.length <= 1) return parts.join("");
   return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
 }
-
-// ─── Country DNA ────────────────────────────────────────────────────────────
 
 export interface DnaAxis {
   key: string;
@@ -100,8 +96,6 @@ export function dnaSummary(axes: readonly DnaAxis[]): string | null {
   if (top.percentile === bottom.percentile) return null;
   return `Strongest in ${top.label.toLowerCase()}, weakest in ${bottom.label.toLowerCase()}.`;
 }
-
-// ─── Condition matrix ───────────────────────────────────────────────────────
 
 export type ConditionKey = "employment" | "approval" | "stability" | "literacy" | "urban";
 
@@ -174,8 +168,6 @@ function clamp(n: number): number {
   return Math.max(0, Math.min(100, n));
 }
 
-// ─── State structure ────────────────────────────────────────────────────────
-
 export type BranchKey = "executive" | "legislative" | "judicial";
 
 export interface StateBranch {
@@ -219,19 +211,8 @@ export function stateBranches(
   return branches.filter((b) => b.rows.length > 0);
 }
 
-// ─── Diplomatic matrix ──────────────────────────────────────────────────────
-
 const PARTNER = new Set(["ALLIED", "FRIENDLY"]);
 const TENSION = new Set(["TENSE", "HOSTILE", "WAR"]);
-
-export interface DiplomaticMatrix {
-  partners: ProfileWorld["relations"];
-  tensions: ProfileWorld["relations"];
-  relationCount: number;
-  treatyCount: number;
-  embassiesHosted: number;
-  embassiesAbroad: number;
-}
 
 /** Partners (allied, friendly) and tensions (tense, hostile, war), strongest first. */
 export function diplomaticMatrix(world: Pick<ProfileWorld, "relations" | "embassies">) {
@@ -243,5 +224,5 @@ export function diplomaticMatrix(world: Pick<ProfileWorld, "relations" | "embass
     treatyCount: world.relations.reduce((sum, r) => sum + r.treaties.length, 0),
     embassiesHosted: world.embassies.filter((e) => e.role === "host").length,
     embassiesAbroad: world.embassies.filter((e) => e.role === "guest").length,
-  } satisfies DiplomaticMatrix;
+  };
 }
