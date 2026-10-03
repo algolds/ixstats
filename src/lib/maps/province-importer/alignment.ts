@@ -14,7 +14,7 @@
  */
 
 import type { Position, Polygon, MultiPolygon } from "geojson";
-import { boxDistanceSq, distanceDeg } from "../planar";
+import { boxDistanceSq, distanceDeg, projectPointToSegment } from "../planar";
 import type {
   AffineMatrix,
   ReferencePoint,
@@ -727,15 +727,6 @@ function findNearestPoint(point: Position, candidates: Position[]): Position | n
     }
   }
   return best;
-}
-
-function projectPointToSegment(p: Position, a: Position, b: Position): Position {
-  const dx = b[0]! - a[0]!;
-  const dy = b[1]! - a[1]!;
-  const lenSq = dx * dx + dy * dy;
-  if (lenSq < 1e-20) return a;
-  const t = Math.max(0, Math.min(1, ((p[0]! - a[0]!) * dx + (p[1]! - a[1]!) * dy) / lenSq));
-  return [a[0]! + t * dx, a[1]! + t * dy];
 }
 
 /** Solve a 3x3 linear system Ax = b via Cramer's rule. */
