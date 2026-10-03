@@ -13,11 +13,11 @@ import type {
 } from "./identity.types";
 
 /** The realm a country belongs to. `realm` is always selected; the FK guarantees the row exists. */
-export function realmOf(country: IdentityCountry): { id: string; name: string; slug: string } {
+function realmOf(country: IdentityCountry): { id: string; name: string; slug: string } {
   return country.realm ?? { id: country.realmId, name: country.realmId, slug: country.realmId };
 }
 
-export function countrySlug(country: { slug: string | null; name: string }): string {
+function countrySlug(country: { slug: string | null; name: string }): string {
   return country.slug ?? country.name.toLowerCase().replace(/ /g, "_");
 }
 

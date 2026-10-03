@@ -1,4 +1,3 @@
-// src/services/AtomicEffectivenessService.ts
 import { type PrismaClient } from "@prisma/client";
 import { ComponentType, type AtomicEffectiveness } from "@prisma/client";
 
@@ -18,7 +17,7 @@ interface SynergyRule {
   description: string;
 }
 
-export class AtomicEffectivenessService {
+class AtomicEffectivenessService {
   private cache = new Map<string, { data: AtomicEffectiveness; timestamp: number }>();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -652,5 +651,3 @@ export function getAtomicEffectivenessService(db: PrismaClient): AtomicEffective
   }
   return atomicEffectivenessService;
 }
-
-export type { ComponentEffectiveness, SynergyRule };

@@ -48,7 +48,7 @@ export const DEFAULT_PASSPORT_VISIBILITY: PassportVisibility = {
 export const MAX_PINNED_RIBBONS = 3;
 export const MAX_SIGNATURE_LENGTH = 60;
 
-export interface PassportSettings {
+interface PassportSettings {
   visibility: PassportVisibility;
   signature: string | null;
   pinnedRibbonKeys: string[];

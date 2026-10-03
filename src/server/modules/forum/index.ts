@@ -26,10 +26,7 @@ export {
   type XFForum,
 } from "./services/xenforo-service";
 
-export {
-  lookupForumUser,
-  syncUserToForum,
-} from "./services/xenforo-user-sync";
+export { lookupForumUser, syncUserToForum } from "./services/xenforo-user-sync";
 
 export {
   createForumLinkService,
@@ -46,9 +43,4 @@ export {
 export { forumBridge } from "./services/forum-bridge";
 // ─── Lib / Utilities ─────────────────────────────────────────────────────────
 export { transformBBCode } from "./lib/bbcode-transformer";
-export {
-  cacheKey,
-  cacheInvalidate,
-  invalidateThread,
-  cachedFetch
-} from "./lib/cache";
+export { cacheKey, cacheInvalidate, invalidateThread, cachedFetch } from "./lib/cache";
