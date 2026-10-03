@@ -232,8 +232,8 @@ export async function updateCitySpatialProfile(db: any, cityId: string): Promise
       cityId
     )) as Array<{ type: string; distance: number }>;
 
-    const riverDist = Number(waterDistances.find((w) => w.type === "rivers")?.distance) ?? 9999.0;
-    const lakeDist = Number(waterDistances.find((w) => w.type === "lakes")?.distance) ?? 9999.0;
+    const riverDist = Number(waterDistances.find((w) => w.type === "rivers")?.distance ?? 9999.0);
+    const lakeDist = Number(waterDistances.find((w) => w.type === "lakes")?.distance ?? 9999.0);
 
     // Consider close if within 10km
     const waterAccess = {

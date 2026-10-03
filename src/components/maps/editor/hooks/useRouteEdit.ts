@@ -315,6 +315,9 @@ export function useRouteEdit({
     listeners.onLayer("mouseenter", MIDPOINT_LAYER, () => {
       if (editing()) setCursor("copy");
     });
+    listeners.onLayer("mouseleave", MIDPOINT_LAYER, () => {
+      if (editing() && !dragRef.current) setCursor("");
+    });
     listeners.onDom(window, "mouseup", onMouseUp);
     listeners.onDom(window, "keydown", onKeyDown);
     listeners.onTouch(canvas, { start: onTouchStart, move: onTouchMove, end: onTouchEnd });
