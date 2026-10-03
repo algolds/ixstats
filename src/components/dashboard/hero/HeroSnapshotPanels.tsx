@@ -74,13 +74,10 @@ function HeroSnapshotPanelsComponent({
   countryId?: string;
   onOpenModal: (modal: "vitality" | "gdp" | "population" | "government") => void;
 }) {
-  const dashboardData = (api as any).mycountry?.getCountryDashboard?.useQuery?.(
+  const { data: recorded } = api.mycountry.getCountryDashboard.useQuery(
     { countryId: countryId || "" },
     { enabled: !!countryId, staleTime: 30_000 }
   );
-
-  const recorded = dashboardData?.data as
-    { publicApproval?: number | null; politicalStability?: string | null } | undefined;
   const approval =
     typeof recorded?.publicApproval === "number" ? `${Math.round(recorded.publicApproval)}%` : "—";
   const stability = recorded?.politicalStability || "—";
