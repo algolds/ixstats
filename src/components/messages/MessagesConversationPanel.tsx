@@ -172,7 +172,6 @@ export function MessagesConversationPanel({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Search Header */}
       <div className={cn("border-separator relative flex shrink-0 flex-col gap-3 border-b p-3")}>
         <div className="flex items-center gap-2">
           <SearchField
@@ -207,7 +206,6 @@ export function MessagesConversationPanel({
         )}
       </div>
 
-      {/* Conversation List */}
       <div className="flex-1 space-y-1 overflow-y-auto p-2" style={{ scrollbarWidth: "thin" }}>
         {showSystemCard && (
           <PinnedConversationCard

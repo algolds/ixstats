@@ -55,7 +55,6 @@ export function MessagesAddParticipantsModal({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Search */}
           <SearchField
             placeholder="Search users to add..."
             aria-label="Search users to add"

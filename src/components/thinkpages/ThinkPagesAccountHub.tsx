@@ -82,7 +82,6 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
-      {/* Feed redirect banner */}
       <Card padding="md" className="flex items-center justify-between gap-4">
         <div>
           <p className="text-headline text-label">The social feed has moved to your Dashboard</p>
@@ -98,7 +97,6 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
         </Button>
       </Card>
 
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           {/* Phones under the new shell get the ShellPageHeader title instead. */}
@@ -122,7 +120,6 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
         </Button>
       </div>
 
-      {/* Account Manager */}
       <EnhancedAccountManager
         accounts={accounts}
         selectedAccount={selectedAccount}
@@ -135,7 +132,6 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
         isOwner
       />
 
-      {/* Modals */}
       {showAccountCreation && (
         <AccountCreationModal
           countryId={countryData.id}

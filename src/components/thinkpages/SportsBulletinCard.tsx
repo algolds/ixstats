@@ -152,7 +152,6 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
 
   return (
     <Card className={cn("group my-3 overflow-hidden", className)}>
-      {/* Header */}
       <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
         <div className="flex items-center gap-3">
           <div className="bg-yellow/10 rounded-row flex size-10 shrink-0 items-center justify-center">

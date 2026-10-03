@@ -1,5 +1,4 @@
 "use client";
-// src/components/forum/reader/Breadcrumbs.tsx
 // Forum breadcrumb navigation.
 
 import Link from "next/link";

@@ -139,7 +139,6 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
               </button>
             ))}
 
-            {/* All Discord Emojis */}
             {isLoading ? (
               <div className="flex w-full items-center justify-center p-3">
                 <div className="border-tint size-4 animate-spin rounded-full border-b-2" />
@@ -175,7 +174,6 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
                     </button>
                   ))}
 
-                {/* Show More/Less Button */}
                 {discordEmojis.emojis.length > 16 && (
                   <button
                     type="button"
@@ -202,7 +200,6 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
         </TabsContent>
       </Tabs>
 
-      {/* Current Reaction Counts */}
       {postReactionCounts && Object.keys(postReactionCounts).length > 0 && (
         <div className="border-separator mt-2 border-t pt-2">
           <div className="text-footnote text-label-secondary mb-1">Current reactions:</div>

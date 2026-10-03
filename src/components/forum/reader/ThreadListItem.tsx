@@ -1,5 +1,4 @@
 "use client";
-// src/components/forum/reader/ThreadListItem.tsx
 // Single row in a thread list view.
 
 import Link from "next/link";
@@ -56,7 +55,6 @@ export function ThreadListItem({
     <div
       className={`forum-thread-row ${isSticky ? "forum-thread-row-sticky" : ""} ${!isOpen ? "opacity-75" : ""}`}
     >
-      {/* Avatar */}
       <div className="hidden shrink-0 sm:block">
         {authorAvatar ? (
           <img
@@ -73,7 +71,6 @@ export function ThreadListItem({
         )}
       </div>
 
-      {/* Title + Author */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           {isSticky && <Pin className="text-tint h-3 w-3 shrink-0" />}
@@ -95,7 +92,6 @@ export function ThreadListItem({
         </div>
       </div>
 
-      {/* Stats */}
       <div className="text-footnote text-label-secondary hidden shrink-0 items-center gap-4 tabular-nums sm:flex">
         <span className="flex items-center gap-1" title="Replies">
           <MessageSquare className="h-3.5 w-3.5" />
@@ -107,7 +103,6 @@ export function ThreadListItem({
         </span>
       </div>
 
-      {/* Last post */}
       <div className="hidden shrink-0 text-right md:block" style={{ minWidth: "100px" }}>
         <div className="text-footnote text-label-secondary">{formatTimeAgo(lastPostDate)}</div>
         <div className="text-footnote text-label-secondary">by {lastPostUsername}</div>

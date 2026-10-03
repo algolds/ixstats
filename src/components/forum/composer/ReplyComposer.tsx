@@ -1,5 +1,4 @@
 "use client";
-// src/components/forum/composer/ReplyComposer.tsx
 // Inline reply composer at the bottom of a thread view using unified GlassPlateEditor.
 
 import { useState, useRef, useEffect, useCallback } from "react";

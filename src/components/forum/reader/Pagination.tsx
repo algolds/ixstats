@@ -1,5 +1,4 @@
 "use client";
-// src/components/forum/reader/Pagination.tsx
 // Forum pagination component.
 
 import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight } from "iconoir-react";

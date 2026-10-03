@@ -152,7 +152,6 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
 
       <ResponseSection prompt={prompt} isSignedIn={!!isSignedIn} myResponse={myResponse} />
 
-      {/* Responses list */}
       <div className="space-y-3">
         <h2 className="text-headline text-label-secondary">Responses</h2>
 
@@ -234,7 +233,6 @@ function BlurbSubmissionForm({ promptId }: { promptId: string }) {
         </span>
       </div>
 
-      {/* Link wiki articles */}
       <div className="mt-3">
         <p className="text-footnote text-label-secondary mb-2">
           Link wiki articles (optional, max 5)

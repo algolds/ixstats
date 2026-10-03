@@ -1,5 +1,4 @@
 "use client";
-// src/app/(forum)/forum/members/[userId]/page.tsx
 // Forum member profile page.
 
 import { useParams } from "next/navigation";
@@ -51,7 +50,6 @@ export default function MemberProfilePage() {
         </div>
       ) : member ? (
         <div>
-          {/* Unified IxnayID Profile Banner */}
           <div className="bg-tint-fill text-footnote rounded-row mb-4 flex flex-wrap items-center justify-between gap-2 px-4 py-2">
             <div className="flex items-center gap-2">
               <span className="text-label font-semibold">IxnayID account:</span>
@@ -93,7 +91,6 @@ export default function MemberProfilePage() {
             </div>
           </div>
 
-          {/* Stats */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <StatCard
               icon={MessageSquare}
@@ -109,7 +106,6 @@ export default function MemberProfilePage() {
             <StatCard icon={Calendar} label="Joined" value={formatDate(member.registerDate)} />
           </div>
 
-          {/* About */}
           {member.about && (
             <Card padding="md" className="mt-4">
               <h2 className="text-headline text-label mb-2">About</h2>

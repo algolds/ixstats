@@ -1,5 +1,4 @@
 "use client";
-// src/app/(forum)/forum/search/page.tsx
 // Forum search results page.
 
 import { useState } from "react";
@@ -43,7 +42,6 @@ export default function ForumSearchPage() {
     <ForumLayout>
       <h1 className="text-large-title text-label mb-4">Search forums</h1>
 
-      {/* Search input */}
       <div className="mb-4 flex gap-2">
         <SearchField
           containerClassName="flex-1"
@@ -56,7 +54,6 @@ export default function ForumSearchPage() {
         <Button onClick={handleSearch}>Search</Button>
       </div>
 
-      {/* Type filter */}
       <SegmentedControl
         size="sm"
         aria-label="Result type"
@@ -73,7 +70,6 @@ export default function ForumSearchPage() {
         ]}
       />
 
-      {/* Results */}
       {isLoading ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (

@@ -255,7 +255,6 @@ export function AccountCreationModal({
           </div>
         )}
 
-        {/* Body */}
         <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
           <AnimatePresence mode="wait">
             {step === "type" ? (
@@ -340,7 +339,6 @@ export function AccountCreationModal({
           </AnimatePresence>
         </div>
 
-        {/* Footer */}
         <DialogFooter className="border-separator border-t px-4 py-3 sm:px-6 sm:py-4">
           <Button variant="secondary" onClick={onClose}>
             Cancel

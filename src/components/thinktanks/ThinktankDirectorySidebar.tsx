@@ -97,7 +97,6 @@ export function ThinktankDirectorySidebar({
 
   return (
     <div className="flex h-full flex-col">
-      {/* ── Top Header & Actions ── */}
       <div className="border-separator relative flex shrink-0 flex-col gap-3 border-b p-3">
         <div className="flex items-center justify-between gap-2">
           <SegmentedControl
@@ -134,7 +133,6 @@ export function ThinktankDirectorySidebar({
           onValueChange={setSearchQuery}
         />
 
-        {/* Dynamic Category Capsules */}
         {availableCategories.length > 1 && (
           <ToggleGroup
             type="single"
@@ -158,7 +156,6 @@ export function ThinktankDirectorySidebar({
         )}
       </div>
 
-      {/* ── Group List ── */}
       <div className="flex-1 space-y-1 overflow-y-auto p-2">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center gap-2 py-16">
@@ -208,12 +205,10 @@ export function ThinktankDirectorySidebar({
                   isSelected ? "bg-tint-fill" : "hover:bg-fill-4"
                 )}
               >
-                {/* Active Indicator Bar */}
                 {isSelected && (
                   <div className="bg-tint absolute top-2 bottom-2 left-0 w-1 rounded-r-full" />
                 )}
 
-                {/* Avatar with Activity Alert Beacon */}
                 <div className="relative shrink-0">
                   <Avatar className="border-separator rounded-control size-9 shrink-0 border">
                     {g.avatar ? <AvatarImage src={g.avatar} alt={g.name} /> : null}
@@ -231,7 +226,6 @@ export function ThinktankDirectorySidebar({
                   )}
                 </div>
 
-                {/* Content Info */}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-headline text-label truncate">{g.name}</span>

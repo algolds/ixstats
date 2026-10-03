@@ -1,5 +1,4 @@
 "use client";
-// src/components/forum/reader/ThreadRenderer.tsx
 // Full thread view with posts, pagination, and reply composer.
 // Client-side pagination for hybrid routing pattern.
 
@@ -96,7 +95,6 @@ export function ThreadRenderer({ threadId, initialPage = 1 }: ThreadRendererProp
 
   return (
     <div>
-      {/* Breadcrumbs */}
       <ForumBreadcrumbs
         items={[
           ...(thread.forumName
@@ -106,7 +104,6 @@ export function ThreadRenderer({ threadId, initialPage = 1 }: ThreadRendererProp
         ]}
       />
 
-      {/* Thread header */}
       <div className="mb-4">
         <h1 className="text-title-1 sm:text-large-title text-label">{thread.title}</h1>
         <div className="text-footnote text-label-secondary mt-2 flex flex-wrap items-center gap-3 tabular-nums">
@@ -128,7 +125,6 @@ export function ThreadRenderer({ threadId, initialPage = 1 }: ThreadRendererProp
         </div>
       </div>
 
-      {/* Top pagination */}
       {pagination && pagination.last_page > 1 && (
         <ForumPagination
           currentPage={pagination.current_page}
@@ -137,7 +133,6 @@ export function ThreadRenderer({ threadId, initialPage = 1 }: ThreadRendererProp
         />
       )}
 
-      {/* Posts */}
       <div className="space-y-3">
         {posts.map((post) => (
           <PostCard
@@ -151,7 +146,6 @@ export function ThreadRenderer({ threadId, initialPage = 1 }: ThreadRendererProp
         ))}
       </div>
 
-      {/* Bottom pagination */}
       {pagination && pagination.last_page > 1 && (
         <ForumPagination
           currentPage={pagination.current_page}
@@ -160,7 +154,6 @@ export function ThreadRenderer({ threadId, initialPage = 1 }: ThreadRendererProp
         />
       )}
 
-      {/* Reply composer */}
       {thread.isOpen && (
         <div ref={composerRef} className="mt-4">
           <ReplyComposer

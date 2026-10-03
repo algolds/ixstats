@@ -1,5 +1,4 @@
 "use client";
-// src/components/forum/shared/ForumContext.tsx
 // Context for passing forum state to the DynamicIsland and other global components.
 // Mirrors WikiContext.tsx pattern.
 

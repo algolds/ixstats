@@ -90,7 +90,6 @@ export function MessagesFolderNav({
         </div>
       </div>
 
-      {/* Settings popover button */}
       <Popover>
         <PopoverTrigger
           className={cn(

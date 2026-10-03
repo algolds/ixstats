@@ -55,7 +55,6 @@ export function MessagesNewConversationModal({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Self-message shortcut */}
           <FacetList>
             <FacetListSection aria-label="Shortcuts">
               <FacetRow
@@ -72,7 +71,6 @@ export function MessagesNewConversationModal({
             </FacetListSection>
           </FacetList>
 
-          {/* Search */}
           <SearchField
             placeholder="Search users..."
             aria-label="Search users"

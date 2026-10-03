@@ -548,7 +548,6 @@ export function EmojiPicker({
         sideOffset={8}
         className="w-80 overflow-hidden p-0"
       >
-        {/* Search */}
         <div className="border-separator border-b p-2">
           <SearchField
             size="sm"
@@ -559,7 +558,6 @@ export function EmojiPicker({
           />
         </div>
 
-        {/* Tab Selection */}
         <div className="border-separator border-b p-2">
           <SegmentedControl
             size="sm"
@@ -576,7 +574,6 @@ export function EmojiPicker({
           />
         </div>
 
-        {/* Picker Content Area */}
         <div ref={scrollRef} className="thin-scrollbar max-h-60 overflow-y-auto p-2">
           {activeTab === "unicode" ? (
             filteredUnicodeCategories.length > 0 ? (

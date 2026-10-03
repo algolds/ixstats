@@ -177,7 +177,6 @@ export function PostActions({
   return (
     <div className={cn("flex items-center justify-between", className)}>
       <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-        {/* Reply */}
         <ActionPill
           size={pillSize}
           tone="info"
@@ -189,7 +188,6 @@ export function PostActions({
           Reply
         </ActionPill>
 
-        {/* Repost */}
         <ActionPill
           size={pillSize}
           pressed={isReposted}
@@ -201,7 +199,6 @@ export function PostActions({
           Repost
         </ActionPill>
 
-        {/* Like / reaction */}
         <div className="relative">
           <ActionPill
             ref={reactionButtonRef}
@@ -248,13 +245,11 @@ export function PostActions({
           </Popover>
         </div>
 
-        {/* Share */}
         <ActionPill size={pillSize} icon={<Share />} onClick={handleShare} aria-label="Share post">
           Share
         </ActionPill>
       </div>
 
-      {/* Repost Modal */}
       {showRepostModal && (
         <RepostModal
           open={showRepostModal}

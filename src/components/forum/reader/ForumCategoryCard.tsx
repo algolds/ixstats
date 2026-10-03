@@ -1,5 +1,4 @@
 "use client";
-// src/components/forum/reader/ForumCategoryCard.tsx
 // Renders a forum category/sub-forum card on the forum index page.
 
 import Link from "next/link";
@@ -56,12 +55,10 @@ export function ForumCategoryCard({
       href={withBasePath(`/forum/${nodeId}`)}
       className="forum-category-card group flex items-center gap-4"
     >
-      {/* Icon */}
       <div className="bg-tint-fill text-tint rounded-control flex size-10 shrink-0 items-center justify-center">
         <MessageSquare className="h-5 w-5" />
       </div>
 
-      {/* Info */}
       <div className="min-w-0 flex-1">
         <h3 className="text-headline text-label group-hover:text-tint transition-colors">
           {title}
@@ -71,7 +68,6 @@ export function ForumCategoryCard({
         )}
       </div>
 
-      {/* Stats */}
       <div className="hidden shrink-0 text-right tabular-nums sm:block">
         <div className="text-footnote text-label-secondary">
           {threadCount.toLocaleString()} threads
@@ -81,7 +77,6 @@ export function ForumCategoryCard({
         </div>
       </div>
 
-      {/* Last post */}
       {lastPostDate && (
         <div className="hidden shrink-0 text-right md:block" style={{ minWidth: "140px" }}>
           {lastThreadTitle && lastThreadId && (

@@ -1,4 +1,3 @@
-// src/app/(forum)/forum/layout.tsx
 // Forum route group layout — imports forum CSS and wraps with ForumContextProvider.
 
 import "~/styles/forum.css";

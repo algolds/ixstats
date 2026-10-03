@@ -76,7 +76,6 @@ export function MessagesViewDetailsModal({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Metadata Cards */}
           <div className="text-body grid grid-cols-2 gap-3">
             <div className="bg-surface-secondary rounded-row flex flex-col gap-1 p-3">
               <span className="text-footnote text-label-secondary flex items-center gap-1">
@@ -116,7 +115,6 @@ export function MessagesViewDetailsModal({
             )}
           </div>
 
-          {/* Participant List */}
           <div className="space-y-3">
             <h4 className="text-headline text-label flex items-center gap-2 px-1">
               <Users className="text-label-secondary size-4" aria-hidden="true" />
@@ -124,7 +122,6 @@ export function MessagesViewDetailsModal({
             </h4>
 
             <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
-              {/* Current User */}
               {currentUser && (
                 <div className="bg-surface-secondary rounded-control flex items-center gap-3 p-2">
                   <Avatar className="size-8">
@@ -157,7 +154,6 @@ export function MessagesViewDetailsModal({
                 </div>
               )}
 
-              {/* Other Participants */}
               {conversation.otherParticipants.map((participant) => (
                 <div
                   key={participant.accountId}

@@ -60,7 +60,6 @@ export function PostModals({ post, state, onAccountClick }: PostModalsProps) {
 
   return (
     <>
-      {/* Delete confirmation */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
@@ -85,7 +84,6 @@ export function PostModals({ post, state, onAccountClick }: PostModalsProps) {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Flag / Report Dialog */}
       <Dialog
         open={showFlagDialog}
         onOpenChange={(open) => {
@@ -125,7 +123,6 @@ export function PostModals({ post, state, onAccountClick }: PostModalsProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Reactions Detail Dialog */}
       <ReactionsDialog
         postId={post.id}
         isOpen={showReactionsDialog}

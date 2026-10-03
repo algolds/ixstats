@@ -94,7 +94,6 @@ export function ThinktankCreateModal({ isOpen, onClose, onCreated }: ThinktankCr
           />
 
           <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-            {/* Logo / Avatar Picker */}
             <div className="bg-surface-secondary rounded-row flex items-center gap-3 p-3">
               <Avatar className="border-separator rounded-control size-11 border">
                 <AvatarImage src={avatarUrl || undefined} alt={name} />
@@ -172,7 +171,6 @@ export function ThinktankCreateModal({ isOpen, onClose, onCreated }: ThinktankCr
               />
             </ThinktankField>
 
-            {/* Multi-Persona Posting Switch */}
             <div className="bg-surface-secondary rounded-row flex items-center justify-between p-3">
               <div className="flex items-center gap-2">
                 <Group className="text-label-secondary size-4" aria-hidden="true" />
@@ -192,7 +190,6 @@ export function ThinktankCreateModal({ isOpen, onClose, onCreated }: ThinktankCr
               />
             </div>
 
-            {/* Privacy Choice */}
             <div className="bg-surface-secondary rounded-row flex items-center justify-between p-3">
               <div className="flex items-center gap-2">
                 {type === "public" ? (
@@ -236,7 +233,6 @@ export function ThinktankCreateModal({ isOpen, onClose, onCreated }: ThinktankCr
         </DialogContent>
       </Dialog>
 
-      {/* ── Media Repository Modal ── */}
       {showMediaModal && (
         <MediaSearchModal
           isOpen={showMediaModal}
