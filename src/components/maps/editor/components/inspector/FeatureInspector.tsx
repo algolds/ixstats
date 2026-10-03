@@ -76,7 +76,6 @@ const MAX_SPEED_KMH = 2000;
 
 type TerrainSample = RouterOutputs["countryGeo"]["sampleTerrainAt"];
 
-/** Local copy of the editable properties, re-read whenever the selected feature changes. */
 function readFields(feature: EditorFeature) {
   const p = feature.properties;
   const routeType = (p?.routeType as string) || "road";
@@ -94,6 +93,17 @@ function readFields(feature: EditorFeature) {
 }
 
 type Fields = ReturnType<typeof readFields>;
+
+/** Local editable copy of the feature's properties, re-read whenever the selected feature changes. */
+function useFeatureFields(feature: EditorFeature) {
+  const [fields, setFields] = useState(() => readFields(feature));
+  const [syncedFeature, setSyncedFeature] = useState(feature);
+  if (syncedFeature !== feature) {
+    setSyncedFeature(feature);
+    setFields(readFields(feature));
+  }
+  return [fields, setFields] as const;
+}
 
 function InspectorHeader({
   feature,
@@ -230,12 +240,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
   onTogglePickLocation,
   isMutating = false,
 }: FeatureInspectorProps) {
-  const [fields, setFields] = useState(() => readFields(feature));
-  const [syncedFeature, setSyncedFeature] = useState(feature);
-  if (syncedFeature !== feature) {
-    setSyncedFeature(feature);
-    setFields(readFields(feature));
-  }
+  const [fields, setFields] = useFeatureFields(feature);
 
   /** Applies a change locally and persists it. */
   const commit = (local: Partial<Fields>, updates: FeaturePropertyUpdates) => {
