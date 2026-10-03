@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   CheckCircle as CheckCircle2,
   Clock,
@@ -33,7 +32,7 @@ import {
 import { isNamedAuthor, toArtworkPreview, type ArtworkPreview, type BatchCandidate } from "./types";
 import type { useLoreBatchQueue } from "./useLoreBatchQueue";
 
-type StatusFilter = "ALL" | BatchCandidate["status"];
+export type StatusFilter = "ALL" | BatchCandidate["status"];
 
 const TABLE_COLUMNS = [
   ["Artwork", "w-14 px-3 text-center"],
@@ -47,6 +46,8 @@ const TABLE_COLUMNS = [
 
 interface CandidateQueueCardProps {
   queue: ReturnType<typeof useLoreBatchQueue>;
+  statusFilter: StatusFilter;
+  onStatusFilterChange: (filter: StatusFilter) => void;
   duplicateCount: number;
   onPreview: (preview: ArtworkPreview) => void;
   onShowError: (candidate: BatchCandidate) => void;
@@ -237,6 +238,8 @@ function CandidateRow({
 
 export function CandidateQueueCard({
   queue,
+  statusFilter,
+  onStatusFilterChange,
   duplicateCount,
   onPreview,
   onShowError,
@@ -245,7 +248,6 @@ export function CandidateQueueCard({
   onReclassify,
 }: CandidateQueueCardProps) {
   const { candidates, counts, isProcessingBatch } = queue;
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const visible =
     statusFilter === "ALL" ? candidates : candidates.filter((c) => c.status === statusFilter);
 
@@ -330,7 +332,7 @@ export function CandidateQueueCard({
         aria-label="Queue status"
         className="mt-1"
         value={statusFilter}
-        onValueChange={setStatusFilter}
+        onValueChange={onStatusFilterChange}
         options={[
           { value: "ALL", label: `All (${candidates.length})` },
           { value: "idle", label: `Queued (${counts.idle})` },

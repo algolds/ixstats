@@ -6,7 +6,7 @@ import { api } from "~/trpc/react";
 import { Card } from "~/components/ui/card";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { BatchControls } from "./lore-batch/BatchControls";
-import { CandidateQueueCard } from "./lore-batch/CandidateQueueCard";
+import { CandidateQueueCard, type StatusFilter } from "./lore-batch/CandidateQueueCard";
 import { CATEGORY_PRESETS } from "./lore-batch/category-presets";
 import {
   ArtworkPreviewDialog,
@@ -30,6 +30,7 @@ export function LoreCardBatchAdmin() {
   const [isPurgeOpen, setIsPurgeOpen] = useState(false);
   const [isBackfillOpen, setIsBackfillOpen] = useState(false);
   const [isReclassifyOpen, setIsReclassifyOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
 
   const queue = useLoreBatchQueue();
   const loaders = useLoreBatchLoaders(queue);
@@ -81,6 +82,8 @@ export function LoreCardBatchAdmin() {
           {queue.candidates.length > 0 && (
             <CandidateQueueCard
               queue={queue}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
               duplicateCount={duplicateStats?.totalDuplicates ?? 0}
               onPreview={setPreview}
               onShowError={setErrorCandidate}
