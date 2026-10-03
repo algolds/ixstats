@@ -7,10 +7,10 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { getRecentChanges as getWikiBridgeRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getForumActivity } from "~/server/modules/forum";
 import { globalCache } from "~/lib/cache";
+import { formatPollForClient } from "../../thinkpages/post-utils";
 import {
   activityFeedItem,
   countryFeedUser,
-  mapFeedPoll,
   thinkpagesFeedItem,
   withViewerPollVotes,
 } from "./shared";
@@ -345,7 +345,7 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
         for (const post of thinkpagesPosts as any[]) {
           combinedActivities.push({
             ...thinkpagesFeedItem(post),
-            poll: post.poll ? mapFeedPoll(post.poll) : null,
+            poll: post.poll ? formatPollForClient(post.poll) : null,
             rawPost: {
               ...post,
               hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],

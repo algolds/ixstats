@@ -1,30 +1,7 @@
 // Feed-item builders shared by the global and following feeds.
 
 import type { PrismaClient } from "@prisma/client";
-
-/** Poll with its option vote counts, as the feed shows it before viewer-specific votes are merged in. */
-export function mapFeedPoll(poll: any) {
-  const votes: Record<string, number> = {};
-  for (const opt of poll.options) votes[opt.id] = opt._count?.votes ?? 0;
-  return {
-    id: poll.id,
-    question: poll.question,
-    description: poll.description,
-    pollType: poll.pollType,
-    multiple: poll.multiple,
-    isActive: poll.isActive,
-    endDate: poll.endDate,
-    options: poll.options.map((o: any) => ({
-      id: o.id,
-      label: o.label,
-      description: o.description,
-    })),
-    votes,
-    totalVotes: poll.options.reduce((sum: number, o: any) => sum + (o._count?.votes ?? 0), 0),
-    hasVoted: false,
-    userVotedOptionIds: [] as string[],
-  };
-}
+import { formatPollForClient } from "../../thinkpages/post-utils";
 
 /** Feed author for an activity row: its country when it has one, the platform otherwise. */
 export function countryFeedUser(country: any) {
@@ -57,7 +34,7 @@ export function activityFeedItem(
       description: activity.description,
       metadata,
     },
-    poll: activity.poll ? mapFeedPoll(activity.poll) : null,
+    poll: activity.poll ? formatPollForClient(activity.poll) : null,
     engagement: {
       likes: activity.likes,
       comments: activity.comments,
