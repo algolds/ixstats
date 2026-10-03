@@ -1,15 +1,5 @@
-/**
- * Geographic Map Router
- *
- * tRPC router for the IxEarth world map system.
- * Handles map layer data, country geometry, spatial queries,
- * and country-feature linking.
- *
- * Data source: PostgreSQL + PostGIS (map_layers table),
- * with file-based fallback for initial load.
- */
-
 import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
 import {
   createTRPCRouter,
   countryOwnerProcedure,
@@ -21,15 +11,73 @@ import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 
-// ──────────────────────────────────────────────
-// Router
-// ──────────────────────────────────────────────
+/** Country owners may only import into their own country; admins (no `ctx.country`) may import anywhere. */
+function assertOwnCountry(country: { id: string } | null | undefined, countryId: string) {
+  if (country && country.id !== countryId) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You can only import provinces for your own country",
+    });
+  }
+}
+
+/** SVG markup or base64 PNG for the import, from the upload record or the direct input. */
+async function resolveImportContent(
+  ctx: {
+    db: PrismaClient;
+    country?: object | null;
+    auth?: { userId?: string | null } | null;
+    user?: { clerkUserId?: string | null } | null;
+  },
+  input: { uploadId?: string; svgContent?: string }
+) {
+  let svgContent = input.svgContent;
+  let pngBase64: string | undefined;
+
+  if (!svgContent && input.uploadId) {
+    const upload = await ctx.db.svgUpload.findUnique({ where: { id: input.uploadId } });
+    if (!upload) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Upload not found" });
+    }
+    const isAdmin = !ctx.country; // countryOwnerMiddleware sets ctx.country = null for admins
+    if (!isAdmin && upload.uploadedBy !== (ctx.auth?.userId ?? ctx.user?.clerkUserId)) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this upload" });
+    }
+
+    // Detect PNG: check file extension from metadata or filename
+    const meta = upload.svgMetadata as Record<string, unknown> | null;
+    const isPng =
+      (meta?.fileType as string) === "png" ||
+      (upload.fileName ?? "").toLowerCase().endsWith(".png");
+    if (isPng) pngBase64 = upload.svgContent ?? undefined;
+    else svgContent = upload.svgContent ?? undefined;
+  }
+
+  // Direct content that doesn't start with '<' is a base64-encoded PNG
+  if (svgContent && !svgContent.trimStart().startsWith("<")) {
+    pngBase64 = svgContent;
+    svgContent = undefined;
+  }
+  return { svgContent, pngBase64 };
+}
+
+async function parseCities(svgContent: string) {
+  try {
+    const { parseCitySvg } = await import("~/lib/city-importer/svg-points");
+    const parsed = parseCitySvg(svgContent);
+    return {
+      layers: parsed.layers,
+      points: parsed.points,
+      detectedCitiesLayerId: parsed.detectedCitiesLayerId,
+      detectedCityNameLayerId: parsed.detectedCityNameLayerId,
+    };
+  } catch (err) {
+    console.warn("[parseProvinceUpload] Failed to parse cities from SVG:", err);
+    return null;
+  }
+}
 
 export const geoAdminProvincesRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // Province Import Endpoints
-  // ──────────────────────────────────────────────
-
   /**
    * Parse an uploaded province SVG and return parsed province features.
    * Also returns the country border geometry for alignment.
@@ -43,50 +91,8 @@ export const geoAdminProvincesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only import provinces for your own country",
-        });
-      }
-
-      // Get content from upload record or direct input
-      let svgContent = input.svgContent;
-      let isPng = false;
-      let pngBase64: string | undefined;
-
-      if (!svgContent && input.uploadId) {
-        const upload = await ctx.db.svgUpload.findUnique({
-          where: { id: input.uploadId },
-        });
-        if (!upload) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Upload not found" });
-        }
-        const isAdmin = !ctx.country; // countryOwnerMiddleware sets ctx.country = null for admins
-        if (!isAdmin && upload.uploadedBy !== (ctx.auth?.userId ?? ctx.user?.clerkUserId)) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this upload" });
-        }
-
-        // Detect PNG: check file extension from metadata or filename
-        const meta = upload.svgMetadata as Record<string, unknown> | null;
-        const fileType = (meta?.fileType as string) ?? "";
-        const fileName = upload.fileName ?? "";
-        isPng = fileType === "png" || fileName.toLowerCase().endsWith(".png");
-
-        if (isPng) {
-          pngBase64 = upload.svgContent ?? undefined;
-        } else {
-          svgContent = upload.svgContent ?? undefined;
-        }
-      }
-
-      // Also detect PNG from direct svgContent (base64-encoded PNG starts without '<')
-      if (svgContent && !svgContent.trimStart().startsWith("<")) {
-        isPng = true;
-        pngBase64 = svgContent;
-        svgContent = undefined;
-      }
+      assertOwnCountry(ctx.country as { id: string } | null, input.countryId);
+      const { svgContent, pngBase64 } = await resolveImportContent(ctx, input);
 
       // Get country border geometry (needed for both SVG and PNG paths)
       const mapLayer = await ctx.db.mapLayer.findFirst({
@@ -94,7 +100,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
         select: { geometry: true },
       });
 
-      if (isPng && pngBase64) {
+      if (pngBase64) {
         // PNG path: extract provinces directly via boundary-line detection
         const pngBuffer = Buffer.from(pngBase64, "base64");
         const { extractProvincesFromPng } = await import("~/lib/flags/png-to-svg");
@@ -128,27 +134,13 @@ export const geoAdminProvincesRouter = createTRPCRouter({
       // Prepend preprocessing log
       result.log.unshift(...preprocessed.log);
 
-      let cityData: any = null;
-      try {
-        const { parseCitySvg } = await import("~/lib/city-importer/svg-points");
-        const parsedCities = parseCitySvg(preprocessed.svgContent);
-        cityData = {
-          layers: parsedCities.layers,
-          points: parsedCities.points,
-          detectedCitiesLayerId: parsedCities.detectedCitiesLayerId,
-          detectedCityNameLayerId: parsedCities.detectedCityNameLayerId,
-        };
-      } catch (err) {
-        console.warn("[parseProvinceUpload] Failed to parse cities from SVG:", err);
-      }
-
       return {
         provinces: result.provinces,
         viewBox: result.viewBox,
         log: result.log,
         layersFound: result.layersFound,
         countryBorder: mapLayer?.geometry ?? null,
-        cityData,
+        cityData: await parseCities(preprocessed.svgContent),
       };
     }),
 
@@ -184,13 +176,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only import provinces for your own country",
-        });
-      }
+      assertOwnCountry(ctx.country as { id: string } | null, input.countryId);
 
       const userId = ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system";
 
