@@ -165,28 +165,37 @@ export function mergeDemographics(
   };
 }
 
+const AGE_GROUPS = [
+  ["0-14", "under15", "var(--color-chart-2)"],
+  ["15-64", "age15to64", "var(--color-chart-3)"],
+  ["65+", "over65", "var(--color-chart-4)"],
+] as const;
+
+const EDUCATION_LEVELS = [
+  ["No Formal Education", "noEducation", "var(--color-chart-5)"],
+  ["Primary Education", "primary", "var(--color-chart-4)"],
+  ["Secondary Education", "secondary", "var(--color-chart-3)"],
+  ["Tertiary Education", "tertiary", "var(--color-chart-2)"],
+] as const;
+
+const cloneItems = <T extends object>(items: T[] | undefined): T[] =>
+  items ? items.map((item) => ({ ...item })) : [];
+
 export function mergeEconomyBuilderIntoInputs(
   baseInputs: EconomicInputs,
   builder: EconomyBuilderState
 ): EconomicInputs {
+  const baseDemographics = baseInputs.demographics;
   const safeBase: EconomicInputs = {
     ...baseInputs,
     coreIndicators: { ...baseInputs.coreIndicators },
     laborEmployment: { ...baseInputs.laborEmployment },
     demographics: {
-      ...baseInputs.demographics,
-      ageDistribution: baseInputs.demographics?.ageDistribution
-        ? baseInputs.demographics.ageDistribution.map((group) => ({ ...group }))
-        : [],
-      regions: baseInputs.demographics?.regions
-        ? baseInputs.demographics.regions.map((region) => ({ ...region }))
-        : [],
-      educationLevels: baseInputs.demographics?.educationLevels
-        ? baseInputs.demographics.educationLevels.map((level) => ({ ...level }))
-        : [],
-      citizenshipStatuses: baseInputs.demographics?.citizenshipStatuses
-        ? baseInputs.demographics.citizenshipStatuses.map((status) => ({ ...status }))
-        : [],
+      ...baseDemographics,
+      ageDistribution: cloneItems(baseDemographics?.ageDistribution),
+      regions: cloneItems(baseDemographics?.regions),
+      educationLevels: cloneItems(baseDemographics?.educationLevels),
+      citizenshipStatuses: cloneItems(baseDemographics?.citizenshipStatuses),
     },
   };
 
@@ -205,8 +214,9 @@ export function mergeEconomyBuilderIntoInputs(
     gdpPerCapita: inferredGdpPerCapita,
   };
 
-  const workerProtectionValues = builder.laborMarket.workerProtections
-    ? Object.values(builder.laborMarket.workerProtections)
+  const labor = builder.laborMarket;
+  const workerProtectionValues = labor.workerProtections
+    ? Object.values(labor.workerProtections)
     : [];
   const averageProtectionScore =
     workerProtectionValues.length > 0
@@ -216,15 +226,15 @@ export function mergeEconomyBuilderIntoInputs(
 
   safeBase.laborEmployment = {
     ...safeBase.laborEmployment,
-    laborForceParticipationRate: builder.laborMarket.laborForceParticipationRate,
-    employmentRate: builder.laborMarket.employmentRate,
-    unemploymentRate: builder.laborMarket.unemploymentRate,
-    totalWorkforce: builder.laborMarket.totalWorkforce,
-    averageWorkweekHours: builder.laborMarket.averageWorkweekHours,
-    minimumWage: builder.laborMarket.minimumWageHourly,
+    laborForceParticipationRate: labor.laborForceParticipationRate,
+    employmentRate: labor.employmentRate,
+    unemploymentRate: labor.unemploymentRate,
+    totalWorkforce: labor.totalWorkforce,
+    averageWorkweekHours: labor.averageWorkweekHours,
+    minimumWage: labor.minimumWageHourly,
     averageAnnualIncome:
-      typeof builder.laborMarket.averageAnnualIncome === "number"
-        ? builder.laborMarket.averageAnnualIncome
+      typeof labor.averageAnnualIncome === "number"
+        ? labor.averageAnnualIncome
         : safeBase.laborEmployment.averageAnnualIncome,
     laborProtections:
       averageProtectionScore !== undefined
@@ -232,72 +242,48 @@ export function mergeEconomyBuilderIntoInputs(
         : safeBase.laborEmployment.laborProtections,
   };
 
-  const ageDistribution = [
-    {
-      group: "0-14",
-      percent: builder.demographics.ageDistribution.under15,
-      color: safeBase.demographics.ageDistribution?.[0]?.color || "var(--color-chart-2)",
-    },
-    {
-      group: "15-64",
-      percent: builder.demographics.ageDistribution.age15to64,
-      color: safeBase.demographics.ageDistribution?.[1]?.color || "var(--color-chart-3)",
-    },
-    {
-      group: "65+",
-      percent: builder.demographics.ageDistribution.over65,
-      color: safeBase.demographics.ageDistribution?.[2]?.color || "var(--color-chart-4)",
-    },
-  ];
+  const demographics = builder.demographics;
+  const baseAges = safeBase.demographics.ageDistribution;
+  const baseEducation = safeBase.demographics.educationLevels;
+  const baseRegions = safeBase.demographics.regions;
 
-  const educationLevels = builder.demographics.educationLevels
-    ? [
-        {
-          level: "No Formal Education",
-          percent: builder.demographics.educationLevels.noEducation,
-          color: safeBase.demographics.educationLevels?.[0]?.color || "var(--color-chart-5)",
-        },
-        {
-          level: "Primary Education",
-          percent: builder.demographics.educationLevels.primary,
-          color: safeBase.demographics.educationLevels?.[1]?.color || "var(--color-chart-4)",
-        },
-        {
-          level: "Secondary Education",
-          percent: builder.demographics.educationLevels.secondary,
-          color: safeBase.demographics.educationLevels?.[2]?.color || "var(--color-chart-3)",
-        },
-        {
-          level: "Tertiary Education",
-          percent: builder.demographics.educationLevels.tertiary,
-          color: safeBase.demographics.educationLevels?.[3]?.color || "var(--color-chart-2)",
-        },
-      ]
-    : safeBase.demographics.educationLevels;
+  const ageDistribution = AGE_GROUPS.map(([group, key, fallbackColor], i) => ({
+    group,
+    percent: demographics.ageDistribution[key],
+    color: baseAges?.[i]?.color || fallbackColor,
+  }));
 
-  const regions = builder.demographics.regions?.length
-    ? builder.demographics.regions.map((region, index) => ({
+  const educationLevels = demographics.educationLevels
+    ? EDUCATION_LEVELS.map(([level, key, fallbackColor], i) => ({
+        level,
+        percent: demographics.educationLevels[key],
+        color: baseEducation?.[i]?.color || fallbackColor,
+      }))
+    : baseEducation;
+
+  const regions = demographics.regions?.length
+    ? demographics.regions.map((region, index) => ({
         name: region.name,
         population:
           region.population ||
           Math.round((totalPopulation * (region.populationPercent ?? 0)) / 100),
         urbanPercent: region.urbanPercent,
-        color: safeBase.demographics.regions?.[index]?.color || getRegionColor(index),
+        color: baseRegions?.[index]?.color || getRegionColor(index),
       }))
-    : safeBase.demographics.regions;
+    : baseRegions;
 
   safeBase.demographics = {
     ...safeBase.demographics,
     ageDistribution,
     regions,
     educationLevels,
-    lifeExpectancy: builder.demographics.lifeExpectancy,
-    literacyRate: builder.demographics.literacyRate,
+    lifeExpectancy: demographics.lifeExpectancy,
+    literacyRate: demographics.literacyRate,
     urbanRuralSplit: {
-      urban: builder.demographics.urbanRuralSplit.urban,
-      rural: builder.demographics.urbanRuralSplit.rural,
+      urban: demographics.urbanRuralSplit.urban,
+      rural: demographics.urbanRuralSplit.rural,
     },
-    populationGrowthRate: builder.demographics.populationGrowthRate,
+    populationGrowthRate: demographics.populationGrowthRate,
   };
 
   return safeBase;
@@ -317,33 +303,18 @@ export function applyGovernmentRevenueAdjustments(
   let structure = builder.structure;
   let changed = false;
 
-  if (laborMarket?.sectorDistribution) {
+  if (laborMarket?.sectorDistribution && (taxBurdenRatio > 35 || taxBurdenRatio < 20)) {
     const currentGovernmentShare = laborMarket.sectorDistribution.government ?? 8;
-
-    if (taxBurdenRatio > 35) {
-      const desiredShare = Math.min(currentGovernmentShare + 2, 15);
-      if (desiredShare !== currentGovernmentShare) {
-        laborMarket = {
-          ...laborMarket,
-          sectorDistribution: {
-            ...laborMarket.sectorDistribution,
-            government: desiredShare,
-          },
-        };
-        changed = true;
-      }
-    } else if (taxBurdenRatio < 20) {
-      const desiredShare = Math.max(currentGovernmentShare - 1, 5);
-      if (desiredShare !== currentGovernmentShare) {
-        laborMarket = {
-          ...laborMarket,
-          sectorDistribution: {
-            ...laborMarket.sectorDistribution,
-            government: desiredShare,
-          },
-        };
-        changed = true;
-      }
+    const desiredShare =
+      taxBurdenRatio > 35
+        ? Math.min(currentGovernmentShare + 2, 15)
+        : Math.max(currentGovernmentShare - 1, 5);
+    if (desiredShare !== currentGovernmentShare) {
+      laborMarket = {
+        ...laborMarket,
+        sectorDistribution: { ...laborMarket.sectorDistribution, government: desiredShare },
+      };
+      changed = true;
     }
   }
 
@@ -442,25 +413,9 @@ export function createDefaultEconomyBuilderState(
         collectiveRights: 55,
       },
     },
-    demographics: {
+    demographics: mergeDemographics({
       totalPopulation: economicInputs.coreIndicators?.totalPopulation || 0,
-      populationGrowthRate: 0,
-      ageDistribution: { under15: 20, age15to64: 65, over65: 15 },
-      urbanRuralSplit: { urban: 50, rural: 50 },
-      regions: [],
-      lifeExpectancy: 75,
-      literacyRate: 90,
-      educationLevels: { noEducation: 5, primary: 25, secondary: 45, tertiary: 25 },
-      netMigrationRate: 0,
-      immigrationRate: 0,
-      emigrationRate: 0,
-      infantMortalityRate: 10,
-      maternalMortalityRate: 50,
-      healthExpenditureGDP: 5,
-      youthDependencyRatio: 30,
-      elderlyDependencyRatio: 23,
-      totalDependencyRatio: 53,
-    },
+    }),
     selectedAtomicComponents: [],
     isValid: true,
     errors: {
