@@ -6,8 +6,13 @@ import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-import { MESSAGE_FOLDERS } from "./MessagesFolderNav";
-import { MessagesConversationCard } from "./MessagesConversationCard";
+import { MESSAGE_FOLDERS, type MessagesSettings } from "./MessagesFolderNav";
+import {
+  MessagesConversationCard,
+  getParticipantName,
+  isCommunityConversation,
+  isDiplomaticConversation,
+} from "./MessagesConversationCard";
 import type { ThinkShareConversation } from "~/types/thinkshare";
 import type { MessageFolder, ChannelFilter } from "~/types/messages";
 import { SYSTEM_CONVERSATION_ID, LOREBOT_CONVERSATION_ID } from "~/types/messages";
@@ -20,6 +25,109 @@ const CHANNEL_FILTERS: { id: ChannelFilter; label: string }[] = [
   { id: "community", label: "Community" },
 ];
 
+const CHANNEL_PREDICATES: Record<ChannelFilter, (c: ThinkShareConversation) => boolean> = {
+  all: () => true,
+  diplomatic: isDiplomaticConversation,
+  direct: (c) => !isDiplomaticConversation(c) && !isCommunityConversation(c) && c.type !== "group",
+  community: isCommunityConversation,
+};
+
+interface PinnedCardProps {
+  title: string;
+  preview: string;
+  selected: boolean;
+  onSelect: () => void;
+  avatarClass: string;
+  icon: React.ReactNode;
+}
+
+function PinnedConversationCard({
+  title,
+  preview,
+  selected,
+  onSelect,
+  avatarClass,
+  icon,
+}: PinnedCardProps) {
+  return (
+    <button
+      onClick={onSelect}
+      className={cn(
+        "group rounded-row relative flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left transition-colors duration-150 select-none",
+        selected ? "bg-tint-fill text-label" : "hover:bg-fill-4 text-label hover:text-label"
+      )}
+    >
+      <div className="relative shrink-0">
+        <div className={cn("flex size-10 items-center justify-center rounded-full", avatarClass)}>
+          {icon}
+        </div>
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <span
+              className={cn(
+                "text-body text-label truncate",
+                selected ? "font-semibold" : "font-medium"
+              )}
+            >
+              {title}
+            </span>
+            <Crown className="text-yellow size-3.5 shrink-0" aria-label="Official" />
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <Pin className="text-label-tertiary size-3.5" aria-label="Pinned" />
+          </div>
+        </div>
+
+        <div className="mt-0.5 flex items-center justify-between gap-2">
+          <p className="text-footnote text-label-secondary line-clamp-1">{preview}</p>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function filterConversations(
+  conversations: ThinkShareConversation[],
+  {
+    channel,
+    searchQuery,
+    settings,
+  }: { channel: ChannelFilter; searchQuery: string; settings?: MessagesSettings }
+) {
+  const query = searchQuery.trim() && searchQuery.toLowerCase();
+  return conversations.filter(
+    (c) =>
+      c.source !== "thinktank" &&
+      CHANNEL_PREDICATES[channel](c) &&
+      (!query || (getParticipantName(c, settings) ?? "").toLowerCase().includes(query))
+  );
+}
+
+function usePinnedPreviews(currentUserId: string) {
+  const { data: notificationData } = api.notifications.getUserNotifications.useQuery(
+    { limit: 1 },
+    { enabled: !!currentUserId, staleTime: 30000 }
+  );
+  const { data: wikiData } = api.wikios.getRecentChanges.useQuery(
+    { limit: 1 },
+    { staleTime: 30000 }
+  );
+  const notice = notificationData?.notifications?.[0];
+  const wikiChange = (wikiData as any)?.[0];
+
+  return {
+    systemPreview: notice
+      ? `${notice.title}: ${notice.description || notice.message || ""}`
+      : "Official platform bulletins and simulation digests",
+    lorebotPreview: wikiChange
+      ? `Latest edit on ${wikiChange.title}: ${wikiChange.comment || `${wikiChange.user} updated article`}`
+      : "WikiOS updates, watchlist activity & lore dispatches",
+  };
+}
+
 interface MessagesConversationPanelProps {
   activeFolder: MessageFolder;
   conversations: ThinkShareConversation[];
@@ -30,7 +138,7 @@ interface MessagesConversationPanelProps {
   onSelectConversation: (id: string) => void;
   currentUserId: string;
   onNewConversation: () => void;
-  settings?: any;
+  settings?: MessagesSettings;
   mutedConversations?: string[];
 }
 
@@ -50,61 +158,17 @@ export function MessagesConversationPanel({
   const folderConfig = MESSAGE_FOLDERS.find((f) => f.id === activeFolder);
   const [activeFilter, setActiveFilter] = useState<ChannelFilter>("all");
 
-  // Fetch latest system notification for pinned preview
-  const { data: latestNotificationData } = api.notifications.getUserNotifications.useQuery(
-    { limit: 1 },
-    { enabled: !!currentUserId, staleTime: 30000 }
-  );
+  const { systemPreview, lorebotPreview } = usePinnedPreviews(currentUserId);
 
-  const latestSystemNotice = latestNotificationData?.notifications?.[0];
-
-  // Fetch latest wiki activity for LoreBot preview
-  const { data: latestWikiData } = api.wikios.getRecentChanges.useQuery(
-    { limit: 1 },
-    { staleTime: 30000 }
-  );
-  const latestWikiChange = (latestWikiData as any)?.[0];
-
-  // Filter conversations by sub-filter & search query
-  const filtered = conversations.filter((c) => {
-    // Exclude thinktanks from main messaging feed
-    if (c.source === "thinktank") return false;
-
-    // 1. Channel filter
-    if (activeFolder === "conversations") {
-      if (activeFilter === "diplomatic") {
-        if (c.source !== "diplomatic" && c.conversationType !== "diplomatic") return false;
-      } else if (activeFilter === "direct") {
-        if (
-          c.source === "diplomatic" ||
-          c.conversationType === "diplomatic" ||
-          c.source === "wiki" ||
-          c.source === "forum" ||
-          c.source === "community" ||
-          c.type === "group"
-        ) {
-          return false;
-        }
-      } else if (activeFilter === "community") {
-        if (c.source !== "wiki" && c.source !== "forum" && c.source !== "community") return false;
-      }
-    }
-
-    // 2. Search query filter
-    if (searchQuery.trim()) {
-      const otherParticipant = c.otherParticipants[0];
-      const name =
-        settings?.displayNamePreference === "account" && otherParticipant?.account?.username
-          ? `@${otherParticipant.account.username}`
-          : (otherParticipant?.account?.displayName ?? c.name ?? "");
-      return name.toLowerCase().includes(searchQuery.toLowerCase());
-    }
-
-    return true;
+  const isConversations = activeFolder === "conversations";
+  const filtered = filterConversations(conversations, {
+    channel: isConversations ? activeFilter : "all",
+    searchQuery,
+    settings,
   });
 
-  const isSystemSelected = selectedConversationId === SYSTEM_CONVERSATION_ID;
-  const isLoreBotSelected = selectedConversationId === LOREBOT_CONVERSATION_ID;
+  const showSystemCard = isConversations && (activeFilter === "all" || activeFilter === "direct");
+  const showLoreBotCard = showSystemCard || (isConversations && activeFilter === "community");
 
   return (
     <div className="flex h-full flex-col">
@@ -118,7 +182,7 @@ export function MessagesConversationPanel({
             value={searchQuery}
             onValueChange={onSearchChange}
           />
-          {activeFolder === "conversations" && (
+          {isConversations && (
             <Button
               size="sm"
               className="shrink-0"
@@ -131,8 +195,7 @@ export function MessagesConversationPanel({
           )}
         </div>
 
-        {/* Channel filter (Conversations folder only) */}
-        {activeFolder === "conversations" && (
+        {isConversations && (
           <SegmentedControl
             size="sm"
             fullWidth
@@ -146,103 +209,27 @@ export function MessagesConversationPanel({
 
       {/* Conversation List */}
       <div className="flex-1 space-y-1 overflow-y-auto p-2" style={{ scrollbarWidth: "thin" }}>
-        {/* Pinned System Messages Card (Conversations folder only) */}
-        {activeFolder === "conversations" &&
-          (activeFilter === "all" || activeFilter === "direct") && (
-            <button
-              onClick={() => onSelectConversation(SYSTEM_CONVERSATION_ID)}
-              className={cn(
-                "group rounded-row relative flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left transition-colors duration-150 select-none",
-                isSystemSelected
-                  ? "bg-tint-fill text-label"
-                  : "hover:bg-fill-4 text-label hover:text-label"
-              )}
-            >
-              {/* System Avatar */}
-              <div className="relative shrink-0">
-                <div className="bg-yellow/15 text-yellow flex size-10 items-center justify-center rounded-full">
-                  <Crown className="size-4" aria-hidden="true" />
-                </div>
-              </div>
+        {showSystemCard && (
+          <PinnedConversationCard
+            title="System messages"
+            selected={selectedConversationId === SYSTEM_CONVERSATION_ID}
+            onSelect={() => onSelectConversation(SYSTEM_CONVERSATION_ID)}
+            avatarClass="bg-yellow/15 text-yellow"
+            icon={<Crown className="size-4" aria-hidden="true" />}
+            preview={systemPreview}
+          />
+        )}
 
-              {/* Content */}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span
-                      className={cn(
-                        "text-body truncate",
-                        isSystemSelected ? "text-label font-semibold" : "text-label font-medium"
-                      )}
-                    >
-                      System messages
-                    </span>
-                    <Crown className="text-yellow size-3.5 shrink-0" aria-label="Official" />
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <Pin className="text-label-tertiary size-3.5" aria-label="Pinned" />
-                  </div>
-                </div>
-
-                <div className="mt-0.5 flex items-center justify-between gap-2">
-                  <p className="text-footnote text-label-secondary line-clamp-1">
-                    {latestSystemNotice
-                      ? `${latestSystemNotice.title}: ${latestSystemNotice.description || latestSystemNotice.message || ""}`
-                      : "Official platform bulletins and simulation digests"}
-                  </p>
-                </div>
-              </div>
-            </button>
-          )}
-
-        {/* Pinned LoreBot Card (Conversations folder only) */}
-        {activeFolder === "conversations" &&
-          (activeFilter === "all" || activeFilter === "community" || activeFilter === "direct") && (
-            <button
-              onClick={() => onSelectConversation(LOREBOT_CONVERSATION_ID)}
-              className={cn(
-                "group rounded-row relative flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left transition-colors duration-150 select-none",
-                isLoreBotSelected
-                  ? "bg-tint-fill text-label"
-                  : "hover:bg-fill-4 text-label hover:text-label"
-              )}
-            >
-              {/* LoreBot Avatar */}
-              <div className="relative shrink-0">
-                <div className="bg-teal/15 text-teal flex size-10 items-center justify-center rounded-full">
-                  <BookOpen className="size-4" aria-hidden="true" />
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span
-                      className={cn(
-                        "text-body truncate",
-                        isLoreBotSelected ? "text-label font-semibold" : "text-label font-medium"
-                      )}
-                    >
-                      LoreBot
-                    </span>
-                    <Crown className="text-yellow size-3.5 shrink-0" aria-label="Official" />
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <Pin className="text-label-tertiary size-3.5" aria-label="Pinned" />
-                  </div>
-                </div>
-
-                <div className="mt-0.5 flex items-center justify-between gap-2">
-                  <p className="text-footnote text-label-secondary line-clamp-1">
-                    {latestWikiChange
-                      ? `Latest edit on ${latestWikiChange.title}: ${latestWikiChange.comment || `${latestWikiChange.user} updated article`}`
-                      : "WikiOS updates, watchlist activity & lore dispatches"}
-                  </p>
-                </div>
-              </div>
-            </button>
-          )}
+        {showLoreBotCard && (
+          <PinnedConversationCard
+            title="LoreBot"
+            selected={selectedConversationId === LOREBOT_CONVERSATION_ID}
+            onSelect={() => onSelectConversation(LOREBOT_CONVERSATION_ID)}
+            avatarClass="bg-teal/15 text-teal"
+            icon={<BookOpen className="size-4" aria-hidden="true" />}
+            preview={lorebotPreview}
+          />
+        )}
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -267,7 +254,6 @@ export function MessagesConversationPanel({
               isSelected={conversation.id === selectedConversationId}
               onClick={() => onSelectConversation(conversation.id)}
               currentUserId={currentUserId}
-              activeFolder={activeFolder}
               settings={settings}
               isMuted={mutedConversations.includes(conversation.id)}
             />

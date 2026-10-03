@@ -1,17 +1,20 @@
 "use client";
 
-import React, { useEffect, useCallback, useState, useRef, useMemo } from "react";
-import { api } from "~/trpc/react";
-import { useNotify } from "~/hooks/useNotify";
+import React, { useEffect, useState, useRef } from "react";
 import { useUser } from "~/context/auth-context";
 import { MessagesChatHeader } from "./MessagesChatHeader";
-import { MessagesBubble, type MessageActions } from "./MessagesBubble";
+import { MessagesBubble, formatTimestamp } from "./MessagesBubble";
+import {
+  isConsecutiveMessage,
+  useConversationMessages,
+  useMarkConversationRead,
+  useSystemBroadcasts,
+} from "./useConversationMessages";
 import { MessagesInputBar } from "./MessagesInputBar";
 import type { MessagesSettings } from "./MessagesFolderNav";
 import type { ThinkShareConversation, ThinkShareClientState } from "~/types/thinkshare";
 import type { MessageFolder } from "~/types/messages";
 import { SYSTEM_CONVERSATION_ID, LOREBOT_CONVERSATION_ID } from "~/types/messages";
-// oxlint-disable-next-line eslint/no-unused-vars
 import {
   Crown,
   Shield,
@@ -29,32 +32,10 @@ import { MessagesAddParticipantsModal } from "./MessagesAddParticipantsModal";
 import { LoreBotFeedView } from "./LoreBotFeedView";
 import Link from "next/link";
 
-// Pretext shrinkwrap / time formatting helper
-function formatTimestamp(date: Date | string): string {
-  const d = new Date(date);
-  const now = new Date();
-  const isToday = d.toDateString() === now.toDateString();
-  if (isToday) {
-    return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  }
-  return d.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
+const DISPATCH_PATTERN = /diplomatic|treaty|embassy|alliance|summons|dispatch/;
 
 function getSystemAlertStyle(content: string, type?: string) {
-  const text = (content + " " + (type || "")).toLowerCase();
-  if (
-    text.includes("diplomatic") ||
-    text.includes("treaty") ||
-    text.includes("embassy") ||
-    text.includes("alliance") ||
-    text.includes("summons") ||
-    text.includes("dispatch")
-  ) {
+  if (DISPATCH_PATTERN.test(`${content} ${type || ""}`.toLowerCase())) {
     return {
       icon: Crown,
       iconColor: "text-yellow bg-yellow/15",
@@ -139,6 +120,90 @@ function SystemBroadcastCard({ item, onDismiss }: { item: any; onDismiss?: () =>
   );
 }
 
+const presenceOf = (clientState: ThinkShareClientState, accountId?: string): any =>
+  accountId ? clientState.presenceMap?.[accountId] : undefined;
+
+interface ThreadStreamProps {
+  isSystemThread: boolean;
+  isLoreBotThread: boolean;
+  isLoading: boolean;
+  system: ReturnType<typeof useSystemBroadcasts>;
+  thread: ReturnType<typeof useConversationMessages>;
+  currentUserId: string;
+  searchQuery: string;
+  settings?: MessagesSettings;
+  onReply: (message: any) => void;
+  endRef: React.RefObject<HTMLDivElement | null>;
+}
+
+function ThreadStream({
+  isSystemThread,
+  isLoreBotThread,
+  isLoading,
+  system,
+  thread,
+  currentUserId,
+  searchQuery,
+  settings,
+  onReply,
+  endRef,
+}: ThreadStreamProps) {
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="border-tint size-6 animate-spin rounded-full border-2 border-t-transparent" />
+      </div>
+    );
+  }
+  if (isLoreBotThread && !isSystemThread) return <LoreBotFeedView currentUserId={currentUserId} />;
+
+  if (isSystemThread) {
+    return (
+      <div className="mx-auto w-full max-w-3xl py-3">
+        {system.broadcasts.length === 0 ? (
+          <EmptyState
+            className="min-h-[300px]"
+            icon={<BellRing />}
+            title="No system broadcasts"
+            message={
+              searchQuery
+                ? `No bulletins match "${searchQuery}"`
+                : "No platform announcements or simulation updates have been sent."
+            }
+          />
+        ) : (
+          system.broadcasts.map((item: any) => (
+            <SystemBroadcastCard
+              key={item.id}
+              item={item}
+              onDismiss={() => system.dismiss(item.id)}
+            />
+          ))
+        )}
+        <div ref={endRef} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-2">
+      {thread.messages.map((message: any, index: number, arr: any[]) => (
+        <MessagesBubble
+          key={message.id}
+          message={message}
+          currentUserId={currentUserId}
+          isConsecutive={isConsecutiveMessage(arr[index - 1], message)}
+          onReply={onReply}
+          actions={thread.actions}
+          settings={settings}
+          searchQuery={searchQuery}
+        />
+      ))}
+      <div ref={endRef} />
+    </div>
+  );
+}
+
 interface MessagesChatPanelProps {
   conversation: ThinkShareConversation;
   currentUserId: string;
@@ -149,8 +214,6 @@ interface MessagesChatPanelProps {
     accountId: string | undefined,
     isTyping: boolean
   ) => void;
-  isSidebarCollapsed?: boolean;
-  onToggleSidebar?: () => void;
   onBack?: () => void;
   settings?: MessagesSettings;
   isMuted?: boolean;
@@ -167,8 +230,6 @@ export function MessagesChatPanel({
   activeFolder,
   clientState,
   sendTypingIndicator,
-  isSidebarCollapsed = false,
-  onToggleSidebar,
   onBack,
   settings,
   isMuted = false,
@@ -178,7 +239,6 @@ export function MessagesChatPanel({
   onDeleteConversation,
   onAddParticipant,
 }: MessagesChatPanelProps) {
-  const notify = useNotify();
   const { user } = useUser();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [replyingTo, setReplyingTo] = useState<any>(null);
@@ -191,335 +251,39 @@ export function MessagesChatPanel({
   const isLoreBotThread =
     conversation.id === LOREBOT_CONVERSATION_ID || conversation.source === "lorebot";
 
-  const utils = api.useUtils();
-
-  // Clear system notifications
-  const clearAllSystem = api.messages.clearAllSystemNotifications.useMutation({
-    onSuccess: () => {
-      notify.success("System notifications cleared");
-      void utils.notifications.getUserNotifications.invalidate();
-      void utils.messages.getFolderCounts.invalidate();
-    },
-    onError: (err) => {
-      notify.error(err.message || "Failed to clear system notifications");
-    },
+  const system = useSystemBroadcasts({
+    enabled: isSystemThread,
+    currentUserId,
+    searchQuery,
+  });
+  const thread = useConversationMessages({
+    conversationId: conversation.id,
+    currentUserId,
+    enabled: !isSystemThread && !isLoreBotThread,
+    searchQuery,
+    user,
+    onSent: () => setReplyingTo(null),
   });
 
-  const handleClearAllSystem = useCallback(() => {
-    clearAllSystem.mutate({ userId: currentUserId });
-  }, [clearAllSystem, currentUserId]);
+  useMarkConversationRead(conversation, currentUserId, isSystemThread);
 
-  // Query 1: Regular conversation messages
-  const { data: messagesData, isLoading: isLoadingMessages } =
-    api.messages.getConversationMessages.useQuery(
-      {
-        conversationId: conversation.id,
-        userId: currentUserId,
-      },
-      {
-        enabled: !isSystemThread && !isLoreBotThread && !!conversation.id && !!currentUserId,
-        refetchOnWindowFocus: false,
-        staleTime: 30000,
-      }
-    );
-
-  // Query 2: System notifications when viewing system thread
-  const {
-    data: notificationsData,
-    isLoading: isLoadingNotifications,
-    refetch: refetchNotifications,
-  } = api.notifications.getUserNotifications.useQuery(
-    {
-      limit: 100,
-    },
-    {
-      enabled: isSystemThread && !!currentUserId,
-      refetchOnWindowFocus: false,
-      staleTime: 15000,
-    }
-  );
-
-  const dismissNotification = api.notifications.dismissNotification.useMutation({
-    onSuccess: () => {
-      notify.success("Notification dismissed");
-      void refetchNotifications();
-    },
-    onError: (err) => {
-      notify.error(err.message || "Failed to dismiss notification");
-    },
-  });
-
-  // Invalidate conversation list (for unread badges)
-  const refetchConversations = useCallback(() => {
-    void utils.messages.getConversationsByFolder.invalidate();
-  }, [utils]);
-
-  // Mark messages as read
-  const markAsRead = api.messages.markMessagesAsRead.useMutation({
-    onSuccess: () => {
-      void utils.messages.getFolderCounts.invalidate();
-      void utils.messages.getConversationsByFolder.invalidate();
-    },
-  });
-
-  useEffect(() => {
-    if (
-      !isSystemThread &&
-      conversation.id &&
-      currentUserId &&
-      (conversation as any).unreadCount > 0
-    ) {
-      markAsRead.mutate({
-        conversationId: conversation.id,
-        userId: currentUserId,
-        messageIds: [],
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversation.id, currentUserId, isSystemThread]);
-
-  // Send message
-  const sendMessage = api.messages.sendMessage.useMutation({
-    onMutate: async (newMsg) => {
-      const queryKey = { conversationId: conversation.id, userId: currentUserId };
-      await utils.messages.getConversationMessages.cancel(queryKey);
-      const previousMessages = utils.messages.getConversationMessages.getData(queryKey);
-
-      const tempId = `temp-${Date.now()}`;
-      const senderAccount = {
-        id: currentUserId,
-        username: user?.username ?? "me",
-        displayName: user?.fullName ?? user?.username ?? "Me",
-        profileImageUrl: user?.imageUrl ?? null,
-        accountType: "country" as const,
-      };
-
-      const optimisticMsg = {
-        id: tempId,
-        conversationId: conversation.id,
-        accountId: currentUserId,
-        account: senderAccount,
-        content: newMsg.content,
-        messageType: newMsg.messageType ?? "text",
-        ixTimeTimestamp: new Date(),
-        createdAt: new Date(),
-        reactions: {},
-        mentions: [],
-        attachments: [],
-        replyTo: undefined,
-        readReceipts: [],
-        isSystem: false,
-        editedAt: null,
-        deletedAt: null,
-        source: null,
-      };
-
-      utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
-        if (!old) return { messages: [optimisticMsg], nextCursor: undefined };
-        return {
-          ...old,
-          messages: [...old.messages, optimisticMsg],
-        };
-      });
-
-      return { previousMessages };
-    },
-    onError: (error: any, _newMsg, context) => {
-      const queryKey = { conversationId: conversation.id, userId: currentUserId };
-      if (context?.previousMessages) {
-        utils.messages.getConversationMessages.setData(queryKey, context.previousMessages);
-      }
-      notify.error(
-        error.message?.includes("content") ? "Invalid content" : "Failed to send message"
-      );
-    },
-    onSettled: (_data, error) => {
-      if (error) {
-        const queryKey = { conversationId: conversation.id, userId: currentUserId };
-        void utils.messages.getConversationMessages.invalidate(queryKey);
-      }
-      refetchConversations();
-    },
-  });
-
-  // Message Actions
-  const addReaction = api.messages.addReaction.useMutation({
-    onMutate: async ({ messageId, reaction }: { messageId: string; reaction: string }) => {
-      const queryKey = { conversationId: conversation.id, userId: currentUserId };
-      await utils.messages.getConversationMessages.cancel(queryKey);
-      const previousMessages = utils.messages.getConversationMessages.getData(queryKey);
-
-      utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          messages: old.messages.map((m: any) => {
-            if (m.id !== messageId) return m;
-            const reactions = { ...m.reactions };
-            reactions[reaction] = (reactions[reaction] ?? 0) + 1;
-            return { ...m, reactions };
-          }),
-        };
-      });
-
-      return { previousMessages };
-    },
-    onSettled: () => {
-      const queryKey = { conversationId: conversation.id, userId: currentUserId };
-      void utils.messages.getConversationMessages.invalidate(queryKey);
-    },
-  });
-
-  const removeReaction = api.messages.removeReaction.useMutation({
-    onMutate: async ({ messageId, reaction }: { messageId: string; reaction: string }) => {
-      const queryKey = { conversationId: conversation.id, userId: currentUserId };
-      await utils.messages.getConversationMessages.cancel(queryKey);
-      const previousMessages = utils.messages.getConversationMessages.getData(queryKey);
-
-      utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          messages: old.messages.map((m: any) => {
-            if (m.id !== messageId) return m;
-            const reactions = { ...m.reactions };
-            if (reactions[reaction] !== undefined) {
-              reactions[reaction] = Math.max(0, reactions[reaction] - 1);
-              if (reactions[reaction] === 0) delete reactions[reaction];
-            }
-            return { ...m, reactions };
-          }),
-        };
-      });
-
-      return { previousMessages };
-    },
-    onSettled: () => {
-      const queryKey = { conversationId: conversation.id, userId: currentUserId };
-      void utils.messages.getConversationMessages.invalidate(queryKey);
-    },
-  });
-
-  const editMutation = api.messages.editMessage.useMutation({
-    onMutate: async ({ messageId, content }: { messageId: string; content: string }) => {
-      const queryKey = { conversationId: conversation.id, userId: currentUserId };
-      await utils.messages.getConversationMessages.cancel(queryKey);
-      const previousMessages = utils.messages.getConversationMessages.getData(queryKey);
-
-      utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          messages: old.messages.map((m: any) =>
-            m.id === messageId ? { ...m, content, editedAt: new Date() } : m
-          ),
-        };
-      });
-
-      return { previousMessages };
-    },
-    onSettled: () => {
-      const queryKey = { conversationId: conversation.id, userId: currentUserId };
-      void utils.messages.getConversationMessages.invalidate(queryKey);
-    },
-  });
-
-  const deleteMutation = api.messages.deleteMessage.useMutation({
-    onMutate: async ({ messageId }) => {
-      const queryKey = { conversationId: conversation.id, userId: currentUserId };
-      await utils.messages.getConversationMessages.cancel(queryKey);
-      const previousMessages = utils.messages.getConversationMessages.getData(queryKey);
-
-      utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          messages: old.messages.filter((m: any) => m.id !== messageId),
-        };
-      });
-
-      return { previousMessages };
-    },
-    onSettled: () => {
-      const queryKey = { conversationId: conversation.id, userId: currentUserId };
-      void utils.messages.getConversationMessages.invalidate(queryKey);
-    },
-  });
-
-  const messageActions: MessageActions = useMemo(
-    () => ({
-      onAddReaction: (messageId: string, reaction: string) =>
-        addReaction.mutate({ messageId, userId: currentUserId, reaction }),
-      onRemoveReaction: (messageId: string, reaction: string) =>
-        removeReaction.mutate({ messageId, reaction }),
-      onEditMessage: (messageId: string, content: string) =>
-        editMutation.mutate({ messageId, content }),
-      onDeleteMessage: (messageId: string) => deleteMutation.mutate({ messageId }),
-    }),
-    [currentUserId, addReaction, removeReaction, editMutation, deleteMutation]
-  );
-
-  const handleSendMessage = useCallback(
-    (content?: string, plainText?: string) => {
-      const text = plainText ?? "";
-      if (!text.trim() || !conversation || !currentUserId || isSystemThread) return;
-
-      sendMessage.mutate({
-        conversationId: conversation.id,
-        userId: currentUserId,
-        content: content ?? "",
-        messageType: "text",
-      });
-      setReplyingTo(null);
-    },
-    [conversation, currentUserId, sendMessage, isSystemThread]
-  );
-
-  const messages = useMemo(() => {
-    const rawMessages = messagesData?.messages ?? [];
-    const sorted = [...rawMessages].sort((a: any, b: any) => {
-      const timeA = new Date(a.createdAt ?? a.ixTimeTimestamp ?? 0).getTime();
-      const timeB = new Date(b.createdAt ?? b.ixTimeTimestamp ?? 0).getTime();
-      return timeA - timeB;
-    });
-    if (!searchQuery) return sorted;
-    return sorted.filter(
-      (msg: any) =>
-        msg.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        msg.account?.displayName.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [messagesData?.messages, searchQuery]);
-
-  const systemBroadcasts = useMemo(() => {
-    const raw = notificationsData?.notifications ?? [];
-    const sorted = [...raw].sort((a: any, b: any) => {
-      const timeA = new Date(a.createdAt ?? a.ixTimeTimestamp ?? 0).getTime();
-      const timeB = new Date(b.createdAt ?? b.ixTimeTimestamp ?? 0).getTime();
-      return timeA - timeB;
-    });
-    if (!searchQuery) return sorted;
-    return sorted.filter(
-      (n: any) =>
-        (n.title ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (n.description ?? n.message ?? "").toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [notificationsData?.notifications, searchQuery]);
+  const handleSendMessage = (content?: string, plainText?: string) => {
+    if (!plainText?.trim() || !currentUserId || isSystemThread) return;
+    thread.send(content ?? "");
+  };
 
   // Scroll to bottom on new messages or system broadcasts
   useEffect(() => {
     if (!searchQuery) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages.length, systemBroadcasts.length, searchQuery, isSystemThread]);
+  }, [thread.messages.length, system.broadcasts.length, searchQuery, isSystemThread]);
 
-  const participantStatus = useMemo(() => {
-    if (isSystemThread || conversation.type === "group") return undefined;
-    const otherParticipant = conversation.otherParticipants[0];
-    if (!otherParticipant) return undefined;
-    return clientState.presenceMap?.[otherParticipant.accountId] as any;
-  }, [conversation, clientState.presenceMap, isSystemThread]);
+  const otherParticipant =
+    isSystemThread || conversation.type === "group" ? undefined : conversation.otherParticipants[0];
+  const participantStatus = presenceOf(clientState, otherParticipant?.accountId);
 
-  const isLoading = isSystemThread ? isLoadingNotifications : isLoadingMessages;
+  const isLoading = isSystemThread ? system.isLoading : thread.isLoading;
 
   return (
     <div className="flex h-full flex-col">
@@ -529,81 +293,32 @@ export function MessagesChatPanel({
         activeFolder={activeFolder}
         participantStatus={participantStatus}
         onSearch={setSearchQuery}
-        onBack={onBack ?? onToggleSidebar}
-        isSidebarCollapsed={isSidebarCollapsed}
+        onBack={onBack}
         onViewDetails={() => setIsDetailsOpen(true)}
         onAddParticipants={() => setIsAddParticipantsOpen(true)}
         onMuteToggle={onMuteToggle}
         onArchiveToggle={onArchiveToggle}
         onDeleteConversation={onDeleteConversation}
-        onClearSystemMessages={isSystemThread ? handleClearAllSystem : undefined}
+        onClearSystemMessages={isSystemThread ? system.clearAll : undefined}
         isMuted={isMuted}
         isArchived={isArchived}
-        displayNamePreference={settings?.displayNamePreference}
       />
 
-      {/* Messages / Broadcasts stream */}
       <div className="flex-1 scrollbar-none overflow-x-hidden overflow-y-auto">
-        {isLoading ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="border-tint size-6 animate-spin rounded-full border-2 border-t-transparent" />
-          </div>
-        ) : isSystemThread ? (
-          <div className="mx-auto w-full max-w-3xl py-3">
-            {systemBroadcasts.length === 0 ? (
-              <EmptyState
-                className="min-h-[300px]"
-                icon={<BellRing />}
-                title="No system broadcasts"
-                message={
-                  searchQuery
-                    ? `No bulletins match "${searchQuery}"`
-                    : "No platform announcements or simulation updates have been sent."
-                }
-              />
-            ) : (
-              systemBroadcasts.map((item: any) => (
-                <SystemBroadcastCard
-                  key={item.id}
-                  item={item}
-                  onDismiss={() => dismissNotification.mutate({ notificationId: item.id })}
-                />
-              ))
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-        ) : isLoreBotThread ? (
-          <LoreBotFeedView currentUserId={currentUserId} />
-        ) : (
-          <div className="py-2">
-            {messages.map((message: any, index: number, arr: any[]) => {
-              const prev = index > 0 ? arr[index - 1] : null;
-              const isConsecutive =
-                prev != null &&
-                prev.accountId === message.accountId &&
-                new Date(message.createdAt ?? message.ixTimeTimestamp).getTime() -
-                  new Date(prev.createdAt ?? prev.ixTimeTimestamp).getTime() <
-                  5 * 60 * 1000;
-
-              return (
-                <MessagesBubble
-                  key={message.id}
-                  message={message}
-                  currentUserId={currentUserId}
-                  isConsecutive={isConsecutive}
-                  onReply={setReplyingTo}
-                  actions={messageActions}
-                  settings={settings}
-                  searchQuery={searchQuery}
-                />
-              );
-            })}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
+        <ThreadStream
+          isSystemThread={isSystemThread}
+          isLoreBotThread={isLoreBotThread}
+          isLoading={isLoading}
+          system={system}
+          thread={thread}
+          currentUserId={currentUserId}
+          searchQuery={searchQuery}
+          settings={settings}
+          onReply={setReplyingTo}
+          endRef={messagesEndRef}
+        />
       </div>
 
-      {/* Footer: Read-only banner for system thread / LoreBot or interactive input bar */}
       {isSystemThread || isLoreBotThread ? (
         <div className="border-separator text-footnote text-label-secondary flex shrink-0 items-center justify-center gap-2 border-t px-4 py-3">
           <Shield className="text-label-secondary size-3.5" aria-hidden="true" />
@@ -617,7 +332,7 @@ export function MessagesChatPanel({
               sendTypingIndicator(conversation.id, undefined, isTyping);
             }
           }}
-          isSending={sendMessage.isPending}
+          isSending={thread.isSending}
           replyingTo={replyingTo}
           onCancelReply={() => setReplyingTo(null)}
         />
@@ -651,9 +366,7 @@ export function MessagesChatPanel({
             ...conversation.otherParticipants.map((p) => p.accountId),
           ]}
           onAddParticipant={async (userId) => {
-            if (onAddParticipant) {
-              await onAddParticipant(userId);
-            }
+            await onAddParticipant?.(userId);
           }}
         />
       )}

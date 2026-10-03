@@ -1,37 +1,48 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
 import { withBasePath } from "~/lib/base-path";
-import { soundEffects } from "~/lib/sound/cuelume";
 
 import { AuthenticationGuard } from "~/components/mycountry/primitives";
 import { MessagesLayout } from "./MessagesLayout";
-import {
-  MessagesFolderNav,
-  getFolderFromPathname,
-  DEFAULT_MESSAGES_SETTINGS,
-  type MessagesSettings,
-} from "./MessagesFolderNav";
+import { MessagesFolderNav, getFolderFromPathname } from "./MessagesFolderNav";
 import { MessagesConversationPanel } from "./MessagesConversationPanel";
 import { MessagesChatPanel } from "./MessagesChatPanel";
 import { MessagesEmptyState } from "./MessagesEmptyState";
 import { MessagesNewConversationModal } from "./MessagesNewConversationModal";
+import { useMessagePreferences } from "./useMessagePreferences";
+import { useMessagesSocket } from "./useMessagesSocket";
 
 import type { MessageFolder } from "~/types/messages";
 import { SYSTEM_CONVERSATION_ID, LOREBOT_CONVERSATION_ID } from "~/types/messages";
-
-// ─── Section titles ──────────────────────────────────────────────
 
 const SECTION_TITLES: Record<MessageFolder, string> = {
   conversations: "Messages",
 };
 
-// ─── Inner Router ────────────────────────────────────────────────
+const officialConversation = (id: string, name: string, source: string) => ({
+  id,
+  type: "channel" as const,
+  name,
+  avatar: null,
+  source,
+  conversationType: "official",
+  isActive: true,
+  lastActivity: new Date(),
+  otherParticipants: [],
+  unreadCount: 0,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+});
+
+const conversationParam = () =>
+  typeof window === "undefined"
+    ? null
+    : new URLSearchParams(window.location.search).get("conversation");
 
 function MessagesRouterInner() {
   const { user } = useUser();
@@ -41,472 +52,142 @@ function MessagesRouterInner() {
 
   const currentUserId = user?.id ?? "";
 
-  // ── State ──
   const [activeFolder, setActiveFolder] = useState<MessageFolder>(() =>
     getFolderFromPathname(pathname)
   );
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const convId = params.get("conversation");
-      if (convId) return convId;
-    }
-    return null;
-  });
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(
+    conversationParam
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewConversation, setShowNewConversation] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const isSidebarCollapsed = !!selectedConversationId;
 
-  // Auto-collapse sidebar when a specific conversation is selected
-  useEffect(() => {
-    if (selectedConversationId) {
-      setIsSidebarCollapsed(true);
-    } else {
-      setIsSidebarCollapsed(false);
-    }
-  }, [selectedConversationId]);
+  const { settings: messagesSettings, updateSettings, muted, archived } = useMessagePreferences();
 
-  // ── Settings (localStorage-backed) ──
-  const [messagesSettings, setMessagesSettings] = useState<MessagesSettings>(() => {
-    if (typeof window === "undefined") return DEFAULT_MESSAGES_SETTINGS;
-    try {
-      const stored = localStorage.getItem("ixstats:messages:settings");
-      return stored
-        ? { ...DEFAULT_MESSAGES_SETTINGS, ...JSON.parse(stored) }
-        : DEFAULT_MESSAGES_SETTINGS;
-    } catch {
-      return DEFAULT_MESSAGES_SETTINGS;
-    }
-  });
-
-  const handleSettingsChange = useCallback((next: MessagesSettings) => {
-    setMessagesSettings(next);
-    try {
-      localStorage.setItem("ixstats:messages:settings", JSON.stringify(next));
-    } catch {
-      // Storage unavailable
-    }
-  }, []);
-
-  // ── Muted and Archived conversations lists (localStorage-backed) ──
-  const [mutedConversations, setMutedConversations] = useState<string[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const stored = localStorage.getItem("ixstats:messages:muted");
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  const [archivedConversations, setArchivedConversations] = useState<string[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const stored = localStorage.getItem("ixstats:messages:archived");
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  const handleMuteToggle = useCallback((conversationId: string) => {
-    setMutedConversations((prev) => {
-      const next = prev.includes(conversationId)
-        ? prev.filter((id) => id !== conversationId)
-        : [...prev, conversationId];
-      try {
-        localStorage.setItem("ixstats:messages:muted", JSON.stringify(next));
-      } catch {
-        // storage unavailable (private mode) — preference is not persisted
-      }
-      return next;
-    });
-  }, []);
-
-  const handleArchiveToggle = useCallback((conversationId: string) => {
-    setArchivedConversations((prev) => {
-      const next = prev.includes(conversationId)
-        ? prev.filter((id) => id !== conversationId)
-        : [...prev, conversationId];
-      try {
-        localStorage.setItem("ixstats:messages:archived", JSON.stringify(next));
-      } catch {
-        // storage unavailable (private mode) — preference is not persisted
-      }
-      return next;
-    });
-    // Deselect active conversation if archived
+  const handleArchiveToggle = (conversationId: string) => {
+    archived.toggle(conversationId);
     setSelectedConversationId((prev) => (prev === conversationId ? null : prev));
-  }, []);
+  };
 
-  // ── Handle URL conversation param ──
+  // The deep-link param is consumed by the initial state above; drop it from the URL.
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const convId = params.get("conversation");
-      if (convId) {
-        setSelectedConversationId(convId);
-        window.history.replaceState({}, "", window.location.pathname);
-      }
-    }
+    if (conversationParam()) window.history.replaceState({}, "", window.location.pathname);
   }, []);
 
-  // ── Server-side folder queries ──
   const {
     data: folderData,
     isLoading: isLoadingConversations,
     refetch: refetchConversations,
   } = api.messages.getConversationsByFolder.useQuery(
     { userId: currentUserId, folder: activeFolder },
-    {
-      enabled: !!currentUserId,
-      retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 30000,
-    }
+    { enabled: !!currentUserId, retry: 1, refetchOnWindowFocus: false, staleTime: 30000 }
   );
 
-  const activeFolderConversations = useMemo(() => {
-    const list = (folderData?.conversations ?? []) as any[];
-    return list.filter((c: any) => !archivedConversations.includes(c.id));
-  }, [folderData?.conversations, archivedConversations]);
+  const activeFolderConversations = useMemo(
+    () => ((folderData?.conversations ?? []) as any[]).filter((c) => !archived.ids.includes(c.id)),
+    [folderData?.conversations, archived.ids]
+  );
 
-  // ── Server-side folder counts ──
   const { data: folderCounts } = api.messages.getFolderCounts.useQuery(
     { userId: currentUserId },
-    {
-      enabled: !!currentUserId,
-      refetchOnWindowFocus: false,
-      staleTime: 30000,
-    }
+    { enabled: !!currentUserId, refetchOnWindowFocus: false, staleTime: 30000 }
   );
 
   // The UI has a single "conversations" folder; its badge is the server's total unread (inbox).
-  const unreadCounts = useMemo<Record<MessageFolder, number>>(
-    () => ({ conversations: folderCounts?.inbox ?? 0 }),
-    [folderCounts]
-  );
+  const unreadCounts: Record<MessageFolder, number> = { conversations: folderCounts?.inbox ?? 0 };
 
-  // ── Selected conversation object with dynamic fallback fetch ──
-  const isCustomSpecialId =
+  // Conversations opened by deep link may not be in the folder list, so fall back to a fetch.
+  const isSpecialId =
     !selectedConversationId ||
     selectedConversationId === SYSTEM_CONVERSATION_ID ||
     selectedConversationId === LOREBOT_CONVERSATION_ID;
 
-  const foundInFolder = useMemo(
-    () =>
-      isCustomSpecialId
-        ? null
-        : (activeFolderConversations.find((c: any) => c.id === selectedConversationId) ?? null),
-    [activeFolderConversations, selectedConversationId, isCustomSpecialId]
-  );
+  const foundInFolder = isSpecialId
+    ? null
+    : (activeFolderConversations.find((c) => c.id === selectedConversationId) ?? null);
 
   const { data: fetchedConversation, isLoading: isLoadingSingleConversation } =
     api.messages.getConversation.useQuery(
       { conversationId: selectedConversationId || "" },
-      {
-        enabled: !isCustomSpecialId && !foundInFolder,
-        staleTime: 30000,
-      }
+      { enabled: !isSpecialId && !foundInFolder, staleTime: 30000 }
     );
 
   const selectedConversation = useMemo(() => {
     if (selectedConversationId === SYSTEM_CONVERSATION_ID) {
-      return {
-        id: SYSTEM_CONVERSATION_ID,
-        type: "channel" as const,
-        name: "System Messages",
-        avatar: null,
-        source: "system",
-        conversationType: "official",
-        isActive: true,
-        lastActivity: new Date(),
-        otherParticipants: [],
-        unreadCount: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      return officialConversation(SYSTEM_CONVERSATION_ID, "System Messages", "system");
     }
     if (selectedConversationId === LOREBOT_CONVERSATION_ID) {
-      return {
-        id: LOREBOT_CONVERSATION_ID,
-        type: "channel" as const,
-        name: "LoreBot",
-        avatar: null,
-        source: "lorebot",
-        conversationType: "official",
-        isActive: true,
-        lastActivity: new Date(),
-        otherParticipants: [],
-        unreadCount: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      return officialConversation(LOREBOT_CONVERSATION_ID, "LoreBot", "lorebot");
     }
     return foundInFolder ?? (fetchedConversation as any) ?? null;
   }, [foundInFolder, fetchedConversation, selectedConversationId]);
 
-  // ── Presence Tracking ──
-  const [presenceMap, setPresenceMap] = useState<Record<string, string>>({});
+  const { clientState, sendTypingIndicator } = useMessagesSocket({
+    currentUserId,
+    user,
+    activeFolder,
+    selectedConversationId,
+    selectedConversation,
+    settings: messagesSettings,
+    mutedIds: muted.ids,
+    archivedIds: archived.ids,
+    onUnarchive: archived.remove,
+    refetchConversations,
+  });
 
-  // ── WebSocket ──
-  const wsOptions = useMemo(
-    () => ({
-      accountId: currentUserId,
-      autoReconnect: true,
-      onMessageUpdate: (data: any) => {
-        if (data.type === "message:new") {
-          // Play sound on incoming message if not muted
-          const isMuted = mutedConversations.includes(data.conversationId);
-          if (data.accountId !== currentUserId && messagesSettings.notificationSounds && !isMuted) {
-            soundEffects.chime();
-          }
+  const handleFolderNavigate = (folder: MessageFolder) => {
+    if (folder === activeFolder) return;
+    setActiveFolder(folder);
+    setSelectedConversationId(null);
+    setSearchQuery("");
 
-          // Unarchive on new message
-          if (archivedConversations.includes(data.conversationId)) {
-            setArchivedConversations((prev) => {
-              const next = prev.filter((id) => id !== data.conversationId);
-              try {
-                localStorage.setItem("ixstats:messages:archived", JSON.stringify(next));
-              } catch {
-                // storage unavailable (private mode) — preference is not persisted
-              }
-              return next;
-            });
-          }
-
-          // Invalidate list counts to show updated unread badge in sidebar
-          void utils.messages.getFolderCounts.invalidate();
-          void utils.messages.getConversationsByFolder.invalidate();
-        }
-
-        if (!selectedConversationId || data.conversationId !== selectedConversationId) return;
-
-        const queryKey = { conversationId: selectedConversationId, userId: currentUserId };
-
-        if (data.type === "message:new") {
-          utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
-            if (!old) return old;
-            // Avoid duplicate messages
-            if (old.messages.some((m: any) => m.id === data.messageId)) return old;
-
-            let senderAccount;
-            if (data.accountId === currentUserId) {
-              senderAccount = {
-                id: currentUserId,
-                username: user?.username ?? "me",
-                displayName: user?.fullName ?? user?.username ?? "Me",
-                profileImageUrl: user?.imageUrl ?? null,
-                accountType: "country" as const,
-              };
-            } else {
-              const participant = selectedConversation?.otherParticipants.find(
-                (p: any) => p.accountId === data.accountId
-              );
-              senderAccount = participant?.account ?? {
-                id: data.accountId,
-                username: "user",
-                displayName: "User",
-                profileImageUrl: null,
-                accountType: "country" as const,
-              };
-            }
-
-            const newMessage = {
-              id: data.messageId,
-              conversationId: data.conversationId!,
-              accountId: data.accountId,
-              account: senderAccount,
-              content: data.content ?? "",
-              messageType: "text" as const,
-              ixTimeTimestamp: new Date(data.timestamp),
-              createdAt: new Date(data.timestamp),
-              reactions: {},
-              mentions: [],
-              attachments: [],
-              replyTo: undefined,
-              readReceipts: [],
-              isSystem: false,
-              editedAt: null,
-              deletedAt: null,
-              source: null,
-            };
-
-            return {
-              ...old,
-              messages: [newMessage, ...old.messages],
-            };
-          });
-
-          // Optimistically update conversation list preview instead of full refetch
-          const folderQueryKey = { userId: currentUserId, folder: activeFolder };
-          utils.messages.getConversationsByFolder.setData(folderQueryKey, (old: any) => {
-            if (!old?.conversations) return old;
-            const updated = old.conversations.map((c: any) => {
-              if (c.id !== data.conversationId) return c;
-              return {
-                ...c,
-                lastActivity: new Date(data.timestamp),
-                lastMessage: {
-                  id: data.messageId,
-                  accountId: data.accountId,
-                  content: data.content ?? "",
-                  ixTimeTimestamp: new Date(data.timestamp),
-                  createdAt: new Date(data.timestamp),
-                  account:
-                    data.accountId === currentUserId
-                      ? { id: currentUserId, displayName: user?.fullName ?? "Me" }
-                      : (c.lastMessage?.account ?? { id: data.accountId, displayName: "User" }),
-                },
-                unreadCount:
-                  data.accountId !== currentUserId ? (c.unreadCount ?? 0) + 1 : c.unreadCount,
-              };
-            });
-            // Sort by lastActivity descending so the updated conversation bubbles up
-            updated.sort(
-              (a: any, b: any) =>
-                new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime()
-            );
-            return { ...old, conversations: updated };
-          });
-        } else if (data.type === "message:updated") {
-          utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
-            if (!old) return old;
-            return {
-              ...old,
-              messages: old.messages.map((m: any) =>
-                m.id === data.messageId
-                  ? { ...m, content: data.content ?? m.content, editedAt: new Date(data.timestamp) }
-                  : m
-              ),
-            };
-          });
-        } else if (data.type === "message:deleted") {
-          utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
-            if (!old) return old;
-            return {
-              ...old,
-              messages: old.messages.filter((m: any) => m.id !== data.messageId),
-            };
-          });
-        }
-      },
-      onConversationUpdate: () => {
-        void refetchConversations();
-      },
-      onPresenceUpdate: (data: any) => {
-        if (data.accountId) {
-          setPresenceMap((prev) => ({
-            ...prev,
-            [data.accountId]: data.status,
-          }));
-        }
-      },
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      currentUserId,
-      refetchConversations,
-      selectedConversationId,
-      selectedConversation,
-      user,
-      utils,
-      messagesSettings,
-      mutedConversations,
-      archivedConversations,
-    ]
-  );
-
-  const {
-    clientState: rawClientState,
-    sendTypingIndicator,
-    subscribeToConversation,
-  } = useThinkPagesWebSocket(wsOptions);
-
-  const clientState = useMemo(
-    () => ({
-      presenceStatus: rawClientState.presenceStatus,
-      typingIndicators: rawClientState.typingIndicators,
-      presenceMap,
-      connectionStatus: rawClientState.connected
-        ? ("connected" as const)
-        : ("disconnected" as const),
-      lastSyncTime: new Date(rawClientState.lastHeartbeat),
-      unreadCount: 0,
-    }),
-    [rawClientState, presenceMap]
-  );
-
-  // Subscribe to selected conversation
-  useEffect(() => {
-    if (selectedConversationId && currentUserId) {
-      subscribeToConversation(selectedConversationId);
-    }
-  }, [selectedConversationId, currentUserId, subscribeToConversation]);
-
-  // ── Navigation ──
-  const handleFolderNavigate = useCallback(
-    (folder: MessageFolder) => {
-      if (folder === activeFolder) return;
-      setActiveFolder(folder);
-      setSelectedConversationId(null);
-      setSearchQuery("");
-
-      window.history.pushState(null, "", withBasePath("/messages"));
-      document.title = "Messages - IxStats";
-    },
-    [activeFolder]
-  );
+    window.history.pushState(null, "", withBasePath("/messages"));
+    document.title = "Messages - IxStats";
+  };
 
   // Handle browser back/forward
   useEffect(() => {
     const onPopState = () => {
-      const newFolder = getFolderFromPathname(window.location.pathname);
-      setActiveFolder(newFolder);
+      setActiveFolder(getFolderFromPathname(window.location.pathname));
       setSelectedConversationId(null);
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  // Set initial title
   useEffect(() => {
     document.title = `${SECTION_TITLES[activeFolder]} - Messages - IxStats`;
   }, [activeFolder]);
 
-  // ── Create conversation (via unified messages router) ──
   const createConversation = api.messages.createConversation.useMutation();
 
-  const handleCreateConversation = useCallback(
-    async (participantId: string, options?: { diplomatic?: boolean }) => {
-      if (!currentUserId?.trim() || !participantId?.trim()) {
-        notify.error("Invalid user or participant");
-        return;
-      }
+  const handleCreateConversation = async (
+    participantId: string,
+    options?: { diplomatic?: boolean }
+  ) => {
+    if (!currentUserId?.trim() || !participantId?.trim()) {
+      notify.error("Invalid user or participant");
+      return;
+    }
 
-      const participantIds =
-        participantId === currentUserId ? [currentUserId] : [currentUserId, participantId];
+    // The diplomatic channel is chosen explicitly in the new-conversation modal
+    const isDiplomatic = options?.diplomatic === true;
 
-      // The diplomatic channel is chosen explicitly in the new-conversation modal
-      const isDiplomatic = options?.diplomatic === true;
-      const source = isDiplomatic ? "diplomatic" : "thinkshare";
-
-      try {
-        const result = await createConversation.mutateAsync({
-          participantIds,
-          source: source as any,
-          conversationType: isDiplomatic ? "diplomatic" : undefined,
-        });
-        setSelectedConversationId(result.id);
-        setShowNewConversation(false);
-        notify.success("Conversation created");
-        void refetchConversations();
-      } catch (error: any) {
-        notify.error(error.message || "Failed to create conversation");
-      }
-    },
-    [currentUserId, createConversation, notify, refetchConversations]
-  );
+    try {
+      const result = await createConversation.mutateAsync({
+        participantIds:
+          participantId === currentUserId ? [currentUserId] : [currentUserId, participantId],
+        source: (isDiplomatic ? "diplomatic" : "thinkshare") as any,
+        conversationType: isDiplomatic ? "diplomatic" : undefined,
+      });
+      setSelectedConversationId(result.id);
+      setShowNewConversation(false);
+      notify.success("Conversation created");
+      void refetchConversations();
+    } catch (error: any) {
+      notify.error(error.message || "Failed to create conversation");
+    }
+  };
 
   const leaveConversationMutation = api.messages.leaveConversation.useMutation({
     onSuccess: () => {
@@ -514,23 +195,18 @@ function MessagesRouterInner() {
       setSelectedConversationId(null);
       void refetchConversations();
     },
-    onError: (err) => {
-      notify.error(err.message || "Failed to delete conversation");
-    },
+    onError: (err) => notify.error(err.message || "Failed to delete conversation"),
   });
 
-  const handleDeleteConversation = useCallback(
-    (conversationId: string) => {
-      if (
-        confirm(
-          "Are you sure you want to delete this conversation? This will remove it from your active list."
-        )
-      ) {
-        leaveConversationMutation.mutate({ conversationId, userId: currentUserId });
-      }
-    },
-    [leaveConversationMutation, currentUserId]
-  );
+  const handleDeleteConversation = (conversationId: string) => {
+    if (
+      confirm(
+        "Are you sure you want to delete this conversation? This will remove it from your active list."
+      )
+    ) {
+      leaveConversationMutation.mutate({ conversationId, userId: currentUserId });
+    }
+  };
 
   const addParticipantMutation = api.messages.addParticipant.useMutation({
     onSuccess: () => {
@@ -543,57 +219,37 @@ function MessagesRouterInner() {
       }
       void refetchConversations();
     },
-    onError: (err) => {
-      notify.error(err.message || "Failed to add participant");
-    },
+    onError: (err) => notify.error(err.message || "Failed to add participant"),
   });
 
-  const handleAddParticipant = useCallback(
-    async (userId: string) => {
-      if (!selectedConversation) return;
+  const handleAddParticipant = async (userId: string) => {
+    if (!selectedConversation) return;
 
-      if (selectedConversation.type === "direct") {
-        // Upgrade direct conversation to group chat
-        const otherParticipantId = selectedConversation.otherParticipants[0]?.accountId;
-        const participantIds = [currentUserId];
-        if (otherParticipantId) {
-          participantIds.push(otherParticipantId);
-        }
-        participantIds.push(userId);
+    if (selectedConversation.type !== "direct") {
+      addParticipantMutation.mutate({ conversationId: selectedConversation.id, userId });
+      return;
+    }
 
-        try {
-          const result = await createConversation.mutateAsync({
-            participantIds,
-            source: selectedConversation.source as any,
-            name: "Group Chat",
-          });
-          setSelectedConversationId(result.id);
-          notify.success("Upgraded to group chat");
-          void refetchConversations();
-        } catch (err: any) {
-          notify.error(err.message || "Failed to create group chat");
-        }
-      } else {
-        // Add participant directly to group chat
-        addParticipantMutation.mutate({
-          conversationId: selectedConversation.id,
+    // Adding to a direct conversation upgrades it to a group chat
+    const otherParticipantId = selectedConversation.otherParticipants[0]?.accountId;
+    try {
+      const result = await createConversation.mutateAsync({
+        participantIds: [
+          currentUserId,
+          ...(otherParticipantId ? [otherParticipantId] : []),
           userId,
-        });
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      selectedConversation,
-      currentUserId,
-      createConversation,
-      addParticipantMutation,
-      refetchConversations,
-      selectedConversationId,
-      utils.messages.getConversationMessages,
-    ]
-  );
+        ],
+        source: selectedConversation.source as any,
+        name: "Group Chat",
+      });
+      setSelectedConversationId(result.id);
+      notify.success("Upgraded to group chat");
+      void refetchConversations();
+    } catch (err: any) {
+      notify.error(err.message || "Failed to create group chat");
+    }
+  };
 
-  // ── Render ──
   return (
     <>
       <MessagesLayout
@@ -605,7 +261,7 @@ function MessagesRouterInner() {
               onNavigate={handleFolderNavigate}
               unreadCounts={unreadCounts}
               settings={messagesSettings}
-              onSettingsChange={handleSettingsChange}
+              onSettingsChange={updateSettings}
             />
             <div className="min-h-0 flex-1">
               <MessagesConversationPanel
@@ -619,7 +275,7 @@ function MessagesRouterInner() {
                 currentUserId={currentUserId}
                 onNewConversation={() => setShowNewConversation(true)}
                 settings={messagesSettings}
-                mutedConversations={mutedConversations}
+                mutedConversations={muted.ids}
               />
             </div>
           </div>
@@ -637,13 +293,11 @@ function MessagesRouterInner() {
               activeFolder={activeFolder}
               clientState={clientState as any}
               sendTypingIndicator={sendTypingIndicator}
-              isSidebarCollapsed={isSidebarCollapsed}
-              onToggleSidebar={() => setIsSidebarCollapsed((prev) => !prev)}
               onBack={() => setSelectedConversationId(null)}
               settings={messagesSettings}
-              isMuted={mutedConversations.includes(selectedConversation.id)}
-              isArchived={archivedConversations.includes(selectedConversation.id)}
-              onMuteToggle={() => handleMuteToggle(selectedConversation.id)}
+              isMuted={muted.ids.includes(selectedConversation.id)}
+              isArchived={archived.ids.includes(selectedConversation.id)}
+              onMuteToggle={() => muted.toggle(selectedConversation.id)}
               onArchiveToggle={() => handleArchiveToggle(selectedConversation.id)}
               onDeleteConversation={() => handleDeleteConversation(selectedConversation.id)}
               onAddParticipant={handleAddParticipant}
@@ -666,8 +320,6 @@ function MessagesRouterInner() {
     </>
   );
 }
-
-// ─── Exported Router with Auth Guard ─────────────────────────────
 
 export function MessagesRouter() {
   return (
