@@ -269,7 +269,7 @@ export const adminUsersRouter = createTRPCRouter({
     .input(z.object({ userId: z.string(), wikiUsername: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const { findLinkableWikiAccount } = await import("~/lib/wiki-os/adapters/ixstates/user-sync");
-      const res = await findLinkableWikiAccount(input.userId, input.wikiUsername, ctx.auth.userId);
+      const res = await findLinkableWikiAccount(input.userId, input.wikiUsername, ctx.auth?.userId ?? undefined);
       if (!res.success) {
         throw new TRPCError({
           code: "BAD_REQUEST",

@@ -307,7 +307,7 @@ export const geoEditorQueueRouter = createTRPCRouter({
         ctx.db,
         edit,
         proposed,
-        ctx.auth!.userId ?? "system",
+        ctx.user.clerkUserId ?? "system",
         input.reviewNote
       );
     } else if (edit.editType === "subdivision") {
@@ -318,7 +318,7 @@ export const geoEditorQueueRouter = createTRPCRouter({
       await applyPoiEdit(ctx.db, edit, proposed);
     }
 
-    await recordReview(ctx.db, input, "approved", ctx.auth!.userId);
+    await recordReview(ctx.db, input, "approved", ctx.user.clerkUserId);
     return { id: input.editId, status: "approved" as const };
   }),
 
@@ -327,7 +327,7 @@ export const geoEditorQueueRouter = createTRPCRouter({
    */
   rejectEdit: adminProcedure.input(reviewInput).mutation(async ({ ctx, input }) => {
     await loadPendingEdit(ctx.db, input.editId);
-    await recordReview(ctx.db, input, "rejected", ctx.auth!.userId);
+    await recordReview(ctx.db, input, "rejected", ctx.user.clerkUserId);
     return { id: input.editId, status: "rejected" as const };
   }),
 });

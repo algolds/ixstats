@@ -108,12 +108,10 @@ function readCached(raw: string | undefined | null): { data: string; ct: string 
 }
 
 /** System owners, admins/staff and beta testers may use the narrator. */
-async function resolveAccess(
-  userId: string,
-  claims: { metadata?: unknown; publicMetadata?: unknown } | undefined
-) {
-  const clerkRole =
-    (claims?.metadata as RoleClaims)?.role || (claims?.publicMetadata as RoleClaims)?.role;
+async function resolveAccess(userId: string, sessionClaims: object | undefined) {
+  const claims = sessionClaims as
+    { metadata?: RoleClaims; publicMetadata?: RoleClaims } | undefined;
+  const clerkRole = claims?.metadata?.role || claims?.publicMetadata?.role;
   const role = typeof clerkRole === "string" ? clerkRole : "";
   let isAdmin = isSystemOwner(userId) || ADMIN_ROLES.includes(role);
   let hasAccess = isAdmin || BETA_ROLES.includes(role);

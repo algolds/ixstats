@@ -245,7 +245,11 @@ async function handleMediaWikiRequest(
   // Query parameters, overridden by any defined request-body fields (POST requests)
   const params: Record<string, string> = {
     ...Object.fromEntries(searchParams),
-    ...Object.fromEntries(Object.entries(requestBody ?? {}).filter(([, v]) => v !== undefined)),
+    ...Object.fromEntries(
+      Object.entries(requestBody ?? {})
+        .filter(([, v]) => v !== undefined)
+        .map(([k, v]) => [k, String(v)])
+    ),
   };
   params.format ||= "json";
   params.formatversion ||= "2";

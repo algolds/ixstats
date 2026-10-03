@@ -582,12 +582,20 @@ export const loreCardsWikiRouter = createTRPCRouter({
         categories: z.array(z.string()),
       })
     )
-    .query(({ input }) =>
-      orFallback("Error getting category stats", { stats: {}, source: input.source }, async () => {
-        const stats = await wikiLoreCardGenerator.getCategoriesInfo(input.categories, input.source);
-        return { stats, source: input.source };
-      })
-    ),
+    .query(({ input }) => {
+      const noStats: Awaited<ReturnType<typeof wikiLoreCardGenerator.getCategoriesInfo>> = {};
+      return orFallback(
+        "Error getting category stats",
+        { stats: noStats, source: input.source },
+        async () => {
+          const stats = await wikiLoreCardGenerator.getCategoriesInfo(
+            input.categories,
+            input.source
+          );
+          return { stats, source: input.source };
+        }
+      );
+    }),
 
   /**
    * Fetch member page titles from a live wiki category (all pages & files up to 10,000)

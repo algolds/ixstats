@@ -21,7 +21,7 @@ function embassyListing(embassy: ListedEmbassy, countryId: string, funders: Set<
   const isHost = embassy.hostCountryId === countryId;
   const budgetVisible = funders.has(embassy.guestCountryId);
   const partnerCountry = isHost ? embassy.guestCountry : embassy.hostCountry;
-  const services: unknown[] | null = embassy.services ? JSON.parse(embassy.services) : null;
+  const services: string[] | null = embassy.services ? JSON.parse(embassy.services) : null;
 
   return {
     id: embassy.id,
