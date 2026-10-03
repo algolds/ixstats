@@ -315,7 +315,6 @@ export function WikiOSUnifiedSidebar({
           const isProfileHovered = !isExpanded && hoveredIndex === profileIndex;
           return (
             <FisheyeRailItem
-              id="lorewards"
               mouseY={mouseY}
               isExpanded={isExpanded || isProfileHovered}
               title="Wiki profile"
@@ -498,7 +497,6 @@ export function WikiOSUnifiedSidebar({
 
               return (
                 <FisheyeRailItem
-                  id="more-tools"
                   mouseY={mouseY}
                   isExpanded={isMoreExpanded}
                   title="More page tools"
@@ -621,7 +619,6 @@ export function WikiOSUnifiedSidebar({
                 const isCountryHovered = !isExpanded && hoveredIndex === currentCountryIndex;
                 return (
                   <FisheyeRailItem
-                    id="lorewards"
                     mouseY={mouseY}
                     isExpanded={isExpanded || isCountryHovered}
                     title={countryData?.name || "Active Country"}

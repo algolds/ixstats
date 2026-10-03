@@ -82,7 +82,7 @@ export function DocumentLayout({ meta, sections, back, children }: DocumentLayou
     <div className="bg-background text-foreground min-h-screen">
       <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <PageHeader
-          title={meta.title}
+          title={meta.title ?? ""}
           subtitle={meta.description}
           back={{ href: back.href, label: back.label }}
           actions={
