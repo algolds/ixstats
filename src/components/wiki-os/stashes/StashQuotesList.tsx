@@ -87,7 +87,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
 
                 <Link
                   href={withBasePath(`/wiki/${q.pageSlug}`)}
-                  className="rounded-row border-separator bg-fill-4 text-label-secondary hover:bg-fill-4 hover:text-label flex h-7 w-7 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                  className="rounded-row border-separator bg-fill-4 text-label-secondary hover:bg-fill-4 hover:text-label flex h-7 w-7 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                   title="Open article"
                 >
                   <ArrowUpRight className="h-3.5 w-3.5" />
@@ -107,7 +107,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
               <div className="rounded-row border-separator bg-surface text-footnote text-label-secondary ml-2 space-y-0.5 border p-3">
                 <div className="text-caption text-label flex items-center gap-1 font-semibold">
                   <MessageSquare className="text-tint h-3 w-3" />
-                  <span>Lore Note</span>
+                  <span>Lore note</span>
                 </div>
                 <p className="leading-relaxed italic">{q.comment}</p>
               </div>

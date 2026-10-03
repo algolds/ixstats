@@ -177,7 +177,7 @@ export function CommonsResultsGrid({
               className="text-footnote border-separator hover:bg-fill-4"
             >
               <RefreshDouble className="mr-2 h-3.5 w-3.5" />
-              Reset Filters
+              Reset filters
             </Button>
           )}
         </div>
@@ -189,7 +189,7 @@ export function CommonsResultsGrid({
         <div className="bg-fill-4 text-label-secondary mb-3 rounded-full p-3">
           <ImageIcon className="h-6 w-6" />
         </div>
-        <p className="text-body text-label mb-1 font-medium">Explore Sovereign Assets</p>
+        <p className="text-body text-label mb-1 font-medium">Explore sovereign assets</p>
         <p className="text-footnote text-label-secondary max-w-sm">
           Search Wikimedia Commons, browse worldbuilding categories in the sidebar, or switch to
           IxWiki to find community uploads.
@@ -232,7 +232,7 @@ export function CommonsResultsGrid({
             variant="outline"
             size="sm"
             onClick={onLoadMore}
-            className="border-separator text-footnote hover:bg-fill-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+            className="border-separator text-footnote hover:bg-fill-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
           >
             Load more images
           </Button>

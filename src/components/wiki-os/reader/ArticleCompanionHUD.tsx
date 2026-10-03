@@ -1,6 +1,6 @@
 "use client";
 // src/components/wiki-os/reader/ArticleCompanionHUD.tsx
-// Apple-inspired companion rail widget positioned at the top of the outset gutter rail (above the TOC).
+// companion rail widget positioned at the top of the outset gutter rail (above the TOC).
 // Features reading metrics, audio narration toggle, Margin discussion count, and quick actions.
 
 import React, { useMemo } from "react";
@@ -61,11 +61,11 @@ function IxWikiPageTools({
         <Button
           variant="outline"
           size="sm"
-          aria-label="What Links Here"
+          aria-label="What links here"
           onClick={() => {
             onOpenBacklinks?.();
           }}
-          title="What Links Here"
+          title="What links here"
           className="bg-fill-4 text-label-secondary hover:text-label"
         >
           <LinkIcon className="text-teal h-3 w-3" />
@@ -75,11 +75,11 @@ function IxWikiPageTools({
         <Button
           variant="outline"
           size="sm"
-          aria-label="Revision History"
+          aria-label="Revision history"
           onClick={() => {
             onOpenHistory?.();
           }}
-          title="Revision History"
+          title="Revision history"
           className="bg-fill-4 text-label-secondary hover:text-label"
         >
           <Clock className="text-label-secondary h-3 w-3" />
@@ -205,7 +205,7 @@ export function ArticleCompanionHUD({
 
         <div className="text-label-secondary font-ui text-footnote space-y-2">
           <div className="text-footnote flex items-center justify-between">
-            <span className="text-label-secondary">Read Time</span>
+            <span className="text-label-secondary">Read time</span>
             <span
               className="text-label font-semibold tabular-nums"
               title={`${wordCount.toLocaleString()} words`}
@@ -260,7 +260,7 @@ export function ArticleCompanionHUD({
           {/* Last Updated Timestamp */}
           {effectiveLastModified && (
             <div className="border-separator text-footnote flex items-center justify-between border-t pt-2">
-              <span className="text-label-secondary">Last Updated</span>
+              <span className="text-label-secondary">Last updated</span>
               <span className="text-label text-caption tabular-nums">
                 {new Date(effectiveLastModified).toLocaleDateString(undefined, {
                   month: "short",
@@ -274,7 +274,7 @@ export function ArticleCompanionHUD({
           {/* Last Editor (if distinct) — with IxnayID avatar when available */}
           {lastEditorName && lastEditorName.toLowerCase() !== creatorName?.toLowerCase() && (
             <div className="text-footnote flex items-center justify-between">
-              <span className="text-label-secondary">Last Editor</span>
+              <span className="text-label-secondary">Last editor</span>
               <Link
                 href={withBasePath(
                   `/wiki/User:${encodeURIComponent(lastEditorName.replace(/ /g, "_"))}`
@@ -416,7 +416,7 @@ export function ArticleCompanionHUD({
                 <Link
                   key={cleanCat}
                   href={`/wiki/categories/${encodeURIComponent(cleanCat.replace(/ /g, "_"))}`}
-                  className="text-label-secondary hover:text-label rounded-control border-separator bg-fill-4 text-caption hover:bg-fill-4 max-w-[180px] truncate border px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
+                  className="text-label-secondary hover:text-label rounded-control border-separator bg-fill-4 text-caption hover:bg-fill-4 max-w-[180px] truncate border px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150"
                 >
                   {cleanCat}
                 </Link>

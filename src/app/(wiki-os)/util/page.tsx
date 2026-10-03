@@ -5,7 +5,7 @@ import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { WikiOSUtilitiesDeck } from "~/components/wiki-os/utilities/WikiOSUtilitiesDeck";
 
 export const metadata: Metadata = {
-  title: "Special Directory & Utilities — WikiOS Lore Engine",
+  title: "Special directory & utilities | WikiOS",
   description:
     "Native macOS-inspired utility deck replacing legacy MediaWiki Special Pages with high-speed tools.",
 };
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function WikiUtilitiesPage() {
   return (
     <WikiOSLayout
-      title="Special Directory & Utilities"
+      title="Special directory & utilities"
       hideTitleHeading={true}
       showUtilitiesRibbon={true}
     >

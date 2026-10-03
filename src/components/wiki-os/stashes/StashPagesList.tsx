@@ -1,8 +1,6 @@
 "use client";
 // src/components/wiki-os/stashes/StashPagesList.tsx
 // Saved wiki articles view with lead image thumbnail, WikiOS logomark, rich metadata, and quick actions.
-// Full Apple Design & Facet compliance.
-
 import { useState } from "react";
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
@@ -107,7 +105,7 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
               <div className="flex shrink-0 items-center gap-1">
                 <Link
                   href={withBasePath(`/wiki/${item.pageSlug}`)}
-                  className="rounded-row border-separator bg-fill-4 text-caption text-label-secondary hover:bg-fill-4 hover:text-label flex items-center gap-1 border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                  className="rounded-row border-separator bg-fill-4 text-caption text-label-secondary hover:bg-fill-4 hover:text-label flex items-center gap-1 border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                   title="Read article"
                 >
                   <span>Read</span>

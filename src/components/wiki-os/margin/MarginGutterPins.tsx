@@ -2,8 +2,6 @@
 // src/components/wiki-os/margin/MarginGutterPins.tsx
 // Renders margin gutter pin indicators precisely aligned with article text highlights and headings.
 // Features debounced rAF layout batching, stable hitboxes, and frictionless hover physics.
-// Apple Design & WikiOS Standard.
-
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { ChatBubble as MessageSquare, DesignPencil as Highlighter } from "iconoir-react";
 import { cn } from "~/lib/utils";
@@ -398,7 +396,7 @@ export function MarginGutterPins({
                 onClick={() => handlePinClick(pin)}
                 aria-label={pin.title}
                 className={cn(
-                  "bg-margin-accent border-yellow/60 shadow-card flex cursor-pointer items-center justify-center rounded-full border font-semibold text-(--margin-badge-text) transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
+                  "bg-margin-accent border-yellow/60 shadow-card flex cursor-pointer items-center justify-center rounded-full border font-semibold text-(--margin-badge-text) transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
                   isHovered
                     ? "border-yellow/50 z-40 scale-110"
                     : isCluster

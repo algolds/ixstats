@@ -35,8 +35,8 @@ export const StashDropdown = memo(function StashDropdown({
           variant="ghost"
           size="icon-sm"
           className="text-label-secondary"
-          title="Stashed Images"
-          aria-label="Stashed Images"
+          title="Stashed images"
+          aria-label="Stashed images"
           onClick={onBeforeOpen}
         >
           <Bookmark className="size-3.5" />
@@ -46,7 +46,7 @@ export const StashDropdown = memo(function StashDropdown({
         <div className="border-separator flex items-center justify-between border-b pb-2">
           <span className="text-caption text-label-secondary flex items-center gap-2 font-semibold">
             <Bookmark className="text-yellow h-3.5 w-3.5" />
-            <span>Stash Explorer</span>
+            <span>Stash explorer</span>
           </span>
           {modal.stashes.length > 1 && (
             <Select value={modal.activeStashId} onValueChange={modal.setSelectedStashId}>

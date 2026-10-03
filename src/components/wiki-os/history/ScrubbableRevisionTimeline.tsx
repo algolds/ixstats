@@ -129,7 +129,7 @@ export function ScrubbableRevisionTimeline({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-tint text-subhead">Revision Timeline</span>
+              <span className="text-tint text-subhead">Revision timeline</span>
               <span className="bg-fill-2 text-label text-caption rounded-full px-2 py-0.5">
                 {revisions.length} revision{revisions.length > 1 ? "s" : ""}
               </span>
@@ -310,7 +310,7 @@ export function ScrubbableRevisionTimeline({
           <div className="rounded-row border-yellow/40 bg-yellow/10 space-y-3 border p-4">
             <div className="text-yellow flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
-              <h4 className="text-caption font-semibold">Confirm Revert Action</h4>
+              <h4 className="text-caption font-semibold">Confirm revert action</h4>
             </div>
             <p className="text-label-secondary text-footnote">
               Are you sure you want to restore the article to revision{" "}
@@ -330,7 +330,7 @@ export function ScrubbableRevisionTimeline({
                 }}
                 className="bg-yellow hover:bg-yellow/80 text-black"
               >
-                {revertMutation.isPending ? "Reverting…" : "Confirm Revert"}
+                {revertMutation.isPending ? "Reverting…" : "Confirm revert"}
               </Button>
               <Button variant="secondary" size="sm" onClick={() => setUndoTarget(null)}>
                 Cancel

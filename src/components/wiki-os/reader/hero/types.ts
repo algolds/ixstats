@@ -1,5 +1,3 @@
-import type { RefractionMode } from "./FeaturedImageRefraction";
-
 export type WikiHeroVariant = "editorial-masthead" | "sculpted-emblem";
 
 export interface FeaturedArticleData {
@@ -43,8 +41,6 @@ export interface WikiHeroProps {
   featuredArticleData?: FeaturedArticleData | null;
   variant?: WikiHeroVariant;
   onSelectVariant?: (variant: WikiHeroVariant) => void;
-  refractionMode?: RefractionMode;
-  onSelectRefractionMode?: (mode: RefractionMode) => void;
   onOpenSearch?: () => void;
   onOpenBlurbs?: () => void;
 }

@@ -84,7 +84,7 @@ export function EditorialMainPageContent({
       {/* ── 1. Two-Column Grid: Topic Taxonomy + Live Revisions Ledger (Equal Proportion) ── */}
       <div className="grid grid-cols-1 items-stretch gap-6 sm:gap-8 lg:grid-cols-12">
         {/* Left Column (col-span-6): Topic Taxonomy Matrix */}
-        <section aria-label="Browse by Topic" className="flex h-full flex-col lg:col-span-6">
+        <section aria-label="Browse by topic" className="flex h-full flex-col lg:col-span-6">
           <div className="border-separator mb-3 flex items-center justify-between border-b pb-2">
             <h2 className="text-label text-headline">Browse by topic</h2>
             <Link
@@ -93,7 +93,7 @@ export function EditorialMainPageContent({
               data-cuelume-hover="tick"
               className="text-label-secondary hover:text-label group/all text-caption flex items-center gap-1 transition-colors"
             >
-              <span>All Topics</span>
+              <span>All topics</span>
               <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover/all:translate-x-0.5" />
             </Link>
           </div>
@@ -114,7 +114,7 @@ export function EditorialMainPageContent({
                     data-cuelume-hover="tick"
                     className={cn(
                       "rounded-row flex items-start gap-2 p-2 sm:p-3",
-                      "hover:bg-fill-4 group transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
+                      "hover:bg-fill-4 group transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150"
                     )}
                   >
                     <div
@@ -139,7 +139,7 @@ export function EditorialMainPageContent({
         </section>
 
         {/* Right Column (col-span-6): Live Revisions Ledger */}
-        <section aria-label="Recent Wiki Activity" className="flex h-full flex-col lg:col-span-6">
+        <section aria-label="Recent wiki activity" className="flex h-full flex-col lg:col-span-6">
           <div className="border-separator mb-3 flex items-center justify-between border-b pb-2">
             <h2 className="text-label text-headline">Recent activity</h2>
             <Link
@@ -266,7 +266,7 @@ export function EditorialMainPageContent({
           className="flex w-full scroll-mt-6 flex-col pt-1"
         >
           <div className="border-separator mb-3 flex items-center justify-between border-b pb-2">
-            <h2 className="text-label text-headline">Explore Countries</h2>
+            <h2 className="text-label text-headline">Explore countries</h2>
             <Link
               href={withBasePath("/countries")}
               data-cuelume-press="press"

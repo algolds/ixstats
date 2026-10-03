@@ -5,7 +5,6 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Folder, Page as FileText, ArrowLeft } from "iconoir-react";
 
 interface CategoryMember {
@@ -49,25 +48,23 @@ export function EnhancedCategoryBrowser({
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8 pb-16 select-none">
-      {/* ── Apple-Grade Masthead Card ── */}
+      {/* ── Masthead Card ── */}
       <motion.div
         initial={reduceMotion ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
-        className="material-hero text-label relative isolate overflow-hidden rounded-3xl p-6 sm:p-8"
+        className="bg-surface border-separator shadow-card text-label rounded-card relative overflow-hidden border p-6 sm:p-8"
       >
-        <TextureOverlay texture="paperGrain" opacity={0.05} />
-
         <div className="relative z-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
           <div className="max-w-2xl space-y-2">
             {/* Breadcrumb Navigation Pill */}
             <Link
               href={withBasePath("/wiki/categories")}
-              className="group border-tint/20 bg-tint/10 text-caption text-tint hover:bg-tint/15 inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+              className="group border-tint/20 bg-tint/10 text-caption text-tint hover:bg-tint/15 inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             >
               <ArrowLeft className="h-3 w-3 transition-transform duration-200 group-hover:-translate-x-0.5" />
               <Folder className="h-3.5 w-3.5" />
-              <span>Category Directory</span>
+              <span>Category directory</span>
               <span className="opacity-40">/</span>
               <span className="font-semibold">{cleanCategoryName}</span>
             </Link>
@@ -133,7 +130,7 @@ export function EnhancedCategoryBrowser({
                   href={withBasePath(
                     `/wiki/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`
                   )}
-                  className="text-label group rounded-row border-separator bg-surface text-caption shadow-card hover:border-tint/40 hover:bg-surface hover:text-tint inline-flex items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
+                  className="text-label group rounded-row border-separator bg-surface text-caption shadow-card hover:border-tint/40 hover:bg-surface hover:text-tint inline-flex items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150"
                 >
                   <Folder className="text-tint/70 group-hover:text-tint h-3.5 w-3.5 shrink-0 transition-colors" />
                   <span>{name}</span>

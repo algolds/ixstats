@@ -27,7 +27,6 @@ import { motion, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
 import type { MainPageContentProps } from "./types";
 
@@ -90,7 +89,7 @@ export function SculptedMainPageContent({
       <div className="grid grid-cols-1 items-stretch gap-6 sm:gap-8 lg:grid-cols-12">
         {/* Left Column (col-span-6): Expanded Categories Matrix + Live Parsed World Almanac Spotlight Card */}
         <section
-          aria-label="Browse Categories & Almanac"
+          aria-label="Browse categories & almanac"
           className="flex h-full flex-col lg:col-span-6"
         >
           <div className="border-separator mb-3 flex items-center justify-between border-b pb-2">
@@ -101,7 +100,7 @@ export function SculptedMainPageContent({
               data-cuelume-hover="tick"
               className="text-label-secondary hover:text-label group/all text-caption flex items-center gap-1 transition-colors"
             >
-              <span>All Topics</span>
+              <span>All topics</span>
               <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover/all:translate-x-0.5" />
             </Link>
           </div>
@@ -120,7 +119,7 @@ export function SculptedMainPageContent({
                       data-cuelume-hover="tick"
                       className={cn(
                         "rounded-row flex items-center gap-2 p-2 sm:p-3",
-                        "hover:bg-fill-4 group transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
+                        "hover:bg-fill-4 group transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150"
                       )}
                     >
                       <div
@@ -139,15 +138,13 @@ export function SculptedMainPageContent({
             </div>
 
             {/* Bottom: Structured World Almanac Spotlight Card */}
-            <div className="group material-hero text-label relative isolate flex flex-1 flex-col justify-between overflow-hidden rounded-2xl p-4 sm:rounded-3xl sm:p-5">
-              <TextureOverlay texture="paperGrain" opacity={0.05} />
-
+            <div className="group bg-surface border-separator shadow-card text-label relative flex flex-1 flex-col justify-between overflow-hidden rounded-2xl border p-4 sm:rounded-3xl sm:p-5">
               {/* Eyebrow Header: Badge + Byline + Category Link */}
               <div className="border-separator mb-3 flex items-center justify-between gap-2 border-b pb-3">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <div className="border-tint/20 bg-tint/10 text-caption text-tint inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-0.5 font-semibold">
                     <IconoirGlobe className="text-tint h-3.5 w-3.5" />
-                    <span>World Almanac</span>
+                    <span>World almanac</span>
                   </div>
                 </div>
 
@@ -159,7 +156,7 @@ export function SculptedMainPageContent({
                   title="Browse full statistical category index"
                 >
                   <Database className="h-3 w-3" />
-                  <span>Index Registry</span>
+                  <span>Index registry</span>
                 </Link>
               </div>
 
@@ -252,7 +249,7 @@ export function SculptedMainPageContent({
         </section>
 
         {/* Right Column (col-span-6): Liquid Glass Activity Stream */}
-        <section aria-label="Recent Wiki Changes" className="flex h-full flex-col lg:col-span-6">
+        <section aria-label="Recent wiki changes" className="flex h-full flex-col lg:col-span-6">
           <div className="border-separator mb-3 flex items-center justify-between border-b pb-2">
             <h2 className="text-label text-headline">Recent activity</h2>
             <Link
@@ -375,11 +372,11 @@ export function SculptedMainPageContent({
       {countries && countries.length > 0 && (
         <section
           id="sovereign-nations"
-          aria-label="Explore Countries"
+          aria-label="Explore countries"
           className="flex w-full scroll-mt-6 flex-col pt-1"
         >
           <div className="border-separator mb-3 flex items-center justify-between border-b pb-2">
-            <h2 className="text-label text-headline">Explore Countries</h2>
+            <h2 className="text-label text-headline">Explore countries</h2>
             <Link
               href={withBasePath("/countries")}
               data-cuelume-press="press"

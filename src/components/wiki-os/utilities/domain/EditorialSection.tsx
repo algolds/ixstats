@@ -16,18 +16,18 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
   const tools = [
     {
       id: "templates",
-      title: "Template Palette & Custom Infobox Designer",
+      title: "Template palette & custom infobox designer",
       description:
         "Interactive palette with canonical schemas, on-the-fly fields, and custom infobox builder.",
       legacyAlias: "Special:Templates",
       icon: ViewGrid,
       href: "/util/templates",
-      badge: "Builder Suite",
+      badge: "Builder suite",
       color: "border-indigo/20 bg-indigo/10 text-indigo",
     },
     {
       id: "diff-suite",
-      title: "Visual Diff Comparator & Revision Revert",
+      title: "Visual diff comparator & revision revert",
       description: "Scrubbable timeline, side-by-side color diffs, and 1-click rollback engine.",
       legacyAlias: "Special:Diff",
       icon: GitCommit,
@@ -37,8 +37,8 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
     },
     {
       id: "editor",
-      title: "PlateJS WYSIWYG & Wikitext Dual Editor",
-      description: "Rich editorial canvas with real-time Parsoid bi-directional transpilation.",
+      title: "PlateJS WYSIWYG & wikitext dual editor",
+      description: "Edit visually or as wikitext; changes sync both ways through Parsoid.",
       legacyAlias: "Special:EditPage",
       icon: EditPencil,
       href: "/wiki/Main_Page?action=edit",
@@ -47,7 +47,7 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
     },
     {
       id: "export",
-      title: "Portable MDX & JSON Snapshot Exporter",
+      title: "Portable MDX & JSON snapshot exporter",
       description:
         "Download portable Markdown files with YAML frontmatter or structured JSON AST dumps.",
       legacyAlias: "Special:Export",

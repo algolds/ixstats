@@ -736,7 +736,7 @@ export function ArticleRenderer({
           <button
             type="button"
             onPointerDown={(e) => {
-              // §1 Response — kill latency: active feedback on pointer-down, not click
+              // Active feedback on pointer-down, not click
               (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.96)";
             }}
             onPointerUp={(e) => {
@@ -748,7 +748,7 @@ export function ArticleRenderer({
             onClick={() => {
               setCompanionCollapsed(true);
             }}
-            className="text-label-secondary hover:text-label border-separator bg-fill-4 text-caption hover:border-separator hover:bg-fill-4 -mb-1 hidden cursor-pointer items-center justify-center gap-1 self-end rounded-full border px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.98] xl:flex"
+            className="text-label-secondary hover:text-label border-separator bg-fill-4 text-caption hover:border-separator hover:bg-fill-4 -mb-1 hidden cursor-pointer items-center justify-center gap-1 self-end rounded-full border px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none xl:flex"
             title="Hide companion"
             aria-label="Hide companion"
           >
@@ -783,7 +783,7 @@ export function ArticleRenderer({
           )}
         </aside>
       )}
-      {/* Companion collapsed — edge handle on the same border-l line (spatial consistency §7, hint §8) */}
+      {/* Companion collapsed: edge handle on the same border-l line */}
       {!marginOpen && companionCollapsed && (
         <button
           type="button"
@@ -798,7 +798,7 @@ export function ArticleRenderer({
         </button>
       )}
 
-      {/* Apple Books Style TOC Drawer (Modal Sheet) */}
+      {/* TOC drawer (modal sheet) */}
       <AppleBooksTocDrawer
         isOpen={tocOpen}
         onClose={() => setTocOpen(false)}

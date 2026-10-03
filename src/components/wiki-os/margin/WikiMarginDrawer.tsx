@@ -215,8 +215,8 @@ export function WikiMarginDrawer({
                   variant="ghost"
                   size="icon-sm"
                   onClick={() => setHelpOpen(true)}
-                  title="Margin Guide & Shortcuts"
-                  aria-label="Margin Guide & Shortcuts"
+                  title="Margin guide & shortcuts"
+                  aria-label="Margin guide & shortcuts"
                   className="text-label-secondary"
                 >
                   <HelpCircle aria-hidden="true" />
@@ -244,7 +244,7 @@ export function WikiMarginDrawer({
                   size="icon-sm"
                   onClick={onClose}
                   title="Close (Esc)"
-                  aria-label="Close Margin"
+                  aria-label="Close margin"
                   className="text-label-secondary"
                 >
                   <X aria-hidden="true" />
@@ -331,7 +331,7 @@ export function WikiMarginDrawer({
                   variant="ghost"
                   size="sm"
                   onClick={() => setActiveModal("history")}
-                  title="Revision History"
+                  title="Revision history"
                 >
                   <Clock aria-hidden="true" />
                   History
@@ -340,7 +340,7 @@ export function WikiMarginDrawer({
                   variant="ghost"
                   size="sm"
                   onClick={() => setActiveModal("backlinks")}
-                  title="What Links Here"
+                  title="What links here"
                 >
                   <Link2 aria-hidden="true" />
                   Backlinks

@@ -69,14 +69,14 @@ export function InfoboxCountryModal({ isOpen, onClose, onInsert }: BaseModalProp
       isOpen={isOpen}
       onClose={onClose}
       icon={<Flag className="text-tint size-5 shrink-0" aria-hidden="true" />}
-      title="Insert Infobox Country"
+      title="Insert infobox country"
       className="max-h-[85vh] max-w-2xl"
       bodyClassName="flex flex-col overflow-hidden"
     >
       <form onSubmit={handleSubmit} className="flex-1 space-y-4 overflow-y-auto p-6">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-subhead text-label-secondary mb-1 block">Country Name</label>
+            <label className="text-subhead text-label-secondary mb-1 block">Country name</label>
             <Input
               ref={firstInputRef}
               type="text"
@@ -86,7 +86,7 @@ export function InfoboxCountryModal({ isOpen, onClose, onInsert }: BaseModalProp
             />
           </div>
           <div>
-            <label className="text-subhead text-label-secondary mb-1 block">Native Name</label>
+            <label className="text-subhead text-label-secondary mb-1 block">Native name</label>
             <Input
               type="text"
               value={formData.nativeName}
@@ -95,7 +95,7 @@ export function InfoboxCountryModal({ isOpen, onClose, onInsert }: BaseModalProp
             />
           </div>
           <div>
-            <label className="text-subhead text-label-secondary mb-1 block">Capital City</label>
+            <label className="text-subhead text-label-secondary mb-1 block">Capital city</label>
             <Input
               type="text"
               value={formData.capital}
@@ -113,7 +113,7 @@ export function InfoboxCountryModal({ isOpen, onClose, onInsert }: BaseModalProp
             />
           </div>
           <div>
-            <label className="text-subhead text-label-secondary mb-1 block">Currency Name</label>
+            <label className="text-subhead text-label-secondary mb-1 block">Currency name</label>
             <Input
               type="text"
               value={formData.currency}
@@ -122,7 +122,7 @@ export function InfoboxCountryModal({ isOpen, onClose, onInsert }: BaseModalProp
             />
           </div>
           <div>
-            <label className="text-subhead text-label-secondary mb-1 block">Currency Symbol</label>
+            <label className="text-subhead text-label-secondary mb-1 block">Currency symbol</label>
             <Input
               type="text"
               value={formData.currencySymbol}
@@ -131,7 +131,7 @@ export function InfoboxCountryModal({ isOpen, onClose, onInsert }: BaseModalProp
             />
           </div>
           <div>
-            <label className="text-subhead text-label-secondary mb-1 block">Government Type</label>
+            <label className="text-subhead text-label-secondary mb-1 block">Government type</label>
             <Input
               type="text"
               value={formData.government}
@@ -180,7 +180,7 @@ export function InfoboxCountryModal({ isOpen, onClose, onInsert }: BaseModalProp
           <Button variant="secondary" type="button" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit">Insert Template</Button>
+          <Button type="submit">Insert template</Button>
         </div>
       </form>
     </TemplateModalShell>

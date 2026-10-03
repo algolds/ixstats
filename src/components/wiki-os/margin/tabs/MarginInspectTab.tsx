@@ -3,8 +3,6 @@
 // Live simulation inspector and lore topology guide:
 // Classifies article hierarchy according to Lore Theory (Hub, Spoke, Leaf)
 // and validates article assertions against live IxStates simulation data.
-// WikiOS & Apple Design Standard.
-
 import React, { useMemo } from "react";
 import Link from "next/link";
 import {
@@ -71,7 +69,7 @@ export function MarginInspectTab({
     if (loadbearingKeywords.some((kw) => lower.includes(kw))) {
       return {
         tier: "LOADBEARING",
-        title: "Loadbearing Spoke",
+        title: "Loadbearing spoke",
         levelName: "Institutional Subpage",
         scopeName: "Systemic Overview",
         description: "Core subsystem page covering state governance, economy, defense, or history.",
@@ -87,7 +85,7 @@ export function MarginInspectTab({
     ) {
       return {
         tier: "HUB",
-        title: "Primary Country Hub",
+        title: "Primary country hub",
         levelName: "Sovereign Overview",
         scopeName: "Foundational Context",
         description:
@@ -100,7 +98,7 @@ export function MarginInspectTab({
     // Otherwise, Specific Topic / Iterative Lore
     return {
       tier: "ITERATIVE",
-      title: "Specialized Leaf",
+      title: "Specialized leaf",
       levelName: "Topic Article",
       scopeName: "Focused Depth",
       description:
@@ -135,7 +133,7 @@ export function MarginInspectTab({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Compass className="text-margin-accent h-4 w-4" />
-            <h4 className="text-caption text-label font-semibold">Article Topology</h4>
+            <h4 className="text-caption text-label font-semibold">Article topology</h4>
           </div>
           <span className="bg-margin-accent text-caption rounded-full px-2 py-0.5 font-semibold text-(--margin-badge-text)">
             {pageTierInfo.title}
@@ -145,14 +143,14 @@ export function MarginInspectTab({
         {/* Structural Spec Inset */}
         <div className="text-footnote grid grid-cols-2 gap-2">
           <div className="rounded-row border-separator bg-surface-secondary space-y-0.5 border p-2">
-            <span className="text-subhead text-label-secondary">Hierarchy Tier</span>
+            <span className="text-subhead text-label-secondary">Hierarchy tier</span>
             <p className="text-caption text-label truncate font-semibold">
               {pageTierInfo.levelName}
             </p>
           </div>
 
           <div className="rounded-row border-separator bg-surface-secondary space-y-0.5 border p-2">
-            <span className="text-subhead text-label-secondary">Editorial Scope</span>
+            <span className="text-subhead text-label-secondary">Editorial scope</span>
             <p className="text-caption text-label truncate font-semibold">
               {pageTierInfo.scopeName}
             </p>
@@ -164,7 +162,7 @@ export function MarginInspectTab({
         </p>
 
         <div className="rounded-row border-separator bg-surface text-footnote text-label-secondary space-y-1 border p-3">
-          <span className="text-margin-accent text-subhead block">Linkage Recommendation</span>
+          <span className="text-margin-accent text-subhead block">Linkage recommendation</span>
           <p className="text-label-secondary leading-snug">{pageTierInfo.guideline}</p>
         </div>
       </div>
@@ -199,7 +197,7 @@ export function MarginInspectTab({
                 </h4>
                 <div className="text-caption text-green flex items-center gap-2 font-semibold">
                   <span className="bg-green/70 h-1.5 w-1.5 rounded-full" />
-                  <span>Simulation Active</span>
+                  <span>Simulation active</span>
                 </div>
               </div>
             </div>
@@ -229,7 +227,7 @@ export function MarginInspectTab({
             <div className="rounded-row border-separator bg-surface-secondary space-y-1 border p-3">
               <div className="text-caption text-label-secondary flex items-center gap-1">
                 <DollarSign className="text-green h-3 w-3" />
-                <span>Gross Domestic Product</span>
+                <span>Gross domestic product</span>
               </div>
               <div className="text-caption text-label font-semibold tabular-nums">
                 {formattedGdp ?? "Calculating..."}
@@ -241,13 +239,13 @@ export function MarginInspectTab({
           <div className="border-separator text-footnote space-y-2 border-t pt-1">
             {matchedCountry.continent && (
               <div className="text-label-secondary flex items-center justify-between">
-                <span>Continental Region</span>
+                <span>Continental region</span>
                 <span className="text-label font-semibold">{matchedCountry.continent}</span>
               </div>
             )}
             {matchedCountry.currentGdpPerCapita && (
               <div className="text-label-secondary flex items-center justify-between">
-                <span>GDP per Capita</span>
+                <span>GDP per capita</span>
                 <span className="text-label font-semibold tabular-nums">
                   ${Number(matchedCountry.currentGdpPerCapita).toLocaleString()}
                 </span>
@@ -274,7 +272,7 @@ export function MarginInspectTab({
           <div className="border-separator bg-surface text-label-secondary mx-auto flex h-8 w-8 items-center justify-center rounded-full border">
             <Globe className="h-4 w-4" />
           </div>
-          <p className="text-caption text-label font-semibold">Independent Encyclopedic Entry</p>
+          <p className="text-caption text-label font-semibold">Independent encyclopedic entry</p>
           <p className="text-footnote text-label-secondary mx-auto max-w-xs leading-relaxed">
             This entry represents an event, custom, or artifact rather than an active sovereign
             nation state.

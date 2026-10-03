@@ -442,7 +442,7 @@ export function MentionPopover({
                     href={withBasePath(`/myleague/${entityId}`)}
                     className="rounded-control-sm bg-yellow/10 text-caption text-yellow hover:bg-yellow/20 flex-1 py-1 text-center font-semibold"
                   >
-                    View Workspace
+                    View workspace
                   </Link>
                 </div>
               </div>
@@ -470,7 +470,7 @@ export function MentionPopover({
                     href={withBasePath(`/myclub/${entityId}`)}
                     className="rounded-control-sm bg-tint/10 text-caption text-tint hover:bg-tint/20 flex-1 py-1 text-center font-semibold"
                   >
-                    View Roster & Stats
+                    View roster & stats
                   </Link>
                 </div>
               </div>
@@ -495,13 +495,13 @@ export function MentionPopover({
                     href={withBasePath(`/countries/${entityId}`)}
                     className="rounded-control-sm bg-green/10 text-caption text-green hover:bg-green/20 flex-1 py-1 text-center font-semibold"
                   >
-                    View Profile
+                    View profile
                   </Link>
                   <Link
                     href={withBasePath(`/mycountry/diplomacy`)}
                     className="rounded-control-sm border-separator bg-surface-secondary text-caption text-label hover:bg-fill-3 flex-1 border py-1 text-center font-semibold"
                   >
-                    Open Embassy
+                    Open embassy
                   </Link>
                 </div>
               </div>
@@ -528,7 +528,7 @@ export function MentionPopover({
                     href={withBasePath(`/dashboard`)}
                     className="rounded-control-sm bg-tint/10 text-caption text-tint hover:bg-tint/20 flex-1 py-1 text-center font-semibold"
                   >
-                    View Feed
+                    View feed
                   </Link>
                   <Link
                     href={withBasePath(`/messages`)}
@@ -549,7 +549,7 @@ export function MentionPopover({
                   href={withBasePath(href)}
                   className="rounded-control-sm border-separator bg-surface-secondary text-caption text-label hover:bg-fill-3 mt-1 border py-1 text-center font-semibold"
                 >
-                  Go to Page
+                  Go to page
                 </Link>
               </div>
             )}

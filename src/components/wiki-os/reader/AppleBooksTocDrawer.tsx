@@ -68,12 +68,12 @@ export function AppleBooksTocDrawer({
         {/* Header */}
         <div className="border-separator flex shrink-0 items-center gap-2 border-b px-6 py-5 pr-14">
           <List className="text-label-secondary size-4" aria-hidden="true" />
-          <SheetTitle className="text-headline">Table of Contents</SheetTitle>
+          <SheetTitle className="text-headline">Table of contents</SheetTitle>
         </div>
 
         {/* Entries */}
         <nav
-          aria-label="Table of Contents"
+          aria-label="Table of contents"
           className="flex-1 space-y-1 overflow-y-auto px-4 py-4 select-none"
         >
           {entries.map((item) => {

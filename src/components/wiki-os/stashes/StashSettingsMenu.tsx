@@ -1,6 +1,6 @@
 "use client";
 // src/components/wiki-os/stashes/StashSettingsMenu.tsx
-// Apple Design Settings & Management Popover for Stash collections.
+// Settings popover for Stash collections.
 // Features opaque elevated surface, zero-bleed depth shadow, crisp typography, and fluid spring physics.
 
 import { useState, useEffect } from "react";
@@ -118,7 +118,7 @@ export function StashSettingsMenu({
         }}
       >
         <PopoverTrigger asChild>
-          <Button variant="secondary" size="sm" title="Collection Settings & Actions">
+          <Button variant="secondary" size="sm" title="Collection settings & actions">
             <span
               className="size-2.5 shrink-0 rounded-full"
               style={{ backgroundColor: stash.color }}
@@ -150,11 +150,11 @@ export function StashSettingsMenu({
 
           {/* Colour */}
           <div className="rounded-row bg-surface-secondary space-y-2 p-3">
-            <span className="text-subhead text-label-secondary block">Theme Color</span>
+            <span className="text-subhead text-label-secondary block">Theme color</span>
             <div
               className="flex items-center justify-between gap-1"
               role="radiogroup"
-              aria-label="Theme Color"
+              aria-label="Theme color"
             >
               {PRESET_COLORS.map((c) => (
                 <button
@@ -165,7 +165,7 @@ export function StashSettingsMenu({
                   aria-label={c}
                   onClick={() => handleColorChange(c)}
                   className={cn(
-                    "duration-fast relative flex size-6 cursor-pointer items-center justify-center rounded-full transition-transform active:scale-[0.98]",
+                    "duration-fast relative flex size-6 cursor-pointer items-center justify-center rounded-full",
                     stash.color === c
                       ? "ring-tint ring-offset-surface-secondary ring-2 ring-offset-2"
                       : "opacity-85 hover:opacity-100"
@@ -218,7 +218,7 @@ export function StashSettingsMenu({
                 <span className={ICON}>
                   <Pencil className="size-3.5" aria-hidden="true" />
                 </span>
-                <span>Rename Collection</span>
+                <span>Rename collection</span>
               </Button>
             )}
 
@@ -226,7 +226,7 @@ export function StashSettingsMenu({
               <span className={ICON}>
                 <ShareIos className="size-3.5" aria-hidden="true" />
               </span>
-              <span>Copy Share Link</span>
+              <span>Copy share link</span>
             </Button>
 
             <Button
@@ -272,7 +272,7 @@ export function StashSettingsMenu({
                 <span className="rounded-control-sm bg-red/10 text-red flex size-6 shrink-0 items-center justify-center">
                   <Trash2 className="size-3.5" aria-hidden="true" />
                 </span>
-                <span>Delete Collection</span>
+                <span>Delete collection</span>
               </Button>
             </div>
           )}
@@ -282,7 +282,7 @@ export function StashSettingsMenu({
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Collection</AlertDialogTitle>
+            <AlertDialogTitle>Delete collection</AlertDialogTitle>
             <AlertDialogDescription>
               Delete <strong>{stash.name}</strong> and all its saved references?
             </AlertDialogDescription>
@@ -302,7 +302,7 @@ export function StashSettingsMenu({
               ) : (
                 <Trash2 aria-hidden="true" />
               )}
-              Confirm Delete
+              Confirm delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

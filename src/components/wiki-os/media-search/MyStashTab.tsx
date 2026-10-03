@@ -14,7 +14,6 @@ import {
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
 import { CommonsDetailPanel } from "~/components/wiki-os/commons/CommonsDetailPanel";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import type { CommonsImage } from "./types";
 import { Button } from "~/components/ui/button";
 
@@ -277,12 +276,6 @@ export function MyStashTab({
                       )}
                       style={{ contentVisibility: "auto", containIntrinsicSize: "auto 180px" }}
                     >
-                      <TextureOverlay
-                        texture="paperGrain"
-                        opacity={0.05}
-                        className="mix-blend-overlay"
-                      />
-                      <TextureOverlay texture="dots" opacity={0.03} className="mix-blend-overlay" />
                       <div className="bg-fill-4 relative aspect-[4/3] w-full overflow-hidden">
                         <img
                           src={img.thumbUrl}

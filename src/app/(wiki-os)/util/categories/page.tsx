@@ -13,7 +13,6 @@ import {
 import { motion, useReducedMotion } from "motion/react";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { DOMAIN_CATEGORIES } from "./_components/constants";
 import { DomainCategoriesGrid } from "./_components/DomainCategoriesGrid";
 import { AlphabetIndexBar } from "./_components/AlphabetIndexBar";
@@ -94,18 +93,16 @@ export default function CategoriesIndexPage() {
           initial={reduceMotion ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="material-hero text-label relative isolate overflow-hidden rounded-3xl p-6 sm:p-8"
+          className="bg-surface border-separator shadow-card text-label rounded-card relative overflow-hidden border p-6 sm:p-8"
         >
-          <TextureOverlay texture="paperGrain" opacity={0.05} />
-
           <div className="relative z-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
             <div className="max-w-xl space-y-2">
               <div className="border-tint/20 bg-tint/10 text-caption text-tint inline-flex items-center gap-2 rounded-full border px-3 py-1 font-semibold">
                 <Folder className="h-3.5 w-3.5" />
-                <span>Knowledge Taxonomy</span>
+                <span>Knowledge taxonomy</span>
               </div>
               <h1 className="text-label font-brand text-title-1 sm:text-large-title">
-                Category Directory
+                Category directory
               </h1>
               <p className="text-label-secondary text-body leading-relaxed">
                 Explore IxWiki articles through structured worldbuilding domains, sovereign nation
@@ -118,7 +115,7 @@ export default function CategoriesIndexPage() {
                 <Layers className="text-tint h-4 w-4" />
                 <div className="text-left">
                   <div className="text-label text-caption font-semibold">12 Domains</div>
-                  <div className="text-label-secondary text-footnote">Primary Portals</div>
+                  <div className="text-label-secondary text-footnote">Primary portals</div>
                 </div>
               </div>
 
@@ -128,7 +125,7 @@ export default function CategoriesIndexPage() {
                   <div className="text-label text-caption font-semibold">
                     {countries.length} Nations
                   </div>
-                  <div className="text-label-secondary text-footnote">Geopolitical Portals</div>
+                  <div className="text-label-secondary text-footnote">Geopolitical portals</div>
                 </div>
               </div>
             </div>
@@ -171,7 +168,7 @@ export default function CategoriesIndexPage() {
             value={activeTab}
             onValueChange={setActiveTab}
             options={[
-              { value: "domains", label: "Domain Portals" },
+              { value: "domains", label: "Domain portals" },
               { value: "all-categories", label: "All Categories (A–Z)" },
               { value: "nations", label: `Countries (${countries.length})` },
             ]}

@@ -109,13 +109,13 @@ export function MarginHelpModal({ isOpen, onClose, themeColors }: MarginHelpModa
             </div>
             <div className="text-footnote grid grid-cols-2 gap-2 pt-0.5">
               <div className="rounded-control bg-surface flex items-center justify-between p-2">
-                <span className="text-label-secondary">Toggle Margin</span>
+                <span className="text-label-secondary">Toggle margin</span>
                 <kbd className="rounded-control-sm border-separator bg-surface text-footnote text-label border px-2 py-0.5 tabular-nums">
                   T
                 </kbd>
               </div>
               <div className="rounded-control bg-surface flex items-center justify-between p-2">
-                <span className="text-label-secondary">Close Drawer</span>
+                <span className="text-label-secondary">Close drawer</span>
                 <kbd className="rounded-control-sm border-separator bg-surface text-footnote text-label border px-2 py-0.5 tabular-nums">
                   Esc
                 </kbd>

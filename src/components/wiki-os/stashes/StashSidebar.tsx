@@ -1,6 +1,6 @@
 "use client";
 // src/components/wiki-os/stashes/StashSidebar.tsx
-// Modern Apple Design collection navigator for the Stash system.
+// Collection navigator for the Stash system.
 // Features Facet glassmorphism, responsive spring animations, inline rename & color curation.
 
 import { useState } from "react";
@@ -115,7 +115,7 @@ export function StashSidebar({
                   <div
                     className="flex items-center justify-between gap-1 px-0.5 pt-0.5"
                     role="radiogroup"
-                    aria-label="Color Tag"
+                    aria-label="Color tag"
                   >
                     {PRESET_COLORS.map((c) => (
                       // A colour swatch (data colour), exposed as a radio like CreateStashPopover's.
@@ -128,7 +128,7 @@ export function StashSidebar({
                         title={c}
                         onClick={() => setEditColor(c)}
                         className={cn(
-                          "relative flex h-5 w-5 cursor-pointer items-center justify-center rounded-full transition-transform active:scale-[0.98]",
+                          "relative flex h-5 w-5 cursor-pointer items-center justify-center rounded-full",
                           editColor === c
                             ? "ring-tint ring-offset-surface ring-2 ring-offset-2"
                             : "opacity-80 hover:opacity-100"

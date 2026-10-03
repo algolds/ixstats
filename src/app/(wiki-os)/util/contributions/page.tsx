@@ -9,7 +9,6 @@ import { motion, useReducedMotion } from "motion/react";
 import { api } from "~/trpc/react";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { withBasePath } from "~/lib/base-path";
 import { User as UserIcon, Search, Folder as FolderTree, Clock, GitCommit } from "iconoir-react";
 import { Button } from "~/components/ui/button";
@@ -46,15 +45,13 @@ export default function ContributionsHubPage() {
           initial={reduceMotion ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
-          className="material-hero text-label relative isolate overflow-hidden rounded-3xl p-6 sm:p-8"
+          className="bg-surface border-separator shadow-card text-label rounded-card relative overflow-hidden border p-6 sm:p-8"
         >
-          <TextureOverlay texture="paperGrain" opacity={0.05} />
-
           <div className="relative z-10 space-y-4">
             <div className="flex items-center gap-2">
               <Link
                 href={withBasePath("/util")}
-                className="group border-green/20 bg-green/10 text-caption text-green hover:bg-green/15 inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                className="group border-green/20 bg-green/10 text-caption text-green hover:bg-green/15 inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
               >
                 <FolderTree className="h-3.5 w-3.5" />
                 <span>Special:Utilities</span>
@@ -66,7 +63,7 @@ export default function ContributionsHubPage() {
             <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
               <div className="max-w-xl space-y-1">
                 <h1 className="text-label font-brand text-title-1 sm:text-large-title">
-                  User Contributions Ledger
+                  User contributions ledger
                 </h1>
                 <p className="text-label-secondary text-body leading-relaxed">
                   Audit article revisions, new creations, byte diffs, and edit summaries by editor

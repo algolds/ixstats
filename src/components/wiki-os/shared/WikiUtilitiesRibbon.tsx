@@ -39,7 +39,7 @@ interface UtilityTab {
 const UTILITY_TABS: UtilityTab[] = [
   { id: "main", label: "Hub", href: "/wiki", icon: Home },
   { id: "categories", label: "Categories", href: "/util/categories", icon: Folder },
-  { id: "recent", label: "Recent Changes", href: "/util/recent-changes", icon: Clock },
+  { id: "recent", label: "Recent changes", href: "/util/recent-changes", icon: Clock },
   { id: "repository", label: "Repository", href: "/util/repository", icon: ImageIcon },
   { id: "utilities", label: "Utilities", href: "/util", icon: Wrench, badge: "Deck" },
   { id: "random", label: "Random", href: "/util/random", icon: Shuffle },
@@ -106,7 +106,7 @@ export function WikiUtilitiesRibbon({
               data-cuelume-press="soft"
               data-cuelume-hover="tick"
               className={cn(
-                "rounded-row text-caption relative z-10 flex shrink-0 items-center gap-2 px-3 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
+                "rounded-row text-caption relative z-10 flex shrink-0 items-center gap-2 px-3 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                 isActive
                   ? "font-semibold text-black"
                   : "text-label-secondary hover:bg-fill-3 hover:text-label"
@@ -150,9 +150,9 @@ export function WikiUtilitiesRibbon({
         )}
 
         {onCreatePageClick && (
-          <Button variant="secondary" size="sm" onClick={onCreatePageClick} title="Create New Page">
+          <Button variant="secondary" size="sm" onClick={onCreatePageClick} title="Create new page">
             <Plus className="h-3.5 w-3.5" />
-            <span>New Page</span>
+            <span>New page</span>
           </Button>
         )}
       </div>

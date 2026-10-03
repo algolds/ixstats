@@ -20,7 +20,7 @@ interface CategoryGroup {
 
 const CATEGORY_GROUPS: CategoryGroup[] = [
   {
-    label: "Government & Royalty",
+    label: "Government & royalty",
     categories: [
       "Royal residences by country",
       "Coats of arms by country",
@@ -33,7 +33,7 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     ],
   },
   {
-    label: "Architecture & Places",
+    label: "Architecture & places",
     categories: [
       "Castles by country",
       "Cathedrals by country",
@@ -46,7 +46,7 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     ],
   },
   {
-    label: "Military & Warfare",
+    label: "Military & warfare",
     categories: [
       "Military uniforms by country",
       "Battles by country",
@@ -59,7 +59,7 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     ],
   },
   {
-    label: "People & Culture",
+    label: "People & culture",
     categories: [
       "Portrait paintings",
       "National costumes by country",
@@ -71,7 +71,7 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     ],
   },
   {
-    label: "Geography & Nature",
+    label: "Geography & nature",
     categories: [
       "Landscapes by country",
       "Mountains by country",
@@ -82,7 +82,7 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     ],
   },
   {
-    label: "Economy & Trade",
+    label: "Economy & trade",
     categories: [
       "Markets by country",
       "Ships by country",
@@ -105,7 +105,7 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
 
 const THEMATIC_GROUPS = [
   {
-    label: "Government & Royalty",
+    label: "Government & royalty",
     keywords: [
       "government",
       "royal",
@@ -122,7 +122,7 @@ const THEMATIC_GROUPS = [
     ],
   },
   {
-    label: "Architecture & Places",
+    label: "Architecture & places",
     keywords: [
       "architecture",
       "building",
@@ -139,7 +139,7 @@ const THEMATIC_GROUPS = [
     ],
   },
   {
-    label: "Military & Warfare",
+    label: "Military & warfare",
     keywords: [
       "military",
       "uniform",
@@ -155,7 +155,7 @@ const THEMATIC_GROUPS = [
     ],
   },
   {
-    label: "People & Culture",
+    label: "People & culture",
     keywords: [
       "people",
       "costume",
@@ -171,7 +171,7 @@ const THEMATIC_GROUPS = [
     ],
   },
   {
-    label: "Geography & Nature",
+    label: "Geography & nature",
     keywords: [
       "geography",
       "map",
@@ -190,7 +190,7 @@ const THEMATIC_GROUPS = [
     ],
   },
   {
-    label: "Economy & Trade",
+    label: "Economy & trade",
     keywords: [
       "economy",
       "market",
@@ -228,7 +228,7 @@ const mapLocalCategories = (categoriesList: Array<{ name: string; fileCount: num
   }));
 
   const generalGroup = {
-    label: "General & Misc",
+    label: "General & misc",
     categories: [] as string[],
     counts: {} as Record<string, number>,
   };

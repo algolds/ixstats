@@ -116,9 +116,7 @@ function BlurbPromptModal({
         {/* Responses */}
         <div className="flex-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-2 overflow-y-auto px-5 py-3">
           {responses.length === 0 && (
-            <p className="text-label-secondary text-body py-6 text-center">
-              No responses yet. Be the first!
-            </p>
+            <p className="text-label-secondary text-body py-6 text-center">No responses yet.</p>
           )}
 
           {responses.map((r) => (
@@ -222,7 +220,7 @@ export function WikiOSMainPage() {
 
   // Fetch Main_Page HTML to extract the featured article from it
   const { data: mainPageData } = api.wikios.getArticleHtml.useQuery(
-    { title: "Main Page" },
+    { title: "Main page" },
     { staleTime: 10 * 60 * 1000 }
   );
 
@@ -267,7 +265,7 @@ export function WikiOSMainPage() {
     return extractFeaturedArticle(mainPageData.contentHtml);
   }, [mainPageData?.contentHtml]);
 
-  // Extract structured featured article details for Apple Editorial card
+  // Extract structured featured article details for card
   const featuredArticleDetails = useMemo(() => {
     if (!featuredArticleHtml) return null;
 

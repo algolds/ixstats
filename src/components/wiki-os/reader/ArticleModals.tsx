@@ -14,7 +14,7 @@ import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
 
-/** Quick detail views from the article toolbar (spec §7.3: a detail view is a `Sheet`). */
+/** Quick detail views from the article toolbar (each is a `Sheet`). */
 function QuickSheet({
   icon,
   title,
@@ -71,7 +71,7 @@ export function QuickHistoryModal({
   return (
     <QuickSheet
       icon={<History className="text-tint size-5" aria-hidden="true" />}
-      title="Recent History"
+      title="Recent history"
       onClose={onClose}
       footer={
         <Button asChild variant="ghost" size="sm">
@@ -146,7 +146,7 @@ export function QuickBacklinksModal({
   return (
     <QuickSheet
       icon={<Link2 className="text-tint size-5" aria-hidden="true" />}
-      title="What Links Here"
+      title="What links here"
       onClose={onClose}
       footer={
         <Button asChild variant="ghost" size="sm">

@@ -63,7 +63,7 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
       setAnimState("ripple");
       setTimeout(() => setAnimState("color-shift"), 600);
       setTimeout(() => setAnimState("idle"), 1000);
-      showFeedback("success", "Stashed!");
+      showFeedback("success", "Stashed");
     },
     onError: (err) => showFeedback("error", err.message ?? "Failed to stash"),
   });
@@ -144,10 +144,10 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
           onMouseLeave={handleMouseLeave}
           disabled={isPending}
           className={cn(
-            "wikios-sidebar-icon-box rounded-row shadow-card flex h-10 w-10 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
+            "wikios-sidebar-icon-box rounded-row shadow-card flex h-10 w-10 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform]",
             isStashed
-              ? "rail-glow-amber rail-animate-pulse border-yellow/20 bg-yellow/5 text-yellow hover:bg-yellow/15"
-              : "rail-glow-rose rail-animate-pulse border-red/20 bg-red/5 text-red hover:bg-red/15",
+              ? "border-yellow/20 bg-yellow/5 text-yellow hover:bg-yellow/15"
+              : "border-red/20 bg-red/5 text-red hover:bg-red/15",
             animState === "pulse" && "wikios-stash-pulse",
             animState === "ripple" && "wikios-stash-ripple",
             animState === "color-shift" && "wikios-stash-color-shift"
@@ -255,7 +255,7 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
                 >
                   <Link href={withBasePath("/stashes")} onClick={() => setShowPopover(false)}>
                     <ChevronRight className="h-3 w-3" />
-                    My Stashes
+                    My stashes
                   </Link>
                 </Button>
               </div>
@@ -417,7 +417,7 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
               >
                 <Link href={withBasePath("/stashes")} onClick={() => setShowPopover(false)}>
                   <ChevronRight className="h-3 w-3" />
-                  My Stashes
+                  My stashes
                 </Link>
               </Button>
             </div>

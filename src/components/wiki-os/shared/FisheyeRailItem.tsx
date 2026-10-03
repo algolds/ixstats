@@ -1,42 +1,9 @@
 "use client";
 // src/components/wiki-os/shared/FisheyeRailItem.tsx
-// Fisheye magnification icon wrapper with physics-based spring glow.
+// Fisheye magnification icon wrapper.
 
 import { useRef } from "react";
 import { motion, useTransform, useSpring, type MotionValue } from "motion/react";
-
-export const getGlowColor = (id: string): string => {
-  switch (id) {
-    case "search":
-    case "backlinks":
-      return "rgba(20, 184, 166, 0.45)";
-    case "main":
-    case "edit":
-      return "rgba(59, 130, 246, 0.45)";
-    case "recent":
-    case "history":
-      return "rgba(245, 158, 11, 0.45)";
-    case "margin":
-      return "var(--margin-accent-glow, rgba(254, 240, 54, 0.55))";
-    case "random":
-      return "rgba(99, 102, 241, 0.45)";
-    case "stashes":
-      return "rgba(244, 63, 94, 0.45)";
-    case "images":
-    case "talk":
-      return "rgba(168, 85, 247, 0.45)";
-    case "utilities":
-      return "rgba(6, 182, 212, 0.55)";
-    case "admin":
-      return "rgba(168, 85, 247, 0.55)";
-    case "lorewards":
-      return "rgba(234, 179, 8, 0.45)";
-    case "create-page":
-      return "rgba(16, 185, 129, 0.45)";
-    default:
-      return "rgba(255, 255, 255, 0.15)";
-  }
-};
 
 export const getActiveColorClass = (itemId: string): string => {
   switch (itemId) {
@@ -72,7 +39,6 @@ export const getActiveColorClass = (itemId: string): string => {
 };
 
 interface FisheyeRailItemProps {
-  id: string;
   mouseY: MotionValue<number>;
   isExpanded: boolean;
   title: string;
@@ -82,7 +48,6 @@ interface FisheyeRailItemProps {
 }
 
 export function FisheyeRailItem({
-  id,
   mouseY,
   isExpanded,
   children,
@@ -107,9 +72,6 @@ export function FisheyeRailItem({
   });
 
   const springScale = useSpring(scale, { stiffness: 250, damping: 20 });
-  const glowOpacity = useTransform(scale, [1.0, 1.3], [0, 0.45]);
-  const springGlowOpacity = useSpring(glowOpacity, { stiffness: 250, damping: 20 });
-  const glowColor = getGlowColor(id);
 
   return (
     <motion.div
@@ -118,13 +80,6 @@ export function FisheyeRailItem({
       style={{ scale: springScale }}
       className="relative origin-center"
     >
-      <motion.div
-        className="rounded-row pointer-events-none absolute inset-0 blur-md"
-        style={{
-          boxShadow: `0 0 16px 3px ${glowColor}`,
-          opacity: springGlowOpacity,
-        }}
-      />
       {children}
     </motion.div>
   );

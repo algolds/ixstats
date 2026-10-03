@@ -46,9 +46,9 @@ import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 import { Button } from "~/components/ui/button";
 
 const NAV_GROUP_1 = [
-  { id: "main", href: "/wiki/Main_Page", icon: Home, title: "Main Page" },
+  { id: "main", href: "/wiki/Main_Page", icon: Home, title: "Main page" },
   { id: "categories", href: "/util/categories", icon: Folder, title: "Categories" },
-  { id: "recent", href: "/util/recent-changes", icon: Clock, title: "Recent Changes" },
+  { id: "recent", href: "/util/recent-changes", icon: Clock, title: "Recent changes" },
   { id: "random", href: "/util/random", icon: Shuffle, title: "Random" },
 ];
 
@@ -193,7 +193,7 @@ export function WikiOSUnifiedSidebar({
     onClick,
     icon: Icon,
     title,
-    glowClass,
+    toneClass,
     isActive,
     badge,
     index,
@@ -203,7 +203,7 @@ export function WikiOSUnifiedSidebar({
     onClick?: () => void;
     icon?: React.ComponentType<{ className?: string }>;
     title: string;
-    glowClass?: string;
+    toneClass?: string;
     isActive: boolean;
     badge?: ReactNode;
     index: number;
@@ -213,10 +213,10 @@ export function WikiOSUnifiedSidebar({
 
     const activeColorClass = getActiveColorClass(id);
     const itemClass = cn(
-      "wikios-sidebar-icon-box flex h-9 w-9 items-center justify-center rounded-row border transition-[color,background-color,border-color,box-shadow,opacity,transform] shadow-card active:scale-[0.98] shrink-0",
+      "wikios-sidebar-icon-box flex h-9 w-9 items-center justify-center rounded-row border transition-[color,background-color,border-color,box-shadow,opacity,transform] shadow-card shrink-0",
       isActive
         ? cn("font-semibold", activeColorClass)
-        : cn("border-separator bg-fill-4 text-label-secondary hover:text-label", glowClass)
+        : cn("border-separator bg-fill-4 text-label-secondary hover:text-label", toneClass)
     );
 
     const transitionStyle = getTransitionStyle(index);
@@ -262,7 +262,6 @@ export function WikiOSUnifiedSidebar({
       return (
         <FisheyeRailItem
           key={id}
-          id={id}
           mouseY={mouseY}
           isExpanded={isRowExpanded}
           title={title}
@@ -279,7 +278,6 @@ export function WikiOSUnifiedSidebar({
     return (
       <FisheyeRailItem
         key={id}
-        id={id}
         mouseY={mouseY}
         isExpanded={isRowExpanded}
         title={title}
@@ -294,7 +292,7 @@ export function WikiOSUnifiedSidebar({
   };
 
   const getToggleTitle = () => {
-    return isCollapsedReal ? "Lock Sidebar" : "Unlock Sidebar";
+    return isCollapsedReal ? "Lock sidebar" : "Unlock sidebar";
   };
 
   const handleToggleClick = () => {
@@ -320,7 +318,7 @@ export function WikiOSUnifiedSidebar({
               id="lorewards"
               mouseY={mouseY}
               isExpanded={isExpanded || isProfileHovered}
-              title="Wiki Profile"
+              title="Wiki profile"
               index={profileIndex}
               onHover={setHoveredIndex}
             >
@@ -336,8 +334,8 @@ export function WikiOSUnifiedSidebar({
           id: "search",
           onClick: onSearchClick,
           icon: Search,
-          title: "Search Wiki",
-          glowClass: "border-teal/20 bg-teal/5 text-teal hover:bg-teal/15",
+          title: "Search wiki",
+          toneClass: "border-teal/20 bg-teal/5 text-teal hover:bg-teal/15",
           isActive: activeId === "search",
           badge: (
             <kbd className="text-label-secondary rounded-control-sm border-separator bg-fill-4 text-footnote border px-1">
@@ -351,9 +349,8 @@ export function WikiOSUnifiedSidebar({
           id: "create-page",
           onClick: onCreatePageClick,
           icon: Plus,
-          title: "Create New Page",
-          glowClass:
-            "border-green/20 bg-green/5 text-green hover:bg-green/15 rail-glow-green rail-animate-pulse",
+          title: "Create new page",
+          toneClass: "border-green/20 bg-green/5 text-green hover:bg-green/15",
           isActive: activeId === "create-page",
           index: rowIndex++,
         })}
@@ -366,19 +363,15 @@ export function WikiOSUnifiedSidebar({
           {/* Navigation Group (Categories/Utilities hidden on article pages) */}
           {NAV_GROUP_1.filter((item) => !(isArticlePage && item.id === "categories")).map(
             (item) => {
-              let glowClass =
-                "border-tint/20 bg-tint/5 text-tint hover:bg-tint/15 rail-glow-blue rail-animate-bounce";
+              let toneClass = "border-tint/20 bg-tint/5 text-tint hover:bg-tint/15";
               if (item.id === "categories") {
-                glowClass =
-                  "border-green/20 bg-green/5 text-green hover:bg-green/15 rail-glow-green";
+                toneClass = "border-green/20 bg-green/5 text-green hover:bg-green/15";
               } else if (item.id === "recent") {
-                glowClass =
-                  "border-yellow/20 bg-yellow/5 text-yellow hover:bg-yellow/15 rail-glow-amber rail-animate-spin";
+                toneClass = "border-yellow/20 bg-yellow/5 text-yellow hover:bg-yellow/15";
               } else if (item.id === "utilities") {
-                glowClass = "border-tint/30 bg-tint/10 text-tint hover:bg-tint/20 rail-glow-di";
+                toneClass = "border-tint/30 bg-tint/10 text-tint hover:bg-tint/20";
               } else if (item.id === "random") {
-                glowClass =
-                  "border-indigo/20 bg-indigo/5 text-indigo hover:bg-indigo/15 rail-glow-di rail-animate-wiggle";
+                toneClass = "border-indigo/20 bg-indigo/5 text-indigo hover:bg-indigo/15";
               }
 
               return renderRow({
@@ -386,7 +379,7 @@ export function WikiOSUnifiedSidebar({
                 href: withBasePath(item.href),
                 icon: item.icon,
                 title: item.title,
-                glowClass,
+                toneClass,
                 isActive: activeId === item.id,
                 index: rowIndex++,
               });
@@ -401,10 +394,10 @@ export function WikiOSUnifiedSidebar({
             href: withBasePath("/stashes"),
             icon: isArticlePage && isCurrentPageStashed ? BookmarkCheck : Bookmark,
             title: "Stashes",
-            glowClass:
+            toneClass:
               isArticlePage && isCurrentPageStashed
-                ? "rail-glow-rose rail-animate-pulse border-red/40 bg-red/15 text-red hover:bg-red/25"
-                : "rail-glow-rose rail-animate-pulse border-red/20 bg-red/5 text-red hover:bg-red/15",
+                ? " border-red/40 bg-red/15 text-red hover:bg-red/25"
+                : " border-red/20 bg-red/5 text-red hover:bg-red/15",
             isActive: pathname === "/stashes" || pathname.startsWith("/stashes/"),
             badge:
               isArticlePage && isSignedIn ? (
@@ -441,7 +434,7 @@ export function WikiOSUnifiedSidebar({
             href: withBasePath("/util/repository"),
             icon: ImageIcon,
             title: "Repository",
-            glowClass: "border-indigo/20 bg-indigo/5 text-indigo hover:bg-indigo/15",
+            toneClass: "border-indigo/20 bg-indigo/5 text-indigo hover:bg-indigo/15",
             isActive:
               pathname === "/util/repository" ||
               pathname.startsWith("/util/repository/") ||
@@ -455,7 +448,7 @@ export function WikiOSUnifiedSidebar({
               href: withBasePath("/util"),
               icon: Wrench,
               title: "Utilities",
-              glowClass: "rail-glow-di border-tint/30 bg-tint/10 text-tint hover:bg-tint/20",
+              toneClass: " border-tint/30 bg-tint/10 text-tint hover:bg-tint/20",
               isActive:
                 pathname === "/util" ||
                 pathname.startsWith("/util") ||
@@ -474,9 +467,8 @@ export function WikiOSUnifiedSidebar({
                 id: "edit",
                 href: withBasePath(`/wiki/${slug}/edit`),
                 icon: FileEdit,
-                title: "Edit Article",
-                glowClass:
-                  "rail-glow-blue rail-animate-bounce border-tint/20 bg-tint/5 text-tint hover:bg-tint/15",
+                title: "Edit article",
+                toneClass: " border-tint/20 bg-tint/5 text-tint hover:bg-tint/15",
                 isActive: activeId === "edit",
                 index: rowIndex++,
               })}
@@ -485,9 +477,9 @@ export function WikiOSUnifiedSidebar({
               id: "margin",
               onClick: () => toggleMargin(),
               icon: Highlighter,
-              title: isMarginOpen ? "Hide Margin" : "Show Margin",
-              glowClass:
-                "rail-glow-highlighter rail-animate-wiggle border-yellow/50 bg-margin-accent/15 text-label hover:bg-margin-accent/25",
+              title: isMarginOpen ? "Hide margin" : "Show margin",
+              toneClass:
+                " border-yellow/50 bg-margin-accent/15 text-label hover:bg-margin-accent/25",
               isActive: isMarginOpen || activeId === "margin",
               badge: (
                 <kbd className="text-label-secondary rounded-control-sm border-separator bg-fill-4 text-footnote border px-1 tabular-nums">
@@ -509,7 +501,7 @@ export function WikiOSUnifiedSidebar({
                   id="more-tools"
                   mouseY={mouseY}
                   isExpanded={isMoreExpanded}
-                  title="More Page Tools"
+                  title="More page tools"
                   index={moreToolsIndex}
                   onHover={setHoveredIndex}
                 >
@@ -536,7 +528,7 @@ export function WikiOSUnifiedSidebar({
                           )}
                           style={transitionStyle}
                         >
-                          More Tools
+                          More tools
                         </span>
                       </button>
                     </DropdownMenuTrigger>
@@ -547,7 +539,7 @@ export function WikiOSUnifiedSidebar({
                       className="text-label w-56 p-2"
                     >
                       <div className="border-separator text-eyebrow text-label-secondary mb-1 border-b px-3 py-1">
-                        Page Tools
+                        Page tools
                       </div>
                       <DropdownMenuItem
                         onClick={() => setActiveModal("history")}
@@ -555,7 +547,7 @@ export function WikiOSUnifiedSidebar({
                       >
                         <Clock className="text-yellow h-3.5 w-3.5 shrink-0" />
                         <div className="min-w-0 flex-1">
-                          <div className="text-label font-semibold">Revision History</div>
+                          <div className="text-label font-semibold">Revision history</div>
                           <div className="text-footnote text-label-secondary truncate">
                             Past edits & revisions
                           </div>
@@ -567,7 +559,7 @@ export function WikiOSUnifiedSidebar({
                       >
                         <Link2 className="text-teal h-3.5 w-3.5 shrink-0" />
                         <div className="min-w-0 flex-1">
-                          <div className="text-label font-semibold">What Links Here</div>
+                          <div className="text-label font-semibold">What links here</div>
                           <div className="text-footnote text-label-secondary truncate">
                             Inbound wiki backlinks
                           </div>
@@ -580,7 +572,7 @@ export function WikiOSUnifiedSidebar({
                         >
                           <Wrench className="text-teal h-3.5 w-3.5 shrink-0" />
                           <div className="min-w-0 flex-1">
-                            <div className="text-label font-semibold">Utilities & Special Hub</div>
+                            <div className="text-label font-semibold">Utilities & special hub</div>
                             <div className="text-footnote text-label-secondary truncate">
                               Diagnostics, tools & special pages
                             </div>
@@ -656,8 +648,7 @@ export function WikiOSUnifiedSidebar({
           onClick: handleToggleClick,
           icon: isCollapsedReal ? PanelLeftOpen : PanelLeftClose,
           title: getToggleTitle(),
-          glowClass:
-            "border-separator bg-fill-4 text-label-secondary hover:bg-fill-3 rail-glow-gray",
+          toneClass: "border-separator bg-fill-4 text-label-secondary hover:bg-fill-3",
           isActive: false,
           index: rowIndex++,
         })}

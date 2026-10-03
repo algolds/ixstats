@@ -30,7 +30,7 @@ export function ArticleFooter({
       )}
       <div className="wikios-footer-links">
         <a href={mwUrl} className="wikios-footer-link" target="_blank" rel="noopener">
-          View on Original Wiki
+          View on original wiki
         </a>
       </div>
     </div>

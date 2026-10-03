@@ -75,7 +75,7 @@ export function EditorialMastheadHeader({
                 href={withBasePath(
                   `/wiki/User:${encodeURIComponent(creatorName.replace(/ /g, "_"))}`
                 )}
-                className="group/author text-label border-separator text-caption hover:border-tint/40 hover:bg-tint/10 hover:text-tint inline-flex items-center gap-2 rounded-full border bg-black/5 px-3 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                className="group/author text-label border-separator text-caption hover:border-tint/40 hover:bg-tint/10 hover:text-tint inline-flex items-center gap-2 rounded-full border bg-black/5 px-3 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
               >
                 {creatorAvatar ? (
                   <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10">
@@ -108,7 +108,7 @@ export function EditorialMastheadHeader({
                   href={withBasePath(
                     `/wiki/User:${encodeURIComponent(lastEditorName.replace(/ /g, "_"))}`
                   )}
-                  className="group/editor text-label border-separator text-caption hover:border-tint/40 hover:bg-tint/10 hover:text-tint inline-flex items-center gap-2 rounded-full border bg-black/5 px-3 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                  className="group/editor text-label border-separator text-caption hover:border-tint/40 hover:bg-tint/10 hover:text-tint inline-flex items-center gap-2 rounded-full border bg-black/5 px-3 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                 >
                   {lastEditorAvatar ? (
                     <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10">
@@ -154,7 +154,7 @@ export function EditorialMastheadHeader({
             <PopoverTrigger asChild>
               <button
                 className={cn(
-                  "group text-caption duration-fast relative flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 transition-[background-color,border-color,transform] active:scale-[0.98]",
+                  "group text-caption duration-fast relative flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 transition-[background-color,border-color,transform]",
                   badgeConfig.classes,
                   showCelebration &&
                     primaryAward.category === "LOREWARD" &&
@@ -174,7 +174,7 @@ export function EditorialMastheadHeader({
                     +{awardsData.awards.length - 1}
                   </span>
                 )}
-                <span className="uppercase">{badgeConfig.text}</span>
+                <span>{badgeConfig.text}</span>
               </button>
             </PopoverTrigger>
 
@@ -185,7 +185,7 @@ export function EditorialMastheadHeader({
               className="text-footnote w-72 space-y-2 p-4"
             >
               <div className="text-label-secondary text-eyebrow text-left">
-                Article Distinctions
+                Article distinctions
               </div>
               <div className="space-y-2">
                 {awardsData.awards.map((award) => (

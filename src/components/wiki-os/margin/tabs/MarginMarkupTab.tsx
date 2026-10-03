@@ -320,7 +320,7 @@ export function MarginMarkupTab({
                   <div className="rounded-row border-yellow/40 bg-surface text-footnote text-label-secondary ml-1 space-y-0.5 border p-2">
                     <div className="text-caption text-label flex items-center gap-1 font-semibold">
                       <MessageSquare className="text-yellow h-2.5 w-2.5" />
-                      <span>Lore Significance</span>
+                      <span>Lore significance</span>
                     </div>
                     <p className="leading-snug italic">{ann.comment}</p>
                   </div>
@@ -344,7 +344,7 @@ export function MarginMarkupTab({
                   <Link
                     href={`/wiki/edit/${sproutChildSlug}?parent=${encodeURIComponent(articleTitle)}`}
                     onClick={(e) => e.stopPropagation()}
-                    className="rounded-control border-green/30 bg-green/10 text-green hover:bg-green/20 flex cursor-pointer items-center gap-1 border px-2 py-0.5 font-semibold transition-transform duration-100 active:scale-[0.98]"
+                    className="rounded-control border-green/30 bg-green/10 text-green hover:bg-green/20 flex cursor-pointer items-center gap-1 border px-2 py-0.5 font-semibold"
                     title="Create a new page from this quote"
                   >
                     <Sprout className="h-2.5 w-2.5" />

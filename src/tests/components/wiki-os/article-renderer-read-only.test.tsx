@@ -116,14 +116,14 @@ describe("ArticleRenderer for another wiki's page is read-only (ruling E-l)", ()
       expect.anything(),
       expect.objectContaining({ enabled: false })
     );
-    expect(screen.queryByTitle("Revision History")).not.toBeInTheDocument();
-    expect(screen.queryByTitle("What Links Here")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("Revision history")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("What links here")).not.toBeInTheDocument();
     expect(screen.queryByText("Margin notes")).not.toBeInTheDocument();
 
     // The Halo's "This Page" actions read the page's wiki from the context (ruling E-l′)
     expect(mockSetWikiPage).toHaveBeenCalledWith("Portal:Eurth", [], expect.anything(), "iiwiki");
 
-    expect(screen.getByText(/From IIWiki — read only/)).toBeInTheDocument();
+    expect(screen.getByText(/From IIWiki \(read only\)/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "open on iiwiki.com" })).toHaveAttribute(
       "href",
       "https://iiwiki.com/wiki/Portal%3AEurth"
@@ -146,7 +146,7 @@ describe("ArticleRenderer for another wiki's page is read-only (ruling E-l)", ()
       expect.anything(),
       expect.objectContaining({ enabled: true })
     );
-    expect(screen.getByTitle("Revision History")).toBeInTheDocument();
+    expect(screen.getByTitle("Revision history")).toBeInTheDocument();
     expect(screen.getByText("Margin notes")).toBeInTheDocument();
     expect(screen.queryByText(/read only/)).not.toBeInTheDocument();
 

@@ -73,7 +73,7 @@ export function UploadTab({
           if (result.success) {
             onImageSelect(result.url);
             onClose();
-            notify.success("Image uploaded successfully");
+            notify.success("Image uploaded");
           } else if (response.status === 401) {
             notify.error("Authentication required", "You need to be signed in to upload images.");
           } else if (response.status === 429) {

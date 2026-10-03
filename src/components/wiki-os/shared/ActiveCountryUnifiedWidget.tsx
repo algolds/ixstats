@@ -131,7 +131,7 @@ export function ActiveCountryUnifiedWidget({
             }
           }}
           className={cn(
-            "wikios-sidebar-icon-box rounded-row border-yellow/20 bg-yellow/5 shadow-card relative flex h-9 w-9 shrink-0 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
+            "wikios-sidebar-icon-box rounded-row border-yellow/20 bg-yellow/5 shadow-card relative flex h-9 w-9 shrink-0 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform]",
             popoverOpen ? "border-yellow/50 bg-yellow/15" : "hover:border-yellow/30"
           )}
           title={`Country Context: ${countryName} ${isCollapsed ? "(Click for details)" : "(Click for actions)"}`}
@@ -223,7 +223,7 @@ export function ActiveCountryUnifiedWidget({
           {/* Vitality Summary */}
           {rings && (
             <div className="border-separator mt-2 border-t pt-3">
-              <div className="text-subhead text-label-secondary mb-2">Vitality Indices</div>
+              <div className="text-subhead text-label-secondary mb-2">Vitality indices</div>
               <div className="text-footnote grid grid-cols-2 gap-2">
                 <div className="bg-fill-4 rounded-control-sm flex justify-between px-2 py-1">
                   <span className="text-label-secondary">Econ:</span>
@@ -258,7 +258,7 @@ export function ActiveCountryUnifiedWidget({
               }}
               className="bg-yellow/10 text-yellow hover:bg-yellow/20 w-full"
             >
-              {isOwnCountry ? "Manage Country" : "Country Actions"}
+              {isOwnCountry ? "Manage country" : "Country actions"}
             </Button>
           </div>
         </div>

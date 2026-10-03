@@ -1,6 +1,6 @@
 "use client";
 // src/components/wiki-os/reader/ImageLightbox.tsx
-// Immersive Apple Quick Look & Repository UI/UX Lightbox Modal for WikiOS.
+// Lightbox modal for WikiOS.
 // Features a unified frame where the Repository Inspector is physically bolted directly to the image,
 // bottom-docked Facet glass controls, high-resolution original asset resolution, Wikitext generator, and fluid spring physics.
 
@@ -326,7 +326,7 @@ function ImageLightboxModal({
   }, [image.fileUrl, cleanTitle, stashMutation]);
 
   return (
-    // Full-screen image viewer (spec §7.3): a Dialog with instant presentation — the fade below is
+    // Full-screen image viewer: a Dialog with instant presentation — the fade below is
     // the transition. The content fills the viewport over a dark photo backdrop.
     <Dialog open onOpenChange={(open) => !open && triggerClose()}>
       <DialogContent
@@ -428,14 +428,14 @@ function ImageLightboxModal({
                   <div className="wikios-lightbox-flank-header">
                     <div className="flex min-w-0 items-center gap-2">
                       <Sparkles className="text-yellow h-3.5 w-3.5 shrink-0" />
-                      <h3 className="text-subhead text-label truncate">Media Details</h3>
+                      <h3 className="text-subhead text-label truncate">Media details</h3>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon-sm"
                       onClick={() => setShowInspector(false)}
                       className="text-label-secondary rounded-full"
-                      title="Close Inspector"
+                      title="Close inspector"
                       aria-label="Close inspector"
                     >
                       <X className="size-3.5" />
@@ -446,7 +446,7 @@ function ImageLightboxModal({
                   <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
                     {/* File Details Card */}
                     <div className="wikios-lightbox-flank-box">
-                      <span className="wikios-lightbox-side-label">File Details</span>
+                      <span className="wikios-lightbox-side-label">File details</span>
                       <p className="text-caption text-label mt-1 font-semibold break-words">
                         {cleanTitle}
                       </p>
@@ -462,7 +462,7 @@ function ImageLightboxModal({
 
                     {/* Wikitext Copy Generator */}
                     <div className="wikios-lightbox-flank-box">
-                      <span className="wikios-lightbox-side-label">Wikitext Formats</span>
+                      <span className="wikios-lightbox-side-label">Wikitext formats</span>
                       <div className="mt-2 grid grid-cols-2 gap-2">
                         {(["thumb", "embed", "raw", "url"] as const).map((fmt) => (
                           <Button
@@ -636,7 +636,7 @@ function ImageLightboxModal({
                   }
                   target="_blank"
                   rel="noreferrer"
-                  title="Inspect MediaWiki File Description Page"
+                  title="Inspect MediaWiki file description page"
                   aria-label="Open file description page"
                 >
                   <ExternalLink className="size-3.5" />

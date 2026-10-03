@@ -155,50 +155,48 @@ export function WikiOSHeader({
       case "LOREWARD":
         return {
           Icon: Trophy,
-          text: "Loreward Winner",
+          text: "Loreward winner",
           classes: "border-yellow/20 bg-yellow/10 text-yellow-ink hover:bg-yellow/20",
           iconColor: "text-yellow",
         };
       case "FEATURED":
         return {
           Icon: Star,
-          text: "Featured Article",
+          text: "Featured article",
           classes: "border-yellow/20 bg-yellow/10 text-yellow-ink hover:bg-yellow/20",
           iconColor: "text-yellow",
         };
       case "COLLABORATION":
         return {
           Icon: Users,
-          text: "Collaborative Work",
+          text: "Collaborative work",
           classes: "border-green/20 bg-green/10 text-green-ink hover:bg-green/20",
           iconColor: "text-green",
         };
       case "PEER_REVIEW":
         return {
           Icon: CheckCircle2,
-          text: "Peer Reviewed",
-          classes: "border-tint/20 bg-tint/10 text-facet-accent-ink hover:bg-tint/20",
+          text: "Peer reviewed",
+          classes: "border-tint/20 bg-tint/10 text-tint hover:bg-tint/20",
           iconColor: "text-blue",
         };
       case "EDITOR_MILESTONE":
         return {
           Icon: Sparkles,
-          text: "Editor Milestone",
+          text: "Editor milestone",
           classes: "border-indigo/20 bg-indigo/10 text-indigo-ink hover:bg-indigo/20",
           iconColor: "text-indigo",
         };
       default:
         return {
           Icon: Trophy,
-          text: "Wiki Award",
+          text: "Wiki award",
           classes: "border-yellow/20 bg-yellow/10 text-yellow-ink hover:bg-yellow/20",
           iconColor: "text-yellow",
         };
     }
   }, [primaryAward]);
 
-  // The hero is the article's lead image (content); the former pointer tilt and sheen are gone
-  // (spec §8: no decorative parallax/tilt on content).
   const containerStyle = {
     aspectRatio: aspectRatio ? `${aspectRatio}` : "3.2",
     minHeight: "150px",
@@ -267,13 +265,6 @@ export function WikiOSHeader({
         >
           {isSvg ? (
             <>
-              {/* Subtle Chromatic Radial Underglow */}
-              <div
-                className="pointer-events-none absolute inset-0 -z-10 opacity-25"
-                style={{
-                  background: `radial-gradient(circle at 60% 50%, ${themeColors?.primary ?? "#3b82f6"} 0%, transparent 65%)`,
-                }}
-              />
               <img
                 src={backdropUrl}
                 alt=""
@@ -302,7 +293,6 @@ export function WikiOSHeader({
               referrerPolicy="no-referrer"
             />
           )}
-          {/* v2 bottom scrim: grounds the floating title card on the artwork. */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
         </div>
       ) : (
@@ -319,15 +309,9 @@ export function WikiOSHeader({
         </div>
       )}
 
-      {/* Floating glass title card (v2 HUD box, Facet 3.1 glass hero tier) */}
+      {/* Title card floating over the lead image */}
       <div className="relative z-10 m-3 max-w-xl self-start sm:m-4">
-        <div className="material-hero text-label relative isolate space-y-2 overflow-hidden rounded-2xl p-4 text-left sm:p-5">
-          {/* Glass over the artwork: the veil keeps the labels ≥ 4.5:1 over any image (§16.8). */}
-          <div
-            aria-hidden="true"
-            className="wikios-hero-veil pointer-events-none absolute inset-0 -z-10 rounded-[inherit]"
-          />
-
+        <div className="material-thick text-label relative isolate space-y-2 overflow-hidden rounded-2xl p-4 text-left sm:p-5">
           {/* Breadcrumb Path */}
           <div className="text-label-secondary text-eyebrow flex items-center gap-1">
             <CategoryBreadcrumb title={title} />
@@ -344,7 +328,7 @@ export function WikiOSHeader({
                 <PopoverTrigger asChild>
                   <button
                     className={cn(
-                      "group text-caption duration-fast facet-press relative flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 transition-[background-color,border-color]",
+                      "group text-caption duration-fast relative flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 transition-[background-color,border-color]",
                       focusRing,
                       badgeConfig.classes,
                       showCelebration &&
@@ -368,7 +352,7 @@ export function WikiOSHeader({
                     />
 
                     {awardsData.awards.length > 1 && (
-                      <span className="text-caption font-data leading-none font-semibold">
+                      <span className="text-caption leading-none font-semibold tabular-nums">
                         +{awardsData.awards.length - 1}
                       </span>
                     )}
@@ -378,7 +362,7 @@ export function WikiOSHeader({
                 <PopoverContent className="font-ui w-72 p-3" align="start">
                   <div className="border-separator mb-2 flex items-center justify-between border-b pb-2">
                     <span className="text-label text-caption font-semibold">
-                      Lorewards & Accolades
+                      Lorewards & accolades
                     </span>
                     <span className="text-label-secondary text-caption">
                       {awardsData.awards.length} awarded

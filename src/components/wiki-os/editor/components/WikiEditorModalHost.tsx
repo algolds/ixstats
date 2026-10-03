@@ -203,7 +203,7 @@ function TemplateEditorDialog({
               <label className="wikios-ve-template-field-label">
                 Wikitext{" "}
                 <span className="text-label-secondary">
-                  (no TemplateData schema — edit source directly)
+                  (no TemplateData schema; edit the source directly)
                 </span>
               </label>
               <Textarea
@@ -274,7 +274,7 @@ function TemplateEditorDialog({
                 }
               }}
             >
-              Update Template
+              Update template
             </Button>
           </div>
         </div>

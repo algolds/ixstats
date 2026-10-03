@@ -51,7 +51,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
   const cards = [
     {
       id: "orphans",
-      title: "Orphan Pages Scanner",
+      title: "Orphan pages scanner",
       description: "Pages with 0 incoming links from other lore documents.",
       legacyAlias: "Special:LonelyPages",
       icon: EyeClosed,
@@ -71,17 +71,17 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
     },
     {
       id: "brokenRedirects",
-      title: "Broken Redirects Detector",
+      title: "Broken redirects detector",
       description: "Redirect aliases pointing to non-existent or archived targets.",
       legacyAlias: "Special:BrokenRedirects",
       icon: WarningTriangle,
       count: brokenRedirects?.length ?? 0,
-      badge: "Broken Links",
+      badge: "Broken links",
       color: "border-red/20 bg-red/10 text-red",
     },
     {
       id: "short",
-      title: "Short & Stub Articles",
+      title: "Short & stub articles",
       description: "Articles with minimal word counts requiring expansion.",
       legacyAlias: "Special:ShortPages",
       icon: Page,
@@ -91,7 +91,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
     },
     {
       id: "long",
-      title: "Long & Comprehensive Articles",
+      title: "Long articles",
       description: "Major flagship lore documents with extensive word counts.",
       legacyAlias: "Special:LongPages",
       icon: Page,
@@ -194,9 +194,9 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  aria-label="Close Inspector"
+                  aria-label="Close inspector"
                   onClick={() => setActiveTab(null)}
-                  title="Close Inspector"
+                  title="Close inspector"
                   className="text-label-secondary"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -237,7 +237,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                   ) : (
                     <div className="text-footnote text-green flex flex-col items-center justify-center p-6 text-center">
                       <CheckCircle className="mb-1 h-5 w-5" />
-                      <span>Zero orphan pages detected — 100% graph connectivity!</span>
+                      <span>No orphan pages found.</span>
                     </div>
                   )}
                 </div>
@@ -275,7 +275,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                   ) : (
                     <div className="text-footnote text-green flex flex-col items-center justify-center p-6 text-center">
                       <CheckCircle className="mb-1 h-5 w-5" />
-                      <span>All lore articles have active outbound wikilinks!</span>
+                      <span>Every article has outbound wikilinks.</span>
                     </div>
                   )}
                 </div>
@@ -304,7 +304,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                   ) : (
                     <div className="text-footnote text-green flex flex-col items-center justify-center p-6 text-center">
                       <CheckCircle className="mb-1 h-5 w-5" />
-                      <span>Zero broken redirects — all aliases resolve cleanly!</span>
+                      <span>No broken redirects found.</span>
                     </div>
                   )}
                 </div>

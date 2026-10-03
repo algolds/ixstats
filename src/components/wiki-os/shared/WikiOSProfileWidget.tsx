@@ -13,7 +13,6 @@ import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { getWikiProfilePath } from "~/lib/wiki-os/profile-url";
 
 function getInitials(name: string): string {
@@ -131,7 +130,6 @@ export function WikiOSProfileWidget({
         } as React.CSSProperties
       }
     >
-      <TextureOverlay texture="chevron" opacity={0.05} className="rounded-row" />
       <div className="relative z-10 flex items-center gap-2">
         {renderAvatar(true)}
         <div className="min-w-0 flex-1">

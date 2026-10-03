@@ -26,10 +26,10 @@ import type { BaseModalProps } from "./types";
 import { TemplateModalShell } from "./TemplateModalShell";
 
 const BUSINESS_FIELDS = [
-  { value: "revenue", label: "Annual Revenue" },
-  { value: "employees", label: "Employees Count" },
-  { value: "sector", label: "Industry Sector" },
-  { value: "founded", label: "Year Founded" },
+  { value: "revenue", label: "Annual revenue" },
+  { value: "employees", label: "Employees count" },
+  { value: "sector", label: "Industry sector" },
+  { value: "founded", label: "Year founded" },
 ];
 
 type BusinessModalTab = "search" | "create";
@@ -147,7 +147,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
       isOpen={isOpen}
       onClose={onClose}
       icon={<Building className="text-teal size-5 shrink-0" aria-hidden="true" />}
-      title="Insert Business Data"
+      title="Insert business data"
     >
       {/* Tab selection */}
       <div className="border-separator border-b p-3">
@@ -158,7 +158,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
           value={activeTab}
           onValueChange={setActiveTab}
           options={[
-            { value: "search", label: "Search Approved Businesses" },
+            { value: "search", label: "Search approved businesses" },
             { value: "create", label: "+ Register & Link Business" },
           ]}
         />
@@ -169,7 +169,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
         <div className="space-y-4 p-6">
           {/* Search */}
           <div className="space-y-2">
-            <label className="text-subhead text-label block">Find Company</label>
+            <label className="text-subhead text-label block">Find company</label>
             <div className="relative">
               <Search className="text-label-secondary absolute top-3 left-3 h-4 w-4" />
               <Input
@@ -221,7 +221,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
           {selectedBusiness && (
             <div className="rounded-control bg-tint-fill flex items-center justify-between p-3">
               <div>
-                <span className="text-caption text-tint block">Ready to Link</span>
+                <span className="text-caption text-tint block">Ready to link</span>
                 <span className="text-label text-headline">{selectedBusiness.name}</span>
               </div>
               {createSuccess && (
@@ -235,7 +235,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
           {/* Field selection */}
           <div className="space-y-2">
             <label id="business-stats-field" className="text-subhead text-label block">
-              Select Attribute Field
+              Select attribute field
             </label>
             <Select value={selectedField} onValueChange={setSelectedField}>
               <SelectTrigger aria-labelledby="business-stats-field" className="w-full">
@@ -263,7 +263,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
               Cancel
             </Button>
             <Button onClick={handleInsertBusiness} disabled={!selectedBusiness}>
-              Insert Business Data
+              Insert business data
             </Button>
           </div>
         </div>
@@ -276,7 +276,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
           {!viewerCountryId ? (
             <div className="rounded-row border-red/25 bg-red/10 space-y-2 border p-4 text-center">
               <AlertTriangle className="text-red mx-auto h-8 w-8" />
-              <h4 className="text-headline text-red">Registration Locked</h4>
+              <h4 className="text-headline text-red">Registration locked</h4>
               <p className="text-label-secondary text-footnote">
                 Only country owners can construct new business points of interest in the database.
                 You can type a business name in the search tab to reference it manually if it
@@ -299,7 +299,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
 
               <div className="space-y-1">
                 <label id="business-poi-category" className="text-subhead text-label block">
-                  POI Category
+                  POI category
                 </label>
                 <Select value={newCategory} onValueChange={setNewCategory}>
                   <SelectTrigger aria-labelledby="business-poi-category" className="w-full">
@@ -308,7 +308,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
                   <SelectContent>
                     <SelectItem value="commercial">Commercial Shop / Retail</SelectItem>
                     <SelectItem value="office">Corporate Office / Finance</SelectItem>
-                    <SelectItem value="industrial">Industrial Facility</SelectItem>
+                    <SelectItem value="industrial">Industrial facility</SelectItem>
                     <SelectItem value="factory">Factory / Manufacturing</SelectItem>
                   </SelectContent>
                 </Select>
@@ -338,7 +338,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
               </div>
 
               <div className="space-y-1">
-                <label className="text-subhead text-label block">Short Description</label>
+                <label className="text-subhead text-label block">Short description</label>
                 <Textarea
                   rows={2}
                   placeholder="Short summary of this corporate establishment..."

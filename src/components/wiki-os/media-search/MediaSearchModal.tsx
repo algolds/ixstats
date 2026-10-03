@@ -79,7 +79,7 @@ export function MediaSearchModal({
           onError: (error) => console.error("[MediaSearchModal]", error),
         });
 
-        notify.success("Image downloaded and ready to use!");
+        notify.success("Image downloaded and ready to use");
         onImageSelect(processedUrl);
       } else {
         onImageSelect(selectedImage);
@@ -103,7 +103,7 @@ export function MediaSearchModal({
         data-dialog-nested="true"
       >
         <DialogHeader className="border-separator shrink-0 border-b px-6 pt-5 pb-3">
-          <DialogTitle className="text-label text-title-3">Search Repository</DialogTitle>
+          <DialogTitle className="text-label text-title-3">Search repository</DialogTitle>
         </DialogHeader>
 
         <Tabs
@@ -168,7 +168,7 @@ export function MediaSearchModal({
               onClick={handleSelectConfirm}
               disabled={!selectedImage || isDownloading}
               size="sm"
-              className="text-caption h-8 cursor-pointer px-4 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+              className="text-caption h-8 cursor-pointer px-4 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             >
               {isDownloading ? (
                 <>

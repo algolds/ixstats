@@ -142,7 +142,7 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
         <div className="border-separator flex items-center gap-3 border-b px-4 py-3">
           <DialogTitle className="text-headline flex items-center gap-2">
             <ImageIcon className="text-tint size-4" aria-hidden="true" />
-            Insert Image
+            Insert image
           </DialogTitle>
 
           <SegmentedControl
@@ -241,7 +241,7 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
                       </div>
                     </div>
 
-                    <Button onClick={handleInsert}>Insert Image</Button>
+                    <Button onClick={handleInsert}>Insert image</Button>
                   </div>
                 </div>
               )}

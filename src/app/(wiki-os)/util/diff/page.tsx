@@ -41,7 +41,7 @@ export default function DiffPage() {
   });
 
   return (
-    <WikiOSLayout title="Revision Diff">
+    <WikiOSLayout title="Revision diff">
       <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6">
         {/* Back Link */}
         <div>
@@ -50,7 +50,7 @@ export default function DiffPage() {
             className="text-label-secondary hover:text-tint text-caption inline-flex items-center gap-2 transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Back to Utilities
+            Back to utilities
           </Link>
         </div>
 
@@ -72,7 +72,7 @@ export default function DiffPage() {
             <div className="border-separator bg-surface rounded-card space-y-4 border p-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <span className="text-tint text-eyebrow">Comparing Revisions</span>
+                  <span className="text-tint text-eyebrow">Comparing revisions</span>
                   <h2 className="text-label text-title-3 mt-1">
                     r{data.from.revid} &rarr; r{data.to.revid}
                   </h2>
@@ -118,7 +118,7 @@ export default function DiffPage() {
                         }}
                         className="bg-yellow hover:bg-yellow/80 text-black"
                       >
-                        {revertMutation.isPending ? "Reverting…" : "Confirm Revert"}
+                        {revertMutation.isPending ? "Reverting…" : "Confirm revert"}
                       </Button>
                       <Button variant="secondary" size="sm" onClick={() => setUndoConfirm(false)}>
                         Cancel

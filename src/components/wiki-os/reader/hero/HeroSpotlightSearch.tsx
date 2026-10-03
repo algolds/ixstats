@@ -1,6 +1,6 @@
 "use client";
 // src/components/wiki-os/reader/hero/HeroSpotlightSearch.tsx
-// Inline Apple Spotlight Search Bar for WikiOS Hero with featured thumbnail images, direct DB queries, page creation, and keyboard navigation.
+// Inline spotlight search bar for WikiOS Hero with featured thumbnail images, direct DB queries, page creation, and keyboard navigation.
 
 import React, { useState, useEffect, useRef, useDeferredValue, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -284,7 +284,7 @@ export function HeroSpotlightSearch({
               </div>
             ) : results.length === 0 && query.trim().length > 0 ? (
               <div className="text-label-secondary text-footnote py-5 text-center">
-                No matching articles found. Press Enter or click above to create it!
+                No matching articles. Press Enter or click above to create it.
               </div>
             ) : (
               <div className="max-h-[340px] space-y-0.5 overflow-y-auto">
@@ -396,7 +396,7 @@ export function HeroSpotlightSearch({
             <div className="text-label-secondary border-separator text-footnote mt-1 flex items-center justify-between border-t px-3 pt-2 pb-0.5 select-none">
               <span>↑↓ Navigate</span>
               <span>↵ Select / Create</span>
-              <span>Esc Close</span>
+              <span>Esc close</span>
             </div>
           </motion.div>
         )}

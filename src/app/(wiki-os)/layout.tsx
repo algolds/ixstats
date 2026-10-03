@@ -9,7 +9,7 @@ import { MediaThemeProvider } from "~/components/wiki-os/shared/MediaThemeContex
 import { PortalTintSync } from "~/components/providers/PortalTintSync";
 
 export const metadata: Metadata = {
-  title: "WikiOS — Worldbuilding Encyclopedia",
+  title: "WikiOS | Worldbuilding encyclopedia",
   description: "Native encyclopedia, lore, and worldbuilding OS",
   icons: [
     { rel: "icon", url: withBasePath("/favicon-wikios.svg"), type: "image/svg+xml" },

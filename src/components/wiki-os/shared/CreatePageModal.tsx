@@ -196,7 +196,7 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
         {/* Header */}
         <div className="border-separator mb-4 flex items-center gap-2 border-b pr-10 pb-3">
           <PenTool className="text-tint size-5" aria-hidden="true" />
-          <SheetTitle className="text-title-3">Create Wiki Page</SheetTitle>
+          <SheetTitle className="text-title-3">Create wiki page</SheetTitle>
         </div>
 
         {/* Steps */}
@@ -264,7 +264,7 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
               ) : step === 3 || (step === 2 && pageType === "blank") ? (
                 <>
                   <Plus aria-hidden="true" />
-                  <span>Create Page</span>
+                  <span>Create page</span>
                 </>
               ) : (
                 <>

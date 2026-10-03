@@ -17,8 +17,7 @@ interface TemplateModalShellProps {
 }
 
 /**
- * Shared frame for the editor's template-insert forms (spec §7.3: a short focused form that
- * blocks the page is a `Dialog`). Escape and the close button dismiss; the content scrolls.
+ * Shared frame for the editor's template-insert forms (a `Dialog`). Escape and the close button dismiss; the content scrolls.
  */
 export function TemplateModalShell({
   isOpen,
