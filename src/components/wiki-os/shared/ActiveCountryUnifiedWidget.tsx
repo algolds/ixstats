@@ -174,9 +174,10 @@ export function ActiveCountryUnifiedWidget({
   useOutsideClick(popoverRef, closePopover);
 
   // Query activity rings to fetch live stats & vitality
+  const countryId = activeCountry?.id ?? "";
   const { data: rings } = api.countries.getActivityRingsData.useQuery(
-    { countryId: activeCountry?.id ?? "" },
-    { enabled: !!activeCountry?.id && (popoverOpen || !isCollapsed), staleTime: 60 * 1000 }
+    { countryId },
+    { enabled: !!countryId && (popoverOpen || !isCollapsed), staleTime: 60 * 1000 }
   );
 
   if (!activeCountry) return null;
@@ -196,13 +197,7 @@ export function ActiveCountryUnifiedWidget({
         )}
       >
         <button
-          onClick={() => {
-            if (isCollapsed) {
-              setPopoverOpen((prev) => !prev);
-            } else {
-              setActionsMenuOpen(true);
-            }
-          }}
+          onClick={() => (isCollapsed ? setPopoverOpen((prev) => !prev) : setActionsMenuOpen(true))}
           className={cn(
             "wikios-sidebar-icon-box rounded-row border-yellow/20 bg-yellow/5 shadow-card relative flex h-9 w-9 shrink-0 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform]",
             popoverOpen ? "border-yellow/50 bg-yellow/15" : "hover:border-yellow/30"
@@ -245,7 +240,7 @@ export function ActiveCountryUnifiedWidget({
       )}
 
       <CountryActionsMenu
-        targetCountryId={activeCountry.id ?? ""}
+        targetCountryId={countryId}
         targetCountryName={countryName}
         viewerCountryId={viewerCountryId}
         isOpen={actionsMenuOpen}
