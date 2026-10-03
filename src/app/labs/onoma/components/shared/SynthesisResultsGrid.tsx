@@ -115,12 +115,12 @@ export function SynthesisResultsGrid({
     return generatedNames.map((name) => {
       const ipa = translateToIPA(name, culture || "latin");
       const syllables = tokenizeIntoSyllables(name).length;
-      const naturalness = scoreNaturalness ? (scoreNaturalness(name) ?? 85) : 85;
+      const naturalness = scoreNaturalness?.(name) ?? null;
       return {
         name,
         ipa,
         syllables,
-        perplexity: Math.max(0, 100 - naturalness),
+        perplexity: naturalness === null ? null : Math.max(0, 100 - naturalness),
         length: name.length,
       };
     });
@@ -136,7 +136,7 @@ export function SynthesisResultsGrid({
       );
     }
     if (perplexityFilter > 0) {
-      list = list.filter((r) => r.perplexity <= perplexityFilter);
+      list = list.filter((r) => r.perplexity !== null && r.perplexity <= perplexityFilter);
     }
     list.sort((a, b) => {
       const valA = a[sorting.column];
@@ -144,9 +144,10 @@ export function SynthesisResultsGrid({
       if (typeof valA === "string" && typeof valB === "string") {
         return sorting.direction === "asc" ? valA.localeCompare(valB) : valB.localeCompare(valA);
       }
-      return sorting.direction === "asc"
-        ? (valA as number) - (valB as number)
-        : (valB as number) - (valA as number);
+      const numA = (valA as number | null) ?? Number.POSITIVE_INFINITY;
+      const numB = (valB as number | null) ?? Number.POSITIVE_INFINITY;
+      if (numA === numB) return 0;
+      return sorting.direction === "asc" ? numA - numB : numB - numA;
     });
     return list;
   }, [tableData, searchQuery, perplexityFilter, sorting]);

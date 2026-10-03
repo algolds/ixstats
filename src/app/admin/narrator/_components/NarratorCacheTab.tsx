@@ -72,7 +72,7 @@ export function NarratorCacheTab() {
             <Skeleton className="mt-1 h-7 w-16" />
           ) : (
             <p className="text-title-2 text-green mt-1 tabular-nums">
-              {cacheStats?.averageHitCount ?? 0}x
+              {cacheStats ? `${cacheStats.averageHitCount}x` : "—"}
             </p>
           )}
         </Card>

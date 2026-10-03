@@ -5,6 +5,7 @@ export interface BatchNameResult {
   name: string;
   ipa: string;
   syllables: number;
-  perplexity: number;
+  /** Null when the corpus model cannot score the name. */
+  perplexity: number | null;
   length: number;
 }

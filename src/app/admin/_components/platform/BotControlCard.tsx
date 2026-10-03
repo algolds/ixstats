@@ -377,26 +377,12 @@ export function BotControlCard({
           <div className="animate-in fade-in duration-fast space-y-4 pt-1">
             {/* PM2 Processes Grid */}
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {(
-                processes || [
-                  {
-                    name: "ixwiki-discord-bot",
-                    status: "offline",
-                    cpu: 0,
-                    memory: 0,
-                    restarts: 0,
-                    uptime: 0,
-                  },
-                  {
-                    name: "ixstats-ixtwitter",
-                    status: "offline",
-                    cpu: 0,
-                    memory: 0,
-                    restarts: 0,
-                    uptime: 0,
-                  },
-                ]
-              ).map((proc) => {
+              {!processes && (
+                <p className="text-label-secondary text-footnote col-span-full">
+                  Process status not available.
+                </p>
+              )}
+              {(processes ?? []).map((proc) => {
                 const isOnline = proc.status === "online";
                 return (
                   <div

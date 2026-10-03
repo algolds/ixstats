@@ -312,10 +312,12 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
           <div className="min-w-0 flex-1 space-y-2">
             {/* Meta Pill Badges */}
             <div className="text-footnote flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">
-                <Crown aria-hidden />
-                <span>{governmentType || "Republic"}</span>
-              </Badge>
+              {governmentType && (
+                <Badge variant="secondary">
+                  <Crown aria-hidden />
+                  <span>{governmentType}</span>
+                </Badge>
+              )}
 
               {demonym && (
                 <Badge variant="default">

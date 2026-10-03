@@ -109,25 +109,25 @@ export function UnifiedMediaServiceAdmin() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
           <p className="text-label-secondary text-stat-label">Cached items</p>
-          <p className="text-label text-title-2 mt-1 tabular-nums">{stats?.cacheSize ?? 0}</p>
+          <p className="text-label text-title-2 mt-1 tabular-nums">{stats?.cacheSize ?? "—"}</p>
         </Card>
 
         <Card className="p-4">
           <p className="text-label-secondary text-stat-label">Hit rate</p>
-          <p className="text-title-2 text-green mt-1 tabular-nums">{hitRate}%</p>
+          <p className="text-title-2 text-green mt-1 tabular-nums">{stats ? `${hitRate}%` : "—"}</p>
         </Card>
 
         <Card className="p-4">
           <p className="text-label-secondary text-stat-label">Flag requests</p>
           <p className="text-title-2 text-yellow mt-1 tabular-nums">
-            {stats?.serviceStats?.flagRequests ?? 0}
+            {stats?.serviceStats?.flagRequests ?? "—"}
           </p>
         </Card>
 
         <Card className="p-4">
           <p className="text-label-secondary text-stat-label">Total requests</p>
           <p className="text-title-2 text-purple mt-1 tabular-nums">
-            {stats?.serviceStats?.totalRequests ?? 0}
+            {stats?.serviceStats?.totalRequests ?? "—"}
           </p>
         </Card>
       </div>

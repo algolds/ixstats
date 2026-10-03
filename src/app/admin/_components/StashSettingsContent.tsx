@@ -73,7 +73,7 @@ export function StashSettingsContent() {
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
             <p className="text-label text-title-2 mt-1 tabular-nums">
-              {stats?.totalStashes.toLocaleString() ?? 0}
+              {stats?.totalStashes.toLocaleString() ?? "—"}
             </p>
           )}
         </Card>
@@ -84,7 +84,7 @@ export function StashSettingsContent() {
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
             <p className="text-title-2 text-purple mt-1 tabular-nums">
-              {stats?.totalHighlights.toLocaleString() ?? 0}
+              {stats?.totalHighlights.toLocaleString() ?? "—"}
             </p>
           )}
         </Card>

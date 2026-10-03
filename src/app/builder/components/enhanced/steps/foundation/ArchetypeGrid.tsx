@@ -216,10 +216,14 @@ export function ArchetypeGrid({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-eyebrow text-label-secondary">Benchmark country</span>
-                <span aria-hidden className="bg-separator-opaque size-1.5 rounded-full" />
-                <span className="text-caption text-label-secondary">
-                  {selectedTemplate.continent || selectedTemplate.region || "Global"}
-                </span>
+                {(selectedTemplate.continent || selectedTemplate.region) && (
+                  <>
+                    <span aria-hidden className="bg-separator-opaque size-1.5 rounded-full" />
+                    <span className="text-caption text-label-secondary">
+                      {selectedTemplate.continent || selectedTemplate.region}
+                    </span>
+                  </>
+                )}
               </div>
               <h2 className="text-headline text-label">{selectedTemplate.name}</h2>
               <p className="text-footnote text-label-secondary tabular-nums">
@@ -395,9 +399,11 @@ export function ArchetypeGrid({
                       </h2>
                       <div className="mt-1 flex flex-wrap gap-2">
                         <Badge variant="default">{arch.region}</Badge>
-                        <Badge variant={getComplexityBadgeVariant(arch.implementationComplexity)}>
-                          Complexity: {arch.implementationComplexity || "Medium"}
-                        </Badge>
+                        {arch.implementationComplexity && (
+                          <Badge variant={getComplexityBadgeVariant(arch.implementationComplexity)}>
+                            Complexity: {arch.implementationComplexity}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     <p className="text-footnote text-label-secondary line-clamp-3">
@@ -445,11 +451,11 @@ export function ArchetypeGrid({
                             <div className="text-footnote text-label-secondary flex justify-between">
                               <span>Innovation</span>
                               <span className="tabular-nums">
-                                {arch.growthMetrics.innovationIndex || 50}%
+                                {arch.growthMetrics.innovationIndex}%
                               </span>
                             </div>
                             <Progress
-                              value={arch.growthMetrics.innovationIndex || 50}
+                              value={arch.growthMetrics.innovationIndex}
                               tone="info"
                               className="h-1"
                               aria-label="Innovation"
@@ -458,12 +464,10 @@ export function ArchetypeGrid({
                           <div className="space-y-1">
                             <div className="text-footnote text-label-secondary flex justify-between">
                               <span>Stability</span>
-                              <span className="tabular-nums">
-                                {arch.growthMetrics.stability || 50}%
-                              </span>
+                              <span className="tabular-nums">{arch.growthMetrics.stability}%</span>
                             </div>
                             <Progress
-                              value={arch.growthMetrics.stability || 50}
+                              value={arch.growthMetrics.stability}
                               tone="success"
                               className="h-1"
                               aria-label="Stability"

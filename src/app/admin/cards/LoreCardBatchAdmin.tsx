@@ -354,8 +354,8 @@ export function LoreCardBatchAdmin() {
         return;
       }
 
-      const newCandidates: BatchCandidate[] = res.titles.map((title, i) => ({
-        id: `cat-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+      const newCandidates: BatchCandidate[] = res.titles.map((title) => ({
+        id: `cat-${crypto.randomUUID()}`,
         articleTitle: title,
         wikiSource: globalWikiSource,
         targetRarity: globalTargetRarity,
@@ -395,8 +395,8 @@ export function LoreCardBatchAdmin() {
         return;
       }
 
-      const newCandidates: BatchCandidate[] = res.titles.map((title, i) => ({
-        id: `allpages-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+      const newCandidates: BatchCandidate[] = res.titles.map((title) => ({
+        id: `allpages-${crypto.randomUUID()}`,
         articleTitle: title,
         wikiSource: globalWikiSource,
         targetRarity: globalTargetRarity,
@@ -447,7 +447,7 @@ export function LoreCardBatchAdmin() {
     // Add standard articles
     for (let i = 0; i < normalTitles.length; i++) {
       newCandidates.push({
-        id: `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+        id: crypto.randomUUID(),
         articleTitle: normalTitles[i],
         wikiSource: globalWikiSource,
         targetRarity: globalTargetRarity,
@@ -470,7 +470,7 @@ export function LoreCardBatchAdmin() {
           if (res.titles && res.titles.length > 0) {
             for (let j = 0; j < res.titles.length; j++) {
               newCandidates.push({
-                id: `cat-${Date.now()}-${j}-${Math.random().toString(36).slice(2, 6)}`,
+                id: `cat-${crypto.randomUUID()}`,
                 articleTitle: res.titles[j],
                 wikiSource: globalWikiSource,
                 targetRarity: globalTargetRarity,
@@ -531,8 +531,8 @@ export function LoreCardBatchAdmin() {
         return;
       }
 
-      const newCandidates: BatchCandidate[] = allTitles.map((title, i) => ({
-        id: `preset-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+      const newCandidates: BatchCandidate[] = allTitles.map((title) => ({
+        id: `preset-${crypto.randomUUID()}`,
         articleTitle: title,
         wikiSource: globalWikiSource,
         targetRarity: globalTargetRarity,

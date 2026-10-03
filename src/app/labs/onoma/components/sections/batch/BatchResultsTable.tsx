@@ -243,17 +243,26 @@ export function BatchResultsTable({
                 <TableCell className="text-label-secondary p-2 font-mono">{r.ipa || "—"}</TableCell>
                 <TableCell className="text-label-secondary p-2">{r.syllables}</TableCell>
                 <TableCell className="p-2">
-                  <span
-                    className={`text-caption font-mono font-semibold ${
-                      r.perplexity < 25
-                        ? "text-green"
-                        : r.perplexity < 50
-                          ? "text-yellow"
-                          : "text-red"
-                    }`}
-                  >
-                    {r.perplexity.toFixed(1)}
-                  </span>
+                  {r.perplexity === null ? (
+                    <span
+                      className="text-label-secondary text-caption font-mono"
+                      title="Not scored"
+                    >
+                      —
+                    </span>
+                  ) : (
+                    <span
+                      className={`text-caption font-mono font-semibold ${
+                        r.perplexity < 25
+                          ? "text-green"
+                          : r.perplexity < 50
+                            ? "text-yellow"
+                            : "text-red"
+                      }`}
+                    >
+                      {r.perplexity.toFixed(1)}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell className="p-2 text-right">
                   <div className="flex items-center justify-end gap-2">

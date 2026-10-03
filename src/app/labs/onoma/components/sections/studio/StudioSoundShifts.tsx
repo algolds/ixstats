@@ -81,7 +81,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
   // Epochs State
   const [epochs, setEpochs] = useState<SoundShiftEpoch[]>(() => {
     const preset = SOUND_SHIFT_PRESETS.find((p) => p.id === "grimms-law")!;
-    return JSON.parse(JSON.stringify(preset.epochs));
+    return structuredClone(preset.epochs);
   });
 
   // Proto-words input state
@@ -109,7 +109,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
     setSelectedPresetId(presetId);
     const preset = SOUND_SHIFT_PRESETS.find((p) => p.id === presetId);
     if (preset) {
-      setEpochs(JSON.parse(JSON.stringify(preset.epochs)));
+      setEpochs(structuredClone(preset.epochs));
       setInputWordsText(preset.sampleInput.join("\n"));
       notify.success(`Loaded "${preset.name}" sound shift rules.`);
     }

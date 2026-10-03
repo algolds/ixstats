@@ -113,7 +113,7 @@ function PlatformSettingsTab() {
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
             <p className="text-label text-title-2 mt-1 tabular-nums">
-              {stats?.totalPosts.toLocaleString() ?? 0}
+              {stats?.totalPosts.toLocaleString() ?? "—"}
             </p>
           )}
         </Card>
@@ -124,7 +124,7 @@ function PlatformSettingsTab() {
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
             <p className="text-title-2 text-purple mt-1 tabular-nums">
-              {stats?.totalAccounts.toLocaleString() ?? 0}
+              {stats?.totalAccounts.toLocaleString() ?? "—"}
             </p>
           )}
         </Card>
@@ -135,8 +135,7 @@ function PlatformSettingsTab() {
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
             <p className="text-title-2 text-green mt-1 tabular-nums">
-              {(stats?.weeklyGrowth ?? 0) > 0 ? "+" : ""}
-              {stats?.weeklyGrowth ?? 0}%
+              {stats ? `${stats.weeklyGrowth > 0 ? "+" : ""}${stats.weeklyGrowth}%` : "—"}
             </p>
           )}
         </Card>

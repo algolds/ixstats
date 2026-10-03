@@ -25,21 +25,7 @@ export interface CalculationModule {
   formula: string;
   variables: Record<string, number | string | string[]>;
   constants: Record<string, number>;
-  dependencies: string[];
-  testCases: TestCase[];
-  lastModified: Date;
-  modifiedBy: string;
   isActive: boolean;
-  version: string;
-}
-
-interface TestCase {
-  id: string;
-  name: string;
-  inputs: Record<string, number | string | string[]>;
-  expectedOutput: number;
-  actualOutput?: number;
-  status: "passed" | "failed" | "pending";
 }
 
 export interface CalculationResult {

@@ -190,14 +190,17 @@ export function IxTimeVisualizer() {
 
   // Dynamic milestones that include future projections
   const dynamicMilestones = useMemo(() => {
-    const currentYear = timeData?.currentGameYear ?? 2040;
-    const futures = [
-      { label: "Current", year: currentYear },
-      { label: "+1 Year", year: currentYear + 1 },
-      { label: "+5 Years", year: currentYear + 5 },
-      { label: "Year 2050", year: 2050 },
-      { label: "Year 2060", year: 2060 },
-    ].filter((f) => f.year > currentYear || f.label === "Current");
+    const currentYear = timeData?.currentGameYear;
+    const futures =
+      currentYear === undefined
+        ? []
+        : [
+            { label: "Current", year: currentYear },
+            { label: "+1 Year", year: currentYear + 1 },
+            { label: "+5 Years", year: currentYear + 5 },
+            { label: "Year 2050", year: 2050 },
+            { label: "Year 2060", year: 2060 },
+          ].filter((f) => f.year > currentYear || f.label === "Current");
 
     return [
       ...MILESTONES,

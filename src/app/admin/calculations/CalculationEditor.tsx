@@ -59,12 +59,7 @@ export function CalculationEditor() {
         formula: f.formula,
         variables: f.variables as Record<string, number | string | string[]>,
         constants: f.constants as Record<string, number>,
-        dependencies: [],
-        testCases: [],
-        lastModified: f.lastModified,
-        modifiedBy: f.modifiedBy,
         isActive: f.isActive,
-        version: f.version,
       }));
 
       const apiFormulaIds = new Set(apiModules.map((m) => m.id));

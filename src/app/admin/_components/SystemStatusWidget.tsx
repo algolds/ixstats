@@ -111,13 +111,13 @@ export function SystemStatusStrip({ className }: { className?: string }) {
       <span className="flex items-center gap-2">
         <span className="text-label-secondary">Countries</span>
         <span className="text-label font-medium tabular-nums">
-          {s.systemStatus?.countryCount ?? 0}
+          {s.systemStatus?.countryCount ?? "—"}
         </span>
       </span>
       <span className="flex items-center gap-2">
         <span className="text-label-secondary">Storyteller events</span>
         <span className="text-label font-medium tabular-nums">
-          {s.systemStatus?.activeStorytellerEffects ?? 0}
+          {s.systemStatus?.activeStorytellerEffects ?? "—"}
         </span>
       </span>
       <span className="flex items-center gap-2">
