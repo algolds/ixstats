@@ -17,6 +17,7 @@ import {
   SVG_NS,
   ancestorElements,
   attrNumber,
+  attrOrZero,
   elementChildren,
   groupName,
   inkscapeLabel,
@@ -88,8 +89,6 @@ const WEAK_CITY_LAYER_NAMES = /\b(dots|pins|markers|points|nodes)\b/i;
 const CITY_NAME_LAYER_NAMES = ["names", "labels", "text", "captions", "annotations"];
 const ANY_LABEL_LAYER_NAMES = /city|town|place|label|name|text/;
 
-const num = (el: XmlElement, attr: string) => parseFloat(el.getAttribute(attr) || "0");
-
 function extractViewBoxWidth(svgRoot: XmlElement): number {
   const parts =
     svgRoot
@@ -97,7 +96,7 @@ function extractViewBoxWidth(svgRoot: XmlElement): number {
       ?.split(/[\s,]+/)
       .map(Number) ?? [];
   const w = parts.length >= 4 ? parts[2]! : 0;
-  return (w === 0 ? num(svgRoot, "width") : w) || 800;
+  return (w === 0 ? attrOrZero(svgRoot, "width") : w) || 800;
 }
 
 function isPointLikeElement(el: XmlElement, viewBoxWidth: number): boolean {
@@ -264,11 +263,11 @@ function scanPoints(group: XmlElement, svgRoot: XmlElement, viewBoxWidth: number
     const tag = svgTag(el);
     if (tag === "circle" || tag === "ellipse") {
       if (attrNumber(el, "r", "rx") > 0) {
-        const [x, y] = toRoot(el, num(el, "cx"), num(el, "cy"));
+        const [x, y] = toRoot(el, attrOrZero(el, "cx"), attrOrZero(el, "cy"));
         points.push({ x, y, el });
       }
     } else if (tag === "use") {
-      const [x, y] = toRoot(el, num(el, "x"), num(el, "y"));
+      const [x, y] = toRoot(el, attrOrZero(el, "x"), attrOrZero(el, "y"));
       const refIcon = el.getAttribute("href") || el.getAttribute("xlink:href") || "";
       points.push({ x, y, el, refIcon });
     } else if (SHAPE_TAGS.has(tag)) {

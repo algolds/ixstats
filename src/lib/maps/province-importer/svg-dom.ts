@@ -51,3 +51,8 @@ export function sanitizeSvg(svgContent: string): string {
     .replace(/href\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, "")
     .replace(/xlink:href\s*=\s*(?:"https?:\/\/[^"]*"|'https?:\/\/[^']*')/gi, "");
 }
+
+/** Numeric attribute value; absent or empty means 0. */
+export function attrOrZero(el: XmlElement, name: string): number {
+  return parseFloat(el.getAttribute(name) || "0");
+}

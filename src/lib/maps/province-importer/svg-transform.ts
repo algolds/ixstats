@@ -10,14 +10,7 @@
  *   | 0 0 1 |
  */
 
-// @xmldom/xmldom@0.9's Element type is no longer structurally assignable to the
-// global lib.dom Element (it was in 0.8). All "XmlElement" values in this file are
-// xmldom-parsed nodes, never real DOM elements, so alias to the package's own type.
-type XmlElement = import("@xmldom/xmldom").Element;
-
-// ──────────────────────────────────────────────
-// Types
-// ──────────────────────────────────────────────
+import type { XmlElement } from "./svg-dom";
 
 interface SvgMatrix {
   a: number;
@@ -29,10 +22,6 @@ interface SvgMatrix {
 }
 
 const IDENTITY_SVG_MATRIX: SvgMatrix = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
-
-// ──────────────────────────────────────────────
-// Matrix Operations
-// ──────────────────────────────────────────────
 
 /** Multiply two SVG matrices: result = A * B */
 function multiplyMatrices(A: SvgMatrix, B: SvgMatrix): SvgMatrix {
@@ -46,116 +35,62 @@ function multiplyMatrices(A: SvgMatrix, B: SvgMatrix): SvgMatrix {
   };
 }
 
-/** Check if a matrix is identity (no transform). */
-export function isIdentity(m: SvgMatrix): boolean {
+function isIdentity(m: SvgMatrix): boolean {
   return m.a === 1 && m.b === 0 && m.c === 0 && m.d === 1 && m.e === 0 && m.f === 0;
 }
 
-// ──────────────────────────────────────────────
-// Transform Attribute Parsing
-// ──────────────────────────────────────────────
+const translateMatrix = (tx: number, ty: number): SvgMatrix => ({
+  ...IDENTITY_SVG_MATRIX,
+  e: tx,
+  f: ty,
+});
+
+const rotateMatrix = (radians: number): SvgMatrix => {
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  return { a: cos, b: sin, c: -sin, d: cos, e: 0, f: 0 };
+};
+
+const toRadians = (degrees = 0) => degrees * (Math.PI / 180);
+
+/** Matrix for each transform function, given its numeric arguments. */
+const TRANSFORM_FUNCTIONS: Record<string, (args: number[]) => SvgMatrix> = {
+  translate: ([tx = 0, ty = 0]) => translateMatrix(tx, ty),
+  scale: ([sx = 1, sy = sx]) => ({ ...IDENTITY_SVG_MATRIX, a: sx, d: sy }),
+  rotate: ([angle, cx = 0, cy = 0]) => {
+    const rotation = rotateMatrix(toRadians(angle));
+    // rotate(angle, cx, cy) = translate(cx,cy) * rotate(angle) * translate(-cx,-cy)
+    return cx !== 0 || cy !== 0
+      ? multiplyMatrices(
+          translateMatrix(cx, cy),
+          multiplyMatrices(rotation, translateMatrix(-cx, -cy))
+        )
+      : rotation;
+  },
+  matrix: ([a = 1, b = 0, c = 0, d = 1, e = 0, f = 0]) => ({ a, b, c, d, e, f }),
+  skewx: ([angle]) => ({ ...IDENTITY_SVG_MATRIX, c: Math.tan(toRadians(angle)) }),
+  skewy: ([angle]) => ({ ...IDENTITY_SVG_MATRIX, b: Math.tan(toRadians(angle)) }),
+};
 
 /**
  * Parse an SVG `transform` attribute string into a single matrix.
- * Handles: translate, scale, rotate, matrix, skewX, skewY.
- * Handles chained transforms: "translate(10,20) scale(2)".
+ * Handles: translate, scale, rotate, matrix, skewX, skewY, and chains like
+ * "translate(10,20) scale(2)" (composed left to right: result = current * next).
  */
 function parseTransformAttr(str: string): SvgMatrix {
-  if (!str || !str.trim()) return { ...IDENTITY_SVG_MATRIX };
-
   let result: SvgMatrix = { ...IDENTITY_SVG_MATRIX };
-
-  // Match individual transform functions
-  const funcRegex = /(translate|scale|rotate|matrix|skewX|skewY)\s*\(([^)]*)\)/gi;
-  let match: RegExpExecArray | null;
-
-  while ((match = funcRegex.exec(str)) !== null) {
-    const fn = match[1]!.toLowerCase();
-    const args = match[2]!
+  for (const [, fn, rawArgs] of str.matchAll(
+    /(translate|scale|rotate|matrix|skewX|skewY)\s*\(([^)]*)\)/gi
+  )) {
+    const args = rawArgs!
       .trim()
       .split(/[\s,]+/)
       .map(Number)
       .filter(isFinite);
-
-    let m: SvgMatrix;
-
-    switch (fn) {
-      case "translate":
-        m = translateMatrix(args[0] ?? 0, args[1] ?? 0);
-        break;
-      case "scale": {
-        const sx = args[0] ?? 1;
-        const sy = args[1] ?? sx;
-        m = scaleMatrix(sx, sy);
-        break;
-      }
-      case "rotate": {
-        const angle = (args[0] ?? 0) * (Math.PI / 180);
-        const cx = args[1] ?? 0;
-        const cy = args[2] ?? 0;
-        if (cx !== 0 || cy !== 0) {
-          // rotate(angle, cx, cy) = translate(cx,cy) * rotate(angle) * translate(-cx,-cy)
-          m = multiplyMatrices(
-            translateMatrix(cx, cy),
-            multiplyMatrices(rotateMatrix(angle), translateMatrix(-cx, -cy))
-          );
-        } else {
-          m = rotateMatrix(angle);
-        }
-        break;
-      }
-      case "matrix":
-        m = {
-          a: args[0] ?? 1,
-          b: args[1] ?? 0,
-          c: args[2] ?? 0,
-          d: args[3] ?? 1,
-          e: args[4] ?? 0,
-          f: args[5] ?? 0,
-        };
-        break;
-      case "skewx": {
-        const angle = (args[0] ?? 0) * (Math.PI / 180);
-        m = { a: 1, b: 0, c: Math.tan(angle), d: 1, e: 0, f: 0 };
-        break;
-      }
-      case "skewy": {
-        const angle = (args[0] ?? 0) * (Math.PI / 180);
-        m = { a: 1, b: Math.tan(angle), c: 0, d: 1, e: 0, f: 0 };
-        break;
-      }
-      default:
-        m = { ...IDENTITY_SVG_MATRIX };
-    }
-
-    // SVG transforms are applied left-to-right: "translate(...) scale(...)"
-    // means translate is applied first, then scale on top → result = scale * translate
-    // But in matrix multiplication order: result = last * ... * first
-    // SVG spec: the leftmost transform is applied first to the coordinate system,
-    // which means we compose as result = current * new_transform
-    result = multiplyMatrices(result, m);
+    result = multiplyMatrices(result, TRANSFORM_FUNCTIONS[fn!.toLowerCase()]!(args));
   }
-
   return result;
 }
-
-function translateMatrix(tx: number, ty: number): SvgMatrix {
-  return { a: 1, b: 0, c: 0, d: 1, e: tx, f: ty };
-}
-
-function scaleMatrix(sx: number, sy: number): SvgMatrix {
-  return { a: sx, b: 0, c: 0, d: sy, e: 0, f: 0 };
-}
-
-function rotateMatrix(radians: number): SvgMatrix {
-  const cos = Math.cos(radians);
-  const sin = Math.sin(radians);
-  return { a: cos, b: sin, c: -sin, d: cos, e: 0, f: 0 };
-}
-
-// ──────────────────────────────────────────────
-// Accumulated Transform
-// ──────────────────────────────────────────────
 
 /**
  * Walk from `el` up to `stopAt` (exclusive) collecting and composing all
@@ -167,24 +102,17 @@ function rotateMatrix(radians: number): SvgMatrix {
 export function getAccumulatedTransform(el: XmlElement, stopAt: XmlElement): SvgMatrix {
   let result: SvgMatrix = { ...IDENTITY_SVG_MATRIX };
 
-  let current: XmlElement | null = el;
-  while (current && current !== stopAt) {
+  for (
+    let current: XmlElement | null = el;
+    current && current !== stopAt;
+    current = current.parentNode as XmlElement | null
+  ) {
+    // Compose: parent transform applied after child → result = parent * child
     const transformAttr = current.getAttribute("transform");
-    if (transformAttr) {
-      const local = parseTransformAttr(transformAttr);
-      // Compose: parent transform applied after child → result = parent * child
-      result = multiplyMatrices(local, result);
-    }
+    if (transformAttr) result = multiplyMatrices(parseTransformAttr(transformAttr), result);
 
-    // Handle viewBox on inner <svg> elements
-    if (current.localName === "svg" && current !== stopAt && current.getAttribute("viewBox")) {
-      const vbTransform = viewBoxTransform(current);
-      if (vbTransform) {
-        result = multiplyMatrices(vbTransform, result);
-      }
-    }
-
-    current = current.parentNode as XmlElement | null;
+    const vbTransform = current.localName === "svg" ? viewBoxTransform(current) : null;
+    if (vbTransform) result = multiplyMatrices(vbTransform, result);
   }
 
   return result;
@@ -192,38 +120,24 @@ export function getAccumulatedTransform(el: XmlElement, stopAt: XmlElement): Svg
 
 /**
  * Compute the implicit transform from a <svg> element's viewBox to its
- * width/height (preserveAspectRatio is assumed to be default "xMidYMid meet").
+ * width/height (a simple scale + translate; preserveAspectRatio is ignored).
  */
 function viewBoxTransform(svgEl: XmlElement): SvgMatrix | null {
-  const vb = svgEl.getAttribute("viewBox");
-  if (!vb) return null;
-
-  const parts = vb.split(/[\s,]+/).map(Number);
-  if (parts.length < 4) return null;
+  const parts = svgEl
+    .getAttribute("viewBox")
+    ?.split(/[\s,]+/)
+    .map(Number);
+  if (!parts || parts.length < 4) return null;
 
   const [vbX, vbY, vbW, vbH] = parts as [number, number, number, number];
-  if (vbW <= 0 || vbH <= 0) return null;
-
   const w = parseFloat(svgEl.getAttribute("width") || "0");
   const h = parseFloat(svgEl.getAttribute("height") || "0");
-  if (w <= 0 || h <= 0) return null;
+  if (vbW <= 0 || vbH <= 0 || w <= 0 || h <= 0) return null;
 
-  // Simple scale + translate (ignoring preserveAspectRatio for now)
   const sx = w / vbW;
   const sy = h / vbH;
-  return {
-    a: sx,
-    b: 0,
-    c: 0,
-    d: sy,
-    e: -vbX * sx,
-    f: -vbY * sy,
-  };
+  return { a: sx, b: 0, c: 0, d: sy, e: -vbX * sx, f: -vbY * sy };
 }
-
-// ──────────────────────────────────────────────
-// Coordinate Application
-// ──────────────────────────────────────────────
 
 /** Apply an SVG matrix to a single point. */
 export function applyMatrixToPoint(x: number, y: number, m: SvgMatrix): [number, number] {
@@ -235,7 +149,7 @@ export function applyMatrixToRings(
   rings: [number, number][][],
   m: SvgMatrix
 ): [number, number][][] {
-  if (isIdentity(m)) return rings;
-
-  return rings.map((ring) => ring.map(([x, y]) => applyMatrixToPoint(x, y, m)));
+  return isIdentity(m)
+    ? rings
+    : rings.map((ring) => ring.map(([x, y]) => applyMatrixToPoint(x, y, m)));
 }
