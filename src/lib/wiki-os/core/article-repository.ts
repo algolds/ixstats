@@ -79,8 +79,11 @@ const ENTITY_DEFAULTS = {
 } satisfies Partial<WikiArticleEntity>;
 
 /** The object without its null/undefined values, so defaults spread under it survive. */
-const defined = <T extends object>(obj: T): Partial<T> =>
-  Object.fromEntries(Object.entries(obj).filter(([, value]) => value != null)) as Partial<T>;
+type Defined<T> = { [K in keyof T as null extends T[K] ? never : K]: T[K] } & {
+  [K in keyof T]?: NonNullable<T[K]>;
+};
+const defined = <T extends object>(obj: T): Defined<T> =>
+  Object.fromEntries(Object.entries(obj).filter(([, value]) => value != null)) as Defined<T>;
 
 function toArticleEntity(article: Prisma.WikiArticleGetPayload<{ select: typeof ARTICLE_SELECT }>) {
   const { syncedAt, ...columns } = article;
@@ -88,7 +91,6 @@ function toArticleEntity(article: Prisma.WikiArticleGetPayload<{ select: typeof 
     ...ENTITY_DEFAULTS,
     ...defined(columns),
     id: toArticleId(article.id),
-    title: article.title,
     slug: toArticleSlug(article.title),
     status: (article.status || "PUBLISHED") as WikiArticleEntity["status"],
     format: (article.format || "STRUCTURED_JSON") as WikiArticleEntity["format"],
