@@ -7,8 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { isSystemOwner } from "~/lib/auth";
+import { requireAdminSession } from "~/server/shared/route-auth";
 import { db } from "~/server/db";
 import { createHash } from "crypto";
 import { extractSvgMetadata } from "~/lib/flags/svg-parser";
@@ -27,17 +26,8 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 export async function POST(request: NextRequest) {
   try {
-    // Auth check
-    const session = await auth();
-    if (!session?.userId) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    }
-    if (!isSystemOwner(session.userId)) {
-      const role = (session.sessionClaims?.metadata as any)?.role;
-      if (!["admin", "owner", "staff"].includes(role as string)) {
-        return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-      }
-    }
+    const admin = await requireAdminSession();
+    if (admin instanceof NextResponse) return admin;
 
     // Parse multipart form data
     const formData = await request.formData();
@@ -89,7 +79,7 @@ export async function POST(request: NextRequest) {
         fileSizeBytes: file.size,
         svgHash,
         status: "pending",
-        uploadedBy: session.userId,
+        uploadedBy: admin.userId,
         svgContent,
         svgMetadata: metadata as unknown as Record<string, unknown> as any,
       },

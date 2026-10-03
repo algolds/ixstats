@@ -1,33 +1,9 @@
 // src/app/api/flag-cache/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { serverFlagResolver } from "~/lib/flags/server";
 import { api } from "~/trpc/server";
-import { isSystemOwner } from "~/lib/auth";
+import { requireAdminSession } from "~/server/shared/route-auth";
 import { ALL_REALMS } from "~/lib/realms/realm-ids";
-
-// Helper to check admin access
-async function requireAdminAccess(): Promise<{ authorized: boolean; error?: NextResponse }> {
-  const session = await auth();
-  if (!session?.userId) {
-    return {
-      authorized: false,
-      error: NextResponse.json({ error: "Authentication required" }, { status: 401 }),
-    };
-  }
-
-  if (!isSystemOwner(session.userId)) {
-    const role = (session.sessionClaims?.metadata as any)?.role;
-    if (!["admin", "owner", "staff"].includes(role)) {
-      return {
-        authorized: false,
-        error: NextResponse.json({ error: "Admin access required" }, { status: 403 }),
-      };
-    }
-  }
-
-  return { authorized: true };
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -149,10 +125,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const authCheck = await requireAdminAccess();
-    if (!authCheck.authorized) {
-      return authCheck.error;
-    }
+    const denied = await requireAdminSession();
+    if (denied instanceof NextResponse) return denied;
 
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
@@ -214,10 +188,8 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const authCheck = await requireAdminAccess();
-    if (!authCheck.authorized) {
-      return authCheck.error;
-    }
+    const denied = await requireAdminSession();
+    if (denied instanceof NextResponse) return denied;
 
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
