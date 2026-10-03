@@ -89,7 +89,7 @@ export default function AchievementsPage() {
   const globalRank = rankIndex !== undefined && rankIndex !== -1 ? rankIndex + 1 : 0;
 
   return (
-    <VaultSidebarLayout activeSection="achievements">
+    <VaultSidebarLayout>
       <div className="space-y-6">
         <PageHeader
           title="Achievements"

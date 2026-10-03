@@ -81,12 +81,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
   );
 
   // Fetch public collections
-  const {
-    data: collectionsData,
-    isLoading,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    refetch,
-  } = api.vault.getPublicCollections.useQuery({
+  const { data: collectionsData, isLoading } = api.vault.getPublicCollections.useQuery({
     limit: pageSize,
     offset: currentPage * pageSize,
     sortBy,

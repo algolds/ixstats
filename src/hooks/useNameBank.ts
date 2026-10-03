@@ -6,9 +6,6 @@ import { api } from "~/trpc/react";
 import type { NameCategory, CulturalProfile } from "~/lib/onoma/types";
 
 export function useNameBank() {
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const utils = api.useUtils();
-
   // Filters for public dictionaries
   const [publicCategoryFilter, setPublicCategoryFilter] = useState<string | null>(null);
   const [publicProfileFilter, setPublicProfileFilter] = useState<string | null>(null);

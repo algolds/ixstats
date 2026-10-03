@@ -4,7 +4,6 @@ import { springSmooth } from "~/lib/design/motion";
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
-// oxlint-disable-next-line eslint/no-unused-vars
 import {
   Package,
   Sparks as Sparkles,
@@ -106,15 +105,6 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
   Eye,
   User,
 };
-
-// oxlint-disable-next-line eslint/no-unused-vars
-interface Particle {
-  id: number;
-  x: number;
-  y: number;
-  rotate: number;
-  scale: number;
-}
 
 const STORE_TABS = [
   { id: "my-packs" as const, label: "My packs", icon: Package },

@@ -130,8 +130,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
 
   // Merge & group
 
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { allAlerts, groups } = useMemo(() => {
+  const { groups } = useMemo(() => {
     const standardList: NotificationItem[] = (notificationsData?.notifications || [])
       .filter((n) => !n.dismissed && !locallyDismissedIds.has(n.id))
       .map((n) => ({
@@ -179,7 +178,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
       if (items.length > 0) grps.push({ label, items });
     }
 
-    return { allAlerts: alerts, groups: grps };
+    return { groups: grps };
   }, [
     notificationsData?.notifications,
     locallyDismissedIds,
@@ -432,7 +431,6 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                                   isRead={isRead}
                                   colors={colors}
                                   Icon={Icon}
-                                  handleMarkRead={handleMarkRead}
                                   handleDismiss={handleDismiss}
                                   handleClick={handleClick}
                                   relativeTime={relativeTime}

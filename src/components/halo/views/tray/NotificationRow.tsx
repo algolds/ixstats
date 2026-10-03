@@ -14,7 +14,6 @@ interface NotificationRowProps {
   isRead: boolean;
   colors: { bg: string; text: string };
   Icon: React.ComponentType<{ className?: string }>;
-  handleMarkRead: (n: NotificationItem) => void;
   handleDismiss: (n: NotificationItem) => void;
   handleClick: (n: NotificationItem) => void;
   relativeTime: (ts: string | number | Date) => string;
@@ -27,8 +26,6 @@ export function NotificationRow({
   isRead,
   colors,
   Icon,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  handleMarkRead,
   handleDismiss,
   handleClick,
   relativeTime: relTime,

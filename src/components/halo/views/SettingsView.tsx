@@ -9,7 +9,6 @@ import { useRouter } from "next/navigation";
 import { withBasePath } from "~/lib/base-path";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { cn } from "~/lib/utils";
-// oxlint-disable-next-line eslint/no-unused-vars
 import {
   Settings,
   Xmark as X,

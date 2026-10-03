@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { stripBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
-import type { VaultSection } from "./VaultSidebarNav";
 import { DashboardPlayerWidget } from "~/components/dashboard/sidebar/DashboardPlayerWidget";
 import { VaultWidget } from "~/components/mycountry/shell/VaultWidget";
 import { DashboardQuickLinks } from "~/components/dashboard/sidebar/DashboardQuickLinks";
@@ -17,21 +16,9 @@ interface VaultSidebarLayoutProps {
   heroSection?: ReactNode;
   /** Alerts/banners rendered above the main content */
   alerts?: ReactNode;
-  /** Controlled mode: active section for sidebar nav */
-  activeSection?: VaultSection;
-  /** Controlled mode: callback for sidebar nav clicks (instant switching) */
-  onNavigate?: (section: VaultSection) => void;
 }
 
-export function VaultSidebarLayout({
-  children,
-  heroSection,
-  alerts,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  activeSection,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  onNavigate,
-}: VaultSidebarLayoutProps) {
+export function VaultSidebarLayout({ children, heroSection, alerts }: VaultSidebarLayoutProps) {
   const pathname = stripBasePath(usePathname());
   const { showNsImporter } = useTheme();
 

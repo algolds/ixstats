@@ -20,7 +20,6 @@ import { AudioPlayer, AudioPlayerControlBar, AudioPlayerButton } from "~/compone
 import { Transport } from "~/components/audio/elements/transport";
 import { Fader } from "~/components/audio/elements/fader";
 import { PlayPauseMorph } from "./PlayPauseMorph";
-// oxlint-disable-next-line eslint/no-unused-vars
 import { useAudioStore } from "~/lib/audio-store";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";

@@ -193,20 +193,6 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
         prev.includes(cardId) ? prev.filter((id) => id !== cardId) : [...prev, cardId]
       );
     };
-    // oxlint-disable-next-line eslint/no-unused-vars
-    const resetForm = () => {
-      setStep(recipientId ? "cards" : "partner");
-      setSelectedYourCards([]);
-      setSelectedTheirCards([]);
-      setYourCredits(0);
-      setTheirCredits(0);
-      setMessage("");
-      if (!recipientId) {
-        setSearchRecipient("");
-        setSelectedPartnerName("");
-      }
-      setPartnerSearchText("");
-    };
 
     const STEPS = ["partner", "cards", "review"] as const;
     const STEP_LABELS: Record<string, string> = {
