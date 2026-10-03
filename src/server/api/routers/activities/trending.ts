@@ -1,13 +1,274 @@
-// src/server/api/routers/activities.ts
-// Activities router for live activity feed system
-
 import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { getRecentChanges as getWikiBridgeRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getForumTrendingThreads } from "~/server/modules/forum";
 import { TRENDING_CONFIG, topicRank } from "~/lib/thinkpages/trending";
 
-// Input schemas
+type TrendingItem = {
+  id: string;
+  title: string;
+  source: "thinkpages" | "forum" | "wiki" | "ixstats" | "crisis";
+  score: number;
+  engagement: { views: number; replies: number; likes: number; reposts: number };
+  author?: string;
+  url?: string;
+  excerpt?: string;
+  timestamp: string;
+  isNew?: boolean;
+};
+
+const HOUR_MS = 60 * 60 * 1000;
+const NO_ENGAGEMENT = { views: 0, replies: 0, likes: 0, reposts: 0 };
+
+/** Time decay: content from 0h ago = 1.0x, 48h ago = 0.1x */
+function timeDecay(ts: Date | string, now: number) {
+  const time = new Date(ts).getTime();
+  return Math.max(0.1, 1 - (now - (isNaN(time) ? now : time)) / (48 * HOUR_MS));
+}
+
+/** One failing source must not take the others down. */
+async function collect(label: string, load: () => Promise<TrendingItem[]>) {
+  try {
+    return await load();
+  } catch (error) {
+    console.error(`[UnifiedTrending] ${label} failed:`, error);
+    return [];
+  }
+}
+
+const SPORTS_BULLETIN = /<!--\s*sports-bulletin:([\s\S]*?)-->/i;
+
+interface SportsBulletin {
+  sportEmoji?: string;
+  league?: { id?: string; name?: string };
+  isChampionBulletin?: boolean;
+  isPlayoffBulletin?: boolean;
+  championName?: string;
+  championId?: string;
+  roundName?: string;
+  matchDay?: number;
+  llmSummary?: string;
+}
+
+/** Title, excerpt and link for a bulletin embedded in a ThinkPages post. */
+function describeBulletin(data: SportsBulletin, fallbackUrl: string) {
+  const emoji = data.sportEmoji || "⚽";
+  const leagueName = data.league?.name || "League";
+  const leagueUrl = data.league?.id ? `/myleague/${data.league.id}` : fallbackUrl;
+  const summary = (fallback: string) =>
+    data.llmSummary ? data.llmSummary.slice(0, 95) + "..." : fallback;
+  if (data.isChampionBulletin) {
+    return {
+      title: `${emoji} ${leagueName} Champion Crowned!`,
+      excerpt: `Congratulations to ${data.championName || "the champions"}!`,
+      url: data.championId ? `/myclub/${data.championId}` : fallbackUrl,
+    };
+  }
+  if (data.isPlayoffBulletin) {
+    return {
+      title: `${emoji} ${leagueName} ${data.roundName || "Playoff"}`,
+      excerpt: summary("Playoff round results and highlights"),
+      url: leagueUrl,
+    };
+  }
+  return {
+    title: `${emoji} ${leagueName} ${data.matchDay ? `— Matchday ${data.matchDay}` : ""}`,
+    excerpt: summary("Latest matchday results and table movers"),
+    url: leagueUrl,
+  };
+}
+
+type TrendingPost = {
+  id: string;
+  content: string;
+  account: { username: string; displayName: string | null } | null;
+};
+
+function describePost(post: TrendingPost) {
+  const cleanContent = post.content.replace(/<!--\s*sports-bulletin:[\s\S]*?-->/gi, "").trim();
+  const previewText = cleanContent || "Sports News Bulletin";
+  const url = `/thinkpages/post/${post.id}`;
+  const excerpt = previewText.length > 100 ? previewText.slice(0, 97) + "..." : previewText;
+  const username = post.account?.username;
+  const bulletin = post.content.match(SPORTS_BULLETIN)?.[1];
+
+  if (bulletin) {
+    try {
+      return describeBulletin(JSON.parse(bulletin.trim()) as SportsBulletin, url);
+    } catch {
+      return { title: `⚽ ${post.account?.displayName || "Sports News"}`, excerpt, url };
+    }
+  }
+  const firstLine = username === "SportsNews" ? cleanContent.split("\n")[0] || "" : null;
+  const title =
+    firstLine === null
+      ? `@${username ?? "unknown"}`
+      : firstLine
+        ? firstLine.replace(/\*\*/g, "").slice(0, 40)
+        : "⚽ Sports Bulletin";
+  return { title, excerpt, url };
+}
+
+async function thinkpagesItems(db: PrismaClient): Promise<TrendingItem[]> {
+  // Scored by the thinkpages-trending cron (engagement-decay over real reactions, replies
+  // and reposts); posts with no engagement from other users do not appear.
+  const posts = await db.thinkpagesPost.findMany({
+    where: { visibility: "public", trendingScore: { gt: 0 } },
+    orderBy: { trendingScore: "desc" },
+    take: 30,
+    include: { account: { select: { username: true, displayName: true, verified: true } } },
+  });
+  return posts.map((post): TrendingItem => ({
+    id: `tp-${post.id}`,
+    ...describePost(post),
+    source: "thinkpages",
+    score: post.trendingScore,
+    engagement: {
+      views: post.impressions,
+      replies: post.replyCount,
+      likes: post.likeCount,
+      reposts: post.repostCount,
+    },
+    author: post.account?.displayName ?? post.account?.username,
+    timestamp: (post.isAutoGenerated ? post.ixTimeTimestamp : post.createdAt).toISOString(),
+  }));
+}
+
+async function forumItems(now: number): Promise<TrendingItem[]> {
+  const threads = await getForumTrendingThreads(25);
+  return threads.map((thread): TrendingItem => ({
+    id: `forum-${thread.threadId}`,
+    title: thread.title,
+    source: "forum",
+    // Views are significant, replies = comments
+    score: (thread.replyCount * 2 + thread.viewCount * 0.05) * timeDecay(thread.timestamp, now),
+    engagement: { ...NO_ENGAGEMENT, views: thread.viewCount, replies: thread.replyCount },
+    author: thread.author,
+    url: thread.url,
+    timestamp: thread.timestamp.toISOString(),
+  }));
+}
+
+const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? "s" : ""}`;
+
+async function wikiItems(now: number): Promise<TrendingItem[]> {
+  // Trending pages from recent changes, aggregated by title
+  const pageMap = new Map<
+    string,
+    {
+      title: string;
+      editCount: number;
+      editors: Set<string>;
+      totalBytesChanged: number;
+      isNew: boolean;
+      latestEdit: Date;
+    }
+  >();
+  for (const rc of await getWikiBridgeRecentChanges(100)) {
+    const editDate = new Date(rc.timestamp);
+    const validDate = isNaN(editDate.getTime()) ? new Date() : editDate;
+    const page = pageMap.get(rc.title) ?? {
+      title: rc.title,
+      editCount: 0,
+      editors: new Set<string>(),
+      totalBytesChanged: 0,
+      isNew: false,
+      latestEdit: validDate,
+    };
+    page.editCount++;
+    page.editors.add(rc.user);
+    page.totalBytesChanged += Math.abs(rc.newLen - rc.oldLen);
+    page.isNew ||= rc.type === "new";
+    if (validDate > page.latestEdit) page.latestEdit = validDate;
+    pageMap.set(rc.title, page);
+  }
+  return [...pageMap.values()]
+    .sort((a, b) => b.editCount - a.editCount)
+    .slice(0, 25)
+    .map((page): TrendingItem => {
+      const editors = page.editors.size;
+      // Edits = activity signal, multiple editors = collaborative interest, byte changes proxy
+      // for content depth; new pages get a bonus
+      const raw =
+        page.editCount * 5 +
+        editors * 10 +
+        Math.min(page.totalBytesChanged / 500, 20) +
+        (page.isNew ? 15 : 0);
+      const activity = `${plural(page.editCount, "edit")} by ${plural(editors, "editor")}`;
+      return {
+        id: `wiki-${page.title}`,
+        title: page.title,
+        source: "wiki",
+        score: raw * timeDecay(page.latestEdit, now),
+        engagement: NO_ENGAGEMENT,
+        url: `/wiki/${encodeURIComponent(page.title.replace(/ /g, "_"))}`,
+        excerpt: page.isNew
+          ? `New page — ${activity}`
+          : `${activity} (${page.totalBytesChanged > 0 ? "+" : ""}${page.totalBytesChanged} bytes)`,
+        timestamp: page.latestEdit.toISOString(),
+        isNew: page.isNew,
+      };
+    });
+}
+
+const ACTIVITY_BASE_SCORE: Record<string, number> = {
+  diplomatic: 25,
+  economic: 20,
+  achievement: 15,
+  meta: 10,
+};
+
+async function activityItems(db: PrismaClient, now: number): Promise<TrendingItem[]> {
+  const activities = await db.activityFeed.findMany({
+    where: { createdAt: { gte: new Date(now - 48 * HOUR_MS) }, visibility: "public" },
+    orderBy: { views: "desc" },
+    take: 40,
+    select: {
+      id: true,
+      title: true,
+      type: true,
+      likes: true,
+      comments: true,
+      shares: true,
+      views: true,
+      createdAt: true,
+    },
+  });
+  return activities.map((a): TrendingItem => {
+    const raw =
+      (ACTIVITY_BASE_SCORE[a.type] ?? 5) + a.shares * 3 + a.comments * 2 + a.likes + a.views * 0.01;
+    return {
+      id: `ix-${a.id}`,
+      title: a.title,
+      source: "ixstats",
+      score: raw * timeDecay(a.createdAt, now),
+      engagement: { views: a.views, replies: a.comments, likes: a.likes, reposts: a.shares },
+      timestamp: a.createdAt.toISOString(),
+    };
+  });
+}
+
+const CRISIS_BASE_SCORE: Record<string, number> = { critical: 60, high: 45, medium: 30 };
+
+async function crisisItems(db: PrismaClient, now: number): Promise<TrendingItem[]> {
+  const crises = await db.crisisEvent.findMany({
+    where: { responseStatus: { in: ["pending", "in_progress", "monitoring"] } },
+    orderBy: [{ severity: "desc" }, { timestamp: "desc" }],
+    take: 10,
+  });
+  return crises.map((crisis): TrendingItem => ({
+    id: `crisis-${crisis.id}`,
+    title: crisis.title,
+    source: "crisis",
+    score:
+      (CRISIS_BASE_SCORE[crisis.severity] ?? 20) * Math.max(0.4, timeDecay(crisis.timestamp, now)),
+    engagement: { ...NO_ENGAGEMENT, views: crisis.casualties ?? 0 },
+    excerpt: crisis.description ?? "Active international crisis requiring resolution.",
+    timestamp: crisis.timestamp.toISOString(),
+  }));
+}
+
 export const activitiesTrendingRouter = createTRPCRouter({
   /**
    * Trending hashtags, as written to `TrendingTopic` by the thinkpages-trending cron job over
@@ -61,300 +322,17 @@ export const activitiesTrendingRouter = createTRPCRouter({
    * Scoring: weighted engagement with time decay (newer content ranks higher).
    */
   getUnifiedTrending: publicProcedure
-    .input(
-      z.object({
-        limit: z.number().min(1).max(100).default(50),
-      })
-    )
+    .input(z.object({ limit: z.number().min(1).max(100).default(50) }))
     .query(async ({ ctx, input }) => {
-      type TrendingItem = {
-        id: string;
-        title: string;
-        source: "thinkpages" | "forum" | "wiki" | "ixstats" | "crisis";
-        score: number;
-        engagement: { views: number; replies: number; likes: number; reposts: number };
-        author?: string;
-        url?: string;
-        excerpt?: string;
-        timestamp: string;
-        isNew?: boolean;
-      };
-
       const now = Date.now();
-      const last48h = new Date(now - 48 * 60 * 60 * 1000);
-      const items: TrendingItem[] = [];
-
-      // Time decay: content from 0h ago = 1.0x, 48h ago = 0.1x
-      const timeDecay = (ts: Date | string) => {
-        const d = typeof ts === "string" ? new Date(ts) : ts;
-        const time = isNaN(d.getTime()) ? now : d.getTime();
-        return Math.max(0.1, 1 - (now - time) / (48 * 60 * 60 * 1000));
-      };
-
-      // ── 1. ThinkPages trending posts ──
-      try {
-        // Scored by the thinkpages-trending cron (engagement-decay over real reactions, replies
-        // and reposts); posts with no engagement from other users do not appear.
-        const posts = await ctx.db.thinkpagesPost.findMany({
-          where: { visibility: "public", trendingScore: { gt: 0 } },
-          orderBy: { trendingScore: "desc" },
-          take: 30,
-          include: {
-            account: { select: { username: true, displayName: true, verified: true } },
-          },
-        });
-
-        for (const post of posts) {
-          const score = post.trendingScore;
-          let title = `@${post.account?.username ?? "unknown"}`;
-          const cleanContent = post.content
-            .replace(/<!--\s*sports-bulletin:[\s\S]*?-->/gi, "")
-            .trim();
-          const previewText = cleanContent || "Sports News Bulletin";
-          let excerpt = previewText.length > 100 ? previewText.slice(0, 97) + "..." : previewText;
-          let targetUrl = `/thinkpages/post/${post.id}`;
-          const bulletinMatch = post.content.match(/<!--\s*sports-bulletin:([\s\S]*?)-->/i);
-          if (bulletinMatch && bulletinMatch[1]) {
-            try {
-              const data = JSON.parse(bulletinMatch[1].trim());
-              const emoji = data.sportEmoji || "⚽";
-              const leagueName = data.league?.name || "League";
-              if (data.isChampionBulletin) {
-                title = `${emoji} ${leagueName} Champion Crowned!`;
-                excerpt = `Congratulations to ${data.championName || "the champions"}!`;
-                if (data.championId) targetUrl = `/myclub/${data.championId}`;
-              } else if (data.isPlayoffBulletin) {
-                title = `${emoji} ${leagueName} ${data.roundName || "Playoff"}`;
-                excerpt = data.llmSummary
-                  ? data.llmSummary.slice(0, 95) + "..."
-                  : "Playoff round results and highlights";
-                if (data.league?.id) targetUrl = `/myleague/${data.league.id}`;
-              } else {
-                title = `${emoji} ${leagueName} ${data.matchDay ? `— Matchday ${data.matchDay}` : ""}`;
-                excerpt = data.llmSummary
-                  ? data.llmSummary.slice(0, 95) + "..."
-                  : "Latest matchday results and table movers";
-                if (data.league?.id) targetUrl = `/myleague/${data.league.id}`;
-              }
-            } catch (_err) {
-              title = `⚽ ${post.account?.displayName || "Sports News"}`;
-            }
-          } else if (post.account?.username === "SportsNews") {
-            const firstLine = cleanContent.split("\n")[0] || "";
-            title = firstLine ? firstLine.replace(/\*\*/g, "").slice(0, 40) : "⚽ Sports Bulletin";
-          }
-
-          items.push({
-            id: `tp-${post.id}`,
-            title,
-            source: "thinkpages",
-            score,
-            engagement: {
-              views: post.impressions,
-              replies: post.replyCount,
-              likes: post.likeCount,
-              reposts: post.repostCount,
-            },
-            author: post.account?.displayName ?? post.account?.username,
-            url: targetUrl,
-            excerpt,
-            timestamp: post.isAutoGenerated
-              ? post.ixTimeTimestamp.toISOString()
-              : post.createdAt.toISOString(),
-          });
-        }
-      } catch (error) {
-        console.error("[UnifiedTrending] ThinkPages failed:", error);
-      }
-
-      // ── 2. Forum threads ──
-      try {
-        const threads = await getForumTrendingThreads(25);
-        for (const thread of threads) {
-          // Forum engagement: views are significant, replies = comments
-          const raw = thread.replyCount * 2 + thread.viewCount * 0.05;
-          const score = raw * timeDecay(thread.timestamp);
-          items.push({
-            id: `forum-${thread.threadId}`,
-            title: thread.title,
-            source: "forum",
-            score,
-            engagement: {
-              views: thread.viewCount,
-              replies: thread.replyCount,
-              likes: 0,
-              reposts: 0,
-            },
-            author: thread.author,
-            url: thread.url,
-            timestamp: thread.timestamp.toISOString(),
-          });
-        }
-      } catch (error) {
-        console.error("[UnifiedTrending] Forum failed:", error);
-      }
-
-      // ── 3. Wiki trending pages ──
-      try {
-        // Build trending pages from recent changes (aggregated by title)
-        const recentEdits = await getWikiBridgeRecentChanges(100);
-        const pageMap = new Map<
-          string,
-          {
-            title: string;
-            editCount: number;
-            uniqueEditors: Set<string>;
-            totalBytesChanged: number;
-            isNew: boolean;
-            latestEdit: Date;
-          }
-        >();
-        for (const rc of recentEdits) {
-          const editDate = new Date(rc.timestamp);
-          const validDate = isNaN(editDate.getTime()) ? new Date() : editDate;
-          const existing = pageMap.get(rc.title);
-          if (existing) {
-            existing.editCount++;
-            existing.uniqueEditors.add(rc.user);
-            existing.totalBytesChanged += Math.abs(rc.newLen - rc.oldLen);
-            if (rc.type === "new") existing.isNew = true;
-            if (validDate > existing.latestEdit) {
-              existing.latestEdit = validDate;
-            }
-          } else {
-            pageMap.set(rc.title, {
-              title: rc.title,
-              editCount: 1,
-              uniqueEditors: new Set([rc.user]),
-              totalBytesChanged: Math.abs(rc.newLen - rc.oldLen),
-              isNew: rc.type === "new",
-              latestEdit: validDate,
-            });
-          }
-        }
-        const pages = [...pageMap.values()]
-          .map((p) => ({ ...p, uniqueEditors: p.uniqueEditors.size }))
-          .sort((a, b) => b.editCount - a.editCount)
-          .slice(0, 25);
-        for (const page of pages) {
-          // Wiki engagement: edits = activity signal, multiple editors = collaborative interest
-          // Byte changes proxy for content depth; new pages get a bonus
-          const raw =
-            page.editCount * 5 +
-            page.uniqueEditors * 10 +
-            Math.min(page.totalBytesChanged / 500, 20) +
-            (page.isNew ? 15 : 0);
-          const score = raw * timeDecay(page.latestEdit);
-          items.push({
-            id: `wiki-${page.title}`,
-            title: page.title,
-            source: "wiki",
-            score,
-            engagement: {
-              views: 0,
-              replies: 0,
-              likes: 0,
-              reposts: 0,
-            },
-            author: undefined,
-            url: `/wiki/${encodeURIComponent(page.title.replace(/ /g, "_"))}`,
-            excerpt: page.isNew
-              ? `New page — ${page.editCount} edit${page.editCount > 1 ? "s" : ""} by ${page.uniqueEditors} editor${page.uniqueEditors > 1 ? "s" : ""}`
-              : `${page.editCount} edit${page.editCount > 1 ? "s" : ""} by ${page.uniqueEditors} editor${page.uniqueEditors > 1 ? "s" : ""} (${page.totalBytesChanged > 0 ? "+" : ""}${page.totalBytesChanged} bytes)`,
-            timestamp: page.latestEdit.toISOString(),
-            isNew: page.isNew,
-          });
-        }
-      } catch (error) {
-        console.error("[UnifiedTrending] Wiki failed:", error);
-      }
-
-      // ── 4. IxStats activities ──
-      try {
-        const activities = await ctx.db.activityFeed.findMany({
-          where: { createdAt: { gte: last48h }, visibility: "public" },
-          orderBy: { views: "desc" },
-          take: 40,
-          select: {
-            id: true,
-            title: true,
-            type: true,
-            likes: true,
-            comments: true,
-            shares: true,
-            views: true,
-            createdAt: true,
-          },
-        });
-
-        for (const a of activities) {
-          let baseScore = 5;
-          if (a.type === "diplomatic") baseScore = 25;
-          else if (a.type === "economic") baseScore = 20;
-          else if (a.type === "achievement") baseScore = 15;
-          else if (a.type === "meta") baseScore = 10;
-
-          const raw = baseScore + a.shares * 3 + a.comments * 2 + a.likes + a.views * 0.01;
-          const score = raw * timeDecay(a.createdAt);
-          items.push({
-            id: `ix-${a.id}`,
-            title: a.title,
-            source: "ixstats",
-            score,
-            engagement: {
-              views: a.views,
-              replies: a.comments,
-              likes: a.likes,
-              reposts: a.shares,
-            },
-            timestamp: a.createdAt.toISOString(),
-          });
-        }
-      } catch (error) {
-        console.error("[UnifiedTrending] IxStats activities failed:", error);
-      }
-
-      // ── 5. Crisis Events ──
-      try {
-        const crises = await ctx.db.crisisEvent.findMany({
-          where: {
-            responseStatus: { in: ["pending", "in_progress", "monitoring"] },
-          },
-          orderBy: [{ severity: "desc" }, { timestamp: "desc" }],
-          take: 10,
-        });
-
-        for (const crisis of crises) {
-          const baseScore =
-            crisis.severity === "critical"
-              ? 60
-              : crisis.severity === "high"
-                ? 45
-                : crisis.severity === "medium"
-                  ? 30
-                  : 20;
-          const score = baseScore * Math.max(0.4, timeDecay(crisis.timestamp));
-          items.push({
-            id: `crisis-${crisis.id}`,
-            title: crisis.title,
-            source: "crisis",
-            score,
-            engagement: {
-              views: crisis.casualties ?? 0,
-              replies: 0,
-              likes: 0,
-              reposts: 0,
-            },
-            excerpt: crisis.description ?? "Active international crisis requiring resolution.",
-            timestamp: crisis.timestamp.toISOString(),
-          });
-        }
-      } catch (error) {
-        console.error("[UnifiedTrending] Crisis events failed:", error);
-      }
-
-      // Sort by score descending and return top items
-      items.sort((a, b) => b.score - a.score);
+      const sources = await Promise.all([
+        collect("ThinkPages", () => thinkpagesItems(ctx.db)),
+        collect("Forum", () => forumItems(now)),
+        collect("Wiki", () => wikiItems(now)),
+        collect("IxStats activities", () => activityItems(ctx.db, now)),
+        collect("Crisis events", () => crisisItems(ctx.db, now)),
+      ]);
+      const items = sources.flat().sort((a, b) => b.score - a.score);
       return { items: items.slice(0, input.limit), generatedAt: new Date().toISOString() };
     }),
 });
