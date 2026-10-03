@@ -6,7 +6,6 @@ import React, { useRef, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { addSectionEditLinks, type TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
-import { AppleBooksTocDrawer } from "~/components/wiki-os/reader/AppleBooksTocDrawer";
 import { StickyToc } from "~/components/wiki-os/reader/StickyToc";
 import { InfoboxWithMap } from "~/components/wiki-os/reader/InfoboxWithMap";
 import { useImageLightbox } from "~/components/wiki-os/reader/ImageLightbox";
@@ -150,7 +149,6 @@ export function ArticleRenderer({
   const readOnly = source !== "ixwiki";
   const marginOpen = isMarginOpen && !readOnly;
   const marginEnabled = !!title && !readOnly;
-  const [tocOpen, setTocOpen] = useState(false);
   const [companionCollapsed, setCompanionCollapsed] = useState(false);
 
   // Persist companion collapsed preference (xl only)
@@ -531,11 +529,6 @@ export function ArticleRenderer({
 
   const lightboxPortal = useImageLightbox(contentRef);
 
-  const _stashQuery = api.wikios.isStashed.useQuery(
-    { pageTitle: title },
-    { enabled: isAuthenticated, retry: false }
-  );
-
   useAnnotationOverlay({
     contentRef,
     annotations: (annotationsData as any) || [],
@@ -598,8 +591,6 @@ export function ArticleRenderer({
           themeColors={themeColors}
           authorInfo={authorInfo}
           awardsData={awardsData}
-          tocLength={toc.length}
-          onTocClick={() => setTocOpen(true)}
         />
         <SourceWikiNote title={title} wikiSource={source} />
 
@@ -779,14 +770,6 @@ export function ArticleRenderer({
           <ChevronLeft className="h-3.5 w-3.5" />
         </button>
       )}
-
-      {/* TOC drawer (modal sheet) */}
-      <AppleBooksTocDrawer
-        isOpen={tocOpen}
-        onClose={() => setTocOpen(false)}
-        entries={toc}
-        themeColors={themeColors}
-      />
 
       {lightboxPortal}
       {citeTooltipPortal}

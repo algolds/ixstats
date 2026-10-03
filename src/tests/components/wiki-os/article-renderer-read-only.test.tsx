@@ -40,9 +40,6 @@ jest.mock("~/lib/wiki-os/editor/wiki-embed-shared", () => ({
   EMBED_JS: "",
   EMBED_PREFETCH: "/maps?embed=true",
 }));
-jest.mock("~/components/wiki-os/reader/AppleBooksTocDrawer", () => ({
-  AppleBooksTocDrawer: () => null,
-}));
 jest.mock("~/components/wiki-os/reader/StickyToc", () => ({ StickyToc: () => null }));
 jest.mock("~/components/wiki-os/reader/InfoboxWithMap", () => ({ InfoboxWithMap: () => null }));
 jest.mock("~/components/wiki-os/reader/ArticleHeader", () => ({

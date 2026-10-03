@@ -67,8 +67,6 @@ export interface ArticleHeaderProps {
       metadata: string | null;
     }>;
   } | null;
-  tocLength: number;
-  onTocClick: () => void;
 }
 
 export function WikiOSHeader({
@@ -80,9 +78,7 @@ export function WikiOSHeader({
   themeColors,
   authorInfo,
   awardsData,
-  _tocLength,
-  _onTocClick,
-}: ArticleHeaderProps & { _tocLength?: number; _onTocClick?: () => void }) {
+}: ArticleHeaderProps) {
   const rawBackdropUrl: string | null =
     typeof countryData?.flagUrl === "string"
       ? countryData.flagUrl
@@ -235,8 +231,6 @@ export function WikiOSHeader({
         themeColors={themeColors}
         authorInfo={authorInfo}
         awardsData={awardsData}
-        tocLength={_tocLength ?? 0}
-        onTocClick={_onTocClick ?? (() => {})}
         primaryAward={primaryAward}
         badgeConfig={badgeConfig}
         showCelebration={showCelebration}
