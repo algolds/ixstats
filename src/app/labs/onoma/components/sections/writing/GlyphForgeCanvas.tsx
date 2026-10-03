@@ -3,7 +3,6 @@
 // Philosophy: Apple SF Symbols × Emil Design Engineering × Pro Audio/Vector Studio
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
-// oxlint-disable-next-line eslint/no-unused-vars
 import {
   Undo as Undo2,
   Redo as Redo2,

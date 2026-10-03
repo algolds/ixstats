@@ -40,10 +40,6 @@ function StashSection({ onLoadToStudio, onNavigateExplore, onNavigateStudio }: S
   // Dictionary collapse state
   const [expandedDicts, setExpandedDicts] = useState<Record<string, boolean>>({});
 
-  // Copy states
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-
   // Name deployment modal
   const [selectedNameForUse, setSelectedNameForUse] = useState<string | null>(null);
 
@@ -79,32 +75,12 @@ function StashSection({ onLoadToStudio, onNavigateExplore, onNavigateStudio }: S
       return matchSearch && matchFolder;
     }) || [];
 
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const handleCopy = async (id: string, text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
-    }
-  };
-
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this item?")) return;
     try {
       await bank.deleteEntry(id);
     } catch (err) {
       console.error("Failed to delete entry:", err);
-    }
-  };
-
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const handleTogglePublic = async (id: string, currentPublic: boolean) => {
-    try {
-      await bank.togglePublic(id, !currentPublic);
-    } catch (err) {
-      console.error("Failed to toggle public status:", err);
     }
   };
 

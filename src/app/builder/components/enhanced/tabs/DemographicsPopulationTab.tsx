@@ -18,7 +18,6 @@ import type {
   RegionDistribution,
 } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
-import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 import {
   calculateDerivedDemographics,
   getRegionColor,
@@ -119,30 +118,11 @@ const SECTION_TITLES = {
 export function DemographicsPopulationTab({
   economyBuilder,
   onEconomyBuilderChange,
-  selectedComponents,
   showAdvanced = false,
 }: DemographicsPopulationTabProps) {
   const [activeSection, setActiveSection] = useState<
     "population" | "age" | "geographic" | "social"
   >("population");
-
-  // Calculate demographic impacts from atomic components
-  const demographicImpacts = useMemo(() => {
-    return selectedComponents.reduce(
-      (acc, compType) => {
-        const component = ATOMIC_ECONOMIC_COMPONENTS[compType];
-        const di = component?.demographicImpact;
-        if (!di) return acc;
-        return {
-          populationGrowth: acc.populationGrowth * (di.populationGrowthModifier ?? 1.0),
-          lifeExpectancy: acc.lifeExpectancy * (di.lifeExpectancyModifier ?? 1.0),
-          literacyRate: acc.literacyRate * (di.literacyModifier ?? 1.0),
-          urbanization: acc.urbanization * (di.urbanizationModifier ?? 1.0),
-        };
-      },
-      { populationGrowth: 1.0, lifeExpectancy: 1.0, literacyRate: 1.0, urbanization: 1.0 }
-    );
-  }, [selectedComponents]);
 
   const handleDemographicsChange = <K extends keyof DemographicsConfiguration>(
     field: K,
@@ -364,9 +344,6 @@ export function DemographicsPopulationTab({
     }),
     [economyBuilder.demographics]
   );
-
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const hasComponentImpact = Object.values(demographicImpacts).some((v) => v !== 1);
 
   return (
     <div className="space-y-6">

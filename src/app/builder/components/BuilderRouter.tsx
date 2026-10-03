@@ -5,16 +5,13 @@ import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "motion/react";
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { Lock, LockSlash as UnlockIcon, ArrowRight } from "iconoir-react";
+import { Lock, LockSlash as UnlockIcon } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { createUrl } from "~/lib/utils";
 import { BuilderErrorBoundary } from "./BuilderErrorBoundary";
 import { BuilderStateProvider, useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { BuilderFilterProvider, useBuilderFilter } from "./builder-filter-context";
 import { BuilderSidebarLayout } from "./BuilderSidebarLayout";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { PreText } from "~/components/ui/pretext";
 import { BuilderWelcomeModal } from "./BuilderWelcomeModal";
 import { BuilderHalo } from "~/components/halo/plugins/builder";
 import { ImportSection } from "./sections/ImportSection";
@@ -545,19 +542,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       );
     }
 
-    const mainContent = (
-      <AtomicBuilderInner
-        onBackToIntro={() => {
-          if (mode === "edit") {
-            router.push(createUrl("/mycountry"));
-          } else {
-            handleNavigate("foundation");
-          }
-        }}
-        mode={mode}
-        countryId={countryId}
-      />
-    );
+    const mainContent = <AtomicBuilderInner mode={mode} countryId={countryId} />;
 
     return mainContent;
   };

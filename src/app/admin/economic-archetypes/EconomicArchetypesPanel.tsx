@@ -10,11 +10,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { ValueSelect } from "~/components/ui/value-select";
 import { useNotify } from "~/hooks/useNotify";
-import {
-  Plus,
-  Search, // oxlint-disable-next-line eslint/no-unused-vars
-  EyeClosed as EyeOff,
-} from "iconoir-react";
+import { Plus, Search } from "iconoir-react";
 import { PageHeader } from "~/components/shell/PageHeader";
 import {
   EconomicArchetypeFormDialog,
@@ -56,8 +52,6 @@ export function EconomicArchetypesPanel() {
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
   const [selectedComplexity, setSelectedComplexity] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const [showInactive, setShowInactive] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingArchetype, setEditingArchetype] = useState<ArchetypeRecord | null>(null);
   const [activeTab, setActiveTab] = useState("general");
@@ -71,13 +65,10 @@ export function EconomicArchetypesPanel() {
     isLoading,
     refetch,
   } = api.economicArchetypes.getAllArchetypes.useQuery({
-    isActive: showInactive ? undefined : true,
+    isActive: true,
   });
 
   const archetypes = archetypesData?.archetypes || [];
-
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { data: stats } = api.economicArchetypes.getArchetypeUsageStats.useQuery();
 
   // Mutations
   const createMutation = api.economicArchetypes.createArchetype.useMutation({

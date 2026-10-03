@@ -14,8 +14,6 @@ interface FoundationPathSelectorProps {
   onBackToHero: () => void;
   onSkipBenchmark: () => void;
   onCountrySelect: (country: RealCountryData) => void;
-  onBackToIntro?: () => void;
-  onCreateFromScratch: () => void;
 }
 
 export function FoundationPathSelector({
@@ -24,8 +22,6 @@ export function FoundationPathSelector({
   onBackToHero,
   onSkipBenchmark,
   onCountrySelect,
-  onBackToIntro,
-  onCreateFromScratch,
 }: FoundationPathSelectorProps) {
   return (
     <motion.div
@@ -74,12 +70,7 @@ export function FoundationPathSelector({
         </div>
       </div>
 
-      <CountrySelector
-        countries={countries}
-        onCountrySelect={onCountrySelect}
-        onBackToIntro={onBackToIntro}
-        onCreateFromScratch={onCreateFromScratch}
-      />
+      <CountrySelector countries={countries} onCountrySelect={onCountrySelect} />
     </motion.div>
   );
 }

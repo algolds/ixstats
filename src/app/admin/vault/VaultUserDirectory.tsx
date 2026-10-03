@@ -32,7 +32,6 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { ValueSelect } from "~/components/ui/value-select";
-// oxlint-disable-next-line eslint/no-unused-vars
 import {
   SystemRestart as Loader2,
   Gift,

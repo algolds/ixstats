@@ -23,7 +23,6 @@ interface GlassSelectBoxProps extends Omit<EnhancedInputProps, "value" | "onChan
   options: SelectOption[];
   placeholder?: string;
   searchable?: boolean;
-  multiSelect?: boolean;
   icon?: React.ComponentType<{ className?: string }>;
   maxHeight?: number;
 }
@@ -41,8 +40,6 @@ export function GlassSelectBox({
   required = false,
   placeholder = "Select an option...",
   searchable = false,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  multiSelect = false,
   icon: Icon,
   maxHeight = 200,
   className,

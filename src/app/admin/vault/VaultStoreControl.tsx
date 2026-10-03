@@ -34,7 +34,6 @@ import {
 import { ColorPickerInput } from "~/components/ui/color-picker";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-// oxlint-disable-next-line eslint/no-unused-vars
 import {
   NavArrowDown as ChevronDown,
   Plus,

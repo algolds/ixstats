@@ -23,7 +23,6 @@ import { FieldIndicator } from "~/app/builder/primitives/FieldIndicator";
 import { Button } from "~/components/ui/button";
 
 interface SectorCardProps {
-  sectorId: string;
   template: SectorTemplate;
   isActive: boolean;
   isLocked: boolean;
@@ -43,8 +42,6 @@ interface SectorCardProps {
 }
 
 export function SectorCard({
-  // oxlint-disable-next-line eslint/no-unused-vars
-  sectorId,
   template,
   isActive,
   isLocked,

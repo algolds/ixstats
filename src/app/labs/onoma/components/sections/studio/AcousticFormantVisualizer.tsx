@@ -4,7 +4,6 @@
 // Onoma Lab — Real-Time IPA Formant & Acoustic Spectrogram Visualizer
 
 import { useState, useMemo, useRef, useEffect } from "react";
-// oxlint-disable-next-line eslint/no-unused-vars
 import { AntennaSignal as Radio } from "iconoir-react";
 import {
   CARDINAL_VOWEL_GRID,
@@ -18,14 +17,11 @@ import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface AcousticFormantVisualizerProps {
   currentIpa: string;
-  currentName?: string;
   accentColor?: string;
 }
 
 export function AcousticFormantVisualizer({
   currentIpa,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  currentName,
   accentColor = "var(--tint)",
 }: AcousticFormantVisualizerProps) {
   const [activeTab, setActiveTab] = useState<"quadrilateral" | "spectrogram">("quadrilateral");

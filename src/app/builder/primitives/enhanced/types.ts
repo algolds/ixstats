@@ -47,7 +47,6 @@ export interface EnhancedInputProps {
   referenceValue?: number;
   referenceLabel?: string;
   showComparison?: boolean;
-  animationDuration?: number;
   className?: string;
 }
 

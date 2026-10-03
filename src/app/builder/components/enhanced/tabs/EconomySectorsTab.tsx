@@ -1,10 +1,5 @@
 import React, { useState, useMemo } from "react";
-// oxlint-disable-next-line eslint/no-unused-vars
-import {
-  Search,
-  Refresh as RefreshCw,
-  InfoCircle as Info,
-} from "iconoir-react";
+import { Search, Refresh as RefreshCw, InfoCircle as Info } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Alert, AlertDescription } from "~/components/ui/alert";
@@ -253,7 +248,6 @@ export function EconomySectorsTab({
       {/* 1. Metrics Overview */}
       <SectorMetrics
         sectors={economyBuilder.sectors}
-        onNormalize={normalizeSectors}
         hasZeroContribution={validation.hasZeroContribution}
       />
 
@@ -328,7 +322,6 @@ export function EconomySectorsTab({
               return (
                 <SectorCard
                   key={sectorType}
-                  sectorId={sectorType}
                   template={template}
                   isActive={!!activeConfig}
                   isLocked={isLocked}

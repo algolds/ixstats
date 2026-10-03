@@ -5,8 +5,7 @@ import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { ValueSelect } from "~/components/ui/value-select";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { Globe, Plus, Search } from "iconoir-react";
+import { Plus, Search } from "iconoir-react";
 import {
   SCENARIO_TYPES,
   RELATIONSHIP_LEVELS,

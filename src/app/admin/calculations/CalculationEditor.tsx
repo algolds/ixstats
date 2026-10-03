@@ -3,14 +3,7 @@
 // Formula & Macro Simulation Engine Editor
 
 import { useState, useEffect } from "react";
-import {
-  Calculator,
-  FloppyDisk as Save,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  StatUp as TrendingUp,
-  EditPencil as Pencil,
-  Search,
-} from "iconoir-react";
+import { Calculator, FloppyDisk as Save, EditPencil as Pencil, Search } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";

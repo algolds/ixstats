@@ -22,16 +22,11 @@ import { BuilderStepLoading } from "../GlobalBuilderLoading";
 import { useBuilderSubmit, BuilderConfirmModal, useBuilderTutorials } from "./atomic-builder";
 
 interface AtomicBuilderPageProps {
-  onBackToIntro?: () => void;
   mode?: "create" | "edit";
   countryId?: string;
 }
 
-function AtomicBuilderPageInner({
-  onBackToIntro,
-  mode = "create",
-  countryId,
-}: AtomicBuilderPageProps) {
+function AtomicBuilderPageInner({ mode = "create", countryId }: AtomicBuilderPageProps) {
   const { builderState, setBuilderState } = useBuilderContext();
   const isEditMode = mode === "edit";
 
@@ -101,13 +96,6 @@ function AtomicBuilderPageInner({
   // Government structure handlers
   const handleGovernmentStructureChange = useCallback(
     (structure: GovernmentBuilderState) => {
-      setBuilderState((prev) => ({ ...prev, governmentStructure: structure }));
-    },
-    [setBuilderState]
-  );
-
-  const handleGovernmentStructureSave = useCallback(
-    async (structure: GovernmentBuilderState) => {
       setBuilderState((prev) => ({ ...prev, governmentStructure: structure }));
     },
     [setBuilderState]
@@ -211,9 +199,7 @@ function AtomicBuilderPageInner({
               countries={countries}
               isLoadingCountries={isLoadingCountries}
               countryLoadError={countryLoadError}
-              onBackToIntro={onBackToIntro}
               onGovernmentStructureChange={handleGovernmentStructureChange}
-              onGovernmentStructureSave={handleGovernmentStructureSave}
             />
           </Suspense>
         </div>
@@ -224,9 +210,7 @@ function AtomicBuilderPageInner({
               countries={countries}
               isLoadingCountries={isLoadingCountries}
               countryLoadError={countryLoadError}
-              onBackToIntro={onBackToIntro}
               onGovernmentStructureChange={handleGovernmentStructureChange}
-              onGovernmentStructureSave={handleGovernmentStructureSave}
             />
           </Suspense>
         </StepContent>
@@ -267,10 +251,6 @@ function AtomicBuilderPageInner({
   );
 }
 
-export function AtomicBuilderPage({
-  onBackToIntro,
-  mode = "create",
-  countryId,
-}: AtomicBuilderPageProps) {
-  return <AtomicBuilderPageInner onBackToIntro={onBackToIntro} mode={mode} countryId={countryId} />;
+export function AtomicBuilderPage({ mode = "create", countryId }: AtomicBuilderPageProps) {
+  return <AtomicBuilderPageInner mode={mode} countryId={countryId} />;
 }

@@ -28,7 +28,6 @@ interface FoundationStepProps {
   isLoadingCountries: boolean;
   countryLoadError?: string | null;
   onCountrySelect: (country: RealCountryData) => void;
-  onBackToIntro?: () => void;
   onCreateFromScratch: () => void;
   onNavigate?: (section: string) => void;
 }
@@ -38,7 +37,6 @@ export function FoundationStep({
   isLoadingCountries,
   countryLoadError,
   onCountrySelect,
-  onBackToIntro,
   onCreateFromScratch,
   onNavigate,
 }: FoundationStepProps) {
@@ -453,8 +451,6 @@ export function FoundationStep({
           setSelectedTemplate(country);
           setSubStep(2);
         }}
-        onBackToIntro={onBackToIntro}
-        onCreateFromScratch={onCreateFromScratch}
       />
     );
   }

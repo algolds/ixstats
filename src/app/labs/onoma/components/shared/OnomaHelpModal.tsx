@@ -14,12 +14,7 @@ import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "~/components/ui/dialog";
 import type { OnomaSection, StudioSubTab, ExploreSubTab } from "~/lib/onoma/types";
-import {
-  WALKTHROUGH_STEPS,
-  SYSTEM_GUIDES,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  type SystemGuideItem,
-} from "./onoma-help-data";
+import { WALKTHROUGH_STEPS, SYSTEM_GUIDES } from "./onoma-help-data";
 
 interface OnomaHelpModalProps {
   isOpen: boolean;

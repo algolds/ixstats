@@ -11,7 +11,6 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
-import { useFormattedAnimatedValue, DEFAULT_ANIMATIONS } from "./animation-utils";
 import { parseNumberInput } from "~/lib/utils";
 import type { EnhancedInputProps } from "./types";
 import { FieldHelpTooltip } from "../../components/help/FieldHelpTooltip";
@@ -116,7 +115,6 @@ export function EnhancedNumberInput({
   referenceValue,
   referenceLabel,
   showComparison = false,
-  animationDuration = 800,
   className,
   format,
   showButtons = true,
@@ -138,8 +136,6 @@ export function EnhancedNumberInput({
 
   // Safely handle all numeric parameters
   const safeMin = typeof min === "number" && !isNaN(min) ? min : 0;
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const safeMax = typeof max === "number" && !isNaN(max) ? max : Infinity;
   const safeStep = typeof step === "number" && !isNaN(step) ? step : 1;
 
   // Safely handle numeric values with NaN protection
@@ -151,24 +147,10 @@ export function EnhancedNumberInput({
         : safeMin;
   const isNumeric = typeof value === "number" && !acceptText;
 
-  // Animated value for smooth transitions (only for numeric values)
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const animatedValue = useFormattedAnimatedValue(numericValue, isNumeric ? format : undefined, {
-    ...DEFAULT_ANIMATIONS.numberFlow,
-    duration: animationDuration,
-  });
-
   const sizeClasses = {
     sm: "text-body px-3 py-2 h-10",
     md: "text-body px-4 py-3 h-12",
     lg: "text-title-3 px-5 py-4 h-14",
-  };
-
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const buttonSizeClasses = {
-    sm: "w-8 h-8",
-    md: "w-10 h-10",
-    lg: "w-12 h-12",
   };
 
   // Update display value when value prop changes

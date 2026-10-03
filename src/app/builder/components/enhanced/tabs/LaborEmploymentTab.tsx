@@ -13,7 +13,6 @@ import {
 import { MetricCard } from "../../../primitives/enhanced";
 import type { EconomyBuilderState, LaborConfiguration } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
-import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 import {
   calculateDerivedLabor,
   getEmploymentTypeColor,
@@ -101,23 +100,6 @@ export function LaborEmploymentTab({
     "workforce" | "employment" | "income" | "protections"
   >("workforce");
 
-  const employmentImpacts = useMemo(() => {
-    return selectedComponents.reduce(
-      (acc, compType) => {
-        const component = ATOMIC_ECONOMIC_COMPONENTS[compType];
-        if (!component?.employmentImpact) return acc;
-
-        return {
-          unemployment: acc.unemployment + (component.employmentImpact.unemploymentModifier || 0),
-          participation:
-            acc.participation * (component.employmentImpact.participationModifier || 1),
-          wageGrowth: acc.wageGrowth * (component.employmentImpact.wageGrowthModifier || 1),
-        };
-      },
-      { unemployment: 0, participation: 1, wageGrowth: 1 }
-    );
-  }, [selectedComponents]);
-
   const handleLaborChange = <K extends keyof LaborConfiguration>(
     field: K,
     value: LaborConfiguration[K]
@@ -185,12 +167,6 @@ export function LaborEmploymentTab({
   );
 
   const laborBounds = useMemo(() => getLaborBounds(selectedComponents), [selectedComponents]);
-
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const hasComponentImpact =
-    employmentImpacts.unemployment !== 0 ||
-    employmentImpacts.participation !== 1 ||
-    employmentImpacts.wageGrowth !== 1;
 
   return (
     <div className="space-y-6">

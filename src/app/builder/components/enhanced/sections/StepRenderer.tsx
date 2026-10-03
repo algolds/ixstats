@@ -20,18 +20,14 @@ interface StepRendererProps {
   countries: RealCountryData[];
   isLoadingCountries: boolean;
   countryLoadError: string | null;
-  onBackToIntro?: () => void;
   onGovernmentStructureChange: (structure: GovernmentBuilderState) => void;
-  onGovernmentStructureSave: (structure: GovernmentBuilderState) => Promise<void>;
 }
 
 export const StepRenderer = memo(function StepRenderer({
   countries,
   isLoadingCountries,
   countryLoadError,
-  onBackToIntro,
   onGovernmentStructureChange,
-  onGovernmentStructureSave,
 }: StepRendererProps) {
   const { builderState, setBuilderState, updateStep, countryId, mode, updateEconomicInputs } =
     useBuilderContext();
@@ -145,7 +141,6 @@ export const StepRenderer = memo(function StepRenderer({
         countryLoadError={countryLoadError}
         onCountrySelect={handleFoundationComplete}
         onCreateFromScratch={handleCreateFromScratch}
-        onBackToIntro={onBackToIntro}
       />
     );
   }
@@ -187,7 +182,6 @@ export const StepRenderer = memo(function StepRenderer({
         activeGovernmentTab={builderState.activeGovernmentTab}
         onGovernmentComponentsChange={handleGovernmentComponentsChange}
         onGovernmentStructureChange={onGovernmentStructureChange}
-        onGovernmentStructureSave={onGovernmentStructureSave}
         onTabChange={handleGovernmentTabChange}
       />
     );
@@ -229,7 +223,6 @@ export const StepRenderer = memo(function StepRenderer({
         countryLoadError={countryLoadError}
         onCountrySelect={handleFoundationComplete}
         onCreateFromScratch={handleCreateFromScratch}
-        onBackToIntro={onBackToIntro}
       />
     );
   }

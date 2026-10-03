@@ -47,14 +47,10 @@ export function BuilderSidebarLayout({
   alerts,
   activeSection,
   onNavigate: _onNavigate,
-  // oxlint-disable-next-line eslint/no-unused-vars
   completedSteps: _completedSteps,
-  // oxlint-disable-next-line eslint/no-unused-vars
   accessibleSteps: _accessibleSteps,
   mode = "create",
-  // oxlint-disable-next-line eslint/no-unused-vars
   heroCollapsed: _heroCollapsed,
-  // oxlint-disable-next-line eslint/no-unused-vars
   onHeroExpand: _onHeroExpand,
   onReset,
 }: BuilderSidebarLayoutProps) {

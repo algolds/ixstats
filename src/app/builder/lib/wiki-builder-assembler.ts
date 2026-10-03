@@ -415,9 +415,7 @@ function createRevenueSourcesFromParsed(
 
 function calculateCompleteness(
   infobox: UnifiedInfoboxData,
-  matchResult: MatchResult,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  departments: ParsedDepartment[]
+  matchResult: MatchResult
 ): Record<string, number> {
   const identityFields = [
     "name",
@@ -629,7 +627,7 @@ export async function assembleWikiImport(input: AssembleInput): Promise<WikiImpo
   });
 
   // Calculate completeness
-  const sectionCompleteness = calculateCompleteness(infoboxData, matchResult, departments);
+  const sectionCompleteness = calculateCompleteness(infoboxData, matchResult);
   const overallCompleteness = Math.round(
     Object.values(sectionCompleteness).reduce((a, b) => a + b, 0) /
       Object.keys(sectionCompleteness).length

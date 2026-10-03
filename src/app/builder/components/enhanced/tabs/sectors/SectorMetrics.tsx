@@ -14,16 +14,10 @@ import type { SectorContribution } from "../utils/validation";
 
 interface SectorMetricsProps {
   sectors: SectorConfiguration[];
-  onNormalize: () => void;
   hasZeroContribution?: SectorContribution[];
 }
 
-export function SectorMetrics({
-  sectors,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  onNormalize,
-  hasZeroContribution = [],
-}: SectorMetricsProps) {
+export function SectorMetrics({ sectors, hasZeroContribution = [] }: SectorMetricsProps) {
   const { totalGDP, totalEmployment, averageProductivity } = calculateSectorTotals(sectors);
 
   const gdpValid = Math.abs(totalGDP - 100) < 1;

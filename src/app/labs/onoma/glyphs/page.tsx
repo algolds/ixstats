@@ -6,17 +6,7 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import {
-  // oxlint-disable-next-line eslint/no-unused-vars
-  Settings,
-  ArrowLeft,
-  Check,
-  Component,
-  ControlSlider,
-  Copy,
-  Search,
-  ViewGrid,
-} from "iconoir-react";
+import { ArrowLeft, Check, Component, ControlSlider, Copy, Search, ViewGrid } from "iconoir-react";
 import {
   OnomaGlyph,
   type OnomaGlyphSize,

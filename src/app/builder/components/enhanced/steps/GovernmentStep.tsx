@@ -4,7 +4,6 @@
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
 
-// oxlint-disable-next-line eslint/no-unused-vars
 import {
   Crown,
   Coins,
@@ -12,8 +11,6 @@ import {
   Group as Users,
   Dollar as DollarSign,
 } from "iconoir-react";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { Checkbox } from "~/components/ui/checkbox";
 import { GovernmentStructureForm } from "~/components/mycountry/domains/government/atoms/GovernmentStructureForm";
 import { RevenueSourceForm } from "~/components/mycountry/domains/government/atoms/RevenueSourceForm";
 import { DepartmentList } from "~/components/mycountry/domains/government/builder/DepartmentList";
@@ -39,7 +36,6 @@ interface GovernmentStepProps {
   activeGovernmentTab: string;
   onGovernmentComponentsChange: (components: ComponentType[]) => void;
   onGovernmentStructureChange: (structure: GovernmentBuilderState) => void;
-  onGovernmentStructureSave: (structure: GovernmentBuilderState) => Promise<void>;
   onTabChange: (tab: string) => void;
   mode?: "create" | "edit";
 }
@@ -52,8 +48,6 @@ export function GovernmentStep({
   activeGovernmentTab,
   onGovernmentComponentsChange,
   onGovernmentStructureChange,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  onGovernmentStructureSave,
   onTabChange,
   mode: propMode,
 }: GovernmentStepProps) {

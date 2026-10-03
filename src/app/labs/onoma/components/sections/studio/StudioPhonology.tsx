@@ -426,11 +426,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
           </div>
 
           {/* Acoustic Formant & Spectrogram Visualizer */}
-          <AcousticFormantVisualizer
-            currentIpa={previewIpa}
-            currentName={previewText}
-            accentColor={ACCENT}
-          />
+          <AcousticFormantVisualizer currentIpa={previewIpa} accentColor={ACCENT} />
 
           <div className="border-separator rounded-row space-y-3 border p-4">
             <div className="flex items-center justify-between">

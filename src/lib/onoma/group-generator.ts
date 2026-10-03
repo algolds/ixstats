@@ -10,8 +10,7 @@ import { pickRandom, resolvePatternTemplate } from "./template-resolver";
 /**
  * Generates a name for a mystic or academic/religious order.
  */
-// oxlint-disable-next-line typescript/no-unused-vars
-export function generateMysticOrderName(chain?: MarkovChain, options?: GenerateOptions): string {
+export function generateMysticOrderName(_chain?: MarkovChain, _options?: GenerateOptions): string {
   const d10 = Math.floor(Math.random() * 10) + 1;
   let pattern = "";
 
@@ -82,8 +81,7 @@ export function generateMilitaryUnitName(chain?: MarkovChain, options?: Generate
 /**
  * Generates a name for a covert or criminal organization (thieves/assassins).
  */
-// oxlint-disable-next-line typescript/no-unused-vars
-export function generateCovertOrgName(chain?: MarkovChain, options?: GenerateOptions): string {
+export function generateCovertOrgName(_chain?: MarkovChain, _options?: GenerateOptions): string {
   const d30 = Math.floor(Math.random() * 30) + 1;
   const data = COVERT_ORG_DATA;
 
@@ -293,8 +291,10 @@ export function generateMercenaryBandName(chain?: MarkovChain, options?: Generat
 }
 
 /** Political party, front, or movement. */
-// oxlint-disable-next-line typescript/no-unused-vars
-export function generatePoliticalPartyName(chain?: MarkovChain, options?: GenerateOptions): string {
+export function generatePoliticalPartyName(
+  _chain?: MarkovChain,
+  _options?: GenerateOptions
+): string {
   const adjectives = [
     "National",
     "People's",
@@ -351,10 +351,8 @@ export function generatePoliticalPartyName(chain?: MarkovChain, options?: Genera
 
 /** Government ministry, department, or agency. */
 export function generateGovernmentAgencyName(
-  // oxlint-disable-next-line typescript/no-unused-vars
-  chain?: MarkovChain,
-  // oxlint-disable-next-line typescript/no-unused-vars
-  options?: GenerateOptions
+  _chain?: MarkovChain,
+  _options?: GenerateOptions
 ): string {
   const fields = [
     "Defense",

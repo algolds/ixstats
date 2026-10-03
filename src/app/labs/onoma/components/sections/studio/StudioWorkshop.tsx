@@ -58,22 +58,14 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
     selectedDictId,
     isSaving,
     successMsg,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    visualizerPrefix,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    setVisualizerPrefix,
     uploadStatus,
     trainingWords,
     classifiedCulture,
     savedDictionaries,
     isEdited,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    visualizerChain,
     generateNames,
     handleFileUpload,
     handleLoadSavedDictionary,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    handleCompleteName,
     handleSaveDictionary,
     bank,
   } = state;

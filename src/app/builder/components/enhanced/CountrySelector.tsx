@@ -12,18 +12,9 @@ import { archetypes } from "~/app/builder/utils/country-archetypes";
 interface CountrySelectorProps {
   countries: RealCountryData[];
   onCountrySelect: (country: RealCountryData) => void;
-  onBackToIntro?: () => void;
-  onCreateFromScratch?: () => void;
 }
 
-export function CountrySelector({
-  countries,
-  onCountrySelect,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  onBackToIntro,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  onCreateFromScratch,
-}: CountrySelectorProps) {
+export function CountrySelector({ countries, onCountrySelect }: CountrySelectorProps) {
   const { setFoundationPreviewCountry } = useBuilderContext();
   const {
     searchTerm,
