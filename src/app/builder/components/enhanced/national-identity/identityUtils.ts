@@ -3,92 +3,55 @@
  * and currency metadata resolution.
  */
 
+const IRREGULAR_DEMONYMS: Record<string, string> = {
+  "united states": "American",
+  america: "American",
+  "united kingdom": "British",
+  britain: "British",
+  england: "English",
+  scotland: "Scottish",
+  wales: "Welsh",
+  ireland: "Irish",
+  france: "French",
+  spain: "Spanish",
+  germany: "German",
+  japan: "Japanese",
+  china: "Chinese",
+  greece: "Greek",
+  switzerland: "Swiss",
+  netherlands: "Dutch",
+  sweden: "Swedish",
+  denmark: "Danish",
+  poland: "Polish",
+};
+
+/** `[ending, letters dropped, suffix added]`, tried in order. */
+const DEMONYM_SUFFIXES: Array<[string, number, string]> = [
+  ["a", 0, "n"],
+  ["y", 1, "ian"],
+  ["land", 0, "er"],
+  ["e", 1, "an"],
+  ["i", 0, "an"],
+  ["u", 0, "an"],
+  ["o", 1, "an"],
+];
+
 /**
  * Derives a default demonym from a country name.
- * e.g., "Eldoria" -> "Eldorian", "France" -> "Francian", "Canada" -> "Canadian"
+ * e.g., "Eldoria" -> "Eldorian", "France" -> "French", "Canada" -> "Canadian"
  */
 export function deriveDemonym(countryName: string): string {
   const trimmed = countryName.trim();
   if (!trimmed) return "";
 
-  // Common irregulars
-  const lower = trimmed.toLowerCase();
-  if (lower === "united states" || lower === "america") return "American";
-  if (lower === "united kingdom" || lower === "britain") return "British";
-  if (lower === "england") return "English";
-  if (lower === "scotland") return "Scottish";
-  if (lower === "wales") return "Welsh";
-  if (lower === "ireland") return "Irish";
-  if (lower === "france") return "French";
-  if (lower === "spain") return "Spanish";
-  if (lower === "germany") return "German";
-  if (lower === "japan") return "Japanese";
-  if (lower === "china") return "Chinese";
-  if (lower === "greece") return "Greek";
-  if (lower === "switzerland") return "Swiss";
-  if (lower === "netherlands") return "Dutch";
-  if (lower === "sweden") return "Swedish";
-  if (lower === "denmark") return "Danish";
-  if (lower === "poland") return "Polish";
+  const irregular = IRREGULAR_DEMONYMS[trimmed.toLowerCase()];
+  if (irregular) return irregular;
 
-  if (trimmed.endsWith("ia")) {
-    return `${trimmed}n`;
-  }
-  if (trimmed.endsWith("a")) {
-    return `${trimmed}n`;
-  }
-  if (trimmed.endsWith("y")) {
-    return `${trimmed.slice(0, -1)}ian`;
-  }
-  if (trimmed.endsWith("land")) {
-    return `${trimmed}er`;
-  }
-  if (trimmed.endsWith("e")) {
-    return `${trimmed.slice(0, -1)}an`;
-  }
-  if (trimmed.endsWith("i") || trimmed.endsWith("u")) {
-    return `${trimmed}an`;
-  }
-  if (trimmed.endsWith("o")) {
-    return `${trimmed.slice(0, -1)}an`;
-  }
-
-  return `${trimmed}ian`;
+  const rule = DEMONYM_SUFFIXES.find(([ending]) => trimmed.endsWith(ending));
+  if (!rule) return `${trimmed}ian`;
+  const [, dropped, suffix] = rule;
+  return `${trimmed.slice(0, trimmed.length - dropped)}${suffix}`;
 }
-
-/**
- * Standard prefix mapping for common government types.
- */
-const GOV_PREFIX_MAP: Record<string, string> = {
-  Republic: "The Republic of",
-  Kingdom: "The Kingdom of",
-  Federation: "The Federation of",
-  Commonwealth: "The Commonwealth of",
-  Emirate: "The Emirate of",
-  Principality: "The Principality of",
-  "Holy State": "The Holy State of",
-  Union: "The Union of",
-  Empire: "The Empire of",
-  Sultanate: "The Sultanate of",
-  Duchy: "The Duchy of",
-  Confederacy: "The Confederacy of",
-  Alliance: "The Alliance of",
-  Coalition: "The Coalition of",
-  Dominion: "The Dominion of",
-  Territories: "The Territories of",
-  Protectorate: "The Protectorate of",
-  Mandate: "The Mandate of",
-  "City-State": "The City-State of",
-  "Free State": "The Free State of",
-  "Socialist Republic": "The Socialist Republic of",
-  "Democratic Republic": "The Democratic Republic of",
-  "People's Republic": "The People's Republic of",
-  "Autonomous Region": "The Autonomous Region of",
-  "Sovereign State": "The Sovereign State of",
-  Nation: "The Nation of",
-  Country: "The Country of",
-  State: "The State of",
-};
 
 /**
  * Generates an official ceremonial name given a short country name and government type.
@@ -97,11 +60,6 @@ const GOV_PREFIX_MAP: Record<string, string> = {
 export function formatCeremonialName(countryName: string, governmentType: string): string {
   const trimmedName = countryName.trim();
   if (!trimmedName) return "";
-
-  const prefix = GOV_PREFIX_MAP[governmentType];
-  if (prefix) {
-    return `${prefix} ${trimmedName}`;
-  }
 
   if (governmentType && governmentType !== "custom" && governmentType !== "Other") {
     return `The ${governmentType} of ${trimmedName}`;
@@ -167,9 +125,7 @@ export function deriveIsoCode(countryName: string): string {
   const trimmed = countryName.trim();
   if (!trimmed) return "";
 
-  const words = trimmed
-    .split(/\s+/)
-    .filter((w) => !/^(the|of|and|for|in|de|du|la|le)$/i.test(w));
+  const words = trimmed.split(/\s+/).filter((w) => !/^(the|of|and|for|in|de|du|la|le)$/i.test(w));
 
   if (words.length >= 2) {
     const first = words[0]?.charAt(0).toUpperCase() || "";
