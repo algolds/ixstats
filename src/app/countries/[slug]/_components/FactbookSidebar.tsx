@@ -55,16 +55,11 @@ interface VitalityRing {
   value: number | null;
 }
 
-/** Activity type → system colour (icon) and dot. */
-const ACTIVITY_TONE: Record<string, { icon: React.ReactNode; dot: string }> = {
-  achievement: { icon: <Trophy aria-hidden className="text-yellow size-3.5" />, dot: "bg-yellow" },
-  economic: { icon: <TrendingUp aria-hidden className="text-blue size-3.5" />, dot: "bg-blue" },
-  diplomatic: { icon: <Users aria-hidden className="text-purple size-3.5" />, dot: "bg-purple" },
-  social: { icon: <MessageSquare aria-hidden className="text-green size-3.5" />, dot: "bg-green" },
-};
-const DEFAULT_ACTIVITY_TONE = {
-  icon: <Activity aria-hidden className="text-label-secondary size-3.5" />,
-  dot: "bg-label-tertiary",
+const ACTIVITY_ICON: Record<string, typeof Activity> = {
+  achievement: Trophy,
+  economic: TrendingUp,
+  diplomatic: Users,
+  social: MessageSquare,
 };
 
 interface FactbookSidebarProps {
@@ -73,8 +68,8 @@ interface FactbookSidebarProps {
 }
 
 /**
- * FactbookSidebar — persistent right-column public briefing shown across all
- * factbook sections: vitality rings, geography map embed, and the recent-activity feed.
+ * FactbookSidebar — the persistent right column across all factbook sections: vitality rings,
+ * the territory map and the recent-activity feed.
  */
 export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarProps) {
   const { country } = useCountryData();
@@ -116,7 +111,7 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
       {
         key: "economicVitality",
         label: "Economic health",
-        subtitle: "GDP & growth",
+        subtitle: "GDP and growth",
         icon: DollarSign,
         value: vitalityData?.economicVitality ?? 0,
       },
@@ -238,7 +233,6 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
             <div className="space-y-3" role="status" aria-label="Loading activity">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="flex items-start gap-3">
-                  <Skeleton className="mt-2 size-2 rounded-full" />
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-4 w-3/4" />
                     <Skeleton className="h-3 w-1/2" />
@@ -249,19 +243,15 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
           ) : activityData && activityData.activities.length > 0 ? (
             <ul className="divide-separator divide-y">
               {activityData.activities.slice(0, 5).map((activity) => {
-                const tone = ACTIVITY_TONE[activity.type] ?? DEFAULT_ACTIVITY_TONE;
+                const ActivityIcon = ACTIVITY_ICON[activity.type] ?? Activity;
                 return (
                   <li
                     key={activity.id}
                     className="flex items-start gap-2 py-3 first:pt-0 last:pb-0"
                   >
-                    <span
-                      aria-hidden
-                      className={cn("mt-2 size-2 shrink-0 rounded-full", tone.dot)}
-                    />
                     <div className="min-w-0 flex-1">
                       <div className="flex min-w-0 items-center gap-2">
-                        {tone.icon}
+                        <ActivityIcon aria-hidden className="text-label-secondary size-3.5" />
                         <p className="text-headline text-label truncate">{activity.title}</p>
                       </div>
                       {activity.source === "thinkpages" && (
@@ -305,7 +295,7 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
               title="No recent public activity"
               action={
                 <Button variant="ghost" size="sm" onClick={viewActivity}>
-                  View activity tab
+                  View all activity
                   <ArrowRight aria-hidden />
                 </Button>
               }

@@ -17,9 +17,9 @@ export interface CountryIdentityStripProps {
 }
 
 /**
- * CountryIdentityStrip — provenance for a nation, from the original profile header: the realm
- * it belongs to (→ `/r/[realm]`) and the IxnayID of the player who holds it (→ `/@handle`), or
- * "Unclaimed". Facet 3 pills on `fill-4`, so it sits on any opaque card.
+ * CountryIdentityStrip — provenance for a nation: the realm it belongs to (→ `/r/[realm]`) and
+ * the IxnayID of the player who holds it (→ `/@handle`), or "Unclaimed". Pills on `fill-4`, so it
+ * sits on any opaque card.
  */
 export function CountryIdentityStrip({ realm, sovereign, className }: CountryIdentityStripProps) {
   const realmName = realm?.name || "IxWorld";

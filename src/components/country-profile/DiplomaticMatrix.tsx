@@ -6,8 +6,7 @@ import { diplomaticMatrix } from "./derive";
 import { RelationRows } from "./WorldStanding";
 
 /**
- * DiplomaticMatrix — the Sovereign Command OS "diplomatic matrix" on the real record: partners
- * (allied, friendly) beside tensions (tense, hostile, at war), strongest first, over the counts of
+ * DiplomaticMatrix — partners (allied, friendly) beside tensions (tense, hostile, at war), strongest first, over the counts of
  * relations, treaties and embassies. Neutral relations are counted but not listed. Renders
  * nothing when the nation has no relations and no embassies.
  */

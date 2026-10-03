@@ -16,7 +16,7 @@ const DOT: Record<PulseTone, string> = {
 };
 
 /**
- * PulseBanner — the national pulse (the Sovereign Command OS banner) on real readings: a status
+ * PulseBanner — the national pulse on real readings: a status
  * derived from GDP growth, population growth and stability (`pulseStatus`), one factual
  * sentence, and the telemetry behind it. Renders nothing without a GDP growth reading.
  */
@@ -55,10 +55,8 @@ export function PulseBanner({
     });
 
   return (
-    // Concept banner: glass with the ambient tint glow bleeding off the top-right corner.
     <Card
       role="region"
-      variant="hero"
       padding="md"
       aria-label={`National pulse: ${status.label}`}
       className={cn(
@@ -69,7 +67,7 @@ export function PulseBanner({
       <div className="flex min-w-0 items-start gap-3">
         <span
           aria-hidden
-          className="bg-surface text-tint border-separator rounded-control shadow-card relative flex size-10 shrink-0 items-center justify-center border"
+          className="bg-surface text-label-secondary border-separator rounded-control shadow-card relative flex size-10 shrink-0 items-center justify-center border"
         >
           <Activity className="size-5" />
           <span

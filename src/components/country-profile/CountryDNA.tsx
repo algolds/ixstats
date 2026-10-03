@@ -1,6 +1,5 @@
 "use client";
 
-import { useId } from "react";
 import { motion } from "motion/react";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { springGentle } from "~/lib/design/motion";
@@ -16,10 +15,7 @@ const RINGS = [0.25, 0.5, 0.75, 1] as const;
 /** Keep a last-placed axis visible as a sliver rather than a point on the centre. */
 const FLOOR = 4;
 
-/**
- * The Sovereign Command OS DNA gave each axis its own hue (sky, indigo, emerald, amber, red,
- * purple); system colour roles keep that per-axis identity in both themes.
- */
+/** Each axis has its own hue so its dot ties to its numbered row in `DnaLegend`. */
 const AXIS_COLORS = [
   "var(--color-blue)",
   "var(--color-indigo)",
@@ -57,7 +53,7 @@ function AxisNumber({
       aria-hidden
       style={style}
       className={cn(
-        "bg-surface-secondary border-separator text-caption text-label font-data flex size-6 items-center justify-center rounded-full border tabular-nums",
+        "bg-surface-secondary border-separator text-caption text-label flex size-6 items-center justify-center rounded-full border tabular-nums",
         className
       )}
     >
@@ -67,7 +63,7 @@ function AxisNumber({
 }
 
 /**
- * CountryDNA — the radial "country DNA" of the Sovereign Command OS, drawn from the World Census:
+ * CountryDNA — the radial country profile, drawn from the World Census:
  * each numbered axis is the nation's percentile in one ranked category (first place reaches the
  * outer ring). Needs three or more axes. The chart is a picture of `DnaLegend`, which carries the
  * same figures as text, so it is labelled by its caption and not read point by point.
@@ -81,7 +77,6 @@ export function CountryDNA({
   caption: string;
   className?: string;
 }) {
-  const gradientId = useId();
   if (axes.length < 3) return null;
   const count = axes.length;
 
@@ -92,18 +87,6 @@ export function CountryDNA({
         className="absolute inset-0 size-full overflow-visible"
         aria-hidden
       >
-        {/* The concept's tinted fill and centre glow, in the app tint. */}
-        <defs>
-          <linearGradient id={`${gradientId}-fill`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="var(--tint)" stopOpacity="0.4" />
-            <stop offset="100%" stopColor="var(--tint)" stopOpacity="0.12" />
-          </linearGradient>
-          <radialGradient id={`${gradientId}-glow`} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="var(--tint)" stopOpacity="0.28" />
-            <stop offset="100%" stopColor="var(--tint)" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-        <circle cx={CENTER} cy={CENTER} r={RADIUS * 0.45} fill={`url(#${gradientId}-glow)`} />
         {RINGS.map((level) => (
           <polygon
             key={level}
@@ -129,15 +112,10 @@ export function CountryDNA({
         })}
         <motion.polygon
           points={polygon(count, (i) => reach(axes[i]!))}
-          className="stroke-tint"
-          fill={`url(#${gradientId}-fill)`}
+          className="stroke-tint fill-tint/20"
           strokeWidth={2}
           strokeLinejoin="round"
-          style={{
-            transformBox: "fill-box",
-            transformOrigin: "center",
-            filter: "drop-shadow(0 0 8px color-mix(in srgb, var(--tint) 30%, transparent))",
-          }}
+          style={{ transformBox: "fill-box", transformOrigin: "center" }}
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={springGentle}

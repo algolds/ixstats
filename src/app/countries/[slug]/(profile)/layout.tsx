@@ -71,7 +71,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
   const flagUrl: string | null = country?.flag || serviceFlag || null;
 
   usePageTitle({
-    title: country ? `${country.name.replace(/_/g, " ")}` : "Country Profile",
+    title: country ? `${country.name.replace(/_/g, " ")}` : "Country profile",
   });
 
   const {

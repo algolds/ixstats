@@ -24,7 +24,7 @@ import {
 import { api } from "~/trpc/react";
 import { formatDistanceToNow, isValid } from "date-fns";
 import { WikiLinkPreview } from "~/components/wiki-os/reader/WikiLinkPreview";
-import { cn, escapeHtml, sanitizeUserContent } from "~/lib/utils";
+import { escapeHtml, sanitizeUserContent } from "~/lib/utils";
 import type { ActivityFilter, ActivityTimeRange, CountryActivityItem } from "../_types";
 import { Card } from "~/components/ui/card";
 
@@ -120,40 +120,21 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
 
   const getItemIcon = (type: string, source: string) => {
     if (source === "thinkpages" || type === "post")
-      return <Rss aria-hidden className="text-cyan size-4" />;
+      return <Rss aria-hidden className="text-label-secondary size-4" />;
     switch (type) {
       case "achievement":
       case "milestone":
-        return <Trophy aria-hidden className="text-yellow size-4" />;
+        return <Trophy aria-hidden className="text-label-secondary size-4" />;
       case "economic":
-        return <TrendingUp aria-hidden className="text-green size-4" />;
+        return <TrendingUp aria-hidden className="text-label-secondary size-4" />;
       case "diplomatic":
-        return <Globe aria-hidden className="text-purple size-4" />;
+        return <Globe aria-hidden className="text-label-secondary size-4" />;
       case "social":
-        return <MessageSquare aria-hidden className="text-blue size-4" />;
+        return <MessageSquare aria-hidden className="text-label-secondary size-4" />;
       case "event":
-        return <Zap aria-hidden className="text-orange size-4" />;
+        return <Zap aria-hidden className="text-label-secondary size-4" />;
       default:
         return <Activity aria-hidden className="text-label-secondary size-4" />;
-    }
-  };
-
-  const getItemDotColor = (type: string, source: string) => {
-    if (source === "thinkpages" || type === "post") return "bg-cyan";
-    switch (type) {
-      case "achievement":
-      case "milestone":
-        return "bg-yellow";
-      case "economic":
-        return "bg-green";
-      case "diplomatic":
-        return "bg-purple";
-      case "social":
-        return "bg-blue";
-      case "event":
-        return "bg-orange";
-      default:
-        return "bg-label-tertiary";
     }
   };
 
@@ -181,17 +162,10 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
         {/* Main feed */}
         <div className="space-y-4 lg:col-span-3">
-          {/* Header */}
           <Card padding="md" className="space-y-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-title-3 text-label flex items-center gap-2">
-                  <Activity aria-hidden className="text-tint size-5" />
-                  Activity feed
-                </h2>
-                <p className="text-callout text-label-secondary">
-                  Posts, events, and milestones from {countryName.replace(/_/g, " ")}
-                </p>
+                <h2 className="text-title-3 text-label">Activity feed</h2>
               </div>
               <SegmentedControl
                 aria-label="Time range"
@@ -217,12 +191,10 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
             />
           </Card>
 
-          {/* Feed items */}
           {isLoading ? (
             <Card padding="md" className="space-y-4" role="status" aria-label="Loading activity">
               {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="flex items-start gap-3">
-                  <Skeleton className="mt-2 size-2 shrink-0 rounded-full" />
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-4 w-3/4" />
                     <Skeleton className="h-3 w-1/2" />
@@ -236,13 +208,6 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
               <ul className="divide-separator divide-y">
                 {feed.map((item) => (
                   <li key={item.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
-                    <span
-                      aria-hidden
-                      className={cn(
-                        "mt-2 size-2 shrink-0 rounded-full",
-                        getItemDotColor(item.type, item.source)
-                      )}
-                    />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -270,19 +235,19 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
                           <>
                             {(item.engagement.likes ?? 0) > 0 && (
                               <span className="flex items-center gap-1">
-                                <Heart aria-hidden className="text-pink size-3" />
+                                <Heart aria-hidden className="size-3" />
                                 {item.engagement.likes}
                               </span>
                             )}
                             {(item.engagement.comments ?? 0) > 0 && (
                               <span className="flex items-center gap-1">
-                                <MessageSquare aria-hidden className="text-blue size-3" />
+                                <MessageSquare aria-hidden className="size-3" />
                                 {item.engagement.comments}
                               </span>
                             )}
                             {item.engagement.shares && item.engagement.shares > 0 && (
                               <span className="flex items-center gap-1">
-                                <Share2 aria-hidden className="text-green size-3" />
+                                <Share2 aria-hidden className="size-3" />
                                 {item.engagement.shares}
                               </span>
                             )}
@@ -307,8 +272,8 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
             <Card>
               <EmptyState
                 icon={<Activity />}
-                title="No activity found for this time period."
-                message="Try expanding the time range or removing filters."
+                title="No activity in this period"
+                message="Try a longer time range or a different type."
               />
             </Card>
           )}

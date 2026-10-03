@@ -235,9 +235,10 @@ export {
 } from "~/lib/country/public-record";
 
 /** Owner-only counts from the owner's own tree: drafts (`proposed`) and directives in force. */
-export function countOwnerDirectives(
-  intents: readonly { status: string }[] | null | undefined
-): { drafts: number; active: number } {
+export function countOwnerDirectives(intents: readonly { status: string }[] | null | undefined): {
+  drafts: number;
+  active: number;
+} {
   const list = intents ?? [];
   return {
     drafts: list.filter((i) => i.status === "proposed").length,
@@ -399,9 +400,7 @@ export function buildChronicle(sources: ChronicleSources): ChronicleEntry[] {
       id: `issue-${o.id}`,
       kind: "decision",
       title: o.title,
-      detail: excerpt(
-        o.decision ? `${o.decision}${o.outcome ? ` — ${o.outcome}` : ""}` : o.outcome
-      ),
+      detail: excerpt(o.decision ? `${o.decision}${o.outcome ? `: ${o.outcome}` : ""}` : o.outcome),
       year: ixTimeToYear(o.ixTime),
       dateLabel: formatIxDate(o.ixTime),
       source: "ixtime",

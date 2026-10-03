@@ -11,7 +11,7 @@ const PAD_TOP = 8;
 const PAD_BOTTOM = 4;
 
 /**
- * EconomyTrend — total GDP over the engine's model history as one thin line (Facet `chart-1`),
+ * EconomyTrend — total GDP over the engine's model history as one thin line,
  * with a crosshair tooltip on hover/focus and a screen-reader table. Single series, so no
  * legend: the caption names it. Renders nothing with fewer than two points.
  */

@@ -133,9 +133,7 @@ describe("chronicle", () => {
       "Rail strike",
     ]);
     expect(entries.filter((e) => e.title === "Grain riots")).toHaveLength(1);
-    expect(entries.find((e) => e.title === "Grain riots")?.detail).toBe(
-      "Option A — Approval rose."
-    );
+    expect(entries.find((e) => e.title === "Grain riots")?.detail).toBe("Option A: Approval rose.");
     expect(entries[0]).toMatchObject({ kind: "founding", dateLabel: "1622", source: "wiki" });
     expect(entries[1]).toMatchObject({ kind: "story", source: "map" });
   });
