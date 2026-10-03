@@ -10,6 +10,7 @@ import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { IxTime } from "~/lib/ixtime";
 import { getEconomicConfigFromDB } from "~/lib/config-service";
 import { IxStatsCalculator } from "~/lib/economy/calculations";
+import { tradeFigures } from "~/lib/economy/trade-figures";
 import { getEconomicTierFromGdpPerCapita } from "~/types/ixstats";
 import { loadVitalityExtras, scoreGovernmentalEfficiency } from "~/server/shared/mycountry-helpers";
 import {
@@ -269,7 +270,6 @@ export const economyProcedures = {
         calculatedStats: {
           gdpGrowth: result.newStats.adjustedGdpGrowth || 0,
           populationGrowth: result.newStats.populationGrowthRate || 0,
-          inflation: result.newStats.inflationRate || 0.02,
         },
         projections: projections.map((p) => ({
           year: new Date(p.ixTime).getFullYear(),
@@ -420,7 +420,7 @@ export const economyProcedures = {
       };
     }),
 
-  // Get trade data for a country
+  // Recorded trade figures for a country (percent-of-GDP exports/imports times GDP); null when unrecorded
   getTradeData: publicProcedure
     .input(
       z.object({
@@ -430,31 +430,27 @@ export const economyProcedures = {
     .query(async ({ ctx, input }) => {
       const country = await ctx.db.country.findUnique({
         where: { id: input.countryId },
+        select: {
+          currentTotalGdp: true,
+          economicProfile: { select: { exportsGDPPercent: true, importsGDPPercent: true } },
+        },
       });
 
       if (!country) {
         throw new Error("Country not found");
       }
 
-      // Calculate trade data based on country economic indicators
-      const gdpBase = country.currentTotalGdp || 1000000000;
-      const tradeIntensity = ((country as any).tradeRelationshipStrength || 25) / 100;
-
-      const totalVolume = gdpBase * 0.6 * tradeIntensity; // Trade typically 60% of GDP * relationship strength
-      const exports = totalVolume * 0.52; // Slightly export-oriented
-      const imports = totalVolume * 0.48;
-      const tradeBalance = exports - imports;
+      const { exports, imports, balance } = tradeFigures({
+        nominalGDP: country.currentTotalGdp,
+        ...country.economicProfile,
+      });
+      if (exports === null || imports === null) return null;
 
       return {
-        totalVolume,
+        totalVolume: exports + imports,
         exports,
         imports,
-        tradeBalance,
-        topPartners: [
-          { country: "Major Trade Partner", volume: totalVolume * 0.25 },
-          { country: "Regional Partner", volume: totalVolume * 0.18 },
-          { country: "Economic Ally", volume: totalVolume * 0.12 },
-        ],
+        tradeBalance: balance,
       };
     }),
 

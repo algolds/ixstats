@@ -147,8 +147,8 @@ export const achievementsCountryRouter = createTRPCRouter({
             countryId: country.id,
             countryName: country.name,
             flag: country.flag || null,
-            economicTier: country.economicTier || "Developed",
-            populationTier: country.populationTier || "Medium",
+            economicTier: country.economicTier,
+            populationTier: country.populationTier,
             totalPoints: agg.count * 10,
             achievementCount: agg.count,
             rareAchievements: agg.rare,
@@ -265,7 +265,9 @@ export const achievementsCountryRouter = createTRPCRouter({
           const totalGdp =
             c.currentTotalGdp && c.currentTotalGdp > 0 ? c.currentTotalGdp : gdpPerCap * pop;
 
-          let val = 0;
+          // Not-yet-computed vitality/wellbeing/health sit at their 0 default; treat as not recorded.
+          const computed = (v: number) => (v > 0 ? v : null);
+          let val: number | null = null;
           switch (input.metric) {
             case "population":
               val = pop;
@@ -282,56 +284,52 @@ export const achievementsCountryRouter = createTRPCRouter({
                   ? c.populationDensity
                   : c.landArea && c.landArea > 0
                     ? pop / c.landArea
-                    : 50;
+                    : null;
               break;
             case "landArea":
-              val = c.landArea || 100000;
+              val = c.landArea || null;
               break;
             case "gdpGrowth":
-              val = c.realGDPGrowthRate ?? c.adjustedGdpGrowth ?? 2.5;
+              val = c.realGDPGrowthRate ?? c.adjustedGdpGrowth;
               break;
             case "avgIncome":
-              val = c.averageAnnualIncome ?? gdpPerCap * 0.45;
+              val = c.averageAnnualIncome;
               break;
             case "workforce":
-              val = c.totalWorkforce ?? pop * (c.laborForceParticipationRate ?? 0.65);
+              val = c.totalWorkforce;
               break;
             case "employmentRate":
-              val = c.employmentRate ?? 94.0;
+              val = c.employmentRate;
               break;
             case "literacyRate":
-              val = c.literacyRate ?? 95.0;
+              val = c.literacyRate;
               break;
             case "lifeExpectancy":
-              val = c.lifeExpectancy ?? 75.0;
+              val = c.lifeExpectancy;
               break;
             case "govRevenue":
-              val =
-                c.governmentRevenueTotal ??
-                totalGdp * (c.taxRevenueGDPPercent ? c.taxRevenueGDPPercent / 100 : 0.25);
+              val = c.governmentRevenueTotal;
               break;
             case "govSpending":
-              val =
-                c.totalGovernmentSpending ??
-                totalGdp * (c.spendingGDPPercent ? c.spendingGDPPercent / 100 : 0.28);
+              val = c.totalGovernmentSpending;
               break;
             case "economicVitality":
-              val = c.economicVitality || 50;
+              val = computed(c.economicVitality);
               break;
             case "wellbeing":
-              val = c.populationWellbeing || 50;
+              val = computed(c.populationWellbeing);
               break;
             case "nationalHealth":
-              val = c.overallNationalHealth || 50;
+              val = computed(c.overallNationalHealth);
               break;
             case "infrastructure":
-              val = c.infrastructureRating || 50;
+              val = c.infrastructureRating;
               break;
             case "urbanization":
-              val = c.urbanPopulationPercent ?? 68.0;
+              val = c.urbanPopulationPercent;
               break;
             case "approval":
-              val = c.publicApproval || 50;
+              val = c.publicApproval;
               break;
           }
 
@@ -339,13 +337,17 @@ export const achievementsCountryRouter = createTRPCRouter({
             countryId: c.id,
             countryName: c.name,
             flag: c.flag || null,
-            value: Number.isNaN(val) ? 0 : val,
-            economicTier: c.economicTier || "Developed",
-            populationTier: c.populationTier || "Medium",
+            value: val !== null && Number.isFinite(val) ? val : null,
+            economicTier: c.economicTier,
+            populationTier: c.populationTier,
           };
         });
 
-        return mapped.sort((a, b) => b.value - a.value).slice(0, input.limit);
+        // Countries with no recorded value for this metric are left off rather than ranked on an invented one.
+        return mapped
+          .flatMap((row) => (row.value === null ? [] : [{ ...row, value: row.value }]))
+          .sort((a, b) => b.value - a.value)
+          .slice(0, input.limit);
       } catch (error) {
         console.error("Error fetching country leaderboard:", error);
         return [];
