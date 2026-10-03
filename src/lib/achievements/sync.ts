@@ -82,7 +82,12 @@ type FixedCondition = [
   value: number | string | boolean,
 ];
 
-/** Baseline trigger per achievement id: [trigger type, metric, operator, threshold]. */
+/**
+ * Baseline trigger per achievement id: [trigger type, metric, operator, threshold].
+ * `vid-annual` (days active is a multiple of 365), `vid-lightswitch` (25+ embassies and no
+ * military personnel) and `meme-1337` (GDP per capita floors to 1337) have no single-metric
+ * rule; they sync as CUSTOM and unlock through their definition condition.
+ */
 const FIXED_CONDITIONS: Record<string, FixedCondition> = {
   "econ-growth-rocket": ["ECONOMIC", "adjustedGdpGrowth", ">=", 10],
   "econ-boom-cycle": ["ECONOMIC", "adjustedGdpGrowth", ">=", 15],
@@ -134,6 +139,15 @@ const FIXED_CONDITIONS: Record<string, FixedCondition> = {
   "gen-achievement-hunter": ["GENERAL", "totalAchievements", ">=", 10],
   "gen-achievement-master": ["GENERAL", "totalAchievements", ">=", 25],
   "gen-achievement-legend": ["GENERAL", "totalAchievements", ">=", 50],
+  "vid-end-of-days": ["GENERAL", "totalAchievements", ">=", 30],
+  "meme-stonks": ["ECONOMIC", "adjustedGdpGrowth", "<", 0],
+  "meme-bankruptcy": ["ECONOMIC", "currentGdpPerCapita", "<=", 1],
+  "meme-ns-ref": ["GENERAL", "totalAchievements", ">=", 40],
+  "lore-scholar": ["SOCIAL", "thinkpageCount", ">=", 5],
+  "lore-collector": ["SOCIAL", "followerCount", ">=", 30],
+  "collect-lore-keeper": ["GENERAL", "loreCardCount", ">=", 50],
+  "collect-archaeologist": ["GENERAL", "retiredCardCount", ">=", 10],
+  "collect-diplomat": ["DIPLOMATIC", "distinctCountryIdCount", ">=", 20],
 };
 
 function determineCondition(id: string, rarity?: AchievementRarity): ConditionConfig {
