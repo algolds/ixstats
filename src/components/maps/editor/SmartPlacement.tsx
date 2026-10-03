@@ -155,7 +155,6 @@ export function SmartPlacement(props: SmartPlacementProps) {
 
   return (
     <Card className="space-y-2 p-2">
-      {/* CivCap Intelligence Header */}
       <div className="flex items-center justify-between">
         <Eyebrow className="flex items-center gap-2">
           <span>CivCap geographic intelligence</span>
@@ -165,7 +164,6 @@ export function SmartPlacement(props: SmartPlacementProps) {
         </span>
       </div>
 
-      {/* CivCap Rating Bars */}
       <div className="text-footnote grid grid-cols-2 gap-2">
         <div className="bg-fill-3 rounded-control-sm flex items-center justify-between px-2 py-1">
           <span className="text-label-secondary flex items-center gap-1">
@@ -193,7 +191,6 @@ export function SmartPlacement(props: SmartPlacementProps) {
         </div>
       </div>
 
-      {/* Smart Suggestions */}
       {suggestions.length > 0 && (
         <div className="border-separator space-y-2 border-t pt-1">
           {suggestions.map((s, i) => {

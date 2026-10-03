@@ -424,7 +424,6 @@ function LayerRow({
           {layer.name}
         </span>
 
-        {/* Select every feature in this layer (for batch actions) */}
         {onSelectIds && layerFeatures.length > 0 && !layer.locked && (
           <IconButton
             onClick={() => onSelectIds(layerFeatures.map((f) => f.id))}

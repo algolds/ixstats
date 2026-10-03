@@ -217,7 +217,6 @@ function CanvasOverlays({
     <>
       <RegionHoverTooltip features={editor.allFeatures} editorMode={editor.mode} />
 
-      {/* Live terrain readout while measuring */}
       {(editor.mode === "ruler" || (editor.rulerPoints && editor.rulerPoints.length > 0)) && (
         <HypsometricElevationHUD onClose={editor.clearRuler} />
       )}

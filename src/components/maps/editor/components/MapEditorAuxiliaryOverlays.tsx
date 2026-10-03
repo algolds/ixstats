@@ -172,7 +172,6 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
         </div>
       )}
 
-      {/* Batch Actions Bar */}
       {editor.selectedIds.size > 1 && (
         <div className="pointer-events-auto absolute bottom-10 left-1/2 z-30 max-w-[calc(100vw-2rem)] -translate-x-1/2">
           <FacetMaterial material="regular" className="rounded-row overflow-hidden">
@@ -188,7 +187,6 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
         </div>
       )}
 
-      {/* Context Menu */}
       <EditorContextMenuWrapper
         contextMenu={contextMenu}
         setContextMenu={setContextMenu}
@@ -197,10 +195,8 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
         onZoomToFeature={state.zoomToFeature}
       />
 
-      {/* Keyboard Shortcut Sheet */}
       {showShortcuts && <KeyboardShortcutSheet onClose={() => setShowShortcuts(false)} />}
 
-      {/* Province Import Wizard Floating Panel */}
       {editor.mode === "import-provinces" && (
         <FloatingImportPanel
           onClose={() => {
@@ -223,10 +219,8 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
         </FloatingImportPanel>
       )}
 
-      {/* Editor Dialogs */}
       <EditorDialogs {...state} onExit={onExit} />
 
-      {/* Onboarding Welcome Modal */}
       <MapEditorWelcomeModal isOpen={showWelcomeModal} onClose={() => setShowWelcomeModal(false)} />
     </>
   );

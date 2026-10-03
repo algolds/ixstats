@@ -139,10 +139,8 @@ export default function MapEditorOverlay({
             : "bg-surface pointer-events-auto"
         } absolute inset-0 z-30 flex flex-col`}
       >
-        {/* Loading splash — fades out when data is ready */}
         {showLoadingScreen && <EditorLoadingScreen />}
 
-        {/* Editor Header */}
         <EditorHeader
           countryInfo={countryInfo}
           activeEditorMode={activeEditorMode}
@@ -171,7 +169,6 @@ export default function MapEditorOverlay({
           onShowShortcuts={() => setShowShortcuts(true)}
         />
 
-        {/* Photoshop-style context bar — shown when a feature tool is active */}
         {activeEditorMode !== "border_edit" && (
           <EditorErrorBoundary name="ToolOptions">
             <ConnectedToolOptionsBar
@@ -181,7 +178,6 @@ export default function MapEditorOverlay({
           </EditorErrorBoundary>
         )}
 
-        {/* Border Editor context bar — shown when in border edit mode */}
         {activeEditorMode === "border_edit" && borderState.featureId && (
           <EditorErrorBoundary name="BorderToolOptions">
             <BorderEditorToolOptions
@@ -197,9 +193,7 @@ export default function MapEditorOverlay({
           </EditorErrorBoundary>
         )}
 
-        {/* Main content: Rail + Canvas + Panel */}
         <div className="flex min-h-0 flex-1">
-          {/* Left tool rail — desktop only */}
           <div className="pointer-events-auto hidden shrink-0 sm:block">
             {isWorldMode && activeEditorMode === "border_edit" ? (
               <BorderToolRail mode={borderState.mode} onModeChange={borderActions.setMode} />
@@ -232,7 +226,6 @@ export default function MapEditorOverlay({
           </EditorWorkspaceLayout>
         </div>
 
-        {/* Mobile tool rail */}
         <div className="sm:hidden">
           <MapEditorToolbar
             mode={editor.mode}
@@ -243,7 +236,6 @@ export default function MapEditorOverlay({
           />
         </div>
 
-        {/* Status Bar */}
         <EditorStatusBar
           mode={editor.mode}
           featureCount={editor.allFeatures.length}
@@ -260,7 +252,6 @@ export default function MapEditorOverlay({
         <CursorTerrainProbe />
         <EditorConfirmHost />
 
-        {/* Auxiliary Overlays (mobile sheets, welcome modal, import wizards, shortcuts help) */}
         <MapEditorAuxiliaryOverlays
           state={state}
           onExit={onExit}

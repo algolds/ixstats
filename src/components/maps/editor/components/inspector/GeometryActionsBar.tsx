@@ -46,7 +46,6 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
   return (
     <div className="space-y-2 select-none">
       <div className="grid grid-cols-2 gap-2">
-        {/* Center on Map */}
         {onCenter && (
           <Button
             variant="outline"
@@ -61,7 +60,6 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
           </Button>
         )}
 
-        {/* Duplicate Feature */}
         {onDuplicate && (
           <Button
             variant="outline"
@@ -76,7 +74,6 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
           </Button>
         )}
 
-        {/* City: Promote to Capital */}
         {isCity && onPromoteCapital && !isCapital && (
           <Button
             variant="outline"
@@ -91,7 +88,6 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
           </Button>
         )}
 
-        {/* City: Snap to Coastline */}
         {isCity && onSnapCoastline && (
           <Button
             variant="outline"
@@ -106,7 +102,6 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
           </Button>
         )}
 
-        {/* Route: Reverse Direction */}
         {isRoute && onReverseRoute && (
           <Button
             variant="outline"
@@ -121,7 +116,6 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
           </Button>
         )}
 
-        {/* Delete button (with 2-click confirmation) */}
         {onDelete && (
           <div className={confirmDelete ? "col-span-2" : "col-span-1"}>
             {confirmDelete ? (
@@ -166,7 +160,6 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
         )}
       </div>
 
-      {/* Region Pathfinder Operations */}
       {isRegion && onPathfinderOperation && (
         <Card className="space-y-2 p-2">
           <Eyebrow>Combine regions</Eyebrow>

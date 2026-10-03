@@ -45,7 +45,6 @@ export const HistoryPanel = React.memo(function HistoryPanel({
 
   return (
     <div className="bg-surface text-label flex h-full flex-col select-none">
-      {/* Header Info */}
       <div className="border-separator text-footnote flex items-center justify-between border-b px-3 py-2">
         <div className="text-label-secondary flex items-center gap-2 font-medium">
           <History className="h-3.5 w-3.5" />
@@ -62,15 +61,12 @@ export const HistoryPanel = React.memo(function HistoryPanel({
         )}
       </div>
 
-      {/* Action list with connecting track */}
       <div className="relative min-h-0 flex-1 scrollbar-thin overflow-y-auto px-2 py-2">
-        {/* Continuous vertical track */}
         {actions.length > 0 && (
           <div className="bg-separator pointer-events-none absolute top-4 bottom-4 left-[21px] w-px" />
         )}
 
         <div className="space-y-1">
-          {/* Initial State item */}
           <button
             type="button"
             onClick={() => handleItemClick(-1)}
@@ -167,7 +163,6 @@ export const HistoryPanel = React.memo(function HistoryPanel({
         </div>
       </div>
 
-      {/* Footer shortcut hints */}
       <div className="border-separator bg-fill-4 text-label-secondary text-footnote flex items-center justify-between border-t px-3 py-2">
         <div className="flex items-center gap-1">
           <KeyCommand className="h-3 w-3 opacity-70" />

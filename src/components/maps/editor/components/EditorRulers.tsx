@@ -205,7 +205,6 @@ export const EditorRulers = memo(function EditorRulers({
 
   return (
     <>
-      {/* Top Ruler */}
       <svg
         className="border-separator bg-fill-2 pointer-events-auto absolute top-0 right-0 left-[24px] z-20 h-6 cursor-ns-resize border-b select-none"
         style={{ width: rulerWidth }}
@@ -236,7 +235,6 @@ export const EditorRulers = memo(function EditorRulers({
         ))}
       </svg>
 
-      {/* Left Ruler */}
       <svg
         className="border-separator bg-fill-2 pointer-events-auto absolute top-[24px] bottom-0 left-0 z-20 w-6 cursor-ew-resize border-r select-none"
         style={{ height: rulerHeight }}
@@ -267,12 +265,10 @@ export const EditorRulers = memo(function EditorRulers({
         ))}
       </svg>
 
-      {/* Corner box */}
       <div className="border-separator bg-fill-3 pointer-events-none absolute top-0 left-0 z-30 flex h-6 w-6 items-center justify-center border-r border-b">
         <span className="text-label-secondary text-caption font-mono font-semibold">°</span>
       </div>
 
-      {/* Guides */}
       <svg className="pointer-events-none absolute inset-0 z-10 h-full w-full">
         {showGuides &&
           guides.map((guide) => {

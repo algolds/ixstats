@@ -107,7 +107,6 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
         </Button>
       </div>
 
-      {/* Controls */}
       <div className="space-y-2">
         <div>
           <Eyebrow className="block">Count ({count})</Eyebrow>
@@ -143,7 +142,6 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
         </div>
       </div>
 
-      {/* Action buttons */}
       {!cells && (
         <Button
           variant="secondary"
@@ -156,7 +154,6 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
         </Button>
       )}
 
-      {/* Generated cells preview */}
       {cells && (
         <>
           <Card className="space-y-1 p-2">

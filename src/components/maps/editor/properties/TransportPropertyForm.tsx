@@ -51,18 +51,15 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
   const [userTab, setUserTab] = useState<"routes" | "draw" | "generate" | null>(null);
   const tab = userTab ?? (routeWaypoints.length > 0 ? "draw" : "routes");
 
-  // Generate state
   const [selectedTypes, setSelectedTypes] = useState<GeneratableRouteType[]>(["rail", "highway"]);
   const [clearExisting, setClearExisting] = useState(false);
   const [generateNotice, setGenerateNotice] = useState<string | null>(null);
 
-  // Draw state
   const [routeName, setRouteName] = useState("");
   const [manualRouteType, setManualRouteType] = useState<string>("road");
   const [isSavingManual, setIsSavingManual] = useState(false);
   const [manualError, setManualError] = useState<string | null>(null);
 
-  // Routes filter state
   const [searchQuery, setSearchQuery] = useState("");
 
   const utils = api.useUtils();
@@ -145,7 +142,6 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
   if (activeRouteId) {
     return (
       <div className="bg-surface text-label flex h-full flex-col">
-        {/* Header */}
         <div className="border-separator flex items-center justify-between border-b px-3 py-2">
           <div className="text-caption flex items-center gap-2 font-semibold">
             <RouteIcon className="text-tint h-4 w-4" />
@@ -193,7 +189,6 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
 
   return (
     <div className="bg-surface text-label flex h-full flex-col">
-      {/* Header */}
       <div className="border-separator flex items-center justify-between border-b px-3 py-2">
         <div className="text-caption flex items-center gap-2 font-semibold">
           <RouteIcon className="text-tint h-4 w-4" />
@@ -211,7 +206,6 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
         </Button>
       </div>
 
-      {/* Tabs */}
       <div className="border-separator border-b p-2">
         <SegmentedControl
           aria-label="Transport network"
@@ -236,7 +230,6 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
         />
       </div>
 
-      {/* Content */}
       <div className="flex-1 overflow-y-auto p-3">
         {tab === "routes" && (
           <RouteFilterList

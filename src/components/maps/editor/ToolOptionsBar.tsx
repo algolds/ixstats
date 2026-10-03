@@ -70,13 +70,10 @@ interface ToolOptionsBarProps {
   selectedCount?: number;
   onDuplicate?: () => void;
   onDelete?: () => void;
-  // Point feature actions (city/POI — used in edit mode)
   onCopyCoords?: () => void;
   onMoveToCoords?: (lng: number, lat: number) => void;
-  // Gap / Negative Space
   showGaps?: boolean;
   onToggleGaps?: () => void;
-  // City scatter/snapping
   onScatterCities?: (count: number, type: string, prefix: string) => void;
   onSnapCityToSubdivisionBorder?: () => void;
   onSnapCityToCoastline?: () => void;
@@ -84,7 +81,6 @@ interface ToolOptionsBarProps {
   onCityCoordinatesChange?: (coords: [number, number]) => void;
   isPickingLocation?: boolean;
   onTogglePickingLocation?: () => void;
-  // Subdivision split/merge/transforms
   onStartSplitSubdivision?: () => void;
   onExecuteSplitSubdivision?: () => void;
   onMergeSelectedSubdivisions?: () => void;
@@ -97,22 +93,18 @@ interface ToolOptionsBarProps {
   /** Points placed on the split line so far. */
   splitPointsCount?: number;
   selectedFeature?: EditorFeature | null;
-  // City operations
   selectedCitiesCount?: number;
   onMergeSelectedCities?: () => void;
   onScalePopulation?: (factor: number) => void;
   onRotateCities?: (angle: number) => void;
   onSplitCity?: (cityId: string) => void;
-  // Empty subdivisions
   showEmptyRegions?: boolean;
   onToggleEmptyRegions?: () => void;
   emptyRegionsCount?: number;
   onCreateCentroidCities?: () => void;
-  // Ruler measuring
   rulerPoints?: [number, number][];
   rulerDistance?: number;
   onClearRuler?: () => void;
-  // Lasso select options
   lassoTool?: "freehand" | "rect";
   onLassoToolChange?: (tool: "freehand" | "rect") => void;
 }

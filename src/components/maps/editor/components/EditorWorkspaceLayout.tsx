@@ -213,7 +213,6 @@ export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
 
   return (
     <div className="relative flex h-full min-h-0 w-full flex-row overflow-hidden">
-      {/* Left panel slot */}
       {(!toolsDisabled || isWorldMode) && (
         <div
           ref={slotRefs.left}
@@ -224,14 +223,11 @@ export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
         </div>
       )}
 
-      {/* Center slot (Canvas + Bottom panels) */}
       <div className="relative flex h-full min-w-0 flex-1 flex-col">
-        {/* Map canvas */}
         <div className="relative min-h-0 min-w-0 flex-1" data-map-container>
           {children}
         </div>
 
-        {/* Bottom panel slot */}
         {(!toolsDisabled || isWorldMode) && (
           <div
             ref={slotRefs.bottom}
@@ -242,7 +238,6 @@ export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
         )}
       </div>
 
-      {/* Right panel slot */}
       {(!toolsDisabled || isWorldMode) && (
         <div
           ref={slotRefs.right}

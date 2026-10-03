@@ -111,7 +111,6 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
         Deselect all
       </Button>
 
-      {/* Bulk Edit — subdivisions only */}
       {canBulkEdit && !editOpen && (
         <Button
           variant="ghost"
@@ -130,7 +129,6 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
 
       {editOpen && (
         <div className="flex flex-wrap items-center gap-2">
-          {/* Field picker */}
           <OptionSelect
             disabled={pending}
             value={field}
@@ -140,7 +138,6 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
             className="w-full"
           />
 
-          {/* Value input — varies by field type */}
           {selectedFieldMeta.inputType === "select" && (
             <OptionSelect
               disabled={pending}

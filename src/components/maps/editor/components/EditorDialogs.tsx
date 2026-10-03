@@ -59,7 +59,6 @@ export const EditorDialogs = React.memo(function EditorDialogs({
 }: EditorDialogsProps) {
   return (
     <>
-      {/* Split Dialog */}
       {showSplitDialog && borderState.featureId && (
         <SplitMergeDialog
           type="split"
@@ -70,7 +69,6 @@ export const EditorDialogs = React.memo(function EditorDialogs({
         />
       )}
 
-      {/* Merge Dialog */}
       {showMergeDialog && borderState.featureId && (
         <SplitMergeDialog
           type="merge"
@@ -81,7 +79,6 @@ export const EditorDialogs = React.memo(function EditorDialogs({
         />
       )}
 
-      {/* Confirmation modal for border saving */}
       <AlertDialog
         open={showConfirmSaveModal}
         onOpenChange={(open) => !open && setShowConfirmSaveModal(false)}
@@ -122,7 +119,6 @@ export const EditorDialogs = React.memo(function EditorDialogs({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Exit confirmation modal */}
       <AlertDialog
         open={showExitConfirm}
         onOpenChange={(open) => !open && setShowExitConfirm(false)}
