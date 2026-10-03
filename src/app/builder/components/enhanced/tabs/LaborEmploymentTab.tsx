@@ -1,8 +1,7 @@
 "use client";
 
+import { SectionTabs } from "./SectionTabs";
 import React, { useState, useMemo } from "react";
-import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
 import {
   Group as Users,
   StatUp as TrendingUp,
@@ -78,6 +77,20 @@ interface LaborEmploymentTabProps {
  * />
  * ```
  */
+const SECTIONS = [
+  { id: "workforce", label: "Workforce", icon: Users },
+  { id: "employment", label: "Employment", icon: Briefcase },
+  { id: "income", label: "Income & wages", icon: DollarSign },
+  { id: "protections", label: "Worker rights & protections", icon: Shield },
+] as const;
+
+const SECTION_TITLES = {
+  workforce: "Workforce structure",
+  employment: "Employment",
+  income: "Income and wages",
+  protections: "Worker protections",
+} as const satisfies Record<(typeof SECTIONS)[number]["id"], string>;
+
 export function LaborEmploymentTab({
   economyBuilder,
   onEconomyBuilderChange,
@@ -223,44 +236,13 @@ export function LaborEmploymentTab({
         />
       </div>
 
-      <div className="border-separator bg-fill-4 rounded-row flex space-x-1 border p-1 shadow-inner">
-        {(
-          [
-            { id: "workforce", label: "Workforce", icon: Users },
-            { id: "employment", label: "Employment", icon: Briefcase },
-            { id: "income", label: "Income & wages", icon: DollarSign },
-            { id: "protections", label: "Worker rights & protections", icon: Shield },
-          ] as const
-        ).map((section) => {
-          const Icon = section.icon;
-          return (
-            <Button
-              key={section.id}
-              variant={activeSection === section.id ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setActiveSection(section.id)}
-              className={cn(
-                "rounded-control flex-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-205",
-                activeSection === section.id
-                  ? "bg-green text-on-green shadow-card hover:bg-green"
-                  : "text-label-secondary hover:bg-fill-3 hover:text-label"
-              )}
-            >
-              <Icon className="mr-2 h-4 w-4" />
-              {section.label}
-            </Button>
-          );
-        })}
-      </div>
+      <SectionTabs sections={SECTIONS} active={activeSection} onChange={setActiveSection} />
 
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
         <Card>
           <div className="border-separator border-b px-6 py-4">
             <h3 className="text-label text-headline flex items-center gap-2">
-              {activeSection === "workforce" && "Workforce structure"}
-              {activeSection === "employment" && "Employment"}
-              {activeSection === "income" && "Income and wages"}
-              {activeSection === "protections" && "Worker protections"}
+              {SECTION_TITLES[activeSection]}
             </h3>
           </div>
           <CardContent className="space-y-6 p-6">
