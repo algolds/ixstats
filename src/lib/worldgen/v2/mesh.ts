@@ -177,9 +177,6 @@ function generateJitteredGrid(targetCount: number, rng: () => number): Float64Ar
   const aspectRatio = 360 / 168;
   const cols = Math.round(Math.sqrt(targetCount * aspectRatio));
   const rows = Math.round(targetCount / cols);
-
-  // oxlint-disable-next-line typescript/no-unused-vars
-  const cellW = 360 / cols;
   const cellH = 168 / rows; // from -84 to 84
 
   const points: number[] = [];
