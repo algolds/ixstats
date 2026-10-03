@@ -6,11 +6,9 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
 import type { EconomicArchetype as PrismaArchetype, PrismaClient } from "@prisma/client";
 import type { EconomicArchetype } from "~/lib/economy/archetypes/types";
-import type { EconomicComponentType } from "~/lib/economy/atomic-data";
-import type { ComponentType } from "@prisma/client";
+import { parseArchetypeFields } from "./serializer";
 import { memoryConfig } from "~/lib/system/dev-memory-config";
 import {
   buildArchetypeSeedRows,
@@ -32,54 +30,21 @@ type CatalogArchetype = EconomicArchetype & {
  * Transforms database representation to TypeScript interface
  */
 function parseArchetypeJSON(archetype: PrismaArchetype): CatalogArchetype {
-  try {
-    return {
-      id: archetype.id,
-      key: archetype.key,
-      era: archetype.era === "historical" ? "historical" : "modern",
-      isActive: archetype.isActive,
-      isCustom: archetype.isCustom,
-      usageCount: archetype.usageCount,
-      name: archetype.name,
-      description: archetype.description,
-      region: archetype.region,
-      characteristics: JSON.parse(archetype.characteristics) as string[],
-      economicComponents: JSON.parse(archetype.economicComponents) as EconomicComponentType[],
-      governmentComponents: JSON.parse(archetype.governmentComponents) as ComponentType[],
-      taxProfile: JSON.parse(archetype.taxProfile) as {
-        corporateRate: number;
-        incomeRate: number;
-        consumptionRate: number;
-        revenueEfficiency: number;
-      },
-      sectorFocus: JSON.parse(archetype.sectorFocus) as Record<string, number>,
-      employmentProfile: JSON.parse(archetype.employmentProfile) as {
-        unemploymentRate: number;
-        laborParticipation: number;
-        wageGrowth: number;
-      },
-      growthMetrics: JSON.parse(archetype.growthMetrics) as {
-        gdpGrowth: number;
-        innovationIndex: number;
-        competitiveness: number;
-        stability: number;
-      },
-      strengths: JSON.parse(archetype.strengths) as string[],
-      challenges: JSON.parse(archetype.challenges) as string[],
-      implementationComplexity: archetype.implementationComplexity.toLowerCase() as
-        "low" | "medium" | "high",
-      culturalFactors: JSON.parse(archetype.culturalFactors) as string[],
-      historicalContext: archetype.historicalContext,
-      modernExamples: JSON.parse(archetype.modernExamples) as string[],
-      recommendations: JSON.parse(archetype.recommendations) as string[],
-    };
-  } catch (error) {
-    console.error("Failed to parse archetype JSON:", error);
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Failed to parse archetype data",
-    });
-  }
+  return {
+    id: archetype.id,
+    key: archetype.key,
+    era: archetype.era === "historical" ? "historical" : "modern",
+    isActive: archetype.isActive,
+    isCustom: archetype.isCustom,
+    usageCount: archetype.usageCount,
+    name: archetype.name,
+    description: archetype.description,
+    region: archetype.region,
+    implementationComplexity: archetype.implementationComplexity.toLowerCase() as
+      "low" | "medium" | "high",
+    historicalContext: archetype.historicalContext,
+    ...parseArchetypeFields(archetype),
+  };
 }
 
 /**

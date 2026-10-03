@@ -12,17 +12,10 @@ type FormulaMeta = {
   variables: Record<string, unknown>;
   constants: Record<string, unknown>;
   isActive: boolean;
-  version: string;
-  lastModified: Date;
-  modifiedBy: string;
 };
 
 export const formulasRouter = createTRPCRouter({
-  getAll: adminProcedure.query(async ({ ctx }) => {
-    // Build live metadata from real config/services and last calculation log
-    const lastCalc = await ctx.db.calculationLog.findFirst({ orderBy: { timestamp: "desc" } });
-    const lastModified = lastCalc?.timestamp ?? new Date();
-
+  getAll: adminProcedure.query(() => {
     const formulas: FormulaMeta[] = [
       {
         id: "gdp-growth",
@@ -42,9 +35,6 @@ export const formulasRouter = createTRPCRouter({
           globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
         },
         isActive: true,
-        version: "1.0.0",
-        lastModified,
-        modifiedBy: ctx.user?.id || "system",
       },
       {
         id: "gdp-per-capita-progression",
@@ -62,9 +52,6 @@ export const formulasRouter = createTRPCRouter({
           globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
         },
         isActive: true,
-        version: "1.0.0",
-        lastModified,
-        modifiedBy: ctx.user?.id || "system",
       },
     ];
 

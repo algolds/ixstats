@@ -66,7 +66,7 @@ export function StashSettingsContent() {
       />
 
       {/* Real Stats Metric Cards */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Total stashed articles</p>
           {statsLoading ? (
@@ -85,17 +85,6 @@ export function StashSettingsContent() {
           ) : (
             <p className="text-title-2 text-purple mt-1 tabular-nums">
               {stats?.totalHighlights.toLocaleString() ?? 0}
-            </p>
-          )}
-        </Card>
-
-        <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Cache Quota per User</p>
-          {statsLoading ? (
-            <Skeleton className="mt-1 h-7 w-20" />
-          ) : (
-            <p className="text-title-2 text-green mt-1 tabular-nums">
-              {stats?.avgCacheSizeKb ?? 143} KB
             </p>
           )}
         </Card>
