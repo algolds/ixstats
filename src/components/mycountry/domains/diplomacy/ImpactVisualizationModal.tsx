@@ -65,14 +65,14 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
               <div className="flex items-center justify-center gap-4">
                 <div className="text-center">
                   <div className="text-label text-title-1 mb-1">
-                    {impact.currentState || "Neutral"}
+                    {impact.currentState || "—"}
                   </div>
                   <span className="text-stat-label text-label-secondary">Before</span>
                 </div>
                 <ArrowRight className="text-label-secondary h-6 w-6" />
                 <div className="text-center">
                   <div className="text-label text-title-1 mb-1">
-                    {impact.newState || "Friendly"}
+                    {impact.newState || "—"}
                   </div>
                   <Eyebrow>After</Eyebrow>
                 </div>

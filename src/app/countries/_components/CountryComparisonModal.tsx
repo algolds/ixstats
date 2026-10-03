@@ -140,22 +140,7 @@ export function CountryComparisonModal({
       }
     } catch (error) {
       console.error("Error fetching country data for comparison:", error);
-      notify.error(`Failed to load data for ${country.name}. Using basic information.`);
-      // Fallback to basic data if API fails
-      const fallbackCountry: ComparisonCountry = {
-        id: country.id,
-        name: country.name,
-        currentPopulation: 0,
-        currentGdpPerCapita: 0,
-        currentTotalGdp: 0,
-        populationGrowthRate: 0,
-        adjustedGdpGrowth: 0,
-        economicTier: country.economicTier,
-        populationTier: "Unknown",
-        continent: country.continent,
-        color: CHART_COLORS[selectedCountries.length] || "#8b5cf6",
-      };
-      setSelectedCountries((prev) => [...prev, fallbackCountry]);
+      notify.error(`Failed to load data for ${country.name}.`);
     } finally {
       setLoadingCountries((prev) => {
         const newSet = new Set(prev);

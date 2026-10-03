@@ -11,7 +11,6 @@ interface TradePartnerItem {
   countryId: string;
   countryName: string;
   flagUrl?: string | null;
-  status: string;
   /** True when the recorded relation carries a trade treaty. */
   tradeAgreement: boolean;
   /** Recorded bilateral trade volume; 0 when none is recorded. */

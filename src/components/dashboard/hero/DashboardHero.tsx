@@ -69,11 +69,6 @@ export function DashboardHeroComponent({
     { id: countryId },
     { enabled: hasCountry, staleTime: 60_000 }
   );
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { data: rankings } = api.mycountry.getRankings.useQuery(
-    { countryId },
-    { enabled: hasCountry, staleTime: 300_000 }
-  );
   const { data: activityRingsData } = api.countries.getActivityRingsData.useQuery(
     { countryId },
     { enabled: hasCountry, staleTime: 60_000 }
@@ -93,23 +88,18 @@ export function DashboardHeroComponent({
   const newStats = (country as Record<string, any>)?.newStats ?? {};
   const stats = useMemo(
     () => ({
-      tier: newStats.economicTier ?? "—",
       countryName: (country as Record<string, any>)?.country ?? "",
-      leader: newStats.leader ?? "",
       continent: newStats.continent ?? "",
       governmentType: newStats.governmentType ?? "",
       slug: newStats.slug ?? "",
       gdpPerCapita: newStats.currentGdpPerCapita ?? 0,
       population: newStats.currentPopulation ?? 0,
-      populationTier: newStats.populationTier ?? "1",
       currentTotalGdp: newStats.currentTotalGdp ?? 0,
-      economicTier: newStats.economicTier ?? "Developing",
       populationDensity: newStats.populationDensity ?? null,
       landArea: newStats.landArea ?? null,
       areaSqMi: newStats.areaSqMi ?? null,
       gdpGrowth: normalizeGrowth(newStats.realGDPGrowthRate || newStats.adjustedGdpGrowth),
       popGrowth: normalizeGrowth(newStats.populationGrowthRate),
-      maxGdpGrowthRate: newStats.maxGdpGrowthRate ?? 0,
     }),
     // oxlint-disable-next-line
     [newStats, country]

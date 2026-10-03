@@ -122,7 +122,6 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
       countryId: rel.targetCountryId || rel.id,
       countryName: rel.targetCountryName || rel.targetCountry || "Diplomatic Partner",
       flagUrl: rel.targetCountryFlag ?? rel.flagUrl ?? null,
-      status: rel.relationship || rel.status || "Formal",
       tradeAgreement: rel.treaties?.some((t) => t.toLowerCase().includes("trade")) ?? false,
       tradeVolume: rel.tradeVolume ?? 0,
     }));

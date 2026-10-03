@@ -5,7 +5,6 @@ export interface TourStep {
   name: string;
   featureId: string;
   countryId: string;
-  fallbackCapital: string;
   fallbackBlurb: string;
   camera: {
     center: [number, number];
@@ -15,12 +14,11 @@ export interface TourStep {
   };
 }
 
-export const TOUR_STEPS: TourStep[] = [
+const TOUR_STEPS: TourStep[] = [
   {
     name: "Caphiria",
     featureId: "Caphiria",
     countryId: "Caphiria",
-    fallbackCapital: "Caphiria City",
     fallbackBlurb:
       "Sarpedon's preeminent empire, characterized by its classical military heritage and administrative centralization.",
     camera: { center: [26.3626, -19.6347], zoom: 4.2, pitch: 45, bearing: 15 },
@@ -29,7 +27,6 @@ export const TOUR_STEPS: TourStep[] = [
     name: "Fiannria",
     featureId: "Fiannria",
     countryId: "Fiannria",
-    fallbackCapital: "Fiannria Harbor",
     fallbackBlurb:
       "A historic maritime gateway in Levantia, pivotal in regional trade corridors across the Kilikas Sea.",
     camera: { center: [63.5578, 41.064], zoom: 4.8, pitch: 35, bearing: -20 },
@@ -38,7 +35,6 @@ export const TOUR_STEPS: TourStep[] = [
     name: "Faneria",
     featureId: "Faneria",
     countryId: "Faneria",
-    fallbackCapital: "Faneria Harbor",
     fallbackBlurb:
       "Located on the Gallia Magna coast of Levantia, an industrial powerhouse built on engineering and maritime commerce.",
     camera: { center: [50.6548, 45.2802], zoom: 5.0, pitch: 40, bearing: 30 },
@@ -47,7 +43,6 @@ export const TOUR_STEPS: TourStep[] = [
     name: "Kiravia",
     featureId: "Kiravia",
     countryId: "Kiravia",
-    fallbackCapital: "Kiravia Prime",
     fallbackBlurb:
       "The expansive northern state of Kiroborea, boasting massive natural resource industries and high technological research hubs.",
     camera: { center: [-22.2237, 53.5878], zoom: 4.5, pitch: 50, bearing: 45 },
@@ -56,7 +51,6 @@ export const TOUR_STEPS: TourStep[] = [
     name: "Tierrador",
     featureId: "Tierrador",
     countryId: "Tierrador",
-    fallbackCapital: "Tierrador Port",
     fallbackBlurb:
       "The gateway of South Crona, critical for agricultural exports and raw mineral shipping routes.",
     camera: { center: [-86.3198, 3.0441], zoom: 4.4, pitch: 30, bearing: -15 },
@@ -65,7 +59,6 @@ export const TOUR_STEPS: TourStep[] = [
     name: "Daxia",
     featureId: "Daxia",
     countryId: "Daxia",
-    fallbackCapital: "Daxia Harbor",
     fallbackBlurb:
       "Audonia's southern trading hub, dominating commerce in the Levantine Ocean and Southeast Asian routes.",
     camera: { center: [164.8931, -8.881], zoom: 4.6, pitch: 45, bearing: 25 },
