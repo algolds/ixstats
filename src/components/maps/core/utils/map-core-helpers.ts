@@ -1,3 +1,5 @@
+import type { Feature } from "geojson";
+
 export const COUNTRY_LABEL_OPACITY: unknown = ["coalesce", ["get", "_distFade"], 0];
 
 /** Escape HTML entities for safe insertion into popup innerHTML */
@@ -69,4 +71,21 @@ export function setFilteredSourceData(
   if (sameFeatureList(lastRef.current, features)) return;
   lastRef.current = features;
   source.setData({ ...base, type: "FeatureCollection", features });
+}
+
+/** Whether a feature belongs to the focused country (matched by id, slug or name). */
+export function matchesCountry(f: Feature, countryKey: string): boolean {
+  const p = f.properties;
+  if (!p) return false;
+  return (
+    p.countryId === countryKey ||
+    p.countrySlug === countryKey ||
+    (typeof p.countryName === "string" && p.countryName.toLowerCase() === countryKey.toLowerCase())
+  );
+}
+
+function setLayersVisible(map: MapLibreMap, layerIds: string[], visible: boolean | undefined) {
+  for (const id of layerIds) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
+  }
 }

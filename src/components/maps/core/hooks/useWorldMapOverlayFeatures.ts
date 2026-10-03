@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import type { Feature } from "geojson";
 import type { CapitalsGeoJson, MapOverlayFeatures } from "../IxWorldMap";
-import { createStarImage, setFilteredSourceData } from "../utils/map-core-helpers";
+import { createStarImage, matchesCountry, setFilteredSourceData } from "../utils/map-core-helpers";
 import type { MapTheme } from "~/lib/map-styles/registry";
 
 interface UseWorldMapOverlayFeaturesProps {
@@ -22,7 +22,6 @@ export function useWorldMapOverlayFeatures({
   theme,
   selectedCountryId,
 }: UseWorldMapOverlayFeaturesProps) {
-  // 1. Render capitals
   useEffect(() => {
     if (!map || !isLoaded || !capitals || capitals.features.length === 0) return;
 
@@ -59,13 +58,11 @@ export function useWorldMapOverlayFeatures({
     lastPoisRef.current = null;
 
     const focusKey = selectedCountryId ?? null;
-    const focusLower = focusKey ? focusKey.toLowerCase() : "";
     const rawCities = (overlayFeatures.cities?.features || []).filter(
       (f) => !f.properties?.isCapital
     );
     const rawPois = overlayFeatures.pois?.features || [];
 
-    // --- Subdivisions (not zoom-filtered) ---
     try {
       const existing = map.getSource("source-overlay-subdivisions");
       if (existing) {
@@ -80,7 +77,6 @@ export function useWorldMapOverlayFeatures({
     const updateOverlayFeatures = () => {
       const currentZoom = map.getZoom();
 
-      // --- Cities (non-capital) ---
       const minPop =
         currentZoom >= 6.0 ? 0 : currentZoom >= 4.5 ? 100000 : currentZoom >= 3.0 ? 250000 : 500000;
       const cities =
@@ -98,18 +94,11 @@ export function useWorldMapOverlayFeatures({
         console.warn("[useWorldMapOverlayFeatures] overlay cities error:", err);
       }
 
-      // --- POIs ---
       const pois =
         currentZoom >= 4.0
           ? rawPois
           : focusKey !== null
-            ? rawPois.filter(
-                (f) =>
-                  f.properties?.countryId === focusKey ||
-                  f.properties?.countrySlug === focusKey ||
-                  (typeof f.properties?.countryName === "string" &&
-                    f.properties.countryName.toLowerCase() === focusLower)
-              )
+            ? rawPois.filter((f) => matchesCountry(f, focusKey))
             : [];
       try {
         setFilteredSourceData(

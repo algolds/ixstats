@@ -4,24 +4,7 @@ import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import type { MapOverlayFeatures, OverlayVisibility } from "../IxWorldMap";
 import { registerStoryPinIcons } from "~/lib/maps/story-pin-icons";
 import type { MapTheme } from "~/lib/map-styles/registry";
-import { setFilteredSourceData } from "../utils/map-core-helpers";
-
-/** Whether a feature belongs to the focused country (matched by id, slug or name). */
-function matchesCountry(f: Feature, countryKey: string): boolean {
-  const p = f.properties;
-  if (!p) return false;
-  return (
-    p.countryId === countryKey ||
-    p.countrySlug === countryKey ||
-    (typeof p.countryName === "string" && p.countryName.toLowerCase() === countryKey.toLowerCase())
-  );
-}
-
-function setLayersVisible(map: MapLibreMap, layerIds: string[], visible: boolean | undefined) {
-  for (const id of layerIds) {
-    if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
-  }
-}
+import { matchesCountry, setFilteredSourceData } from "../utils/map-core-helpers";
 
 interface UseWorldMapDataOverlaysProps {
   map: MapLibreMap | null;

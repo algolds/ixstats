@@ -44,8 +44,7 @@ export interface DeckTransportOverlayProps {
   onSelectSegment?: (segmentId: string) => void;
 }
 
-// ── Typed Control Adapter (MapLibre <-> MapboxOverlay) ───────────────
-
+// Typed adapter so MapboxOverlay can be added as a MapLibre control
 class DeckMapLibreAdapter implements MapLibreControl {
   private overlay: MapboxOverlay;
 
@@ -75,8 +74,6 @@ class DeckMapLibreAdapter implements MapLibreControl {
     this.overlay.finalize();
   }
 }
-
-// ── Component ───────────────────────────────────────────────────────
 
 export function DeckTransportOverlay({
   map,
@@ -120,7 +117,6 @@ export function DeckTransportOverlay({
 
       const layers: Layer[] = [];
 
-      // ── ArcLayer: 3D Flight Corridors ──
       if (enableFlightArcs && flightArcs.length > 0) {
         layers.push(
           new ArcLayer<FlightArcData>({
@@ -140,7 +136,6 @@ export function DeckTransportOverlay({
         );
       }
 
-      // ── TripsLayer: GPU Vehicle Light Trails ──
       if (enableGpuTrips && trips.length > 0) {
         layers.push(
           new TripsLayer<VehicleTrip>({
@@ -159,7 +154,6 @@ export function DeckTransportOverlay({
         );
       }
 
-      // ── ColumnLayer: 3D Volumetric Hub Pillars ──
       if (enableHubPillars && hubPillars.length > 0) {
         layers.push(
           new ColumnLayer<HubPillarData>({
