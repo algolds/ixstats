@@ -19,20 +19,12 @@ import type { GovernmentBuilderState } from "~/types/government";
 import type { TaxBuilderState } from "~/types/builder/tax-builder";
 
 // Type for government data without validation state
-export type GovernmentBuilderData = Omit<GovernmentBuilderState, "isValid" | "errors">;
+type GovernmentBuilderData = Omit<GovernmentBuilderState, "isValid" | "errors">;
 
 // Type for tax data without validation state
-export type TaxBuilderData = Omit<TaxBuilderState, "isValid" | "errors">;
+type TaxBuilderData = Omit<TaxBuilderState, "isValid" | "errors">;
 
 // ==================== TYPE DEFINITIONS ====================
-
-export interface FieldMapping {
-  sourceField: string;
-  targetTable: string;
-  targetField: string;
-  transformFunction?: (value: any) => any;
-  requiresUserConfirmation?: boolean;
-}
 
 export interface ConflictWarning {
   field: string;
@@ -43,7 +35,7 @@ export interface ConflictWarning {
   message: string;
 }
 
-export interface IntegrationResult {
+interface IntegrationResult {
   success: boolean;
   warnings: ConflictWarning[];
   affectedTables: string[];
@@ -51,98 +43,10 @@ export interface IntegrationResult {
   errors?: string[];
 }
 
-// ==================== GOVERNMENT BUILDER FIELD MAPPINGS ====================
-
-/**
- * Complete mapping of Government Builder fields to database tables
- * This ensures every field in the builder is persisted to the correct location
- */
-export const GOVERNMENT_FIELD_MAPPINGS: FieldMapping[] = [
-  // GovernmentStructure table mappings
-  {
-    sourceField: "structure.governmentName",
-    targetTable: "GovernmentStructure",
-    targetField: "governmentName",
-  },
-  {
-    sourceField: "structure.governmentType",
-    targetTable: "GovernmentStructure",
-    targetField: "governmentType",
-  },
-  {
-    sourceField: "structure.headOfState",
-    targetTable: "GovernmentStructure",
-    targetField: "headOfState",
-  },
-  {
-    sourceField: "structure.headOfGovernment",
-    targetTable: "GovernmentStructure",
-    targetField: "headOfGovernment",
-  },
-  {
-    sourceField: "structure.legislatureName",
-    targetTable: "GovernmentStructure",
-    targetField: "legislatureName",
-  },
-  {
-    sourceField: "structure.executiveName",
-    targetTable: "GovernmentStructure",
-    targetField: "executiveName",
-  },
-  {
-    sourceField: "structure.judicialName",
-    targetTable: "GovernmentStructure",
-    targetField: "judicialName",
-  },
-  {
-    sourceField: "structure.totalBudget",
-    targetTable: "GovernmentStructure",
-    targetField: "totalBudget",
-  },
-  {
-    sourceField: "structure.fiscalYear",
-    targetTable: "GovernmentStructure",
-    targetField: "fiscalYear",
-  },
-  {
-    sourceField: "structure.budgetCurrency",
-    targetTable: "GovernmentStructure",
-    targetField: "budgetCurrency",
-  },
-
-  // Cross-table mappings (Government → Country table)
-  {
-    sourceField: "structure.governmentType",
-    targetTable: "Country",
-    targetField: "governmentType",
-    requiresUserConfirmation: true,
-  },
-  {
-    sourceField: "structure.headOfState",
-    targetTable: "Country",
-    targetField: "leader",
-    requiresUserConfirmation: true,
-    transformFunction: (value) => value || "Unknown",
-  },
-
-  // Cross-table mappings (Government → GovernmentBudget table)
-  {
-    sourceField: "structure.totalBudget",
-    targetTable: "GovernmentBudget",
-    targetField: "totalBudget",
-    requiresUserConfirmation: true,
-  },
-
-  // Budget allocation mappings
-  { sourceField: "budgetAllocations", targetTable: "BudgetAllocation", targetField: "*" },
-  { sourceField: "departments", targetTable: "GovernmentDepartment", targetField: "*" },
-  { sourceField: "revenueSources", targetTable: "RevenueSource", targetField: "*" },
-];
-
 /**
  * Mapping for department categories to budget spending categories
  */
-export const DEPARTMENT_TO_SPENDING_CATEGORY: Record<string, string> = {
+const DEPARTMENT_TO_SPENDING_CATEGORY: Record<string, string> = {
   Defense: "defense",
   Education: "education",
   Health: "healthcare",
@@ -166,90 +70,6 @@ export const DEPARTMENT_TO_SPENDING_CATEGORY: Record<string, string> = {
   "Emergency Management": "other",
   Other: "other",
 };
-
-// ==================== TAX BUILDER FIELD MAPPINGS ====================
-
-/**
- * Complete mapping of Tax Builder fields to database tables
- */
-export const TAX_FIELD_MAPPINGS: FieldMapping[] = [
-  // TaxSystem table mappings
-  {
-    sourceField: "taxSystem.taxSystemName",
-    targetTable: "TaxSystem",
-    targetField: "taxSystemName",
-  },
-  { sourceField: "taxSystem.taxAuthority", targetTable: "TaxSystem", targetField: "taxAuthority" },
-  { sourceField: "taxSystem.fiscalYear", targetTable: "TaxSystem", targetField: "fiscalYear" },
-  { sourceField: "taxSystem.taxCode", targetTable: "TaxSystem", targetField: "taxCode" },
-  { sourceField: "taxSystem.baseRate", targetTable: "TaxSystem", targetField: "baseRate" },
-  {
-    sourceField: "taxSystem.progressiveTax",
-    targetTable: "TaxSystem",
-    targetField: "progressiveTax",
-  },
-  { sourceField: "taxSystem.flatTaxRate", targetTable: "TaxSystem", targetField: "flatTaxRate" },
-  {
-    sourceField: "taxSystem.alternativeMinTax",
-    targetTable: "TaxSystem",
-    targetField: "alternativeMinTax",
-  },
-  {
-    sourceField: "taxSystem.alternativeMinRate",
-    targetTable: "TaxSystem",
-    targetField: "alternativeMinRate",
-  },
-  {
-    sourceField: "taxSystem.complianceRate",
-    targetTable: "TaxSystem",
-    targetField: "complianceRate",
-  },
-  {
-    sourceField: "taxSystem.collectionEfficiency",
-    targetTable: "TaxSystem",
-    targetField: "collectionEfficiency",
-  },
-
-  // Cross-table mappings (TaxSystem → FiscalSystem table)
-  {
-    sourceField: "categories",
-    targetTable: "FiscalSystem",
-    targetField: "personalIncomeTaxRates",
-    transformFunction: (categories) => {
-      const incomeTax = categories.find((c: any) => c.categoryType === "Income Tax");
-      return incomeTax?.baseRate?.toString() || "0";
-    },
-    requiresUserConfirmation: true,
-  },
-  {
-    sourceField: "categories",
-    targetTable: "FiscalSystem",
-    targetField: "corporateTaxRates",
-    transformFunction: (categories) => {
-      const corpTax = categories.find((c: any) => c.categoryType === "Corporate Tax");
-      return corpTax?.baseRate?.toString() || "0";
-    },
-    requiresUserConfirmation: true,
-  },
-  {
-    sourceField: "categories",
-    targetTable: "FiscalSystem",
-    targetField: "salesTaxRate",
-    transformFunction: (categories) => {
-      const salesTax = categories.find(
-        (c: any) => c.categoryType === "Sales Tax" || c.categoryType === "Value-Added Tax (VAT)"
-      );
-      return salesTax?.baseRate || 0;
-    },
-    requiresUserConfirmation: true,
-  },
-
-  // Nested mappings
-  { sourceField: "categories", targetTable: "TaxCategory", targetField: "*" },
-  { sourceField: "brackets", targetTable: "TaxBracket", targetField: "*" },
-  { sourceField: "exemptions", targetTable: "TaxExemption", targetField: "*" },
-  { sourceField: "deductions", targetTable: "TaxDeduction", targetField: "*" },
-];
 
 // ==================== CONFLICT DETECTION ====================
 
@@ -694,54 +514,4 @@ export async function syncTaxData(
       errors,
     };
   }
-}
-
-/**
- * Get field mapping information for a specific builder field
- */
-export function getFieldMappingInfo(
-  builderType: "government" | "tax",
-  fieldPath: string
-): FieldMapping[] {
-  const mappings = builderType === "government" ? GOVERNMENT_FIELD_MAPPINGS : TAX_FIELD_MAPPINGS;
-  return mappings.filter((m) => m.sourceField === fieldPath);
-}
-
-/**
- * Validate that all builder fields are mapped
- */
-export function validateFieldCoverage(
-  builderType: "government" | "tax",
-  builderData: GovernmentBuilderState | TaxBuilderState
-): { mapped: string[]; unmapped: string[] } {
-  const mappings = builderType === "government" ? GOVERNMENT_FIELD_MAPPINGS : TAX_FIELD_MAPPINGS;
-  const mappedFields = new Set(mappings.map((m) => m.sourceField));
-
-  // Get all fields from builder data (flatten nested objects)
-  const allFields = getAllFieldPaths(builderData);
-
-  const mapped = allFields.filter((f) => mappedFields.has(f));
-  const unmapped = allFields.filter((f) => !mappedFields.has(f));
-
-  return { mapped, unmapped };
-}
-
-/**
- * Helper to get all field paths from an object
- */
-function getAllFieldPaths(obj: any, prefix = ""): string[] {
-  const fields: string[] = [];
-
-  for (const key in obj) {
-    const path = prefix ? `${prefix}.${key}` : key;
-    const value = obj[key];
-
-    if (value !== null && typeof value === "object" && !Array.isArray(value)) {
-      fields.push(...getAllFieldPaths(value, path));
-    } else {
-      fields.push(path);
-    }
-  }
-
-  return fields;
 }

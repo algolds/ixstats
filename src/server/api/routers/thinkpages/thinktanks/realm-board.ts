@@ -26,7 +26,7 @@ export const isRealmBoard = (group: { type: string }) => group.type === REALM_BO
 
 type BoardDb = Pick<PrismaClient, "realmBoard" | "realm" | "user" | "country">;
 
-export interface RealmBoardAccess {
+interface RealmBoardAccess {
   isMember: boolean;
   isManager: boolean;
   role: string | null;

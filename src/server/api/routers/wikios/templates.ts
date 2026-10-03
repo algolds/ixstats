@@ -20,7 +20,7 @@ import type { Prisma } from "@prisma/client";
  * Master Polymorphic Canonical Templates Registry.
  * Condenses legacy fragmented templates into unified masters with dynamic variant toggles.
  */
-export const CANONICAL_BUILTIN_TEMPLATES = [
+const CANONICAL_BUILTIN_TEMPLATES = [
   // 1. Sovereign & Geopolitical
   {
     name: "Infobox country",
@@ -312,7 +312,7 @@ export const CANONICAL_BUILTIN_TEMPLATES = [
 /**
  * Polymorphic alias map resolving legacy templates to Master canonicals.
  */
-export const CANONICAL_ALIASES_MAP: Record<string, { target: string; variant?: string }> = {
+const CANONICAL_ALIASES_MAP: Record<string, { target: string; variant?: string }> = {
   // Country merges
   "infobox former country": { target: "Infobox country", variant: "former" },
   "infobox subdivision": { target: "Infobox country", variant: "subdivision" },
@@ -372,7 +372,7 @@ export const CANONICAL_ALIASES_MAP: Record<string, { target: string; variant?: s
   "infobox bilateral relations": { target: "Infobox historical era" },
 };
 
-export const BUILTIN_TEMPLATE_SCHEMAS: Record<
+const BUILTIN_TEMPLATE_SCHEMAS: Record<
   string,
   {
     description: string;

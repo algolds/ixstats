@@ -1,32 +1,68 @@
 import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 // Import the wiki search service
 import { notificationHooks } from "~/lib/notifications/hooks";
-import { globalCache } from "~/lib/cache";
-import { personaDisplayName } from "../../post-utils";
-
-const invalidateFeeds = async () => {
-  try {
-    await Promise.all([
-      globalCache.deleteByPattern("thinkpages_feed:*"),
-      globalCache.deleteByPattern("global_activity_feed:*"),
-      globalCache.deleteByPattern("user_following_feed:*"),
-    ]);
-  } catch (error) {
-    console.error("Failed to invalidate feeds:", error);
-  }
-};
+import { invalidateFeeds, personaDisplayName } from "../../post-utils";
 
 /**
  * Post update for a new reaction tally: the JSON tally plus `likeCount`, which mirrors the
  * `like` entry so feed and post views show the real number (it was never written before).
  */
-export function countersData(reactionCounts: Record<string, number>) {
+function countersData(reactionCounts: Record<string, number>) {
   return {
     reactionCounts: JSON.stringify(reactionCounts),
     likeCount: Math.max(0, reactionCounts.like ?? 0),
   };
+}
+
+/**
+ * Checks the caller owns `accountId`, then loads the post's tally and the account's existing
+ * reaction on it. Throws UNAUTHORIZED / FORBIDDEN / NOT_FOUND like the mutations always did.
+ */
+async function loadReactionState(
+  db: PrismaClient,
+  clerkUserId: string | null | undefined,
+  postId: string,
+  accountId: string,
+  unauthorizedMessage: string
+) {
+  if (!clerkUserId) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: unauthorizedMessage });
+  }
+
+  // Verify the account belongs to the current user
+  const account = await db.thinkpagesAccount.findUnique({ where: { id: accountId } });
+  if (!account || account.clerkUserId !== clerkUserId) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You do not have permission to use this account",
+    });
+  }
+
+  const post = await db.thinkpagesPost.findUnique({
+    where: { id: postId },
+    select: { reactionCounts: true, content: true },
+  });
+  if (!post) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Post not found" });
+  }
+
+  const reactionCounts = (() => {
+    try {
+      return post.reactionCounts ? JSON.parse(post.reactionCounts) : {};
+    } catch (error) {
+      console.warn("Failed to parse reactionCounts:", error);
+      return {};
+    }
+  })();
+
+  const existingReaction = await db.postReaction.findUnique({
+    where: { postId_accountId: { postId, accountId } },
+  });
+
+  return { account, post, reactionCounts, existingReaction };
 }
 
 const AddReactionSchema = z.object({
@@ -44,54 +80,13 @@ export const thinkpagesPostsReactionsMutationsRouter = createTRPCRouter({
     const { db } = ctx;
     const clerkUserId = ctx.auth?.userId;
 
-    if (!clerkUserId) {
-      throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "You must be logged in to react to posts",
-      });
-    }
-
-    // Verify the account belongs to the current user
-    const account = await db.thinkpagesAccount.findUnique({
-      where: { id: input.accountId },
-    });
-
-    if (!account || account.clerkUserId !== clerkUserId) {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "You do not have permission to use this account",
-      });
-    }
-
-    const post = await db.thinkpagesPost.findUnique({
-      where: { id: input.postId },
-      select: { reactionCounts: true, content: true },
-    });
-
-    if (!post) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "Post not found",
-      });
-    }
-
-    const reactionCounts = (() => {
-      try {
-        return post.reactionCounts ? JSON.parse(post.reactionCounts) : {};
-      } catch (error) {
-        console.warn("Failed to parse reactionCounts in addReaction:", error);
-        return {};
-      }
-    })();
-
-    const existingReaction = await db.postReaction.findUnique({
-      where: {
-        postId_accountId: {
-          postId: input.postId,
-          accountId: input.accountId,
-        },
-      },
-    });
+    const { account, post, reactionCounts, existingReaction } = await loadReactionState(
+      db,
+      clerkUserId,
+      input.postId,
+      input.accountId,
+      "You must be logged in to react to posts"
+    );
 
     if (existingReaction) {
       if (existingReaction.reactionType === input.reactionType) {
@@ -251,54 +246,13 @@ export const thinkpagesPostsReactionsMutationsRouter = createTRPCRouter({
       const { db } = ctx;
       const clerkUserId = ctx.auth?.userId;
 
-      if (!clerkUserId) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "You must be logged in to remove reactions",
-        });
-      }
-
-      // Verify the account belongs to the current user
-      const account = await db.thinkpagesAccount.findUnique({
-        where: { id: input.accountId },
-      });
-
-      if (!account || account.clerkUserId !== clerkUserId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have permission to use this account",
-        });
-      }
-
-      const post = await db.thinkpagesPost.findUnique({
-        where: { id: input.postId },
-        select: { reactionCounts: true, content: true },
-      });
-
-      if (!post) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Post not found",
-        });
-      }
-
-      const reactionCounts = (() => {
-        try {
-          return post.reactionCounts ? JSON.parse(post.reactionCounts) : {};
-        } catch (error) {
-          console.warn("Failed to parse reactionCounts in addReaction:", error);
-          return {};
-        }
-      })();
-
-      const existingReaction = await db.postReaction.findUnique({
-        where: {
-          postId_accountId: {
-            postId: input.postId,
-            accountId: input.accountId,
-          },
-        },
-      });
+      const { post, reactionCounts, existingReaction } = await loadReactionState(
+        db,
+        clerkUserId,
+        input.postId,
+        input.accountId,
+        "You must be logged in to remove reactions"
+      );
 
       if (existingReaction) {
         // Use transaction to ensure consistency

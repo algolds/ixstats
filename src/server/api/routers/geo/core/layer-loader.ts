@@ -98,7 +98,7 @@ export async function warmGeoCacheDev(db: any): Promise<void> {
 
 const GEOJSON_DIR = join(process.cwd(), "scripts", "geojson_fixed");
 
-export async function loadGeoJSONFromFile(layerType: string): Promise<FeatureCollection> {
+async function loadGeoJSONFromFile(layerType: string): Promise<FeatureCollection> {
   const filePath = join(GEOJSON_DIR, `${layerType}.geojson`);
   const raw = await readFile(filePath, "utf-8");
   const parsed = JSON.parse(raw) as FeatureCollection;
@@ -476,7 +476,7 @@ async function buildLayerFromDB(
  *
  * Example: 4068 altitude polygons across 9 colors → 9 MultiPolygon features.
  */
-export function mergeFeaturesByColor(fc: FeatureCollection): FeatureCollection {
+function mergeFeaturesByColor(fc: FeatureCollection): FeatureCollection {
   // Position[][][] = array of polygon rings, each polygon is Position[][] (ring of [lng,lat])
   const colorGroups = new Map<string, import("geojson").Position[][][]>();
 

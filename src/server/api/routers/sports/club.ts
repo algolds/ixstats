@@ -6,12 +6,86 @@
  */
 
 import { z } from "zod";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { teamWageBill } from "~/lib/sports";
 import { IxTime } from "~/lib/ixtime";
 import type { LiveTraceEvent } from "~/lib/sports/live-match";
+
+const TEAM_OVERVIEW_INCLUDE = {
+  players: { where: { isActive: true }, orderBy: { position: "asc" } },
+  coaches: { where: { isActive: true } },
+  league: { select: { id: true, name: true, sportPreset: true, archetype: true } },
+} satisfies Prisma.SportTeamInclude;
+
+type TeamWithOverview = Prisma.SportTeamGetPayload<{ include: typeof TEAM_OVERVIEW_INCLUDE }>;
+
+/** Season context, standings, fixtures and records shared by the owner and public team overviews. */
+async function buildTeamOverview(
+  db: Pick<PrismaClient, "sportSeason" | "sportStanding" | "sportMatch" | "sportTeamSeason">,
+  team: TeamWithOverview
+) {
+  const activeSeason = await db.sportSeason.findFirst({
+    where: { leagueId: team.leagueId, status: "in_progress" },
+    select: { id: true, seasonNumber: true, status: true },
+  });
+
+  let currentStandings = null;
+  let upcomingMatches: Array<{
+    id: string;
+    matchDay: number;
+    status: string;
+    homeTeamId: string;
+    awayTeamId: string;
+    homeTeam: { id: string; name: string };
+    awayTeam: { id: string; name: string };
+  }> = [];
+
+  if (activeSeason) {
+    currentStandings = await db.sportStanding.findUnique({
+      where: { seasonId_teamId: { seasonId: activeSeason.id, teamId: team.id } },
+    });
+
+    upcomingMatches = await db.sportMatch.findMany({
+      where: {
+        seasonId: activeSeason.id,
+        status: "scheduled",
+        OR: [{ homeTeamId: team.id }, { awayTeamId: team.id }],
+      },
+      include: {
+        homeTeam: { select: { id: true, name: true, shortName: true } },
+        awayTeam: { select: { id: true, name: true, shortName: true } },
+      },
+      orderBy: { matchDay: "asc" },
+      take: 5,
+    });
+  }
+
+  const seasonsCount = await db.sportTeamSeason.count({
+    where: { teamId: team.id },
+  });
+
+  const championships = await db.sportSeason.count({
+    where: { championTeamId: team.id, status: "completed" },
+  });
+
+  return {
+    team,
+    activeSeason,
+    currentStandings,
+    upcomingMatches,
+    seasonsCount,
+    championships,
+    wageBill: teamWageBill(
+      team.players as unknown as Array<{
+        isActive?: boolean;
+        ratings: Record<string, unknown> | null;
+      }>
+    ),
+  };
+}
 
 export const sportsClubRouter = createTRPCRouter({
   upgradeStadium: protectedProcedure
@@ -174,9 +248,13 @@ export const sportsClubRouter = createTRPCRouter({
         const updatedLineup = {
           ...lineup,
           attackFocus:
-            input.attackFocus !== undefined ? input.attackFocus : ((lineup.attackFocus as number) ?? 50),
+            input.attackFocus !== undefined
+              ? input.attackFocus
+              : ((lineup.attackFocus as number) ?? 50),
           teamIntensity:
-            input.teamIntensity !== undefined ? input.teamIntensity : ((lineup.teamIntensity as number) ?? 50),
+            input.teamIntensity !== undefined
+              ? input.teamIntensity
+              : ((lineup.teamIntensity as number) ?? 50),
         };
 
         return ctx.db.sportTeam.update({
@@ -600,75 +678,14 @@ export const sportsClubRouter = createTRPCRouter({
       try {
         const team = await ctx.db.sportTeam.findUnique({
           where: { id: input.teamId, ownerUserId: ctx.user.id },
-          include: {
-            players: { where: { isActive: true }, orderBy: { position: "asc" } },
-            coaches: { where: { isActive: true } },
-            league: { select: { id: true, name: true, sportPreset: true, archetype: true } },
-          },
+          include: TEAM_OVERVIEW_INCLUDE,
         });
 
         if (!team) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Club not found or not owned by you" });
         }
 
-        const activeSeason = await ctx.db.sportSeason.findFirst({
-          where: { leagueId: team.leagueId, status: "in_progress" },
-          select: { id: true, seasonNumber: true, status: true },
-        });
-
-        let currentStandings = null;
-        let upcomingMatches: Array<{
-          id: string;
-          matchDay: number;
-          status: string;
-          homeTeamId: string;
-          awayTeamId: string;
-          homeTeam: { id: string; name: string };
-          awayTeam: { id: string; name: string };
-        }> = [];
-
-        if (activeSeason) {
-          currentStandings = await ctx.db.sportStanding.findUnique({
-            where: { seasonId_teamId: { seasonId: activeSeason.id, teamId: team.id } },
-          });
-
-          upcomingMatches = await ctx.db.sportMatch.findMany({
-            where: {
-              seasonId: activeSeason.id,
-              status: "scheduled",
-              OR: [{ homeTeamId: team.id }, { awayTeamId: team.id }],
-            },
-            include: {
-              homeTeam: { select: { id: true, name: true, shortName: true } },
-              awayTeam: { select: { id: true, name: true, shortName: true } },
-            },
-            orderBy: { matchDay: "asc" },
-            take: 5,
-          });
-        }
-
-        const seasonsCount = await ctx.db.sportTeamSeason.count({
-          where: { teamId: team.id },
-        });
-
-        const championships = await ctx.db.sportSeason.count({
-          where: { championTeamId: team.id, status: "completed" },
-        });
-
-        return {
-          team,
-          activeSeason,
-          currentStandings,
-          upcomingMatches,
-          seasonsCount,
-          championships,
-          wageBill: teamWageBill(
-            team.players as unknown as Array<{
-              isActive?: boolean;
-              ratings: Record<string, unknown> | null;
-            }>
-          ),
-        };
+        return buildTeamOverview(ctx.db, team);
       } catch (error) {
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
@@ -684,75 +701,14 @@ export const sportsClubRouter = createTRPCRouter({
       try {
         const team = await ctx.db.sportTeam.findUnique({
           where: { id: input.teamId },
-          include: {
-            players: { where: { isActive: true }, orderBy: { position: "asc" } },
-            coaches: { where: { isActive: true } },
-            league: { select: { id: true, name: true, sportPreset: true, archetype: true } },
-          },
+          include: TEAM_OVERVIEW_INCLUDE,
         });
 
         if (!team) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
         }
 
-        const activeSeason = await ctx.db.sportSeason.findFirst({
-          where: { leagueId: team.leagueId, status: "in_progress" },
-          select: { id: true, seasonNumber: true, status: true },
-        });
-
-        let currentStandings = null;
-        let upcomingMatches: Array<{
-          id: string;
-          matchDay: number;
-          status: string;
-          homeTeamId: string;
-          awayTeamId: string;
-          homeTeam: { id: string; name: string };
-          awayTeam: { id: string; name: string };
-        }> = [];
-
-        if (activeSeason) {
-          currentStandings = await ctx.db.sportStanding.findUnique({
-            where: { seasonId_teamId: { seasonId: activeSeason.id, teamId: team.id } },
-          });
-
-          upcomingMatches = await ctx.db.sportMatch.findMany({
-            where: {
-              seasonId: activeSeason.id,
-              status: "scheduled",
-              OR: [{ homeTeamId: team.id }, { awayTeamId: team.id }],
-            },
-            include: {
-              homeTeam: { select: { id: true, name: true, shortName: true } },
-              awayTeam: { select: { id: true, name: true, shortName: true } },
-            },
-            orderBy: { matchDay: "asc" },
-            take: 5,
-          });
-        }
-
-        const seasonsCount = await ctx.db.sportTeamSeason.count({
-          where: { teamId: team.id },
-        });
-
-        const championships = await ctx.db.sportSeason.count({
-          where: { championTeamId: team.id, status: "completed" },
-        });
-
-        return {
-          team,
-          activeSeason,
-          currentStandings,
-          upcomingMatches,
-          seasonsCount,
-          championships,
-          wageBill: teamWageBill(
-            team.players as unknown as Array<{
-              isActive?: boolean;
-              ratings: Record<string, unknown> | null;
-            }>
-          ),
-        };
+        return buildTeamOverview(ctx.db, team);
       } catch (error) {
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({

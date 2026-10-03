@@ -2,7 +2,7 @@
  * Messaging Domain Errors (Plan 163)
  */
 
-export class MessagingError extends Error {
+class MessagingError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "MessagingError";

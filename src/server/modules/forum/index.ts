@@ -9,7 +9,6 @@
 export {
   getForumActivity,
   getForumTrendingThreads,
-  searchForumThreads,
   xfFetch,
   xfFetchAsUser,
   xfPostAsUser,
@@ -20,8 +19,6 @@ export {
   type XFUser,
   type XFThread,
   type XFPost,
-  type XFNodeForum,
-  type XFPaginatedResponse,
   type XFForumsResponse,
   type XFThreadsResponse,
   type XFThreadResponse,
@@ -30,17 +27,13 @@ export {
 } from "./services/xenforo-service";
 
 export {
-  setupForumCustomFields,
   lookupForumUser,
   syncUserToForum,
 } from "./services/xenforo-user-sync";
 
 export {
   createForumLinkService,
-  forumVerificationCode,
   ForumLinkError,
-  FORUM_CODE_WINDOW_MS,
-  type ForumLinkDeps,
   type ForumProfileProof,
 } from "./services/forum-link-verification";
 
@@ -51,17 +44,11 @@ export {
 } from "./services/linked-user";
 
 export { forumBridge } from "./services/forum-bridge";
-export type { BridgeAdapter, BridgeSyncResult } from "~/server/shared/bridge-types";
-
 // ─── Lib / Utilities ─────────────────────────────────────────────────────────
-export { transformBBCode, transformPosts, type TransformedPost } from "./lib/bbcode-transformer";
+export { transformBBCode } from "./lib/bbcode-transformer";
 export {
   cacheKey,
-  cacheGet,
-  cacheSet,
   cacheInvalidate,
   invalidateThread,
-  cacheClear,
-  cachedFetch,
-  FORUM_CACHE_TTL,
+  cachedFetch
 } from "./lib/cache";

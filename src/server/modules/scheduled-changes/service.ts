@@ -32,7 +32,7 @@ import {
   type AllowedFieldPath,
 } from "./effect-value";
 
-export interface ApplyDueResult {
+interface ApplyDueResult {
   appliedCount: number;
   /** Deterministic validation failures plus transient errors; equals `errors.length`. */
   failedCount: number;

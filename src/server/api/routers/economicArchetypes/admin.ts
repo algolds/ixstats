@@ -6,49 +6,11 @@ import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import type { EconomicArchetype as PrismaArchetype } from "@prisma/client";
+import { parseArchetypeFields } from "./serializer";
 
-/**
- * Parse JSON string fields back to objects
- * Transforms database representation to TypeScript interface
- */
+/** Row plus its decoded JSON columns. */
 function parseArchetypeJSON(archetype: PrismaArchetype) {
-  try {
-    return {
-      ...archetype,
-      characteristics: JSON.parse(archetype.characteristics) as string[],
-      economicComponents: JSON.parse(archetype.economicComponents) as string[],
-      governmentComponents: JSON.parse(archetype.governmentComponents) as string[],
-      taxProfile: JSON.parse(archetype.taxProfile) as {
-        corporateRate: number;
-        incomeRate: number;
-        consumptionRate: number;
-        revenueEfficiency: number;
-      },
-      sectorFocus: JSON.parse(archetype.sectorFocus) as Record<string, number>,
-      employmentProfile: JSON.parse(archetype.employmentProfile) as {
-        unemploymentRate: number;
-        laborParticipation: number;
-        wageGrowth: number;
-      },
-      growthMetrics: JSON.parse(archetype.growthMetrics) as {
-        gdpGrowth: number;
-        innovationIndex: number;
-        competitiveness: number;
-        stability: number;
-      },
-      strengths: JSON.parse(archetype.strengths) as string[],
-      challenges: JSON.parse(archetype.challenges) as string[],
-      culturalFactors: JSON.parse(archetype.culturalFactors) as string[],
-      modernExamples: JSON.parse(archetype.modernExamples) as string[],
-      recommendations: JSON.parse(archetype.recommendations) as string[],
-    };
-  } catch (error) {
-    console.error("Failed to parse archetype JSON:", error);
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Failed to parse archetype data",
-    });
-  }
+  return { ...archetype, ...parseArchetypeFields(archetype) };
 }
 
 /**

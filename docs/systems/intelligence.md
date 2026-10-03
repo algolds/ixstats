@@ -20,7 +20,7 @@ Intelligence in IxStates is the **recon / fog-of-information** layer: what your 
 | **Policy fog warnings** | `policies.getPolicyReconContext` → `PolicyReconBanner` (over-capacity, effectiveness < 45%) | Live (warnings only, no numeric masking) |
 | **Fogged whip count** | `legislation.previewBillVote` (`src/lib/statecraft/whip.ts`) | Live |
 | **Threat & border assessment** | `security.getSecurityAssessment`, `security.getBorderSecurity` → `BorderThreatPanel` (Defense) | Live, premium |
-| **Intelligence templates** | `intelligence.getAllTemplates` / `createTemplate` / `updateTemplate` / `deleteTemplate` (admin, `/admin/intelligence-templates`); read by `diplomaticCore.getSharedData` | Live (admin) |
+| **Intelligence templates** | `intelligence.getAllTemplates` / `createTemplate` / `updateTemplate` / `deleteTemplate` (admin, `/admin/intelligence-templates`); no reader since `diplomaticCore.getSharedData` was removed (it returned derived/invented figures) | Live (admin) |
 
 ---
 

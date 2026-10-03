@@ -6,7 +6,7 @@
 // Types
 // ---------------------------------------------------------------------------
 
-export interface TransformedPost {
+interface TransformedPost {
   /** Post body as sanitized HTML */
   contentHtml: string;
   /** Attachment references found in the post */
@@ -19,7 +19,7 @@ export interface TransformedPost {
   hasSpoiler: boolean;
 }
 
-export interface AttachmentRef {
+interface AttachmentRef {
   id: number;
   /** Whether this is an inline attachment (embedded in text) */
   inline: boolean;
@@ -328,17 +328,3 @@ function rewriteForumUrl(url: string, forumBaseUrl: string): string {
 // ---------------------------------------------------------------------------
 // Batch transform (for thread view with multiple posts)
 // ---------------------------------------------------------------------------
-
-/**
- * Transform multiple posts at once (more efficient for thread views).
- */
-export function transformPosts(
-  posts: Array<{ postId: number; message: string }>,
-  options?: { forumBaseUrl?: string }
-): Map<number, TransformedPost> {
-  const results = new Map<number, TransformedPost>();
-  for (const post of posts) {
-    results.set(post.postId, transformBBCode(post.message, options));
-  }
-  return results;
-}

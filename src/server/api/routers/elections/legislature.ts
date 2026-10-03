@@ -6,79 +6,11 @@ import {
   type EnsureElectionResult,
 } from "~/lib/government/election-lifecycle";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { parseChambers } from "~/lib/government/election-simulation";
 
 // ============================================================
 // Election System Router - Extension of Government Sub-System
 // ============================================================
-
-// How a chamber's members are chosen. Lore-first: not every legislature is party-elected
-// (Caphiria's Senate is appointed, Drasenia fills seats by lot, Faneria's upper house is
-// ex-officio). Stored as the 4th positional field of the serialized chamberType blob.
-// See plans/mycountry-lore-alignment*.md.
-export type SelectionMethod =
-  "elected" | "appointed" | "sortition" | "hereditary" | "ex-officio" | "corporatist";
-
-export type ElectoralSystem = "proportional" | "fptp" | "mixed";
-
-export interface ChamberConfig {
-  name: string;
-  seats: number;
-  electoralSystem: ElectoralSystem;
-  selectionMethod: SelectionMethod;
-}
-
-export function toElectoralSystem(val?: string): ElectoralSystem {
-  if (val === "fptp" || val === "mixed" || val === "proportional") return val;
-  return "proportional";
-}
-
-export function parseChambers(
-  chamberType: string,
-  legislatureName: string,
-  totalSeats: number,
-  globalElectoralSystem: string
-): ChamberConfig[] {
-  if (chamberType.includes("|")) {
-    const [, serialized] = chamberType.split("|");
-    if (serialized) {
-      const parts = serialized.split(";").filter(Boolean);
-      return parts.map((part) => {
-        const [name, seatsStr, system, selection] = part.split(":");
-        return {
-          name: name || "Chamber",
-          seats: Number(seatsStr) || 100,
-          electoralSystem: toElectoralSystem(system || globalElectoralSystem),
-          selectionMethod: (selection || "elected") as SelectionMethod,
-        };
-      });
-    }
-  }
-
-  // Fallbacks
-  const system = toElectoralSystem(globalElectoralSystem);
-  if (chamberType === "bicameral") {
-    const senateSeats = Math.max(10, Math.floor(totalSeats * 0.4));
-    const houseSeats = Math.max(10, totalSeats - senateSeats);
-    return [
-      {
-        name: "House of Representatives",
-        seats: houseSeats,
-        electoralSystem: system,
-        selectionMethod: "elected",
-      },
-      { name: "Senate", seats: senateSeats, electoralSystem: system, selectionMethod: "elected" },
-    ];
-  }
-
-  return [
-    {
-      name: legislatureName || "National Assembly",
-      seats: totalSeats,
-      electoralSystem: system,
-      selectionMethod: "elected",
-    },
-  ];
-}
 
 export const electionsLegislatureRouter = createTRPCRouter({
   // ─── Legislature ───────────────────────────────────────

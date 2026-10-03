@@ -3,7 +3,7 @@
 
 import { Cache } from "~/lib/cache";
 
-export const FORUM_CACHE_TTL = {
+const FORUM_CACHE_TTL = {
   forums: 30 * 60 * 1000,
   threadList: 2 * 60 * 1000,
   thread: 60 * 1000,
@@ -14,7 +14,7 @@ export const FORUM_CACHE_TTL = {
   conversations: 60 * 1000,
 } as const;
 
-export type ForumCacheType = keyof typeof FORUM_CACHE_TTL;
+type ForumCacheType = keyof typeof FORUM_CACHE_TTL;
 
 const forumCache = new Cache<any>({
   defaultTtlMs: 60_000,
@@ -45,14 +45,6 @@ export function cacheInvalidate(prefix: string): void {
 export function invalidateThread(threadId: number): void {
   cacheInvalidate(`forum:thread:${threadId}`);
   cacheInvalidate(`forum:post:`);
-}
-
-export function cacheClear(): void {
-  const keysToDelete: string[] = [];
-  forumCache.forEach((_v, key) => {
-    if (key.startsWith("forum:")) keysToDelete.push(key);
-  });
-  keysToDelete.forEach((k) => forumCache.delete(k));
 }
 
 export async function cachedFetch<T>(

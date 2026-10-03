@@ -11,7 +11,7 @@ export interface DiplomaticRelationDto {
   status: string;
   diplomaticChannels: string[];
   tradeVolume: number;
-  culturalExchange: string;
+  culturalExchange: string | null;
   activePolicies: string[];
   recentIncidents: string[];
   flagUrl?: string | null;

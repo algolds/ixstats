@@ -102,7 +102,7 @@ function wikiEventDescription(item: WikiActivityItem): string {
   return `${item.byteDiff > 0 ? `+${item.byteDiff}` : item.byteDiff} bytes`;
 }
 
-export interface HistorySources {
+interface HistorySources {
   identityId: string;
   handle: string;
   feed: WikiActivityItem[];

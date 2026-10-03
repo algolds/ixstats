@@ -11,7 +11,7 @@ import {
   type NationCapacity,
 } from "./realms.nation-cap";
 
-export type BuilderRealmErrorCode = "REALM_NOT_FOUND" | "REALM_CLOSED" | "CAP_REACHED";
+type BuilderRealmErrorCode = "REALM_NOT_FOUND" | "REALM_CLOSED" | "CAP_REACHED";
 
 export class BuilderRealmError extends Error {
   constructor(
@@ -29,7 +29,7 @@ type BuilderDb = {
   user: Pick<PrismaClient["user"], "findUnique">;
 };
 
-export interface BuilderUser {
+interface BuilderUser {
   /** Platform user id (`User.id`). */
   id: string;
   clerkUserId: string;
@@ -84,7 +84,7 @@ export async function resolveBuilderRealm(
   return { realmId: target, capacity };
 }
 
-export interface BuilderRealmOption {
+interface BuilderRealmOption {
   id: string;
   slug: string;
   name: string;

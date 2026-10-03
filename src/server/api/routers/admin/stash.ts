@@ -14,7 +14,6 @@ export const adminStashRouter = createTRPCRouter({
       return {
         totalStashes,
         totalHighlights,
-        avgCacheSizeKb: 143,
       };
     } catch (error) {
       console.error("Failed to get stash stats:", error);

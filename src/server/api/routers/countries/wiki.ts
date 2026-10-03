@@ -1,7 +1,11 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { cachedStaticProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
-import { getArticleIntro, getPageSections, getPageImages as wikiBridgePageImages } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import {
+  getArticleIntro,
+  getPageSections,
+  getPageImages as wikiBridgePageImages,
+} from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { searchWiki as searchWikiService } from "~/lib/wiki-os/core/native-search-service";
 import { parseInfobox as parseInfoboxParser } from "~/lib/wiki-os/transformers/infobox-parser";
@@ -32,14 +36,10 @@ const EXCLUDED_IMAGE_PATTERNS = [
   /\.svg$/i,
 ];
 
-/**
- * Extract the first paragraph (intro) from wikitext after the infobox.
- * Returns clean plaintext.
- */
-function extractWikiIntro(wikitext: string): string | null {
-  // Strip infobox template (match balanced braces)
-  let contentAfterInfobox = wikitext;
-  const infoboxMatch = wikitext.match(/\{\{\s*[Ii]nfobox\s/);
+/** Text before the first heading, after dropping a leading infobox template (balanced braces). */
+function leadSection(wikitext: string, infoboxPattern: RegExp): string {
+  let content = wikitext;
+  const infoboxMatch = wikitext.match(infoboxPattern);
   if (infoboxMatch) {
     const startIdx = wikitext.indexOf(infoboxMatch[0]);
     let depth = 0;
@@ -56,14 +56,14 @@ function extractWikiIntro(wikitext: string): string | null {
         i++;
       }
     }
-    contentAfterInfobox = wikitext.substring(i).trim();
+    content = wikitext.substring(i).trim();
   }
+  return content.split(/^==/m)[0] || content;
+}
 
-  // Take content before first heading (==)
-  const beforeFirstHeading = contentAfterInfobox.split(/^==/m)[0] || contentAfterInfobox;
-
-  // Clean wikitext to plaintext
-  const cleaned = beforeFirstHeading
+/** Strip templates, refs, comments, tables, categories, files and magic words from wikitext. */
+function stripCommonWikiMarkup(text: string): string {
+  return text
     .replace(/\{\{wp\|[^|}]+\|([^}]+)\}\}/g, "$1")
     .replace(/\{\{wp\|([^}]+)\}\}/g, "$1")
     .replace(/\{\{lang\|[^|]+\|([^}]+)\}\}/g, "$1")
@@ -80,7 +80,18 @@ function extractWikiIntro(wikitext: string): string | null {
     .replace(/<ref[^>]*\/>/gi, "")
     .replace(/<!--.*?-->/gs, "")
     .replace(/\{\|.*?\|\}/gs, "")
-    .replace(/__[A-Z_]+__/g, "")
+    .replace(/__[A-Z_]+__/g, "");
+}
+
+/**
+ * Extract the first paragraph (intro) from wikitext after the infobox.
+ * Returns clean plaintext.
+ */
+function extractWikiIntro(wikitext: string): string | null {
+  const beforeFirstHeading = leadSection(wikitext, /\{\{\s*[Ii]nfobox\s/);
+
+  // Clean wikitext to plaintext
+  const cleaned = stripCommonWikiMarkup(beforeFirstHeading)
     .replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1")
     .replace(/'{2,3}/g, "")
     .replace(/<[^>]+>/g, "")
@@ -175,50 +186,10 @@ async function fetchWikiRichIntro(
           ? `/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`
           : `https://iiwiki.com/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`;
 
-      // Strip infobox template (match balanced braces)
-      let contentAfterInfobox = wikitext;
-      const infoboxMatch = wikitext.match(/\{\{\s*Infobox/i);
-      if (infoboxMatch) {
-        const startIdx = wikitext.indexOf(infoboxMatch[0]);
-        let depth = 0;
-        let i = startIdx;
-        while (i < wikitext.length - 1) {
-          if (wikitext[i] === "{" && wikitext[i + 1] === "{") {
-            depth++;
-            i += 2;
-          } else if (wikitext[i] === "}" && wikitext[i + 1] === "}") {
-            depth--;
-            i += 2;
-            if (depth === 0) break;
-          } else {
-            i++;
-          }
-        }
-        contentAfterInfobox = wikitext.substring(i).trim();
-      }
-
-      // Take content before first heading (==)
-      const beforeFirstHeading = contentAfterInfobox.split(/^==/m)[0] || contentAfterInfobox;
+      const beforeFirstHeading = leadSection(wikitext, /\{\{\s*Infobox/i);
 
       // Clean wikitext templates, refs, categories, files
-      const cleanContent = beforeFirstHeading
-        .replace(/\{\{wp\|[^|}]+\|([^}]+)\}\}/g, "$1")
-        .replace(/\{\{wp\|([^}]+)\}\}/g, "$1")
-        .replace(/\{\{lang\|[^|]+\|([^}]+)\}\}/g, "$1")
-        .replace(/\{\{nowrap\|([^}]+)\}\}/g, "$1")
-        .replace(/\{\{convert[^}]*\}\}/gi, "")
-        .replace(/\{\{[^}]+\|([^|}]+)\}\}/g, "$1")
-        .replace(/\{\{[^}]+\}\}/g, "")
-        .replace(/\[\[Template:[^\]]*\]\]/gi, "")
-        .replace(/\[\[Category:[^\]]*\]\]/gi, "")
-        .replace(/\[\[File:[^\]]*\]\]/gi, "")
-        .replace(/\[\[Image:[^\]]*\]\]/gi, "")
-        .replace(/\[\[[a-z]{2,3}:[^\]]*\]\]/gi, "")
-        .replace(/<ref[^>]*>.*?<\/ref>/gi, "")
-        .replace(/<ref[^>]*\/>/gi, "")
-        .replace(/<!--.*?-->/gs, "")
-        .replace(/\{\|.*?\|\}/gs, "")
-        .replace(/__[A-Z_]+__/g, "")
+      const cleanContent = stripCommonWikiMarkup(beforeFirstHeading)
         .replace(/\n\n+/g, "|||PARA|||")
         .replace(/[ \t]+/g, " ")
         .replace(/\n/g, " ")
@@ -462,9 +433,16 @@ export const wikiProcedures = {
         }
 
         // Extract category tags from article wikitext to guide background LoreScanner
-        const catMatches = article.wikitext.match(/\[\[Category:([^\]|]+)(?:\|[^\]]*)?\]\]/gi) || [];
+        const catMatches =
+          article.wikitext.match(/\[\[Category:([^\]|]+)(?:\|[^\]]*)?\]\]/gi) || [];
         const categories = catMatches
-          .map((c) => c.replace(/^\[\[Category:/i, "").replace(/\]\]$/, "").split("|")[0]?.trim())
+          .map((c) =>
+            c
+              .replace(/^\[\[Category:/i, "")
+              .replace(/\]\]$/, "")
+              .split("|")[0]
+              ?.trim()
+          )
           .filter((c): c is string => Boolean(c));
         if (categories.length > 0) {
           unified.categories = categories;

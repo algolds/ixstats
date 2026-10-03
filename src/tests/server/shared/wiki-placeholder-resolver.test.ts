@@ -57,7 +57,10 @@ describe("Plan 160: Canonical WikiOS Placeholder Resolver", () => {
     category: "Technology",
     countryId: "c-1",
     country: mockCountry,
+    metadata: { revenue: 2_500_000, employees: 1200, sector: "Technology", founded: 1987 },
   };
+
+  const mockUnrecordedPoi = { ...mockPoi, id: "poi-2", name: "Blank Works", metadata: null };
 
   function createMockDb(options?: { countryFindManySpy?: jest.Mock }) {
     const countryFindMany =
@@ -85,10 +88,11 @@ describe("Plan 160: Canonical WikiOS Placeholder Resolver", () => {
       },
       pointOfInterest: {
         findMany: jest.fn().mockImplementation(async ({ where }: any) => {
-          if (where?.name?.in?.includes("aether dynamics")) {
-            return [mockPoi];
-          }
-          return [];
+          const names: string[] = (where?.name?.in ?? []).map((n: string) => n.toLowerCase());
+          return [
+            ...(names.includes("aether dynamics") ? [mockPoi] : []),
+            ...(names.includes("blank works") ? [mockUnrecordedPoi] : []),
+          ];
         }),
       },
     };
@@ -155,10 +159,22 @@ describe("Plan 160: Canonical WikiOS Placeholder Resolver", () => {
 
     expect(results).toHaveLength(4);
     expect(results[0].value).toContain("$");
-    expect(results[1].value).toBeDefined();
-    expect(results[2].value).toBeDefined();
-    expect(results[3].value).toMatch(/^\d{4}$/);
+    expect(results[0].rawVal).toBe(2_500_000);
+    expect(results[1].value).toBe("1,200");
+    expect(results[2].value).toBe("Technology");
+    expect(results[3].value).toBe("1987");
     expect(results[0].status).toBe("resolved");
+  });
+
+  it("6b. Never invents business figures that are not recorded", async () => {
+    const db = createMockDb();
+    const results = await resolveWikiPlaceholderValues(
+      ["BusinessData:Blank_Works:revenue", "BusinessData:Blank_Works:employees"],
+      db
+    );
+
+    expect(results.map((r) => r.value)).toEqual(["—", "—"]);
+    expect(results.every((r) => r.status === "not-found" && r.rawVal === null)).toBe(true);
   });
 
   it("7. Handles numeric zero values correctly without converting to N/A", async () => {

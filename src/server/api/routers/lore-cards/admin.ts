@@ -19,7 +19,7 @@ import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
 import type { WikiSource } from "~/lib/wiki-os/config";
 import { LedgerError, earnCreditsTx } from "~/lib/vault/vault-ledger";
-import type { Prisma } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 
 const LORE_CARD_REQUEST_COST = 50; // IxCredits
 
@@ -63,6 +63,39 @@ async function findLoreRequestPayment(
       : { usedToken: false, credits: Math.abs(row.credits) || LORE_CARD_REQUEST_COST };
   }
   return { usedToken: false, credits: LORE_CARD_REQUEST_COST };
+}
+
+/** The signed-in admin and the lore card request they are acting on. */
+async function loadRequestForAdmin(
+  db: Pick<PrismaClient, "loreCardRequest">,
+  adminUserId: string | null | undefined,
+  requestId: string
+) {
+  if (!adminUserId) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Admin authentication required",
+    });
+  }
+
+  const request = await db.loreCardRequest.findUnique({ where: { id: requestId } });
+  if (!request) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Request not found",
+    });
+  }
+
+  return { adminUserId, request };
+}
+
+function assertPending(request: { status: string }) {
+  if (request.status !== "PENDING") {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `Request is already ${request.status.toLowerCase()}`,
+    });
+  }
 }
 
 export const loreCardsAdminRouter = createTRPCRouter({
@@ -175,31 +208,13 @@ export const loreCardsAdminRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const adminUserId = ctx.user?.id;
-        if (!adminUserId) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "Admin authentication required",
-          });
-        }
+        const { adminUserId, request } = await loadRequestForAdmin(
+          ctx.db,
+          ctx.user?.id,
+          input.requestId
+        );
 
-        const request = await ctx.db.loreCardRequest.findUnique({
-          where: { id: input.requestId },
-        });
-
-        if (!request) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Request not found",
-          });
-        }
-
-        if (request.status !== "PENDING") {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: `Request is already ${request.status.toLowerCase()}`,
-          });
-        }
+        assertPending(request);
 
         // Update request status
         await ctx.db.loreCardRequest.update({
@@ -241,31 +256,13 @@ export const loreCardsAdminRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const adminUserId = ctx.user?.id;
-        if (!adminUserId) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "Admin authentication required",
-          });
-        }
+        const { adminUserId, request } = await loadRequestForAdmin(
+          ctx.db,
+          ctx.user?.id,
+          input.requestId
+        );
 
-        const request = await ctx.db.loreCardRequest.findUnique({
-          where: { id: input.requestId },
-        });
-
-        if (!request) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Request not found",
-          });
-        }
-
-        if (request.status !== "PENDING") {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: `Request is already ${request.status.toLowerCase()}`,
-          });
-        }
+        assertPending(request);
 
         // Reject and refund atomically. The conditional update makes a double-click (or two
         // admins) refund once; the refund goes through the ledger and mirrors what was paid.
@@ -355,24 +352,11 @@ export const loreCardsAdminRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const adminUserId = ctx.user?.id;
-        if (!adminUserId) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "Admin authentication required",
-          });
-        }
-
-        const request = await ctx.db.loreCardRequest.findUnique({
-          where: { id: input.requestId },
-        });
-
-        if (!request) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Request not found",
-          });
-        }
+        const { adminUserId, request } = await loadRequestForAdmin(
+          ctx.db,
+          ctx.user?.id,
+          input.requestId
+        );
 
         if (request.status !== "APPROVED") {
           throw new TRPCError({

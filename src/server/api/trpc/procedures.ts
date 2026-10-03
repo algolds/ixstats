@@ -15,10 +15,8 @@ import {
   rateLimitMiddleware,
   standardMutationRateLimit,
   lightMutationRateLimit,
-  readOnlyRateLimit,
   publicRateLimit,
   standardCacheMiddleware,
-  userCacheMiddleware,
   staticCacheMiddleware,
 } from "./middleware";
 import { userLoggingMiddleware } from "~/lib/logging";
@@ -59,13 +57,9 @@ export const standardMutationCountryOwnerProcedure = countryOwnerProcedure
 
 export const lightMutationProcedure = protectedProcedure.use(lightMutationRateLimit);
 
-export const readOnlyProcedure = protectedProcedure.use(readOnlyRateLimit);
-
 export const rateLimitedPublicProcedure = publicProcedure.use(publicRateLimit);
 
 // Cached procedure variants
 export const cachedPublicProcedure = publicProcedure.use(standardCacheMiddleware);
-
-export const cachedProtectedProcedure = protectedProcedure.use(userCacheMiddleware);
 
 export const cachedStaticProcedure = publicProcedure.use(staticCacheMiddleware);

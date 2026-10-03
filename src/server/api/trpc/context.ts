@@ -21,11 +21,11 @@ const userContextCache = new Cache({
   maxSize: 50,
 });
 
-export function getCachedUserContext(clerkUserId: string): any | null {
+function getCachedUserContext(clerkUserId: string): any | null {
   return userContextCache.get(clerkUserId) ?? null;
 }
 
-export function setCachedUserContext(clerkUserId: string, user: any): void {
+function setCachedUserContext(clerkUserId: string, user: any): void {
   userContextCache.set(clerkUserId, user);
 }
 

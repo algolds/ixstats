@@ -30,7 +30,7 @@ export interface NationCapacity {
   canTakeAnother: boolean;
 }
 
-export type NationCapClient = {
+type NationCapClient = {
   country: Pick<PrismaClient["country"], "count">;
   user: Pick<PrismaClient["user"], "findUnique">;
 };

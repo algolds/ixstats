@@ -39,10 +39,10 @@ type OwnershipRow = Prisma.CardOwnershipGetPayload<{
 }>;
 
 /** Lore card categories a collection can span (every `LoreCategory` except `NS_IMPORT`). */
-export const LORE_CATEGORY_COUNT = 12;
+const LORE_CATEGORY_COUNT = 12;
 
 /** How many cards the collection highlight shows. */
-export const COLLECTION_HIGHLIGHT_SIZE = 6;
+const COLLECTION_HIGHLIGHT_SIZE = 6;
 
 export interface PassportVaultFocus {
   /** Distinct lore categories across the live collection (NationStates imports excluded). */
@@ -92,7 +92,7 @@ function wikiUrlOf(card: OwnershipRow["cards"]): string | null {
 }
 
 /** Shape an owned card for `CardDisplay`; JSON columns are passed through as stored. */
-export function toCardInstance(o: OwnershipRow): CardInstance {
+function toCardInstance(o: OwnershipRow): CardInstance {
   const c = o.cards;
   return {
     id: c.id,

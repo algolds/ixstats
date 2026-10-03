@@ -132,7 +132,7 @@ export const countryOwnerMiddleware = t.middleware(async ({ ctx, next, path }) =
   });
 });
 
-export interface RateLimitOptions {
+interface RateLimitOptions {
   max: number;
   windowMs: number;
   namespace?: string;

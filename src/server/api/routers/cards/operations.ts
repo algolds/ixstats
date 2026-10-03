@@ -15,7 +15,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 
-export interface UnifiedLogItem {
+interface UnifiedLogItem {
   id: string;
   timestamp: string;
   category:

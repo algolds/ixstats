@@ -4,14 +4,6 @@
 
 import type { PrismaClient } from "@prisma/client";
 
-export interface BridgeMessage {
-  externalId: string;
-  content: string;
-  authorId: string;
-  authorName: string;
-  timestamp: Date;
-}
-
 export interface BridgeSyncResult {
   conversationsCreated: number;
   conversationsUpdated: number;

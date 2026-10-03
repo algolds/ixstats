@@ -32,7 +32,7 @@ export async function setMyCountryCache(key: string, data: any, ttl = 60000): Pr
 // ==================== DIPLOMATIC STANDING ====================
 
 /** The real diplomatic record a Diplomatic Standing score is computed from. */
-export interface DiplomaticStandingInputs {
+interface DiplomaticStandingInputs {
   /** `DiplomaticRelation.strength` (0-100) of every relation the country is party to. */
   relationStrengths: number[];
   /** Active embassies the country hosts or keeps abroad. */
@@ -63,7 +63,7 @@ export const DIPLOMATIC_STANDING_WEIGHTS = {
 } as const;
 
 /** Foreign-policy action types that count as hostile when received. */
-export const HOSTILE_FOREIGN_POLICY_ACTIONS = ["embargo", "sanction", "blockade"];
+const HOSTILE_FOREIGN_POLICY_ACTIONS = ["embargo", "sanction", "blockade"];
 const ACTIVE_TREATY_STATUSES = ["active", "ratified", "ACTIVE", "RATIFIED"];
 
 export function emptyDiplomaticStandingInputs(): DiplomaticStandingInputs {
@@ -106,7 +106,7 @@ export function scoreDiplomaticStanding(inputs: DiplomaticStandingInputs): numbe
 }
 
 /** The Prisma delegates the diplomatic loader reads (a PrismaClient or a test double). */
-export type DiplomacyDb = Pick<
+type DiplomacyDb = Pick<
   typeof db,
   "diplomaticRelation" | "embassy" | "allianceMember" | "treaty" | "foreignPolicyAction"
 >;
@@ -208,7 +208,7 @@ export function scoreGovernmentalEfficiency(
 }
 
 /** Read a country's government effectiveness (null when it has no GovernmentStructure). */
-export async function loadGovernmentEffectiveness(
+async function loadGovernmentEffectiveness(
   countryId: string,
   prisma: Pick<typeof db, "governmentStructure"> = db
 ): Promise<number | null> {
@@ -222,7 +222,7 @@ export async function loadGovernmentEffectiveness(
 // ==================== VITALITY ====================
 
 /** Data outside the Country row that some vitality scores need. */
-export interface VitalityExtras {
+interface VitalityExtras {
   /** From `computeDiplomaticStanding`; null or absent when there is no diplomatic record. */
   diplomaticStanding?: number | null;
   /** `GovernmentStructure.governmentEffectiveness`; null or absent when there is none. */
@@ -308,7 +308,7 @@ interface CensusCategory {
 }
 
 /** The World Census categories, in display order. */
-export const CENSUS_CATEGORIES: CensusCategory[] = [
+const CENSUS_CATEGORIES: CensusCategory[] = [
   { category: "GDP per Capita", tierKey: "economicTier" },
   { category: "Total GDP", tierKey: "economicTier" },
   { category: "GDP Growth", tierKey: "economicTier" },

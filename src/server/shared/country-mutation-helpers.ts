@@ -623,29 +623,20 @@ export async function syncEconomyBuilderState(
         ? JSON.stringify(economyState.structure)
         : undefined;
 
+  const profileData = {
+    sectorBreakdown: sectorBreakdownJson,
+    gdpGrowthVolatility,
+    economicComplexity,
+    innovationIndex,
+    competitivenessRank,
+    exportsGDPPercent,
+    importsGDPPercent,
+    tradeBalance,
+  };
   await tx.economicProfile.upsert({
     where: { countryId },
-    update: {
-      sectorBreakdown: sectorBreakdownJson,
-      gdpGrowthVolatility,
-      economicComplexity,
-      innovationIndex,
-      competitivenessRank,
-      exportsGDPPercent,
-      importsGDPPercent,
-      tradeBalance,
-    },
-    create: {
-      countryId,
-      sectorBreakdown: sectorBreakdownJson,
-      gdpGrowthVolatility: gdpGrowthVolatility ?? 2.5,
-      economicComplexity: economicComplexity ?? 50,
-      innovationIndex: innovationIndex ?? 50,
-      competitivenessRank: competitivenessRank ?? 50,
-      exportsGDPPercent: exportsGDPPercent ?? 20,
-      importsGDPPercent: importsGDPPercent ?? 22,
-      tradeBalance: tradeBalance ?? -2,
-    },
+    update: profileData,
+    create: { countryId, ...profileData },
   });
 
   const laborConfig = economyState.laborMarket;
@@ -654,7 +645,6 @@ export async function syncEconomyBuilderState(
     const femaleParticipationRate = laborConfig.femaleParticipationRate;
     const medianWage =
       laborConfig.livingWageHourly !== undefined ? laborConfig.livingWageHourly * 2000 : undefined;
-    const wageGrowthRate = 2.5;
 
     const employmentBySector =
       sectors.length > 0
@@ -677,24 +667,20 @@ export async function syncEconomyBuilderState(
           )
         : undefined;
 
+    const laborData = {
+      youthUnemploymentRate,
+      femaleParticipationRate,
+      informalEmploymentRate: laborConfig.employmentType?.informal,
+      medianWage,
+      employmentBySector,
+      wageBySector,
+    };
     await tx.laborMarket.upsert({
       where: { countryId },
-      update: {
-        youthUnemploymentRate,
-        femaleParticipationRate,
-        informalEmploymentRate: laborConfig.employmentType?.informal,
-        medianWage,
-        wageGrowthRate,
-        employmentBySector,
-        wageBySector,
-      },
+      update: laborData,
       create: {
         countryId,
-        youthUnemploymentRate: youthUnemploymentRate ?? 6.0,
-        femaleParticipationRate: femaleParticipationRate ?? 50,
-        informalEmploymentRate: laborConfig.employmentType?.informal ?? 5.0,
-        medianWage: medianWage ?? 30000,
-        wageGrowthRate: wageGrowthRate ?? 2.5,
+        ...laborData,
         employmentBySector: employmentBySector ?? "[]",
         wageBySector: wageBySector ?? "[]",
       },
@@ -717,30 +703,26 @@ export async function syncEconomyBuilderState(
     const medianAge = demoConfig.medianAge;
     const populationGrowthProjection = demoConfig.populationGrowthRate;
 
+    const demographicsData = {
+      ageDistribution,
+      regions,
+      educationLevels,
+      birthRate,
+      deathRate,
+      migrationRate,
+      dependencyRatio,
+      medianAge,
+      populationGrowthProjection,
+    };
     await tx.demographics.upsert({
       where: { countryId },
-      update: {
-        ageDistribution,
-        regions,
-        educationLevels,
-        birthRate,
-        deathRate,
-        migrationRate,
-        dependencyRatio,
-        medianAge,
-        populationGrowthProjection,
-      },
+      update: demographicsData,
       create: {
         countryId,
+        ...demographicsData,
         ageDistribution: ageDistribution ?? "{}",
         regions: regions ?? "[]",
         educationLevels: educationLevels ?? "{}",
-        birthRate: birthRate ?? 12.5,
-        deathRate: deathRate ?? 8.0,
-        migrationRate: migrationRate ?? 0,
-        dependencyRatio: dependencyRatio ?? 54,
-        medianAge: medianAge ?? 35,
-        populationGrowthProjection: populationGrowthProjection ?? 0.5,
       },
     });
   }

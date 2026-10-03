@@ -9,9 +9,9 @@ export type JsonPrimitive = string | number | boolean | null;
 // (e.g. `parentDepartmentId: undefined`); JSON serialization drops them on write.
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue | undefined };
 
-export const jsonLiteralSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+const jsonLiteralSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
 
-export const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
+const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
   z.union([
     jsonLiteralSchema,
     z.array(jsonValueSchema),
@@ -19,7 +19,7 @@ export const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
   ])
 );
 
-export const jsonRecordSchema = z.record(z.string(), jsonValueSchema.optional());
+const jsonRecordSchema = z.record(z.string(), jsonValueSchema.optional());
 
 /**
  * Shared Zod schema for economic inputs submitted through Country Builder / Editor.
@@ -225,37 +225,6 @@ export const countryGovernmentComponentSchema = z
     notes: z.string().optional(),
   })
   .passthrough();
-
-export const countryTaxBracketInputSchema = z
-  .object({
-    bracketName: z.string().optional(),
-    minIncome: z.number().nullable().optional(),
-    maxIncome: z.number().nullable().optional(),
-    rate: z.number().optional(),
-    isActive: z.boolean().optional(),
-  })
-  .passthrough();
-
-export const countryTaxCategoryInputSchema = z
-  .object({
-    categoryName: z.string().optional(),
-    categoryType: z.string().optional(),
-    description: z.string().optional(),
-    isActive: z.boolean().optional(),
-    baseRate: z.number().optional(),
-    calculationMethod: z.string().optional(),
-    minimumAmount: z.number().optional(),
-    maximumAmount: z.number().optional(),
-    exemptionAmount: z.number().optional(),
-    deductionAllowed: z.boolean().optional(),
-    standardDeduction: z.number().optional(),
-    priority: z.number().optional(),
-    color: z.string().optional(),
-    icon: z.string().optional(),
-    brackets: z.array(countryTaxBracketInputSchema).optional(),
-  })
-  .passthrough();
-
 export const countryTaxSystemInputSchema = z
   .object({
     taxSystemName: z.string().optional(),

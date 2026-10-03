@@ -11,7 +11,7 @@ import { resolveEquipmentImage } from "~/server/services/wikimedia-equipment-ima
 
 const prisma = new PrismaClient();
 
-export interface ValidationJobResult {
+interface ValidationJobResult {
   success: boolean;
   timestamp: Date;
   total: number;

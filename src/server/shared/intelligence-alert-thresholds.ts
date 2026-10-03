@@ -9,7 +9,7 @@ import { notificationAPI } from "~/lib/notifications/api";
 /**
  * Calculate real-time country metrics (social, security, political)
  */
-export async function calculateRealTimeMetrics(db: any, countryId: string) {
+async function calculateRealTimeMetrics(db: any, countryId: string) {
   // Get recent security threats
   const securityThreats = await db.intelligenceAlert.findMany({
     where: {
@@ -109,7 +109,7 @@ export async function evaluateThresholds(
   const realTimeMetrics = await calculateRealTimeMetrics(db, countryId);
 
   // Helper to map metric names to values
-  const getMetricValue = (metricName: string): number => {
+  const getMetricValue = (metricName: string): number | null => {
     switch (metricName) {
       // GDP
       case "gdpGrowthRate":
@@ -129,9 +129,9 @@ export async function evaluateThresholds(
       case "securityScore":
         return realTimeMetrics.security;
       case "militaryStrength":
-        return country.securityAssessment?.militaryStrength ?? 60;
+        return country.securityAssessment?.militaryStrength ?? null;
       case "threatLevel":
-        return country.securityAssessment?.activeThreatCount ?? 0;
+        return country.securityAssessment?.activeThreatCount ?? null;
       // Diplomatic
       case "diplomaticStanding":
         return country.diplomaticStanding;
@@ -145,7 +145,7 @@ export async function evaluateThresholds(
       case "tradeBalance":
         return country.tradeBalance;
       case "unemploymentRate":
-        return country.unemploymentRate ?? 5;
+        return country.unemploymentRate ?? null;
       // Governance
       case "governmentalEfficiency":
         return country.governmentalEfficiency;
@@ -154,7 +154,7 @@ export async function evaluateThresholds(
       case "publicApproval":
         return country.publicApproval;
       default:
-        return 0;
+        return null;
     }
   };
 
@@ -167,6 +167,8 @@ export async function evaluateThresholds(
 
   for (const t of thresholds) {
     const val = getMetricValue(t.metricName);
+    // No recorded value for this metric: nothing to breach.
+    if (val === null) continue;
 
     // Determine severity breached
     let severityBreached: "critical" | "high" | "medium" | null = null;

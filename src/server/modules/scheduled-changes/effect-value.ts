@@ -50,7 +50,7 @@ export const IMPACT_TO_PRIORITY: Record<string, "low" | "medium" | "high"> = {
   high: "high",
 };
 
-export type EffectValueResult = { ok: true; value: number } | { ok: false; reason: string };
+type EffectValueResult = { ok: true; value: number } | { ok: false; reason: string };
 
 function parseFiniteNumber(json: string): number | null {
   try {

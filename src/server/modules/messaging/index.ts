@@ -3,48 +3,9 @@
  */
 
 export { MessagingService, createMessagingService } from "./service";
-export { DEFAULT_USER_MESSAGE_CAP } from "./contracts";
-
-export type {
-  MessageSource,
-  MessageFolder,
-  UserAccount,
-  NotificationCollaborator,
-  WebSocketCollaborator,
-  BridgeCollaborator,
-  TelemetryPayload,
-  TelemetryLogger,
-  MessagingDependencies,
-  GetConversationsByFolderInput,
-  GetConversationsLegacyInput,
-  GetConversationMessagesInput,
-  CreateConversationInput,
-  CreateConversationByCountriesInput,
-  SendMessageInput,
-  EditMessageInput,
-  DeleteMessageInput,
-  MarkMessagesAsReadInput,
-  AddReactionInput,
-  RemoveReactionInput,
-  AddParticipantInput,
-  LeaveConversationInput,
-  SearchUsersInput,
-  UpdatePresenceInput,
-} from "./contracts";
-
 export {
-  MessagingError,
   MessagingForbiddenError,
   MessagingNotFoundError,
   MessagingValidationError,
 } from "./errors";
-
-export {
-  formatMessagesConversation,
-  formatMessagesMessage,
-  formatThinkpagesConversation,
-  formatThinkpagesMessage,
-} from "./formatters";
-
-export { recordMessagingTelemetry, defaultTelemetryLogger } from "./telemetry";
-export { batchResolveMessagingAccounts } from "./account-resolver";
+export { recordMessagingTelemetry } from "./telemetry";

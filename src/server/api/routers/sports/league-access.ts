@@ -13,7 +13,7 @@ interface LeagueManagerCaller {
   auth: { userId: string };
 }
 
-export function canManageLeague(
+function canManageLeague(
   caller: LeagueManagerCaller,
   league: { createdByUserId: string }
 ): boolean {

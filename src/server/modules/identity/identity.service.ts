@@ -59,7 +59,7 @@ import {
   type PassportRibbon,
 } from "./identity.showcase";
 
-export interface IdentityQuery {
+interface IdentityQuery {
   handle: string;
   viewerClerkId: string | null;
 }
@@ -256,7 +256,7 @@ export async function getRealms(
   return query.realm ? filterByRealm(memberships, query.realm) : memberships;
 }
 
-export interface IdentityWork {
+interface IdentityWork {
   authoredArticles: AuthoredArticle[];
   conlangs: Awaited<ReturnType<typeof loadConlangs>>;
   sportTeams: Awaited<ReturnType<typeof loadSportTeams>>;
@@ -321,7 +321,7 @@ export async function getHistory(
   return paginateEvents(events, query.limit, query.cursor);
 }
 
-export interface RibbonRack {
+interface RibbonRack {
   ribbons: PassportRibbon[];
   /** Every ribbon the user holds, of which `ribbons` may be the first few. */
   total: number;

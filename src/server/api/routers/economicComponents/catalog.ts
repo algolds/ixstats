@@ -14,9 +14,9 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { EconomicComponentType } from "@prisma/client";
-import { ATOMIC_ECONOMIC_COMPONENTS, ECONOMIC_TEMPLATES } from "~/lib/economy/atomic-data";
+import { ECONOMIC_TEMPLATES } from "~/lib/economy/atomic-data";
 
-import { type ParsedEconomicComponent } from "./serializer";
+import { getLibraryComponents } from "./serializer";
 
 // ============================================================================
 // Input Validation Schemas
@@ -34,36 +34,6 @@ const getAllComponentsSchema = z
 const incrementUsageSchema = z.object({
   componentType: economicComponentTypeSchema,
 });
-
-/**
- * Components from the ATOMIC_ECONOMIC_COMPONENTS code library
- */
-function getLibraryComponents(): ParsedEconomicComponent[] {
-  return Object.values(ATOMIC_ECONOMIC_COMPONENTS)
-    .filter((comp): comp is NonNullable<typeof comp> => comp !== undefined)
-    .map((comp) => ({
-      id: comp.id,
-      type: comp.type,
-      name: comp.name,
-      description: comp.description,
-      effectiveness: comp.effectiveness,
-      synergies: comp.synergies,
-      conflicts: comp.conflicts,
-      governmentSynergies: comp.governmentSynergies,
-      governmentConflicts: comp.governmentConflicts,
-      taxImpact: comp.taxImpact,
-      sectorImpact: comp.sectorImpact,
-      employmentImpact: comp.employmentImpact,
-      implementationCost: comp.implementationCost,
-      maintenanceCost: comp.maintenanceCost,
-      requiredCapacity: comp.requiredCapacity,
-      category: comp.category,
-      color: comp.color,
-      metadata: comp.metadata,
-      usageCount: 0,
-      isActive: true,
-    }));
-}
 
 /**
  * Ensure the usage-count table has a row per component

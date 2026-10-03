@@ -21,9 +21,9 @@ type AccessDb = Pick<
 >;
 type AccountDb = Pick<PrismaClient, "thinkpagesAccount">;
 
-export const GROUP_MANAGER_ROLES = ["owner", "admin"] as const;
+const GROUP_MANAGER_ROLES = ["owner", "admin"] as const;
 
-export interface GroupAccess<G> {
+interface GroupAccess<G> {
   group: G;
   isMember: boolean;
   isManager: boolean;
@@ -66,7 +66,7 @@ export async function getGroupAccess<G extends GroupLike>(
 }
 
 /** Public groups (and realm boards) are readable by anyone; other groups by their members only. */
-export function canReadGroup(access: GroupAccess<GroupLike>): boolean {
+function canReadGroup(access: GroupAccess<GroupLike>): boolean {
   return canReadGroupType(access.group.type) || access.isMember;
 }
 

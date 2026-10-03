@@ -3,14 +3,14 @@
 
 import { StashNoteMetadataSchema } from "~/lib/onoma/types";
 
-export interface LexiconDef {
+interface LexiconDef {
   partOfSpeech: string;
   root: string;
   meaning: string;
   origin: string;
 }
 
-export interface ParsedStashNote {
+interface ParsedStashNote {
   category: string | null;
   role: string | null;
   gender: string | null;
@@ -19,7 +19,7 @@ export interface ParsedStashNote {
   values: string[];
 }
 
-export interface StashItemRecord {
+interface StashItemRecord {
   id: string;
   pageTitle: string;
   pageSlug: string;
@@ -35,7 +35,7 @@ export interface StashItemRecord {
   };
 }
 
-export interface StandaloneNameBankRecord {
+interface StandaloneNameBankRecord {
   id: string;
   userId: string;
   type: string;
@@ -50,7 +50,7 @@ export interface StandaloneNameBankRecord {
   updatedAt: Date;
 }
 
-export interface NameBankEntryOutput {
+interface NameBankEntryOutput {
   id: string;
   userId: string;
   type: "dictionary" | "saved-name";

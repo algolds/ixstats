@@ -2,9 +2,9 @@ import { TRPCError } from "@trpc/server";
 import { isSystemOwner } from "~/lib/auth";
 
 export const COUNTRY_WRITE_ROLES = ["admin", "owner", "staff", "system-owner"] as const;
-export type CountryWriteRole = (typeof COUNTRY_WRITE_ROLES)[number];
+type CountryWriteRole = (typeof COUNTRY_WRITE_ROLES)[number];
 
-export interface CountryAuthContext {
+interface CountryAuthContext {
   auth?: {
     userId?: string | null;
     sessionClaims?: any;
