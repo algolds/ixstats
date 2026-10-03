@@ -1,10 +1,31 @@
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import Link from "next/link";
 import { OpenNewWindow as ExternalLink } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 
 /** In-app wiki pages (WikiOS paths) open via `Link`; anything else opens in a new tab. */
 export const isInternalWikiUrl = (url: string) => url.startsWith("/") || url.includes("/wiki/");
+
+/** Plain wiki link: `Link` for in-app pages, a new-tab anchor otherwise. */
+export function WikiAnchor({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return isInternalWikiUrl(href) ? (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  ) : (
+    <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+      {children}
+    </a>
+  );
+}
 
 /** Display name of the wiki a URL points at (in-app pages are IxWiki). */
 export const wikiSiteName = (url: string) =>
