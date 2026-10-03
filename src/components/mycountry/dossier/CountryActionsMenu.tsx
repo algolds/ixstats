@@ -22,7 +22,7 @@ import {
   Trophy,
   Calendar,
 } from "iconoir-react";
-import { api } from "~/trpc/react";
+import { api, type RouterInputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useCountryDiplomacyActions } from "./useCountryDiplomacyActions";
 import { MeetingScheduler } from "~/components/executive/actions/MeetingScheduler";
@@ -62,6 +62,7 @@ interface CountryActionsMenuProps {
 type IconType = React.ComponentType<{ className?: string }>;
 type DiplomacyActions = ReturnType<typeof useCountryDiplomacyActions>;
 type ForeignPolicy = Parameters<DiplomacyActions["proposeForeignPolicy"]>[0];
+type CongratulationPost = RouterInputs["thinkpages"]["createPost"];
 
 const MANAGEMENT_LINKS: Array<[icon: IconType, label: string, path: string]> = [
   [Building2, "MyCountry dashboard", "/mycountry"],
@@ -96,24 +97,19 @@ function CongratulateRow({
   achievements,
   viewerCountryId,
   disabled,
-  onSent,
+  sending,
+  onSend,
 }: {
   targetCountryName: string;
   achievements: Array<{ id: string; title: string; description?: string | null }>;
   viewerCountryId: string | undefined;
+  /** Another action in the menu is in flight (the row's own sending state is `sending`). */
   disabled: boolean;
-  onSent: () => void;
+  sending: boolean;
+  onSend: (post: CongratulationPost) => void;
 }) {
   const notify = useNotify();
   const [selected, setSelected] = useState("");
-  const mutation = api.thinkpages.createPost.useMutation({
-    onSuccess: () => {
-      notify.success(`Congratulations sent to ${targetCountryName}`);
-      setSelected("");
-      onSent();
-    },
-    onError: (error) => notify.error(`Failed to send congratulations: ${error.message}`),
-  });
 
   const congratulate = () => {
     if (!viewerCountryId) {
@@ -127,7 +123,7 @@ function CongratulateRow({
     const achievement = achievements.find((a) => a.id === selected);
     if (!achievement) return;
 
-    mutation.mutate({
+    onSend({
       accountId: viewerCountryId,
       content:
         `Congratulations to ${targetCountryName} on ${achievement.title}. ${achievement.description ?? ""}`.trim(),
@@ -159,9 +155,9 @@ function CongratulateRow({
         size="sm"
         variant="secondary"
         onClick={congratulate}
-        disabled={!viewerCountryId || disabled || mutation.isPending || !selected}
+        disabled={!viewerCountryId || disabled || sending || !selected}
       >
-        {mutation.isPending ? "Sending…" : "Congratulate"}
+        {sending ? "Sending…" : "Congratulate"}
       </Button>
     </Card>
   );
@@ -186,6 +182,14 @@ export function CountryActionsMenu({
     targetCountryName,
     followStatusEnabled: !!viewerCountryId,
     onProposed: onClose,
+  });
+
+  const congratulation = api.thinkpages.createPost.useMutation({
+    onSuccess: () => {
+      notify.success(`Congratulations sent to ${targetCountryName}`);
+      onClose();
+    },
+    onError: (error) => notify.error(`Failed to send congratulations: ${error.message}`),
   });
 
   const { data: recentAchievements } = api.achievements.getRecentByCountry.useQuery(
@@ -225,7 +229,8 @@ export function CountryActionsMenu({
     setSchedulerOpen(true);
   };
 
-  const isBusy = diplomacy.isPending;
+  // A sending congratulation also locks the diplomacy rows so nothing is double-submitted.
+  const isBusy = diplomacy.isPending || congratulation.isPending;
   const needsViewer = !viewerCountryId || isBusy;
 
   return (
@@ -265,7 +270,8 @@ export function CountryActionsMenu({
                       achievements={recentAchievements}
                       viewerCountryId={viewerCountryId}
                       disabled={isBusy}
-                      onSent={onClose}
+                      sending={congratulation.isPending}
+                      onSend={congratulation.mutate}
                     />
                   )}
                 </ActionGroup>
