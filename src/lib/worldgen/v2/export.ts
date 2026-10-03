@@ -345,36 +345,3 @@ function smoothGeometry(geom: Polygon | MultiPolygon, passes: number): Polygon |
     ),
   };
 }
-
-// oxlint-disable-next-line typescript/no-unused-vars
-function filterSmallComponents(graph: WorldGraph, cellList: number[], minSize: number): number[] {
-  const { cells } = graph;
-  const cellSet = new Set(cellList);
-  const visited = new Set<number>();
-  const validCells: number[] = [];
-
-  for (const c of cellList) {
-    if (visited.has(c)) continue;
-
-    const comp: number[] = [];
-    const queue = [c];
-    visited.add(c);
-
-    while (queue.length > 0) {
-      const curr = queue.pop()!;
-      comp.push(curr);
-      for (const nb of cells.neighbors[curr]!) {
-        if (cellSet.has(nb) && !visited.has(nb)) {
-          visited.add(nb);
-          queue.push(nb);
-        }
-      }
-    }
-
-    if (comp.length >= minSize) {
-      validCells.push(...comp);
-    }
-  }
-
-  return validCells;
-}

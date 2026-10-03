@@ -287,14 +287,6 @@ export interface ImportAnalysis {
   analysisTime: number;
 }
 
-// Time context information
-// Forecast data
-// Chart data types
-// API response wrappers
-// Form validation types
-// UI State types
-// oxlint-disable-next-line typescript/no-unused-vars
-// Theme types
 // Database model types (matching Prisma schema)
 export interface Country {
   id: string;

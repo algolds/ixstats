@@ -19,8 +19,7 @@ class MemoryOptimizer {
   static async monitorMemoryUsage(): Promise<void> {
     if (typeof process !== "undefined" && typeof process.memoryUsage === "function") {
       const stats = getMemoryStats();
-      // oxlint-disable-next-line typescript/no-unused-vars
-      const { heapUsedMB, heapTotalMB, usagePercent, rssMB } = stats;
+      const { heapUsedMB, usagePercent, rssMB } = stats;
 
       // Dev mode: Proactive cache clearing at 70% threshold
       if (isDevMode && usagePercent > this.CACHE_CLEAR_THRESHOLD) {

@@ -385,8 +385,6 @@ function checkClimateCoherence(graph: WorldGraph): QualityCheckResult {
 
 function checkLakePlacement(graph: WorldGraph): QualityCheckResult {
   const lakes = graph.features.filter((f) => f.type === "lake");
-  // oxlint-disable-next-line typescript/no-unused-vars
-  const passed = true; // All flood-filled lakes are inside landmasses by construction
 
   return {
     name: "Lake Placement",
@@ -407,9 +405,6 @@ function checkCoastlineComplexity(graph: WorldGraph, _params: WorldGenParams): Q
       coastalLandCount++;
     }
   }
-
-  // oxlint-disable-next-line typescript/no-unused-vars
-  const passed = coastalLandCount > 50;
 
   return {
     name: "Coastline Complexity",
