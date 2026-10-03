@@ -128,7 +128,6 @@ export function BudgetAllocationForm({
           </div>
         </div>
 
-        {/* Inline amount / share controls */}
         <div className="flex flex-wrap items-center gap-4 lg:mr-4 lg:ml-auto">
           <label className="flex items-center gap-2">
             <Eyebrow>Amount</Eyebrow>
@@ -196,11 +195,9 @@ export function BudgetAllocationForm({
         </div>
       </div>
 
-      {/* Expanded section */}
       {!isCollapsed && (
         <div className="border-separator space-y-4 border-t px-4 pt-4 pb-4">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {/* Inputs */}
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label
@@ -257,7 +254,6 @@ export function BudgetAllocationForm({
               )}
             </div>
 
-            {/* Utilization & context */}
             <div className="space-y-4">
               <div className="space-y-2">
                 <h4 className="text-label text-headline flex items-center gap-2">

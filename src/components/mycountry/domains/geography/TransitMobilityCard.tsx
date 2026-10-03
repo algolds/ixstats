@@ -130,7 +130,6 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
 
   return (
     <Card className="rounded-card">
-      {/* Header */}
       <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 p-4 pb-3">
         <div className="flex min-w-0 items-center gap-2">
           <RouteIcon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
@@ -199,7 +198,6 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
           </TransitStat>
         </div>
 
-        {/* Modal velocities */}
         {Object.keys(modalSummary.modalGroups).length > 0 && (
           <div className="space-y-2">
             <Eyebrow className="block">Modal velocities and network extent</Eyebrow>
@@ -235,7 +233,6 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
           </div>
         )}
 
-        {/* Top travel corridors */}
         {topCorridors.length > 0 && (
           <div className="space-y-2">
             <Eyebrow className="block">Primary intercity travel corridors</Eyebrow>

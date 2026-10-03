@@ -59,7 +59,6 @@ export function RevenueAddSection({
           Add custom revenue source
         </Button>
 
-        {/* Quick Add Presets badges */}
         <div className="border-separator rounded-control space-y-3 border p-4">
           <h3 className="text-label text-headline">Quick add common channels</h3>
           <div className="space-y-3">

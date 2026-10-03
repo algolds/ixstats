@@ -125,7 +125,6 @@ export function RevenueSourceForm({
         {/* KPI Summary Cards & Category Breakdown */}
         <RevenueSummaryKpis data={data} totalCalculated={totalCalculated} />
 
-        {/* Existing Revenue Channels list */}
         <div className="space-y-4">
           {data.map((item, index) => (
             <RevenueItemRow

@@ -158,7 +158,6 @@ export function EmbassyCreatorSheet({
         </SheetHeader>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
-          {/* Host Country */}
           <div>
             <Label className="text-caption mb-2 block">Host country</Label>
             <CountrySelector
@@ -175,7 +174,6 @@ export function EmbassyCreatorSheet({
 
           <Separator />
 
-          {/* Embassy Details */}
           <div>
             <Label className="text-caption mb-2 block">
               Embassy name <span className="text-destructive">*</span>
@@ -217,7 +215,6 @@ export function EmbassyCreatorSheet({
             </div>
           </div>
 
-          {/* Cost Preview */}
           {hostCountryId && (
             <>
               <Separator />
@@ -280,7 +277,6 @@ export function EmbassyCreatorSheet({
             </>
           )}
 
-          {/* Info notice */}
           <Card variant="inset" padding="none" className="text-label-secondary text-footnote p-2">
             Both countries will be notified of the embassy establishment. The host country can view
             your embassy details.

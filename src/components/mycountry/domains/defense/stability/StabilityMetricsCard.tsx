@@ -111,7 +111,6 @@ function MetricSection({
 function StabilityBody({ metrics }: { metrics: StabilityMetrics }) {
   return (
     <>
-      {/* Stability Score */}
       <div>
         <div className="mb-2 flex items-end justify-between">
           <span className="text-stat-label text-label-secondary">Overall stability score</span>

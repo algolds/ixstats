@@ -104,7 +104,6 @@ export function ParliamentHemicycle({
         </h3>
       )}
 
-      {/* SVG Hemicycle */}
       <div className="mx-auto" style={{ maxWidth: 420 }}>
         <svg viewBox="0 0 400 210" className="w-full">
           {seatPositions.map((pos, i) => (
@@ -123,7 +122,6 @@ export function ParliamentHemicycle({
         </svg>
       </div>
 
-      {/* Party Legend */}
       <div className="flex flex-wrap justify-center gap-3">
         {partySummary.map((ps) => (
           <div key={ps.party.id} className="text-footnote flex items-center gap-2">

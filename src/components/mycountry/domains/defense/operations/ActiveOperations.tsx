@@ -137,7 +137,6 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
               </div>
 
               <div className="flex items-center gap-3">
-                {/* Stats */}
                 <div className="text-footnote space-y-1 text-right">
                   <div className="text-label-secondary flex items-center gap-1">
                     <Users className="h-3 w-3" />
@@ -154,7 +153,6 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
                   )}
                 </div>
 
-                {/* End operation */}
                 {isActive && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
@@ -199,7 +197,6 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
               </div>
             </div>
 
-            {/* Deployment count */}
             {op.deployments && op.deployments.length > 0 && (
               <div className="text-label-secondary text-footnote mt-2">
                 {op.deployments.filter((d) => d.status === "deployed").length} active deployments
@@ -209,7 +206,6 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
               </div>
             )}
 
-            {/* Success rating for completed ops */}
             {op.successRating && (
               <Badge
                 variant={SUCCESS_RATING_BADGE[op.successRating] ?? "destructive"}

@@ -32,7 +32,6 @@ export const WizardStepNarrative = React.memo(function WizardStepNarrative({
         </p>
       </div>
 
-      {/* Narrative */}
       <div className="space-y-2">
         <Label htmlFor="narrative" className="text-label">
           Exchange Narrative *
@@ -49,7 +48,6 @@ export const WizardStepNarrative = React.memo(function WizardStepNarrative({
         </p>
       </div>
 
-      {/* Objectives */}
       <div className="space-y-2">
         <Label className="text-label">Objectives * (select at least one)</Label>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">

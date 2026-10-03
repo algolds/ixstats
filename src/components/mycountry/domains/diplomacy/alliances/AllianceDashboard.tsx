@@ -100,7 +100,6 @@ export function AllianceDashboard({
 
   return (
     <Card className="rounded-card space-y-4 p-4">
-      {/* Alliance header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <div
@@ -178,7 +177,6 @@ export function AllianceDashboard({
         <p className="text-label-secondary text-body">{alliance.description}</p>
       )}
 
-      {/* Stats */}
       <dl className="grid grid-cols-3 gap-3 text-center">
         {[
           { label: "Members", value: String(alliance.memberCount) },
@@ -194,7 +192,6 @@ export function AllianceDashboard({
         ))}
       </dl>
 
-      {/* Members list */}
       <div>
         <h4 className="text-label text-headline mb-2 flex items-center gap-2">
           <Users className="text-label-secondary h-4 w-4" />
@@ -219,10 +216,8 @@ export function AllianceDashboard({
         </div>
       </div>
 
-      {/* Collective actions */}
       <CollectiveActionsPanel allianceId={allianceId} countryId={countryId} myRole={myRole} />
 
-      {/* Quick stats */}
       <div className="text-label-secondary text-footnote flex items-center gap-4">
         <span className="flex items-center gap-1">
           <Vote className="h-3 w-3" />

@@ -40,10 +40,8 @@ export const DepartmentForm = React.memo(function DepartmentForm({
 }: DepartmentFormProps) {
   return (
     <div className="space-y-6">
-      {/* Icon & Color Header Section */}
       <DepartmentIconPicker data={data} onChange={onChange} isReadOnly={isReadOnly} />
 
-      {/* Core Basic Fields */}
       <DepartmentBasicFields
         data={data}
         onChange={onChange}
@@ -51,7 +49,6 @@ export const DepartmentForm = React.memo(function DepartmentForm({
         errors={errors}
       />
 
-      {/* Core Operational Functions */}
       <DepartmentFunctionsManager data={data} onChange={onChange} isReadOnly={isReadOnly} />
 
       {/* Contextual Policy / Atomic Components Selector */}
@@ -62,7 +59,6 @@ export const DepartmentForm = React.memo(function DepartmentForm({
         isReadOnly={isReadOnly}
       />
 
-      {/* Action Footer */}
       {!isReadOnly && onDelete && (
         <div className="flex justify-end pt-2">
           <Button type="button" variant="destructive" size="sm" onClick={onDelete}>

@@ -31,7 +31,6 @@ export const DepartmentIconPicker = React.memo(function DepartmentIconPicker({
 
   return (
     <Card variant="inset" className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2">
-      {/* Icon Display and Media Modal */}
       <div className="space-y-2">
         <Eyebrow className="block">Department emblem / icon</Eyebrow>
         <div className="flex items-center gap-3">
@@ -75,7 +74,6 @@ export const DepartmentIconPicker = React.memo(function DepartmentIconPicker({
         />
       </div>
 
-      {/* Theme Color Picker */}
       <div className="space-y-2">
         <Eyebrow className="block">Department accent color</Eyebrow>
         <ColorPickerInput

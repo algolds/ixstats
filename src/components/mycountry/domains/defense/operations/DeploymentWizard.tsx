@@ -179,7 +179,6 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
         </SheetHeader>
 
         <div className="space-y-4">
-          {/* Operation name and type */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Operation name</Label>
@@ -209,7 +208,6 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
             </div>
           </div>
 
-          {/* Target and description */}
           <div>
             <Label>Target Nation (optional)</Label>
             <Select value={targetCountryId} onValueChange={setTargetCountryId}>
@@ -236,7 +234,6 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
             />
           </div>
 
-          {/* Personnel */}
           <div>
             <Label>Personnel Deployed: {personnel.toLocaleString()}</Label>
             <Slider
@@ -248,7 +245,6 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
             />
           </div>
 
-          {/* Units selection */}
           {allUnits.length > 0 && (
             <div>
               <Label>Deploy Units ({selectedUnitIds.length} selected)</Label>
@@ -271,7 +267,6 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
             </div>
           )}
 
-          {/* Assets selection */}
           {allAssets.length > 0 && (
             <div>
               <Label>Deploy Assets ({selectedAssetIds.length} selected)</Label>
@@ -294,7 +289,6 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
             </div>
           )}
 
-          {/* Cost preview */}
           <div className="border-separator rounded-control border p-3">
             <div className="mb-2 flex items-center gap-2">
               <AlertTriangle aria-hidden="true" className="text-yellow h-4 w-4" />

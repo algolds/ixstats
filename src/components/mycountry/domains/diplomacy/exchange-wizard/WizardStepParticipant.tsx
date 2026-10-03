@@ -85,7 +85,6 @@ export const WizardStepParticipant = React.memo(function WizardStepParticipant({
         </p>
       </div>
 
-      {/* Search */}
       <div className="relative">
         <Search className="text-label-secondary absolute top-1/2 left-3 -translate-y-1/2" />
         <Input
@@ -97,7 +96,6 @@ export const WizardStepParticipant = React.memo(function WizardStepParticipant({
         />
       </div>
 
-      {/* Country List */}
       <div className="max-h-[400px] space-y-2 overflow-y-auto pr-2">
         <CountryList {...listProps} />
       </div>

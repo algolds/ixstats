@@ -55,7 +55,6 @@ export function GovernmentStructureFields({
 
   return (
     <>
-      {/* Basic Information */}
       {hideGovernmentType ? (
         <div className="space-y-2">
           <Label htmlFor="governmentName" className="text-label-secondary text-body font-medium">
@@ -108,7 +107,6 @@ export function GovernmentStructureFields({
         </div>
       )}
 
-      {/* Leadership */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <div className="flex items-center justify-between">

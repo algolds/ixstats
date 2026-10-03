@@ -218,7 +218,6 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Border Security Overview */}
         <Card>
           <CardHeader className="p-5 pb-3">
             <h4 className="text-label text-headline flex items-center gap-2">
@@ -267,7 +266,6 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
           </CardContent>
         </Card>
 
-        {/* Neighbor Threats */}
         <Card>
           <CardHeader className="p-5 pb-3">
             <h4 className="text-label text-headline flex items-center gap-2">
