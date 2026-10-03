@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -320,9 +320,12 @@ export function GovernmentMetricModals({
 
   const directives = getDirectivesForComponents(selectedComponentObjects.map((c) => c.type));
 
-  useEffect(() => {
+  // Open on the tab for whichever metric was clicked (adjusted during render, not in an effect).
+  const [lastOpenTab, setLastOpenTab] = useState<MetricTab | null>(null);
+  if (openTab !== lastOpenTab) {
+    setLastOpenTab(openTab);
     if (openTab) setActiveTab(openTab);
-  }, [openTab]);
+  }
 
   const TitleIcon = TAB_TITLE_ICONS[activeTab];
   const titles: Record<MetricTab, string> = {
