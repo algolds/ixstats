@@ -3,8 +3,6 @@ import type { ProjectionMode } from "~/lib/maps/map-config";
 
 export interface TourStep {
   name: string;
-  featureId: string;
-  countryId: string;
   fallbackBlurb: string;
   camera: {
     center: [number, number];
@@ -14,56 +12,67 @@ export interface TourStep {
   };
 }
 
+const step = (
+  name: string,
+  fallbackBlurb: string,
+  center: [number, number],
+  zoom: number,
+  pitch: number,
+  bearing: number
+): TourStep => ({ name, fallbackBlurb, camera: { center, zoom, pitch, bearing } });
+
 const TOUR_STEPS: TourStep[] = [
-  {
-    name: "Caphiria",
-    featureId: "Caphiria",
-    countryId: "Caphiria",
-    fallbackBlurb:
-      "Sarpedon's preeminent empire, characterized by its classical military heritage and administrative centralization.",
-    camera: { center: [26.3626, -19.6347], zoom: 4.2, pitch: 45, bearing: 15 },
-  },
-  {
-    name: "Fiannria",
-    featureId: "Fiannria",
-    countryId: "Fiannria",
-    fallbackBlurb:
-      "A historic maritime gateway in Levantia, pivotal in regional trade corridors across the Kilikas Sea.",
-    camera: { center: [63.5578, 41.064], zoom: 4.8, pitch: 35, bearing: -20 },
-  },
-  {
-    name: "Faneria",
-    featureId: "Faneria",
-    countryId: "Faneria",
-    fallbackBlurb:
-      "Located on the Gallia Magna coast of Levantia, an industrial powerhouse built on engineering and maritime commerce.",
-    camera: { center: [50.6548, 45.2802], zoom: 5.0, pitch: 40, bearing: 30 },
-  },
-  {
-    name: "Kiravia",
-    featureId: "Kiravia",
-    countryId: "Kiravia",
-    fallbackBlurb:
-      "The expansive northern state of Kiroborea, boasting massive natural resource industries and high technological research hubs.",
-    camera: { center: [-22.2237, 53.5878], zoom: 4.5, pitch: 50, bearing: 45 },
-  },
-  {
-    name: "Tierrador",
-    featureId: "Tierrador",
-    countryId: "Tierrador",
-    fallbackBlurb:
-      "The gateway of South Crona, critical for agricultural exports and raw mineral shipping routes.",
-    camera: { center: [-86.3198, 3.0441], zoom: 4.4, pitch: 30, bearing: -15 },
-  },
-  {
-    name: "Daxia",
-    featureId: "Daxia",
-    countryId: "Daxia",
-    fallbackBlurb:
-      "Audonia's southern trading hub, dominating commerce in the Levantine Ocean and Southeast Asian routes.",
-    camera: { center: [164.8931, -8.881], zoom: 4.6, pitch: 45, bearing: 25 },
-  },
+  step(
+    "Caphiria",
+    "Sarpedon's preeminent empire, characterized by its classical military heritage and administrative centralization.",
+    [26.3626, -19.6347],
+    4.2,
+    45,
+    15
+  ),
+  step(
+    "Fiannria",
+    "A historic maritime gateway in Levantia, pivotal in regional trade corridors across the Kilikas Sea.",
+    [63.5578, 41.064],
+    4.8,
+    35,
+    -20
+  ),
+  step(
+    "Faneria",
+    "Located on the Gallia Magna coast of Levantia, an industrial powerhouse built on engineering and maritime commerce.",
+    [50.6548, 45.2802],
+    5.0,
+    40,
+    30
+  ),
+  step(
+    "Kiravia",
+    "The expansive northern state of Kiroborea, boasting massive natural resource industries and high technological research hubs.",
+    [-22.2237, 53.5878],
+    4.5,
+    50,
+    45
+  ),
+  step(
+    "Tierrador",
+    "The gateway of South Crona, critical for agricultural exports and raw mineral shipping routes.",
+    [-86.3198, 3.0441],
+    4.4,
+    30,
+    -15
+  ),
+  step(
+    "Daxia",
+    "Audonia's southern trading hub, dominating commerce in the Levantine Ocean and Southeast Asian routes.",
+    [164.8931, -8.881],
+    4.6,
+    45,
+    25
+  ),
 ];
+
+const WORLD_VIEW = { center: [56.1842, 0] as [number, number], zoom: 1.8, pitch: 0, bearing: 0 };
 
 export type TourState = "idle" | "intro" | "flying" | "paused_at_step" | "outro" | "completed";
 
@@ -90,28 +99,16 @@ export function useMapTour({
   const savedProjectionMode = useRef<ProjectionMode | null>(null);
 
   const startTour = useCallback(() => {
-    // Save current projection mode to restore later
+    // Remember the projection to restore on exit; the tour runs in dynamic (globe at low zoom)
     savedProjectionMode.current = projectionMode;
-    // Set to dynamic projection (globe view at low zoom)
     setProjectionMode("dynamic");
-    // Clear any selected country
     setSelectedCountry(null);
     setTourState("intro");
     setCurrentStepIndex(0);
     setProgress(0);
     setIsPaused(false);
 
-    const map = mapRef.current?.getMap();
-    if (map) {
-      map.flyTo({
-        center: [56.1842, 0],
-        zoom: 1.8,
-        pitch: 0,
-        bearing: 0,
-        speed: 1.0,
-        essential: true,
-      });
-    }
+    mapRef.current?.getMap()?.flyTo({ ...WORLD_VIEW, speed: 1.0, essential: true });
   }, [projectionMode, setProjectionMode, setSelectedCountry, mapRef]);
 
   const exitTour = useCallback(() => {
@@ -124,15 +121,7 @@ export function useMapTour({
       setProjectionMode(savedProjectionMode.current);
     }
 
-    const map = mapRef.current?.getMap();
-    if (map) {
-      map.flyTo({
-        pitch: 0,
-        bearing: 0,
-        speed: 1.2,
-        essential: true,
-      });
-    }
+    mapRef.current?.getMap()?.flyTo({ pitch: 0, bearing: 0, speed: 1.2, essential: true });
   }, [setProjectionMode, mapRef]);
 
   const flyToStepIndex = useCallback(
@@ -141,39 +130,32 @@ export function useMapTour({
       setCurrentStepIndex(idx);
       setProgress(0);
 
-      const step = TOUR_STEPS[idx];
+      const stop = TOUR_STEPS[idx];
       const map = mapRef.current?.getMap();
-      if (map && step) {
-        let center = step.camera.center;
+      if (!map || !stop) return;
 
-        if (mapLayers) {
-          const politicalLayer = mapLayers.find((l) => l.type === "political");
-          const features = politicalLayer?.data?.features || [];
-          const feature = features.find(
-            (f: any) =>
-              f.properties?._id?.toLowerCase() === step.featureId.toLowerCase() ||
-              f.properties?._displayName?.toLowerCase() === step.name.toLowerCase()
-          );
+      // Prefer the country's live centroid over the hard-coded camera centre.
+      const name = stop.name.toLowerCase();
+      const props = mapLayers
+        ?.find((l) => l.type === "political")
+        ?.data?.features?.find(
+          (f: any) =>
+            f.properties?._id?.toLowerCase() === name ||
+            f.properties?._displayName?.toLowerCase() === name
+        )?.properties;
+      const lng = props?._centroidLng;
+      const lat = props?._centroidLat;
+      const hasCentroid =
+        typeof lng === "number" && typeof lat === "number" && lng !== 0 && lat !== 0;
 
-          if (feature?.properties) {
-            const lng = feature.properties._centroidLng;
-            const lat = feature.properties._centroidLat;
-            if (typeof lng === "number" && typeof lat === "number" && lng !== 0 && lat !== 0) {
-              center = [lng, lat];
-              console.log(`[useMapTour] Found dynamic centroid for ${step.name}:`, center);
-            }
-          }
-        }
-
-        map.flyTo({
-          center: center,
-          zoom: step.camera.zoom,
-          pitch: step.camera.pitch,
-          bearing: step.camera.bearing,
-          speed: 0.8, // cinematic speed
-          essential: true,
-        });
-      }
+      map.flyTo({
+        center: hasCentroid ? [lng, lat] : stop.camera.center,
+        zoom: stop.camera.zoom,
+        pitch: stop.camera.pitch,
+        bearing: stop.camera.bearing,
+        speed: 0.8, // cinematic speed
+        essential: true,
+      });
     },
     [mapRef, mapLayers]
   );
@@ -185,17 +167,7 @@ export function useMapTour({
       // Outro sequence
       setTourState("outro");
       setProgress(0);
-      const map = mapRef.current?.getMap();
-      if (map) {
-        map.flyTo({
-          center: [56.1842, 0],
-          zoom: 1.8,
-          pitch: 0,
-          bearing: 0,
-          speed: 0.7,
-          essential: true,
-        });
-      }
+      mapRef.current?.getMap()?.flyTo({ ...WORLD_VIEW, speed: 0.7, essential: true });
     }
   }, [currentStepIndex, flyToStepIndex, mapRef]);
 
@@ -205,9 +177,7 @@ export function useMapTour({
     }
   }, [currentStepIndex, flyToStepIndex]);
 
-  const togglePause = useCallback(() => {
-    setIsPaused((p) => !p);
-  }, []);
+  const togglePause = useCallback(() => setIsPaused((p) => !p), []);
 
   // Listen to MapLibre transition end events
   useEffect(() => {
@@ -224,7 +194,6 @@ export function useMapTour({
         setProgress(0);
       } else if (tourState === "outro") {
         // Outro zoom out is complete, finish
-        setTourState("completed");
         setTourState("idle");
         if (savedProjectionMode.current) {
           setProjectionMode(savedProjectionMode.current);
@@ -233,7 +202,6 @@ export function useMapTour({
     };
 
     map.on("moveend", handleMoveEnd);
-
     return () => {
       map.off("moveend", handleMoveEnd);
     };
