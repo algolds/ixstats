@@ -470,9 +470,10 @@ function ResponseModerationSection() {
         <ValueSelect
           value={selectedPromptId}
           onValueChange={setSelectedPromptId}
-          options={prompts?.map(
-            (p) => [p.id, `${p.title} (${p._count.responses} responses)`] as const
-          )}
+          options={
+            prompts?.map((p) => [p.id, `${p.title} (${p._count.responses} responses)`] as const) ??
+            []
+          }
           size="sm"
           placeholder="Choose a prompt to view responses..."
         />

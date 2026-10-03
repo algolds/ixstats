@@ -26,10 +26,7 @@ import {
   Copy,
   Download,
   Filter,
-  Pause,
-  Play,
   Search,
-  Terminal,
   Trash as Trash2,
   Xmark as X,
 } from "iconoir-react";

@@ -5,7 +5,7 @@ import { Coins, EditPencil as Edit2, List, Check } from "iconoir-react";
 import { CurrencySelector, CurrencyInput, UNIFIED_CURRENCIES } from "./CurrencySelector";
 import { CurrencyIcon } from "./CurrencyIcon";
 import { api } from "~/trpc/react";
-import { getCurrencyInfo, isValidCurrency } from "~/lib/utils";
+import { getCurrencyInfo } from "~/lib/utils";
 import { POPULAR_CURRENCIES } from "./identityUtils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { Badge } from "~/components/ui/badge";
@@ -58,7 +58,6 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
 
   const labelId = useId();
   const currencyInfo = getCurrencyInfo(value);
-  const isValid = !value || isValidCurrency(value);
 
   return (
     <div className="space-y-3" role="group" aria-labelledby={labelId}>

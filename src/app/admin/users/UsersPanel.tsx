@@ -926,13 +926,15 @@ export function UsersPanel() {
             <ValueSelect
               value={selectedUser}
               onValueChange={setSelectedUser}
-              options={userIdentities?.map(
-                (u) =>
-                  [
-                    u.clerkUserId,
-                    `${u.clerkUserId} ${u.country ? `(${u.country.name})` : ""}`,
-                  ] as const
-              )}
+              options={
+                userIdentities?.map(
+                  (u) =>
+                    [
+                      u.clerkUserId,
+                      `${u.clerkUserId} ${u.country ? `(${u.country.name})` : ""}`,
+                    ] as const
+                ) ?? []
+              }
               size="sm"
               placeholder="Select a user..."
               itemClassName="text-footnote"
@@ -941,7 +943,7 @@ export function UsersPanel() {
             <ValueSelect
               value={selectedCountry}
               onValueChange={setSelectedCountry}
-              options={countriesWithUsers?.map((c) => [c.id, c.name] as const)}
+              options={countriesWithUsers?.map((c) => [c.id, c.name] as const) ?? []}
               size="sm"
               placeholder="Select a nation..."
               itemClassName="text-footnote"

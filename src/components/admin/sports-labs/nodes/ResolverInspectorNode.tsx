@@ -44,11 +44,6 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
   const [homeScandal, setHomeScandal] = useState<boolean>(false);
   const [awayScandal, setAwayScandal] = useState<boolean>(false);
 
-  // DB queries
-  const { data: dbLeague } = api.sports.getLeague.useQuery(
-    { id: selectedLeagueId },
-    { enabled: !!selectedLeagueId }
-  );
   const { data: dbSeason } = api.sports.getSeason.useQuery(
     { id: selectedSeasonId },
     { enabled: !!selectedSeasonId }

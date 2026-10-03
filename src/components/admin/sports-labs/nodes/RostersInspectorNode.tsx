@@ -169,7 +169,7 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
           <ValueSelect
             value={selectedTeamId}
             onValueChange={setSelectedTeamId}
-            options={dbLeague.teams?.map((t) => [t.id, t.name] as const)}
+            options={dbLeague.teams?.map((t) => [t.id, t.name] as const) ?? []}
             placeholder="Choose team"
           />
         </div>

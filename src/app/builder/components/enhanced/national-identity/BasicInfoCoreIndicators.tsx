@@ -90,7 +90,7 @@ export const BasicInfoCoreIndicators = React.memo(function BasicInfoCoreIndicato
                   nominalGDP: clamped * sanitizedCoreIndicators.gdpPerCapita,
                 },
                 fiscalSystem: {
-                  ...(safeInputs.fiscalSystem || {}),
+                  ...safeInputs.fiscalSystem,
                   taxRevenueGDPPercent: defaultTaxRate,
                   governmentRevenueTotal:
                     (clamped * sanitizedCoreIndicators.gdpPerCapita * defaultTaxRate) / 100,
@@ -136,7 +136,7 @@ export const BasicInfoCoreIndicators = React.memo(function BasicInfoCoreIndicato
                   nominalGDP: sanitizedCoreIndicators.totalPopulation * clamped,
                 },
                 fiscalSystem: {
-                  ...(safeInputs.fiscalSystem || {}),
+                  ...safeInputs.fiscalSystem,
                   taxRevenueGDPPercent: defaultTaxRate,
                   governmentRevenueTotal:
                     (sanitizedCoreIndicators.totalPopulation * clamped * defaultTaxRate) / 100,

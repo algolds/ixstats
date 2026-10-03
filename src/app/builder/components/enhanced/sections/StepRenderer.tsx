@@ -188,7 +188,6 @@ export const StepRenderer = memo(function StepRenderer({
         onGovernmentComponentsChange={handleGovernmentComponentsChange}
         onGovernmentStructureChange={onGovernmentStructureChange}
         onGovernmentStructureSave={onGovernmentStructureSave}
-        onEconomicInputsChange={updateEconomicInputs}
         onTabChange={handleGovernmentTabChange}
       />
     );

@@ -1,15 +1,6 @@
 import { LeagueSeasonPicker } from "./LeagueSeasonPicker";
 import React from "react";
-import { Label } from "~/components/ui/label";
-import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "~/components/ui/select";
 import {
   Table,
   TableBody,

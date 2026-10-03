@@ -29,7 +29,7 @@ export function LeagueSeasonPicker({
         <ValueSelect
           value={selectedLeagueId}
           onValueChange={setSelectedLeagueId}
-          options={leagues?.map((l) => [l.id, l.name] as const)}
+          options={leagues?.map((l) => [l.id, l.name] as const) ?? []}
           placeholder="Choose league"
         />
       </div>

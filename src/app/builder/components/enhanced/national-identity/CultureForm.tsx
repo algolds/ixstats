@@ -205,8 +205,9 @@ export const CultureForm = React.memo(
         if (revealedKeys.has(sym.key)) return false;
         const text = identity[sym.key as keyof NationalIdentityData];
         const img = identity[sym.imageKey as keyof NationalIdentityData];
-        return !Boolean(
-          (typeof text === "string" && text.trim()) || (typeof img === "string" && img.trim())
+        return !(
+          (typeof text === "string" && text.trim()) ||
+          (typeof img === "string" && img.trim())
         );
       });
     }, [showAllMotifs, revealedKeys, identity]);

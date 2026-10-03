@@ -440,7 +440,7 @@ function NationalIssuesPanel() {
                 <ValueSelect
                   value={evalCountryId}
                   onValueChange={setEvalCountryId}
-                  options={countries?.map((c) => [c.id, c.name] as const)}
+                  options={countries?.map((c) => [c.id, c.name] as const) ?? []}
                   size="sm"
                   placeholder="Select Target Country..."
                   itemClassName="text-footnote"

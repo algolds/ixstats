@@ -159,22 +159,6 @@ export function EconomyBuilderPage({
     builderContext,
   });
 
-  const [revenueIntegration, setRevenueIntegration] = useState<{
-    totalRevenue: number;
-    taxRevenue: number;
-    nonTaxRevenue: number;
-    taxBurdenRatio: number;
-    revenueToGDPRatio: number;
-    governmentSizeIndicator: "Small" | "Medium" | "Large";
-  }>({
-    totalRevenue: 0,
-    taxRevenue: 0,
-    nonTaxRevenue: 0,
-    taxBurdenRatio: 0,
-    revenueToGDPRatio: 0,
-    governmentSizeIndicator: "Medium",
-  });
-
   // Stable refs to the latest values for callbacks that must not re-subscribe.
   const economyBuilderRef = useRef(economyBuilder);
   const economicInputsRef = useRef(economicInputs);
@@ -262,10 +246,6 @@ export function EconomyBuilderPage({
       .filter((source) => source.category === "Direct Tax" || source.category === "Indirect Tax")
       .reduce((sum, source) => sum + (source.revenueAmount || 0), 0);
 
-    const nonTaxRevenue = revenueSources
-      .filter((source) => source.category !== "Direct Tax" && source.category !== "Indirect Tax")
-      .reduce((sum, source) => sum + (source.revenueAmount || 0), 0);
-
     const currentEconomicInputs = economicInputsRef.current;
     const currentEconomyBuilder = economyBuilderRef.current;
     const gdp =
@@ -275,22 +255,6 @@ export function EconomyBuilderPage({
 
     const taxBurdenRatio = gdp > 0 ? (taxRevenue / gdp) * 100 : 0;
     const revenueToGDPRatio = gdp > 0 ? (totalRevenue / gdp) * 100 : 0;
-
-    let governmentSizeIndicator: "Small" | "Medium" | "Large" = "Medium";
-    if (revenueToGDPRatio < 25) {
-      governmentSizeIndicator = "Small";
-    } else if (revenueToGDPRatio > 40) {
-      governmentSizeIndicator = "Large";
-    }
-
-    setRevenueIntegration({
-      totalRevenue,
-      taxRevenue,
-      nonTaxRevenue,
-      taxBurdenRatio,
-      revenueToGDPRatio,
-      governmentSizeIndicator,
-    });
 
     const adjustedBuilder = applyGovernmentRevenueAdjustments(currentEconomyBuilder, {
       taxBurdenRatio,

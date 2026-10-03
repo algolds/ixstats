@@ -40,7 +40,6 @@ interface GovernmentStepProps {
   onGovernmentComponentsChange: (components: ComponentType[]) => void;
   onGovernmentStructureChange: (structure: GovernmentBuilderState) => void;
   onGovernmentStructureSave: (structure: GovernmentBuilderState) => Promise<void>;
-  onEconomicInputsChange: (inputs: EconomicInputs) => void;
   onTabChange: (tab: string) => void;
   mode?: "create" | "edit";
 }
@@ -55,7 +54,6 @@ export function GovernmentStep({
   onGovernmentStructureChange,
   // oxlint-disable-next-line eslint/no-unused-vars
   onGovernmentStructureSave,
-  onEconomicInputsChange,
   onTabChange,
   mode: propMode,
 }: GovernmentStepProps) {
@@ -148,7 +146,6 @@ export function GovernmentStep({
 
   const gdpCapWarning = warnings.gdpCapWarning;
   const { viewMode } = useBuilderFilter();
-  const isExpertOrEdit = effectiveMode === "edit" || viewMode === "expert";
 
   // Auto-allocate standard departments if empty in standard mode (create mode only)
   useEffect(() => {
