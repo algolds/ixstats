@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { timeAgo } from "~/lib/format/compact";
+import { isGroupMember } from "./groupMembership";
 
 interface ThinktankDirectorySidebarProps {
   groups: any[];
@@ -41,14 +42,7 @@ export function ThinktankDirectorySidebar({
   const availableCategories = useMemo(() => {
     const counts: Record<string, number> = { All: 0 };
     for (const g of groups) {
-      const isUserMember =
-        Boolean(g.isMember) ||
-        Boolean(g.isJoined) ||
-        (Boolean(currentUserId) && g.createdBy === currentUserId) ||
-        (Boolean(currentUserId) && g.members?.some((m: any) => m.userId === currentUserId));
-
-      if (activeTab === "my" && !isUserMember) continue;
-      if (activeTab === "discover" && isUserMember) continue;
+      if (isGroupMember(g, currentUserId) !== (activeTab === "my")) continue;
 
       counts.All = (counts.All || 0) + 1;
       const cat = g.category || "General";
@@ -65,24 +59,12 @@ export function ThinktankDirectorySidebar({
   // Filtering
   const filteredGroups = useMemo(() => {
     return groups.filter((g) => {
-      const isUserMember =
-        Boolean(g.isMember) ||
-        Boolean(g.isJoined) ||
-        // oxlint-disable-next-line
-        (Boolean(currentUserId) && g.createdBy === currentUserId) ||
-        (Boolean(currentUserId) && g.members?.some((m: any) => m.userId === currentUserId));
+      if (isGroupMember(g, currentUserId) !== (activeTab === "my")) return false;
 
-      // 1. Tab filter
-      if (activeTab === "my" && !isUserMember) return false;
-      if (activeTab === "discover" && isUserMember) return false;
-
-      // 2. Category filter
-      if (selectedCategory !== "All") {
-        const groupCat = g.category || "General";
-        if (groupCat !== selectedCategory) return false;
+      if (selectedCategory !== "All" && (g.category || "General") !== selectedCategory) {
+        return false;
       }
 
-      // 3. Search query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchesName = g.name?.toLowerCase().includes(q);
@@ -93,7 +75,7 @@ export function ThinktankDirectorySidebar({
 
       return true;
     });
-  }, [groups, activeTab, selectedCategory, searchQuery]);
+  }, [groups, activeTab, selectedCategory, searchQuery, currentUserId]);
 
   return (
     <div className="flex h-full flex-col">

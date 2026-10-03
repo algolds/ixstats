@@ -1,47 +1,11 @@
 "use client";
 
-import React, { useState, type FC } from "react";
-import {
-  Heart,
-  Emoji as Smile,
-  Emoji as Angry,
-  ThumbsUp,
-  ThumbsDown,
-  FireFlame as Flame,
-  Plus,
-  Sparks as Sparkles,
-} from "iconoir-react";
+import React, { useState } from "react";
+import { Heart, Plus, Sparks as Sparkles } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
-
-const REACTION_ICONS: { [key: string]: FC<{ className?: string }> } = {
-  like: Heart,
-  laugh: Smile,
-  angry: Angry,
-  fire: Flame,
-  thumbsup: ThumbsUp,
-  thumbsdown: ThumbsDown,
-};
-
-// Common Discord emoji reactions including ixnay
-const DISCORD_EMOJI_REACTIONS = [
-  {
-    name: "ixnay",
-    url: "https://cdn.discordapp.com/emojis/559232409451888640.png",
-    id: "559232409451888640",
-  },
-  {
-    name: "heky_boi",
-    url: "https://cdn.discordapp.com/emojis/580813300733157376.png",
-    id: "580813300733157376",
-  },
-  {
-    name: "pog",
-    url: "https://cdn.discordapp.com/emojis/739969522139209748.png",
-    id: "739969522139209748",
-  },
-];
+import { DISCORD_EMOJI_REACTIONS, REACTION_ICONS } from "./post/ThinkpagesPostUtils";
 
 interface DiscordEmoji {
   id: string;
@@ -128,7 +92,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
             {/* Featured Discord Emojis (including ixnay) */}
             {DISCORD_EMOJI_REACTIONS.map((emoji) => (
               <button
-                key={emoji.id}
+                key={emoji.name}
                 type="button"
                 onClick={() => onSelectReaction(`discord:${emoji.name}`)}
                 className="hover:bg-fill-3 rounded-control-sm p-2 transition-[background-color,scale] duration-150 hover:scale-125"
@@ -155,7 +119,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
                   .slice(0, showMoreEmojis ? discordEmojis.emojis.length : 16)
                   .map((emoji: DiscordEmoji) => (
                     <button
-                      key={emoji.id}
+                      key={emoji.name}
                       type="button"
                       onClick={() => onSelectReaction(`discord:${emoji.name}`)}
                       className="hover:bg-fill-3 rounded-control-sm p-2 transition-[background-color,scale] duration-150 hover:scale-125"

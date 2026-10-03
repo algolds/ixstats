@@ -11,6 +11,7 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { Button } from "~/components/ui/button";
 
 import { ThinktankLayout } from "./ThinktankLayout";
+import { isGroupMember } from "./groupMembership";
 import { ThinktankDirectorySidebar } from "./ThinktankDirectorySidebar";
 import { ThinktankHeader, type ThinktankTab } from "./ThinktankHeader";
 import { ThinktankFeedTab } from "./ThinktankFeedTab";
@@ -35,13 +36,7 @@ function pickDefaultGroup(groups: any[], currentUserId: string): string {
     // storage unavailable (private mode): fall back to the default group
   }
 
-  const mine = groups.find(
-    (g) =>
-      Boolean(g.isMember) ||
-      Boolean(g.isJoined) ||
-      (Boolean(currentUserId) &&
-        (g.createdBy === currentUserId || g.members?.some((m: any) => m.userId === currentUserId)))
-  );
+  const mine = groups.find((g) => isGroupMember(g, currentUserId));
   return (mine ?? groups[0]).id;
 }
 

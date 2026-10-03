@@ -39,7 +39,7 @@ export const REACTION_ICONS: Record<string, React.ElementType> = {
   thumbsdown: ThumbsDown,
 };
 
-const DISCORD_EMOJI_REACTIONS = [
+export const DISCORD_EMOJI_REACTIONS = [
   { name: "ixnay", url: "https://cdn.discordapp.com/emojis/559232409451888640.png" },
   { name: "heky_boi", url: "https://cdn.discordapp.com/emojis/580813300733157376.png" },
   { name: "pog", url: "https://cdn.discordapp.com/emojis/739969522139209748.png" },
