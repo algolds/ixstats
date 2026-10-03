@@ -103,7 +103,6 @@ export function CardSettingsAdmin({
 
   return (
     <div className="space-y-6">
-      {/* ─── Subnavigation ─────────────────────────────────────── */}
       <SegmentedControl
         asTabs
         aria-label="Card settings sections"
@@ -132,7 +131,6 @@ export function CardSettingsAdmin({
         })}
       />
 
-      {/* ─── Subtab Content Panes ────────────────────────────────── */}
       {activeSubtab === "general" && (
         <div className="space-y-6">
           <CardGeneralSettingsAdmin />

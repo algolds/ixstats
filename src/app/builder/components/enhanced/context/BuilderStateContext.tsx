@@ -176,7 +176,6 @@ export function BuilderStateProvider({
  * useBuilderContext - Hook to access builder state from context
  *
  * @throws Error if used outside of BuilderStateProvider
- * @returns BuilderState and related handlers
  */
 export function useBuilderContext(): BuilderContextValue {
   const context = useContext(BuilderStateContext);
@@ -191,8 +190,6 @@ export function useBuilderContext(): BuilderContextValue {
 /**
  * useBuilderContextOptional - Hook to access builder state from context
  * Returns null if used outside of BuilderStateProvider (safe to call anywhere)
- *
- * @returns BuilderContextValue | null
  */
 export function useBuilderContextOptional(): BuilderContextValue | null {
   return useContext(BuilderStateContext) ?? null;

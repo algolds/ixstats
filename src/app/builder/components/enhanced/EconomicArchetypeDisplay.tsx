@@ -3,13 +3,7 @@
 import React, { useState, memo, useMemo } from "react";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Archery as Target, Search } from "iconoir-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Input } from "~/components/ui/input";
 import type { EconomicArchetype } from "~/lib/economy/archetypes/types";
 import type { EconomyBuilderState } from "~/types/economy-builder";
@@ -97,7 +91,6 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
 
   return (
     <div className={`space-y-6 ${className ?? ""}`}>
-      {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-fill-3 border-separator rounded-row grid h-11 w-full grid-cols-2 border p-1">
           <TabsTrigger
@@ -118,7 +111,6 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
           {archetypes.length > 0 && (
             <div className="border-separator bg-surface rounded-row flex flex-col gap-4 border p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-                {/* Search Input */}
                 <div className="relative max-w-md flex-1">
                   <Search className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                   <Input
@@ -129,21 +121,20 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
                   />
                 </div>
 
-                {/* Complexity Filter */}
-                <Select value={complexityFilter} onValueChange={setComplexityFilter}>
-                  <SelectTrigger className="bg-fill-4 border-separator w-full sm:w-44">
-                    <SelectValue placeholder="Select complexity" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All complexities</SelectItem>
-                    <SelectItem value="low">Low complexity</SelectItem>
-                    <SelectItem value="medium">Medium complexity</SelectItem>
-                    <SelectItem value="high">High complexity</SelectItem>
-                  </SelectContent>
-                </Select>
+                <ValueSelect
+                  value={complexityFilter}
+                  onValueChange={setComplexityFilter}
+                  options={[
+                    ["all", "All complexities"],
+                    ["low", "Low complexity"],
+                    ["medium", "Medium complexity"],
+                    ["high", "High complexity"],
+                  ]}
+                  className="bg-fill-4 border-separator w-full sm:w-44"
+                  placeholder="Select complexity"
+                />
               </div>
 
-              {/* Counter */}
               <div className="text-label-secondary text-caption shrink-0 font-semibold">
                 Showing {filteredArchetypes.length} of{" "}
                 {archetypes.filter((a) => (a.era ?? "modern") === activeTab).length}
@@ -195,7 +186,6 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
         </div>
       </Tabs>
 
-      {/* Details Modal */}
       <ArchetypeDetailsModal
         isOpen={isDetailsOpen}
         onOpenChange={setIsDetailsOpen}

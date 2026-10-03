@@ -153,7 +153,6 @@ export default function CardAdminDashboardPage() {
       />
 
       <div className="space-y-6">
-        {/* ─── Facet Navigation Top Header ─────────────────────────── */}
         <Card padding="lg" className="space-y-6">
           {/* Embedded Library Overview / NS Sync Health Metrics (Switches dynamically per active tab) */}
           {(() => {
@@ -163,7 +162,6 @@ export default function CardAdminDashboardPage() {
               return (
                 <div className="border-separator space-y-2 border-t pt-2">
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                    {/* Total Sync Operations */}
                     <Card padding="sm">
                       <Stat
                         size="sm"
@@ -181,7 +179,6 @@ export default function CardAdminDashboardPage() {
                       />
                     </Card>
 
-                    {/* Success Rate */}
                     <Card padding="sm">
                       <Stat
                         size="sm"
@@ -198,7 +195,6 @@ export default function CardAdminDashboardPage() {
                       />
                     </Card>
 
-                    {/* Failure / Error Rate */}
                     <Card padding="sm">
                       <Stat
                         size="sm"
@@ -215,7 +211,6 @@ export default function CardAdminDashboardPage() {
                       />
                     </Card>
 
-                    {/* Avg Cards / Sync */}
                     <Card padding="sm">
                       <Stat
                         size="sm"
@@ -235,7 +230,6 @@ export default function CardAdminDashboardPage() {
               <div className="border-separator space-y-2 border-t pt-2">
                 {/* 4 Hero Stat Cards */}
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                  {/* Active Cards */}
                   <Card padding="sm">
                     <Stat
                       size="sm"
@@ -247,7 +241,6 @@ export default function CardAdminDashboardPage() {
                     />
                   </Card>
 
-                  {/* Active Categories */}
                   <Card padding="sm">
                     <Stat
                       size="sm"
@@ -259,7 +252,6 @@ export default function CardAdminDashboardPage() {
                     />
                   </Card>
 
-                  {/* Pending Requests */}
                   <Card padding="sm">
                     <Stat
                       size="sm"
@@ -271,7 +263,6 @@ export default function CardAdminDashboardPage() {
                     />
                   </Card>
 
-                  {/* NS Cards */}
                   <Card padding="sm">
                     <Stat
                       size="sm"
@@ -287,7 +278,6 @@ export default function CardAdminDashboardPage() {
             );
           })()}
 
-          {/* Section switcher */}
           <SegmentedControl
             asTabs
             aria-label="Cards administration sections"
@@ -303,10 +293,8 @@ export default function CardAdminDashboardPage() {
           />
         </Card>
 
-        {/* ─── TAB: 3D CARD DESIGNER STUDIO ─────────────────────── */}
         {activeTab === "designer" && <CardDesignerStudio />}
 
-        {/* ─── TAB: OVERVIEW & LIBRARY STATISTICS ──────────────────── */}
         {activeTab === "overview" && (
           <div className="space-y-6">
             {/* Operations Log & Audit Trail Card inside Overview */}
@@ -367,7 +355,6 @@ export default function CardAdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Quick Filter Pill Badges */}
               {unifiedLogsData?.stats && (
                 <ToggleGroup
                   type="single"
@@ -433,12 +420,10 @@ export default function CardAdminDashboardPage() {
           </div>
         )}
 
-        {/* ─── TAB: CARD EXPLORER ──────────────────────────────────── */}
         {activeTab === "explorer" && (
           <AdminCardExplorer initialCategory={selectedExplorerCategory} />
         )}
 
-        {/* ─── TAB: UNIFIED IMPORT STUDIO ─────────────────────────── */}
         {activeTab === "imports" && (
           <CardImportStudio
             initialSubtab={importSubtab}
@@ -446,7 +431,6 @@ export default function CardAdminDashboardPage() {
           />
         )}
 
-        {/* ─── TAB: UNIFIED SETTINGS STUDIO ───────────────────────── */}
         {activeTab === "settings" && (
           <CardSettingsAdmin
             initialSubtab={settingsSubtab}

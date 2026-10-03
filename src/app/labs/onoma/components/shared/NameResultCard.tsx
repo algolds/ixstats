@@ -259,9 +259,7 @@ export function NameResultCard({
       )}
       interactive
     >
-      {/* Main Top Row */}
       <div className="relative z-10 flex w-full min-w-0 items-start justify-between gap-3">
-        {/* Name Display Stack */}
         <div className="flex min-w-0 flex-1 flex-col items-start gap-2">
           <span
             className="text-label group-hover:text-tint w-full leading-none font-semibold whitespace-nowrap transition-colors duration-300"
@@ -302,7 +300,6 @@ export function NameResultCard({
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div
           className={cn(
             "border-separator bg-surface rounded-control shadow-card flex flex-shrink-0 items-center gap-0.5 border px-1 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out select-none",
@@ -324,7 +321,6 @@ export function NameResultCard({
             <Languages className="h-4 w-4" />
           </Toggle>
 
-          {/* Copy Button */}
           <Button
             variant="ghost"
             size="icon-sm"
@@ -359,7 +355,6 @@ export function NameResultCard({
             </Button>
           )}
 
-          {/* Use/Redirect Button */}
           {onUse && (
             <Button
               variant="ghost"
@@ -396,7 +391,6 @@ export function NameResultCard({
         />
       )}
 
-      {/* Expanded Inline Morph Area */}
       <AnimatePresence initial={false}>
         {showDetailsModal && (
           <motion.div

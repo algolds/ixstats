@@ -158,7 +158,6 @@ export function NPCPersonalityFormDialog({
             />
           </div>
 
-          {/* Trait Sliders */}
           <div className="border-separator space-y-3 border-t pt-4">
             <h4 className="text-label text-caption">Psychological & strategic traits</h4>
 

@@ -1,7 +1,6 @@
 import { DEFAULT_POLICY_FLAGS } from "~/lib/economy/factory";
 import type { RealCountryData, EconomicInputs } from "~/types/builder";
 
-// Helper function to create default economic inputs
 export function createDefaultEconomicInputs(referenceCountry?: RealCountryData): EconomicInputs {
   const basePopulation = referenceCountry?.population || 10000000;
   const baseGDPPerCapita = referenceCountry?.gdpPerCapita || 25000;
@@ -215,11 +214,36 @@ export function createDefaultEconomicInputs(referenceCountry?: RealCountryData):
       lifeExpectancy: 78.5,
       urbanRuralSplit: { urban: 65, rural: 35 },
       regions: [
-        { name: "North", population: basePopulation * 0.25, urbanPercent: 70, color: "var(--color-chart-1)" },
-        { name: "South", population: basePopulation * 0.3, urbanPercent: 60, color: "var(--color-chart-2)" },
-        { name: "East", population: basePopulation * 0.2, urbanPercent: 75, color: "var(--color-chart-3)" },
-        { name: "West", population: basePopulation * 0.15, urbanPercent: 55, color: "var(--color-chart-4)" },
-        { name: "Central", population: basePopulation * 0.1, urbanPercent: 50, color: "var(--color-chart-5)" },
+        {
+          name: "North",
+          population: basePopulation * 0.25,
+          urbanPercent: 70,
+          color: "var(--color-chart-1)",
+        },
+        {
+          name: "South",
+          population: basePopulation * 0.3,
+          urbanPercent: 60,
+          color: "var(--color-chart-2)",
+        },
+        {
+          name: "East",
+          population: basePopulation * 0.2,
+          urbanPercent: 75,
+          color: "var(--color-chart-3)",
+        },
+        {
+          name: "West",
+          population: basePopulation * 0.15,
+          urbanPercent: 55,
+          color: "var(--color-chart-4)",
+        },
+        {
+          name: "Central",
+          population: basePopulation * 0.1,
+          urbanPercent: 50,
+          color: "var(--color-chart-5)",
+        },
       ],
       educationLevels: [
         { level: "No Formal Education", percent: 5, color: "var(--color-chart-5)" },

@@ -9,8 +9,6 @@
 
 import { makeRng } from "~/lib/worldgen/rng";
 
-// ── Types ────────────────────────────────────
-
 export interface LanguageFamily {
   id: string;
   name: string;
@@ -22,13 +20,7 @@ export interface LanguageFamily {
   minLength: number;
   maxLength: number;
   vowelRatio: [number, number];
-  riverTemplates: string[];
-  lakeTemplates: string[];
-  mountainTemplates: string[];
-  seaTemplates: string[];
 }
-
-// ── Constants ────────────────────────────────
 
 const VOWELS = new Set("aeiouàáâãäåèéêëìíîïòóôõöùúûüæœ");
 const END_TOKEN = "$";
@@ -39,8 +31,6 @@ const MAX_SYLL = 5;
 function isVowel(c: string): boolean {
   return VOWELS.has(c.toLowerCase());
 }
-
-// ── Syllable Splitting ───────────────────────
 
 /**
  * Split a word into pseudo-syllables (max 5 chars each).
@@ -80,8 +70,6 @@ function splitIntoSyllables(word: string): string[] {
   return out.length > 0 ? out : [w];
 }
 
-// ── Post-processing ──────────────────────────
-
 function removeTripleLetters(s: string): string {
   let r = "";
   for (let i = 0; i < s.length; i++) {
@@ -116,8 +104,6 @@ function postProcess(s: string): string {
   return collapseDoubleVowels(removeTripleLetters(s));
 }
 
-// ── Training ─────────────────────────────────
-
 /**
  * Build a language family from seed words.
  * Trains syllable-level transitions: outer key = last char of prev syllable
@@ -132,10 +118,6 @@ export function buildLanguageFamily(
     minLength?: number;
     maxLength?: number;
     vowelRatio?: [number, number];
-    riverTemplates?: string[];
-    lakeTemplates?: string[];
-    mountainTemplates?: string[];
-    seaTemplates?: string[];
   } = {}
 ): LanguageFamily {
   const transitions = new Map<string, Map<string, number>>();
@@ -177,14 +159,8 @@ export function buildLanguageFamily(
     minLength: options.minLength ?? 4,
     maxLength: options.maxLength ?? 12,
     vowelRatio: options.vowelRatio ?? [0.3, 0.6],
-    riverTemplates: options.riverTemplates ?? ["$N River", "River $N"],
-    lakeTemplates: options.lakeTemplates ?? ["Lake $N"],
-    mountainTemplates: options.mountainTemplates ?? ["Mount $N", "$N Mountains"],
-    seaTemplates: options.seaTemplates ?? ["Sea of $N", "$N Sea"],
   };
 }
-
-// ── Generation ───────────────────────────────
 
 /**
  * Markov name generator. Deterministic when given a seed.
@@ -311,33 +287,4 @@ export class MarkovNameGenerator {
     this.generated.add(fallback);
     return fallback;
   }
-
-  private fromTemplate(templates: string[]): string {
-    const root = this.generate();
-    return templates[Math.floor(this.rng() * templates.length)]!.replace("$N", root);
-  }
-
-  generateRiverName(): string {
-    return this.fromTemplate(this.family.riverTemplates);
-  }
-  generateLakeName(): string {
-    return this.fromTemplate(this.family.lakeTemplates);
-  }
-  generateMountainName(): string {
-    return this.fromTemplate(this.family.mountainTemplates);
-  }
-  generateSeaName(): string {
-    return this.fromTemplate(this.family.seaTemplates);
-  }
-
-  getGenerated(): ReadonlySet<string> {
-    return this.generated;
-  }
-
-  addExisting(names: Iterable<string>): void {
-    for (const n of names) this.generated.add(n);
-  }
 }
-
-// ── Multi-family coordinator ─────────────────
-// ── Utilities ────────────────────────────────

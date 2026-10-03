@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { NAME_ROLES, NAME_GENDERS, type NameRole, type NameGender } from "~/lib/onoma/name-sets";
 import { Input } from "~/components/ui/input";
 
@@ -115,33 +116,27 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
             <label className="text-label-secondary text-subhead">Role</label>
-            <Select value={role} onValueChange={(val) => setRole(val as NameRole)}>
-              <SelectTrigger className="text-footnote w-full">
-                <SelectValue placeholder="Select role" />
-              </SelectTrigger>
-              <SelectContent className="max-h-[250px]">
-                {NAME_ROLES.map((r) => (
-                  <SelectItem key={r.value} value={r.value} className="text-footnote">
-                    {r.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ValueSelect
+              value={role}
+              onValueChange={(val) => setRole(val as NameRole)}
+              options={NAME_ROLES.map((r) => [r.value, r.label] as const)}
+              className="text-footnote w-full"
+              placeholder="Select role"
+              contentClassName="max-h-[250px]"
+              itemClassName="text-footnote"
+            />
           </div>
           <div className="space-y-1">
             <label className="text-label-secondary text-subhead">Gender</label>
-            <Select value={gender} onValueChange={(val) => setGender(val as NameGender)}>
-              <SelectTrigger className="text-footnote w-full">
-                <SelectValue placeholder="Select gender" />
-              </SelectTrigger>
-              <SelectContent className="max-h-[250px]">
-                {NAME_GENDERS.map((g) => (
-                  <SelectItem key={g.value} value={g.value} className="text-footnote">
-                    {g.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ValueSelect
+              value={gender}
+              onValueChange={(val) => setGender(val as NameGender)}
+              options={NAME_GENDERS.map((g) => [g.value, g.label] as const)}
+              className="text-footnote w-full"
+              placeholder="Select gender"
+              contentClassName="max-h-[250px]"
+              itemClassName="text-footnote"
+            />
           </div>
         </div>
 

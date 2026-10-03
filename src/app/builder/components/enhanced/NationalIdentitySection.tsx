@@ -222,7 +222,6 @@ export function NationalIdentitySection({
         </BuilderTabCard>
       </div>
 
-      {/* Image selection modals */}
       {showFlagImageModal && (
         <MediaSearchModal
           isOpen={showFlagImageModal}

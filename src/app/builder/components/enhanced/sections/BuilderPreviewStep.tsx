@@ -54,7 +54,6 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
 
   return (
     <div className="space-y-6">
-      {/* Identity and government */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <PreviewSection
           id="identity"
@@ -83,7 +82,6 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
         </PreviewSection>
       </div>
 
-      {/* Economy */}
       <PreviewSection
         id="economy"
         title="Economy"
@@ -95,7 +93,6 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
         <PreviewEconomy economicInputs={economicInputs} currency={currency} />
       </PreviewSection>
 
-      {/* Readiness strip */}
       <Card className="rounded-card flex flex-wrap items-center justify-between gap-4 p-4">
         <div className="flex items-center gap-3">
           <BarChart3 aria-hidden="true" className="text-label-secondary h-5 w-5" />

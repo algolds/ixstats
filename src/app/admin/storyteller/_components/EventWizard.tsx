@@ -41,8 +41,6 @@ import {
   TableCell,
 } from "~/components/ui/table";
 
-// ── Event Types ──────────────────────────────────────────────────────────────
-
 const EVENT_TYPES = [
   {
     value: "economic_crisis",
@@ -120,8 +118,6 @@ const EVENT_TYPES = [
 
 type EventTypeValue = (typeof EVENT_TYPES)[number]["value"];
 
-// ── Wizard Steps ─────────────────────────────────────────────────────────────
-
 const STEPS = [
   { label: "Event type", number: 1 },
   { label: "Scope & countries", number: 2 },
@@ -129,8 +125,6 @@ const STEPS = [
   { label: "Impact preview", number: 4 },
   { label: "Confirm & schedule", number: 5 },
 ] as const;
-
-// ── Form State ───────────────────────────────────────────────────────────────
 
 interface WizardFormState {
   type: EventTypeValue | "";
@@ -153,8 +147,6 @@ const defaultForm: WizardFormState = {
   duration: 2,
   delayDays: 0,
 };
-
-// ── Component ────────────────────────────────────────────────────────────────
 
 interface EventWizardProps {
   onCreated?: () => void;
@@ -229,7 +221,6 @@ export function EventWizard({ onCreated }: EventWizardProps) {
 
   return (
     <div className="space-y-6">
-      {/* Step Progress */}
       <StepIndicator
         aria-label="Event wizard progress"
         steps={STEPS.map((st) => ({ id: String(st.number), label: st.label }))}
@@ -237,7 +228,6 @@ export function EventWizard({ onCreated }: EventWizardProps) {
         onStepClick={(index) => setStep(index + 1)}
       />
 
-      {/* Step Content */}
       <div className="min-h-[400px]">
         {step === 1 && (
           <Step1EventType
@@ -282,7 +272,6 @@ export function EventWizard({ onCreated }: EventWizardProps) {
         )}
       </div>
 
-      {/* Navigation */}
       <div className="border-separator flex items-center justify-between border-t pt-4">
         <Button variant="outline" onClick={() => setStep((s) => s - 1)} disabled={step === 1}>
           <ChevronLeft className="mr-1 h-4 w-4" />
@@ -313,8 +302,6 @@ export function EventWizard({ onCreated }: EventWizardProps) {
     </div>
   );
 }
-
-// ── Step Components ──────────────────────────────────────────────────────────
 
 function Step1EventType({
   selected,
@@ -416,7 +403,6 @@ function Step3Parameters({
       </p>
 
       <div className="space-y-5">
-        {/* Event Name */}
         <div>
           <Label>Event name</Label>
           <div className="relative mt-1">
@@ -432,7 +418,6 @@ function Step3Parameters({
           </div>
         </div>
 
-        {/* Description */}
         <div>
           <Label>Narrative Description (optional)</Label>
           <Textarea
@@ -444,7 +429,6 @@ function Step3Parameters({
           />
         </div>
 
-        {/* Severity */}
         <div>
           <div className="mb-2 flex items-center justify-between">
             <Label>Severity</Label>
@@ -476,7 +460,6 @@ function Step3Parameters({
           </div>
         </div>
 
-        {/* Duration */}
         <div>
           <div className="mb-2 flex items-center justify-between">
             <Label>Duration (IxTime years)</Label>
@@ -493,7 +476,6 @@ function Step3Parameters({
           />
         </div>
 
-        {/* Delay */}
         <div>
           <div className="mb-2 flex items-center justify-between">
             <Label>Delay Start (days from now)</Label>
@@ -570,7 +552,6 @@ function Step4Preview({
         Projected impact based on event severity and affected economies.
       </p>
 
-      {/* Summary */}
       <div className="mb-4 grid grid-cols-3 gap-3">
         <div className="border-separator rounded-control border p-3 text-center">
           <div className="text-label-secondary text-footnote">Countries</div>
@@ -595,7 +576,6 @@ function Step4Preview({
         </div>
       </div>
 
-      {/* Country breakdown */}
       <Table containerClassName="h-[260px]">
         <TableHeader sticky>
           <TableRow>

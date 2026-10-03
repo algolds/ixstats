@@ -22,16 +22,11 @@ import { BuilderStepLoading } from "../GlobalBuilderLoading";
 import { useBuilderSubmit, BuilderConfirmModal, useBuilderTutorials } from "./atomic-builder";
 
 interface AtomicBuilderPageProps {
-  onBackToIntro?: () => void;
   mode?: "create" | "edit";
   countryId?: string;
 }
 
-function AtomicBuilderPageInner({
-  onBackToIntro,
-  mode = "create",
-  countryId,
-}: AtomicBuilderPageProps) {
+function AtomicBuilderPageInner({ mode = "create", countryId }: AtomicBuilderPageProps) {
   const { builderState, setBuilderState } = useBuilderContext();
   const isEditMode = mode === "edit";
 
@@ -101,13 +96,6 @@ function AtomicBuilderPageInner({
   // Government structure handlers
   const handleGovernmentStructureChange = useCallback(
     (structure: GovernmentBuilderState) => {
-      setBuilderState((prev) => ({ ...prev, governmentStructure: structure }));
-    },
-    [setBuilderState]
-  );
-
-  const handleGovernmentStructureSave = useCallback(
-    async (structure: GovernmentBuilderState) => {
       setBuilderState((prev) => ({ ...prev, governmentStructure: structure }));
     },
     [setBuilderState]
@@ -204,7 +192,6 @@ function AtomicBuilderPageInner({
 
   return (
     <div className="flex h-full min-h-0 w-full flex-1 flex-col">
-      {/* Main Content Area */}
       {builderState.step === "foundation" && !isEditMode ? (
         <div className="flex h-full min-h-0 w-full flex-1 flex-col">
           <Suspense fallback={<BuilderStepLoading message="Loading builder step..." />}>
@@ -212,9 +199,7 @@ function AtomicBuilderPageInner({
               countries={countries}
               isLoadingCountries={isLoadingCountries}
               countryLoadError={countryLoadError}
-              onBackToIntro={onBackToIntro}
               onGovernmentStructureChange={handleGovernmentStructureChange}
-              onGovernmentStructureSave={handleGovernmentStructureSave}
             />
           </Suspense>
         </div>
@@ -225,15 +210,12 @@ function AtomicBuilderPageInner({
               countries={countries}
               isLoadingCountries={isLoadingCountries}
               countryLoadError={countryLoadError}
-              onBackToIntro={onBackToIntro}
               onGovernmentStructureChange={handleGovernmentStructureChange}
-              onGovernmentStructureSave={handleGovernmentStructureSave}
             />
           </Suspense>
         </StepContent>
       )}
 
-      {/* Tutorial Intro Disclosure Components */}
       <IntroDisclosure
         steps={enhancedTutorialSteps}
         featureId="builder-complete-tutorial"
@@ -269,10 +251,6 @@ function AtomicBuilderPageInner({
   );
 }
 
-export function AtomicBuilderPage({
-  onBackToIntro,
-  mode = "create",
-  countryId,
-}: AtomicBuilderPageProps) {
-  return <AtomicBuilderPageInner onBackToIntro={onBackToIntro} mode={mode} countryId={countryId} />;
+export function AtomicBuilderPage({ mode = "create", countryId }: AtomicBuilderPageProps) {
+  return <AtomicBuilderPageInner mode={mode} countryId={countryId} />;
 }

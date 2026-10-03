@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { AdvancedConlangSettings } from "./AdvancedConlangSettings";
 import { GenerateCountPill } from "./GenerateCountPill";
 import type { NameCategory } from "~/lib/onoma/types";
@@ -54,7 +55,6 @@ export function DomainControlBar({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-footnote text-label font-semibold">Category</label>
-            {/* Rules trigger */}
             <Toggle
               variant="outline"
               size="sm"
@@ -73,18 +73,15 @@ export function DomainControlBar({
               />
             </Toggle>
           </div>
-          <Select value={category} onValueChange={(val) => onCategoryChange?.(val as NameCategory)}>
-            <SelectTrigger className="text-footnote h-9 w-full">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent className="max-h-[300px]">
-              {categories.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id} className="text-footnote font-medium">
-                  {cat.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={category}
+            onValueChange={(val) => onCategoryChange?.(val as NameCategory)}
+            options={categories.map((cat) => [cat.id, cat.label] as const)}
+            className="text-footnote h-9 w-full"
+            placeholder="Select category"
+            contentClassName="max-h-[300px]"
+            itemClassName="text-footnote font-medium"
+          />
         </div>
       )}
 
@@ -212,7 +209,6 @@ export function DomainControlBar({
         setBatchCount={setBatchCount}
       />
 
-      {/* Collapsible Advanced Conlang Settings */}
       {showAdvanced && (
         <div className="animate-in fade-in slide-in-from-top-1 border-separator border-t pt-4 duration-200">
           <AdvancedConlangSettings gen={gen} category={category} />

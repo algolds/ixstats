@@ -47,7 +47,6 @@ export const PreviewGovernment = memo(function PreviewGovernment({
 
   return (
     <div className="space-y-5">
-      {/* Government Details & Leadership */}
       <div className="rounded-row border-separator bg-surface border p-4">
         <h3 className="text-eyebrow text-label-secondary flex items-center gap-2">
           <Landmark className="text-tint h-3.5 w-3.5" />
@@ -111,7 +110,6 @@ export const PreviewGovernment = memo(function PreviewGovernment({
         </dl>
       </div>
 
-      {/* Selected Institutions / Components */}
       <div className="space-y-2">
         <h3 className="text-eyebrow text-label-secondary flex items-center gap-2">
           <Shield className="text-tint h-3.5 w-3.5" />

@@ -29,7 +29,6 @@ function RoadIcon({
       className={className}
       aria-hidden="true"
     >
-      {/* Outer road boundary curbs */}
       <line
         x1="2"
         y1="2"
@@ -51,7 +50,6 @@ function RoadIcon({
         className="opacity-30"
       />
 
-      {/* Dashed center lane divider */}
       <line
         x1="8"
         y1="2.5"

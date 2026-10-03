@@ -132,7 +132,6 @@ const EligibleCountryCard = React.memo<EligibleCountryCardProps>(function Eligib
               : "border-separator hover:border-label-tertiary"
           )}
         >
-          {/* Completeness Badge in Top-Left */}
           <div
             className={cn(
               "text-caption absolute top-3 left-3 z-20 flex items-center gap-1 rounded-full px-2 py-0.5 tabular-nums",
@@ -250,7 +249,6 @@ const EligibleCountryCard = React.memo<EligibleCountryCardProps>(function Eligib
             )}
           </AnimatePresence>
 
-          {/* Flag Background */}
           {showFlag ? (
             <img
               src={country.flagUrl}
@@ -356,7 +354,6 @@ export function EligibleCountryGrid({
   return (
     <div className="relative w-full select-none">
       <div className="rounded-card border-separator bg-surface relative flex max-h-[75vh] flex-col overflow-hidden border">
-        {/* Scrollable Grid Area */}
         <div className="relative min-h-0 flex-1 overflow-y-auto p-4 pb-8">
           {isLoading ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-4">

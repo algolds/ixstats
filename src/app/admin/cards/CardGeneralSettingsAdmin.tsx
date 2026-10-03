@@ -45,7 +45,6 @@ export function CardGeneralSettingsAdmin() {
 
   return (
     <Card className="space-y-6">
-      {/* Header bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-label text-title-3">General card system policies</h2>
@@ -67,7 +66,6 @@ export function CardGeneralSettingsAdmin() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Marketplace & Trading Policies */}
         <Card className="space-y-4 p-6">
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <ShoppingBag className="text-green h-4 w-4" />
@@ -75,7 +73,6 @@ export function CardGeneralSettingsAdmin() {
           </div>
 
           <div className="space-y-4">
-            {/* Global Trading Toggle */}
             <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
               <div className="space-y-0.5">
                 <label className="text-label text-caption block">
@@ -117,7 +114,6 @@ export function CardGeneralSettingsAdmin() {
           </div>
         </Card>
 
-        {/* Daily Claims & Allowance */}
         <Card className="space-y-4 p-6">
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <Gift className="text-purple h-4 w-4" />
@@ -125,7 +121,6 @@ export function CardGeneralSettingsAdmin() {
           </div>
 
           <div className="space-y-4">
-            {/* Daily Free Packs Amount */}
             <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
               <div className="space-y-0.5">
                 <label className="text-label text-caption block">Daily free pack allowance</label>
@@ -146,7 +141,6 @@ export function CardGeneralSettingsAdmin() {
               </div>
             </div>
 
-            {/* Cooldown Hours */}
             <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
               <div className="space-y-0.5">
                 <label className="text-label text-caption block">Free pack reset interval</label>
@@ -177,7 +171,6 @@ export function CardGeneralSettingsAdmin() {
           </div>
 
           <div className="space-y-4">
-            {/* Player Minting Toggle */}
             <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
               <div className="space-y-0.5">
                 <label className="text-label text-caption block">
@@ -193,7 +186,6 @@ export function CardGeneralSettingsAdmin() {
               />
             </div>
 
-            {/* Auto Generate Lore Thumbnails */}
             <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
               <div className="space-y-0.5">
                 <label className="text-label text-caption block">
@@ -213,7 +205,6 @@ export function CardGeneralSettingsAdmin() {
           </div>
         </Card>
 
-        {/* Binder & Recycler Limits */}
         <Card className="space-y-4 p-6">
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <Layers className="text-teal h-4 w-4" />
@@ -221,7 +212,6 @@ export function CardGeneralSettingsAdmin() {
           </div>
 
           <div className="space-y-4">
-            {/* Max Inventory Cards */}
             <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
               <div className="space-y-0.5">
                 <label className="text-label text-caption block">Player binder capacity cap</label>
@@ -243,7 +233,6 @@ export function CardGeneralSettingsAdmin() {
               </div>
             </div>
 
-            {/* Max Junk Batch Size */}
             <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
               <div className="space-y-0.5">
                 <label className="text-label text-caption block">

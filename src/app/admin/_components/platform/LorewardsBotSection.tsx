@@ -35,13 +35,7 @@ import {
   CommandItem,
   CommandGroup,
 } from "~/components/ui/command";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 
 export function LorewardsBotSection() {
   const notify = useNotify();
@@ -92,7 +86,6 @@ export function LorewardsBotSection() {
   // Blacklist query
   const { data: blacklist, refetch: refetchBlacklist } = api.lorewards.getBlacklist.useQuery();
 
-  // Blacklist Mutation
   const updateBlacklistMutation = api.lorewards.updateBlacklist.useMutation({
     onSuccess: () => {
       notify.success(
@@ -106,7 +99,6 @@ export function LorewardsBotSection() {
     },
   });
 
-  // Override Winner Mutation
   const overrideWinnerMutation = api.lorewards.overrideWinner.useMutation({
     onSuccess: () => {
       notify.success("Winner Overridden", "The winner override has been successfully synced.");
@@ -129,7 +121,6 @@ export function LorewardsBotSection() {
     },
   });
 
-  // Cross validate mutation
   const crossValidateMutation = api.lorewards.crossValidate.useMutation({
     onSuccess: (data) => {
       setValidationResult(data);
@@ -396,7 +387,6 @@ export function LorewardsBotSection() {
         </CardContent>
       </Card>
 
-      {/* Bot Logs Console */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -408,24 +398,24 @@ export function LorewardsBotSection() {
               <CardDescription>Auditing output stream of Discord bot processes</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Select value={selectedProcess} onValueChange={(v) => setSelectedProcess(v as any)}>
-                <SelectTrigger size="sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ixwiki-discord-bot">Discord bot</SelectItem>
-                  <SelectItem value="ixstats-ixtwitter">IxTwitter Feed</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={logType} onValueChange={(v) => setLogType(v as any)}>
-                <SelectTrigger size="sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="out">Stdout (info)</SelectItem>
-                  <SelectItem value="err">Stderr (errors)</SelectItem>
-                </SelectContent>
-              </Select>
+              <ValueSelect
+                value={selectedProcess}
+                onValueChange={(v) => setSelectedProcess(v as any)}
+                options={[
+                  ["ixwiki-discord-bot", "Discord bot"],
+                  ["ixstats-ixtwitter", "IxTwitter Feed"],
+                ]}
+                size="sm"
+              />
+              <ValueSelect
+                value={logType}
+                onValueChange={(v) => setLogType(v as any)}
+                options={[
+                  ["out", "Stdout (info)"],
+                  ["err", "Stderr (errors)"],
+                ]}
+                size="sm"
+              />
               <Button
                 size="icon"
                 variant="ghost"
@@ -458,7 +448,6 @@ export function LorewardsBotSection() {
         </CardContent>
       </Card>
 
-      {/* Loreward Run Console */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="text-title-3 flex items-center gap-2">
@@ -578,7 +567,6 @@ export function LorewardsBotSection() {
         </CardContent>
       </Card>
 
-      {/* Sync & Cross-Validation Diagnostics */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="text-title-3 flex items-center gap-2">
@@ -635,7 +623,6 @@ export function LorewardsBotSection() {
             </div>
           </div>
 
-          {/* Validation Result Display */}
           {validationResult && (
             <div className="rounded-row border-blue/20 bg-blue/5 space-y-3 border p-4">
               <div className="border-blue/20 flex items-center justify-between border-b pb-2">
@@ -679,7 +666,6 @@ export function LorewardsBotSection() {
             </div>
           )}
 
-          {/* Recent validation history list */}
           <div className="space-y-2">
             <h6 className="text-label-secondary text-subhead">Recent Cross-Validation History:</h6>
             <div className="border-separator bg-fill-4 divide-separator rounded-row text-footnote divide-y overflow-hidden border">
@@ -720,7 +706,6 @@ export function LorewardsBotSection() {
         </CardContent>
       </Card>
 
-      {/* Silent Blacklist Manager */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="text-title-3 flex items-center gap-2">
@@ -823,17 +808,18 @@ export function LorewardsBotSection() {
             </div>
             <div className="space-y-1">
               <label className="text-label-secondary text-subhead">Duration</label>
-              <Select value={blacklistDuration} onValueChange={(v) => setBlacklistDuration(v)}>
-                <SelectTrigger size="sm" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="permanent">Permanent</SelectItem>
-                  <SelectItem value="7days">7 Days</SelectItem>
-                  <SelectItem value="30days">30 Days</SelectItem>
-                  <SelectItem value="custom">Custom date</SelectItem>
-                </SelectContent>
-              </Select>
+              <ValueSelect
+                value={blacklistDuration}
+                onValueChange={(v) => setBlacklistDuration(v)}
+                options={[
+                  ["permanent", "Permanent"],
+                  ["7days", "7 Days"],
+                  ["30days", "30 Days"],
+                  ["custom", "Custom date"],
+                ]}
+                size="sm"
+                className="w-full"
+              />
             </div>
             {blacklistDuration === "custom" && (
               <div className="space-y-1">
@@ -856,7 +842,6 @@ export function LorewardsBotSection() {
             Add to blacklist
           </Button>
 
-          {/* Active Blacklisted Users List */}
           <div className="space-y-2">
             <h6 className="text-label-secondary text-subhead">Active Blacklisted Users:</h6>
             <div className="border-separator bg-fill-4 divide-separator rounded-row text-footnote max-h-48 divide-y overflow-hidden overflow-y-auto border">
@@ -899,7 +884,6 @@ export function LorewardsBotSection() {
         </CardContent>
       </Card>
 
-      {/* Manual Winner Override Tool */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="text-title-3 flex items-center gap-2">
@@ -924,20 +908,20 @@ export function LorewardsBotSection() {
             </div>
             <div className="space-y-1">
               <label className="text-label-secondary text-subhead">Type</label>
-              <Select value={overrideType} onValueChange={(v) => setOverrideType(v)}>
-                <SelectTrigger size="sm" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily Loreward</SelectItem>
-                  <SelectItem value="weekly">Weekly Loreward</SelectItem>
-                  <SelectItem value="monthly">Monthly Loreward</SelectItem>
-                </SelectContent>
-              </Select>
+              <ValueSelect
+                value={overrideType}
+                onValueChange={(v) => setOverrideType(v)}
+                options={[
+                  ["daily", "Daily Loreward"],
+                  ["weekly", "Weekly Loreward"],
+                  ["monthly", "Monthly Loreward"],
+                ]}
+                size="sm"
+                className="w-full"
+              />
             </div>
           </div>
 
-          {/* Winner details */}
           <div className="border-separator space-y-2 border-t pt-2">
             <span className="text-eyebrow text-yellow">1. Winner Details</span>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -984,7 +968,6 @@ export function LorewardsBotSection() {
             </div>
           </div>
 
-          {/* Runner up details */}
           <div className="border-separator space-y-2 border-t pt-2">
             <span className="text-label-secondary text-eyebrow">2. Runner-up Details</span>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

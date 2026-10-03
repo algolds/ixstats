@@ -73,7 +73,6 @@ export function CorpusSelector({
           <SelectValue placeholder="Select language profile or corpus…" />
         </SelectTrigger>
         <SelectContent className="max-h-[340px]">
-          {/* Active Studio Lexicon */}
           {studioWords && studioWords.length > 0 && (
             <div className="border-separator border-b pb-1">
               <div className="text-tint text-eyebrow px-3 py-1">Active studio session</div>
@@ -109,7 +108,6 @@ export function CorpusSelector({
             </div>
           )}
 
-          {/* Natural Language Profiles */}
           <div>
             <div className="text-tint text-eyebrow px-3 py-1">
               Natural Language Profiles ({NATURAL_PROFILES.length})
@@ -124,7 +122,6 @@ export function CorpusSelector({
             ))}
           </div>
 
-          {/* Fantasy & Lineage Templates */}
           <div className="border-separator border-t pt-1">
             <div className="text-eyebrow text-indigo px-3 py-1">
               Fantasy & Lineage Templates ({templateProfiles.length})

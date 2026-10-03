@@ -7,13 +7,7 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { User, Check, WarningCircle as AlertCircle } from "iconoir-react";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { Card } from "~/components/ui/card";
@@ -92,17 +86,15 @@ export function MembershipPanel() {
 
             <div>
               <label className="text-label text-caption mb-2 block">Target membership tier</label>
-              <Select value={tier} onValueChange={(val: any) => setTier(val)}>
-                <SelectTrigger size="sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="basic">Basic (Free Tier)</SelectItem>
-                  <SelectItem value="mycountry_premium">
-                    MyCountry Premium (Executive Suite)
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <ValueSelect
+                value={tier}
+                onValueChange={(val: any) => setTier(val)}
+                options={[
+                  ["basic", "Basic (Free Tier)"],
+                  ["mycountry_premium", "MyCountry Premium (Executive Suite)"],
+                ]}
+                size="sm"
+              />
             </div>
 
             {message && (

@@ -7,13 +7,7 @@ import { Input } from "~/components/ui/input";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { useNotify } from "~/hooks/useNotify";
 import {
   NOTIFICATION_CATEGORIES,
@@ -148,7 +142,6 @@ export function EventsRegistryPanel() {
 
   return (
     <div className="space-y-6">
-      {/* Stats bar */}
       {data && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Card className="flex flex-col gap-6 py-6">
@@ -190,7 +183,6 @@ export function EventsRegistryPanel() {
         </div>
       )}
 
-      {/* Seed / Batch controls */}
       <div className="flex flex-wrap items-center gap-3">
         {!hasConfigs && (
           <Button
@@ -232,7 +224,6 @@ export function EventsRegistryPanel() {
 
       {hasConfigs && (
         <>
-          {/* Filters */}
           <Card className="flex flex-col gap-6 py-6">
             <CardContent className="p-4">
               <div className="flex flex-wrap items-end gap-3">
@@ -251,72 +242,58 @@ export function EventsRegistryPanel() {
 
                 <div className="w-[160px]">
                   <label className="text-label-secondary text-caption mb-1 block">Category</label>
-                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All categories" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value=" ">All categories</SelectItem>
-                      {NOTIFICATION_CATEGORIES.map((cat) => (
-                        <SelectItem key={cat} value={cat}>
-                          {CATEGORY_LABELS[cat] ?? cat}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <ValueSelect
+                    value={categoryFilter}
+                    onValueChange={setCategoryFilter}
+                    options={[
+                      [" ", "All categories"],
+                      ...NOTIFICATION_CATEGORIES.map(
+                        (cat) => [cat, CATEGORY_LABELS[cat] ?? cat] as const
+                      ),
+                    ]}
+                    placeholder="All categories"
+                  />
                 </div>
 
                 <div className="w-[160px]">
                   <label className="text-label-secondary text-caption mb-1 block">Source</label>
-                  <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All sources" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value=" ">All sources</SelectItem>
-                      {uniqueSources.map((src) => (
-                        <SelectItem key={src} value={src}>
-                          {src}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <ValueSelect
+                    value={sourceFilter}
+                    onValueChange={setSourceFilter}
+                    options={[
+                      [" ", "All sources"],
+                      ...uniqueSources.map((src) => [src, src] as const),
+                    ]}
+                    placeholder="All sources"
+                  />
                 </div>
 
                 <div className="w-[160px]">
                   <label className="text-label-secondary text-caption mb-1 block">
                     Trigger type
                   </label>
-                  <Select value={triggerFilter} onValueChange={setTriggerFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All triggers" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value=" ">All triggers</SelectItem>
-                      {NOTIFICATION_TRIGGER_TYPES.map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {t}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <ValueSelect
+                    value={triggerFilter}
+                    onValueChange={setTriggerFilter}
+                    options={[
+                      [" ", "All triggers"],
+                      ...NOTIFICATION_TRIGGER_TYPES.map((t) => [t, t] as const),
+                    ]}
+                    placeholder="All triggers"
+                  />
                 </div>
 
                 <div className="w-[140px]">
                   <label className="text-label-secondary text-caption mb-1 block">Status</label>
-                  <Select
+                  <ValueSelect
                     value={statusFilter}
                     onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="enabled">Enabled</SelectItem>
-                      <SelectItem value="disabled">Disabled</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    options={[
+                      ["all", "All"],
+                      ["enabled", "Enabled"],
+                      ["disabled", "Disabled"],
+                    ]}
+                  />
                 </div>
               </div>
 

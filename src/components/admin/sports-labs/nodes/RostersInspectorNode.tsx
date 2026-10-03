@@ -4,13 +4,7 @@ import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent } from "~/components/ui/card";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { PositionTooltip } from "~/components/sports/PositionTooltip";
 import { Undo as RotateCcw } from "iconoir-react";
 import { api } from "~/trpc/react";
@@ -172,18 +166,12 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
       {dbLeague && (
         <div className="space-y-2">
           <Label>Select team</Label>
-          <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choose team" />
-            </SelectTrigger>
-            <SelectContent>
-              {dbLeague.teams?.map((t) => (
-                <SelectItem key={t.id} value={t.id}>
-                  {t.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={selectedTeamId}
+            onValueChange={setSelectedTeamId}
+            options={dbLeague.teams?.map((t) => [t.id, t.name] as const) ?? []}
+            placeholder="Choose team"
+          />
         </div>
       )}
 
@@ -214,20 +202,17 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
                   <Badge variant="warning">BLESSING BOOST: +5 ELO</Badge>
                 </div>
                 <div className="flex gap-2">
-                  <Select value={selectedSaint} onValueChange={setSelectedSaint}>
-                    <SelectTrigger size="sm">
-                      <SelectValue placeholder="Select saint" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Saint Rais">Saint Rais (Light Blessing)</SelectItem>
-                      <SelectItem value="Saint Inonsia">
-                        Saint Inonsia (Fortitude Blessing)
-                      </SelectItem>
-                      <SelectItem value="Saint Magador">
-                        Saint Magador (Victory Blessing)
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <ValueSelect
+                    value={selectedSaint}
+                    onValueChange={setSelectedSaint}
+                    options={[
+                      ["Saint Rais", "Saint Rais (Light Blessing)"],
+                      ["Saint Inonsia", "Saint Inonsia (Fortitude Blessing)"],
+                      ["Saint Magador", "Saint Magador (Victory Blessing)"],
+                    ]}
+                    size="sm"
+                    placeholder="Select saint"
+                  />
                   <Button
                     size="sm"
                     className="shrink-0"

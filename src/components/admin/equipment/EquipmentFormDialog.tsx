@@ -81,7 +81,6 @@ export function EquipmentFormDialog({
           <SheetDescription>Configure military equipment catalog entry</SheetDescription>
         </SheetHeader>
 
-        {/* Tab Navigation */}
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
@@ -99,7 +98,6 @@ export function EquipmentFormDialog({
             })}
           </TabsList>
 
-          {/* Tab Content */}
           <div className="mt-4 flex-1 overflow-y-auto">
             <TabsContent value="general">
               <GeneralTab
@@ -124,7 +122,6 @@ export function EquipmentFormDialog({
           </div>
         </Tabs>
 
-        {/* Footer Actions */}
         <SheetFooter className="border-separator shrink-0 border-t pt-4">
           <Button variant="ghost" onClick={onClose}>
             Cancel

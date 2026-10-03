@@ -34,7 +34,6 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
         isSelected && "border-tint ring-tint/50 ring-1"
       )}
     >
-      {/* Header */}
       <div className="space-y-3">
         <div className="flex items-center gap-3">
           <div className={cn("rounded-control border-separator shrink-0 border p-3", colors.bg)}>
@@ -66,7 +65,6 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
         </div>
       </div>
 
-      {/* Action Buttons */}
       <div className="border-separator flex items-center gap-2 border-t pt-3">
         {showSelectButton && (
           <Button

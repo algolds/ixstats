@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-// oxlint-disable-next-line eslint/no-unused-vars
+import { ValueSelect } from "~/components/ui/value-select";
 import {
   SystemRestart as Loader2,
   Gift,
@@ -190,7 +190,6 @@ export function VaultUserDirectory() {
     onError: (err) => notify.error("Failed to revoke", err.message),
   });
 
-  // Resets
   const resetAdjustForm = () => {
     setAdjustAmount("");
     setAdjustType("ADMIN_ADJUSTMENT");
@@ -206,7 +205,7 @@ export function VaultUserDirectory() {
   };
 
   // Handlers
-  const handleOpenAdjust = (user: any) => {
+  const openDialogFor = (user: any, open: () => void) => {
     setSelectedUser({
       id: user.id,
       clerkUserId: user.clerkUserId,
@@ -214,30 +213,11 @@ export function VaultUserDirectory() {
       country: user.country,
       credits: user.vault.credits,
     });
-    setIsAdjustOpen(true);
+    open();
   };
-
-  const handleOpenPack = (user: any) => {
-    setSelectedUser({
-      id: user.id,
-      clerkUserId: user.clerkUserId,
-      displayName: user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
-      country: user.country,
-      credits: user.vault.credits,
-    });
-    setIsPackOpen(true);
-  };
-
-  const handleOpenCosmetics = (user: any) => {
-    setSelectedUser({
-      id: user.id,
-      clerkUserId: user.clerkUserId,
-      displayName: user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
-      country: user.country,
-      credits: user.vault.credits,
-    });
-    setIsCosmeticsOpen(true);
-  };
+  const handleOpenAdjust = (user: any) => openDialogFor(user, () => setIsAdjustOpen(true));
+  const handleOpenPack = (user: any) => openDialogFor(user, () => setIsPackOpen(true));
+  const handleOpenCosmetics = (user: any) => openDialogFor(user, () => setIsCosmeticsOpen(true));
 
   const handleAdjustSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -422,33 +402,19 @@ export function VaultUserDirectory() {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => {
-                    setSelectedUser({
-                      id: user.id,
-                      clerkUserId: user.clerkUserId,
-                      displayName: user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
-                      country: user.country,
-                      credits: user.vault.credits,
-                    });
-                    setIsStreakOpen(true);
-                    setStreakDelta(0);
-                  }}
+                  onClick={() =>
+                    openDialogFor(user, () => {
+                      setIsStreakOpen(true);
+                      setStreakDelta(0);
+                    })
+                  }
                   className="cursor-pointer gap-2 py-2"
                 >
                   <Flame className="text-orange h-3.5 w-3.5" />
                   <span>Adjust streak</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => {
-                    setSelectedUser({
-                      id: user.id,
-                      clerkUserId: user.clerkUserId,
-                      displayName: user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
-                      country: user.country,
-                      credits: user.vault.credits,
-                    });
-                    setIsHistoryOpen(true);
-                  }}
+                  onClick={() => openDialogFor(user, () => setIsHistoryOpen(true))}
                   className="cursor-pointer gap-2 py-2"
                 >
                   <History className="text-label-secondary h-3.5 w-3.5" />
@@ -465,7 +431,6 @@ export function VaultUserDirectory() {
 
   return (
     <div className="space-y-6">
-      {/* Directory Table */}
       <FacetDataTable
         data={vaultData?.users || []}
         columns={columns}
@@ -487,7 +452,6 @@ export function VaultUserDirectory() {
         emptyMessage="No user vaults found matching your search."
       />
 
-      {/* Adjust Credits Dialog */}
       <Dialog open={isAdjustOpen} onOpenChange={setIsAdjustOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -538,18 +502,19 @@ export function VaultUserDirectory() {
 
                 <div className="space-y-2">
                   <Label htmlFor="adjust-type">Transaction type</Label>
-                  <Select value={adjustType} onValueChange={setAdjustType}>
-                    <SelectTrigger id="adjust-type">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ADMIN_ADJUSTMENT">Admin adjustment</SelectItem>
-                      <SelectItem value="EARN_ACTIVE">Earn active gameplay</SelectItem>
-                      <SelectItem value="EARN_SOCIAL">Earn social engagement</SelectItem>
-                      <SelectItem value="SPEND_MARKET">Spend marketplace</SelectItem>
-                      <SelectItem value="SPEND_BOOST">Spend deck boost</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <ValueSelect
+                    value={adjustType}
+                    onValueChange={setAdjustType}
+                    options={[
+                      ["ADMIN_ADJUSTMENT", "Admin adjustment"],
+                      ["EARN_ACTIVE", "Earn active gameplay"],
+                      ["EARN_SOCIAL", "Earn social engagement"],
+                      ["SPEND_MARKET", "Spend marketplace"],
+                      ["SPEND_BOOST", "Spend deck boost"],
+                    ]}
+                    id="adjust-type"
+                    placeholder="Select type"
+                  />
                 </div>
               </div>
 
@@ -606,7 +571,6 @@ export function VaultUserDirectory() {
         </DialogContent>
       </Dialog>
 
-      {/* Adjust Streak Dialog */}
       <Dialog open={isStreakOpen} onOpenChange={setIsStreakOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -663,7 +627,6 @@ export function VaultUserDirectory() {
         </DialogContent>
       </Dialog>
 
-      {/* Transaction history sheet */}
       <Sheet open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
         <SheetContent size="wide" className="overflow-y-auto">
           <SheetHeader>
@@ -722,7 +685,6 @@ export function VaultUserDirectory() {
         </SheetContent>
       </Sheet>
 
-      {/* Award Pack Dialog */}
       <Dialog open={isPackOpen} onOpenChange={setIsPackOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -810,7 +772,6 @@ export function VaultUserDirectory() {
         </DialogContent>
       </Dialog>
 
-      {/* Manage Cosmetics Dialog */}
       <Dialog open={isCosmeticsOpen} onOpenChange={setIsCosmeticsOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>

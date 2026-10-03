@@ -17,13 +17,7 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Button } from "~/components/ui/button";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { Card } from "~/components/ui/card";
@@ -71,7 +65,6 @@ export default function EtymologySection() {
     { enabled: !!selectedRootId }
   );
 
-  // Mutations
   const createRootMutation = api.onoma.createRoot.useMutation({
     onSuccess: (data: any) => {
       notify.success(`Root word '${data.root}' created.`);
@@ -334,7 +327,6 @@ export default function EtymologySection() {
             )}
           </Card>
 
-          {/* Add New Root Form */}
           <Card variant="inset" padding="none" className="p-4">
             <form onSubmit={handleCreateRoot} className="space-y-3">
               <h4 className="text-label text-subhead">Create new root word</h4>
@@ -407,7 +399,6 @@ export default function EtymologySection() {
         <div className="space-y-4 lg:col-span-8">
           {activeRoot ? (
             <div className="space-y-4">
-              {/* Root Details Header */}
               <Card variant="inset" padding="none" className="p-4">
                 <div className="flex items-start justify-between">
                   <div>
@@ -442,7 +433,6 @@ export default function EtymologySection() {
                 </div>
               </Card>
 
-              {/* Derivations Tree Graph */}
               <Card variant="inset" padding="none" className="relative min-h-[300px] space-y-4 p-4">
                 <div className="border-separator flex items-center justify-between border-b pb-2">
                   <h4 className="text-label text-subhead flex items-center gap-2">
@@ -484,7 +474,6 @@ export default function EtymologySection() {
                 )}
               </Card>
 
-              {/* Form to Add Derivation */}
               <Card variant="inset" padding="none" className="p-4">
                 <form onSubmit={handleAddDerivation} className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -528,18 +517,19 @@ export default function EtymologySection() {
                       <label className="text-label-secondary text-caption mb-1 block font-medium">
                         Derivation type
                       </label>
-                      <Select value={newDerivType} onValueChange={(v) => setNewDerivType(v)}>
-                        <SelectTrigger size="sm" className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="prefix">Prefixation (Affix)</SelectItem>
-                          <SelectItem value="suffix">Suffixation (Affix)</SelectItem>
-                          <SelectItem value="compound">Compounding</SelectItem>
-                          <SelectItem value="semantic-shift">Semantic shift</SelectItem>
-                          <SelectItem value="reduplication">Reduplication</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <ValueSelect
+                        value={newDerivType}
+                        onValueChange={(v) => setNewDerivType(v)}
+                        options={[
+                          ["prefix", "Prefixation (Affix)"],
+                          ["suffix", "Suffixation (Affix)"],
+                          ["compound", "Compounding"],
+                          ["semantic-shift", "Semantic shift"],
+                          ["reduplication", "Reduplication"],
+                        ]}
+                        size="sm"
+                        className="w-full"
+                      />
                     </div>
                     <div>
                       <label className="text-label-secondary text-caption mb-1 block font-medium">

@@ -42,7 +42,6 @@ function PipelineNode({ data, selected }: NodeProps) {
           : "bg-surface border-separator hover:border-separator-opaque"
       )}
     >
-      {/* Target Handles */}
       {inputPositions.map((pos) => {
         let position = Position.Top;
         if (pos === "bottom") position = Position.Bottom;
@@ -75,7 +74,6 @@ function PipelineNode({ data, selected }: NodeProps) {
         </div>
       </div>
 
-      {/* Source Handles */}
       {outputPositions.map((pos) => {
         let position = Position.Bottom;
         if (pos === "top") position = Position.Top;
@@ -375,7 +373,6 @@ export default function SportsLabsPanel() {
 
       {/* Main Grid: Left canvas + Right inspector */}
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-        {/* Canvas Section */}
         <div className="relative flex h-[650px] flex-col lg:col-span-7">
           <Card className="rounded-row relative flex flex-1 flex-col gap-6 overflow-hidden py-6">
             <ReactFlow
@@ -412,7 +409,6 @@ export default function SportsLabsPanel() {
           </Card>
         </div>
 
-        {/* Inspector Section */}
         <div className="h-[650px] lg:col-span-5">
           <SportsLabsInspector
             selectedNodeId={selectedNodeId}

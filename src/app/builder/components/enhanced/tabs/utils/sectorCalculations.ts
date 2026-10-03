@@ -107,16 +107,6 @@ export const SECTOR_TEMPLATES: Record<string, SectorTemplate> = {
  *
  * Uses economic sector classification to determine the category
  * based on sector type.
- *
- * @param sectorType - Sector identifier
- * @returns Economic sector category
- *
- * @example
- * ```ts
- * getSectorCategory('agriculture'); // 'Primary'
- * getSectorCategory('manufacturing'); // 'Secondary'
- * getSectorCategory('services'); // 'Tertiary'
- * ```
  */
 export function getSectorCategory(sectorType: string): "Primary" | "Secondary" | "Tertiary" {
   if (["agriculture", "mining"].includes(sectorType)) return "Primary";
@@ -129,15 +119,6 @@ export function getSectorCategory(sectorType: string): "Primary" | "Secondary" |
  *
  * Computes total GDP contribution, employment share, and average
  * productivity across all provided sectors.
- *
- * @param sectors - Array of sector configurations
- * @returns Aggregate sector metrics
- *
- * @example
- * ```ts
- * const totals = calculateSectorTotals(sectors);
- * // { totalGDP: 100, totalEmployment: 100, averageProductivity: 85.5 }
- * ```
  */
 /**
  * Constraint information for a sector based on selected atomic components
@@ -168,9 +149,6 @@ export interface SectorConstraint {
  *
  * Analyzes sectorImpact values across all selected components to determine
  * which sectors are locked, recommended, and the allowed value ranges.
- *
- * @param selectedComponents - Array of selected economic component types
- * @returns Record of sector constraints keyed by sector template ID
  */
 export function getSectorConstraints(
   selectedComponents: EconomicComponentType[]

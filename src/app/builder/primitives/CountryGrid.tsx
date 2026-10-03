@@ -27,7 +27,7 @@ import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { SearchField } from "~/components/ui/search-field";
 
-export const ECONOMIC_TIERS = [
+const ECONOMIC_TIERS = [
   { id: "all", label: "All tiers", description: "Any economic level" },
   { id: "tier-advanced", label: "Advanced", description: "GDP/cap >$50k", color: "text-green" },
   {
@@ -255,7 +255,6 @@ export function CountryGrid({
 
             {/* Right: Inline Controls (Search + Econ Tier Dropdown + Inline Scroll Rail) */}
             <div className="flex min-w-0 flex-1 items-center gap-2 lg:max-w-2xl xl:max-w-3xl">
-              {/* Search Bar */}
               {onSearchChange && (
                 <SearchField
                   size="sm"
@@ -269,7 +268,6 @@ export function CountryGrid({
                 />
               )}
 
-              {/* Economic tier menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -304,13 +302,11 @@ export function CountryGrid({
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Vertical Divider */}
               <div aria-hidden className="bg-separator-opaque hidden h-5 w-px shrink-0 sm:block" />
 
               {/* Inline Horizontally Scrolling Filter Rail */}
               {onToggleArchetype && (
                 <div className="relative flex min-w-0 flex-1 items-center">
-                  {/* Left Scroll Chevron */}
                   {canScrollLeft && (
                     <div className="bg-surface pointer-events-none absolute left-0 z-10 flex h-full items-center pr-1">
                       <Button
@@ -356,7 +352,6 @@ export function CountryGrid({
                     </ToggleGroup>
                   </div>
 
-                  {/* Right Scroll Chevron */}
                   {canScrollRight && (
                     <div className="bg-surface pointer-events-none absolute right-0 z-10 flex h-full items-center pl-1">
                       <Button
@@ -377,7 +372,6 @@ export function CountryGrid({
           </div>
         </div>
 
-        {/* Scrollable Card Container */}
         <div
           ref={scrollContainerRef}
           className="relative min-h-0 flex-1 overflow-y-auto p-4 pb-8"

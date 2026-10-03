@@ -10,13 +10,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Switch } from "~/components/ui/switch";
 import { Checkbox } from "~/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import {
   Dialog,
   DialogContent,
@@ -110,7 +104,6 @@ export function DiplomaticOptionsPanel() {
   // Queries
   const { data: options, isLoading, refetch } = api.admin.getDiplomaticOptions.useQuery();
 
-  // Mutations
   const createMutation = api.admin.createDiplomaticOption.useMutation({
     onSuccess: () => {
       notify.success("Success", "Diplomatic option created successfully");
@@ -254,7 +247,6 @@ export function DiplomaticOptionsPanel() {
         subtitle="Reference catalog for diplomatic profiles, strategic priorities and partnership goals."
       />
 
-      {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
           <p className="text-label-secondary text-stat-label">Total options</p>
@@ -295,7 +287,6 @@ export function DiplomaticOptionsPanel() {
         </TabsList>
 
         <TabsContent value="catalog" className="mt-4 space-y-4 focus-visible:outline-none">
-          {/* Filters & Actions */}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-1 flex-wrap items-center gap-2">
               <div className="relative max-w-xs min-w-[180px] flex-1">
@@ -308,41 +299,33 @@ export function DiplomaticOptionsPanel() {
                 />
               </div>
 
-              <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as any)}>
-                <SelectTrigger size="sm" className="w-40">
-                  <SelectValue placeholder="All types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all" className="text-footnote">
-                    All types
-                  </SelectItem>
-                  <SelectItem value="strategic_priority" className="text-footnote">
-                    Strategic priority
-                  </SelectItem>
-                  <SelectItem value="partnership_goal" className="text-footnote">
-                    Partnership goal
-                  </SelectItem>
-                  <SelectItem value="key_achievement" className="text-footnote">
-                    Key achievement
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <ValueSelect
+                value={typeFilter}
+                onValueChange={(value) => setTypeFilter(value as any)}
+                options={[
+                  ["all", "All types"],
+                  ["strategic_priority", "Strategic priority"],
+                  ["partnership_goal", "Partnership goal"],
+                  ["key_achievement", "Key achievement"],
+                ]}
+                size="sm"
+                className="w-40"
+                placeholder="All types"
+                itemClassName="text-footnote"
+              />
 
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger size="sm" className="w-36">
-                  <SelectValue placeholder="All categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all" className="text-footnote">
-                    All categories
-                  </SelectItem>
-                  {CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat} className="text-footnote">
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <ValueSelect
+                value={categoryFilter}
+                onValueChange={setCategoryFilter}
+                options={[
+                  ["all", "All categories"],
+                  ...CATEGORIES.map((cat) => [cat, cat] as const),
+                ]}
+                size="sm"
+                className="w-36"
+                placeholder="All categories"
+                itemClassName="text-footnote"
+              />
 
               <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2 px-2 select-none">
                 <Checkbox
@@ -359,7 +342,6 @@ export function DiplomaticOptionsPanel() {
             </Button>
           </div>
 
-          {/* Bulk actions */}
           {selectedIds.size > 0 && (
             <div className="border-tint/30 bg-tint-fill rounded-row text-footnote flex items-center gap-3 border p-3">
               <span className="text-label font-semibold">{selectedIds.size} selected</span>
@@ -377,7 +359,6 @@ export function DiplomaticOptionsPanel() {
             </div>
           )}
 
-          {/* High-Density Inset Glass Table */}
           {isLoading ? (
             <div className="space-y-2">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -494,7 +475,6 @@ export function DiplomaticOptionsPanel() {
         </TabsContent>
       </Tabs>
 
-      {/* Add Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -505,21 +485,18 @@ export function DiplomaticOptionsPanel() {
           <div className="space-y-4">
             <div>
               <label className="text-label text-caption mb-2 block">Type</label>
-              <Select
+              <ValueSelect
                 value={formData.type}
                 onValueChange={(value) =>
                   setFormData({ ...formData, type: value as DiplomaticOptionType })
                 }
-              >
-                <SelectTrigger size="sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="strategic_priority">Strategic priority</SelectItem>
-                  <SelectItem value="partnership_goal">Partnership goal</SelectItem>
-                  <SelectItem value="key_achievement">Key achievement</SelectItem>
-                </SelectContent>
-              </Select>
+                options={[
+                  ["strategic_priority", "Strategic priority"],
+                  ["partnership_goal", "Partnership goal"],
+                  ["key_achievement", "Key achievement"],
+                ]}
+                size="sm"
+              />
             </div>
 
             <div>
@@ -534,24 +511,15 @@ export function DiplomaticOptionsPanel() {
 
             <div>
               <label className="text-label text-caption mb-2 block">Category</label>
-              <Select
+              <ValueSelect
                 value={formData.category || "none"}
                 onValueChange={(value) =>
                   setFormData({ ...formData, category: value === "none" ? "" : value })
                 }
-              >
-                <SelectTrigger size="sm">
-                  <SelectValue placeholder="Select category..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                options={[["none", "None"], ...CATEGORIES.map((cat) => [cat, cat] as const)]}
+                size="sm"
+                placeholder="Select category..."
+              />
             </div>
 
             <div>

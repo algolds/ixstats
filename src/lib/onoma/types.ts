@@ -298,54 +298,50 @@ export function getSectionFromPathname(pathname: string): OnomaSection {
   return match?.id ?? "overview";
 }
 
+const pick = <T>(table: Record<string, T>, key: string): T | undefined =>
+  Object.hasOwn(table, key) ? table[key] : undefined;
+
+const STUDIO_SUB_TABS: Record<string, StudioSubTab> = {
+  visualizer: "visualizer",
+  namesets: "namesets",
+  shifts: "shifts",
+  "sound-shifts": "shifts",
+};
+
 /**
  * Helper to get studio sub-tab from a pathname.
  */
 export function getStudioSubTabFromPathname(pathname: string): StudioSubTab {
   const segment = pathname.split("/labs/onoma/studio")[1]?.replace(/^\//, "") || "";
-  const subsegment = segment.split("/")[0];
-  if (subsegment === "visualizer") return "visualizer";
-  if (subsegment === "namesets") return "namesets";
-  if (subsegment === "shifts" || subsegment === "sound-shifts") return "shifts";
-
-  return "workshop";
+  return pick(STUDIO_SUB_TABS, segment.split("/")[0]) ?? "workshop";
 }
+
+const EXPLORE_SUB_TABS: Record<string, ExploreSubTab> = {
+  phonology: "phonology",
+  acoustics: "phonology",
+  compare: "phonology",
+  comparator: "phonology",
+  grammar: "grammar",
+  syntax: "grammar",
+  etymology: "grammar",
+  roots: "grammar",
+  writing: "writing",
+  packs: "packs",
+  marketplace: "packs",
+  community: "packs",
+};
 
 /**
  * Helper to get explore sub-tab from a pathname.
  */
 export function getExploreSubTabFromPathname(pathname: string): ExploreSubTab {
   const segment = pathname.split("/labs/onoma/explore")[1]?.replace(/^\//, "") || "";
-  const subsegment = segment.split("/")[0];
-  if (subsegment === "phonology" || subsegment === "acoustics") return "phonology";
-  if (
-    subsegment === "grammar" ||
-    subsegment === "syntax" ||
-    subsegment === "etymology" ||
-    subsegment === "roots"
-  ) {
-    return "grammar";
-  }
-  if (subsegment === "writing") return "writing";
-  if (subsegment === "compare" || subsegment === "comparator") return "phonology";
-  if (subsegment === "packs" || subsegment === "marketplace" || subsegment === "community")
-    return "packs";
+  const nested = pick(EXPLORE_SUB_TABS, segment.split("/")[0]);
+  if (nested) return nested;
 
-  // Backward compatibility for root-level direct URLs
-  const parts = pathname.split("/labs/onoma/")[1]?.split("/") || [];
-  const rootSegment = parts[0] || "";
-  if (rootSegment === "phonology" || rootSegment === "acoustics" || rootSegment === "compare")
-    return "phonology";
-  if (
-    rootSegment === "grammar" ||
-    rootSegment === "syntax" ||
-    rootSegment === "etymology" ||
-    rootSegment === "roots"
-  ) {
-    return "grammar";
-  }
-  if (rootSegment === "writing") return "writing";
-  if (rootSegment === "packs" || rootSegment === "marketplace") return "packs";
-
-  return "phonology";
+  // Backward compatibility for root-level direct URLs (which never had a community alias)
+  const rootSegment = pathname.split("/labs/onoma/")[1]?.split("/")[0] || "";
+  return rootSegment === "community"
+    ? "phonology"
+    : (pick(EXPLORE_SUB_TABS, rootSegment) ?? "phonology");
 }

@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
@@ -187,7 +188,6 @@ export function NotificationComposer() {
     realm: ALL_REALMS,
   });
 
-  // Mutations
   const createNotificationMutation = api.notifications.createNotification.useMutation({
     onSuccess: () => {
       notify.success("Platform alert broadcasted successfully");
@@ -280,9 +280,7 @@ export function NotificationComposer() {
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      {/* Compose form */}
       <div className="space-y-6 lg:col-span-2">
-        {/* Mode Selector */}
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-headline flex items-center gap-2">
@@ -322,7 +320,6 @@ export function NotificationComposer() {
           </CardContent>
         </Card>
 
-        {/* Templates */}
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader className="pb-2">
             <CardTitle className="text-caption flex items-center gap-2">
@@ -347,7 +344,6 @@ export function NotificationComposer() {
           </CardContent>
         </Card>
 
-        {/* Main form */}
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle className="text-headline flex items-center gap-2">
@@ -391,72 +387,50 @@ export function NotificationComposer() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-caption">Conversation type</Label>
-                  <Select
+                  <ValueSelect
                     value={form.conversationType}
                     onValueChange={(v) => handleField("conversationType", v as any)}
-                  >
-                    <SelectTrigger size="sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="official">Official system dispatch</SelectItem>
-                      <SelectItem value="diplomatic">Diplomatic cable</SelectItem>
-                      <SelectItem value="personal">Personal direct message</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    options={[
+                      ["official", "Official system dispatch"],
+                      ["diplomatic", "Diplomatic cable"],
+                      ["personal", "Personal direct message"],
+                    ]}
+                    size="sm"
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label className="text-caption">Security classification</Label>
-                  <Select
+                  <ValueSelect
                     value={form.classification}
                     onValueChange={(v) => handleField("classification", v as any)}
-                  >
-                    <SelectTrigger size="sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DIPLOMATIC_CLASSIFICATIONS.map((c) => (
-                        <SelectItem key={c} value={c}>
-                          {c}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    options={DIPLOMATIC_CLASSIFICATIONS.map((c) => [c, c] as const)}
+                    size="sm"
+                  />
                 </div>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-caption">Type</Label>
-                  <Select value={form.type} onValueChange={(v) => handleField("type", v)}>
-                    <SelectTrigger size="sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TYPES.map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {t.charAt(0).toUpperCase() + t.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <ValueSelect
+                    value={form.type}
+                    onValueChange={(v) => handleField("type", v)}
+                    options={TYPES.map((t) => [t, t.charAt(0).toUpperCase() + t.slice(1)] as const)}
+                    size="sm"
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label className="text-caption">Level / Priority</Label>
-                  <Select value={form.level} onValueChange={(v) => handleField("level", v as any)}>
-                    <SelectTrigger size="sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {LEVELS.map((l) => (
-                        <SelectItem key={l} value={l}>
-                          {l.charAt(0).toUpperCase() + l.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <ValueSelect
+                    value={form.level}
+                    onValueChange={(v) => handleField("level", v as any)}
+                    options={LEVELS.map(
+                      (l) => [l, l.charAt(0).toUpperCase() + l.slice(1)] as const
+                    )}
+                    size="sm"
+                  />
                 </div>
               </div>
             )}
@@ -464,35 +438,29 @@ export function NotificationComposer() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-caption">Category</Label>
-                <Select value={form.category} onValueChange={(v) => handleField("category", v)}>
-                  <SelectTrigger size="sm">
-                    <SelectValue placeholder="None" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c.charAt(0).toUpperCase() + c.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <ValueSelect
+                  value={form.category}
+                  onValueChange={(v) => handleField("category", v)}
+                  options={CATEGORIES.map(
+                    (c) => [c, c.charAt(0).toUpperCase() + c.slice(1)] as const
+                  )}
+                  size="sm"
+                  placeholder="None"
+                />
               </div>
 
               <div className="space-y-2">
                 <Label className="text-caption">Recipient scope</Label>
-                <Select
+                <ValueSelect
                   value={form.scope}
                   onValueChange={(v) => handleField("scope", v as FormState["scope"])}
-                >
-                  <SelectTrigger size="sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="global">Global (All Users)</SelectItem>
-                    <SelectItem value="country">Country specific</SelectItem>
-                    <SelectItem value="user">Specific user</SelectItem>
-                  </SelectContent>
-                </Select>
+                  options={[
+                    ["global", "Global (All Users)"],
+                    ["country", "Country specific"],
+                    ["user", "Specific user"],
+                  ]}
+                  size="sm"
+                />
               </div>
             </div>
 
@@ -559,7 +527,6 @@ export function NotificationComposer() {
         </Card>
       </div>
 
-      {/* Sidebar Live Preview */}
       <div className="space-y-4">
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader className="pb-3">

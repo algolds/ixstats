@@ -174,159 +174,37 @@ export class MarkovChain {
    */
   private generateAtOrder(o: number, options: GenerateOptions = {}): string | null {
     const startNode = this.starts[o];
-    if (!startNode || startNode.neighbors.length === 0) {
-      return null;
-    }
+    if (!startNode || startNode.neighbors.length === 0) return null;
 
-    const startWith = options.startsWith || "";
-    const endWith = options.endsWith || "";
-    const minLength = Math.max(options.minLength || 0, startWith.length, endWith.length);
-    const maxLength = options.maxLength || -1;
-    const allowDuplicates = options.allowDuplicates ?? false;
+    const rules = resolveRules(options);
     const maxAttempts = options.maxAttempts ?? 100;
-    const contains = options.contains || "";
-    const excludes = options.excludes || "";
 
-    const vowelHarmony = options.vowelHarmony || "none";
-    const maxConsonantCluster = options.maxConsonantCluster ?? 3;
-    const maxVowelCluster = options.maxVowelCluster ?? 3;
-    const allowDoubleLetters = options.allowDoubleLetters ?? true;
-    const minSyllables = options.minSyllables || 0;
-    const maxSyllables = options.maxSyllables || -1;
-    const mustEndWithVowel = options.mustEndWithVowel ?? false;
-    const mustEndWithConsonant = options.mustEndWithConsonant ?? false;
-    const cvTemplate = options.cvTemplate || "";
-    const noInitialClusters = options.noInitialClusters ?? false;
-    const noFinalClusters = options.noFinalClusters ?? false;
-
-    const startWithLower = startWith.toLowerCase();
-    const endWithLower = endWith.toLowerCase();
-    const containsLower = contains.toLowerCase();
-    const excludesLower = excludes.toLowerCase();
-
-    let attempts = 0;
-
-    while (attempts < maxAttempts) {
-      attempts++;
-
-      const nextNodeIndex = Math.floor(Math.random() * startNode.neighbors.length);
-      let currentNode = startNode.neighbors[nextNodeIndex];
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      let currentNode = startNode.neighbors[Math.floor(Math.random() * startNode.neighbors.length)];
       const wordTokens: string[] = [];
 
-      while (currentNode && (maxLength < 0 || wordTokens.join("").length <= maxLength)) {
+      while (
+        currentNode &&
+        (rules.maxLength < 0 || wordTokens.join("").length <= rules.maxLength)
+      ) {
         wordTokens.push(currentNode.token);
-        const nextIndex = Math.floor(Math.random() * currentNode.neighbors.length);
-        currentNode = currentNode.neighbors[nextIndex];
+        currentNode =
+          currentNode.neighbors[Math.floor(Math.random() * currentNode.neighbors.length)];
       }
 
       const candidate = wordTokens.join("");
-
-      // Phonotactic Safeguards Check
-      if (candidate.length > 0) {
-        // 1. Triple identical letters (e.g. "aaa", "sss")
-        if (/(.)\1\1/i.test(candidate)) continue;
-
-        // 2. Double punctuation (e.g. "--", "''")
-        if (/[-']{2,}/.test(candidate)) continue;
-
-        // 3. Leading/trailing hyphens/apostrophes
-        if (/^[-']|[-']$/.test(candidate)) continue;
-
-        // 4. Double identical letters check (if allowDoubleLetters is false)
-        if (!allowDoubleLetters && /(.)\1/i.test(candidate)) continue;
-
-        // 5. Consonant/Vowel cluster limits (using loop-count for precision and safety)
-        let consecutiveVowels = 0;
-        let consecutiveConsonants = 0;
-        let invalidCluster = false;
-
-        for (const char of candidate.toLowerCase()) {
-          if (VOWELS_CLASS.includes(char)) {
-            consecutiveVowels++;
-            consecutiveConsonants = 0;
-          } else if (char >= "a" && char <= "z") {
-            consecutiveConsonants++;
-            consecutiveVowels = 0;
-          } else {
-            consecutiveVowels = 0;
-            consecutiveConsonants = 0;
-          }
-
-          if (consecutiveVowels > maxVowelCluster || consecutiveConsonants > maxConsonantCluster) {
-            invalidCluster = true;
-            break;
-          }
-        }
-        if (invalidCluster) continue;
-
-        // 6. Vowel Harmony check
-        if (vowelHarmony !== "none") {
-          const frontVowels = "eiyäöüéèêëěēę";
-          const backVowels = "aouáàâǎăāãåąóòôǒŏōõúùûǔŭūũ";
-
-          let hasFront = false;
-          let hasBack = false;
-
-          for (const char of candidate.toLowerCase()) {
-            if (frontVowels.includes(char)) hasFront = true;
-            if (backVowels.includes(char)) hasBack = true;
-          }
-
-          if (vowelHarmony === "front" && hasBack) continue;
-          if (vowelHarmony === "back" && hasFront) continue;
-        }
-
-        // 7. Must end with vowel/consonant checks
-        if (
-          mustEndWithVowel &&
-          !VOWELS_CLASS.includes(candidate[candidate.length - 1].toLowerCase())
-        ) {
-          continue;
-        }
-        if (
-          mustEndWithConsonant &&
-          VOWELS_CLASS.includes(candidate[candidate.length - 1].toLowerCase())
-        ) {
-          continue;
-        }
-
-        // 8. Syllable count range
-        const syllablesCount = tokenizeIntoSyllables(candidate).length;
-        if (minSyllables > 0 && syllablesCount < minSyllables) {
-          continue;
-        }
-        if (maxSyllables >= 0 && syllablesCount > maxSyllables) {
-          continue;
-        }
-
-        // 9. CV template constraint
-        if (cvTemplate && !matchCvTemplate(candidate, cvTemplate)) {
-          continue;
-        }
-
-        // 10. Initial/Final consonant cluster restrictions
-        if (noInitialClusters && startsWithCluster(candidate)) {
-          continue;
-        }
-        if (noFinalClusters && endsWithCluster(candidate)) {
-          continue;
-        }
-      }
-
-      // Validation checks
       if (
-        candidate.substring(0, startWithLower.length) !== startWithLower ||
-        candidate.substring(candidate.length - endWithLower.length) !== endWithLower ||
-        (containsLower && candidate.indexOf(containsLower) === -1) ||
-        (excludesLower && candidate.indexOf(excludesLower) > -1) ||
-        (maxLength >= 0 && candidate.length > maxLength) ||
-        candidate.length < minLength ||
-        (!allowDuplicates && this.isDuplicate(candidate))
+        candidate.length > 0 &&
+        PHONOTACTIC_CHECKS.some((violates) => violates(candidate, rules))
       ) {
         continue;
       }
-
-      // Return capitalized result
+      if (
+        violatesConstraints(candidate, rules) ||
+        (!rules.allowDuplicates && this.isDuplicate(candidate))
+      ) {
+        continue;
+      }
       return MarkovChain.capitalize(candidate);
     }
 
@@ -377,32 +255,118 @@ export class MarkovChain {
   }
 }
 
-function matchCvTemplate(word: string, template: string): boolean {
-  const vowels = "aeiouyáàâäǎăāãåǻąæǽǣéèėêëěĕēęẹǝəɛíìiîïǐĭīĩįịĳóòôöǒŏōõőọøǿơœúùûüǔŭūũűůųụưýỳŷÿȳỹƴ";
-  const cleaned = word.toLowerCase().replace(/[^a-z]/g, "");
-  if (cleaned.length !== template.length) return false;
-  for (let i = 0; i < cleaned.length; i++) {
-    const char = cleaned[i];
-    const isVowel = vowels.includes(char);
-    const templateChar = template[i].toUpperCase();
-    if (templateChar === "V" && !isVowel) return false;
-    if (templateChar === "C" && isVowel) return false;
+type ResolvedRules = ReturnType<typeof resolveRules>;
+
+/** The options with their defaults applied and the string filters lower-cased. */
+function resolveRules(options: GenerateOptions) {
+  const startWith = (options.startsWith || "").toLowerCase();
+  const endWith = (options.endsWith || "").toLowerCase();
+  return {
+    startWith,
+    endWith,
+    contains: (options.contains || "").toLowerCase(),
+    excludes: (options.excludes || "").toLowerCase(),
+    minLength: Math.max(options.minLength || 0, startWith.length, endWith.length),
+    maxLength: options.maxLength || -1,
+    allowDuplicates: options.allowDuplicates ?? false,
+    vowelHarmony: options.vowelHarmony || "none",
+    maxConsonantCluster: options.maxConsonantCluster ?? 3,
+    maxVowelCluster: options.maxVowelCluster ?? 3,
+    allowDoubleLetters: options.allowDoubleLetters ?? true,
+    minSyllables: options.minSyllables || 0,
+    maxSyllables: options.maxSyllables || -1,
+    mustEndWithVowel: options.mustEndWithVowel ?? false,
+    mustEndWithConsonant: options.mustEndWithConsonant ?? false,
+    cvTemplate: options.cvTemplate || "",
+    noInitialClusters: options.noInitialClusters ?? false,
+    noFinalClusters: options.noFinalClusters ?? false,
+  };
+}
+
+const FRONT_VOWELS = "eiyäöüéèêëěēę";
+const BACK_VOWELS = "aouáàâǎăāãåąóòôǒŏōõúùûǔŭūũ";
+
+const isVowel = (char: string) => VOWELS_CLASS.includes(char);
+const lettersOnly = (word: string) => word.toLowerCase().replace(/[^a-z]/g, "");
+
+function exceedsClusterLimits(word: string, maxVowels: number, maxConsonants: number): boolean {
+  let vowels = 0;
+  let consonants = 0;
+  for (const char of word.toLowerCase()) {
+    if (isVowel(char)) {
+      vowels++;
+      consonants = 0;
+    } else if (char >= "a" && char <= "z") {
+      consonants++;
+      vowels = 0;
+    } else {
+      vowels = 0;
+      consonants = 0;
+    }
+    if (vowels > maxVowels || consonants > maxConsonants) return true;
   }
-  return true;
+  return false;
+}
+
+function breaksVowelHarmony(word: string, harmony: ResolvedRules["vowelHarmony"]): boolean {
+  if (harmony === "none") return false;
+  const letters = [...word.toLowerCase()];
+  return letters.some((char) => (harmony === "front" ? BACK_VOWELS : FRONT_VOWELS).includes(char));
+}
+
+function matchCvTemplate(word: string, template: string): boolean {
+  const cleaned = lettersOnly(word);
+  if (cleaned.length !== template.length) return false;
+  return [...cleaned].every((char, i) => {
+    const slot = template[i].toUpperCase();
+    return slot === "V" ? isVowel(char) : slot === "C" ? !isVowel(char) : true;
+  });
 }
 
 function startsWithCluster(word: string): boolean {
-  const vowels = "aeiouyáàâäǎăāãåǻąæǽǣéèėêëěĕēęẹǝəɛíìiîïǐĭīĩįịĳóòôöǒŏōõőọøǿơœúùûüǔŭūũűůųụưýỳŷÿȳỹƴ";
-  const cleaned = word.toLowerCase().replace(/[^a-z]/g, "");
-  if (cleaned.length < 2) return false;
-  return !vowels.includes(cleaned[0]) && !vowels.includes(cleaned[1]);
+  const cleaned = lettersOnly(word);
+  return cleaned.length >= 2 && !isVowel(cleaned[0]) && !isVowel(cleaned[1]);
 }
 
 function endsWithCluster(word: string): boolean {
-  const vowels = "aeiouyáàâäǎăāãåǻąæǽǣéèėêëěĕēęẹǝəɛíìiîïǐĭīĩįịĳóòôöǒŏōõőọøǿơœúùûüǔŭūũűůųụưýỳŷÿȳỹƴ";
-  const cleaned = word.toLowerCase().replace(/[^a-z]/g, "");
-  if (cleaned.length < 2) return false;
+  const cleaned = lettersOnly(word);
   return (
-    !vowels.includes(cleaned[cleaned.length - 1]) && !vowels.includes(cleaned[cleaned.length - 2])
+    cleaned.length >= 2 &&
+    !isVowel(cleaned[cleaned.length - 1]) &&
+    !isVowel(cleaned[cleaned.length - 2])
+  );
+}
+
+/** Each check returns true when the candidate breaks a phonotactic rule and must be rejected. */
+const PHONOTACTIC_CHECKS: Array<(word: string, rules: ResolvedRules) => boolean> = [
+  (word) => /(.)\1\1/i.test(word),
+  (word) => /[-']{2,}/.test(word),
+  (word) => /^[-']|[-']$/.test(word),
+  (word, rules) => !rules.allowDoubleLetters && /(.)\1/i.test(word),
+  (word, rules) => exceedsClusterLimits(word, rules.maxVowelCluster, rules.maxConsonantCluster),
+  (word, rules) => breaksVowelHarmony(word, rules.vowelHarmony),
+  (word, rules) => rules.mustEndWithVowel && !isVowel(word[word.length - 1].toLowerCase()),
+  (word, rules) => rules.mustEndWithConsonant && isVowel(word[word.length - 1].toLowerCase()),
+  (word, rules) => {
+    const syllables = tokenizeIntoSyllables(word).length;
+    return (
+      (rules.minSyllables > 0 && syllables < rules.minSyllables) ||
+      (rules.maxSyllables >= 0 && syllables > rules.maxSyllables)
+    );
+  },
+  (word, rules) => !!rules.cvTemplate && !matchCvTemplate(word, rules.cvTemplate),
+  (word, rules) => rules.noInitialClusters && startsWithCluster(word),
+  (word, rules) => rules.noFinalClusters && endsWithCluster(word),
+];
+
+/** Length and substring filters, checked after the phonotactic rules. */
+function violatesConstraints(candidate: string, rules: ResolvedRules): boolean {
+  return (
+    candidate.substring(0, rules.startWith.length) !== rules.startWith ||
+    candidate.substring(candidate.length - rules.endWith.length) !== rules.endWith ||
+    (!!rules.contains && !candidate.includes(rules.contains)) ||
+    (!!rules.excludes && candidate.includes(rules.excludes)) ||
+    (rules.maxLength >= 0 && candidate.length > rules.maxLength) ||
+    candidate.length < rules.minLength
   );
 }

@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Input } from "~/components/ui/input";
@@ -261,24 +262,18 @@ export function VoicePreferencesPanel({
       <div className="space-y-4">
         <div className="space-y-1">
           <label className="text-label-secondary text-subhead">Personal default voice</label>
-          <Select
+          <ValueSelect
             value={personalVoice || "default"}
             onValueChange={(val) => onSavePreferences(val === "default" ? "" : val, personalSpeed)}
-          >
-            <SelectTrigger className="text-footnote w-full">
-              <SelectValue placeholder="Use system default" />
-            </SelectTrigger>
-            <SelectContent className="max-h-[250px]">
-              <SelectItem value="default" className="text-footnote">
-                Use system default
-              </SelectItem>
-              {voiceOptions.map((id) => (
-                <SelectItem key={id} value={id} className="text-footnote">
-                  {voiceLabel(id)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            options={[
+              ["default", "Use system default"],
+              ...voiceOptions.map((id) => [id, voiceLabel(id)] as const),
+            ]}
+            className="text-footnote w-full"
+            placeholder="Use system default"
+            contentClassName="max-h-[250px]"
+            itemClassName="text-footnote"
+          />
         </div>
 
         <div className="space-y-2">
@@ -318,7 +313,6 @@ export function VoicePreferencesPanel({
 
           {showAdvancedVoice && (
             <div className="text-label-secondary text-caption mt-3 space-y-4 pl-1">
-              {/* Preset Selection */}
               <div className="space-y-1">
                 <label className="text-label text-subhead">Species preset</label>
                 <Select value={selectedPreset} onValueChange={(v) => onApplyPreset(v)}>
@@ -336,7 +330,6 @@ export function VoicePreferencesPanel({
                 </Select>
               </div>
 
-              {/* Force Native Bypass */}
               <div className="text-label flex items-center justify-between py-1">
                 <span className="text-eyebrow">Force Native Browser TTS</span>
                 <Checkbox
@@ -347,7 +340,6 @@ export function VoicePreferencesPanel({
                 />
               </div>
 
-              {/* Local Playback Volume */}
               <div className="space-y-1">
                 <div className="flex justify-between">
                   <span className="text-eyebrow">Local playback volume</span>
@@ -364,7 +356,6 @@ export function VoicePreferencesPanel({
                 />
               </div>
 
-              {/* Browser Pitch Override */}
               <div className="space-y-1">
                 <div className="flex justify-between">
                   <span className="text-eyebrow">Browser speech pitch</span>
@@ -381,7 +372,6 @@ export function VoicePreferencesPanel({
                 />
               </div>
 
-              {/* Voice Blending Options */}
               <div className="border-separator space-y-2 border-t pt-2">
                 <div className="text-label flex items-center justify-between">
                   <span className="text-eyebrow">Voice blending</span>
@@ -399,68 +389,48 @@ export function VoicePreferencesPanel({
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
                       <label className="text-caption font-semibold">Primary voice</label>
-                      <Select
+                      <ValueSelect
                         value={voiceBlendPrimary}
                         onValueChange={(v) =>
                           onUpdateAdvanced("onoma-personal-voice-blend-primary", v)
                         }
-                      >
-                        <SelectTrigger size="sm" className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {voiceOptions.map((id) => (
-                            <SelectItem key={id} value={id}>
-                              {voiceLabel(id)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        options={voiceOptions.map((id) => [id, voiceLabel(id)] as const)}
+                        size="sm"
+                        className="w-full"
+                      />
                     </div>
                     <div className="space-y-1">
                       <label className="text-caption font-semibold">Secondary voice</label>
-                      <Select
+                      <ValueSelect
                         value={voiceBlendSecondary}
                         onValueChange={(v) =>
                           onUpdateAdvanced("onoma-personal-voice-blend-secondary", v)
                         }
-                      >
-                        <SelectTrigger size="sm" className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {voiceOptions.map((id) => (
-                            <SelectItem key={id} value={id}>
-                              {voiceLabel(id)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        options={voiceOptions.map((id) => [id, voiceLabel(id)] as const)}
+                        size="sm"
+                        className="w-full"
+                      />
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Emotional Prosody Inflections */}
               <div className="border-separator space-y-1 border-t pt-2">
                 <label className="text-label text-subhead">Emotional prosody</label>
-                <Select
+                <ValueSelect
                   value={personalProsody}
                   onValueChange={(v) => onUpdateAdvanced("onoma-personal-prosody", v)}
-                >
-                  <SelectTrigger size="sm" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="neutral">Neutral (Standard)</SelectItem>
-                    <SelectItem value="exclamatory">Energetic / Exclamatory (!)</SelectItem>
-                    <SelectItem value="inquisitive">Inquisitive / Questioning (?)</SelectItem>
-                    <SelectItem value="mysterious">Mysterious / Hesitant (...)</SelectItem>
-                  </SelectContent>
-                </Select>
+                  options={[
+                    ["neutral", "Neutral (Standard)"],
+                    ["exclamatory", "Energetic / Exclamatory (!)"],
+                    ["inquisitive", "Inquisitive / Questioning (?)"],
+                    ["mysterious", "Mysterious / Hesitant (...)"],
+                  ]}
+                  size="sm"
+                  className="w-full"
+                />
               </div>
 
-              {/* Inflection & Aspiration Tweaks */}
               <div className="border-separator space-y-2 border-t pt-2">
                 <span className="text-label text-eyebrow">Inflection & phoneme tweaks</span>
 
@@ -488,22 +458,20 @@ export function VoicePreferencesPanel({
                   <label className="text-label text-caption font-semibold">
                     Initial Breath/Aspiration Prefix
                   </label>
-                  <Select
+                  <ValueSelect
                     value={personalPhonemePrefix || "__none__"}
                     onValueChange={(v) =>
                       onUpdateAdvanced("onoma-personal-phoneme-prefix", v === "__none__" ? "" : v)
                     }
-                  >
-                    <SelectTrigger size="sm" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">None (Standard start)</SelectItem>
-                      <SelectItem value="h">Soft H (h) - breathy aspiration</SelectItem>
-                      <SelectItem value=".">Pause (.) - small initial silence</SelectItem>
-                      <SelectItem value="ə">Schwa (ə) - neutral vowel start</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    options={[
+                      ["__none__", "None (Standard start)"],
+                      ["h", "Soft H (h) - breathy aspiration"],
+                      [".", "Pause (.) - small initial silence"],
+                      ["ə", "Schwa (ə) - neutral vowel start"],
+                    ]}
+                    size="sm"
+                    className="w-full"
+                  />
                 </div>
 
                 <div className="space-y-1">
@@ -552,22 +520,16 @@ export function VoicePreferencesPanel({
                   <span className="text-label-secondary truncate font-semibold capitalize">
                     {c}
                   </span>
-                  <Select
+                  <ValueSelect
                     value={personalVoiceMap[c] || "" || "__none__"}
                     onValueChange={(v) => onUpdateCultureMap(c, v === "__none__" ? "" : v)}
-                  >
-                    <SelectTrigger size="sm" className="max-w-[140px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">Inherit default</SelectItem>
-                      {voiceOptions.map((vId) => (
-                        <SelectItem key={vId} value={vId}>
-                          {voiceLabel(vId)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    options={[
+                      ["__none__", "Inherit default"],
+                      ...voiceOptions.map((vId) => [vId, voiceLabel(vId)] as const),
+                    ]}
+                    size="sm"
+                    className="max-w-[140px]"
+                  />
                 </div>
               ))}
             </div>

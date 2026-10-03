@@ -6,13 +6,7 @@
 import React from "react";
 import { Cpu, ArrowRight } from "iconoir-react";
 import { Input } from "~/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Card } from "~/components/ui/card";
 
@@ -160,7 +154,6 @@ export function SyntaxSentenceBuilder({
         <Cpu className="text-indigo h-4 w-4" /> Live sentence generator
       </h4>
 
-      {/* Translation Output Banner */}
       <div className="rounded-control border-indigo/20 bg-indigo/5 space-y-2 border p-4">
         <div className="text-label-secondary text-footnote flex items-center gap-2 font-semibold">
           <span>Source (English):</span>
@@ -172,9 +165,7 @@ export function SyntaxSentenceBuilder({
         </div>
       </div>
 
-      {/* Interactive Phrase Tuning */}
       <div className="text-footnote grid grid-cols-1 gap-4 pt-2 md:grid-cols-3">
-        {/* Subject */}
         <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
           <span className="text-label block font-semibold">Subject noun</span>
           <Input
@@ -209,7 +200,6 @@ export function SyntaxSentenceBuilder({
           </div>
         </div>
 
-        {/* Verb */}
         <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
           <span className="text-label block font-semibold">Action verb</span>
           <Input
@@ -219,19 +209,19 @@ export function SyntaxSentenceBuilder({
             className="w-full"
             placeholder="e.g. eat"
           />
-          <Select value={verbTense} onValueChange={(v) => setVerbTense(v)}>
-            <SelectTrigger size="sm" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="present">Present tense</SelectItem>
-              <SelectItem value="past">Past tense</SelectItem>
-              <SelectItem value="future">Future tense</SelectItem>
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={verbTense}
+            onValueChange={(v) => setVerbTense(v)}
+            options={[
+              ["present", "Present tense"],
+              ["past", "Past tense"],
+              ["future", "Future tense"],
+            ]}
+            size="sm"
+            className="w-full"
+          />
         </div>
 
-        {/* Object */}
         <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
           <span className="text-label block font-semibold">Object noun</span>
           <Input

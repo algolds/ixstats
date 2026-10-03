@@ -169,7 +169,6 @@ export const GeographyForm = React.memo(
 
             <CardContent className="space-y-4 p-6">
               <div className="grid grid-cols-3 gap-3">
-                {/* ISO Code */}
                 <div className="space-y-2">
                   <label className="text-label text-caption flex items-center gap-1">
                     <MapIcon className="text-label-secondary size-3.5" />
@@ -185,7 +184,6 @@ export const GeographyForm = React.memo(
                   <p className="text-label-secondary text-footnote text-center">2 or 3 letters</p>
                 </div>
 
-                {/* Web Domain */}
                 <div className="space-y-2">
                   <label className="text-label text-caption flex items-center gap-1">
                     <Wifi className="text-label-secondary size-3.5" />
@@ -200,7 +198,6 @@ export const GeographyForm = React.memo(
                   <p className="text-label-secondary text-footnote text-center">.el, .ix</p>
                 </div>
 
-                {/* Calling Code */}
                 <div className="space-y-2">
                   <label className="text-label text-caption flex items-center gap-1">
                     <Phone className="text-label-secondary size-3.5" />
@@ -218,7 +215,6 @@ export const GeographyForm = React.memo(
             </CardContent>
           </Card>
 
-          {/* Civic Standards Card */}
           <Card className="z-10 overflow-visible">
             <div className="border-separator border-b px-6 py-4">
               <h3 className="text-label text-headline flex items-center gap-2">
@@ -274,7 +270,6 @@ export const GeographyForm = React.memo(
 
               {/* Driving Side & Calendar Week Start */}
               <div className="border-separator grid grid-cols-1 gap-4 border-t pt-4 sm:grid-cols-2">
-                {/* Driving Side */}
                 <div className="space-y-2">
                   <label className="text-label text-caption flex items-center gap-1">
                     <Car className="text-label-secondary h-3.5 w-3.5" />
@@ -301,7 +296,6 @@ export const GeographyForm = React.memo(
                   />
                 </div>
 
-                {/* Week Starts On */}
                 <div className="space-y-2">
                   <label className="text-label text-caption flex items-center gap-1">
                     <Calendar className="text-label-secondary h-3.5 w-3.5" />
@@ -325,7 +319,6 @@ export const GeographyForm = React.memo(
           </Card>
         </div>
 
-        {/* Geographic Center Card */}
         <Card className="overflow-hidden">
           <div className="border-separator border-b px-6 py-4">
             <div className="flex items-center justify-between">
@@ -339,7 +332,6 @@ export const GeographyForm = React.memo(
                 </p>
               </div>
 
-              {/* Capital & Map Helpers */}
               <div className="flex items-center gap-2">
                 {capitalCity?.coordinates && (
                   <Button
@@ -400,7 +392,6 @@ export const GeographyForm = React.memo(
               </div>
             </div>
 
-            {/* Status indicator */}
             <div className="text-footnote flex items-center gap-2 pt-1">
               {hasCoordinates ? (
                 <Badge variant="success" className="tabular-nums">
@@ -418,7 +409,6 @@ export const GeographyForm = React.memo(
           </CardContent>
         </Card>
 
-        {/* Map Picker Modal */}
         {countryId && isMapPickerOpen && (
           <MapPickerModal
             isOpen={isMapPickerOpen}

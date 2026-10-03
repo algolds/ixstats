@@ -24,68 +24,34 @@ export interface ScanResult {
   selected: boolean;
 }
 
-export const getIconComponent = (iconName?: string) => {
-  switch (iconName) {
-    case "trophy":
-      return Trophy;
-    case "medal":
-      return Medal;
-    case "star":
-      return Star;
-    case "crown":
-      return Crown;
-    case "shield":
-      return Shield;
-    case "award":
-      return Award;
-    case "users":
-      return Users;
-    case "check":
-      return Check;
-    case "sparkles":
-    default:
-      return Sparkles;
-  }
+const ICON_COMPONENTS = {
+  trophy: Trophy,
+  medal: Medal,
+  star: Star,
+  crown: Crown,
+  shield: Shield,
+  award: Award,
+  users: Users,
+  check: Check,
+  sparkles: Sparkles,
+} as const;
+
+export const getIconComponent = (iconName?: string) =>
+  ICON_COMPONENTS[iconName as keyof typeof ICON_COMPONENTS] ?? Sparkles;
+
+/** Tailwind text class and chart colour token for each award colour name. */
+const AWARD_COLORS: Record<string, { text: string; hex: string }> = {
+  amber: { text: "text-yellow", hex: "var(--color-chart-2)" },
+  slate: { text: "text-label-secondary", hex: "var(--color-gray)" },
+  cyan: { text: "text-teal", hex: "var(--color-chart-6)" },
+  green: { text: "text-green", hex: "var(--color-chart-3)" },
+  purple: { text: "text-purple", hex: "var(--color-chart-4)" },
+  pink: { text: "text-pink", hex: "var(--color-chart-5)" },
+  red: { text: "text-red", hex: "var(--color-chart-8)" },
 };
 
-export const getColorClass = (colorName?: string) => {
-  switch (colorName) {
-    case "amber":
-      return "text-yellow";
-    case "slate":
-      return "text-label-secondary";
-    case "cyan":
-      return "text-teal";
-    case "green":
-      return "text-green";
-    case "purple":
-      return "text-purple";
-    case "pink":
-      return "text-pink";
-    case "red":
-      return "text-red";
-    default:
-      return "text-yellow";
-  }
-};
+export const getColorClass = (colorName?: string) =>
+  AWARD_COLORS[colorName ?? ""]?.text ?? AWARD_COLORS.amber.text;
 
-export const getColorHex = (colorName: string) => {
-  switch (colorName) {
-    case "amber":
-      return "var(--color-chart-2)";
-    case "slate":
-      return "var(--color-gray)";
-    case "cyan":
-      return "var(--color-chart-6)";
-    case "green":
-      return "var(--color-chart-3)";
-    case "purple":
-      return "var(--color-chart-4)";
-    case "pink":
-      return "var(--color-chart-5)";
-    case "red":
-      return "var(--color-chart-8)";
-    default:
-      return "var(--color-chart-2)";
-  }
-};
+export const getColorHex = (colorName: string) =>
+  AWARD_COLORS[colorName]?.hex ?? AWARD_COLORS.amber.hex;

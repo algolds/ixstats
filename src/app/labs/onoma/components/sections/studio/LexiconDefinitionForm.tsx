@@ -3,13 +3,7 @@
 // src/app/labs/onoma/components/sections/studio/LexiconDefinitionForm.tsx
 // Onoma Custom Studio Workshop — Lexicon Definition Form Component
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Button } from "~/components/ui/button";
@@ -44,28 +38,21 @@ export function LexiconDefinitionForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <label className="text-label-secondary text-subhead">Part of speech</label>
-            <Select value={lexEditPos} onValueChange={setLexEditPos}>
-              <SelectTrigger className="text-footnote w-full">
-                <SelectValue placeholder="Select POS" />
-              </SelectTrigger>
-              <SelectContent className="max-h-[200px]">
-                <SelectItem value="Noun" className="text-footnote">
-                  Noun
-                </SelectItem>
-                <SelectItem value="Adjective" className="text-footnote">
-                  Adjective
-                </SelectItem>
-                <SelectItem value="Verb" className="text-footnote">
-                  Verb
-                </SelectItem>
-                <SelectItem value="Proper Noun" className="text-footnote">
-                  Proper noun
-                </SelectItem>
-                <SelectItem value="Adverb" className="text-footnote">
-                  Adverb
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <ValueSelect
+              value={lexEditPos}
+              onValueChange={setLexEditPos}
+              options={[
+                ["Noun", "Noun"],
+                ["Adjective", "Adjective"],
+                ["Verb", "Verb"],
+                ["Proper Noun", "Proper noun"],
+                ["Adverb", "Adverb"],
+              ]}
+              className="text-footnote w-full"
+              placeholder="Select POS"
+              contentClassName="max-h-[200px]"
+              itemClassName="text-footnote"
+            />
           </div>
 
           <div className="space-y-2">

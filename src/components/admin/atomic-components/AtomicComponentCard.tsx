@@ -28,7 +28,6 @@ export function AtomicComponentCard({ component, domain }: AtomicComponentCardPr
 
   return (
     <Card className="group hover:border-separator relative p-4 transition-colors">
-      {/* Header */}
       <div className="mb-3 flex items-start justify-between">
         <div className="flex-1 pr-2">
           <div className="mb-1 flex items-center gap-2">
@@ -43,12 +42,10 @@ export function AtomicComponentCard({ component, domain }: AtomicComponentCardPr
         </div>
       </div>
 
-      {/* Description */}
       <p className="text-label-secondary text-footnote mb-3 line-clamp-2 leading-relaxed">
         {component.description}
       </p>
 
-      {/* Effectiveness Bar */}
       <div className="mb-3">
         <div className="text-footnote mb-1 flex items-center justify-between">
           <span className="text-label-secondary">Effectiveness</span>
@@ -68,7 +65,6 @@ export function AtomicComponentCard({ component, domain }: AtomicComponentCardPr
         </div>
       </div>
 
-      {/* Metrics & Synergies count */}
       <div className="border-separator text-label-secondary text-footnote flex items-center justify-between border-t pt-2">
         <span className="text-footnote tabular-nums">
           Complexity: {component.metadata?.complexity ?? "—"}

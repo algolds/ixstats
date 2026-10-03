@@ -61,7 +61,6 @@ interface NavGroup {
 }
 
 const NAV_GROUPS: NavGroup[] = [
-  // ── 1. System & Platform ──────────────────────────────────────────────────
   {
     title: "System & Platform",
     subgroups: [
@@ -97,7 +96,6 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
 
-  // ── 2. Realms ─────────────────────────────────────────────────────────────
   {
     title: "Realms",
     subgroups: [
@@ -117,7 +115,6 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
 
-  // ── 3. Apps ───────────────────────────────────────────────────────────────
   {
     title: "Apps",
     subgroups: [
@@ -253,7 +250,6 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
 
-  // ── 4. Simulation Engines ─────────────────────────────────────────────────
   {
     title: "Simulation Engines",
     subgroups: [
@@ -387,7 +383,6 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
 
-  // ── 5. Users & Security ───────────────────────────────────────────────────
   {
     title: "Users & Security",
     subgroups: [
@@ -431,7 +426,6 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
 
-  // ── 6. Labs & Experimental ────────────────────────────────────────────────
   {
     title: "Labs & Experimental",
     subgroups: [
@@ -591,7 +585,6 @@ export function AdminSidebarNavWidget({
       )}
       aria-label="Admin navigation"
     >
-      {/* Search filter */}
       <SearchField
         size="sm"
         placeholder="Filter tools & applications..."

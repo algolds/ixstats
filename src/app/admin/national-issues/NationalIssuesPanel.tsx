@@ -13,13 +13,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Switch } from "~/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
 import { ALL_REALMS } from "~/lib/realms/realm-ids";
@@ -162,7 +156,6 @@ function NationalIssuesPanel() {
         subtitle="Decision trees, generation triggers and storyteller injections."
       />
 
-      {/* Global Stat Bar */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
           <p className="text-label-secondary text-stat-label">Total evaluations</p>
@@ -230,7 +223,6 @@ function NationalIssuesPanel() {
           )}
         </div>
 
-        {/* Templates Tab */}
         <TabsContent value="templates" className="mt-4 space-y-4 focus-visible:outline-none">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <div className="relative max-w-sm min-w-[200px] flex-1">
@@ -241,37 +233,24 @@ function NationalIssuesPanel() {
                 className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-3"
               />
             </div>
-            <Select value={domainFilter} onValueChange={setDomainFilter}>
-              <SelectTrigger size="sm" className="w-44">
-                <SelectValue placeholder="All domains" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" className="text-footnote">
-                  All domains
-                </SelectItem>
-                <SelectItem value="economic" className="text-footnote">
-                  Economic
-                </SelectItem>
-                <SelectItem value="political" className="text-footnote">
-                  Political
-                </SelectItem>
-                <SelectItem value="social" className="text-footnote">
-                  Social
-                </SelectItem>
-                <SelectItem value="military" className="text-footnote">
-                  Military
-                </SelectItem>
-                <SelectItem value="diplomatic" className="text-footnote">
-                  Diplomatic
-                </SelectItem>
-                <SelectItem value="infrastructure" className="text-footnote">
-                  Infrastructure
-                </SelectItem>
-                <SelectItem value="environmental" className="text-footnote">
-                  Environmental
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <ValueSelect
+              value={domainFilter}
+              onValueChange={setDomainFilter}
+              options={[
+                ["all", "All domains"],
+                ["economic", "Economic"],
+                ["political", "Political"],
+                ["social", "Social"],
+                ["military", "Military"],
+                ["diplomatic", "Diplomatic"],
+                ["infrastructure", "Infrastructure"],
+                ["environmental", "Environmental"],
+              ]}
+              size="sm"
+              className="w-44"
+              placeholder="All domains"
+              itemClassName="text-footnote"
+            />
           </div>
 
           {isTemplatesLoading ? (
@@ -360,7 +339,6 @@ function NationalIssuesPanel() {
           )}
         </TabsContent>
 
-        {/* Active Issues Tab */}
         <TabsContent value="issues" className="mt-4 focus-visible:outline-none">
           {isIssuesLoading ? (
             <div className="text-label-secondary text-footnote p-8 text-center">
@@ -409,7 +387,6 @@ function NationalIssuesPanel() {
           )}
         </TabsContent>
 
-        {/* Engine Configuration Tab */}
         <TabsContent value="engine" className="mt-4 focus-visible:outline-none">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Card className="space-y-4 p-5">
@@ -456,18 +433,14 @@ function NationalIssuesPanel() {
                 Live criteria evaluation test
               </h3>
               <div className="text-footnote space-y-3">
-                <Select value={evalCountryId} onValueChange={setEvalCountryId}>
-                  <SelectTrigger size="sm">
-                    <SelectValue placeholder="Select Target Country..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries?.map((c) => (
-                      <SelectItem key={c.id} value={c.id} className="text-footnote">
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <ValueSelect
+                  value={evalCountryId}
+                  onValueChange={setEvalCountryId}
+                  options={countries?.map((c) => [c.id, c.name] as const) ?? []}
+                  size="sm"
+                  placeholder="Select Target Country..."
+                  itemClassName="text-footnote"
+                />
                 <Button
                   size="sm"
                   variant="outline"

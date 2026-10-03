@@ -116,7 +116,6 @@ export function AutosaveMonitoringDashboard() {
         title="Autosave monitoring"
         actions={
           <>
-            {/* Auto-refresh toggle */}
             <Button
               variant={autoRefresh ? "default" : "outline"}
               size="sm"
@@ -129,12 +128,10 @@ export function AutosaveMonitoringDashboard() {
               {autoRefresh ? "Auto-refresh on" : "Auto-refresh off"}
             </Button>
 
-            {/* Manual refresh */}
             <Button variant="outline" size="sm" onClick={handleRefreshAll}>
               <RefreshCw className="h-4 w-4" />
             </Button>
 
-            {/* Time Range Selector */}
             <Tabs value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)}>
               <TabsList>
                 <TabsTrigger value="1h">1 hour</TabsTrigger>
@@ -147,7 +144,6 @@ export function AutosaveMonitoringDashboard() {
         }
       />
 
-      {/* System Health Badge */}
       <Card className="flex flex-col gap-6 py-6">
         <CardContent className="pt-6">
           <div className="flex items-center gap-4">
@@ -186,7 +182,6 @@ export function AutosaveMonitoringDashboard() {
         </CardContent>
       </Card>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="Total autosaves"
@@ -215,9 +210,7 @@ export function AutosaveMonitoringDashboard() {
         />
       </div>
 
-      {/* Charts Section */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Time Series Chart */}
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle>Autosave activity</CardTitle>
@@ -228,7 +221,6 @@ export function AutosaveMonitoringDashboard() {
           </CardContent>
         </Card>
 
-        {/* Section Breakdown */}
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle>Section breakdown</CardTitle>
@@ -249,7 +241,6 @@ export function AutosaveMonitoringDashboard() {
         </Card>
       </div>
 
-      {/* Failure Analysis */}
       {failureAnalysis && failureAnalysis.errorTypes.length > 0 && (
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
@@ -283,7 +274,6 @@ export function AutosaveMonitoringDashboard() {
         </Card>
       )}
 
-      {/* Active Users Table */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle>Active users</CardTitle>

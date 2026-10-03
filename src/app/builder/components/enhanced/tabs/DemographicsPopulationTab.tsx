@@ -1,8 +1,7 @@
 "use client";
 
+import { SectionTabs } from "./SectionTabs";
 import React, { useState, useMemo } from "react";
-import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
 import {
   Group as Users,
   Heart,
@@ -19,7 +18,6 @@ import type {
   RegionDistribution,
 } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
-import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 import {
   calculateDerivedDemographics,
   getRegionColor,
@@ -55,15 +53,6 @@ const clampToRange = (value: number, min: number, max: number) => {
   return Math.min(Math.max(value, min), max);
 };
 
-/**
- * Props for the DemographicsPopulationTab component
- *
- * @interface DemographicsPopulationTabProps
- * @property {EconomyBuilderState} economyBuilder - Current state of the economy builder containing all demographic configurations
- * @property {function} onEconomyBuilderChange - Callback to update the economy builder state when demographic values change
- * @property {EconomicComponentType[]} selectedComponents - Array of selected atomic economic components that may affect demographics
- * @property {boolean} [showAdvanced=false] - Optional flag to show advanced demographic configuration options
- */
 interface DemographicsPopulationTabProps {
   economyBuilder: EconomyBuilderState;
   onEconomyBuilderChange: (builder: EconomyBuilderState) => void;
@@ -71,65 +60,29 @@ interface DemographicsPopulationTabProps {
   showAdvanced?: boolean;
 }
 
-/**
- * DemographicsPopulationTab - Comprehensive demographic and population configuration interface for the economy builder
- *
- * This component provides a tabbed interface for configuring all aspects of a nation's demographic profile,
- * including population structure, age distribution, geographic distribution, and social indicators. It displays
- * real-time metrics, visualizations, and impact assessments from selected atomic economic components.
- *
- * The tab organizes demographic configuration into four main sections:
- * - Population: Total population, growth rates, and basic demographic structure
- * - Age Structure: Age distribution breakdowns (under 15, 15-64, 65+) with dependency ratios
- * - Geographic: Regional distribution, urban/rural split, and geographic population patterns
- * - Social Indicators: Life expectancy, literacy rates, education levels, and health metrics
- *
- * @component
- * @param {DemographicsPopulationTabProps} props - Component props
- * @param {EconomyBuilderState} props.economyBuilder - The current economy builder state containing demographic data
- * @param {function} props.onEconomyBuilderChange - Callback function to update economy builder state with demographic changes
- * @param {EconomicComponentType[]} props.selectedComponents - Array of selected atomic economic components that may impact demographics
- * @param {boolean} [props.showAdvanced=false] - Whether to display advanced configuration options
- *
- * @returns {JSX.Element} Rendered demographics configuration tab with metrics, forms, and visualizations
- *
- * @example
- * ```tsx
- * <DemographicsPopulationTab
- *   economyBuilder={economyBuilderState}
- *   onEconomyBuilderChange={handleEconomyChange}
- *   selectedComponents={['UNIVERSAL_HEALTHCARE', 'PUBLIC_EDUCATION']}
- *   showAdvanced={true}
- * />
- * ```
- */
+const SECTIONS = [
+  { id: "population", label: "Population", icon: Users },
+  { id: "age", label: "Age structure", icon: Baby },
+  { id: "geographic", label: "Geographic", icon: MapPin },
+  { id: "social", label: "Social indicators", icon: GraduationCap },
+] as const;
+
+const SECTION_TITLES = {
+  population: "Population Structure",
+  age: "Age Distribution",
+  geographic: "Geographic Distribution",
+  social: "Social Indicators",
+} as const satisfies Record<(typeof SECTIONS)[number]["id"], string>;
+
+/** Demographic and population settings: population, age structure, geography and social indicators. */
 export function DemographicsPopulationTab({
   economyBuilder,
   onEconomyBuilderChange,
-  selectedComponents,
   showAdvanced = false,
 }: DemographicsPopulationTabProps) {
   const [activeSection, setActiveSection] = useState<
     "population" | "age" | "geographic" | "social"
   >("population");
-
-  // Calculate demographic impacts from atomic components
-  const demographicImpacts = useMemo(() => {
-    return selectedComponents.reduce(
-      (acc, compType) => {
-        const component = ATOMIC_ECONOMIC_COMPONENTS[compType];
-        const di = component?.demographicImpact;
-        if (!di) return acc;
-        return {
-          populationGrowth: acc.populationGrowth * (di.populationGrowthModifier ?? 1.0),
-          lifeExpectancy: acc.lifeExpectancy * (di.lifeExpectancyModifier ?? 1.0),
-          literacyRate: acc.literacyRate * (di.literacyModifier ?? 1.0),
-          urbanization: acc.urbanization * (di.urbanizationModifier ?? 1.0),
-        };
-      },
-      { populationGrowth: 1.0, lifeExpectancy: 1.0, literacyRate: 1.0, urbanization: 1.0 }
-    );
-  }, [selectedComponents]);
 
   const handleDemographicsChange = <K extends keyof DemographicsConfiguration>(
     field: K,
@@ -352,9 +305,6 @@ export function DemographicsPopulationTab({
     [economyBuilder.demographics]
   );
 
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const hasComponentImpact = Object.values(demographicImpacts).some((v) => v !== 1);
-
   return (
     <div className="space-y-6">
       <h2 className="sr-only">Demographics & population configuration</h2>
@@ -394,44 +344,13 @@ export function DemographicsPopulationTab({
         />
       </div>
 
-      <div className="border-separator bg-fill-4 rounded-row flex space-x-1 border p-1 shadow-inner">
-        {(
-          [
-            { id: "population", label: "Population", icon: Users },
-            { id: "age", label: "Age structure", icon: Baby },
-            { id: "geographic", label: "Geographic", icon: MapPin },
-            { id: "social", label: "Social indicators", icon: GraduationCap },
-          ] as const
-        ).map((section) => {
-          const Icon = section.icon;
-          return (
-            <Button
-              key={section.id}
-              variant={activeSection === section.id ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setActiveSection(section.id)}
-              className={cn(
-                "rounded-control flex-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-205",
-                activeSection === section.id
-                  ? "bg-green text-on-green shadow-card hover:bg-green"
-                  : "text-label-secondary hover:bg-fill-3 hover:text-label"
-              )}
-            >
-              <Icon className="mr-2 h-4 w-4" />
-              {section.label}
-            </Button>
-          );
-        })}
-      </div>
+      <SectionTabs sections={SECTIONS} active={activeSection} onChange={setActiveSection} />
 
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
         <Card>
           <div className="border-separator border-b px-6 py-4">
             <h3 className="text-label text-headline flex items-center gap-2">
-              {activeSection === "population" && "Population Structure"}
-              {activeSection === "age" && "Age Distribution"}
-              {activeSection === "geographic" && "Geographic Distribution"}
-              {activeSection === "social" && "Social Indicators"}
+              {SECTION_TITLES[activeSection]}
             </h3>
           </div>
           <CardContent className="space-y-6 p-6">

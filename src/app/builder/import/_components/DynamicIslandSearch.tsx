@@ -30,8 +30,6 @@ import { withBasePath } from "~/lib/base-path";
 import type { UnifiedInfoboxData } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import { GOV_PRESETS, SORT_OPTIONS } from "./EligibleCountryGrid";
 
-// ─── Types ───
-
 export interface WikiSite {
   name: string;
   displayName: string;
@@ -53,14 +51,12 @@ export interface SearchResult {
   government?: string;
 }
 
-export type ParsedCountryData = UnifiedInfoboxData;
+type ParsedCountryData = UnifiedInfoboxData;
 const logoMap: Record<string, string> = {
   ixwiki: "/images/ix-logo.svg",
   iiwiki: "/images/IIWikiLogo.png",
   althistory: "/images/althistory-logo.webp",
 };
-
-// ─── Props ───
 
 interface DynamicIslandSearchProps {
   selectedSite: WikiSite;
@@ -86,8 +82,6 @@ interface DynamicIslandSearchProps {
   hasActiveFilters: boolean;
   onClearFilters: () => void;
 }
-
-// ─── Component ───
 
 export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
   selectedSite,
@@ -193,7 +187,6 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
   return (
     <div ref={containerRef} className="relative" onKeyDown={handleKeyDown}>
       <AnimatePresence mode="popLayout">
-        {/* ─── Parsing Pill ─── */}
         {isParsing && (
           <motion.div
             key="parsing"
@@ -226,13 +219,11 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
           </motion.div>
         )}
 
-        {/* ─── Unified Search & Filter Island ─── */}
         {!isParsing && !isParsed && (
           <div className="border-separator bg-surface rounded-card shadow-card relative w-full border p-2 sm:p-3">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               {/* Left Group: Wiki Source Selector + Search Input */}
               <div className="flex min-w-0 flex-1 items-center gap-2">
-                {/* Wiki source menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -277,7 +268,6 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
 
                 <div aria-hidden className="bg-separator-opaque h-4 w-px shrink-0" />
 
-                {/* Search Input Field */}
                 <div className="relative flex min-w-0 flex-1 items-center gap-2 px-1">
                   {isSearching ? (
                     <motion.div
@@ -331,7 +321,6 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
 
               {/* Right Group: Government Segmented Control + Sort Dropdown + Count + Reset */}
               <div className="border-separator flex shrink-0 flex-wrap items-center justify-between gap-2 border-t pt-1 sm:flex-nowrap md:justify-end md:border-t-0 md:pt-0">
-                {/* Segmented Government Filter */}
                 <SegmentedControl
                   aria-label="Government type"
                   size="sm"
@@ -343,7 +332,6 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                   options={GOV_PRESETS.map((preset) => ({ value: preset.id, label: preset.label }))}
                 />
 
-                {/* Sort menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -376,12 +364,10 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                {/* Nation Count Badge */}
                 <Badge variant="default" className="tabular-nums">
                   {nationCount} {nationCount === 1 ? "nation" : "nations"}
                 </Badge>
 
-                {/* Reset Action */}
                 {hasActiveFilters && (
                   <Button
                     type="button"
@@ -401,7 +387,6 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
             {/* Dropdown Live Results Area (if searching via MediaWiki API) */}
             {showResults && searchTerm.trim().length > 0 && (
               <div className="material-thick rounded-row z-popover shadow-floating absolute top-full right-0 left-0 mt-2 max-h-72 overflow-y-auto p-2">
-                {/* Searching Status */}
                 {isSearching && searchResults.length === 0 && (
                   <div className="flex items-center justify-center gap-3 py-6">
                     <motion.div
@@ -416,14 +401,12 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                   </div>
                 )}
 
-                {/* Error Status */}
                 {error && (
                   <div className="px-4 py-4 text-center">
                     <p className="text-footnote text-red">{error}</p>
                   </div>
                 )}
 
-                {/* No Results */}
                 {!isSearching && searchResults.length === 0 && !error && (
                   <div className="px-4 py-6 text-center">
                     <p className="text-label-secondary text-footnote">
@@ -432,7 +415,6 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                   </div>
                 )}
 
-                {/* Results List */}
                 {searchResults.length > 0 && (
                   <div className="space-y-2">
                     {searchResults.slice(0, 10).map((result, index) => (
@@ -463,8 +445,6 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
   );
 };
 
-// ─── Inline Result Item with Apple Tactile Physics ───
-
 interface SearchResultItemInlineProps {
   result: SearchResult;
   isSelected: boolean;
@@ -494,7 +474,6 @@ function SearchResultItemInline({
         isSelected ? "border-blue/40 bg-blue/10" : "bg-surface hover:bg-fill-3 border-separator"
       )}
     >
-      {/* Flag or Globe */}
       {result.flagUrl && !imgError ? (
         <img
           src={result.flagUrl}
@@ -509,7 +488,6 @@ function SearchResultItemInline({
         </div>
       )}
 
-      {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-label text-body truncate font-medium">{result.title}</h2>
@@ -522,7 +500,6 @@ function SearchResultItemInline({
           />
         </div>
 
-        {/* Key Indicators or Snippet */}
         {result.population || result.gdpPerCapita || result.capital || result.government ? (
           <div className="text-label-secondary text-footnote mt-1 flex flex-wrap gap-x-3 gap-y-1">
             {result.population && (

@@ -53,7 +53,6 @@ export function DiplomaticScenariosPanel() {
         </TabsContent>
 
         <TabsContent value="catalog" className="mt-6 space-y-6 focus-visible:outline-none">
-          {/* Header */}
           <DiplomaticScenariosHeader
             typeFilter={admin.typeFilter}
             setTypeFilter={admin.setTypeFilter}
@@ -70,7 +69,6 @@ export function DiplomaticScenariosPanel() {
             onOpenAddDialog={() => admin.setIsAddDialogOpen(true)}
           />
 
-          {/* Bulk Actions */}
           <DiplomaticScenarioBulkActions
             selectedCount={admin.selectedIds.size}
             totalCount={admin.filteredScenarios.length}
@@ -79,7 +77,6 @@ export function DiplomaticScenariosPanel() {
             onBulkDeactivate={admin.handleBulkDeactivate}
           />
 
-          {/* Scenarios Grid */}
           {admin.isLoading ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
@@ -110,7 +107,6 @@ export function DiplomaticScenariosPanel() {
         </TabsContent>
       </Tabs>
 
-      {/* Editor Dialog */}
       {(admin.isAddDialogOpen || admin.editingScenario) && (
         <DiplomaticScenarioFormDialog
           isOpen={admin.isAddDialogOpen || !!admin.editingScenario}

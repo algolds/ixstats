@@ -1,11 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import {
-  WhiteFlag as Flag,
-  Globe,
-  Translate as Languages,
-} from "iconoir-react";
+import { WhiteFlag as Flag, Globe, Translate as Languages } from "iconoir-react";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import type { EconomicInputs } from "~/app/builder/lib/economy-data-service";
 
@@ -31,7 +27,6 @@ export const PreviewIdentity = memo(function PreviewIdentity({
     <div className="space-y-6">
       {/* Flag and Coat of Arms Badges */}
       <div className="flex items-center justify-center gap-6">
-        {/* Flag */}
         <div className="rounded-row border-separator bg-surface shadow-card hover:border-tint/40 hover:shadow-card relative flex h-16 w-28 items-center justify-center overflow-hidden border p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
           {economicInputs?.flagUrl || nationalIdentity.countryName ? (
             <UnifiedCountryFlag
@@ -44,7 +39,6 @@ export const PreviewIdentity = memo(function PreviewIdentity({
           )}
         </div>
 
-        {/* Coat of Arms */}
         {economicInputs?.coatOfArmsUrl && (
           <div className="rounded-row border-separator bg-surface shadow-card hover:border-tint/40 hover:shadow-card relative flex h-16 w-16 items-center justify-center overflow-hidden border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
             <img
@@ -59,9 +53,7 @@ export const PreviewIdentity = memo(function PreviewIdentity({
         )}
       </div>
 
-      {/* Identity Details Bento Columns */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {/* Basic Info */}
         <div className="rounded-row border-separator bg-surface border p-4">
           <h3 className="text-eyebrow text-label-secondary flex items-center gap-2">
             <Globe className="text-tint h-3.5 w-3.5" />
@@ -105,7 +97,6 @@ export const PreviewIdentity = memo(function PreviewIdentity({
           </dl>
         </div>
 
-        {/* Culture */}
         <div className="rounded-row border-separator bg-surface border p-4">
           <h3 className="text-eyebrow text-label-secondary flex items-center gap-2">
             <Languages className="text-tint h-3.5 w-3.5" />

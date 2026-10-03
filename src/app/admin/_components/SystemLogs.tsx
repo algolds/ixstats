@@ -4,14 +4,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
-import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/admin/log-viewer";
+import { LogViewerFilterable, type LogEntry } from "~/components/admin/log-viewer";
+import { toLogLevel, useClearSystemLogs } from "../_hooks/useSystemLogs";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Activity, OpenNewWindow as ExternalLink, SystemRestart as Loader2 } from "iconoir-react";
-import { useNotify } from "~/hooks/useNotify";
 
 export function SystemLogs() {
-  const notify = useNotify();
   const [limit] = useState(100);
 
   // Fetch actual logs from the database
@@ -27,30 +26,13 @@ export function SystemLogs() {
     }
   );
 
-  const clearLogsMutation = api.admin.clearSystemLogs.useMutation({
-    onSuccess: () => {
-      notify.success("System logs cleared successfully");
-      void refetch();
-    },
-    onError: (err) => {
-      notify.error(err.message || "Failed to clear logs");
-    },
-  });
-
-  const handleClearLogs = () => {
-    if (confirm("Are you sure you want to purge all system logs? This cannot be undone.")) {
-      clearLogsMutation.mutate();
-    }
-  };
+  const handleClearLogs = useClearSystemLogs(
+    refetch,
+    "Are you sure you want to purge all system logs? This cannot be undone."
+  );
 
   // Map database logs to LogViewer entries format
   const entries: LogEntry[] = (logsData?.logs ?? []).map((log) => {
-    let level: LogLevel = "info";
-    const dbLevel = log.level?.toUpperCase();
-    if (dbLevel === "DEBUG") level = "debug";
-    else if (dbLevel === "WARN" || dbLevel === "WARNING") level = "warn";
-    else if (dbLevel === "ERROR" || dbLevel === "CRITICAL" || dbLevel === "FATAL") level = "error";
-
     let msg = `[${log.category}] ${log.message}`;
     if (log.userId) msg += ` | user: ${log.userId}`;
     if (log.component) msg += ` | component: ${log.component}`;
@@ -59,7 +41,7 @@ export function SystemLogs() {
     if (log.errorStack) msg += `\nStack: ${log.errorStack.slice(0, 1000)}`;
 
     return {
-      level,
+      level: toLogLevel(log.level),
       message: msg,
       timestamp: log.timestamp ? new Date(log.timestamp).toISOString() : undefined,
     };

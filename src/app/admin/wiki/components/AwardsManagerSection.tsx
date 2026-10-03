@@ -24,13 +24,7 @@ import {
 import { cn } from "~/lib/utils";
 import { getIconComponent, getColorClass, getColorHex } from "./types";
 import { Textarea } from "~/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import {
   Table,
   TableHeader,
@@ -212,7 +206,6 @@ export function AwardsManagerSection() {
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="flex flex-col gap-6 lg:col-span-1">
-        {/* Creation form */}
         <Card className="flex h-fit flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle className="text-title-3 flex items-center gap-2">
@@ -237,18 +230,18 @@ export function AwardsManagerSection() {
 
               <div className="space-y-2">
                 <label className="text-label text-body font-medium">Category</label>
-                <Select value={category} onValueChange={(v) => setCategory(v)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="FEATURED">🏆 Featured Article</SelectItem>
-                    <SelectItem value="COLLABORATION">👥 Collaboration Milestone</SelectItem>
-                    <SelectItem value="PEER_REVIEW">✔️ Peer Reviewed</SelectItem>
-                    <SelectItem value="SPECIAL">⭐ Special Recognition</SelectItem>
-                    <SelectItem value="EDITOR_MILESTONE">✨ Editor Milestone</SelectItem>
-                  </SelectContent>
-                </Select>
+                <ValueSelect
+                  value={category}
+                  onValueChange={(v) => setCategory(v)}
+                  options={[
+                    ["FEATURED", "🏆 Featured Article"],
+                    ["COLLABORATION", "👥 Collaboration Milestone"],
+                    ["PEER_REVIEW", "✔️ Peer Reviewed"],
+                    ["SPECIAL", "⭐ Special Recognition"],
+                    ["EDITOR_MILESTONE", "✨ Editor Milestone"],
+                  ]}
+                  className="w-full"
+                />
               </div>
 
               <div className="space-y-2">
@@ -272,48 +265,49 @@ export function AwardsManagerSection() {
                 />
               </div>
 
-              {/* Medal Icon Builder Section */}
               <div className="border-separator space-y-3 border-t pt-3">
                 <span className="text-eyebrow text-yellow">Medal icon builder</span>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <label className="text-label text-caption">Shape</label>
-                    <Select value={iconShape} onValueChange={(v) => setIconShape(v)}>
-                      <SelectTrigger size="sm" className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="trophy">🏆 Trophy</SelectItem>
-                        <SelectItem value="medal">🏅 Medal</SelectItem>
-                        <SelectItem value="star">⭐ Star</SelectItem>
-                        <SelectItem value="crown">👑 Crown</SelectItem>
-                        <SelectItem value="shield">🛡️ Shield</SelectItem>
-                        <SelectItem value="award">🎖️ Award</SelectItem>
-                        <SelectItem value="users">👥 Users</SelectItem>
-                        <SelectItem value="check">✔️ Check</SelectItem>
-                        <SelectItem value="sparkles">✨ Sparkles</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <ValueSelect
+                      value={iconShape}
+                      onValueChange={(v) => setIconShape(v)}
+                      options={[
+                        ["trophy", "🏆 Trophy"],
+                        ["medal", "🏅 Medal"],
+                        ["star", "⭐ Star"],
+                        ["crown", "👑 Crown"],
+                        ["shield", "🛡️ Shield"],
+                        ["award", "🎖️ Award"],
+                        ["users", "👥 Users"],
+                        ["check", "✔️ Check"],
+                        ["sparkles", "✨ Sparkles"],
+                      ]}
+                      size="sm"
+                      className="w-full"
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-label text-caption">Color type</label>
-                    <Select value={iconColor} onValueChange={(v) => setIconColor(v)}>
-                      <SelectTrigger size="sm" className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="amber">Amber (Gold)</SelectItem>
-                        <SelectItem value="slate">Slate (Silver)</SelectItem>
-                        <SelectItem value="cyan">Cyan</SelectItem>
-                        <SelectItem value="green">Green</SelectItem>
-                        <SelectItem value="purple">Purple</SelectItem>
-                        <SelectItem value="pink">Pink</SelectItem>
-                        <SelectItem value="red">Red</SelectItem>
-                        <SelectItem value="custom">Custom HEX</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <ValueSelect
+                      value={iconColor}
+                      onValueChange={(v) => setIconColor(v)}
+                      options={[
+                        ["amber", "Amber (Gold)"],
+                        ["slate", "Slate (Silver)"],
+                        ["cyan", "Cyan"],
+                        ["green", "Green"],
+                        ["purple", "Purple"],
+                        ["pink", "Pink"],
+                        ["red", "Red"],
+                        ["custom", "Custom HEX"],
+                      ]}
+                      size="sm"
+                      className="w-full"
+                    />
                   </div>
                 </div>
 
@@ -342,7 +336,6 @@ export function AwardsManagerSection() {
                   </div>
                 )}
 
-                {/* Ambient Glass Medal Preview */}
                 <div className="border-separator bg-fill-4 rounded-row flex flex-col items-center justify-center border p-4">
                   <span className="text-label-secondary text-eyebrow mb-2 select-none">
                     Live medal preview
@@ -403,7 +396,6 @@ export function AwardsManagerSection() {
           </CardContent>
         </Card>
 
-        {/* Automated Milestones Panel */}
         <Card className="flex h-fit flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle className="text-title-3 flex items-center gap-2">
@@ -458,7 +450,6 @@ export function AwardsManagerSection() {
       </div>
 
       <div className="flex flex-col gap-6 lg:col-span-2">
-        {/* Recent Winners Log */}
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -576,7 +567,6 @@ export function AwardsManagerSection() {
           </CardContent>
         </Card>
 
-        {/* Active Awards List */}
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -585,19 +575,19 @@ export function AwardsManagerSection() {
                 <CardDescription>Chronological list of all manual wiki rewards</CardDescription>
               </div>
               <div className="flex items-center gap-2">
-                <Select value={awardCategory} onValueChange={(v) => setAwardCategory(v)}>
-                  <SelectTrigger size="sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All categories</SelectItem>
-                    <SelectItem value="FEATURED">Featured</SelectItem>
-                    <SelectItem value="COLLABORATION">Collaboration</SelectItem>
-                    <SelectItem value="PEER_REVIEW">Peer review</SelectItem>
-                    <SelectItem value="SPECIAL">Special</SelectItem>
-                    <SelectItem value="EDITOR_MILESTONE">Milestones</SelectItem>
-                  </SelectContent>
-                </Select>
+                <ValueSelect
+                  value={awardCategory}
+                  onValueChange={(v) => setAwardCategory(v)}
+                  options={[
+                    ["all", "All categories"],
+                    ["FEATURED", "Featured"],
+                    ["COLLABORATION", "Collaboration"],
+                    ["PEER_REVIEW", "Peer review"],
+                    ["SPECIAL", "Special"],
+                    ["EDITOR_MILESTONE", "Milestones"],
+                  ]}
+                  size="sm"
+                />
               </div>
             </div>
           </CardHeader>

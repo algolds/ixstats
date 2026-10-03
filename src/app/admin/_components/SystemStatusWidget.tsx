@@ -192,14 +192,12 @@ export function SystemStatusWidget() {
 
       {isCollapsed ? (
         <div className="text-footnote flex items-center justify-between gap-2 overflow-hidden px-3 py-2 tabular-nums">
-          {/* IxTime */}
           <span
             className="text-label max-w-[100px] shrink-0 truncate font-medium whitespace-nowrap"
             title="Current IxTime"
           >
             {liveFormattedTime || systemStatus?.ixTime?.formattedIxTime || "Time"}
           </span>
-          {/* Bot Connection */}
           <span
             className="flex shrink-0 items-center gap-1 overflow-hidden"
             title={botAvailable ? "Bot Connected" : "Bot Offline"}
@@ -220,7 +218,6 @@ export function SystemStatusWidget() {
         </div>
       ) : (
         <div className="space-y-3 p-4 pt-1 tabular-nums">
-          {/* Live IxTime Display */}
           <div className="space-y-1">
             <div className="text-eyebrow text-label-secondary flex items-center gap-2">
               <Clock aria-hidden className="size-3.5" />
@@ -240,7 +237,6 @@ export function SystemStatusWidget() {
             )}
           </div>
 
-          {/* Discord Bot Status */}
           <div className="space-y-1">
             <div className="text-eyebrow text-label-secondary flex items-center gap-2">
               <Bot aria-hidden className="size-3.5" />
@@ -258,7 +254,6 @@ export function SystemStatusWidget() {
             )}
           </div>
 
-          {/* Quick System Indicators */}
           <dl className="border-separator text-footnote space-y-2 border-t pt-3">
             <div className="flex items-center justify-between">
               <dt className="text-label-secondary flex items-center gap-2">

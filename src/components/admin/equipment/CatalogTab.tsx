@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Slider } from "~/components/ui/slider";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -81,7 +82,6 @@ export function CatalogTab({
 }: CatalogTabProps) {
   return (
     <div className="space-y-4">
-      {/* Category Tabs */}
       <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
         <TabsList className="bg-fill-3 rounded-row flex w-full flex-wrap justify-start gap-1 p-1">
           {Object.entries(CATEGORIES).map(([key, label]) => {
@@ -100,7 +100,6 @@ export function CatalogTab({
         </TabsList>
       </Tabs>
 
-      {/* Advanced Filters */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative max-w-sm min-w-[200px] flex-1">
           <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
@@ -112,21 +111,15 @@ export function CatalogTab({
           />
         </div>
 
-        <Select value={eraFilter} onValueChange={setEraFilter}>
-          <SelectTrigger size="sm" className="w-36">
-            <SelectValue placeholder="All eras" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all" className="text-footnote">
-              All eras
-            </SelectItem>
-            {ERAS.map((era) => (
-              <SelectItem key={era.value} value={era.value} className="text-footnote">
-                {era.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <ValueSelect
+          value={eraFilter}
+          onValueChange={setEraFilter}
+          options={[["all", "All eras"], ...ERAS.map((era) => [era.value, era.label] as const)]}
+          size="sm"
+          className="w-36"
+          placeholder="All eras"
+          itemClassName="text-footnote"
+        />
 
         <Select value={subcategoryFilter} onValueChange={setSubcategoryFilter}>
           <SelectTrigger size="sm" className="w-40">
@@ -158,7 +151,6 @@ export function CatalogTab({
 
       {/* Advanced Filters Row 2 */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {/* Tech Level Range */}
         <div>
           <label className="text-label text-body mb-2 block font-medium">
             Tech Level: {techLevelRange[0]} - {techLevelRange[1]}
@@ -173,7 +165,6 @@ export function CatalogTab({
           />
         </div>
 
-        {/* Cost Range */}
         <div>
           <label className="text-label text-body mb-2 block font-medium">
             Acquisition Cost: ${(costRange[0] / 1000000).toFixed(1)}M - $
@@ -190,7 +181,6 @@ export function CatalogTab({
         </div>
       </div>
 
-      {/* Bulk Actions */}
       {selectedIds.size > 0 && (
         <div className="rounded-row border-red/30 bg-red/10 text-footnote flex items-center gap-3 border p-3">
           <span className="text-label font-medium">{selectedIds.size} selected</span>
@@ -208,7 +198,6 @@ export function CatalogTab({
         </div>
       )}
 
-      {/* Stats Bar */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
           <p className="text-label-secondary text-stat-label">Total systems</p>
@@ -230,7 +219,6 @@ export function CatalogTab({
         </Card>
       </div>
 
-      {/* Equipment Grid */}
       {isLoading ? (
         <div className="py-12 text-center">
           <div className="border-tint mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
@@ -249,7 +237,6 @@ export function CatalogTab({
         </Card>
       ) : (
         <>
-          {/* Select All Checkbox */}
           <div className="mb-4 flex items-center gap-2">
             <Checkbox
               id="selectAll"

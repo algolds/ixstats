@@ -10,13 +10,7 @@ import { NameResultCard } from "../shared/NameResultCard";
 import { UseNameDialog } from "../shared/UseNameDialog";
 import { DictionaryEditModal, type DictEditValue } from "../shared/DictionaryEditModal";
 import { api } from "~/trpc/react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { ImportStashPanel } from "../stash/ImportStashPanel";
 import { SavedDictionaryCard } from "../stash/SavedDictionaryCard";
 import { StudioLexicon } from "./studio/StudioLexicon";
@@ -45,10 +39,6 @@ function StashSection({ onLoadToStudio, onNavigateExplore, onNavigateStudio }: S
 
   // Dictionary collapse state
   const [expandedDicts, setExpandedDicts] = useState<Record<string, boolean>>({});
-
-  // Copy states
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Name deployment modal
   const [selectedNameForUse, setSelectedNameForUse] = useState<string | null>(null);
@@ -85,32 +75,12 @@ function StashSection({ onLoadToStudio, onNavigateExplore, onNavigateStudio }: S
       return matchSearch && matchFolder;
     }) || [];
 
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const handleCopy = async (id: string, text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
-    }
-  };
-
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this item?")) return;
     try {
       await bank.deleteEntry(id);
     } catch (err) {
       console.error("Failed to delete entry:", err);
-    }
-  };
-
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const handleTogglePublic = async (id: string, currentPublic: boolean) => {
-    try {
-      await bank.togglePublic(id, !currentPublic);
-    } catch (err) {
-      console.error("Failed to toggle public status:", err);
     }
   };
 
@@ -186,9 +156,7 @@ function StashSection({ onLoadToStudio, onNavigateExplore, onNavigateStudio }: S
 
   return (
     <div className="space-y-5">
-      {/* Tab Switcher & Filters/Import */}
       <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-3">
-        {/* Sub-tab Toggle buttons */}
         <SegmentedControl
           size="sm"
           asTabs
@@ -207,26 +175,21 @@ function StashSection({ onLoadToStudio, onNavigateExplore, onNavigateStudio }: S
             {/* Upload .txt files (one dictionary per file) */}
             <ImportStashPanel />
 
-            {/* Folder filter dropdown */}
             <div className="relative w-full sm:w-44">
-              <Select value={selectedStashFilterId} onValueChange={setSelectedStashFilterId}>
-                <SelectTrigger className="text-footnote w-full">
-                  <SelectValue placeholder="All folders" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px]">
-                  <SelectItem value="all" className="text-footnote">
-                    📁 All Folders
-                  </SelectItem>
-                  {stashesQuery.data?.map((s) => (
-                    <SelectItem key={s.id} value={s.id} className="text-footnote">
-                      📁 {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <ValueSelect
+                value={selectedStashFilterId}
+                onValueChange={setSelectedStashFilterId}
+                options={[
+                  ["all", "📁 All Folders"],
+                  ...(stashesQuery.data?.map((s) => [s.id, `📁 ${s.name}`] as const) ?? []),
+                ]}
+                className="text-footnote w-full"
+                placeholder="All folders"
+                contentClassName="max-h-[300px]"
+                itemClassName="text-footnote"
+              />
             </div>
 
-            {/* Search Input */}
             <div className="relative w-full sm:w-56">
               <Search className="text-label-secondary absolute top-2 left-3 h-4 w-4" />
               <Input
@@ -260,7 +223,6 @@ function StashSection({ onLoadToStudio, onNavigateExplore, onNavigateStudio }: S
             ))}
           </datalist>
 
-          {/* Two-Column Side-by-Side Layout */}
           <div className="grid items-start gap-6 lg:grid-cols-12">
             {/* Left Column (7/12): Saved Names Badges */}
             <div className="space-y-3 lg:col-span-7">
@@ -366,7 +328,6 @@ function StashSection({ onLoadToStudio, onNavigateExplore, onNavigateStudio }: S
                               </PopoverContent>
                             </Popover>
 
-                            {/* Delete */}
                             <Button
                               variant="ghost"
                               size="icon-sm"
@@ -442,7 +403,6 @@ function StashSection({ onLoadToStudio, onNavigateExplore, onNavigateStudio }: S
         </>
       )}
 
-      {/* Deployment Modal */}
       {selectedNameForUse && (
         <UseNameDialog
           isOpen={!!selectedNameForUse}
@@ -452,7 +412,6 @@ function StashSection({ onLoadToStudio, onNavigateExplore, onNavigateStudio }: S
         />
       )}
 
-      {/* Edit Dictionary Modal */}
       {editDict && (
         <DictionaryEditModal
           dict={editDict}

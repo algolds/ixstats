@@ -113,8 +113,6 @@ export function isFieldChanged(
   return index.get(normalizeFieldName(name))?.includes(value) ?? false;
 }
 
-// ─── Editor sections ───
-
 /** The editor's sections that hold saved fields (Review only reads them). */
 export type EditorSection = "identity" | "government" | "economics";
 

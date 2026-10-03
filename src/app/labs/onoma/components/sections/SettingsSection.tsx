@@ -265,7 +265,6 @@ function SettingsSection() {
         <VoiceSandboxPanel voiceOptions={voiceOptions} speechConfig={speechConfig} />
       </div>
 
-      {/* Browser Conlang Data Manager */}
       <ConlangDataManagerPanel onImportComplete={handleImportComplete} />
     </div>
   );

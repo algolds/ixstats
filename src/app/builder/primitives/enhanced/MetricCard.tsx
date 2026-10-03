@@ -119,7 +119,6 @@ export function MetricCard({
           </div>
         </div>
 
-        {/* Trend Indicator */}
         {trend && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
@@ -132,7 +131,6 @@ export function MetricCard({
         )}
       </div>
 
-      {/* Main Value */}
       <div className="relative z-10 mb-2">
         <div className="flex flex-wrap items-baseline gap-1">
           <motion.span className="text-label text-title-1" style={{ color: colors.primary }}>
@@ -143,7 +141,6 @@ export function MetricCard({
         </div>
       </div>
 
-      {/* Change Indicator */}
       {change !== undefined && (
         <motion.div
           initial={{ opacity: 0, y: 5 }}

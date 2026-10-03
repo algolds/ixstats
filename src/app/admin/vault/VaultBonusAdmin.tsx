@@ -124,7 +124,6 @@ export function VaultBonusAdmin() {
 
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
       <Card className="border-green/30 bg-green/10 p-6">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
@@ -155,7 +154,6 @@ export function VaultBonusAdmin() {
         </div>
       </Card>
 
-      {/* Group Sections Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {GROUPS.map((group) => {
           const GroupIcon = group.icon;
@@ -204,7 +202,6 @@ export function VaultBonusAdmin() {
         })}
       </div>
 
-      {/* Save Button Bar */}
       <div className="flex justify-end pt-2">
         <Button
           variant="secondary"

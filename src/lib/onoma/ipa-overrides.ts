@@ -38,8 +38,6 @@ function writeJson(key: string, value: unknown): void {
   window.dispatchEvent(new Event(OVERRIDES_UPDATED_EVENT));
 }
 
-// --- Per-name overrides (ipa + voice) ---
-
 export function getNameOverrides(): NameOverrideMap {
   return readJson<NameOverrideMap>(NAME_OVERRIDES_KEY, {});
 }
@@ -62,8 +60,6 @@ export function setNameOverride(name: string, patch: NameOverride): void {
   writeJson(NAME_OVERRIDES_KEY, all);
 }
 
-// --- Per-culture rule overrides ---
-
 export function getCultureRuleOverrides(culture: string | null): [string, string][] {
   if (!culture) return [];
   const primary = culture.split("+")[0].toLowerCase().trim();
@@ -82,8 +78,6 @@ export function setCultureRuleOverrides(culture: string, rules: [string, string]
   }
   writeJson(PHONOLOGY_RULES_KEY, all);
 }
-
-// --- Resolution ---
 
 /** Resolve the effective IPA for a name: per-name override wins, else culture rules + overrides. */
 export function resolveIpa(name: string, culture: string | null): string {

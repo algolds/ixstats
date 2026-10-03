@@ -18,7 +18,6 @@ export function GrammarRootsSection() {
 
   return (
     <div className="space-y-6">
-      {/* Header & Mode Switcher */}
       <div className="border-separator flex flex-col justify-between gap-4 border-b pb-4 sm:flex-row sm:items-center">
         <div>
           <h2 className="text-label text-body font-semibold">
@@ -33,7 +32,6 @@ export function GrammarRootsSection() {
           </p>
         </div>
 
-        {/* Apple Segmented Switcher */}
         <SegmentedControl
           asTabs
           aria-label="Grammar workspace"
@@ -47,7 +45,6 @@ export function GrammarRootsSection() {
         />
       </div>
 
-      {/* Content Canvas */}
       <motion.div
         key={mode}
         initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}

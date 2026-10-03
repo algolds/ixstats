@@ -56,9 +56,7 @@ export function ThinkPagesSettingsContent() {
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────
 // 1. Platform Settings Tab
-// ────────────────────────────────────────────────────────────────────────
 
 function PlatformSettingsTab() {
   const notify = useNotify();
@@ -105,7 +103,6 @@ function PlatformSettingsTab() {
 
   return (
     <div className="space-y-6">
-      {/* Real Stats Metric Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Total social posts</p>
@@ -141,7 +138,6 @@ function PlatformSettingsTab() {
         </Card>
       </div>
 
-      {/* Settings Form */}
       <Card className="space-y-5 p-5">
         <div className="border-separator flex items-center justify-between border-b pb-4">
           <div>
@@ -157,7 +153,6 @@ function PlatformSettingsTab() {
         </div>
 
         <div className="space-y-3">
-          {/* Max Accounts */}
           <div className="border-separator bg-fill-3 rounded-row flex flex-col justify-between gap-3 border p-4 sm:flex-row sm:items-center">
             <div>
               <Label className="text-label text-caption">Max Accounts Limit per User</Label>
@@ -175,7 +170,6 @@ function PlatformSettingsTab() {
             />
           </div>
 
-          {/* Character Cap */}
           <div className="border-separator bg-fill-3 rounded-row flex flex-col justify-between gap-3 border p-4 sm:flex-row sm:items-center">
             <div>
               <Label className="text-label text-caption">Post character length cap</Label>
@@ -193,7 +187,6 @@ function PlatformSettingsTab() {
             />
           </div>
 
-          {/* Auto News Elections */}
           <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
               <Label className="text-label text-caption">Election Results Auto-News</Label>
@@ -208,7 +201,6 @@ function PlatformSettingsTab() {
             />
           </div>
 
-          {/* Auto News Policies */}
           <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
               <Label className="text-label text-caption">Passed Directives Auto-News</Label>
@@ -223,7 +215,6 @@ function PlatformSettingsTab() {
             />
           </div>
 
-          {/* Comment Attachments */}
           <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
               <Label className="text-label text-caption">Media & card attachments</Label>
@@ -243,9 +234,7 @@ function PlatformSettingsTab() {
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────
 // 2. Discord Mirror Tab
-// ────────────────────────────────────────────────────────────────────────
 
 function DiscordMirrorTab() {
   const notify = useNotify();

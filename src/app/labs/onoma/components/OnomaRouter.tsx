@@ -22,7 +22,6 @@ function OnomaRouter() {
     activeSubTab,
     activeExploreSubTab,
     lastActiveTab,
-    lexiconCount,
     shouldAnimateStash,
     hasInteractedPronunciation,
     setHasInteractedPronunciation,
@@ -53,7 +52,6 @@ function OnomaRouter() {
           activeSubTab={activeSubTab}
           activeExploreSubTab={activeExploreSubTab}
           lastActiveTab={lastActiveTab}
-          lexiconCount={lexiconCount}
           shouldAnimateStash={shouldAnimateStash}
           hasInteractedPronunciation={hasInteractedPronunciation}
           setHasInteractedPronunciation={setHasInteractedPronunciation}
@@ -91,7 +89,6 @@ function OnomaRouter() {
         </Card>
       </div>
 
-      {/* Physics-Based Elastic Pull Footer */}
       <PhysicsPullFooter>
         <OnomaFooter
           onNavigate={handleNavigate}

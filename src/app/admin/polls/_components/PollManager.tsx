@@ -112,7 +112,6 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
 
   return (
     <div className="space-y-6">
-      {/* Stats Overview */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <Card className="p-4">
           <p className="text-label-secondary text-stat-label">Ballots configured</p>
@@ -130,7 +129,6 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
         </Card>
       </div>
 
-      {/* Poll Cards List */}
       <div className="grid grid-cols-1 gap-4">
         {polls.map((poll: any) => {
           const isExpired = poll.endDate ? new Date() > new Date(poll.endDate) : false;
@@ -177,7 +175,6 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                     )}
                   </div>
 
-                  {/* Actions Panel */}
                   <div className="bg-fill-4 border-separator rounded-row flex shrink-0 items-center gap-4 self-start border p-2 md:self-auto">
                     <div className="flex items-center gap-2">
                       <span className="text-label-secondary text-eyebrow">Active:</span>
@@ -282,7 +279,6 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                             %)
                           </span>
                         </div>
-                        {/* Linear Progress Bar */}
                         <div className="bg-fill-3 relative h-2 w-full overflow-hidden rounded-full">
                           <div
                             className="bg-poll h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"

@@ -23,7 +23,6 @@ import { FieldIndicator } from "~/app/builder/primitives/FieldIndicator";
 import { Button } from "~/components/ui/button";
 
 interface SectorCardProps {
-  sectorId: string;
   template: SectorTemplate;
   isActive: boolean;
   isLocked: boolean;
@@ -43,8 +42,6 @@ interface SectorCardProps {
 }
 
 export function SectorCard({
-  // oxlint-disable-next-line eslint/no-unused-vars
-  sectorId,
   template,
   isActive,
   isLocked,
@@ -125,7 +122,6 @@ export function SectorCard({
       onClick={!isActive && !isLocked ? onToggle : undefined}
     >
       <div className="space-y-3">
-        {/* Header */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3">
             <div className={cn("rounded-control shrink-0 p-2", colors.bg)}>
@@ -183,21 +179,18 @@ export function SectorCard({
           </div>
         </div>
 
-        {/* Description */}
         {!isActive && (
           <p className="text-label-secondary text-footnote line-clamp-2 leading-snug">
             {template.description}
           </p>
         )}
 
-        {/* Incompatible Component List */}
         {isLocked && lockedBy.length > 0 && (
           <div className="border-red/10 bg-red/[0.03] text-footnote text-red rounded border px-3 py-1 leading-tight">
             <span className="font-semibold">Incompatible with:</span> {lockedBy.join(", ")}
           </div>
         )}
 
-        {/* Recommendations list */}
         {isRecommended && !isActive && !isLocked && recommendedBy.length > 0 && (
           <div className="border-green/10 bg-green/[0.03] text-footnote text-green flex items-start gap-1 rounded border px-3 py-1 leading-tight">
             <ArrowUpRight className="mt-0.5 h-3 w-3 shrink-0" />
@@ -250,7 +243,6 @@ export function SectorCard({
               </div>
             )}
 
-            {/* Core Sliders */}
             <div className="space-y-3">
               <SliderWithDirectInput
                 label="GDP contribution"
@@ -285,7 +277,6 @@ export function SectorCard({
               />
             </div>
 
-            {/* Advanced Controls */}
             {showAdvanced && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}

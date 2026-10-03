@@ -6,7 +6,6 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-// oxlint-disable-next-line eslint/no-unused-vars
 import {
   BookmarkBook,
   GitFork,
@@ -26,13 +25,7 @@ import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Card } from "~/components/ui/card";
 
 const FAMILIES = [
@@ -162,18 +155,12 @@ export function LanguagePacksSection({
           />
         </div>
 
-        <Select value={familyFilter} onValueChange={(v) => setFamilyFilter(v)}>
-          <SelectTrigger size="sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {FAMILIES.map((fam) => (
-              <SelectItem key={fam.value} value={fam.value}>
-                {fam.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <ValueSelect
+          value={familyFilter}
+          onValueChange={(v) => setFamilyFilter(v)}
+          options={FAMILIES.map((fam) => [fam.value, fam.label] as const)}
+          size="sm"
+        />
 
         <Button
           variant="outline"
@@ -189,7 +176,6 @@ export function LanguagePacksSection({
 
       {/* Main Grid: Card Gallery on Left + Detail Drawer on Right if Selected */}
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-        {/* Gallery Column */}
         <div className={activePack ? "space-y-4 lg:col-span-7" : "space-y-4 lg:col-span-12"}>
           {isLoading ? (
             <div className="flex h-64 items-center justify-center">
@@ -248,11 +234,9 @@ export function LanguagePacksSection({
           )}
         </div>
 
-        {/* Detailed Inspection Drawer */}
         {activePack && (
           <div className="sticky top-(--shell-top-offset) space-y-4 lg:col-span-5">
             <Card variant="inset" padding="none" className="space-y-4 p-5">
-              {/* Drawer Header */}
               <div className="border-separator flex items-start justify-between border-b pb-3">
                 <div>
                   <div className="flex items-center gap-2">
@@ -275,7 +259,6 @@ export function LanguagePacksSection({
                 </Button>
               </div>
 
-              {/* Sub-tabs Segmented Switcher */}
               <SegmentedControl
                 size="sm"
                 fullWidth
@@ -348,7 +331,6 @@ export function LanguagePacksSection({
               {/* Tab 3: Reviews */}
               {activeSubTab === "reviews" && (
                 <div className="text-footnote space-y-4">
-                  {/* Rating input */}
                   <div className="bg-surface border-separator rounded-row space-y-2 border p-3">
                     <label className="text-label block font-semibold">
                       Leave a community rating

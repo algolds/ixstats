@@ -51,6 +51,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Card } from "~/components/ui/card";
 
 /** Badge variant for a sync job status (colour paired with the status text). */
@@ -281,7 +282,6 @@ export function NSImportSuiteAdmin() {
 
   return (
     <div className="space-y-6">
-      {/* ─── Active & Paused Background Sync Jobs ───────────────── */}
       {activeJobs && activeJobs.length > 0 && (
         <Card className="border-blue/30 bg-blue/5 space-y-4 p-6">
           <h2 className="text-label text-title-3 flex items-center gap-2">
@@ -357,9 +357,7 @@ export function NSImportSuiteAdmin() {
         </Card>
       )}
 
-      {/* ─── Bulk Region Import & Discovery Grid ───────────────── */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Region Fetch Card */}
         <Card className="space-y-4 p-6">
           <div className="flex items-center gap-2">
             <div className="rounded-row border-green/30 bg-green/20 border p-2">
@@ -396,7 +394,6 @@ export function NSImportSuiteAdmin() {
           </div>
         </Card>
 
-        {/* Discover Top Regions Card */}
         <Card className="space-y-4 p-6">
           <div className="flex items-center gap-2">
             <div className="rounded-row border-purple/30 bg-purple/20 border p-2">
@@ -410,21 +407,22 @@ export function NSImportSuiteAdmin() {
             </div>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Select value={discoveryTag} onValueChange={(v) => setDiscoveryTag(v)}>
-              <SelectTrigger size="sm" className="flex-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="gargantuan">Largest regions</SelectItem>
-                <SelectItem value="Role Player">Roleplay communities</SelectItem>
-                <SelectItem value="Democratic">Democratic / Legislative</SelectItem>
-                <SelectItem value="Totalitarian">Totalitarian / Dictatorships</SelectItem>
-                <SelectItem value="Communist">Communist / Leftist</SelectItem>
-                <SelectItem value="Capitalist">Capitalist / Trade</SelectItem>
-                <SelectItem value="Monarchist">Monarchy / Feudalist</SelectItem>
-                <SelectItem value="Anarchist">Anarchist / Lawless</SelectItem>
-              </SelectContent>
-            </Select>
+            <ValueSelect
+              value={discoveryTag}
+              onValueChange={(v) => setDiscoveryTag(v)}
+              options={[
+                ["gargantuan", "Largest regions"],
+                ["Role Player", "Roleplay communities"],
+                ["Democratic", "Democratic / Legislative"],
+                ["Totalitarian", "Totalitarian / Dictatorships"],
+                ["Communist", "Communist / Leftist"],
+                ["Capitalist", "Capitalist / Trade"],
+                ["Monarchist", "Monarchy / Feudalist"],
+                ["Anarchist", "Anarchist / Lawless"],
+              ]}
+              size="sm"
+              className="flex-1"
+            />
             <Button
               variant="secondary"
               onClick={() => discoverRegionsMutation.mutate({ limit: 15, tag: discoveryTag })}
@@ -482,7 +480,6 @@ export function NSImportSuiteAdmin() {
         </Card>
       </div>
 
-      {/* ─── Filter CTE Nations Section ────────────────────────── */}
       <Card className="border-yellow/20 bg-yellow/5 space-y-4 p-6">
         <div className="flex items-center gap-2">
           <div className="rounded-row border-yellow/30 bg-yellow/20 border p-2">
@@ -510,9 +507,7 @@ export function NSImportSuiteAdmin() {
         </Button>
       </Card>
 
-      {/* ─── Sync Operations Log & Import Filter Explorer ──────────────── */}
       <Card className="space-y-6 p-6">
-        {/* Header toolbar */}
         <div className="border-separator flex flex-col gap-3 border-b pb-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="flex items-center gap-2">
@@ -529,7 +524,6 @@ export function NSImportSuiteAdmin() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {/* Import run selector dropdown */}
             <div className="flex items-center gap-2">
               <label className="text-label-secondary text-caption flex items-center gap-1">
                 <Layers className="text-tint h-3 w-3" /> Import:
@@ -566,19 +560,15 @@ export function NSImportSuiteAdmin() {
               </Select>
             </div>
 
-            {/* Sync type filter */}
-            <Select
+            <ValueSelect
               value={syncTypeFilter}
               onValueChange={(v) => setSyncTypeFilter(v as "all" | "region")}
-            >
-              <SelectTrigger size="sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All types</SelectItem>
-                <SelectItem value="region">Region only</SelectItem>
-              </SelectContent>
-            </Select>
+              options={[
+                ["all", "All types"],
+                ["region", "Region only"],
+              ]}
+              size="sm"
+            />
 
             <Button variant="outline" size="sm" onClick={handleRefreshAll}>
               <RefreshCw className="mr-2 h-3 w-3" /> Refresh
@@ -634,7 +624,6 @@ export function NSImportSuiteAdmin() {
               </div>
             </div>
 
-            {/* Metrics row */}
             <div className="text-footnote grid grid-cols-2 gap-2 pt-1 sm:grid-cols-4 lg:grid-cols-6">
               <div className="bg-surface border-separator rounded-control border p-2">
                 <span className="text-label-secondary text-footnote block">Processed</span>
@@ -904,7 +893,6 @@ export function NSImportSuiteAdmin() {
         )}
       </Card>
 
-      {/* ─── Confirm Region Fetch Modal ────────────────────────── */}
       <AlertDialog open={!!confirmFetchRegions} onOpenChange={() => setConfirmFetchRegions(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -953,7 +941,6 @@ export function NSImportSuiteAdmin() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ─── Confirm Stop Job Modal ─────────────────────────────── */}
       <AlertDialog open={!!confirmStopJobId} onOpenChange={() => setConfirmStopJobId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

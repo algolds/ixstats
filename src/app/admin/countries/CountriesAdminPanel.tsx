@@ -10,7 +10,6 @@ import { Globe, Search, Page as FileText } from "iconoir-react";
 import { CountryAdminPanel } from "../_components/CountryAdminPanel";
 import { CountryInspector } from "../_components/CountryInspector";
 import { DataImportCard } from "../_components/platform/DataImportCard";
-import { ImportPreviewDialog } from "../_components/ImportPreviewDialog";
 import { useAdminState } from "../_hooks/useAdminState";
 import { useAdminHandlers } from "../_hooks/useAdminHandlers";
 
@@ -67,21 +66,11 @@ export function CountriesAdminPanel() {
 
         <TabsContent value="import" className="mt-4 space-y-6 focus-visible:outline-none">
           <DataImportCard
+            importState={importState}
             onFileSelect={handleFileSelect}
-            isUploading={importState.isUploading}
-            isAnalyzing={importState.isAnalyzing}
-            analyzeError={importState.analyzeError}
-            importError={importState.importError}
+            onImportClose={handleImportClose}
+            onImportConfirm={handleImportConfirm}
           />
-          {importState.showPreview && importState.previewData && (
-            <ImportPreviewDialog
-              isOpen={importState.showPreview}
-              onClose={handleImportClose}
-              onConfirm={handleImportConfirm}
-              changes={importState.previewData.changes}
-              isLoading={importState.isUploading}
-            />
-          )}
         </TabsContent>
       </Tabs>
     </div>

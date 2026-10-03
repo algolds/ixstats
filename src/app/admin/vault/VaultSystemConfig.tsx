@@ -209,10 +209,8 @@ export function VaultSystemConfig() {
                 </div>
               </div>
 
-              {/* System switches section */}
               <div className="border-separator border-t pt-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {/* Enable Earning */}
                   <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-label text-caption">Enable earning</span>
@@ -227,7 +225,6 @@ export function VaultSystemConfig() {
                       }
                     />
                   </div>
-                  {/* Enable Store Purchases */}
                   <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-label text-caption">Enable store</span>
@@ -242,7 +239,6 @@ export function VaultSystemConfig() {
                       }
                     />
                   </div>
-                  {/* Enable Card Crafting */}
                   <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-label text-caption">Enable crafting</span>
@@ -257,7 +253,6 @@ export function VaultSystemConfig() {
                       }
                     />
                   </div>
-                  {/* Enable Card Packs */}
                   <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-label text-caption">Enable card packs</span>
@@ -287,7 +282,6 @@ export function VaultSystemConfig() {
                       }
                     />
                   </div>
-                  {/* Enable Auctions */}
                   <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-label text-caption">Enable P2P Auctions</span>
@@ -302,7 +296,6 @@ export function VaultSystemConfig() {
                       }
                     />
                   </div>
-                  {/* Maintenance Mode */}
                   <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-destructive text-caption">Maintenance mode</span>

@@ -56,7 +56,6 @@ export function CardTakedownsAdmin() {
           fetches will not restore it.
         </p>
 
-        {/* Takedown Input Form */}
         <div className="flex flex-wrap items-center gap-3 pt-2">
           <Input
             value={takedownCardId}

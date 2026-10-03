@@ -4,7 +4,7 @@
 export type BuilderStep = "foundation" | "core" | "government" | "economics" | "preview";
 
 // Builder mode: create new country or edit existing
-export type BuilderMode = "create" | "edit";
+type BuilderMode = "create" | "edit";
 
 // Field lock configuration for edit mode
 // Field locks for edit mode (system-calculated fields that users cannot edit)

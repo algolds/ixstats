@@ -2,13 +2,7 @@
 import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Page as FileText, InfoCircle as Info, Search } from "iconoir-react";
 import { COMPLEXITY_LEVELS } from "~/lib/admin/atomic-component-filters";
 
@@ -66,7 +60,6 @@ export function AtomicComponentsHeader({
         </span>
       </p>
 
-      {/* Filter Rail */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative max-w-sm min-w-[200px] flex-1">
           <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
@@ -78,37 +71,31 @@ export function AtomicComponentsHeader({
           />
         </div>
 
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger size="sm" className="w-44">
-            <SelectValue placeholder="All categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all" className="text-footnote">
-              All categories
-            </SelectItem>
-            {categories.map((category) => (
-              <SelectItem key={category} value={category} className="text-footnote">
-                {category}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <ValueSelect
+          value={categoryFilter}
+          onValueChange={setCategoryFilter}
+          options={[
+            ["all", "All categories"],
+            ...categories.map((category) => [category, category] as const),
+          ]}
+          size="sm"
+          className="w-44"
+          placeholder="All categories"
+          itemClassName="text-footnote"
+        />
 
-        <Select value={complexityFilter} onValueChange={setComplexityFilter}>
-          <SelectTrigger size="sm" className="w-40">
-            <SelectValue placeholder="All complexities" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all" className="text-footnote">
-              All complexities
-            </SelectItem>
-            {COMPLEXITY_LEVELS.map((level) => (
-              <SelectItem key={level} value={level} className="text-footnote">
-                {level}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <ValueSelect
+          value={complexityFilter}
+          onValueChange={setComplexityFilter}
+          options={[
+            ["all", "All complexities"],
+            ...COMPLEXITY_LEVELS.map((level) => [level, level] as const),
+          ]}
+          size="sm"
+          className="w-40"
+          placeholder="All complexities"
+          itemClassName="text-footnote"
+        />
       </div>
     </div>
   );

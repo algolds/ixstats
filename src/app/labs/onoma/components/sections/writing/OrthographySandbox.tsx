@@ -253,7 +253,6 @@ export function OrthographySandbox({
             className="text-body flex-1 font-mono"
           />
 
-          {/* Export & Copy Suite */}
           <div className="flex items-center gap-1">
             <Button
               variant="outline"
@@ -409,7 +408,6 @@ export function OrthographySandbox({
         )}
       </div>
 
-      {/* Phonetic Token Breakdown Stream */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-label-secondary text-eyebrow">
@@ -451,7 +449,6 @@ export function OrthographySandbox({
 
       {/* Typesetting Sliders with Tactile Numerical Badges */}
       <div className="bg-surface-secondary rounded-row grid grid-cols-2 gap-3 p-4 sm:grid-cols-4">
-        {/* Glyph Size Slider */}
         <div className="space-y-2">
           <div className="text-caption flex items-center justify-between">
             <span className="text-label-secondary font-medium">Glyph size</span>
@@ -468,7 +465,6 @@ export function OrthographySandbox({
           />
         </div>
 
-        {/* Letter Spacing Slider */}
         <div className="space-y-2">
           <div className="text-caption flex items-center justify-between">
             <span className="text-label-secondary font-medium">Tracking</span>
@@ -485,7 +481,6 @@ export function OrthographySandbox({
           />
         </div>
 
-        {/* Word Spacing Slider */}
         <div className="space-y-2">
           <div className="text-caption flex items-center justify-between">
             <span className="text-label-secondary font-medium">Word gap</span>
@@ -502,7 +497,6 @@ export function OrthographySandbox({
           />
         </div>
 
-        {/* Baseline Shift Slider */}
         <div className="space-y-2">
           <div className="text-caption flex items-center justify-between">
             <span className="text-label-secondary font-medium">Baseline shift</span>

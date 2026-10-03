@@ -39,41 +39,15 @@ import { Badge } from "~/components/ui/badge";
 import { Slider } from "~/components/ui/slider";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { cn } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
 import { useAdminNavigation } from "./AdminNavigationContext";
-
-// Economic configurations and tiers duplication
-enum EconomicTier {
-  IMPOVERISHED = "Impoverished",
-  DEVELOPING = "Developing",
-  DEVELOPED = "Developed",
-  HEALTHY = "Healthy",
-  STRONG = "Strong",
-  VERY_STRONG = "Very Strong",
-  EXTRAVAGANT = "Extravagant",
-}
-
-enum PopulationTier {
-  TIER_1 = "1",
-  TIER_2 = "2",
-  TIER_3 = "3",
-  TIER_4 = "4",
-  TIER_5 = "5",
-  TIER_6 = "6",
-  TIER_7 = "7",
-  TIER_X = "X",
-}
+import { ECONOMIC_TIER_INFO } from "~/lib/tier-utils";
+import { EconomicTier, PopulationTier } from "~/types/ixstats";
 
 interface MockEffect {
   id: string;
@@ -83,15 +57,26 @@ interface MockEffect {
   duration: number; // years
 }
 
-const TIER_MAX_GROWTH: Record<EconomicTier, number> = {
-  [EconomicTier.IMPOVERISHED]: 0.1,
-  [EconomicTier.DEVELOPING]: 0.075,
-  [EconomicTier.DEVELOPED]: 0.05,
-  [EconomicTier.HEALTHY]: 0.035,
-  [EconomicTier.STRONG]: 0.0275,
-  [EconomicTier.VERY_STRONG]: 0.015,
-  [EconomicTier.EXTRAVAGANT]: 0.005,
-};
+const ECONOMIC_TIERS_DESCENDING = Object.entries(ECONOMIC_TIER_INFO).reverse() as Array<
+  [EconomicTier, (typeof ECONOMIC_TIER_INFO)[EconomicTier]]
+>;
+
+const POPULATION_TIER_FLOORS: Array<[number, PopulationTier]> = [
+  [500_000_000, PopulationTier.TIER_X],
+  [350_000_000, PopulationTier.TIER_7],
+  [120_000_000, PopulationTier.TIER_6],
+  [80_000_000, PopulationTier.TIER_5],
+  [50_000_000, PopulationTier.TIER_4],
+  [30_000_000, PopulationTier.TIER_3],
+  [10_000_000, PopulationTier.TIER_2],
+];
+
+const getEconTier = (gdpPerCapita: number): EconomicTier =>
+  ECONOMIC_TIERS_DESCENDING.find(([, { min }]) => gdpPerCapita >= min)?.[0] ??
+  EconomicTier.IMPOVERISHED;
+
+const getPopTier = (population: number): PopulationTier =>
+  POPULATION_TIER_FLOORS.find(([floor]) => population >= floor)?.[1] ?? PopulationTier.TIER_1;
 
 export function CountryInspector() {
   const { sidebarHidden, setSidebarHidden } = useAdminNavigation();
@@ -167,27 +152,6 @@ export function CountryInspector() {
 
   const fmtBig = (n: number) => `$${formatCompact(n)}`;
 
-  const getEconTier = (gdpPerCapita: number): EconomicTier => {
-    if (gdpPerCapita >= 65000) return EconomicTier.EXTRAVAGANT;
-    if (gdpPerCapita >= 55000) return EconomicTier.VERY_STRONG;
-    if (gdpPerCapita >= 45000) return EconomicTier.STRONG;
-    if (gdpPerCapita >= 35000) return EconomicTier.HEALTHY;
-    if (gdpPerCapita >= 25000) return EconomicTier.DEVELOPED;
-    if (gdpPerCapita >= 10000) return EconomicTier.DEVELOPING;
-    return EconomicTier.IMPOVERISHED;
-  };
-
-  const getPopTier = (population: number): PopulationTier => {
-    if (population >= 500_000_000) return PopulationTier.TIER_X;
-    if (population >= 350_000_000) return PopulationTier.TIER_7;
-    if (population >= 120_000_000) return PopulationTier.TIER_6;
-    if (population >= 80_000_000) return PopulationTier.TIER_5;
-    if (population >= 50_000_000) return PopulationTier.TIER_4;
-    if (population >= 30_000_000) return PopulationTier.TIER_3;
-    if (population >= 10_000_000) return PopulationTier.TIER_2;
-    return PopulationTier.TIER_1;
-  };
-
   // Perform full calculation steps client-side based on the sliders & effects state
   const calculation = useMemo(() => {
     if (!countryData) return null;
@@ -203,7 +167,6 @@ export function CountryInspector() {
     const cfgDiminishingFactor = globalConfig?.diminishingReturnsFactor || 0.5;
     const cfgMinGrowthFloor = globalConfig?.minGrowthFloor || -0.1;
 
-    // Base rates
     const popBaseRate = countryData.populationGrowthRate || 0.01;
     const gdpBaseRate = countryData.adjustedGdpGrowth || 0.02;
 
@@ -273,7 +236,7 @@ export function CountryInspector() {
     }
 
     // Apply Tier Cap Check
-    const tierMaxCap = TIER_MAX_GROWTH[currentEconTier] || 0.05;
+    const tierMaxCap = ECONOMIC_TIER_INFO[currentEconTier].maxGrowth;
     const isCapped = drReducedVal > tierMaxCap;
     let finalGdpGrowthRate = isCapped ? tierMaxCap : drReducedVal;
 
@@ -777,7 +740,6 @@ export function CountryInspector() {
     setNewEffectDesc("");
   };
 
-  // Remove mock effect
   const handleRemoveMockEffect = (id: string) => {
     setMockEffects((prev) => prev.filter((eff) => eff.id !== id));
   };
@@ -1462,7 +1424,6 @@ export function CountryInspector() {
 
   return (
     <div className="space-y-6">
-      {/* Search Header Selector */}
       <div className="border-separator flex flex-col justify-between gap-4 border-b pb-5 sm:flex-row sm:items-center">
         <div className="space-y-1">
           <h3 className="text-label text-title-3 flex items-center gap-2">
@@ -1476,7 +1437,6 @@ export function CountryInspector() {
         </div>
 
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-          {/* Search Input Searchable Single-select */}
           <div className="relative w-full sm:w-[240px]">
             <div className="relative">
               <Search className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
@@ -1530,7 +1490,6 @@ export function CountryInspector() {
             )}
           </div>
 
-          {/* Fullscreen Button */}
           <Button
             variant="outline"
             onClick={() => {
@@ -1556,9 +1515,7 @@ export function CountryInspector() {
         </div>
       ) : countryData && calculation ? (
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-          {/* Left Controls Column */}
           <div className="space-y-6 lg:col-span-4">
-            {/* Country info header */}
             <div className="border-separator bg-fill-4 rounded-row flex items-center gap-3 border p-4">
               <UnifiedCountryFlag
                 countryName={countryData.name}
@@ -1574,7 +1531,6 @@ export function CountryInspector() {
               </div>
             </div>
 
-            {/* Slider controls */}
             <div className="border-separator bg-fill-4 rounded-row space-y-5 border p-4">
               <div className="space-y-2">
                 <div className="text-caption flex items-center justify-between">
@@ -1617,7 +1573,6 @@ export function CountryInspector() {
               </div>
             </div>
 
-            {/* Active database storyteller effects */}
             <div className="border-separator bg-fill-4 rounded-row space-y-3 border p-4">
               <Label className="text-label text-caption block">Active database effects</Label>
               {countryData.storytellerEffects && countryData.storytellerEffects.length > 0 ? (
@@ -1667,38 +1622,26 @@ export function CountryInspector() {
               )}
             </div>
 
-            {/* Mock Sandbox effects form */}
             <div className="border-separator bg-fill-4 rounded-row space-y-4 border p-4">
               <Label className="text-label text-caption block">Mock sandbox event</Label>
               <form onSubmit={handleAddMockEffect} className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
                     <Label className="text-label-secondary text-footnote">Effect type</Label>
-                    <Select value={newEffectType} onValueChange={setNewEffectType}>
-                      <SelectTrigger size="sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="gdp_adjustment" className="text-footnote">
-                          GDP Adjustment
-                        </SelectItem>
-                        <SelectItem value="population_adjustment" className="text-footnote">
-                          Pop adjustment
-                        </SelectItem>
-                        <SelectItem value="growth_rate_modifier" className="text-footnote">
-                          Growth rate mult
-                        </SelectItem>
-                        <SelectItem value="natural_disaster" className="text-footnote">
-                          Natural Disaster (Direct)
-                        </SelectItem>
-                        <SelectItem value="trade_agreement" className="text-footnote">
-                          Trade Agreement (Direct)
-                        </SelectItem>
-                        <SelectItem value="special_event" className="text-footnote">
-                          Special Event (Direct)
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <ValueSelect
+                      value={newEffectType}
+                      onValueChange={setNewEffectType}
+                      options={[
+                        ["gdp_adjustment", "GDP Adjustment"],
+                        ["population_adjustment", "Pop adjustment"],
+                        ["growth_rate_modifier", "Growth rate mult"],
+                        ["natural_disaster", "Natural Disaster (Direct)"],
+                        ["trade_agreement", "Trade Agreement (Direct)"],
+                        ["special_event", "Special Event (Direct)"],
+                      ]}
+                      size="sm"
+                      itemClassName="text-footnote"
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-label-secondary text-footnote">Value (%)</Label>
@@ -1765,7 +1708,6 @@ export function CountryInspector() {
 
           {/* Right React Flow + Details Inspector Column */}
           <div className="flex flex-col gap-6 lg:col-span-8">
-            {/* React Flow Board */}
             <CountryFormulaFlow
               nodes={nodes}
               edges={edges}
@@ -1774,7 +1716,6 @@ export function CountryInspector() {
               onNodeClick={handleNodeClick}
             />
 
-            {/* Selected Node Details Card */}
             <div className="border-separator bg-surface rounded-row border p-5">
               {renderNodeDetails()}
             </div>

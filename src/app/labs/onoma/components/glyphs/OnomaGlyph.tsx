@@ -7,7 +7,7 @@
 import React from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { GLYPH_CATALOG, type OnomaGlyphName } from "./onoma-glyphs-catalog";
+import { GlyphSvg, type OnomaGlyphName } from "./onoma-glyphs-catalog";
 
 export type OnomaGlyphSize = "xs" | "sm" | "md" | "lg" | "xl" | "display";
 export type OnomaGlyphState = "idle" | "active" | "generating" | "disabled";
@@ -35,6 +35,24 @@ const SIZE_MAP: Record<OnomaGlyphSize, { className: string; defaultStroke: numbe
   display: { className: "w-12 h-12", defaultStroke: 2.0 },
 };
 
+const FRAMED_SIZE_CLASS: Record<OnomaGlyphSize, string> = {
+  xs: "text-caption gap-0.5",
+  sm: "text-caption gap-0.5",
+  md: "text-footnote gap-1",
+  lg: "text-body gap-1",
+  xl: "text-body gap-2",
+  display: "text-title-2 gap-2",
+};
+
+const COMPOSED_SIZE_CLASS: Record<OnomaGlyphSize, string> = {
+  xs: "text-caption gap-1",
+  sm: "text-caption gap-1",
+  md: "text-footnote gap-2",
+  lg: "text-body gap-2",
+  xl: "text-body gap-2",
+  display: "text-title-3 gap-3",
+};
+
 export function OnomaGlyph({
   name = "emerge-engine",
   variant = "canonical",
@@ -50,25 +68,22 @@ export function OnomaGlyph({
   ...rest
 }: OnomaGlyphProps) {
   const shouldReduceMotion = useReducedMotion();
-  const sizeConfig = SIZE_MAP[size] || SIZE_MAP.md;
+  const sizeConfig = SIZE_MAP[size];
   const stroke = strokeWidth || sizeConfig.defaultStroke;
+  const isActive = state === "active";
+  const accentStyle = isActive && accentColor ? { color: accentColor } : undefined;
+  const textTone = isActive ? "text-label font-semibold" : "text-label-secondary";
 
-  // 1. Framed Linguistic Object: ⟨LABEL⟩
   if (variant === "framed" && label) {
     return (
       <span
         className={cn(
           "inline-flex items-center font-mono font-semibold transition-colors select-none",
-          size === "xs" && "text-caption gap-0.5",
-          size === "sm" && "text-caption gap-0.5",
-          size === "md" && "text-footnote gap-1",
-          size === "lg" && "text-body gap-1",
-          size === "xl" && "text-body gap-2",
-          size === "display" && "text-title-2 gap-2",
-          state === "active" ? "text-label font-semibold" : "text-label-secondary",
+          FRAMED_SIZE_CLASS[size],
+          textTone,
           className
         )}
-        style={state === "active" && accentColor ? { color: accentColor } : undefined}
+        style={accentStyle}
         title={title || `⟨${label}⟩`}
       >
         <span className="opacity-40">⟨</span>
@@ -78,22 +93,16 @@ export function OnomaGlyph({
     );
   }
 
-  // 2. Composed Transformation Expression: from → to
   if (variant === "composed" && from && to) {
     return (
       <span
         className={cn(
           "inline-flex items-center font-mono transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
-          size === "xs" && "text-caption gap-1",
-          size === "sm" && "text-caption gap-1",
-          size === "md" && "text-footnote gap-2",
-          size === "lg" && "text-body gap-2",
-          size === "xl" && "text-body gap-2",
-          size === "display" && "text-title-3 gap-3",
-          state === "active" ? "text-label font-semibold" : "text-label-secondary",
+          COMPOSED_SIZE_CLASS[size],
+          textTone,
           className
         )}
-        style={state === "active" && accentColor ? { color: accentColor } : undefined}
+        style={accentStyle}
         title={title || `${from} → ${to}`}
       >
         <span className="text-label font-semibold">{from}</span>
@@ -113,41 +122,34 @@ export function OnomaGlyph({
     );
   }
 
-  // 3. Canonical Glyph Vector Icon
-  const GlyphRenderer = GLYPH_CATALOG[name] || GLYPH_CATALOG["emerge-engine"];
-
   const content = (
     <div
       className={cn(
         "inline-flex shrink-0 items-center justify-center transition-transform duration-150 select-none",
         sizeConfig.className,
         state === "idle" && "text-label-secondary hover:text-label",
-        state === "active" && "text-label font-semibold drop-shadow-xs",
+        isActive && "text-label font-semibold drop-shadow-xs",
         state === "disabled" && "text-label-tertiary pointer-events-none",
         className
       )}
-      style={state === "active" && accentColor ? { color: accentColor } : undefined}
+      style={accentStyle}
       title={title || name}
       {...rest}
     >
-      {GlyphRenderer({ strokeWidth: stroke })}
+      <GlyphSvg name={name} strokeWidth={stroke} />
     </div>
   );
 
-  // Animated generating state
-  if (state === "generating") {
-    return (
-      <motion.div
-        animate={
-          shouldReduceMotion ? { opacity: [0.6, 1, 0.6] } : { rotate: 360, scale: [1, 1.08, 1] }
-        }
-        transition={{ duration: 1.6, repeat: Infinity, ease: "linear" }}
-        className="inline-flex items-center justify-center"
-      >
-        {content}
-      </motion.div>
-    );
-  }
-
-  return content;
+  if (state !== "generating") return content;
+  return (
+    <motion.div
+      animate={
+        shouldReduceMotion ? { opacity: [0.6, 1, 0.6] } : { rotate: 360, scale: [1, 1.08, 1] }
+      }
+      transition={{ duration: 1.6, repeat: Infinity, ease: "linear" }}
+      className="inline-flex items-center justify-center"
+    >
+      {content}
+    </motion.div>
+  );
 }

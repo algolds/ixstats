@@ -3,14 +3,7 @@
 // Formula & Macro Simulation Engine Editor
 
 import { useState, useEffect } from "react";
-import {
-  Calculator,
-  FloppyDisk as Save,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  StatUp as TrendingUp,
-  EditPencil as Pencil,
-  Search,
-} from "iconoir-react";
+import { Calculator, FloppyDisk as Save, EditPencil as Pencil, Search } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -151,7 +144,6 @@ export function CalculationEditor() {
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-      {/* Sidebar List */}
       <Card className="space-y-3 p-4 lg:col-span-1">
         <div className="relative">
           <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
@@ -188,7 +180,6 @@ export function CalculationEditor() {
         </FacetListSection>
       </Card>
 
-      {/* Main Detail / Editor */}
       <div className="space-y-6 lg:col-span-3">
         {selectedModule ? (
           <>
@@ -229,7 +220,6 @@ export function CalculationEditor() {
                 </div>
               </div>
 
-              {/* Code / Formula Display */}
               <div className="space-y-2">
                 <label className="text-label-secondary text-subhead">
                   Mathematical Formula (JavaScript Expression)
@@ -253,7 +243,6 @@ export function CalculationEditor() {
               </div>
             </Card>
 
-            {/* Interactive Sandbox Simulator */}
             <CalculationSimulator
               selectedModule={selectedModule}
               sandboxInputs={sandboxInputs}

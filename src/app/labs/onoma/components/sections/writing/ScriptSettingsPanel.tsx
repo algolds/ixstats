@@ -66,7 +66,6 @@ export function ScriptSettingsPanel({
 }: ScriptSettingsPanelProps) {
   return (
     <div className="space-y-4">
-      {/* Script Directory */}
       <Card variant="inset" padding="none" className="space-y-3 p-4">
         <div className="border-separator flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
@@ -148,7 +147,6 @@ export function ScriptSettingsPanel({
         </div>
 
         <div className="space-y-4">
-          {/* Script Name */}
           <div>
             <label className="text-label-secondary text-subhead mb-1 block">Script name</label>
             <Input
@@ -161,7 +159,6 @@ export function ScriptSettingsPanel({
             />
           </div>
 
-          {/* Typology Segmented Cards */}
           <div>
             <label
               id="script-typology-label"
@@ -187,7 +184,6 @@ export function ScriptSettingsPanel({
             </RadioCardGroup>
           </div>
 
-          {/* Direction Segmented Control */}
           <div>
             <label
               id="script-direction-label"
@@ -209,7 +205,6 @@ export function ScriptSettingsPanel({
             />
           </div>
 
-          {/* Save Script System Action */}
           <Button
             size="sm"
             type="button"

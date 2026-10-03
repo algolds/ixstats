@@ -46,7 +46,6 @@ export function DiplomaticChoiceEditor({
 
   return (
     <div className="space-y-4">
-      {/* Choices List */}
       <div>
         <div className="mb-3 flex items-center justify-between">
           <label className="text-label text-body font-medium">
@@ -155,7 +154,6 @@ export function DiplomaticChoiceEditor({
         )}
       </div>
 
-      {/* Choice Editor Sub-Card */}
       {editingChoiceIndex !== null && (
         <Card className="border-red/30 flex flex-col gap-6 border-2 p-4 py-6">
           <h4 className="text-label text-body mb-3 font-medium">

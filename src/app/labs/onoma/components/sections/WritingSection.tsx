@@ -44,7 +44,6 @@ export default function WritingSection({ studioWords = [] }: WritingSectionProps
   // Queries
   const { data: systems, isLoading: listLoading } = api.onoma.listSystems.useQuery();
 
-  // Mutations
   const saveSystemMutation = api.onoma.saveSystem.useMutation({
     onSuccess: (data) => {
       notify.success(`Writing system '${data.name}' saved.`);
@@ -198,7 +197,6 @@ export default function WritingSection({ studioWords = [] }: WritingSectionProps
     setEditingGlyph(null);
   };
 
-  // Remove a glyph
   const handleRemoveGlyph = (id: string) => {
     const updated = glyphs.filter((g) => g.id !== id);
     persistChanges(updated);
@@ -263,7 +261,6 @@ export default function WritingSection({ studioWords = [] }: WritingSectionProps
 
   return (
     <div className="space-y-6">
-      {/* Main Studio Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left Column: Script Directory & Typology Settings (4 cols) */}
         <div className="space-y-4 lg:col-span-4">
@@ -293,7 +290,6 @@ export default function WritingSection({ studioWords = [] }: WritingSectionProps
         {/* Right Column: Glyph Designer Canvas & Glyph Registry (8 cols) */}
         <div className="space-y-6 lg:col-span-8">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
-            {/* Glyph Designer Canvas */}
             <div className="md:col-span-6">
               <GlyphForgeCanvas
                 onSaveGlyph={handleSaveGlyph}
@@ -303,7 +299,6 @@ export default function WritingSection({ studioWords = [] }: WritingSectionProps
               />
             </div>
 
-            {/* Glyph Registry */}
             <div className="md:col-span-6">
               <GlyphMapRegistry
                 glyphs={glyphs}
@@ -317,7 +312,6 @@ export default function WritingSection({ studioWords = [] }: WritingSectionProps
         </div>
       </div>
 
-      {/* Full-Width Orthography Render Sandbox */}
       <OrthographySandbox
         glyphs={glyphs}
         direction={direction}

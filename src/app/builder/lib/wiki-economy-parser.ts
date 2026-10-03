@@ -3,7 +3,12 @@
  * Uses keyword-based regex matching with evidence collection and confidence scoring.
  */
 
-import { extractEvidence, findBestMatch, type PatternMatch } from "./wiki-pattern-utils";
+import {
+  extractEvidence,
+  findBestMatch,
+  scanMatches,
+  type PatternMatch,
+} from "./wiki-pattern-utils";
 
 export interface WikiEconomyAttributes {
   economicSystem:
@@ -83,30 +88,14 @@ export function parseEconomyAttributes(
 
   // Economic system - ordered by specificity (more specific = higher confidence)
   const systemPatterns: PatternMatch[] = [
-    { pattern: /mixed economy|mixed market/i, value: "mixed", confidence: 90 },
-    { pattern: /social market economy|social market/i, value: "social_market", confidence: 85 },
-    {
-      pattern: /state capitalism|state-controlled economy/i,
-      value: "state_capitalism",
-      confidence: 85,
-    },
-    {
-      pattern: /planned economy|central planning|command economy/i,
-      value: "planned",
-      confidence: 85,
-    },
-    { pattern: /corporatist economy|corporatism/i, value: "corporatist", confidence: 80 },
-    {
-      pattern: /resource-based economy|resource-dependent economy/i,
-      value: "resource_based",
-      confidence: 80,
-    },
-    {
-      pattern: /knowledge economy|innovation-driven economy/i,
-      value: "knowledge_economy",
-      confidence: 80,
-    },
-    { pattern: /free market|market economy|laissez-faire/i, value: "free_market", confidence: 75 },
+    ["mixed", 90, /mixed economy|mixed market/i],
+    ["social_market", 85, /social market economy|social market/i],
+    ["state_capitalism", 85, /state capitalism|state-controlled economy/i],
+    ["planned", 85, /planned economy|central planning|command economy/i],
+    ["corporatist", 80, /corporatist economy|corporatism/i],
+    ["resource_based", 80, /resource-based economy|resource-dependent economy/i],
+    ["knowledge_economy", 80, /knowledge economy|innovation-driven economy/i],
+    ["free_market", 75, /free market|market economy|laissez-faire/i],
   ];
   const systemResult = findBestMatch(
     combinedContent,
@@ -116,30 +105,17 @@ export function parseEconomyAttributes(
   result.economicSystem = systemResult.value as WikiEconomyAttributes["economicSystem"];
   result.economicSystemConfidence = systemResult.confidence;
 
-  // State-owned enterprises
   const soePattern =
     /(state-owned enterprises|nationalized industries|public sector companies|government-owned)/gi;
-  let soeMatch;
-  while ((soeMatch = soePattern.exec(combinedContent)) !== null) {
+  scanMatches(combinedContent, soePattern, result.stateOwnedEvidence, () => {
     result.hasStateOwnedEnterprises = true;
-    const evidenceSnippet = extractEvidence(combinedContent, soeMatch.index, soeMatch[0].length);
-    if (!result.stateOwnedEvidence.includes(evidenceSnippet)) {
-      result.stateOwnedEvidence.push(evidenceSnippet);
-    }
-  }
+  });
 
-  // Free trade zones
   const ftzPattern = /(free trade zone|special economic zone|export processing zone|free port)/gi;
-  let ftzMatch;
-  while ((ftzMatch = ftzPattern.exec(combinedContent)) !== null) {
+  scanMatches(combinedContent, ftzPattern, result.freeTradeEvidence, () => {
     result.hasFreeTradeZones = true;
-    const evidenceSnippet = extractEvidence(combinedContent, ftzMatch.index, ftzMatch[0].length);
-    if (!result.freeTradeEvidence.includes(evidenceSnippet)) {
-      result.freeTradeEvidence.push(evidenceSnippet);
-    }
-  }
+  });
 
-  // Central bank
   const centralBankPattern =
     /central bank (?:of|is|called|named)?\s*(?:the\s+)?([A-Z][a-zA-Z\s]+?)(?:,|\.|is|was)/gi;
   const cbMatch = centralBankPattern.exec(combinedContent);
@@ -174,25 +150,14 @@ export function parseEconomyAttributes(
   // Welfare programs
   const welfarePattern =
     /(universal healthcare|national health service|free education|public education|welfare state|social safety net|universal basic income)/gi;
-  let welfareMatch;
-  while ((welfareMatch = welfarePattern.exec(combinedContent)) !== null) {
+  scanMatches(combinedContent, welfarePattern, result.socialPolicyEvidence, (match) => {
     result.hasWelfarePrograms = true;
-    const matched = welfareMatch[1].toLowerCase();
+    const matched = match[1].toLowerCase();
     if (matched.includes("healthcare") || matched.includes("health service")) {
       result.hasUniversalHealthcare = true;
     }
-    if (matched.includes("education")) {
-      result.hasPublicEducation = true;
-    }
-    const evidenceSnippet = extractEvidence(
-      combinedContent,
-      welfareMatch.index,
-      welfareMatch[0].length
-    );
-    if (!result.socialPolicyEvidence.includes(evidenceSnippet)) {
-      result.socialPolicyEvidence.push(evidenceSnippet);
-    }
-  }
+    if (matched.includes("education")) result.hasPublicEducation = true;
+  });
 
   // Calculate overall confidence
   let totalConfidence = 0;

@@ -86,7 +86,6 @@ export function CountrySelector({
         )}
       </div>
 
-      {/* Selected badges */}
       {selectedIds.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {selectedIds.slice(0, 10).map((id) => {
@@ -114,7 +113,6 @@ export function CountrySelector({
         </div>
       )}
 
-      {/* Country list */}
       <ScrollArea className="border-separator rounded-control h-[280px] border">
         <FacetListSection variant="plain" aria-label="Countries">
           {filtered.map((c) => (

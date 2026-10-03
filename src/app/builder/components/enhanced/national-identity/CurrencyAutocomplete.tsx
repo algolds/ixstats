@@ -5,7 +5,7 @@ import { Coins, EditPencil as Edit2, List, Check } from "iconoir-react";
 import { CurrencySelector, CurrencyInput, UNIFIED_CURRENCIES } from "./CurrencySelector";
 import { CurrencyIcon } from "./CurrencyIcon";
 import { api } from "~/trpc/react";
-import { getCurrencyInfo, isValidCurrency } from "~/lib/utils";
+import { getCurrencyInfo } from "~/lib/utils";
 import { POPULAR_CURRENCIES } from "./identityUtils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { Badge } from "~/components/ui/badge";
@@ -58,7 +58,6 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
 
   const labelId = useId();
   const currencyInfo = getCurrencyInfo(value);
-  const isValid = !value || isValidCurrency(value);
 
   return (
     <div className="space-y-3" role="group" aria-labelledby={labelId}>
@@ -91,7 +90,6 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
       </div>
 
       <div className="space-y-2">
-        {/* Currency Selector Mode */}
         {inputMode === "selector" ? (
           <div className="space-y-2">
             <CurrencySelector
@@ -111,7 +109,6 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
               allowCustom={allowCustom}
             />
 
-            {/* Suggestions from database */}
             {((data?.global?.length ?? 0) > 0 || (data?.user?.length ?? 0) > 0) && (
               <div className="bg-surface-secondary rounded-row text-footnote p-2">
                 <div className="text-subhead text-label-secondary mb-1">Community currencies</div>
@@ -133,7 +130,6 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
           </div>
         )}
 
-        {/* Currency Meta Pill Badges */}
         {value && currencyInfo && (
           <div className="text-footnote flex items-center gap-2">
             {currencyInfo.isISO ? (

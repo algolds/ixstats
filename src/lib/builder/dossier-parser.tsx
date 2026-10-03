@@ -33,10 +33,6 @@ export interface WikiSection {
 
 /**
  * Truncate content to a reasonable length
- *
- * @param content - Content to truncate
- * @param maxLength - Maximum length in characters
- * @returns Object with truncated content and isTruncated flag
  */
 export function truncateContent(
   content: string,
@@ -61,10 +57,6 @@ export function truncateContent(
 
 /**
  * Parse wiki content for display with link handling
- *
- * @param content - Wiki content to parse
- * @param handleLinkClick - Callback for link clicks
- * @returns JSX elements for rendering
  */
 export function parseWikiContent(
   content: string,

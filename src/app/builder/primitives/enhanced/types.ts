@@ -47,15 +47,7 @@ export interface EnhancedInputProps {
   referenceValue?: number;
   referenceLabel?: string;
   showComparison?: boolean;
-  animationDuration?: number;
   className?: string;
-}
-
-export interface ChartDataPoint {
-  name: string;
-  value: number;
-  color?: string;
-  [key: string]: string | number | boolean | undefined;
 }
 
 export interface MetricCardProps {

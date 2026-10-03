@@ -193,11 +193,9 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
 
   return (
     <Card className="relative flex flex-col gap-6 overflow-hidden py-6">
-      {/* Header */}
       <CardHeader className="relative z-10 pb-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
-            {/* Back Button */}
             {onBack && (
               <Button
                 type="button"
@@ -271,7 +269,6 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
                 )}
               </div>
 
-              {/* Background LoreScanner Status Pill */}
               {loreScanStatus && (
                 <div className="mt-2 flex items-center gap-2">
                   {loreScanStatus.isScanning ? (
@@ -298,7 +295,6 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
             </div>
           </div>
 
-          {/* Continue Action */}
           <div className="flex shrink-0 sm:self-start">
             <Button
               size="default"
@@ -322,9 +318,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
         </div>
       </CardHeader>
 
-      {/* Collapsible Sections */}
       <CardContent className="relative z-10 space-y-3 pb-6">
-        {/* Wiki Intro Description */}
         {data.wikiIntro && (
           <div className="border-separator rounded-control border p-4">
             <div className="mb-2 flex items-center gap-2">

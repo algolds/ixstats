@@ -34,7 +34,6 @@ import {
 import { ColorPickerInput } from "~/components/ui/color-picker";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-// oxlint-disable-next-line eslint/no-unused-vars
 import {
   NavArrowDown as ChevronDown,
   Plus,
@@ -89,7 +88,6 @@ export function VaultStoreControl() {
       { enabled: !!selectedItemId }
     );
 
-  // Mutations
   const createMutation = api.vault.adminCreateStoreItem.useMutation({
     onSuccess: () => {
       notify.success("Success", "Store item created successfully");
@@ -121,7 +119,6 @@ export function VaultStoreControl() {
     onError: (err) => notify.error("Toggle Failed", err.message),
   });
 
-  // Resets
   const resetForm = () => {
     setEditingItem(null);
     setFormData({
@@ -387,7 +384,6 @@ export function VaultStoreControl() {
         </Table>
       )}
 
-      {/* Create / Edit Dialog */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -663,7 +659,6 @@ export function VaultStoreControl() {
         </DialogContent>
       </Dialog>
 
-      {/* Price History Ledger Dialog */}
       <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>

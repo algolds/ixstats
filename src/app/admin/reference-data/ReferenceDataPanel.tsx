@@ -29,8 +29,6 @@ import {
   Refresh as RefreshCw,
 } from "iconoir-react";
 
-// ── Data Type Registry ───────────────────────────────────────────────────────
-
 /** Category icon colours (static class names so Tailwind generates them). */
 const CATEGORY_ICON_COLOR: Record<string, string> = {
   cyan: "text-cyan",
@@ -216,8 +214,6 @@ const CATEGORIES = [
   },
 ];
 
-// ── Component ────────────────────────────────────────────────────────────────
-
 export default function ReferenceDataPage() {
   usePageTitle({ title: "Admin - Reference Data" });
 
@@ -273,7 +269,6 @@ export default function ReferenceDataPage() {
         }
       />
 
-      {/* Grouped categories */}
       <div className="space-y-6">
         {CATEGORIES.map((category) => {
           const types = DATA_TYPES.filter((t) => t.category === category.key);
@@ -321,7 +316,6 @@ export default function ReferenceDataPage() {
                         <ExternalLink className="text-label-secondary h-3.5 w-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
                       </div>
 
-                      {/* Count badge */}
                       {count != null ? (
                         <div className="border-separator text-footnote mt-3 flex items-center justify-between border-t pt-2">
                           <span className="text-label-secondary">Records</span>

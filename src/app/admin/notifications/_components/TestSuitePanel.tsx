@@ -26,13 +26,7 @@ import {
   Bell,
   Flask as FlaskConical,
 } from "iconoir-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 
 const CATEGORIES: { label: string; value: NotificationCategory }[] = [
   { label: "System", value: "system" },
@@ -82,7 +76,6 @@ export function TestSuitePanel() {
   const addResult = (msg: string) => setTestResults((prev) => [...prev, msg]);
   const clearResults = () => setTestResults([]);
 
-  // === Trigger preset via useNotify ===
   const triggerPreset = (preset: string) => {
     switch (preset) {
       case "crisis":
@@ -149,7 +142,6 @@ export function TestSuitePanel() {
     }
   };
 
-  // === Fire custom notification simulator ===
   const handleCustomTrigger = () => {
     notify.notify({
       title,
@@ -172,7 +164,6 @@ export function TestSuitePanel() {
     addResult(`📨 Custom "${title}" notification triggered`);
   };
 
-  // === System-level tests via store ===
   const testIntelligence = async () => {
     try {
       await addNotification({
@@ -297,7 +288,6 @@ export function TestSuitePanel() {
 
   return (
     <div className="space-y-6">
-      {/* Preset Buttons */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -328,7 +318,6 @@ export function TestSuitePanel() {
         </CardContent>
       </Card>
 
-      {/* System-level test buttons */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -383,7 +372,6 @@ export function TestSuitePanel() {
         </CardContent>
       </Card>
 
-      {/* Custom Simulator */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -412,52 +400,34 @@ export function TestSuitePanel() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label className="text-footnote">Type</Label>
-                  <Select value={type} onValueChange={(v) => setType(v as ToastType)}>
-                    <SelectTrigger size="sm" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TYPES.map((t) => (
-                        <SelectItem key={t.value} value={t.value}>
-                          {t.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <ValueSelect
+                    value={type}
+                    onValueChange={(v) => setType(v as ToastType)}
+                    options={TYPES.map((t) => [t.value, t.label] as const)}
+                    size="sm"
+                    className="w-full"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-footnote">Priority</Label>
-                  <Select value={priority} onValueChange={(v) => setPriority(v as ToastPriority)}>
-                    <SelectTrigger size="sm" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PRIORITIES.map((p) => (
-                        <SelectItem key={p.value} value={p.value}>
-                          {p.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <ValueSelect
+                    value={priority}
+                    onValueChange={(v) => setPriority(v as ToastPriority)}
+                    options={PRIORITIES.map((p) => [p.value, p.label] as const)}
+                    size="sm"
+                    className="w-full"
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label className="text-footnote">Category</Label>
-                <Select
+                <ValueSelect
                   value={category}
                   onValueChange={(v) => setCategory(v as NotificationCategory)}
-                >
-                  <SelectTrigger size="sm" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        {c.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  options={CATEGORIES.map((c) => [c.value, c.label] as const)}
+                  size="sm"
+                  className="w-full"
+                />
               </div>
             </div>
 
@@ -506,7 +476,6 @@ export function TestSuitePanel() {
         </CardContent>
       </Card>
 
-      {/* Test Results */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

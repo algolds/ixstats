@@ -6,6 +6,7 @@
 import { STARTING_SECTOR_DISTRIBUTION, STARTING_EMPLOYMENT_TYPE } from "./default-labor-market";
 import type { UnifiedInfoboxData } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import { currentBudgetYear } from "~/lib/government/budget-year";
+import { DEFAULT_POLICY_FLAGS } from "~/lib/economy/factory";
 import type {
   EconomicInputs,
   NationalIdentityData,
@@ -295,71 +296,29 @@ function createDefaultGovernmentSpending(
     spendingPerCapita: (core.nominalGDP * 0.35) / core.totalPopulation,
     deficitSurplus: -2,
     spendingCategories: [],
-    performanceBasedBudgeting: false,
+    ...DEFAULT_POLICY_FLAGS,
     universalBasicServices: hasWelfare,
     greenInvestmentPriority: hasEnvProtection,
     digitalGovernmentInitiative: hasDigitalGov,
-    zeroBasedBudgeting: false,
-    publicPrivatePartnerships: false,
-    participatoryBudgeting: false,
     emergencyReserveFund: true,
-    socialImpactBonds: false,
     childWelfareFirstPolicy: hasWelfare,
     preventiveCareEmphasis: hasHealthcare,
-    infrastructureBankFund: false,
-    universalBasicIncome: false,
     progressiveTaxation: tier !== "Developing",
     carbonTax: hasEnvProtection,
     wealthTax: tier === "Advanced",
-    financialTransactionTax: false,
     universalHealthcare: hasHealthcare,
     freeEducation: hasEducation,
     affordableHousing: hasWelfare,
     elderlyCare: hasWelfare,
     disabilitySupport: hasWelfare,
     mentalHealthServices: hasHealthcare,
-    stemEducationFocus: false,
     vocationalTraining: hasEducation,
     adultEducation: hasEducation,
     earlyChildhoodEducation: hasEducation,
-    smartCityInitiative: false,
-    publicTransportExpansion: false,
     renewableEnergyTransition: hasEnvProtection,
-    highSpeedInternet: false,
-    waterInfrastructure: false,
     researchDevelopmentFund: tier === "Advanced",
-    startupIncubators: false,
-    patentReform: false,
-    openDataInitiative: false,
-    cybersecurityInitiative: false,
-    borderSecurity: false,
-    disasterPreparedness: false,
-    crimePrevention: false,
     carbonNeutrality: hasEnvProtection,
     biodiversityProtection: hasEnvProtection,
-    wasteReduction: false,
-    greenBuildingStandards: false,
-    sustainableAgriculture: false,
-    criminalJusticeReform: false,
-    legalAidExpansion: false,
-    restorativeJustice: false,
-    courtSystemModernization: false,
-    artsCultureFunding: false,
-    heritagePreservation: false,
-    multiculturalPrograms: false,
-    languagePreservation: false,
-    ruralDevelopment: false,
-    ruralHealthcare: false,
-    ruralBroadband: false,
-    agriculturalSupport: false,
-    foreignAidProgram: false,
-    refugeeSupport: false,
-    diplomaticEngagement: false,
-    tradePromotion: false,
-    transparencyInitiative: false,
-    citizenEngagement: false,
-    antiCorruption: false,
-    publicServiceReform: false,
   };
 }
 
@@ -415,9 +374,7 @@ function createRevenueSourcesFromParsed(
 
 function calculateCompleteness(
   infobox: UnifiedInfoboxData,
-  matchResult: MatchResult,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  departments: ParsedDepartment[]
+  matchResult: MatchResult
 ): Record<string, number> {
   const identityFields = [
     "name",
@@ -464,6 +421,124 @@ function calculateCompleteness(
     demographics: demoPct,
     laborMarket: laborPct,
     fiscalSystem: fiscalPct,
+  };
+}
+
+function createGovernmentStructure(
+  infobox: UnifiedInfoboxData,
+  name: string,
+  totalBudget: number,
+  parts: Pick<GovernmentBuilderState, "departments" | "budgetAllocations" | "revenueSources">
+): Partial<GovernmentBuilderState> {
+  const govType = infobox.government_type
+    ? normalizeGovernmentType(infobox.government_type)
+    : "Other";
+  return {
+    structure: {
+      governmentName: `Government of ${name}`,
+      governmentType: govType as GovernmentType,
+      headOfState: infobox.head_of_state || "",
+      headOfGovernment: infobox.head_of_government || "",
+      legislatureName: infobox.legislature || infobox.upper_house || "",
+      executiveName: "",
+      judicialName: "",
+      totalBudget,
+      fiscalYear: "Calendar Year",
+      budgetCurrency: infobox.currency_code || infobox.currency || "USD",
+    },
+    ...parts,
+  };
+}
+
+function createEconomyBuilderState({
+  infobox,
+  econAttrs,
+  core,
+  labor,
+  demographics,
+  tier,
+}: {
+  infobox: UnifiedInfoboxData;
+  econAttrs: WikiEconomyAttributes;
+  core: CoreEconomicIndicators;
+  labor: LaborEmploymentData;
+  demographics: DemographicData;
+  tier: ReturnType<typeof getEconomicTier>;
+}): Partial<EconomyBuilderState> {
+  const established = tier !== "Developing";
+  return {
+    structure: {
+      economicModel:
+        econAttrs.economicSystem === "free_market"
+          ? "Market Economy"
+          : econAttrs.economicSystem === "planned"
+            ? "Planned Economy"
+            : "Mixed Economy",
+      primarySectors: [],
+      secondarySectors: [],
+      tertiarySectors: [],
+      totalGDP: core.nominalGDP,
+      gdpCurrency: infobox.currency_code || infobox.currency || "USD",
+      economicTier: tier,
+      growthStrategy: "Balanced",
+    },
+    sectors: [],
+    laborMarket: {
+      totalWorkforce: labor.totalWorkforce,
+      laborForceParticipationRate: labor.laborForceParticipationRate,
+      employmentRate: labor.employmentRate,
+      unemploymentRate: labor.unemploymentRate,
+      underemploymentRate: 8,
+      youthUnemploymentRate: 12,
+      seniorEmploymentRate: 35,
+      femaleParticipationRate: 50,
+      maleParticipationRate: 70,
+      sectorDistribution: { ...STARTING_SECTOR_DISTRIBUTION },
+      employmentType: { ...STARTING_EMPLOYMENT_TYPE },
+      averageAnnualIncome: core.gdpPerCapita * 0.6,
+      averageWorkweekHours: 40,
+      averageOvertimeHours: 2,
+      paidVacationDays: 20,
+      paidSickLeaveDays: 10,
+      parentalLeaveWeeks: 12,
+      unionizationRate: 20,
+      collectiveBargainingCoverage: 25,
+      minimumWageHourly: labor.minimumWage > 0 ? labor.minimumWage / 2000 : 10,
+      livingWageHourly: labor.minimumWage > 0 ? (labor.minimumWage / 2000) * 1.2 : 15,
+      workplaceSafetyIndex: established ? 75 : 50,
+      laborRightsScore: established ? 70 : 45,
+      workerProtections: {
+        jobSecurity: established ? 70 : 40,
+        wageProtection: established ? 75 : 50,
+        healthSafety: established ? 80 : 50,
+        discriminationProtection: established ? 75 : 40,
+        collectiveRights: established ? 70 : 45,
+      },
+    },
+    demographics: {
+      totalPopulation: core.totalPopulation,
+      populationGrowthRate: 1.0,
+      ageDistribution: { under15: 20, age15to64: 65, over65: 15 },
+      urbanRuralSplit: demographics.urbanRuralSplit,
+      regions: [],
+      lifeExpectancy: demographics.lifeExpectancy,
+      literacyRate: demographics.literacyRate,
+      educationLevels: { noEducation: 5, primary: 20, secondary: 50, tertiary: 25 },
+      netMigrationRate: 0,
+      immigrationRate: 3,
+      emigrationRate: 3,
+      infantMortalityRate: 5,
+      maternalMortalityRate: 10,
+      healthExpenditureGDP: 8,
+      youthDependencyRatio: 30,
+      elderlyDependencyRatio: 23,
+      totalDependencyRatio: 53,
+    },
+    selectedAtomicComponents: [],
+    isValid: false,
+    errors: {},
+    lastUpdated: new Date(),
+    version: "1.0.0",
   };
 }
 
@@ -523,102 +598,20 @@ export async function assembleWikiImport(input: AssembleInput): Promise<WikiImpo
     fiscal.governmentRevenueTotal
   );
 
-  const govType = infoboxData.government_type
-    ? normalizeGovernmentType(infoboxData.government_type)
-    : "Other";
-  const governmentStructure: Partial<GovernmentBuilderState> = {
-    structure: {
-      governmentName: `Government of ${name}`,
-      governmentType: govType as GovernmentType,
-      headOfState: infoboxData.head_of_state || "",
-      headOfGovernment: infoboxData.head_of_government || "",
-      legislatureName: infoboxData.legislature || infoboxData.upper_house || "",
-      executiveName: "",
-      judicialName: "",
-      totalBudget,
-      fiscalYear: "Calendar Year",
-      budgetCurrency: infoboxData.currency_code || infoboxData.currency || "USD",
-    },
+  const governmentStructure = createGovernmentStructure(infoboxData, name, totalBudget, {
     departments: deptInputs,
     budgetAllocations: allocations,
     revenueSources,
-  };
+  });
 
-  // Build economy builder state
-  const economyBuilderState: Partial<EconomyBuilderState> = {
-    structure: {
-      economicModel:
-        econAttrs.economicSystem === "free_market"
-          ? "Market Economy"
-          : econAttrs.economicSystem === "planned"
-            ? "Planned Economy"
-            : "Mixed Economy",
-      primarySectors: [],
-      secondarySectors: [],
-      tertiarySectors: [],
-      totalGDP: core.nominalGDP,
-      gdpCurrency: infoboxData.currency_code || infoboxData.currency || "USD",
-      economicTier: tier,
-      growthStrategy: "Balanced",
-    },
-    sectors: [],
-    laborMarket: {
-      totalWorkforce: labor.totalWorkforce,
-      laborForceParticipationRate: labor.laborForceParticipationRate,
-      employmentRate: labor.employmentRate,
-      unemploymentRate: labor.unemploymentRate,
-      underemploymentRate: 8,
-      youthUnemploymentRate: 12,
-      seniorEmploymentRate: 35,
-      femaleParticipationRate: 50,
-      maleParticipationRate: 70,
-      sectorDistribution: { ...STARTING_SECTOR_DISTRIBUTION },
-      employmentType: { ...STARTING_EMPLOYMENT_TYPE },
-      averageAnnualIncome: core.gdpPerCapita * 0.6,
-      averageWorkweekHours: 40,
-      averageOvertimeHours: 2,
-      paidVacationDays: 20,
-      paidSickLeaveDays: 10,
-      parentalLeaveWeeks: 12,
-      unionizationRate: 20,
-      collectiveBargainingCoverage: 25,
-      minimumWageHourly: labor.minimumWage > 0 ? labor.minimumWage / 2000 : 10,
-      livingWageHourly: labor.minimumWage > 0 ? (labor.minimumWage / 2000) * 1.2 : 15,
-      workplaceSafetyIndex: tier !== "Developing" ? 75 : 50,
-      laborRightsScore: tier !== "Developing" ? 70 : 45,
-      workerProtections: {
-        jobSecurity: tier !== "Developing" ? 70 : 40,
-        wageProtection: tier !== "Developing" ? 75 : 50,
-        healthSafety: tier !== "Developing" ? 80 : 50,
-        discriminationProtection: tier !== "Developing" ? 75 : 40,
-        collectiveRights: tier !== "Developing" ? 70 : 45,
-      },
-    },
-    demographics: {
-      totalPopulation: core.totalPopulation,
-      populationGrowthRate: 1.0,
-      ageDistribution: { under15: 20, age15to64: 65, over65: 15 },
-      urbanRuralSplit: demographics.urbanRuralSplit,
-      regions: [],
-      lifeExpectancy: demographics.lifeExpectancy,
-      literacyRate: demographics.literacyRate,
-      educationLevels: { noEducation: 5, primary: 20, secondary: 50, tertiary: 25 },
-      netMigrationRate: 0,
-      immigrationRate: 3,
-      emigrationRate: 3,
-      infantMortalityRate: 5,
-      maternalMortalityRate: 10,
-      healthExpenditureGDP: 8,
-      youthDependencyRatio: 30,
-      elderlyDependencyRatio: 23,
-      totalDependencyRatio: 53,
-    },
-    selectedAtomicComponents: [],
-    isValid: false,
-    errors: {},
-    lastUpdated: new Date(),
-    version: "1.0.0",
-  };
+  const economyBuilderState = createEconomyBuilderState({
+    infobox: infoboxData,
+    econAttrs,
+    core,
+    labor,
+    demographics,
+    tier,
+  });
 
   // Detect conflicts
   const conflicts = detectWikiImportConflicts(matchResult, {
@@ -628,8 +621,7 @@ export async function assembleWikiImport(input: AssembleInput): Promise<WikiImpo
     budgetAllocations: allocations,
   });
 
-  // Calculate completeness
-  const sectionCompleteness = calculateCompleteness(infoboxData, matchResult, departments);
+  const sectionCompleteness = calculateCompleteness(infoboxData, matchResult);
   const overallCompleteness = Math.round(
     Object.values(sectionCompleteness).reduce((a, b) => a + b, 0) /
       Object.keys(sectionCompleteness).length

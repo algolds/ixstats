@@ -92,7 +92,6 @@ export function DiplomaticScenarioFormDialog({
           </SheetDescription>
         </SheetHeader>
 
-        {/* Tab Navigation */}
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
@@ -110,7 +109,6 @@ export function DiplomaticScenarioFormDialog({
             })}
           </TabsList>
 
-          {/* Tab Content */}
           <div className="mt-4 flex-1 overflow-y-auto">
             <TabsContent value="general">
               <GeneralTab formData={formData} setFormData={setFormData} countries={countries} />
@@ -137,7 +135,6 @@ export function DiplomaticScenarioFormDialog({
           </div>
         </Tabs>
 
-        {/* Footer Actions */}
         <SheetFooter className="border-separator shrink-0 border-t pt-4">
           <Button variant="ghost" onClick={onClose}>
             Cancel

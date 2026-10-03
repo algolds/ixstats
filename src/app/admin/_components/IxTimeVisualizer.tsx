@@ -77,7 +77,6 @@ export function IxTimeVisualizer() {
   const [converterInput, setConverterInput] = useState("");
   const [converterResult, setConverterResult] = useState<string | null>(null);
 
-  // Update time data
   const updateTimeData = useCallback(() => {
     try {
       const currentIxTime = IxTime.getCurrentIxTime();
@@ -307,9 +306,7 @@ export function IxTimeVisualizer() {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* === TOP SECTION: Current Time Overview === */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {/* Current IxTime */}
           <div className="rounded-control border-blue/10 bg-blue/5 hover:border-blue/20 duration-fast border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
             <div className="text-caption text-blue mb-1 flex items-center gap-2">
               <Clock className="h-3.5 w-3.5" /> Current IxTime
@@ -340,7 +337,6 @@ export function IxTimeVisualizer() {
             </div>
           </div>
 
-          {/* System Health */}
           <div className="rounded-control border-purple/10 bg-purple/5 hover:border-purple/20 duration-fast border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
             <div className="text-caption text-purple mb-1 flex items-center gap-2">
               <Target className="h-3.5 w-3.5" /> System health
@@ -366,7 +362,6 @@ export function IxTimeVisualizer() {
           </div>
         </div>
 
-        {/* Prediction row */}
         <div className="border-separator bg-surface rounded-control text-caption flex flex-wrap items-center gap-x-6 gap-y-2 border px-4 py-2">
           <div className="text-label-secondary">
             <span className="text-label font-semibold">In 24 real hours:</span>{" "}
@@ -382,7 +377,6 @@ export function IxTimeVisualizer() {
           <div className="animate-in fade-in slide-in-from-top-2 duration-fast space-y-6 pt-1">
             <Separator className="border-separator my-1" />
 
-            {/* === MIDDLE SECTION: IRL <-> IxTime Converter === */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <ArrowRightLeft className="text-blue h-4 w-4" />
@@ -393,7 +387,6 @@ export function IxTimeVisualizer() {
 
               <div className="border-separator bg-surface rounded-control border p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                  {/* Mode toggle */}
                   <div className="shrink-0 space-y-2">
                     <Label className="text-label-secondary text-subhead">Direction</Label>
                     <div className="flex gap-1">
@@ -422,7 +415,6 @@ export function IxTimeVisualizer() {
                     </div>
                   </div>
 
-                  {/* Date input */}
                   <div className="flex-1 space-y-2">
                     <Label className="text-label-secondary text-subhead">
                       {converterMode === "irl-to-ix" ? "Enter IRL Date" : "Enter IxTime Date"}
@@ -457,7 +449,6 @@ export function IxTimeVisualizer() {
                 )}
               </div>
 
-              {/* Reference Milestone Table */}
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -488,7 +479,6 @@ export function IxTimeVisualizer() {
 
             <Separator className="border-separator my-1" />
 
-            {/* === VISUAL TIMELINE === */}
             <div className="space-y-3">
               <div className="text-footnote grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div className="rounded-control-sm border-blue/10 bg-blue/5 hover:border-blue/20 border px-3 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]">
@@ -508,7 +498,6 @@ export function IxTimeVisualizer() {
                 </div>
               </div>
 
-              {/* Progress bar */}
               <div className="border-separator bg-blue/10 relative h-2.5 rounded-full border p-[1px]">
                 {/* Pre-pivot progress (blue) - always full since we're past the pivot */}
                 <div
@@ -538,7 +527,6 @@ export function IxTimeVisualizer() {
 
             <Separator className="border-separator my-1" />
 
-            {/* === BOTTOM SECTION: Collapsible Diagnostics === */}
             <div className="space-y-4">
               <Button
                 variant="ghost"
@@ -557,7 +545,6 @@ export function IxTimeVisualizer() {
 
               {showDiagnostics && (
                 <div className="animate-in fade-in slide-in-from-top-2 duration-fast mt-2 grid grid-cols-1 gap-6 md:grid-cols-3">
-                  {/* Accuracy Section */}
                   <div className="border-separator bg-surface rounded-control flex flex-col justify-between space-y-3 border p-4">
                     <div className="space-y-3">
                       <div className="text-label-secondary text-caption flex items-center gap-2">
@@ -591,7 +578,6 @@ export function IxTimeVisualizer() {
                     </div>
                   </div>
 
-                  {/* Sync Status Section */}
                   <div className="border-separator bg-surface rounded-control flex flex-col justify-between space-y-3 border p-4">
                     <div className="space-y-3">
                       <div className="text-label-secondary text-caption flex items-center gap-2">
@@ -650,7 +636,6 @@ export function IxTimeVisualizer() {
                     </div>
                   </div>
 
-                  {/* Simulation Section */}
                   <div className="border-separator bg-surface rounded-control flex flex-col justify-between space-y-3 border p-4">
                     <div className="space-y-3">
                       <div className="text-label-secondary text-caption flex items-center gap-2">

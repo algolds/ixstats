@@ -25,6 +25,68 @@ export interface MorphologyDetails {
   declensionTable: DeclensionTable;
 }
 
+/** Gender rules per culture family: the first family whose keyword the culture contains wins. */
+const GENDER_RULES: Array<{
+  cultures: string[];
+  endings: Array<[GrammaticalGender, string[]]>;
+  fallback: GrammaticalGender;
+}> = [
+  {
+    cultures: ["latin", "roman"],
+    endings: [
+      ["masculine", ["us", "er"]],
+      ["feminine", ["a"]],
+      ["neuter", ["um", "u"]],
+    ],
+    fallback: "masculine",
+  },
+  {
+    cultures: ["german"],
+    endings: [
+      ["feminine", ["e"]],
+      ["neuter", ["chen", "lein", "um"]],
+    ],
+    fallback: "masculine",
+  },
+  {
+    cultures: ["greek"],
+    endings: [
+      ["masculine", ["os", "as", "es"]],
+      ["feminine", ["a", "i", "o"]],
+      ["neuter", ["on", "ma"]],
+    ],
+    fallback: "masculine",
+  },
+  {
+    cultures: ["slav"],
+    endings: [
+      ["feminine", ["a", "ya", "ia"]],
+      ["neuter", ["o", "e", "ye"]],
+    ],
+    fallback: "masculine",
+  },
+  { cultures: ["arab"], endings: [["feminine", ["ah", "a", "t"]]], fallback: "masculine" },
+  {
+    cultures: ["constructed", "tolkien", "elf"],
+    endings: [
+      ["masculine", ["on", "ion", "or"]],
+      ["feminine", ["iel", "wen", "ril"]],
+    ],
+    fallback: "neuter",
+  },
+  {
+    cultures: [],
+    endings: [
+      ["feminine", ["a", "e", "i"]],
+      ["neuter", ["o", "u"]],
+    ],
+    fallback: "masculine",
+  },
+];
+
+const matchesCulture = (culture: string, keywords: string[]) =>
+  keywords.length === 0 || keywords.some((keyword) => culture.includes(keyword));
+
 /**
  * Detects the grammatical gender of a word based on its ending and culture profile.
  */
@@ -33,48 +95,169 @@ export function detectGender(word: string, culture: string | null): GrammaticalG
   const w = word.trim().toLowerCase();
   const c = (culture || "any").toLowerCase();
 
-  if (c.includes("latin") || c.includes("roman")) {
-    if (w.endsWith("us") || w.endsWith("er")) return "masculine";
-    if (w.endsWith("a")) return "feminine";
-    if (w.endsWith("um") || w.endsWith("u")) return "neuter";
-    return "masculine"; // Default Latin
-  }
-
-  if (c.includes("german")) {
-    if (w.endsWith("e")) return "feminine";
-    if (w.endsWith("chen") || w.endsWith("lein") || w.endsWith("um")) return "neuter";
-    return "masculine"; // Default German ends in consonant
-  }
-
-  if (c.includes("greek")) {
-    if (w.endsWith("os") || w.endsWith("as") || w.endsWith("es")) return "masculine";
-    if (w.endsWith("a") || w.endsWith("i") || w.endsWith("o")) return "feminine";
-    if (w.endsWith("on") || w.endsWith("ma")) return "neuter";
-    return "masculine";
-  }
-
-  if (c.includes("slavic") || c.includes("slav")) {
-    if (w.endsWith("a") || w.endsWith("ya") || w.endsWith("ia")) return "feminine";
-    if (w.endsWith("o") || w.endsWith("e") || w.endsWith("ye")) return "neuter";
-    return "masculine"; // Consonant
-  }
-
-  if (c.includes("arab")) {
-    if (w.endsWith("ah") || w.endsWith("a") || w.endsWith("t")) return "feminine";
-    return "masculine";
-  }
-
-  if (c.includes("constructed") || c.includes("tolkien") || c.includes("elf")) {
-    if (w.endsWith("on") || w.endsWith("ion") || w.endsWith("or")) return "masculine";
-    if (w.endsWith("iel") || w.endsWith("wen") || w.endsWith("ril")) return "feminine";
-    return "neuter";
-  }
-
-  // Generic fallback based on standard vowel/consonant rules
-  if (w.endsWith("a") || w.endsWith("e") || w.endsWith("i")) return "feminine";
-  if (w.endsWith("o") || w.endsWith("u")) return "neuter";
-  return "masculine"; // ends in consonant
+  const rule = GENDER_RULES.find(({ cultures }) => matchesCulture(c, cultures))!;
+  const match = rule.endings.find(([, endings]) => endings.some((ending) => w.endsWith(ending)));
+  return match ? match[0] : rule.fallback;
 }
+
+/** A declension: how many letters make way for the stem, and the ten forms as `|`-separated templates. */
+interface Declension {
+  matches: (lower: string) => boolean;
+  strip: number;
+  /** Nominative, genitive, accusative, dative, ablative; singular then plural each. {w} is the word, {s} its stem. */
+  forms: string;
+}
+
+const endsWithAny =
+  (...endings: string[]) =>
+  (lower: string) =>
+    endings.some((ending) => lower.endsWith(ending));
+
+const ARABIC_FEMININE_FORMS =
+  "{s}atu|{s}atun|{s}ati|{s}atin|{s}ata|{s}atin|li-{s}ah|li-{s}at|min {s}ah|min {s}at";
+
+/** Declensions per culture family, tried in order; the first matching entry applies. */
+const DECLENSIONS: Array<{ cultures: string[]; declensions: Declension[] }> = [
+  {
+    // 1st/2nd/3rd Latin declensions (Verona -> Veronae, Marcus -> Marci, Carthago -> Carthagines)
+    cultures: ["latin", "roman"],
+    declensions: [
+      {
+        matches: endsWithAny("a"),
+        strip: 1,
+        forms: "{w}|{s}ae|{s}ae|{s}arum|{s}am|{s}as|{s}ae|{s}is|{s}a|{s}is",
+      },
+      {
+        matches: endsWithAny("us"),
+        strip: 2,
+        forms: "{w}|{s}i|{s}i|{s}orum|{s}um|{s}os|{s}o|{s}is|{s}o|{s}is",
+      },
+      {
+        matches: endsWithAny("um"),
+        strip: 2,
+        forms: "{w}|{s}a|{s}i|{s}orum|{s}um|{s}a|{s}o|{s}is|{s}o|{s}is",
+      },
+      {
+        matches: () => true,
+        strip: 0,
+        forms: "{w}|{w}es|{w}is|{w}um|{w}em|{w}es|{w}i|{w}ibus|{w}e|{w}ibus",
+      },
+    ],
+  },
+  {
+    // Germanic weak/strong declensions
+    cultures: ["german"],
+    declensions: [
+      {
+        matches: endsWithAny("e"),
+        strip: 1,
+        forms: "{w}|{s}en|{w}n|{s}en|{w}|{s}en|{w}n|{s}en|von {w}|von {s}en",
+      },
+      {
+        matches: () => true,
+        strip: 0,
+        forms: "{w}|{w}e|{w}s|{w}e|{w}|{w}e|{w}e|{w}en|von {w}|von {w}e",
+      },
+    ],
+  },
+  {
+    cultures: ["greek"],
+    declensions: [
+      {
+        matches: endsWithAny("os"),
+        strip: 2,
+        forms: "{w}|{s}oi|{s}ou|{s}on|{s}on|{s}ous|{s}o|{s}ois|apo {w}|apo {s}ous",
+      },
+      {
+        matches: endsWithAny("a", "e"),
+        strip: 1,
+        forms: "{w}|{s}es|{s}as|{s}on|{s}an|{s}es|{s}a|{s}ais|apo {w}|apo {s}es",
+      },
+      {
+        matches: endsWithAny("on"),
+        strip: 2,
+        forms: "{w}|{s}a|{s}ou|{s}on|{s}on|{s}a|{s}o|{s}ois|apo {w}|apo {s}a",
+      },
+    ],
+  },
+  {
+    cultures: ["slav"],
+    declensions: [
+      {
+        matches: endsWithAny("a"),
+        strip: 1,
+        forms: "{w}|{s}y|{s}y|{s}|{s}u|{s}y|{s}e|{s}am|s {s}oy|s {s}ami",
+      },
+      {
+        matches: () => true,
+        strip: 0,
+        forms: "{w}|{w}y|{w}a|{w}ov|{w}a|{w}ov|{w}u|{w}am|s {w}om|s {w}ami",
+      },
+    ],
+  },
+  {
+    // Simplified Arabic triptote case markings (-u, -i, -a) and sound plural suffixes (-un, -in)
+    cultures: ["arab"],
+    declensions: [
+      {
+        matches: endsWithAny("ah"),
+        strip: 2,
+        forms: ARABIC_FEMININE_FORMS,
+      },
+      {
+        matches: endsWithAny("a"),
+        strip: 1,
+        forms: ARABIC_FEMININE_FORMS,
+      },
+      {
+        matches: () => true,
+        strip: 0,
+        forms: "{w}u|{w}una|{w}i|{w}ina|{w}a|{w}ina|li-{w}|li-{w}in|min {w}|min {w}in",
+      },
+    ],
+  },
+  {
+    // Quenya-like noun cases
+    cultures: ["constructed", "tolkien", "elf"],
+    declensions: [
+      {
+        matches: (lower) => "aeiouyëöü".includes(lower.charAt(lower.length - 1)),
+        strip: 0,
+        forms: "{w}|{w}r|{w}o|{w}ron|{w}|{w}r|{w}n|{w}ryo|{w}llo|{w}llon",
+      },
+      {
+        matches: () => true,
+        strip: 0,
+        forms: "{w}|{w}i|{w}o|{w}ion|{w}|{w}i|{w}n|{w}inyo|{w}ello|{w}ellon",
+      },
+    ],
+  },
+];
+
+const DEFAULT_FORMS = "{w}|{w}s|{w}'s|{w}s'|{w}|{w}s|to {w}|to {w}s|from {w}|from {w}s";
+
+const CASE_DESCRIPTIONS: Record<keyof DeclensionTable, [singular: string, plural: string]> = {
+  nominative: [
+    'Subject (e.g. "The city is here")',
+    'Multiple subjects (e.g. "These cities are here")',
+  ],
+  genitive: [
+    'Possession / Origin (e.g. "Of the city")',
+    'Plural possession / Origin (e.g. "Of the cities")',
+  ],
+  accusative: [
+    'Direct Object (e.g. "I found the city")',
+    'Plural direct objects (e.g. "I found the cities")',
+  ],
+  dative: [
+    'Recipient (e.g. "Dedicated to/for the city")',
+    'Plural recipients (e.g. "Dedicated to/for the cities")',
+  ],
+  ablative: [
+    'Origin / Instrument (e.g. "From/by the city")',
+    'Plural origins / instruments (e.g. "From/by the cities")',
+  ],
+};
 
 /**
  * Generates Singular & Plural declined forms for all 5 cases.
@@ -84,249 +267,28 @@ export function generateNounDeclension(word: string, culture: string | null): De
   const lower = baseWord.toLowerCase();
   const c = (culture || "any").toLowerCase();
 
-  // Singular and Plural builders
-  let nomS = baseWord;
-  let nomP = baseWord + "s";
-  let genS = baseWord + "'s";
-  let genP = baseWord + "s'";
-  let accS = baseWord;
-  let accP = baseWord + "s";
-  let datS = "to " + baseWord;
-  let datP = "to " + baseWord + "s";
-  let ablS = "from " + baseWord;
-  let ablP = "from " + baseWord + "s";
+  const family = DECLENSIONS.find(({ cultures }) => matchesCulture(c, cultures));
+  const declension = family?.declensions.find(({ matches }) => matches(lower));
+  const stem = declension ? baseWord.slice(0, baseWord.length - declension.strip) : baseWord;
+  const forms = (declension?.forms ?? DEFAULT_FORMS)
+    .split("|")
+    .map((template) =>
+      MarkovChain.capitalize(
+        template.replaceAll("{w}", () => baseWord).replaceAll("{s}", () => stem)
+      )
+    );
 
-  if (c.includes("latin") || c.includes("roman")) {
-    if (lower.endsWith("a")) {
-      // 1st Declension (e.g. Verona -> Veronae)
-      const stem = baseWord.slice(0, -1);
-      nomS = baseWord;
-      nomP = stem + "ae";
-      genS = stem + "ae";
-      genP = stem + "arum";
-      accS = stem + "am";
-      accP = stem + "as";
-      datS = stem + "ae";
-      datP = stem + "is";
-      ablS = stem + "a";
-      ablP = stem + "is";
-    } else if (lower.endsWith("us")) {
-      // 2nd Declension Masculine (e.g. Marcus -> Marci)
-      const stem = baseWord.slice(0, -2);
-      nomS = baseWord;
-      nomP = stem + "i";
-      genS = stem + "i";
-      genP = stem + "orum";
-      accS = stem + "um";
-      accP = stem + "os";
-      datS = stem + "o";
-      datP = stem + "is";
-      ablS = stem + "o";
-      ablP = stem + "is";
-    } else if (lower.endsWith("um")) {
-      // 2nd Declension Neuter (e.g. Latium -> Latia)
-      const stem = baseWord.slice(0, -2);
-      nomS = baseWord;
-      nomP = stem + "a";
-      genS = stem + "i";
-      genP = stem + "orum";
-      accS = stem + "um";
-      accP = stem + "a";
-      datS = stem + "o";
-      datP = stem + "is";
-      ablS = stem + "o";
-      ablP = stem + "is";
-    } else {
-      // 3rd Declension/Other (e.g. Carthago -> Carthagines)
-      nomS = baseWord;
-      nomP = baseWord + "es";
-      genS = baseWord + "is";
-      genP = baseWord + "um";
-      accS = baseWord + "em";
-      accP = baseWord + "es";
-      datS = baseWord + "i";
-      datP = baseWord + "ibus";
-      ablS = baseWord + "e";
-      ablP = baseWord + "ibus";
-    }
-  } else if (c.includes("german")) {
-    // Germanic weak/strong declensions
-    if (lower.endsWith("e")) {
-      const stem = baseWord.slice(0, -1);
-      nomS = baseWord;
-      nomP = stem + "en";
-      genS = baseWord + "n";
-      genP = stem + "en";
-      accS = baseWord;
-      accP = stem + "en";
-      datS = baseWord + "n";
-      datP = stem + "en";
-      ablS = "von " + baseWord;
-      ablP = "von " + stem + "en";
-    } else {
-      nomS = baseWord;
-      nomP = baseWord + "e";
-      genS = baseWord + "s";
-      genP = baseWord + "e";
-      accS = baseWord;
-      accP = baseWord + "e";
-      datS = baseWord + "e";
-      datP = baseWord + "en";
-      ablS = "von " + baseWord;
-      ablP = "von " + baseWord + "e";
-    }
-  } else if (c.includes("greek")) {
-    if (lower.endsWith("os")) {
-      const stem = baseWord.slice(0, -2);
-      nomS = baseWord;
-      nomP = stem + "oi";
-      genS = stem + "ou";
-      genP = stem + "on";
-      accS = stem + "on";
-      accP = stem + "ous";
-      datS = stem + "o";
-      datP = stem + "ois";
-      ablS = "apo " + baseWord;
-      ablP = "apo " + stem + "ous";
-    } else if (lower.endsWith("a") || lower.endsWith("e")) {
-      const stem = baseWord.slice(0, -1);
-      nomS = baseWord;
-      nomP = stem + "es";
-      genS = stem + "as";
-      genP = stem + "on";
-      accS = stem + "an";
-      accP = stem + "es";
-      datS = stem + "a";
-      datP = stem + "ais";
-      ablS = "apo " + baseWord;
-      ablP = "apo " + stem + "es";
-    } else if (lower.endsWith("on")) {
-      const stem = baseWord.slice(0, -2);
-      nomS = baseWord;
-      nomP = stem + "a";
-      genS = stem + "ou";
-      genP = stem + "on";
-      accS = stem + "on";
-      accP = stem + "a";
-      datS = stem + "o";
-      datP = stem + "ois";
-      ablS = "apo " + baseWord;
-      ablP = "apo " + stem + "a";
-    }
-  } else if (c.includes("slavic") || c.includes("slav")) {
-    if (lower.endsWith("a")) {
-      const stem = baseWord.slice(0, -1);
-      nomS = baseWord;
-      nomP = stem + "y";
-      genS = stem + "y";
-      genP = stem;
-      accS = stem + "u";
-      accP = stem + "y";
-      datS = stem + "e";
-      datP = stem + "am";
-      ablS = "s " + stem + "oy";
-      ablP = "s " + stem + "ami";
-    } else {
-      // Consonant ending masculine
-      nomS = baseWord;
-      nomP = baseWord + "y";
-      genS = baseWord + "a";
-      genP = baseWord + "ov";
-      accS = baseWord + "a";
-      accP = baseWord + "ov";
-      datS = baseWord + "u";
-      datP = baseWord + "am";
-      ablS = "s " + baseWord + "om";
-      ablP = "s " + baseWord + "ami";
-    }
-  } else if (c.includes("arab")) {
-    // Simplified Arabic triptote case markings (-u, -i, -a) or sound plural suffixes (-un, -in)
-    if (lower.endsWith("ah") || lower.endsWith("a")) {
-      const stem = lower.endsWith("ah") ? baseWord.slice(0, -2) : baseWord.slice(0, -1);
-      nomS = stem + "atu";
-      nomP = stem + "atun";
-      genS = stem + "ati";
-      genP = stem + "atin";
-      accS = stem + "ata";
-      accP = stem + "atin";
-      datS = "li-" + stem + "ah";
-      datP = "li-" + stem + "at";
-      ablS = "min " + stem + "ah";
-      ablP = "min " + stem + "at";
-    } else {
-      nomS = baseWord + "u";
-      nomP = baseWord + "una";
-      genS = baseWord + "i";
-      genP = baseWord + "ina";
-      accS = baseWord + "a";
-      accP = baseWord + "ina";
-      datS = "li-" + baseWord;
-      datP = "li-" + baseWord + "in";
-      ablS = "min " + baseWord;
-      ablP = "min " + baseWord + "in";
-    }
-  } else if (c.includes("constructed") || c.includes("tolkien") || c.includes("elf")) {
-    // Quenya-like noun cases
-    const lastChar = lower.charAt(lower.length - 1);
-    const isVowel = "aeiouyëöü".includes(lastChar);
-
-    if (isVowel) {
-      nomS = baseWord;
-      nomP = baseWord + "r";
-      genS = baseWord + "o";
-      genP = baseWord + "ron";
-      accS = baseWord;
-      accP = baseWord + "r";
-      datS = baseWord + "n";
-      datP = baseWord + "ryo";
-      ablS = baseWord + "llo";
-      ablP = baseWord + "llon";
-    } else {
-      nomS = baseWord;
-      nomP = baseWord + "i";
-      genS = baseWord + "o";
-      genP = baseWord + "ion";
-      accS = baseWord;
-      accP = baseWord + "i";
-      datS = baseWord + "n";
-      datP = baseWord + "inyo";
-      ablS = baseWord + "ello";
-      ablP = baseWord + "ellon";
-    }
-  }
-
-  return {
-    nominative: {
-      singular: MarkovChain.capitalize(nomS),
-      plural: MarkovChain.capitalize(nomP),
-      descriptionSingular: 'Subject (e.g. "The city is here")',
-      descriptionPlural: 'Multiple subjects (e.g. "These cities are here")',
-    },
-    genitive: {
-      singular: MarkovChain.capitalize(genS),
-      plural: MarkovChain.capitalize(genP),
-      descriptionSingular: 'Possession / Origin (e.g. "Of the city")',
-      descriptionPlural: 'Plural possession / Origin (e.g. "Of the cities")',
-    },
-    accusative: {
-      singular: MarkovChain.capitalize(accS),
-      plural: MarkovChain.capitalize(accP),
-      descriptionSingular: 'Direct Object (e.g. "I found the city")',
-      descriptionPlural: 'Plural direct objects (e.g. "I found the cities")',
-    },
-    dative: {
-      singular: MarkovChain.capitalize(datS),
-      plural: MarkovChain.capitalize(datP),
-      descriptionSingular: 'Recipient (e.g. "Dedicated to/for the city")',
-      descriptionPlural: 'Plural recipients (e.g. "Dedicated to/for the cities")',
-    },
-    ablative: {
-      singular: MarkovChain.capitalize(ablS),
-      plural: MarkovChain.capitalize(ablP),
-      descriptionSingular: 'Origin / Instrument (e.g. "From/by the city")',
-      descriptionPlural: 'Plural origins / instruments (e.g. "From/by the cities")',
-    },
-  };
+  const table = {} as DeclensionTable;
+  (Object.keys(CASE_DESCRIPTIONS) as Array<keyof DeclensionTable>).forEach((name, i) => {
+    const [descriptionSingular, descriptionPlural] = CASE_DESCRIPTIONS[name];
+    table[name] = {
+      singular: forms[2 * i],
+      plural: forms[2 * i + 1],
+      descriptionSingular,
+      descriptionPlural,
+    };
+  });
+  return table;
 }
 
 /**

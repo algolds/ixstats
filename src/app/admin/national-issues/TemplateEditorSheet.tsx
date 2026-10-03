@@ -14,13 +14,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Textarea } from "~/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
 
@@ -115,7 +109,6 @@ export function TemplateEditorSheet({
     { enabled: isOpen && isEdit }
   );
 
-  // Mutations
   const createMutation = api.nationalIssues.createTemplate.useMutation();
   const updateMutation = api.nationalIssues.updateTemplate.useMutation();
 
@@ -266,7 +259,6 @@ export function TemplateEditorSheet({
               </div>
             )}
 
-            {/* Basic Info */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-subhead text-label-secondary mb-1 block">
@@ -320,70 +312,41 @@ export function TemplateEditorSheet({
               />
             </div>
 
-            {/* Classification */}
             <div className="grid grid-cols-3 gap-2">
               <div>
                 <label className="text-subhead text-label-secondary mb-1 block">Domain</label>
-                <Select value={domain} onValueChange={(val: any) => setDomain(val)}>
-                  <SelectTrigger size="sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DOMAINS.map((d) => (
-                      <SelectItem
-                        key={d}
-                        value={d}
-                        className="text-footnote focus:bg-fill-4 focus:text-label"
-                      >
-                        {d}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <ValueSelect
+                  value={domain}
+                  onValueChange={(val: any) => setDomain(val)}
+                  options={DOMAINS.map((d) => [d, d] as const)}
+                  size="sm"
+                  itemClassName="text-footnote focus:bg-fill-4 focus:text-label"
+                />
               </div>
 
               <div>
                 <label className="text-subhead text-label-secondary mb-1 block">Category</label>
-                <Select value={category} onValueChange={(val: any) => setCategory(val)}>
-                  <SelectTrigger size="sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map((c) => (
-                      <SelectItem
-                        key={c}
-                        value={c}
-                        className="text-footnote focus:bg-fill-4 focus:text-label"
-                      >
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <ValueSelect
+                  value={category}
+                  onValueChange={(val: any) => setCategory(val)}
+                  options={CATEGORIES.map((c) => [c, c] as const)}
+                  size="sm"
+                  itemClassName="text-footnote focus:bg-fill-4 focus:text-label"
+                />
               </div>
 
               <div>
                 <label className="text-subhead text-label-secondary mb-1 block">Severity</label>
-                <Select value={baseSeverity} onValueChange={(val: any) => setBaseSeverity(val)}>
-                  <SelectTrigger size="sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SEVERITIES.map((s) => (
-                      <SelectItem
-                        key={s}
-                        value={s}
-                        className="text-footnote focus:bg-fill-4 focus:text-label"
-                      >
-                        {s.toUpperCase()}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <ValueSelect
+                  value={baseSeverity}
+                  onValueChange={(val: any) => setBaseSeverity(val)}
+                  options={SEVERITIES.map((s) => [s, s.toUpperCase()] as const)}
+                  size="sm"
+                  itemClassName="text-footnote focus:bg-fill-4 focus:text-label"
+                />
               </div>
             </div>
 
-            {/* Mechanics parameters */}
             <div className="grid grid-cols-4 gap-2">
               <div>
                 <label className="text-subhead text-label-secondary mb-1 block">
@@ -440,7 +403,6 @@ export function TemplateEditorSheet({
               </div>
             </div>
 
-            {/* Settings Toggles */}
             <div className="flex gap-4">
               <label className="text-caption flex cursor-pointer items-center gap-2">
                 <Checkbox
@@ -459,7 +421,6 @@ export function TemplateEditorSheet({
               </label>
             </div>
 
-            {/* JSON Code Blocks */}
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <label className="text-subhead text-label-secondary flex items-center gap-2">

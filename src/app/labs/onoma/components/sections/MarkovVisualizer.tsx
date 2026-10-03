@@ -292,7 +292,6 @@ function MarkovVisualizerInner({
 
   return (
     <div className="border-separator bg-surface rounded-row relative flex flex-col overflow-hidden border">
-      {/* Control panel bar */}
       <div className="border-separator bg-fill-4 flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="bg-tint h-2 w-2 animate-pulse rounded-full" />
@@ -322,7 +321,6 @@ function MarkovVisualizerInner({
           </Button>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex items-center gap-2">
           <Button
             variant="secondary"
@@ -347,7 +345,6 @@ function MarkovVisualizerInner({
         </div>
       </div>
 
-      {/* Main Flow Canvas */}
       <div className="bg-fill-4 relative h-[380px] w-full">
         <ReactFlow
           nodes={nodes}
@@ -367,7 +364,6 @@ function MarkovVisualizerInner({
           <FlowFitViewController activePrefix={activePrefix} />
         </ReactFlow>
 
-        {/* Help tip overlay */}
         <div className="bg-surface border-separator text-label-secondary rounded-control-sm text-caption shadow-card pointer-events-none absolute right-3 bottom-3 z-20 flex items-center gap-1 border px-2 py-1 select-none">
           <HelpCircle className="text-tint/80 h-3 w-3" />
           <span>Click neighbor nodes to grow the name token-by-token</span>

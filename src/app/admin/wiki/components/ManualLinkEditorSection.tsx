@@ -91,7 +91,6 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
         <h3 className="text-label text-caption">Manual link editor</h3>
       </div>
       <div className="space-y-4">
-        {/* Country Selector */}
         <div className="space-y-2">
           <label className="text-label text-caption">Country</label>
           <div className="relative">
@@ -161,7 +160,6 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
@@ -189,7 +187,6 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
           </Button>
         </div>
 
-        {/* Test Result */}
         {testResult && (
           <div
             className={cn(

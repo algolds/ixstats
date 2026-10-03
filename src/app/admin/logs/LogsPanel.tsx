@@ -4,32 +4,21 @@ import { useState, useDeferredValue } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { api } from "~/trpc/react";
-import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/admin/log-viewer";
+import { LogViewerFilterable, type LogEntry } from "~/components/admin/log-viewer";
+import { toLogLevel, useClearSystemLogs } from "../_hooks/useSystemLogs";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
 import { Input } from "~/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import {
   Refresh as RefreshCw,
   Trash as Trash2,
   Search,
   SystemRestart as Loader2,
 } from "iconoir-react";
-import { useNotify } from "~/hooks/useNotify";
 import { Card } from "~/components/ui/card";
 
-export function LogsPanel() {
-  return <DedicatedLogsPage />;
-}
-
 export default function DedicatedLogsPage() {
-  const notify = useNotify();
   usePageTitle({ title: "Admin - System Logs" });
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -67,21 +56,10 @@ export default function DedicatedLogsPage() {
     }
   );
 
-  const clearLogsMutation = api.admin.clearSystemLogs.useMutation({
-    onSuccess: () => {
-      notify.success("System logs cleared successfully");
-      void refetch();
-    },
-    onError: (err) => {
-      notify.error(err.message || "Failed to clear logs");
-    },
-  });
-
-  const handleClearLogs = () => {
-    if (confirm("Are you sure you want to purge all system logs? This action cannot be undone.")) {
-      clearLogsMutation.mutate();
-    }
-  };
+  const handleClearLogs = useClearSystemLogs(
+    refetch,
+    "Are you sure you want to purge all system logs? This action cannot be undone."
+  );
 
   // Categories from the logger configuration
   const LOG_CATEGORIES = [
@@ -101,12 +79,6 @@ export default function DedicatedLogsPage() {
 
   // Convert DB SystemLog entries to LogViewer entries
   const entries: LogEntry[] = (logsData?.logs ?? []).map((log) => {
-    let level: LogLevel = "info";
-    const dbLevel = log.level?.toUpperCase();
-    if (dbLevel === "DEBUG") level = "debug";
-    else if (dbLevel === "WARN" || dbLevel === "WARNING") level = "warn";
-    else if (dbLevel === "ERROR" || dbLevel === "CRITICAL" || dbLevel === "FATAL") level = "error";
-
     let msg = `[${log.category}] ${log.message}`;
     if (log.userId) {
       const uMatch = usersData?.find((u) => u.id === log.userId);
@@ -120,7 +92,7 @@ export default function DedicatedLogsPage() {
     if (log.metadata) msg += `\nMetadata: ${log.metadata}`;
 
     return {
-      level,
+      level: toLogLevel(log.level),
       message: msg,
       timestamp: log.timestamp ? new Date(log.timestamp).toISOString() : undefined,
     };
@@ -135,7 +107,6 @@ export default function DedicatedLogsPage() {
         subtitle="Search and filter database logs, runtime exceptions and client-side rejections."
       />
 
-      {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
           <p className="text-label-secondary text-stat-label">Fetched logs</p>
@@ -161,7 +132,6 @@ export default function DedicatedLogsPage() {
         </Card>
       </div>
 
-      {/* Single-line Filter Rail */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <div className="relative max-w-xs min-w-[180px] flex-1">
@@ -174,66 +144,50 @@ export default function DedicatedLogsPage() {
             />
           </div>
 
-          <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-            <SelectTrigger size="sm" className="w-32">
-              <SelectValue placeholder="All levels" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL" className="text-footnote">
-                All levels
-              </SelectItem>
-              <SelectItem value="DEBUG" className="text-footnote">
-                DEBUG
-              </SelectItem>
-              <SelectItem value="INFO" className="text-footnote">
-                INFO
-              </SelectItem>
-              <SelectItem value="WARN" className="text-footnote">
-                WARN
-              </SelectItem>
-              <SelectItem value="ERROR" className="text-footnote">
-                ERROR
-              </SelectItem>
-              <SelectItem value="CRITICAL" className="text-footnote">
-                CRITICAL
-              </SelectItem>
-              <SelectItem value="FATAL" className="text-footnote">
-                FATAL
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={selectedLevel}
+            onValueChange={setSelectedLevel}
+            options={[
+              ["ALL", "All levels"],
+              ["DEBUG", "DEBUG"],
+              ["INFO", "INFO"],
+              ["WARN", "WARN"],
+              ["ERROR", "ERROR"],
+              ["CRITICAL", "CRITICAL"],
+              ["FATAL", "FATAL"],
+            ]}
+            size="sm"
+            className="w-32"
+            placeholder="All levels"
+            itemClassName="text-footnote"
+          />
 
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger size="sm" className="w-36">
-              <SelectValue placeholder="All categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL" className="text-footnote">
-                All categories
-              </SelectItem>
-              {LOG_CATEGORIES.map((cat) => (
-                <SelectItem key={cat} value={cat} className="text-footnote">
-                  {cat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={selectedCategory}
+            onValueChange={setSelectedCategory}
+            options={[
+              ["ALL", "All categories"],
+              ...LOG_CATEGORIES.map((cat) => [cat, cat] as const),
+            ]}
+            size="sm"
+            className="w-36"
+            placeholder="All categories"
+            itemClassName="text-footnote"
+          />
 
-          <Select value={selectedUser} onValueChange={setSelectedUser}>
-            <SelectTrigger size="sm" className="w-36">
-              <SelectValue placeholder="All users" />
-            </SelectTrigger>
-            <SelectContent className="max-h-56">
-              <SelectItem value="ALL" className="text-footnote">
-                All users
-              </SelectItem>
-              {usersData?.map((u) => (
-                <SelectItem key={u.id} value={u.id} className="text-footnote">
-                  {u.clerkUserId}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={selectedUser}
+            onValueChange={setSelectedUser}
+            options={[
+              ["ALL", "All users"],
+              ...(usersData?.map((u) => [u.id, u.clerkUserId] as const) ?? []),
+            ]}
+            size="sm"
+            className="w-36"
+            placeholder="All users"
+            contentClassName="max-h-56"
+            itemClassName="text-footnote"
+          />
 
           <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2 px-2 select-none">
             <Switch
@@ -278,7 +232,6 @@ export default function DedicatedLogsPage() {
         </div>
       </div>
 
-      {/* Main Terminal Output */}
       <Card className="overflow-hidden p-3">
         {isLoading ? (
           <div className="flex h-96 items-center justify-center">

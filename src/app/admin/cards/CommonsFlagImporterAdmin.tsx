@@ -21,13 +21,7 @@ import {
   Check,
 } from "iconoir-react";
 import type { CardRarity } from "@prisma/client";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Card } from "~/components/ui/card";
 
 function cleanCategoryTitle(input: string): string {
@@ -63,7 +57,6 @@ export function CommonsFlagImporterAdmin() {
     { enabled: Boolean(activeCategory), refetchOnWindowFocus: false }
   );
 
-  // Mutation to import
   const importMutation = api.cards.importCommonsFlags.useMutation({
     onSuccess: (data) => {
       notify.success("Flags Imported", data.message || `Imported ${data.imported} flag(s).`);
@@ -141,7 +134,6 @@ export function CommonsFlagImporterAdmin() {
 
   return (
     <Card className="space-y-6 p-6">
-      {/* Header */}
       <div className="border-separator flex flex-col gap-2 border-b pb-4">
         <div className="flex items-center gap-3">
           <div className="rounded-row border-teal/30 bg-teal/10 border p-3">
@@ -196,7 +188,6 @@ export function CommonsFlagImporterAdmin() {
             </Button>
           </div>
 
-          {/* Quick Preset Shortcuts */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <span className="text-label-secondary text-caption">Quick Categories:</span>
             <Button
@@ -228,7 +219,6 @@ export function CommonsFlagImporterAdmin() {
           </div>
         </div>
 
-        {/* Active Query Status Badge */}
         <div className="border-separator text-footnote flex items-center justify-between border-t pt-3">
           <span className="text-label-secondary font-medium">
             Active Query: <code className="text-teal tabular-nums">{activeCategory}</code>
@@ -246,48 +236,46 @@ export function CommonsFlagImporterAdmin() {
           </Button>
         </div>
 
-        {/* Card Minting Parameters */}
         <div className="border-separator grid grid-cols-1 gap-3 border-t pt-2 sm:grid-cols-2">
-          {/* Default Rarity */}
           <div>
             <label className="text-label-secondary text-caption mb-1 block">
               Target card rarity
             </label>
-            <Select value={defaultRarity} onValueChange={(v) => setDefaultRarity(v as CardRarity)}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="COMMON">Common</SelectItem>
-                <SelectItem value="UNCOMMON">Uncommon</SelectItem>
-                <SelectItem value="RARE">Rare</SelectItem>
-                <SelectItem value="ULTRA_RARE">Ultra rare</SelectItem>
-                <SelectItem value="EPIC">Epic</SelectItem>
-                <SelectItem value="LEGENDARY">Legendary</SelectItem>
-              </SelectContent>
-            </Select>
+            <ValueSelect
+              value={defaultRarity}
+              onValueChange={(v) => setDefaultRarity(v as CardRarity)}
+              options={[
+                ["COMMON", "Common"],
+                ["UNCOMMON", "Uncommon"],
+                ["RARE", "Rare"],
+                ["ULTRA_RARE", "Ultra rare"],
+                ["EPIC", "Epic"],
+                ["LEGENDARY", "Legendary"],
+              ]}
+              size="sm"
+              className="w-full"
+            />
           </div>
 
-          {/* Season */}
           <div>
             <label className="text-label-secondary text-caption mb-1 block">
               Target card season
             </label>
-            <Select value={String(season)} onValueChange={(v) => setSeason(parseInt(v, 10))}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={String(1)}>Season 1</SelectItem>
-                <SelectItem value={String(2)}>Season 2</SelectItem>
-                <SelectItem value={String(3)}>Season 3</SelectItem>
-              </SelectContent>
-            </Select>
+            <ValueSelect
+              value={String(season)}
+              onValueChange={(v) => setSeason(parseInt(v, 10))}
+              options={[
+                [String(1), "Season 1"],
+                [String(2), "Season 2"],
+                [String(3), "Season 3"],
+              ]}
+              size="sm"
+              className="w-full"
+            />
           </div>
         </div>
       </Card>
 
-      {/* Results Browser */}
       {commonsQuery.isLoading || commonsQuery.isFetching ? (
         <div className="border-separator rounded-row flex h-52 flex-col items-center justify-center space-y-2 border">
           <Loader2 className="text-teal h-7 w-7 animate-spin" />
@@ -372,7 +360,6 @@ export function CommonsFlagImporterAdmin() {
             </div>
           </div>
 
-          {/* Flag Image Grid */}
           <div className="grid max-h-[520px] grid-cols-2 gap-3 overflow-y-auto p-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
             {items.map((item) => {
               const isSelected = selectedItemUrls.has(item.fileUrl);
@@ -398,7 +385,6 @@ export function CommonsFlagImporterAdmin() {
                       loading="lazy"
                     />
 
-                    {/* Already Minted Badge */}
                     {isMinted && (
                       <div className="rounded-control-sm bg-green/90 text-caption text-label absolute top-1 left-1 flex items-center gap-1 px-2 py-0.5">
                         <Check className="h-2.5 w-2.5" /> Minted

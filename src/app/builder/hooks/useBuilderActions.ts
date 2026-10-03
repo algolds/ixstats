@@ -46,87 +46,6 @@ interface UseBuilderActionsProps {
  * - Access control based on completion state
  *
  * Works in conjunction with useBuilderState to manage workflow progression.
- *
- * @hook
- * @param {UseBuilderActionsProps} props - Builder state and setter
- * @param {BuilderState} props.builderState - Current builder state
- * @param {Function} props.setBuilderState - State setter function
- * @returns {UseBuilderActionsReturn} Navigation methods and progress tracking
- * @returns {Function} returns.handleContinue - Progress to next tab/step
- * @returns {Function} returns.handlePreviousStep - Go back one step
- * @returns {Function} returns.handleStepClick - Jump to specific step
- * @returns {Function} returns.handleTabChange - Switch tabs within step
- * @returns {Function} returns.canNavigateToStep - Check step accessibility
- * @returns {number} returns.progressPercentage - Workflow completion (0-100)
- *
- * @example
- * ```tsx
- * function BuilderNavigation() {
- *   const { builderState, setBuilderState } = useBuilderState();
- *   const { handleContinue, handlePreviousStep, progressPercentage } =
- *     useBuilderActions({ builderState, setBuilderState });
- *
- *   return (
- *     <div>
- *       <ProgressBar value={progressPercentage} />
- *       <button onClick={handlePreviousStep}>Back</button>
- *       <button onClick={handleContinue}>Continue</button>
- *     </div>
- *   );
- * }
- * ```
- *
- * @example
- * ```tsx
- * // Tab navigation within a step
- * function CoreStepTabs() {
- *   const { builderState, setBuilderState } = useBuilderState();
- *   const { handleTabChange } = useBuilderActions({ builderState, setBuilderState });
- *
- *   const tabs = ['identity', 'indicators'];
- *
- *   return (
- *     <div>
- *       {tabs.map(tab => (
- *         <button
- *           key={tab}
- *           onClick={() => handleTabChange('core', tab)}
- *           className={builderState.activeCoreTab === tab ? 'active' : ''}
- *         >
- *           {tab}
- *         </button>
- *       ))}
- *     </div>
- *   );
- * }
- * ```
- *
- * @example
- * ```tsx
- * // Step indicator with access control
- * function StepIndicator() {
- *   const { builderState, setBuilderState } = useBuilderState();
- *   const { handleStepClick, canNavigateToStep } =
- *     useBuilderActions({ builderState, setBuilderState });
- *
- *   const steps: BuilderStep[] = ['foundation', 'core', 'government', 'economics', 'preview'];
- *
- *   return (
- *     <div className="flex gap-2">
- *       {steps.map((step, index) => (
- *         <button
- *           key={step}
- *           onClick={() => handleStepClick(step)}
- *           disabled={!canNavigateToStep(step)}
- *           className={builderState.step === step ? 'active' : ''}
- *         >
- *           {index + 1}. {step}
- *         </button>
- *       ))}
- *     </div>
- *   );
- * }
- * ```
  */
 export function useBuilderActions({
   builderState,
@@ -345,7 +264,6 @@ export function useBuilderActions({
     [builderState.step, builderState.completedSteps, mode, steps, isScratchOrImport]
   );
 
-  // Calculate progress percentage
   const progressPercentage = useMemo(() => {
     const currentIndex = steps.indexOf(builderState.step);
     if (currentIndex === -1) return 0;

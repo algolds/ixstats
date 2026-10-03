@@ -102,7 +102,6 @@ export function AdminSidebarLayout({
             </div>
           )}
 
-          {/* Main Content */}
           <div className="min-w-0 flex-1">
             <SystemStatusStrip className="mb-6" />
             {children}

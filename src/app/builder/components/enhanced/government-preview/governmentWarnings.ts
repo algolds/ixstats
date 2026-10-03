@@ -15,11 +15,6 @@ interface GovernmentWarnings {
 
 /**
  * Compute all government builder warnings from the current builder state.
- *
- * @param governmentStructure - The full government builder structure
- * @param nominalGDP - The country's nominal GDP
- * @param baselineBudget - The initial budget value captured on mount (null if unavailable)
- * @param baselineCurrency - The initial currency captured on mount (null if unavailable)
  */
 export function computeGovernmentWarnings(
   governmentStructure: {

@@ -152,7 +152,6 @@ export function BatchResultsTable({
 
   return (
     <div className="space-y-4">
-      {/* Control bar */}
       <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-3">
         <div className="flex items-center gap-3">
           <Input
@@ -196,7 +195,6 @@ export function BatchResultsTable({
         </div>
       </div>
 
-      {/* Results table */}
       <Table containerClassName="max-h-[500px]">
         <TableHeader sticky>
           <TableRow>

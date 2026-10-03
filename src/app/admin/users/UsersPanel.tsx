@@ -9,13 +9,7 @@ import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Input } from "~/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import {
   Dialog,
   DialogContent,
@@ -132,7 +126,6 @@ export function UsersPanel() {
   const { data: countriesWithUsers, refetch: refetchCountries } =
     api.admin.listCountriesWithUsers.useQuery();
 
-  // Mutations
   const linkWikiMutation = api.admin.linkUserWiki.useMutation({
     onSuccess: () => {
       notify.success("Success", "MediaWiki account successfully linked");
@@ -214,7 +207,6 @@ export function UsersPanel() {
     onError: (err) => notify.error("Error", err.message || "Failed to update membership tier"),
   });
 
-  // Filtered identities
   const filteredIdentities = userIdentities?.filter((user) => {
     if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();
@@ -236,7 +228,6 @@ export function UsersPanel() {
         subtitle="MediaWiki reconciliation, Discord sync, nation links and system roles."
       />
 
-      {/* Active Impersonation Session Banner */}
       {activePlayAs && (
         <div className="rounded-card border-red/40 bg-red/10 flex flex-col gap-3 border p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
@@ -344,9 +335,7 @@ export function UsersPanel() {
           </div>
         </div>
 
-        {/* ================================================================= */}
         {/* TAB 1: MASTER IDENTITY MATRIX */}
-        {/* ================================================================= */}
         <TabsContent value="identities" className="mt-4 space-y-4">
           <Card className="p-4">
             <div className="mb-3 flex items-center justify-between">
@@ -523,9 +512,7 @@ export function UsersPanel() {
           </Card>
         </TabsContent>
 
-        {/* ================================================================= */}
         {/* TAB 2: WIKI RECONCILIATION & ALTS */}
-        {/* ================================================================= */}
         <TabsContent value="wiki-reconciliation" className="mt-4 space-y-4">
           <Card className="p-4">
             <div className="mb-4">
@@ -667,9 +654,7 @@ export function UsersPanel() {
           </Card>
         </TabsContent>
 
-        {/* ================================================================= */}
         {/* TAB 3: DISCORD BOT MEMBER SYNC */}
-        {/* ================================================================= */}
         <TabsContent value="discord-sync" className="mt-4 space-y-4">
           <Card className="p-4">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -713,7 +698,6 @@ export function UsersPanel() {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Auto Match Suggestions */}
                 <div>
                   <h4 className="text-label text-subhead mb-2">
                     High Confidence Match Candidates ({discordSyncData?.suggestions.length || 0})
@@ -762,9 +746,7 @@ export function UsersPanel() {
           </Card>
         </TabsContent>
 
-        {/* ================================================================= */}
         {/* TAB 4: COUNTRY CLAIMS & TIERS */}
-        {/* ================================================================= */}
         <TabsContent value="country-claims" className="mt-4 space-y-4">
           <Card className="p-4">
             <div className="mb-4 flex items-center justify-between">
@@ -846,7 +828,6 @@ export function UsersPanel() {
         </TabsContent>
       </Tabs>
 
-      {/* Manual Wiki Link Dialog */}
       <Dialog open={isWikiDialogOpen} onOpenChange={setIsWikiDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -885,7 +866,6 @@ export function UsersPanel() {
         </DialogContent>
       </Dialog>
 
-      {/* Manual Discord Link Dialog */}
       <Dialog open={isDiscordDialogOpen} onOpenChange={setIsDiscordDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -930,38 +910,37 @@ export function UsersPanel() {
         </DialogContent>
       </Dialog>
 
-      {/* Country Assign Dialog */}
       <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Assign country to user</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
-            <Select value={selectedUser} onValueChange={setSelectedUser}>
-              <SelectTrigger size="sm">
-                <SelectValue placeholder="Select a user..." />
-              </SelectTrigger>
-              <SelectContent>
-                {userIdentities?.map((u) => (
-                  <SelectItem key={u.id} value={u.clerkUserId} className="text-footnote">
-                    {u.clerkUserId} {u.country ? `(${u.country.name})` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ValueSelect
+              value={selectedUser}
+              onValueChange={setSelectedUser}
+              options={
+                userIdentities?.map(
+                  (u) =>
+                    [
+                      u.clerkUserId,
+                      `${u.clerkUserId} ${u.country ? `(${u.country.name})` : ""}`,
+                    ] as const
+                ) ?? []
+              }
+              size="sm"
+              placeholder="Select a user..."
+              itemClassName="text-footnote"
+            />
 
-            <Select value={selectedCountry} onValueChange={setSelectedCountry}>
-              <SelectTrigger size="sm">
-                <SelectValue placeholder="Select a nation..." />
-              </SelectTrigger>
-              <SelectContent>
-                {countriesWithUsers?.map((c) => (
-                  <SelectItem key={c.id} value={c.id} className="text-footnote">
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ValueSelect
+              value={selectedCountry}
+              onValueChange={setSelectedCountry}
+              options={countriesWithUsers?.map((c) => [c.id, c.name] as const) ?? []}
+              size="sm"
+              placeholder="Select a nation..."
+              itemClassName="text-footnote"
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setIsAssignDialogOpen(false)}>

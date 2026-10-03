@@ -8,19 +8,9 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { useNotify } from "~/hooks/useNotify";
-import {
-  Plus,
-  Search, // oxlint-disable-next-line eslint/no-unused-vars
-  EyeClosed as EyeOff,
-} from "iconoir-react";
+import { Plus, Search } from "iconoir-react";
 import { PageHeader } from "~/components/shell/PageHeader";
 import {
   EconomicArchetypeFormDialog,
@@ -62,8 +52,6 @@ export function EconomicArchetypesPanel() {
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
   const [selectedComplexity, setSelectedComplexity] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const [showInactive, setShowInactive] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingArchetype, setEditingArchetype] = useState<ArchetypeRecord | null>(null);
   const [activeTab, setActiveTab] = useState("general");
@@ -77,15 +65,11 @@ export function EconomicArchetypesPanel() {
     isLoading,
     refetch,
   } = api.economicArchetypes.getAllArchetypes.useQuery({
-    isActive: showInactive ? undefined : true,
+    isActive: true,
   });
 
   const archetypes = archetypesData?.archetypes || [];
 
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { data: stats } = api.economicArchetypes.getArchetypeUsageStats.useQuery();
-
-  // Mutations
   const createMutation = api.economicArchetypes.createArchetype.useMutation({
     onSuccess: () => {
       notify.success("Success", "Archetype created successfully");
@@ -130,7 +114,6 @@ export function EconomicArchetypesPanel() {
     // oxlint-disable-next-line
   }, [archetypes]);
 
-  // Filtered archetypes
   const filteredArchetypes = useMemo(() => {
     return archetypes.filter((archetype: any) => {
       if (selectedEra !== "all" && archetype.era !== selectedEra) return false;
@@ -196,7 +179,6 @@ export function EconomicArchetypesPanel() {
         subtitle="Macroeconomic policy models, component templates and simulation archetypes."
       />
 
-      {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
           <div className="text-label-secondary text-stat-label">Total archetypes</div>
@@ -222,7 +204,6 @@ export function EconomicArchetypesPanel() {
         </Card>
       </div>
 
-      {/* Filter & Action Rail */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <div className="relative max-w-sm min-w-[200px] flex-1">
@@ -235,54 +216,45 @@ export function EconomicArchetypesPanel() {
             />
           </div>
 
-          <Select value={selectedEra} onValueChange={(v: any) => setSelectedEra(v)}>
-            <SelectTrigger size="sm" className="w-36">
-              <SelectValue placeholder="All eras" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="text-footnote">
-                All eras
-              </SelectItem>
-              <SelectItem value="modern" className="text-footnote">
-                Modern
-              </SelectItem>
-              <SelectItem value="historical" className="text-footnote">
-                Historical
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={selectedEra}
+            onValueChange={(v: any) => setSelectedEra(v)}
+            options={[
+              ["all", "All eras"],
+              ["modern", "Modern"],
+              ["historical", "Historical"],
+            ]}
+            size="sm"
+            className="w-36"
+            placeholder="All eras"
+            itemClassName="text-footnote"
+          />
 
-          <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-            <SelectTrigger size="sm" className="w-36">
-              <SelectValue placeholder="All regions" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="text-footnote">
-                All regions
-              </SelectItem>
-              {regions.map((region) => (
-                <SelectItem key={region} value={region} className="text-footnote">
-                  {region}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={selectedRegion}
+            onValueChange={setSelectedRegion}
+            options={[
+              ["all", "All regions"],
+              ...regions.map((region) => [region, region] as const),
+            ]}
+            size="sm"
+            className="w-36"
+            placeholder="All regions"
+            itemClassName="text-footnote"
+          />
 
-          <Select value={selectedComplexity} onValueChange={setSelectedComplexity}>
-            <SelectTrigger size="sm" className="w-40">
-              <SelectValue placeholder="All complexities" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="text-footnote">
-                All complexities
-              </SelectItem>
-              {COMPLEXITY_LEVELS.map((level) => (
-                <SelectItem key={level} value={level} className="text-footnote">
-                  {complexityLabel(level)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={selectedComplexity}
+            onValueChange={setSelectedComplexity}
+            options={[
+              ["all", "All complexities"],
+              ...COMPLEXITY_LEVELS.map((level) => [level, complexityLabel(level)] as const),
+            ]}
+            size="sm"
+            className="w-40"
+            placeholder="All complexities"
+            itemClassName="text-footnote"
+          />
         </div>
 
         <Button
@@ -296,7 +268,6 @@ export function EconomicArchetypesPanel() {
         </Button>
       </div>
 
-      {/* High-Density Inset Glass Table */}
       {isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -371,7 +342,6 @@ export function EconomicArchetypesPanel() {
         </Card>
       )}
 
-      {/* Editor Dialog */}
       {(isAddDialogOpen || editingArchetype) && (
         <EconomicArchetypeFormDialog
           isOpen={isAddDialogOpen || !!editingArchetype}

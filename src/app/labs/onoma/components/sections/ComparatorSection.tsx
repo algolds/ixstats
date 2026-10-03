@@ -131,7 +131,6 @@ export default function ComparatorSection({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       {!hideHeader && (
         <div className="border-separator space-y-1 border-b pb-4">
           <h2 className="text-label text-title-2 font-bold">Linguistic comparison</h2>
@@ -164,9 +163,7 @@ export default function ComparatorSection({
         />
       </div>
 
-      {/* Linguistic Distance Dashboard */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {/* Composite distance card */}
         <Card
           variant="inset"
           padding="none"
@@ -188,7 +185,6 @@ export default function ComparatorSection({
           </span>
         </Card>
 
-        {/* Phoneme overlap card */}
         <Card variant="inset" padding="none" className="p-4 text-center">
           <span className="text-label text-large-title font-mono font-bold">
             {comparison.phonemeOverlap}%
@@ -201,7 +197,6 @@ export default function ComparatorSection({
           </span>
         </Card>
 
-        {/* Bigram similarity card */}
         <Card variant="inset" padding="none" className="p-4 text-center">
           <GitCompare className="text-indigo mx-auto mb-2 h-6 w-6 opacity-80" />
           <span className="text-label text-large-title font-mono font-bold">
@@ -216,11 +211,9 @@ export default function ComparatorSection({
         </Card>
       </div>
 
-      {/* Phoneme Inventories compare */}
       <div className="space-y-3">
         <h3 className="text-label-secondary text-subhead">Phoneme inventory overlap analysis</h3>
         <Card variant="inset" padding="none" className="space-y-4 p-4">
-          {/* Shared sounds */}
           <div className="space-y-2">
             <span className="text-caption text-green font-semibold">
               Shared Phonemes ({comparison.sharedPhonemes.length})
@@ -241,7 +234,6 @@ export default function ComparatorSection({
           </div>
 
           <div className="border-separator grid grid-cols-1 gap-4 border-t pt-2 sm:grid-cols-2">
-            {/* Unique to A */}
             <div className="space-y-2">
               <span className="text-tint text-caption font-semibold capitalize">
                 Unique to {corpusA.label} ({comparison.uniqueToA.length})
@@ -261,7 +253,6 @@ export default function ComparatorSection({
               </div>
             </div>
 
-            {/* Unique to B */}
             <div className="space-y-2">
               <span className="text-caption text-indigo font-semibold capitalize">
                 Unique to {corpusB.label} ({comparison.uniqueToB.length})
@@ -295,7 +286,6 @@ export default function ComparatorSection({
                 {comparison.entropyDelta.toFixed(3)} bits
               </span>
             </div>
-            {/* Visual bar comparing entropy */}
             <div className="space-y-2">
               <div>
                 <div className="text-caption mb-1 flex justify-between">
@@ -331,7 +321,6 @@ export default function ComparatorSection({
         </Card>
       </div>
 
-      {/* Sample outputs Side-by-Side */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="space-y-3">
           <h3 className="text-label-secondary text-subhead capitalize">
@@ -390,7 +379,6 @@ export default function ComparatorSection({
         </div>
       </div>
 
-      {/* Blend preview workbench */}
       <div className="border-separator space-y-3 border-t pt-3">
         <div className="flex items-center justify-between">
           <h3 className="text-label-secondary text-subhead">

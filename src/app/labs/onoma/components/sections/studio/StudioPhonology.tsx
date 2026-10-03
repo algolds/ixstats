@@ -215,7 +215,6 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
         <ComparatorSection hideHeader studioWords={studioWords} />
       ) : (
         <>
-          {/* Live preview */}
           <div className="border-separator bg-fill-4 rounded-row space-y-2 border p-4">
             <label className="text-label-secondary text-subhead">Live preview</label>
             <div className="flex flex-wrap items-center gap-2">
@@ -276,7 +275,6 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
               </Button>
             </div>
 
-            {/* Interactive Grapheme Mapper Timeline */}
             {previewText.trim().length > 0 && (
               <div className="border-separator animate-in fade-in mt-3 space-y-2 border-t pt-4 duration-200">
                 <h4 className="text-label-secondary text-subhead">
@@ -343,7 +341,6 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                             </Button>
                           </div>
 
-                          {/* Popover Tabs */}
                           <SegmentedControl
                             size="sm"
                             fullWidth
@@ -429,13 +426,8 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
           </div>
 
           {/* Acoustic Formant & Spectrogram Visualizer */}
-          <AcousticFormantVisualizer
-            currentIpa={previewIpa}
-            currentName={previewText}
-            accentColor={ACCENT}
-          />
+          <AcousticFormantVisualizer currentIpa={previewIpa} accentColor={ACCENT} />
 
-          {/* Rule editor */}
           <div className="border-separator rounded-row space-y-3 border p-4">
             <div className="flex items-center justify-between">
               <h4 className="text-label text-subhead">{culture} grapheme → IPA overrides</h4>
@@ -497,7 +489,6 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
               </Button>
             </div>
 
-            {/* Built-in reference */}
             <details className="border-separator border-t pt-2">
               <summary className="text-label-secondary text-subhead cursor-pointer">
                 Built-in {culture} rules (reference)
@@ -515,7 +506,6 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
             </details>
           </div>
 
-          {/* Per-name overrides */}
           <div className="border-separator rounded-row space-y-2 border p-4">
             <h4 className="text-label text-subhead">Per-name overrides</h4>
             {overrideNames.length === 0 ? (

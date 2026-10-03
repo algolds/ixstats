@@ -32,449 +32,242 @@ interface ComponentScoringEntry {
 
 const ESSENTIAL_CATEGORIES = ["power_distribution", "decision_process", "legitimacy"];
 
+interface ScoringContext {
+  government: WikiGovernmentAttributes;
+  lowerInfobox: string;
+}
+
+interface ScoringRule {
+  applies: (context: ScoringContext) => boolean;
+  points: number;
+  reason: string;
+}
+
+type ScalarAttribute = "powerStructure" | "decisionProcess" | "internationalPosture";
+type ListAttribute =
+  | "legitimacySources"
+  | "institutions"
+  | "controlMechanisms"
+  | "economicGovernance"
+  | "socialPolicies"
+  | "administrativeFeatures";
+
+const ATTRIBUTE_LABELS: Record<ScalarAttribute | ListAttribute, string> = {
+  powerStructure: "Power structure",
+  decisionProcess: "Decision process",
+  internationalPosture: "International posture",
+  legitimacySources: "Legitimacy source",
+  institutions: "Institution",
+  controlMechanisms: "Control mechanism",
+  economicGovernance: "Economic governance",
+  socialPolicies: "Social policy",
+  administrativeFeatures: "Administrative feature",
+};
+
+/** The parsed attribute equals `value`. */
+const is = (attribute: ScalarAttribute, value: string, points: number): ScoringRule => ({
+  applies: ({ government }) => government[attribute] === value,
+  points,
+  reason: `${ATTRIBUTE_LABELS[attribute]} identified as ${value}`,
+});
+
+/** The parsed list contains an entry of `type`. */
+const has = (
+  attribute: ListAttribute,
+  type: string,
+  points: number,
+  label = type.replace(/_/g, " ")
+): ScoringRule => ({
+  applies: ({ government }) =>
+    (government[attribute] as ReadonlyArray<{ type: string }>).some((item) => item.type === type),
+  points,
+  reason: `${ATTRIBUTE_LABELS[attribute]} includes ${label}`,
+});
+
+/** The infobox's government type contains `word`. */
+const infobox = (word: string, points: number): ScoringRule => ({
+  applies: ({ lowerInfobox }) => lowerInfobox.includes(word),
+  points,
+  reason: `Infobox government type contains '${word}'`,
+});
+
+const COMPONENT_SCORING: Array<[ComponentType, string, ...ScoringRule[]]> = [
+  [
+    ComponentType.FEDERAL_SYSTEM,
+    "power_distribution",
+    is("powerStructure", "federal", 60),
+    infobox("federal", 25),
+  ],
+  [
+    ComponentType.UNITARY_SYSTEM,
+    "power_distribution",
+    is("powerStructure", "unitary", 60),
+    infobox("unitary", 25),
+  ],
+  [ComponentType.CENTRALIZED_POWER, "power_distribution", is("powerStructure", "centralized", 60)],
+  [ComponentType.CONFEDERATE_SYSTEM, "power_distribution", is("powerStructure", "confederate", 60)],
+  [
+    ComponentType.DEMOCRATIC_PROCESS,
+    "decision_process",
+    is("decisionProcess", "democratic", 60),
+    has("legitimacySources", "electoral", 25),
+  ],
+  [ComponentType.AUTOCRATIC_PROCESS, "decision_process", is("decisionProcess", "autocratic", 40)],
+  [
+    ComponentType.TECHNOCRATIC_PROCESS,
+    "decision_process",
+    is("decisionProcess", "technocratic", 40),
+  ],
+  [ComponentType.CONSENSUS_PROCESS, "decision_process", is("decisionProcess", "consensus", 40)],
+  [ComponentType.OLIGARCHIC_PROCESS, "decision_process", is("decisionProcess", "oligarchic", 40)],
+  [ComponentType.ELECTORAL_LEGITIMACY, "legitimacy", has("legitimacySources", "electoral", 35)],
+  [
+    ComponentType.TRADITIONAL_LEGITIMACY,
+    "legitimacy",
+    has("legitimacySources", "traditional", 35),
+    infobox("monarchy", 35),
+  ],
+  [ComponentType.PERFORMANCE_LEGITIMACY, "legitimacy", has("legitimacySources", "performance", 35)],
+  [ComponentType.CHARISMATIC_LEGITIMACY, "legitimacy", has("legitimacySources", "charismatic", 35)],
+  [
+    ComponentType.RELIGIOUS_LEGITIMACY,
+    "legitimacy",
+    has("legitimacySources", "religious", 35),
+    infobox("theocracy", 35),
+  ],
+  [
+    ComponentType.INSTITUTIONAL_LEGITIMACY,
+    "legitimacy",
+    has("legitimacySources", "institutional", 35),
+  ],
+  [
+    ComponentType.INDEPENDENT_JUDICIARY,
+    "institution",
+    has("institutions", "independent_judiciary", 35),
+  ],
+  [
+    ComponentType.PROFESSIONAL_BUREAUCRACY,
+    "institution",
+    has("institutions", "professional_bureaucracy", 35),
+  ],
+  [
+    ComponentType.MILITARY_ADMINISTRATION,
+    "institution",
+    has("institutions", "military_administration", 35),
+  ],
+  [
+    ComponentType.PARTISAN_INSTITUTIONS,
+    "institution",
+    has("institutions", "partisan_institutions", 35),
+  ],
+  [
+    ComponentType.TECHNOCRATIC_AGENCIES,
+    "institution",
+    has("institutions", "technocratic_agencies", 35),
+  ],
+  [ComponentType.RULE_OF_LAW, "control", has("controlMechanisms", "rule_of_law", 35)],
+  [
+    ComponentType.SURVEILLANCE_SYSTEM,
+    "control",
+    has("controlMechanisms", "surveillance_system", 35),
+  ],
+  [
+    ComponentType.ECONOMIC_INCENTIVES,
+    "control",
+    has("controlMechanisms", "economic_incentives", 35),
+  ],
+  [
+    ComponentType.FREE_MARKET_SYSTEM,
+    "economic_governance",
+    has("economicGovernance", "free_market", 40),
+  ],
+  [
+    ComponentType.PLANNED_ECONOMY,
+    "economic_governance",
+    has("economicGovernance", "planned_economy", 40),
+  ],
+  [
+    ComponentType.MIXED_ECONOMY,
+    "economic_governance",
+    has("economicGovernance", "mixed_economy", 40),
+  ],
+  [
+    ComponentType.CORPORATIST_SYSTEM,
+    "economic_governance",
+    has("economicGovernance", "corporatist", 40),
+  ],
+  [
+    ComponentType.SOCIAL_MARKET_ECONOMY,
+    "economic_governance",
+    has("economicGovernance", "social_market", 40),
+  ],
+  [
+    ComponentType.STATE_CAPITALISM,
+    "economic_governance",
+    has("economicGovernance", "state_capitalism", 40),
+  ],
+  [ComponentType.WELFARE_STATE, "social_policy", has("socialPolicies", "welfare_state", 35)],
+  [
+    ComponentType.UNIVERSAL_HEALTHCARE,
+    "social_policy",
+    has("socialPolicies", "universal_healthcare", 35),
+  ],
+  [ComponentType.PUBLIC_EDUCATION, "social_policy", has("socialPolicies", "public_education", 35)],
+  [
+    ComponentType.WORKER_PROTECTION,
+    "social_policy",
+    has("socialPolicies", "worker_protection", 35),
+  ],
+  [
+    ComponentType.ENVIRONMENTAL_PROTECTION,
+    "social_policy",
+    has("socialPolicies", "environmental_protection", 35),
+  ],
+  [
+    ComponentType.DIGITAL_GOVERNMENT,
+    "administrative",
+    has("administrativeFeatures", "digital_government", 35),
+  ],
+  [
+    ComponentType.ADMINISTRATIVE_DECENTRALIZATION,
+    "administrative",
+    has("administrativeFeatures", "administrative_decentralization", 35),
+  ],
+  [
+    ComponentType.MERIT_BASED_SYSTEM,
+    "administrative",
+    has("administrativeFeatures", "merit_based_system", 35, "merit-based system"),
+  ],
+  [
+    ComponentType.MULTILATERAL_DIPLOMACY,
+    "international",
+    is("internationalPosture", "multilateral", 35),
+  ],
+];
+
 function scoreAllComponents(
   government: WikiGovernmentAttributes,
-  economy: WikiEconomyAttributes,
   infoboxGovType?: string
 ): ComponentScoringEntry[] {
-  const entries: ComponentScoringEntry[] = [];
-  const lowerInfobox = infoboxGovType?.toLowerCase() ?? "";
-
-  // Power Distribution
-  entries.push(
-    scoreComponent(ComponentType.FEDERAL_SYSTEM, "power_distribution", [
-      {
-        condition: government.powerStructure === "federal",
-        points: 60,
-        reason: "Power structure identified as federal",
-      },
-      {
-        condition: lowerInfobox.includes("federal"),
-        points: 25,
-        reason: "Infobox government type contains 'federal'",
-      },
-    ])
+  const context = { government, lowerInfobox: infoboxGovType?.toLowerCase() ?? "" };
+  return COMPONENT_SCORING.map(([component, category, ...rules]) =>
+    scoreComponent(component, category, rules, context)
   );
-
-  entries.push(
-    scoreComponent(ComponentType.UNITARY_SYSTEM, "power_distribution", [
-      {
-        condition: government.powerStructure === "unitary",
-        points: 60,
-        reason: "Power structure identified as unitary",
-      },
-      {
-        condition: lowerInfobox.includes("unitary"),
-        points: 25,
-        reason: "Infobox government type contains 'unitary'",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.CENTRALIZED_POWER, "power_distribution", [
-      {
-        condition: government.powerStructure === "centralized",
-        points: 60,
-        reason: "Power structure identified as centralized",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.CONFEDERATE_SYSTEM, "power_distribution", [
-      {
-        condition: government.powerStructure === "confederate",
-        points: 60,
-        reason: "Power structure identified as confederate",
-      },
-    ])
-  );
-
-  // Decision Process
-  entries.push(
-    scoreComponent(ComponentType.DEMOCRATIC_PROCESS, "decision_process", [
-      {
-        condition: government.decisionProcess === "democratic",
-        points: 60,
-        reason: "Decision process identified as democratic",
-      },
-      {
-        condition: government.legitimacySources.some((s) => s.type === "electoral"),
-        points: 25,
-        reason: "Legitimacy source includes electoral",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.AUTOCRATIC_PROCESS, "decision_process", [
-      {
-        condition: government.decisionProcess === "autocratic",
-        points: 40,
-        reason: "Decision process identified as autocratic",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.TECHNOCRATIC_PROCESS, "decision_process", [
-      {
-        condition: government.decisionProcess === "technocratic",
-        points: 40,
-        reason: "Decision process identified as technocratic",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.CONSENSUS_PROCESS, "decision_process", [
-      {
-        condition: government.decisionProcess === "consensus",
-        points: 40,
-        reason: "Decision process identified as consensus",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.OLIGARCHIC_PROCESS, "decision_process", [
-      {
-        condition: government.decisionProcess === "oligarchic",
-        points: 40,
-        reason: "Decision process identified as oligarchic",
-      },
-    ])
-  );
-
-  // Legitimacy
-  entries.push(
-    scoreComponent(ComponentType.ELECTORAL_LEGITIMACY, "legitimacy", [
-      {
-        condition: government.legitimacySources.some((s) => s.type === "electoral"),
-        points: 35,
-        reason: "Legitimacy source includes electoral",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.TRADITIONAL_LEGITIMACY, "legitimacy", [
-      {
-        condition: government.legitimacySources.some((s) => s.type === "traditional"),
-        points: 35,
-        reason: "Legitimacy source includes traditional",
-      },
-      {
-        condition: lowerInfobox.includes("monarchy"),
-        points: 35,
-        reason: "Infobox government type contains 'monarchy'",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.PERFORMANCE_LEGITIMACY, "legitimacy", [
-      {
-        condition: government.legitimacySources.some((s) => s.type === "performance"),
-        points: 35,
-        reason: "Legitimacy source includes performance",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.CHARISMATIC_LEGITIMACY, "legitimacy", [
-      {
-        condition: government.legitimacySources.some((s) => s.type === "charismatic"),
-        points: 35,
-        reason: "Legitimacy source includes charismatic",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.RELIGIOUS_LEGITIMACY, "legitimacy", [
-      {
-        condition: government.legitimacySources.some((s) => s.type === "religious"),
-        points: 35,
-        reason: "Legitimacy source includes religious",
-      },
-      {
-        condition: lowerInfobox.includes("theocracy"),
-        points: 35,
-        reason: "Infobox government type contains 'theocracy'",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.INSTITUTIONAL_LEGITIMACY, "legitimacy", [
-      {
-        condition: government.legitimacySources.some((s) => s.type === "institutional"),
-        points: 35,
-        reason: "Legitimacy source includes institutional",
-      },
-    ])
-  );
-
-  // Institutions
-  entries.push(
-    scoreComponent(ComponentType.INDEPENDENT_JUDICIARY, "institution", [
-      {
-        condition: government.institutions.some((i) => i.type === "independent_judiciary"),
-        points: 35,
-        reason: "Institution includes independent judiciary",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.PROFESSIONAL_BUREAUCRACY, "institution", [
-      {
-        condition: government.institutions.some((i) => i.type === "professional_bureaucracy"),
-        points: 35,
-        reason: "Institution includes professional bureaucracy",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.MILITARY_ADMINISTRATION, "institution", [
-      {
-        condition: government.institutions.some((i) => i.type === "military_administration"),
-        points: 35,
-        reason: "Institution includes military administration",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.PARTISAN_INSTITUTIONS, "institution", [
-      {
-        condition: government.institutions.some((i) => i.type === "partisan_institutions"),
-        points: 35,
-        reason: "Institution includes partisan institutions",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.TECHNOCRATIC_AGENCIES, "institution", [
-      {
-        condition: government.institutions.some((i) => i.type === "technocratic_agencies"),
-        points: 35,
-        reason: "Institution includes technocratic agencies",
-      },
-    ])
-  );
-
-  // Control
-  entries.push(
-    scoreComponent(ComponentType.RULE_OF_LAW, "control", [
-      {
-        condition: government.controlMechanisms.some((c) => c.type === "rule_of_law"),
-        points: 35,
-        reason: "Control mechanism includes rule of law",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.SURVEILLANCE_SYSTEM, "control", [
-      {
-        condition: government.controlMechanisms.some((c) => c.type === "surveillance_system"),
-        points: 35,
-        reason: "Control mechanism includes surveillance system",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.ECONOMIC_INCENTIVES, "control", [
-      {
-        condition: government.controlMechanisms.some((c) => c.type === "economic_incentives"),
-        points: 35,
-        reason: "Control mechanism includes economic incentives",
-      },
-    ])
-  );
-
-  // Economic governance
-  entries.push(
-    scoreComponent(ComponentType.FREE_MARKET_SYSTEM, "economic_governance", [
-      {
-        condition: government.economicGovernance.some((e) => e.type === "free_market"),
-        points: 40,
-        reason: "Economic governance includes free market",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.PLANNED_ECONOMY, "economic_governance", [
-      {
-        condition: government.economicGovernance.some((e) => e.type === "planned_economy"),
-        points: 40,
-        reason: "Economic governance includes planned economy",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.MIXED_ECONOMY, "economic_governance", [
-      {
-        condition: government.economicGovernance.some((e) => e.type === "mixed_economy"),
-        points: 40,
-        reason: "Economic governance includes mixed economy",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.CORPORATIST_SYSTEM, "economic_governance", [
-      {
-        condition: government.economicGovernance.some((e) => e.type === "corporatist"),
-        points: 40,
-        reason: "Economic governance includes corporatist",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.SOCIAL_MARKET_ECONOMY, "economic_governance", [
-      {
-        condition: government.economicGovernance.some((e) => e.type === "social_market"),
-        points: 40,
-        reason: "Economic governance includes social market",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.STATE_CAPITALISM, "economic_governance", [
-      {
-        condition: government.economicGovernance.some((e) => e.type === "state_capitalism"),
-        points: 40,
-        reason: "Economic governance includes state capitalism",
-      },
-    ])
-  );
-
-  // Social policy
-  entries.push(
-    scoreComponent(ComponentType.WELFARE_STATE, "social_policy", [
-      {
-        condition: government.socialPolicies.some((s) => s.type === "welfare_state"),
-        points: 35,
-        reason: "Social policy includes welfare state",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.UNIVERSAL_HEALTHCARE, "social_policy", [
-      {
-        condition: government.socialPolicies.some((s) => s.type === "universal_healthcare"),
-        points: 35,
-        reason: "Social policy includes universal healthcare",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.PUBLIC_EDUCATION, "social_policy", [
-      {
-        condition: government.socialPolicies.some((s) => s.type === "public_education"),
-        points: 35,
-        reason: "Social policy includes public education",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.WORKER_PROTECTION, "social_policy", [
-      {
-        condition: government.socialPolicies.some((s) => s.type === "worker_protection"),
-        points: 35,
-        reason: "Social policy includes worker protection",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.ENVIRONMENTAL_PROTECTION, "social_policy", [
-      {
-        condition: government.socialPolicies.some((s) => s.type === "environmental_protection"),
-        points: 35,
-        reason: "Social policy includes environmental protection",
-      },
-    ])
-  );
-
-  // Administrative
-  entries.push(
-    scoreComponent(ComponentType.DIGITAL_GOVERNMENT, "administrative", [
-      {
-        condition: government.administrativeFeatures.some((a) => a.type === "digital_government"),
-        points: 35,
-        reason: "Administrative feature includes digital government",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.ADMINISTRATIVE_DECENTRALIZATION, "administrative", [
-      {
-        condition: government.administrativeFeatures.some(
-          (a) => a.type === "administrative_decentralization"
-        ),
-        points: 35,
-        reason: "Administrative feature includes administrative decentralization",
-      },
-    ])
-  );
-
-  entries.push(
-    scoreComponent(ComponentType.MERIT_BASED_SYSTEM, "administrative", [
-      {
-        condition: government.administrativeFeatures.some((a) => a.type === "merit_based_system"),
-        points: 35,
-        reason: "Administrative feature includes merit-based system",
-      },
-    ])
-  );
-
-  // International
-  entries.push(
-    scoreComponent(ComponentType.MULTILATERAL_DIPLOMACY, "international", [
-      {
-        condition: government.internationalPosture === "multilateral",
-        points: 35,
-        reason: "International posture identified as multilateral",
-      },
-    ])
-  );
-
-  return entries;
 }
 
 function scoreComponent(
   component: ComponentType,
   category: string,
-  rules: Array<{ condition: boolean; points: number; reason: string }>
+  rules: ScoringRule[],
+  context: ScoringContext
 ): ComponentScoringEntry {
-  let score = 0;
-  const reasons: string[] = [];
-
-  for (const rule of rules) {
-    if (rule.condition) {
-      score += rule.points;
-      reasons.push(rule.reason);
-    }
-  }
-
-  return { component, score, reasons, category };
+  const matched = rules.filter((rule) => rule.applies(context));
+  return {
+    component,
+    score: matched.reduce((sum, rule) => sum + rule.points, 0),
+    reasons: matched.map((rule) => rule.reason),
+    category,
+  };
 }
 
 function applySynergies(entries: ComponentScoringEntry[]): ComponentScoringEntry[] {
@@ -590,9 +383,9 @@ export function matchComponents(attributes: {
   economy: WikiEconomyAttributes;
   infoboxGovType?: string;
 }): MatchResult {
-  const { government, economy, infoboxGovType } = attributes;
+  const { government, infoboxGovType } = attributes;
 
-  let entries = scoreAllComponents(government, economy, infoboxGovType);
+  let entries = scoreAllComponents(government, infoboxGovType);
   entries = applySynergies(entries);
   entries = applyConflicts(entries);
 

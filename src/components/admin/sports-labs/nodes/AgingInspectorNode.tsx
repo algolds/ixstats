@@ -1,15 +1,7 @@
 import React, { useState } from "react";
-import { Label } from "~/components/ui/label";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Slider } from "~/components/ui/slider";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "~/components/ui/select";
 import { PositionTooltip } from "~/components/sports/PositionTooltip";
 import { ControlSlider as Sliders, Suitcase as Briefcase } from "iconoir-react";
 import { cn } from "~/lib/utils";
@@ -38,11 +30,6 @@ export const AgingInspectorNode = React.memo(function AgingInspectorNode({
   const [coachDev, setCoachDev] = useState(70);
   const [agingResults, setAgingResults] = useState<any[]>([]);
 
-  // DB queries
-  const { data: dbLeague } = api.sports.getLeague.useQuery(
-    { id: selectedLeagueId },
-    { enabled: !!selectedLeagueId }
-  );
   const { data: dbSeason } = api.sports.getSeason.useQuery(
     { id: selectedSeasonId },
     { enabled: !!selectedSeasonId }

@@ -4,13 +4,7 @@
 // Onoma Custom Studio Workshop — Linguistic Profile Details Component
 
 import { useState, useEffect, useCallback } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import type { MorphologyDetails } from "~/lib/onoma/morphology";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -114,7 +108,6 @@ export function LinguisticProfile({
       onClick={(e) => e.stopPropagation()}
       className="border-separator animate-in fade-in slide-in-from-top-1 relative z-10 mt-3 w-full space-y-3 border-t pt-3 text-left duration-200"
     >
-      {/* Header with Segmented Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-tint text-footnote font-mono font-semibold">⟨{name}⟩</span>
@@ -228,18 +221,17 @@ export function LinguisticProfile({
                   <label className="text-label-secondary text-subhead font-mono">
                     Part of speech
                   </label>
-                  <Select value={editPos} onValueChange={setEditPos}>
-                    <SelectTrigger className="text-footnote w-full">
-                      <SelectValue placeholder="Select POS" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[200px]">
-                      {["Noun", "Verb", "Adjective", "Adverb", "Root", "Proper Noun"].map((pos) => (
-                        <SelectItem key={pos} value={pos} className="text-footnote">
-                          {pos}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <ValueSelect
+                    value={editPos}
+                    onValueChange={setEditPos}
+                    options={["Noun", "Verb", "Adjective", "Adverb", "Root", "Proper Noun"].map(
+                      (pos) => [pos, pos] as const
+                    )}
+                    className="text-footnote w-full"
+                    placeholder="Select POS"
+                    contentClassName="max-h-[200px]"
+                    itemClassName="text-footnote"
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-label-secondary text-subhead font-mono">

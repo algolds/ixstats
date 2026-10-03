@@ -5,16 +5,13 @@ import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "motion/react";
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { Lock, LockSlash as UnlockIcon, ArrowRight } from "iconoir-react";
+import { Lock, LockSlash as UnlockIcon } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { createUrl } from "~/lib/utils";
 import { BuilderErrorBoundary } from "./BuilderErrorBoundary";
 import { BuilderStateProvider, useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { BuilderFilterProvider, useBuilderFilter } from "./builder-filter-context";
 import { BuilderSidebarLayout } from "./BuilderSidebarLayout";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { PreText } from "~/components/ui/pretext";
 import { BuilderWelcomeModal } from "./BuilderWelcomeModal";
 import { BuilderHalo } from "~/components/halo/plugins/builder";
 import { ImportSection } from "./sections/ImportSection";
@@ -54,8 +51,6 @@ import type { BuilderStep } from "./enhanced/builderConfig";
 import { withBasePath } from "~/lib/base-path";
 import { Card } from "~/components/ui/card";
 
-// ─── Section loading skeleton ───
-
 function SectionSkeleton() {
   return (
     <div className="space-y-4 p-6" role="status" aria-label="Loading section">
@@ -69,15 +64,11 @@ function SectionSkeleton() {
   );
 }
 
-// ─── Lazy-loaded sections ───
-
 // The existing AtomicBuilderPage inner content will be rendered for build steps
 const AtomicBuilderInner = dynamic(
   () => import("./enhanced/AtomicBuilderPage").then((m) => ({ default: m.AtomicBuilderPage })),
   { loading: () => <SectionSkeleton /> }
 );
-
-// ─── Section title map ───
 
 const SECTION_TITLES: Record<BuilderSection, string> = {
   foundation: "Foundation",
@@ -100,8 +91,6 @@ interface BuilderRouterProps {
   mode?: "create" | "edit";
   countryId?: string;
 }
-
-// ─── URL helpers ───
 
 function getSectionFromUrl(mode?: "create" | "edit"): BuilderSection {
   if (typeof window === "undefined") return mode === "edit" ? "identity" : "foundation";
@@ -130,8 +119,6 @@ function WelcomeModalWrapper() {
   const { welcomeModalOpen, setWelcomeModalOpen } = useBuilderFilter();
   return <BuilderWelcomeModal open={welcomeModalOpen} onOpenChange={setWelcomeModalOpen} />;
 }
-
-// ─── Inner Router (consumes BuilderStateContext) ───
 
 function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) {
   const { user } = useUser();
@@ -203,8 +190,6 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       showAdvancedMode: nextIsAdvanced,
     }));
   }, [builderState.showAdvancedMode, filter, setBuilderState]);
-
-  // ─── Editor: save, discard, autosave status ───
 
   const [isEditorSaving, setIsEditorSaving] = useState(false);
   const isEditorSavingRef = useRef(false);
@@ -557,19 +542,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       );
     }
 
-    const mainContent = (
-      <AtomicBuilderInner
-        onBackToIntro={() => {
-          if (mode === "edit") {
-            router.push(createUrl("/mycountry"));
-          } else {
-            handleNavigate("foundation");
-          }
-        }}
-        mode={mode}
-        countryId={countryId}
-      />
-    );
+    const mainContent = <AtomicBuilderInner mode={mode} countryId={countryId} />;
 
     return mainContent;
   };
@@ -713,8 +686,6 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     </BuilderGuideProvider>
   );
 }
-
-// ─── Exported Router (provides BuilderStateContext) ───
 
 export function BuilderRouter({ mode = "create", countryId }: BuilderRouterProps) {
   return (

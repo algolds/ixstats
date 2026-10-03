@@ -39,8 +39,6 @@ import {
 import { PackHolographicCover } from "~/components/cards/pack-opening/PackHolographicCover";
 import { cn } from "~/lib/utils/cn";
 
-// ─── Pack types & rarity options ─────────────────────────────────
-
 const PACK_TYPES = [
   { value: "BASIC", label: "Basic" },
   { value: "PREMIUM", label: "Premium" },
@@ -67,8 +65,6 @@ const PACK_TYPE_COLORS: Record<string, { bg: string; text: string; border: strin
   LIMITED: { bg: "bg-red/20", text: "text-red", border: "border-red/30" },
 };
 
-// ─── Form data ───────────────────────────────────────────────────
-
 interface PackFormData {
   name: string;
   description: string;
@@ -90,8 +86,6 @@ const INITIAL_FORM: PackFormData = {
   guaranteedRarity: "",
   isActive: true,
 };
-
-// ─── Component ───────────────────────────────────────────────────
 
 export function CardPacksAdmin() {
   const notify = useNotify();
@@ -262,7 +256,6 @@ export function CardPacksAdmin() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {[
           { label: "Total packs", value: stats.total, icon: Package, color: "text-blue" },
@@ -285,7 +278,6 @@ export function CardPacksAdmin() {
         ))}
       </div>
 
-      {/* Pack Grid */}
       {isLoading ? (
         <div className="py-12 text-center">
           <div className="border-yellow mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2" />
@@ -393,7 +385,6 @@ export function CardPacksAdmin() {
         </div>
       )}
 
-      {/* Create / Edit Dialog */}
       <Dialog
         open={isAddDialogOpen || !!editingPack}
         onOpenChange={(open) => {

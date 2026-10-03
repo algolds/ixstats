@@ -113,7 +113,6 @@ export function EconomicControlCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Growth Factor Slider */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label className="text-label text-caption">Global growth factor</Label>
@@ -154,7 +153,6 @@ export function EconomicControlCard({
 
         <Separator className="border-separator" />
 
-        {/* Base Inflation Rate */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label className="text-label text-caption">Base inflation rate</Label>
@@ -182,7 +180,6 @@ export function EconomicControlCard({
           <div className="animate-in fade-in slide-in-from-top-2 duration-fast space-y-6 pt-1">
             <Separator className="border-separator my-1" />
 
-            {/* Diminishing Returns */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <Label className="text-label-secondary text-subhead">Diminishing returns</Label>
@@ -234,7 +231,6 @@ export function EconomicControlCard({
 
             <Separator className="border-separator my-1" />
 
-            {/* Min Growth Floor */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="text-label text-caption">Minimum growth floor</Label>
@@ -330,7 +326,6 @@ export function EconomicControlCard({
 
         <Separator className="border-separator" />
 
-        {/* Toggle Settings */}
         <div className="space-y-3">
           <span className="text-label-secondary text-eyebrow block">Calculation automation</span>
           <div className="space-y-3">
@@ -366,7 +361,6 @@ export function EconomicControlCard({
 
         <Separator className="border-separator" />
 
-        {/* Force Recalculation */}
         <Button onClick={onForceCalculation} disabled={calculationPending} className="h-10 w-full">
           {calculationPending ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

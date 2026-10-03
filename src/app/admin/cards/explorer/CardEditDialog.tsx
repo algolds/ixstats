@@ -15,13 +15,7 @@ import type { CardRarity } from "@prisma/client";
 import { LoreCategory, ArtworkSource, BROWSABLE_CATEGORIES } from "~/lib/cards/category-enums";
 import { getCategoryLabel } from "~/lib/cards/category-theme";
 import type { CardInstance } from "~/types/cards-display";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 
 interface CardEditDialogProps {
   isOpen: boolean;
@@ -102,21 +96,21 @@ export const CardEditDialog = React.memo(function CardEditDialog({
 
           {/* Right Column: Interactive Editor Form */}
           <div className="space-y-4 md:col-span-7">
-            {/* Origin & Title */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="text-label text-caption mb-1 block">Card Origin / Type</label>
-                <Select value={editCardType} onValueChange={(v) => setEditCardType(v)}>
-                  <SelectTrigger size="sm" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="LORE">Wiki Lore Card (Wiki)</SelectItem>
-                    <SelectItem value="NS_IMPORT">NationStates Import (NS Import)</SelectItem>
-                    <SelectItem value="COMMONS_IMPORT">Commons Flag Import (Commons)</SelectItem>
-                    <SelectItem value="USER_CUSTOM">User Custom Import (Custom)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <ValueSelect
+                  value={editCardType}
+                  onValueChange={(v) => setEditCardType(v)}
+                  options={[
+                    ["LORE", "Wiki Lore Card (Wiki)"],
+                    ["NS_IMPORT", "NationStates Import (NS Import)"],
+                    ["COMMONS_IMPORT", "Commons Flag Import (Commons)"],
+                    ["USER_CUSTOM", "User Custom Import (Custom)"],
+                  ]}
+                  size="sm"
+                  className="w-full"
+                />
               </div>
 
               <div>
@@ -130,7 +124,6 @@ export const CardEditDialog = React.memo(function CardEditDialog({
               </div>
             </div>
 
-            {/* Lore Category */}
             <div>
               <label className="text-label text-caption mb-1 block flex items-center justify-between">
                 <span>Lore category</span>
@@ -138,41 +131,37 @@ export const CardEditDialog = React.memo(function CardEditDialog({
                   Sets background theme & icon watermark
                 </span>
               </label>
-              <Select
+              <ValueSelect
                 value={(editCategory === "NS_IMPORT" ? "" : editCategory) || "__none__"}
                 onValueChange={(v) => setEditCategory((v === "__none__" ? "" : v) as LoreCategory)}
-              >
-                <SelectTrigger size="sm" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">(Default / Unassigned)</SelectItem>
-                  {BROWSABLE_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}: {getCategoryLabel(cat)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                options={[
+                  ["__none__", "(Default / Unassigned)"],
+                  ...BROWSABLE_CATEGORIES.map(
+                    (cat) => [cat, `${cat}: ${getCategoryLabel(cat)}`] as const
+                  ),
+                ]}
+                size="sm"
+                className="w-full"
+              />
             </div>
 
-            {/* Rarity & Market Value */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-label text-caption mb-1 block">Rarity tier</label>
-                <Select value={editRarity} onValueChange={(v) => setEditRarity(v as CardRarity)}>
-                  <SelectTrigger size="sm" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="COMMON">COMMON</SelectItem>
-                    <SelectItem value="UNCOMMON">UNCOMMON</SelectItem>
-                    <SelectItem value="RARE">RARE</SelectItem>
-                    <SelectItem value="ULTRA_RARE">ULTRA RARE</SelectItem>
-                    <SelectItem value="EPIC">EPIC</SelectItem>
-                    <SelectItem value="LEGENDARY">LEGENDARY</SelectItem>
-                  </SelectContent>
-                </Select>
+                <ValueSelect
+                  value={editRarity}
+                  onValueChange={(v) => setEditRarity(v as CardRarity)}
+                  options={[
+                    ["COMMON", "COMMON"],
+                    ["UNCOMMON", "UNCOMMON"],
+                    ["RARE", "RARE"],
+                    ["ULTRA_RARE", "ULTRA RARE"],
+                    ["EPIC", "EPIC"],
+                    ["LEGENDARY", "LEGENDARY"],
+                  ]}
+                  size="sm"
+                  className="w-full"
+                />
               </div>
 
               <div>
@@ -188,26 +177,21 @@ export const CardEditDialog = React.memo(function CardEditDialog({
               </div>
             </div>
 
-            {/* Artwork Source & URL */}
             <div className="space-y-2">
               <div>
                 <label className="text-label text-caption mb-1 block">Artwork source tier</label>
-                <Select
+                <ValueSelect
                   value={editArtworkSource}
                   onValueChange={(v) => setEditArtworkSource(v as ArtworkSource)}
-                >
-                  <SelectTrigger size="sm" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PROCEDURAL">
-                      Tier 1-2: Procedural Icon Emblem (No Image)
-                    </SelectItem>
-                    <SelectItem value="WIKI_FETCHED">Tier 3: Wiki Fetched Image</SelectItem>
-                    <SelectItem value="FLAG">Tier 3: National Flag Artwork</SelectItem>
-                    <SelectItem value="UPLOADED">Tier 3: Admin Custom Upload</SelectItem>
-                  </SelectContent>
-                </Select>
+                  options={[
+                    ["PROCEDURAL", "Tier 1-2: Procedural Icon Emblem (No Image)"],
+                    ["WIKI_FETCHED", "Tier 3: Wiki Fetched Image"],
+                    ["FLAG", "Tier 3: National Flag Artwork"],
+                    ["UPLOADED", "Tier 3: Admin Custom Upload"],
+                  ]}
+                  size="sm"
+                  className="w-full"
+                />
               </div>
 
               <div>
@@ -227,7 +211,6 @@ export const CardEditDialog = React.memo(function CardEditDialog({
               </div>
             </div>
 
-            {/* Visibility / Takedown Toggle */}
             <div className="border-separator bg-surface rounded-row flex items-center justify-between border p-3">
               <div>
                 <div className="text-label text-caption">Card visibility status</div>

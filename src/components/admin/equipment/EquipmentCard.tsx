@@ -43,7 +43,6 @@ export function EquipmentCard({
         `hover:border-red/50 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${isSelected ? "ring-red ring-2" : ""}`
       )}
     >
-      {/* Selection & Image */}
       <div className="mb-3 flex items-start justify-between">
         <Checkbox checked={isSelected} onCheckedChange={onToggleSelect} />
         {equipment.imageUrl ? (
@@ -59,7 +58,6 @@ export function EquipmentCard({
         )}
       </div>
 
-      {/* Header */}
       <div className="mb-2">
         <div className="mb-1 flex items-start justify-between gap-2">
           <h3 className="text-label line-clamp-1 flex-1 font-semibold">{equipment.name}</h3>
@@ -79,7 +77,6 @@ export function EquipmentCard({
         </div>
       </div>
 
-      {/* Key Info */}
       <div className="text-footnote mb-3 space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-label-secondary">Manufacturer:</span>
@@ -115,7 +112,6 @@ export function EquipmentCard({
         </div>
       </div>
 
-      {/* Actions */}
       <div className="border-separator flex items-center gap-2 border-t pt-3">
         <Button size="sm" variant="outline" onClick={onEdit} className="flex-1">
           <Pencil className="mr-1 h-3 w-3" />

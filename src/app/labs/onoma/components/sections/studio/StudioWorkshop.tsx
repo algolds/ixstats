@@ -4,6 +4,14 @@
 // Onoma Custom Studio Workshop View
 
 import {
+  CvTemplateField,
+  LengthFields,
+  OptionSwitches,
+  OptionText,
+  SyllableFields,
+  type OptionFieldContext,
+} from "../../shared/GenerateOptionFields";
+import {
   ControlSlider as SlidersHorizontal,
   Bookmark,
   SystemRestart as Loader2,
@@ -21,7 +29,6 @@ import {
 } from "~/components/ui/select";
 import { useState } from "react";
 import { type StudioState } from "../../../hooks/useStudioState";
-import { Switch } from "~/components/ui/switch";
 import { PatternDepthControl } from "../../shared/PatternDepthControl";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -51,34 +58,26 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
     selectedDictId,
     isSaving,
     successMsg,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    visualizerPrefix,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    setVisualizerPrefix,
     uploadStatus,
     trainingWords,
     classifiedCulture,
     savedDictionaries,
     isEdited,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    visualizerChain,
     generateNames,
     handleFileUpload,
     handleLoadSavedDictionary,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    handleCompleteName,
     handleSaveDictionary,
     bank,
   } = state;
 
+  const ctx: OptionFieldContext = { options, onChange: setOptions, look: "studio" };
+
   return (
     <>
-      {/* Two-Column Layout */}
       <div className="grid items-start gap-6 lg:grid-cols-12">
         {/* Left Column (5/12): Seed input and parameters */}
         <div className="space-y-4 lg:col-span-5">
           <Card variant="inset" padding="none" className="space-y-4 p-4">
-            {/* Seeds text area */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-label-secondary text-footnote font-semibold">
@@ -106,7 +105,6 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   )}
                 </div>
               </div>
-              {/* Load Saved Dictionary Selector */}
               {savedDictionaries.length > 0 && (
                 <div className="pt-0.5 pb-1">
                   <Select
@@ -145,7 +143,6 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               </div>
             )}
 
-            {/* Save Seeds Form */}
             {isEdited && (
               <form
                 onSubmit={handleSaveDictionary}
@@ -176,77 +173,26 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               </div>
             )}
 
-            {/* Parameters Accordion/Content */}
             <div className="border-separator space-y-4 border-t pt-4">
               <h3 className="text-label-secondary text-subhead flex items-center gap-1 pb-1">
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 Parameters
               </h3>
 
-              {/* Pattern Depth Control */}
               <PatternDepthControl value={order} onChange={setOrder} variant="inspector" />
 
-              {/* Length limits */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-label-secondary text-subhead">Min length</label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={20}
-                    value={options.minLength || 4}
-                    onChange={(e) =>
-                      setOptions({ ...options, minLength: parseInt(e.target.value) || 0 })
-                    }
-                    className="text-footnote w-full"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-label-secondary text-subhead">Max length</label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={30}
-                    value={options.maxLength || 12}
-                    onChange={(e) =>
-                      setOptions({ ...options, maxLength: parseInt(e.target.value) || 0 })
-                    }
-                    className="text-footnote w-full"
-                  />
-                </div>
-              </div>
+              <LengthFields ctx={ctx} />
 
-              {/* Advanced Substring constraints */}
               <div className="grid grid-cols-2 gap-3 pb-3">
-                <div className="space-y-1">
-                  <label className="text-label-secondary text-subhead">Starts with</label>
-                  <Input
-                    type="text"
-                    placeholder="Prefix"
-                    value={options.startsWith || ""}
-                    onChange={(e) => setOptions({ ...options, startsWith: e.target.value })}
-                    className="text-footnote w-full"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-label-secondary text-subhead">Ends with</label>
-                  <Input
-                    type="text"
-                    placeholder="Suffix"
-                    value={options.endsWith || ""}
-                    onChange={(e) => setOptions({ ...options, endsWith: e.target.value })}
-                    className="text-footnote w-full"
-                  />
-                </div>
+                <OptionText ctx={ctx} field="startsWith" label="Starts with" placeholder="Prefix" />
+                <OptionText ctx={ctx} field="endsWith" label="Ends with" placeholder="Suffix" />
               </div>
 
-              {/* Phonotactic Constraints */}
               <div className="border-separator space-y-3 border-t pt-3">
                 <h4 className="text-label-secondary text-subhead pb-0.5">
                   Phonotactic constraints
                 </h4>
 
-                {/* Vowel Harmony */}
                 <div className="space-y-2">
                   <label className="text-label-secondary text-subhead">Vowel harmony</label>
                   <Select
@@ -272,7 +218,6 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   </Select>
                 </div>
 
-                {/* Cluster Size Limits */}
                 <div className="grid grid-cols-2 gap-3 pt-1">
                   <div className="space-y-1">
                     <div className="flex justify-between">
@@ -310,7 +255,6 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   </div>
                 </div>
 
-                {/* Allow Double Letters Toggle */}
                 <div className="border-separator flex items-center justify-between border-t pt-2">
                   <div className="space-y-0.5">
                     <label className="text-label-secondary text-subhead">
@@ -328,7 +272,6 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   />
                 </div>
 
-                {/* Advanced toggler */}
                 <div className="border-separator border-t pt-2">
                   <Button
                     variant="ghost"
@@ -344,148 +287,23 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
 
                   {showAdvanced && (
                     <div className="animate-in fade-in mt-4 space-y-4 duration-200">
-                      {/* Syllable Counts */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <label className="text-label-secondary text-subhead">Min syllables</label>
-                          <Input
-                            type="number"
-                            min={0}
-                            max={5}
-                            value={options.minSyllables || 0}
-                            onChange={(e) =>
-                              setOptions({
-                                ...options,
-                                minSyllables: parseInt(e.target.value) || 0,
-                              })
-                            }
-                            className="text-footnote w-full"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-label-secondary text-subhead">Max syllables</label>
-                          <Input
-                            type="number"
-                            min={-1}
-                            max={10}
-                            placeholder="No limit"
-                            value={
-                              options.maxSyllables === undefined || options.maxSyllables === -1
-                                ? ""
-                                : options.maxSyllables
-                            }
-                            onChange={(e) =>
-                              setOptions({
-                                ...options,
-                                maxSyllables:
-                                  e.target.value === "" ? -1 : parseInt(e.target.value) || -1,
-                              })
-                            }
-                            className="text-footnote w-full"
-                          />
-                        </div>
-                      </div>
-
-                      {/* CV Template Input */}
-                      <div className="space-y-1">
-                        <label className="text-label-secondary text-subhead">
-                          Strict CV Template
-                        </label>
-                        <Input
-                          type="text"
-                          placeholder="e.g. CVCV (C=consonant, V=vowel)"
-                          value={options.cvTemplate || ""}
-                          onChange={(e) =>
-                            setOptions({
-                              ...options,
-                              cvTemplate: e.target.value.replace(/[^cvCV]/g, "").toUpperCase(),
-                            })
-                          }
-                          className="w-full font-mono"
-                        />
-                      </div>
-
-                      {/* Switches Grid */}
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        {/* Must End With Vowel */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-label-secondary text-caption font-semibold">
-                            Must end with vowel
-                          </span>
-                          <Switch
-                            checked={options.mustEndWithVowel || false}
-                            onCheckedChange={(checked) =>
-                              setOptions({
-                                ...options,
-                                mustEndWithVowel: checked,
-                                mustEndWithConsonant: checked
-                                  ? false
-                                  : options.mustEndWithConsonant,
-                              })
-                            }
-                            size="sm"
-                          />
-                        </div>
-
-                        {/* Must End With Consonant */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-label-secondary text-caption font-semibold">
-                            Must end with consonant
-                          </span>
-                          <Switch
-                            checked={options.mustEndWithConsonant || false}
-                            onCheckedChange={(checked) =>
-                              setOptions({
-                                ...options,
-                                mustEndWithConsonant: checked,
-                                mustEndWithVowel: checked ? false : options.mustEndWithVowel,
-                              })
-                            }
-                            size="sm"
-                          />
-                        </div>
-
-                        {/* No Initial Clusters */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-label-secondary text-caption font-semibold">
-                            No Initial CC Clusters
-                          </span>
-                          <Switch
-                            checked={options.noInitialClusters || false}
-                            onCheckedChange={(checked) =>
-                              setOptions({
-                                ...options,
-                                noInitialClusters: checked,
-                              })
-                            }
-                            size="sm"
-                          />
-                        </div>
-
-                        {/* No Final Clusters */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-label-secondary text-caption font-semibold">
-                            No Final CC Clusters
-                          </span>
-                          <Switch
-                            checked={options.noFinalClusters || false}
-                            onCheckedChange={(checked) =>
-                              setOptions({
-                                ...options,
-                                noFinalClusters: checked,
-                              })
-                            }
-                            size="sm"
-                          />
-                        </div>
-                      </div>
+                      <SyllableFields ctx={ctx} />
+                      <CvTemplateField ctx={ctx} />
+                      <OptionSwitches
+                        ctx={ctx}
+                        labels={{
+                          mustEndWithVowel: "Must end with vowel",
+                          mustEndWithConsonant: "Must end with consonant",
+                          noInitialClusters: "No Initial CC Clusters",
+                          noFinalClusters: "No Final CC Clusters",
+                        }}
+                      />
                     </div>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Assemble control */}
             <div className="border-separator mt-2 flex items-center gap-2 border-t pt-4">
               <div className="border-separator bg-background rounded-control flex h-7 items-center gap-1 border p-0.5 select-none">
                 <Button

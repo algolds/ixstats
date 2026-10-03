@@ -140,7 +140,6 @@ export function DemographicsVisualizations({
         </CardContent>
       </Card>
 
-      {/* Education Levels */}
       <Card>
         <CardContent className="p-6">
           <h4 className="text-headline text-label mb-4 flex items-center gap-2">
@@ -158,7 +157,6 @@ export function DemographicsVisualizations({
         </CardContent>
       </Card>
 
-      {/* Demographics Health */}
       <Card>
         <CardContent className="p-6">
           <h4 className="text-headline text-label mb-4 flex items-center gap-2">

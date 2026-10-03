@@ -53,6 +53,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 
 const statusMeta: Record<string, { label: string; className: string }> = {
   active: {
@@ -73,8 +74,6 @@ const archetypeMeta: Record<string, { label: string; className: string }> = {
   bracket: { label: "Bracket", className: "bg-red/10 text-red border-red/30" },
   circuit: { label: "Circuit", className: "bg-yellow/10 text-yellow border-yellow/30" },
 };
-
-// ─── Sub-Component for Advanced Operations ───────────────────────────────
 
 function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: () => void }) {
   const notify = useNotify();
@@ -185,7 +184,6 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
         </Button>
       </div>
 
-      {/* Match override dialog */}
       <Dialog open={matchOverrideOpen} onOpenChange={setMatchOverrideOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -462,8 +460,6 @@ function AINarratorLab() {
 
   return (
     <Card className="relative flex flex-col gap-6 overflow-hidden p-6 py-6">
-      {/* Background radial glow */}
-
       <div className="space-y-6">
         <div>
           <h2 className="text-label text-title-2 flex items-center gap-2">
@@ -480,23 +476,23 @@ function AINarratorLab() {
           <div className="space-y-4 md:col-span-6">
             <div className="space-y-2">
               <label className="text-label-secondary text-subhead block">Sport preset</label>
-              <Select value={sport} onValueChange={(v) => handleLoadTemplate(v)}>
-                <SelectTrigger size="sm" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="soccer">Soccer ⚽</SelectItem>
-                  <SelectItem value="f1">Formula 1 🏎️</SelectItem>
-                  <SelectItem value="boxing">Boxing 🥊</SelectItem>
-                  <SelectItem value="basketball">Basketball 🏀</SelectItem>
-                  <SelectItem value="football">Football 🏈</SelectItem>
-                  <SelectItem value="hockey">Hockey 🏒</SelectItem>
-                  <SelectItem value="baseball">Baseball ⚾</SelectItem>
-                </SelectContent>
-              </Select>
+              <ValueSelect
+                value={sport}
+                onValueChange={(v) => handleLoadTemplate(v)}
+                options={[
+                  ["soccer", "Soccer ⚽"],
+                  ["f1", "Formula 1 🏎️"],
+                  ["boxing", "Boxing 🥊"],
+                  ["basketball", "Basketball 🏀"],
+                  ["football", "Football 🏈"],
+                  ["hockey", "Hockey 🏒"],
+                  ["baseball", "Baseball ⚾"],
+                ]}
+                size="sm"
+                className="w-full"
+              />
             </div>
 
-            {/* Advanced Settings Toggle */}
             <div className="pt-1 select-none">
               <Button
                 type="button"
@@ -511,7 +507,6 @@ function AINarratorLab() {
               </Button>
             </div>
 
-            {/* Config Fields */}
             {showConfig && (
               <div className="border-separator rounded-row space-y-4 border p-4">
                 <div className="border-separator flex items-center gap-2 border-b pb-2 select-none">
@@ -531,23 +526,21 @@ function AINarratorLab() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <label className="text-label-secondary text-subhead block">Provider</label>
-                    <Select
+                    <ValueSelect
                       value={provider}
                       onValueChange={(v) => {
                         setProvider(v);
                         saveConfig("provider", v);
                       }}
-                    >
-                      <SelectTrigger size="sm" className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="nvidia">Nvidia</SelectItem>
-                        <SelectItem value="openrouter">OpenRouter</SelectItem>
-                        <SelectItem value="openai">OpenAI</SelectItem>
-                        <SelectItem value="custom">Custom (OpenAI-like)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      options={[
+                        ["nvidia", "Nvidia"],
+                        ["openrouter", "OpenRouter"],
+                        ["openai", "OpenAI"],
+                        ["custom", "Custom (OpenAI-like)"],
+                      ]}
+                      size="sm"
+                      className="w-full"
+                    />
                   </div>
                   <div className="space-y-2">
                     <label
@@ -892,7 +885,6 @@ export default function SportsOversightPanel() {
 
   const { data: featuredId, refetch: refetchFeatured } = api.sports.getFeaturedLeagueId.useQuery();
 
-  // Mutations
   const deleteMutation = api.sports.deleteLeague.useMutation({
     onSuccess: () => {
       notify.success("League Deleted", `${deleteTarget?.name ?? "League"} has been removed.`);
@@ -1096,9 +1088,7 @@ export default function SportsOversightPanel() {
 
       <NotificationSettingsCard />
 
-      {/* Overview stats cards */}
       <div className="border-separator bg-surface rounded-row border p-6">
-        {/* Global stats row */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
           <div className="bg-surface-secondary border-separator rounded-control border p-3">
             <span className="text-label-secondary text-stat-label">Total leagues</span>
@@ -1315,7 +1305,6 @@ export default function SportsOversightPanel() {
         </Tabs>
       )}
 
-      {/* Creator dialog */}
       <LeagueCreator
         open={creatorOpen}
         onOpenChange={setCreatorOpen}
@@ -1327,7 +1316,6 @@ export default function SportsOversightPanel() {
         isCanonical={true}
       />
 
-      {/* Delete confirmation dialog */}
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

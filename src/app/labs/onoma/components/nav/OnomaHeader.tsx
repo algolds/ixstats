@@ -34,7 +34,6 @@ interface OnomaHeaderProps {
   activeSubTab: StudioSubTab;
   activeExploreSubTab: ExploreSubTab;
   lastActiveTab: OnomaSection;
-  lexiconCount: number;
   shouldAnimateStash: boolean;
   hasInteractedPronunciation: boolean;
   setHasInteractedPronunciation: (val: boolean) => void;
@@ -60,8 +59,6 @@ export function OnomaHeader({
   activeSubTab,
   activeExploreSubTab,
   lastActiveTab,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  lexiconCount,
   shouldAnimateStash,
   hasInteractedPronunciation,
   setHasInteractedPronunciation: _setHasInteractedPronunciation,

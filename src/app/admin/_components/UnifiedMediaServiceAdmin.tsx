@@ -105,7 +105,6 @@ export function UnifiedMediaServiceAdmin() {
 
   return (
     <div className="space-y-5">
-      {/* Stats Overview */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
           <p className="text-label-secondary text-stat-label">Cached items</p>
@@ -132,7 +131,6 @@ export function UnifiedMediaServiceAdmin() {
         </Card>
       </div>
 
-      {/* Main Controls Card */}
       <Card className="space-y-5 p-5">
         <div className="border-separator flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
@@ -174,7 +172,6 @@ export function UnifiedMediaServiceAdmin() {
           </div>
         </div>
 
-        {/* Cache Health Warning */}
         {stats && stats.cacheSize === 0 && (
           <div className="rounded-row border-yellow/30 bg-yellow/10 text-footnote text-yellow flex items-center gap-2 border p-3">
             <AlertTriangle className="text-yellow h-4 w-4 shrink-0" />
@@ -187,7 +184,6 @@ export function UnifiedMediaServiceAdmin() {
           </div>
         )}
 
-        {/* Actions */}
         <div className="flex flex-wrap gap-2">
           <Button onClick={fetchStats} disabled={isLoading} variant="outline" size="sm">
             {isLoading ? (
@@ -212,7 +208,6 @@ export function UnifiedMediaServiceAdmin() {
           </Button>
         </div>
 
-        {/* Detailed Stats */}
         {stats && (
           <div className="border-separator grid grid-cols-1 gap-4 border-t pt-4 md:grid-cols-2">
             <div className="border-separator bg-fill-3 rounded-row space-y-2 border p-3">

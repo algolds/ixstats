@@ -16,6 +16,7 @@ import {
   Xmark as X,
 } from "iconoir-react";
 import { GenerateCountPill } from "../shared/GenerateCountPill";
+import { LengthFields, OptionText, type OptionFieldContext } from "../shared/GenerateOptionFields";
 import { PatternDepthControl } from "../shared/PatternDepthControl";
 import {
   Select,
@@ -83,6 +84,7 @@ export function QuickGeneratorControls({
   isGenerating,
   handleGenerate,
 }: QuickGeneratorControlsProps) {
+  const ctx: OptionFieldContext = { options, onChange: setOptions, look: "inspector" };
   // Custom Dictionaries from LocalStorage
   const [customDicts, setCustomDicts] = useState<CustomDictionary[]>([]);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
@@ -249,7 +251,6 @@ export function QuickGeneratorControls({
 
           {/* Dictionary Action Controls & Rules toggle */}
           <div className="flex items-center gap-2">
-            {/* Rules / Constraints toggle */}
             <Toggle
               variant="outline"
               size="sm"
@@ -283,7 +284,6 @@ export function QuickGeneratorControls({
                   </Button>
                 )}
 
-                {/* Rename custom dictionary */}
                 <Button
                   variant="outline"
                   size="sm"
@@ -299,7 +299,6 @@ export function QuickGeneratorControls({
                   <span>Rename</span>
                 </Button>
 
-                {/* Delete custom dictionary */}
                 <Button
                   variant="ghost"
                   size="icon-sm"
@@ -331,7 +330,6 @@ export function QuickGeneratorControls({
           </div>
         </div>
 
-        {/* Inline Rename Form */}
         {isRenaming && (
           <div className="border-tint/30 bg-tint/5 animate-in fade-in rounded-row flex items-center gap-2 border p-2 duration-150">
             <Input
@@ -401,13 +399,11 @@ export function QuickGeneratorControls({
           </div>
         )}
 
-        {/* Dictionary Select Dropdown */}
         <Select value={selectedDictId} onValueChange={setSelectedDictId}>
           <SelectTrigger className="text-footnote h-9 w-full">
             <SelectValue placeholder="Select lexicon..." />
           </SelectTrigger>
           <SelectContent className="max-h-[320px]">
-            {/* Custom Dictionaries Group */}
             {customDicts.length > 0 && (
               <SelectGroup>
                 <SelectLabel className="text-tint px-2 py-1">
@@ -426,7 +422,6 @@ export function QuickGeneratorControls({
               </SelectGroup>
             )}
 
-            {/* Built-in Presets Group */}
             <SelectGroup>
               <SelectLabel className="text-label-secondary px-2 py-1">
                 Built-in Presets ({publicDicts.length})
@@ -506,94 +501,31 @@ export function QuickGeneratorControls({
         setBatchCount={setBatchCount}
       />
 
-      {/* Collapsible Phonotactics & Constraints */}
       {showAdvanced && (
         <div className="animate-in fade-in slide-in-from-top-1 border-separator space-y-3 border-t pt-4 duration-200">
           <div className="space-y-2">
-            {/* Length Range */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <label className="text-caption text-label block font-medium">Min length</label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={options.minLength || 4}
-                  onChange={(e) =>
-                    setOptions({ ...options, minLength: parseInt(e.target.value) || 0 })
-                  }
-                  className="text-footnote w-full font-mono"
-                />
-              </div>
+            <LengthFields ctx={ctx} className="grid grid-cols-2 gap-2" />
+            <OptionText
+              ctx={ctx}
+              field="startsWith"
+              label="Starts With"
+              hint="(#_)"
+              placeholder="#_"
+            />
+            <OptionText ctx={ctx} field="endsWith" label="Ends with" hint="(_#)" placeholder="_#" />
+            <OptionText
+              ctx={ctx}
+              field="contains"
+              label="Contains pattern"
+              placeholder="e.g. 'an'"
+            />
+            <OptionText
+              ctx={ctx}
+              field="excludes"
+              label="Excludes pattern"
+              placeholder="e.g. 'xx'"
+            />
 
-              <div className="space-y-1">
-                <label className="text-caption text-label block font-medium">Max length</label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={30}
-                  value={options.maxLength || 12}
-                  onChange={(e) =>
-                    setOptions({ ...options, maxLength: parseInt(e.target.value) || 0 })
-                  }
-                  className="text-footnote w-full font-mono"
-                />
-              </div>
-            </div>
-
-            {/* Prefix / Suffix Affixes */}
-            <div className="space-y-1">
-              <label className="text-caption text-label block font-medium">
-                Starts With{" "}
-                <span className="text-label-secondary text-caption font-mono">(#_)</span>
-              </label>
-              <Input
-                type="text"
-                placeholder="#_"
-                value={options.startsWith || ""}
-                onChange={(e) => setOptions({ ...options, startsWith: e.target.value })}
-                className="text-footnote w-full font-mono"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-caption text-label block font-medium">
-                Ends with <span className="text-label-secondary text-caption font-mono">(_#)</span>
-              </label>
-              <Input
-                type="text"
-                placeholder="_#"
-                value={options.endsWith || ""}
-                onChange={(e) => setOptions({ ...options, endsWith: e.target.value })}
-                className="text-footnote w-full font-mono"
-              />
-            </div>
-
-            {/* Contains Filter */}
-            <div className="space-y-1">
-              <label className="text-caption text-label block font-medium">Contains pattern</label>
-              <Input
-                type="text"
-                placeholder="e.g. 'an'"
-                value={options.contains || ""}
-                onChange={(e) => setOptions({ ...options, contains: e.target.value })}
-                className="text-footnote w-full font-mono"
-              />
-            </div>
-
-            {/* Excludes Filter */}
-            <div className="space-y-1">
-              <label className="text-caption text-label block font-medium">Excludes pattern</label>
-              <Input
-                type="text"
-                placeholder="e.g. 'xx'"
-                value={options.excludes || ""}
-                onChange={(e) => setOptions({ ...options, excludes: e.target.value })}
-                className="text-footnote w-full font-mono"
-              />
-            </div>
-
-            {/* Permit Seed Duplicates */}
             <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border px-3 py-2">
               <label className="text-caption text-label font-medium">Allow seed duplicates</label>
               <Checkbox

@@ -47,14 +47,10 @@ export function BuilderSidebarLayout({
   alerts,
   activeSection,
   onNavigate: _onNavigate,
-  // oxlint-disable-next-line eslint/no-unused-vars
   completedSteps: _completedSteps,
-  // oxlint-disable-next-line eslint/no-unused-vars
   accessibleSteps: _accessibleSteps,
   mode = "create",
-  // oxlint-disable-next-line eslint/no-unused-vars
   heroCollapsed: _heroCollapsed,
-  // oxlint-disable-next-line eslint/no-unused-vars
   onHeroExpand: _onHeroExpand,
   onReset,
 }: BuilderSidebarLayoutProps) {
@@ -87,20 +83,17 @@ export function BuilderSidebarLayout({
       )}
       data-builder-content
     >
-      {/* Hero Section */}
       {heroSection && <div className="container mx-auto px-4 pt-2 sm:pt-4">{heroSection}</div>}
 
       {/* Docked Studio Header (Non-sticky, directly in normal flow above main container) */}
       {headerElement}
 
-      {/* Alerts */}
       {alerts && (
         <div className="mx-auto w-full max-w-6xl px-4 pt-2 empty:hidden">
           <div className="space-y-2 empty:hidden">{alerts}</div>
         </div>
       )}
 
-      {/* Main canvas */}
       <main
         className={cn(
           "mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col px-4 pb-8",
@@ -110,7 +103,6 @@ export function BuilderSidebarLayout({
         <div className="flex h-full min-h-0 w-full flex-1 flex-col space-y-4">
           {children}
 
-          {/* Step footer */}
           {stepFooter}
 
           {/* Fallback Footer Reset Action (only when stepFooter not provided) */}

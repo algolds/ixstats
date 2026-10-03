@@ -248,7 +248,6 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
         </div>
       </div>
 
-      {/* Resume In-Progress Country Banner */}
       <AnimatePresence mode="wait">
         {inProgressData && (
           <motion.div

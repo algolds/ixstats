@@ -63,7 +63,6 @@ export function CalculationSimulator({
           ))}
         </div>
 
-        {/* Results */}
         {sandboxResult && (
           <div
             className={`rounded-row text-footnote border p-4 ${
