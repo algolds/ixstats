@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group";
+import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils/cn";
@@ -10,7 +10,7 @@ import { useControllableState } from "~/hooks/useControllableState";
 
 /**
  * A single choice among 2-5 peer options (view switchers, periods, filters), skinned over Radix
- * ToggleGroup (`radiogroup`) or, with `asTabs`, Radix Tabs (`tablist`). The selected segment is
+ * RadioGroup (`radiogroup`, arrow keys move and select) or, with `asTabs`, Radix Tabs (`tablist`). The selected segment is
  * marked by a thumb that springs between segments.
  *
  * More than five options scroll horizontally instead of squeezing (`scrollable` overrides). An
@@ -217,9 +217,9 @@ export function SegmentedControl<T extends string = string>({
         {content}
       </TabsPrimitive.Trigger>
     ) : (
-      <ToggleGroupPrimitive.Item key={option.value} {...segment} data-slot="segmented-control-item">
+      <RadioGroupPrimitive.Item key={option.value} {...segment} data-slot="segmented-control-item">
         {content}
-      </ToggleGroupPrimitive.Item>
+      </RadioGroupPrimitive.Item>
     );
   });
 
@@ -239,9 +239,8 @@ export function SegmentedControl<T extends string = string>({
     );
   }
   return (
-    <ToggleGroupPrimitive.Root
+    <RadioGroupPrimitive.Root
       ref={trackRef}
-      type="single"
       value={value ?? ""}
       onValueChange={select}
       disabled={disabled}
@@ -250,6 +249,6 @@ export function SegmentedControl<T extends string = string>({
       {...props}
     >
       {segments}
-    </ToggleGroupPrimitive.Root>
+    </RadioGroupPrimitive.Root>
   );
 }

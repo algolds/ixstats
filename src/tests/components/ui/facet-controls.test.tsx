@@ -119,19 +119,22 @@ describe("SegmentedControl", () => {
     expect(screen.getByRole("radio", { name: "Day" })).toHaveAttribute("aria-checked", "true");
   });
 
-  it("moves focus with arrows (skipping disabled), Home and End", async () => {
+  it("selects with arrows (skipping disabled), Home and End", async () => {
     render(<Period />);
     const radio = (name: string) => screen.getByRole("radio", { name });
 
     radio("Week").focus();
     fireEvent.keyDown(radio("Week"), { key: "ArrowRight" });
-    await waitFor(() => expect(radio("Year")).toHaveFocus());
+    await waitFor(() => expect(radio("Year")).toHaveAttribute("aria-checked", "true"));
+    expect(radio("Year")).toHaveFocus();
 
     fireEvent.keyDown(radio("Year"), { key: "Home" });
-    await waitFor(() => expect(radio("Day")).toHaveFocus());
+    await waitFor(() => expect(radio("Day")).toHaveAttribute("aria-checked", "true"));
+    expect(radio("Day")).toHaveFocus();
 
     fireEvent.keyDown(radio("Day"), { key: "End" });
-    await waitFor(() => expect(radio("Year")).toHaveFocus());
+    await waitFor(() => expect(radio("Year")).toHaveAttribute("aria-checked", "true"));
+    expect(radio("Year")).toHaveFocus();
   });
 
   it("keeps the current choice when it is pressed again", () => {
