@@ -217,32 +217,6 @@ export function StoryPinRows({ land, limit = 4 }: { land: ProfileLand; limit?: n
   );
 }
 
-/** Government structure: offices and bodies only (no budgets). */
-export function GovernmentRows({ state }: { state: ProfileState }) {
-  const g = state.government;
-  if (!g) return null;
-  const rows: [string, string | null][] = [
-    ["Head of state", g.headOfState],
-    ["Head of government", g.headOfGovernment],
-    ["Executive", g.executive],
-    ["Legislature", g.legislature],
-    ["Judiciary", g.judiciary],
-  ];
-  return (
-    <FacetListSection
-      header={g.name}
-      footer={g.departments.length > 0 ? `Ministries: ${g.departments.join(", ")}.` : undefined}
-    >
-      <FacetRow title="System" trailing={g.type} />
-      {rows
-        .filter((r): r is [string, string] => !!r[1])
-        .map(([label, value]) => (
-          <FacetRow key={label} title={label} trailing={value} />
-        ))}
-    </FacetListSection>
-  );
-}
-
 /** Last election result as a seat bar (party colours are data) plus the next scheduled vote. */
 export function ElectionSummary({ state, className }: { state: ProfileState; className?: string }) {
   const e = state.election;

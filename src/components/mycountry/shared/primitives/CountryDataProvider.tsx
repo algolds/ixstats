@@ -16,17 +16,17 @@ import { useDemoMode } from "~/context/DemoModeContext";
 import type { RouterOutputs } from "~/trpc/react";
 
 export type CountryWithEconomicData = RouterOutputs["countries"]["getByIdWithEconomicData"];
-export type UserProfileOutput = RouterOutputs["users"]["getProfile"];
-export type ActivityRingsOutput = RouterOutputs["countries"]["getActivityRingsData"];
+type UserProfileOutput = RouterOutputs["users"]["getProfile"];
+type ActivityRingsOutput = RouterOutputs["countries"]["getActivityRingsData"];
 export type MappedEconomyData = ReturnType<typeof mapCountryToEconomyData>;
 
-export interface SystemStatusData {
+interface SystemStatusData {
   ixTime: number;
   serverStatus: string;
   lastUpdate: string;
 }
 
-export interface CountryDataContextValue {
+interface CountryDataContextValue {
   userProfile: UserProfileOutput | null | undefined;
   country: CountryWithEconomicData | null | undefined;
   economyData: MappedEconomyData;
@@ -40,7 +40,7 @@ export interface CountryDataContextValue {
   isPublicReadOnly?: boolean;
 }
 
-export const CountryDataContext = createContext<CountryDataContextValue | undefined>(undefined);
+const CountryDataContext = createContext<CountryDataContextValue | undefined>(undefined);
 
 interface CountryDataProviderProps {
   children: ReactNode;

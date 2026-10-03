@@ -207,15 +207,6 @@ export function MyCountryLogo({
 }
 
 // Simplified icon version for use in navigation, etc.
-export function MyCountryIcon({
-  size = "md",
-  className,
-  animated = false,
-}: Omit<MyCountryLogoProps, "variant">) {
-  return (
-    <MyCountryLogo size={size} variant="icon-only" animated={animated} className={className} />
-  );
-}
 
 export function MyCountryLogomark({ className }: { className?: string }) {
   return (

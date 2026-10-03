@@ -20,7 +20,7 @@ import type { DepartmentInput, BudgetAllocationInput } from "~/types/government"
 import type { BudgetSummary } from "~/lib/government/builder-validation";
 import { currentBudgetYear } from "~/lib/government/budget-year";
 
-export interface BudgetAllocationListProps {
+interface BudgetAllocationListProps {
   departments: DepartmentInput[];
   budgetAllocations: BudgetAllocationInput[];
   budgetSummary: BudgetSummary;

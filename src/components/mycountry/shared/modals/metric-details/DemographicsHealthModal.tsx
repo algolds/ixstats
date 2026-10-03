@@ -365,5 +365,3 @@ export function DemographicsHealthModal({
     </BaseMetricDetailsModal>
   );
 }
-
-export default DemographicsHealthModal;

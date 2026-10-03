@@ -11,7 +11,7 @@ import type { AtomicEconomicComponent } from "~/lib/economy/atomic-data";
 import { formatCurrency } from "~/lib/economy/atomic-utils";
 import { AtomicCard } from "~/components/shared/atomic-picker";
 
-export interface ComponentCardProps {
+interface ComponentCardProps {
   component: AtomicEconomicComponent;
   isSelected: boolean;
   onSelect: () => void;

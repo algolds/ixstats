@@ -25,7 +25,7 @@
 import { useRef, useCallback, useState, useEffect, useLayoutEffect } from "react";
 import { NavArrowUp as ChevronUp } from "iconoir-react";
 
-export type SnapPosition = "dismissed" | "peek" | "half" | "full";
+type SnapPosition = "dismissed" | "peek" | "half" | "full";
 
 interface SnapBottomSheetProps {
   children: React.ReactNode;

@@ -43,7 +43,7 @@ function normalizeGrowth(value: number | null | undefined): number {
   return Math.min(20, Math.max(-20, v));
 }
 
-export function DashboardHeroComponent({
+function DashboardHeroComponent({
   onCollapsedChange,
 }: {
   collapsed?: boolean;

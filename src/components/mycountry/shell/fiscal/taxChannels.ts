@@ -100,7 +100,7 @@ export const ACCENT_BG: Record<string, string> = {
   rose: "bg-red",
 };
 
-export interface FiscalRatesRow {
+interface FiscalRatesRow {
   corporateTaxRates?: string | null;
   personalIncomeTaxRates?: string | null;
   salesTaxRate?: number | null;
@@ -108,7 +108,7 @@ export interface FiscalRatesRow {
   wealthTaxRate?: number | null;
 }
 
-export interface SavedRate {
+interface SavedRate {
   /** The saved rate, or null when the nation has none for this tax. */
   rate: number | null;
   /**

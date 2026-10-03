@@ -134,7 +134,7 @@ function giniLabel(raw: number | null): string {
   return `${gini.toFixed(1)} (${band})`;
 }
 
-export interface EconomyDrillDownProps {
+interface EconomyDrillDownProps {
   countryId: string;
 }
 

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from "~/components/ui/card";
 /** The composer always has four steps: goal, approach, projected impact, review and declare. */
 const STEP_COUNT = 4;
 
-export interface StepSectionProps {
+interface StepSectionProps {
   step: number;
   title: string;
   description?: React.ReactNode;

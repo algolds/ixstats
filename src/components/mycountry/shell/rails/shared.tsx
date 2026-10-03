@@ -5,17 +5,7 @@ import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import type { MyCountryDomain } from "../domain-meta";
 import { timeAgo } from "~/lib/format/compact";
-import { STATUS_TEXT as SHELL_STATUS_TEXT } from "../status-tone";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
-
-/** Legacy per-domain text accent (re-exported by DomainContextRail; not used by the rails). */
-export const DOMAIN_ACCENT: Record<MyCountryDomain, string> = {
-  relations: "text-cyan",
-  defense: "text-red",
-  politics: "text-indigo",
-  economy: "text-green",
-};
-
 /**
  * Status colours for the domain rails: the shell's shared `status-tone` mapping (destructive,
  * orange warning, MyCountry gold, muted) plus `success` for healthy readings.
@@ -179,39 +169,5 @@ export function DomainActivityCard({
         </ul>
       )}
     </RailCard>
-  );
-}
-
-export function DomainWidget({
-  domain,
-  title,
-  kpis,
-  activityTitle,
-  activityIcon,
-  entries,
-  emptyMessage,
-}: {
-  domain: MyCountryDomain;
-  title: string;
-  kpis: Kpi[];
-  activityTitle: string;
-  activityIcon: React.ComponentType<{ className?: string }>;
-  entries: ActivityEntry[];
-  emptyMessage: string;
-}) {
-  return (
-    <div className="space-y-6">
-      <RailCard title={title}>
-        <DomainKpiGrid items={kpis} />
-      </RailCard>
-
-      <DomainActivityCard
-        domain={domain}
-        title={activityTitle}
-        icon={activityIcon}
-        entries={entries}
-        emptyMessage={emptyMessage}
-      />
-    </div>
   );
 }

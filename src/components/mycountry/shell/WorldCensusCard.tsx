@@ -39,7 +39,7 @@ export function formatCensusValue(ranking: Pick<Ranking, "category" | "value">):
  * Tie-break order when two ranks stand out equally: the headline measures of a nation first.
  * Categories not listed sort last.
  */
-export const CENSUS_PRIORITY: readonly RankingCategory[] = [
+const CENSUS_PRIORITY: readonly RankingCategory[] = [
   "Total GDP",
   "GDP per Capita",
   "Population",
@@ -53,7 +53,7 @@ export const CENSUS_PRIORITY: readonly RankingCategory[] = [
 ];
 
 /** How many census rows show before "See more". */
-export const CENSUS_VISIBLE_COUNT = 5;
+const CENSUS_VISIBLE_COUNT = 5;
 
 function priorityOf(category: RankingCategory): number {
   const i = CENSUS_PRIORITY.indexOf(category);
@@ -75,7 +75,7 @@ export function sortCensusByRelevance(rankings: readonly Ranking[]): Ranking[] {
   );
 }
 
-export interface WorldCensusListProps {
+interface WorldCensusListProps {
   rankings: Ranking[] | undefined;
   isLoading?: boolean;
   /** Rows shown before the "See more" disclosure (default 5). */
@@ -181,7 +181,7 @@ export function WorldCensusList({
   );
 }
 
-export interface WorldCensusCardProps {
+interface WorldCensusCardProps {
   countryId: string;
 }
 

@@ -12,7 +12,7 @@ import type {
 import { formatPercent, formatRate } from "~/app/countries/[slug]/_utils/profileLayer";
 
 /** Growth rates arrive as fractions (0.034) or percents (3.4); see `formatRate`. */
-export function ratePercent(value: number | null): number | null {
+function ratePercent(value: number | null): number | null {
   if (value == null) return null;
   return Math.abs(value) < 1 ? value * 100 : value;
 }
@@ -21,7 +21,7 @@ export function ratePercent(value: number | null): number | null {
 
 export type PulseTone = "success" | "info" | "warning" | "default";
 
-export interface PulseStatus {
+interface PulseStatus {
   label: string;
   tone: PulseTone;
   /** One factual sentence built from the readings. */

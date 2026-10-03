@@ -6,29 +6,10 @@ import { usePendingLocks } from "~/hooks/usePendingLocks";
 import { Badge } from "~/components/ui/badge";
 import { Coins } from "iconoir-react";
 import type { RevenueSourceInput, RevenueCategory } from "~/types/government";
-import {
-  revenueCategories,
-  revenueCategoryIcons,
-  revenueCategoryColors,
-  commonRevenueSources,
-  getCollectionMethodIcon,
-  getCollectionMethodsForCategory,
-  RevenueSummaryKpis,
-  RevenueItemRow,
-  RevenueAddSection,
-} from "./revenue";
+import { RevenueSummaryKpis, RevenueItemRow, RevenueAddSection } from "./revenue";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
-export {
-  revenueCategories,
-  revenueCategoryIcons,
-  revenueCategoryColors,
-  commonRevenueSources,
-  getCollectionMethodIcon,
-  getCollectionMethodsForCategory,
-};
-
-export interface RevenueSourceFormProps {
+interface RevenueSourceFormProps {
   data: RevenueSourceInput[];
   onChange: (data: RevenueSourceInput[]) => void;
   totalRevenue: number;

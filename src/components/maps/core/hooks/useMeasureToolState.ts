@@ -15,7 +15,7 @@ const LINE_LAYER_ID = "measure-line";
 const POINT_LAYER_ID = "measure-points";
 const LABEL_LAYER_ID = "measure-labels";
 
-export interface UseMeasureToolStateOptions {
+interface UseMeasureToolStateOptions {
   mapRef: React.RefObject<IxWorldMapRef | null>;
   onActiveChange?: (active: boolean) => void;
 }

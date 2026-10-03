@@ -8,7 +8,7 @@ import { TrendIndicator as TrendIndicatorUI } from "~/components/ui/trend-indica
 import { InlineHelpIcon } from "~/components/ui/help-icon";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
-export interface MetricCardProps {
+interface MetricCardProps {
   title: string;
   value: string | number;
   description?: string;

@@ -24,7 +24,7 @@ type IconComponent = ComponentType<{
 }>;
 
 /** Iconoir glyph per story-pin category (Facet bans emoji-as-icon). */
-export const CATEGORY_ICONS: Record<string, IconComponent> = {
+const CATEGORY_ICONS: Record<string, IconComponent> = {
   battle: Tournament,
   founding: Tower,
   treaty: Page,

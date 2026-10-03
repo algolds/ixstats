@@ -60,7 +60,3 @@ export const DOMAIN_SECTIONS: ReadonlySet<string> = new Set([
   "economy",
   "executive",
 ]);
-
-export function isDomainSection(section?: string): boolean {
-  return section ? DOMAIN_SECTIONS.has(section) : false;
-}

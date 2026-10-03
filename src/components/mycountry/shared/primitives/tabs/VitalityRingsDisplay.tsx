@@ -1,14 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { motion } from "motion/react";
 import { HealthRing } from "~/components/ui/health-ring";
 import { Activity, Dollar as DollarSign, Group as Users, Globe, Building } from "iconoir-react";
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
 import { cn } from "~/lib/utils";
 
-import { VitalityBreakdownModal } from "~/components/mycountry/shared/modals/VitalityBreakdownModal";
-import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 export interface VitalityRing {
@@ -22,7 +20,7 @@ export interface VitalityRing {
   onClick?: () => void;
 }
 
-export interface VitalityRingsDisplayProps {
+interface VitalityRingsDisplayProps {
   rings: VitalityRing[];
   title?: string;
   subtitle?: string;
@@ -35,41 +33,6 @@ export interface VitalityRingsDisplayProps {
 }
 
 // Default vitality ring configurations for national metrics
-export const defaultVitalityRings: VitalityRing[] = [
-  {
-    id: "economic",
-    label: "Economic vitality",
-    value: 0,
-    color: "var(--color-amber-500)",
-    icon: DollarSign,
-    description: "Economic health and performance",
-  },
-  {
-    id: "population",
-    label: "Population wellbeing",
-    value: 0,
-    color: "var(--color-cyan-500)",
-    icon: Users,
-    description: "Quality of life and development",
-  },
-  {
-    id: "diplomatic",
-    label: "Diplomatic standing",
-    value: 0,
-    color: "var(--color-violet-500)",
-    icon: Globe,
-    description: "International relations strength",
-  },
-  {
-    id: "government",
-    label: "Government efficiency",
-    value: 0,
-    color: "var(--color-red-500)",
-    icon: Building,
-    description: "Governance effectiveness",
-  },
-];
-
 // Size configurations
 const sizeConfig = {
   sm: { ring: 80, gap: "gap-3" },
@@ -232,63 +195,7 @@ export function VitalityRingsDisplay({
   );
 }
 
-/**
- * QuickVitalityRings - Compact inline version without card wrapper
- */
-export function QuickVitalityRings({
-  rings,
-  size = "sm",
-  className = "",
-  countryName,
-}: {
-  rings: VitalityRing[];
-  size?: "sm" | "md";
-  className?: string;
-  countryName?: string;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const ringSize = size === "sm" ? 60 : 80;
-
-  return (
-    <>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        onClick={() => setIsOpen(true)}
-        title="Click for vitality index breakdown"
-        aria-label="Open vitality index breakdown"
-        className={cn(
-          "rounded-control-sm size-5",
-          cn(
-            "hover:bg-fill-3 focus-visible:ring-tint rounded-row flex cursor-pointer items-center gap-2 p-1 transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2",
-            className
-          )
-        )}
-      >
-        {rings.map((ring) => (
-          <HealthRing
-            key={ring.id}
-            value={ring.value}
-            size={ringSize}
-            color={ring.color}
-            label={ring.label}
-            tooltip={`${ring.label}: ${ring.value}/100. Click for breakdown`}
-          />
-        ))}
-      </Button>
-
-      <VitalityBreakdownModal
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        rings={rings}
-        countryName={countryName}
-      />
-    </>
-  );
-}
-
-export function getAppleVitalityColor(score: number): string {
+function getAppleVitalityColor(score: number): string {
   if (score >= 80) return "var(--color-emerald-500)"; // Optimal
   if (score >= 65) return "var(--color-cyan-500)"; // Strong
   if (score >= 45) return "var(--color-amber-500)"; // Moderate

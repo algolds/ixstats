@@ -44,7 +44,7 @@ const SECTION_TO_DOMAIN: Record<string, MyCountryDomain> = {
  * /executive): a title row, the domain's drill content inline and the shared rail alongside.
  * Defense stays premium-gated via PremiumPreviewFrame.
  */
-export interface DomainSurfaceProps {
+interface DomainSurfaceProps {
   countryId: string;
   section: string;
   onDeclare?: (prefilled?: string) => void;

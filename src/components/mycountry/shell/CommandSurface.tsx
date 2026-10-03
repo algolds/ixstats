@@ -13,7 +13,7 @@ import { DrillSheets, type DrillSheetKind } from "~/components/mycountry/shell/D
 import { DOMAIN_SECTIONS } from "./domain-meta";
 import type { CommandNavMode } from "./command-nav-mode";
 
-export interface CommandSurfaceProps {
+interface CommandSurfaceProps {
   section?: string;
   onNavigate?: (section: string) => void;
 }

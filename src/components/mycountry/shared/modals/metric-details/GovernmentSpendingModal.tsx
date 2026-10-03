@@ -309,5 +309,3 @@ export function GovernmentSpendingModal({
     </BaseMetricDetailsModal>
   );
 }
-
-export default GovernmentSpendingModal;

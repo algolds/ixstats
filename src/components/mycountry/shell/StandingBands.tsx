@@ -33,12 +33,12 @@ function getRatingLabel(score: number): RatingLabel {
   return "Strained";
 }
 
-export interface StandingBandsProps {
+interface StandingBandsProps {
   countryId: string;
 }
 
 /** CivCap state as served by `policies.getPolicyReconContext` (lib/government/civcap.ts). */
-export interface CivCapBandInput {
+interface CivCapBandInput {
   capacity: number;
   used: number;
   available: number;

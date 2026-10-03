@@ -2,25 +2,10 @@
 
 import React from "react";
 import type { MyCountryDomain } from "./domain-meta";
-import {
-  RelationsRail,
-  DefenseRail,
-  PoliticsRail,
-  EconomyRail,
-  DomainKpiGrid,
-  DomainActivityCard,
-  DomainWidget,
-  DOMAIN_ACCENT,
-  type Kpi,
-  type ActivityEntry,
-} from "./rails";
-import { formatCompact, timeAgo } from "~/lib/format/compact";
-
-export { DomainKpiGrid, DomainActivityCard, DomainWidget, DOMAIN_ACCENT, formatCompact, timeAgo };
-export type { Kpi, ActivityEntry };
+import { RelationsRail, DefenseRail, PoliticsRail, EconomyRail } from "./rails";
 
 /** The rail for the four full-page domain surfaces: per-domain KPIs and a recent-activity log. */
-export interface DomainContextRailProps {
+interface DomainContextRailProps {
   countryId: string;
   domain: MyCountryDomain;
 }

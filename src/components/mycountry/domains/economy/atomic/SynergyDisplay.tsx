@@ -8,9 +8,12 @@
 
 import React, { useMemo } from "react";
 import { formatComponentName, type EconomicComponentType } from "~/lib/economy/atomic-data";
-import { SynergyDisplay as SharedSynergyDisplay, type SynergyItem } from "~/components/shared/atomic-picker";
+import {
+  SynergyDisplay as SharedSynergyDisplay,
+  type SynergyItem,
+} from "~/components/shared/atomic-picker";
 
-export interface SynergyDisplayProps {
+interface SynergyDisplayProps {
   synergies: Array<{
     component1: EconomicComponentType;
     component2: EconomicComponentType;

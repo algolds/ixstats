@@ -15,12 +15,12 @@ import { useCountryMapEmbedState } from "~/components/maps/widgets/hooks/useCoun
 import { useCountryMapEmbedLayers } from "~/components/maps/widgets/hooks/useCountryMapEmbedLayers";
 
 /** A clicked map feature, identified by kind + record id. */
-export interface CountryMapFeature {
+interface CountryMapFeature {
   kind: "city" | "subdivision";
   id: string;
 }
 
-export interface CountryMapEmbedProps {
+interface CountryMapEmbedProps {
   countryId: string;
   height?: string;
   className?: string;

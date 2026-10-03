@@ -2,8 +2,6 @@
 export * from "./types";
 
 // Base modal
-export { BaseMetricDetailsModal, type BaseMetricDetailsModalProps } from "./BaseMetricDetailsModal";
-
 // Specialized metric detail modals
 export { GdpDetailsModal } from "./GdpDetailsModal";
 export { PopulationDetailsModal } from "./PopulationDetailsModal";

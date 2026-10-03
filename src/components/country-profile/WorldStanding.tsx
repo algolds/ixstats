@@ -1,11 +1,9 @@
 import { Building, Globe } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
-import { Stat } from "~/components/ui/stat";
 import { createUrl } from "~/lib/utils";
-import { cn } from "~/lib/utils/cn";
 import type { ProfileWorld } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
-import { rankLabel, relationshipBadge } from "./labels";
+import { relationshipBadge } from "./labels";
 
 function FlagDot({ src, name }: { src: string | null; name: string }) {
   if (!src) {
@@ -26,43 +24,6 @@ function FlagDot({ src, name }: { src: string | null; name: string }) {
       loading="lazy"
       className="border-separator size-7 rounded-full border object-cover"
     />
-  );
-}
-
-/**
- * World Census standing (mycountry.getRankings): value + rank per category. The census ranks a
- * nation within its realm, so the hint names the realm.
- */
-export function RankingGrid({
-  rankings,
-  realm,
-  limit,
-  className,
-}: {
-  rankings: ProfileWorld["rankings"];
-  /** The realm the census ranks the nation in. */
-  realm?: string | null;
-  limit?: number;
-  className?: string;
-}) {
-  const shown = limit ? rankings.slice(0, limit) : rankings;
-  if (shown.length === 0) return null;
-  return (
-    <dl className={cn("grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3", className)}>
-      {shown.map((r) => (
-        <div key={r.category}>
-          <dt className="sr-only">{r.category}</dt>
-          <dd>
-            <Stat
-              size="sm"
-              label={r.category}
-              value={r.value}
-              hint={rankLabel(r.rank, r.total, realm)}
-            />
-          </dd>
-        </div>
-      ))}
-    </dl>
   );
 }
 

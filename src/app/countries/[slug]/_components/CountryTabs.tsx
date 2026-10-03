@@ -17,7 +17,7 @@ const TABS: { id: ProfileTabType; label: string; path: string; icon: typeof Page
 ];
 
 /** The tab a pathname under `/countries/[slug]` belongs to (the profile when none matches). */
-export function activeProfileTab(pathname: string | null, slug: string): ProfileTabType {
+function activeProfileTab(pathname: string | null, slug: string): ProfileTabType {
   const base = `/countries/${slug}`;
   const index = pathname?.indexOf(base) ?? -1;
   const rest = index >= 0 ? pathname!.slice(index + base.length).replace(/^\/+/, "") : "";

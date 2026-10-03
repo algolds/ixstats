@@ -4,7 +4,7 @@ import React from "react";
 import { cn } from "~/lib/utils";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 
-export interface SectionTab<Id extends string> {
+interface SectionTab<Id extends string> {
   id: Id;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -17,7 +17,7 @@ export interface SectionTab<Id extends string> {
   activeClassName?: string;
 }
 
-export interface SectionTabBarProps<Id extends string> {
+interface SectionTabBarProps<Id extends string> {
   tabs: ReadonlyArray<SectionTab<Id>>;
   activeTab: Id;
   onChange: (id: Id) => void;

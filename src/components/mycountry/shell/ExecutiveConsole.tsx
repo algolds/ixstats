@@ -7,7 +7,7 @@ import type { DrillSheetKind } from "./DrillSheets";
  * Declare a directive (goal → approach → projected impact → review), track the ones in force,
  * and review past directives with the effects they recorded. See DirectivesWorkspace.
  */
-export interface ExecutiveConsoleProps {
+interface ExecutiveConsoleProps {
   countryId: string;
   initialGoal?: string;
   onDone?: (msg?: string) => void;

@@ -17,7 +17,7 @@ const CountryComparisonModal = dynamic(
   { ssr: false }
 );
 
-export interface QuickActionsProps {
+interface QuickActionsProps {
   countryId: string;
   /** The country's URL slug (`/countries/[slug]/…`). */
   slug: string;

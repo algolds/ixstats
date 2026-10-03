@@ -15,9 +15,9 @@ import { SNAP_LAYER_TYPES } from "~/lib/maps/editor-prefs";
 
 export const EMPTY_FC = { type: "FeatureCollection" as const, features: [] as Feature[] };
 
-export const SNAP_GUIDE_SOURCE = "editor-snap-guide";
-export const SNAP_GUIDE_LAYER = "editor-snap-guide-line";
-export const SNAP_GUIDE_POINT_LAYER = "editor-snap-guide-point";
+const SNAP_GUIDE_SOURCE = "editor-snap-guide";
+const SNAP_GUIDE_LAYER = "editor-snap-guide-line";
+const SNAP_GUIDE_POINT_LAYER = "editor-snap-guide-point";
 
 /**
  * Helper to get a typed GeoJSON source from the map
@@ -101,7 +101,8 @@ export function getGenericBBox(
  * Calculate overlap GeoJSON between a drawn geometry and other subdivisions
  */
 export function calculateOverlapGeoJson(
-  drawnGeom: (Geometry & { coordinates?: Position[][] | Position[][][] }) | Feature | null | undefined,
+  drawnGeom:
+    (Geometry & { coordinates?: Position[][] | Position[][][] }) | Feature | null | undefined,
   allFeatures: EditorFeature[],
   currentFeatureId?: string
 ) {

@@ -12,14 +12,14 @@
 
 import { useSyncExternalStore } from "react";
 
-export interface LiveTerrainInfo {
+interface LiveTerrainInfo {
   elevation?: string | null;
   elevationMeters?: number | null;
   climate?: string | null;
   biomeColor?: string | null;
 }
 
-export interface TransientEditorState {
+interface TransientEditorState {
   hoveredFeatureId: string | null;
   cursorCoords: [number, number] | null;
   /** Cursor position in map-container pixels (for tooltips that follow the pointer). */

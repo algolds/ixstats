@@ -9,28 +9,16 @@ import type { DepartmentInput } from "~/types/government";
 import {
   isImageIconSource,
   resolveNamedDepartmentIcon,
-  departmentCategories,
-  organizationalLevels,
   categoryIcons,
-  categoryColors,
-  getPriorityDetails,
 } from "./department/department-constants";
 import { DepartmentBasicFields } from "./department/DepartmentBasicFields";
 import { DepartmentFunctionsManager } from "./department/DepartmentFunctionsManager";
 import { DepartmentAtomicSelector } from "./department/DepartmentAtomicSelector";
 import { DepartmentIconPicker } from "./department/DepartmentIconPicker";
 
-export {
-  isImageIconSource,
-  resolveNamedDepartmentIcon,
-  departmentCategories,
-  organizationalLevels,
-  categoryIcons,
-  categoryColors,
-  getPriorityDetails,
-};
+export { isImageIconSource, resolveNamedDepartmentIcon, categoryIcons };
 
-export interface DepartmentFormProps {
+interface DepartmentFormProps {
   data: DepartmentInput;
   onChange: (data: DepartmentInput) => void;
   onDelete?: () => void;

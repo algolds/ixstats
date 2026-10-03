@@ -22,7 +22,7 @@ import {
 
 const EMPTY = "__option-select-empty__";
 
-export interface OptionSelectOption<T extends string = string> {
+interface OptionSelectOption<T extends string = string> {
   value: T;
   label: React.ReactNode;
   disabled?: boolean;
@@ -30,7 +30,7 @@ export interface OptionSelectOption<T extends string = string> {
   group?: string;
 }
 
-export interface OptionSelectProps<T extends string = string> {
+interface OptionSelectProps<T extends string = string> {
   value: T | undefined;
   onValueChange: (value: T) => void;
   options: readonly OptionSelectOption<T>[];

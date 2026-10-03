@@ -30,7 +30,7 @@ import { LAYER_CONFIGS, getClimateLegend, type MapLayerType } from "~/lib/maps/m
 import { overlaysByCategory } from "~/lib/maps/overlay-registry";
 import type { OverlayVisibility } from "./IxWorldMap";
 
-export interface MapControlsProps {
+interface MapControlsProps {
   visibleLayers: Set<MapLayerType>;
   onToggleLayer: (layer: MapLayerType) => void;
   overlayVisibility?: OverlayVisibility;

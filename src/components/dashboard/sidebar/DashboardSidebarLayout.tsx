@@ -9,14 +9,14 @@ import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight } from "icon
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 
-export interface SidebarContextProps {
+interface SidebarContextProps {
   isCollapsed: boolean;
   toggleCollapsed: () => void;
   isHovered?: boolean;
   setIsHovered?: (hovered: boolean) => void;
 }
 
-export const SidebarContext = createContext<SidebarContextProps>({
+const SidebarContext = createContext<SidebarContextProps>({
   isCollapsed: false,
   toggleCollapsed: () => {},
   isHovered: false,

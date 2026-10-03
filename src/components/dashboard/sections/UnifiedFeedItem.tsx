@@ -3,7 +3,6 @@
 import { useState, useMemo, memo } from "react";
 import {
   WarningTriangle as AlertTriangle,
-  OpenNewWindow as ExternalLink,
   Globe,
   Bank as Landmark,
   Map as MapIcon,
@@ -15,15 +14,9 @@ import {
   OpenBook as BookOpen,
   ChatBubble as MessageCircle,
 } from "iconoir-react";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
-import {
-  WikiLinkPreview,
-  ForumLinkPreview,
-  WikiHtmlContent,
-} from "~/components/wiki-os/reader/WikiLinkPreview";
+import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { parseSportsBulletin } from "~/lib/sports/feed-bulletins";
@@ -33,14 +26,11 @@ import { cn } from "~/lib/utils";
 import { WikiAuthorPopover } from "./WikiAuthorPopover";
 import { FeedItemHeader } from "./feed/FeedItemHeader";
 import { FeedGroupedDrawer } from "./feed/FeedGroupedDrawer";
-import { InlineWikiArticlePreview, parseWikitextToHtml } from "./feed/InlineWikiArticlePreview";
+import { InlineWikiArticlePreview } from "./feed/InlineWikiArticlePreview";
 import { WikiFeedCard } from "./feed/WikiFeedCard";
 import type { ProcessedFeedItem } from "~/types/dashboard-feed";
 import { Card } from "~/components/ui/card";
-
-export { parseWikitextToHtml, InlineWikiArticlePreview, WikiFeedCard };
-
-export const SOURCE_CONFIG: Record<
+const SOURCE_CONFIG: Record<
   string,
   { icon: typeof Rss; color: string; bg: string; label: string }
 > = {
@@ -279,31 +269,6 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
     </Card>
   );
 });
-
-export function FeedExternalLink({ url }: { url: string; title?: string }) {
-  const wikiMatch = url.match(/ixwiki\.com\/wiki\/([^#?]+)/);
-  const forumMatch = url.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
-  const link = (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-label-secondary hover:text-label bg-fill-3 hover:bg-fill-2 rounded-control-sm text-caption duration-fast ease-out-facet focus-visible:outline-tint flex items-center gap-1 px-2 py-0.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
-    >
-      <ExternalLink aria-hidden className="size-3.5" />
-      <span>Open</span>
-    </a>
-  );
-  if (wikiMatch)
-    return (
-      <WikiLinkPreview title={decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ")} wiki="ixwiki">
-        {link}
-      </WikiLinkPreview>
-    );
-  if (forumMatch)
-    return <ForumLinkPreview threadId={parseInt(forumMatch[1]!, 10)}>{link}</ForumLinkPreview>;
-  return link;
-}
 
 /** Loading placeholder shaped like a feed card. */
 export function FeedItemSkeleton() {

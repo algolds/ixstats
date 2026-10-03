@@ -15,7 +15,7 @@ export interface MapGenConfig {
   landCoverage: number;
 }
 
-export interface MapPipelineControlsProps {
+interface MapPipelineControlsProps {
   config: MapGenConfig;
   onChangeConfig: (config: MapGenConfig) => void;
   onGenerate: () => void;

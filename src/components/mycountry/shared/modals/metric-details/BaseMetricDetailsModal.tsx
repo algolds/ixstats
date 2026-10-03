@@ -34,7 +34,7 @@ export interface MetricModalTab {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-export interface BaseMetricDetailsModalProps {
+interface BaseMetricDetailsModalProps {
   /** Modal open state */
   isOpen: boolean;
   /** Close handler */
@@ -276,5 +276,3 @@ export function BaseMetricDetailsModal({
     </Sheet>
   );
 }
-
-export default BaseMetricDetailsModal;

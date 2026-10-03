@@ -10,7 +10,7 @@ import { formatIxCountdown } from "~/lib/statecraft/calendar";
 import { TONE_CLASSES } from "~/components/mycountry/directives/directive-model";
 import { Card } from "~/components/ui/card";
 
-export interface DeclarePanelProps {
+interface DeclarePanelProps {
   goal: string;
   approachLabel: string;
   civCapCost: number | null;

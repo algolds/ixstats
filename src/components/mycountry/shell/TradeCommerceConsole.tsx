@@ -23,8 +23,6 @@ import { CustomSectorDialog } from "./trade-commerce/CustomSectorDialog";
 import { RailCard, RailCount, RailRow } from "./rails/shared";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
-export { type CustomSector, type AccentColor } from "./trade-commerce/trade-commerce-types";
-
 /**
  * Trade & Commerce tab.
  *

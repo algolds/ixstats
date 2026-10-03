@@ -86,7 +86,7 @@ export interface MapLayerData {
 
 export type OverlayVisibility = Record<string, boolean>;
 
-export interface IxWorldMapProps {
+interface IxWorldMapProps {
   layers: any[];
   theme?: MapTheme;
   capitals?: CapitalsGeoJson;

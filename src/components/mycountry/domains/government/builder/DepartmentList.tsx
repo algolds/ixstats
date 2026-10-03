@@ -31,7 +31,7 @@ import { cn } from "~/lib/utils";
 import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 import { Card, CardContent, CardFooter } from "~/components/ui/card";
 
-export interface DepartmentListProps {
+interface DepartmentListProps {
   departments: DepartmentInput[];
   onAddDepartment: () => void;
   onUpdateDepartment: (index: number, department: DepartmentInput) => void;

@@ -19,7 +19,6 @@ import { useNotify } from "~/hooks/useNotify";
 import type { CountryWithEconomicData } from "~/types/ixstats";
 
 import type { ComparisonCountry } from "~/types/country-comparison";
-export type { ComparisonCountry };
 
 interface CountryComparisonModalProps {
   isOpen: boolean;

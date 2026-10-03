@@ -76,7 +76,7 @@ export interface ProfileIdentity {
   sovereign: { username: string | null; roleName: string | null } | null;
 }
 
-export interface ProfileLore {
+interface ProfileLore {
   articleTitle: string;
   wikiHref: string;
   prologue: string[];
@@ -337,7 +337,7 @@ function toLand(bundle: GeoBundle | undefined, isLoading: boolean): ProfileLand 
 
 // ─── Hook ───────────────────────────────────────────────────────────────────
 
-export interface UseCountryProfileLayerOptions {
+interface UseCountryProfileLayerOptions {
   country: CountryWithEconomicData | null | undefined;
   /** Resolved flag (country.flag or the flag service). */
   flagUrl: string | null;

@@ -13,7 +13,7 @@
 import React, { memo, useEffect, useRef, useState } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 
-export interface EditorGuide {
+interface EditorGuide {
   id: string;
   type: "h" | "v";
   value: number;

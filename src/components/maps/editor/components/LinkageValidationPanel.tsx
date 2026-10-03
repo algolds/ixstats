@@ -23,7 +23,7 @@ const VALIDATION_TABS = [
   { value: "features", label: "Features" },
 ];
 
-export interface LinkageFeatureItem {
+interface LinkageFeatureItem {
   featureId: string;
   displayName: string;
   countryId?: string | null;

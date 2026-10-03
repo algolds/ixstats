@@ -71,7 +71,7 @@ const TRENDING_SOURCE: Record<
   },
 };
 
-export function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwiki" | "iiwiki" }) {
+function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwiki" | "iiwiki" }) {
   const { data: intro } = api.wikios.getIntro.useQuery({ title, wiki }, { staleTime: 30 * 60_000 });
 
   const leadImage = useWikiLeadImage(title, intro?.text || intro?.intro || "");
@@ -106,7 +106,7 @@ export function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwi
   );
 }
 
-export function ForumPreviewContent({ threadId }: { threadId: number }) {
+function ForumPreviewContent({ threadId }: { threadId: number }) {
   const { data: thread } = api.wikios.getForumThreadPreview.useQuery(
     { threadId },
     { staleTime: 10 * 60_000 }

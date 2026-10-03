@@ -5,9 +5,9 @@ import { getSeverityRank } from "./agendaTypes";
 /** One IxTime day in ms. Deadlines and elections are scheduled in IxTime. */
 const IX_DAY_MS = 86_400_000;
 /** An issue deadline this close (IxTime) is "Due soon". */
-export const ISSUE_DUE_SOON_IX_MS = 2 * IX_DAY_MS;
+const ISSUE_DUE_SOON_IX_MS = 2 * IX_DAY_MS;
 /** An election this close (IxTime) is "Due soon" and needs action. */
-export const ELECTION_DUE_SOON_IX_MS = 7 * IX_DAY_MS;
+const ELECTION_DUE_SOON_IX_MS = 7 * IX_DAY_MS;
 
 type Timestamp = Date | string | number | null | undefined;
 
@@ -41,7 +41,7 @@ export interface AgendaSourceElection {
   createdAt?: Timestamp;
 }
 
-export interface AgendaSources {
+interface AgendaSources {
   /** Open national issues (`nationalIssues.getMyIssues`, status active). */
   issues?: readonly AgendaSourceIssue[];
   /** All intents (`intent.getTree`); only active directives are listed. */
@@ -52,7 +52,7 @@ export interface AgendaSources {
 }
 
 /** A Date, ISO string or ms timestamp as ms, or null when missing or invalid. */
-export function toMs(value: Timestamp): number | null {
+function toMs(value: Timestamp): number | null {
   if (value == null) return null;
   const ms =
     value instanceof Date ? value.getTime() : typeof value === "number" ? value : Date.parse(value);
@@ -70,7 +70,7 @@ function capitalize(text: string): string {
 const URGENCY_RANK: Record<AgendaUrgency, number> = { overdue: 3, "due-soon": 2, upcoming: 0 };
 
 /** Agenda order: overdue, then due soon, then flagged, then newest first. */
-export function compareAgendaItems(a: AgendaItem, b: AgendaItem): number {
+function compareAgendaItems(a: AgendaItem, b: AgendaItem): number {
   const rank = (i: AgendaItem) => (i.urgency ? URGENCY_RANK[i.urgency] : 0) || (i.flagged ? 1 : 0);
   return rank(b) - rank(a) || (b.receivedAt ?? 0) - (a.receivedAt ?? 0);
 }

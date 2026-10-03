@@ -10,7 +10,7 @@ import {
   ForumLinkPreview,
 } from "~/components/wiki-os/reader/WikiLinkPreview";
 
-export interface FeedItemHeaderProps {
+interface FeedItemHeaderProps {
   activity: any;
   resolvedConfig: {
     icon: typeof Rss;
@@ -28,7 +28,7 @@ export interface FeedItemHeaderProps {
   externalUrl?: string;
 }
 
-export function FeedExternalLink({ url }: { url: string }) {
+function FeedExternalLink({ url }: { url: string }) {
   const wikiMatch = url.match(/ixwiki\.com\/wiki\/([^#?]+)/);
   const forumMatch = url.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
 

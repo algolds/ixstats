@@ -21,7 +21,7 @@ import { DirectiveCard } from "./DirectiveCard";
 import { directiveTimeline, type IntentRow } from "./directive-model";
 import { Card } from "~/components/ui/card";
 
-export type DirectivesView = "new" | "active" | "history";
+type DirectivesView = "new" | "active" | "history";
 type HistoryFilter = "all" | "completed" | "abandoned";
 
 const HISTORY_PAGE = 20;
@@ -31,7 +31,7 @@ const HISTORY_FILTERS: ReadonlyArray<{ id: HistoryFilter; label: string }> = [
   { id: "abandoned", label: "Abandoned" },
 ];
 
-export interface DirectivesWorkspaceProps {
+interface DirectivesWorkspaceProps {
   countryId: string;
   initialGoal?: string;
   onCommitted?: (res: IntentCommitResult) => void;

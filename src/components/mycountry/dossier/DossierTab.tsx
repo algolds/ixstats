@@ -484,5 +484,3 @@ export const DossierTab: React.FC<DossierTabProps> = ({
     </>
   );
 };
-
-export default DossierTab;

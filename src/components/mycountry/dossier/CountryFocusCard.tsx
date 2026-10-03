@@ -5,17 +5,13 @@ import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
-import { TextReveal, FadeIn } from "~/components/ui/text-reveal";
 import { formatPopulation } from "~/lib/utils";
-import { Coins, Eye, Globe, Group as UsersIcon, Star, StatUp as TrendingUp } from "iconoir-react";
+import { Coins, Eye, Globe, Group as UsersIcon, StatUp as TrendingUp } from "iconoir-react";
 import { ExpandedCardContent } from "./ExpandedCardContent";
 import { withBasePath } from "~/lib/base-path";
 
-export type Brand<T, B extends string> = T & { readonly __brand: B };
-export type CountryId = Brand<string, "CountryId">;
-export type CountrySlug = Brand<string, "CountrySlug">;
-
-export type EconomicTier =
+type Brand<T, B extends string> = T & { readonly __brand: B };
+type EconomicTier =
   | "Extravagant"
   | "Very Strong"
   | "Strong"

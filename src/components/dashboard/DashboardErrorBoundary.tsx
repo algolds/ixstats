@@ -6,7 +6,7 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { WarningTriangle as AlertTriangle, SystemRestart as RotateCcw } from "iconoir-react";
 import { Card } from "~/components/ui/card";
 
-export interface DashboardErrorBoundaryProps {
+interface DashboardErrorBoundaryProps {
   children: ReactNode;
   title?: string;
   description?: string;

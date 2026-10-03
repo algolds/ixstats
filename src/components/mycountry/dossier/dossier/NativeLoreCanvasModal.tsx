@@ -10,7 +10,7 @@ import { WikiVisualEditor } from "~/components/wiki-os/editor/WikiVisualEditor";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Card } from "~/components/ui/card";
 
-export type LoreClearance = "PUBLIC" | "ALLIANCE" | "PRIVATE";
+type LoreClearance = "PUBLIC" | "ALLIANCE" | "PRIVATE";
 
 interface NativeLoreCanvasModalProps {
   isOpen: boolean;

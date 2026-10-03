@@ -17,7 +17,7 @@ export interface InteractionInfo {
   score: number;
 }
 
-export interface ComponentCardProps {
+interface ComponentCardProps {
   component: AtomicGovernmentComponent;
   isSelected: boolean;
   onSelect: () => void;

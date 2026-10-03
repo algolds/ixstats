@@ -18,18 +18,11 @@ interface CountriesPageModularProps {
   viewerCountryId?: string;
 }
 
-export const SORT_OPTIONS = [
-  "random",
-  "name",
-  "population",
-  "gdp",
-  "gdpPerCapita",
-  "tier",
-] as const;
-export type SortOption = (typeof SORT_OPTIONS)[number];
+const SORT_OPTIONS = ["random", "name", "population", "gdp", "gdpPerCapita", "tier"] as const;
+type SortOption = (typeof SORT_OPTIONS)[number];
 
-export const FILTER_OPTIONS = ["all", "developed", "developing", "superpower"] as const;
-export type FilterOption = (typeof FILTER_OPTIONS)[number];
+const FILTER_OPTIONS = ["all", "developed", "developing", "superpower"] as const;
+type FilterOption = (typeof FILTER_OPTIONS)[number];
 
 export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   countries,

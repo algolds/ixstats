@@ -393,5 +393,3 @@ export function CardImageUploadModal({
     </>
   );
 }
-
-export default CardImageUploadModal;

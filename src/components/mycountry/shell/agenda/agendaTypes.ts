@@ -3,7 +3,7 @@ import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import type { StatusTone } from "../status-tone";
 
 /** Where an agenda item comes from. */
-export type AgendaItemKind = "issue" | "directive" | "election";
+type AgendaItemKind = "issue" | "directive" | "election";
 
 /**
  * How pressing an item is, relative to its deadline. Never a calendar date: an item is either

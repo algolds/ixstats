@@ -674,4 +674,3 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
 CulturalExchangeProgramComponent.displayName = "CulturalExchangeProgram";
 
 export const CulturalExchangeProgram = CulturalExchangeProgramComponent;
-export default CulturalExchangeProgramComponent;

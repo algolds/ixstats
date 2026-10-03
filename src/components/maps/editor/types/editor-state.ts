@@ -2,13 +2,13 @@
 
 import type { Geometry } from "geojson";
 import type { Prisma } from "@prisma/client";
-import type { useMapEditor, EditorFeature, EditorMode, FeatureType } from "~/hooks/useMapEditor";
+import type { useMapEditor, EditorFeature, FeatureType } from "~/hooks/useMapEditor";
 import type { BorderEditorState, BorderEditorActions } from "~/hooks/useBorderEditor";
 import type { TabId } from "~/components/maps/editor/EditorPanel";
 
 export type MapEditorInstance = ReturnType<typeof useMapEditor>;
 
-export type { BorderEditorState, BorderEditorActions, EditorFeature, EditorMode, FeatureType };
+export type { BorderEditorState, BorderEditorActions, EditorFeature, FeatureType };
 
 export interface ContextMenuFeature {
   id: string;
@@ -37,14 +37,6 @@ export interface LayerStateRecord {
   visible: boolean;
   opacity: number;
   locked?: boolean;
-}
-
-export type EditorLayerStates = Record<string, LayerStateRecord>;
-
-export interface EditorCountryInfo {
-  id?: string;
-  name: string;
-  flagUrl?: string | null;
 }
 
 export interface PropertiesPanelCountry {

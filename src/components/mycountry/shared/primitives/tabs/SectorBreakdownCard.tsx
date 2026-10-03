@@ -3,7 +3,6 @@
 import React, { useMemo } from "react";
 import { formatCompactCurrency, formatPopulation } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
-import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 
 import { StatUp as TrendingUp, StatDown as TrendingDown, Minus } from "iconoir-react";
@@ -13,7 +12,7 @@ import { useCountryData } from "../CountryDataProvider";
 import { extractCountryImageData, type ImageContext } from "~/lib/media";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
-export interface SectorData {
+interface SectorData {
   id: string;
   name: string;
   value: number; // Monetary value
@@ -27,7 +26,7 @@ export interface SectorData {
   imageKeyword?: string;
 }
 
-export interface SectorBreakdownCardProps {
+interface SectorBreakdownCardProps {
   title: string;
   subtitle?: string;
   sectors: SectorData[];
@@ -351,34 +350,4 @@ export function SectorBreakdownCard({
   );
 
   return <Card className={cn("rounded-card", className)}>{cardInner}</Card>;
-}
-
-/**
- * QuickSectorGrid - Compact grid display for sector overview
- */
-export function QuickSectorGrid({
-  sectors,
-  className = "",
-}: {
-  sectors: SectorData[];
-  className?: string;
-}) {
-  return (
-    <div className={cn("grid grid-cols-2 gap-3 sm:grid-cols-4", className)}>
-      {sectors.map((sector) => {
-        const colors = getColorClasses(sector.color);
-        return (
-          <div key={sector.id} className="bg-fill-3 rounded-row p-3 text-center">
-            <div className="text-label text-title-2 tabular-nums">
-              {formatCurrency(sector.value)}
-            </div>
-            <div className="text-label-secondary text-footnote mt-1">{sector.name}</div>
-            <Badge variant="outline" className="mt-1">
-              {sector.percentage.toFixed(1)}%
-            </Badge>
-          </div>
-        );
-      })}
-    </div>
-  );
 }

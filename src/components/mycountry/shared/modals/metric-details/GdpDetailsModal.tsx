@@ -654,5 +654,3 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
     </BaseMetricDetailsModal>
   );
 }
-
-export default GdpDetailsModal;

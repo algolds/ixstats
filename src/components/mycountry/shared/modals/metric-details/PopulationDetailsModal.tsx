@@ -987,5 +987,3 @@ export function PopulationDetailsModal({
     </BaseMetricDetailsModal>
   );
 }
-
-export default PopulationDetailsModal;

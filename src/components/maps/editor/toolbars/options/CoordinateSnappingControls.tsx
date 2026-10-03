@@ -6,7 +6,7 @@ import { Button, type ButtonProps } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { cn } from "~/lib/utils/cn";
 
-export type ToolbarButtonTone = "default" | "active" | "danger";
+type ToolbarButtonTone = "default" | "active" | "danger";
 
 /** The compact action button used in the editor tool-options bar (Facet `Button`, xs). */
 export const ToolbarButton = React.forwardRef<

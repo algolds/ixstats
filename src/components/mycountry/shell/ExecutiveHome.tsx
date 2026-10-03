@@ -40,7 +40,7 @@ export const CooldownTimer = React.memo(function CooldownTimer({
   return <>{formatCooldownTime(cooldownUntil, now)}</>;
 });
 
-export function ExecutiveHomeComponent({
+function ExecutiveHomeComponent({
   countryId,
   onDeclare,
   onOpenDrill,

@@ -4,8 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { unsplashService } from "~/lib/media";
 import type { BannerMode, BaseCountryData } from "../_types";
 
-export type { BannerMode };
-
 function getBannerPref(countryId?: string): { mode: BannerMode; customUrl?: string } {
   if (typeof window === "undefined" || !countryId) return { mode: "dynamic" };
   try {
@@ -26,7 +24,7 @@ function saveBannerPref(countryId: string, pref: { mode: BannerMode; customUrl?:
   }
 }
 
-export interface UseCountryPageStateReturn {
+interface UseCountryPageStateReturn {
   showCountryActions: boolean;
   setShowCountryActions: React.Dispatch<React.SetStateAction<boolean>>;
   /** The contextual landscape photo (Unsplash), once loaded. */

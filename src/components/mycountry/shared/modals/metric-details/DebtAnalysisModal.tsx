@@ -317,5 +317,3 @@ export function DebtAnalysisModal({
     </BaseMetricDetailsModal>
   );
 }
-
-export default DebtAnalysisModal;

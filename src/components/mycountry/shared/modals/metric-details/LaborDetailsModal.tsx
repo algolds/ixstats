@@ -295,5 +295,3 @@ export function LaborDetailsModal({
     </BaseMetricDetailsModal>
   );
 }
-
-export default LaborDetailsModal;

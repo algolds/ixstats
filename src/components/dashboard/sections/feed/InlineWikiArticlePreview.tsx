@@ -12,8 +12,6 @@ import { WikiArticleActions } from "./WikiArticleActions";
 import { useWikiLeadImage } from "./useWikiLeadImage";
 import { Card } from "~/components/ui/card";
 
-export { parseWikitextToHtml };
-
 export function InlineWikiArticlePreview({
   title,
   wiki = "ixwiki",
