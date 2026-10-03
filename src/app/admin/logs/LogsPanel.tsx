@@ -56,7 +56,7 @@ export default function DedicatedLogsPage() {
     }
   );
 
-  const handleClearLogs = useClearSystemLogs(
+  const { clear: handleClearLogs, isClearing } = useClearSystemLogs(
     refetch,
     "Are you sure you want to purge all system logs? This action cannot be undone."
   );
@@ -224,7 +224,7 @@ export default function DedicatedLogsPage() {
             variant="destructive"
             size="sm"
             onClick={handleClearLogs}
-            disabled={clearLogsMutation.isPending}
+            disabled={isClearing}
           >
             <Trash2 className="mr-2 h-3.5 w-3.5" />
             Purge logs

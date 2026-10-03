@@ -26,7 +26,7 @@ export function SystemLogs() {
     }
   );
 
-  const handleClearLogs = useClearSystemLogs(
+  const { clear: handleClearLogs } = useClearSystemLogs(
     refetch,
     "Are you sure you want to purge all system logs? This cannot be undone."
   );

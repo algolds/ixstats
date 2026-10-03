@@ -101,7 +101,7 @@ const GLYPH_CATALOG: Record<OnomaGlyphName, React.ReactNode> = {
       >
         C
       </text>
-      <line x1="3" y1="18" x2="21" y2="18" strokeWidth={strokeWidth} />
+      <line x1="3" y1="18" x2="21" y2="18" />
     </>
   ),
 

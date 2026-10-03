@@ -31,7 +31,10 @@ export function useClearSystemLogs(refetch: () => unknown, confirmMessage: strin
       notify.error(err.message || "Failed to clear logs");
     },
   });
-  return () => {
-    if (confirm(confirmMessage)) clearLogs.mutate();
+  return {
+    clear: () => {
+      if (confirm(confirmMessage)) clearLogs.mutate();
+    },
+    isClearing: clearLogs.isPending,
   };
 }

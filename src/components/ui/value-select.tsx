@@ -9,16 +9,16 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 
-type ValueSelectOption = readonly [value: string, label: ReactNode];
+type ValueSelectOption<T extends string> = readonly [value: T, label: ReactNode];
 
-interface ValueSelectProps extends Omit<
+interface ValueSelectProps<T extends string> extends Omit<
   ComponentProps<typeof SelectTrigger>,
   "value" | "defaultValue" | "onChange" | "children" | "disabled"
 > {
-  value?: string;
-  onValueChange?: (value: string) => void;
+  value?: T;
+  onValueChange?: (value: T) => void;
   /** `[value, label]` pairs, in display order. */
-  options: readonly ValueSelectOption[];
+  options: readonly ValueSelectOption<T>[];
   placeholder?: string;
   disabled?: boolean;
   contentClassName?: string;
@@ -26,7 +26,7 @@ interface ValueSelectProps extends Omit<
 }
 
 /** A `Select` over a static `[value, label]` list: trigger, value, content and items in one. */
-export function ValueSelect({
+export function ValueSelect<T extends string = string>({
   value,
   onValueChange,
   options,
@@ -35,9 +35,13 @@ export function ValueSelect({
   contentClassName,
   itemClassName,
   ...trigger
-}: ValueSelectProps) {
+}: ValueSelectProps<T>) {
   return (
-    <Select value={value} onValueChange={onValueChange} disabled={disabled}>
+    <Select
+      value={value}
+      onValueChange={onValueChange as ((value: string) => void) | undefined}
+      disabled={disabled}
+    >
       <SelectTrigger {...trigger}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>

@@ -98,8 +98,8 @@ function getDynamicStep(val: number, defaultStep: number = 1): number {
 }
 
 /** Pulls a number or string out of a value that may be wrapped in an object (`value`, `amount`, `number`). */
-function unwrapValue(value: number | string | object | null): number | string {
-  if (typeof value !== "object" || value === null) return value;
+function unwrapValue(value: number | string | object): number | string {
+  if (typeof value !== "object") return value;
   const record = value as Record<string, number | string | boolean | undefined>;
   for (const key of ["value", "amount", "number"]) {
     const candidate = record[key];
