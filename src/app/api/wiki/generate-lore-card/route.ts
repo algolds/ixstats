@@ -3,7 +3,7 @@
 
 import { NextResponse } from "next/server";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
-import type { WikiSource } from "~/lib/wiki-os/config";
+import { invalidSourceResponse, parseWikiSource } from "../article-candidates";
 import { requireAdminSession } from "~/server/shared/route-auth";
 
 export const runtime = "nodejs";
@@ -15,25 +15,19 @@ export async function POST(request: Request) {
     if (denied instanceof NextResponse) return denied;
 
     const body = await request.json();
-    const { articleTitle, wikiSource } = body;
+    const { articleTitle } = body;
+    const wikiSource = parseWikiSource(body.wikiSource);
 
     if (!articleTitle || typeof articleTitle !== "string") {
       return NextResponse.json({ error: "Article title is required" }, { status: 400 });
     }
 
-    if (!wikiSource || !["ixwiki", "iiwiki"].includes(wikiSource)) {
-      return NextResponse.json(
-        { error: "Invalid wiki source. Must be 'ixwiki' or 'iiwiki'" },
-        { status: 400 }
-      );
-    }
+    if (!wikiSource) return invalidSourceResponse();
 
     // Generate card candidate (require image)
-    const candidate = await wikiLoreCardGenerator.generateCard(
-      articleTitle,
-      wikiSource as WikiSource,
-      { requireImage: true }
-    );
+    const candidate = await wikiLoreCardGenerator.generateCard(articleTitle, wikiSource, {
+      requireImage: true,
+    });
 
     if (!candidate) {
       return NextResponse.json(
