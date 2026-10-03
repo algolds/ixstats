@@ -218,7 +218,7 @@ interface KeyPerformanceIndicator {
 }
 
 // Enums and Union Types
-export type BudgetStatus = "Allocated" | "In Use" | "Overspent" | "Underutilized" | "Completed";
+type BudgetStatus = "Allocated" | "In Use" | "Overspent" | "Underutilized" | "Completed";
 
 type BudgetType = "Personnel" | "Operations" | "Capital" | "Research" | "Other";
 

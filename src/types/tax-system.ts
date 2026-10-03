@@ -80,7 +80,7 @@ export const TaxBuilderStateSchema = z.object({
   selectedAtomicTaxComponents: z.array(z.string()).optional(),
 });
 // Base enums and constants
-export const CALCULATION_METHODS = {
+const CALCULATION_METHODS = {
   PERCENTAGE: "percentage",
   FIXED: "fixed",
   TIERED: "tiered",
@@ -158,48 +158,5 @@ export interface TaxDeductionInput {
 
 // Calculator types
 // Templates and presets
-export interface TaxSystemTemplate {
-  name: string;
-  description: string;
-  fiscalYear: string;
-  progressiveTax: boolean;
-  categories: TaxCategoryTemplate[];
-}
-
-interface TaxCategoryTemplate {
-  categoryName: string;
-  categoryType: string;
-  description: string;
-  baseRate: number;
-  calculationMethod: CalculationMethodValue;
-  brackets?: TaxBracketTemplate[];
-  exemptions?: TaxExemptionTemplate[];
-  deductions?: TaxDeductionTemplate[];
-}
-
-interface TaxBracketTemplate {
-  bracketName?: string;
-  minIncome: number;
-  maxIncome?: number;
-  rate: number;
-  marginalRate: boolean;
-}
-
-interface TaxExemptionTemplate {
-  exemptionName: string;
-  exemptionType: string;
-  description: string;
-  exemptionAmount?: number;
-  exemptionRate?: number;
-}
-
-interface TaxDeductionTemplate {
-  deductionName: string;
-  deductionType: string;
-  description: string;
-  maximumAmount?: number;
-  percentage?: number;
-}
-
 // Validation types
 // Analytics and reporting types
