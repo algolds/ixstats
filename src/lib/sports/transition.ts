@@ -790,7 +790,7 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
 
           await tx.cardOwnership.create({
             data: {
-              id: `trophy_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              id: `trophy_${Date.now()}_${crypto.randomUUID()}`,
               userId: champTeam.ownerUserId,
               ownerId: champTeam.ownerUserId,
               cardId: cardTemplate.id,

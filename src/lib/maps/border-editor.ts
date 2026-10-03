@@ -1149,8 +1149,8 @@ export function alignSharedVertices(
   modifiedA: boolean;
   modifiedB: boolean;
 } {
-  let currentA = JSON.parse(JSON.stringify(geomA)) as Polygon | MultiPolygon;
-  let currentB = JSON.parse(JSON.stringify(geomB)) as Polygon | MultiPolygon;
+  let currentA = structuredClone(geomA) as Polygon | MultiPolygon;
+  let currentB = structuredClone(geomB) as Polygon | MultiPolygon;
   let modifiedA = false;
   let modifiedB = false;
 

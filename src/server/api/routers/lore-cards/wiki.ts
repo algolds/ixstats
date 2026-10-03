@@ -142,7 +142,7 @@ export const loreCardsWikiRouter = createTRPCRouter({
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/^-|-$/g, "");
-        const uniqueSuffix = Math.random().toString(36).substring(2, 7);
+        const uniqueSuffix = crypto.randomUUID().slice(0, 5);
         const slug = `${slugBase}-${uniqueSuffix}`;
 
         const card = await ctx.db.card.create({

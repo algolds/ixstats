@@ -109,7 +109,7 @@ export function cascadeMoveVertex(
     if (!geom) {
       const src = geometries.get(ref.featureId);
       if (!src) continue;
-      geom = JSON.parse(JSON.stringify(src)) as Polygon | MultiPolygon;
+      geom = structuredClone(src) as Polygon | MultiPolygon;
     }
 
     const rings = getAllRings(geom);

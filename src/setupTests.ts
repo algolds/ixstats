@@ -11,6 +11,12 @@ if (typeof (globalThis as { fetch?: unknown }).fetch === "undefined") {
   if (fetchModule.Headers) g.Headers = fetchModule.Headers;
 }
 
+// jsdom has no structuredClone; Node and the browser do.
+if (typeof globalThis.structuredClone === "undefined") {
+  const { serialize, deserialize } = require("node:v8");
+  globalThis.structuredClone = <T>(value: T): T => deserialize(serialize(value));
+}
+
 // Polyfill Clerk publishable key for test env
 process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = "pk_test_mock_key_for_testing";
 

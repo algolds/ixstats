@@ -72,7 +72,7 @@ export function saveCustomDictionary(
     });
   } else {
     // Create new
-    const newId = id || `custom-dict-${now}-${Math.random().toString(36).slice(2, 7)}`;
+    const newId = id || `custom-dict-${now}-${crypto.randomUUID().slice(0, 5)}`;
     updatedDict = {
       id: newId,
       title: title.trim() || "Untitled Lexicon",

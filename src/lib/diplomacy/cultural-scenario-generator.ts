@@ -275,7 +275,7 @@ export class CulturalScenarioGenerator {
     };
 
     return {
-      id: `cultural_scenario_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+      id: `cultural_scenario_${Date.now()}_${crypto.randomUUID()}`,
       type: template.type,
       title: this.generateTitle(template, context),
       narrative,

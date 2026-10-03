@@ -208,7 +208,7 @@ export async function awardAchievementCard(
     // Create new ownership record
     const ownership = await db.cardOwnership.create({
       data: {
-        id: `card_own_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `card_own_${Date.now()}_${crypto.randomUUID()}`,
         userId: user.id,
         ownerId: user.id,
         cardId,

@@ -355,7 +355,7 @@ export function LoreCardBatchAdmin() {
       }
 
       const newCandidates: BatchCandidate[] = res.titles.map((title, i) => ({
-        id: `cat-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+        id: `cat-${Date.now()}-${i}-${crypto.randomUUID().slice(0, 4)}`,
         articleTitle: title,
         wikiSource: globalWikiSource,
         targetRarity: globalTargetRarity,
@@ -396,7 +396,7 @@ export function LoreCardBatchAdmin() {
       }
 
       const newCandidates: BatchCandidate[] = res.titles.map((title, i) => ({
-        id: `allpages-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+        id: `allpages-${Date.now()}-${i}-${crypto.randomUUID().slice(0, 4)}`,
         articleTitle: title,
         wikiSource: globalWikiSource,
         targetRarity: globalTargetRarity,
@@ -447,7 +447,7 @@ export function LoreCardBatchAdmin() {
     // Add standard articles
     for (let i = 0; i < normalTitles.length; i++) {
       newCandidates.push({
-        id: `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+        id: `${Date.now()}-${i}-${crypto.randomUUID().slice(0, 4)}`,
         articleTitle: normalTitles[i],
         wikiSource: globalWikiSource,
         targetRarity: globalTargetRarity,
@@ -470,7 +470,7 @@ export function LoreCardBatchAdmin() {
           if (res.titles && res.titles.length > 0) {
             for (let j = 0; j < res.titles.length; j++) {
               newCandidates.push({
-                id: `cat-${Date.now()}-${j}-${Math.random().toString(36).slice(2, 6)}`,
+                id: `cat-${Date.now()}-${j}-${crypto.randomUUID().slice(0, 4)}`,
                 articleTitle: res.titles[j],
                 wikiSource: globalWikiSource,
                 targetRarity: globalTargetRarity,
@@ -532,7 +532,7 @@ export function LoreCardBatchAdmin() {
       }
 
       const newCandidates: BatchCandidate[] = allTitles.map((title, i) => ({
-        id: `preset-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+        id: `preset-${Date.now()}-${i}-${crypto.randomUUID().slice(0, 4)}`,
         articleTitle: title,
         wikiSource: globalWikiSource,
         targetRarity: globalTargetRarity,

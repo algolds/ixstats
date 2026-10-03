@@ -237,7 +237,7 @@ export const cardsAdminRouter = createTRPCRouter({
             if (ctx.user?.id) {
               await ctx.db.cardOwnership.create({
                 data: {
-                  id: `card_own_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+                  id: `card_own_${Date.now()}_${crypto.randomUUID().slice(0, 7)}`,
                   userId: ctx.user.id,
                   ownerId: ctx.user.id,
                   cardId: card.id,

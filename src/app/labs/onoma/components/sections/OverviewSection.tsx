@@ -173,7 +173,7 @@ export function OverviewSection() {
 
         // 3. Log generation event with unique run hash to live history
         if (results.length > 0) {
-          const runHash = `onoma-${Math.random().toString(36).substring(2, 7)}${Date.now().toString(36).slice(-4)}`;
+          const runHash = `onoma-${crypto.randomUUID().slice(0, 5)}${Date.now().toString(36).slice(-4)}`;
           const cat = (selectedDict?.category as string) || "sandbox";
 
           logActivityMutation
