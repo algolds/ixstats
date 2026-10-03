@@ -133,6 +133,354 @@ function ProfileLoading() {
   );
 }
 
+type Pillars = ReturnType<typeof conditionPillars>;
+type TileProps = { layer: CountryProfileLayer };
+
+function Dock({
+  orientation,
+  active,
+  onJump,
+}: {
+  orientation: "vertical" | "horizontal";
+  active: string | null;
+  onJump: (id: DockId) => void;
+}) {
+  const vertical = orientation === "vertical";
+  return (
+    <ul className={cn("flex gap-1", vertical ? "flex-col" : "w-max")}>
+      {DOCK_ITEMS.map(({ id, label, icon: Icon }) => {
+        const current = active === tileId(id);
+        return (
+          <li key={id}>
+            <button
+              type="button"
+              onClick={() => onJump(id)}
+              aria-current={current ? "location" : undefined}
+              className={cn(
+                "focus-visible:outline-tint flex items-center gap-2 focus-visible:outline-2 focus-visible:-outline-offset-2",
+                vertical
+                  ? "text-body rounded-control-sm w-full px-3 py-2"
+                  : "text-caption flex-col justify-center rounded-full px-3 py-1 pointer-coarse:min-h-11",
+                current
+                  ? "bg-tint-fill text-tint ring-tint/30 font-semibold ring-1"
+                  : "text-label-secondary hover:bg-fill-4 hover:text-label"
+              )}
+            >
+              <Icon aria-hidden className="size-4 shrink-0" />
+              <span className={vertical ? undefined : "whitespace-nowrap"}>{label}</span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function DnaTile({ layer, pillars }: TileProps & { pillars: Pillars }) {
+  const { identity, world } = layer;
+  const dna = toDnaAxes(world.rankings);
+  const dnaLine = dnaSummary(dna);
+  // World Census ranks are realm ranks: label them with the realm they are drawn from.
+  const censusRealm = censusRealmName(identity.realm);
+  return (
+    <Tile id="dna" icon={Dna} title="Country DNA" subtitle={dnaLine ?? undefined}>
+      {dna.length > 0 && (
+        <div
+          className={cn(
+            "grid grid-cols-1 items-center gap-6",
+            dna.length >= 3 && "md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]"
+          )}
+        >
+          <CountryDNA
+            axes={dna}
+            caption={`${identity.name}'s World Census percentile within ${censusRealm} in ${dna.length} categories. ${dnaLine ?? ""}`}
+          />
+          <FacetList variant="plain">
+            <DnaLegend axes={dna} realm={censusRealm} />
+          </FacetList>
+        </div>
+      )}
+      {pillars.length >= 2 && (
+        <section aria-labelledby="command-condition" className="space-y-3">
+          <h3 id="command-condition" className="text-subhead text-label-secondary">
+            National condition
+          </h3>
+          <ConditionMatrix pillars={pillars} />
+        </section>
+      )}
+      {dna.length === 0 && pillars.length < 2 && (
+        <EmptyState compact icon={<Dna />} title="No standing on record yet" />
+      )}
+    </Tile>
+  );
+}
+
+function LandTile({ layer }: TileProps) {
+  const { land } = layer;
+  return (
+    <Tile id="land" icon={MapIcon} title="Territory" className="md:col-span-6 xl:col-span-7">
+      <TerritoryMap
+        countryId={layer.countryId}
+        hasGeometry={land.hasGeometry}
+        isLoading={land.isLoading}
+        heightClass="h-72"
+      />
+      <FacetList variant="plain">
+        <LandRows land={land} header="Territorial attributes" />
+        <PlaceRows land={land} limit={4} />
+      </FacetList>
+    </Tile>
+  );
+}
+
+function LoreTile({
+  layer,
+  chapters,
+  onOpen,
+}: TileProps & { chapters: LoreChapter[]; onOpen: () => void }) {
+  const { lore, identity } = layer;
+  return (
+    <Tile
+      id="lore"
+      icon={OpenBook}
+      title="Lore"
+      subtitle={lore.isEmpty ? undefined : `From the wiki article “${lore.articleTitle}”`}
+      className="md:col-span-6 xl:col-span-5"
+      action={
+        lore.prologue.length > 0 || chapters.length > 0 ? (
+          <Button variant="secondary" size="sm" onClick={onOpen}>
+            <OpenBook aria-hidden />
+            Read the story
+          </Button>
+        ) : undefined
+      }
+    >
+      {lore.isLoading ? (
+        <div className="space-y-3" aria-hidden>
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className={cn("h-4", i === 3 ? "w-1/2" : "w-full")} />
+          ))}
+        </div>
+      ) : lore.prologue.length > 0 ? (
+        <div className="relative max-h-80 overflow-hidden [mask-image:linear-gradient(to_bottom,black_70%,transparent)]">
+          <LoreProse paragraphs={lore.prologue.slice(0, 2)} />
+        </div>
+      ) : (
+        <EmptyState
+          compact
+          icon={<OpenBook />}
+          title="No wiki article yet"
+          message={`${identity.name}'s story has not been written on the wiki.`}
+        />
+      )}
+      {chapters.length > 0 && (
+        <p className="text-footnote text-label-secondary">
+          {chapters.length} {chapters.length === 1 ? "chapter" : "chapters"}:{" "}
+          {chapters.map((k) => LORE_TITLES[k].toLowerCase()).join(", ")}
+        </p>
+      )}
+    </Tile>
+  );
+}
+
+function EconomyTile({ layer, pillars }: TileProps & { pillars: Pillars }) {
+  const { vitals } = layer;
+  const inMatrix = new Set<string>(pillars.map((p) => p.key));
+  // Readings the condition matrix already shows are not repeated in the domain tiles.
+  const stats = [
+    ...headlineVitals(vitals).filter((s) => s.key === "gdp" || s.key === "gdppc"),
+    ...economyVitals(vitals).filter(
+      (s) => !(s.key === "unemployment" && inMatrix.has("employment"))
+    ),
+  ];
+  return (
+    <Tile
+      id="economy"
+      icon={Coins}
+      title="Economy"
+      subtitle={vitals.economicTier ? `${vitals.economicTier} economy` : undefined}
+      className="md:col-span-6 xl:col-span-7"
+    >
+      <StatGrid stats={stats} columns="grid-cols-2 sm:grid-cols-4" />
+      <EconomyTrend points={vitals.history} />
+      {stats.length === 0 && vitals.history.length < 2 && (
+        <EmptyState compact icon={<Coins />} title="No economic data" />
+      )}
+    </Tile>
+  );
+}
+
+function PeopleTile({ layer, pillars }: TileProps & { pillars: Pillars }) {
+  const { vitals, identity } = layer;
+  const inMatrix = new Set<string>(pillars.map((p) => p.key));
+  const stats = [
+    ...headlineVitals(vitals).filter((s) => s.key === "population"),
+    ...peopleVitals(vitals).filter((s) => !inMatrix.has(s.key)),
+  ];
+  return (
+    <Tile
+      id="people"
+      icon={Group}
+      title="People"
+      subtitle={identity.demonym ?? undefined}
+      className="md:col-span-6 xl:col-span-5"
+    >
+      <StatGrid stats={stats} columns="grid-cols-2" />
+      <FacetList variant="plain">
+        <IdentityRows
+          identity={{
+            ...identity,
+            officialName: null,
+            capital: null,
+            governmentType: null,
+            anthem: null,
+            leaders: [],
+          }}
+          header="Identity"
+        />
+      </FacetList>
+      {stats.length === 0 && !identity.languages && !identity.currency && (
+        <EmptyState compact icon={<Group />} title="No population data" />
+      )}
+    </Tile>
+  );
+}
+
+function StateTile({ layer, wikiAnchor }: TileProps & { wikiAnchor: (heading: string) => string }) {
+  const { state, identity, lore } = layer;
+  const branches = stateBranches(state, identity);
+  const chapter = lore.chapters.state;
+  return (
+    <Tile
+      id="state"
+      icon={Bank}
+      title="State"
+      subtitle={state.government?.name ?? identity.governmentType ?? undefined}
+      className="md:col-span-6 xl:col-span-12"
+    >
+      <StateStructure
+        branches={branches}
+        system={state.government?.type ?? identity.governmentType}
+        ministries={state.government?.departments ?? []}
+        wikiSource={
+          chapter ? { heading: chapter.heading, href: wikiAnchor(chapter.heading) } : null
+        }
+      />
+      <ElectionSummary state={state} />
+      <div className="grid grid-cols-1 gap-x-6 gap-y-4 lg:grid-cols-2">
+        <FacetList variant="plain">
+          <DirectiveRows directives={state.directives} limit={4} header="Directives" />
+        </FacetList>
+        <FacetList variant="plain">
+          <IssueOutcomeRows outcomes={state.issueOutcomes} limit={4} header="Decisions" />
+        </FacetList>
+      </div>
+      {branches.length === 0 &&
+        state.directives.length === 0 &&
+        state.issueOutcomes.length === 0 &&
+        !state.election && <EmptyState compact icon={<Bank />} title="No public record yet" />}
+    </Tile>
+  );
+}
+
+function WorldTile({ layer: { world } }: TileProps) {
+  return (
+    <Tile id="world" icon={Globe} title="Foreign affairs" className="md:col-span-6 xl:col-span-12">
+      <DiplomaticMatrix world={world} />
+      <FacetList variant="plain">
+        <EmbassyRows embassies={world.embassies} limit={6} />
+      </FacetList>
+      {world.relations.length === 0 && world.embassies.length === 0 && (
+        <EmptyState compact icon={<Globe />} title="No foreign relations yet" />
+      )}
+    </Tile>
+  );
+}
+
+function ChronicleTile({ layer: { chronicle, land }, onOpen }: TileProps & { onOpen: () => void }) {
+  return (
+    <Tile
+      id="chronicle"
+      icon={Clock}
+      title="Chronicle"
+      className="md:col-span-6 xl:col-span-12"
+      action={
+        chronicle.length > 6 ? (
+          <Button variant="secondary" size="sm" onClick={onOpen}>
+            Full chronicle
+          </Button>
+        ) : undefined
+      }
+    >
+      {chronicle.length > 0 ? (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <ChronicleTimeline entries={chronicle} order="desc" limit={6} />
+          <FacetList variant="plain">
+            <StoryPinRows land={land} limit={3} />
+          </FacetList>
+        </div>
+      ) : (
+        <EmptyState compact icon={<Clock />} title="No dated events yet" />
+      )}
+    </Tile>
+  );
+}
+
+function ReadingSheet({
+  open,
+  onOpenChange,
+  title,
+  description,
+  className,
+  children,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: React.ReactNode;
+  description: React.ReactNode;
+  className: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className={cn("w-full overflow-y-auto", className)}>
+        <SheetHeader className="mb-6">
+          <SheetTitle>{title}</SheetTitle>
+          <SheetDescription>{description}</SheetDescription>
+        </SheetHeader>
+        {children}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+/** The whole story in the Reading style. */
+function StoryBody({
+  layer: { lore },
+  chapters,
+  wikiAnchor,
+}: TileProps & { chapters: LoreChapter[]; wikiAnchor: (heading: string) => string }) {
+  return (
+    <div className="space-y-10 pb-6">
+      {lore.prologue.length > 0 && <LoreProse paragraphs={lore.prologue} />}
+      {chapters.map((key) => {
+        const section = lore.chapters[key]!;
+        return (
+          <section key={key} aria-labelledby={`story-${key}`} className="space-y-3">
+            <h3 id={`story-${key}`} className="text-title-1 text-label">
+              {LORE_TITLES[key]}
+            </h3>
+            <LoreProse
+              paragraphs={section.paragraphs}
+              source={{ heading: section.heading, href: wikiAnchor(section.heading) }}
+            />
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
 function CommandBody({
   layer,
   slug,
@@ -142,7 +490,7 @@ function CommandBody({
   slug: string;
   cover: HeroCover | null;
 }) {
-  const { identity, lore, vitals, land, state, world, chronicle } = layer;
+  const { identity, lore, vitals, land, chronicle } = layer;
   const [storyOpen, setStoryOpen] = useState(false);
   const [chronicleOpen, setChronicleOpen] = useState(false);
   const active = useScrollSpy(
@@ -150,29 +498,16 @@ function CommandBody({
     "-15% 0px -55% 0px"
   );
 
-  const vitalStats = headlineVitals(vitals);
-  const loreChapters = (Object.keys(LORE_TITLES) as LoreChapter[]).filter((k) => lore.chapters[k]);
-  const dna = toDnaAxes(world.rankings);
-  const dnaLine = dnaSummary(dna);
-  // World Census ranks are realm ranks: label them with the realm they are drawn from.
-  const censusRealm = censusRealmName(identity.realm);
   const pillars = conditionPillars(vitals);
-  const inMatrix = new Set<string>(pillars.map((p) => p.key));
-  const branches = stateBranches(state, identity);
-  // Readings the condition matrix already shows are not repeated in the domain tiles.
-  const economyStats = [
-    ...vitalStats.filter((s) => s.key === "gdp" || s.key === "gdppc"),
-    ...economyVitals(vitals).filter(
-      (s) => !(s.key === "unemployment" && inMatrix.has("employment"))
-    ),
-  ];
-  const peopleStats = [
-    ...vitalStats.filter((s) => s.key === "population"),
-    ...peopleVitals(vitals).filter((s) => !inMatrix.has(s.key)),
-  ];
-  const stateChapter = lore.chapters.state;
+  const loreChapters = (Object.keys(LORE_TITLES) as LoreChapter[]).filter((k) => lore.chapters[k]);
   const wikiAnchor = (heading: string) =>
     `${lore.wikiHref}#${encodeURIComponent(heading.replace(/ /g, "_"))}`;
+  const quickActions = {
+    countryId: layer.countryId,
+    slug,
+    wikiHref: lore.isEmpty ? null : lore.wikiHref,
+    hasGeometry: land.hasGeometry,
+  };
 
   const jump = (id: DockId) => {
     document
@@ -180,41 +515,8 @@ function CommandBody({
       ?.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
   };
 
-  const dock = (orientation: "vertical" | "horizontal") => (
-    <ul className={cn("flex gap-1", orientation === "vertical" ? "flex-col" : "w-max")}>
-      {DOCK_ITEMS.map((item) => {
-        const Icon = item.icon;
-        const current = active === tileId(item.id);
-        return (
-          <li key={item.id}>
-            <button
-              type="button"
-              onClick={() => jump(item.id)}
-              aria-current={current ? "location" : undefined}
-              className={cn(
-                "focus-visible:outline-tint flex items-center gap-2 focus-visible:outline-2 focus-visible:-outline-offset-2",
-                orientation === "vertical"
-                  ? "text-body rounded-control-sm w-full px-3 py-2"
-                  : "text-caption flex-col justify-center rounded-full px-3 py-1 pointer-coarse:min-h-11",
-                current
-                  ? "bg-tint-fill text-tint ring-tint/30 font-semibold ring-1"
-                  : "text-label-secondary hover:bg-fill-4 hover:text-label"
-              )}
-            >
-              <Icon aria-hidden className="size-4 shrink-0" />
-              <span className={orientation === "horizontal" ? "whitespace-nowrap" : undefined}>
-                {item.label}
-              </span>
-            </button>
-          </li>
-        );
-      })}
-    </ul>
-  );
-
   return (
     <div className="space-y-6">
-      {/* ── Hero */}
       <CountryHero
         id={tileId("glance")}
         className={SCROLL_MARGIN}
@@ -229,7 +531,7 @@ function CommandBody({
         ]}
         realm={identity.realm}
         sovereign={identity.sovereign}
-        stats={vitalStats}
+        stats={headlineVitals(vitals)}
         cover={cover}
         countrySlug={layer.slug}
       />
@@ -239,293 +541,66 @@ function CommandBody({
       <PulseBanner name={identity.name} vitals={vitals} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[13rem_minmax(0,1fr)]">
-        {/* ── Dock (≥1024px): domains and tools */}
         <aside aria-label="Profile sections" className="hidden lg:block">
           <Card className="sticky top-[var(--shell-top-offset,5rem)] space-y-4 p-2">
             <nav aria-labelledby="command-dock-domains" className="space-y-1">
               <h2 id="command-dock-domains" className="text-subhead text-label-secondary px-3 pt-1">
                 Domains
               </h2>
-              {dock("vertical")}
+              <Dock orientation="vertical" active={active} onJump={jump} />
             </nav>
             <div className="border-separator space-y-2 border-t px-1 pt-3 pb-1">
               <h2 className="text-subhead text-label-secondary px-2">Tools</h2>
-              <QuickActions
-                countryId={layer.countryId}
-                slug={slug}
-                wikiHref={lore.isEmpty ? null : lore.wikiHref}
-                hasGeometry={land.hasGeometry}
-              />
+              <QuickActions {...quickActions} />
             </div>
           </Card>
         </aside>
 
         <div className="min-w-0 space-y-6">
-          {/* ── Country DNA and national condition */}
-          <Tile id="dna" icon={Dna} title="Country DNA" subtitle={dnaLine ?? undefined}>
-            {dna.length > 0 && (
-              <div
-                className={cn(
-                  "grid grid-cols-1 items-center gap-6",
-                  dna.length >= 3 && "md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]"
-                )}
-              >
-                <CountryDNA
-                  axes={dna}
-                  caption={`${identity.name}'s World Census percentile within ${censusRealm} in ${dna.length} categories. ${dnaLine ?? ""}`}
-                />
-                <FacetList variant="plain">
-                  <DnaLegend axes={dna} realm={censusRealm} />
-                </FacetList>
-              </div>
-            )}
-            {pillars.length >= 2 && (
-              <section aria-labelledby="command-condition" className="space-y-3">
-                <h3 id="command-condition" className="text-subhead text-label-secondary">
-                  National condition
-                </h3>
-                <ConditionMatrix pillars={pillars} />
-              </section>
-            )}
-            {dna.length === 0 && pillars.length < 2 && (
-              <EmptyState compact icon={<Dna />} title="No standing on record yet" />
-            )}
-          </Tile>
-
+          <DnaTile layer={layer} pillars={pillars} />
           <div className="grid grid-cols-1 gap-6 md:grid-cols-6 xl:grid-cols-12">
-            <Tile
-              id="land"
-              icon={MapIcon}
-              title="Territory"
-              className="md:col-span-6 xl:col-span-7"
-            >
-              <TerritoryMap
-                countryId={layer.countryId}
-                hasGeometry={land.hasGeometry}
-                isLoading={land.isLoading}
-                heightClass="h-72"
-              />
-              <FacetList variant="plain">
-                <LandRows land={land} header="Territorial attributes" />
-                <PlaceRows land={land} limit={4} />
-              </FacetList>
-            </Tile>
-
-            <Tile
-              id="lore"
-              icon={OpenBook}
-              title="Lore"
-              subtitle={lore.isEmpty ? undefined : `From the wiki article “${lore.articleTitle}”`}
-              className="md:col-span-6 xl:col-span-5"
-              action={
-                lore.prologue.length > 0 || loreChapters.length > 0 ? (
-                  <Button variant="secondary" size="sm" onClick={() => setStoryOpen(true)}>
-                    <OpenBook aria-hidden />
-                    Read the story
-                  </Button>
-                ) : undefined
-              }
-            >
-              {lore.isLoading ? (
-                <div className="space-y-3" aria-hidden>
-                  {[0, 1, 2, 3].map((i) => (
-                    <Skeleton key={i} className={cn("h-4", i === 3 ? "w-1/2" : "w-full")} />
-                  ))}
-                </div>
-              ) : lore.prologue.length > 0 ? (
-                <div className="relative max-h-80 overflow-hidden [mask-image:linear-gradient(to_bottom,black_70%,transparent)]">
-                  <LoreProse paragraphs={lore.prologue.slice(0, 2)} />
-                </div>
-              ) : (
-                <EmptyState
-                  compact
-                  icon={<OpenBook />}
-                  title="No wiki article yet"
-                  message={`${identity.name}'s story has not been written on the wiki.`}
-                />
-              )}
-              {loreChapters.length > 0 && (
-                <p className="text-footnote text-label-secondary">
-                  {loreChapters.length} {loreChapters.length === 1 ? "chapter" : "chapters"}:{" "}
-                  {loreChapters.map((k) => LORE_TITLES[k].toLowerCase()).join(", ")}
-                </p>
-              )}
-            </Tile>
-
-            <Tile
-              id="economy"
-              icon={Coins}
-              title="Economy"
-              subtitle={vitals.economicTier ? `${vitals.economicTier} economy` : undefined}
-              className="md:col-span-6 xl:col-span-7"
-            >
-              <StatGrid stats={economyStats} columns="grid-cols-2 sm:grid-cols-4" />
-              <EconomyTrend points={vitals.history} />
-              {economyStats.length === 0 && vitals.history.length < 2 && (
-                <EmptyState compact icon={<Coins />} title="No economic data" />
-              )}
-            </Tile>
-
-            <Tile
-              id="people"
-              icon={Group}
-              title="People"
-              subtitle={identity.demonym ?? undefined}
-              className="md:col-span-6 xl:col-span-5"
-            >
-              <StatGrid stats={peopleStats} columns="grid-cols-2" />
-              <FacetList variant="plain">
-                <IdentityRows
-                  identity={{
-                    ...identity,
-                    officialName: null,
-                    capital: null,
-                    governmentType: null,
-                    anthem: null,
-                    leaders: [],
-                  }}
-                  header="Identity"
-                />
-              </FacetList>
-              {peopleStats.length === 0 && !identity.languages && !identity.currency && (
-                <EmptyState compact icon={<Group />} title="No population data" />
-              )}
-            </Tile>
-
-            <Tile
-              id="state"
-              icon={Bank}
-              title="State"
-              subtitle={state.government?.name ?? identity.governmentType ?? undefined}
-              className="md:col-span-6 xl:col-span-12"
-            >
-              <StateStructure
-                branches={branches}
-                system={state.government?.type ?? identity.governmentType}
-                ministries={state.government?.departments ?? []}
-                wikiSource={
-                  stateChapter
-                    ? { heading: stateChapter.heading, href: wikiAnchor(stateChapter.heading) }
-                    : null
-                }
-              />
-              <ElectionSummary state={state} />
-              <div className="grid grid-cols-1 gap-x-6 gap-y-4 lg:grid-cols-2">
-                <FacetList variant="plain">
-                  <DirectiveRows directives={state.directives} limit={4} header="Directives" />
-                </FacetList>
-                <FacetList variant="plain">
-                  <IssueOutcomeRows outcomes={state.issueOutcomes} limit={4} header="Decisions" />
-                </FacetList>
-              </div>
-              {branches.length === 0 &&
-                state.directives.length === 0 &&
-                state.issueOutcomes.length === 0 &&
-                !state.election && (
-                  <EmptyState compact icon={<Bank />} title="No public record yet" />
-                )}
-            </Tile>
-
-            <Tile
-              id="world"
-              icon={Globe}
-              title="Foreign affairs"
-              className="md:col-span-6 xl:col-span-12"
-            >
-              <DiplomaticMatrix world={world} />
-              <FacetList variant="plain">
-                <EmbassyRows embassies={world.embassies} limit={6} />
-              </FacetList>
-              {world.relations.length === 0 && world.embassies.length === 0 && (
-                <EmptyState compact icon={<Globe />} title="No foreign relations yet" />
-              )}
-            </Tile>
-
-            <Tile
-              id="chronicle"
-              icon={Clock}
-              title="Chronicle"
-              className="md:col-span-6 xl:col-span-12"
-              action={
-                chronicle.length > 6 ? (
-                  <Button variant="secondary" size="sm" onClick={() => setChronicleOpen(true)}>
-                    Full chronicle
-                  </Button>
-                ) : undefined
-              }
-            >
-              {chronicle.length > 0 ? (
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <ChronicleTimeline entries={chronicle} order="desc" limit={6} />
-                  <FacetList variant="plain">
-                    <StoryPinRows land={land} limit={3} />
-                  </FacetList>
-                </div>
-              ) : (
-                <EmptyState compact icon={<Clock />} title="No dated events yet" />
-              )}
-            </Tile>
+            <LandTile layer={layer} />
+            <LoreTile layer={layer} chapters={loreChapters} onOpen={() => setStoryOpen(true)} />
+            <EconomyTile layer={layer} pillars={pillars} />
+            <PeopleTile layer={layer} pillars={pillars} />
+            <StateTile layer={layer} wikiAnchor={wikiAnchor} />
+            <WorldTile layer={layer} />
+            <ChronicleTile layer={layer} onOpen={() => setChronicleOpen(true)} />
           </div>
 
-          {/* ── Bottom dock (<1024px), pinned while the stream is on screen: tab-bar acrylic */}
+          {/* Bottom dock (<1024px), pinned while the stream is on screen: tab-bar acrylic */}
           <FacetMaterial
             as="nav"
             material="acrylic"
             aria-label="Domains"
             className="shadow-floating z-sticky sticky bottom-[calc(var(--shell-tabbar-height,0px)+1rem)] mx-auto w-fit max-w-full overflow-x-auto rounded-full p-1 lg:hidden"
           >
-            {dock("horizontal")}
+            <Dock orientation="horizontal" active={active} onJump={jump} />
           </FacetMaterial>
           <div className="lg:hidden">
-            <QuickActions
-              layout="row"
-              countryId={layer.countryId}
-              slug={slug}
-              wikiHref={lore.isEmpty ? null : lore.wikiHref}
-              hasGeometry={land.hasGeometry}
-            />
+            <QuickActions layout="row" {...quickActions} />
           </div>
         </div>
       </div>
 
-      {/* ── Reading sheet: the whole story in the Reading style */}
-      <Sheet open={storyOpen} onOpenChange={setStoryOpen}>
-        <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
-          <SheetHeader className="mb-6">
-            <SheetTitle>The story of {identity.name}</SheetTitle>
-            <SheetDescription>From the wiki article “{lore.articleTitle}”.</SheetDescription>
-          </SheetHeader>
-          <div className="space-y-10 pb-6">
-            {lore.prologue.length > 0 && <LoreProse paragraphs={lore.prologue} />}
-            {loreChapters.map((key) => {
-              const section = lore.chapters[key]!;
-              return (
-                <section key={key} aria-labelledby={`story-${key}`} className="space-y-3">
-                  <h3 id={`story-${key}`} className="text-title-1 text-label">
-                    {LORE_TITLES[key]}
-                  </h3>
-                  <LoreProse
-                    paragraphs={section.paragraphs}
-                    source={{ heading: section.heading, href: wikiAnchor(section.heading) }}
-                  />
-                </section>
-              );
-            })}
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      <Sheet open={chronicleOpen} onOpenChange={setChronicleOpen}>
-        <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
-          <SheetHeader className="mb-6">
-            <SheetTitle>Chronicle of {identity.name}</SheetTitle>
-            <SheetDescription>
-              Founding dates, map stories and the IxTime record, newest first.
-            </SheetDescription>
-          </SheetHeader>
-          <ChronicleTimeline entries={chronicle} order="desc" />
-        </SheetContent>
-      </Sheet>
+      <ReadingSheet
+        open={storyOpen}
+        onOpenChange={setStoryOpen}
+        title={`The story of ${identity.name}`}
+        description={`From the wiki article “${lore.articleTitle}”.`}
+        className="sm:max-w-2xl"
+      >
+        <StoryBody layer={layer} chapters={loreChapters} wikiAnchor={wikiAnchor} />
+      </ReadingSheet>
+      <ReadingSheet
+        open={chronicleOpen}
+        onOpenChange={setChronicleOpen}
+        title={`Chronicle of ${identity.name}`}
+        description="Founding dates, map stories and the IxTime record, newest first."
+        className="sm:max-w-xl"
+      >
+        <ChronicleTimeline entries={chronicle} order="desc" />
+      </ReadingSheet>
     </div>
   );
 }
