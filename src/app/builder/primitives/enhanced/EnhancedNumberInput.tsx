@@ -97,6 +97,33 @@ function getDynamicStep(val: number, defaultStep: number = 1): number {
   return Math.max(defaultStep, roundedRatio * stepMagnitude);
 }
 
+/** Pulls a number or string out of a value that may be wrapped in an object (`value`, `amount`, `number`). */
+function unwrapValue(value: number | string | object | null): number | string {
+  if (typeof value !== "object" || value === null) return value;
+  const record = value as Record<string, number | string | boolean | undefined>;
+  for (const key of ["value", "amount", "number"]) {
+    const candidate = record[key];
+    if (typeof candidate === "number" || typeof candidate === "string") return candidate;
+  }
+  return 0;
+}
+
+/** The text an idle input shows for `value`. */
+function displayTextFor(
+  value: number | string,
+  {
+    acceptText,
+    format,
+    precision,
+  }: Pick<EnhancedNumberInputProps, "acceptText" | "format" | "precision">
+): string {
+  const unwrapped = unwrapValue(value);
+  if (acceptText) return String(unwrapped || "");
+  const numValue = Number(unwrapped);
+  if (isNaN(numValue)) return "0";
+  return typeof format === "function" ? format(numValue) : numValue.toFixed(precision);
+}
+
 export function EnhancedNumberInput({
   value,
   onChange,
@@ -153,42 +180,28 @@ export function EnhancedNumberInput({
     lg: "text-title-3 px-5 py-4 h-14",
   };
 
+  const formatForDisplay = (n: number) =>
+    isFocused
+      ? formatInputOnTheFly(n.toString())
+      : typeof format === "function"
+        ? format(n)
+        : n.toFixed(precision);
+
+  const formatWholeNumber = (n: number) =>
+    n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+  /** Puts the caret `suffixLength` characters from the end once the new text is rendered. */
+  const placeCaretFromEnd = (textLength: number, suffixLength: number) => {
+    requestAnimationFrame(() => {
+      const caret = Math.max(0, textLength - suffixLength);
+      inputRef.current?.setSelectionRange(caret, caret);
+    });
+  };
+
   // Update display value when value prop changes
   useEffect(() => {
     if (!isEditing && !isFocused) {
-      // Force convert any value to number or string
-      let processedValue = value;
-
-      // If value is an object, try to extract a number from it
-      if (typeof value === "object" && value !== null) {
-        const valRecord = value as Record<string, number | string | boolean | undefined>;
-        if (typeof valRecord.value === "number" || typeof valRecord.value === "string") {
-          processedValue = valRecord.value;
-        } else if (typeof valRecord.amount === "number" || typeof valRecord.amount === "string") {
-          processedValue = valRecord.amount;
-        } else if (typeof valRecord.number === "number" || typeof valRecord.number === "string") {
-          processedValue = valRecord.number;
-        } else {
-          processedValue = 0;
-        }
-      }
-
-      // Convert to number if not acceptText mode
-      if (!acceptText) {
-        const numValue = Number(processedValue);
-        if (!isNaN(numValue)) {
-          if (typeof format === "function") {
-            setDisplayValue(format(numValue));
-          } else {
-            setDisplayValue(numValue.toFixed(precision));
-          }
-        } else {
-          setDisplayValue("0");
-        }
-      } else {
-        // Text mode - convert everything to string
-        setDisplayValue(String(processedValue || ""));
-      }
+      setDisplayValue(displayTextFor(value, { acceptText, format, precision }));
     }
   }, [value, precision, isEditing, isFocused, acceptText, format]);
 
@@ -209,14 +222,7 @@ export function EnhancedNumberInput({
 
     setDisplayValue(formatted);
 
-    // Restore cursor position in the next tick
-    requestAnimationFrame(() => {
-      if (inputRef.current) {
-        const suffixLengthBefore = lengthBefore - selectionStart;
-        const newSelectionStart = Math.max(0, formatted.length - suffixLengthBefore);
-        inputRef.current.setSelectionRange(newSelectionStart, newSelectionStart);
-      }
-    });
+    placeCaretFromEnd(formatted.length, lengthBefore - selectionStart);
   };
 
   const handleInputBlur = () => {
@@ -236,20 +242,9 @@ export function EnhancedNumberInput({
         const clampedValue = numericValue < 0 ? 0 : numericValue > max ? max : numericValue;
         onChange(clampedValue);
 
-        setDisplayValue(
-          clampedValue.toLocaleString("en-US", {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-          })
-        );
+        setDisplayValue(formatWholeNumber(clampedValue));
       } else {
-        const fallbackValue = typeof value === "number" ? value : 0;
-        setDisplayValue(
-          fallbackValue.toLocaleString("en-US", {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-          })
-        );
+        setDisplayValue(formatWholeNumber(typeof value === "number" ? value : 0));
       }
     }
   };
@@ -271,47 +266,53 @@ export function EnhancedNumberInput({
     }, 0);
   };
 
-  const handleIncrement = () => {
-    if (isNumeric) {
-      const currentStep = dynamicStep ? getDynamicStep(numericValue, safeStep) : safeStep;
-      const newValue = Math.min(max, numericValue + currentStep);
-      onChange(newValue);
-
-      const formatted = isFocused
-        ? formatInputOnTheFly(newValue.toString())
-        : typeof format === "function"
-          ? format(newValue)
-          : newValue.toFixed(precision);
-      setDisplayValue(formatted);
-    }
+  const nudge = (direction: 1 | -1) => {
+    if (!isNumeric) return;
+    const currentStep = dynamicStep ? getDynamicStep(numericValue, safeStep) : safeStep;
+    const newValue =
+      direction > 0
+        ? Math.min(max, numericValue + currentStep)
+        : Math.max(min, numericValue - currentStep);
+    onChange(newValue);
+    setDisplayValue(formatForDisplay(newValue));
   };
-
-  const handleDecrement = () => {
-    if (isNumeric) {
-      const currentStep = dynamicStep ? getDynamicStep(numericValue, safeStep) : safeStep;
-      const newValue = Math.max(min, numericValue - currentStep);
-      onChange(newValue);
-
-      const formatted = isFocused
-        ? formatInputOnTheFly(newValue.toString())
-        : typeof format === "function"
-          ? format(newValue)
-          : newValue.toFixed(precision);
-      setDisplayValue(formatted);
-    }
-  };
+  const handleIncrement = () => nudge(1);
+  const handleDecrement = () => nudge(-1);
 
   const handleReset = () => {
-    if (resetValue !== undefined) {
-      onChange(resetValue);
-
-      const formatted = isFocused
+    if (resetValue === undefined) return;
+    onChange(resetValue);
+    setDisplayValue(
+      isFocused
         ? formatInputOnTheFly(resetValue.toString())
         : typeof format === "function"
           ? format(resetValue)
-          : Number(resetValue).toFixed(precision);
-      setDisplayValue(formatted);
-    }
+          : Number(resetValue).toFixed(precision)
+    );
+  };
+
+  /** Backspace/Delete next to a thousands comma removes the adjoining digit too. */
+  const deleteAcrossComma = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    key: "Backspace" | "Delete"
+  ) => {
+    const input = inputRef.current;
+    if (!input) return;
+    const start = input.selectionStart || 0;
+    if (start !== (input.selectionEnd || 0)) return;
+    const backwards = key === "Backspace";
+    if (displayValue[backwards ? start - 1 : start] !== ",") return;
+
+    e.preventDefault();
+    const combined = backwards
+      ? displayValue.slice(0, start - 2) + displayValue.slice(start)
+      : displayValue.slice(0, start) + displayValue.slice(start + 2);
+    const formatted = formatInputOnTheFly(combined);
+    setDisplayValue(formatted);
+    placeCaretFromEnd(
+      formatted.length,
+      Math.max(0, displayValue.length - start - (backwards ? 0 : 2))
+    );
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -328,71 +329,12 @@ export function EnhancedNumberInput({
       setIsEditing(false);
       setIsFocused(false);
       const originalValue = typeof value === "number" ? value : 0;
-      if (typeof format === "function") {
-        setDisplayValue(format(originalValue));
-      } else {
-        setDisplayValue(originalValue.toFixed(precision));
-      }
+      setDisplayValue(
+        typeof format === "function" ? format(originalValue) : originalValue.toFixed(precision)
+      );
       inputRef.current?.blur();
-    } else if (e.key === "Backspace" && !acceptText) {
-      const input = inputRef.current;
-      if (input) {
-        const start = input.selectionStart || 0;
-        const end = input.selectionEnd || 0;
-
-        if (start === end && start > 0) {
-          const charToDelete = displayValue[start - 1];
-          if (charToDelete === ",") {
-            e.preventDefault();
-            // Delete comma and the digit before it
-            const before = displayValue.slice(0, start - 2);
-            const after = displayValue.slice(start);
-            const combined = before + after;
-            const formatted = formatInputOnTheFly(combined);
-
-            setDisplayValue(formatted);
-
-            const lengthBefore = displayValue.length;
-            const suffixLengthBefore = lengthBefore - start;
-            requestAnimationFrame(() => {
-              if (inputRef.current) {
-                const newStart = Math.max(0, formatted.length - suffixLengthBefore);
-                inputRef.current.setSelectionRange(newStart, newStart);
-              }
-            });
-          }
-        }
-      }
-    } else if (e.key === "Delete" && !acceptText) {
-      const input = inputRef.current;
-      if (input) {
-        const start = input.selectionStart || 0;
-        const end = input.selectionEnd || 0;
-
-        if (start === end && start < displayValue.length) {
-          const charToDelete = displayValue[start];
-          if (charToDelete === ",") {
-            e.preventDefault();
-            // Delete comma and the digit after it
-            const before = displayValue.slice(0, start);
-            const after = displayValue.slice(start + 2);
-            const combined = before + after;
-            const formatted = formatInputOnTheFly(combined);
-
-            setDisplayValue(formatted);
-
-            const lengthBefore = displayValue.length;
-            const suffixLengthBefore = lengthBefore - start;
-            const newSuffixLength = Math.max(0, suffixLengthBefore - 2);
-            requestAnimationFrame(() => {
-              if (inputRef.current) {
-                const newStart = Math.max(0, formatted.length - newSuffixLength);
-                inputRef.current.setSelectionRange(newStart, newStart);
-              }
-            });
-          }
-        }
-      }
+    } else if ((e.key === "Backspace" || e.key === "Delete") && !acceptText) {
+      deleteAcrossComma(e, e.key);
     }
   };
 
