@@ -3,16 +3,83 @@ import { adminProcedure } from "~/server/api/trpc";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { TRPCError } from "@trpc/server";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
-import {
-  buildGeoProfile,
-  computeEconomicGeoModifiers,
-  getAgricultureFactor,
-  resolveClimateFromColor,
-  ELEVATION_ZONES,
-  type ClimateZoneEntry,
-  type ElevationZoneEntry,
-} from "~/lib/maps/geo-analytics";
-import { estimateBboxOverlap } from "./geometry";
+import type { PrismaClient } from "@prisma/client";
+import { buildGeoProfile, computeEconomicGeoModifiers } from "~/lib/maps/geo-analytics";
+import { buildClimateZones, buildElevationZones, LAYER_SELECT, type Extent } from "./profile-zones";
+
+/** Computes and stores one country's geo profile; throws "no geometry" when it has none. */
+async function recalculateGeoProfile(db: PrismaClient, countryId: string) {
+  const country = await db.country.findUnique({
+    where: { id: countryId },
+    select: {
+      coastlineKm: true,
+      landArea: true,
+      areaSqMi: true,
+      geometry: true,
+      boundingBox: true,
+      realmId: true,
+    },
+  });
+  if (!country?.geometry) throw new Error("no geometry");
+
+  const coastlineKm = country.coastlineKm ?? 0;
+  const areaKm2 = country.landArea ?? (country.areaSqMi ? country.areaSqMi / 0.386102 : 0);
+  const extent: Extent = (country.boundingBox as [number, number, number, number] | null) ?? [
+    -180, -90, 180, 90,
+  ];
+
+  // Climate/altitude layers of the country's own realm
+  const layersOfType = (layerType: "climate" | "altitudes") =>
+    db.mapLayer.findMany({
+      where: { layerType, isActive: true, realmId: country.realmId },
+      select: LAYER_SELECT,
+    });
+  const [climateLayers, altitudeLayers] = await Promise.all([
+    layersOfType("climate"),
+    layersOfType("altitudes"),
+  ]);
+  const climateDistribution = buildClimateZones(climateLayers, extent, false);
+  const elevationProfile = buildElevationZones(altitudeLayers, extent);
+
+  const profile = buildGeoProfile({
+    climateDistribution,
+    elevationProfile,
+    coastlineKm,
+    neighborCount: 0,
+    totalRiverLengthKm: 0,
+    totalLakeAreaSqKm: 0,
+    areaKm2,
+  });
+  const econ = computeEconomicGeoModifiers(profile);
+
+  const fields = {
+    climateDistribution: climateDistribution as any,
+    elevationProfile: elevationProfile as any,
+    arableLandPercent: profile.arableLandPercent,
+    coastlineKm,
+    isLandlocked: profile.isLandlocked,
+    isIsland: profile.isIsland,
+    dominantClimate: profile.dominantClimate,
+    dominantElevation: profile.dominantElevation,
+    meanElevation: profile.meanElevation,
+    terrainRoughness: profile.terrainRoughness,
+    gdpModifier: econ.gdpModifier,
+    tradeModifier: econ.tradeModifier,
+    infraCostModifier: econ.infraCostModifier,
+    lastCalculatedAt: new Date(),
+  };
+  await db.countryGeoProfile.upsert({
+    where: { countryId },
+    create: {
+      countryId,
+      riverKm: 0,
+      lakeAreaSqKm: 0,
+      neighborCount: profile.neighborCount,
+      ...fields,
+    },
+    update: fields,
+  });
+}
 
 export const adminOpsProcedures = {
   recalculateArea: adminProcedure
@@ -66,223 +133,31 @@ export const adminOpsProcedures = {
       });
     }),
 
-  // ──────────────────────────────────────────────
-  // User map editor endpoints (country owners)
-  // ──────────────────────────────────────────────
-
-  /**
-   * Validate that a point is inside the user's country borders (PostGIS).
-   * Returns true/false.
-   */
+  /** Admin: recompute stored geo profiles (one country, or every country with geometry). */
   recalculateGeoProfiles: adminProcedure
     .input(z.object({ countryId: z.string().optional() }).optional())
     .mutation(async ({ ctx, input }) => {
-      // Get countries to process
       const countries = await ctx.db.country.findMany({
         where: input?.countryId ? { id: input.countryId } : { geometry: { not: null } as any },
         select: { id: true, name: true },
       });
 
       let processed = 0;
-      let failed = 0;
       const errors: string[] = [];
-
       for (const country of countries) {
         try {
-          // Call the profile computation endpoint internally (reuse logic)
-          // We directly compute here to avoid circular calls
-          const profileResult = await ctx.db.country.findUnique({
-            where: { id: country.id },
-            select: {
-              coastlineKm: true,
-              landArea: true,
-              areaSqMi: true,
-              geometry: true,
-              centroid: true,
-              boundingBox: true,
-              realmId: true,
-            },
-          });
-
-          if (!profileResult?.geometry) {
-            errors.push(`${country.name}: no geometry`);
-            failed++;
-            continue;
-          }
-
-          const coastlineKm = profileResult.coastlineKm ?? 0;
-          const areaKm2 =
-            profileResult.landArea ??
-            (profileResult.areaSqMi ? profileResult.areaSqMi / 0.386102 : 0);
-          const bbox = profileResult.boundingBox as [number, number, number, number] | null;
-
-          // Get climate/altitude layers (the country's own realm's) for this country's bbox
-          const realmId = profileResult.realmId;
-          const [climateLayers, altitudeLayers] = await Promise.all([
-            ctx.db.mapLayer.findMany({
-              where: { layerType: "climate", isActive: true, realmId },
-              select: {
-                featureId: true,
-                geometry: true,
-                properties: true,
-                areaSqKm: true,
-                displayName: true,
-              },
-            }),
-            ctx.db.mapLayer.findMany({
-              where: { layerType: "altitudes", isActive: true, realmId },
-              select: { featureId: true, geometry: true, properties: true, areaSqKm: true },
-            }),
-          ]);
-
-          const countryMinLng = bbox?.[0] ?? -180;
-          const countryMinLat = bbox?.[1] ?? -90;
-          const countryMaxLng = bbox?.[2] ?? 180;
-          const countryMaxLat = bbox?.[3] ?? 90;
-
-          // Build climate distribution
-          const climateDistribution: ClimateZoneEntry[] = [];
-          for (const cl of climateLayers) {
-            const props = cl.properties as Record<string, unknown> | null;
-            if (!props) continue;
-            const clGeo = cl.geometry as import("geojson").Geometry | null;
-            if (!clGeo || !cl.areaSqKm || cl.areaSqKm <= 0) continue;
-
-            const clFill = (props["fill"] as string) ?? "";
-            const climateName = resolveClimateFromColor(clFill);
-            if (!climateName) continue;
-
-            const overlapFraction = estimateBboxOverlap(
-              clGeo,
-              countryMinLng,
-              countryMinLat,
-              countryMaxLng,
-              countryMaxLat
-            );
-            if (overlapFraction <= 0) continue;
-
-            climateDistribution.push({
-              type: climateName,
-              percentArea: 0,
-              areaSqKm: cl.areaSqKm * overlapFraction,
-              agricultureFactor: getAgricultureFactor(climateName),
-            });
-          }
-          // oxlint-disable-next-line eslint/no-shadow -- shadowed 'z' is intentional in this scope
-          const totalClimateArea = climateDistribution.reduce((s, z) => s + z.areaSqKm, 0);
-          // oxlint-disable-next-line eslint/no-shadow -- shadowed 'z' is intentional in this scope
-          for (const z of climateDistribution) {
-            z.percentArea =
-              totalClimateArea > 0
-                ? Math.round((z.areaSqKm / totalClimateArea) * 100 * 10) / 10
-                : 0;
-          }
-
-          // Build elevation profile
-          const elevationProfile: ElevationZoneEntry[] = [];
-          for (const al of altitudeLayers) {
-            const props = al.properties as Record<string, unknown> | null;
-            if (!props) continue;
-            const alGeo = al.geometry as import("geojson").Geometry | null;
-            if (!alGeo || !al.areaSqKm || al.areaSqKm <= 0) continue;
-
-            const overlapFraction = estimateBboxOverlap(
-              alGeo,
-              countryMinLng,
-              countryMinLat,
-              countryMaxLng,
-              countryMaxLat
-            );
-            if (overlapFraction <= 0) continue;
-
-            const fill = (props["fill"] as string) ?? "";
-            const zoneMatch = ELEVATION_ZONES.find(
-              (ez) => ez.color.toLowerCase() === fill.toLowerCase()
-            );
-            if (!zoneMatch) continue;
-
-            const existing = elevationProfile.find((e) => e.zone === zoneMatch.zoneId);
-            if (existing) {
-              existing.areaSqKm += al.areaSqKm * overlapFraction;
-            } else {
-              elevationProfile.push({
-                zone: zoneMatch.zoneId,
-                name: zoneMatch.zoneName,
-                percentArea: 0,
-                areaSqKm: al.areaSqKm * overlapFraction,
-                minElev: zoneMatch.elevationMin,
-                maxElev: zoneMatch.elevationMax,
-              });
-            }
-          }
-          // oxlint-disable-next-line eslint/no-shadow -- shadowed 'z' is intentional in this scope
-          const totalElevArea = elevationProfile.reduce((s, z) => s + z.areaSqKm, 0);
-          // oxlint-disable-next-line eslint/no-shadow -- shadowed 'z' is intentional in this scope
-          for (const z of elevationProfile) {
-            z.percentArea =
-              totalElevArea > 0 ? Math.round((z.areaSqKm / totalElevArea) * 100 * 10) / 10 : 0;
-          }
-
-          const profile = buildGeoProfile({
-            climateDistribution,
-            elevationProfile,
-            coastlineKm,
-            neighborCount: 0,
-            totalRiverLengthKm: 0,
-            totalLakeAreaSqKm: 0,
-            areaKm2,
-          });
-          const econ = computeEconomicGeoModifiers(profile);
-
-          // Upsert the profile
-          await ctx.db.countryGeoProfile.upsert({
-            where: { countryId: country.id },
-            create: {
-              countryId: country.id,
-              climateDistribution: climateDistribution as any,
-              elevationProfile: elevationProfile as any,
-              arableLandPercent: profile.arableLandPercent,
-              coastlineKm,
-              isLandlocked: profile.isLandlocked,
-              isIsland: profile.isIsland,
-              riverKm: 0,
-              lakeAreaSqKm: 0,
-              neighborCount: profile.neighborCount,
-              dominantClimate: profile.dominantClimate,
-              dominantElevation: profile.dominantElevation,
-              meanElevation: profile.meanElevation,
-              terrainRoughness: profile.terrainRoughness,
-              gdpModifier: econ.gdpModifier,
-              tradeModifier: econ.tradeModifier,
-              infraCostModifier: econ.infraCostModifier,
-              lastCalculatedAt: new Date(),
-            },
-            update: {
-              climateDistribution: climateDistribution as any,
-              elevationProfile: elevationProfile as any,
-              arableLandPercent: profile.arableLandPercent,
-              coastlineKm,
-              isLandlocked: profile.isLandlocked,
-              isIsland: profile.isIsland,
-              dominantClimate: profile.dominantClimate,
-              dominantElevation: profile.dominantElevation,
-              meanElevation: profile.meanElevation,
-              terrainRoughness: profile.terrainRoughness,
-              gdpModifier: econ.gdpModifier,
-              tradeModifier: econ.tradeModifier,
-              infraCostModifier: econ.infraCostModifier,
-              lastCalculatedAt: new Date(),
-            },
-          });
-
+          await recalculateGeoProfile(ctx.db, country.id);
           processed++;
         } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          errors.push(`${country.name}: ${msg}`);
-          failed++;
+          errors.push(`${country.name}: ${err instanceof Error ? err.message : String(err)}`);
         }
       }
 
-      return { processed, failed, total: countries.length, errors: errors.slice(0, 20) };
+      return {
+        processed,
+        failed: errors.length,
+        total: countries.length,
+        errors: errors.slice(0, 20),
+      };
     }),
 };

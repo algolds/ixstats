@@ -10,95 +10,11 @@ import {
   computeCrisisRiskFactors,
   estimateTemperature,
   estimatePrecipitation,
-  getAgricultureFactor,
-  resolveClimateFromColor,
-  ELEVATION_ZONES,
-  type ClimateZoneEntry,
-  type ElevationZoneEntry,
 } from "~/lib/maps/geo-analytics";
 import { estimateBboxOverlap } from "./geometry";
+import { buildClimateZones, buildElevationZones, LAYER_SELECT, type Extent } from "./profile-zones";
 
 const DEG_TO_KM = 111.32;
-
-/** Longitude/latitude extent of the country; the whole globe when it has no stored bounding box. */
-type Extent = [minLng: number, minLat: number, maxLng: number, maxLat: number];
-
-const LAYER_SELECT = {
-  featureId: true,
-  geometry: true,
-  properties: true,
-  areaSqKm: true,
-  displayName: true,
-} as const;
-
-/** Layers that overlap the extent, with each one's fill colour and the area it contributes. */
-function overlappingFills(
-  layers: Array<{ geometry: unknown; properties: unknown; areaSqKm: number | null }>,
-  extent: Extent
-) {
-  return layers.flatMap((layer) => {
-    const props = layer.properties as Record<string, unknown> | null;
-    const geometry = layer.geometry as Geometry | null;
-    const area = layer.areaSqKm ?? 0;
-    if (!props || !geometry || area <= 0) return [];
-    // Rough bbox overlap (PostGIS ST_Intersection would be more precise)
-    const overlap = estimateBboxOverlap(geometry, ...extent);
-    if (overlap <= 0) return [];
-    return [{ fill: (props["fill"] as string) ?? "", overlapArea: area * overlap }];
-  });
-}
-
-function withPercentAreas<T extends { areaSqKm: number; percentArea: number }>(zones: T[]) {
-  const total = zones.reduce((sum, zone) => sum + zone.areaSqKm, 0);
-  for (const zone of zones) {
-    zone.percentArea = total > 0 ? Math.round((zone.areaSqKm / total) * 100 * 10) / 10 : 0;
-  }
-  return zones;
-}
-
-type OverlapLayers = Parameters<typeof overlappingFills>[0];
-
-function buildClimateDistribution(layers: OverlapLayers, extent: Extent) {
-  const zones: ClimateZoneEntry[] = [];
-  for (const { fill, overlapArea } of overlappingFills(layers, extent)) {
-    // Climate type comes from the fill colour (SVG paths have no text names)
-    const type = resolveClimateFromColor(fill);
-    if (!type) continue;
-    // Aggregate same climate types (multiple SVG polygons per zone)
-    const existing = zones.find((zone) => zone.type === type);
-    if (existing) existing.areaSqKm += overlapArea;
-    else {
-      zones.push({
-        type,
-        percentArea: 0,
-        areaSqKm: overlapArea,
-        agricultureFactor: getAgricultureFactor(type),
-      });
-    }
-  }
-  return withPercentAreas(zones).sort((a, b) => b.areaSqKm - a.areaSqKm);
-}
-
-function buildElevationProfile(layers: OverlapLayers, extent: Extent) {
-  const zones: ElevationZoneEntry[] = [];
-  for (const { fill, overlapArea } of overlappingFills(layers, extent)) {
-    const match = ELEVATION_ZONES.find((ez) => ez.color.toLowerCase() === fill.toLowerCase());
-    if (!match) continue;
-    const existing = zones.find((zone) => zone.zone === match.zoneId);
-    if (existing) existing.areaSqKm += overlapArea;
-    else {
-      zones.push({
-        zone: match.zoneId,
-        name: match.zoneName,
-        percentArea: 0,
-        areaSqKm: overlapArea,
-        minElev: match.elevationMin,
-        maxElev: match.elevationMax,
-      });
-    }
-  }
-  return withPercentAreas(zones).sort((a, b) => a.minElev - b.minElev);
-}
 
 /** Count and summed length/area of the realm's rivers or lakes clipped to the country, via PostGIS. */
 async function clippedLayerStats(
@@ -349,8 +265,12 @@ export const geoProfileProcedures = {
       ]);
 
       const areaKm2 = country.landArea ?? (country.areaSqMi ? country.areaSqMi / 0.386102 : 0);
-      const climateDistribution = buildClimateDistribution(climateLayers, extent);
-      const elevationProfile = buildElevationProfile(altitudeLayers, extent);
+      const climateDistribution = buildClimateZones(climateLayers, extent, true).sort(
+        (a, b) => b.areaSqKm - a.areaSqKm
+      );
+      const elevationProfile = buildElevationZones(altitudeLayers, extent).sort(
+        (a, b) => a.minElev - b.minElev
+      );
       const hydro = await loadHydrography(ctx.db, input.countryId, realmId, extent);
       const { neighbors, perimeterKm, coastlineKm } = await loadNeighbours(
         ctx.db,
