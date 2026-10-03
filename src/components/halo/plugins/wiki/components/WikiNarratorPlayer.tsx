@@ -21,7 +21,6 @@ import { Transport } from "~/components/audio/elements/transport";
 import { Fader } from "~/components/audio/elements/fader";
 import { PlayPauseMorph } from "./PlayPauseMorph";
 // oxlint-disable-next-line eslint/no-unused-vars
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { useAudioStore } from "~/lib/audio-store";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
@@ -91,7 +90,7 @@ export function WikiNarratorPlayer({
   const currentSpeed = typeof narratorState?.speed === "number" ? narratorState.speed : 1.0;
   const currentVoiceId = narratorState?.voice || "";
   const currentVoiceLabel =
-    (currentVoiceId && NARRATOR_VOICE_LABELS[currentVoiceId]) || currentVoiceId || "Default Voice";
+    (currentVoiceId && NARRATOR_VOICE_LABELS[currentVoiceId]) || currentVoiceId || "Default voice";
   const shortVoiceName =
     currentVoiceLabel.split(" - ")[1] ||
     currentVoiceLabel.replace("Female ", "").replace("Male ", "");
@@ -116,8 +115,8 @@ export function WikiNarratorPlayer({
     () => [
       {
         id: activeSectionId || "wiki-narrator",
-        title: narratorState?.activeSectionTitle || "Wiki Article",
-        artist: "Wiki Narrator",
+        title: narratorState?.activeSectionTitle || "Wiki article",
+        artist: "Wiki narrator",
         url: "",
       },
     ],
@@ -265,7 +264,7 @@ export function WikiNarratorPlayer({
               </span>
             </div>
 
-            <div className="text-label-secondary text-footnote flex shrink-0 items-center gap-1 font-mono tabular-nums">
+            <div className="text-label-secondary text-footnote flex shrink-0 items-center gap-1 tabular-nums">
               {hasNarrator && (
                 <span>
                   {narratorState.activeBlockIndex + 1}/{narratorState.totalBlocks}
@@ -281,7 +280,7 @@ export function WikiNarratorPlayer({
         {/* ── 2. audio-ui Section Scrubber (Transport with Chapter Milestone Markers) ── */}
         <div className="relative w-full px-1 py-1">
           <Transport
-            aria-label="Timeline Section Scrubber"
+            aria-label="Section timeline"
             value={displayPercent}
             onSeek={(val) => handleScrub(val)}
             size="sm"
@@ -353,7 +352,7 @@ export function WikiNarratorPlayer({
                   narratorActions?.play?.();
                 }
               }}
-              className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[scale] duration-150 hover:scale-105 active:scale-[0.98]"
+              className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[scale] duration-150 hover:scale-105"
               style={{
                 backgroundColor: accentColor,
                 boxShadow: `0 2px 8px ${getRgbaColor(accentColor, 0.35)}`,
@@ -365,27 +364,27 @@ export function WikiNarratorPlayer({
             </button>
 
             <AudioPlayerButton
-              aria-label="Previous Section"
+              aria-label="Previous section"
               onClick={narratorActions?.skipPrev}
               disabled={!hasNarrator || narratorState.activeBlockIndex <= 0}
               size="icon"
               variant="ghost"
-              className="text-label-secondary hover:text-label h-7 w-7 active:scale-[0.98] disabled:opacity-30"
-              tooltipLabel="Previous Section"
+              className="text-label-secondary hover:text-label h-7 w-7 disabled:opacity-30"
+              tooltipLabel="Previous section"
             >
               <ChevronLeft className="h-4 w-4" />
             </AudioPlayerButton>
 
             <AudioPlayerButton
-              aria-label="Next Section"
+              aria-label="Next section"
               onClick={narratorActions?.skipNext}
               disabled={
                 !hasNarrator || narratorState.activeBlockIndex >= narratorState.totalBlocks - 1
               }
               size="icon"
               variant="ghost"
-              className="text-label-secondary hover:text-label h-7 w-7 active:scale-[0.98] disabled:opacity-30"
-              tooltipLabel="Next Section"
+              className="text-label-secondary hover:text-label h-7 w-7 disabled:opacity-30"
+              tooltipLabel="Next section"
             >
               <ChevronRight className="h-4 w-4" />
             </AudioPlayerButton>
@@ -455,14 +454,14 @@ export function WikiNarratorPlayer({
         {activeTray === "voice" && (
           <div className="border-separator bg-surface-elevated text-label animate-in fade-in slide-in-from-top-1 rounded-row shadow-card mt-2 space-y-1 border p-2 duration-150">
             <div className="border-separator text-label-secondary text-subhead flex items-center justify-between border-b px-1 pb-1">
-              <span>Narrator Voice</span>
+              <span>Narrator voice</span>
               <span className="text-footnote font-normal opacity-70">Kokoro TTS</span>
             </div>
 
             <FacetList variant="plain" className="max-h-36 scrollbar-thin overflow-y-auto">
               <FacetListSection aria-label="Narrator voices">
                 <FacetRow
-                  title="Default Voice"
+                  title="Default voice"
                   accessory="check"
                   selected={!currentVoiceId}
                   onClick={() => {
@@ -498,19 +497,19 @@ export function WikiNarratorPlayer({
                   className="text-destructive hover:bg-destructive/10 w-full justify-start"
                 >
                   <Trash2 aria-hidden />
-                  <span>Clear Voice Audio Cache</span>
+                  <span>Clear voice audio cache</span>
                 </Button>
               </div>
             )}
           </div>
         )}
 
-        {/* 4B. Inline Playback Speed Tray */}
+        {/* 4B. Inline Playback speed Tray */}
         {activeTray === "speed" && (
           <div className="border-separator bg-surface-elevated text-label animate-in fade-in slide-in-from-top-1 rounded-row shadow-card mt-2 space-y-2 border p-3 duration-150">
             <div className="text-label-secondary text-subhead flex items-center justify-between">
-              <span>Playback Speed</span>
-              <span className="font-mono font-semibold" style={{ color: accentColor }}>
+              <span>Playback speed</span>
+              <span className="font-semibold tabular-nums" style={{ color: accentColor }}>
                 {currentSpeed}×
               </span>
             </div>
@@ -535,8 +534,8 @@ export function WikiNarratorPlayer({
         {activeTray === "volume" && (
           <div className="border-separator bg-surface-elevated text-label animate-in fade-in slide-in-from-top-1 rounded-row shadow-card mt-2 space-y-2 border p-3 duration-150">
             <div className="text-label-secondary text-subhead flex items-center justify-between">
-              <span>Volume Gain</span>
-              <span className="font-mono font-semibold tabular-nums" style={{ color: accentColor }}>
+              <span>Volume gain</span>
+              <span className="font-semibold tabular-nums" style={{ color: accentColor }}>
                 {Math.round(currentVolume * 100)}%
               </span>
             </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "~/components/ui/button";
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import {
@@ -44,7 +45,7 @@ export function NationStatesCardsPanel() {
   const handleRefresh = async () => {
     soundEffects.press();
     await utils.nsImport.getMyNSCards.invalidate();
-    notify.success("Trading card deck synchronized with NationStates");
+    notify.success("Deck synced with NationStates");
   };
 
   const cards = nsCardsData?.cards ?? [];
@@ -64,50 +65,47 @@ export function NationStatesCardsPanel() {
   return (
     <div className="space-y-6">
       <SettingsHeader
-        title="NationStates Cards"
+        title="NationStates cards"
         category="Vault"
         description={
           cardsLoading
-            ? "Syncing trading cards imported from NationStates..."
-            : `${cards.length} ${cards.length === 1 ? "trading card" : "trading cards"} imported from your NationStates deck. Search, filter, preview, or take down cards.`
+            ? "Syncing your NationStates cards..."
+            : `${cards.length} ${cards.length === 1 ? "trading card" : "trading cards"} imported from your NationStates deck.`
         }
         actions={
           <div className="flex items-center gap-2">
-            <Link
-              href="/vault"
-              data-cuelume-press="soft"
-              className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-            >
-              <span>Full Vault</span>
-              <ExternalLink className="h-3 w-3 opacity-60" />
-            </Link>
-            <Link
-              href="/vault/ns-deck"
-              data-cuelume-press="soft"
-              className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-            >
-              <NationStatesLogo size="xs" className="h-3 w-auto" />
-              <span>Import Deck</span>
-            </Link>
-            <button
+            <Button asChild variant="secondary" size="sm">
+              <Link href="/vault" data-cuelume-press="soft">
+                <span>Open Vault</span>
+                <ExternalLink className="h-3 w-3 opacity-60" />
+              </Link>
+            </Button>
+            <Button asChild variant="secondary" size="sm">
+              <Link href="/vault/ns-deck" data-cuelume-press="soft">
+                <NationStatesLogo size="xs" className="h-3 w-auto" />
+                <span>Import deck</span>
+              </Link>
+            </Button>
+            <Button
               type="button"
               onClick={handleRefresh}
               disabled={isRefetching}
               data-cuelume-press="soft"
               title="Sync deck with server"
-              className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground flex h-8 w-8 items-center justify-center rounded-xl border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97] disabled:opacity-50"
+              variant="secondary"
+              size="icon-sm"
             >
               <RefreshCw className={cn("h-3.5 w-3.5", isRefetching && "animate-spin")} />
-            </button>
+            </Button>
           </div>
         }
       />
 
-      {/* NationStates API & Trademark Disclaimer */}
-      <div className="border-border/40 bg-card/30 text-muted-foreground flex items-start gap-2.5 rounded-2xl border p-3 text-xs leading-relaxed backdrop-blur-md">
+      {/* NationStates API disclaimer */}
+      <div className="border-separator bg-surface text-muted-foreground rounded-card flex items-start gap-2.5 border p-3 text-xs leading-relaxed">
         <NationStatesLogo size="xs" className="mt-0.5 shrink-0 opacity-80" />
         <p className="min-w-0 flex-1">
-          Trading card data is retrieved via the official{" "}
+          Card data comes from the official{" "}
           <a
             href="https://www.nationstates.net/pages/api.html#cards"
             target="_blank"
@@ -116,43 +114,38 @@ export function NationStatesCardsPanel() {
           >
             NationStates API
           </a>
-          . Not affiliated with or endorsed by NationStates. All card artwork, nation flags, and
-          emblems remain the copyright of their respective authors.
+          . IxStats is not affiliated with or endorsed by NationStates. Card artwork, flags and
+          emblems remain the copyright of their authors.
         </p>
       </div>
 
-      {/* Imported Cards Grid & Browser */}
+      {/* Imported cards */}
       <SettingsGroup>
         {cardsLoading ? (
-          <div className="text-muted-foreground p-8 text-center text-xs">
-            Loading trading card deck...
-          </div>
+          <div className="text-muted-foreground p-8 text-center text-xs">Loading your cards...</div>
         ) : cards.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 text-center">
             <Gem className="text-muted-foreground/40 mb-2 h-8 w-8" />
             <p className="text-muted-foreground text-xs font-semibold">No cards imported yet</p>
             <p className="text-muted-foreground/70 mt-0.5 max-w-sm text-xs">
-              Connect your NationStates nation to import your season trading cards and showcase them
-              on your profile.
+              Connect your NationStates nation to import your season cards and show them on your
+              profile.
             </p>
-            <Link
-              href="/vault/ns-deck"
-              data-cuelume-press="soft"
-              className="facet-interactive bg-foreground text-background hover:bg-foreground/90 mt-3.5 inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-semibold active:scale-[0.98]"
-            >
-              <NationStatesLogo size="xs" />
-              <span>Import Your NS Deck</span>
-            </Link>
+            <Button asChild variant="default" size="sm">
+              <Link href="/vault/ns-deck" data-cuelume-press="soft">
+                <NationStatesLogo size="xs" />
+                <span>Import your NationStates deck</span>
+              </Link>
+            </Button>
           </div>
         ) : (
           <div className="space-y-4 p-4">
-            {/* Search Input Bar */}
             <div className="relative">
               <Search className="text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search cards by nation name, ID, or season..."
+                placeholder="Search by nation name, ID or season"
                 className="bg-muted/20 border-border/60 h-8 pl-8 text-xs font-medium"
               />
             </div>
@@ -166,7 +159,7 @@ export function NationStatesCardsPanel() {
                 {filteredCards.map((card) => (
                   <div
                     key={card.cardId}
-                    className="border-border/50 bg-card/60 hover:bg-card/90 hover:border-border flex items-center justify-between gap-3 rounded-xl border p-2.5 shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                    className="border-separator bg-surface-secondary rounded-row flex items-center justify-between gap-3 border p-2.5"
                   >
                     <div className="flex min-w-0 items-center gap-2.5">
                       <div className="border-border/60 bg-muted/60 relative flex h-9 w-12 shrink-0 overflow-hidden rounded-lg border shadow-2xs">
@@ -201,18 +194,19 @@ export function NationStatesCardsPanel() {
                           Active
                         </span>
                       )}
-                      <button
+                      <Button
                         type="button"
                         onClick={() => {
                           soundEffects.press();
                           setSelectedCard(card as unknown as CardInstance);
                         }}
                         data-cuelume-press="soft"
-                        className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold active:scale-[0.98]"
+                        variant="secondary"
+                        size="sm"
                       >
                         <Eye className="text-muted-foreground h-3 w-3" />
                         <span>View</span>
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -222,40 +216,40 @@ export function NationStatesCardsPanel() {
         )}
       </SettingsGroup>
 
-      {/* Sovereignty & Takedown */}
+      {/* Takedown */}
       <SettingsGroup
-        title="Card Removal & Opt-Out"
-        description="Disconnect deck sync or submit takedown requests to permanently remove cards from search indexing."
+        title="Card removal and opt-out"
+        description="Disconnect deck sync or request removal of your cards from search."
       >
         <SettingsRow
-          label="Takedown / Disconnect Deck"
-          description="Request removal of your NationStates card metadata or unlink your deck"
+          label="Takedown and disconnect"
+          description="Request removal of your NationStates card data or unlink your deck"
           icon={ShieldAlert}
           glyphClass="bg-muted/60 text-foreground"
         >
-          <button
+          <Button
             type="button"
             onClick={() => {
               soundEffects.press();
               setShowTakedownModal(true);
             }}
             data-cuelume-press="soft"
-            className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-500 active:scale-[0.98]"
+            variant="secondary"
+            size="sm"
+            className="hover:text-destructive"
           >
             <ShieldAlert className="h-3.5 w-3.5" />
-            <span>Takedown / Opt-Out</span>
-          </button>
+            <span>Takedown and opt-out</span>
+          </Button>
         </SettingsRow>
       </SettingsGroup>
 
-      {/* Card Details Modal */}
       <CardDetailsModal
         card={selectedCard}
         open={Boolean(selectedCard)}
         onClose={() => setSelectedCard(null)}
       />
 
-      {/* NationStates Card Takedown & Opt-Out Modal */}
       <NSTakedownModal
         isOpen={showTakedownModal}
         onClose={() => setShowTakedownModal(false)}

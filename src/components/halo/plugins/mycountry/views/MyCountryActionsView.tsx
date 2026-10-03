@@ -52,13 +52,13 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
       action: () => navigateToSection("diplomacy"),
     },
     {
-      label: "Foreign Policy",
+      label: "Foreign policy",
       icon: Globe,
       iconClass: "text-teal",
       action: () => navigateToSection("diplomacy"),
     },
     {
-      label: "Domestic Policy",
+      label: "Domestic policy",
       icon: Gavel,
       iconClass: "text-indigo",
       action: () => navigateToSection("executive"),
@@ -85,7 +85,7 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
         <div className="text-headline text-yellow flex items-center gap-2">
           <Crown className="h-4 w-4" />
           <PreText className="text-inherit" whiteSpace="nowrap">
-            MyCountry® Quick Actions
+            MyCountry® Quick actions
           </PreText>
         </div>
         <Button
@@ -97,7 +97,7 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
             onClose();
           }}
           className="text-label-secondary hover:text-label"
-          aria-label="Close Quick Actions"
+          aria-label="Close quick actions"
         >
           <X aria-hidden />
         </Button>

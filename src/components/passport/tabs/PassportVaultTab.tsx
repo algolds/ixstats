@@ -45,12 +45,12 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
       <Card variant="inset" padding="none" className="border-separator border">
         <EmptyState
           icon={<Crown />}
-          title="No Vault Collection"
-          message={`@${cleanUsername} hasn't started collecting IxCards yet.`}
+          title="No collection yet"
+          message={`@${cleanUsername} has not collected any IxCards yet.`}
           action={
             <Button asChild variant="secondary" size="sm">
               <Link href="/vault">
-                <span>Explore Vault</span>
+                <span>Open Vault</span>
                 <ArrowRight aria-hidden />
               </Link>
             </Button>

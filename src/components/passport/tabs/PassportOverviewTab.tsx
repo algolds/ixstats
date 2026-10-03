@@ -27,10 +27,8 @@ interface PassportOverviewTabProps {
   onOpenVault?: () => void;
 }
 
-/** Section header (sentence-case `text-subhead`, Facet 3 §3). */
+/** Section header. */
 const SECTION_LABEL = "text-subhead text-label-secondary";
-
-/** An inset panel inside the passport card. */
 
 function FeaturedRealm({ data, cleanUsername }: PassportOverviewTabProps) {
   const realm = data.featuredRealm;
@@ -77,7 +75,7 @@ function FeaturedRealm({ data, cleanUsername }: PassportOverviewTabProps) {
         </Button>
         <Button asChild variant="secondary" size="sm">
           <Link href={`/countries/${realm.country.slug}`}>
-            <span>View Country</span>
+            <span>View country</span>
             <ArrowRight aria-hidden />
           </Link>
         </Button>
@@ -180,8 +178,7 @@ function civicStats(data: PassportPayload) {
 }
 
 /**
- * Tab 1 — identity overview: featured realm, the showcase, linked platforms and civic stature
- * (plan 188).
+ * Identity overview: featured realm, the showcase, linked platforms and civic stature.
  */
 export const PassportOverviewTab = React.memo(function PassportOverviewTab({
   data,

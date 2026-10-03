@@ -167,7 +167,7 @@ export function MessageTrayItem({
                     {displayTitle}
                   </span>
                   {isDiplomatic && (
-                    <span className="rounded-control-sm bg-yellow/15 text-caption text-yellow shrink-0 px-1 py-0.5 uppercase">
+                    <span className="rounded-control-sm bg-yellow/15 text-caption text-yellow shrink-0 px-1 py-0.5">
                       Dispatch
                     </span>
                   )}

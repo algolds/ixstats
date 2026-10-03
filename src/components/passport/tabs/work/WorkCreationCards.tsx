@@ -50,7 +50,7 @@ export const WorkArticleCards = React.memo(function WorkArticleCards({
           </span>
         </h4>
         <Link href="/wiki" className={CARD_LINK}>
-          <span>Explore WikiOS</span>
+          <span>Open WikiOS</span>
           <ArrowUpRight aria-hidden className="size-3.5" />
         </Link>
       </div>
@@ -80,7 +80,7 @@ export const WorkArticleCards = React.memo(function WorkArticleCards({
             <div className={CARD_FOOTER}>
               <span className="text-label-secondary text-footnote">WikiOS</span>
               <Link href={`/wiki/${encodeURIComponent(item.title)}`} className={CARD_LINK}>
-                <span>Read Article</span>
+                <span>Read article</span>
                 <ArrowRight aria-hidden className="size-3.5" />
               </Link>
             </div>
@@ -108,7 +108,7 @@ export const WorkCreationCards = React.memo(function WorkCreationCards({
   return (
     <div className="space-y-3 pt-2">
       {showHeading && (
-        <h4 className="text-subhead text-label-secondary">Canonical realm and system creations</h4>
+        <h4 className="text-subhead text-label-secondary">Realm and system creations</h4>
       )}
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -136,7 +136,7 @@ export const WorkCreationCards = React.memo(function WorkCreationCards({
             <div className={CARD_FOOTER}>
               <span className="text-label-secondary text-footnote">Onoma</span>
               <Link href={`/onoma/pack/${item.slug || item.id}`} className={CARD_LINK}>
-                <span>View Pack</span>
+                <span>View pack</span>
                 <ArrowRight aria-hidden className="size-3.5" />
               </Link>
             </div>
@@ -195,7 +195,7 @@ export const WorkCreationCards = React.memo(function WorkCreationCards({
             <div className={CARD_FOOTER}>
               <span className="text-label-secondary text-footnote">MyLeague</span>
               <Link href="/sports" className={CARD_LINK}>
-                <span>View Club</span>
+                <span>View club</span>
                 <ArrowRight aria-hidden className="size-3.5" />
               </Link>
             </div>

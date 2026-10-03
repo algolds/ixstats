@@ -13,16 +13,14 @@ function maskVar(iconPath: string): string {
 }
 
 /**
- * The aurora's secondary hue (`--facet-accent-2`). The category colour itself is the card's
- * `accent` prop (`categoryTheme.accent` → `--facet-accent`), which the aurora and radiance read.
+ * The aurora's secondary hue (`--facet-accent-2`).
  */
 function auroraStyle(categoryTheme: CategoryTheme): CSSProperties {
   return { "--facet-accent-2": accentColor(categoryTheme.accent2) } as CSSProperties;
 }
 
 /**
- * Jewel achievement icon (v2 c5c6b382 `JewelAchievementIcon`): the achievement icon filled with
- * a category-tuned metallic gem gradient (`facet-jewel`, styles/facet/identity.css). Locked: a
+ * Jewel achievement icon: the achievement icon filled with a category-tuned metallic gem gradient (`facet-jewel`, styles/facet/identity.css). Locked: a
  * faint blurred icon under a lock.
  */
 export function JewelAchievementIcon({
@@ -68,8 +66,7 @@ export function JewelAchievementIcon({
 }
 
 /**
- * Achievement card backdrop (v2 c5c6b382 `AchievementCardBackdrop`), on the identity sheet's
- * sanctioned layers (spec §16.5):
+ * Achievement card backdrop, layered from the identity sheet:
  * - the dot texture,
  * - the multi-stop aurora mesh (`facet-aurora`: category → secondary hue, .4 → .75 on card hover),
  * - the category radiance from the top (`facet-radiance`, .45 → .7 on card hover),
@@ -77,9 +74,8 @@ export function JewelAchievementIcon({
  * - the 144px ghost heraldic watermark of the icon in the bottom-right corner
  *   (`facet-ghost-heraldry`).
  * All decorative (`aria-hidden`, no pointer events). Render it as the first children of a
- * `relative overflow-hidden` card with `accent={categoryTheme.accent}` (the aurora and radiance
- * take the category colour from it) and keep the content `relative`; the hover brighten follows
- * the card (the layers' direct parent).
+ * `relative overflow-hidden` card and keep the content `relative`; the hover brighten follows the
+ * card (the layers' direct parent).
  */
 export function AchievementCardBackdrop({
   iconPath,

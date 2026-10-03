@@ -104,8 +104,6 @@ describe("Alert", () => {
 });
 
 describe("ShellPageHeader page-title hook", () => {
-  afterEach(() => document.documentElement.removeAttribute("data-nav"));
-
   it("exports the attribute and spreadable props", () => {
     expect(SHELL_PAGE_TITLE_ATTRIBUTE).toBe("data-shell-page-title");
     render(<h1 {...shellPageTitleProps}>Countries</h1>);
@@ -116,7 +114,6 @@ describe("ShellPageHeader page-title hook", () => {
   });
 
   it("marks the shell header with where it shows", () => {
-    document.documentElement.setAttribute("data-nav", "facet");
     const { container, rerender } = render(<ShellPageHeader title="Vault" />);
     expect(container.querySelector('[data-slot="shell-page-header"]')).toHaveAttribute(
       "data-shell-page-header",
@@ -129,14 +126,14 @@ describe("ShellPageHeader page-title hook", () => {
     );
   });
 
-  it("hides a marked title only under the new shell, where the shell header shows", () => {
+  it("hides a marked title where the shell header shows", () => {
     const css = read("src/styles/facet/shell.css").replace(/\/\*[\s\S]*?\*\//g, "");
     const utilities = css.slice(css.indexOf("@layer utilities"));
     expect(utilities).toMatch(
-      /:root\[data-nav="facet"\]:has\(\[data-shell-page-header="all"\]\) \[data-shell-page-title\]\s*\{\s*display:\s*none;/
+      /:root:has\(\[data-shell-page-header="all"\]\) \[data-shell-page-title\]\s*\{\s*display:\s*none;/
     );
     expect(utilities).toMatch(
-      /@media \(max-width: 1023\.98px\) \{\s*:root\[data-nav="facet"\]:has\(\[data-shell-page-header="phone"\]\) \[data-shell-page-title\]\s*\{\s*display:\s*none;/
+      /@media \(max-width: 1023\.98px\) \{\s*:root:has\(\[data-shell-page-header="phone"\]\) \[data-shell-page-title\]\s*\{\s*display:\s*none;/
     );
   });
 

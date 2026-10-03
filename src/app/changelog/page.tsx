@@ -1,17 +1,13 @@
-import Link from "next/link";
 import { type Metadata } from "next";
-import { FireFlame as Flame, ArrowLeft } from "iconoir-react";
 import { PLATFORM_VERSION, RELEASE_NAME, CHANNEL, CHANNEL_CONFIG } from "~/lib/buildVersion";
 import { StatusIndicator } from "~/components/ui/status-indicator";
 import { cn } from "~/lib/utils";
 import { ChangelogFeed, type Release } from "./_components/ChangelogFeed";
-import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
+import { PageHeader } from "~/components/shell/PageHeader";
 
 export const metadata: Metadata = {
-  title: "Changelog & Platform Updates | IxStates",
-  description:
-    "Follow the latest platform features, simulation updates, engine upgrades, and polish across the nation-building ecosystem.",
+  title: "Changelog | IxStates",
+  description: "Platform features, simulation updates, engine upgrades and fixes.",
 };
 
 const RELEASES: Release[] = [
@@ -22,107 +18,106 @@ const RELEASES: Release[] = [
     channel: "Release Candidate",
     isCurrent: true,
     tagline:
-      "Bun 1.4 & TypeScript 7.0 Native Engine Upgrade, Unified Messaging, Atomic Statecraft, and Facet Design System Convergence.",
+      "Unified messaging, Statecraft policy builder, TypeScript 7 and Bun 1.4, and the Facet design system.",
     items: [
       {
         id: "v14-messaging",
         category: "feature",
-        title: "Unified Messaging & ThinkShare Suite",
+        title: "Messaging and ThinkShare",
         description:
-          "Full-featured platform communication hub supporting bilateral diplomatic dispatches, multi-party discussion channels, real-time message reactions, and cross-app presence.",
+          "One inbox for diplomatic dispatches, group channels and ThinkShare, with reactions and presence across apps.",
         highlights: [
-          "Bilateral and multilateral diplomatic communication channels",
-          "Real-time emoji reactions, thread replies, and message editing",
-          "Zero-latency unread tracking engine with single-click folder catch-up",
+          "Bilateral and multilateral diplomatic channels",
+          "Emoji reactions, thread replies and message editing",
+          "Unread counts with one-click folder catch-up",
         ],
-        link: { href: "/messages", label: "Open Messages" },
+        link: { href: "/messages", label: "Open messages" },
       },
       {
         id: "v14-statecraft",
         category: "feature",
-        title: "Atomic Statecraft & Policy Synthesizer",
+        title: "Statecraft policy builder",
         description:
-          "High-performance headless policy builder for executive national management, tax structure synthesis, and economic directive composition.",
+          "Compose tax structures, budgets and economic directives for your nation and see the budget impact as you edit.",
         highlights: [
-          "Real-time simulation feedback with reactive budget impact modeling",
-          "Tactile slot-based component selectors with category filtering",
-          "Automated synergy and friction detection between national policies",
+          "Live budget impact while you change a policy",
+          "Slot-based component selectors with category filters",
+          "Synergy and conflict detection between policies",
         ],
-        link: { href: "/mycountry", label: "Explore Statecraft" },
+        link: { href: "/mycountry", label: "Open MyCountry" },
       },
       {
         id: "v14-halo",
         category: "feature",
-        title: "Halo Navigation & Command Palette (v5)",
+        title: "Halo command palette",
         description:
-          "Universal ambient overlay and command palette providing instant multi-domain navigation, keyword synonym search, and in-palette system execution.",
+          "Press ⌘K to jump to any page, search by keyword or synonym, and run system actions without leaving the page.",
         highlights: [
-          "Instant keyboard-driven command navigation with ⌘K activation",
-          "Comprehensive multi-domain coverage across Statecraft, Vault, Geography, Knowledge, Community, Sports, and Labs",
-          "Fast keyword and synonym indexing for seamless discovery",
-          "Direct in-palette system actions for themes, audio effects, and compact mode",
+          "Keyboard navigation across Statecraft, Vault, Maps, Wiki, Forum, Sports and Labs",
+          "Keyword and synonym search",
+          "Actions for theme, sound effects and compact mode",
         ],
       },
       {
         id: "v14-ts7-bun",
         category: "engine",
-        title: "TypeScript 7.0 & Bun 1.4 Native Engine",
+        title: "TypeScript 7 and Bun 1.4",
         description:
-          "Upgraded compiler to native Go shared-memory concurrency with multi-threaded checkers, reducing typechecking time down to ~2s and cutting memory overhead by 80%.",
+          "The compiler is now the native TypeScript 7 build. Typechecking takes about 2 seconds and uses roughly 80% less memory.",
         highlights: [
-          "Sub-10ms atomic CLI boot times and native Bun.cron() scheduling",
-          "Strict Copy-on-Write polygon operations and zero-dependency color mathematics",
-          "100% end-to-end verified typecheck and architecture integrity validation",
+          "CLI starts in under 10 ms; scheduled jobs use Bun.cron()",
+          "Copy-on-write polygon operations and dependency-free color math",
+          "Typecheck and architecture checks pass end to end",
         ],
       },
       {
         id: "v14-facet",
         category: "improvement",
-        title: "Facet Design Language (v2) & Tactile Physics",
+        title: "Facet design system",
         description:
-          "Elevated visual design system featuring translucent frosted glass refraction, momentum-aware spring animations, and refined light/dark theme compliance across all modules.",
+          "A consistent set of surfaces, spring animations and light and dark themes across every module.",
         highlights: [
-          "Apple-inspired fluid motion curves and interruptible gesture transitions",
-          "Enhanced contrast ratios, semantic color tokens, and ambient depth layering",
-          "Theme-compliant dossier action menus and congratulatory achievement dialogs",
+          "Interruptible gesture transitions and fluid motion curves",
+          "Semantic color tokens with stronger contrast",
+          "Dossier menus and achievement dialogs follow the active theme",
         ],
       },
       {
         id: "v14-flag-service",
         category: "improvement",
-        title: "Canonical Flag Authority & Fast Resolution",
+        title: "Flag service",
         description:
-          "Streamlined flag resolution engine combining PostgreSQL database authority with high-speed memory caching and Wikimedia Commons fallback.",
+          "Flags resolve from the database first, then a memory cache, then Wikimedia Commons.",
         highlights: [
-          "Sub-millisecond resolution for all 82+ custom and fictional world nations",
-          "Immutability guarantees with zero-mutation request batching",
-          "Adaptive fallback placeholders with automatic basePath routing",
+          "Cached lookups for all 82+ custom and fictional nations",
+          "Batched requests that never modify flag data",
+          "Placeholder flags when none is found, with base-path routing",
         ],
-        link: { href: "/countries", label: "Browse Countries" },
+        link: { href: "/countries", label: "Browse countries" },
       },
       {
         id: "v14-unread-fix",
         category: "fix",
-        title: "Accurate Unread Message & Notification Counting",
+        title: "Unread counts",
         description:
-          "Replaced folder conversation tallying with exact unread message timestamp queries, ensuring notification badges display 0 when all inbox messages have been read.",
+          "Unread badges now count unread messages instead of conversations, so they show 0 once everything is read.",
         highlights: [
-          "Single-trip batch SQL queries for instantaneous unread count resolution",
-          "Global Mark All as Read mutation for one-touch inbox clearing",
-          "Robust multi-identity user resolution supporting Clerk and internal IDs",
+          "One batched query for all unread counts",
+          "Mark all as read clears the inbox in one action",
+          "Works for both Clerk and internal user IDs",
         ],
       },
       {
         id: "v14-trending-pulse",
         category: "fix",
-        title: "Live Activity & Trending Topics Redesign",
+        title: "Trending topics and live activity",
         description:
-          "Modernized dashboard trending widget with categorical Live Activity badges, amber pulse indicators, and enhanced social/wiki/forum distinction.",
+          "The dashboard trending widget now labels each item by type and distinguishes social, wiki and forum activity.",
         highlights: [
-          "Dynamic categorization for map updates, economic milestones, and diplomacy",
-          "Interactive preview cards for linked MediaWiki articles and forum threads",
+          "Categories for map updates, economic milestones and diplomacy",
+          "Preview cards for linked wiki articles and forum threads",
         ],
-        link: { href: "/dashboard", label: "View Dashboard" },
+        link: { href: "/dashboard", label: "Open dashboard" },
       },
     ],
   },
@@ -131,51 +126,50 @@ const RELEASES: Release[] = [
     releaseName: "Epona",
     date: "July 2026",
     channel: "Stable",
-    tagline:
-      "WikiOS Visual Reader, LoreStash, Unified Feed Architecture, and Interactive Metric Explorers.",
+    tagline: "WikiOS reader, LoreStash, a unified activity feed and metric explorers.",
     items: [
       {
         id: "v13-wikios",
         category: "feature",
-        title: "WikiOS Next-Gen Reader & Canvas",
+        title: "WikiOS reader and canvas",
         description:
-          "Modern Next.js native frontend for MediaWiki knowledge bases featuring PlateJS rich visual editing, Parsoid wikitext transformation, and responsive article layouts.",
+          "A Next.js frontend for MediaWiki with PlateJS visual editing, Parsoid wikitext conversion and responsive article layouts.",
         highlights: [
-          "Interactive wiki article hover previews and fast author popovers",
-          "LoreStash bookmarking for offline and saved article reading",
-          "Unified MediaWiki API bridge with strict rate-limiting compliance",
+          "Hover previews for articles and popovers for authors",
+          "LoreStash bookmarks for saved articles",
+          "One MediaWiki API bridge that respects rate limits",
         ],
-        link: { href: "/wiki", label: "Explore WikiOS" },
+        link: { href: "/wiki", label: "Open WikiOS" },
       },
       {
         id: "v13-vault-cards",
         category: "feature",
-        title: "IxVault Collectibles & Streak Milestones",
+        title: "IxVault collectibles and streaks",
         description:
-          "Interactive national collectible card deck, dynamic rarity values, daily login streaks, and civic achievement unlocks.",
+          "Collect national cards with rarity values, keep a daily login streak and earn civic achievements.",
         highlights: [
-          "Marketplace auctions and real-time live trading ledger",
-          "Civic achievement milestones with collector score tracking",
+          "Marketplace auctions and a live trading ledger",
+          "Achievement milestones with a collector score",
         ],
-        link: { href: "/vault", label: "Visit IxVault" },
+        link: { href: "/vault", label: "Open IxVault" },
       },
       {
         id: "v13-metric-modals",
         category: "improvement",
-        title: "Deep Economic & Demographic Modals",
+        title: "Economic and demographic detail views",
         description:
-          "Comprehensive four-tab analytical modals for GDP, Labor, Government Spending, Demographics, and National Debt.",
+          "Four-tab views for GDP, labor, government spending, demographics and national debt.",
         highlights: [
-          "Interactive comparison sliders and historical trend visualizers",
-          "Detailed fiscal health diagnostics and growth projections",
+          "Comparison sliders and historical trend charts",
+          "Fiscal health diagnostics and growth projections",
         ],
       },
       {
         id: "v13-unified-feed",
         category: "improvement",
-        title: "Multi-Source Unified Activity Stream",
+        title: "Unified activity feed",
         description:
-          "Real-time aggregate stream combining ThinkPages posts, MediaWiki contributions, forum threads, and sports news bulletins into a single cohesive feed.",
+          "ThinkPages posts, wiki contributions, forum threads and sports news in a single feed.",
       },
     ],
   },
@@ -187,16 +181,10 @@ export default function ChangelogPage() {
   return (
     <div className="bg-background text-label relative min-h-screen">
       <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Top Navigation */}
-        <div className="mb-8 flex items-center justify-between">
-          <Button asChild variant="outline" size="sm">
-            <Link href="/dashboard">
-              <ArrowLeft aria-hidden />
-              <span>Back to Dashboard</span>
-            </Link>
-          </Button>
-
-          <div className="flex items-center gap-2">
+        <PageHeader
+          title="What's new in IxStates"
+          back={{ href: "/dashboard", label: "Dashboard" }}
+          actions={
             <StatusIndicator
               status={channelTheme.status}
               label={`v${PLATFORM_VERSION} · ${RELEASE_NAME} (${channelTheme.shortName})`}
@@ -207,27 +195,9 @@ export default function ChangelogPage() {
                 channelTheme.bgColor
               )}
             />
-          </div>
-        </div>
+          }
+        />
 
-        {/* Hero Header */}
-        <div className="mb-12 text-center sm:text-left">
-          <Badge variant="secondary">
-            <Flame aria-hidden />
-            <span>Public Release Notes & Changelog</span>
-          </Badge>
-
-          <h1 className="text-large-title lg:text-display text-label mt-4">
-            What's New in <span className="text-tint">IxStates</span>
-          </h1>
-
-          <p className="text-body text-label-secondary mt-3 max-w-2xl">
-            Follow the latest platform features, simulation updates, engine upgrades, and polish
-            across the nation-building ecosystem.
-          </p>
-        </div>
-
-        {/* Interactive Feed */}
         <ChangelogFeed releases={RELEASES} />
       </div>
     </div>

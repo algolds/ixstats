@@ -8,14 +8,12 @@ import {
   NavArrowRight as ChevronRight,
   Send,
   CheckCircle as CheckCircle2,
-  Compass,
   Quote,
   SystemRestart as Loader2,
 } from "iconoir-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Badge } from "~/components/ui/badge";
 import { Button, buttonVariants } from "~/components/ui/button";
-import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { EmptyState } from "~/components/ui/empty-state";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
@@ -57,32 +55,24 @@ export function BlurbSection() {
 
   return (
     <>
-      {/* v2 (c5c6b382): a pressable CutoutCard with the indigo cutout tab header. The whole card
-          is the button (Facet 3.1 HIG: no nested controls), so "Respond" is its visual label. */}
-      <CutoutCard
-        variant="card"
+      {/* The whole card is the button (no nested controls), so "Respond" is its visual label. */}
+      <Card
+        interactive
+        padding="md"
         onClick={() => setModalOpen(true)}
         aria-label="Open blurb of the day"
         aria-describedby={questionId}
         className="no-wiki-tooltip flex flex-col justify-between"
-        trackPointerHover={false}
       >
-        <CutoutCardHeader
-          icon={<Quote />}
-          trailing={
-            <Badge variant="secondary">
-              <Compass aria-hidden />
-              Daily prompt
-            </Badge>
-          }
-        >
-          Blurb of the day
-        </CutoutCardHeader>
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h2 className="text-headline text-label">Blurb of the day</h2>
+          <Badge variant="secondary">Daily prompt</Badge>
+        </div>
 
-        <div className="space-y-3 px-4 pb-4">
+        <div className="space-y-3">
           {/* Prompt question */}
           <div className="space-y-1">
-            {prompt.title && <p className="text-subhead text-facet-accent-ink">{prompt.title}</p>}
+            {prompt.title && <p className="text-subhead text-label-secondary">{prompt.title}</p>}
             <blockquote id={questionId} className="text-label text-callout line-clamp-3">
               &ldquo;{prompt.question}&rdquo;
             </blockquote>
@@ -91,8 +81,8 @@ export function BlurbSection() {
           {/* Footer meta and call to action */}
           <div className="flex items-center justify-between pt-1">
             <span className="text-label-secondary text-footnote flex items-center gap-2">
-              <MessageCircle aria-hidden className="text-facet-accent size-3.5" />
-              <span className="font-data tabular-nums">{responseCount}</span>
+              <MessageCircle aria-hidden className="size-3.5" />
+              <span className="tabular-nums">{responseCount}</span>
               {responseCount === 1 ? "response" : "responses"}
             </span>
 
@@ -109,7 +99,7 @@ export function BlurbSection() {
             </span>
           </div>
         </div>
-      </CutoutCard>
+      </Card>
 
       <BlurbResponseModal
         open={modalOpen}
@@ -198,7 +188,7 @@ export function BlurbResponseModal({
                 <textarea
                   value={newResponse}
                   onChange={(e) => setNewResponse(e.target.value)}
-                  placeholder="Share your country's perspective, culture, or lore..."
+                  placeholder="Write your response"
                   maxLength={1000}
                   rows={3}
                   aria-label="Your response"
@@ -229,12 +219,12 @@ export function BlurbResponseModal({
                     {submitMutation.isPending ? (
                       <>
                         <Loader2 aria-hidden className="animate-spin" />
-                        <span>Submitting...</span>
+                        <span>Submitting</span>
                       </>
                     ) : (
                       <>
                         <Send aria-hidden />
-                        <span>Submit dispatch</span>
+                        <span>Submit response</span>
                       </>
                     )}
                   </Button>
@@ -254,7 +244,7 @@ export function BlurbResponseModal({
           <div className="border-separator bg-surface-secondary border-b px-5 py-4">
             <div className="text-success text-subhead mb-1 flex items-center gap-2">
               <CheckCircle2 aria-hidden className="size-4" />
-              <span>Your country&apos;s dispatch</span>
+              <span>Your response</span>
             </div>
             <p className="text-label text-callout whitespace-pre-wrap">{myResponse.content}</p>
           </div>
@@ -263,9 +253,7 @@ export function BlurbResponseModal({
         {/* Unauthenticated note */}
         {!isSignedIn && (
           <div className="border-separator bg-surface-secondary border-b px-5 py-3 text-center">
-            <p className="text-label-secondary text-footnote">
-              Sign in with your nation to submit a cultural dispatch.
-            </p>
+            <p className="text-label-secondary text-footnote">Sign in to respond.</p>
           </div>
         )}
 
@@ -283,7 +271,7 @@ export function BlurbResponseModal({
               compact
               icon={<MessageCircle />}
               title="No responses yet"
-              message="Be the first country to share a perspective on this topic."
+              message="Add the first response."
             />
           )}
 
@@ -359,7 +347,7 @@ export function BlurbResponseModal({
                 {isFetchingNextPage ? (
                   <>
                     <Loader2 aria-hidden className="animate-spin" />
-                    Loading...
+                    Loading
                   </>
                 ) : (
                   "Load more responses"

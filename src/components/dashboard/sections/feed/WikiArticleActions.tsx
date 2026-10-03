@@ -117,7 +117,7 @@ export function WikiArticleActions({ title: cleanTitle, trailing }: WikiArticleA
   const handleToggleSpecificStash = useCallback(
     (stashId: string) => {
       if (!user) {
-        notify.error("Please sign in to save to Stash.");
+        notify.error("Sign in to save to a stash.");
         return;
       }
       const inThisStash = stashedIn.some((s: any) => s.id === stashId);
@@ -135,7 +135,7 @@ export function WikiArticleActions({ title: cleanTitle, trailing }: WikiArticleA
       e.preventDefault();
       e.stopPropagation();
       if (!user) {
-        notify.error("Please sign in to save to Stash.");
+        notify.error("Sign in to save to a stash.");
         return;
       }
       if (isStashed) {
@@ -154,7 +154,7 @@ export function WikiArticleActions({ title: cleanTitle, trailing }: WikiArticleA
       setMarginNote("");
       setIsMarginOpen(false);
       utils.wikios.getArticleMarginData.invalidate({ articleTitle: cleanTitle });
-      notify.success("Note added to Margin!");
+      notify.success("Note added to Margin");
     },
     onError: (err) => {
       setIsSubmittingNote(false);
@@ -166,7 +166,7 @@ export function WikiArticleActions({ title: cleanTitle, trailing }: WikiArticleA
     (e: React.FormEvent) => {
       e.preventDefault();
       if (!user) {
-        notify.error("Please sign in to post Margin notes.");
+        notify.error("Sign in to post Margin notes.");
         return;
       }
       if (!marginNote.trim() || isSubmittingNote) return;
@@ -205,7 +205,7 @@ export function WikiArticleActions({ title: cleanTitle, trailing }: WikiArticleA
       if (typeof navigator !== "undefined" && navigator.clipboard) {
         await navigator.clipboard.writeText(fullUrl);
         setCopied(true);
-        notify.success("Article link copied to clipboard!");
+        notify.success("Link copied");
         setTimeout(() => setCopied(false), 2000);
       }
     },
@@ -347,7 +347,7 @@ export function WikiArticleActions({ title: cleanTitle, trailing }: WikiArticleA
 
                 {userStashes.length === 0 ? (
                   <p className="text-label-secondary text-footnote py-1">
-                    No custom stashes found. Click Save to Stash to create your default stash.
+                    You have no custom stashes. Saving an article creates your default stash.
                   </p>
                 ) : (
                   <FacetList variant="plain" className="max-h-48 overflow-y-auto">
@@ -421,7 +421,7 @@ export function WikiArticleActions({ title: cleanTitle, trailing }: WikiArticleA
               <div className="flex items-center justify-between">
                 <span className="text-subhead text-label flex items-center gap-2">
                   <Edit aria-hidden className="text-label-secondary size-4" />
-                  Add margin note or discussion
+                  Add a Margin note
                 </span>
                 <div className="flex items-center gap-2">
                   <Link
@@ -445,7 +445,7 @@ export function WikiArticleActions({ title: cleanTitle, trailing }: WikiArticleA
               <Textarea
                 value={marginNote}
                 onChange={(e) => setMarginNote(e.target.value)}
-                placeholder={`Leave a note or start a discussion on ${cleanTitle}...`}
+                placeholder={`Add a note on ${cleanTitle}`}
                 aria-label="Margin note"
                 rows={2}
                 autoFocus

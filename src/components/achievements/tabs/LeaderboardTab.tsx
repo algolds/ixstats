@@ -47,10 +47,10 @@ interface LeaderboardTabProps {
 }
 
 const CATEGORIES = [
-  { id: "all", label: "All Categories" },
-  { id: "economy", label: "Economy & Wealth" },
-  { id: "demographics", label: "Demographics & Labor" },
-  { id: "governance", label: "Quality & Governance" },
+  { id: "all", label: "All categories" },
+  { id: "economy", label: "Economy & wealth" },
+  { id: "demographics", label: "Demographics & labor" },
+  { id: "governance", label: "Quality & governance" },
 ] as const;
 
 const FILTERS = [
@@ -58,7 +58,7 @@ const FILTERS = [
   { id: "totalGdp", label: "Total GDP", icon: DollarSign, fmt: "currency", domain: "economy" },
   {
     id: "gdpPerCapita",
-    label: "GDP per Capita",
+    label: "GDP per capita",
     icon: DollarSign,
     fmt: "currency",
     domain: "economy",
@@ -66,14 +66,14 @@ const FILTERS = [
   { id: "population", label: "Population", icon: Users, fmt: "number", domain: "demographics" },
   {
     id: "populationDensity",
-    label: "Pop. Density",
+    label: "Pop. density",
     icon: Gauge,
     fmt: "number",
     domain: "demographics",
   },
-  { id: "landArea", label: "Land Area", icon: Map, fmt: "number", domain: "demographics" },
-  { id: "gdpGrowth", label: "GDP Growth", icon: TrendingUp, fmt: "percent", domain: "economy" },
-  { id: "avgIncome", label: "Avg Income", icon: DollarSign, fmt: "currency", domain: "economy" },
+  { id: "landArea", label: "Land area", icon: Map, fmt: "number", domain: "demographics" },
+  { id: "gdpGrowth", label: "GDP growth", icon: TrendingUp, fmt: "percent", domain: "economy" },
+  { id: "avgIncome", label: "Avg income", icon: DollarSign, fmt: "currency", domain: "economy" },
   { id: "workforce", label: "Workforce", icon: Users, fmt: "number", domain: "demographics" },
   {
     id: "employmentRate",
@@ -91,13 +91,13 @@ const FILTERS = [
   },
   {
     id: "lifeExpectancy",
-    label: "Life Expectancy",
+    label: "Life expectancy",
     icon: Heart,
     fmt: "years",
     domain: "governance",
   },
-  { id: "govRevenue", label: "Gov. Revenue", icon: Landmark, fmt: "currency", domain: "economy" },
-  { id: "govSpending", label: "Gov. Spending", icon: Landmark, fmt: "currency", domain: "economy" },
+  { id: "govRevenue", label: "Gov. revenue", icon: Landmark, fmt: "currency", domain: "economy" },
+  { id: "govSpending", label: "Gov. spending", icon: Landmark, fmt: "currency", domain: "economy" },
 ] as const;
 
 type FilterId = (typeof FILTERS)[number]["id"];
@@ -267,17 +267,17 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
     <Card padding="lg" className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-label text-title-2">Global world leaderboards</h2>
+          <h2 className="text-label text-title-2">World leaderboards</h2>
           <p className="text-label-secondary text-footnote">
-            Rankings across {active.label.toLowerCase()} • {limit} nations displayed
+            Rankings across {active.label.toLowerCase()} • top {limit} nations
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <SearchField
             size="sm"
-            placeholder="Search nation..."
-            aria-label="Search nation"
+            placeholder="Search nations"
+            aria-label="Search nations"
             value={searchQuery}
             onValueChange={setSearchQuery}
             containerClassName="w-full sm:w-64"
@@ -372,7 +372,7 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
             </FacetListSection>
           </FacetList>
         ) : (
-          <EmptyState compact title="No achievement data available for search query" />
+          <EmptyState compact title="No nations match your search" />
         )
       ) : isLoading ? (
         <div aria-busy className="space-y-2">
@@ -399,7 +399,7 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
           </FacetListSection>
         </FacetList>
       ) : (
-        <EmptyState compact title="No nation metrics found matching your criteria" />
+        <EmptyState compact title="No nations match your filters" />
       )}
     </Card>
   );

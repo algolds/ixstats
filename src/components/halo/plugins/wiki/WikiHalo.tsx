@@ -97,7 +97,7 @@ function WikiBreadcrumb() {
             }
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[scale] duration-150 hover:scale-105 active:scale-[0.98]"
+          className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[scale] duration-150 hover:scale-105"
           style={{
             backgroundColor: accentColor,
             boxShadow: `0 1px 6px ${getRgbaColor(accentColor, 0.35)}`,
@@ -116,7 +116,7 @@ function WikiBreadcrumb() {
           className="text-caption truncate font-semibold transition-colors"
           style={{ color: accentColor }}
         >
-          {hasSpecificTitle ? articleTitle : "Wiki Narrator"}
+          {hasSpecificTitle ? articleTitle : "Wiki narrator"}
         </span>
 
         {activeSectionName && (

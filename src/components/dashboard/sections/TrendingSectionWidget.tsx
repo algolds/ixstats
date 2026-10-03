@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
-  FireFlame as Flame,
   RssFeed as Rss,
   Journal as Newspaper,
   OpenBook as BookOpen,
@@ -16,7 +15,7 @@ import {
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Tooltip } from "~/components/ui/tooltip-card";
-import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
+import { Card } from "~/components/ui/card";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
@@ -283,13 +282,10 @@ export function TrendingSectionWidget() {
   }, [trendingData, activeFilter]);
 
   return (
-    // v2 (c5c6b382): a CutoutCard with the amber cutout tab header.
-    <CutoutCard variant="card" className="no-wiki-tooltip" trackPointerHover={false}>
-      <CutoutCardHeader icon={<Flame />} as="h2">
-        Trending topics
-      </CutoutCardHeader>
+    <Card padding="md" className="no-wiki-tooltip">
+      <h2 className="text-headline text-label mb-3">Trending topics</h2>
 
-      <div className="space-y-3 px-4 pb-4">
+      <div className="space-y-3">
         <SegmentedControl
           aria-label="Trending source"
           size="sm"
@@ -314,7 +310,7 @@ export function TrendingSectionWidget() {
 
           {!isLoading && trendingItems.length === 0 && (
             <p className="text-label-secondary text-callout py-6 text-center">
-              No trending content found
+              Nothing is trending right now.
             </p>
           )}
 
@@ -351,7 +347,7 @@ export function TrendingSectionWidget() {
                 .replace(/<!--\s*sports-bulletin:[\s\S]*?-->/gi, "")
                 .trim();
               if (!displayExcerpt && item.source === "thinkpages") {
-                displayExcerpt = "Sports News & Matchday Bulletin";
+                displayExcerpt = "Sports news and matchday bulletin";
               }
 
               const itemHref = isWiki && wikiTitle ? titleToWikiOSRoute(wikiTitle) : item.url;
@@ -369,17 +365,11 @@ export function TrendingSectionWidget() {
                   {...(linkProps as any)}
                   className="group/item bg-surface-secondary border-separator hover:border-tint/40 hover:bg-fill-3 rounded-row facet-press facet-press-subtle focus-visible:outline-tint flex cursor-pointer items-start gap-3 border p-3 focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
-                  {/* v2 source chip; the glyph grows on hover. */}
                   <span
                     aria-hidden
                     className="bg-surface border-separator rounded-control-sm mt-0.5 flex size-6 shrink-0 items-center justify-center border"
                   >
-                    <SrcIcon
-                      className={cn(
-                        "ease-out-facet duration-fast size-3.5 transition-[scale] group-hover/item:scale-110 group-focus-visible/item:scale-110 motion-reduce:transition-none motion-reduce:group-hover/item:scale-100 motion-reduce:group-focus-visible/item:scale-100",
-                        src.color
-                      )}
-                    />
+                    <SrcIcon className={cn("size-3.5", src.color)} />
                   </span>
 
                   <div className="min-w-0 flex-1">
@@ -396,7 +386,7 @@ export function TrendingSectionWidget() {
                       </p>
                     )}
 
-                    <div className="text-label-secondary text-footnote font-data mt-1 flex items-center gap-3 tabular-nums">
+                    <div className="text-label-secondary text-footnote mt-1 flex items-center gap-3 tabular-nums">
                       {item.engagement?.likes > 0 && (
                         <span className="flex items-center gap-1">
                           <Heart aria-hidden className="text-red size-3.5 fill-current" />
@@ -447,6 +437,6 @@ export function TrendingSectionWidget() {
             })}
         </div>
       </div>
-    </CutoutCard>
+    </Card>
   );
 }

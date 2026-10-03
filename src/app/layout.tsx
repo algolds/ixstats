@@ -9,7 +9,7 @@ import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/context/theme-context";
 import { AuthProvider } from "~/context/auth-context";
 import { IconoirProvider } from "iconoir-react";
-import { Navigation, NavigationTransitionHandler } from "~/app/_components";
+import { NavigationTransitionHandler } from "~/app/_components";
 import { SetupRedirect } from "~/app/_components/SetupRedirect";
 import { AppShell } from "~/components/shell/AppShell";
 import { WebGLErrorHandler } from "~/components/ui/webgl-error-handler";
@@ -31,7 +31,7 @@ import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
 import { LazyGameProviders } from "~/components/providers/LazyGameProviders";
 import { CuelumeSoundProvider } from "~/components/providers/CuelumeSoundProvider";
 import { FacetMotionConfig } from "~/components/providers/FacetMotionConfig";
-import { APPEARANCE_INIT_SCRIPT, FACET_NAV_DEFAULT } from "~/lib/design/appearance";
+import { APPEARANCE_INIT_SCRIPT } from "~/lib/design/appearance";
 
 // Removed force-dynamic to enable static generation and ISR where possible
 // Dynamic data is handled through proper React boundaries and tRPC
@@ -82,12 +82,7 @@ function AppContent({
                       <GlobalLinkTooltips />
                       <NavigationTransitionHandler />
                       <CuelumeSoundProvider />
-                      {/* The legacy top bar, or the Facet 3 shell (AppSidebar / TabBar / Halo
-                          island) when the `facet-nav` flag is on — see ~/components/shell. */}
-                      <AppShell
-                        legacyNav={<Navigation />}
-                        beforeMain={!isStandalone && <SetupRedirect />}
-                      >
+                      <AppShell beforeMain={!isStandalone && <SetupRedirect />}>
                         {/* Media providers + MiniPlayer live in the (wiki-os) layout (narrator only). */}
                         {children}
                       </AppShell>
@@ -124,11 +119,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       lang="en"
       // Server default; the pre-paint script below rewrites theme + preference attributes
       // (data-theme, data-density, data-contrast, data-transparency, data-motion, data-sound,
-      // --text-scale, and the navigation shell's data-nav / data-sidebar) from storage / the OS
-      // before first paint, hence suppressHydrationWarning.
+      // --text-scale, and the sidebar's data-sidebar) from storage / the OS before first paint,
+      // hence suppressHydrationWarning.
       className="dark"
       data-theme="dark"
-      data-nav={FACET_NAV_DEFAULT ? "facet" : undefined}
+      // Constant: two WikiOS rules still select on it.
+      data-nav="facet"
       suppressHydrationWarning
     >
       <head>

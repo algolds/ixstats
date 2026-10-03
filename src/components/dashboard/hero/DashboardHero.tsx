@@ -3,14 +3,7 @@
 import { useState, useMemo, memo } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import {
-  Crown,
-  Calendar,
-  Globe,
-  Tournament as Swords,
-  NavArrowUp as ChevronUp,
-  NavArrowRight as ChevronRight,
-} from "iconoir-react";
+import { NavArrowUp as ChevronUp, NavArrowRight as ChevronRight } from "iconoir-react";
 import * as IconoirIcons from "iconoir-react";
 import { useUser } from "~/context/auth-context";
 import { usePremium } from "~/hooks/usePremium";
@@ -20,70 +13,14 @@ import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { assetUrl } from "~/lib/base-path";
 import { createVitalityRingsFromCountry } from "~/components/mycountry/primitives";
-import { SECTION_THEME_CLASSES } from "~/lib/themes";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { FlagWatermark } from "~/components/ui/facet/identity/FlagWatermark";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { AvatarGlow } from "~/components/vault/AvatarGlow";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
-import { type HeroHelpStep } from "~/components/ui/hero-help-modal";
 
 import { HeroSnapshotPanels, type HeroSnapshotData } from "./HeroSnapshotPanels";
-
-// oxlint-disable-next-line eslint/no-unused-vars
-const DASHBOARD_HELP_STEPS: HeroHelpStep[] = [
-  {
-    title: "Welcome to IxStats",
-    body: "This is your global dashboard — a live snapshot of your nation and the wider world. Use it to keep tabs on your standing and jump into the systems that matter.",
-  },
-  {
-    title: "Your nation at a glance",
-    body: "The hero shows your flag, leader, GDP per capita, population, land area, and momentum (growth + global rank). The map highlights your territory and capital.",
-  },
-  {
-    title: "Switch perspectives",
-    body: "Use the Overview, Agenda, Diplomacy, and Defense tabs to see different slices of your nation right from the dashboard.",
-  },
-  {
-    title: "Explore the world",
-    body: "From the nav you can browse global rankings and stats, the interactive world map, ThinkPages social feeds, and the IxVault marketplace.",
-  },
-  {
-    title: "Run your country",
-    body: "Click “Go to MyCountry” to enter your command suite — hold cabinet meetings, enact policies, resolve national issues, and edit your nation.",
-  },
-];
-
-// oxlint-disable-next-line eslint/no-unused-vars
-const HERO_NAV = [
-  {
-    section: "Overview" as const,
-    icon: Crown,
-    label: "Overview",
-    theme: SECTION_THEME_CLASSES.overview,
-  },
-  {
-    section: "Agenda" as const,
-    icon: Calendar,
-    label: "Agenda",
-    theme: SECTION_THEME_CLASSES.executive,
-  },
-  {
-    section: "Diplomacy" as const,
-    icon: Globe,
-    label: "Diplomacy",
-    theme: SECTION_THEME_CLASSES.diplomacy,
-  },
-  {
-    section: "Defense" as const,
-    icon: Swords,
-    label: "Defense",
-    theme: SECTION_THEME_CLASSES.defense,
-  },
-] as const;
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -195,8 +132,6 @@ export function DashboardHeroComponent({
     stats.slug || (country as any)?.slug || (country as any)?.newStats?.slug || countryId;
 
   return (
-    // v2 (c5c6b382) glass hero (white 5% frosted fill, 15% white border, xl shadow) with a
-    // top refraction hairline, the 320px flag watermark that brightens on hover, and paper grain.
     <Card variant="hero" className="overflow-hidden">
       <FlagWatermark src={flagUrl} />
 
@@ -228,7 +163,6 @@ export function DashboardHeroComponent({
           />
         </div>
 
-        {/* v2 nested a frosted panel here; glass never nests, so it is the inset panel. */}
         <div className="bg-surface-secondary rounded-row shadow-card relative flex h-full flex-col justify-between gap-2 overflow-hidden p-3 md:col-span-2">
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="mb-2 flex items-center justify-between gap-2">
@@ -276,7 +210,7 @@ export function DashboardHeroComponent({
                 </div>
               </Link>
 
-              {/* v2 amber MyCountry pill: the tinted button in the MyCountry (gold) scope. */}
+              {/* MyCountry gold scope for the tinted button. */}
               <span data-app="mycountry" className="contents">
                 <Button asChild variant="secondary" size="sm" className="shrink-0 rounded-full">
                   <Link href="/mycountry">

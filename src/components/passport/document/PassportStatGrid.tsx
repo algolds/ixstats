@@ -19,9 +19,9 @@ interface PassportStatGridProps {
 
 /** An inset panel (`Card variant="inset"` styling on a button or link). */
 const STAT_CELL = cn("bg-surface-secondary text-label rounded-row", "w-full p-3");
-/** v2 cells: a rim in the cell's accent on hover and keyboard focus, and the press scale. */
+/** Pressable cells: hover fill and the press scale. */
 const STAT_CELL_INTERACTIVE =
-  "hover:bg-fill-3 border border-transparent hover:border-yellow/30 focus-visible:border-yellow/30 facet-press focus-visible:outline-tint cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2";
+  "hover:bg-fill-3 facet-press focus-visible:outline-tint cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2";
 
 /** Category breadth of the whole live collection (e.g. "3/12", "Military focus"). */
 function categorySummary(focus: PassportVault["focus"]): { label: string; sub: string } {
@@ -54,7 +54,7 @@ export const PassportStatGrid = React.memo(function PassportStatGrid({
           type="button"
           onClick={onOpenLorewards}
           className={cn(STAT_CELL, STAT_CELL_INTERACTIVE, "text-left")}
-          title="View Lorewards civic accolades"
+          title="View Lorewards accolades"
         >
           <Stat
             size="sm"
@@ -64,7 +64,7 @@ export const PassportStatGrid = React.memo(function PassportStatGrid({
             value={lorewards?.rank ? `#${lorewards.rank}` : "Unranked"}
             hint={
               <span>
-                <span className="font-data tabular-nums">
+                <span className="tabular-nums">
                   {(lorewards?.totalScore ?? 0).toLocaleString()}
                 </span>{" "}
                 pts
@@ -102,9 +102,7 @@ export const PassportStatGrid = React.memo(function PassportStatGrid({
             hint={
               forumStats ? (
                 <span>
-                  <span className="font-data tabular-nums">
-                    {forumStats.reactionScore.toLocaleString()}
-                  </span>{" "}
+                  <span className="tabular-nums">{forumStats.reactionScore.toLocaleString()}</span>{" "}
                   reactions
                 </span>
               ) : (
@@ -130,8 +128,8 @@ export const PassportStatGrid = React.memo(function PassportStatGrid({
             }
             hint={
               <span>
-                <span className="font-data tabular-nums">{vault.totalCards.toLocaleString()}</span>{" "}
-                cards · Lv {vault.collectorLevel}
+                <span className="tabular-nums">{vault.totalCards.toLocaleString()}</span> cards · Lv{" "}
+                {vault.collectorLevel}
               </span>
             }
           />

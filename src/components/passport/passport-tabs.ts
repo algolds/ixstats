@@ -2,7 +2,7 @@ import type { PassportTabType } from "./types";
 
 export const DEFAULT_PASSPORT_TAB: PassportTabType = "overview";
 
-/** `?tab=` values, including the pre-plan-188 names (`lore`, `wiki`) and the plan's `passport`. */
+/** `?tab=` values, including the older names (`lore`, `wiki`, `passport`). */
 const TAB_ALIASES = new Map<string, PassportTabType>([
   ["overview", "overview"],
   ["passport", "overview"],

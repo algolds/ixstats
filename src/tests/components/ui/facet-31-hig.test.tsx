@@ -257,7 +257,7 @@ describe("Halo walkthrough highlight", () => {
   it("is a static ring, not a looping pulse (spec §8: no ambient loops)", () => {
     const source = fs.readFileSync(path.join(ROOT, "src/components/halo/index.tsx"), "utf8");
     expect(source).not.toMatch(/repeat:\s*Infinity/);
-    expect(source).toContain('isTourActive && "ring-tint/50 facet-glow ring-2"');
+    expect(source).toContain('isTourActive && "ring-tint/50 ring-2"');
   });
 });
 

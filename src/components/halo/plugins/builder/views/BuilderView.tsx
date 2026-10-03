@@ -74,9 +74,9 @@ function BuilderViewComponent({ onClose, onSwitchMode, filter, context }: Builde
                 size="icon-sm"
                 onClick={() => onSwitchMode("search" as ViewMode)}
                 className="text-label-secondary hover:text-label"
-                title="Global Search"
+                title="Search"
                 type="button"
-                aria-label="Global Search"
+                aria-label="Search"
               >
                 <Search aria-hidden />
               </Button>
@@ -110,9 +110,9 @@ function BuilderViewComponent({ onClose, onSwitchMode, filter, context }: Builde
               size="icon-sm"
               onClick={() => filter.setWelcomeModalOpen(true)}
               className="text-label-secondary hover:text-yellow"
-              title="Open Welcome Guide"
+              title="Open welcome guide"
               type="button"
-              aria-label="Open Welcome Guide"
+              aria-label="Open welcome guide"
             >
               <HelpCircle aria-hidden />
             </Button>
@@ -122,9 +122,9 @@ function BuilderViewComponent({ onClose, onSwitchMode, filter, context }: Builde
             size="icon-sm"
             onClick={onClose}
             className="text-label-secondary hover:text-label"
-            title="Collapse Hero"
+            title="Collapse"
             type="button"
-            aria-label="Collapse Hero"
+            aria-label="Collapse"
           >
             <X aria-hidden />
           </Button>

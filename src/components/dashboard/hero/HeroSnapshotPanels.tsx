@@ -1,19 +1,9 @@
 "use client";
 
-import { useMemo, memo, type ReactNode } from "react";
+import { useMemo, memo } from "react";
 import {
   Coins,
   Group as Users,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  Bell,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  Component as Layers,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  Community as Handshake,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  WarningTriangle as AlertTriangle,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  Archery as Target,
   Activity,
   Heart,
   ScaleFrameEnlarge as Scale,
@@ -22,95 +12,14 @@ import {
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { HealthRing } from "~/components/ui/health-ring";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { PreText } from "~/components/ui/pretext";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { StandingBands } from "~/components/mycountry/shell/StandingBands";
 
-/** v2 telemetry cells: hover wash, the icon grows, and the cell presses (`facet-press-sm`). */
+/** Telemetry cells: hover wash, the icon grows, and the cell presses. */
 const SNAPSHOT_BUTTON =
   "group facet-press facet-press-sm hover:bg-fill-4 rounded-control focus-visible:outline-tint flex min-w-0 cursor-pointer items-center gap-2 px-2 py-1 text-left focus-visible:outline-2 focus-visible:outline-offset-2";
 
-/** v2 icon nudge on hover and keyboard focus (Reduce Motion: still). */
+/** Icon nudge on hover and keyboard focus (Reduce Motion: still). */
 const ICON_GROW =
   "ease-out-facet transition-[scale] duration-fast group-hover:scale-110 group-focus-visible:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100 motion-reduce:group-focus-visible:scale-100";
-
-// Helper UI primitives
-export function StatPill({
-  icon: Icon,
-  label,
-  value,
-  color,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: string | number;
-  color: string;
-}) {
-  return (
-    <div className="bg-fill-4 rounded-control flex items-center gap-2 px-2 py-2">
-      <Icon aria-hidden className={cn("size-3.5 shrink-0", color)} />
-      <div className="min-w-0">
-        <p className="text-label-secondary text-eyebrow">{label}</p>
-        <p className="text-label text-caption font-data tabular-nums">{value}</p>
-      </div>
-    </div>
-  );
-}
-
-export function MiniBar({
-  value,
-  max = 100,
-  color = "bg-yellow",
-}: {
-  value: number;
-  max?: number;
-  color?: string;
-}) {
-  const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
-  return (
-    <div className="bg-fill-3 h-1 w-full overflow-hidden rounded-full">
-      <div className={cn("h-full rounded-full", color)} style={{ width: `${pct}%` }} />
-    </div>
-  );
-}
-
-export function IndicatorRow({
-  label,
-  value,
-  valueClass = "text-label",
-  barValue,
-  barMax = 100,
-  barColor = "bg-yellow",
-}: {
-  label: string;
-  value: string;
-  valueClass?: string;
-  barValue?: number;
-  barMax?: number;
-  barColor?: string;
-}) {
-  return (
-    <div className="space-y-0.5">
-      <div className="text-footnote flex items-center justify-between gap-2">
-        <span className="text-label-secondary truncate">{label}</span>
-        <span className={cn("font-data shrink-0 font-medium tabular-nums", valueClass)}>
-          {value}
-        </span>
-      </div>
-      {barValue != null && <MiniBar value={barValue} max={barMax} color={barColor} />}
-    </div>
-  );
-}
-
-export function DetailList({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="bg-fill-4 rounded-control mt-2 flex min-h-0 flex-1 flex-col gap-1 p-2">
-      <p className="text-subhead text-label-secondary">{title}</p>
-      <div className="flex min-h-0 flex-1 flex-col justify-center gap-2">{children}</div>
-    </div>
-  );
-}
 
 export interface HeroSnapshotData {
   stats: {
@@ -157,23 +66,6 @@ function getQualitativeRating(score: number): { label: string; color: string } {
   if (score >= 45) return { label: "Stable", color: "text-teal" };
   if (score >= 30) return { label: "Moderate", color: "text-caution" };
   return { label: "Vulnerable", color: "text-destructive" };
-}
-
-// oxlint-disable-next-line eslint/no-unused-vars
-function getDiplomaticStance(strength: number): { label: string; color: string } {
-  if (strength >= 80) return { label: "Ironclad Alliance", color: "text-teal" };
-  if (strength >= 65) return { label: "Strong Ties", color: "text-green" };
-  if (strength >= 45) return { label: "Warm Relations", color: "text-teal" };
-  if (strength >= 25) return { label: "Neutral Stance", color: "text-blue" };
-  return { label: "Strained Ties", color: "text-yellow" };
-}
-
-// oxlint-disable-next-line eslint/no-unused-vars
-function getForceReadinessLabel(readiness: number): { label: string; color: string } {
-  if (readiness >= 75) return { label: "Combat Ready", color: "text-green" };
-  if (readiness >= 50) return { label: "Operational", color: "text-teal" };
-  if (readiness >= 30) return { label: "Refitting", color: "text-yellow" };
-  return { label: "Standby", color: "text-red" };
 }
 
 function HeroSnapshotPanelsComponent({
@@ -275,8 +167,8 @@ function HeroSnapshotPanelsComponent({
         >
           <Users aria-hidden className={cn("text-blue size-4 shrink-0", ICON_GROW)} />
           <span className="min-w-0">
-            <span className="text-label-secondary text-eyebrow block">Pop</span>
-            <span className="text-label text-caption sm:text-headline font-data block truncate tabular-nums group-hover:underline group-focus-visible:underline">
+            <span className="text-label-secondary text-stat-label block">Pop</span>
+            <span className="text-label text-caption sm:text-headline block truncate tabular-nums group-hover:underline group-focus-visible:underline">
               {pop}
             </span>
           </span>
@@ -290,8 +182,8 @@ function HeroSnapshotPanelsComponent({
         >
           <Coins aria-hidden className={cn("text-green size-4 shrink-0", ICON_GROW)} />
           <span className="min-w-0">
-            <span className="text-label-secondary text-eyebrow block">GDP</span>
-            <span className="text-success text-caption sm:text-headline font-data block truncate tabular-nums group-hover:underline group-focus-visible:underline">
+            <span className="text-label-secondary text-stat-label block">GDP</span>
+            <span className="text-success text-caption sm:text-headline block truncate tabular-nums group-hover:underline group-focus-visible:underline">
               {gdp}
             </span>
           </span>
@@ -344,25 +236,19 @@ function HeroSnapshotPanelsComponent({
         <div className="flex min-w-0 items-center justify-center gap-1 px-1">
           <Heart aria-hidden className="text-red size-3.5 shrink-0" />
           <dt className="text-label-secondary text-footnote">Approval</dt>
-          <dd className="text-label text-caption font-data truncate tabular-nums">
-            {approvalPct}%
-          </dd>
+          <dd className="text-label text-caption truncate tabular-nums">{approvalPct}%</dd>
         </div>
 
         <div className="flex min-w-0 items-center justify-center gap-1 px-1">
           <Scale aria-hidden className="text-indigo size-3.5 shrink-0" />
           <dt className="text-label-secondary text-footnote">Stability</dt>
-          <dd className="text-label text-caption font-data truncate tabular-nums">
-            {stabilityPct}%
-          </dd>
+          <dd className="text-label text-caption truncate tabular-nums">{stabilityPct}%</dd>
         </div>
 
         <div className="flex min-w-0 items-center justify-center gap-1 px-1">
           <Zap aria-hidden className="text-yellow size-3.5 shrink-0" />
           <dt className="text-label-secondary text-footnote">Capacity</dt>
-          <dd className="text-label text-caption font-data truncate tabular-nums">
-            {capacityPct}%
-          </dd>
+          <dd className="text-label text-caption truncate tabular-nums">{capacityPct}%</dd>
         </div>
       </dl>
     </div>

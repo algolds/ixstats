@@ -51,7 +51,7 @@ export function IxStatsSplashPage() {
         />
         <div className="relative z-10 text-center">
           <div className="border-fill border-t-tint mx-auto mb-4 size-12 animate-spin rounded-full border-2" />
-          <p className="text-body text-label-secondary">Redirecting to dashboard...</p>
+          <p className="text-body text-label-secondary">Opening your dashboard</p>
         </div>
       </div>
     );
@@ -60,7 +60,7 @@ export function IxStatsSplashPage() {
   const topCountriesRecords = topCountries as unknown as Record<string, unknown>[];
 
   return (
-    // The landing pitches MyCountry, so it wears the MyCountry gold tint (Facet 3 §2.2).
+    // The landing pitches MyCountry, so it uses the MyCountry gold tint.
     <div data-app="mycountry" className="bg-background relative min-h-screen overflow-hidden">
       <PortalTintSync />
       <InteractiveGridPattern

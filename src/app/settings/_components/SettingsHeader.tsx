@@ -28,7 +28,7 @@ export function SettingsHeader({ title, description, category, actions }: Settin
           <span className="text-foreground">{title}</span>
         </div>
 
-        <h1 className="text-foreground text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
+        <h1 className="text-foreground text-2xl font-bold sm:text-3xl">{title}</h1>
         {description && (
           <p className="text-muted-foreground max-w-2xl text-xs font-medium">{description}</p>
         )}

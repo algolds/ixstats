@@ -17,7 +17,7 @@ export function SettingsSkeleton() {
             <Skeleton className="h-10 w-64 rounded-xl" />
             <Skeleton className="h-4 w-40 rounded-lg" />
           </div>
-          <div className="flex items-center gap-4 rounded-2xl border border-slate-200/50 bg-white/30 p-2 pr-6 backdrop-blur-md dark:border-slate-800/30 dark:bg-slate-900/30">
+          <div className="rounded-card border-separator bg-surface flex items-center gap-4 border p-2 pr-6">
             <Skeleton className="h-12 w-12 rounded-xl" />
             <div className="space-y-1.5">
               <Skeleton className="h-3 w-20 rounded" />

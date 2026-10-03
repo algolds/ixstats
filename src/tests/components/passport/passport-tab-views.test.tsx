@@ -139,6 +139,6 @@ describe("PassportWorkTab", () => {
         cleanUsername="alex"
       />
     );
-    expect(screen.getByText("No Published Work Found")).toBeInTheDocument();
+    expect(screen.getByText("No published work")).toBeInTheDocument();
   });
 });

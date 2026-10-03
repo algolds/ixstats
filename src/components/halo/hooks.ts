@@ -137,7 +137,7 @@ export function useDynamicIslandState() {
     if (!isSignedIn || !user) {
       ctx.push(
         {
-          name: "Sign In",
+          name: "Sign in",
           path: "/sign-in",
           icon: LogIn,
           category: "System",
@@ -145,7 +145,7 @@ export function useDynamicIslandState() {
           keywords: ["login", "auth", "signin", "session"],
         },
         {
-          name: "Sign Up",
+          name: "Sign up",
           path: "/sign-up",
           icon: LogIn,
           category: "System",
@@ -155,7 +155,7 @@ export function useDynamicIslandState() {
       );
     } else {
       ctx.push({
-        name: "Sign Out",
+        name: "Sign out",
         actionId: "sign-out",
         icon: LogOut,
         category: "System",
@@ -179,7 +179,7 @@ export function useDynamicIslandState() {
       const cid = pathname.split("/countries/")[1]?.split("/")[0];
       if (cid) {
         ctx.push({
-          name: "Country Profile",
+          name: "Country profile",
           path: `/countries/${cid}`,
           icon: Globe,
           category: "Geography",

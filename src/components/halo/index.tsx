@@ -310,16 +310,11 @@ function CommandPaletteContent({
         </AnimatePresence>
 
         {/* DI pill — draggable for swipe-up nav tray. During the walkthrough the island carries
-            a static highlight — the tour tooltip's tint ring and soft tint glow (`facet-glow`) —
-            instead of the retired looping pulse (spec §8 / §16.8: no ambient loops). It has no
-            movement, so it is the same under Reduce Motion. */}
+            a static tint ring instead of a looping pulse. It has no movement, so it is the same
+            under Reduce Motion. */}
         <motion.div
           data-tour-highlight={isTourActive ? "true" : undefined}
-          className={cn(
-            "rounded-full",
-            diPulseClass,
-            isTourActive && "ring-tint/50 facet-glow ring-2"
-          )}
+          className={cn("rounded-full", diPulseClass, isTourActive && "ring-tint/50 ring-2")}
           animate={{
             scale: ringActive ? 1.04 : 1,
             y: pillBounce ? -4 : 0,

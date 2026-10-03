@@ -131,8 +131,8 @@ function GroupedSeriesCard({
   const isLegendaryOrEpic = activeLevel.rarity === "Legendary" || activeLevel.rarity === "Epic";
 
   return (
-    // v2 (c5c6b382): unlocked achievements are glass cards that lift on hover, decorated with the
-    // aurora / radiance / foil / ghost-heraldry backdrop; locked ones stay a dashed opaque slot.
+    // Unlocked achievements lift on hover and carry the aurora / radiance / foil / heraldry
+    // backdrop; locked ones stay a dashed opaque slot.
     <MotionCard
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
@@ -221,7 +221,7 @@ function GroupedSeriesCard({
               )}
             >
               {isSecret && !isRevealed
-                ? "Hidden challenge. Click the eye icon to preview secret details."
+                ? "Secret achievement. Select the eye icon to reveal it."
                 : activeLevel.description}
             </p>
           </div>
@@ -281,7 +281,7 @@ function GroupedSeriesCard({
             </div>
 
             <span className="text-label-secondary text-footnote">
-              <span className="font-data tabular-nums">
+              <span className="tabular-nums">
                 {item.unlockedCount} / {item.totalLevels}
               </span>{" "}
               mastered
@@ -319,7 +319,7 @@ function GroupedSeriesCard({
             {isUnlocked && activeLevel.unlockedAt ? (
               <span className="text-label">
                 Unlocked{" "}
-                <span className="font-data tabular-nums">
+                <span className="tabular-nums">
                   {new Date(activeLevel.unlockedAt).toLocaleDateString(undefined, {
                     month: "short",
                     day: "numeric",
@@ -403,8 +403,8 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
       >
         <SearchField
           size="sm"
-          placeholder="Search achievement series..."
-          aria-label="Search achievement series"
+          placeholder="Search achievements"
+          aria-label="Search achievements"
           value={searchQuery}
           onValueChange={setSearchQuery}
           containerClassName="max-w-sm flex-1"
@@ -428,7 +428,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
                 <ToggleGroupItem key={r} value={r} className="gap-2">
                   <RarityIcon aria-hidden className="size-3.5" />
                   <span>{config.label}</span>
-                  <span className="text-label-secondary font-data tabular-nums">{count}</span>
+                  <span className="text-label-secondary tabular-nums">{count}</span>
                 </ToggleGroupItem>
               );
             })}
@@ -471,8 +471,8 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
         <Card>
           <EmptyState
             icon={<Award />}
-            title="No matching series"
-            message="Try adjusting your search query or rarity filter."
+            title="No achievements match"
+            message="Change the search or pick another rarity."
           />
         </Card>
       )}

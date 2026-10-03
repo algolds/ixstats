@@ -133,7 +133,7 @@ export default async function ForumPostEmbed({
             fontSize: 10,
           }}
         >
-          View Cards
+          View cards
         </a>
       </div>
     </div>

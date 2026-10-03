@@ -8,8 +8,6 @@ import { ShellPageHeader, shellPageTitleProps } from "~/components/shell/ShellPa
 export function DashboardPageClient({ initialCountryId }: { initialCountryId: string }) {
   usePageTitle({ title: "Dashboard" });
 
-  // Enhanced home page with social activity feed and platform-wide engagement
-  // Combines the best of the original CommandCenter with new social features
   return (
     <DashboardErrorBoundary
       title="Dashboard Error"

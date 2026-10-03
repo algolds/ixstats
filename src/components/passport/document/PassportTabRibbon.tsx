@@ -36,7 +36,7 @@ interface PassportTabRibbonProps {
 }
 
 /**
- * The mid-card die-cut index ribbon that switches passport tabs — the WAI-ARIA tabs pattern:
+ * The mid-card die-cut index ribbon that switches passport tabs, using the WAI-ARIA tabs pattern:
  * `role="tablist"` of `role="tab"`s with `aria-selected`, the selected tab controls the panel
  * (`passportTabPanelId`), roving tabindex (only the selected tab is in the Tab order), and
  * ←/→/Home/End move focus and select (automatic activation).
@@ -104,16 +104,16 @@ export const PassportTabRibbon = React.memo(function PassportTabRibbon({
               onClick={() => onSelectTab(tab.id)}
               onKeyDown={(event) => handleKeyDown(event, idx)}
               className={cn(
-                // v2: the active tab is the inverted (monochrome primary) pill; tabs press. The
-                // 28px pill keeps a 44pt hit area on touch screens (`hitSlop`, inside the py-2).
+                // The active tab is the inverted (primary) pill. The 28px pill keeps a 44pt hit
+                // area on touch screens (`hitSlop`).
                 hitSlop,
-                "rounded-control text-footnote facet-press facet-press-sm focus-visible:outline-tint relative flex h-(--control-height-sm) shrink-0 cursor-pointer items-center gap-2 px-3 font-medium focus-visible:outline-2 focus-visible:outline-offset-2",
+                "rounded-control text-footnote focus-visible:outline-tint relative flex h-(--control-height-sm) shrink-0 cursor-pointer items-center gap-2 px-3 font-medium focus-visible:outline-2 focus-visible:outline-offset-2",
                 isActive
                   ? "bg-primary-fill text-on-primary shadow-card"
                   : "text-label-secondary hover:text-label hover:bg-fill-4"
               )}
             >
-              <span aria-hidden className="font-data tabular-nums opacity-60">
+              <span aria-hidden className="tabular-nums opacity-60">
                 {String(idx + 1).padStart(2, "0")}.
               </span>
               <Icon aria-hidden className="size-3.5" />
@@ -124,7 +124,7 @@ export const PassportTabRibbon = React.memo(function PassportTabRibbon({
                   initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={shouldReduceMotion ? REDUCED_MOTION_FADE : springSnappy}
-                  className="text-caption font-data rounded-full bg-current/15 px-2 tabular-nums"
+                  className="text-caption rounded-full bg-current/15 px-2 tabular-nums"
                 >
                   {count}
                 </motion.span>

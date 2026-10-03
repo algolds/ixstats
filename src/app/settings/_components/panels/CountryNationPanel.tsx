@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "~/components/ui/button";
 import { useTransition } from "react";
 import Link from "next/link";
 import {
@@ -116,19 +117,16 @@ export function CountryNationPanel({
   return (
     <div className="space-y-6">
       <SettingsHeader
-        title="MyCountry Settings"
+        title="MyCountry settings"
         category="MyCountry"
-        description="Official nation metadata, national flag symbols, and map-to-national sync mode."
+        description="Country name, flag and how map data feeds national statistics."
       />
 
-      {/* National Flag & Symbols */}
-      <SettingsGroup
-        title="National Symbols"
-        description="Official heraldry and flag representations displayed across IxStates."
-      >
+      {/* Flag */}
+      <SettingsGroup title="National symbols" description="The flag shown across IxStats.">
         <SettingsRow
-          label="National Flag"
-          description="National ensign used across dossiers, maps, and leaderboard rankings"
+          label="National flag"
+          description="Shown on your country page, the map and leaderboards"
           icon={Flag}
           glyphClass="bg-muted/60 text-foreground"
         >
@@ -140,17 +138,18 @@ export function CountryNationPanel({
                 className="h-full w-full object-cover"
               />
             </div>
-            <button
+            <Button
               type="button"
               onClick={() => {
                 soundEffects.press();
                 setFlagUploadMode(!flagUploadMode);
               }}
               data-cuelume-press="soft"
-              className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+              variant="secondary"
+              size="sm"
             >
-              {flagUploadMode ? "Cancel" : "Change Flag"}
-            </button>
+              {flagUploadMode ? "Cancel" : "Change flag"}
+            </Button>
           </div>
         </SettingsRow>
 
@@ -192,7 +191,7 @@ export function CountryNationPanel({
                   <div className="border-border/60 bg-muted/60 relative h-16 w-24 overflow-hidden rounded-lg border shadow-xs">
                     <img
                       src={uploadedFlagUrl}
-                      alt="Flag Preview"
+                      alt="Flag preview"
                       className="h-full w-full object-cover"
                     />
                   </div>
@@ -202,38 +201,37 @@ export function CountryNationPanel({
             </div>
 
             <div className="flex justify-end gap-2">
-              <button
+              <Button
                 type="button"
                 onClick={() => {
                   soundEffects.press();
                   setFlagUploadMode(false);
                   setUploadedFlagUrl(null);
                 }}
-                className="facet-interactive border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground rounded-xl border px-3 py-1.5 text-xs font-semibold active:scale-[0.98]"
+                variant="secondary"
+                size="sm"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleFlagSave}
                 disabled={!uploadedFlagUrl || updateCountryFlagMutation.isPending}
-                className="facet-interactive bg-foreground text-background hover:bg-foreground/90 rounded-xl px-3.5 py-1.5 text-xs font-semibold active:scale-[0.98] disabled:opacity-50"
+                variant="default"
+                size="sm"
               >
-                {updateCountryFlagMutation.isPending ? "Saving..." : "Save Flag"}
-              </button>
+                {updateCountryFlagMutation.isPending ? "Saving..." : "Save flag"}
+              </Button>
             </div>
           </div>
         )}
       </SettingsGroup>
 
-      {/* Country Identity */}
-      <SettingsGroup
-        title="Country Identity"
-        description="Official nomenclature and country registry designations."
-      >
+      {/* Country identity */}
+      <SettingsGroup title="Country identity" description="Your country name and its page.">
         <SettingsRow
-          label="State Name"
-          description="Official country name used across treaties, dossiers, and diplomatic tables"
+          label="Country name"
+          description="Used across treaties, country pages and diplomatic tables"
           icon={TypeIcon}
           glyphClass="bg-muted/60 text-foreground"
         >
@@ -246,31 +244,33 @@ export function CountryNationPanel({
                 className="h-8 w-44 text-xs font-semibold"
                 autoFocus
               />
-              <button
+              <Button
                 type="button"
                 onClick={handleUpdateCountryName}
                 disabled={updateCountryNameMutation.isPending || !newCountryName.trim()}
                 data-cuelume-press="soft"
-                className="facet-interactive bg-foreground text-background hover:bg-foreground/90 flex h-8 w-8 items-center justify-center rounded-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97] disabled:opacity-50"
+                variant="default"
+                size="icon-sm"
               >
                 <Save className="h-3.5 w-3.5" />
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => {
                   soundEffects.press();
                   setIsEditingCountry(false);
                 }}
                 data-cuelume-press="soft"
-                className="facet-interactive border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground flex h-8 w-8 items-center justify-center rounded-xl border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
+                variant="secondary"
+                size="icon-sm"
               >
                 <X className="h-3.5 w-3.5" />
-              </button>
+              </Button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
               <span className="text-foreground text-xs font-bold">{country.name}</span>
-              <button
+              <Button
                 type="button"
                 onClick={() => {
                   soundEffects.press();
@@ -278,40 +278,42 @@ export function CountryNationPanel({
                   setIsEditingCountry(true);
                 }}
                 data-cuelume-press="soft"
-                className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground rounded-xl border px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                variant="secondary"
+                size="sm"
               >
                 Rename
-              </button>
+              </Button>
             </div>
           )}
         </SettingsRow>
 
         <SettingsRow
-          label="Country Dossier"
-          description="View your full executive factbook and national statistics"
+          label="Country page"
+          description="Your factbook and national statistics"
           icon={ImageIcon}
           glyphClass="bg-muted/60 text-foreground"
         >
-          <Link
-            href={getCountryPath({ id: country.id, name: country.name, slug: country.slug })}
-            data-cuelume-press="soft"
-            className="facet-interactive border-border/60 bg-muted/40 text-foreground hover:bg-muted/70 flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-          >
-            <span>Open Dossier</span>
-            <ExternalLink className="h-3 w-3 opacity-60" />
-          </Link>
+          <Button asChild variant="secondary" size="sm">
+            <Link
+              href={getCountryPath({ id: country.id, name: country.name, slug: country.slug })}
+              data-cuelume-press="soft"
+            >
+              <span>Open country page</span>
+              <ExternalLink className="h-3 w-3 opacity-60" />
+            </Link>
+          </Button>
         </SettingsRow>
       </SettingsGroup>
 
-      {/* Map Reconciliation & Geo Sync Mode */}
+      {/* Map sync */}
       <SettingsGroup
-        title="Geography & Map Sync"
-        description="Configure how spatial map features roll up into national metrics."
+        title="Geography and map sync"
+        description="How map features roll up into national figures."
       >
         <SettingsSelectRow
           id="geo-sync-mode"
-          label="Map Rollup Mode"
-          description="Determines how territorial map data calculates national population and GDP"
+          label="Map rollup mode"
+          description="How map data sets national population and GDP"
           icon={Scale}
           glyphClass="bg-muted/60 text-foreground"
           value={currentMode}
@@ -320,42 +322,43 @@ export function CountryNationPanel({
           options={[
             {
               value: "hybrid",
-              label: "Hybrid Mode (Recommended)",
-              description: "Balances executive targets with local map density",
+              label: "Hybrid (recommended)",
+              description: "Balances your national targets with local map density",
             },
             {
               value: "top-down",
-              label: "Top-Down (Macro-Driven)",
-              description: "National executive stats distribute down to map tiles",
+              label: "Top-down",
+              description: "National statistics are distributed down to the map",
             },
             {
               value: "bottom-up",
-              label: "Bottom-Up (Geometry-Driven)",
-              description: "Map terrain and cities strictly calculate national totals",
+              label: "Bottom-up",
+              description: "Map subdivisions and cities set the national totals",
             },
           ]}
         />
 
         <SettingsRow
-          label="Rebase from Map"
+          label="Rebase from map"
           description={
             rollups
               ? `Current map total: ${Number(rollups.subdivisionPopulationSum ?? 0).toLocaleString()} citizens (${Math.round((rollups.populationCoverage ?? 0) * 100)}% coverage)`
-              : "Synchronize national baseline stats directly from geographic map entities"
+              : "Reset national baseline statistics from your map"
           }
           icon={RefreshCw}
           glyphClass="bg-muted/60 text-foreground"
         >
-          <button
+          <Button
             type="button"
             onClick={handleRebase}
             disabled={rebaseMutation.isPending}
             data-cuelume-press="soft"
-            className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-50"
+            variant="secondary"
+            size="sm"
           >
             <RefreshCw className={`h-3 w-3 ${rebaseMutation.isPending ? "animate-spin" : ""}`} />
-            <span>{rebaseMutation.isPending ? "Rebasing..." : "Rebase Stats"}</span>
-          </button>
+            <span>{rebaseMutation.isPending ? "Rebasing..." : "Rebase stats"}</span>
+          </Button>
         </SettingsRow>
       </SettingsGroup>
     </div>

@@ -1,5 +1,8 @@
 "use client";
 
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { useState } from "react";
 import {
   ShieldAlert,
@@ -116,7 +119,7 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="border-border/60 bg-card/95 max-h-[85vh] overflow-y-auto rounded-2xl p-6 shadow-2xl backdrop-blur-xl sm:max-w-xl">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader className="space-y-2">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-500">
@@ -124,48 +127,31 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
             </div>
             <div>
               <DialogTitle className="text-foreground text-lg font-bold">
-                NationStates Card Takedown & Opt-Out
+                NationStates card takedown
               </DialogTitle>
               <DialogDescription className="text-muted-foreground text-xs">
-                Remove your nation&apos;s flag from cards served on the platform.
+                Remove your nation&apos;s flag from cards shown on IxStats.
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        {/* Tab switcher */}
-        <div className="border-border/60 bg-muted/30 flex rounded-xl border p-1">
-          <button
-            type="button"
-            onClick={() => {
-              soundEffects.press();
-              setActiveTab("owned");
-            }}
-            className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-              activeTab === "owned"
-                ? "bg-card text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Owned Cards ({cards.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              soundEffects.press();
-              setActiveTab("verify");
-            }}
-            className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-              activeTab === "verify"
-                ? "bg-card text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Verify Nation Claim
-          </button>
-        </div>
+        <SegmentedControl
+          aria-label="Takedown step"
+          size="sm"
+          fullWidth
+          value={activeTab}
+          onValueChange={(tab) => {
+            soundEffects.press();
+            setActiveTab(tab);
+          }}
+          options={[
+            { value: "owned", label: `Owned cards (${cards.length})` },
+            { value: "verify", label: "Verify nation claim" },
+          ]}
+        />
 
-        {/* Tab: Owned Cards */}
+        {/* Owned cards */}
         {activeTab === "owned" && (
           <div className="space-y-4 pt-2">
             {isLoading ? (
@@ -173,11 +159,11 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
             ) : cards.length === 0 ? (
-              <div className="border-border/40 bg-muted/20 rounded-xl border p-5 text-center">
+              <div className="border-separator bg-surface-secondary rounded-row border p-5 text-center">
                 <p className="text-muted-foreground text-xs">
-                  You don&apos;t have any NationStates-imported cards in your collection. If your
-                  nation&apos;s flag appears on other cards, use the{" "}
-                  <strong>Verify Nation Claim</strong> tab to submit a takedown.
+                  You have not imported any NationStates cards. If your nation&apos;s flag appears
+                  on other cards, use the <strong>Verify nation claim</strong> tab to request a
+                  takedown.
                 </p>
               </div>
             ) : (
@@ -189,20 +175,18 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
                   return (
                     <div
                       key={key}
-                      className="border-border/60 bg-muted/15 space-y-2.5 rounded-xl border p-3.5"
+                      className="border-separator bg-surface-secondary rounded-row space-y-2.5 border p-3.5"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="text-foreground text-xs font-bold">{nation}</span>
                           {isVerified ? (
-                            <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                              <ShieldCheck className="h-2.5 w-2.5" />
+                            <Badge variant="success">
+                              <ShieldCheck aria-hidden />
                               Verified
-                            </span>
+                            </Badge>
                           ) : (
-                            <span className="inline-flex items-center rounded-md border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
-                              Unverified
-                            </span>
+                            <Badge variant="warning">Unverified</Badge>
                           )}
                         </div>
                         <span className="text-muted-foreground text-xs">
@@ -214,7 +198,7 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
                         {nationCards.map((card) => (
                           <div
                             key={card.cardId}
-                            className="border-border/40 bg-card/60 flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
+                            className="border-separator bg-surface rounded-row flex items-center justify-between gap-3 border px-3 py-2"
                           >
                             <div className="min-w-0">
                               <p className="text-foreground truncate text-xs font-medium">
@@ -225,7 +209,7 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
                               </p>
                             </div>
 
-                            <button
+                            <Button
                               type="button"
                               disabled={
                                 card.isHidden ||
@@ -245,11 +229,9 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
                                 }
                               }}
                               data-cuelume-press="soft"
-                              className={`facet-interactive flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
-                                card.isHidden
-                                  ? "border-border/60 bg-muted text-muted-foreground border"
-                                  : "border border-rose-500/30 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 dark:text-rose-400"
-                              }`}
+                              variant={card.isHidden ? "secondary" : "outline"}
+                              size="xs"
+                              className={card.isHidden ? undefined : "text-destructive"}
                             >
                               {card.isHidden ? (
                                 <>
@@ -259,10 +241,10 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
                               ) : (
                                 <>
                                   <Eye className="h-3 w-3" />
-                                  <span>Hide Flag</span>
+                                  <span>Hide flag</span>
                                 </>
                               )}
-                            </button>
+                            </Button>
                           </div>
                         ))}
                       </div>
@@ -274,7 +256,7 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
           </div>
         )}
 
-        {/* Tab: Verify Nation Claim */}
+        {/* Verify claim */}
         {activeTab === "verify" && (
           <div className="space-y-4 pt-2">
             {claimSuccessMessage ? (
@@ -282,86 +264,81 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/20 text-emerald-500">
                   <CheckCircle2 className="h-6 w-6" />
                 </div>
-                <h4 className="text-foreground text-sm font-bold">Takedown Request Submitted</h4>
+                <h4 className="text-foreground text-sm font-bold">Takedown request submitted</h4>
                 <p className="text-muted-foreground text-xs">{claimSuccessMessage}</p>
-                <button
+                <Button
                   type="button"
                   onClick={handleClose}
                   data-cuelume-press="soft"
-                  className="facet-interactive bg-foreground text-background mt-2 rounded-xl px-4 py-2 text-xs font-bold hover:opacity-90 active:scale-[0.98]"
+                  variant="default"
+                  size="sm"
                 >
                   Done
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="space-y-3">
                 <div>
                   <label className="text-foreground mb-1 block text-xs font-semibold">
-                    NationStates Nation Name
+                    NationStates nation name
                   </label>
                   <Input
                     type="text"
                     value={claimNation}
                     onChange={(e) => setClaimNation(e.target.value)}
-                    placeholder="Enter nation name..."
+                    placeholder="Nation name"
                     className="text-xs"
                   />
                 </div>
 
-                <div className="border-border/40 bg-muted/20 space-y-2 rounded-xl border p-3.5">
+                <div className="border-separator bg-surface-secondary rounded-row space-y-2 border p-3.5">
                   <p className="text-foreground text-xs font-medium">
-                    Step 1: Get your verification checksum code
+                    Step 1: Get your verification code
                   </p>
                   <p className="text-muted-foreground text-xs">
-                    Sign in to NationStates and generate a temporary code to prove ownership of this
-                    flag.
+                    Sign in to NationStates and generate a temporary code to prove you own this
+                    nation.
                   </p>
-                  <a
-                    href={verifyUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="facet-interactive border-border/60 bg-card text-foreground hover:bg-muted inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold active:scale-[0.98]"
-                  >
-                    <span>Open NationStates Verification</span>
-                    <ExternalLink className="text-muted-foreground h-3 w-3" />
-                  </a>
+                  <Button asChild variant="secondary" size="sm">
+                    <a href={verifyUrl} target="_blank" rel="noopener noreferrer">
+                      <span>Open NationStates verification</span>
+                      <ExternalLink aria-hidden />
+                    </a>
+                  </Button>
                 </div>
 
                 <div>
                   <label className="text-foreground mb-1 block text-xs font-semibold">
-                    Step 2: Paste Verification Checksum
+                    Step 2: Paste the verification code
                   </label>
                   <Input
                     type="text"
                     value={claimChecksum}
                     onChange={(e) => setClaimChecksum(e.target.value)}
-                    placeholder="Paste checksum code..."
+                    placeholder="Verification code"
                     className="font-mono text-xs"
                   />
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={handleClose}
-                    className="facet-interactive border-border/60 bg-card text-foreground hover:bg-muted rounded-xl border px-3.5 py-1.5 text-xs font-bold active:scale-[0.98]"
-                  >
+                  <Button type="button" onClick={handleClose} variant="secondary" size="sm">
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     onClick={handleVerifyClaim}
                     disabled={
                       !claimNation.trim() || !claimChecksum.trim() || verifyClaimMutation.isPending
                     }
                     data-cuelume-press="soft"
-                    className="facet-interactive flex items-center gap-1.5 rounded-xl bg-rose-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-rose-700 active:scale-[0.98] disabled:opacity-50"
+                    variant="default"
+                    size="sm"
                   >
                     {verifyClaimMutation.isPending && (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     )}
-                    <span>Submit Takedown</span>
-                  </button>
+                    <span>Submit takedown</span>
+                  </Button>
                 </div>
               </div>
             )}

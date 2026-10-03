@@ -24,7 +24,7 @@ function matchesSearch(query: string, title: string, summary: string | null): bo
   return !q || title.toLowerCase().includes(q) || Boolean(summary?.toLowerCase().includes(q));
 }
 
-/** Tab 3 — everything this identity authored, registered or enacted (plan 188 §4). */
+/** Everything this identity authored, registered or enacted. */
 export const PassportWorkTab = React.memo(function PassportWorkTab({
   work,
   wiki,
@@ -48,8 +48,8 @@ export const PassportWorkTab = React.memo(function PassportWorkTab({
       <Card variant="inset" padding="none" className="border-separator border">
         <EmptyState
           icon={<BookOpen />}
-          title="No Published Work Found"
-          message={`@${cleanUsername} has not yet published any WikiOS articles, revisions, language packs, or simulation directives.`}
+          title="No published work"
+          message={`@${cleanUsername} has not published any WikiOS articles, language packs or directives yet.`}
         />
       </Card>
     );

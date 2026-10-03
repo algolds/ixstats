@@ -45,7 +45,7 @@ function ByteDiff({ bytes }: { bytes: number }) {
 
 interface WorkActivityFeedProps {
   feed: FeedItem[];
-  /** Wiki username for the "View All" contributions link. */
+  /** Wiki username for the "View all" contributions link. */
   contributionsUser: string;
 }
 
@@ -68,7 +68,7 @@ export const WorkActivityFeed = React.memo(function WorkActivityFeed({
           href={`/wiki/contributions/${encodeURIComponent(contributionsUser)}`}
           className="text-tint text-footnote flex items-center gap-0.5 hover:underline"
         >
-          <span>View All</span>
+          <span>View all</span>
           <ArrowUpRight aria-hidden className="size-3.5" />
         </Link>
       </div>

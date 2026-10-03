@@ -79,8 +79,8 @@ export function SplashLiveFeed() {
       <div className="mb-5 text-center">
         <h2 className={`text-title-3 md:text-title-2 ${splashGold.headline}`}>Happening now</h2>
         <p className="text-label-secondary text-body mx-auto mt-1 max-w-lg leading-relaxed">
-          Real updates, same stream as your dashboard—ThinkPages, wiki edits, achievements, forum,
-          and public notices.
+          The same activity stream as the dashboard: ThinkPages posts, wiki edits, achievements,
+          forum threads and public notices.
         </p>
       </div>
 

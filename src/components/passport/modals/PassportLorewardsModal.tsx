@@ -64,7 +64,6 @@ export function PassportLorewardsModal({
   const stats = wiki?.lorewards;
   const awardHistory = wiki?.awardHistory ?? [];
 
-  // Streak Calendar State
   const now = new Date();
   const [calYear, setCalYear] = useState(now.getFullYear());
   const [calMonth, setCalMonth] = useState(now.getMonth() + 1);
@@ -100,14 +99,14 @@ export function PassportLorewardsModal({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      {/* Detail view (spec §7.3): a wide side sheet for the two-column calendar + ledger. */}
+      {/* A wide side sheet for the two-column calendar and ledger. */}
       <SheetContent size="wide" className="flex flex-col gap-0 p-0">
         <SheetHeader className="border-separator border-b p-6 pr-14 pb-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Trophy aria-hidden className="text-tint size-6 shrink-0" />
               <div>
-                <SheetTitle>Lorewards Civic Accolades</SheetTitle>
+                <SheetTitle>Lorewards accolades</SheetTitle>
                 <SheetDescription className="mt-0.5">
                   Author identity:{" "}
                   <strong className="text-label font-medium">User:{wikiUsername}</strong>
@@ -118,7 +117,7 @@ export function PassportLorewardsModal({
             {stats?.rank ? (
               <Badge variant="warning" className="tabular-nums">
                 <Trophy aria-hidden />
-                <span>Global Rank #{stats.rank}</span>
+                <span>Global rank #{stats.rank}</span>
               </Badge>
             ) : (
               <Badge variant="default">Unranked</Badge>
@@ -127,7 +126,7 @@ export function PassportLorewardsModal({
         </SheetHeader>
 
         <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-6">
-          {/* 1. Metric matrix */}
+          {/* Metrics */}
           {stats ? (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
               <MetricCard
@@ -173,7 +172,7 @@ export function PassportLorewardsModal({
             </p>
           )}
 
-          {/* 2. Streak calendar & award history */}
+          {/* Streak calendar and award history */}
           <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-12">
             {/* Streak calendar */}
             <section
@@ -200,7 +199,7 @@ export function PassportLorewardsModal({
                     variant="secondary"
                     size="icon-sm"
                     onClick={prevMonth}
-                    title="Previous Month"
+                    title="Previous month"
                     aria-label="Previous month"
                   >
                     <ChevronLeft />
@@ -211,7 +210,7 @@ export function PassportLorewardsModal({
                     size="icon-sm"
                     onClick={nextMonth}
                     disabled={isCurrentMonth}
-                    title="Next Month"
+                    title="Next month"
                     aria-label="Next month"
                   >
                     <ChevronRight />
@@ -252,9 +251,9 @@ export function PassportLorewardsModal({
                         )}
                         title={
                           status === "winner"
-                            ? `${MONTH_NAMES[calMonth - 1]} ${day} — Loreward Winner`
+                            ? `${MONTH_NAMES[calMonth - 1]} ${day}: Loreward winner`
                             : status === "runner-up"
-                              ? `${MONTH_NAMES[calMonth - 1]} ${day} — Loreward Runner-up`
+                              ? `${MONTH_NAMES[calMonth - 1]} ${day}: Loreward runner-up`
                               : `${MONTH_NAMES[calMonth - 1]} ${day}`
                         }
                       >
@@ -385,7 +384,7 @@ export function PassportLorewardsModal({
             className="text-tint text-footnote inline-flex cursor-pointer items-center gap-2 font-medium hover:underline"
           >
             <BookOpen aria-hidden className="size-3.5" />
-            <span>View Wiki Contributions</span>
+            <span>View wiki contributions</span>
           </Link>
 
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>

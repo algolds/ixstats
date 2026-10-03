@@ -9,7 +9,6 @@ import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Stat } from "~/components/ui/stat";
 import { REDUCED_MOTION_FADE, springSmooth, tweenFast } from "~/lib/design/motion";
-import { GuillochePattern } from "./cards/GuillochePattern";
 import { PassportBackFace } from "./document/PassportBackFace";
 import { PassportMasthead } from "./document/PassportMasthead";
 import { PassportStatGrid } from "./document/PassportStatGrid";
@@ -71,10 +70,9 @@ export function MidRibbonPassportDocument({
 
   const featuredRealm = data.featuredRealm;
 
-  // Authoritative Role from Database / Admin / Clerk
+  // Role from the database, admin or Clerk
   const roleName = data.account.roleName || featuredRealm?.role || "Leader";
 
-  // High-Resolution Avatar for physical passport biometric rendering
   const highResAvatarUrl = getHighResolutionAvatar(avatarUrl, 800);
 
   // Saved signature inscription (PassportPreference.signature); the display name when unset.
@@ -89,7 +87,7 @@ export function MidRibbonPassportDocument({
       setCopiedHandle(true);
       setTimeout(() => setCopiedHandle(false), 2000);
     } catch {
-      // clipboard unavailable (permission denied / insecure context) — nothing copied
+      // Clipboard unavailable (permission denied or insecure context): nothing copied.
     }
   }, [cleanUsername]);
 
@@ -102,10 +100,11 @@ export function MidRibbonPassportDocument({
   const realmName = featuredRealm?.name ?? "—";
   const passportNumber = `IX-${cleanUsername.toUpperCase().substring(0, 4)}-${data.account.userId ? data.account.userId.substring(0, 4).toUpperCase() : "882"}`;
   const entryDate = data.account.createdAt
-    ? new Date(data.account.createdAt)
-        .toLocaleDateString("en-US", { month: "short", year: "numeric" })
-        .toUpperCase()
-    : "RECENT";
+    ? new Date(data.account.createdAt).toLocaleDateString("en-US", {
+        month: "short",
+        year: "numeric",
+      })
+    : "Recent";
 
   const vault = data.vault;
   const ribbonCounts = { realms: data.realmCount, vault: vault?.totalCards };
@@ -121,13 +120,8 @@ export function MidRibbonPassportDocument({
         animate={{ rotateY: shouldReduceMotion ? 0 : isFlipped ? 180 : 0 }}
         transition={flipTransition}
       >
-        {/* ========================================================================= */}
-        {/* FRONT FACE OF THE PASSPORT                                               */}
-        {/* ========================================================================= */}
+        {/* Front face */}
         <MotionCard
-          // v2 document: the translucent glass page (Facet 3.1 glass hero + tinted shadow; no
-          // clipping blob); the panels inside stay opaque (glass never nests).
-          variant="hero"
           className={cn(
             "relative w-full [backface-visibility:hidden]",
             isFlipped ? "pointer-events-none opacity-0" : "opacity-100"
@@ -136,21 +130,19 @@ export function MidRibbonPassportDocument({
           animate={{ opacity: isFlipped ? 0 : 1 }}
           transition={tweenFast}
         >
-          <GuillochePattern opacity={0.06} />
-
           <div className="relative">
-            {/* 1. TOP IDENTITY & OVERVIEW CARD SECTION */}
+            {/* Identity and overview */}
             <div className="space-y-6 p-5 sm:p-7">
-              {/* Header: Clean Sovereign Masthead with Frosted IX Emblem */}
+              {/* Masthead */}
               <PassportMasthead
                 cleanUsername={cleanUsername}
                 isOwner={isOwner}
                 onEdit={handleEdit}
               />
 
-              {/* Identity & Overview Grid (Restrained Information Grammar) */}
+              {/* Identity and overview grid */}
               <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-                {/* Left: Unobstructed High-Res Portrait & Signature */}
+                {/* Portrait and signature */}
                 <div className="flex flex-col items-center gap-4 sm:items-start lg:col-span-4">
                   <div className="bg-fill-3 border-separator rounded-card shadow-card relative h-44 w-38 overflow-hidden border-2 sm:h-52 sm:w-44">
                     {highResAvatarUrl ? (
@@ -177,9 +169,9 @@ export function MidRibbonPassportDocument({
                   </div>
                 </div>
 
-                {/* Right: Identity & 4-Cell Information Grammar Grid */}
+                {/* Identity details */}
                 <div className="space-y-4 lg:col-span-8">
-                  {/* Name, Handle & Role */}
+                  {/* Name, handle and role */}
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-label text-title-1">{displayName}</h2>
@@ -206,7 +198,7 @@ export function MidRibbonPassportDocument({
                     </div>
                   </div>
 
-                  {/* Information Grammar 4-Cell Matrix */}
+                  {/* Identity facts */}
                   <div className="border-separator grid grid-cols-2 gap-3 border-y py-3 sm:grid-cols-4">
                     <Stat size="sm" label="Identity no." value={passportNumber} />
                     <Stat size="sm" label="Date joined" value={entryDate} />
@@ -218,7 +210,7 @@ export function MidRibbonPassportDocument({
                     />
                   </div>
 
-                  {/* Stat Overview Grid (Lorewards, Streak, Forum, Vault) */}
+                  {/* Lorewards, streak, forum and Vault stats */}
                   <PassportStatGrid
                     visibility={visibility}
                     lorewards={data.wiki.lorewards}
@@ -228,7 +220,7 @@ export function MidRibbonPassportDocument({
                     onOpenVault={handleOpenVault}
                   />
 
-                  {/* ThinkPages Voice Bio (if available) */}
+                  {/* ThinkPages bio */}
                   {data.thinkpages.bio && (
                     <Card variant="inset" padding="sm" className="space-y-1">
                       <div className="text-label-secondary text-subhead flex items-center gap-2">
@@ -244,7 +236,7 @@ export function MidRibbonPassportDocument({
               </div>
             </div>
 
-            {/* 2. MID-CARD DIE-CUT INDEX RIBBON */}
+            {/* Tab ribbon */}
             <PassportTabRibbon
               activeTab={activeTab}
               onSelectTab={onSelectTab}
@@ -252,8 +244,7 @@ export function MidRibbonPassportDocument({
               idBase={tabIdBase}
             />
 
-            {/* 3. LOWER TAB BODY CONTENT — Apple §4 spring, §9 rubber-band, §11 will-change.
-                The ribbon's tab panel: labelled by the selected tab, focusable (tabs pattern). */}
+            {/* The ribbon's tab panel: labelled by the selected tab, focusable (tabs pattern). */}
             <div
               role="tabpanel"
               id={passportTabPanelId(tabIdBase)}
@@ -283,9 +274,7 @@ export function MidRibbonPassportDocument({
           </div>
         </MotionCard>
 
-        {/* ========================================================================= */}
-        {/* BACK FACE OF THE PASSPORT (CONFIGURATION & PRIVACY CONTROLS)               */}
-        {/* ========================================================================= */}
+        {/* Back face: configuration and privacy controls */}
         <PassportBackFace
           isFlipped={isFlipped}
           shouldReduceMotion={Boolean(shouldReduceMotion)}
@@ -295,7 +284,7 @@ export function MidRibbonPassportDocument({
         />
       </motion.div>
 
-      {/* Interactive Lorewards Civic Accolades Modal */}
+      {/* Lorewards modal */}
       <PassportLorewardsModal
         open={isLorewardsModalOpen}
         onOpenChange={setIsLorewardsModalOpen}

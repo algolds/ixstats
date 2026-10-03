@@ -32,15 +32,15 @@ interface BuilderStepItem {
 }
 
 const BUILDER_STEPS: readonly BuilderStepItem[] = [
-  { key: "foundation", label: "1. Base Template", desc: "Select foundation country" },
-  { key: "core", label: "2. National Identity", desc: "Configure naming, languages, motto" },
+  { key: "foundation", label: "1. Base template", desc: "Select foundation country" },
+  { key: "core", label: "2. National identity", desc: "Configure naming, languages, motto" },
   {
     key: "government",
-    label: "3. Government Structure",
-    desc: "Design departments & legislature",
+    label: "3. Government structure",
+    desc: "Design departments and legislature",
   },
-  { key: "economics", label: "4. Economy Setup", desc: "Configure components & taxes" },
-  { key: "preview", label: "5. Verify & Submit", desc: "Verify and initialize country" },
+  { key: "economics", label: "4. Economy setup", desc: "Configure components and taxes" },
+  { key: "preview", label: "5. Verify and submit", desc: "Verify and initialize country" },
 ] as const;
 
 const STEP_ORDER: readonly BuilderStep[] = [
@@ -105,7 +105,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
       : null);
 
   const countryName =
-    builderState?.economicInputs?.countryName || activeTemplate?.name || "New Country";
+    builderState?.economicInputs?.countryName || activeTemplate?.name || "New country";
 
   const getStepState = (stepKey: BuilderStep) => {
     if (currentStep === stepKey) return "active";
@@ -164,7 +164,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
             <span className="text-caption text-label-secondary">v{BUILDER_VERSION}</span>
           </div>
           <h2 className="text-title-3 text-label">
-            Building: <span className="text-yellow">{countryName || "New Country"}</span>
+            Building: <span className="text-yellow">{countryName || "New country"}</span>
           </h2>
         </div>
 
@@ -194,7 +194,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
             <div className="rounded-control border-red/30 bg-red/10 flex items-center gap-2 border p-0.5">
               <span className="text-caption text-red px-2 font-semibold">Reset draft?</span>
               <Button type="button" variant="destructive" size="sm" onClick={handleConfirmRestart}>
-                Yes, Reset
+                Yes, reset
               </Button>
               <Button
                 type="button"
@@ -211,7 +211,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
               variant="outline"
               size="sm"
               onClick={() => setIsConfirmingRestart(true)}
-              title="Restart Builder"
+              title="Restart builder"
               className="text-label-secondary hover:border-red/30 hover:bg-red/10 hover:text-red"
             >
               <RefreshCw aria-hidden />
@@ -224,7 +224,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
       <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
         {/* Step Progress Tracker */}
         <div className="space-y-2 text-left md:col-span-7">
-          <h3 className="text-eyebrow text-label-secondary mb-2">Progress Checklist</h3>
+          <h3 className="text-eyebrow text-label-secondary mb-2">Progress checklist</h3>
           <div className="space-y-2">
             {BUILDER_STEPS.map((st) => {
               const state = getStepState(st.key);
@@ -271,7 +271,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
         {/* Configuration Summary Card */}
         <div className="rounded-row border-separator bg-surface flex flex-col justify-between border p-3 text-left md:col-span-5">
           <div className="space-y-3">
-            <h3 className="text-eyebrow text-label-secondary">Stats Configured</h3>
+            <h3 className="text-eyebrow text-label-secondary">Stats configured</h3>
 
             <div className="text-footnote space-y-2">
               <div className="border-separator flex items-center justify-between border-b py-1">
@@ -288,7 +288,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
               <div className="border-separator flex items-center justify-between border-b py-1">
                 <span className="text-label-secondary flex items-center gap-2 font-semibold">
                   <Coins className="text-label-secondary h-3.5 w-3.5" />
-                  Total Budget
+                  Total budget
                 </span>
                 <span className="text-label font-semibold">
                   {builderState?.governmentStructure?.structure?.totalBudget
@@ -299,7 +299,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
               <div className="border-separator flex items-center justify-between border-b py-1">
                 <span className="text-label-secondary flex items-center gap-2 font-semibold">
                   <Globe className="text-label-secondary h-3.5 w-3.5" />
-                  Capital City
+                  Capital city
                 </span>
                 <span className="text-label max-w-[120px] truncate font-semibold">
                   {builderState?.economicInputs?.nationalIdentity?.capitalCity || "Not configured"}
@@ -319,15 +319,14 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
             </div>
           </div>
 
-          {/* v2 BUILDER_GOLD: Halo floats outside the Builder's `data-app="mycountry"` scope, so the
-              primary opts into the gold itself. */}
+          {/* Halo floats outside the Builder's `data-app="mycountry"` scope, so the button opts into the gold itself. */}
           <Button
             onClick={handleContinue}
             data-app="mycountry"
             className="mt-4 w-full"
             type="button"
           >
-            Continue Designing
+            Continue designing
             <ArrowRight aria-hidden="true" />
           </Button>
         </div>

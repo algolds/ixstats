@@ -115,9 +115,9 @@ function ForumHeader({
               size="icon-sm"
               onClick={() => onSwitchMode("search")}
               className="text-label-secondary hover:text-label"
-              title="Global Search"
+              title="Search"
               type="button"
-              aria-label="Global Search"
+              aria-label="Search"
             >
               <Search aria-hidden />
             </Button>
@@ -218,10 +218,10 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
       />
 
       <div className="space-y-1">
-        {/* ── Current Context ─────────────────────────────────────────── */}
+        {/* ── Current context ─────────────────────────────────────────── */}
         {(currentThread || currentForum) && (
           <>
-            <SectionLabel>Current Context</SectionLabel>
+            <SectionLabel>Current context</SectionLabel>
             {currentThread && (
               <ForumRow
                 icon={<MessageSquare className="text-orange h-3.5 w-3.5" />}
@@ -242,13 +242,13 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
           </>
         )}
 
-        {/* ── Quick Actions ───────────────────────────────────────────── */}
+        {/* ── Quick actions ───────────────────────────────────────────── */}
         <SectionLabel>Actions</SectionLabel>
 
         <ForumRow
           icon={<Layout className="text-blue h-3.5 w-3.5" />}
           iconBg="bg-blue/15"
-          label="All Forums"
+          label="All forums"
           description="Browse categories and boards"
           onClick={() => navigate("/forum")}
         />
@@ -256,7 +256,7 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
         <ForumRow
           icon={<Plus className="text-orange h-3.5 w-3.5" />}
           iconBg="bg-orange/15"
-          label="New Thread"
+          label="New thread"
           description="Start a new forum discussion"
           onClick={() => navigate("/forum/new-thread")}
         />

@@ -41,7 +41,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
 
         <div className="flex items-center gap-2">
           <span className="text-label-secondary text-footnote">
-            <span className="font-data tabular-nums">
+            <span className="tabular-nums">
               {rarestShowcase?.length || 0} / {Math.min(rarestAll?.length || 0, 9)}
             </span>{" "}
             displayed
@@ -55,7 +55,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
               aria-expanded={showAll}
               onClick={() => setShowAll(!showAll)}
             >
-              {showAll ? "Show top 3 only" : "See all top 9"}
+              {showAll ? "Show top 3" : "Show top 9"}
             </Button>
           )}
         </div>
@@ -89,7 +89,6 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ ...springSmooth, delay: Math.min(idx * 0.02, 0.2) }}
-                // v2 showcase: glass cabinet cards that lift on hover, with the full backdrop.
                 variant="hero"
                 className={cn(
                   "flex flex-col justify-between overflow-hidden p-4",
@@ -110,7 +109,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                     <Badge variant={getRarityBadgeVariant(achievement.rarity, isUnlocked)}>
                       {achievement.rarity}
                     </Badge>
-                    <span className="text-label-secondary text-footnote font-data tabular-nums">
+                    <span className="text-label-secondary text-footnote tabular-nums">
                       {achievement.globalUnlockPercent !== undefined
                         ? `${achievement.globalUnlockPercent}% unlocked`
                         : "Rare unlock"}
@@ -157,7 +156,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                 <div className="border-separator relative mt-3 flex items-center justify-between border-t pt-2">
                   <Badge variant="success">{achievement.points} pts</Badge>
                   {achievement.unlockedAt && (
-                    <span className="text-label-secondary text-footnote font-data tabular-nums">
+                    <span className="text-label-secondary text-footnote tabular-nums">
                       {new Date(achievement.unlockedAt).toLocaleDateString()}
                     </span>
                   )}
@@ -170,8 +169,8 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
         <Card>
           <EmptyState
             icon={<Trophy />}
-            title="Showcase cabinet empty"
-            message="Unlock the rarest achievements to fill your showcase shelf."
+            title="No unlocked achievements yet"
+            message="Unlock achievements to build your showcase shelf."
           />
         </Card>
       )}

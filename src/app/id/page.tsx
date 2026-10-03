@@ -8,6 +8,7 @@ import { AccountIdentityPanel } from "~/app/settings/_components/panels/AccountI
 import { facetClerkAppearance } from "~/lib/clerk/theme";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 
 export default function IdAccountHubPage() {
   const { user } = useUser();
@@ -21,7 +22,7 @@ export default function IdAccountHubPage() {
     "me";
 
   usePageTitle({
-    title: "IxnayID & Account Settings",
+    title: "IxnayID and account settings",
   });
 
   return (
@@ -30,7 +31,7 @@ export default function IdAccountHubPage() {
         <div className="flex w-full justify-center">
           <UserProfile routing="hash" appearance={facetClerkAppearance}>
             <UserProfile.Page
-              label="IxnayID & Passport"
+              label="IxnayID and passport"
               url="ixnayid"
               labelIcon={<Crown className="h-4 w-4" />}
             >
@@ -39,7 +40,7 @@ export default function IdAccountHubPage() {
               </div>
             </UserProfile.Page>
             <UserProfile.Link
-              label="Public Passport"
+              label="Public passport"
               url={`/@${username}`}
               labelIcon={<ExternalLink className="h-4 w-4" />}
             />
@@ -47,17 +48,16 @@ export default function IdAccountHubPage() {
         </div>
       </SignedIn>
       <SignedOut>
-        <div className="material-hero text-label flex flex-col items-center justify-center gap-4 rounded-2xl p-8 text-center">
+        <Card padding="lg" className="flex flex-col items-center justify-center gap-4 text-center">
           <Crown className="text-label h-10 w-10" />
-          <h2 className="text-label text-title-2">Sign in to Access IxnayID</h2>
+          <h2 className="text-label text-title-2">Sign in to use IxnayID</h2>
           <p className="text-label-secondary text-footnote max-w-md">
-            Manage your persistent digital passport, security credentials, and multi-tenant realm
-            memberships.
+            Your passport, security settings and realm memberships are on your account.
           </p>
           <SignInButton mode="modal">
-            <Button type="button">Sign In to IxStates</Button>
+            <Button type="button">Sign in to IxStates</Button>
           </SignInButton>
-        </div>
+        </Card>
       </SignedOut>
     </div>
   );

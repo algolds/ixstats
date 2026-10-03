@@ -23,7 +23,7 @@ import { Badge } from "~/components/ui/badge";
 
 interface WikiWorkspaceTabProps {
   articleTitle?: string | null;
-  /** The wiki the article lives on; another wiki's page is read-only in WikiOS (ruling E-l′). */
+  /** The wiki the article lives on; another wiki's page is read-only in WikiOS. */
   wikiSource: WikiSource;
   isMainPage?: boolean;
   isSignedIn?: boolean;
@@ -62,7 +62,7 @@ export function WikiWorkspaceTab({
       {/* Local Drafts Section */}
       {localDrafts.length > 0 && (
         <CollapsibleSection
-          label="Local Drafts"
+          label="Local drafts"
           icon={<FileEdit className="text-blue h-3 w-3" />}
           count={localDrafts.length}
           open={draftsOpen}
@@ -91,8 +91,8 @@ export function WikiWorkspaceTab({
                   </PreText>
                   <PreText className="text-label-secondary text-footnote" whiteSpace="nowrap">
                     {draft.type === "visual"
-                      ? "Visual Editor (Canvas) Draft"
-                      : "Source Editor Draft"}
+                      ? "Visual editor (Canvas) draft"
+                      : "Source editor draft"}
                   </PreText>
                 </div>
                 <span className="text-caption text-blue shrink-0 font-semibold">Resume ›</span>
@@ -105,7 +105,7 @@ export function WikiWorkspaceTab({
       {/* Reading Progress / Paused Sessions Section */}
       {pausedSessions.length > 0 && (
         <CollapsibleSection
-          label="Reading Progress"
+          label="Reading progress"
           icon={<Clock className="text-green h-3 w-3" />}
           count={pausedSessions.length}
           open={sessionsOpen}
@@ -142,7 +142,7 @@ export function WikiWorkspaceTab({
       {/* Recent Activity — collapsible feed (shown when on wiki index/search) */}
       {!articleTitle && (
         <CollapsibleSection
-          label="Recent Activity"
+          label="Recent activity"
           icon={<Clock className="h-3 w-3" />}
           open={recentOpen}
           onToggle={() => setRecentOpen(!recentOpen)}
@@ -176,14 +176,14 @@ export function WikiWorkspaceTab({
       {/* Page Actions — contextual to current article */}
       {articleTitle && !isMainPage && (
         <div className="border-separator mb-3 border-b pb-3">
-          <SectionHeader label="This Page" />
+          <SectionHeader label="This page" />
           <div className="space-y-0.5">
             {wikiSource === "ixwiki" && (
               <IxWikiPageActions isSignedIn={isSignedIn} slug={slug} onClose={onClose} />
             )}
             <QuickAction
               icon={<ExternalLink />}
-              label="View on Original Wiki"
+              label="View on original wiki"
               onClick={() => {
                 onClose();
                 if (articleTitle) {

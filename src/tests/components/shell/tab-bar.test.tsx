@@ -76,6 +76,25 @@ describe("TabBar", () => {
     );
   });
 
+  it("lists the account at the end of More and closes the sheet when one of its links is used", () => {
+    mockPhoneWidth();
+    render(
+      <TabBar
+        pathname="/dashboard"
+        searchParams={null}
+        apps={apps}
+        account={<a href="/settings?tab=account#ixnayid-card">IxnayID connections</a>}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "More" }));
+    fireEvent.click(
+      within(screen.getByRole("dialog", { name: "More" })).getByRole("link", {
+        name: "IxnayID connections",
+      })
+    );
+    expect(screen.queryByRole("dialog", { name: "More" })).not.toBeInTheDocument();
+  });
+
   it("uses at least 44px targets", () => {
     render(<TabBar pathname="/dashboard" searchParams={null} apps={apps} />);
     expect(screen.getByRole("link", { name: "Home" }).className).toContain("min-h-11");

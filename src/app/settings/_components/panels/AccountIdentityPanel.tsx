@@ -104,9 +104,9 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
   return (
     <div className="space-y-6">
       <SettingsHeader
-        title="IxnayID & Digital Passport"
-        category="Profile & Identity"
-        description="Public passport presentation and connected community accounts."
+        title="IxnayID & passport"
+        category="Profile & identity"
+        description="Your public passport and connected community accounts."
         actions={
           <Button asChild variant="secondary" size="sm">
             <Link href={passportUrl}>
@@ -117,8 +117,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
         }
       />
 
-      {/* Identity card: v2's glass passport card with the tint wash (Facet 3.1 glass hero) */}
-      <Card variant="hero" padding="md">
+      <Card padding="md">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <div className="border-separator bg-fill-3 rounded-row relative size-14 shrink-0 overflow-hidden border">
@@ -147,7 +146,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                   Verified
                 </Badge>
                 <Badge variant="success">
-                  <span className="font-data tabular-nums">{totalConnectedCount}/4</span> connected
+                  <span className="tabular-nums">{totalConnectedCount}/4</span> connected
                 </Badge>
               </div>
 
@@ -215,7 +214,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
       {/* Account credentials & linked accounts */}
       <SettingsGroup
         title="Account credentials"
-        description="Login details, security settings, and connected community accounts."
+        description="Login details and connected community accounts."
         action={
           <Button
             type="button"
@@ -237,7 +236,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
             )}
           </Button>
         }
-        footer="Click your avatar to change your password, turn on two-step verification, or manage active sessions."
+        footer="Select your avatar to change your password, turn on two-step verification or manage sessions."
       >
         <SettingsRow label="Username" icon={Key} glyphClass="bg-purple/15 text-purple">
           <span
@@ -268,7 +267,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
           description={
             status
               ? `${linkedServicesCount} of 3 connected (Forum, wikis, Discord)`
-              : "Connect your Forum, wikis, and Discord accounts"
+              : "Connect your forum, wiki and Discord accounts"
           }
           icon={LinkIcon}
           glyphClass="bg-indigo/15 text-indigo"
@@ -361,7 +360,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
               label="Discord"
               description={
                 status?.discord.linked
-                  ? "Connected to Discord community server"
+                  ? "Connected to Discord"
                   : "Connect your Discord account to receive bot alerts"
               }
               icon={Disc}
@@ -383,7 +382,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                 </div>
               ) : (
                 <span className="text-label-secondary text-footnote">
-                  Sign in with Discord on Clerk
+                  Sign in with Discord to connect
                 </span>
               )}
             </SettingsRow>

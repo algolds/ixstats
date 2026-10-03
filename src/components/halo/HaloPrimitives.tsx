@@ -15,8 +15,8 @@ import { cn } from "~/lib/utils/cn";
 import { springSnappy } from "~/lib/design/motion";
 import { DynamicIslandEffects } from "./DynamicIslandEffects";
 
-// The island morphs with the Facet snappy spring (spec §8): it answers a press directly, at the
-// same settle speed as the controls inside it.
+// The island morphs with the snappy spring: it answers a press directly, at the same settle
+// speed as the controls inside it.
 const MAX_HEIGHT_MOBILE_ULTRA = 400;
 const MAX_HEIGHT_MOBILE_MASSIVE = 700;
 
@@ -328,7 +328,7 @@ export const DynamicIslandContent = ({
           }}
           transition={springSnappy}
         >
-          {/* v2 red → orange alert glow, on the system colours. */}
+          {/* Red to orange alert glow. */}
           <div className="bg-destructive/35 transparency-reduced:hidden absolute inset-0 rounded-[inherit] blur-xl contrast-more:hidden" />
           <div className="bg-orange/25 transparency-reduced:hidden absolute inset-0 rounded-[inherit] blur-lg contrast-more:hidden" />
         </motion.div>
@@ -337,10 +337,8 @@ export const DynamicIslandContent = ({
       <motion.div
         id={id}
         data-expanded={!isCompact ? "true" : undefined}
-        // Halo is the v2 acrylic island (spec §16.1 #6, v2 `.dynamic-island-shell`): 28px / 190%
-        // as the pill, the 40px / 210% frosted sheet once `data-expanded` opens it into a panel,
-        // over the v2 blue / indigo / cyan glow underlay with the four refraction edges. Content
-        // inside stays on opaque roles.
+        // Halo is the acrylic island: a pill, then a frosted sheet once `data-expanded` opens it
+        // into a panel. Content inside stays on opaque roles.
         className={cn(
           "material-acrylic relative mx-auto items-center justify-center text-center",
           isImpersonating && "ring-destructive ring-2"

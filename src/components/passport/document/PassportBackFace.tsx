@@ -13,7 +13,6 @@ import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-lis
 import { tweenFast } from "~/lib/design/motion";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { RibbonBar } from "~/components/achievements/FloatingRibbonRack";
-import { GuillochePattern } from "../cards/GuillochePattern";
 import { IxnayPassportSeal } from "../cards/IxnayPassportSeal";
 import type { PassportVisibility } from "../types";
 import { Card } from "~/components/ui/card";
@@ -24,13 +23,13 @@ const VISIBILITY_TOGGLES: Array<{ key: keyof PassportVisibility; title: string; 
   {
     key: "achievements",
     title: "Achievements",
-    hint: "Achievements & ribbons (also the country-page rack)",
+    hint: "Achievements and ribbons (also on the country page)",
   },
-  { key: "accolades", title: "Civic Accolades", hint: "Lorewards score, rank & laurels" },
+  { key: "accolades", title: "Civic accolades", hint: "Lorewards score, rank and laurels" },
   { key: "impact", title: "Focus", hint: "Collection category breadth" },
-  { key: "forumStats", title: "Forum Discussions", hint: "Message & reaction counters" },
-  { key: "vaultCards", title: "IxCredits", hint: "IxCredits balance & collection" },
-  { key: "historyStream", title: "Activity History", hint: "Activity stream" },
+  { key: "forumStats", title: "Forum activity", hint: "Message and reaction counts" },
+  { key: "vaultCards", title: "IxCredits", hint: "IxCredits balance and collection" },
+  { key: "historyStream", title: "Activity history", hint: "Your activity stream" },
 ];
 
 /** Signature ribbon slots on the passport's showcase shelf. */
@@ -101,8 +100,6 @@ export const PassportBackFace = React.memo(function PassportBackFace({
 
   return (
     <MotionCard
-      // v2: the back of the document is the same translucent glass page as the front.
-      variant="hero"
       className={cn(
         "absolute inset-0 min-h-full w-full space-y-6 overflow-y-auto p-6 [backface-visibility:hidden] sm:p-8",
         !isFlipped ? "pointer-events-none" : ""
@@ -118,17 +115,14 @@ export const PassportBackFace = React.memo(function PassportBackFace({
       animate={{ opacity: isFlipped ? 1 : 0 }}
       transition={tweenFast}
     >
-      <GuillochePattern opacity={0.05} />
-
       <div className="relative space-y-6">
-        {/* Header */}
         <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-4">
           <div className="flex items-center gap-3">
             <IxnayPassportSeal size="sm" />
             <div>
               <h2 className="text-label text-title-3">Passport configuration</h2>
               <p className="text-label-secondary text-footnote">
-                Signature, privacy and signature ribbons
+                Signature, privacy and pinned ribbons
               </p>
             </div>
           </div>
@@ -167,7 +161,7 @@ export const PassportBackFace = React.memo(function PassportBackFace({
                 className="bg-surface font-serif italic"
               />
               <div className="text-label-secondary text-footnote flex items-center justify-between gap-2">
-                <span>Calligraphic preview:</span>
+                <span>Preview:</span>
                 <span className="text-label text-body truncate font-serif italic">
                   {signature.trim() || displayName}
                 </span>
@@ -175,7 +169,6 @@ export const PassportBackFace = React.memo(function PassportBackFace({
             </div>
           </Card>
 
-          {/* Persisted visibility toggles */}
           <FacetList>
             <FacetListSection
               header="Public passport sections"
@@ -202,7 +195,7 @@ export const PassportBackFace = React.memo(function PassportBackFace({
           </FacetList>
         </div>
 
-        {/* Signature ribbon shelf picker */}
+        {/* Ribbon picker */}
         <Card variant="inset" className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-subhead text-label flex items-center gap-2">
@@ -251,11 +244,10 @@ export const PassportBackFace = React.memo(function PassportBackFace({
           )}
         </Card>
 
-        {/* Action footer */}
         <div className="flex items-center justify-end gap-3 pt-2">
           <Button type="button" variant="secondary" onClick={handleDone}>
             <RotateCcw aria-hidden />
-            <span>Return to Passport</span>
+            <span>Return to passport</span>
           </Button>
         </div>
       </div>

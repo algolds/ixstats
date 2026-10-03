@@ -126,57 +126,36 @@ export function initAppearanceFromStorage(
 
 /* ─── Navigation shell ───────────────────────────────────────────────────────────────────────── */
 
-/**
- * Storage keys for the navigation shell. Kept apart from `APPEARANCE_STORAGE_KEYS` because
- * `ThemeProvider` does not own them: `src/lib/navigation/use-facet-nav.ts` reads and writes them.
- */
+/** Storage key for the AppSidebar's collapsed state; `use-sidebar-collapsed.ts` reads and writes it. */
 export const NAV_STORAGE_KEYS = {
-  /** "true" | "false"; absent = the deployment default (`NEXT_PUBLIC_FACET_NAV`). */
-  facetNav: "ixstats-facet-nav",
   /** "true" when the AppSidebar is collapsed to icons. */
   sidebarCollapsed: "ixstats-sidebar-collapsed",
 } as const;
 
 export type NavStorageKeys = typeof NAV_STORAGE_KEYS;
 
-/**
- * Deployment default for the `facet-nav` flag: `NEXT_PUBLIC_FACET_NAV=1` turns the new shell on
- * for everyone who has not chosen otherwise in Settings. Inlined at build time on the client.
- */
-export const FACET_NAV_DEFAULT: boolean =
-  process.env.NEXT_PUBLIC_FACET_NAV === "1" || process.env.NEXT_PUBLIC_FACET_NAV === "true";
-
 export interface NavPreferences {
-  /** The `facet-nav` flag: AppSidebar/TabBar instead of the top navigation bar. */
-  facetNav: boolean;
   sidebarCollapsed: boolean;
 }
 
 /**
- * Writes `data-nav="facet"` and `data-sidebar="collapsed"` onto the root element. CSS keys the shell
- * off these attributes, so the server markup and the first paint agree. Self-contained (serialised).
+ * Writes `data-sidebar="collapsed"` onto the root element; the shell's CSS keys off it, so the
+ * server markup and the first paint agree. Self-contained (serialised).
  */
 export function applyNavPreferences(root: HTMLElement, p: NavPreferences): void {
-  if (p.facetNav) root.setAttribute("data-nav", "facet");
-  else root.removeAttribute("data-nav");
   if (p.sidebarCollapsed) root.setAttribute("data-sidebar", "collapsed");
   else root.removeAttribute("data-sidebar");
 }
 
 /** Resolves the stored navigation preferences. Self-contained (serialised). */
-export function readNavPreferences(keys: NavStorageKeys, facetNavDefault: boolean): NavPreferences {
-  function read(key: string): string | null {
-    try {
-      return window.localStorage.getItem(key);
-    } catch {
-      return null;
-    }
+export function readNavPreferences(keys: NavStorageKeys): NavPreferences {
+  let stored: string | null = null;
+  try {
+    stored = window.localStorage.getItem(keys.sidebarCollapsed);
+  } catch {
+    // Storage blocked: the sidebar starts expanded.
   }
-  const stored = read(keys.facetNav);
-  return {
-    facetNav: stored === "true" ? true : stored === "false" ? false : facetNavDefault,
-    sidebarCollapsed: read(keys.sidebarCollapsed) === "true",
-  };
+  return { sidebarCollapsed: stored === "true" };
 }
 
 /** Inline, render-blocking `<head>` script body. Must carry the CSP nonce. */
@@ -186,4 +165,4 @@ export const APPEARANCE_INIT_SCRIPT =
   )},${applyAppearance.toString()})}catch(e){}` +
   `try{(${applyNavPreferences.toString()})(document.documentElement,(${readNavPreferences.toString()})(${JSON.stringify(
     NAV_STORAGE_KEYS
-  )},${JSON.stringify(FACET_NAV_DEFAULT)}))}catch(e){}`;
+  )}))}catch(e){}`;

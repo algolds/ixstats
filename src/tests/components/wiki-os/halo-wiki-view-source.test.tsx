@@ -34,7 +34,7 @@ jest.mock("~/components/wiki-os/shared/WikiContext", () => ({
   }),
 }));
 
-describe("Halo wiki view: This Page actions follow the page's wiki (ruling E-lâ€²)", () => {
+describe("Halo wiki view: This page actions follow the page's wiki (ruling E-lâ€²)", () => {
   const open = jest.spyOn(window, "open").mockImplementation(() => null);
 
   beforeEach(() => jest.clearAllMocks());
@@ -43,12 +43,12 @@ describe("Halo wiki view: This Page actions follow the page's wiki (ruling E-lâ€
     mockSource = "iiwiki";
     render(<WikiView onClose={jest.fn()} />);
 
-    expect(screen.getByText("This Page")).toBeInTheDocument();
+    expect(screen.getByText("This page")).toBeInTheDocument();
     expect(screen.queryByText("Edit")).not.toBeInTheDocument();
     expect(screen.queryByText("History")).not.toBeInTheDocument();
     expect(screen.queryByText("What links here")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByText("View on Original Wiki"));
+    fireEvent.click(screen.getByText("View on original wiki"));
     expect(open).toHaveBeenCalledWith(
       "https://iiwiki.com/wiki/Portal%3AEurth",
       "_blank",
@@ -83,7 +83,7 @@ describe("Halo wiki view: This Page actions follow the page's wiki (ruling E-lâ€
     expect(screen.getByText("History")).toBeInTheDocument();
     expect(screen.getByText("What links here")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText("View on Original Wiki"));
+    fireEvent.click(screen.getByText("View on original wiki"));
     expect(open).toHaveBeenCalledWith(
       expect.stringMatching(/^https:\/\/ixwiki\.com\/wiki\/Portal%3AEurth$/),
       "_blank",

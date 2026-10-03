@@ -61,7 +61,7 @@ export function SettingsSidebarNav({
   return (
     <aside
       className="w-full space-y-4 lg:sticky lg:top-(--shell-top-offset)"
-      aria-label="Settings Navigation"
+      aria-label="Settings navigation"
     >
       {/* Profile card */}
       {user && (

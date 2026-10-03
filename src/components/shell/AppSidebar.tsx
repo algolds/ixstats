@@ -1,31 +1,23 @@
 "use client";
 
 /**
- * AppSidebar (Facet 3 spec §7.4): the primary navigation at ≥1024px when the `facet-nav` flag is on.
+ * AppSidebar: the primary navigation at ≥1024px.
  *
- * v2-styled acrylic panel (Facet 3.1 spec §16.1 #9: `material-acrylic` with the v2 blue / indigo /
- * cyan glow underlay and the four refraction edges) floating on the leading edge (`z-chrome`,
- * 256px, collapsible to 64px icons; the width is the `--shell-sidebar-width` variable from
- * `src/styles/facet/shell.css`, so the persisted collapsed state is right before first paint).
- * Top: the app switcher. Middle: the current app's sections from the section map, the current one
- * tinted and `aria-current="page"`.
- * Sections with a `group` are listed under a sub-heading (`role="group"`). Bottom: the account,
- * Settings and the collapse toggle.
+ * A `material-regular` panel floating on the leading edge (`z-chrome`, 256px, collapsible to 64px
+ * icons; the width is the `--shell-sidebar-width` variable from `src/styles/facet/shell.css`, so
+ * the persisted collapsed state is right before first paint). Top: the app switcher. Middle: the
+ * current app's sections from the section map, the current one tinted and `aria-current="page"`.
+ * Sections with a `group` are listed under a sub-heading (`role="group"`). Bottom: the account
+ * slot, Settings and the collapse toggle.
  *
- * Presentational: the route, visible apps, account and collapsed state come in as props
+ * Presentational: the route, visible apps, account slot and collapsed state come in as props
  * (`FacetShell` wires them), so it renders the same on the server and in tests.
  */
 
 import * as React from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import {
-  NavArrowDown,
-  Check,
-  SidebarCollapse,
-  SidebarExpand,
-  User as UserIcon,
-} from "iconoir-react";
+import { NavArrowDown, Check, SidebarCollapse, SidebarExpand } from "iconoir-react";
 
 import { cn } from "~/lib/utils/cn";
 import { focusRing } from "~/components/ui/button";
@@ -49,11 +41,6 @@ import {
   type SearchParamsLike,
 } from "~/lib/navigation/app-sections";
 
-export interface ShellAccount {
-  name: string;
-  imageUrl?: string | null;
-}
-
 export interface AppSidebarProps {
   /** Current pathname without the base path. */
   pathname: string;
@@ -64,20 +51,18 @@ export interface AppSidebarProps {
   /** Collapsed to icons; `null` before hydration (CSS already reflects the stored state). */
   collapsed: boolean | null;
   onCollapsedChange: (collapsed: boolean) => void;
-  /** Signed-in account shown at the bottom; null when signed out. */
-  account?: ShellAccount | null;
-  /** Rendered in place of the account when signed out (e.g. a sign-in button). */
-  signIn?: React.ReactNode;
+  /** The account row (`AccountMenu`, or its sign-in button) pinned above Settings. */
+  account?: React.ReactNode;
   className?: string;
 }
 
 export const APP_SIDEBAR_ID = "facet-app-sidebar";
 
-const rowBase =
+export const rowBase =
   "relative flex min-h-9 w-full items-center gap-3 rounded-control px-2.5 text-body transition-colors duration-fast ease-out-facet pointer-coarse:min-h-11 sidebar-collapsed:justify-center sidebar-collapsed:px-0";
 
 /** Wraps a row in a trailing tooltip when the sidebar is collapsed to icons. */
-function CollapsedTooltip({
+export function CollapsedTooltip({
   collapsed,
   label,
   children,
@@ -206,7 +191,6 @@ export function AppSidebar({
   collapsed,
   onCollapsedChange,
   account,
-  signIn,
   className,
 }: AppSidebarProps) {
   const current = getAppForPath(pathname);
@@ -228,11 +212,7 @@ export function AppSidebar({
         className
       )}
     >
-      <FacetMaterial
-        material="acrylic"
-        data-slot="app-sidebar-panel"
-        className="flex min-h-0 flex-1 flex-col"
-      >
+      <FacetMaterial data-slot="app-sidebar-panel" className="flex min-h-0 flex-1 flex-col">
         <div className="p-2">
           <AppSwitcher apps={switcherApps} current={current} collapsed={collapsed} />
         </div>
@@ -290,33 +270,7 @@ export function AppSidebar({
 
         <div className="border-separator flex flex-col gap-0.5 border-t p-2">
           <ul className="flex flex-col gap-0.5">
-            {account ? (
-              <li>
-                <CollapsedTooltip collapsed={collapsed} label={account.name}>
-                  <Link
-                    href="/settings?tab=account"
-                    aria-label={`Account: ${account.name}`}
-                    className={cn(rowBase, focusRing, "text-label hover:bg-fill-4")}
-                  >
-                    {account.imageUrl ? (
-                      // Clerk avatar URL; next/image would need its host allow-listed.
-                      <img
-                        src={account.imageUrl}
-                        alt=""
-                        className="size-6 shrink-0 rounded-full object-cover"
-                      />
-                    ) : (
-                      <UserIcon aria-hidden className="size-4 shrink-0" />
-                    )}
-                    <span className="sidebar-collapsed:sr-only min-w-0 flex-1 truncate">
-                      {account.name}
-                    </span>
-                  </Link>
-                </CollapsedTooltip>
-              </li>
-            ) : signIn ? (
-              <li className="sidebar-collapsed:justify-center flex">{signIn}</li>
-            ) : null}
+            {account && <li className="sidebar-collapsed:justify-center flex">{account}</li>}
             {settingsApp && (
               <SidebarLink
                 href={settingsApp.href}

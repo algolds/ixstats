@@ -20,8 +20,7 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
   const [, setClockTick] = useState(0);
 
   useEffect(() => {
-    // Live seconds clock — tick every 1s, but pause while the tab is hidden so we
-    // don't re-render once a second in a backgrounded tab. (audit F6)
+    // Tick every second, paused while the tab is hidden.
     let id: ReturnType<typeof setInterval> | null = null;
     const start = () => {
       if (id == null) id = setInterval(() => setClockTick((n) => n + 1), 1000);
@@ -64,7 +63,7 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
       <motion.div
         initial={{ scale: 0.96, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="material-hero text-label mb-6 flex flex-col items-center gap-3 rounded-2xl px-4 py-3 sm:mb-8 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-4 sm:gap-y-2 sm:px-6 sm:py-4"
+        className="bg-surface text-label border-separator rounded-card shadow-card mb-6 flex flex-col items-center gap-3 border px-4 py-3 sm:mb-8 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-4 sm:gap-y-2 sm:px-6 sm:py-4"
       >
         <div className="flex items-center gap-2">
           <div className={splashGold.pulseDot} aria-hidden />
@@ -78,7 +77,7 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
         <button
           type="button"
           onClick={() => setEarthClock((e) => !e)}
-          className="text-label rounded-control hover:text-facet-accent-ink focus-visible:outline-tint flex max-w-[min(92vw,36rem)] flex-col items-center gap-0.5 px-2 py-1 text-center transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 sm:items-start sm:text-left"
+          className="text-label rounded-control hover:text-tint-ink focus-visible:outline-tint flex max-w-[min(92vw,36rem)] flex-col items-center gap-0.5 px-2 py-1 text-center transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 sm:items-start sm:text-left"
           aria-label={
             earthClock
               ? "Showing Earth time. Switch to IxTime."
@@ -88,7 +87,7 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
           <span className="text-headline sm:text-body tabular-nums">
             {earthClock ? earthTime : realmCalendarLine}
           </span>
-          <span className="text-label-secondary text-eyebrow sm:text-footnote">
+          <span className="text-label-secondary text-eyebrow">
             {earthClock ? "Earth" : "IxTime"}
           </span>
         </button>
@@ -120,23 +119,24 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
       </div>
 
       <p className="text-label text-title-2 md:text-large-title mx-auto mb-3 max-w-3xl">
-        Everything runs. Everything connects.
+        Build a nation and run its economy.
       </p>
 
       <p className="text-label-secondary text-body md:text-title-3 mx-auto mb-3 max-w-2xl leading-relaxed">
-        Lore and live stats in one place. Your wiki, your economy, your feed—updated continuously so
-        the board reflects what nations actually do.
+        IxStats is the economic simulation for the Ixnay worldbuilding community. Create a country,
+        choose its government and policies, answer national issues, and compare your results with
+        other nations on a shared clock.
       </p>
       <p className="text-label-secondary text-body mx-auto mb-8 max-w-xl leading-relaxed">
-        Collect lore cards, earn IxCredits, and unlock achievements in the{" "}
+        Collect lore cards and earn IxCredits in the{" "}
         <Link href="/vault" className={splashGold.link}>
-          MyVault
+          IxVault
         </Link>
-        . Play NationStates? You can{" "}
+        . If you play NationStates, you can{" "}
         <Link href="/vault/import" className={splashGold.link}>
           import your deck
-        </Link>{" "}
-        too.
+        </Link>
+        .
       </p>
 
       {stats && (
@@ -175,18 +175,17 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
             </motion.span>
           </Link>
         </Button>
-        {/* The gold primary (data-app="mycountry") with the v2 gold glow. */}
-        <Button asChild size="lg" className="facet-glow">
+        <Button asChild size="lg">
           <Link href="/builder">
             <motion.span className="mr-2 inline-block">
               <Hammer aria-hidden="true" className="h-5 w-5" />
             </motion.span>
-            Launch MyCountry Builder
+            Build your nation
           </Link>
         </Button>
       </div>
       <p className="text-label-secondary text-footnote md:text-body mx-auto mt-4 max-w-md leading-relaxed">
-        The builder remembers you after sign-in. Preview it anytime.
+        You can try the builder without an account. Sign in to save your nation.
       </p>
     </motion.div>
   );
