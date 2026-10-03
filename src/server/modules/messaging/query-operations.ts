@@ -17,6 +17,12 @@ import { formatMessagesConversation, formatThinkpagesConversation } from "./form
 import { recordMessagingTelemetry } from "./telemetry";
 import { batchResolveMessagingAccounts } from "./account-resolver";
 
+const CONVERSATION_DETAIL_INCLUDE = {
+  participants: { where: { isActive: true } },
+  thinktankGroup: { include: { members: { where: { isActive: true } } } },
+  messages: { take: 1, orderBy: { ixTimeTimestamp: "desc" } },
+} as const;
+
 export class MessagingQueryOperations {
   private db: any;
   private forumBridge?: any;
@@ -250,18 +256,7 @@ export class MessagingQueryOperations {
           { thinktankGroup: { conversationId: conversationId } },
         ],
       },
-      include: {
-        participants: { where: { isActive: true } },
-        thinktankGroup: {
-          include: {
-            members: { where: { isActive: true } },
-          },
-        },
-        messages: {
-          take: 1,
-          orderBy: { ixTimeTimestamp: "desc" },
-        },
-      },
+      include: CONVERSATION_DETAIL_INCLUDE,
     });
 
     // Auto-create/heal ThinkTank conversation if missing
@@ -299,18 +294,7 @@ export class MessagingQueryOperations {
 
         conv = await this.db.thinkshareConversation.findUnique({
           where: { id: newConv.id },
-          include: {
-            participants: { where: { isActive: true } },
-            thinktankGroup: {
-              include: {
-                members: { where: { isActive: true } },
-              },
-            },
-            messages: {
-              take: 1,
-              orderBy: { ixTimeTimestamp: "desc" },
-            },
-          },
+          include: CONVERSATION_DETAIL_INCLUDE,
         });
       }
     }
@@ -523,25 +507,5 @@ export class MessagingQueryOperations {
       profileImageUrl: u.country?.flag ?? null,
       accountType: "country" as const,
     }));
-  }
-
-  public async getPresenceForUsers(userIds: string[]) {
-    if (userIds.length === 0) return {};
-
-    const presenceList = await this.db.userPresence.findMany({
-      where: { userId: { in: userIds } },
-    });
-
-    const result: Record<string, any> = {};
-    for (const p of presenceList) {
-      result[p.userId] = {
-        status: p.status,
-        lastSeenAt: p.lastSeenAt,
-        currentCountryId: p.currentCountryId,
-        customStatus: p.customStatus,
-      };
-    }
-
-    return result;
   }
 }

@@ -85,8 +85,6 @@ export interface MessagingDependencies {
   telemetry?: TelemetryLogger;
 }
 
-// ─── Command / Query Inputs ──────────────────────────────────────────────────
-
 export interface GetConversationsByFolderInput {
   folder: MessageFolder;
   limit?: number;
