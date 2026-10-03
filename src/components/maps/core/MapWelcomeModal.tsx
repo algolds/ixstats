@@ -1,23 +1,13 @@
 "use client";
 
-/**
- * MapWelcomeModal — First-visit welcome screen for IxWorld.
- *
- * Shows on the first visit (localStorage key). Displays quick tips,
- * keyboard shortcuts, and feature highlights. Dismisses permanently
- * on close or "Don't show again".
- */
-
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence } from "motion/react";
 import {
   Globe,
   Component as Layers,
   Ruler,
   MapPin,
   Keyframe as Keyboard,
-  NavArrowRight as ChevronRight,
-  NavArrowLeft as ChevronLeft,
   Compass,
   Navigator as Navigation,
 } from "iconoir-react";
@@ -35,6 +25,7 @@ import { IxTime } from "~/lib/ixtime";
 import { IXWORLD_VERSION } from "~/lib/buildVersion";
 import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
 import { Card } from "~/components/ui/card";
+import { SlidePage, TipCard, WelcomeFooter } from "~/components/maps/shared/WelcomeDialogParts";
 
 const STORAGE_KEY = "ixworld-welcome-seen";
 
@@ -81,6 +72,137 @@ const SHORTCUTS = [
   { keys: ["Esc"], action: "Close panels" },
 ];
 
+const TOTAL_PAGES = 2; // Tips page + Shortcuts page
+
+/** Shortcuts page. */
+function ShortcutsPage() {
+  return (
+    <SlidePage from="right">
+      <h3 className="text-label text-headline mb-3 flex items-center gap-2">
+        <Keyboard className="text-label-secondary h-4 w-4" aria-hidden />
+        Keyboard shortcuts
+      </h3>
+      <div>
+        {SHORTCUTS.map((s) => (
+          <div
+            key={s.action}
+            className="border-separator flex items-center justify-between border-b px-1 py-2 last:border-b-0"
+          >
+            <span className="text-label-secondary text-footnote">{s.action}</span>
+            <div className="flex items-center gap-1">
+              {s.keys.map((k) => (
+                <kbd
+                  key={k}
+                  className="bg-fill-3 text-label border-separator text-footnote rounded-control-sm inline-flex h-5 min-w-[22px] items-center justify-center border px-2 tabular-nums"
+                >
+                  {k}
+                </kbd>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <Card variant="inset" className="mt-4 p-3">
+        <div className="mb-1 flex items-center gap-2">
+          <Compass className="text-blue h-4 w-4" aria-hidden />
+          <h4 className="text-label text-headline">Tip</h4>
+        </div>
+        <p className="text-label-secondary text-footnote">
+          Everything on this map connects to a living wiki. Hover any country or place name for an
+          instant preview, or click through to read the full article.
+        </p>
+      </Card>
+    </SlidePage>
+  );
+}
+
+const TERM_CLASS = "text-label-secondary cursor-help underline decoration-dotted";
+
+const CLIMATE_SWATCHES = [
+  ["bg-red", "Tropical Wet (Ar)"],
+  ["bg-yellow", "Steppe (Bs)"],
+  ["bg-green/70", "Temperate Oceanic (Do)"],
+  ["bg-cyan", "Continental (Dc)"],
+  ["bg-fill", "Highland (H)"],
+  ["bg-blue", "Boreal (E)"],
+];
+
+function WorldNotes({ currentIxTime }: { currentIxTime: string }) {
+  return (
+    <div className="text-label-secondary text-footnote space-y-2 leading-relaxed">
+      <div>
+        IxWorld runs on{" "}
+        <Tooltip
+          content={
+            <div className="text-footnote space-y-2">
+              <p className="font-semibold">Current IxTime</p>
+              <p className="text-blue tabular-nums">{currentIxTime}</p>
+              <p className="text-label-secondary">
+                The in-world clock runs at 2x real time. One real day = two in-game days. All
+                economic cycles, elections, and events follow this clock.
+              </p>
+            </div>
+          }
+        >
+          <strong className={TERM_CLASS}>IxTime</strong>
+        </Tooltip>{" "}
+        is the in-world clock, which moves at 2x real time.
+      </div>
+      <div>
+        The world uses a{" "}
+        <Tooltip
+          content={
+            <div className="text-footnote space-y-2">
+              <p className="font-semibold">Trewartha climate system</p>
+              <div className="text-footnote grid grid-cols-2 gap-x-3 gap-y-0.5">
+                {CLIMATE_SWATCHES.map(([color, label]) => (
+                  <span key={label}>
+                    <span className={`${color} mr-1 inline-block h-2 w-2 rounded-full`} />
+                    {label}
+                  </span>
+                ))}
+              </div>
+              <p className="text-label-secondary">
+                12 climate zones and 9 elevation bands. Climate affects agriculture, GDP modifiers,
+                crisis risk, and NPC behavior.
+              </p>
+            </div>
+          }
+        >
+          <strong className={TERM_CLASS}>Trewartha climate system</strong>
+        </Tooltip>{" "}
+        with 12 zones and 9 elevation bands.
+      </div>
+      <div>
+        All lore originates from{" "}
+        <Tooltip
+          content={
+            <div className="text-footnote space-y-2">
+              <p className="font-semibold">IxWiki</p>
+              <p className="text-label-secondary">
+                The collaborative wiki is the canonical source of truth. Country articles,
+                infoboxes, and coordinates feed directly into the map and stats engine. Edits on the
+                wiki are reflected here automatically.
+              </p>
+            </div>
+          }
+        >
+          <a
+            href={DEFAULT_MEDIAWIKI_URL}
+            target="_blank"
+            rel="noopener"
+            className={`hover:text-label ${TERM_CLASS}`}
+          >
+            IxWiki
+          </a>
+        </Tooltip>{" "}
+        is the canonical source of truth.
+      </div>
+    </div>
+  );
+}
+
 export function MapWelcomeModal({
   isMapReady,
   onStartTour,
@@ -88,6 +210,7 @@ export function MapWelcomeModal({
   onClose,
 }: MapWelcomeModalProps) {
   const [show, setShow] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
 
   // Sync parent isOpen control
   useEffect(() => {
@@ -100,20 +223,17 @@ export function MapWelcomeModal({
   // Current IxTime for the tooltip
   const currentIxTime = useMemo(() => {
     try {
-      const ixTs = IxTime.getCurrentIxTime();
-      return IxTime.formatIxTime(ixTs, true);
+      return IxTime.formatIxTime(IxTime.getCurrentIxTime(), true);
     } catch {
       return "—";
     }
   }, []);
-  const [currentPage, setCurrentPage] = useState(0);
 
   useEffect(() => {
     if (!isMapReady) return;
     try {
-      const seen = localStorage.getItem(STORAGE_KEY);
       // Re-show on new versions (user sees what's new)
-      if (!seen || seen !== IXWORLD_VERSION) {
+      if (localStorage.getItem(STORAGE_KEY) !== IXWORLD_VERSION) {
         const timer = setTimeout(() => setShow(true), 800);
         return () => clearTimeout(timer);
       }
@@ -133,14 +253,11 @@ export function MapWelcomeModal({
     }
   }, [onClose]);
 
-  const totalPages = 2; // Tips page + Shortcuts page
-
   if (!show) return null;
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="rounded-card gap-0 overflow-hidden p-0 sm:max-w-lg">
-        {/* Header */}
         <DialogHeader className="flex-row items-center justify-between gap-3 px-6 pt-6 pr-12 pb-4 text-left">
           <div className="flex items-center gap-3">
             <Globe className="text-blue h-6 w-6 shrink-0" aria-hidden />
@@ -156,233 +273,51 @@ export function MapWelcomeModal({
           </Badge>
         </DialogHeader>
 
-        {/* Content pages */}
         <div className="px-6 pb-2">
           <AnimatePresence mode="wait">
             {currentPage === 0 && (
-              <motion.div
-                key="tips"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                transition={{ duration: 0.2 }}
-                className="grid grid-cols-2 gap-2"
-              >
-                {TIPS.map((tip) => {
-                  const Icon = tip.icon;
-                  return (
-                    <Card variant="inset" key={tip.title} className="p-3">
-                      <div className="mb-2 flex items-center gap-2">
-                        <Icon className="text-blue h-4 w-4" aria-hidden />
-                        <h3 className="text-label text-headline">{tip.title}</h3>
-                      </div>
-                      <p className="text-label-secondary text-footnote leading-relaxed">
-                        {tip.description}
-                      </p>
-                    </Card>
-                  );
-                })}
-              </motion.div>
+              <SlidePage key="tips" from="left" className="grid grid-cols-2 gap-2">
+                {TIPS.map((tip) => (
+                  <TipCard key={tip.title} {...tip} />
+                ))}
+              </SlidePage>
             )}
-
-            {currentPage === 1 && (
-              <motion.div
-                key="shortcuts"
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                <h3 className="text-label text-headline mb-3 flex items-center gap-2">
-                  <Keyboard className="text-label-secondary h-4 w-4" aria-hidden />
-                  Keyboard shortcuts
-                </h3>
-                <div>
-                  {SHORTCUTS.map((s) => (
-                    <div
-                      key={s.action}
-                      className="border-separator flex items-center justify-between border-b px-1 py-2 last:border-b-0"
-                    >
-                      <span className="text-label-secondary text-footnote">{s.action}</span>
-                      <div className="flex items-center gap-1">
-                        {s.keys.map((k) => (
-                          <kbd
-                            key={k}
-                            className="bg-fill-3 text-label border-separator text-footnote rounded-control-sm inline-flex h-5 min-w-[22px] items-center justify-center border px-2 tabular-nums"
-                          >
-                            {k}
-                          </kbd>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <Card variant="inset" className="mt-4 p-3">
-                  <div className="mb-1 flex items-center gap-2">
-                    <Compass className="text-blue h-4 w-4" aria-hidden />
-                    <h4 className="text-label text-headline">Tip</h4>
-                  </div>
-                  <p className="text-label-secondary text-footnote">
-                    Everything on this map connects to a living wiki. Hover any country or place
-                    name for an instant preview, or click through to read the full article.
-                  </p>
-                </Card>
-              </motion.div>
-            )}
+            {currentPage === 1 && <ShortcutsPage key="shortcuts" />}
           </AnimatePresence>
         </div>
 
-        {/* World notes */}
         <div className="px-6 pb-2">
-          <div className="text-label-secondary text-footnote space-y-2 leading-relaxed">
-            <div>
-              IxWorld runs on{" "}
-              <Tooltip
-                content={
-                  <div className="text-footnote space-y-2">
-                    <p className="font-semibold">Current IxTime</p>
-                    <p className="text-blue tabular-nums">{currentIxTime}</p>
-                    <p className="text-label-secondary">
-                      The in-world clock runs at 2x real time. One real day = two in-game days. All
-                      economic cycles, elections, and events follow this clock.
-                    </p>
-                  </div>
-                }
-              >
-                <strong className="text-label-secondary cursor-help underline decoration-dotted">
-                  IxTime
-                </strong>
-              </Tooltip>{" "}
-              is the in-world clock, which moves at 2x real time.
-            </div>
-            <div>
-              The world uses a{" "}
-              <Tooltip
-                content={
-                  <div className="text-footnote space-y-2">
-                    <p className="font-semibold">Trewartha climate system</p>
-                    <div className="text-footnote grid grid-cols-2 gap-x-3 gap-y-0.5">
-                      <span>
-                        <span className="bg-red mr-1 inline-block h-2 w-2 rounded-full" />
-                        Tropical Wet (Ar)
-                      </span>
-                      <span>
-                        <span className="bg-yellow mr-1 inline-block h-2 w-2 rounded-full" />
-                        Steppe (Bs)
-                      </span>
-                      <span>
-                        <span className="bg-green/70 mr-1 inline-block h-2 w-2 rounded-full" />
-                        Temperate Oceanic (Do)
-                      </span>
-                      <span>
-                        <span className="bg-cyan mr-1 inline-block h-2 w-2 rounded-full" />
-                        Continental (Dc)
-                      </span>
-                      <span>
-                        <span className="bg-fill mr-1 inline-block h-2 w-2 rounded-full" />
-                        Highland (H)
-                      </span>
-                      <span>
-                        <span className="bg-blue mr-1 inline-block h-2 w-2 rounded-full" />
-                        Boreal (E)
-                      </span>
-                    </div>
-                    <p className="text-label-secondary">
-                      12 climate zones and 9 elevation bands. Climate affects agriculture, GDP
-                      modifiers, crisis risk, and NPC behavior.
-                    </p>
-                  </div>
-                }
-              >
-                <strong className="text-label-secondary cursor-help underline decoration-dotted">
-                  Trewartha climate system
-                </strong>
-              </Tooltip>{" "}
-              with 12 zones and 9 elevation bands.
-            </div>
-            <div>
-              All lore originates from{" "}
-              <Tooltip
-                content={
-                  <div className="text-footnote space-y-2">
-                    <p className="font-semibold">IxWiki</p>
-                    <p className="text-label-secondary">
-                      The collaborative wiki is the canonical source of truth. Country articles,
-                      infoboxes, and coordinates feed directly into the map and stats engine. Edits
-                      on the wiki are reflected here automatically.
-                    </p>
-                  </div>
-                }
-              >
-                <a
-                  href={DEFAULT_MEDIAWIKI_URL}
-                  target="_blank"
-                  rel="noopener"
-                  className="text-label-secondary hover:text-label cursor-help underline decoration-dotted"
-                >
-                  IxWiki
-                </a>
-              </Tooltip>{" "}
-              is the canonical source of truth.
-            </div>
-          </div>
+          <WorldNotes currentIxTime={currentIxTime} />
         </div>
 
-        {/* Footer */}
-        <div className="border-separator flex items-center justify-between border-t px-6 py-4">
-          <div className="flex items-center gap-2">
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                aria-label={`Page ${i + 1} of ${totalPages}`}
-                aria-current={i === currentPage ? "step" : undefined}
-                onClick={() => setCurrentPage(i)}
-                className={`h-1.5 rounded-full transition-[background-color,opacity] ${
-                  i === currentPage ? "bg-blue w-5" : "bg-fill-2 hover:bg-fill w-1.5"
-                }`}
-              />
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2">
-            {currentPage > 0 && (
-              <Button variant="ghost" size="sm" onClick={() => setCurrentPage((p) => p - 1)}>
-                <ChevronLeft aria-hidden />
-                Back
+        <WelcomeFooter
+          page={currentPage}
+          totalPages={TOTAL_PAGES}
+          onPageChange={setCurrentPage}
+          finalActions={
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  handleClose();
+                  onStartTour?.();
+                }}
+              >
+                <Compass aria-hidden />
+                Take a tour
               </Button>
-            )}
-            {currentPage < totalPages - 1 ? (
-              <Button variant="secondary" size="sm" onClick={() => setCurrentPage((p) => p + 1)}>
-                Next
-                <ChevronRight aria-hidden />
+              <Button
+                size="sm"
+                onClick={handleClose}
+                className="bg-blue text-on-blue hover:bg-blue/90"
+              >
+                Start exploring
+                <Navigation aria-hidden />
               </Button>
-            ) : (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    handleClose();
-                    onStartTour?.();
-                  }}
-                >
-                  <Compass aria-hidden />
-                  Take a tour
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleClose}
-                  className="bg-blue text-on-blue hover:bg-blue/90"
-                >
-                  Start exploring
-                  <Navigation aria-hidden />
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
+            </>
+          }
+        />
       </DialogContent>
     </Dialog>
   );
