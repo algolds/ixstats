@@ -250,7 +250,7 @@ Ownership and material validation happen just before the transaction. **If any s
 ## UI/UX Features
 
 ### Facet Design
-Components use Facet 3 primitives: an opaque `FacetCard` workbench with `Stat` insets, the card picker in a
+Components use Facet primitives: an opaque `Card` workbench with `Stat` insets, the card picker in a
 `Dialog`, and the crafting result as a full-screen `Dialog` (a Vault reveal moment; Escape or a click continues).
 
 ### Animations

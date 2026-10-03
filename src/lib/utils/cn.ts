@@ -2,7 +2,7 @@ import { type ClassValue, clsx } from "clsx";
 import { extendTailwindMerge } from "tailwind-merge";
 
 /**
- * tailwind-merge that knows the Facet 3 token utilities (src/styles/facet/tokens.css). Without this it
+ * tailwind-merge that knows the Facet token utilities (src/styles/facet/tokens.css). Without this it
  * reads every unknown `text-*` as a colour, so `cn("text-body text-label")` would drop one of them.
  */
 const twMerge = extendTailwindMerge<"material">({

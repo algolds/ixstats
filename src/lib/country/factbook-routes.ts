@@ -56,7 +56,7 @@ const HASH_ROUTE_MAP: Record<string, string> = {
   geography: "/factbook/geography",
   dossier: "/dossier",
   activity: "/activity",
-  // Legacy v2 executive-drill kinds from V2DrillSheets — default to the factbook.
+  // Legacy executive-drill kinds — default to the factbook.
   relations: "/factbook",
   defense: "/factbook",
   politics: "/factbook",

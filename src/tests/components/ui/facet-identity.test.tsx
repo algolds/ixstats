@@ -225,7 +225,7 @@ describe("figures in the body face", () => {
     expect(cls).not.toMatch(/\bfont-data\b/);
   });
 
-  it("font-data is Azeret Mono with tabular figures and a slashed zero (v2 .font-mono)", () => {
+  it("font-data is Azeret Mono with tabular figures and a slashed zero", () => {
     expect(tokensCss).toContain('--font-data--font-feature-settings: "tnum" 1, "zero" 1;');
     expect(tokensCss).toContain('--font-mono--font-feature-settings: "tnum" 1, "zero" 1;');
     expect(tokensCss).toMatch(/--font-data: "Azeret Mono"/);

@@ -4,7 +4,7 @@
 
 import type { EconomicTier, PopulationTier } from "~/types/ixstats";
 
-/** The `Badge` variant (Facet 3 §7.1) a membership tier renders with. */
+/** The `Badge` variant a membership tier renders with. */
 export type TierBadgeVariant = "warning" | "default";
 
 export interface TierInfo {

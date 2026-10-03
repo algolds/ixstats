@@ -1,5 +1,5 @@
 /**
- * Cuelume — IxStates' synthesized Web Audio cues (Facet 3 spec §9).
+ * Cuelume — IxStates' synthesized Web Audio cues.
  *
  * Policy: on by default at master 0.25, but only **meaningful moments** make sound —
  * success, error, destructive confirm, sheet/dialog present & dismiss, Vault reveals, Halo
@@ -98,7 +98,7 @@ function isSoundName(value: string | null): value is SoundName {
 /**
  * Delegated `data-cuelume-press` / `data-cuelume-release` / `data-cuelume-toggle` handling,
  * routed through {@link playSound} so the mute rules apply. `data-cuelume-hover` is deliberately
- * not bound — hover ticks are retired (§9). Primitives no longer set these attributes; the
+ * not bound — hover ticks are retired. Primitives no longer set these attributes; the
  * mechanism stays for the few meaningful feature-level cues that still use it.
  */
 function bindDelegatedCues(root: Document): void {
@@ -186,7 +186,7 @@ export function playSound(name: SoundName, options?: { volume?: number }): void 
 }
 
 /**
- * The §9 moments — the only cues new code should play.
+ * The meaningful moments — the only cues new code should play.
  */
 export const soundCues = {
   /** A sheet or dialog is presented. */
@@ -210,7 +210,7 @@ export const soundCues = {
 export type SoundMoment = keyof typeof soundCues;
 
 /**
- * Raw palette (legacy). Prefer {@link soundCues}; hover/press/tick cues are retired by §9 and
+ * Raw palette (legacy). Prefer {@link soundCues}; hover/press/tick cues are retired and
  * remain only until feature code migrates.
  */
 export const soundEffects = {

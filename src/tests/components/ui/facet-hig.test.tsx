@@ -1,9 +1,7 @@
 /**
- * Facet 3.1 — HIG pass over the restored identity (docs/specs/2026-09-30-facet-3-design-system.md
- * §16.8). The primitive APIs that replace the app workarounds (`accent`, `retint`, `rim`,
- * `CutoutCardHeader as`), glass nesting, touch targets and focus, the sanctioned textures, and the
- * accessibility-preference rules in the identity sheet. Cascade: identity-cascade.test.ts;
- * contrast: token-contrast.test.ts.
+ * HIG rules for the identity layer: the accent vocabulary, `CutoutCardHeader as`, glass nesting,
+ * touch targets and focus, the sanctioned textures, and the accessibility-preference rules in the
+ * identity sheet. Cascade: identity-cascade.test.ts; contrast: token-contrast.test.ts.
  */
 import fs from "fs";
 import path from "path";
@@ -131,7 +129,7 @@ describe("touch targets, focus and keyboard (HIG)", () => {
 });
 
 describe("textures", () => {
-  it("chevron is sanctioned (the v2 Builder texture) with the 0.05 cap", () => {
+  it("chevron is sanctioned (the Builder texture) with the 0.05 cap", () => {
     expect(SANCTIONED_TEXTURES).toEqual(["dots", "grid", "paperGrain", "chevron"]);
     expect(TEXTURE_MAX_OPACITY).toBe(0.05);
   });
@@ -180,7 +178,7 @@ describe("accessibility preferences in the identity sheet", () => {
   });
 });
 
-describe("motion uses the named durations (spec §8)", () => {
+describe("motion uses the named durations", () => {
   it("press and lift transition over --duration-fast (150ms)", () => {
     expect(DURATION_FAST).toBe(0.15);
     for (const name of ["facet-press", "facet-lift"]) {
@@ -254,7 +252,7 @@ describe("achievement aurora / radiance follow the card's accent", () => {
 });
 
 describe("Halo walkthrough highlight", () => {
-  it("is a static ring, not a looping pulse (spec §8: no ambient loops)", () => {
+  it("is a static ring, not a looping pulse (no ambient loops)", () => {
     const source = fs.readFileSync(path.join(ROOT, "src/components/halo/index.tsx"), "utf8");
     expect(source).not.toMatch(/repeat:\s*Infinity/);
     expect(source).toContain('isTourActive && "ring-tint/50 ring-2"');

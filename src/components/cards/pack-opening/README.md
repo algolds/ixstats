@@ -222,7 +222,7 @@ export function PackStore() {
         </button>
       ))}
 
-      {/* Present it in a full-screen Dialog (Facet 3: no hand-rolled `fixed inset-0` overlays);
+      {/* Present it in a full-screen Dialog (no hand-rolled `fixed inset-0` overlays);
           see VaultStoreTab for the reference wiring. */}
       {opening && (
         <div className="h-dvh w-screen">

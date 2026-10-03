@@ -1,5 +1,5 @@
 /**
- * App section map for the Facet 3 navigation shell (spec §7.4, Phase 3).
+ * App section map for the navigation shell.
  *
  * One list of apps — icon, route, `data-app` tint key and sections — read by the AppSidebar (app
  * switcher + the current app's sections), the TabBar (primary apps + "More") and anything else that
@@ -81,7 +81,7 @@ import {
 
 export type NavIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
-/** `data-app` tint keys (tokens.css §2.2). Omitted = the default (indigo) tint. */
+/** `data-app` tint keys (tokens.css). Omitted = the default (indigo) tint. */
 export type AppTint =
   "admin" | "mycountry" | "intel" | "maps" | "thinkpages" | "vault" | "forum" | "wiki" | "sports";
 
@@ -570,7 +570,7 @@ export const TAB_BAR_PRIORITY: readonly AppId[] = [
 export const TAB_BAR_SLOTS = 4;
 
 /**
- * Routes that stay chromeless with the new shell: no sidebar, no tab bar (spec §7.4 — Maps keeps
+ * Routes that stay chromeless with the shell: no sidebar, no tab bar (Maps keeps
  * its own wayfinding; the full-screen map editors cover the viewport).
  */
 export const CHROMELESS_PREFIXES: readonly string[] = [

@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
  * Plan 346: pins the Facet anti-slop gates (docs/reference/facet-design-system.md §8) so they
- * cannot regrow. (Onoma, `src/app/labs/onoma`, was excluded until its Facet 3 conversion.)
+ * cannot regrow.
  */
 import fs from "fs";
 import path from "path";
@@ -176,7 +176,7 @@ const ART_GRADIENT_FILES = [
 ].map((dir) => dir.split("/").join(path.sep));
 
 /**
- * Facet 3.1 (spec §16.1): blur comes from the glass/acrylic materials (`material-*`, FacetCard
+ * Blur comes from the glass/acrylic materials (`material-*`, FacetCard
  * `variant="glass"`, FacetMaterial). A raw `backdrop-blur-*`/`backdrop-saturate-*` utility or an
  * inline `backdropFilter` in converted feature code is a hand-rolled material. `backdrop-blur-none`
  * (turning a primitive's blur off) is fine.
@@ -188,14 +188,14 @@ const RAW_BACKDROP_ALLOWED = new Set([
   `${path.join("components", "mycountry", "shell", "DrillSheets.tsx")}: backdrop-blur-xl`,
 ]);
 const INLINE_BACKDROP_FILES = [
-  // The rare-card reveal moment (Vault flourish, spec §8) frosts the stage behind the card.
+  // The rare-card reveal moment (Vault flourish) frosts the stage behind the card.
   "components/cards/pack-opening/Stage3_CardReveal.tsx",
   // The progressive blur primitive is a material itself (stepped backdrop blur).
   "components/ui/magicui/progressive-blur.tsx",
 ].map((dir) => dir.split("/").join(path.sep));
 
 /**
- * Facet 3.1 (spec §16.8): textures in converted feature code are the sanctioned ones
+ * Textures in converted feature code are the sanctioned ones
  * (`SANCTIONED_TEXTURES`: dots, grid, paperGrain, chevron — clamped to 0.05 by TextureOverlay).
  * Card art (`components/cards/`) keeps its own textures. Allowlisted: legacy uses pending their app's
  * next pass.
@@ -245,6 +245,12 @@ describe("Facet anti-slop guards", () => {
     expect(layout?.content.match(/<FacetMotionConfig>/g) ?? []).toHaveLength(1);
     expect(layout?.content.match(/<MotionConfig\b/g) ?? []).toHaveLength(0);
     expect(hits(/RackFocusBlurWrapper/g)).toEqual([]);
+  });
+
+  it("keeps the removed decoration (TintGlow, AcrylicGlow, Refraction, FacetCard, retint/rim/glow props) out", () => {
+    expect(
+      hits(/\b(?:TintGlow|AcrylicGlow|FacetCard)\b|<Refraction\b|\b(?:retint|rim|glow)=/g)
+    ).toEqual([]);
   });
 
   it("imports icons only from iconoir-react (lucide-react is prohibited)", () => {

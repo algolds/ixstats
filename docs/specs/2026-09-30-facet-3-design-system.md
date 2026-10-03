@@ -793,7 +793,7 @@ the rims out-specify every surface border, and (HIG follow-ups) that `material-a
 vibrant role and `text-label-secondary` / `text-muted-foreground` re-resolve under it. `token-contrast` also covers
 the acrylic worst case and the tinted badge (§16.8). `facet-guards` (3.1 HIG): converted code uses only
 `SANCTIONED_TEXTURES`.
-Primitive behaviour: `src/tests/components/ui/facet-31-identity.test.tsx` and `facet-31-hig.test.tsx`.
+Primitive behaviour: `src/tests/components/ui/facet-identity.test.tsx` and `facet-hig.test.tsx`.
 
 ### 16.7 Rollout
 
