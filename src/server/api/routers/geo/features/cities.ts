@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
 import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import {
@@ -10,7 +9,7 @@ import {
 } from "~/lib/maps/geo-validation";
 
 import { syncGeographicDemographics } from "~/lib/country-geo/sync";
-import { assertOwnCountry, coordinatesSchema } from "../core/shared";
+import { assertFound, assertOwnCountry, coordinatesSchema } from "../core/shared";
 
 export const geoFeaturesCitiesRouter = createTRPCRouter({
   /**
@@ -111,12 +110,12 @@ export const geoFeaturesCitiesRouter = createTRPCRouter({
       assertOwnCountry(ctx, input.countryId);
 
       // Verify city belongs to country
-      const city = await ctx.db.city.findFirst({
-        where: { id: input.cityId, countryId: input.countryId },
-      });
-      if (!city) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "City not found" });
-      }
+      assertFound(
+        await ctx.db.city.findFirst({
+          where: { id: input.cityId, countryId: input.countryId },
+        }),
+        "City not found"
+      );
 
       // If coordinates changed, validate containment + collision
       if (input.coordinates) {
@@ -180,12 +179,12 @@ export const geoFeaturesCitiesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       assertOwnCountry(ctx, input.countryId);
 
-      const city = await ctx.db.city.findFirst({
-        where: { id: input.cityId, countryId: input.countryId },
-      });
-      if (!city) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "City not found" });
-      }
+      const city = assertFound(
+        await ctx.db.city.findFirst({
+          where: { id: input.cityId, countryId: input.countryId },
+        }),
+        "City not found"
+      );
 
       const wasCapital = city.isNationalCapital;
       await ctx.db.city.delete({ where: { id: input.cityId } });

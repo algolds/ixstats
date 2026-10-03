@@ -8,7 +8,7 @@ import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { validateGeometryValid } from "~/lib/maps/geo-validation";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
-import { assertFeatureFound, neighbourFeatures } from "../core/shared";
+import { assertFound, neighbourFeatures } from "../core/shared";
 
 export const geoEditorBordersRouter = createTRPCRouter({
   /** Start a border editing session for a feature. Returns geometry + neighbor info. */
@@ -16,7 +16,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
     .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
     .mutation(async ({ ctx, input }) => {
       const realmId = await viewerRealmId(ctx, input.realm);
-      const feature = assertFeatureFound(
+      const feature = assertFound(
         await ctx.db.mapLayer.findFirst({
           where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
           select: {
@@ -30,7 +30,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
             countryId: true,
           },
         }),
-        input.featureId
+        `Feature not found: ${input.featureId}`
       );
 
       // Find neighboring features by bounding box overlap
@@ -132,12 +132,12 @@ export const geoEditorBordersRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const realmId = await viewerRealmId(ctx, input.realm);
-      const feature = assertFeatureFound(
+      const feature = assertFound(
         await ctx.db.mapLayer.findFirst({
           where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
           select: { id: true, geometry: true, countryId: true, displayName: true, areaSqKm: true },
         }),
-        input.featureId
+        `Feature not found: ${input.featureId}`
       );
 
       if (input.applyDirectly) {
@@ -277,11 +277,11 @@ export const geoEditorBordersRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const realmId = await viewerRealmId(ctx, input.realm);
-      const feature = assertFeatureFound(
+      const feature = assertFound(
         await ctx.db.mapLayer.findFirst({
           where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
         }),
-        input.featureId
+        `Feature not found: ${input.featureId}`
       );
 
       const { splitPolygon, calculateArea, calculateCentroid, calculateBBox } =

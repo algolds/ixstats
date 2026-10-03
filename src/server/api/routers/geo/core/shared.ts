@@ -24,12 +24,10 @@ export function assertOwnCountry(
   }
 }
 
-/** NOT_FOUND unless the (already queried) map feature exists. */
-export function assertFeatureFound<T>(feature: T | null | undefined, featureId: string): T {
-  if (!feature) {
-    throw new TRPCError({ code: "NOT_FOUND", message: `Feature not found: ${featureId}` });
-  }
-  return feature;
+/** NOT_FOUND (with `message`) unless the queried entity exists. */
+export function assertFound<T>(entity: T | null | undefined, message: string): T {
+  if (!entity) throw new TRPCError({ code: "NOT_FOUND", message });
+  return entity;
 }
 
 /** Neighbouring layers overlapping a [minLng, minLat, maxLng, maxLat] box padded by `pad`, as feature stubs. */
@@ -61,10 +59,7 @@ export async function requirePoliticalLayer(db: PrismaClient, featureId: string,
   const mapLayer = await db.mapLayer.findFirst({
     where: { layerType: "political", featureId, realmId },
   });
-  if (!mapLayer) {
-    throw new TRPCError({ code: "NOT_FOUND", message: `Map feature not found: ${featureId}` });
-  }
-  return mapLayer;
+  return assertFound(mapLayer, `Map feature not found: ${featureId}`);
 }
 
 /**

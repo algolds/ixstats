@@ -5,11 +5,10 @@ import {
   standardMutationCountryOwnerProcedure,
 } from "~/server/api/trpc";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
-import { TRPCError } from "@trpc/server";
 import { GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { validatePointContainment } from "~/lib/maps/geo-validation";
-import { assertOwnCountry, coordinatesSchema } from "../core/shared";
+import { assertFound, assertOwnCountry, coordinatesSchema } from "../core/shared";
 
 export const geoFeaturesLabelsRouter = createTRPCRouter({
   createMapLabel: standardMutationCountryOwnerProcedure
@@ -115,10 +114,12 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       assertOwnCountry(ctx, input.countryId);
-      const label = await ctx.db.mapLabel.findFirst({
-        where: { id: input.labelId, countryId: input.countryId },
-      });
-      if (!label) throw new TRPCError({ code: "NOT_FOUND", message: "Map label not found" });
+      assertFound(
+        await ctx.db.mapLabel.findFirst({
+          where: { id: input.labelId, countryId: input.countryId },
+        }),
+        "Map label not found"
+      );
 
       if (input.coordinates) {
         await validatePointContainment(
@@ -144,10 +145,12 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
     .input(z.object({ countryId: z.string(), labelId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       assertOwnCountry(ctx, input.countryId);
-      const label = await ctx.db.mapLabel.findFirst({
-        where: { id: input.labelId, countryId: input.countryId },
-      });
-      if (!label) throw new TRPCError({ code: "NOT_FOUND", message: "Map label not found" });
+      assertFound(
+        await ctx.db.mapLabel.findFirst({
+          where: { id: input.labelId, countryId: input.countryId },
+        }),
+        "Map label not found"
+      );
       await ctx.db.mapLabel.delete({ where: { id: input.labelId } });
       await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS);
       broadcastMapUpdate("mapLabel", input.countryId);

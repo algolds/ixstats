@@ -9,7 +9,7 @@ import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { validatePointContainment, checkNameUniqueness } from "~/lib/maps/geo-validation";
-import { assertOwnCountry, coordinatesSchema } from "../core/shared";
+import { assertFound, assertOwnCountry, coordinatesSchema } from "../core/shared";
 
 export const geoFeaturesStoryPinsRouter = createTRPCRouter({
   createStoryPin: standardMutationCountryOwnerProcedure
@@ -145,10 +145,12 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       assertOwnCountry(ctx, input.countryId);
-      const pin = await ctx.db.storyPin.findFirst({
-        where: { id: input.pinId, countryId: input.countryId },
-      });
-      if (!pin) throw new TRPCError({ code: "NOT_FOUND", message: "Story pin not found" });
+      assertFound(
+        await ctx.db.storyPin.findFirst({
+          where: { id: input.pinId, countryId: input.countryId },
+        }),
+        "Story pin not found"
+      );
 
       if (input.coordinates) {
         await validatePointContainment(
@@ -197,10 +199,12 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
     .input(z.object({ countryId: z.string(), pinId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       assertOwnCountry(ctx, input.countryId);
-      const pin = await ctx.db.storyPin.findFirst({
-        where: { id: input.pinId, countryId: input.countryId },
-      });
-      if (!pin) throw new TRPCError({ code: "NOT_FOUND", message: "Story pin not found" });
+      assertFound(
+        await ctx.db.storyPin.findFirst({
+          where: { id: input.pinId, countryId: input.countryId },
+        }),
+        "Story pin not found"
+      );
       await ctx.db.storyPin.delete({ where: { id: input.pinId } });
       await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS);
       broadcastMapUpdate("storyPin", input.countryId);

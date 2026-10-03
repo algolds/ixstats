@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
 import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { ActivityGenerator } from "~/lib/activity";
@@ -11,7 +10,7 @@ import {
 } from "~/lib/maps/geo-validation";
 
 import { syncResourcePoolModifiers } from "~/server/shared/geo-resource-sync";
-import { assertOwnCountry, coordinatesSchema } from "../core/shared";
+import { assertFound, assertOwnCountry, coordinatesSchema } from "../core/shared";
 
 export const geoFeaturesPoisRouter = createTRPCRouter({
   /**
@@ -121,12 +120,12 @@ export const geoFeaturesPoisRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       assertOwnCountry(ctx, input.countryId);
 
-      const poi = await ctx.db.pointOfInterest.findFirst({
-        where: { id: input.poiId, countryId: input.countryId },
-      });
-      if (!poi) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Point of interest not found" });
-      }
+      const poi = assertFound(
+        await ctx.db.pointOfInterest.findFirst({
+          where: { id: input.poiId, countryId: input.countryId },
+        }),
+        "Point of interest not found"
+      );
 
       if (input.coordinates) {
         await validatePointContainment(
@@ -185,12 +184,12 @@ export const geoFeaturesPoisRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       assertOwnCountry(ctx, input.countryId);
 
-      const poi = await ctx.db.pointOfInterest.findFirst({
-        where: { id: input.poiId, countryId: input.countryId },
-      });
-      if (!poi) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Point of interest not found" });
-      }
+      const poi = assertFound(
+        await ctx.db.pointOfInterest.findFirst({
+          where: { id: input.poiId, countryId: input.countryId },
+        }),
+        "Point of interest not found"
+      );
 
       await ctx.db.pointOfInterest.delete({ where: { id: input.poiId } });
       await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS);
