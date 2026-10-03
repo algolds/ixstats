@@ -12,20 +12,6 @@ export const PRESET_COLORS = [
 
 export type StashTab = "articles" | "quotes" | "images" | "threads";
 
-export interface CommonsImage {
-  pageid: number;
-  title: string;
-  thumbUrl: string;
-  url: string;
-  descriptionUrl: string;
-  width: number;
-  height: number;
-  mime: string;
-  description: string;
-  artist: string;
-  license: string;
-}
-
 export interface StashHeaderItem {
   id: string;
   name: string;
