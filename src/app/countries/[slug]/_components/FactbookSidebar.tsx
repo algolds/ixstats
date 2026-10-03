@@ -46,14 +46,37 @@ function vitalityColor(score: number | null): string {
   return "var(--color-red)";
 }
 
-interface VitalityRing {
-  key: keyof VitalityData;
-  label: string;
-  subtitle: string;
-  icon: React.ComponentType<{ className?: string }>;
-  /** Null = no data (shown as "—"). */
-  value: number | null;
-}
+/** The four vitality rings and the metric modal each one opens. */
+const VITALITY_RINGS = [
+  {
+    key: "economicVitality",
+    label: "Economic health",
+    subtitle: "GDP and growth",
+    icon: DollarSign,
+    modal: "gdp",
+  },
+  {
+    key: "populationWellbeing",
+    label: "Population wellbeing",
+    subtitle: "Demographics",
+    icon: Users,
+    modal: "population",
+  },
+  {
+    key: "diplomaticStanding",
+    label: "Diplomatic standing",
+    subtitle: "Relations, embassies, treaties",
+    icon: Shield,
+    modal: "demographics-health",
+  },
+  {
+    key: "governmentalEfficiency",
+    label: "Government efficiency",
+    subtitle: "Administration",
+    icon: Building,
+    modal: "government-spending",
+  },
+] as const;
 
 const ACTIVITY_ICON: Record<string, typeof Activity> = {
   achievement: Trophy,
@@ -88,75 +111,23 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
       { enabled: !!country?.id }
     );
 
-  const handleRingClick = (key: string) => {
-    if (!country?.id) return;
-    switch (key) {
-      case "economicVitality":
-        openMetricModal("gdp", country.id);
-        break;
-      case "populationWellbeing":
-        openMetricModal("population", country.id);
-        break;
-      case "diplomaticStanding":
-        openMetricModal("demographics-health", country.id);
-        break;
-      case "governmentalEfficiency":
-        openMetricModal("government-spending", country.id);
-        break;
-    }
-  };
-
-  const vitalityRings: VitalityRing[] = React.useMemo(
-    () => [
-      {
-        key: "economicVitality",
-        label: "Economic health",
-        subtitle: "GDP and growth",
-        icon: DollarSign,
-        value: vitalityData?.economicVitality ?? null,
-      },
-      {
-        key: "populationWellbeing",
-        label: "Population wellbeing",
-        subtitle: "Demographics",
-        icon: Users,
-        value: vitalityData?.populationWellbeing ?? null,
-      },
-      {
-        key: "diplomaticStanding",
-        label: "Diplomatic standing",
-        subtitle: "Relations, embassies, treaties",
-        icon: Shield,
-        value: vitalityData?.diplomaticStanding ?? null,
-      },
-      {
-        key: "governmentalEfficiency",
-        label: "Government efficiency",
-        subtitle: "Administration",
-        icon: Building,
-        value: vitalityData?.governmentalEfficiency ?? null,
-      },
-    ],
-    [vitalityData]
-  );
-
   if (!country) return null;
 
   const viewActivity = () => router.push(createUrl(`/countries/${countrySlug}/activity`));
 
   return (
     <div className="space-y-6">
-      {/* National vitality */}
       <Card padding="sm" aria-label="National vitality">
         <div className="grid grid-cols-2 gap-2">
-          {vitalityRings.map((ring) => {
-            const known = ring.value !== null;
-            const shown = known ? `${Math.round(ring.value ?? 0)}%` : "—";
+          {VITALITY_RINGS.map((ring) => {
+            const value = vitalityData?.[ring.key] ?? null;
+            const known = value !== null;
+            const shown = known ? `${Math.round(value)}%` : "—";
             return (
               <button
                 key={ring.key}
                 type="button"
-                onClick={() => handleRingClick(ring.key)}
+                onClick={() => openMetricModal(ring.modal, country.id)}
                 aria-label={`${ring.label}: ${known ? shown : "no record yet"}`}
                 className={cn(
                   "bg-surface-secondary rounded-row flex min-h-14 cursor-pointer items-center gap-3 p-2 text-left",
@@ -165,9 +136,9 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
                 )}
               >
                 <HealthRing
-                  value={ring.value ?? 0}
+                  value={value ?? 0}
                   size={36}
-                  color={vitalityColor(ring.value)}
+                  color={vitalityColor(value)}
                   label={ring.label}
                   tooltip={
                     known
@@ -188,7 +159,6 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
         </div>
       </Card>
 
-      {/* Geography map */}
       {!mapLoading && hasGeometry && (
         <Card className="overflow-hidden">
           <CountryMapEmbed
@@ -214,7 +184,6 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
         </Card>
       )}
 
-      {/* Recent activity */}
       <Card>
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
           <h3 className="text-headline text-label flex items-center gap-2">
