@@ -108,25 +108,25 @@ export function MatchCommentary({ matchId }: MatchCommentaryProps) {
           <div>
             <span className="text-eyebrow text-label-tertiary block">Win prob</span>
             <span className="text-label font-semibold tabular-nums">
-              {Math.round((evaluation.winProbability ?? 0.5) * 100)}% Home
+              {evaluation.winProbability != null ? `${Math.round(evaluation.winProbability * 100)}% Home` : "—"}
             </span>
           </div>
           <div>
             <span className="text-eyebrow text-label-tertiary block">Possession</span>
             <span className="text-label font-semibold tabular-nums">
-              {Math.round((evaluation.dominance ?? 0.5) * 100)}% Dom
+              {evaluation.dominance != null ? `${Math.round(evaluation.dominance * 100)}% Dom` : "—"}
             </span>
           </div>
           <div>
             <span className="text-eyebrow text-label-tertiary block">Tempo</span>
             <span className="text-label font-semibold tabular-nums">
-              {(evaluation.tempo ?? 1.0).toFixed(1)}x Speed
+              {evaluation.tempo != null ? `${evaluation.tempo.toFixed(1)}x speed` : "—"}
             </span>
           </div>
           <div>
             <span className="text-eyebrow text-label-tertiary block">Upset volatility</span>
             <span className="text-label font-semibold tabular-nums">
-              {(evaluation.volatility ?? 0.5).toFixed(1)} Index
+              {evaluation.volatility != null ? `${evaluation.volatility.toFixed(1)} index` : "—"}
             </span>
           </div>
         </div>
