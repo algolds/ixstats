@@ -194,12 +194,7 @@ export function StandingsTable({
                     (relegationCount ?? 0) > 0 &&
                     rank > group.standings.length - (relegationCount ?? 0);
 
-                  // Mock dynamic form if not available
-                  const form = team.recentForm ?? [
-                    team.wins > 0 ? "W" : "D",
-                    team.wins > 1 ? "W" : "L",
-                    team.draws > 0 ? "D" : "W",
-                  ];
+                  const form = team.recentForm ?? [];
 
                   return (
                     <tr
@@ -294,6 +289,7 @@ export function StandingsTable({
                       {/* Recent Form Pills */}
                       <td className="py-3 pr-3 text-center">
                         <div className="flex items-center justify-center gap-1">
+                          {form.length === 0 && <span aria-label="No results yet">—</span>}
                           {form.map((res, i) => (
                             <span
                               key={i}

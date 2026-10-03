@@ -28,7 +28,7 @@ import { MarginMarkupTab } from "./tabs/MarginMarkupTab";
 import { MarginInspectTab } from "./tabs/MarginInspectTab";
 import { MarginHelpModal } from "./modals/MarginHelpModal";
 
-export type MarginTab = "threads" | "markup" | "inspect";
+type MarginTab = "threads" | "markup" | "inspect";
 
 interface ThemeColors {
   primary: string;

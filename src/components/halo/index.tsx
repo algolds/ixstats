@@ -32,20 +32,11 @@ export {
   SIZE_PRESETS,
   DynamicIslandProvider,
   Halo,
-  HaloContainer,
-  useHaloSize,
-  HaloProvider,
 } from "./HaloPrimitives";
 
 // Re-export plugin system for page-level consumption
-export {
-  useDIPlugin,
-  useActiveDIPlugin,
-  useAllDIPlugins,
-  useDIPluginView,
-  DIPluginProvider,
-} from "./plugin-context";
-export type { DIPlugin, DIAction, DIViewProps, DIBadge } from "./types";
+export { useDIPlugin, useActiveDIPlugin, DIPluginProvider } from "./plugin-context";
+export type { DIPlugin, DIViewProps } from "./types";
 
 interface CommandPaletteProps {
   className?: string;

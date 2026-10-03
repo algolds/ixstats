@@ -137,7 +137,7 @@ export function GlassBarChart({
 
   const gradientId = useMemo(
     // oxlint-disable-next-line
-    () => `bar-grad-${theme}-${Math.random().toString(36).substr(2, 9)}`,
+    () => `bar-grad-${theme}-${crypto.randomUUID()}`,
     [theme]
   );
 
@@ -270,7 +270,7 @@ export function GlassLineChart({
   const ChartComponent = area ? AreaChart : LineChart;
   const gradientId = useMemo(
     // oxlint-disable-next-line
-    () => `area-grad-${theme}-${Math.random().toString(36).substr(2, 9)}`,
+    () => `area-grad-${theme}-${crypto.randomUUID()}`,
     [theme]
   );
 

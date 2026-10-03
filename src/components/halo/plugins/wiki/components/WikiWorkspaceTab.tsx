@@ -240,7 +240,7 @@ function IxWikiPageActions({
   );
 }
 
-export function SectionHeader({ label }: { label: string }) {
+function SectionHeader({ label }: { label: string }) {
   return (
     <div className="text-label-secondary text-subhead mb-2">
       <PreText whiteSpace="nowrap">{label}</PreText>
@@ -289,7 +289,7 @@ export function CollapsibleSection({
   );
 }
 
-export function QuickAction({
+function QuickAction({
   icon,
   label,
   shortcut,

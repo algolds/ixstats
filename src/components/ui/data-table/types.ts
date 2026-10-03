@@ -1,6 +1,6 @@
 import type React from "react";
 
-export type MobileRole = "hero" | "subtitle" | "badge" | "field" | "action" | "footer";
+type MobileRole = "hero" | "subtitle" | "badge" | "field" | "action" | "footer";
 
 export type SortDirection = "asc" | "desc";
 

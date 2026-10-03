@@ -65,4 +65,3 @@ export function ForumHalo() {
 }
 
 // Backwards compatibility alias
-export const ForumDIPlugin = ForumHalo;

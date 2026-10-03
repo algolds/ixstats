@@ -11,7 +11,7 @@ import { cn } from "~/lib/utils/cn";
  * row's end). The delta pairs its colour with an arrow icon and screen-reader text; `sentiment`
  * decides the colour when "up" is bad (e.g. debt).
  */
-export type StatDeltaDirection = "up" | "down" | "neutral";
+type StatDeltaDirection = "up" | "down" | "neutral";
 
 export interface StatDelta {
   /** Display text, e.g. "+2.4%" or "−120". */

@@ -23,7 +23,7 @@ import type { DIViewProps } from "~/components/halo/types";
 import type { BuilderStep } from "~/app/builder/components/enhanced/builderConfig";
 import type { BuilderState } from "~/app/builder/hooks/builderStateTypes";
 
-export type BuilderProgressViewProps = DIViewProps<BuilderFilterState, BuilderContextValue>;
+type BuilderProgressViewProps = DIViewProps<BuilderFilterState, BuilderContextValue>;
 
 interface BuilderStepItem {
   key: BuilderStep;

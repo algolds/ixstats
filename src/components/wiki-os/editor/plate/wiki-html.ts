@@ -28,16 +28,16 @@ interface BaseEl {
   id?: string;
   children: Descendant[];
 }
-export interface PEl extends BaseEl {
+interface PEl extends BaseEl {
   type: "p";
 }
-export interface HeadingEl extends BaseEl {
+interface HeadingEl extends BaseEl {
   type: "h2" | "h3" | "h4";
 }
-export interface QuoteEl extends BaseEl {
+interface QuoteEl extends BaseEl {
   type: "blockquote";
 }
-export interface ListEl extends BaseEl {
+interface ListEl extends BaseEl {
   type: "ul" | "ol";
 }
 export interface ListItemEl extends BaseEl {
@@ -45,10 +45,10 @@ export interface ListItemEl extends BaseEl {
   level?: number;
   prefix?: string;
 }
-export interface CodeBlockEl extends BaseEl {
+interface CodeBlockEl extends BaseEl {
   type: "code-block";
 }
-export interface TableEl extends BaseEl {
+interface TableEl extends BaseEl {
   type: "table";
   caption?: string;
   attributes?: string;
@@ -62,15 +62,15 @@ export interface CellEl extends BaseEl {
   attributes?: string;
   isHeader?: boolean;
 }
-export interface HrEl extends BaseEl {
+interface HrEl extends BaseEl {
   type: "hr";
 }
-export interface LinkEl extends BaseEl {
+interface LinkEl extends BaseEl {
   type: "link";
   url: string;
   internal?: boolean;
 }
-export interface TemplateEl extends BaseEl {
+interface TemplateEl extends BaseEl {
   type: "template";
   name: string;
   params: Record<string, string>;
@@ -96,12 +96,12 @@ export interface ChipMapEmbedEl extends BaseEl {
   href: string;
   title: string;
 }
-export interface MediaEl extends BaseEl {
+interface MediaEl extends BaseEl {
   type: "media";
   html: string;
   filename?: string;
 }
-export interface RawHtmlEl extends BaseEl {
+interface RawHtmlEl extends BaseEl {
   type: "raw-html";
   html: string;
   kind?: "infobox" | "generic";
@@ -110,11 +110,11 @@ export interface RawHtmlEl extends BaseEl {
   dataMw?: string;
   /** Canonical MediaWiki invocation — emitted verbatim by serializePlateToWikitext. */ wikitext?: string;
 }
-export interface RefEl extends BaseEl {
+interface RefEl extends BaseEl {
   type: "ref";
   label: string;
 }
-export interface InfoboxBoxEl extends BaseEl {
+interface InfoboxBoxEl extends BaseEl {
   type: "infobox-box";
   title?: string;
   fields: Array<{ label: string; value: string }>;

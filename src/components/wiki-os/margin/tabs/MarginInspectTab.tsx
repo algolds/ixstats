@@ -25,7 +25,7 @@ interface MarginInspectTabProps {
   isAuthenticated: boolean;
 }
 
-export type PageTier = "HUB" | "LOADBEARING" | "ITERATIVE";
+type PageTier = "HUB" | "LOADBEARING" | "ITERATIVE";
 
 export function MarginInspectTab({
   articleTitle,

@@ -194,7 +194,7 @@ export function CoordsPill({
 
 import type { WikiPlaceholderMetadata } from "~/server/shared/wiki-placeholders";
 
-export type DynamicStatMetadata =
+type DynamicStatMetadata =
   | WikiPlaceholderMetadata
   | {
       label?: string;

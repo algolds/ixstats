@@ -16,7 +16,7 @@ import { useHasNarratorAccess } from "~/hooks/usePermissions";
 import { WikiNarratorPlayer } from "../components";
 import type { DIViewProps } from "~/components/halo/types";
 
-export interface WikiNarratorViewProps extends DIViewProps {}
+interface WikiNarratorViewProps extends DIViewProps {}
 
 function getRgbaColor(colorStr: string, opacity: number): string {
   if (colorStr.startsWith("#")) {

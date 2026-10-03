@@ -1,2 +1,2 @@
-export { MyCountryHalo, MyCountryDIPlugin } from "./MyCountryHalo";
+export { MyCountryHalo } from "./MyCountryHalo";
 export * from "./views";

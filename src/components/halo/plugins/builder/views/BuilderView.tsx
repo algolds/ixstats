@@ -6,7 +6,6 @@ import { BuilderProgressView } from "./BuilderProgressView";
 import type { DIViewProps, ViewMode } from "~/components/halo/types";
 import type { BuilderFilterState } from "~/app/builder/components/builder-filter-context";
 import type { BuilderContextValue } from "~/app/builder/components/enhanced/context/BuilderStateContext";
-import type { RealCountryData } from "~/app/builder/lib/economy-types";
 import { Button } from "~/components/ui/button";
 
 /**
@@ -31,7 +30,7 @@ function getHighResFlagUrl(url: string | null | undefined): string | null | unde
   return url;
 }
 
-export type BuilderViewProps = DIViewProps<BuilderFilterState, BuilderContextValue>;
+type BuilderViewProps = DIViewProps<BuilderFilterState, BuilderContextValue>;
 
 function BuilderViewComponent({ onClose, onSwitchMode, filter, context }: BuilderViewProps) {
   const activeTemplate =
@@ -141,4 +140,3 @@ export const BuilderView = memo(BuilderViewComponent);
 BuilderView.displayName = "BuilderView";
 
 // Backwards compatibility alias
-export const BuilderDIView = BuilderView;

@@ -13,7 +13,5 @@ export type {
 
 // Export physical materials components and types
 export { FacetMaterial } from "./shared/FacetMaterial";
-export type { FacetMaterialProps, FacetMaterialType } from "./shared/FacetMaterial";
-
 // Hero identity marks (corner flag watermark, tint hairline, glyph watermark)
-export { FlagWatermark, TintHairline, WatermarkGlyph } from "./identity/FlagWatermark";
+export { FlagWatermark } from "./identity/FlagWatermark";

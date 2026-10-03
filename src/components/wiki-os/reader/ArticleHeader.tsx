@@ -21,7 +21,7 @@ import { EditorialMastheadHeader } from "./headers/EditorialMastheadHeader";
 import { WatchButton } from "./WatchButton";
 import { focusRing } from "~/components/ui/button";
 
-export type ArticleThemeColors =
+type ArticleThemeColors =
   | FlagColors
   | {
       primary: string;

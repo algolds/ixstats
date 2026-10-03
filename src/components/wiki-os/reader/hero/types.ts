@@ -1,6 +1,6 @@
 export type WikiHeroVariant = "editorial-masthead" | "sculpted-emblem";
 
-export interface FeaturedArticleData {
+interface FeaturedArticleData {
   title: string;
   slug: string;
   imgSrc: string | null;

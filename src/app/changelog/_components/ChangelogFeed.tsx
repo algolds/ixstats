@@ -24,7 +24,7 @@ import { Card } from "~/components/ui/card";
 
 type ReleaseCategory = "all" | "feature" | "improvement" | "engine" | "fix";
 
-export interface ReleaseItem {
+interface ReleaseItem {
   id: string;
   category: "feature" | "improvement" | "engine" | "fix";
   title: string;

@@ -264,4 +264,3 @@ export function WikiHalo() {
 }
 
 // Backwards compatibility alias
-export const WikiDIPlugin = WikiHalo;

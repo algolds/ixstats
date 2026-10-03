@@ -92,7 +92,7 @@ const VIRTUAL_SURFACES = {
   none: "",
 } as const;
 
-export type VirtualAnchorPopoverSurface = keyof typeof VIRTUAL_SURFACES;
+type VirtualAnchorPopoverSurface = keyof typeof VIRTUAL_SURFACES;
 
 export interface VirtualAnchorPopoverProps extends Omit<
   React.ComponentProps<typeof PopoverPrimitive.Content>,

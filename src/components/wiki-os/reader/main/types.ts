@@ -1,6 +1,6 @@
 // src/components/wiki-os/reader/main/types.ts
 
-export interface RecentChangeItem {
+interface RecentChangeItem {
   title: string | null;
   user: string | null;
   timestamp: string | Date | null;
@@ -11,7 +11,7 @@ export interface RecentChangeItem {
   thumbnail?: string | null;
 }
 
-export interface CountrySelectItem {
+interface CountrySelectItem {
   id: string;
   name: string;
   flagUrl?: string | null;
@@ -20,7 +20,7 @@ export interface CountrySelectItem {
   gdp?: number | null;
 }
 
-export interface AlmanacSpotlightData {
+interface AlmanacSpotlightData {
   title: string;
   slug: string;
   category: string;

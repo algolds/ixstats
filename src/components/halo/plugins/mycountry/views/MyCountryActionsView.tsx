@@ -133,4 +133,3 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
 }
 
 // Backwards compatibility alias
-export const MyCountryCommandPalette = MyCountryActionsView;

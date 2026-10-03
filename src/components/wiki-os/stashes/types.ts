@@ -39,7 +39,7 @@ export interface StashHeaderItem {
   updatedAt?: string | Date;
 }
 
-export interface StashedAnnotationItem {
+interface StashedAnnotationItem {
   id: string;
   selectedText: string;
   comment?: string | null;

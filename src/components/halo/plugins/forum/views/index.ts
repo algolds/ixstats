@@ -1,1 +1,1 @@
-export { ForumView, type ForumViewProps } from "./ForumView";
+export { ForumView } from "./ForumView";

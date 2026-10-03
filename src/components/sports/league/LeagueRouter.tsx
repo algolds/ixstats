@@ -43,10 +43,37 @@ interface LeagueRouterProps {
   leagueId: string;
 }
 
+interface FormMatch {
+  status: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  resolvedIxTime?: number | null;
+  homeTeam: { id: string };
+  awayTeam: { id: string };
+}
+
+/** Each team's last three completed results (oldest first), taken from the played fixtures. */
+function recentFormByTeam(matches: FormMatch[] | undefined): Map<string, Array<"W" | "D" | "L">> {
+  const form = new Map<string, Array<"W" | "D" | "L">>();
+  const played = (matches ?? [])
+    .filter((m) => m.status === "completed" && m.homeScore !== null && m.awayScore !== null)
+    .sort((a, b) => (a.resolvedIxTime ?? 0) - (b.resolvedIxTime ?? 0));
+  for (const m of played) {
+    const diff = m.homeScore! - m.awayScore!;
+    for (const [teamId, result] of [
+      [m.homeTeam.id, diff > 0 ? "W" : diff < 0 ? "L" : "D"],
+      [m.awayTeam.id, diff < 0 ? "W" : diff > 0 ? "L" : "D"],
+    ] as const) {
+      form.set(teamId, [...(form.get(teamId) ?? []), result].slice(-3));
+    }
+  }
+  return form;
+}
+
 export function LeagueRouter({ leagueId }: LeagueRouterProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { focusOrganization, focusMatch } = useSportsFocus();
+  const { focusOrganization } = useSportsFocus();
 
   const sectionParam = (searchParams.get("section") ||
     searchParams.get("tab")) as SportsNavSection | null;
@@ -159,8 +186,14 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
     { enabled: !!seasonId }
   );
 
+  const { data: schedule } = api.sports.getSchedule.useQuery(
+    { seasonId: seasonId ?? "" },
+    { enabled: !!seasonId }
+  );
+
   const standingsRows = useMemo<StandingsRow[] | undefined>(() => {
     if (!standings) return undefined;
+    const formByTeam = recentFormByTeam(schedule?.matches);
     return standings.map((s, idx) => ({
       id: s.id,
       teamId: s.teamId,
@@ -172,16 +205,12 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
       pointsFor: s.pointsFor ?? 0,
       pointsAgainst: s.pointsAgainst ?? 0,
       rank: s.position ?? idx + 1,
+      recentForm: formByTeam.get(s.teamId),
       color: s.team.color ?? undefined,
       logo: s.team.logo,
       wikiSlug: s.team.wikiSlug,
     }));
-  }, [standings]);
-
-  const { data: schedule } = api.sports.getSchedule.useQuery(
-    { seasonId: seasonId ?? "" },
-    { enabled: !!seasonId }
-  );
+  }, [standings, schedule?.matches]);
 
   const sportTheme = getSportTheme(league?.sportPreset);
   const isBoxing = league?.archetype === "bracket" || league?.sportPreset === "boxing";
@@ -203,16 +232,13 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
 
   let completedCount = 0;
   let totalCount = 0;
-  let progressLabel = "Matches";
 
   if (isCircuit && schedule?.races) {
     totalCount = schedule.races.length;
     completedCount = schedule.races.filter((r) => r.status === "completed").length;
-    progressLabel = "GPs Completed";
   } else if (schedule?.matches) {
     totalCount = schedule.matches.length;
     completedCount = schedule.matches.filter((m) => m.status === "completed").length;
-    progressLabel = "Fixtures Played";
   }
 
   const progressPct = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;

@@ -40,7 +40,7 @@ function normalizeGrowth(value: number | null | undefined): number {
 
 const isStandalone = typeof window !== "undefined" && isStandaloneClient();
 
-export interface MyCountryViewProps {
+interface MyCountryViewProps {
   onClose: () => void;
   onSwitchMode?: (mode: ViewMode) => void;
 }
@@ -473,4 +473,3 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
 }
 
 // Backwards compatibility alias
-export const MyCountryDIView = MyCountryView;

@@ -22,7 +22,6 @@ import {
   Wallet,
   ScaleFrameEnlarge as Scale,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { AvatarGlow } from "~/components/vault/AvatarGlow";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
@@ -35,7 +34,7 @@ import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Button } from "~/components/ui/button";
 import { tweenFast } from "~/lib/design/motion";
 
-export interface WikiProfileViewProps {
+interface WikiProfileViewProps {
   onClose: () => void;
 }
 
