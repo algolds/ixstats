@@ -155,6 +155,11 @@ const ANGLICIZE_OTHER_VOWELS = new Set([
   "œ",
 ]);
 
+// Stressed cardinals keep their quality; word-initial ones keep a clear onset instead of a
+// hesitation schwa. Any other unstressed cardinal reduces to a schwa.
+const STRESSED_CARDINALS: Record<string, string> = { e: "ɛ", o: "oʊ", a: "a" };
+const INITIAL_CARDINALS: Record<string, string> = { e: "ɛ", o: "oʊ", a: "ɑ" };
+
 /**
  * Soften Onoma's cardinal vowels toward English so kokoro stops voicing a crisp
  * "eh / ah / oh" on every syllable. Stress-aware:
@@ -191,28 +196,17 @@ export function anglicizeForSpeech(ipa: string): string {
     }
 
     // Skip already-fine multi-char vowels whole (they are nuclei → clear stress).
-    let skipped = false;
-    for (const v of ANGLICIZE_SKIP_VOWELS) {
-      if (ipa.startsWith(v, i)) {
-        out += v;
-        i += v.length;
-        stressNext = false;
-        isWordInitial = false;
-        skipped = true;
-        break;
-      }
+    const skipVowel = ANGLICIZE_SKIP_VOWELS.find((v) => ipa.startsWith(v, i));
+    if (skipVowel) {
+      out += skipVowel;
+      i += skipVowel.length;
+      stressNext = false;
+      isWordInitial = false;
+      continue;
     }
-    if (skipped) continue;
 
-    if (ch === "e" || ch === "a" || ch === "o") {
-      if (stressNext) {
-        out += ch === "e" ? "ɛ" : ch === "o" ? "oʊ" : "a";
-      } else if (isWordInitial) {
-        // Word-initial cardinal vowel: preserve clear vowel onset rather than reducing to hesitation schwa
-        out += ch === "e" ? "ɛ" : ch === "o" ? "oʊ" : "ɑ";
-      } else {
-        out += "ə";
-      }
+    if (ch in STRESSED_CARDINALS) {
+      out += stressNext ? STRESSED_CARDINALS[ch] : isWordInitial ? INITIAL_CARDINALS[ch] : "ə";
       stressNext = false;
       isWordInitial = false;
       i++;
