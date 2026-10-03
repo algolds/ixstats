@@ -8,7 +8,7 @@
  */
 
 import { ComponentType } from "~/lib/enums";
-import type { EconomicInputs } from "./economy-types";
+import type { EconomicInputs } from "~/types/builder";
 
 /**
  * The economic inputs after the components newly present in `next` (and absent

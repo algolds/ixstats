@@ -512,7 +512,3 @@ function countShapes(root: XmlElement): number {
   walk(root);
   return count;
 }
-
-// ──────────────────────────────────────────────
-// Self-intersection detection & fix
-// ──────────────────────────────────────────────

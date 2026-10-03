@@ -8,7 +8,7 @@
  * - Error generation and completeness checks
  */
 
-import type { TaxBuilderState } from "~/types/builder/tax-builder";
+import type { TaxBuilderState } from "~/types/builder";
 
 interface ValidationResult {
   isValid: boolean;

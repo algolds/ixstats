@@ -15,7 +15,7 @@ import {
 // Policy flags default (all false)
 // ===============================
 
-const DEFAULT_POLICY_FLAGS: Pick<
+export const DEFAULT_POLICY_FLAGS: Pick<
   GovernmentSpendingData,
   | "performanceBasedBudgeting"
   | "universalBasicServices"
@@ -230,10 +230,3 @@ export function createEmptyEconomyData(): EconomyData {
     },
   } satisfies EconomyData);
 }
-
-// ===============================
-// Shared helpers for presets
-// ===============================
-// ===============================
-// PRESETS: Controlled, schema-validated economy presets
-// ===============================

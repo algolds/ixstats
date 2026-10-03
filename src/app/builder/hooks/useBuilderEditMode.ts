@@ -41,7 +41,7 @@ import type {
   EducationLevel,
   Region,
   EconomicClass,
-} from "../lib/economy-types";
+} from "~/types/builder";
 import type { SpendingCategoryData } from "../utils/governmentValidation";
 import type { ComponentType } from "~/lib/enums";
 import type { EconomicComponentType } from "~/lib/economy/atomic-data";

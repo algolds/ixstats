@@ -784,5 +784,3 @@ export class MarkovDiplomacyEngine {
     }
   }
 }
-
-// ==================== HELPER FUNCTIONS ====================

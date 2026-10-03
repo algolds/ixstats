@@ -90,7 +90,3 @@ export interface VolatilityMetric {
   risk?: string;
   trend?: "up" | "down" | "stable";
 }
-
-// ===== COMPARATIVE BENCHMARKING =====
-// ===== DIPLOMATIC NETWORK STATS =====
-// ===== MISSION SUCCESS DATA =====

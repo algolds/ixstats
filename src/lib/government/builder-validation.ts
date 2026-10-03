@@ -16,9 +16,3 @@ export interface BudgetSummary {
   isUnderBudget: boolean;
 }
 
-// ==================== STRUCTURE VALIDATION ====================
-// ==================== DEPARTMENT VALIDATION ====================
-// ==================== BUDGET VALIDATION ====================
-// ==================== REVENUE VALIDATION ====================
-// ==================== COMPLETE VALIDATION ====================
-// ==================== SUMMARY GENERATION ====================

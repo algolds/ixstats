@@ -17,7 +17,7 @@ import {
   useBuilderContext,
   type BuilderContextValue,
 } from "~/app/builder/components/enhanced/context/BuilderStateContext";
-import type { RealCountryData } from "~/app/builder/lib/economy-types";
+import type { RealCountryData } from "~/types/builder";
 import { BuilderView } from "./views";
 import type { DIPlugin, DIViewProps } from "~/components/halo/types";
 import { PreText } from "~/components/ui/pretext";

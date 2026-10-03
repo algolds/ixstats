@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { AppError } from "~/lib/app-error";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import type { TaxBuilderState } from "~/types/builder/tax-builder";
+import type { TaxBuilderState } from "~/types/builder";
 import {
   detectTaxConflicts,
   syncTaxData,

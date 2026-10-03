@@ -9,7 +9,7 @@ import {
 } from "iconoir-react";
 
 import { toTitleCase } from "~/lib/utils";
-import type { NationalIdentityData } from "~/app/builder/lib/economy-types";
+import type { NationalIdentityData } from "~/types/builder";
 
 /**
  * Identity field config rendered as pills in the MyCountry overview tab.

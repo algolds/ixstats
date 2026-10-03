@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 import { ArrowLeft, ArrowRight } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { CountrySelector } from "../../CountrySelector";
-import type { RealCountryData } from "~/app/builder/lib/economy-types";
+import type { RealCountryData } from "~/types/builder";
 import { stepVariants } from "./foundationUtils";
 
 interface FoundationPathSelectorProps {

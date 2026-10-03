@@ -475,7 +475,3 @@ export function calculateStabilityMetrics(
     stabilityTrend,
   };
 }
-
-// ====================================
-// HELPER FUNCTIONS
-// ====================================

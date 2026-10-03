@@ -1343,5 +1343,3 @@ export class NPCPersonalitySystem {
     return { updatedTraits, drift };
   }
 }
-
-// ==================== HELPER FUNCTIONS ====================

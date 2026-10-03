@@ -13,7 +13,7 @@ import { safeGetItemSync, safeRemoveItemSync } from "~/lib/system/local-storage-
 import type { BuilderState } from "../hooks/builderStateTypes";
 import { sanitizeEconomicInputs } from "../hooks/builderStateTypes";
 import { createDefaultEconomicInputs } from "./default-economic-inputs";
-import type { EconomicInputs } from "./economy-types";
+import type { EconomicInputs } from "~/types/builder";
 
 export interface RecoveredDraft {
   state: BuilderState;
