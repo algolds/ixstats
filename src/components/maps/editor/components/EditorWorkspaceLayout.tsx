@@ -41,6 +41,117 @@ function startSplitDrag(
   document.addEventListener("mouseup", onMouseUp);
 }
 
+type Placement = "left" | "right" | "bottom";
+
+interface StackStyle {
+  /** Container classes when both panels are collapsed / one is / both are expanded. */
+  containers: { bothCollapsed: string; partial: string; expanded: string };
+  /** Wrapper for the panel that takes the remaining space. */
+  fill: string;
+  /** Wrappers for a collapsed panel A / B next to an expanded sibling (none: rendered bare). */
+  collapsedA?: string;
+  collapsedB?: string;
+  /** Wrapper classes for panel A in the expanded split, plus the CSS property its ratio drives. */
+  first: string;
+  /** Applies the first panel's share of the stack along its axis. */
+  size: (css: string) => React.CSSProperties;
+  divider: string;
+  lockedDivider: string;
+}
+
+const STACK_STYLES: Record<"vertical" | "horizontal", StackStyle> = {
+  vertical: {
+    containers: {
+      bothCollapsed: "flex h-full shrink-0 flex-col",
+      partial: "flex h-full shrink-0 flex-col",
+      expanded: "flex h-full shrink-0 flex-col",
+    },
+    fill: "min-h-0 w-full flex-1",
+    first: "min-h-0 w-full shrink-0",
+    size: (height) => ({ height }),
+    divider:
+      "bg-separator hover:bg-blue/50 h-1 w-full shrink-0 cursor-row-resize transition-colors",
+    lockedDivider: "bg-separator h-px w-full shrink-0",
+  },
+  horizontal: {
+    containers: {
+      bothCollapsed: "flex w-full shrink-0 flex-row gap-2 px-2 py-1",
+      partial: "flex w-full shrink-0 flex-row items-center",
+      expanded: "flex w-full shrink-0 flex-row",
+    },
+    fill: "h-full min-w-0 flex-1",
+    collapsedA: "mr-2 shrink-0",
+    collapsedB: "ml-2 shrink-0",
+    first: "h-full min-w-0 shrink-0",
+    size: (width) => ({ width }),
+    divider:
+      "bg-separator hover:bg-blue/50 h-full w-1 shrink-0 cursor-col-resize transition-colors",
+    lockedDivider: "bg-separator h-full w-px shrink-0",
+  },
+};
+
+interface StackProps {
+  style: StackStyle;
+  name: string;
+  panelA: React.ReactNode;
+  panelB: React.ReactNode;
+  collapsedA: boolean;
+  collapsedB: boolean;
+  splitRatio: number;
+  panelsLocked: boolean;
+  onDividerMouseDown: (e: React.MouseEvent) => void;
+}
+
+/** Two panels docked to the same edge: stacked, one collapsed, or split with a draggable divider. */
+function PanelStack({
+  style,
+  name,
+  panelA,
+  panelB,
+  collapsedA,
+  collapsedB,
+  splitRatio,
+  panelsLocked,
+  onDividerMouseDown,
+}: StackProps) {
+  const a = <EditorErrorBoundary name={`${name}-A`}>{panelA}</EditorErrorBoundary>;
+  const b = <EditorErrorBoundary name={`${name}-B`}>{panelB}</EditorErrorBoundary>;
+  const wrap = (className: string | undefined, node: React.ReactNode) =>
+    className ? <div className={className}>{node}</div> : node;
+
+  if (collapsedA && collapsedB) {
+    return (
+      <div className={style.containers.bothCollapsed}>
+        {a}
+        {b}
+      </div>
+    );
+  }
+
+  if (collapsedA || collapsedB) {
+    return (
+      <div className={style.containers.partial}>
+        {wrap(collapsedA ? style.collapsedA : style.fill, a)}
+        {wrap(collapsedB ? style.collapsedB : style.fill, b)}
+      </div>
+    );
+  }
+
+  return (
+    <div className={style.containers.expanded}>
+      <div style={style.size(`calc(${splitRatio * 100}% - 2px)`)} className={style.first}>
+        {a}
+      </div>
+      {panelsLocked ? (
+        <div className={style.lockedDivider} />
+      ) : (
+        <div className={style.divider} onMouseDown={onDividerMouseDown} />
+      )}
+      <div className={style.fill}>{b}</div>
+    </div>
+  );
+}
+
 export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
   panelConfigs,
   panelsLocked,
@@ -50,207 +161,53 @@ export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
   panelB,
   children,
 }: EditorWorkspaceLayoutProps) {
-  const [leftSplitRatio, setLeftSplitRatio] = useState(0.5);
-  const [rightSplitRatio, setRightSplitRatio] = useState(0.5);
-  const [bottomSplitRatio, setBottomSplitRatio] = useState(0.5);
+  const [splitRatios, setSplitRatios] = useState<Record<Placement, number>>({
+    left: 0.5,
+    right: 0.5,
+    bottom: 0.5,
+  });
 
-  const leftSidebarRef = useRef<HTMLDivElement>(null);
-  const rightSidebarRef = useRef<HTMLDivElement>(null);
-  const bottomDockRef = useRef<HTMLDivElement>(null);
-
-  const handleVerticalSplitResize = (side: "left" | "right") => (e: React.MouseEvent) => {
-    const isLeft = side === "left";
-    const ref = isLeft ? leftSidebarRef : rightSidebarRef;
-    startSplitDrag(
-      e,
-      "y",
-      isLeft ? leftSplitRatio : rightSplitRatio,
-      ref.current?.getBoundingClientRect().height || 500,
-      isLeft ? setLeftSplitRatio : setRightSplitRatio
-    );
+  const slotRefs: Record<Placement, React.RefObject<HTMLDivElement | null>> = {
+    left: useRef<HTMLDivElement>(null),
+    right: useRef<HTMLDivElement>(null),
+    bottom: useRef<HTMLDivElement>(null),
   };
 
-  const handleHorizontalSplitResize = (e: React.MouseEvent) =>
-    startSplitDrag(
-      e,
-      "x",
-      bottomSplitRatio,
-      bottomDockRef.current?.getBoundingClientRect().width || 800,
-      setBottomSplitRatio
-    );
+  const renderSlotContent = (placement: Placement) => {
+    const isA = panelConfigs.panelA.placement === placement;
+    const isB = panelConfigs.panelB.placement === placement;
+    const name = `${placement[0]!.toUpperCase()}${placement.slice(1)}Panel`;
 
-  const renderSidePanelContent = (side: "left" | "right") => {
-    const isSideA = panelConfigs.panelA.placement === side;
-    const isSideB = panelConfigs.panelB.placement === side;
-
-    if (!isSideA && !isSideB) return null;
-
-    if (isSideA && !isSideB) {
+    if (isA && isB) {
+      const isBottom = placement === "bottom";
       return (
-        <EditorErrorBoundary name={`${side === "left" ? "Left" : "Right"}Panel-A`}>
-          {panelA}
-        </EditorErrorBoundary>
+        <PanelStack
+          style={STACK_STYLES[isBottom ? "horizontal" : "vertical"]}
+          name={name}
+          panelA={panelA}
+          panelB={panelB}
+          collapsedA={panelConfigs.panelA.collapsed}
+          collapsedB={panelConfigs.panelB.collapsed}
+          splitRatio={splitRatios[placement]}
+          panelsLocked={panelsLocked}
+          onDividerMouseDown={(e) => {
+            const rect = slotRefs[placement].current?.getBoundingClientRect();
+            startSplitDrag(
+              e,
+              isBottom ? "x" : "y",
+              splitRatios[placement],
+              (isBottom ? rect?.width : rect?.height) || (isBottom ? 800 : 500),
+              (ratio) => setSplitRatios((prev) => ({ ...prev, [placement]: ratio }))
+            );
+          }}
+        />
       );
     }
-
-    if (isSideB && !isSideA) {
-      return (
-        <EditorErrorBoundary name={`${side === "left" ? "Left" : "Right"}Panel-B`}>
-          {panelB}
-        </EditorErrorBoundary>
-      );
-    }
-
-    // Both panelA and panelB are stacked on the same side
-    const collapsedA = panelConfigs.panelA.collapsed;
-    const collapsedB = panelConfigs.panelB.collapsed;
-    const splitRatio = side === "left" ? leftSplitRatio : rightSplitRatio;
-
-    if (collapsedA && collapsedB) {
-      return (
-        <div className="flex h-full shrink-0 flex-col">
-          <EditorErrorBoundary name={`${side === "left" ? "Left" : "Right"}Panel-A`}>
-            {panelA}
-          </EditorErrorBoundary>
-          <EditorErrorBoundary name={`${side === "left" ? "Left" : "Right"}Panel-B`}>
-            {panelB}
-          </EditorErrorBoundary>
-        </div>
-      );
-    }
-
-    if (collapsedA) {
-      return (
-        <div className="flex h-full shrink-0 flex-col">
-          <EditorErrorBoundary name={`${side === "left" ? "Left" : "Right"}Panel-A`}>
-            {panelA}
-          </EditorErrorBoundary>
-          <div className="min-h-0 w-full flex-1">
-            <EditorErrorBoundary name={`${side === "left" ? "Left" : "Right"}Panel-B`}>
-              {panelB}
-            </EditorErrorBoundary>
-          </div>
-        </div>
-      );
-    }
-
-    if (collapsedB) {
-      return (
-        <div className="flex h-full shrink-0 flex-col">
-          <div className="min-h-0 w-full flex-1">
-            <EditorErrorBoundary name={`${side === "left" ? "Left" : "Right"}Panel-A`}>
-              {panelA}
-            </EditorErrorBoundary>
-          </div>
-          <EditorErrorBoundary name={`${side === "left" ? "Left" : "Right"}Panel-B`}>
-            {panelB}
-          </EditorErrorBoundary>
-        </div>
-      );
-    }
-
-    // Both expanded: resizable vertical split
+    if (!isA && !isB) return null;
     return (
-      <div className="flex h-full shrink-0 flex-col">
-        <div
-          style={{ height: `calc(${splitRatio * 100}% - 2px)` }}
-          className="min-h-0 w-full shrink-0"
-        >
-          <EditorErrorBoundary name={`${side === "left" ? "Left" : "Right"}Panel-A`}>
-            {panelA}
-          </EditorErrorBoundary>
-        </div>
-        {!panelsLocked ? (
-          <div
-            className="bg-separator hover:bg-blue/50 h-1 w-full shrink-0 cursor-row-resize transition-colors"
-            onMouseDown={handleVerticalSplitResize(side)}
-          />
-        ) : (
-          <div className="bg-separator h-px w-full shrink-0" />
-        )}
-        <div className="min-h-0 w-full flex-1">
-          <EditorErrorBoundary name={`${side === "left" ? "Left" : "Right"}Panel-B`}>
-            {panelB}
-          </EditorErrorBoundary>
-        </div>
-      </div>
-    );
-  };
-
-  const renderBottomDockContent = () => {
-    const isBottomA = panelConfigs.panelA.placement === "bottom";
-    const isBottomB = panelConfigs.panelB.placement === "bottom";
-
-    if (!isBottomA && !isBottomB) return null;
-
-    if (isBottomA && !isBottomB) {
-      return <EditorErrorBoundary name="BottomPanel-A">{panelA}</EditorErrorBoundary>;
-    }
-
-    if (isBottomB && !isBottomA) {
-      return <EditorErrorBoundary name="BottomPanel-B">{panelB}</EditorErrorBoundary>;
-    }
-
-    // Both stacked at bottom
-    const collapsedA = panelConfigs.panelA.collapsed;
-    const collapsedB = panelConfigs.panelB.collapsed;
-
-    if (collapsedA && collapsedB) {
-      return (
-        <div className="flex w-full shrink-0 flex-row gap-2 px-2 py-1">
-          <EditorErrorBoundary name="BottomPanel-A">{panelA}</EditorErrorBoundary>
-          <EditorErrorBoundary name="BottomPanel-B">{panelB}</EditorErrorBoundary>
-        </div>
-      );
-    }
-
-    if (collapsedA) {
-      return (
-        <div className="flex w-full shrink-0 flex-row items-center">
-          <div className="mr-2 shrink-0">
-            <EditorErrorBoundary name="BottomPanel-A">{panelA}</EditorErrorBoundary>
-          </div>
-          <div className="h-full min-w-0 flex-1">
-            <EditorErrorBoundary name="BottomPanel-B">{panelB}</EditorErrorBoundary>
-          </div>
-        </div>
-      );
-    }
-
-    if (collapsedB) {
-      return (
-        <div className="flex w-full shrink-0 flex-row items-center">
-          <div className="h-full min-w-0 flex-1">
-            <EditorErrorBoundary name="BottomPanel-A">{panelA}</EditorErrorBoundary>
-          </div>
-          <div className="ml-2 shrink-0">
-            <EditorErrorBoundary name="BottomPanel-B">{panelB}</EditorErrorBoundary>
-          </div>
-        </div>
-      );
-    }
-
-    // Both bottom expanded: horizontal resizable split
-    return (
-      <div className="flex w-full shrink-0 flex-row">
-        <div
-          style={{ width: `calc(${bottomSplitRatio * 100}% - 2px)` }}
-          className="h-full min-w-0 shrink-0"
-        >
-          <EditorErrorBoundary name="BottomPanel-A">{panelA}</EditorErrorBoundary>
-        </div>
-        {!panelsLocked ? (
-          <div
-            className="bg-separator hover:bg-blue/50 h-full w-1 shrink-0 cursor-col-resize transition-colors"
-            onMouseDown={handleHorizontalSplitResize}
-          />
-        ) : (
-          <div className="bg-separator h-full w-px shrink-0" />
-        )}
-        <div className="h-full min-w-0 flex-1">
-          <EditorErrorBoundary name="BottomPanel-B">{panelB}</EditorErrorBoundary>
-        </div>
-      </div>
+      <EditorErrorBoundary name={`${name}-${isA ? "A" : "B"}`}>
+        {isA ? panelA : panelB}
+      </EditorErrorBoundary>
     );
   };
 
@@ -259,11 +216,11 @@ export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
       {/* Left panel slot */}
       {(!toolsDisabled || isWorldMode) && (
         <div
-          ref={leftSidebarRef}
+          ref={slotRefs.left}
           data-testid="editor-panel-A"
           className="pointer-events-auto hidden h-full shrink-0 sm:flex"
         >
-          {renderSidePanelContent("left")}
+          {renderSlotContent("left")}
         </div>
       )}
 
@@ -277,10 +234,10 @@ export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
         {/* Bottom panel slot */}
         {(!toolsDisabled || isWorldMode) && (
           <div
-            ref={bottomDockRef}
+            ref={slotRefs.bottom}
             className="pointer-events-auto hidden w-full shrink-0 flex-row sm:flex"
           >
-            {renderBottomDockContent()}
+            {renderSlotContent("bottom")}
           </div>
         )}
       </div>
@@ -288,11 +245,11 @@ export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
       {/* Right panel slot */}
       {(!toolsDisabled || isWorldMode) && (
         <div
-          ref={rightSidebarRef}
+          ref={slotRefs.right}
           data-testid="editor-panel-B"
           className="pointer-events-auto hidden h-full shrink-0 sm:flex"
         >
-          {renderSidePanelContent("right")}
+          {renderSlotContent("right")}
         </div>
       )}
     </div>
