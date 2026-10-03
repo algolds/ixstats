@@ -124,7 +124,6 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
 
       {/* Account Manager */}
       <EnhancedAccountManager
-        countryId={countryData.id}
         accounts={accounts}
         selectedAccount={selectedAccount}
         onAccountSelect={setSelectedAccount}

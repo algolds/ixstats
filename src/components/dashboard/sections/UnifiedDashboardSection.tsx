@@ -405,7 +405,6 @@ export function UnifiedDashboardSection({
       <AccountManagerModal
         isOpen={isAccountModalOpen}
         onClose={() => setIsAccountModalOpen(false)}
-        countryId={userProfile?.countryId ?? ""}
         accounts={accounts}
         selectedAccount={selectedAccount}
         onAccountSelect={setSelectedAccount}

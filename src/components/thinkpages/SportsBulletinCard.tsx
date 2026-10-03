@@ -21,16 +21,118 @@ interface SportsBulletinCardProps {
   className?: string;
 }
 
+type BulletinResult = NonNullable<SportsBulletinData["results"]>[number];
+type BulletinMover = NonNullable<SportsBulletinData["movers"]>[number];
+
+function bulletinSubtitle({
+  isChampionBulletin,
+  isPlayoffBulletin,
+  roundName,
+  matchDay,
+}: Pick<
+  SportsBulletinData,
+  "isChampionBulletin" | "isPlayoffBulletin" | "roundName" | "matchDay"
+>) {
+  if (isChampionBulletin) return "Final season standings";
+  if (isPlayoffBulletin) return roundName || "Playoffs";
+  return matchDay ? `Matchday ${matchDay}` : "Official league bulletin";
+}
+
+function ChampionBanner({ name, id }: { name: string; id?: string | number | null }) {
+  return (
+    <div className="bg-yellow/10 rounded-row m-3 flex items-center justify-between p-4">
+      <div className="flex items-center gap-3">
+        <div className="bg-yellow/15 text-yellow rounded-row flex size-12 items-center justify-center">
+          <Trophy className="size-6" aria-hidden="true" />
+        </div>
+        <div>
+          <Eyebrow className="text-yellow">League champion</Eyebrow>
+          <h3 className="text-title-3 text-label">{name}</h3>
+        </div>
+      </div>
+      {id && (
+        <Button asChild variant="secondary" size="sm">
+          <Link href={`/myclub/${id}`}>
+            <span>View club</span>
+            <ChevronRight aria-hidden="true" />
+          </Link>
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function MatchRow({ result: res }: { result: BulletinResult }) {
+  const homeWon = res.homeScore > res.awayScore;
+  const awayWon = res.awayScore > res.homeScore;
+
+  return (
+    <div className="bg-surface-secondary rounded-row relative flex items-center justify-between p-3">
+      <div className="min-w-0 flex-1 space-y-1 pr-2">
+        <TeamLine team={res.home} won={homeWon} />
+        <TeamLine team={res.away} won={awayWon} />
+      </div>
+
+      <div className="flex shrink-0 items-center gap-2">
+        {res.isUpset && (
+          <Badge variant="warning">
+            <Zap aria-hidden="true" />
+            Upset
+          </Badge>
+        )}
+        <div className="bg-surface text-label text-headline rounded-control-sm flex items-center gap-1 px-2 py-1 tabular-nums">
+          <span className={cn(homeWon && "text-yellow")}>{res.homeScore}</span>
+          <span className="text-label-tertiary">–</span>
+          <span className={cn(awayWon && "text-yellow")}>{res.awayScore}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MoverRow({ mover }: { mover: BulletinMover }) {
+  const jump = mover.oldRank - mover.newRank;
+  const isUp = jump > 0;
+  const isDown = jump < 0;
+
+  return (
+    <div className="bg-surface-secondary rounded-row flex items-center justify-between px-3 py-2">
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="bg-fill-3 text-label text-caption rounded-control-sm flex h-7 min-w-8 shrink-0 items-center justify-center px-2 tabular-nums">
+          #{mover.newRank}
+        </div>
+
+        <Badge
+          variant={isUp ? "success" : isDown ? "destructive" : "default"}
+          className="tabular-nums"
+        >
+          {isUp ? `▲${jump}` : isDown ? `▼${Math.abs(jump)}` : "—"}
+        </Badge>
+
+        {mover.id ? (
+          <Link
+            href={`/myclub/${mover.id}`}
+            className="text-headline text-label hover:text-yellow truncate transition-colors"
+          >
+            {mover.name}
+          </Link>
+        ) : (
+          <span className="text-headline text-label truncate">{mover.name}</span>
+        )}
+      </div>
+
+      <span className="text-caption text-yellow shrink-0 tabular-nums">Rank #{mover.newRank}</span>
+    </div>
+  );
+}
+
 export function SportsBulletinCard({ data, author: _author, className }: SportsBulletinCardProps) {
   const {
     league,
     sportEmoji,
-    matchDay,
     results = [],
     movers = [],
     isChampionBulletin,
-    isPlayoffBulletin,
-    roundName,
     championName,
     championId,
     llmSummary,
@@ -66,15 +168,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
               {isChampionBulletin && <Badge variant="warning">Champion crowned</Badge>}
             </div>
             <p className="text-footnote text-label-secondary flex items-center gap-2 tabular-nums">
-              {isChampionBulletin ? (
-                <span>Final season standings</span>
-              ) : isPlayoffBulletin ? (
-                <span>{roundName || "Playoffs"}</span>
-              ) : matchDay ? (
-                <span>Matchday {matchDay}</span>
-              ) : (
-                <span>Official league bulletin</span>
-              )}
+              <span>{bulletinSubtitle(data)}</span>
             </p>
           </div>
         </div>
@@ -90,107 +184,22 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
         )}
       </div>
 
-      {/* Champion banner */}
-      {isChampionBulletin && championName && (
-        <div className="bg-yellow/10 rounded-row m-3 flex items-center justify-between p-4">
-          <div className="flex items-center gap-3">
-            <div className="bg-yellow/15 text-yellow rounded-row flex size-12 items-center justify-center">
-              <Trophy className="size-6" aria-hidden="true" />
-            </div>
-            <div>
-              <Eyebrow className="text-yellow">League champion</Eyebrow>
-              <h3 className="text-title-3 text-label">{championName}</h3>
-            </div>
-          </div>
-          {championId && (
-            <Button asChild variant="secondary" size="sm">
-              <Link href={`/myclub/${championId}`}>
-                <span>View club</span>
-                <ChevronRight aria-hidden="true" />
-              </Link>
-            </Button>
-          )}
-        </div>
-      )}
+      {isChampionBulletin && championName && <ChampionBanner name={championName} id={championId} />}
 
       <div className="p-3">
         {activeTab === "matches" && (
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-            {results.map((res, idx) => {
-              const homeWon = res.homeScore > res.awayScore;
-              const awayWon = res.awayScore > res.homeScore;
-
-              return (
-                <div
-                  key={idx}
-                  className="bg-surface-secondary rounded-row relative flex items-center justify-between p-3"
-                >
-                  <div className="min-w-0 flex-1 space-y-1 pr-2">
-                    <TeamLine team={res.home} won={homeWon} />
-                    <TeamLine team={res.away} won={awayWon} />
-                  </div>
-
-                  <div className="flex shrink-0 items-center gap-2">
-                    {res.isUpset && (
-                      <Badge variant="warning">
-                        <Zap aria-hidden="true" />
-                        Upset
-                      </Badge>
-                    )}
-                    <div className="bg-surface text-label text-headline rounded-control-sm flex items-center gap-1 px-2 py-1 tabular-nums">
-                      <span className={cn(homeWon && "text-yellow")}>{res.homeScore}</span>
-                      <span className="text-label-tertiary">–</span>
-                      <span className={cn(awayWon && "text-yellow")}>{res.awayScore}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {results.map((res, idx) => (
+              <MatchRow key={idx} result={res} />
+            ))}
           </div>
         )}
 
         {activeTab === "movers" && (
           <div className="space-y-2">
-            {movers.map((mover, idx) => {
-              const jump = mover.oldRank - mover.newRank;
-              const isUp = jump > 0;
-              const isDown = jump < 0;
-
-              return (
-                <div
-                  key={idx}
-                  className="bg-surface-secondary rounded-row flex items-center justify-between px-3 py-2"
-                >
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="bg-fill-3 text-label text-caption rounded-control-sm flex h-7 min-w-8 shrink-0 items-center justify-center px-2 tabular-nums">
-                      #{mover.newRank}
-                    </div>
-
-                    <Badge
-                      variant={isUp ? "success" : isDown ? "destructive" : "default"}
-                      className="tabular-nums"
-                    >
-                      {isUp ? `▲${jump}` : isDown ? `▼${Math.abs(jump)}` : "—"}
-                    </Badge>
-
-                    {mover.id ? (
-                      <Link
-                        href={`/myclub/${mover.id}`}
-                        className="text-headline text-label hover:text-yellow truncate transition-colors"
-                      >
-                        {mover.name}
-                      </Link>
-                    ) : (
-                      <span className="text-headline text-label truncate">{mover.name}</span>
-                    )}
-                  </div>
-
-                  <span className="text-caption text-yellow shrink-0 tabular-nums">
-                    Rank #{mover.newRank}
-                  </span>
-                </div>
-              );
-            })}
+            {movers.map((mover, idx) => (
+              <MoverRow key={idx} mover={mover} />
+            ))}
           </div>
         )}
 

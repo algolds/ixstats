@@ -124,7 +124,6 @@ export function UnifiedComposerContainer({
 
         <TabsContent value="accounts" className="m-0 p-0">
           <EnhancedAccountManager
-            countryId={countryId}
             accounts={accounts}
             selectedAccount={selectedAccount}
             onAccountSelect={onAccountSelect || (() => {})}

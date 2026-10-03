@@ -10,6 +10,103 @@ import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 
+type LinkedArticle = { title: string; url: string };
+
+function ResponseCard({ response: r }: { response: any }) {
+  const articles: LinkedArticle[] = Array.isArray(r.linkedArticles) ? r.linkedArticles : [];
+
+  return (
+    <div
+      className={`bg-surface rounded-card border p-4 ${
+        r.featured ? "border-yellow/40" : "border-separator"
+      }`}
+    >
+      <div className="mb-2 flex items-center gap-2">
+        {r.country?.flag && (
+          <img src={r.country.flag} alt="" className="rounded-control-sm h-3.5 w-5 object-cover" />
+        )}
+        <Link
+          href={withBasePath(
+            `/wiki/${encodeURIComponent((r.country?.name ?? "").replace(/ /g, "_"))}`
+          )}
+          className="text-headline text-label hover:text-tint transition-colors"
+        >
+          {r.country?.name ?? "Unknown"}
+        </Link>
+        {r.featured && <Badge variant="warning">Featured</Badge>}
+      </div>
+      <p className="text-body text-label-secondary whitespace-pre-wrap">{r.content}</p>
+      {articles.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {articles.map((article, i) => (
+            <Link
+              key={i}
+              href={withBasePath(article.url)}
+              className="text-footnote text-tint underline"
+            >
+              {article.title}
+            </Link>
+          ))}
+        </div>
+      )}
+      <p className="text-footnote text-label-secondary mt-2">
+        {new Date(r.createdAt).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })}
+      </p>
+    </div>
+  );
+}
+
+function PromptHeader({ prompt }: { prompt: any }) {
+  const count: number = prompt._count.responses;
+  return (
+    <div className="bg-surface rounded-card border-separator border p-5 sm:p-6">
+      <h1 className="text-title-3 text-label sm:text-title-2">{prompt.title}</h1>
+      <p className="text-body text-label-secondary mt-2">{prompt.question}</p>
+      <div className="mt-3 flex items-center gap-3">
+        <Badge variant="default" className="tabular-nums">
+          {count} {count === 1 ? "response" : "responses"}
+        </Badge>
+        {prompt.status === "CLOSED" && <Badge variant="outline">Closed</Badge>}
+      </div>
+    </div>
+  );
+}
+
+/** The submission form, the user's own response, or a sign-in hint. */
+function ResponseSection({
+  prompt,
+  isSignedIn,
+  myResponse,
+}: {
+  prompt: any;
+  isSignedIn: boolean;
+  myResponse?: { content: string } | null;
+}) {
+  const isActive = prompt.status === "ACTIVE";
+  return (
+    <>
+      {isSignedIn && isActive && !myResponse && <BlurbSubmissionForm promptId={prompt.id} />}
+
+      {myResponse && (
+        <div className="bg-tint-fill rounded-card p-4">
+          <p className="text-caption text-tint mb-2">Your response</p>
+          <p className="text-body text-label-secondary whitespace-pre-wrap">{myResponse.content}</p>
+        </div>
+      )}
+
+      {!isSignedIn && isActive && (
+        <div className="bg-surface rounded-card border-separator border p-4 text-center">
+          <p className="text-body text-label-secondary">Sign in to submit your response.</p>
+        </div>
+      )}
+    </>
+  );
+}
+
 /**
  * Single prompt view with all responses and a submission form.
  */
@@ -51,35 +148,9 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
 
   return (
     <div className="space-y-6">
-      {/* Prompt header */}
-      <div className="bg-surface rounded-card border-separator border p-5 sm:p-6">
-        <h1 className="text-title-3 text-label sm:text-title-2">{prompt.title}</h1>
-        <p className="text-body text-label-secondary mt-2">{prompt.question}</p>
-        <div className="mt-3 flex items-center gap-3">
-          <Badge variant="default" className="tabular-nums">
-            {prompt._count.responses} {prompt._count.responses === 1 ? "response" : "responses"}
-          </Badge>
-          {prompt.status === "CLOSED" && <Badge variant="outline">Closed</Badge>}
-        </div>
-      </div>
+      <PromptHeader prompt={prompt} />
 
-      {/* Submission form */}
-      {isSignedIn && prompt.status === "ACTIVE" && !myResponse && (
-        <BlurbSubmissionForm promptId={prompt.id} />
-      )}
-
-      {myResponse && (
-        <div className="bg-tint-fill rounded-card p-4">
-          <p className="text-caption text-tint mb-2">Your response</p>
-          <p className="text-body text-label-secondary whitespace-pre-wrap">{myResponse.content}</p>
-        </div>
-      )}
-
-      {!isSignedIn && prompt.status === "ACTIVE" && (
-        <div className="bg-surface rounded-card border-separator border p-4 text-center">
-          <p className="text-body text-label-secondary">Sign in to submit your response.</p>
-        </div>
-      )}
+      <ResponseSection prompt={prompt} isSignedIn={!!isSignedIn} myResponse={myResponse} />
 
       {/* Responses list */}
       <div className="space-y-3">
@@ -92,54 +163,7 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
         )}
 
         {responses.map((r) => (
-          <div
-            key={r.id}
-            className={`bg-surface rounded-card border p-4 ${
-              r.featured ? "border-yellow/40" : "border-separator"
-            }`}
-          >
-            <div className="mb-2 flex items-center gap-2">
-              {r.country?.flag && (
-                <img
-                  src={r.country.flag}
-                  alt=""
-                  className="rounded-control-sm h-3.5 w-5 object-cover"
-                />
-              )}
-              <Link
-                href={withBasePath(
-                  `/wiki/${encodeURIComponent((r.country?.name ?? "").replace(/ /g, "_"))}`
-                )}
-                className="text-headline text-label hover:text-tint transition-colors"
-              >
-                {r.country?.name ?? "Unknown"}
-              </Link>
-              {r.featured && <Badge variant="warning">Featured</Badge>}
-            </div>
-            <p className="text-body text-label-secondary whitespace-pre-wrap">{r.content}</p>
-            {r.linkedArticles &&
-              Array.isArray(r.linkedArticles) &&
-              (r.linkedArticles as { title: string; url: string }[]).length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {(r.linkedArticles as { title: string; url: string }[]).map((article, i) => (
-                    <Link
-                      key={i}
-                      href={withBasePath(article.url)}
-                      className="text-footnote text-tint underline"
-                    >
-                      {article.title}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            <p className="text-footnote text-label-secondary mt-2">
-              {new Date(r.createdAt).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </p>
-          </div>
+          <ResponseCard key={r.id} response={r} />
         ))}
 
         {hasNextPage && (
@@ -159,15 +183,11 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Submission form (internal)
-// ---------------------------------------------------------------------------
-
 function BlurbSubmissionForm({ promptId }: { promptId: string }) {
   const [content, setContent] = useState("");
   const [articleTitle, setArticleTitle] = useState("");
   const [articleUrl, setArticleUrl] = useState("");
-  const [linkedArticles, setLinkedArticles] = useState<{ title: string; url: string }[]>([]);
+  const [linkedArticles, setLinkedArticles] = useState<LinkedArticle[]>([]);
 
   const utils = api.useUtils();
 

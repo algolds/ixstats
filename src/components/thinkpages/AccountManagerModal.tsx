@@ -7,7 +7,6 @@ import { EnhancedAccountManager } from "./EnhancedAccountManager";
 interface AccountManagerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  countryId: string;
   accounts: any[];
   selectedAccount: any | null;
   onAccountSelect: (account: any) => void;
@@ -19,7 +18,6 @@ interface AccountManagerModalProps {
 export function AccountManagerModal({
   isOpen,
   onClose,
-  countryId,
   accounts,
   selectedAccount,
   onAccountSelect,
@@ -44,7 +42,6 @@ export function AccountManagerModal({
         <div className="flex-1 overflow-x-hidden overflow-y-auto p-6">
           <EnhancedAccountManager
             inModal={true}
-            countryId={countryId}
             accounts={accounts}
             selectedAccount={selectedAccount}
             onAccountSelect={(account) => {
