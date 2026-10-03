@@ -106,8 +106,9 @@ export function MyCountryLogo({
     },
   };
 
-  // oxlint-disable-next-line
-  const LogoIcon = () => (
+  // Elements, not inner components: a component defined here would remount (and reset its
+  // hover animation) on every render of the logo.
+  const logoIcon = (
     <motion.div
       className="relative flex items-center justify-center"
       variants={animated ? iconVariants : {}}
@@ -143,8 +144,7 @@ export function MyCountryLogo({
     </motion.div>
   );
 
-  // oxlint-disable-next-line
-  const LogoText = () => (
+  const logoText = (
     <motion.div variants={animated ? textVariants : {}} className="flex flex-col leading-none">
       <span
         className={cn(
@@ -179,19 +179,11 @@ export function MyCountryLogo({
   );
 
   if (variant === "icon-only") {
-    return (
-      <div className={cn(config.container, "flex items-center", className)}>
-        <LogoIcon />
-      </div>
-    );
+    return <div className={cn(config.container, "flex items-center", className)}>{logoIcon}</div>;
   }
 
   if (variant === "text-only") {
-    return (
-      <div className={cn(config.container, "flex items-center", className)}>
-        <LogoText />
-      </div>
-    );
+    return <div className={cn(config.container, "flex items-center", className)}>{logoText}</div>;
   }
 
   return (
@@ -200,8 +192,8 @@ export function MyCountryLogo({
       initial="initial"
       whileHover={animated ? "hover" : undefined}
     >
-      <LogoIcon />
-      <LogoText />
+      {logoIcon}
+      {logoText}
     </motion.div>
   );
 }
