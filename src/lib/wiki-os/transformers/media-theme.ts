@@ -49,6 +49,15 @@ export function normalizeMediaMode(mode: string | null | undefined): "auto" | "p
   return "auto";
 }
 
+/** URL fragments that identify each media type, in precedence order. */
+const MEDIA_TYPE_URL_HINTS: Array<[MediaType, string[]]> = [
+  ["math", ["/math/", "mwe-math", "ext.math"]],
+  // Vector graphics: charts, schematics, icons, flags, seals
+  ["svg", [".svg", "format=svg"]],
+  ["diagram", ["diagram", "schematic", "chart", "graph", "drawing"]],
+  ["photo", [".jpg", ".jpeg", ".webp", "photo"]],
+];
+
 /**
  * Detect media type from URL, filename, or DOM element.
  */
@@ -56,50 +65,15 @@ export function detectMediaType(src: string | null | undefined, el?: Element | n
   if (!src) return "unknown";
 
   const lowerSrc = src.toLowerCase();
+  const elementHints: Partial<Record<MediaType, unknown>> = {
+    math:
+      el?.classList.contains("mwe-math-fallback-image-inline") || el?.closest(".mwe-math-element"),
+    svg: el?.getAttribute("data-is-svg") === "true",
+  };
 
-  // 1. Math formulas (LaTeX/MathML renders)
-  if (
-    lowerSrc.includes("/math/") ||
-    lowerSrc.includes("mwe-math") ||
-    lowerSrc.includes("ext.math") ||
-    el?.classList.contains("mwe-math-fallback-image-inline") ||
-    el?.closest(".mwe-math-element")
-  ) {
-    return "math";
+  for (const [type, hints] of MEDIA_TYPE_URL_HINTS) {
+    if (elementHints[type] || hints.some((hint) => lowerSrc.includes(hint))) return type;
   }
-
-  // 2. SVGs (vector graphics, charts, schematics, icons, flags, seals)
-  if (
-    lowerSrc.includes(".svg") ||
-    lowerSrc.includes("format=svg") ||
-    (lowerSrc.includes("/special:filepath/") && lowerSrc.endsWith(".svg")) ||
-    el?.getAttribute("data-is-svg") === "true"
-  ) {
-    return "svg";
-  }
-
-  // 3. Transparent diagrams or charts
-  if (
-    lowerSrc.includes("diagram") ||
-    lowerSrc.includes("schematic") ||
-    lowerSrc.includes("chart") ||
-    lowerSrc.includes("graph") ||
-    lowerSrc.includes("drawing")
-  ) {
-    return "diagram";
-  }
-
-  // 4. Photographs (JPEG, WebP photos, historical archives)
-  if (
-    lowerSrc.includes(".jpg") ||
-    lowerSrc.includes(".jpeg") ||
-    lowerSrc.includes(".webp") ||
-    lowerSrc.includes("photo")
-  ) {
-    return "photo";
-  }
-
-  // Default fallback
   return "unknown";
 }
 
