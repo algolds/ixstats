@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import {
   SystemRestart as Loader2,
@@ -17,16 +16,17 @@ import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { CommonsCategoryBrowser } from "~/components/wiki-os/commons/CommonsCategoryBrowser";
 import { CommonsDetailPanel } from "~/components/wiki-os/commons/CommonsDetailPanel";
-import type { CommonsImage } from "./types";
-import { getImageType, getImageOrientation } from "./types";
+import {
+  dedupeImages,
+  matchesImageFilters,
+  wikiFilesToImages,
+  type CommonsImage,
+  type ImageOrientationFilter,
+  type ImageTypeFilter,
+  type WikiSubSource,
+} from "./types";
 import { MyStashTab } from "./MyStashTab";
 import { SearchField } from "~/components/ui/search-field";
-
-function dedupeImages(existing: CommonsImage[], incoming: CommonsImage[]): CommonsImage[] {
-  const seen = new Set(existing.map((img) => img.pageid));
-  const newOnes = incoming.filter((img) => !seen.has(img.pageid));
-  return [...existing, ...newOnes];
-}
 
 interface WikiRepositoryTabProps {
   selectedImageObj: CommonsImage | null;
@@ -37,7 +37,6 @@ interface WikiRepositoryTabProps {
 }
 
 type WikiSourceTab = "commons" | "wiki" | "stash";
-type WikiSubSource = "ixwiki" | "iiwiki";
 
 export function WikiRepositoryTab({
   selectedImageObj,
@@ -60,10 +59,8 @@ export function WikiRepositoryTab({
   const lastMergedCatDataRef = useRef<unknown>(null);
 
   // Filters state
-  const [fileTypeFilter, setFileTypeFilter] = useState<"all" | "jpg" | "png" | "svg">("all");
-  const [orientationFilter, setOrientationFilter] = useState<
-    "all" | "landscape" | "portrait" | "square"
-  >("all");
+  const [fileTypeFilter, setFileTypeFilter] = useState<ImageTypeFilter>("all");
+  const [orientationFilter, setOrientationFilter] = useState<ImageOrientationFilter>("all");
 
   // Reset state when switching primary source
   useEffect(() => {
@@ -177,40 +174,8 @@ export function WikiRepositoryTab({
   // Map and set ixwiki/iiwiki images
   useEffect(() => {
     if (wikiSource === "wiki" && wikiFileData) {
-      const isIiwiki = wikiSubSource === "iiwiki";
-      const offset = isIiwiki ? 2000000 : 1000000;
-      const mapped = wikiFileData.map((img: any, index: number) => {
-        const rawUrl = img.url || "";
-        const proxiedUrl = rawUrl.includes("iiwiki.com/")
-          ? withBasePath(
-              rawUrl.replace(/^https?:\/\/(www\.)?iiwiki\.com\//, "/api/mediawiki/iiwiki/")
-            )
-          : rawUrl.includes("ixwiki.com/")
-            ? withBasePath(
-                rawUrl.replace(/^https?:\/\/(www\.)?ixwiki\.com\//, "/api/mediawiki/ixwiki/")
-              )
-            : rawUrl;
-
-        return {
-          pageid: index + offset,
-          title: img.name.startsWith("File:") ? img.name : `File:${img.name}`,
-          thumbUrl: proxiedUrl,
-          url: proxiedUrl,
-          descriptionUrl: isIiwiki
-            ? `https://iiwiki.com/wiki/File:${encodeURIComponent(img.name)}`
-            : `https://ixwiki.com/wiki/File:${encodeURIComponent(img.name)}`,
-          width: img.width || 0,
-          height: img.height || 0,
-          mime: img.mime || "image/png",
-          description: isIiwiki
-            ? `External upload on IIWiki. Size: ${(img.size / 1024).toFixed(1)} KB`
-            : `Local upload on IxWiki. Size: ${(img.size / 1024).toFixed(1)} KB`,
-          artist: isIiwiki ? "IIWiki Contributor" : "IxWiki Contributor",
-          license: "CC BY-SA 3.0",
-        };
-      });
       // oxlint-disable-next-line
-      setWikiImages(mapped);
+      setWikiImages(wikiFilesToImages(wikiFileData, wikiSubSource));
     }
   }, [wikiFileData, wikiSource, wikiSubSource]);
 
@@ -225,13 +190,10 @@ export function WikiRepositoryTab({
   };
 
   const hasMoreWikiImages =
-    wikiSource === "commons"
-      ? isSearchMode
-        ? commonsSearchData?.nextOffset != null
-        : isBrowseMode
-          ? commonsCatData?.nextOffset != null
-          : false
-      : false;
+    wikiSource === "commons" &&
+    (isSearchMode
+      ? commonsSearchData?.nextOffset != null
+      : isBrowseMode && commonsCatData?.nextOffset != null);
 
   const handleToggleCategory = (cat: string) => {
     setActiveCategories((prev) =>
@@ -259,15 +221,7 @@ export function WikiRepositoryTab({
       if (seenKeys.has(uniqueKey)) return false;
       seenKeys.add(uniqueKey);
 
-      if (fileTypeFilter !== "all") {
-        const type = getImageType(img.mime ?? "", img.title);
-        if (type !== fileTypeFilter) return false;
-      }
-      if (orientationFilter !== "all") {
-        const orient = getImageOrientation(img.width, img.height);
-        if (orient !== orientationFilter) return false;
-      }
-      return true;
+      return matchesImageFilters(img, fileTypeFilter, orientationFilter);
     });
   }, [wikiImages, fileTypeFilter, orientationFilter]);
 
