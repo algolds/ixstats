@@ -15,7 +15,7 @@ import type { FacetAccent } from "~/lib/design/identity";
 export const QUEST_PATHS = [
   {
     name: "Merchant Path",
-    description: "Build a massive national economy and GDP",
+    description: "Grow your economy and GDP",
     icon: TrendingUp,
     badgeColor: "bg-green/10 text-green border-green/20",
     glowColor: "shadow-floating",
@@ -32,7 +32,7 @@ export const QUEST_PATHS = [
   },
   {
     name: "Prosperity Path",
-    description: "Improve citizen wealth and economic development",
+    description: "Raise citizen wealth and economic development",
     icon: Sparkles,
     badgeColor: "bg-yellow/10 text-yellow border-yellow/20",
     glowColor: "shadow-floating",
@@ -49,7 +49,7 @@ export const QUEST_PATHS = [
   },
   {
     name: "Warlord Path",
-    description: "Expand and fund the armed forces",
+    description: "Build and fund your armed forces",
     icon: Shield,
     badgeColor: "bg-red/10 text-red border-red/20",
     glowColor: "shadow-floating",
@@ -71,7 +71,7 @@ export const QUEST_PATHS = [
   },
   {
     name: "Diplomat Path",
-    description: "Extend global influence through treaties and trade",
+    description: "Gain influence through treaties and trade",
     icon: Globe,
     badgeColor: "bg-blue/10 text-blue border-blue/20",
     glowColor: "shadow-floating",
@@ -93,7 +93,7 @@ export const QUEST_PATHS = [
   },
   {
     name: "Sovereign Path",
-    description: "Develop atomic governance structures",
+    description: "Build out your government structures",
     icon: Landmark,
     badgeColor: "bg-indigo/10 text-indigo border-indigo/20",
     glowColor: "shadow-floating",
@@ -104,7 +104,7 @@ export const QUEST_PATHS = [
   },
   {
     name: "Thinker Path",
-    description: "Influence public discourse on ThinkPages",
+    description: "Shape the conversation on ThinkPages",
     icon: BookOpen,
     badgeColor: "bg-blue/10 text-blue border-blue/20",
     glowColor: "shadow-floating",
@@ -121,7 +121,7 @@ export const QUEST_PATHS = [
   },
   {
     name: "Vidmaster Path",
-    description: "The ultimate trial of system mastery and dedication",
+    description: "The hardest challenges on the platform",
     icon: Crown,
     badgeColor: "bg-yellow/10 text-yellow border-yellow/20",
     glowColor: "shadow-floating",
@@ -132,7 +132,7 @@ export const QUEST_PATHS = [
   },
   {
     name: "Lore & Meme Path",
-    description: "Nostalgic community jokes, stonks, and wiki archives",
+    description: "Community jokes, stonks and wiki archives",
     icon: Trophy,
     badgeColor: "bg-indigo/10 text-indigo border-indigo/20",
     glowColor: "shadow-floating",
@@ -152,9 +152,8 @@ export const QUEST_PATHS = [
 
 /**
  * Per-category styling: a system colour carries the category on its badge, icon pedestal and icon
- * fill. Facet 3.1 (spec §16.5) restores the v2 card decoration through the identity sheet's
- * sanctioned classes, driven by `accent` / `accent2` (the card's `accent`, aurora, radiance) and the `jewel` stops
- * (the metallic icon fill) — system colour roles, so they follow the theme.
+ * fill. The card decoration is driven by `accent` / `accent2` (aurora, radiance) and the `jewel`
+ * stops (the metallic icon fill); all are system colour roles, so they follow the theme.
  */
 export interface CategoryTheme {
   name: string;
@@ -170,17 +169,16 @@ export interface CategoryTheme {
   /** Solid fill painted through the achievement icon's mask (locked/fallback). */
   iconFill: string;
   /**
-   * Category accent (Facet 3.1, spec §16.8): the card's `accent` prop (glass wash, tinted border,
-   * glow) and the aurora / radiance colour of `AchievementCardBackdrop`.
+   * Category accent: the aurora / radiance colour of `AchievementCardBackdrop`.
    */
   accent: FacetAccent;
-  /** The aurora's secondary hue (v2 `via-amber`/`via-cyan`…). */
+  /** The aurora's secondary hue. */
   accent2: FacetAccent;
-  /** Jewel icon gradient stops (`--jewel-from/-via/-to`; v2 `iconGradient`). */
+  /** Jewel icon gradient stops (`--jewel-from/-via/-to`). */
   jewel: readonly [from: string, via: string, to: string];
 }
 
-/** A pale highlight of a colour, for the jewel's middle stop (v2 `via-*-100`). */
+/** A pale highlight of a colour, for the jewel's middle stop. */
 const pale = (color: string) => `color-mix(in srgb, ${color} 25%, white)`;
 
 export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
@@ -495,7 +493,7 @@ export const ACHIEVEMENT_SERIES_DEFINITIONS: AchievementSeriesConfig[] = [
     id: "series-econ-gdp",
     name: "National GDP Milestones",
     category: "Economic",
-    description: "Rank among the world's leading economies by total GDP.",
+    description: "Rank among the world's largest economies by total GDP.",
     iconPath: "/icons/game-icons/icons/ffffff/transparent/1x1/willdabeast/gold-bar.svg",
     keys: [
       "econ-first-million",
@@ -509,7 +507,7 @@ export const ACHIEVEMENT_SERIES_DEFINITIONS: AchievementSeriesConfig[] = [
     id: "series-econ-per-capita",
     name: "Citizen Prosperity & GDP/Capita",
     category: "Economic",
-    description: "Advance individual citizen wealth and high standard of living.",
+    description: "Raise GDP per capita and citizen wealth.",
     iconPath: "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/greek-temple.svg",
     keys: [
       "econ-wealthy-citizens",
@@ -522,7 +520,7 @@ export const ACHIEVEMENT_SERIES_DEFINITIONS: AchievementSeriesConfig[] = [
     id: "series-econ-growth",
     name: "Economic Growth & Boom",
     category: "Economic",
-    description: "Accelerate annual GDP expansion and economic growth rate.",
+    description: "Raise your annual GDP growth rate.",
     iconPath: "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/growth.svg",
     keys: ["econ-growth-rocket", "econ-boom-cycle"],
   },
@@ -530,7 +528,7 @@ export const ACHIEVEMENT_SERIES_DEFINITIONS: AchievementSeriesConfig[] = [
     id: "series-mil-branches",
     name: "Military Branches Spectrum",
     category: "Military",
-    description: "Establish and diversify national armed forces branches.",
+    description: "Establish more armed forces branches.",
     iconPath: "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/crossed-swords.svg",
     keys: ["mil-first-branch", "mil-armed-forces", "mil-full-spectrum"],
   },
@@ -538,7 +536,7 @@ export const ACHIEVEMENT_SERIES_DEFINITIONS: AchievementSeriesConfig[] = [
     id: "series-mil-personnel",
     name: "Standing Armed Personnel",
     category: "Military",
-    description: "Mobilize and train active standing military personnel.",
+    description: "Grow your active military personnel.",
     iconPath: "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/meeple-army.svg",
     keys: ["mil-standing-army", "mil-large-force", "mil-massive-force", "mil-global-force"],
   },
@@ -546,7 +544,7 @@ export const ACHIEVEMENT_SERIES_DEFINITIONS: AchievementSeriesConfig[] = [
     id: "series-mil-budget",
     name: "National Defense Commitment",
     category: "Military",
-    description: "Allocate strategic GDP expenditure toward sovereign defense.",
+    description: "Spend a larger share of GDP on defense.",
     iconPath: "/icons/game-icons/icons/ffffff/transparent/1x1/sbed/shield.svg",
     keys: ["mil-defense-commitment", "mil-strong-defense", "mil-military-superpower"],
   },
@@ -554,7 +552,7 @@ export const ACHIEVEMENT_SERIES_DEFINITIONS: AchievementSeriesConfig[] = [
     id: "series-dip-embassies",
     name: "Global Embassy Network",
     category: "Diplomatic",
-    description: "Deploy diplomatic embassies to partner nations worldwide.",
+    description: "Open embassies in more countries.",
     iconPath: "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/capitol.svg",
     keys: [
       "dip-first-embassy",
@@ -567,7 +565,7 @@ export const ACHIEVEMENT_SERIES_DEFINITIONS: AchievementSeriesConfig[] = [
     id: "series-dip-treaties",
     name: "Bilateral Treaties & Accords",
     category: "Diplomatic",
-    description: "Negotiate and ratify bilateral treaties and accords.",
+    description: "Negotiate and ratify bilateral treaties.",
     iconPath: "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/tied-scroll.svg",
     keys: ["dip-first-treaty", "dip-treaty-network"],
   },
@@ -575,7 +573,7 @@ export const ACHIEVEMENT_SERIES_DEFINITIONS: AchievementSeriesConfig[] = [
     id: "series-dip-trade",
     name: "Trade Partnerships & Hubs",
     category: "Diplomatic",
-    description: "Form international trade partnerships and commercial networks.",
+    description: "Form trade partnerships with other countries.",
     iconPath: "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/trade.svg",
     keys: ["dip-trade-partners", "dip-trade-hub"],
   },
@@ -583,7 +581,7 @@ export const ACHIEVEMENT_SERIES_DEFINITIONS: AchievementSeriesConfig[] = [
     id: "series-gov-atomic",
     name: "Atomic Governance Architecture",
     category: "Government",
-    description: "Configure modular atomic government branches and statecraft systems.",
+    description: "Configure more government branches and systems.",
     iconPath: "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/brick-wall.svg",
     keys: ["gov-first-component", "gov-building-blocks", "gov-sophisticated", "gov-complex-system"],
   },
@@ -591,7 +589,7 @@ export const ACHIEVEMENT_SERIES_DEFINITIONS: AchievementSeriesConfig[] = [
     id: "series-social-thinkpages",
     name: "ThinkPages Thought Leadership",
     category: "Social",
-    description: "Publish insightful articles and analysis on ThinkPages.",
+    description: "Publish articles and analysis on ThinkPages.",
     iconPath: "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/quill.svg",
     keys: ["social-first-thinkpage", "social-thinkpage-author", "social-prolific-author"],
   },
@@ -599,7 +597,7 @@ export const ACHIEVEMENT_SERIES_DEFINITIONS: AchievementSeriesConfig[] = [
     id: "series-social-influence",
     name: "Public Discourse & Trending",
     category: "Social",
-    description: "Gain widespread readership and trending discourse recognition.",
+    description: "Reach a wide readership and trend on ThinkPages.",
     iconPath: "/icons/game-icons/icons/ffffff/transparent/1x1/carl-olsen/flame.svg",
     keys: ["social-popular", "social-trending"],
   },
@@ -607,7 +605,7 @@ export const ACHIEVEMENT_SERIES_DEFINITIONS: AchievementSeriesConfig[] = [
     id: "series-lore-scholar",
     name: "WikiOS Lore & Archives",
     category: "General",
-    description: "Archive national history and collect community lore entries.",
+    description: "Write national history and collect lore entries.",
     iconPath: "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/spell-book.svg",
     keys: ["lore-scholar", "lore-collector"],
   },
@@ -615,7 +613,7 @@ export const ACHIEVEMENT_SERIES_DEFINITIONS: AchievementSeriesConfig[] = [
     id: "series-pop-demographics",
     name: "Demographic Expansion",
     category: "General",
-    description: "Grow national population from emerging state to global mega-nation.",
+    description: "Grow your population from a small state to a mega-nation.",
     iconPath: "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/meeple-group.svg",
     keys: ["pop-emerging", "pop-populous", "pop-giant", "pop-mega"],
   },
