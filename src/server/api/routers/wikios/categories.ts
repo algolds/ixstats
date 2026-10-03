@@ -22,6 +22,128 @@ import {
 } from "~/lib/wiki-os/transformers/image-url";
 import { wikiSourceSchema } from "./_shared";
 
+type CategoryMember = {
+  pageid: number;
+  title: string;
+  type: "page" | "subcat" | "file";
+  ns: number;
+  isSubcategory: boolean;
+  imageUrl?: string | null;
+};
+
+async function loadCategoryMembers(input: {
+  category: string;
+  limit: number;
+  type?: "page" | "subcat" | "file";
+}): Promise<{ members: CategoryMember[]; hasMore: boolean }> {
+  // 1. Fast-path: Native PostgreSQL Category DAG
+  const nativeDetails = await CategoryService.getCategoryDetails(input.category);
+  if (
+    nativeDetails.category &&
+    (nativeDetails.articles.length > 0 || nativeDetails.subcategories.length > 0)
+  ) {
+    const members: CategoryMember[] = [];
+    if (!input.type || input.type === "subcat") {
+      for (const c of nativeDetails.subcategories) {
+        members.push({
+          pageid: 0,
+          title: `Category:${c.name}`,
+          type: "subcat",
+          ns: 14,
+          isSubcategory: true,
+          imageUrl: null,
+        });
+      }
+    }
+    if (!input.type || input.type === "page") {
+      for (const a of nativeDetails.articles) {
+        members.push({
+          pageid: 0,
+          title: a.title,
+          type: "page",
+          ns: 0,
+          isSubcategory: false,
+          imageUrl: null,
+        });
+      }
+    }
+    return { members: members.slice(0, input.limit), hasMore: members.length > input.limit };
+  }
+
+  // 2. Resilient Bridge Fallback (MySQL IxWiki / HTTP Sister Wikis)
+  const bridgeResult = await getCategoryMembers(input.category, input.limit, input.type);
+  return {
+    members: bridgeResult.members.map((m) => ({
+      pageid: m.pageId ?? 0,
+      title: m.title,
+      type: (m.type ?? "page") as CategoryMember["type"],
+      ns: m.ns ?? 0,
+      isSubcategory: m.isSubcategory ?? false,
+      imageUrl: null,
+    })),
+    hasMore: bridgeResult.hasMore ?? false,
+  };
+}
+
+const spaced = (title: string) => title.replace(/_/g, " ");
+
+function leadImageOf(art: { leadImageUrl: string | null; wikitext: string | null }) {
+  const raw = art.leadImageUrl || (art.wikitext && extractLeadImageFromWikitext(art.wikitext));
+  return raw ? normalizeWikiImageUrl(raw) || raw : null;
+}
+
+/** Batch lead-image resolution (local articles first, then MediaWiki thumbnails) for page members. */
+async function attachMemberImages(members: CategoryMember[]) {
+  const pageMembers = members.filter((m) => m.type === "page" || m.ns === 0);
+  if (pageMembers.length === 0) return;
+
+  const titles = pageMembers.map((m) => m.title);
+  const imageMap = new Map<string, string>();
+  const lookup = (title: string) =>
+    imageMap.get(title) ?? imageMap.get(toArticleSlug(title)) ?? imageMap.get(spaced(title));
+
+  try {
+    const articles = await db.wikiArticle.findMany({
+      where: {
+        OR: [
+          { title: { in: titles } },
+          { title: { in: titles.map(spaced) } },
+          { slug: { in: titles.map((t) => toArticleSlug(t)) } },
+        ],
+      },
+      select: { title: true, slug: true, leadImageUrl: true, wikitext: true },
+    });
+
+    for (const art of articles) {
+      const img = leadImageOf(art);
+      if (img) {
+        imageMap.set(art.title, img);
+        imageMap.set(art.slug, img);
+        imageMap.set(art.title.replace(/ /g, "_"), img);
+      }
+    }
+  } catch {
+    // Non-fatal
+  }
+
+  const missingTitles = titles.filter((t) => !lookup(t));
+  if (missingTitles.length > 0) {
+    try {
+      for (const [title, url] of (await batchFetchThumbnails(missingTitles)).entries()) {
+        const norm = normalizeWikiImageUrl(url) || url;
+        imageMap.set(title, norm);
+        imageMap.set(toArticleSlug(title), norm);
+      }
+    } catch {
+      // Non-fatal
+    }
+  }
+
+  for (const member of pageMembers) {
+    member.imageUrl = lookup(member.title) ?? null;
+  }
+}
+
 export const wikiosCategoriesRouter = createTRPCRouter({
   /**
    * Get members of a category with automatic lead thumbnail image resolution.
@@ -36,145 +158,9 @@ export const wikiosCategoriesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      let rawMembers: Array<{
-        pageid: number;
-        title: string;
-        type: "page" | "subcat" | "file";
-        ns: number;
-        isSubcategory: boolean;
-        imageUrl?: string | null;
-      }> = [];
-      let hasMore = false;
-
-      // 1. Fast-path: Native PostgreSQL Category DAG
-      const nativeDetails = await CategoryService.getCategoryDetails(input.category);
-      if (
-        nativeDetails.category &&
-        (nativeDetails.articles.length > 0 || nativeDetails.subcategories.length > 0)
-      ) {
-        if (!input.type || input.type === "subcat") {
-          for (const c of nativeDetails.subcategories) {
-            rawMembers.push({
-              pageid: 0,
-              title: `Category:${c.name}`,
-              type: "subcat" as const,
-              ns: 14,
-              isSubcategory: true,
-              imageUrl: null,
-            });
-          }
-        }
-
-        if (!input.type || input.type === "page") {
-          for (const a of nativeDetails.articles) {
-            rawMembers.push({
-              pageid: 0,
-              title: a.title,
-              type: "page" as const,
-              ns: 0,
-              isSubcategory: false,
-              imageUrl: null,
-            });
-          }
-        }
-
-        hasMore = rawMembers.length > input.limit;
-        rawMembers = rawMembers.slice(0, input.limit);
-      } else {
-        // 2. Resilient Bridge Fallback (MySQL IxWiki / HTTP Sister Wikis)
-        const bridgeResult = await getCategoryMembers(input.category, input.limit, input.type);
-        rawMembers = bridgeResult.members.map((m) => ({
-          pageid: m.pageId ?? 0,
-          title: m.title,
-          type: (m.type ?? "page") as "page" | "subcat" | "file",
-          ns: m.ns ?? 0,
-          isSubcategory: m.isSubcategory ?? false,
-          imageUrl: null,
-        }));
-        hasMore = bridgeResult.hasMore ?? false;
-      }
-
-      // 3. Batch Image Resolution for Page Members
-      const pageMembers = rawMembers.filter((m) => m.type === "page" || m.ns === 0);
-      if (pageMembers.length > 0) {
-        const titles = pageMembers.map((m) => m.title);
-        const slugs = titles.map((t) => toArticleSlug(t));
-        const imageMap = new Map<string, string>();
-
-        try {
-          const articles = await db.wikiArticle.findMany({
-            where: {
-              OR: [
-                { title: { in: titles } },
-                { title: { in: titles.map((t) => t.replace(/_/g, " ")) } },
-                { slug: { in: slugs } },
-              ],
-            },
-            select: {
-              title: true,
-              slug: true,
-              leadImageUrl: true,
-              wikitext: true,
-            },
-          });
-
-          for (const art of articles) {
-            let img: string | null = null;
-            if (art.leadImageUrl) {
-              img = normalizeWikiImageUrl(art.leadImageUrl) || art.leadImageUrl;
-            } else if (art.wikitext) {
-              const lead = extractLeadImageFromWikitext(art.wikitext);
-              if (lead) {
-                img = normalizeWikiImageUrl(lead) || lead;
-              }
-            }
-
-            if (img) {
-              imageMap.set(art.title, img);
-              imageMap.set(art.slug, img);
-              imageMap.set(art.title.replace(/ /g, "_"), img);
-            }
-          }
-        } catch {
-          // Non-fatal
-        }
-
-        const missingTitles = titles.filter(
-          (t) =>
-            !imageMap.has(t) &&
-            !imageMap.has(toArticleSlug(t)) &&
-            !imageMap.has(t.replace(/_/g, " "))
-        );
-        if (missingTitles.length > 0) {
-          try {
-            const mwImages = await batchFetchThumbnails(missingTitles);
-            for (const [title, url] of mwImages.entries()) {
-              const norm = normalizeWikiImageUrl(url) || url;
-              imageMap.set(title, norm);
-              imageMap.set(toArticleSlug(title), norm);
-            }
-          } catch {
-            // Non-fatal
-          }
-        }
-
-        // Assign resolved images back to members
-        for (const member of rawMembers) {
-          if (member.type === "page" || member.ns === 0) {
-            const memberSlug = toArticleSlug(member.title);
-            member.imageUrl =
-              imageMap.get(member.title) ??
-              imageMap.get(memberSlug) ??
-              imageMap.get(member.title.replace(/_/g, " ")) ??
-              null;
-          }
-        }
-      }
-
-      return {
-        members: rawMembers,
-        continueToken: hasMore ? "more" : null,
-      };
+      const { members, hasMore } = await loadCategoryMembers(input);
+      await attachMemberImages(members);
+      return { members, continueToken: hasMore ? "more" : null };
     }),
 
   /**
