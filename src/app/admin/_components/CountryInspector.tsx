@@ -46,28 +46,8 @@ import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { cn } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
 import { useAdminNavigation } from "./AdminNavigationContext";
-
-// Economic configurations and tiers duplication
-enum EconomicTier {
-  IMPOVERISHED = "Impoverished",
-  DEVELOPING = "Developing",
-  DEVELOPED = "Developed",
-  HEALTHY = "Healthy",
-  STRONG = "Strong",
-  VERY_STRONG = "Very Strong",
-  EXTRAVAGANT = "Extravagant",
-}
-
-enum PopulationTier {
-  TIER_1 = "1",
-  TIER_2 = "2",
-  TIER_3 = "3",
-  TIER_4 = "4",
-  TIER_5 = "5",
-  TIER_6 = "6",
-  TIER_7 = "7",
-  TIER_X = "X",
-}
+import { ECONOMIC_TIER_INFO } from "~/lib/tier-utils";
+import { EconomicTier, PopulationTier } from "~/types/ixstats";
 
 interface MockEffect {
   id: string;
@@ -77,15 +57,26 @@ interface MockEffect {
   duration: number; // years
 }
 
-const TIER_MAX_GROWTH: Record<EconomicTier, number> = {
-  [EconomicTier.IMPOVERISHED]: 0.1,
-  [EconomicTier.DEVELOPING]: 0.075,
-  [EconomicTier.DEVELOPED]: 0.05,
-  [EconomicTier.HEALTHY]: 0.035,
-  [EconomicTier.STRONG]: 0.0275,
-  [EconomicTier.VERY_STRONG]: 0.015,
-  [EconomicTier.EXTRAVAGANT]: 0.005,
-};
+const ECONOMIC_TIERS_DESCENDING = Object.entries(ECONOMIC_TIER_INFO).reverse() as Array<
+  [EconomicTier, (typeof ECONOMIC_TIER_INFO)[EconomicTier]]
+>;
+
+const POPULATION_TIER_FLOORS: Array<[number, PopulationTier]> = [
+  [500_000_000, PopulationTier.TIER_X],
+  [350_000_000, PopulationTier.TIER_7],
+  [120_000_000, PopulationTier.TIER_6],
+  [80_000_000, PopulationTier.TIER_5],
+  [50_000_000, PopulationTier.TIER_4],
+  [30_000_000, PopulationTier.TIER_3],
+  [10_000_000, PopulationTier.TIER_2],
+];
+
+const getEconTier = (gdpPerCapita: number): EconomicTier =>
+  ECONOMIC_TIERS_DESCENDING.find(([, { min }]) => gdpPerCapita >= min)?.[0] ??
+  EconomicTier.IMPOVERISHED;
+
+const getPopTier = (population: number): PopulationTier =>
+  POPULATION_TIER_FLOORS.find(([floor]) => population >= floor)?.[1] ?? PopulationTier.TIER_1;
 
 export function CountryInspector() {
   const { sidebarHidden, setSidebarHidden } = useAdminNavigation();
@@ -160,27 +151,6 @@ export function CountryInspector() {
   }, [selectedCountryId]);
 
   const fmtBig = (n: number) => `$${formatCompact(n)}`;
-
-  const getEconTier = (gdpPerCapita: number): EconomicTier => {
-    if (gdpPerCapita >= 65000) return EconomicTier.EXTRAVAGANT;
-    if (gdpPerCapita >= 55000) return EconomicTier.VERY_STRONG;
-    if (gdpPerCapita >= 45000) return EconomicTier.STRONG;
-    if (gdpPerCapita >= 35000) return EconomicTier.HEALTHY;
-    if (gdpPerCapita >= 25000) return EconomicTier.DEVELOPED;
-    if (gdpPerCapita >= 10000) return EconomicTier.DEVELOPING;
-    return EconomicTier.IMPOVERISHED;
-  };
-
-  const getPopTier = (population: number): PopulationTier => {
-    if (population >= 500_000_000) return PopulationTier.TIER_X;
-    if (population >= 350_000_000) return PopulationTier.TIER_7;
-    if (population >= 120_000_000) return PopulationTier.TIER_6;
-    if (population >= 80_000_000) return PopulationTier.TIER_5;
-    if (population >= 50_000_000) return PopulationTier.TIER_4;
-    if (population >= 30_000_000) return PopulationTier.TIER_3;
-    if (population >= 10_000_000) return PopulationTier.TIER_2;
-    return PopulationTier.TIER_1;
-  };
 
   // Perform full calculation steps client-side based on the sliders & effects state
   const calculation = useMemo(() => {
@@ -266,7 +236,7 @@ export function CountryInspector() {
     }
 
     // Apply Tier Cap Check
-    const tierMaxCap = TIER_MAX_GROWTH[currentEconTier] || 0.05;
+    const tierMaxCap = ECONOMIC_TIER_INFO[currentEconTier].maxGrowth;
     const isCapped = drReducedVal > tierMaxCap;
     let finalGdpGrowthRate = isCapped ? tierMaxCap : drReducedVal;
 
