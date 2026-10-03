@@ -59,6 +59,8 @@ export function validateAndRepair(graph: WorldGraph, params: WorldGenParams): Qu
   if (check6.repaired) totalRepairs++;
 
   // Check 7: Coastline Complexity
+
+const MIN_COASTAL_LAND_CELLS = 50;
   const check7 = checkCoastlineComplexity(graph, params);
   checks.push(check7);
   if (check7.repaired) totalRepairs++;
@@ -397,7 +399,12 @@ function checkLakePlacement(graph: WorldGraph): QualityCheckResult {
 
 // Check 7: Coastline Complexity
 
-function checkCoastlineComplexity(graph: WorldGraph, _params: WorldGenParams): QualityCheckResult {
+const MIN_COASTAL_LAND_CELLS = 50;
+
+export function checkCoastlineComplexity(
+  graph: WorldGraph,
+  _params: WorldGenParams
+): QualityCheckResult {
   // Count coastal land cells
   let coastalLandCount = 0;
   for (let i = 0; i < graph.cells.n; i++) {
@@ -406,11 +413,15 @@ function checkCoastlineComplexity(graph: WorldGraph, _params: WorldGenParams): Q
     }
   }
 
+  const passed = coastalLandCount > MIN_COASTAL_LAND_CELLS;
+
   return {
     name: "Coastline Complexity",
-    passed: true,
-    score: 95,
-    details: `${coastalLandCount} coastal land cells forming organic island & continent shorelines`,
+    passed,
+    score: passed ? 95 : 60,
+    details: passed
+      ? `${coastalLandCount} coastal land cells forming organic island & continent shorelines`
+      : `Only ${coastalLandCount} coastal land cells (need more than ${MIN_COASTAL_LAND_CELLS}); shorelines are too simple`,
     repaired: false,
   };
 }
