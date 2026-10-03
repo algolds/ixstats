@@ -1,14 +1,5 @@
 "use client";
 
-/**
- * Atomic Government Components
- *
- * Main orchestrator component for the atomic government builder system.
- * Uses modular UI components with clean composition.
- *
- * @module AtomicGovernmentComponents
- */
-
 import React, { useMemo } from "react";
 import { Button } from "~/components/ui/button";
 import {
@@ -33,7 +24,7 @@ import { AtomicFilterBar } from "~/components/shared/atomic-picker";
 import { ComponentType } from "~/lib/enums";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { TooltipProvider } from "~/components/ui/tooltip";
-import { GovernmentMetricModals } from "./GovernmentMetricModals";
+import { GovernmentMetricModals, type MetricTab } from "./GovernmentMetricModals";
 import { Card } from "~/components/ui/card";
 
 interface AtomicGovernmentComponentsProps {
@@ -57,10 +48,6 @@ interface AtomicGovernmentComponentsProps {
   hideSelectedList?: boolean;
 }
 
-/**
- * Main atomic government builder component
- * Orchestrates all sub-components and manages state through hook
- */
 export function AtomicGovernmentComponents({
   initialComponents = [],
   maxComponents = 10,
@@ -72,11 +59,9 @@ export function AtomicGovernmentComponents({
   hideCategorySelector = false,
   hideSelectedList = false,
 }: AtomicGovernmentComponentsProps) {
-  // Usage counts for the admin component statistics
   const { mutate: trackUsage } = api.governmentComponents.incrementComponentUsage.useMutation();
   const incrementUsage = (componentType: ComponentType) => trackUsage({ componentType });
 
-  // Initialize builder hook
   const builder = useAtomicGovernmentBuilder({
     initialComponents,
     maxComponents,
@@ -85,10 +70,9 @@ export function AtomicGovernmentComponents({
     defaultCategoryFilter,
   });
 
-  // Get available categories
   const categories = useMemo(() => getCategories(ATOMIC_COMPONENTS), []);
 
-  // Calculate category counts for filtered components
+  // Category counts for the filtered components
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     Object.values(builder.filteredComponents).forEach((comp) => {
@@ -99,79 +83,22 @@ export function AtomicGovernmentComponents({
     return counts;
   }, [builder.filteredComponents]);
 
-  // Get selected component objects
-  const selectedComponentObjects = useMemo(() => {
-    return builder.selectedComponents
-      .map((type) => ATOMIC_COMPONENTS[type])
-      .filter((comp) => comp !== undefined);
-  }, [builder.selectedComponents]);
+  const selectedComponentObjects = builder.selectedComponents
+    .map((type) => ATOMIC_COMPONENTS[type])
+    .filter((comp) => comp !== undefined);
 
-  // Get unique categories of currently selected components
-  const selectedCategories = useMemo(() => {
-    const selected = new Set<string>();
-    selectedComponentObjects.forEach((comp) => {
-      if (comp?.category) {
-        selected.add(comp.category.toLowerCase());
-      }
-    });
-    return selected;
-  }, [selectedComponentObjects]);
-
-  // Dialog state for active synergies/conflicts & details
-  const [interactionsOpen, setInteractionsOpen] = React.useState(false);
-  const [selectedListOpen, setSelectedListOpen] = React.useState(false);
-  const [effectivenessOpen, setEffectivenessOpen] = React.useState(false);
-  const [implementationOpen, setImplementationOpen] = React.useState(false);
-  const [maintenanceOpen, setMaintenanceOpen] = React.useState(false);
+  const [openTab, setOpenTab] = React.useState<MetricTab | null>(null);
   const [welcomeOpen, setWelcomeOpen] = React.useState(true);
 
-  const handleSynergiesClick = React.useCallback(() => {
-    setInteractionsOpen(true);
-  }, []);
+  const metrics = {
+    totalComponents: builder.selectedComponents.length,
+    totalEffectiveness: builder.effectiveness.totalEffectiveness,
+    implementationCost: builder.implementationCost,
+    maintenanceCost: builder.maintenanceCost,
+    synergyCount: builder.synergies.length,
+    conflictCount: builder.conflicts.length,
+  };
 
-  const handleConflictsClick = React.useCallback(() => {
-    setInteractionsOpen(true);
-  }, []);
-
-  const handleComponentsClick = React.useCallback(() => {
-    setSelectedListOpen(true);
-  }, []);
-
-  const handleEffectivenessClick = React.useCallback(() => {
-    setEffectivenessOpen(true);
-  }, []);
-
-  const handleImplementationClick = React.useCallback(() => {
-    setImplementationOpen(true);
-  }, []);
-
-  const handleMaintenanceClick = React.useCallback(() => {
-    setMaintenanceOpen(true);
-  }, []);
-
-  // Build metrics object
-  const metrics = useMemo(
-    () => ({
-      totalComponents: builder.selectedComponents.length,
-      totalEffectiveness: builder.effectiveness.totalEffectiveness,
-      implementationCost: builder.implementationCost,
-      maintenanceCost: builder.maintenanceCost,
-      synergyCount: builder.synergies.length,
-      conflictCount: builder.conflicts.length,
-    }),
-    [
-      builder.selectedComponents.length,
-      builder.effectiveness.totalEffectiveness,
-      builder.implementationCost,
-      builder.maintenanceCost,
-      builder.synergies.length,
-      builder.conflicts.length,
-    ]
-  );
-
-  const isAllCategoriesSelected = builder.categoryFilter === null;
-
-  // Templates list for AtomicFilterBar
   const templatesList = useMemo(() => {
     return Object.entries(GOVERNMENT_TEMPLATES).map(([id, t]) => ({
       id,
@@ -192,7 +119,6 @@ export function AtomicGovernmentComponents({
     }
   };
 
-  // Handle save with usage tracking
   const handleSave = () => {
     if (builder.validation.isValid) {
       builder.selectedComponents.forEach((componentType) => {
@@ -202,7 +128,6 @@ export function AtomicGovernmentComponents({
     }
   };
 
-  // Handle component selection with usage tracking
   const handleComponentSelect = (componentType: ComponentType) => {
     builder.selectComponent(componentType);
     incrementUsage(componentType);
@@ -210,7 +135,6 @@ export function AtomicGovernmentComponents({
 
   const workspaceContent = (
     <div className="space-y-6">
-      {/* Filter and Search Bar */}
       {!hideCategorySelector && (
         <div className="border-separator border-b pb-6">
           <AtomicFilterBar
@@ -227,8 +151,6 @@ export function AtomicGovernmentComponents({
           />
         </div>
       )}
-
-      {/* Library and Selected list */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className={hideSelectedList ? "lg:col-span-3" : "lg:col-span-2"}>
           <div className="space-y-4">
@@ -269,10 +191,7 @@ export function AtomicGovernmentComponents({
   return (
     <TooltipProvider delayDuration={150}>
       <div className="space-y-6">
-        {/* Welcome & Instruction Modal */}
         {!standalone && <AtomicWelcomeModal open={welcomeOpen} onOpenChange={setWelcomeOpen} />}
-
-        {/* Header Section */}
         {!standalone && (
           <Card className="p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -296,8 +215,6 @@ export function AtomicGovernmentComponents({
                   </p>
                 </div>
               </div>
-
-              {/* Header Actions */}
               {!isReadOnly && (
                 <div className="flex items-center gap-3">
                   <Button
@@ -318,8 +235,6 @@ export function AtomicGovernmentComponents({
             </div>
           </Card>
         )}
-
-        {/* Info Alert */}
         {!standalone && (
           <Alert>
             <Info className="text-label-secondary h-4 w-4" />
@@ -329,8 +244,6 @@ export function AtomicGovernmentComponents({
             </AlertDescription>
           </Alert>
         )}
-
-        {/* Validation Errors */}
         {!builder.validation.isValid && builder.validation.errors.length > 0 && (
           <Alert variant="destructive">
             <AlertDescription>
@@ -342,30 +255,18 @@ export function AtomicGovernmentComponents({
             </AlertDescription>
           </Alert>
         )}
-
-        {/* Metrics Panel */}
         <MetricsPanel
           metrics={metrics}
-          onComponentsClick={handleComponentsClick}
-          onEffectivenessClick={handleEffectivenessClick}
-          onImplementationClick={handleImplementationClick}
-          onMaintenanceClick={handleMaintenanceClick}
-          onSynergiesClick={handleSynergiesClick}
-          onConflictsClick={handleConflictsClick}
+          onComponentsClick={() => setOpenTab("components")}
+          onEffectivenessClick={() => setOpenTab("effectiveness")}
+          onImplementationClick={() => setOpenTab("costs")}
+          onMaintenanceClick={() => setOpenTab("costs")}
+          onSynergiesClick={() => setOpenTab("interactions")}
+          onConflictsClick={() => setOpenTab("interactions")}
         />
-
-        {/* Metric Modals & Dialogs */}
         <GovernmentMetricModals
-          selectedListOpen={selectedListOpen}
-          setSelectedListOpen={setSelectedListOpen}
-          interactionsOpen={interactionsOpen}
-          setInteractionsOpen={setInteractionsOpen}
-          effectivenessOpen={effectivenessOpen}
-          setEffectivenessOpen={setEffectivenessOpen}
-          implementationOpen={implementationOpen}
-          setImplementationOpen={setImplementationOpen}
-          maintenanceOpen={maintenanceOpen}
-          setMaintenanceOpen={setMaintenanceOpen}
+          openTab={openTab}
+          onClose={() => setOpenTab(null)}
           selectedComponentObjects={selectedComponentObjects}
           isReadOnly={isReadOnly}
           onDeselect={builder.deselectComponent}
@@ -375,11 +276,7 @@ export function AtomicGovernmentComponents({
           synergies={builder.synergies}
           conflicts={builder.conflicts}
         />
-
-        {/* Main Workspace */}
         {standalone ? workspaceContent : <Card className="p-6">{workspaceContent}</Card>}
-
-        {/* Save Button (Bottom) */}
         {!isReadOnly && !standalone && (
           <div className="flex justify-end gap-3 pt-2">
             <Button
@@ -401,7 +298,5 @@ export function AtomicGovernmentComponents({
   );
 }
 
-// Re-export types and utilities for convenience
 export { ComponentType } from "~/lib/enums";
 export { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
-// Export alias for backward compatibility

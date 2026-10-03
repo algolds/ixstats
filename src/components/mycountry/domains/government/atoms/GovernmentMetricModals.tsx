@@ -18,19 +18,12 @@ import type { ComponentType } from "~/lib/enums";
 import { cn } from "~/lib/utils";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 
-type MetricTab = "components" | "interactions" | "effectiveness" | "costs";
+export type MetricTab = "components" | "interactions" | "effectiveness" | "costs";
 
 interface GovernmentMetricModalsProps {
-  selectedListOpen: boolean;
-  setSelectedListOpen: (open: boolean) => void;
-  interactionsOpen: boolean;
-  setInteractionsOpen: (open: boolean) => void;
-  effectivenessOpen: boolean;
-  setEffectivenessOpen: (open: boolean) => void;
-  implementationOpen: boolean;
-  setImplementationOpen: (open: boolean) => void;
-  maintenanceOpen: boolean;
-  setMaintenanceOpen: (open: boolean) => void;
+  /** The tab to show, or null when the sheet is closed. */
+  openTab: MetricTab | null;
+  onClose: () => void;
   selectedComponentObjects: AtomicGovernmentComponent[];
   isReadOnly: boolean;
   onDeselect: (type: ComponentType) => void;
@@ -312,16 +305,8 @@ function CostsTab({
 }
 
 export function GovernmentMetricModals({
-  selectedListOpen,
-  setSelectedListOpen,
-  interactionsOpen,
-  setInteractionsOpen,
-  effectivenessOpen,
-  setEffectivenessOpen,
-  implementationOpen,
-  setImplementationOpen,
-  maintenanceOpen,
-  setMaintenanceOpen,
+  openTab,
+  onClose,
   selectedComponentObjects,
   isReadOnly,
   onDeselect,
@@ -335,28 +320,9 @@ export function GovernmentMetricModals({
 
   const directives = getDirectivesForComponents(selectedComponentObjects.map((c) => c.type));
 
-  const openTab: MetricTab | null = selectedListOpen
-    ? "components"
-    : interactionsOpen
-      ? "interactions"
-      : effectivenessOpen
-        ? "effectiveness"
-        : implementationOpen || maintenanceOpen
-          ? "costs"
-          : null;
-
   useEffect(() => {
     if (openTab) setActiveTab(openTab);
   }, [openTab]);
-
-  const handleOpenChange = (open: boolean) => {
-    if (open) return;
-    setSelectedListOpen(false);
-    setInteractionsOpen(false);
-    setEffectivenessOpen(false);
-    setImplementationOpen(false);
-    setMaintenanceOpen(false);
-  };
 
   const TitleIcon = TAB_TITLE_ICONS[activeTab];
   const titles: Record<MetricTab, string> = {
@@ -367,7 +333,7 @@ export function GovernmentMetricModals({
   };
 
   return (
-    <Sheet open={openTab !== null} onOpenChange={handleOpenChange}>
+    <Sheet open={openTab !== null} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="flex flex-col gap-0 overflow-hidden p-0">
         <SheetHeader className="border-separator border-b px-6 pt-5 pb-3">
           <SheetTitle className="text-label text-title-3 flex items-center gap-2">

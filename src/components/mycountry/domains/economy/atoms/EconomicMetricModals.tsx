@@ -21,7 +21,7 @@ import { Card } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 
-type MetricTab = "components" | "interactions" | "effectiveness" | "costs";
+export type MetricTab = "components" | "interactions" | "effectiveness" | "costs";
 
 const METRIC_TABS = [
   { value: "components", label: "Components", icon: <Package /> },
@@ -31,16 +31,9 @@ const METRIC_TABS = [
 ];
 
 interface EconomicMetricModalsProps {
-  selectedListOpen: boolean;
-  setSelectedListOpen: (open: boolean) => void;
-  interactionsOpen: boolean;
-  setInteractionsOpen: (open: boolean) => void;
-  effectivenessOpen: boolean;
-  setEffectivenessOpen: (open: boolean) => void;
-  implementationOpen: boolean;
-  setImplementationOpen: (open: boolean) => void;
-  maintenanceOpen: boolean;
-  setMaintenanceOpen: (open: boolean) => void;
+  /** The tab to show, or null when the sheet is closed. */
+  openTab: MetricTab | null;
+  onClose: () => void;
   selectedComponentTypes: EconomicComponentType[];
   selectedComponentObjects: AtomicEconomicComponent[];
   maxComponents?: number;
@@ -305,16 +298,8 @@ function CostsTab({
 }
 
 export function EconomicMetricModals({
-  selectedListOpen,
-  setSelectedListOpen,
-  interactionsOpen,
-  setInteractionsOpen,
-  effectivenessOpen,
-  setEffectivenessOpen,
-  implementationOpen,
-  setImplementationOpen,
-  maintenanceOpen,
-  setMaintenanceOpen,
+  openTab,
+  onClose,
   selectedComponentTypes,
   selectedComponentObjects,
   maxComponents,
@@ -328,29 +313,11 @@ export function EconomicMetricModals({
   const [activeTab, setActiveTab] = useState<MetricTab>("components");
 
   // Open on the tab for whichever metric was clicked (adjusted during render, not in an effect).
-  const requestedTab: MetricTab | null = selectedListOpen
-    ? "components"
-    : interactionsOpen
-      ? "interactions"
-      : effectivenessOpen
-        ? "effectiveness"
-        : implementationOpen || maintenanceOpen
-          ? "costs"
-          : null;
-  const [lastRequestedTab, setLastRequestedTab] = useState<MetricTab | null>(null);
-  if (requestedTab !== lastRequestedTab) {
-    setLastRequestedTab(requestedTab);
-    if (requestedTab) setActiveTab(requestedTab);
+  const [lastOpenTab, setLastOpenTab] = useState<MetricTab | null>(null);
+  if (openTab !== lastOpenTab) {
+    setLastOpenTab(openTab);
+    if (openTab) setActiveTab(openTab);
   }
-
-  const handleOpenChange = (open: boolean) => {
-    if (open) return;
-    setSelectedListOpen(false);
-    setInteractionsOpen(false);
-    setEffectivenessOpen(false);
-    setImplementationOpen(false);
-    setMaintenanceOpen(false);
-  };
 
   const titles: Record<MetricTab, string> = {
     components: `Selected Components (${selectedComponentObjects.length})`,
@@ -361,7 +328,7 @@ export function EconomicMetricModals({
   const TitleIcon = TAB_ICONS[activeTab];
 
   return (
-    <Sheet open={requestedTab !== null} onOpenChange={handleOpenChange}>
+    <Sheet open={openTab !== null} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="flex flex-col overflow-hidden p-0">
         <SheetHeader className="border-separator border-b px-6 pt-6 pb-4">
           <SheetTitle className="text-label text-title-3 flex items-center gap-2">
