@@ -17,6 +17,21 @@ const CULTURE_LANG: Record<string, string> = {
   any: "en-US",
 };
 
+/** The visitor's saved voice preference for `key`, or "" when unset (or outside the browser). */
+const personal = (key: string): string =>
+  typeof window === "undefined" ? "" : localStorage.getItem(`onoma-personal-${key}`) || "";
+
+const personalNumber = (key: string, fallback: number): number => {
+  const value = personal(key);
+  return value ? Number(value) : fallback;
+};
+
+const PROSODY_PUNCTUATION: Record<string, string> = {
+  exclamatory: "!",
+  inquisitive: "?",
+  mysterious: "...",
+};
+
 /**
  * Pronounces a generated name using the browser's native window.speechSynthesis,
  * converting its IPA string to readable English syllable chunks.
@@ -34,14 +49,8 @@ export function speakBrowserNative(
     try {
       window.speechSynthesis.cancel();
 
-      const personalProsody =
-        typeof window !== "undefined"
-          ? localStorage.getItem("onoma-personal-prosody") || "neutral"
-          : "neutral";
-      let phoneticSpelling = ipaToSpeechSpelling(ipa) || name;
-      if (personalProsody === "exclamatory") phoneticSpelling += "!";
-      else if (personalProsody === "inquisitive") phoneticSpelling += "?";
-      else if (personalProsody === "mysterious") phoneticSpelling += "...";
+      const phoneticSpelling =
+        (ipaToSpeechSpelling(ipa) || name) + (PROSODY_PUNCTUATION[personal("prosody")] ?? "");
 
       const utterance = new SpeechSynthesisUtterance(phoneticSpelling);
 
@@ -66,20 +75,10 @@ export function speakBrowserNative(
         }
       }
 
-      // Configure natural rate and pitch
-      const personalSpeed =
-        typeof window !== "undefined" ? localStorage.getItem("onoma-personal-speed") : null;
-      utterance.rate = personalSpeed ? Number(personalSpeed) : 0.82; // slightly slower for clean syllable articulation
-
-      const personalPitch =
-        typeof window !== "undefined" ? localStorage.getItem("onoma-personal-pitch") : null;
-      utterance.pitch = personalPitch ? Number(personalPitch) : 1.05;
-
-      const personalVolume =
-        typeof window !== "undefined" ? localStorage.getItem("onoma-personal-volume") : null;
-      if (personalVolume) {
-        utterance.volume = Number(personalVolume);
-      }
+      // Slightly slower than natural for clean syllable articulation
+      utterance.rate = personalNumber("speed", 0.82);
+      utterance.pitch = personalNumber("pitch", 1.05);
+      if (personal("volume")) utterance.volume = personalNumber("volume", 1);
 
       utterance.onend = () => resolve();
       utterance.onerror = (e) => reject(new Error(`SpeechSynthesis error: ${e.error}`));
@@ -91,12 +90,18 @@ export function speakBrowserNative(
   });
 }
 
-/**
- * Play a name's pronunciation: prefer Kokoro (phoneme mode from the IPA) when enabled,
- * otherwise (or on failure) fall back to the browser Web Speech voice.
- * Shared by the naming cards and the IPA Studio so playback behaves identically.
- */
-export async function speakName(opts: {
+/** The voice the visitor mapped to this culture's primary family, if any. */
+function cultureMappedVoice(culture: string | null): string {
+  if (!culture) return "";
+  try {
+    const cultureMap = JSON.parse(personal("voice-map") || "{}");
+    return cultureMap[culture.split("+")[0].toLowerCase().trim()] || "";
+  } catch {
+    return ""; // malformed personal voice map — use default voice selection
+  }
+}
+
+interface SpeakNameOptions {
   name: string;
   ipa: string;
   culture: string | null;
@@ -107,83 +112,58 @@ export async function speakName(opts: {
   defaultVoice?: string;
   /** 🔊 Pronounce: read exact phonemes in the default voice (skip culture/per-name voice). */
   forceDefaultVoice?: boolean;
-}): Promise<void> {
-  const { name, ipa, culture, kokoroEnabled, voice, defaultVoice, forceDefaultVoice } = opts;
+}
 
-  const forceNative =
-    typeof window !== "undefined" && localStorage.getItem("onoma-personal-force-native") === "true";
-  const useKokoro = kokoroEnabled && !forceNative;
+/** The TTS request: the name plus the visitor's personal voice settings. */
+function ttsParams({
+  name,
+  ipa,
+  culture,
+  voice,
+  defaultVoice,
+  forceDefaultVoice,
+}: SpeakNameOptions): URLSearchParams {
+  const params = new URLSearchParams({ text: name, ipa });
+  if (culture) params.set("culture", culture);
+
+  const primaryBlend = personal("voice-blend-primary");
+  const secondaryBlend = personal("voice-blend-secondary");
+  const userDefaultVoice =
+    personal("voice-blend-active") === "true" && primaryBlend && secondaryBlend
+      ? `${primaryBlend}+${secondaryBlend}`
+      : personal("voice");
+
+  const chosen = forceDefaultVoice
+    ? userDefaultVoice || defaultVoice || ""
+    : voice || cultureMappedVoice(culture) || userDefaultVoice;
+
+  if (chosen) params.set("voice", chosen); // explicit/personal voice -> server skips culture map
+  const optionalParams: Array<[string, string]> = [
+    ["speed", personal("speed")],
+    ["model", personal("model")],
+    ["phonemePrefix", personal("phoneme-prefix")],
+  ];
+  for (const [key, value] of optionalParams) if (value) params.set(key, value);
+  if (personal("anglicize") === "false") params.set("anglicize", "false");
+  if (personal("strip-stress") === "true") params.set("stripStress", "true");
+  const prosody = personal("prosody");
+  if (prosody && prosody !== "neutral") params.set("prosody", prosody);
+  return params;
+}
+
+/**
+ * Play a name's pronunciation: prefer Kokoro (phoneme mode from the IPA) when enabled,
+ * otherwise (or on failure) fall back to the browser Web Speech voice.
+ * Shared by the naming cards and the IPA Studio so playback behaves identically.
+ */
+export async function speakName(opts: SpeakNameOptions): Promise<void> {
+  const { name, ipa, culture, kokoroEnabled } = opts;
+
+  const useKokoro = kokoroEnabled && personal("force-native") !== "true";
 
   if (useKokoro) {
     try {
-      const params = new URLSearchParams({ text: name, ipa });
-      if (culture) params.set("culture", culture);
-
-      // Read client personal overrides from localStorage
-      let personalVoice = "";
-      let personalSpeed = "";
-      let personalModel = "";
-      let personalVolume = "";
-      let personalVoiceMap = "";
-      let personalAnglicize = "";
-      let personalPhonemePrefix = "";
-      let personalStripStress = "";
-      let personalProsody = "";
-      let voiceBlendActive = "";
-      let voiceBlendPrimary = "";
-      let voiceBlendSecondary = "";
-
-      if (typeof window !== "undefined") {
-        personalVoice = localStorage.getItem("onoma-personal-voice") || "";
-        personalSpeed = localStorage.getItem("onoma-personal-speed") || "";
-        personalModel = localStorage.getItem("onoma-personal-model") || "";
-        personalVolume = localStorage.getItem("onoma-personal-volume") || "";
-        personalVoiceMap = localStorage.getItem("onoma-personal-voice-map") || "";
-        personalAnglicize = localStorage.getItem("onoma-personal-anglicize") || "";
-        personalPhonemePrefix = localStorage.getItem("onoma-personal-phoneme-prefix") || "";
-        personalStripStress = localStorage.getItem("onoma-personal-strip-stress") || "";
-        personalProsody = localStorage.getItem("onoma-personal-prosody") || "";
-        voiceBlendActive = localStorage.getItem("onoma-personal-voice-blend-active") || "";
-        voiceBlendPrimary = localStorage.getItem("onoma-personal-voice-blend-primary") || "";
-        voiceBlendSecondary = localStorage.getItem("onoma-personal-voice-blend-secondary") || "";
-      }
-
-      // Determine the resolved default/fallback voice for the user
-      let resolvedUserDefaultVoice = personalVoice;
-      if (voiceBlendActive === "true" && voiceBlendPrimary && voiceBlendSecondary) {
-        resolvedUserDefaultVoice = `${voiceBlendPrimary}+${voiceBlendSecondary}`;
-      }
-
-      // Resolve the actual chosen voice
-      let chosen = "";
-      if (forceDefaultVoice) {
-        chosen = resolvedUserDefaultVoice || defaultVoice || "";
-      } else if (voice) {
-        chosen = voice;
-      } else {
-        // Check per-culture mappings override first
-        let cultureMappedVoice = "";
-        if (culture) {
-          try {
-            const cultureMap = JSON.parse(personalVoiceMap || "{}");
-            const primaryCulture = culture.split("+")[0].toLowerCase().trim();
-            if (cultureMap[primaryCulture]) {
-              cultureMappedVoice = cultureMap[primaryCulture];
-            }
-          } catch {
-            // malformed personal voice map — use default voice selection
-          }
-        }
-        chosen = cultureMappedVoice || resolvedUserDefaultVoice || "";
-      }
-
-      if (chosen) params.set("voice", chosen); // explicit/personal voice -> server skips culture map
-      if (personalSpeed) params.set("speed", personalSpeed); // personal speed override
-      if (personalModel) params.set("model", personalModel); // personal model override
-      if (personalAnglicize === "false") params.set("anglicize", "false");
-      if (personalPhonemePrefix) params.set("phonemePrefix", personalPhonemePrefix);
-      if (personalStripStress === "true") params.set("stripStress", "true");
-      if (personalProsody && personalProsody !== "neutral") params.set("prosody", personalProsody);
+      const params = ttsParams(opts);
 
       const res = await fetch(withBasePath(`/api/onoma/tts?${params.toString()}`));
       if (!res.ok) {
@@ -193,7 +173,7 @@ export async function speakName(opts: {
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
-      if (personalVolume) audio.volume = Number(personalVolume);
+      if (personal("volume")) audio.volume = Number(personal("volume"));
       audio.onended = () => URL.revokeObjectURL(url);
       await audio.play();
       return;
