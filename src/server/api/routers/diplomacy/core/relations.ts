@@ -73,7 +73,7 @@ export const diplomaticCoreRelationsRouter = createTRPCRouter({
               ? JSON.parse(relation.diplomaticChannels)
               : [],
             tradeVolume: relation.tradeVolume || 0,
-            culturalExchange: relation.culturalExchange || "Medium",
+            culturalExchange: relation.culturalExchange,
             recentActivity: relation.recentActivity,
             economicTier: relation.economicTier,
             flagUrl: relation.flagUrl,
