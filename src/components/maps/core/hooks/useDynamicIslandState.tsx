@@ -90,7 +90,6 @@ export function useDynamicIslandState({ onSearchResult, realm }: UseDynamicIslan
     return Object.entries(groups);
   }, [results]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const flatResults = results ?? [];
   const showResults = searchOpen && debouncedQuery.length >= 2;
   const hasResults = grouped.length > 0;
@@ -163,13 +162,11 @@ export function useDynamicIslandState({ onSearchResult, realm }: UseDynamicIslan
 
   return {
     searchOpen,
-    setSearchOpen,
     query,
     setQuery,
     selectedIdx,
     setSelectedIdx,
     isFlashing,
-    setIsFlashing,
     containerRef,
     inputRef,
     user,
@@ -182,7 +179,6 @@ export function useDynamicIslandState({ onSearchResult, realm }: UseDynamicIslan
     messageUnreadCount,
     unreadNotifications,
     totalUnread,
-    results,
     searchLoading,
     grouped,
     flatResults,

@@ -1,12 +1,8 @@
 "use client";
 
 /**
- * TimelineScrubber — read-only historical timeline control.
- *
- * Lets the user drag a slider to a past IxTime; the host (MapContainer)
- * then swaps the political layer for the snapshot at that IxTime via
- * `api.geoCore.getWorldMapAsOf`. "Return to present" restores the live
- * political layer. The slider is hidden when no BorderHistory rows exist.
+ * Read-only historical timeline: dragging to a past IxTime makes the host swap the political
+ * layer for that snapshot ("Return to present" restores it). Hidden when no BorderHistory exists.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -40,7 +36,6 @@ export function TimelineScrubber({ value, onChange, hidden, className }: Timelin
     gcTime: 30 * 60_000,
   });
 
-  // No history rows → don't render anything.
   const hasHistory = !!range && range.minTime !== null;
   const effectivelyHidden = hidden || rangeLoading || !hasHistory;
 
@@ -58,7 +53,7 @@ export function TimelineScrubber({ value, onChange, hidden, className }: Timelin
     setDraft(currentValue);
   }, [currentValue]);
 
-  // Debounce: commit `draft` to parent ~200ms after the user stops dragging.
+  // Commit `draft` to the parent ~200ms after the user stops dragging.
   const commitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (effectivelyHidden) return;
