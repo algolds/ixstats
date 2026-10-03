@@ -1,6 +1,3 @@
-// ─────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────
 
 /** Climate zone distribution entry for a country */
 export interface ClimateZoneEntry {
@@ -73,10 +70,6 @@ interface CrisisRiskFactors {
   pandemic: number;
   famine: number;
 }
-
-// ─────────────────────────────────────────────────────────────────
-// Constants
-// ─────────────────────────────────────────────────────────────────
 
 /** Climate metadata — agriculture factors, temperature, precipitation per Trewartha zone */
 const CLIMATE_METADATA: Record<
@@ -331,10 +324,6 @@ export const ELEVATION_ZONES = [
   },
 ] as const;
 
-// ─────────────────────────────────────────────────────────────────
-// Core Analytics Functions
-// ─────────────────────────────────────────────────────────────────
-
 /**
  * Compute arable land percentage from climate zone distribution.
  * Weighted average of agriculture factors by area share.
@@ -497,10 +486,6 @@ function computeDrainageDensity(totalRiverLengthKm: number, areaKm2: number): nu
   if (areaKm2 <= 0) return 0;
   return Math.round((totalRiverLengthKm / areaKm2) * 1000) / 1000;
 }
-
-// ─────────────────────────────────────────────────────────────────
-// Gameplay Integration Functions
-// ─────────────────────────────────────────────────────────────────
 
 /**
  * Compute economic modifiers from geographic profile.
@@ -787,10 +772,6 @@ export function buildGeoProfile(raw: {
     totalLakeAreaSqKm: raw.totalLakeAreaSqKm,
   };
 }
-
-// ─────────────────────────────────────────────────────────────────
-// Centralized Measurement Math & Distance Formatting (Plan 146)
-// ─────────────────────────────────────────────────────────────────
 
 /**
  * Formats a distance in kilometers into metric, imperial, and nautical strings.

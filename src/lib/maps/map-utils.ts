@@ -7,10 +7,6 @@
 
 import type { Feature, FeatureCollection, Geometry, Position } from "geojson";
 
-// ──────────────────────────────────────────────
-// Antimeridian splitting
-// ──────────────────────────────────────────────
-
 /**
  * Interpolate the latitude where a segment crosses lng=180.
  */

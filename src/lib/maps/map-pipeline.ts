@@ -13,10 +13,6 @@ import type { WorldGenParams } from "~/lib/worldgen/types";
 import type { PngToSvgConfig, PngToSvgResult } from "~/lib/flags/png-to-svg";
 import { getZoneByColor } from "./elevation-config";
 
-// ──────────────────────────────────────────────
-// Types
-// ──────────────────────────────────────────────
-
 type PipelineSource = "svg" | "png" | "procedural";
 
 export interface PipelineInput {
@@ -57,10 +53,6 @@ interface PipelineResult {
     warnings: string[];
   };
 }
-
-// ──────────────────────────────────────────────
-// Pipeline Execution
-// ──────────────────────────────────────────────
 
 /** Tag altitude features whose fill matches an elevation zone; returns how many carry elevation data. */
 function enrichAltitudeFeatures(altitudes: FeatureCollection): number {
@@ -164,7 +156,6 @@ export async function runMapPipeline(
   };
 
   try {
-    // ────── Stage 1: Convert to intermediate format ──────
     if (isColourAnalysis(input)) return await detectPngColours(input, log, report);
 
     let detectedColors: PipelineResult["detectedColors"];
@@ -238,7 +229,6 @@ export async function runMapPipeline(
       );
     }
 
-    // ────── Stage 2: Enrich altitude features with elevation metadata ──────
     report("enrichment", 60, "Enriching altitude features with elevation data...");
 
     if (layers.altitudes) {
@@ -250,7 +240,6 @@ export async function runMapPipeline(
       );
     }
 
-    // ────── Stage 3: Validate ──────
     report("validation", 80, "Validating layers...");
 
     warnings.push(...invalidGeometryWarnings(layers));

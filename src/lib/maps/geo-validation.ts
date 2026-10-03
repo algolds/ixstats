@@ -10,10 +10,6 @@ import type { PrismaClient } from "@prisma/client";
 import type { Geometry, Polygon, MultiPolygon, Position } from "geojson";
 import { TRPCError } from "@trpc/server";
 
-// ──────────────────────────────────────────────
-// Coordinate Validation
-// ──────────────────────────────────────────────
-
 /**
  * Validate that coordinates are within valid WGS84 bounds.
  * Throws TRPCError BAD_REQUEST if invalid.
@@ -44,10 +40,6 @@ export function validateGeometryBounds(geometry: Geometry): void {
   }
 }
 
-// ──────────────────────────────────────────────
-// PostGIS Availability
-// ──────────────────────────────────────────────
-
 let _postgisAvailable: boolean | null = null;
 
 /**
@@ -71,10 +63,6 @@ export async function isPostGISAvailable(db: PrismaClient): Promise<boolean> {
 export function resetPostGISCache(): void {
   _postgisAvailable = null;
 }
-
-// ──────────────────────────────────────────────
-// Spatial Containment Validation
-// ──────────────────────────────────────────────
 
 /**
  * Validate a point is within a country's borders using PostGIS.
@@ -269,10 +257,6 @@ export async function clipAndValidatePolygon(
   }
 }
 
-// ──────────────────────────────────────────────
-// Geometry Validity
-// ──────────────────────────────────────────────
-
 /**
  * Check if a geometry is valid using PostGIS ST_IsValid.
  * Throws TRPCError BAD_REQUEST with the ST_IsValidReason if invalid.
@@ -307,10 +291,6 @@ export async function validateGeometryValid(
     });
   }
 }
-
-// ──────────────────────────────────────────────
-// Collision Detection
-// ──────────────────────────────────────────────
 
 /**
  * Check if a point feature is too close to an existing feature of the same type.
@@ -376,10 +356,6 @@ export async function checkPointCollision(
     console.warn(`[geo-validation] Collision check failed (non-blocking):`, err);
   }
 }
-
-// ──────────────────────────────────────────────
-// Name Uniqueness
-// ──────────────────────────────────────────────
 
 /**
  * Check for duplicate feature names within a country.
@@ -463,10 +439,6 @@ export async function checkNameUniqueness(
   }
 }
 
-// ──────────────────────────────────────────────
-// Shared Geometry Helpers
-// ──────────────────────────────────────────────
-
 /**
  * Recursively extract all [lng, lat] positions from a GeoJSON geometry.
  */
@@ -485,10 +457,6 @@ function extractAllPositions(geometry: Geometry): [number, number][] {
   }
   return positions;
 }
-
-// ──────────────────────────────────────────────
-// Geometry Structure Validation (Pure — no DB)
-// ──────────────────────────────────────────────
 
 interface GeometryValidationError {
   type: string;

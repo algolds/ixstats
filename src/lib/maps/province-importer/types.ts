@@ -6,10 +6,6 @@
 
 import type { Position, Polygon, MultiPolygon } from "geojson";
 
-// ──────────────────────────────────────────────
-// Province Feature Types
-// ──────────────────────────────────────────────
-
 /** A parsed province from an SVG or PNG input. */
 export interface ProvinceFeature {
   /** Unique identifier from SVG (element ID or generated) */
@@ -31,10 +27,6 @@ export interface ProvinceFeature {
   /** Whether this province is included in the import */
   included: boolean;
 }
-
-// ──────────────────────────────────────────────
-// Parse Configuration & Results
-// ──────────────────────────────────────────────
 
 export interface ProvinceParseConfig {
   /** Number of segments for bezier flattening (default: 8) */
@@ -63,10 +55,6 @@ export interface ProvinceParseResult {
   /** Names of layers/groups found in the SVG */
   layersFound: string[];
 }
-
-// ──────────────────────────────────────────────
-// Affine Transform & Alignment
-// ──────────────────────────────────────────────
 
 /**
  * 2D affine transformation matrix (6 parameters).
@@ -113,10 +101,6 @@ export interface ManualTransform {
   scale: number;
 }
 
-// ──────────────────────────────────────────────
-// Topology Validation
-// ──────────────────────────────────────────────
-
 export interface GapReport {
   /** GeoJSON polygon of the gap area */
   geometry: Polygon;
@@ -157,9 +141,5 @@ export interface TopologyReport {
     issues: string[];
   }>;
 }
-
-// ──────────────────────────────────────────────
-// Import Session State
-// ──────────────────────────────────────────────
 
 export type ImportStep = "upload" | "names" | "align" | "snap" | "validate" | "commit";

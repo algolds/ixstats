@@ -27,10 +27,6 @@ import {
 } from "@turf/helpers";
 import type { Feature, FeatureCollection, Point, Polygon, MultiPolygon, BBox } from "geojson";
 
-// ──────────────────────────────────────────────────────────────
-// Types
-// ──────────────────────────────────────────────────────────────
-
 interface ProvinceGeneratorOpts {
   /**
    * Integer seed for reproducible point placement.
@@ -38,10 +34,6 @@ interface ProvinceGeneratorOpts {
    */
   seed?: number;
 }
-
-// ──────────────────────────────────────────────────────────────
-// Tiny seeded pseudo-random (mulberry32 — no external dep)
-// ──────────────────────────────────────────────────────────────
 
 function mulberry32(seed: number): () => number {
   let s = seed >>> 0;
@@ -53,10 +45,6 @@ function mulberry32(seed: number): () => number {
     return ((z ^ (z >>> 14)) >>> 0) / 0x100000000;
   };
 }
-
-// ──────────────────────────────────────────────────────────────
-// Helpers
-// ──────────────────────────────────────────────────────────────
 
 /**
  * Scatter `count` points inside `bounds` using the given PRNG.
@@ -79,10 +67,6 @@ function toFeature(geom: Polygon | MultiPolygon): Feature<Polygon> | Feature<Mul
   }
   return turfMultiPolygon(geom.coordinates) as Feature<MultiPolygon>;
 }
-
-// ──────────────────────────────────────────────────────────────
-// Main export
-// ──────────────────────────────────────────────────────────────
 
 /**
  * Generate `count` province polygons by subdividing `country`.
@@ -141,10 +125,6 @@ export function generateProvinces(
 
   return results;
 }
-
-// ──────────────────────────────────────────────────────────────
-// Utilities exported for the prototype UI
-// ──────────────────────────────────────────────────────────────
 
 /**
  * Compute total area (m²) across an array of province geometries.

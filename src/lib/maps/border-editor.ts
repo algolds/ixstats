@@ -7,10 +7,6 @@
 
 import type { Position, Polygon, MultiPolygon } from "geojson";
 
-// ──────────────────────────────────────────────
-// Types
-// ──────────────────────────────────────────────
-
 export interface VertexRef {
   ringIndex: number;
   vertexIndex: number;
@@ -28,10 +24,6 @@ interface NearestResult<T> {
   ref: T;
   distance: number; // degrees (approximate)
 }
-
-// ──────────────────────────────────────────────
-// Ring / Coordinate Helpers
-// ──────────────────────────────────────────────
 
 /** Get all rings from a Polygon or MultiPolygon as flat arrays. */
 export function getAllRings(geometry: Polygon | MultiPolygon): Position[][] {
@@ -65,10 +57,6 @@ export function rebuildGeometry(
   }
   return { type: "MultiPolygon", coordinates: result };
 }
-
-// ──────────────────────────────────────────────
-// Vertex Operations
-// ──────────────────────────────────────────────
 
 /** Get all vertices from a geometry (excluding ring-closing duplicates). */
 export function getVertices(geometry: Polygon | MultiPolygon): VertexRef[] {
@@ -168,10 +156,6 @@ export function removeVertex(
   return rebuildGeometry(geometry, rings);
 }
 
-// ──────────────────────────────────────────────
-// Nearest Finding
-// ──────────────────────────────────────────────
-
 /** Find the nearest vertex to a point. */
 export function findNearestVertex(
   geometry: Polygon | MultiPolygon,
@@ -217,13 +201,6 @@ export function findNearestEdge(
   }
   return best;
 }
-
-// ──────────────────────────────────────────────
-// Shared Border Detection
-// ──────────────────────────────────────────────
-// ──────────────────────────────────────────────
-// Geometry Metrics
-// ──────────────────────────────────────────────
 
 /** Calculate approximate area of a geometry in square kilometers. */
 export function calculateArea(geometry: Polygon | MultiPolygon): number {
@@ -309,15 +286,7 @@ export function validateGeometry(geometry: Polygon | MultiPolygon): {
   return { valid: errors.length === 0, errors };
 }
 
-// ──────────────────────────────────────────────
-// Undo/Redo Stack
-// ──────────────────────────────────────────────
-
 export * from "./border-undo";
-
-// ──────────────────────────────────────────────
-// Split / Merge Operations
-// ──────────────────────────────────────────────
 
 /**
  * Split a polygon along a line defined by a series of points.
@@ -433,10 +402,6 @@ export function mergeGeometries(
   };
 }
 
-// ──────────────────────────────────────────────
-// Internal Helpers
-// ──────────────────────────────────────────────
-
 function isRingClosed(ring: Position[]): boolean {
   if (ring.length < 2) return false;
   return coordsEqual(ring[0]!, ring[ring.length - 1]!);
@@ -513,10 +478,6 @@ function getSplitLineSegment(splitLine: Position[], tStart: number, tEnd: number
   return points;
 }
 
-// ──────────────────────────────────────────────
-// Point-in-Polygon & Clamping
-// ──────────────────────────────────────────────
-
 /** Ray-casting point-in-polygon test against a single polygon (outer ring + holes). */
 function pointInPolygonRing(point: Position, rings: Position[][]): boolean {
   const [x, y] = point;
@@ -583,10 +544,6 @@ function rayCast(x: number, y: number, ring: Position[]): boolean {
   return inside;
 }
 
-// ──────────────────────────────────────────────
-// Altitude Snap
-// ──────────────────────────────────────────────
-
 export interface AltitudeSnapResult {
   position: Position;
   zoneId: string;
@@ -598,9 +555,6 @@ export interface AltitudeSnapResult {
  * Searches all edges of altitude zone polygons for the closest point
  * to the given position.
  */
-// ──────────────────────────────────────────────
-// Simplification (Douglas-Peucker)
-// ──────────────────────────────────────────────
 
 /** Douglas-Peucker line simplification on a single ring. */
 function douglasPeucker(ring: Position[], tolerance: number): Position[] {
@@ -780,10 +734,6 @@ export function snapPointToGeometries(
 
   return bestEdgeDist <= tolerance ? bestEdgeProj : point;
 }
-
-// ──────────────────────────────────────────────
-// Neighbor-aware border snapping
-// ──────────────────────────────────────────────
 
 /**
  * Snap a region's geometry to neighboring region borders and the country border,
