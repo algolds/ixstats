@@ -756,8 +756,6 @@ export function ArticleRenderer({
             <ChevronRight className="h-3 w-3" />
           </button>
           <ArticleCompanionHUD
-            title={title}
-            slug={slug}
             contentHtml={contentHtml}
             lastModified={lastModified}
             authorInfo={authorInfo}
@@ -772,8 +770,6 @@ export function ArticleRenderer({
             onOpenHistory={() => setActiveModal("history")}
             onOpenBacklinks={() => setActiveModal("backlinks")}
             narrator={narrator}
-            isAuthenticated={isAuthenticated}
-            isCollapsed={false}
             readOnly={readOnly}
           />
           {toc.length > 0 && (
