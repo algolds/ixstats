@@ -404,21 +404,21 @@ export function VaultUserDirectory() {
                   className="cursor-pointer gap-2 py-2"
                 >
                   <ArrowUpDown className="text-yellow h-3.5 w-3.5" />
-                  <span>Adjust Credits</span>
+                  <span>Adjust credits</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => handleOpenPack(user)}
                   className="cursor-pointer gap-2 py-2"
                 >
                   <Gift className="text-blue h-3.5 w-3.5" />
-                  <span>Award Card Pack</span>
+                  <span>Award card pack</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => handleOpenCosmetics(user)}
                   className="cursor-pointer gap-2 py-2"
                 >
                   <Gem className="text-purple h-3.5 w-3.5" />
-                  <span>Manage Cosmetics</span>
+                  <span>Manage cosmetics</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -436,7 +436,7 @@ export function VaultUserDirectory() {
                   className="cursor-pointer gap-2 py-2"
                 >
                   <Flame className="text-orange h-3.5 w-3.5" />
-                  <span>Adjust Streak</span>
+                  <span>Adjust streak</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {
@@ -452,7 +452,7 @@ export function VaultUserDirectory() {
                   className="cursor-pointer gap-2 py-2"
                 >
                   <History className="text-label-secondary h-3.5 w-3.5" />
-                  <span>Transaction History</span>
+                  <span>Transaction history</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -469,7 +469,7 @@ export function VaultUserDirectory() {
       <FacetDataTable
         data={vaultData?.users || []}
         columns={columns}
-        title="User Vault Directory"
+        title="User Vault directory"
         description="Search, inspect, and adjust user balances, level progression, and card inventory."
         searchable
         searchPlaceholder="Search user ID, clerk ID, usernames..."
@@ -491,13 +491,13 @@ export function VaultUserDirectory() {
       <Dialog open={isAdjustOpen} onOpenChange={setIsAdjustOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">Adjust Credits Balance</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">Adjust credits balance</DialogTitle>
           </DialogHeader>
 
           {selectedUser && (
             <form onSubmit={handleAdjustSubmit} className="space-y-4 py-2">
               <div className="bg-fill-4 border-separator rounded-control border p-3">
-                <div className="text-label-secondary text-footnote">Target User</div>
+                <div className="text-label-secondary text-footnote">Target user</div>
                 <div className="mt-0.5 flex items-center gap-2">
                   {selectedUser.country?.flag && (
                     <img
@@ -520,7 +520,7 @@ export function VaultUserDirectory() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="adjust-amount">Adjustment Amount</Label>
+                  <Label htmlFor="adjust-amount">Adjustment amount</Label>
                   <Input
                     id="adjust-amount"
                     type="number"
@@ -537,24 +537,24 @@ export function VaultUserDirectory() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="adjust-type">Transaction Type</Label>
+                  <Label htmlFor="adjust-type">Transaction type</Label>
                   <Select value={adjustType} onValueChange={setAdjustType}>
                     <SelectTrigger id="adjust-type">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ADMIN_ADJUSTMENT">Admin Adjustment</SelectItem>
-                      <SelectItem value="EARN_ACTIVE">Earn Active Gameplay</SelectItem>
-                      <SelectItem value="EARN_SOCIAL">Earn Social Engagement</SelectItem>
-                      <SelectItem value="SPEND_MARKET">Spend Marketplace</SelectItem>
-                      <SelectItem value="SPEND_BOOST">Spend Deck Boost</SelectItem>
+                      <SelectItem value="ADMIN_ADJUSTMENT">Admin adjustment</SelectItem>
+                      <SelectItem value="EARN_ACTIVE">Earn active gameplay</SelectItem>
+                      <SelectItem value="EARN_SOCIAL">Earn social engagement</SelectItem>
+                      <SelectItem value="SPEND_MARKET">Spend marketplace</SelectItem>
+                      <SelectItem value="SPEND_BOOST">Spend deck boost</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="adjust-source">System Source</Label>
+                <Label htmlFor="adjust-source">System source</Label>
                 <Input
                   id="adjust-source"
                   type="text"
@@ -565,7 +565,7 @@ export function VaultUserDirectory() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="adjust-reason">Audit Reason</Label>
+                <Label htmlFor="adjust-reason">Audit reason</Label>
                 <Input
                   id="adjust-reason"
                   type="text"
@@ -578,7 +578,7 @@ export function VaultUserDirectory() {
 
               <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-3">
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-label text-caption">Send Alert Notification</span>
+                  <span className="text-label text-caption">Send alert notification</span>
                   <span className="text-label-secondary text-footnote">
                     Send notification directly to user profile feed.
                   </span>
@@ -610,7 +610,7 @@ export function VaultUserDirectory() {
       <Dialog open={isStreakOpen} onOpenChange={setIsStreakOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">Adjust Login Streak</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">Adjust login streak</DialogTitle>
           </DialogHeader>
 
           {selectedUser && (
@@ -625,7 +625,7 @@ export function VaultUserDirectory() {
               className="space-y-4 py-2"
             >
               <div className="bg-fill-4 border-separator rounded-control border p-3">
-                <div className="text-label-secondary text-footnote">Target User</div>
+                <div className="text-label-secondary text-footnote">Target user</div>
                 <div className="mt-0.5 flex items-center gap-2">
                   {selectedUser.country?.flag && (
                     <img
@@ -667,7 +667,7 @@ export function VaultUserDirectory() {
       <Sheet open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
         <SheetContent size="wide" className="overflow-y-auto">
           <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">Transaction History</SheetTitle>
+            <SheetTitle className="flex items-center gap-2">Transaction history</SheetTitle>
           </SheetHeader>
 
           <div className="py-2">
@@ -726,13 +726,13 @@ export function VaultUserDirectory() {
       <Dialog open={isPackOpen} onOpenChange={setIsPackOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">Award Card Pack</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">Award card pack</DialogTitle>
           </DialogHeader>
 
           {selectedUser && (
             <form onSubmit={handlePackSubmit} className="space-y-4 py-2">
               <div className="bg-fill-4 border-separator rounded-control border p-3">
-                <div className="text-label-secondary text-footnote">Recipient User</div>
+                <div className="text-label-secondary text-footnote">Recipient user</div>
                 <div className="mt-0.5 flex items-center gap-2">
                   {selectedUser.country?.flag && (
                     <img
@@ -748,7 +748,7 @@ export function VaultUserDirectory() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="pack-select">Select Card Pack Template</Label>
+                <Label htmlFor="pack-select">Select card pack template</Label>
                 <Select value={selectedPackId} onValueChange={setSelectedPackId}>
                   <SelectTrigger id="pack-select">
                     <SelectValue placeholder="Choose a pack configurations..." />
@@ -770,7 +770,7 @@ export function VaultUserDirectory() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="pack-method">Acquired Method</Label>
+                <Label htmlFor="pack-method">Acquired method</Label>
                 <Input
                   id="pack-method"
                   type="text"
@@ -782,7 +782,7 @@ export function VaultUserDirectory() {
 
               <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-3">
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-label text-caption">Send Alert Notification</span>
+                  <span className="text-label text-caption">Send alert notification</span>
                   <span className="text-label-secondary text-footnote">
                     Notify user they received a new pack configuration.
                   </span>
@@ -816,14 +816,14 @@ export function VaultUserDirectory() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Gem className="text-purple h-5 w-5" />
-              Manage Cosmetics & Upgrades
+              Manage cosmetics & upgrades
             </DialogTitle>
           </DialogHeader>
 
           {selectedUser && (
             <div className="space-y-4 py-2">
               <div className="bg-fill-4 border-separator rounded-control border p-3">
-                <div className="text-label-secondary text-footnote">Target User</div>
+                <div className="text-label-secondary text-footnote">Target user</div>
                 <div className="mt-0.5 flex items-center gap-2">
                   {selectedUser.country?.flag && (
                     <img

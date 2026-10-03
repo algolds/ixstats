@@ -1,12 +1,12 @@
 "use client";
 export const dynamic = "force-dynamic";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { api } from "~/trpc/react";
 import Link from "next/link";
-import { Globe as Globe2, SystemRestart as Loader2, EditPencil, Palette } from "iconoir-react";
+import { SystemRestart as Loader2, EditPencil, Palette } from "iconoir-react";
+import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import nextDynamic from "next/dynamic";
 
@@ -33,8 +33,8 @@ type TabId = "pipeline" | "edits" | "settings";
 
 const TABS: { value: TabId; label: string }[] = [
   { value: "settings", label: "Settings" },
-  { value: "pipeline", label: "Import Pipeline" },
-  { value: "edits", label: "Edit Queue" },
+  { value: "pipeline", label: "Import pipeline" },
+  { value: "edits", label: "Edit queue" },
 ];
 
 interface AdminMapsPageProps {
@@ -52,31 +52,31 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Globe2}
-        title="Atlas World Map"
-        description="Manage the IxEarth map, assign countries, coordinate PostGIS layers, and review vector edits."
-      >
-        <Link
-          href="/admin/maps/editor"
-          className="bg-tint text-on-tint hover:bg-tint-hover rounded-control text-caption flex items-center gap-2 px-3 py-2 transition-[background-color,transform] active:scale-[0.98]"
-        >
-          <EditPencil className="h-3.5 w-3.5" />
-          Open World Editor
-        </Link>
-        <Link
-          href="/admin/maps/style-editor"
-          className="border-separator text-label-secondary hover:bg-fill-4 hover:text-label rounded-control text-caption flex items-center gap-2 border px-3 py-2 transition-[background-color,color,transform] active:scale-[0.98]"
-        >
-          <Palette className="h-3.5 w-3.5" />
-          Style Editor
-        </Link>
-      </AdminHeader>
+      <PageHeader
+        title="Atlas world map"
+        subtitle="Manage the IxEarth map, assign countries, coordinate PostGIS layers and review vector edits."
+        actions={
+          <>
+            <Button asChild size="sm">
+              <Link href="/admin/maps/editor">
+                <EditPencil />
+                Open world editor
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/admin/maps/style-editor">
+                <Palette />
+                Style editor
+              </Link>
+            </Button>
+          </>
+        }
+      />
 
       {/* Summary stats */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
         <Card className="p-4">
-          <Eyebrow className="block">Total Features</Eyebrow>
+          <span className="text-stat-label text-label-secondary block">Total features</span>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
@@ -87,7 +87,7 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
         </Card>
 
         <Card className="p-4">
-          <Eyebrow className="block">Political Regions</Eyebrow>
+          <span className="text-stat-label text-label-secondary block">Political regions</span>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
@@ -98,7 +98,7 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
         </Card>
 
         <Card className="p-4">
-          <Eyebrow className="block">Linked Countries</Eyebrow>
+          <span className="text-stat-label text-label-secondary block">Linked countries</span>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
@@ -109,7 +109,7 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
         </Card>
 
         <Card className="p-4">
-          <Eyebrow className="block">Linkage Rate</Eyebrow>
+          <span className="text-stat-label text-label-secondary block">Linkage rate</span>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (

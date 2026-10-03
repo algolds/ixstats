@@ -272,7 +272,7 @@ const DOMAINS = [
 
 const PALETTES = [
   { label: "Default (Foreground)", value: undefined },
-  { label: "Onoma Blue", value: "#0091ff" },
+  { label: "Onoma blue", value: "#0091ff" },
   { label: "Emerald", value: "#10b981" },
   { label: "Purple", value: "#a855f7" },
   { label: "Amber", value: "#f59e0b" },
@@ -325,7 +325,7 @@ export default function OnomaGlyphsDevPage() {
                 <span>Labs / Onoma</span>
               </Link>
               <span>/</span>
-              <span className="text-label font-semibold">Glyph Catalog</span>
+              <span className="text-label font-semibold">Glyph catalog</span>
             </div>
 
             <div className="flex items-center gap-3">
@@ -350,10 +350,10 @@ export default function OnomaGlyphsDevPage() {
           <div className="flex items-center gap-2 self-start md:self-auto">
             <Link
               href="/labs/onoma"
-              className="border-separator bg-fill-3 hover:bg-fill-3 rounded-row text-footnote inline-flex items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
+              className="border-separator bg-fill-3 hover:bg-fill-3 rounded-row text-footnote inline-flex items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity]"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
-              <span>Back to Onoma Workspace</span>
+              <span>Back to Onoma workspace</span>
             </Link>
           </div>
         </div>
@@ -363,7 +363,7 @@ export default function OnomaGlyphsDevPage() {
           <div className="border-separator flex items-center justify-between gap-2 border-b pb-3">
             <div className="text-label-secondary text-eyebrow flex items-center gap-2 font-mono">
               <ControlSlider className="text-tint h-4 w-4" />
-              <span>Live Testing Controls</span>
+              <span>Live testing controls</span>
             </div>
             <span className="text-label-secondary text-footnote font-mono">
               Showing {filteredGlyphs.length} of {GLYPH_METADATA.length} Glyphs
@@ -462,7 +462,7 @@ export default function OnomaGlyphsDevPage() {
 
             {/* Accent Color Palette */}
             <div className="space-y-2">
-              <label className="text-label-secondary text-subhead font-mono">Accent Color</label>
+              <label className="text-label-secondary text-subhead font-mono">Accent color</label>
               <ToggleGroup
                 type="single"
                 size="sm"
@@ -574,7 +574,7 @@ export default function OnomaGlyphsDevPage() {
           <div className="border-separator border-b pb-3">
             <h2 className="text-title-3 flex items-center gap-2 font-mono font-bold">
               <Component className="text-tint h-4 w-4" />
-              <span>Special Linguistic Notation Variants</span>
+              <span>Special linguistic notation variants</span>
             </h2>
             <p className="text-label-secondary text-footnote">
               Composed transformations (sound shifts) and framed brand/entity objects.
@@ -652,7 +652,7 @@ export default function OnomaGlyphsDevPage() {
           <div className="border-separator border-b pb-3">
             <h2 className="text-title-3 flex items-center gap-2 font-mono font-bold">
               <ViewGrid className="text-tint h-4 w-4" />
-              <span>Optical Scale Verification Matrix</span>
+              <span>Optical scale verification matrix</span>
             </h2>
             <p className="text-label-secondary text-footnote">
               Verify stroke hierarchy and optical balance at Micro (16px), Standard (24px), and
@@ -663,7 +663,7 @@ export default function OnomaGlyphsDevPage() {
           <Table className="font-mono">
             <TableHeader>
               <TableRow>
-                <TableHead className="pr-4">Glyph Name</TableHead>
+                <TableHead className="pr-4">Glyph name</TableHead>
                 <TableHead className="px-4 text-center">Micro (16px)</TableHead>
                 <TableHead className="px-4 text-center">Standard (24px)</TableHead>
                 <TableHead className="px-4 text-center">Display (48px)</TableHead>

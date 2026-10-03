@@ -96,7 +96,7 @@ export function OnomaFooter({
                   scrollToTop();
                 }}
                 className="group/brand h-auto gap-2 px-1 py-1 hover:bg-transparent"
-                title="Onoma — Overview"
+                title="Onoma overview"
                 aria-label="Onoma overview"
               >
                 <OnomaBrandLogo

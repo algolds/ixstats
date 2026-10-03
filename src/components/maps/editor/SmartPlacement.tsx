@@ -169,13 +169,13 @@ export function SmartPlacement(props: SmartPlacementProps) {
       <div className="text-footnote grid grid-cols-2 gap-2">
         <div className="bg-fill-3 rounded-control-sm flex items-center justify-between px-2 py-1">
           <span className="text-label-secondary flex items-center gap-1">
-            <Waves className="text-green h-2.5 w-2.5" /> Agri Yield
+            <Waves className="text-green h-2.5 w-2.5" /> Agri yield
           </span>
           <span className="font-semibold tabular-nums">{metrics.agriScore}%</span>
         </div>
         <div className="bg-fill-3 rounded-control-sm flex items-center justify-between px-2 py-1">
           <span className="text-label-secondary flex items-center gap-1">
-            <Anchor className="text-blue h-2.5 w-2.5" /> Trade Flow
+            <Anchor className="text-blue h-2.5 w-2.5" /> Trade flow
           </span>
           <span className="font-semibold tabular-nums">{metrics.tradeScore}%</span>
         </div>
@@ -187,7 +187,7 @@ export function SmartPlacement(props: SmartPlacementProps) {
         </div>
         <div className="bg-fill-3 rounded-control-sm flex items-center justify-between px-2 py-1">
           <span className="text-label-secondary flex items-center gap-1">
-            <Droplets className="text-cyan h-2.5 w-2.5" /> Water Table
+            <Droplets className="text-cyan h-2.5 w-2.5" /> Water table
           </span>
           <span className="font-semibold tabular-nums">{metrics.waterScore}%</span>
         </div>

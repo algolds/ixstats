@@ -83,11 +83,11 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Card Sources</SelectItem>
-          <SelectItem value="LORE_BATCH">Wiki Lore Cards</SelectItem>
+          <SelectItem value="all">All card sources</SelectItem>
+          <SelectItem value="LORE_BATCH">Wiki lore cards</SelectItem>
           <SelectItem value="NS_IMPORT">NS Official Imports</SelectItem>
           <SelectItem value="USER_CUSTOM">User Imported / Custom</SelectItem>
-          <SelectItem value="COMMONS_IMPORT">Commons Flag Imports</SelectItem>
+          <SelectItem value="COMMONS_IMPORT">Commons flag imports</SelectItem>
         </SelectContent>
       </Select>
 
@@ -104,10 +104,10 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Lore Categories</SelectItem>
+            <SelectItem value="all">All lore categories</SelectItem>
             {Object.values(LoreCategory).map((cat) => (
               <SelectItem key={cat} value={cat}>
-                {cat} — {getCategoryLabel(cat)}
+                {cat}: {getCategoryLabel(cat)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -127,8 +127,8 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Nation States</SelectItem>
-            <SelectItem value="active_only">Active Nations Only</SelectItem>
+            <SelectItem value="all">All nation states</SelectItem>
+            <SelectItem value="active_only">Active nations only</SelectItem>
             <SelectItem value="cte_only">CTE / Defunct Only</SelectItem>
           </SelectContent>
         </Select>
@@ -146,8 +146,8 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Visibility</SelectItem>
-          <SelectItem value="visible">Visible Cards</SelectItem>
+          <SelectItem value="all">All visibility</SelectItem>
+          <SelectItem value="visible">Visible cards</SelectItem>
           <SelectItem value="takedown">Hidden / Retired</SelectItem>
         </SelectContent>
       </Select>
@@ -165,7 +165,7 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Seasons</SelectItem>
+          <SelectItem value="all">All seasons</SelectItem>
           <SelectItem value="1">Season 1</SelectItem>
           <SelectItem value="2">Season 2</SelectItem>
           <SelectItem value="3">Season 3</SelectItem>
@@ -184,11 +184,11 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Rarities</SelectItem>
+          <SelectItem value="all">All rarities</SelectItem>
           <SelectItem value="COMMON">Common</SelectItem>
           <SelectItem value="UNCOMMON">Uncommon</SelectItem>
           <SelectItem value="RARE">Rare</SelectItem>
-          <SelectItem value="ULTRA_RARE">Ultra Rare</SelectItem>
+          <SelectItem value="ULTRA_RARE">Ultra rare</SelectItem>
           <SelectItem value="EPIC">Epic</SelectItem>
           <SelectItem value="LEGENDARY">Legendary</SelectItem>
         </SelectContent>

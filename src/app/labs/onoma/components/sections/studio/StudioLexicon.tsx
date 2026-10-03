@@ -144,7 +144,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
       <div className="space-y-4 lg:col-span-4">
         <Card variant="inset" padding="none" className="space-y-4 p-4">
           <div className="space-y-1">
-            <h3 className="text-label text-body font-semibold">Lexicon Terms</h3>
+            <h3 className="text-label text-body font-semibold">Lexicon terms</h3>
             <p className="text-label-secondary text-footnote">
               Stashed names and defined vocabulary.
             </p>
@@ -328,7 +328,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                 className="text-label-secondary hover:text-red hover:bg-red/10"
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                <span>Delete Word</span>
+                <span>Delete word</span>
               </Button>
             </div>
 
@@ -336,7 +336,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
             {editingPron && (
               <div className="border-separator animate-in slide-in-from-top-1 bg-tint/5 rounded-row relative z-10 w-full space-y-2 border p-3 text-left duration-200">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-label text-subhead">Customize Pronunciation</h4>
+                  <h4 className="text-label text-subhead">Customize pronunciation</h4>
                   <Button
                     variant="ghost"
                     size="icon-sm"
@@ -442,7 +442,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
 
             {/* Transcriptions Grid */}
             <div className="space-y-2">
-              <h4 className="text-label-secondary text-subhead">Orthographic Transcriptions</h4>
+              <h4 className="text-label-secondary text-subhead">Orthographic transcriptions</h4>
               <div className="grid gap-3 sm:grid-cols-3">
                 <Button
                   variant="outline"
@@ -536,9 +536,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                   <h4 className="text-label-secondary text-subhead">Noun Declension (Cases)</h4>
                   <span className="text-label-secondary text-caption font-semibold">
                     Gender:{" "}
-                    <span className="text-tint font-semibold uppercase">
-                      {selectedTermMorphology.gender}
-                    </span>
+                    <span className="text-tint font-semibold">{selectedTermMorphology.gender}</span>
                   </span>
                 </div>
 

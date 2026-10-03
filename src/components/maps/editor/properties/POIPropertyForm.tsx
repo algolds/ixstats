@@ -196,7 +196,7 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
             </div>
             <div>
               <label className="text-label-secondary text-caption mb-1 block text-left">
-                Era Label
+                Era label
               </label>
               <input
                 type="text"
@@ -209,7 +209,7 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
           </div>
           <div>
             <label className="text-label-secondary text-caption mb-1 block text-left">
-              Importance Level
+              Importance level
             </label>
             <OptionSelect
               aria-label="Importance level"

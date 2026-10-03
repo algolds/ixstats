@@ -123,7 +123,7 @@ export function VaultPurchaseLogs() {
     <FacetDataTable
       data={(logs as unknown as PurchaseLog[]) || []}
       columns={columns}
-      title="Store Purchase Ledger"
+      title="Store purchase ledger"
       description="Review detailed audits of all user credit expenditures on cosmetics and upgrades."
       searchable
       searchPlaceholder="Filter by user or item..."

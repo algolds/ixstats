@@ -1,5 +1,5 @@
 /**
- * Deterministic distance-based hit-testing for the map editor (Plan 120 P1).
+ * Deterministic distance-based hit-testing for the map editor.
  *
  * Replaces the previous fixed ±6px bbox + "points-first" stable sort with a
  * predictable, Photoshop-like model:
@@ -140,10 +140,10 @@ export function hitTestFeatures(
 
   const p = Array.isArray(point) ? { x: point[0], y: point[1] } : point;
 
-  // ── Phase 1: exact-point query (what is rendered under the cursor) ──
+  // ── Exact-point query (what is rendered under the cursor) ──
   // Small bbox tolerance for polygon/gap layers so a near-edge cursor still
   // resolves the fill; point/label layers query the exact pixel and rely on
-  // Phase 2 grab-assist for near misses.
+  // Grab-assist for near misses.
   const polyQuery =
     polygonTolerance > 0 || gapTolerance > 0
       ? makeBbox(p, Math.max(polygonTolerance, gapTolerance))
@@ -189,7 +189,7 @@ export function hitTestFeatures(
     return { hit: bestExactPoly, locked: !!lockedHit };
   }
 
-  // ── Phase 2: grab-assist — nearest point within tolerance (empty space only) ──
+  // ── Grab-assist — nearest point within tolerance (empty space only) ──
   const grabLayers = pointLayers.filter((id) => !opts.excludeLayers?.includes(id));
   const grabHits: HitResult[] = [];
   for (const layerId of grabLayers) {

@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
@@ -50,10 +50,9 @@ export function BlurbsPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={MessageCircle}
-        title="Blurbs & Community Prompts"
-        description="Oversee weekly Topic Tuesday prompts, publish interactive discussion topics, and moderate community responses."
+      <PageHeader
+        title="Blurbs and community prompts"
+        subtitle="Weekly Topic Tuesday prompts, discussion topics and response moderation."
       />
 
       <BlurbStatsSummary />
@@ -62,17 +61,17 @@ export function BlurbsPanel() {
         <TabsList className="bg-fill-3 mb-4 flex w-full max-w-md justify-start gap-1 rounded-full p-1">
           <TabsTrigger
             value="prompts"
-            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
             <FileText className="text-teal h-4 w-4" />
-            Prompt Catalog
+            Prompt catalog
           </TabsTrigger>
           <TabsTrigger
             value="moderation"
-            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
             <MessageCircle className="text-purple h-4 w-4" />
-            Response Moderation
+            Response moderation
           </TabsTrigger>
         </TabsList>
 
@@ -102,7 +101,7 @@ function BlurbStatsSummary() {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       <Card className="p-4">
-        <p className="text-label-secondary text-eyebrow">Total Responses</p>
+        <p className="text-label-secondary text-eyebrow">Total responses</p>
         {countLoading ? (
           <Skeleton className="mt-1 h-7 w-16" />
         ) : (
@@ -113,7 +112,7 @@ function BlurbStatsSummary() {
       </Card>
 
       <Card className="p-4">
-        <p className="text-label-secondary text-eyebrow">Active Prompts</p>
+        <p className="text-label-secondary text-eyebrow">Active prompts</p>
         {activeLoading ? (
           <Skeleton className="mt-1 h-7 w-16" />
         ) : (
@@ -122,7 +121,7 @@ function BlurbStatsSummary() {
       </Card>
 
       <Card className="p-4">
-        <p className="text-label-secondary text-eyebrow">All Prompts Catalog</p>
+        <p className="text-label-secondary text-eyebrow">All prompts catalog</p>
         {allLoading ? (
           <Skeleton className="mt-1 h-7 w-16" />
         ) : (
@@ -240,12 +239,12 @@ function PromptManagementSection() {
           <DialogTrigger asChild>
             <Button size="sm">
               <Plus className="mr-2 h-3.5 w-3.5" />
-              New Prompt
+              New prompt
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Create Community Topic Prompt</DialogTitle>
+              <DialogTitle>Create community topic prompt</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-3">
               <div className="space-y-2">
@@ -298,7 +297,7 @@ function PromptManagementSection() {
               </div>
 
               <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-3">
-                <Label className="text-caption">Publish Immediately</Label>
+                <Label className="text-caption">Publish immediately</Label>
                 <Switch
                   checked={form.publishNow}
                   onCheckedChange={(val) => setForm((prev) => ({ ...prev, publishNow: val }))}
@@ -479,7 +478,7 @@ function ResponseModerationSection() {
   return (
     <Card className="space-y-4 p-5">
       <div className="border-separator max-w-md space-y-2 border-b pb-4">
-        <Label className="text-label-secondary text-subhead">Select Discussion Prompt</Label>
+        <Label className="text-label-secondary text-subhead">Select discussion prompt</Label>
         <Select value={selectedPromptId} onValueChange={setSelectedPromptId}>
           <SelectTrigger size="sm">
             <SelectValue placeholder="Choose a prompt to view responses..." />
@@ -557,7 +556,7 @@ function ResponseModerationSection() {
           {hasNextPage && (
             <div className="pt-2 text-center">
               <Button variant="outline" size="sm" onClick={() => fetchNextPage()}>
-                Load More Responses
+                Load more responses
               </Button>
             </div>
           )}

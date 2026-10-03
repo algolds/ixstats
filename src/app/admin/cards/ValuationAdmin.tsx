@@ -60,7 +60,7 @@ export function ValuationAdmin() {
       <div className="border-separator border-b pb-4">
         <div className="flex items-center gap-2">
           <Coins className="text-yellow h-4 w-4" />
-          <h2 className="text-label text-caption">Card Valuation Formula</h2>
+          <h2 className="text-label text-caption">Card valuation formula</h2>
         </div>
         <p className="text-label-secondary text-footnote mt-1 leading-relaxed">
           Single source of truth for every card&apos;s value:{" "}

@@ -173,13 +173,13 @@ export function CoordinateSnappingControls({
 
       {onSnapBorder && (
         <ToolbarButton onClick={onSnapBorder} title="Snap to CONTAINING region border">
-          Snap to Border
+          Snap to border
         </ToolbarButton>
       )}
 
       {onSnapCoast && (
         <ToolbarButton onClick={onSnapCoast} title="Snap to nearest coastline">
-          Snap to Coast
+          Snap to coast
         </ToolbarButton>
       )}
     </div>

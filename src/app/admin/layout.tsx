@@ -23,7 +23,7 @@ function AccessDeniedScreen() {
   return (
     <div className="bg-grouped text-label flex min-h-screen flex-col items-center justify-center p-4">
       <Card padding="lg" className="w-full max-w-sm text-center">
-        <h1 className="text-destructive text-title-1 mb-4">Access Denied</h1>
+        <h1 className="text-destructive text-title-1 mb-4">Access denied</h1>
         <p className="text-label-secondary text-body mb-6">
           You do not have permission to view the Administration console.
         </p>
@@ -34,10 +34,10 @@ function AccessDeniedScreen() {
               void signOut();
             }}
           >
-            Sign Out
+            Sign out
           </Button>
           <Button asChild>
-            <Link href="/">Go to Home</Link>
+            <Link href="/">Go to home</Link>
           </Button>
         </div>
       </Card>

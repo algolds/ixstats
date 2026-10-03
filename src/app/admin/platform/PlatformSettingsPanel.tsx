@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { ImportPreviewDialog } from "../_components/ImportPreviewDialog";
 import { NavigationSettings } from "../_components/NavigationSettings";
 import { IxTimeVisualizer } from "../_components/IxTimeVisualizer";
@@ -15,7 +15,6 @@ import { api } from "~/trpc/react";
 import { useAdminState } from "../_hooks/useAdminState";
 import { useAdminHandlers } from "../_hooks/useAdminHandlers";
 import {
-  Settings,
   Clock,
   StatUp as TrendingUp,
   Heart as HeartPulse,
@@ -121,55 +120,36 @@ export function PlatformSettingsPanel({ defaultTab = "general" }: PlatformSettin
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Settings}
-        title="General Settings & Platform Controls"
-        description="Global engine parameters, time override multipliers, spatial autosave telemetry, and system diagnostic monitors."
+      <PageHeader
+        title="Platform settings"
+        subtitle="Engine parameters, time overrides, autosave telemetry and diagnostics."
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-fill-3 rounded-row flex w-full flex-wrap justify-start gap-1 p-1">
-          <TabsTrigger
-            value="general"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
-          >
+          <TabsTrigger value="general" className="text-caption flex items-center gap-2">
             <TrendingUp className="text-green h-4 w-4" />
-            Economic Controls
+            Economic controls
           </TabsTrigger>
-          <TabsTrigger
-            value="autosave"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
-          >
+          <TabsTrigger value="autosave" className="text-caption flex items-center gap-2">
             <Activity className="text-green h-4 w-4" />
-            Autosave Monitor
+            Autosave monitor
           </TabsTrigger>
-          <TabsTrigger
-            value="time"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
-          >
+          <TabsTrigger value="time" className="text-caption flex items-center gap-2">
             <Clock className="text-blue h-4 w-4" />
-            Time Override
+            Time override
           </TabsTrigger>
-          <TabsTrigger
-            value="system-health"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
-          >
+          <TabsTrigger value="system-health" className="text-caption flex items-center gap-2">
             <HeartPulse className="text-red h-4 w-4" />
-            System Diagnostics
+            System diagnostics
           </TabsTrigger>
-          <TabsTrigger
-            value="navigation"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
-          >
+          <TabsTrigger value="navigation" className="text-caption flex items-center gap-2">
             <Navigation className="text-teal h-4 w-4" />
-            Navigation Controls
+            Navigation controls
           </TabsTrigger>
-          <TabsTrigger
-            value="database"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
-          >
+          <TabsTrigger value="database" className="text-caption flex items-center gap-2">
             <Database className="text-indigo h-4 w-4" />
-            Database Explorer
+            Database explorer
           </TabsTrigger>
         </TabsList>
 

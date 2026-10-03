@@ -89,7 +89,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
             disabled={disabled}
           >
             <Crown className="h-3.5 w-3.5" />
-            <span>Make Capital</span>
+            <span>Make capital</span>
           </Button>
         )}
 
@@ -104,7 +104,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
             disabled={disabled}
           >
             <Waves className="text-cyan h-3.5 w-3.5" />
-            <span>Snap Coast</span>
+            <span>Snap coast</span>
           </Button>
         )}
 
@@ -140,7 +140,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
                   disabled={disabled}
                 >
                   <Trash className="h-3.5 w-3.5" />
-                  <span>Confirm Delete</span>
+                  <span>Confirm delete</span>
                 </Button>
                 <Button
                   variant="outline"

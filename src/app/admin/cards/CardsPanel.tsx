@@ -29,7 +29,7 @@ import { LoreCategory } from "~/lib/cards/category-enums";
 import { Stat } from "~/components/ui/stat";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { AdminCardExplorer } from "./AdminCardExplorer";
 import { CardImportStudio, type ImportSubtab } from "./CardImportStudio";
 import { CardSettingsAdmin, type SettingsSubtab } from "./CardSettingsAdmin";
@@ -139,7 +139,7 @@ export default function CardAdminDashboardPage() {
       const targetStr = log.target ? ` [target: ${log.target}]` : "";
       return {
         timestamp: log.timestamp,
-        message: `${log.title} — ${log.message}${actorStr}${targetStr}`,
+        message: `${log.title}: ${log.message}${actorStr}${targetStr}`,
         level,
       };
     });
@@ -147,10 +147,9 @@ export default function CardAdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Database}
-        title="Cards Administration"
-        description="Comprehensive card administration suite — overview metrics, real-time library explorer, NationStates & wiki batch pipelines, card designer, and economic policies."
+      <PageHeader
+        title="Cards"
+        subtitle="Overview, library explorer, NationStates and wiki batch pipelines, card designer and economic policies."
       />
 
       <div className="space-y-6">
@@ -168,7 +167,7 @@ export default function CardAdminDashboardPage() {
                     <Card padding="sm">
                       <Stat
                         size="sm"
-                        label="Total Sync Operations"
+                        label="Total sync operations"
                         icon={<Database className="text-blue" />}
                         iconPlacement="trailing"
                         value={<>{(healthStats?.overall.totalSyncs ?? 0).toLocaleString()}</>}
@@ -186,7 +185,7 @@ export default function CardAdminDashboardPage() {
                     <Card padding="sm">
                       <Stat
                         size="sm"
-                        label="Success Rate"
+                        label="Success rate"
                         icon={<TrendingUp className="text-green" />}
                         iconPlacement="trailing"
                         value={<>{((healthStats?.overall.successRate ?? 0) * 100).toFixed(1)}%</>}
@@ -203,7 +202,7 @@ export default function CardAdminDashboardPage() {
                     <Card padding="sm">
                       <Stat
                         size="sm"
-                        label="Failure Rate"
+                        label="Failure rate"
                         icon={<AlertTriangle className="text-red" />}
                         iconPlacement="trailing"
                         value={<>{((healthStats?.overall.errorRate ?? 0) * 100).toFixed(1)}%</>}
@@ -240,7 +239,7 @@ export default function CardAdminDashboardPage() {
                   <Card padding="sm">
                     <Stat
                       size="sm"
-                      label="Active Cards"
+                      label="Active cards"
                       icon={<BookOpen className="text-yellow" />}
                       iconPlacement="trailing"
                       value={<>{(loreStats?.totalLoreCards ?? 0).toLocaleString()}</>}
@@ -252,7 +251,7 @@ export default function CardAdminDashboardPage() {
                   <Card padding="sm">
                     <Stat
                       size="sm"
-                      label="Lore Categories"
+                      label="Lore categories"
                       icon={<Layers className="text-teal" />}
                       iconPlacement="trailing"
                       value={<>{Object.keys(loreStats?.categoryBreakdown ?? {}).length} / 13</>}
@@ -264,7 +263,7 @@ export default function CardAdminDashboardPage() {
                   <Card padding="sm">
                     <Stat
                       size="sm"
-                      label="Pending Requests"
+                      label="Pending requests"
                       icon={<Sparkles className="text-purple" />}
                       iconPlacement="trailing"
                       value={<>{(loreStats?.pendingRequests ?? 0).toLocaleString()}</>}
@@ -296,9 +295,9 @@ export default function CardAdminDashboardPage() {
             onValueChange={(tab) => setActiveTab(tab)}
             options={[
               { value: "overview", label: "Overview", icon: <Layers /> },
-              { value: "designer", label: "Card Designer", icon: <Palette /> },
-              { value: "explorer", label: "Card Explorer", icon: <Search /> },
-              { value: "imports", label: "Import Studio", icon: <Globe /> },
+              { value: "designer", label: "Card designer", icon: <Palette /> },
+              { value: "explorer", label: "Card explorer", icon: <Search /> },
+              { value: "imports", label: "Import studio", icon: <Globe /> },
               { value: "settings", label: "Settings", icon: <Sliders /> },
             ]}
           />
@@ -318,7 +317,7 @@ export default function CardAdminDashboardPage() {
                     <FileText className="text-tint h-5 w-5" />
                   </div>
                   <div>
-                    <h2 className="text-label text-title-3">Operations Log & Audit Trail</h2>
+                    <h2 className="text-label text-title-3">Operations log & audit trail</h2>
                     <p className="text-label-secondary text-caption">
                       All admin actions, designer mints, import syncs, batch generations, takedowns,
                       and system operations
@@ -387,22 +386,22 @@ export default function CardAdminDashboardPage() {
                     },
                     {
                       id: "imports",
-                      label: "Imports & Syncs",
+                      label: "Imports & syncs",
                       count: unifiedLogsData.stats.imports,
                     },
                     {
                       id: "designer",
-                      label: "Card Designer",
+                      label: "Card designer",
                       count: unifiedLogsData.stats.designer,
                     },
                     {
                       id: "lore_batch",
-                      label: "Lore Batch",
+                      label: "Lore batch",
                       count: unifiedLogsData.stats.lore_batch,
                     },
                     {
                       id: "explorer",
-                      label: "Explorer & Actions",
+                      label: "Explorer & actions",
                       count: unifiedLogsData.stats.explorer,
                     },
                     {
@@ -426,7 +425,7 @@ export default function CardAdminDashboardPage() {
 
               <LogViewerFilterable
                 entries={operationsLogEntries}
-                title="Unified Cards Audit Trail & Operations Stream"
+                title="Unified cards audit trail & operations stream"
                 maxHeight={460}
                 className="border-separator bg-surface border"
               />

@@ -96,30 +96,30 @@ const TYPE_META: Record<string, { icon: typeof Train; label: string }> = {
   // Rail
   rail: { icon: Train, label: "Railway" },
   high_speed_rail: { icon: Train, label: "High-Speed Rail" },
-  railway: { icon: Train, label: "Conventional Rail" },
-  metro: { icon: Train, label: "Metro System" },
-  light_rail: { icon: Train, label: "Light Rail" },
+  railway: { icon: Train, label: "Conventional rail" },
+  metro: { icon: Train, label: "Metro system" },
+  light_rail: { icon: Train, label: "Light rail" },
   monorail: { icon: Train, label: "Monorail" },
 
   // Road
   motorway: { icon: Car, label: "Motorway" },
   highway: { icon: Car, label: "Highway" },
-  trunk: { icon: Car, label: "Trunk Road" },
+  trunk: { icon: Car, label: "Trunk road" },
   road: { icon: Car, label: "Road" },
-  secondary: { icon: Car, label: "Secondary Road" },
+  secondary: { icon: Car, label: "Secondary road" },
 
   // Maritime
-  shipping_lane: { icon: Ship, label: "Shipping Lane" },
+  shipping_lane: { icon: Ship, label: "Shipping lane" },
   canal: { icon: Droplets, label: "Canal" },
   ferry: { icon: Ship, label: "Ferry" },
 
   // Air
-  air_corridor: { icon: Plane, label: "Air Route" },
+  air_corridor: { icon: Plane, label: "Air route" },
 
   // Utility
   pipeline: { icon: Droplets, label: "Pipeline" },
-  power_grid: { icon: Flash, label: "Power Grid" },
-  fiber: { icon: Wifi, label: "Fiber Optic" },
+  power_grid: { icon: Flash, label: "Power grid" },
+  fiber: { icon: Wifi, label: "Fiber optic" },
 
   // Military
   military_supply: { icon: Shield, label: "Mil. Supply" },
@@ -516,7 +516,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
             {Boolean(props.costBillion) && (
               <div className="flex items-center justify-between">
                 <span className="text-label-secondary flex items-center gap-2">
-                  <Coins className="h-3 w-3" /> Build Cost
+                  <Coins className="h-3 w-3" /> Build cost
                 </span>
                 <span className="font-medium tabular-nums">
                   {Number(props.costBillion).toFixed(2)}B
@@ -537,7 +537,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
         {/* Intermodal Logistics */}
         <div className="border-separator text-footnote space-y-2 border-t px-4 py-2">
           <div className="flex items-center justify-between">
-            <span className="text-label-secondary">Modal Network</span>
+            <span className="text-label-secondary">Modal network</span>
             <span className="text-label font-medium capitalize">{modalFamily} Logistics</span>
           </div>
           {intermodalBadge && (

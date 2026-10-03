@@ -155,7 +155,7 @@ export const DocumentInspector = React.memo(function DocumentInspector({
 
         <div className="grid grid-cols-2 gap-2">
           <div className="border-separator rounded-control min-w-0 border p-2">
-            <Eyebrow className="block truncate">Land area</Eyebrow>
+            <span className="text-stat-label text-label-secondary block truncate">Land area</span>
             <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
               <span className="text-label text-headline truncate tabular-nums">
                 {areaKm2 != null ? Math.round(areaKm2).toLocaleString() : "—"}
@@ -168,7 +168,9 @@ export const DocumentInspector = React.memo(function DocumentInspector({
             </div>
           </div>
           <div className="border-separator rounded-control min-w-0 border p-2">
-            <Eyebrow className="block truncate">Total features</Eyebrow>
+            <span className="text-stat-label text-label-secondary block truncate">
+              Total features
+            </span>
             <p className="text-label text-headline mt-0.5 truncate tabular-nums">
               {allFeatures.length.toLocaleString()}
             </p>
@@ -235,7 +237,7 @@ export const DocumentInspector = React.memo(function DocumentInspector({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Waves className="text-label-secondary h-3.5 w-3.5" />
-              <Eyebrow>Hydrology System</Eyebrow>
+              <Eyebrow>Hydrology system</Eyebrow>
             </div>
             {geoProfile?.hydro?.drainageDensity != null && (
               <span className="text-label-secondary text-footnote tabular-nums">
@@ -246,7 +248,9 @@ export const DocumentInspector = React.memo(function DocumentInspector({
 
           <div className="grid grid-cols-2 gap-2">
             <div className="border-separator rounded-control min-w-0 border p-2">
-              <Eyebrow className="block truncate">River network</Eyebrow>
+              <span className="text-stat-label text-label-secondary block truncate">
+                River network
+              </span>
               <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
                 <span className="text-label text-headline truncate tabular-nums">
                   {geoProfile?.hydro?.totalRiverLengthKm != null &&
@@ -271,7 +275,9 @@ export const DocumentInspector = React.memo(function DocumentInspector({
             </div>
 
             <div className="border-separator rounded-control min-w-0 border p-2">
-              <Eyebrow className="block truncate">Lakes & basins</Eyebrow>
+              <span className="text-stat-label text-label-secondary block truncate">
+                Lakes & basins
+              </span>
               <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
                 <span className="text-label text-headline truncate tabular-nums">
                   {geoProfile?.hydro?.totalLakeAreaSqKm != null &&

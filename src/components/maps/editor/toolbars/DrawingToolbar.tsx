@@ -28,7 +28,7 @@ export function DrawingToolbar({
         </span>
         <div className="bg-separator h-4 w-px" />
         <Button variant="ghost" size="xs" className="text-label-secondary" onClick={undoLastVertex}>
-          Delete Last
+          Delete last
         </Button>
         <Button
           variant="ghost"
@@ -45,7 +45,7 @@ export function DrawingToolbar({
           disabled={!canSaveDraw}
           className="rounded-full"
         >
-          Save Shape
+          Save shape
         </Button>
       </FacetMaterial>
     </div>

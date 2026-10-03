@@ -123,7 +123,7 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
       {/* Primary Lake Surface Metrics */}
       <div className="grid grid-cols-2 gap-2">
         <Card className="min-w-0 p-2">
-          <Eyebrow className="block truncate">Surface area</Eyebrow>
+          <span className="text-stat-label text-label-secondary block truncate">Surface area</span>
           <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
             <span className="text-label text-headline truncate tabular-nums">
               {areaKm2 != null ? Math.round(areaKm2).toLocaleString() : "—"}
@@ -142,7 +142,9 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
         </Card>
 
         <Card className="min-w-0 p-2">
-          <Eyebrow className="block truncate">Shoreline perimeter</Eyebrow>
+          <span className="text-stat-label text-label-secondary block truncate">
+            Shoreline perimeter
+          </span>
           <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
             <span className="text-label text-headline truncate tabular-nums">
               {perimeterKm != null ? Math.round(perimeterKm).toLocaleString() : "—"}
@@ -166,7 +168,7 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Droplet className="text-blue h-3.5 w-3.5" />
-            <Eyebrow>Limnology & Bathymetry</Eyebrow>
+            <Eyebrow>Limnology & bathymetry</Eyebrow>
           </div>
           {surfaceSample.isLoading && (
             <div className="border-separator border-t-blue h-2.5 w-2.5 animate-spin rounded-full border-2" />
@@ -175,7 +177,7 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
 
         <div className="text-footnote grid grid-cols-2 gap-2">
           <div className="border-separator bg-fill-4 rounded-control-sm min-w-0 space-y-1 p-2">
-            <Eyebrow className="block">Surface elevation</Eyebrow>
+            <span className="text-stat-label text-label-secondary block">Surface elevation</span>
             <p className="text-label text-caption font-semibold tabular-nums">
               {surfaceElev != null ? `${surfaceElev.toLocaleString()} m` : "—"}
             </p>
@@ -185,7 +187,7 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
           </div>
 
           <div className="border-separator bg-fill-4 rounded-control-sm min-w-0 space-y-1 p-2">
-            <Eyebrow className="block">Max depth</Eyebrow>
+            <span className="text-stat-label text-label-secondary block">Max depth</span>
             <div className="flex items-center gap-1">
               <input
                 type="number"

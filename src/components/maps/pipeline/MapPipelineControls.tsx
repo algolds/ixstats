@@ -48,9 +48,9 @@ export function MapPipelineControls({
       <div className="border-separator flex items-center justify-between border-b p-4">
         <div>
           <h2 className="text-tint text-title-3 flex items-center gap-2">
-            <Compass className="h-4 w-4" /> Map Pipeline Lab
+            <Compass className="h-4 w-4" /> Map pipeline lab
           </h2>
-          <p className="text-label-secondary text-footnote">Procedural Generation & Ingestion</p>
+          <p className="text-label-secondary text-footnote">Procedural generation & ingestion</p>
         </div>
       </div>
 
@@ -112,7 +112,7 @@ export function MapPipelineControls({
             {/* Mesh Engine Indicator */}
             <div className="border-tint/20 bg-tint-fill text-label rounded-control-sm text-caption flex items-center justify-between border p-2">
               <span className="flex items-center gap-2">
-                <Layers className="text-tint h-3.5 w-3.5" /> Mesh Engine
+                <Layers className="text-tint h-3.5 w-3.5" /> Mesh engine
               </span>
               <span className="text-tint text-caption font-semibold tabular-nums">
                 100K RBF Splines
@@ -122,7 +122,7 @@ export function MapPipelineControls({
             {/* Country Count */}
             <div className="space-y-2">
               <label className="text-label text-caption flex justify-between">
-                <span>Nations Generated</span>
+                <span>Nations generated</span>
                 <span className="text-tint tabular-nums">{config.countryCount} nations</span>
               </label>
               <Slider
@@ -140,7 +140,7 @@ export function MapPipelineControls({
             {/* Land Coverage */}
             <div className="space-y-2">
               <label className="text-label text-caption flex justify-between">
-                <span>Land Ratio</span>
+                <span>Land ratio</span>
                 <span className="text-tint tabular-nums">{config.landCoverage}%</span>
               </label>
               <Slider
@@ -169,7 +169,7 @@ export function MapPipelineControls({
                 </>
               ) : (
                 <>
-                  <Play className="size-4 fill-current" aria-hidden /> Run Map Pipeline
+                  <Play className="size-4 fill-current" aria-hidden /> Run map pipeline
                 </>
               )}
             </Button>
@@ -184,12 +184,12 @@ export function MapPipelineControls({
             {[
               {
                 id: "political",
-                label: "Political Borders",
+                label: "Political borders",
                 desc: "Nation polygons and territories",
               },
-              { id: "altitudes", label: "Altitudes & Topography", desc: "9 elevation zones" },
-              { id: "climate", label: "Climate Zones", desc: "Trewartha 12 climate types" },
-              { id: "rivers", label: "Hydrographic Rivers", desc: "Vectorized river channels" },
+              { id: "altitudes", label: "Altitudes & topography", desc: "9 elevation zones" },
+              { id: "climate", label: "Climate zones", desc: "Trewartha 12 climate types" },
+              { id: "rivers", label: "Hydrographic rivers", desc: "Vectorized river channels" },
               { id: "lakes", label: "Waterbodies / Lakes", desc: "Inland lakes and basins" },
             ].map((layer) => (
               <label

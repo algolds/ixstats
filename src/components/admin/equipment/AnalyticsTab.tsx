@@ -127,7 +127,7 @@ export function AnalyticsTab({
       <div className="flex min-h-[400px] items-center justify-center">
         <Card className="border-red/30 bg-red/10 flex w-full max-w-md flex-col gap-6 py-6">
           <CardHeader>
-            <CardTitle className="text-red">Error Loading Analytics</CardTitle>
+            <CardTitle className="text-red">Error loading analytics</CardTitle>
             <CardDescription className="text-red">{error.message}</CardDescription>
           </CardHeader>
         </Card>
@@ -187,27 +187,25 @@ export function AnalyticsTab({
 
   // Chart configs
   const chartConfig = {
-    count: { label: "Equipment Count", color: "var(--color-chart-8)" },
-    value: { label: "Total Items", color: "var(--color-chart-1)" },
-    usage: { label: "Usage Count", color: "var(--color-chart-2)" },
-    avgTechLevel: { label: "Avg Tech Level", color: "var(--color-chart-8)" },
+    count: { label: "Equipment count", color: "var(--color-chart-8)" },
+    value: { label: "Total items", color: "var(--color-chart-1)" },
+    usage: { label: "Usage count", color: "var(--color-chart-2)" },
+    avgTechLevel: { label: "Avg tech level", color: "var(--color-chart-8)" },
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-surface rounded-row border-separator border p-6">
-        <h2 className="text-title-1 text-red">Military Equipment Analytics</h2>
-        <p className="text-label-secondary">
-          Comprehensive usage analytics and statistics for military equipment catalog
-        </p>
+        <h2 className="text-title-1 text-red">Military equipment analytics</h2>
+        <p className="text-label-secondary">Usage statistics for the military equipment catalog</p>
       </div>
 
       {/* Summary Statistics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-red/30 bg-red/10 flex flex-col gap-6 py-6">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-body font-medium">Total Equipment Items</CardTitle>
+            <CardTitle className="text-body font-medium">Total equipment items</CardTitle>
             <Shield className="text-label-secondary h-4 w-4" />
           </CardHeader>
           <CardContent>
@@ -218,7 +216,7 @@ export function AnalyticsTab({
 
         <Card className="border-red/30 bg-red/10 flex flex-col gap-6 py-6">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-body font-medium">Active Equipment</CardTitle>
+            <CardTitle className="text-body font-medium">Active equipment</CardTitle>
             <Activity className="text-label-secondary h-4 w-4" />
           </CardHeader>
           <CardContent>
@@ -231,7 +229,7 @@ export function AnalyticsTab({
 
         <Card className="border-red/30 bg-red/10 flex flex-col gap-6 py-6">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-body font-medium">Total Manufacturers</CardTitle>
+            <CardTitle className="text-body font-medium">Total manufacturers</CardTitle>
             <Factory className="text-label-secondary h-4 w-4" />
           </CardHeader>
           <CardContent>
@@ -242,7 +240,7 @@ export function AnalyticsTab({
 
         <Card className="border-red/30 bg-red/10 flex flex-col gap-6 py-6">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-body font-medium">Average Tech Level</CardTitle>
+            <CardTitle className="text-body font-medium">Average tech level</CardTitle>
             <TrendingUp className="text-label-secondary h-4 w-4" />
           </CardHeader>
           <CardContent>
@@ -276,7 +274,7 @@ export function AnalyticsTab({
         {/* Equipment by Category */}
         <Card className="border-red/30 flex flex-col gap-6 py-6">
           <CardHeader>
-            <CardTitle className="text-red">Equipment by Category</CardTitle>
+            <CardTitle className="text-red">Equipment by category</CardTitle>
             <CardDescription>Distribution across equipment categories</CardDescription>
           </CardHeader>
           <CardContent>
@@ -307,7 +305,7 @@ export function AnalyticsTab({
         {/* Equipment by Era */}
         <Card className="border-red/30 flex flex-col gap-6 py-6">
           <CardHeader>
-            <CardTitle className="text-red">Equipment by Era</CardTitle>
+            <CardTitle className="text-red">Equipment by era</CardTitle>
             <CardDescription>Distribution across historical eras</CardDescription>
           </CardHeader>
           <CardContent>
@@ -359,7 +357,7 @@ export function AnalyticsTab({
         {/* Technology Level Progression by Era */}
         <Card className="border-red/30 col-span-2 flex flex-col gap-6 py-6">
           <CardHeader>
-            <CardTitle className="text-red">Technology Level Progression by Era</CardTitle>
+            <CardTitle className="text-red">Technology level progression by era</CardTitle>
             <CardDescription>Average technology tier across historical eras</CardDescription>
           </CardHeader>
           <CardContent>
@@ -399,12 +397,12 @@ export function AnalyticsTab({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="px-4">Equipment Name</TableHead>
+                  <TableHead className="px-4">Equipment name</TableHead>
                   <TableHead className="px-4">Category</TableHead>
                   <TableHead className="px-4">Era</TableHead>
                   <TableHead className="px-4">Manufacturer</TableHead>
-                  <TableHead className="px-4 text-center">Tech Level</TableHead>
-                  <TableHead className="px-4 text-right">Usage Count</TableHead>
+                  <TableHead className="px-4 text-center">Tech level</TableHead>
+                  <TableHead className="px-4 text-right">Usage count</TableHead>
                   <TableHead className="px-4">Status</TableHead>
                 </TableRow>
               </TableHeader>

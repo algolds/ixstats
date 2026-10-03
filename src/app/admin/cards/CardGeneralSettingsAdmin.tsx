@@ -48,7 +48,7 @@ export function CardGeneralSettingsAdmin() {
       {/* Header bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-label text-title-3">General Card System Policies</h2>
+          <h2 className="text-label text-title-3">General card system policies</h2>
           <p className="text-label-secondary text-caption">
             Configure global marketplace controls, free pack allowances, drop rates, and lore
             permissions.
@@ -71,7 +71,7 @@ export function CardGeneralSettingsAdmin() {
         <Card className="space-y-4 p-6">
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <ShoppingBag className="text-green h-4 w-4" />
-            <h3 className="text-label text-headline">Marketplace & Trading</h3>
+            <h3 className="text-label text-headline">Marketplace & trading</h3>
           </div>
 
           <div className="space-y-4">
@@ -79,7 +79,7 @@ export function CardGeneralSettingsAdmin() {
             <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
               <div className="space-y-0.5">
                 <label className="text-label text-caption block">
-                  Global Trading & Auction House
+                  Global trading & auction house
                 </label>
                 <p className="text-label-secondary text-footnote">
                   Master kill-switch for direct card trades and auction marketplace
@@ -121,14 +121,14 @@ export function CardGeneralSettingsAdmin() {
         <Card className="space-y-4 p-6">
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <Gift className="text-purple h-4 w-4" />
-            <h3 className="text-label text-headline">Daily Free Packs & Cooldowns</h3>
+            <h3 className="text-label text-headline">Daily free packs & cooldowns</h3>
           </div>
 
           <div className="space-y-4">
             {/* Daily Free Packs Amount */}
             <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
               <div className="space-y-0.5">
-                <label className="text-label text-caption block">Daily Free Pack Allowance</label>
+                <label className="text-label text-caption block">Daily free pack allowance</label>
                 <p className="text-label-secondary text-footnote">
                   Number of complimentary packs grantable per cooldown cycle
                 </p>
@@ -149,7 +149,7 @@ export function CardGeneralSettingsAdmin() {
             {/* Cooldown Hours */}
             <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
               <div className="space-y-0.5">
-                <label className="text-label text-caption block">Free Pack Reset Interval</label>
+                <label className="text-label text-caption block">Free pack reset interval</label>
                 <p className="text-label-secondary text-footnote">
                   Hours required between consecutive free pack claims
                 </p>
@@ -173,7 +173,7 @@ export function CardGeneralSettingsAdmin() {
         <Card className="space-y-4 p-6">
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <Sparkles className="text-yellow h-4 w-4" />
-            <h3 className="text-label text-headline">Lore Creation & Permissions</h3>
+            <h3 className="text-label text-headline">Lore creation & permissions</h3>
           </div>
 
           <div className="space-y-4">
@@ -181,7 +181,7 @@ export function CardGeneralSettingsAdmin() {
             <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
               <div className="space-y-0.5">
                 <label className="text-label text-caption block">
-                  Player Lore Card Submissions
+                  Player lore card submissions
                 </label>
                 <p className="text-label-secondary text-footnote">
                   Allow regular players to propose lore cards for review
@@ -217,14 +217,14 @@ export function CardGeneralSettingsAdmin() {
         <Card className="space-y-4 p-6">
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <Layers className="text-teal h-4 w-4" />
-            <h3 className="text-label text-headline">Inventory & Recycler Limits</h3>
+            <h3 className="text-label text-headline">Inventory & recycler limits</h3>
           </div>
 
           <div className="space-y-4">
             {/* Max Inventory Cards */}
             <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
               <div className="space-y-0.5">
-                <label className="text-label text-caption block">Player Binder Capacity Cap</label>
+                <label className="text-label text-caption block">Player binder capacity cap</label>
                 <p className="text-label-secondary text-footnote">
                   Maximum active cards a user can hold in their collection
                 </p>

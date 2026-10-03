@@ -82,10 +82,10 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-label-secondary text-footnote font-semibold">
-                  Training Seeds
+                  Training seeds
                 </label>
                 <div className="flex items-center gap-2">
-                  <label className="border-tint/20 bg-tint/5 text-tint hover:bg-tint/10 hover:text-tint rounded-control text-caption flex cursor-pointer items-center gap-1 border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-95">
+                  <label className="border-tint/20 bg-tint/5 text-tint hover:bg-tint/10 hover:text-tint rounded-control text-caption flex cursor-pointer items-center gap-1 border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity] duration-200">
                     <Upload className="h-3 w-3" />
                     <span>Upload .txt</span>
                     <input
@@ -189,7 +189,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               {/* Length limits */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-label-secondary text-subhead">Min Length</label>
+                  <label className="text-label-secondary text-subhead">Min length</label>
                   <Input
                     type="number"
                     min={1}
@@ -202,7 +202,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-label-secondary text-subhead">Max Length</label>
+                  <label className="text-label-secondary text-subhead">Max length</label>
                   <Input
                     type="number"
                     min={1}
@@ -219,7 +219,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               {/* Advanced Substring constraints */}
               <div className="grid grid-cols-2 gap-3 pb-3">
                 <div className="space-y-1">
-                  <label className="text-label-secondary text-subhead">Starts With</label>
+                  <label className="text-label-secondary text-subhead">Starts with</label>
                   <Input
                     type="text"
                     placeholder="Prefix"
@@ -229,7 +229,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-label-secondary text-subhead">Ends With</label>
+                  <label className="text-label-secondary text-subhead">Ends with</label>
                   <Input
                     type="text"
                     placeholder="Suffix"
@@ -243,12 +243,12 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               {/* Phonotactic Constraints */}
               <div className="border-separator space-y-3 border-t pt-3">
                 <h4 className="text-label-secondary text-subhead pb-0.5">
-                  Phonotactic Constraints
+                  Phonotactic constraints
                 </h4>
 
                 {/* Vowel Harmony */}
                 <div className="space-y-2">
-                  <label className="text-label-secondary text-subhead">Vowel Harmony</label>
+                  <label className="text-label-secondary text-subhead">Vowel harmony</label>
                   <Select
                     value={options.vowelHarmony || "none"}
                     onValueChange={(val: "none" | "front" | "back") =>
@@ -277,7 +277,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   <div className="space-y-1">
                     <div className="flex justify-between">
                       <label className="text-label-secondary text-subhead">
-                        Max Consonant Cluster
+                        Max consonant cluster
                       </label>
                       <span className="text-tint text-caption font-semibold">
                         {options.maxConsonantCluster ?? 3}
@@ -295,7 +295,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-between">
-                      <label className="text-label-secondary text-subhead">Max Vowel Cluster</label>
+                      <label className="text-label-secondary text-subhead">Max vowel cluster</label>
                       <span className="text-tint text-caption font-semibold">
                         {options.maxVowelCluster ?? 3}
                       </span>
@@ -314,7 +314,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                 <div className="border-separator flex items-center justify-between border-t pt-2">
                   <div className="space-y-0.5">
                     <label className="text-label-secondary text-subhead">
-                      Allow Double Letters
+                      Allow double letters
                     </label>
                     <p className="text-label-secondary text-caption leading-normal">
                       Permit repeating vowels/consonants (e.g. aa, ss)
@@ -347,7 +347,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                       {/* Syllable Counts */}
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
-                          <label className="text-label-secondary text-subhead">Min Syllables</label>
+                          <label className="text-label-secondary text-subhead">Min syllables</label>
                           <Input
                             type="number"
                             min={0}
@@ -363,7 +363,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="text-label-secondary text-subhead">Max Syllables</label>
+                          <label className="text-label-secondary text-subhead">Max syllables</label>
                           <Input
                             type="number"
                             min={-1}
@@ -410,7 +410,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                         {/* Must End With Vowel */}
                         <div className="flex items-center justify-between">
                           <span className="text-label-secondary text-caption font-semibold">
-                            Must End With Vowel
+                            Must end with vowel
                           </span>
                           <Switch
                             checked={options.mustEndWithVowel || false}
@@ -430,7 +430,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                         {/* Must End With Consonant */}
                         <div className="flex items-center justify-between">
                           <span className="text-label-secondary text-caption font-semibold">
-                            Must End With Consonant
+                            Must end with consonant
                           </span>
                           <Switch
                             checked={options.mustEndWithConsonant || false}
@@ -520,7 +520,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                 disabled={trainingWords.length === 0}
                 className="flex-1 justify-center"
               >
-                <span>Assemble Seeds</span>
+                <span>Assemble seeds</span>
               </Button>
             </div>
           </Card>
@@ -535,7 +535,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               className="animate-in fade-in space-y-4 p-4 duration-300"
             >
               <div className="border-separator border-b pb-3">
-                <h3 className="text-label text-body font-semibold">Custom Model Output</h3>
+                <h3 className="text-label text-body font-semibold">Custom model output</h3>
                 <p className="text-label-secondary text-caption mt-0.5">
                   Names assembled by modeling phonetic patterns from input seeds.
                 </p>

@@ -14,7 +14,6 @@ import { useSystemValidation } from "~/hooks/useSystemValidation";
 import { getStatusColor, getStatusBgColor } from "~/lib/system/system-validation";
 import { ValidationCategory } from "./validation/ValidationCategory";
 import { AuditProgressBar } from "./validation/AuditProgressBar";
-import { Eyebrow } from "~/components/ui/eyebrow";
 
 export function SystemValidationDashboard() {
   const {
@@ -108,7 +107,7 @@ export function SystemValidationDashboard() {
           <Card className="flex flex-col gap-6 py-6">
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
               <Clock className="text-label-tertiary mb-4 h-12 w-12" />
-              <h3 className="text-label text-title-3 mb-1">No Audit Results</h3>
+              <h3 className="text-label text-title-3 mb-1">No audit results</h3>
               <p className="text-label-secondary text-body max-w-sm">
                 Click &quot;Run Full Audit&quot; to validate all platform subsystems, database
                 connectivity, authentication, and economic engine health.
@@ -124,23 +123,23 @@ export function SystemValidationDashboard() {
           <CardContent className="p-6">
             <div className="grid grid-cols-2 gap-6 sm:grid-cols-5">
               <div>
-                <Eyebrow className="block">Total Checks</Eyebrow>
+                <span className="text-stat-label text-label-secondary block">Total checks</span>
                 <p className="text-label text-title-1 tabular-nums">{summary.totalChecks}</p>
               </div>
               <div>
-                <p className="text-eyebrow text-green">Passed</p>
+                <p className="text-stat-label text-green">Passed</p>
                 <p className="text-title-1 text-green tabular-nums">{summary.passed}</p>
               </div>
               <div>
-                <p className="text-eyebrow text-yellow">Warnings</p>
+                <p className="text-stat-label text-yellow">Warnings</p>
                 <p className="text-title-1 text-yellow tabular-nums">{summary.warnings}</p>
               </div>
               <div>
-                <p className="text-eyebrow text-red">Failures</p>
+                <p className="text-stat-label text-red">Failures</p>
                 <p className="text-title-1 text-red tabular-nums">{summary.failures}</p>
               </div>
               <div>
-                <Eyebrow className="block">Duration</Eyebrow>
+                <span className="text-stat-label text-label-secondary block">Duration</span>
                 <p className="text-label text-title-1 tabular-nums">{summary.duration}ms</p>
               </div>
             </div>

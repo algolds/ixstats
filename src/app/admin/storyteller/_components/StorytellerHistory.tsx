@@ -40,10 +40,8 @@ export function StorytellerHistory() {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <FileText className="text-label-secondary mb-3 h-10 w-10" />
-        <h3 className="text-label text-title-3">No History</h3>
-        <p className="text-label-secondary text-body mt-1">
-          Admin actions will appear here as they occur.
-        </p>
+        <h3 className="text-label text-title-3">No history</h3>
+        <p className="text-label-secondary text-body mt-1">No admin actions recorded yet.</p>
       </div>
     );
   }
@@ -52,7 +50,7 @@ export function StorytellerHistory() {
     <div>
       <div className="mb-4 flex items-center gap-2">
         <Clock className="text-label-secondary h-5 w-5" />
-        <h3 className="text-label text-title-3">Admin History</h3>
+        <h3 className="text-label text-title-3">Admin history</h3>
         <Badge variant="outline">{logs.length} entries</Badge>
       </div>
 

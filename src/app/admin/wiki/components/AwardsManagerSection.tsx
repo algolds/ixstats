@@ -217,7 +217,7 @@ export function AwardsManagerSection() {
           <CardHeader>
             <CardTitle className="text-title-3 flex items-center gap-2">
               <AwardIcon className="text-yellow h-5 w-5" />
-              Issue Custom Award
+              Issue custom award
             </CardTitle>
             <CardDescription>Assign article-level trophies or achievements</CardDescription>
           </CardHeader>
@@ -274,7 +274,7 @@ export function AwardsManagerSection() {
 
               {/* Medal Icon Builder Section */}
               <div className="border-separator space-y-3 border-t pt-3">
-                <span className="text-eyebrow text-yellow">Medal Icon Builder</span>
+                <span className="text-eyebrow text-yellow">Medal icon builder</span>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
@@ -298,7 +298,7 @@ export function AwardsManagerSection() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-label text-caption">Color Type</label>
+                    <label className="text-label text-caption">Color type</label>
                     <Select value={iconColor} onValueChange={(v) => setIconColor(v)}>
                       <SelectTrigger size="sm" className="w-full">
                         <SelectValue />
@@ -345,7 +345,7 @@ export function AwardsManagerSection() {
                 {/* Ambient Glass Medal Preview */}
                 <div className="border-separator bg-fill-4 rounded-row flex flex-col items-center justify-center border p-4">
                   <span className="text-label-secondary text-eyebrow mb-2 select-none">
-                    Live Medal Preview
+                    Live medal preview
                   </span>
                   <div className="border-separator bg-surface duration-fast relative flex h-14 w-14 items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform]">
                     <div
@@ -408,7 +408,7 @@ export function AwardsManagerSection() {
           <CardHeader>
             <CardTitle className="text-title-3 flex items-center gap-2">
               <Sparkles className="text-pink h-5 w-5" />
-              Automated Milestones
+              Automated milestones
             </CardTitle>
             <CardDescription>Scan page histories and auto-assign milestones</CardDescription>
           </CardHeader>
@@ -465,7 +465,7 @@ export function AwardsManagerSection() {
               <div>
                 <CardTitle className="text-title-3 flex items-center gap-2">
                   <History className="text-yellow h-5 w-5" />
-                  Recent Winners Log
+                  Recent winners log
                 </CardTitle>
                 <CardDescription>
                   Chronological feed of automatically calculated daily, weekly, and monthly loreward
@@ -501,7 +501,7 @@ export function AwardsManagerSection() {
                     <TableHead className="px-4">Date</TableHead>
                     <TableHead className="px-4">Type</TableHead>
                     <TableHead className="px-4">Winner</TableHead>
-                    <TableHead className="px-4">Article Page</TableHead>
+                    <TableHead className="px-4">Article page</TableHead>
                     <TableHead className="px-4 text-right">Metrics</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -581,7 +581,7 @@ export function AwardsManagerSection() {
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle className="text-title-3">Issued Awards</CardTitle>
+                <CardTitle className="text-title-3">Issued awards</CardTitle>
                 <CardDescription>Chronological list of all manual wiki rewards</CardDescription>
               </div>
               <div className="flex items-center gap-2">
@@ -590,10 +590,10 @@ export function AwardsManagerSection() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="all">All categories</SelectItem>
                     <SelectItem value="FEATURED">Featured</SelectItem>
                     <SelectItem value="COLLABORATION">Collaboration</SelectItem>
-                    <SelectItem value="PEER_REVIEW">Peer Review</SelectItem>
+                    <SelectItem value="PEER_REVIEW">Peer review</SelectItem>
                     <SelectItem value="SPECIAL">Special</SelectItem>
                     <SelectItem value="EDITOR_MILESTONE">Milestones</SelectItem>
                   </SelectContent>
@@ -627,9 +627,9 @@ export function AwardsManagerSection() {
                 <TableHeader sticky>
                   <TableRow>
                     <TableHead className="px-4">Article</TableHead>
-                    <TableHead className="px-4">Award & Badge</TableHead>
+                    <TableHead className="px-4">Award & badge</TableHead>
                     <TableHead className="hidden px-4 sm:table-cell">Recipients</TableHead>
-                    <TableHead className="hidden px-4 md:table-cell">Awarded At</TableHead>
+                    <TableHead className="hidden px-4 md:table-cell">Awarded at</TableHead>
                     <TableHead className="w-12 px-4" />
                   </TableRow>
                 </TableHeader>

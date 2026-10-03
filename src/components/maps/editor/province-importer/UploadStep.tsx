@@ -75,16 +75,16 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-label text-body font-medium">Upload Province Map</h3>
+        <h3 className="text-label text-body font-medium">Upload province map</h3>
         <p className="text-label-secondary text-footnote mt-1">
           Upload an SVG or PNG file containing your province/subdivision boundaries. SVG files from
-          Inkscape work best — provinces are detected from path groups.
+          Inkscape work best. Provinces are detected from path groups.
         </p>
       </div>
 
       {/* Scope picker */}
       <div className="space-y-2">
-        <Eyebrow className="block">Import Scope</Eyebrow>
+        <Eyebrow className="block">Import scope</Eyebrow>
         <SegmentedControl
           aria-label="Import scope"
           fullWidth
@@ -92,9 +92,9 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
           value={importer.importScope}
           onValueChange={(v) => importer.setImportScope(v as typeof importer.importScope)}
           options={[
-            { value: "both", label: "Provinces & Cities" },
-            { value: "provinces", label: "Provinces Only" },
-            { value: "cities", label: "Cities Only" },
+            { value: "both", label: "Provinces & cities" },
+            { value: "provinces", label: "Provinces only" },
+            { value: "cities", label: "Cities only" },
           ]}
         />
       </div>

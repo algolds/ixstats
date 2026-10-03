@@ -171,7 +171,7 @@ export function ConlangDataManagerPanel({ onImportComplete }: ConlangDataManager
 
   return (
     <div className="border-separator bg-fill-4 rounded-row space-y-4 border p-4 text-left">
-      <h4 className="text-label text-subhead">Browser Conlang Data Manager</h4>
+      <h4 className="text-label text-subhead">Browser conlang data manager</h4>
       <p className="text-label-secondary text-caption leading-normal">
         All conlang dictionary definitions, custom pronunciation rules, and overrides are stored
         device-locally. Use these controls to backup, restore, or clear your data.
@@ -180,12 +180,12 @@ export function ConlangDataManagerPanel({ onImportComplete }: ConlangDataManager
       <div className="grid gap-3 pt-1 sm:grid-cols-3">
         {/* Backup / Export */}
         <Button variant="outline" size="sm" onClick={handleExportData} className="justify-center">
-          <Download className="text-tint h-3.5 w-3.5" /> Export Backup File
+          <Download className="text-tint h-3.5 w-3.5" /> Export backup file
         </Button>
 
         {/* Restore / Import */}
         <label className="border-separator bg-background text-label hover:bg-fill-3 rounded-control text-footnote flex cursor-pointer items-center justify-center gap-2 border px-3 py-2 font-semibold transition-colors select-none">
-          <Upload className="text-green h-3.5 w-3.5" /> Import Backup File
+          <Upload className="text-green h-3.5 w-3.5" /> Import backup file
           <input type="file" accept=".json" onChange={handleImportData} className="hidden" />
         </label>
 
@@ -204,7 +204,7 @@ export function ConlangDataManagerPanel({ onImportComplete }: ConlangDataManager
           }}
           className="text-red hover:bg-red/10 justify-center"
         >
-          <Trash2 className="h-3.5 w-3.5" /> Clear All Data
+          <Trash2 className="h-3.5 w-3.5" /> Clear all data
         </Button>
       </div>
     </div>

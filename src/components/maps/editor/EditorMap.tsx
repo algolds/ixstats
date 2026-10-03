@@ -147,7 +147,7 @@ interface EditorMapProps {
     coords: [number, number][],
     mode?: "replace" | "add" | "subtract"
   ) => void;
-  /** Rectangular marquee selection from screen-space bounds (Plan 120 P3). */
+  /** Rectangular marquee selection from screen-space bounds. */
   onApplyRectSelection?: (
     bounds: { west: number; south: number; east: number; north: number },
     mode?: "replace" | "add" | "subtract"
@@ -158,7 +158,7 @@ interface EditorMapProps {
   selectedIds?: Set<string>;
   /** Toggle a feature in/out of the multi-select (Shift+click). */
   onToggleSelect?: (id: string) => void;
-  /** Lasso tool style: freehand loop vs rectangular marquee (Plan 120 P3). */
+  /** Lasso tool style: freehand loop vs rectangular marquee. */
   lassoTool?: "freehand" | "rect";
   guides?: { id: string; type: "h" | "v"; value: number }[];
   setGuides?: React.Dispatch<
@@ -349,13 +349,13 @@ const EditorMap = memo(
     selectedIdsRef.current = selectedIds;
     const lockedLayersRef = useRef(lockedLayers);
     lockedLayersRef.current = lockedLayers;
-    /** Pointer-down position for click-vs-drag discrimination (Plan 120 P2). */
+    /** Pointer-down position for click-vs-drag discrimination. */
     const pointerDownPosRef = useRef<{ x: number; y: number } | null>(null);
     /** True when the last gesture was a drag (>4px) — used to suppress post-drag clicks. */
     const wasDragRef = useRef(false);
-    /** Last hovered feature id, to avoid redundant setFilter/setFeatureState (Plan 120 P7). */
+    /** Last hovered feature id, to avoid redundant setFilter/setFeatureState. */
     const lastHoveredIdRef = useRef<string | null>(null);
-    /** Cached interactive-layer list excluding locked layers (Plan 120 P1/P5). */
+    /** Cached interactive-layer list excluding locked layers. */
     const interactiveLayersRef = useRef<string[]>([...INTERACTIVE_LAYERS]);
     interactiveLayersRef.current = [...INTERACTIVE_LAYERS];
     const lassoToolRef = useRef(lassoTool);
@@ -733,7 +733,7 @@ const EditorMap = memo(
           (e.originalEvent as MouseEvent & { routeClicked?: boolean })?.routeClicked
         )
           return;
-        // Post-drag clicks (map pan / feature drag) must not select (Plan 120 P2).
+        // Post-drag clicks (map pan / feature drag) must not select.
         if (wasDragRef.current) return;
 
         const currentMode = modeRef.current;
@@ -766,7 +766,7 @@ const EditorMap = memo(
               if (e.originalEvent) {
                 e.originalEvent.preventDefault();
               }
-              // Shift/Alt click multi-select (Plan 120 P7)
+              // Shift/Alt click multi-select
               const isShift = !!e.originalEvent?.shiftKey;
               const isAlt = !!e.originalEvent?.altKey;
               if (isShift || isAlt) {
@@ -932,7 +932,7 @@ const EditorMap = memo(
         )
           return;
         if (isVertexEditing) return;
-        // Post-drag clicks (map pan) must not place/insert anything (Plan 120 P2).
+        // Post-drag clicks (map pan) must not place/insert anything.
         if (wasDragRef.current) return;
 
         const currentMode = modeRef.current;
@@ -981,7 +981,7 @@ const EditorMap = memo(
       };
     }, [isLoaded, isVertexEditing, onAddRulerPoint, snapPoint, routePluginEvent]);
 
-    // Handle Lasso / Rect marquee click-and-drag selection (Plan 120 P3)
+    // Handle Lasso / Rect marquee click-and-drag selection
     useEffect(() => {
       const map = mapRef.current;
       if (!map || !isLoaded) return;
@@ -1121,7 +1121,7 @@ const EditorMap = memo(
       };
     }, [isLoaded, onApplyLassoSelection, onApplyRectSelection, setLassoGeometry]);
 
-    // Highlight selected features (subdivisions + points) — Plan 120 P6
+    // Highlight selected features (subdivisions + points)
     useEffect(() => {
       const map = mapRef.current;
       if (!map || !isLoaded) return;

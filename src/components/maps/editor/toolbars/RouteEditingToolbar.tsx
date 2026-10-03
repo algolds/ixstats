@@ -108,7 +108,7 @@ export function RouteEditingToolbar({
           </>
         )}
         <Button size="sm" onClick={onRouteEditCommit}>
-          Save Route Path
+          Save route path
         </Button>
         <Button variant="outline" size="sm" onClick={onRouteEditCancel}>
           Cancel

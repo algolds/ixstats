@@ -314,7 +314,7 @@ export function LorewardsBotSection() {
             <Sliders className="text-indigo h-5 w-5" />
             PM2 Process Manager
           </CardTitle>
-          <CardDescription>Control active backend integrations in real-time</CardDescription>
+          <CardDescription>Switch backend integrations on or off</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
@@ -413,7 +413,7 @@ export function LorewardsBotSection() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ixwiki-discord-bot">Discord Bot</SelectItem>
+                  <SelectItem value="ixwiki-discord-bot">Discord bot</SelectItem>
                   <SelectItem value="ixstats-ixtwitter">IxTwitter Feed</SelectItem>
                 </SelectContent>
               </Select>
@@ -463,7 +463,7 @@ export function LorewardsBotSection() {
         <CardHeader>
           <CardTitle className="text-title-3 flex items-center gap-2">
             <Award className="text-yellow h-5 w-5" />
-            Loreward Run Console
+            Loreward run console
           </CardTitle>
           <CardDescription>
             Manually trigger scoring run, preview candidates, and push updates
@@ -497,7 +497,7 @@ export function LorewardsBotSection() {
                 <div>
                   <h4 className="text-headline text-green flex items-center gap-2">
                     <CheckCircle className="h-4 w-4" />
-                    Winner Picked
+                    Winner picked
                   </h4>
                   {scoringResult.winner ? (
                     <div className="text-label-secondary text-body mt-2">
@@ -534,7 +534,7 @@ export function LorewardsBotSection() {
               {scoringResult.candidates && scoringResult.candidates.length > 0 && (
                 <div className="border-separator mt-4 border-t pt-3">
                   <h4 className="text-label-secondary text-subhead mb-2">
-                    Scoring Candidate Queue
+                    Scoring candidate queue
                   </h4>
                   <div className="text-label-secondary text-footnote space-y-2">
                     {scoringResult.candidates.map((c: any, index: number) => (
@@ -607,7 +607,7 @@ export function LorewardsBotSection() {
               ) : (
                 <>
                   <Zap className="h-3.5 w-3.5" />
-                  Trigger Full State Sync
+                  Trigger full state sync
                 </>
               )}
             </Button>
@@ -725,7 +725,7 @@ export function LorewardsBotSection() {
         <CardHeader>
           <CardTitle className="text-title-3 flex items-center gap-2">
             <Ban className="text-red h-5 w-5" />
-            Silent Blacklist Manager
+            Silent blacklist manager
           </CardTitle>
           <CardDescription>
             Excludes specified users from the bot's daily scans and win eligibility for a
@@ -831,13 +831,13 @@ export function LorewardsBotSection() {
                   <SelectItem value="permanent">Permanent</SelectItem>
                   <SelectItem value="7days">7 Days</SelectItem>
                   <SelectItem value="30days">30 Days</SelectItem>
-                  <SelectItem value="custom">Custom Date</SelectItem>
+                  <SelectItem value="custom">Custom date</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             {blacklistDuration === "custom" && (
               <div className="space-y-1">
-                <label className="text-label-secondary text-subhead">Expiry Date</label>
+                <label className="text-label-secondary text-subhead">Expiry date</label>
                 <Input
                   type="date"
                   value={blacklistExpiry}
@@ -853,7 +853,7 @@ export function LorewardsBotSection() {
             disabled={updateBlacklistMutation.isPending}
             className="w-full sm:w-auto"
           >
-            Add to Blacklist
+            Add to blacklist
           </Button>
 
           {/* Active Blacklisted Users List */}
@@ -904,7 +904,7 @@ export function LorewardsBotSection() {
         <CardHeader>
           <CardTitle className="text-title-3 flex items-center gap-2">
             <Sliders className="text-yellow h-5 w-5" />
-            Manual Winner Override Tool
+            Manual winner override tool
           </CardTitle>
           <CardDescription>
             Manually rewrite the winning details of past daily, weekly, or monthly entries and push
@@ -951,7 +951,7 @@ export function LorewardsBotSection() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-label-secondary text-subhead">Page Title</label>
+                <label className="text-label-secondary text-subhead">Page title</label>
                 <Input
                   placeholder="Winner article page"
                   value={overrideWinnerPage}
@@ -972,7 +972,7 @@ export function LorewardsBotSection() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-label-secondary text-subhead">Bytes Added</label>
+                <label className="text-label-secondary text-subhead">Bytes added</label>
                 <Input
                   type="number"
                   placeholder="Winner bytes"
@@ -998,7 +998,7 @@ export function LorewardsBotSection() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-label-secondary text-subhead">Page Title</label>
+                <label className="text-label-secondary text-subhead">Page title</label>
                 <Input
                   placeholder="Runner-up article page"
                   value={overrideRunnerUpPage}
@@ -1019,7 +1019,7 @@ export function LorewardsBotSection() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-label-secondary text-subhead">Bytes Added</label>
+                <label className="text-label-secondary text-subhead">Bytes added</label>
                 <Input
                   type="number"
                   placeholder="Runner-up bytes"

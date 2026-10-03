@@ -365,7 +365,7 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
           className="animate-in fade-in text-caption text-green flex items-center gap-2 duration-200"
         >
           <CheckCircle2 className="h-3.5 w-3.5" />
-          <span>{isEdit ? "Changes saved" : "Saved — click map to place another"}</span>
+          <span>{isEdit ? "Changes saved" : "Saved. Click map to place another"}</span>
         </div>
       )}
 

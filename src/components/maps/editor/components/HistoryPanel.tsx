@@ -110,7 +110,7 @@ export const HistoryPanel = React.memo(function HistoryPanel({
             onClick={() => handleItemClick(-1)}
             disabled={isMutating}
             aria-current={position === -1 ? "step" : undefined}
-            className={`group rounded-control text-caption relative flex w-full items-center gap-2 px-2 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
+            className={`group rounded-control text-caption relative flex w-full items-center gap-2 px-2 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity] ${
               position === -1
                 ? "bg-tint-fill text-tint ring-tint/30 font-semibold ring-1"
                 : "text-label-secondary hover:bg-fill-3 hover:text-label"
@@ -126,7 +126,7 @@ export const HistoryPanel = React.memo(function HistoryPanel({
               <Map className="h-3 w-3" />
             </div>
             <div className="flex min-w-0 flex-1 items-center justify-between">
-              <span className="truncate">Initial State</span>
+              <span className="truncate">Initial state</span>
               {position === -1 && <Badge variant="default">Current</Badge>}
             </div>
           </button>
@@ -144,7 +144,7 @@ export const HistoryPanel = React.memo(function HistoryPanel({
                 onClick={() => handleItemClick(idx)}
                 disabled={isMutating}
                 aria-current={isCurrent ? "step" : undefined}
-                className={`group rounded-control text-caption relative flex w-full items-center gap-2 px-2 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
+                className={`group rounded-control text-caption relative flex w-full items-center gap-2 px-2 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity] ${
                   isCurrent
                     ? "bg-tint-fill text-tint ring-tint/30 font-semibold ring-1"
                     : isActive
@@ -192,7 +192,9 @@ export const HistoryPanel = React.memo(function HistoryPanel({
               </div>
               <div className="space-y-0.5">
                 <p className="text-label-secondary font-medium">No actions recorded</p>
-                <p className="text-footnote">Creations, edits, and deletions will appear here</p>
+                <p className="text-footnote">
+                  Create, edit or delete a feature to start the history
+                </p>
               </div>
             </div>
           )}

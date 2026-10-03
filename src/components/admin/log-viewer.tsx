@@ -443,7 +443,7 @@ function LogViewerTerminal({
         <Button
           variant="ghost"
           onClick={scrollToBottom}
-          className="border-separator bg-fill-4 text-label-secondary hover:text-label text-caption h-auto w-full gap-2 rounded-none border-t py-2 font-normal active:scale-100"
+          className="border-separator bg-fill-4 text-label-secondary hover:text-label text-caption h-auto w-full gap-2 rounded-none border-t py-2 font-normal"
           aria-label="Scroll to latest"
         >
           <ArrowDown className="size-3" />
@@ -532,7 +532,7 @@ function LogViewerMinimal({
         <Button
           variant="ghost"
           onClick={scrollToBottom}
-          className="border-separator bg-fill-4 text-label-secondary hover:text-label text-caption h-auto w-full gap-2 rounded-none border-t py-1 font-normal active:scale-100"
+          className="border-separator bg-fill-4 text-label-secondary hover:text-label text-caption h-auto w-full gap-2 rounded-none border-t py-1 font-normal"
           aria-label="Scroll to latest"
         >
           <ArrowDown className="size-3" />
@@ -770,7 +770,7 @@ function LogViewerFilterable({
         <Button
           variant="ghost"
           onClick={scrollToBottom}
-          className="border-separator bg-fill-4 text-label-secondary hover:text-label text-caption h-auto w-full gap-2 rounded-none border-t py-2 font-normal active:scale-100"
+          className="border-separator bg-fill-4 text-label-secondary hover:text-label text-caption h-auto w-full gap-2 rounded-none border-t py-2 font-normal"
           aria-label="Scroll to latest"
         >
           <ArrowDown className="size-3" />

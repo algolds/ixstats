@@ -21,7 +21,7 @@ export default function LayerPanel() {
   return (
     <Card className="h-full overflow-hidden">
       <div className="flex h-full flex-col p-4">
-        <h2 className="border-separator text-label text-headline mb-4 border-b pb-2">Layer Tree</h2>
+        <h2 className="border-separator text-label text-headline mb-4 border-b pb-2">Layer tree</h2>
 
         <div className="flex-1 space-y-4 overflow-y-auto">
           {/* Shield Root */}

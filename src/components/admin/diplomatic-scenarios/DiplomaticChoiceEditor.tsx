@@ -54,7 +54,7 @@ export function DiplomaticChoiceEditor({
           </label>
           <Button variant="destructive" size="sm" type="button" onClick={onAddChoice}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Choice
+            Add choice
           </Button>
         </div>
 
@@ -93,7 +93,7 @@ export function DiplomaticChoiceEditor({
                         Object.keys(choice.predictedOutcomes).length > 0)) && (
                       <details className="mt-2">
                         <summary className="text-label-secondary hover:text-label text-subhead mb-1 cursor-pointer select-none">
-                          View Effects & Outcomes
+                          View effects & outcomes
                         </summary>
                         <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2">
                           {choice.effects && Object.keys(choice.effects).length > 0 && (
@@ -112,7 +112,7 @@ export function DiplomaticChoiceEditor({
                             Object.keys(choice.predictedOutcomes).length > 0 && (
                               <div>
                                 <span className="text-label-secondary text-eyebrow mb-1 block">
-                                  Predicted Outcomes
+                                  Predicted outcomes
                                 </span>
                                 <JsonViewer
                                   data={choice.predictedOutcomes}
@@ -186,7 +186,7 @@ export function DiplomaticChoiceEditor({
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <div>
                 <label className="text-label text-body mb-2 block font-medium">
-                  Skill Required
+                  Skill required
                 </label>
                 <Input
                   value={choiceFormData.skillRequired}
@@ -197,7 +197,7 @@ export function DiplomaticChoiceEditor({
                 />
               </div>
               <div>
-                <label className="text-label text-body mb-2 block font-medium">Skill Level</label>
+                <label className="text-label text-body mb-2 block font-medium">Skill level</label>
                 <Input
                   type="number"
                   value={choiceFormData.skillLevel}
@@ -212,7 +212,7 @@ export function DiplomaticChoiceEditor({
                 />
               </div>
               <div>
-                <label className="text-label text-body mb-2 block font-medium">Risk Level</label>
+                <label className="text-label text-body mb-2 block font-medium">Risk level</label>
                 <Select
                   value={choiceFormData.riskLevel}
                   onValueChange={(value) =>
@@ -276,7 +276,7 @@ export function DiplomaticChoiceEditor({
             <div className="flex items-center gap-2 pt-2">
               <Button variant="destructive" size="sm" type="button" onClick={onSaveChoice}>
                 <Check className="mr-2 h-4 w-4" />
-                Save Choice
+                Save choice
               </Button>
               <Button size="sm" variant="ghost" type="button" onClick={onCancelChoiceEdit}>
                 Cancel

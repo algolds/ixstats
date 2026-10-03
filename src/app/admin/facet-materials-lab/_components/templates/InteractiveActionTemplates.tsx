@@ -20,7 +20,7 @@ import { Card } from "~/components/ui/card";
 
 /*
  * Lab-only *frames* (the configurator's `facet-material-*` from `styles/facet/lab.css`) around
- * Facet 3 content: real primitives coloured by the tint, which `LabTemplates` scopes to the lab's
+ * real primitives coloured by the tint, which `LabTemplates` scopes to the lab's
  * accent colour.
  */
 
@@ -34,7 +34,7 @@ const VITALITY_RINGS = [
 ] as const;
 
 const BUTTON_STYLES: { label: string; variant: ButtonVariant }[] = [
-  { label: "Primary Action", variant: "default" },
+  { label: "Primary action", variant: "default" },
   { label: "Secondary", variant: "secondary" },
   { label: "Neutral", variant: "secondary" },
   { label: "Danger", variant: "destructive" },
@@ -87,7 +87,7 @@ export function InteractiveActionTemplates({
           />
           <div className="pointer-events-none relative z-10 flex items-center gap-2">
             <Sparkles aria-hidden className="text-tint size-5" />
-            <span>Simulate Trigger Command</span>
+            <span>Simulate trigger command</span>
           </div>
         </div>
       );
@@ -146,7 +146,7 @@ export function InteractiveActionTemplates({
             className="z-0 rounded-[inherit]"
           />
           <div className="pointer-events-none relative z-10">
-            <h4 className="text-headline">National Vitality</h4>
+            <h4 className="text-headline">National vitality</h4>
             <p className="text-label-secondary text-footnote">
               {material} · depth {depth}
             </p>
@@ -224,13 +224,12 @@ export function InteractiveActionTemplates({
             </div>
             <h3 className="text-title-1 text-label">IxStats</h3>
             <p className="text-label-secondary text-footnote max-w-[240px] leading-relaxed">
-              Next-generation nation simulation platform with real-time analytics and diplomatic
-              intelligence.
+              Nation simulation with analytics and diplomatic intelligence.
             </p>
           </div>
           <div className="relative z-10 flex items-center justify-center gap-3">
-            <Button onClick={() => setButtonClickCount((c) => c + 1)}>Get Started</Button>
-            <Button variant="outline">Learn More</Button>
+            <Button onClick={() => setButtonClickCount((c) => c + 1)}>Get started</Button>
+            <Button variant="outline">Learn more</Button>
           </div>
         </div>
       );
@@ -248,9 +247,9 @@ export function InteractiveActionTemplates({
             className="z-0 rounded-[inherit]"
           />
           <div className="pointer-events-none relative z-10">
-            <h3 className="text-title-3 text-label">System Overview</h3>
+            <h3 className="text-title-3 text-label">System overview</h3>
             <p className="text-label-secondary text-footnote mt-0.5">
-              Real-time performance with {material} surface
+              Performance overview on a {material} surface
             </p>
           </div>
           <div className="pointer-events-none relative z-10 grid grid-cols-2 gap-3">

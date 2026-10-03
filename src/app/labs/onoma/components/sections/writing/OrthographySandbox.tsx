@@ -32,8 +32,8 @@ interface OrthographySandboxProps {
 const SAMPLE_PHRASES = [
   { label: "Classic", text: "aba kala voran" },
   { label: "Pangram", text: "the quick brown fox" },
-  { label: "Conlang Imperial", text: "kaelen voss sha tur" },
-  { label: "Celestial Runes", text: "sol luna ast aether" },
+  { label: "Conlang imperial", text: "kaelen voss sha tur" },
+  { label: "Celestial runes", text: "sol luna ast aether" },
   { label: "Syllables", text: "ba be bi bo bu" },
 ];
 
@@ -206,7 +206,7 @@ export function OrthographySandbox({
             <Eye className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-label text-subhead">Orthography Render Sandbox</h3>
+            <h3 className="text-label text-subhead">Orthography render sandbox</h3>
             <p className="text-label-secondary text-caption">
               Typesetting preview, dynamic font metrics & token inspector
             </p>
@@ -359,7 +359,7 @@ export function OrthographySandbox({
                     whileHover={shouldReduceMotion ? {} : { scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedToken(tok)}
-                    title={`⟨${tok.charOrPhoneme}⟩ — Click to inspect`}
+                    title={`⟨${tok.charOrPhoneme}⟩: Click to inspect`}
                     className={cn(
                       "border-separator bg-fill-4 hover:border-tint/50 hover:bg-tint/10 group rounded-row relative flex shrink-0 cursor-pointer items-center justify-center border transition-colors",
                       selectedToken?.id === tok.id && "border-tint ring-tint/30 bg-tint/15 ring-2"
@@ -394,7 +394,7 @@ export function OrthographySandbox({
                     onForgeMissing?.(tok.charOrPhoneme);
                   }}
                   title={`Unmapped phoneme: '${tok.charOrPhoneme}' (Click to design)`}
-                  className="border-separator hover:border-tint/60 hover:bg-tint/10 text-label-secondary hover:text-tint rounded-row text-footnote flex shrink-0 cursor-pointer items-center justify-center border border-dashed font-mono font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
+                  className="border-separator hover:border-tint/60 hover:bg-tint/10 text-label-secondary hover:text-tint rounded-row text-footnote flex shrink-0 cursor-pointer items-center justify-center border border-dashed font-mono font-semibold transition-[color,background-color,border-color,box-shadow,opacity]"
                   style={{
                     width: glyphSize,
                     height: glyphSize,
@@ -454,7 +454,7 @@ export function OrthographySandbox({
         {/* Glyph Size Slider */}
         <div className="space-y-2">
           <div className="text-caption flex items-center justify-between">
-            <span className="text-label-secondary font-medium">Glyph Size</span>
+            <span className="text-label-secondary font-medium">Glyph size</span>
             <span className="text-label bg-fill-3 py-0.2 rounded-control-sm px-1 font-mono font-semibold">
               {glyphSize}px
             </span>
@@ -488,7 +488,7 @@ export function OrthographySandbox({
         {/* Word Spacing Slider */}
         <div className="space-y-2">
           <div className="text-caption flex items-center justify-between">
-            <span className="text-label-secondary font-medium">Word Gap</span>
+            <span className="text-label-secondary font-medium">Word gap</span>
             <span className="text-label bg-fill-3 py-0.2 rounded-control-sm px-1 font-mono font-semibold">
               {wordSpacing}px
             </span>
@@ -505,7 +505,7 @@ export function OrthographySandbox({
         {/* Baseline Shift Slider */}
         <div className="space-y-2">
           <div className="text-caption flex items-center justify-between">
-            <span className="text-label-secondary font-medium">Baseline Shift</span>
+            <span className="text-label-secondary font-medium">Baseline shift</span>
             <span className="text-label bg-fill-3 py-0.2 rounded-control-sm px-1 font-mono font-semibold">
               {baselineOffset > 0 ? `+${baselineOffset}` : baselineOffset}px
             </span>

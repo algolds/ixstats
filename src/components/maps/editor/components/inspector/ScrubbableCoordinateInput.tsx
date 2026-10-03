@@ -197,7 +197,7 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
             }
             className={cn(
               "rounded-control-sm size-5",
-              `rounded-control flex h-8 w-8 shrink-0 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
+              `rounded-control flex h-8 w-8 shrink-0 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity] ${
                 isPickingLocation
                   ? "bg-tint text-on-tint border-tint shadow-card"
                   : "border-separator bg-fill-4 text-label-secondary hover:bg-fill-3 hover:text-label"

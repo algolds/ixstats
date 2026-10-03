@@ -1,7 +1,7 @@
 "use client";
 
 // src/app/labs/onoma/components/nav/OnomaHeader.tsx
-// Onoma page header (Product Model: CREATE · STUDIO · EXPLORE). Facet 3 chrome: the wordmark and
+// Onoma page header (Product Model: CREATE · STUDIO · EXPLORE). The wordmark and
 // utility buttons sit on the grouped page; the pillar console is a thin material toolbar holding the
 // pillar and section tabs (SegmentedControl), or the Stash/Settings return bar.
 
@@ -124,7 +124,7 @@ export function OnomaHeader({
               variant="ghost"
               onClick={() => onNavigate("overview")}
               className="group/brand h-auto px-1 py-1 hover:bg-transparent"
-              title="Onoma — Overview"
+              title="Onoma overview"
               aria-label="Onoma overview"
             >
               <OnomaBrandLogo

@@ -230,7 +230,7 @@ export default function SyntaxSection() {
         <div className="text-footnote grid grid-cols-2 gap-3 sm:grid-cols-4">
           {/* Word Order */}
           <div className="space-y-1">
-            <label className="text-label-secondary text-subhead">Word Order</label>
+            <label className="text-label-secondary text-subhead">Word order</label>
             <Select value={wordOrder} onValueChange={(v) => setWordOrder(v)}>
               <SelectTrigger size="sm" className="w-full">
                 <SelectValue />
@@ -248,7 +248,7 @@ export default function SyntaxSection() {
 
           {/* Adjective Placement */}
           <div className="space-y-1">
-            <label className="text-label-secondary text-subhead">Adjective Order</label>
+            <label className="text-label-secondary text-subhead">Adjective order</label>
             <Select value={adjectiveOrder} onValueChange={(v) => setAdjectiveOrder(v)}>
               <SelectTrigger size="sm" className="w-full">
                 <SelectValue />
@@ -262,7 +262,7 @@ export default function SyntaxSection() {
 
           {/* Accusative Suffix */}
           <div className="space-y-1">
-            <label className="text-label-secondary text-subhead">Accusative Suffix</label>
+            <label className="text-label-secondary text-subhead">Accusative suffix</label>
             <Input
               type="text"
               value={accSuffix}
@@ -274,7 +274,7 @@ export default function SyntaxSection() {
 
           {/* Plural Suffix */}
           <div className="space-y-1">
-            <label className="text-label-secondary text-subhead">Plural Suffix</label>
+            <label className="text-label-secondary text-subhead">Plural suffix</label>
             <Input
               type="text"
               value={pluralSuffix}

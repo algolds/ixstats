@@ -200,9 +200,9 @@ export function StashSection({
           value={stashTab}
           onValueChange={setStashTab}
           options={[
-            { value: "saved", label: "Saved Items" },
-            { value: "lexicon", label: "Lexicon Dictionary" },
-            { value: "history", label: "Generation History" },
+            { value: "saved", label: "Saved items" },
+            { value: "lexicon", label: "Lexicon dictionary" },
+            { value: "history", label: "Generation history" },
           ]}
         />
 
@@ -215,7 +215,7 @@ export function StashSection({
             <div className="relative w-full sm:w-44">
               <Select value={selectedStashFilterId} onValueChange={setSelectedStashFilterId}>
                 <SelectTrigger className="text-footnote w-full">
-                  <SelectValue placeholder="All Folders" />
+                  <SelectValue placeholder="All folders" />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
                   <SelectItem value="all" className="text-footnote">

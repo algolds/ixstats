@@ -267,7 +267,7 @@ export function NSImportSuiteAdmin() {
         timestamp: log.completedAt
           ? new Date(log.completedAt).toISOString()
           : new Date(log.startedAt).toISOString(),
-        message: `[${log.syncType}] — ${log.status} | Processed: ${log.cardsProcessed ?? 0} (Created: +${log.cardsCreated ?? 0}, Updated: +${log.cardsUpdated ?? 0}) ${log.errorMessage ? `| Error: ${log.errorMessage}` : ""}`,
+        message: `[${log.syncType}]: ${log.status} | Processed: ${log.cardsProcessed ?? 0} (Created: +${log.cardsCreated ?? 0}, Updated: +${log.cardsUpdated ?? 0}) ${log.errorMessage ? `| Error: ${log.errorMessage}` : ""}`,
         level,
       };
     });
@@ -366,7 +366,7 @@ export function NSImportSuiteAdmin() {
               <MapPin className="text-green h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-label text-title-3">Region Card Fetch</h3>
+              <h3 className="text-label text-title-3">Region card fetch</h3>
               <p className="text-label-secondary text-caption">
                 Fetch trading cards from all nations in specified NS regions
               </p>
@@ -415,8 +415,8 @@ export function NSImportSuiteAdmin() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="gargantuan">Largest Regions</SelectItem>
-                <SelectItem value="Role Player">Roleplay Communities</SelectItem>
+                <SelectItem value="gargantuan">Largest regions</SelectItem>
+                <SelectItem value="Role Player">Roleplay communities</SelectItem>
                 <SelectItem value="Democratic">Democratic / Legislative</SelectItem>
                 <SelectItem value="Totalitarian">Totalitarian / Dictatorships</SelectItem>
                 <SelectItem value="Communist">Communist / Leftist</SelectItem>
@@ -516,10 +516,10 @@ export function NSImportSuiteAdmin() {
         <div className="border-separator flex flex-col gap-3 border-b pb-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-label text-title-3">Sync Operations & Import Runs</h2>
+              <h2 className="text-label text-title-3">Sync operations & import runs</h2>
               {selectedSyncLog && (
                 <Badge variant="info">
-                  <Filter className="h-3 w-3" /> Filtered View
+                  <Filter className="h-3 w-3" /> Filtered view
                 </Badge>
               )}
             </div>
@@ -558,7 +558,7 @@ export function NSImportSuiteAdmin() {
                     });
                     return (
                       <SelectItem key={log.id} value={log.id}>
-                        [{log.status}] {label} — {dateStr} (+{log.cardsCreated})
+                        [{log.status}] {label}: {dateStr} (+{log.cardsCreated})
                       </SelectItem>
                     );
                   })}
@@ -575,8 +575,8 @@ export function NSImportSuiteAdmin() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="region">Region Only</SelectItem>
+                <SelectItem value="all">All types</SelectItem>
+                <SelectItem value="region">Region only</SelectItem>
               </SelectContent>
             </Select>
 
@@ -612,7 +612,7 @@ export function NSImportSuiteAdmin() {
                   value={activeLogTab}
                   onValueChange={setActiveLogTab}
                   options={[
-                    { value: "logs", label: "Audit Log", icon: <FileText /> },
+                    { value: "logs", label: "Audit log", icon: <FileText /> },
                     {
                       value: "cards",
                       icon: <Sparkles />,
@@ -629,7 +629,7 @@ export function NSImportSuiteAdmin() {
                     setActiveLogTab("logs");
                   }}
                 >
-                  <X className="mr-1 h-3.5 w-3.5" /> Clear Filter
+                  <X className="mr-1 h-3.5 w-3.5" /> Clear filter
                 </Button>
               </div>
             </div>
@@ -695,7 +695,7 @@ export function NSImportSuiteAdmin() {
                           )
                         }
                       >
-                        <RefreshCw className="mr-1 h-3 w-3" /> Retry Region Fetch
+                        <RefreshCw className="mr-1 h-3 w-3" /> Retry region fetch
                       </Button>
                     )}
                     <Button
@@ -910,7 +910,7 @@ export function NSImportSuiteAdmin() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Globe className="text-green h-5 w-5" />
-              Confirm Region Fetch
+              Confirm region fetch
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="text-label-secondary text-footnote space-y-2">

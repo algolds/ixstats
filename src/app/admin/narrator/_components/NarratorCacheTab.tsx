@@ -45,7 +45,7 @@ export function NarratorCacheTab() {
       {/* Metric Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Total Cached Cards</p>
+          <p className="text-label-secondary text-eyebrow">Total cached cards</p>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-16" />
           ) : (
@@ -56,7 +56,7 @@ export function NarratorCacheTab() {
         </Card>
 
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Total Cache Hits</p>
+          <p className="text-label-secondary text-eyebrow">Total cache hits</p>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-16" />
           ) : (
@@ -83,7 +83,7 @@ export function NarratorCacheTab() {
         <div className="border-separator border-b pb-3">
           <div className="flex items-center gap-2">
             <Database className="text-yellow h-4 w-4" />
-            <h3 className="text-label text-caption">Cache Policy & Storage</h3>
+            <h3 className="text-label text-caption">Cache policy & storage</h3>
           </div>
           <p className="text-label-secondary text-footnote mt-0.5">
             To prevent quota drainage and API rate limits, flavor text descriptions are cached for
@@ -118,7 +118,7 @@ export function NarratorCacheTab() {
             ) : (
               <>
                 <Trash2 className="mr-2 h-3.5 w-3.5" />
-                Flush Flavor Cache
+                Flush flavor cache
               </>
             )}
           </Button>

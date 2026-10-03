@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * OptionSelect — the Facet `Select` (spec §7.2) driven by an options array, for the many
+ * OptionSelect — the `Select` driven by an options array, for the many
  * value/label pickers in the map editor, Vexel and MyCountry that used native select elements.
  *
  * Radix Select reserves the empty string, so an option whose value is `""` (an "any"/"none"

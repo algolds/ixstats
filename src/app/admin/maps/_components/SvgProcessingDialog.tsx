@@ -6,7 +6,6 @@
  * and allows preview + commit.
  */
 
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "~/components/ui/sheet";
@@ -155,19 +154,19 @@ export function SvgProcessingDialog({
               {/* Summary */}
               <div className="grid grid-cols-3 gap-3">
                 <Card className="rounded-control p-3">
-                  <Eyebrow className="block">Features</Eyebrow>
+                  <span className="text-stat-label text-label-secondary block">Features</span>
                   <div className="text-label text-title-3 tabular-nums">
                     {processResult.featureCount}
                   </div>
                 </Card>
                 <Card className="rounded-control p-3">
-                  <Eyebrow className="block">Matched</Eyebrow>
+                  <span className="text-stat-label text-label-secondary block">Matched</span>
                   <div className="text-label text-title-3 tabular-nums">
                     {Object.keys(processResult.countryMatches).length}
                   </div>
                 </Card>
                 <Card className="rounded-control p-3">
-                  <Eyebrow className="block">Unmatched</Eyebrow>
+                  <span className="text-stat-label text-label-secondary block">Unmatched</span>
                   <div className="text-label text-title-3 tabular-nums">
                     {processResult.featureCount - Object.keys(processResult.countryMatches).length}
                   </div>
@@ -252,7 +251,7 @@ export function SvgProcessingDialog({
               ) : (
                 <>
                   <Check className="mr-2 h-4 w-4" />
-                  Commit to Map
+                  Commit to map
                 </>
               )}
             </Button>

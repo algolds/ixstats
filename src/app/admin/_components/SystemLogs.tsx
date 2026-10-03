@@ -81,7 +81,7 @@ export function SystemLogs() {
           <Button variant="outline" size="sm" asChild className="gap-1">
             <Link href="/admin/logs">
               <ExternalLink className="h-3.5 w-3.5" />
-              Dedicated View
+              Dedicated view
             </Link>
           </Button>
         </div>
@@ -94,7 +94,7 @@ export function SystemLogs() {
         ) : (
           <LogViewerFilterable
             entries={entries}
-            title="Latest System Logs"
+            title="Latest system logs"
             maxHeight={400}
             onClear={handleClearLogs}
             className="border-separator bg-fill-4"

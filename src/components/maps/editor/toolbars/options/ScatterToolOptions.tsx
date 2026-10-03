@@ -13,7 +13,7 @@ const CITY_TYPES = [
   { value: "capital", label: "Capital" },
   { value: "town", label: "Town" },
   { value: "village", label: "Village" },
-  { value: "port", label: "Port City" },
+  { value: "port", label: "Port city" },
 ];
 
 export function CityScatterPopover({
@@ -30,7 +30,7 @@ export function CityScatterPopover({
   return (
     <PopoverContent className="w-64 space-y-3 p-3">
       <div className="space-y-1">
-        <Eyebrow className="block">Scatter Count</Eyebrow>
+        <Eyebrow className="block">Scatter count</Eyebrow>
         <div className="flex items-center gap-2">
           <Slider
             aria-label="Scatter count"
@@ -44,7 +44,7 @@ export function CityScatterPopover({
         </div>
       </div>
       <div className="space-y-1">
-        <Eyebrow className="block">City Type</Eyebrow>
+        <Eyebrow className="block">City type</Eyebrow>
         <OptionSelect
           aria-label="City type"
           value={type}
@@ -55,7 +55,7 @@ export function CityScatterPopover({
         />
       </div>
       <div className="space-y-1">
-        <Eyebrow className="block">Name Prefix</Eyebrow>
+        <Eyebrow className="block">Name prefix</Eyebrow>
         <input
           type="text"
           value={prefix}
@@ -87,7 +87,7 @@ export function TransformGeometryPopover({
   return (
     <PopoverContent className="w-64 space-y-4 p-3">
       <div className="space-y-1">
-        <Eyebrow className="block">Simplify Tolerance</Eyebrow>
+        <Eyebrow className="block">Simplify tolerance</Eyebrow>
         <div className="flex items-center gap-2">
           <Slider
             aria-label="Simplify tolerance"
@@ -109,7 +109,7 @@ export function TransformGeometryPopover({
         </div>
       </div>
       <div className="space-y-1">
-        <Eyebrow className="block">Smooth Geometry</Eyebrow>
+        <Eyebrow className="block">Smooth geometry</Eyebrow>
         <Button
           variant="secondary"
           size="sm"
@@ -143,7 +143,7 @@ export function TransformGeometryPopover({
         </div>
       </div>
       <div className="space-y-1">
-        <Eyebrow className="block">Scale Factor</Eyebrow>
+        <Eyebrow className="block">Scale factor</Eyebrow>
         <div className="flex items-center gap-2">
           <Slider
             aria-label="Scale factor"
@@ -184,7 +184,7 @@ export function CityTransformationsPopover({
   return (
     <PopoverContent className="w-64 space-y-4 p-3">
       <div className="space-y-1">
-        <Eyebrow className="block">Scale Population</Eyebrow>
+        <Eyebrow className="block">Scale population</Eyebrow>
         <div className="flex items-center gap-2">
           <Slider
             aria-label="Scale population"

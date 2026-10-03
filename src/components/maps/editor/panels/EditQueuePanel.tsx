@@ -141,7 +141,7 @@ export function EditQueuePanel() {
                 <div className="border-separator border-t px-4 py-3">
                   {/* Proposed data */}
                   <div className="mb-3">
-                    <Eyebrow className="mb-1 block">Proposed Changes</Eyebrow>
+                    <Eyebrow className="mb-1 block">Proposed changes</Eyebrow>
                     <JsonViewer
                       data={edit.proposedData ?? null}
                       defaultExpanded={2}
@@ -152,7 +152,7 @@ export function EditQueuePanel() {
                   {/* Current data (if update/delete) */}
                   {edit.currentData && (
                     <div className="mb-3">
-                      <Eyebrow className="mb-1 block">Current Data</Eyebrow>
+                      <Eyebrow className="mb-1 block">Current data</Eyebrow>
                       <JsonViewer
                         data={edit.currentData}
                         defaultExpanded={2}

@@ -40,7 +40,7 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-label text-body font-medium">Snap & Simplify</h3>
+        <h3 className="text-label text-body font-medium">Snap & simplify</h3>
         <p className="text-label-secondary text-footnote mt-1">
           Snap edges to the country border, simplify vertices to the minimum needed, and align
           shared borders between neighboring provinces.
@@ -50,7 +50,7 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
       {/* Snap Tolerance */}
       <div className="space-y-2">
         <label className="text-label-secondary text-footnote flex items-center gap-2">
-          <Magnet className="h-3 w-3" /> Border Snap Tolerance
+          <Magnet className="h-3 w-3" /> Border snap tolerance
         </label>
         <Slider
           aria-label="Border snap tolerance"
@@ -71,7 +71,7 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
       {/* Simplify Tolerance */}
       <div className="space-y-2">
         <label className="text-label-secondary text-footnote flex items-center gap-2">
-          <Minimize2 className="h-3 w-3" /> Vertex Reduction
+          <Minimize2 className="h-3 w-3" /> Vertex reduction
         </label>
         <Slider
           aria-label="Vertex reduction"
@@ -116,7 +116,7 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
         disabled={!importer.countryBorder}
       >
         <Magnet className="h-3.5 w-3.5" />
-        Apply Snap & Simplify
+        Apply snap & simplify
       </Button>
 
       <div className="text-label-secondary text-footnote">

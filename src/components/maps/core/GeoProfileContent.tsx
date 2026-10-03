@@ -170,7 +170,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
         <Card className="px-3 py-2">
           <Eyebrow className="flex items-center gap-2">
             <Wheat className="h-3 w-3" />
-            Arable Land
+            Arable land
           </Eyebrow>
           <div
             className={`text-headline mt-0.5 ${
@@ -206,7 +206,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
         <Card className="px-3 py-2">
           <Stat
             size="sm"
-            label="Mean Temp"
+            label="Mean temp"
             value={<>{profile.climate.estMeanTempC}°C</>}
             icon={<Thermometer className="size-3.5" />}
           />
@@ -215,7 +215,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
         <Card className="px-3 py-2">
           <Stat
             size="sm"
-            label="Mean Elev"
+            label="Mean elev"
             value={<>{profile.elevation.meanElev}m</>}
             icon={<Mountain className="size-3.5" />}
           />
@@ -443,7 +443,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
 
       {/* ── Economic Modifiers ── */}
       <div>
-        <Eyebrow>Geographic Modifiers</Eyebrow>
+        <Eyebrow>Geographic modifiers</Eyebrow>
         <div className="mt-2 flex flex-wrap gap-2">
           <ModifierBadge label="GDP" value={profile.economic.gdpModifier} />
           <ModifierBadge label="Trade" value={profile.economic.tradeModifier} />

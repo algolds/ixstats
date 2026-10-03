@@ -69,8 +69,8 @@ export function EquipmentFormDialog({
     { id: "general", label: "General", icon: Settings },
     { id: "specifications", label: "Specifications", icon: FileText },
     { id: "capabilities", label: "Capabilities", icon: Rocket },
-    { id: "costs", label: "Costs & Requirements", icon: DollarSign },
-    { id: "media", label: "Media & Documentation", icon: Image },
+    { id: "costs", label: "Costs & requirements", icon: DollarSign },
+    { id: "media", label: "Media & documentation", icon: Image },
   ];
 
   return (
@@ -429,7 +429,7 @@ function CostsTab({
 
       <div>
         <label className="text-label text-body mb-2 block font-medium">
-          Annual Maintenance Hours
+          Annual maintenance hours
         </label>
         <Input
           type="number"
@@ -483,7 +483,7 @@ function MediaTab({
       </div>
 
       <div>
-        <label className="text-label text-body mb-2 block font-medium">Historical Context</label>
+        <label className="text-label text-body mb-2 block font-medium">Historical context</label>
         <Textarea
           value={formData.historicalContext}
           onChange={(e) => setFormData({ ...formData, historicalContext: e.target.value })}

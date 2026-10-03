@@ -13,7 +13,7 @@ import { DiplomaticScenariosAnalyticsTab } from "./_components/DiplomaticScenari
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Shield, StatsReport as BarChart3 } from "iconoir-react";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Card } from "~/components/ui/card";
 
 export function DiplomaticScenariosPanel() {
@@ -23,10 +23,9 @@ export function DiplomaticScenariosPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Shield}
-        title="Diplomatic Scenarios"
-        description="Author and calibrate dynamic diplomatic crisis decision scenarios, requirements, and branching resolution trees."
+      <PageHeader
+        title="Diplomatic scenarios"
+        subtitle="Author crisis scenarios with their requirements and resolution branches."
       />
 
       <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="w-full">
@@ -34,14 +33,14 @@ export function DiplomaticScenariosPanel() {
           <TabsList className="bg-fill-3 flex w-full max-w-xs justify-start gap-1 rounded-full p-1">
             <TabsTrigger
               value="catalog"
-              className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+              className="text-caption flex flex-1 items-center justify-center gap-2"
             >
               <Shield className="text-purple h-4 w-4" />
               Scenarios
             </TabsTrigger>
             <TabsTrigger
               value="analytics"
-              className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+              className="text-caption flex flex-1 items-center justify-center gap-2"
             >
               <BarChart3 className="text-teal h-4 w-4" />
               Analytics

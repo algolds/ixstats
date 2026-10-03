@@ -14,8 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Crown, User, Check, WarningCircle as AlertCircle } from "iconoir-react";
-import { AdminHeader } from "../_components/AdminHeader";
+import { User, Check, WarningCircle as AlertCircle } from "iconoir-react";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Card } from "~/components/ui/card";
 
 export function MembershipPanel() {
@@ -55,10 +55,9 @@ export function MembershipPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Crown}
-        title="Membership Tier Management"
-        description="Update user membership tiers and grant MyCountry Executive / Premium subscription entitlements."
+      <PageHeader
+        title="Membership tiers"
+        subtitle="Change user tiers and grant MyCountry Executive or Premium access."
       />
 
       <div className="mx-auto max-w-xl">
@@ -70,7 +69,7 @@ export function MembershipPanel() {
                   <User className="text-tint h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-label text-caption">Current Session</p>
+                  <p className="text-label text-caption">Current session</p>
                   <p className="text-label-secondary text-footnote font-mono">{user.id}</p>
                 </div>
               </div>
@@ -92,7 +91,7 @@ export function MembershipPanel() {
             </div>
 
             <div>
-              <label className="text-label text-caption mb-2 block">Target Membership Tier</label>
+              <label className="text-label text-caption mb-2 block">Target membership tier</label>
               <Select value={tier} onValueChange={(val: any) => setTier(val)}>
                 <SelectTrigger size="sm">
                   <SelectValue />

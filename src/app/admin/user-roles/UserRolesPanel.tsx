@@ -27,7 +27,7 @@ import { Shield, Search, Sparks as Sparkles, Group as Users, Mail } from "iconoi
 import { Switch } from "~/components/ui/switch";
 import { useNotify } from "~/hooks/useNotify";
 import { useAbility, Can } from "~/components/providers/AbilityProvider";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Card } from "~/components/ui/card";
@@ -120,27 +120,26 @@ export function UserRolesPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Shield}
-        title="Role & Permission Systems"
-        description="System roles hierarchy, VIP player invitations, and membership elevation auditing."
+      <PageHeader
+        title="Roles and permissions"
+        subtitle="Role hierarchy, VIP invitations and membership elevation audit."
       />
 
       <Tabs defaultValue="roles" className="w-full">
         <TabsList className="bg-fill-3 flex w-full max-w-md justify-start gap-1 rounded-full p-1">
           <TabsTrigger
             value="roles"
-            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
             <Shield className="text-teal h-4 w-4" />
-            System Roles
+            System roles
           </TabsTrigger>
           <TabsTrigger
             value="memberships"
-            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
             <Users className="text-purple h-4 w-4" />
-            Account Elevation
+            Account elevation
           </TabsTrigger>
         </TabsList>
 
@@ -148,7 +147,7 @@ export function UserRolesPanel() {
           <Card className="space-y-4 p-5">
             <div className="border-separator flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-label text-caption">Configured System Roles</h3>
+                <h3 className="text-label text-caption">Configured system roles</h3>
                 <p className="text-label-secondary text-footnote mt-0.5">
                   Hierarchy levels and attached permission profiles
                 </p>
@@ -163,11 +162,11 @@ export function UserRolesPanel() {
                   </DialogTrigger>
                   <DialogContent className="max-h-[85vh] max-w-md overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>Send Waitlist Bypass Invitation</DialogTitle>
+                      <DialogTitle>Send waitlist bypass invitation</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-3">
                       <div className="space-y-2">
-                        <label className="text-label text-caption">Email Address</label>
+                        <label className="text-label text-caption">Email address</label>
                         <Input
                           type="email"
                           value={inviteForm.emailAddress}
@@ -179,7 +178,7 @@ export function UserRolesPanel() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-label text-caption">Reserved Nation Name</label>
+                        <label className="text-label text-caption">Reserved nation name</label>
                         <Input
                           value={inviteForm.reservedNationName}
                           onChange={(e) =>
@@ -190,7 +189,7 @@ export function UserRolesPanel() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-label text-caption">Initial Role</label>
+                        <label className="text-label text-caption">Initial role</label>
                         <Select
                           value={inviteForm.role}
                           onValueChange={(val: "admin" | "user" | "owner") =>

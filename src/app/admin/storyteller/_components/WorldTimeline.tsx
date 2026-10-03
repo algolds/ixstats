@@ -96,7 +96,7 @@ export function WorldTimeline() {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <Clock className="text-label-secondary mb-3 h-10 w-10" />
-        <h3 className="text-label text-title-3">No World Events</h3>
+        <h3 className="text-label text-title-3">No world events</h3>
         <p className="text-label-secondary text-body mt-1">
           Create your first world event using the Event Wizard.
         </p>
@@ -228,7 +228,7 @@ export function WorldTimeline() {
                 {/* Expanded detail */}
                 {isExpanded && (
                   <div className="border-separator mt-3 space-y-2 border-t pt-3">
-                    <h5 className="text-label text-subhead">Affected Countries</h5>
+                    <h5 className="text-label text-subhead">Affected countries</h5>
                     <div className="flex flex-wrap gap-2">
                       {event.affectedCountries.map((ac) => (
                         <Badge key={ac.country.id} variant="outline">

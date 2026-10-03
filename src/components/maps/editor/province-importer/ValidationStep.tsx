@@ -28,7 +28,7 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-label text-body font-medium">Topology Validation</h3>
+        <h3 className="text-label text-body font-medium">Topology validation</h3>
         <p className="text-label-secondary text-footnote mt-1">
           Checking for gaps, overlaps, and geometry issues.
         </p>
@@ -38,7 +38,7 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
         <div className="border-separator rounded-control text-footnote text-green flex flex-col gap-2 border px-3 py-4">
           <div className="flex items-center gap-2 font-medium">
             <CheckCircle className="h-4 w-4" />
-            Ready for City Import
+            Ready for city import
           </div>
           <p className="text-label-secondary text-footnote mt-1 leading-relaxed">
             Province topology checks are skipped for cities-only import.{" "}
@@ -113,7 +113,7 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
                   {gap.adjacentProvinces.length > 0 && (
                     <span className="text-label-secondary">
                       {" "}
-                      — near {gap.adjacentProvinces.join(", ")}
+                      near {gap.adjacentProvinces.join(", ")}
                     </span>
                   )}
                   {gap.autoFixable && <span className="text-green ml-1">(auto-fixable)</span>}
@@ -145,7 +145,7 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
                   <span className="font-medium">{overlap.areaSqKm} km²</span>
                   <span className="text-label-secondary">
                     {" "}
-                    — {overlap.provinces[0]} ∩ {overlap.provinces[1]}
+                    {overlap.provinces[0]} ∩ {overlap.provinces[1]}
                   </span>
                 </div>
               ))}

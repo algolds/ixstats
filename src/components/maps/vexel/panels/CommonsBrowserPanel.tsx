@@ -25,14 +25,14 @@ interface CommonsBrowserPanelProps {
 }
 
 const COMMONS_SUGGESTED_CATEGORIES = [
-  { label: "Lions in Heraldry", value: "Lions in heraldry" },
-  { label: "Eagles in Heraldry", value: "Eagles in heraldry" },
-  { label: "Fleur-de-lis in Heraldry", value: "Fleur-de-lis in heraldry" },
-  { label: "Crosses in Heraldry", value: "Crosses in heraldry" },
-  { label: "Crowns in Heraldry", value: "Crowns in heraldry" },
-  { label: "Stars in Heraldry", value: "Stars in heraldry" },
-  { label: "Castles in Heraldry", value: "Castles in heraldry" },
-  { label: "Swords in Heraldry", value: "Swords in heraldry" },
+  { label: "Lions in heraldry", value: "Lions in heraldry" },
+  { label: "Eagles in heraldry", value: "Eagles in heraldry" },
+  { label: "Fleur-de-lis in heraldry", value: "Fleur-de-lis in heraldry" },
+  { label: "Crosses in heraldry", value: "Crosses in heraldry" },
+  { label: "Crowns in heraldry", value: "Crowns in heraldry" },
+  { label: "Stars in heraldry", value: "Stars in heraldry" },
+  { label: "Castles in heraldry", value: "Castles in heraldry" },
+  { label: "Swords in heraldry", value: "Swords in heraldry" },
 ];
 
 export default function CommonsBrowserPanel({

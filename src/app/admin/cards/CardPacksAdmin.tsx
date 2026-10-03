@@ -54,7 +54,7 @@ const RARITY_OPTIONS = [
   { value: "COMMON", label: "Common" },
   { value: "UNCOMMON", label: "Uncommon" },
   { value: "RARE", label: "Rare" },
-  { value: "ULTRA_RARE", label: "Ultra Rare" },
+  { value: "ULTRA_RARE", label: "Ultra rare" },
   { value: "EPIC", label: "Epic" },
   { value: "LEGENDARY", label: "Legendary" },
 ];
@@ -234,7 +234,7 @@ export function CardPacksAdmin() {
           size="sm"
         >
           <Plus className="mr-2 h-4 w-4" />
-          Create Pack
+          Create pack
         </Button>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative">
@@ -265,15 +265,15 @@ export function CardPacksAdmin() {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {[
-          { label: "Total Packs", value: stats.total, icon: Package, color: "text-blue" },
+          { label: "Total packs", value: stats.total, icon: Package, color: "text-blue" },
           { label: "Active", value: stats.active, icon: Star, color: "text-green" },
           {
-            label: "Avg Price",
+            label: "Avg price",
             value: `${stats.avgPrice} IxC`,
             icon: Coins,
             color: "text-yellow",
           },
-          { label: "Total Cards", value: stats.totalCards, icon: Layers, color: "text-purple" },
+          { label: "Total cards", value: stats.totalCards, icon: Layers, color: "text-purple" },
         ].map((s) => (
           <Card key={s.label} className="flex flex-col gap-6 p-4 py-6">
             <div className="flex items-center gap-2">
@@ -493,7 +493,7 @@ export function CardPacksAdmin() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-label text-body mb-2 block font-medium">Card Count</label>
+                <label className="text-label text-body mb-2 block font-medium">Card count</label>
                 <Input
                   type="number"
                   min={1}
@@ -505,7 +505,7 @@ export function CardPacksAdmin() {
               </div>
               <div>
                 <label className="text-label text-body mb-2 block font-medium">
-                  Guaranteed Rarity
+                  Guaranteed rarity
                 </label>
                 <Select
                   value={formData.guaranteedRarity}

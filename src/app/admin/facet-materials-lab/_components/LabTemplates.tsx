@@ -33,7 +33,7 @@ export function LabTemplates({
   const { template, customAccent } = config;
 
   // The lab accent drives the lab materials (`--facet-lab-accent`) and, as a scoped tint, the
-  // Facet 3 primitives inside each template — the way an app's `data-app` tint scopes them.
+  // primitives inside each template, the way an app's `data-app` tint scopes them.
   const accentVars = {
     "--facet-lab-accent": customAccent,
     "--accent": customAccent,

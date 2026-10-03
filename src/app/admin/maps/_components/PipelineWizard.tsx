@@ -138,8 +138,8 @@ export function PipelineWizard() {
         value={mode}
         onValueChange={setMode}
         options={[
-          { value: "quick", label: "Quick Update", icon: <Zap /> },
-          { value: "full", label: "Full Pipeline", icon: <Settings2 /> },
+          { value: "quick", label: "Quick update", icon: <Zap /> },
+          { value: "full", label: "Full pipeline", icon: <Settings2 /> },
         ]}
       />
 
@@ -364,7 +364,7 @@ function QuickUpdatePanel() {
               </p>
             </div>
             <Button variant="outline" size="sm" onClick={reset}>
-              <RotateCcw className="mr-2 h-3.5 w-3.5" /> Start Over
+              <RotateCcw className="mr-2 h-3.5 w-3.5" /> Start over
             </Button>
           </div>
 
@@ -396,7 +396,7 @@ function QuickUpdatePanel() {
               />
               <DiffBadge
                 icon={Link2}
-                label="Links Preserved"
+                label="Links preserved"
                 count={result.diff.summary.linkagesPreserved}
                 color="amber"
               />
@@ -437,7 +437,7 @@ function QuickUpdatePanel() {
                   <TableHead className="px-3">Status</TableHead>
                   <TableHead className="px-3">Feature ID</TableHead>
                   <TableHead className="px-3">Name</TableHead>
-                  <TableHead className="px-3">Country Link</TableHead>
+                  <TableHead className="px-3">Country link</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -497,7 +497,7 @@ function QuickUpdatePanel() {
           <div className="flex gap-3 pt-2">
             <Button onClick={handleCommit}>
               <Upload className="mr-2 h-4 w-4" />
-              Apply Update
+              Apply update
             </Button>
             <Button variant="outline" onClick={reset}>
               Cancel
@@ -517,14 +517,14 @@ function QuickUpdatePanel() {
         <div className="flex flex-col items-center gap-4 py-12">
           <CheckCircle2 className="text-green h-12 w-12" />
           <div className="text-center">
-            <h3 className="text-label text-title-3">Update Applied</h3>
+            <h3 className="text-label text-title-3">Update applied</h3>
             <p className="text-label-secondary text-body mt-1">
               {result.featureCount} features committed to{" "}
               <Badge variant="outline">{result.layerType}</Badge> layer
             </p>
           </div>
           <Button variant="outline" onClick={reset}>
-            Upload Another
+            Upload another
           </Button>
         </div>
       )}
@@ -679,7 +679,7 @@ function FullPipelinePanel() {
 
   return (
     <Card className="rounded-row p-6">
-      <h3 className="text-label text-title-3 mb-4">Full Pipeline Wizard</h3>
+      <h3 className="text-label text-title-3 mb-4">Full pipeline wizard</h3>
       <p className="text-label-secondary text-footnote mb-4">
         Multi-step wizard for importing SVG/PNG maps with coordinate calibration. For single-layer
         updates, use Quick Update mode instead.
@@ -749,7 +749,7 @@ function FullPipelinePanel() {
             </div>
             <Button asChild>
               <label className="cursor-pointer">
-                Choose File
+                Choose file
                 <input
                   type="file"
                   accept=".svg,.png,.jpg,.jpeg"
@@ -802,12 +802,12 @@ function FullPipelinePanel() {
       {step === "complete" && importResult && (
         <div className="space-y-4 py-4 text-center">
           <CheckCircle className="text-green mx-auto h-12 w-12" />
-          <p className="text-label text-title-3">Import Complete</p>
+          <p className="text-label text-title-3">Import complete</p>
           <p className="text-label-secondary text-body">
             {importResult.imported} features imported successfully. Shared vertex index has been
             rebuilt.
           </p>
-          <Button onClick={handleReset}>Import Another Map</Button>
+          <Button onClick={handleReset}>Import another map</Button>
         </div>
       )}
 
@@ -856,7 +856,7 @@ function PreviewStep({
   return (
     <div className="space-y-4">
       <Card className="rounded-control p-4">
-        <h4 className="text-label text-body mb-2 font-medium">Pipeline Results</h4>
+        <h4 className="text-label text-body mb-2 font-medium">Pipeline results</h4>
         <div className="space-y-1">
           {Object.entries(result.metadata.featureCounts).map(([layer, count]) => (
             <div key={layer} className="text-body flex justify-between">
@@ -880,7 +880,7 @@ function PreviewStep({
 
       {!result.validation.valid && (
         <div className="border-destructive/30 rounded-control border p-3">
-          <p className="text-destructive text-caption mb-1">Validation Errors</p>
+          <p className="text-destructive text-caption mb-1">Validation errors</p>
           {result.validation.errors.map((e, i) => (
             <p key={i} className="text-destructive/80 text-footnote">
               {e}
@@ -892,10 +892,10 @@ function PreviewStep({
       <div className="flex gap-2">
         <Button onClick={onProceed} disabled={!result.validation.valid}>
           <Database className="h-4 w-4" />
-          Proceed to Import
+          Proceed to import
         </Button>
         <Button variant="outline" onClick={onReset}>
-          Start Over
+          Start over
         </Button>
       </div>
     </div>
@@ -989,7 +989,7 @@ function PngColourStep({
       const result = await runPipeline.mutateAsync({ source: "png", pngBase64 });
       const ranked = rankColours(result.detectedColors ?? []);
       if (ranked.length === 0) {
-        onError("No colours were detected — upload a flat-colour political map.");
+        onError("No colours were detected. Upload a flat-colour political map.");
       }
       setColours(ranked);
     } catch (err) {
@@ -1018,7 +1018,7 @@ function PngColourStep({
     return (
       <div className="space-y-2">
         <p className="text-label-secondary text-body">
-          {colours.length} colours detected — nations of{" "}
+          {colours.length} colours detected: nations of{" "}
           <span className="text-label font-medium">{realmName}</span>
         </p>
         <ColourNationMapper

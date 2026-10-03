@@ -134,7 +134,7 @@ export function PatternDepthControl({
       <div className={cn("space-y-1", className)}>
         {showLabels && (
           <div className="flex items-center gap-1">
-            <label className="text-footnote text-label block font-semibold">Pattern Depth</label>
+            <label className="text-footnote text-label block font-semibold">Pattern depth</label>
             <Button
               variant="ghost"
               size="icon-sm"
@@ -192,7 +192,7 @@ export function PatternDepthControl({
     <div className={cn("space-y-2", className)}>
       {showLabels && (
         <div className="flex items-center gap-2 pb-0.5">
-          <label className="text-footnote text-label font-semibold">Pattern Depth</label>
+          <label className="text-footnote text-label font-semibold">Pattern depth</label>
 
           {/* Help / Info Trigger Icon */}
           <Toggle
@@ -229,7 +229,7 @@ export function PatternDepthControl({
           >
             <div className="border-separator bg-fill-3 text-label-secondary rounded-row text-caption space-y-2 border p-3">
               <div className="text-label flex items-center justify-between font-semibold">
-                <span className="text-label">About Pattern Depth</span>
+                <span className="text-label">About pattern depth</span>
                 <Button
                   variant="ghost"
                   size="icon-sm"

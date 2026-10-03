@@ -160,7 +160,7 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
         <div className="border-separator flex items-center justify-between border-b px-3 py-2">
           <div className="text-caption flex items-center gap-2 font-semibold">
             <RouteIcon className="text-tint h-4 w-4" />
-            <span>Edit Route Path</span>
+            <span>Edit route path</span>
           </div>
           <Button
             type="button"
@@ -208,7 +208,7 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
       <div className="border-separator flex items-center justify-between border-b px-3 py-2">
         <div className="text-caption flex items-center gap-2 font-semibold">
           <RouteIcon className="text-tint h-4 w-4" />
-          <span>Transport Network</span>
+          <span>Transport network</span>
         </div>
         <Button
           type="button"

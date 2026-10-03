@@ -9,7 +9,7 @@ import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 const EDITABLE_FIELDS = [
   { value: "color", label: "Color", inputType: "color" as const },
   { value: "type", label: "Type", inputType: "select" as const },
-  { value: "level", label: "Admin Level", inputType: "number" as const },
+  { value: "level", label: "Admin level", inputType: "number" as const },
   { value: "governmentType", label: "Gov. Type", inputType: "text" as const },
 ] as const;
 
@@ -108,7 +108,7 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
         disabled={isMutating}
       >
         <X className="h-3 w-3" />
-        Deselect All
+        Deselect all
       </Button>
 
       {/* Bulk Edit — subdivisions only */}
@@ -216,7 +216,7 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
         title="Delete selected (Delete)"
       >
         <Trash2 className="h-3 w-3" />
-        Delete Selected
+        Delete selected
       </Button>
     </div>
   );

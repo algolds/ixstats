@@ -36,7 +36,7 @@ import {
 import { Card } from "~/components/ui/card";
 
 const FAMILIES = [
-  { value: "any", label: "All Language Families" },
+  { value: "any", label: "All language families" },
   { value: "latin", label: "Latin / Roman" },
   { value: "germanic", label: "Germanic / Norse" },
   { value: "celtic", label: "Celtic / Gaelic" },
@@ -49,7 +49,7 @@ const FAMILIES = [
   { value: "african", label: "African" },
   { value: "indic", label: "Indic" },
   { value: "uralic", label: "Uralic" },
-  { value: "constructed", label: "Constructed Conlang" },
+  { value: "constructed", label: "Constructed conlang" },
 ];
 
 export function LanguagePacksSection({
@@ -131,7 +131,7 @@ export function LanguagePacksSection({
       {/* Header & Vault Bridge Banner */}
       <div className="border-separator flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <h2 className="text-label text-title-2 font-bold">Community Packs</h2>
+          <h2 className="text-label text-title-2 font-bold">Community packs</h2>
           <p className="text-label-secondary text-footnote mt-0.5">
             Discover, inspect, and fork community conlang models, phonological rule sets, and seed
             dictionaries.
@@ -141,7 +141,7 @@ export function LanguagePacksSection({
         {/* IxVault Platform Marketplace Bridge Link */}
         <Link
           href="/vault/marketplace?tab=store"
-          className="group border-separator bg-fill-4 hover:bg-fill-3 rounded-row text-footnote flex shrink-0 items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
+          className="group border-separator bg-fill-4 hover:bg-fill-3 rounded-row text-footnote flex shrink-0 items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity]"
         >
           <Shop className="text-yellow h-4 w-4" />
           <span className="text-label">Browse on IxVault</span>
@@ -181,7 +181,7 @@ export function LanguagePacksSection({
           type="button"
           onClick={() => refetch()}
           className="justify-center"
-          title="Refresh Language Packs"
+          title="Refresh language packs"
         >
           <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
         </Button>
@@ -198,7 +198,7 @@ export function LanguagePacksSection({
           ) : !marketplaceData?.packs || marketplaceData.packs.length === 0 ? (
             <Card variant="inset" padding="none" className="p-12 text-center">
               <BookmarkBook className="text-label-secondary text-tint mx-auto mb-3 h-12 w-12 opacity-30" />
-              <h4 className="text-label text-body font-semibold">No Language Packs Found</h4>
+              <h4 className="text-label text-body font-semibold">No language packs found</h4>
               <p className="text-label-secondary text-footnote mt-1">
                 Try adjusting your search terms or language family filters.
               </p>
@@ -267,8 +267,8 @@ export function LanguagePacksSection({
                   variant="ghost"
                   size="icon-sm"
                   onClick={() => setSelectedPackId(null)}
-                  title="Close Inspector"
-                  aria-label="Close Inspector"
+                  title="Close inspector"
+                  aria-label="Close inspector"
                   className="text-label-secondary hover:text-label"
                 >
                   <X className="h-4 w-4" />
@@ -303,7 +303,7 @@ export function LanguagePacksSection({
                   </p>
 
                   <div className="bg-surface border-separator rounded-row space-y-2 border p-3 font-mono">
-                    <div className="text-label text-eyebrow">Phonological Constraints</div>
+                    <div className="text-label text-eyebrow">Phonological constraints</div>
                     <div className="text-caption grid grid-cols-2 gap-2">
                       <div>
                         <span className="text-label-secondary">Family: </span>
@@ -320,10 +320,10 @@ export function LanguagePacksSection({
                     type="button"
                     onClick={() => handleFork(activePack as LanguagePack)}
                     disabled={forkMutation.isPending}
-                    className="bg-tint hover:bg-tint-hover rounded-row text-on-tint shadow-card h-9 w-full cursor-pointer font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
+                    className="bg-tint hover:bg-tint-hover rounded-row text-on-tint shadow-card h-9 w-full cursor-pointer font-semibold transition-[color,background-color,border-color,box-shadow,opacity]"
                   >
                     <GitFork className="mr-2 h-4 w-4" />
-                    <span>Fork Pack to My Studio</span>
+                    <span>Fork pack to my studio</span>
                   </Button>
                 </div>
               )}
@@ -351,7 +351,7 @@ export function LanguagePacksSection({
                   {/* Rating input */}
                   <div className="bg-surface border-separator rounded-row space-y-2 border p-3">
                     <label className="text-label block font-semibold">
-                      Leave a Community Rating
+                      Leave a community rating
                     </label>
                     <div role="radiogroup" aria-label="Rating" className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
@@ -394,7 +394,7 @@ export function LanguagePacksSection({
                       disabled={rateMutation.isPending}
                       className="bg-fill-2 text-label hover:bg-fill-2 border-separator rounded-control h-8 w-full border font-semibold"
                     >
-                      Submit Rating
+                      Submit rating
                     </Button>
                   </div>
                 </div>

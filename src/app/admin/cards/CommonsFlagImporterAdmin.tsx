@@ -149,7 +149,7 @@ export function CommonsFlagImporterAdmin() {
           </div>
           <div>
             <h2 className="text-label text-title-2 flex items-center gap-2">
-              Wikimedia Commons Flag & Image Importer
+              Wikimedia Commons flag & image importer
             </h2>
             <p className="text-label-secondary text-caption">
               Parse any Wikimedia Commons Category URL or title, resolve vector/raster flag images,
@@ -190,7 +190,7 @@ export function CommonsFlagImporterAdmin() {
                 </>
               ) : (
                 <>
-                  Parse Category <ArrowRight className="ml-2 h-4 w-4" />
+                  Parse category <ArrowRight className="ml-2 h-4 w-4" />
                 </>
               )}
             </Button>
@@ -251,7 +251,7 @@ export function CommonsFlagImporterAdmin() {
           {/* Default Rarity */}
           <div>
             <label className="text-label-secondary text-caption mb-1 block">
-              Target Card Rarity
+              Target card rarity
             </label>
             <Select value={defaultRarity} onValueChange={(v) => setDefaultRarity(v as CardRarity)}>
               <SelectTrigger size="sm" className="w-full">
@@ -261,7 +261,7 @@ export function CommonsFlagImporterAdmin() {
                 <SelectItem value="COMMON">Common</SelectItem>
                 <SelectItem value="UNCOMMON">Uncommon</SelectItem>
                 <SelectItem value="RARE">Rare</SelectItem>
-                <SelectItem value="ULTRA_RARE">Ultra Rare</SelectItem>
+                <SelectItem value="ULTRA_RARE">Ultra rare</SelectItem>
                 <SelectItem value="EPIC">Epic</SelectItem>
                 <SelectItem value="LEGENDARY">Legendary</SelectItem>
               </SelectContent>
@@ -271,7 +271,7 @@ export function CommonsFlagImporterAdmin() {
           {/* Season */}
           <div>
             <label className="text-label-secondary text-caption mb-1 block">
-              Target Card Season
+              Target card season
             </label>
             <Select value={String(season)} onValueChange={(v) => setSeason(parseInt(v, 10))}>
               <SelectTrigger size="sm" className="w-full">
@@ -306,7 +306,7 @@ export function CommonsFlagImporterAdmin() {
             onClick={() => void commonsQuery.refetch()}
             className="mt-2"
           >
-            Retry Category Fetch
+            Retry category fetch
           </Button>
         </div>
       ) : items.length === 0 ? (
@@ -325,7 +325,7 @@ export function CommonsFlagImporterAdmin() {
                 {selectedItemUrls.size > 0 &&
                 unmintedItems.every((i) => selectedItemUrls.has(i.fileUrl)) ? (
                   <>
-                    <CheckSquare className="text-teal mr-2 h-3.5 w-3.5" /> Deselect All
+                    <CheckSquare className="text-teal mr-2 h-3.5 w-3.5" /> Deselect all
                   </>
                 ) : (
                   <>

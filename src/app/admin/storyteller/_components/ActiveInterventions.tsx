@@ -36,7 +36,7 @@ export function ActiveInterventions() {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <Zap className="text-label-secondary mb-3 h-10 w-10" />
-        <h3 className="text-label text-title-3">No Active Interventions</h3>
+        <h3 className="text-label text-title-3">No active interventions</h3>
         <p className="text-label-secondary text-body mt-1">
           All storyteller effects are currently inactive. Create a world event to generate
           interventions.
@@ -50,7 +50,7 @@ export function ActiveInterventions() {
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Zap className="text-yellow h-5 w-5" />
-          <h3 className="text-label text-title-3">Active Interventions</h3>
+          <h3 className="text-label text-title-3">Active interventions</h3>
           <Badge variant="warning">
             {countriesWithInterventions.reduce((sum, c) => sum + c.activeInterventions, 0)} total
           </Badge>
@@ -96,7 +96,7 @@ function CountryInterventionRow({
         variant="ghost"
         aria-expanded={expanded}
         onClick={() => setExpanded(!expanded)}
-        className="rounded-row h-auto w-full justify-between p-3 text-left font-normal active:scale-100"
+        className="rounded-row h-auto w-full justify-between p-3 text-left font-normal"
       >
         <div className="flex items-center gap-3">
           <UnifiedCountryFlag countryName={country.name} flagUrl={country.flag} size="sm" />
@@ -135,7 +135,7 @@ function CountryInterventionRow({
                         {dm.value >= 0 ? "+" : ""}
                         {(dm.value * 100).toFixed(1)}%
                       </span>
-                      {dm.worldEventId && <Badge variant="info">World Event</Badge>}
+                      {dm.worldEventId && <Badge variant="info">World event</Badge>}
                     </div>
                     {dm.description && (
                       <p className="text-label-secondary text-footnote mt-0.5 truncate">

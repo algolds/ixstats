@@ -1,12 +1,9 @@
 "use client";
 
 /**
- * Facet 3 showcase — the production system as it ships (docs/reference/facet-design-system.md):
- * the Facet 3.1 identity (glass hero, glow, refraction, monochrome / gold primary, data numerals,
- * heavy headings, CutoutCard, flag watermark, acrylic, achievement aurora — and the 3.1 HIG pass:
- * accents, rims, header headings, glass nesting), per-app tints, text
- * styles, opaque surfaces vs glass chrome, inset grouped lists, controls and badges. Everything
- * here is a real primitive from `src/components/ui`; nothing is lab-only.
+ * Showcase of the production primitives from `src/components/ui`: per-app tints, surfaces and
+ * materials, stats and grouped lists, controls and badges, text styles and system colours.
+ * Nothing here is lab-only.
  */
 
 import * as React from "react";
@@ -19,19 +16,16 @@ import {
   Search,
   Spark,
   BoxIso as Package,
-  Crown,
   Wallet,
   Trophy,
 } from "iconoir-react";
 import { FacetMaterial } from "~/components/ui/facet/shared/FacetMaterial";
-import { FlagWatermark } from "~/components/ui/facet";
 import {
   CutoutCard,
   CutoutCardHeader,
   CutoutCardStagger,
   CutoutCardStaggerItem,
 } from "~/components/ui/cutout-card";
-import { assetUrl } from "~/lib/base-path";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { Stat } from "~/components/ui/stat";
 import { Badge } from "~/components/ui/badge";
@@ -60,16 +54,16 @@ const APP_TINTS = [
 type AppTint = (typeof APP_TINTS)[number]["value"];
 
 const TEXT_STYLES = [
-  ["text-large-title", "Large title — one per page"],
-  ["text-title-1", "Title 1 — sheets and dialogs"],
-  ["text-title-2", "Title 2 — card titles"],
-  ["text-title-3", "Title 3 — group titles, stat values"],
-  ["text-headline", "Headline — row titles"],
-  ["text-body", "Body — default text"],
-  ["text-callout", "Callout — helper text"],
-  ["text-subhead", "Subhead — list section headers"],
-  ["text-footnote", "Footnote — metadata, timestamps"],
-  ["text-caption", "Caption — chips, axis labels"],
+  ["text-large-title", "Large title: one per page"],
+  ["text-title-1", "Title 1: sheets and dialogs"],
+  ["text-title-2", "Title 2: card titles"],
+  ["text-title-3", "Title 3: group titles, stat values"],
+  ["text-headline", "Headline: row titles"],
+  ["text-body", "Body: default text"],
+  ["text-callout", "Callout: helper text"],
+  ["text-subhead", "Subhead: list section headers"],
+  ["text-footnote", "Footnote: metadata, timestamps"],
+  ["text-caption", "Caption: chips, axis labels"],
 ] as const;
 
 const SYSTEM_COLOURS = [
@@ -105,7 +99,7 @@ function SectionTitle({ title, description }: { title: string; description: stri
   );
 }
 
-export function Facet3Showcase() {
+export function FacetShowcase() {
   const [tint, setTint] = React.useState<AppTint>("admin");
   const [period, setPeriod] = React.useState("week");
   const [filters, setFilters] = React.useState<string[]>(["active"]);
@@ -120,8 +114,7 @@ export function Facet3Showcase() {
             <h3 className="text-title-3 text-label">App tint</h3>
             <p className="text-callout text-label-secondary">
               Each app root sets <code className="font-mono">data-app</code>; selection, links,
-              toggles and focus follow its tint. The filled primary is monochrome — gold in
-              MyCountry and the Builder.
+              toggles and focus follow its tint.
             </p>
           </div>
           <Button>Primary action</Button>
@@ -135,16 +128,16 @@ export function Facet3Showcase() {
         />
       </Card>
 
-      <Facet31Identity />
+      <CardsAndChrome />
 
       <section>
         <SectionTitle
           title="Surfaces and materials"
-          description="Dense content is opaque (FacetCard on the grouped background); glass is for floating chrome and, since 3.1, hero/feature cards. Glass never nests."
+          description="Dense content is opaque (FacetCard on the grouped background); glass is for floating chrome and, since 3.1, hero/feature cards. "
         />
         <div className="grid gap-4 lg:grid-cols-2">
           <Card padding="md" className="space-y-3">
-            <Eyebrow>FacetCard</Eyebrow>
+            <Eyebrow>Card</Eyebrow>
             <p className="text-body text-label">
               Opaque <code className="font-mono">surface</code> with a hairline and{" "}
               <code className="font-mono">rounded-card</code>.
@@ -186,7 +179,7 @@ export function Facet3Showcase() {
       <section>
         <SectionTitle
           title="Data"
-          description="Stat tiles use an Eyebrow data label and the data face (mono, slashed zero); lists are inset grouped."
+          description="Stat tiles pair a small label with a tabular value. Lists are inset grouped."
         />
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="grid grid-cols-2 gap-3">
@@ -310,7 +303,7 @@ export function Facet3Showcase() {
                 {label}
               </p>
             ))}
-            <Eyebrow>Eyebrow — data labels only</Eyebrow>
+            <Eyebrow>Eyebrow: footnote label</Eyebrow>
           </Card>
           <Card padding="md" className="space-y-4">
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
@@ -340,13 +333,13 @@ export function Facet3Showcase() {
   );
 }
 
-/** The Facet 3.1 identity layer (spec §16), on a busy backdrop so the glass has something to blur. */
-function Facet31Identity() {
+/** CutoutCard, acrylic chrome and the achievement aurora, on a busy backdrop so the glass has something to blur. */
+function CardsAndChrome() {
   return (
     <section>
       <SectionTitle
-        title="Facet 3.1 identity"
-        description="Glass hero cards with the domain glow and refraction hairline, the monochrome / gold primary, data numerals, heavy headings, CutoutCard, the flag watermark, acrylic chrome and achievement aurora."
+        title="Cards and chrome"
+        description="CutoutCard, the acrylic Halo pill and the achievement aurora."
       />
       <div className="bg-grouped rounded-card relative isolate overflow-hidden p-4 md:p-6">
         <div aria-hidden className="absolute inset-0 -z-10">
@@ -356,49 +349,7 @@ function Facet31Identity() {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
-          {/* (a) Hero glass card: variant="glass" + glow + flag watermark + heavy heading + mono stats */}
-          <Card variant="hero" padding="lg" className="group overflow-hidden lg:col-span-2">
-            <FlagWatermark src={assetUrl("/placeholder-flag.svg")} />
-            <div className="relative space-y-4">
-              <div>
-                <Eyebrow>Hero glass</Eyebrow>
-                <h2 className="text-large-title text-label">Republic of Velaria</h2>
-                <p className="text-callout text-label-secondary">
-                  FacetCard variant=&quot;glass&quot; glow — hover to brighten the flag.
-                </p>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <Stat label="GDP" value="$1.20T" delta={{ value: "+2.4%", direction: "up" }} />
-                <Stat label="Population" value="48,031,200" />
-                <Stat label="Rank" value="#3" hint="of 41 in IxWorld" />
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button>Primary</Button>
-                <Button variant="secondary">Tinted</Button>
-                <Button variant="outline">Bordered</Button>
-              </div>
-            </div>
-          </Card>
-
-          {/* (d) Gold actions: data-app="mycountry" scope, with the v2 gold rim (rim="gold") */}
-          <Card variant="hero" padding="lg" className="space-y-3" data-app="mycountry">
-            <Eyebrow>MyCountry gold</Eyebrow>
-            <h3 className="text-title-2 text-label">Declare a directive</h3>
-            <p className="text-callout text-label-secondary">
-              Inside data-app=&quot;mycountry&quot; the filled primary is the v2 gold gradient with
-              a gold rim.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button>
-                <Crown />
-                Declare
-              </Button>
-              <Button variant="secondary">Draft</Button>
-            </div>
-          </Card>
-
-          {/* (b) Feature / media CutoutCard — accent re-tints the header strip, glow and (retint)
-              the badges; the header title is a real h3. */}
+          {/* CutoutCard: the header title is a real h3. */}
           <CutoutCard variant="card" onClick={() => {}} aria-label="Open the Vault">
             <CutoutCardHeader
               as="h3"
@@ -419,7 +370,7 @@ function Facet31Identity() {
             </CutoutCardStagger>
           </CutoutCard>
 
-          {/* Acrylic chrome (Halo / navigation) */}
+          {/* Acrylic chrome (Halo) */}
           <FacetMaterial
             material="acrylic"
             className="flex items-center justify-between rounded-full px-5 py-3"
@@ -427,17 +378,6 @@ function Facet31Identity() {
             <span className="text-headline text-label">material-acrylic</span>
             <Badge variant="secondary">3</Badge>
           </FacetMaterial>
-
-          {/* Accents and rims (HIG pass): accent re-tints the glow, wash, tinted border and rim */}
-          <div className="grid gap-3 sm:grid-cols-3 lg:col-span-3">
-            {(["green", "cyan", "gold"] as const satisfies readonly string[]).map((accent) => (
-              <Card key={accent} variant="hero" padding="md" className="overflow-hidden">
-                <Eyebrow>accent=&quot;{accent}&quot;</Eyebrow>
-                <p className="text-headline text-label">Glow, wash and rim</p>
-                <p className="text-footnote text-facet-accent-ink">text-facet-accent-ink</p>
-              </Card>
-            ))}
-          </div>
 
           {/* Achievement aurora / radiance / foil / ghost heraldry */}
           <Card

@@ -254,13 +254,13 @@ export function VaultStoreControl() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-label text-title-3">Store Inventory</h3>
+          <h3 className="text-label text-title-3">Store inventory</h3>
           <p className="text-label-secondary text-footnote">
             Manage active shop cosmetics and dynamic system account upgrades.
           </p>
         </div>
         <Button onClick={handleOpenCreate} size="sm">
-          <Plus className="mr-2 h-4 w-4" /> Create Item
+          <Plus className="mr-2 h-4 w-4" /> Create item
         </Button>
       </div>
 
@@ -279,7 +279,7 @@ export function VaultStoreControl() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-12 text-center">Icon</TableHead>
-              <TableHead>Item Details</TableHead>
+              <TableHead>Item details</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Quality / Badge</TableHead>
               <TableHead className="text-right">Price (IxC)</TableHead>
@@ -348,7 +348,7 @@ export function VaultStoreControl() {
                         variant="outline"
                         onClick={() => handleOpenEdit(item)}
                         className="w-8"
-                        title="Edit Item"
+                        title="Edit item"
                       >
                         <Edit2 className="h-3.5 w-3.5" />
                       </Button>
@@ -357,7 +357,7 @@ export function VaultStoreControl() {
                         variant="outline"
                         onClick={() => handleOpenHistory(item.id)}
                         className="w-8"
-                        title="Price History Ledger"
+                        title="Price history ledger"
                       >
                         <History className="h-3.5 w-3.5" />
                       </Button>
@@ -399,7 +399,7 @@ export function VaultStoreControl() {
           <form onSubmit={handleSave} className="space-y-4 py-2">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="item-name">Item Name</Label>
+                <Label htmlFor="item-name">Item name</Label>
                 <Input
                   id="item-name"
                   required
@@ -416,7 +416,7 @@ export function VaultStoreControl() {
                   onValueChange={(val) => setFormData({ ...formData, category: val })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select Category" />
+                    <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cosmetics">Cosmetics</SelectItem>
@@ -458,7 +458,7 @@ export function VaultStoreControl() {
                   onValueChange={(val) => setFormData({ ...formData, quality: val })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select Quality" />
+                    <SelectValue placeholder="Select quality" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="COMMON">Common</SelectItem>
@@ -470,7 +470,7 @@ export function VaultStoreControl() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="item-badge">Badge Label</Label>
+                <Label htmlFor="item-badge">Badge label</Label>
                 <Input
                   id="item-badge"
                   value={formData.badgeText}
@@ -482,7 +482,7 @@ export function VaultStoreControl() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="item-icon">Icon Select</Label>
+                <Label htmlFor="item-icon">Icon select</Label>
                 <Popover open={isIconPopoverOpen} onOpenChange={setIsIconPopoverOpen}>
                   <PopoverTrigger
                     id="item-icon"
@@ -603,7 +603,7 @@ export function VaultStoreControl() {
               ) : (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="fx-kind">Effect Type</Label>
+                    <Label htmlFor="fx-kind">Effect type</Label>
                     <Select
                       value={formData.cosmeticKind}
                       onValueChange={(val) =>
@@ -617,14 +617,14 @@ export function VaultStoreControl() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="avatarGlow">Avatar Glow</SelectItem>
-                        <SelectItem value="neonFrame">Neon Frame</SelectItem>
-                        <SelectItem value="chatBadge">Chat Badge</SelectItem>
+                        <SelectItem value="avatarGlow">Avatar glow</SelectItem>
+                        <SelectItem value="neonFrame">Neon frame</SelectItem>
+                        <SelectItem value="chatBadge">Chat badge</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="fx-color">Effect Color</Label>
+                    <Label htmlFor="fx-color">Effect color</Label>
                     <ColorPickerInput
                       value={formData.effectColor}
                       onChange={(val) => setFormData({ ...formData, effectColor: val })}
@@ -632,7 +632,7 @@ export function VaultStoreControl() {
                   </div>
                   {formData.cosmeticKind === "chatBadge" && (
                     <div className="space-y-2">
-                      <Label htmlFor="fx-badge-icon">Badge Icon</Label>
+                      <Label htmlFor="fx-badge-icon">Badge icon</Label>
                       <Input
                         id="fx-badge-icon"
                         value={formData.effectIcon}
@@ -669,7 +669,7 @@ export function VaultStoreControl() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <History className="text-yellow h-5 w-5" />
-              Price History Ledger
+              Price history ledger
             </DialogTitle>
           </DialogHeader>
 
@@ -688,7 +688,7 @@ export function VaultStoreControl() {
               <Table containerClassName="max-h-60">
                 <TableHeader sticky>
                   <TableRow>
-                    <TableHead>Changed Date</TableHead>
+                    <TableHead>Changed date</TableHead>
                     <TableHead className="text-right">Price</TableHead>
                     <TableHead className="text-right">Admin</TableHead>
                   </TableRow>

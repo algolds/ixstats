@@ -38,7 +38,7 @@ import {
   Filter,
   StatsReport as BarChart3,
 } from "iconoir-react";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Badge } from "~/components/ui/badge";
 import {
   Table,
@@ -249,30 +249,29 @@ export function DiplomaticOptionsPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Flag}
-        title="Diplomatic Options"
-        description="Manage reference catalog for diplomatic profiles, strategic priorities, and partnership goals."
+      <PageHeader
+        title="Diplomatic options"
+        subtitle="Reference catalog for diplomatic profiles, strategic priorities and partnership goals."
       />
 
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Total Options</p>
+          <p className="text-label-secondary text-stat-label">Total options</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">{options?.length || 0}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Active Registry</p>
+          <p className="text-label-secondary text-stat-label">Active registry</p>
           <p className="text-title-2 text-green mt-1 tabular-nums">
             {options?.filter((o) => o.isActive).length || 0}
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Filtered Results</p>
+          <p className="text-label-secondary text-stat-label">Filtered results</p>
           <p className="text-title-2 text-teal mt-1 tabular-nums">{filteredOptions.length}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Selected</p>
+          <p className="text-label-secondary text-stat-label">Selected</p>
           <p className="text-title-2 text-purple mt-1 tabular-nums">{selectedIds.size}</p>
         </Card>
       </div>
@@ -281,17 +280,17 @@ export function DiplomaticOptionsPanel() {
         <TabsList className="bg-fill-3 rounded-row mb-4 flex w-full flex-wrap justify-start gap-1 p-1">
           <TabsTrigger
             value="catalog"
-            className="rounded-control text-caption flex items-center gap-2 px-3 py-2 transition-transform active:scale-[0.98]"
+            className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
           >
             <Flag className="h-3.5 w-3.5" />
-            Options Catalog
+            Options catalog
           </TabsTrigger>
           <TabsTrigger
             value="analytics"
-            className="rounded-control text-caption flex items-center gap-2 px-3 py-2 transition-transform active:scale-[0.98]"
+            className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
           >
             <BarChart3 className="h-3.5 w-3.5" />
-            Usage Analytics
+            Usage analytics
           </TabsTrigger>
         </TabsList>
 
@@ -311,31 +310,31 @@ export function DiplomaticOptionsPanel() {
 
               <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as any)}>
                 <SelectTrigger size="sm" className="w-40">
-                  <SelectValue placeholder="All Types" />
+                  <SelectValue placeholder="All types" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all" className="text-footnote">
-                    All Types
+                    All types
                   </SelectItem>
                   <SelectItem value="strategic_priority" className="text-footnote">
-                    Strategic Priority
+                    Strategic priority
                   </SelectItem>
                   <SelectItem value="partnership_goal" className="text-footnote">
-                    Partnership Goal
+                    Partnership goal
                   </SelectItem>
                   <SelectItem value="key_achievement" className="text-footnote">
-                    Key Achievement
+                    Key achievement
                   </SelectItem>
                 </SelectContent>
               </Select>
 
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger size="sm" className="w-36">
-                  <SelectValue placeholder="All Categories" />
+                  <SelectValue placeholder="All categories" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all" className="text-footnote">
-                    All Categories
+                    All categories
                   </SelectItem>
                   {CATEGORIES.map((cat) => (
                     <SelectItem key={cat} value={cat} className="text-footnote">
@@ -356,7 +355,7 @@ export function DiplomaticOptionsPanel() {
 
             <Button onClick={() => setIsAddDialogOpen(true)}>
               <Plus className="mr-2 h-3.5 w-3.5" />
-              Add Option
+              Add option
             </Button>
           </div>
 
@@ -393,7 +392,7 @@ export function DiplomaticOptionsPanel() {
               </p>
               <Button className="mt-4" onClick={() => setIsAddDialogOpen(true)}>
                 <Plus className="mr-2 h-3.5 w-3.5" />
-                Add First Option
+                Add first option
               </Button>
             </Card>
           ) : (
@@ -411,7 +410,7 @@ export function DiplomaticOptionsPanel() {
                       />
                     </TableHead>
                     <TableHead className="px-4">Type</TableHead>
-                    <TableHead className="px-4">Value & Description</TableHead>
+                    <TableHead className="px-4">Value & description</TableHead>
                     <TableHead className="px-4">Category</TableHead>
                     <TableHead className="px-4">Order</TableHead>
                     <TableHead className="px-4">Status</TableHead>
@@ -468,7 +467,7 @@ export function DiplomaticOptionsPanel() {
                               handleUpdate(option.id, { ...option, isActive })
                             }
                             aria-label={`Active: ${option.value}`}
-                            title="Toggle Status"
+                            title="Toggle status"
                           />
                           <Button
                             variant="ghost"
@@ -499,7 +498,7 @@ export function DiplomaticOptionsPanel() {
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Diplomatic Option</DialogTitle>
+            <DialogTitle>Add diplomatic option</DialogTitle>
             <DialogDescription>Create a new diplomatic option for user profiles</DialogDescription>
           </DialogHeader>
 
@@ -516,9 +515,9 @@ export function DiplomaticOptionsPanel() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="strategic_priority">Strategic Priority</SelectItem>
-                  <SelectItem value="partnership_goal">Partnership Goal</SelectItem>
-                  <SelectItem value="key_achievement">Key Achievement</SelectItem>
+                  <SelectItem value="strategic_priority">Strategic priority</SelectItem>
+                  <SelectItem value="partnership_goal">Partnership goal</SelectItem>
+                  <SelectItem value="key_achievement">Key achievement</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -566,7 +565,7 @@ export function DiplomaticOptionsPanel() {
             </div>
 
             <div>
-              <label className="text-label text-caption mb-2 block">Sort Order</label>
+              <label className="text-label text-caption mb-2 block">Sort order</label>
               <Input
                 type="number"
                 value={formData.sortOrder}

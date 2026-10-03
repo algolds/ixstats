@@ -65,7 +65,7 @@ export function CardImportStudio({
   const SUBTABS = [
     {
       id: "wiki" as ImportSubtab,
-      label: "Wiki Lore Importer",
+      label: "Wiki lore importer",
       description: "Batch generate & scrape lore cards from IxWiki, IIWiki & WikiOS",
       icon: BookOpen,
       badge: pendingRequestsCount > 0 ? `${pendingRequestsCount} requests` : undefined,
@@ -81,7 +81,7 @@ export function CardImportStudio({
     },
     {
       id: "flags" as ImportSubtab,
-      label: "Commons Flags",
+      label: "Commons flags",
       description: "Vector SVG & high-res flag importer from Wikimedia Commons",
       icon: Flag,
     },
@@ -97,7 +97,7 @@ export function CardImportStudio({
               <Layers className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-label text-headline">Card Import Studio</h2>
+              <h2 className="text-label text-headline">Card import studio</h2>
               <p className="text-label-secondary text-footnote">
                 Unified data ingestion pipeline: Wiki lore archives, NationStates collections, and
                 Commons flags

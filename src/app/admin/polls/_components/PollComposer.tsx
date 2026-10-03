@@ -148,9 +148,9 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
 
   // Progress Indicators
   const STEPS = [
-    { number: 1, label: "Topic & Context" },
-    { number: 2, label: "Scope & Targeting" },
-    { number: 3, label: "Options & Publish" },
+    { number: 1, label: "Topic & context" },
+    { number: 2, label: "Scope & targeting" },
+    { number: 3, label: "Options & publish" },
   ];
 
   return (
@@ -161,7 +161,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
             <div className="flex items-center justify-between">
               <CardTitle className="text-label text-headline flex items-center gap-2">
                 <Sparkles className="text-poll h-4 w-4" />
-                Poll Wizard Composer
+                Poll wizard composer
               </CardTitle>
               <span className="text-label-secondary text-caption">Step {step} of 3</span>
             </div>
@@ -218,7 +218,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                 <div className="animate-in fade-in slide-in-from-right-3 duration-fast space-y-4">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label className="text-label text-caption">Poll Type</Label>
+                      <Label className="text-label text-caption">Poll type</Label>
                       <Select
                         value={pollType}
                         onValueChange={(val: "choice" | "feature-poll" | "feature-voting") => {
@@ -232,15 +232,15 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="choice">Standard Choice Poll</SelectItem>
-                          <SelectItem value="feature-poll">Feature Priority Poll</SelectItem>
-                          <SelectItem value="feature-voting">Feature Upvoting Board</SelectItem>
+                          <SelectItem value="choice">Standard choice poll</SelectItem>
+                          <SelectItem value="feature-poll">Feature priority poll</SelectItem>
+                          <SelectItem value="feature-voting">Feature upvoting board</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-label text-caption">Scope & Targeting</Label>
+                      <Label className="text-label text-caption">Scope & targeting</Label>
                       <Select
                         value={targetScope}
                         onValueChange={(val: "global" | "country") => setTargetScope(val)}
@@ -250,7 +250,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="global">Global (All Users)</SelectItem>
-                          <SelectItem value="country">Country Targeted</SelectItem>
+                          <SelectItem value="country">Country targeted</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -298,7 +298,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                           htmlFor="multiple"
                           className="text-label text-caption cursor-pointer"
                         >
-                          Allow Multiple Option Choices
+                          Allow multiple option choices
                         </Label>
                       </div>
                     )}
@@ -318,7 +318,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                       onClick={handleAddOption}
                       className="cursor-pointer gap-1"
                     >
-                      <Plus className="h-3.5 w-3.5" /> Add Option
+                      <Plus className="h-3.5 w-3.5" /> Add option
                     </Button>
                   </div>
 
@@ -356,7 +356,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                   <div className="border-poll/20 bg-poll/5 text-poll rounded-control text-footnote mt-4 flex items-start gap-2 border p-3">
                     <Info className="mt-0.5 h-4 w-4 shrink-0" />
                     <span>
-                      Review all parameters. Clicking <strong>Create & Publish</strong> will record
+                      Review all parameters. Clicking <strong>Create & publish</strong> will record
                       the poll and publish an announcement card directly to the active feeds.
                     </span>
                   </div>
@@ -389,7 +389,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                       "Creating..."
                     ) : (
                       <>
-                        <Send className="h-3.5 w-3.5" /> Create & Publish
+                        <Send className="h-3.5 w-3.5" /> Create & publish
                       </>
                     )}
                   </Button>
@@ -411,7 +411,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
           <CardContent className="text-label-secondary text-footnote space-y-4 leading-relaxed">
             <div>
               <h5 className="text-label mb-1 flex items-center gap-2 font-semibold">
-                <CheckCircle className="text-green h-3.5 w-3.5" /> Standard Choice Poll
+                <CheckCircle className="text-green h-3.5 w-3.5" /> Standard choice poll
               </h5>
               <p>
                 Classic single or multiple choice query. Displays vote bar charts and raw counts to
@@ -421,7 +421,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
 
             <div>
               <h5 className="text-label mb-1 flex items-center gap-2 font-semibold">
-                <CheckCircle className="text-green h-3.5 w-3.5" /> Feature Priority Poll
+                <CheckCircle className="text-green h-3.5 w-3.5" /> Feature priority poll
               </h5>
               <p>
                 Designed to rank user preferences across proposed ideas, mods, or system features.
@@ -430,11 +430,11 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
 
             <div>
               <h5 className="text-label mb-1 flex items-center gap-2 font-semibold">
-                <CheckCircle className="text-green h-3.5 w-3.5" /> Feature Upvoting Board
+                <CheckCircle className="text-green h-3.5 w-3.5" /> Feature upvoting board
               </h5>
               <p>
-                Lists feature proposals with upvote cards, enabling citizens to upvote/downvote
-                features in real-time.
+                Lists feature proposals with upvote cards, where citizens can upvote or downvote
+                features.
               </p>
             </div>
 

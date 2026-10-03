@@ -66,7 +66,7 @@ export const StandingsInspectorNode = React.memo(function StandingsInspectorNode
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label>Select League</Label>
+        <Label>Select league</Label>
         <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
           <SelectTrigger>
             <SelectValue placeholder="Choose league" />
@@ -83,7 +83,7 @@ export const StandingsInspectorNode = React.memo(function StandingsInspectorNode
 
       {dbLeague && dbLeague.seasons && (
         <div className="space-y-2">
-          <Label>Select Season</Label>
+          <Label>Select season</Label>
           <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
             <SelectTrigger>
               <SelectValue placeholder="Choose season" />
@@ -106,7 +106,7 @@ export const StandingsInspectorNode = React.memo(function StandingsInspectorNode
               <p className="text-label-secondary flex items-center justify-between font-semibold">
                 <span>League Division Tier: {(dbLeague as any).tier ?? 1}</span>
                 <Badge variant="outline" className="border-tint/20 text-tint">
-                  Pyramid Level
+                  Pyramid level
                 </Badge>
               </p>
               {(dbLeague as any).parentLeague && (

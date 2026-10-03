@@ -429,7 +429,7 @@ export function TemplateEditorSheet({
               </div>
 
               <div>
-                <label className="text-subhead text-label-secondary mb-1 block">Max Active</label>
+                <label className="text-subhead text-label-secondary mb-1 block">Max active</label>
                 <Input
                   type="number"
                   min={1}
@@ -447,7 +447,7 @@ export function TemplateEditorSheet({
                   checked={isActive}
                   onCheckedChange={(checked) => setIsActive(checked === true)}
                 />
-                <span>Active Template</span>
+                <span>Active template</span>
               </label>
 
               <label className="text-caption flex cursor-pointer items-center gap-2">
@@ -455,7 +455,7 @@ export function TemplateEditorSheet({
                   checked={isGlobal}
                   onCheckedChange={(checked) => setIsGlobal(checked === true)}
                 />
-                <span>Is Global Event</span>
+                <span>Is global event</span>
               </label>
             </div>
 
@@ -490,7 +490,7 @@ export function TemplateEditorSheet({
                 </label>
                 <div className="flex items-center gap-2">
                   <Button type="button" variant="ghost" size="sm" onClick={handlePrefillResponse}>
-                    Prefill Template
+                    Prefill template
                   </Button>
                   <Badge
                     variant="outline"

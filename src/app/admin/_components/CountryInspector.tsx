@@ -800,7 +800,7 @@ export function CountryInspector() {
           <div className="space-y-4">
             <h4 className="text-label text-headline flex items-center gap-2">
               <Globe className="text-blue h-4 w-4" />
-              Baseline State
+              Baseline state
             </h4>
             <p className="text-label-secondary text-footnote leading-relaxed">
               These are the baseline values retrieved from the roster sheet, which represent the
@@ -809,7 +809,7 @@ export function CountryInspector() {
             <div className="text-footnote grid grid-cols-2 gap-2">
               <div className="border-separator bg-fill-4 rounded-control p-3">
                 <span className="text-label-secondary text-footnote block">
-                  Baseline Population
+                  Baseline population
                 </span>
                 <span className="text-label font-semibold tabular-nums">
                   {calculation.baseline.pop.toLocaleString()}
@@ -840,7 +840,7 @@ export function CountryInspector() {
           <div className="space-y-4">
             <h4 className="text-label text-headline flex items-center gap-2">
               <Settings className="text-yellow h-4 w-4" />
-              Simulation Modifiers
+              Simulation modifiers
             </h4>
             <p className="text-label-secondary text-footnote leading-relaxed">
               Global parameters stored in system configuration along with custom sandbox
@@ -848,14 +848,14 @@ export function CountryInspector() {
             </p>
             <div className="text-footnote space-y-2">
               <div className="border-separator flex justify-between border-b pb-2">
-                <span className="text-label-secondary">Global Growth Factor</span>
+                <span className="text-label-secondary">Global growth factor</span>
                 <span className="font-semibold tabular-nums">
                   {calculation.settings.globalGrowthFactor.toFixed(4)} (
                   {((calculation.settings.globalGrowthFactor - 1) * 100).toFixed(2)}%)
                 </span>
               </div>
               <div className="border-separator flex justify-between border-b pb-2">
-                <span className="text-label-secondary">Local Multiplier Slider</span>
+                <span className="text-label-secondary">Local multiplier slider</span>
                 <span className="text-yellow font-semibold tabular-nums">
                   {calculation.settings.localGrowthFactor.toFixed(2)}x
                 </span>
@@ -881,7 +881,7 @@ export function CountryInspector() {
           <div className="space-y-4">
             <h4 className="text-label text-headline flex items-center gap-2">
               <Zap className="text-indigo h-4 w-4" />
-              Storyteller Effects
+              Storyteller effects
             </h4>
             <p className="text-label-secondary text-footnote leading-relaxed">
               Aggregate of active database storyteller effects and sandboxed mock events.
@@ -922,27 +922,27 @@ export function CountryInspector() {
           <div className="space-y-4">
             <h4 className="text-label text-headline flex items-center gap-2">
               <Users className="text-teal h-4 w-4" />
-              Effective Population Growth
+              Effective population growth
             </h4>
             <p className="text-label-secondary text-footnote leading-relaxed">
               Computes the annual growth rate used to project future populations.
             </p>
             <div className="text-footnote space-y-2">
               <div className="border-separator flex justify-between border-b pb-2">
-                <span className="text-label-secondary">Baseline Pop Growth Rate</span>
+                <span className="text-label-secondary">Baseline pop growth rate</span>
                 <span className="font-semibold tabular-nums">
                   {(calculation.popGrowth.baseRate * 100).toFixed(2)}%
                 </span>
               </div>
               <div className="border-separator flex justify-between border-b pb-2">
-                <span className="text-label-secondary">Storyteller Adjustments</span>
+                <span className="text-label-secondary">Storyteller adjustments</span>
                 <span className="text-indigo font-semibold tabular-nums">
                   {calculation.popGrowth.storytellerAdjust >= 0 ? "+" : ""}
                   {(calculation.popGrowth.storytellerAdjust * 100).toFixed(2)}%
                 </span>
               </div>
               <div className="text-label flex justify-between font-semibold">
-                <span>Final Pop Growth Rate</span>
+                <span>Final pop growth rate</span>
                 <span className="tabular-nums">
                   {(calculation.popGrowth.finalRate * 100).toFixed(2)}%
                 </span>
@@ -971,7 +971,7 @@ export function CountryInspector() {
             </p>
             <div className="text-footnote space-y-2">
               <div className="border-separator flex justify-between border-b pb-1">
-                <span className="text-label-secondary">Baseline Growth Rate</span>
+                <span className="text-label-secondary">Baseline growth rate</span>
                 <span className="tabular-nums">
                   {(calculation.gdpGrowth.baseRate * 100).toFixed(2)}%
                 </span>
@@ -1014,7 +1014,7 @@ export function CountryInspector() {
                 </span>
               </div>
               <div className="text-label flex justify-between font-semibold">
-                <span>Raw Growth Rate</span>
+                <span>Raw growth rate</span>
                 <span className="tabular-nums">
                   {(calculation.gdpGrowth.withStorytellerAdjust * 100).toFixed(2)}%
                 </span>
@@ -1034,7 +1034,7 @@ export function CountryInspector() {
           <div className="space-y-4">
             <h4 className="text-label text-headline flex items-center gap-2">
               <Info className="text-yellow h-4 w-4" />
-              Diminishing Returns Calculator
+              Diminishing returns calculator
             </h4>
             <p className="text-label-secondary text-footnote leading-relaxed">
               Applies diminishing returns to wealthier economies (exceeding threshold) using
@@ -1048,7 +1048,7 @@ export function CountryInspector() {
                 </span>
               </div>
               <div className="border-separator flex justify-between border-b pb-1">
-                <span className="text-label-secondary">Diminishing Threshold</span>
+                <span className="text-label-secondary">Diminishing threshold</span>
                 <span className="font-semibold tabular-nums">$60,000</span>
               </div>
               <div className="border-separator flex justify-between border-b pb-1">
@@ -1060,13 +1060,13 @@ export function CountryInspector() {
                 )}
               </div>
               <div className="border-separator flex justify-between border-b pb-1">
-                <span className="text-label-secondary">Incoming Raw Growth</span>
+                <span className="text-label-secondary">Incoming raw growth</span>
                 <span className="tabular-nums">
                   {(calculation.gdpGrowth.diminishingReturns.originalRate * 100).toFixed(2)}%
                 </span>
               </div>
               <div className="text-label flex justify-between font-semibold">
-                <span>Reduced Rate</span>
+                <span>Reduced rate</span>
                 <span className="tabular-nums">
                   {(calculation.gdpGrowth.diminishingReturns.reducedRate * 100).toFixed(2)}%
                 </span>
@@ -1094,7 +1094,7 @@ export function CountryInspector() {
           <div className="space-y-4">
             <h4 className="text-label text-headline flex items-center gap-2">
               <TrendingUp className="text-pink h-4 w-4" />
-              Economic Tier Growth Cap
+              Economic tier growth cap
             </h4>
             <p className="text-label-secondary text-footnote leading-relaxed">
               Limits the maximum annual growth rate based on the country's current economic tier to
@@ -1102,17 +1102,17 @@ export function CountryInspector() {
             </p>
             <div className="text-footnote space-y-2">
               <div className="border-separator flex justify-between border-b pb-2">
-                <span className="text-label-secondary">Current Tier</span>
+                <span className="text-label-secondary">Current tier</span>
                 <span className="text-label font-semibold">{calculation.baseline.tier}</span>
               </div>
               <div className="border-separator flex justify-between border-b pb-2">
-                <span className="text-label-secondary">Max Tier Growth Cap</span>
+                <span className="text-label-secondary">Max tier growth cap</span>
                 <span className="text-pink font-semibold tabular-nums">
                   {(calculation.gdpGrowth.tierMax * 100).toFixed(2)}%
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-label-secondary">Cap Status</span>
+                <span className="text-label-secondary">Cap status</span>
                 {calculation.gdpGrowth.isCapped ? (
                   <Badge variant="destructive">CAPPED</Badge>
                 ) : (
@@ -1132,7 +1132,7 @@ export function CountryInspector() {
           <div className="space-y-4">
             <h4 className="text-label text-headline flex items-center gap-2">
               <Calendar className="text-orange h-4 w-4" />
-              Time Progression Engine
+              Time progression engine
             </h4>
             <p className="text-label-secondary text-footnote leading-relaxed">
               Compounds growth rates over the target timeline. Also applies one-time special
@@ -1140,13 +1140,13 @@ export function CountryInspector() {
             </p>
             <div className="text-footnote space-y-2">
               <div className="border-separator flex justify-between border-b pb-1">
-                <span className="text-label-secondary">Years Projected</span>
+                <span className="text-label-secondary">Years projected</span>
                 <span className="text-orange font-semibold tabular-nums">
                   {calculation.progression.years.toFixed(1)}
                 </span>
               </div>
               <div className="border-separator flex justify-between border-b pb-1">
-                <span className="text-label-secondary">Compound Pop Growth Factor</span>
+                <span className="text-label-secondary">Compound pop growth factor</span>
                 <span className="tabular-nums">
                   {calculation.progression.popGrowthCompound.toFixed(4)}x
                 </span>
@@ -1170,7 +1170,7 @@ export function CountryInspector() {
           <div className="space-y-4">
             <h4 className="text-label text-headline flex items-center gap-2">
               <Zap className="text-red h-4 w-4" />
-              Direct Special Modifiers
+              Direct special modifiers
             </h4>
             <p className="text-label-secondary text-footnote leading-relaxed">
               Applies one-time direct modifiers to outputs at the end of simulation (e.g. natural
@@ -1178,7 +1178,7 @@ export function CountryInspector() {
             </p>
             <div className="text-footnote space-y-2">
               <div className="border-separator flex justify-between border-b pb-1">
-                <span className="text-label-secondary">Direct Population Modifier</span>
+                <span className="text-label-secondary">Direct population modifier</span>
                 <span className="text-red font-semibold tabular-nums">
                   {calculation.progression.directPopModifier >= 0 ? "+" : ""}
                   {(calculation.progression.directPopModifier * 100).toFixed(1)}%
@@ -1206,7 +1206,7 @@ export function CountryInspector() {
           <div className="space-y-4">
             <h4 className="text-label text-headline flex items-center gap-2">
               <TrendingUp className="text-green h-4 w-4" />
-              Projected Output
+              Projected output
             </h4>
             <p className="text-label-secondary text-footnote leading-relaxed">
               The final calculated state of the country after running all simulation adjustments.
@@ -1214,7 +1214,7 @@ export function CountryInspector() {
             <div className="text-footnote grid grid-cols-2 gap-2">
               <div className="border-separator bg-fill-4 rounded-control p-2">
                 <span className="text-label-secondary text-footnote block">
-                  Projected Population
+                  Projected population
                 </span>
                 <span className="text-label font-semibold tabular-nums">
                   {Math.round(calculation.output.pop).toLocaleString()}
@@ -1243,7 +1243,7 @@ export function CountryInspector() {
               {calculation.output.popDensity !== undefined && (
                 <div className="border-separator bg-fill-4 rounded-control col-span-2 p-2">
                   <span className="text-label-secondary text-footnote block">
-                    Population Density
+                    Population density
                   </span>
                   <span className="text-label font-medium tabular-nums">
                     {calculation.output.popDensity.toFixed(1)} / km²
@@ -1263,7 +1263,7 @@ export function CountryInspector() {
           <div className="space-y-4">
             <h4 className="text-label text-headline flex items-center gap-2">
               <Calculator className="text-green h-4 w-4" />
-              Economic Vitality Formula
+              Economic vitality formula
             </h4>
             <p className="text-label-secondary text-footnote leading-relaxed">
               Calculates index reflecting GDP wealth and growth rate.
@@ -1276,13 +1276,13 @@ export function CountryInspector() {
                 </span>
               </div>
               <div className="border-separator flex justify-between border-b pb-2">
-                <span className="text-label-secondary">Growth Bonus</span>
+                <span className="text-label-secondary">Growth bonus</span>
                 <span className="font-semibold tabular-nums">
                   {calculation.secondary.details.growthBonus.toFixed(1)}
                 </span>
               </div>
               <div className="text-label flex justify-between font-semibold">
-                <span>Final Economic Vitality</span>
+                <span>Final economic vitality</span>
                 <span className="tabular-nums">
                   {Math.round(calculation.secondary.vitality)} / 100
                 </span>
@@ -1314,26 +1314,26 @@ export function CountryInspector() {
           <div className="space-y-4">
             <h4 className="text-label text-headline flex items-center gap-2">
               <Users className="text-teal h-4 w-4" />
-              Population Wellbeing Formula
+              Population wellbeing formula
             </h4>
             <p className="text-label-secondary text-footnote leading-relaxed">
               Combines growth health status and population density factors.
             </p>
             <div className="text-footnote space-y-2">
               <div className="border-separator flex justify-between border-b pb-2">
-                <span className="text-label-secondary">Growth Health</span>
+                <span className="text-label-secondary">Growth health</span>
                 <span className="font-semibold tabular-nums">
                   {calculation.secondary.details.growthHealth}
                 </span>
               </div>
               <div className="border-separator flex justify-between border-b pb-2">
-                <span className="text-label-secondary">Density Factor</span>
+                <span className="text-label-secondary">Density factor</span>
                 <span className="font-semibold tabular-nums">
                   {calculation.secondary.details.densityFactor.toFixed(1)}
                 </span>
               </div>
               <div className="text-label flex justify-between font-semibold">
-                <span>Final Wellbeing</span>
+                <span>Final wellbeing</span>
                 <span className="tabular-nums">
                   {Math.round(calculation.secondary.wellbeing)} / 100
                 </span>
@@ -1363,24 +1363,24 @@ export function CountryInspector() {
           <div className="space-y-4">
             <h4 className="text-label text-headline flex items-center gap-2">
               <Settings className="text-pink h-4 w-4" />
-              Governmental Efficiency Formula
+              Governmental efficiency formula
             </h4>
             <p className="text-label-secondary text-footnote leading-relaxed">
               Computed based on the economic tier category score multiplier.
             </p>
             <div className="text-footnote space-y-2">
               <div className="border-separator flex justify-between border-b pb-2">
-                <span className="text-label-secondary">Economic Tier</span>
+                <span className="text-label-secondary">Economic tier</span>
                 <span className="font-semibold">{calculation.output.tier}</span>
               </div>
               <div className="border-separator flex justify-between border-b pb-2">
-                <span className="text-label-secondary">Tier Base Score</span>
+                <span className="text-label-secondary">Tier base score</span>
                 <span className="font-semibold tabular-nums">
                   {Math.round(calculation.secondary.efficiency / 0.8)}
                 </span>
               </div>
               <div className="text-label flex justify-between font-semibold">
-                <span>Final Efficiency</span>
+                <span>Final efficiency</span>
                 <span className="tabular-nums">
                   {Math.round(calculation.secondary.efficiency)} / 100
                 </span>
@@ -1407,34 +1407,34 @@ export function CountryInspector() {
           <div className="space-y-4">
             <h4 className="text-label text-headline flex items-center gap-2">
               <Globe className="text-indigo h-4 w-4" />
-              Diplomatic Standing Formula
+              Diplomatic standing formula
             </h4>
             <p className="text-label-secondary text-footnote leading-relaxed">
               Derived from influence, alliances, and trade strength offsets against tensions.
             </p>
             <div className="text-footnote space-y-2">
               <div className="border-separator flex justify-between border-b pb-1">
-                <span className="text-label-secondary">Global Influence</span>
+                <span className="text-label-secondary">Global influence</span>
                 <span className="tabular-nums">{calculation.secondary.details.influence}</span>
               </div>
               <div className="border-separator flex justify-between border-b pb-1">
-                <span className="text-label-secondary">Trade Relationship Strength</span>
+                <span className="text-label-secondary">Trade relationship strength</span>
                 <span className="tabular-nums">+{calculation.secondary.details.tradeStrength}</span>
               </div>
               <div className="border-separator flex justify-between border-b pb-1">
-                <span className="text-label-secondary">Alliance Strength</span>
+                <span className="text-label-secondary">Alliance strength</span>
                 <span className="tabular-nums">
                   +{calculation.secondary.details.allianceStrength}
                 </span>
               </div>
               <div className="border-separator flex justify-between border-b pb-1">
-                <span className="text-label-secondary">Diplomatic Tensions</span>
+                <span className="text-label-secondary">Diplomatic tensions</span>
                 <span className="text-red tabular-nums">
                   -{calculation.secondary.details.tensions}
                 </span>
               </div>
               <div className="text-label flex justify-between font-semibold">
-                <span>Final Diplomatic Standing</span>
+                <span>Final diplomatic standing</span>
                 <span className="tabular-nums">
                   {Math.round(calculation.secondary.diplomatic)} / 100
                 </span>
@@ -1467,7 +1467,7 @@ export function CountryInspector() {
         <div className="space-y-1">
           <h3 className="text-label text-title-3 flex items-center gap-2">
             <Calculator className="text-indigo h-5 w-5" />
-            Country Calculation Pipeline Inspector
+            Country calculation pipeline inspector
           </h3>
           <p className="text-label-secondary text-footnote">
             Select a nation to analyze base metrics, growth configurations, caps, and storyteller
@@ -1578,7 +1578,7 @@ export function CountryInspector() {
             <div className="border-separator bg-fill-4 rounded-row space-y-5 border p-4">
               <div className="space-y-2">
                 <div className="text-caption flex items-center justify-between">
-                  <Label className="text-label">Target Projection Timeline</Label>
+                  <Label className="text-label">Target projection timeline</Label>
                   <span className="text-orange tabular-nums">+{yearsElapsed.toFixed(1)} yrs</span>
                 </div>
                 <Slider
@@ -1599,7 +1599,7 @@ export function CountryInspector() {
 
               <div className="border-separator space-y-2 border-t pt-4">
                 <div className="text-caption flex items-center justify-between">
-                  <Label className="text-label">Local Growth Multiplier</Label>
+                  <Label className="text-label">Local growth multiplier</Label>
                   <span className="text-yellow tabular-nums">{localMultiplier.toFixed(2)}x</span>
                 </div>
                 <Slider
@@ -1619,7 +1619,7 @@ export function CountryInspector() {
 
             {/* Active database storyteller effects */}
             <div className="border-separator bg-fill-4 rounded-row space-y-3 border p-4">
-              <Label className="text-label text-caption block">Active Database Effects</Label>
+              <Label className="text-label text-caption block">Active database effects</Label>
               {countryData.storytellerEffects && countryData.storytellerEffects.length > 0 ? (
                 <div className="max-h-[140px] space-y-2 overflow-y-auto pr-1">
                   {countryData.storytellerEffects.map((eff: any) => {
@@ -1669,11 +1669,11 @@ export function CountryInspector() {
 
             {/* Mock Sandbox effects form */}
             <div className="border-separator bg-fill-4 rounded-row space-y-4 border p-4">
-              <Label className="text-label text-caption block">Mock Sandbox Event</Label>
+              <Label className="text-label text-caption block">Mock sandbox event</Label>
               <form onSubmit={handleAddMockEffect} className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <Label className="text-label-secondary text-footnote">Effect Type</Label>
+                    <Label className="text-label-secondary text-footnote">Effect type</Label>
                     <Select value={newEffectType} onValueChange={setNewEffectType}>
                       <SelectTrigger size="sm">
                         <SelectValue />
@@ -1683,10 +1683,10 @@ export function CountryInspector() {
                           GDP Adjustment
                         </SelectItem>
                         <SelectItem value="population_adjustment" className="text-footnote">
-                          Pop Adjustment
+                          Pop adjustment
                         </SelectItem>
                         <SelectItem value="growth_rate_modifier" className="text-footnote">
-                          Growth Rate Mult
+                          Growth rate mult
                         </SelectItem>
                         <SelectItem value="natural_disaster" className="text-footnote">
                           Natural Disaster (Direct)
@@ -1723,13 +1723,13 @@ export function CountryInspector() {
                 </div>
 
                 <Button type="submit" size="sm" className="w-full">
-                  <Plus className="mr-1 h-3.5 w-3.5" /> Add Sandbox Event
+                  <Plus className="mr-1 h-3.5 w-3.5" /> Add sandbox event
                 </Button>
               </form>
 
               {mockEffects.length > 0 && (
                 <div className="border-separator max-h-[140px] space-y-2 overflow-y-auto border-t pt-3 pr-1">
-                  <div className="text-eyebrow text-indigo">Added Mock Effects</div>
+                  <div className="text-eyebrow text-indigo">Added mock effects</div>
                   {mockEffects.map((eff) => (
                     <div
                       key={eff.id}
@@ -1783,7 +1783,7 @@ export function CountryInspector() {
       ) : (
         <div className="border-separator rounded-row border border-dashed py-24 text-center">
           <Calculator className="text-label-secondary mx-auto mb-3 h-10 w-10 opacity-60" />
-          <h4 className="text-label text-headline">No Country Loaded</h4>
+          <h4 className="text-label text-headline">No country loaded</h4>
           <p className="text-label-secondary text-footnote mt-1">
             Search and select a country from the dropdown to start inspecting calculations.
           </p>

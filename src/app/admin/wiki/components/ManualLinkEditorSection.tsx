@@ -88,7 +88,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
     <Card className="space-y-4 p-5">
       <div className="border-separator flex items-center gap-2 border-b pb-3">
         <Globe className="text-blue h-4 w-4" />
-        <h3 className="text-label text-caption">Manual Link Editor</h3>
+        <h3 className="text-label text-caption">Manual link editor</h3>
       </div>
       <div className="space-y-4">
         {/* Country Selector */}
@@ -136,7 +136,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
         {/* Wiki Source & Page Title */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="space-y-2">
-            <label className="text-label text-caption">Wiki Source</label>
+            <label className="text-label text-caption">Wiki source</label>
             <SegmentedControl
               size="sm"
               fullWidth
@@ -151,7 +151,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
           </div>
 
           <div className="space-y-2 sm:col-span-2">
-            <label className="text-label text-caption">Wiki Page Title</label>
+            <label className="text-label text-caption">Wiki page title</label>
             <Input
               placeholder="e.g. United_States or Grand_Duchy_of_..."
               value={wikiPageTitle}
@@ -185,7 +185,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
             disabled={!selectedCountryId || !wikiPageTitle.trim()}
           >
             <Save className="mr-2 h-3.5 w-3.5" />
-            Save Link
+            Save link
           </Button>
         </div>
 

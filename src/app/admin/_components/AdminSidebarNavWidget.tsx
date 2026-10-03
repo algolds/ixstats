@@ -69,7 +69,7 @@ const NAV_GROUPS: NavGroup[] = [
         subtitle: "Core",
         items: [
           {
-            label: "General Settings",
+            label: "General settings",
             href: "/admin/platform",
             icon: Settings,
             description: "Time, growth multipliers, and database explorer",
@@ -77,7 +77,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "platform",
           },
           {
-            label: "Bot Settings",
+            label: "Bot settings",
             href: "/admin/bot",
             icon: Cpu,
             description: "Scheduled worker tasks, Discord bot sync, and status",
@@ -85,7 +85,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "bot",
           },
           {
-            label: "Notification Settings",
+            label: "Notification settings",
             href: "/admin/notifications",
             icon: Bell,
             description: "Alert rules and system dispatch logs",
@@ -105,7 +105,7 @@ const NAV_GROUPS: NavGroup[] = [
         subtitle: "Regions & Communities",
         items: [
           {
-            label: "Realms Settings",
+            label: "Realms settings",
             href: "/admin/realms",
             icon: Sparkles,
             description: "Community regions, custom worlds, and player access",
@@ -133,7 +133,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "maps",
           },
           {
-            label: "Map Style Editor",
+            label: "Map style editor",
             href: "/admin/maps/style-editor",
             icon: Palette,
             description: "Map color palettes and layer styles",
@@ -162,7 +162,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "lorescanner",
           },
           {
-            label: "Image Repository",
+            label: "Image repository",
             href: "/admin/image-repo",
             icon: Layers,
             description: "Media repository and upload manager",
@@ -170,7 +170,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "image-repo",
           },
           {
-            label: "Stash Settings",
+            label: "Stash settings",
             href: "/admin/stash",
             icon: FolderHeart,
             description: "Offline article cache and user storage quotas",
@@ -191,7 +191,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "vault",
           },
           {
-            label: "Card Packs & Lore",
+            label: "Card packs & lore",
             href: "/admin/cards",
             icon: Package,
             description: "Packs, season rotations, and lore card sync",
@@ -199,7 +199,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "cards",
           },
           {
-            label: "Achievements & Awards",
+            label: "Achievements & awards",
             href: "/admin/achievements",
             icon: Award,
             description: "Badges, point tiers, and unlock rules",
@@ -220,7 +220,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "thinkpages",
           },
           {
-            label: "Blurbs & Prompts",
+            label: "Blurbs & prompts",
             href: "/admin/blurbs",
             icon: MessageCircle,
             description: "Writing prompts and flagged post moderation",
@@ -228,7 +228,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "blurbs",
           },
           {
-            label: "Polls Management",
+            label: "Polls management",
             href: "/admin/polls",
             icon: Vote,
             description: "Poll creation, duration, and vote counts",
@@ -269,7 +269,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "countries",
           },
           {
-            label: "Calculations Editor",
+            label: "Calculations editor",
             href: "/admin/calculations",
             icon: Cpu,
             description: "Macroeconomic formula definitions",
@@ -277,7 +277,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "calculations",
           },
           {
-            label: "Vitality Rings Audit",
+            label: "Vitality rings audit",
             href: "/admin/rings-audit",
             icon: Activity,
             description: "Vitality dimensions and index weight validation",
@@ -285,7 +285,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "rings-audit",
           },
           {
-            label: "Reference Data Catalog",
+            label: "Reference data catalog",
             href: "/admin/reference-data",
             icon: Database,
             description: "Simulation enums and lookup tables",
@@ -306,7 +306,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "storyteller",
           },
           {
-            label: "National Issues",
+            label: "National issues",
             href: "/admin/national-issues",
             icon: Newspaper,
             description: "Issue templates and multiple-choice dilemma options",
@@ -314,7 +314,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "national-issues",
           },
           {
-            label: "Diplomatic Options",
+            label: "Diplomatic options",
             href: "/admin/diplomatic-options",
             icon: Bookmark,
             description: "Diplomatic stances, priorities, and pacts",
@@ -322,7 +322,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "diplomatic-options",
           },
           {
-            label: "Diplomatic Scenarios",
+            label: "Diplomatic scenarios",
             href: "/admin/diplomatic-scenarios",
             icon: Shield,
             description: "Scenario outcomes and conflict chains",
@@ -343,7 +343,7 @@ const NAV_GROUPS: NavGroup[] = [
         subtitle: "Statecraft Engine",
         items: [
           {
-            label: "Military Equipment",
+            label: "Military equipment",
             href: "/admin/military-equipment",
             icon: Package,
             description: "Unit stats, defense systems, and unit costs",
@@ -351,7 +351,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "military-equipment",
           },
           {
-            label: "Economic Archetypes",
+            label: "Economic archetypes",
             href: "/admin/economic-archetypes",
             icon: Trophy,
             description: "Macroeconomic policy templates",
@@ -359,7 +359,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "economic-archetypes",
           },
           {
-            label: "Economic Components",
+            label: "Economic components",
             href: "/admin/economic-components",
             icon: Layers,
             description: "Economic building blocks and modifiers",
@@ -367,7 +367,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "economic-components",
           },
           {
-            label: "Government Components",
+            label: "Government components",
             href: "/admin/government-components",
             icon: Database,
             description: "Civic institutions and governance modules",
@@ -375,7 +375,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "government-components",
           },
           {
-            label: "Intelligence Templates",
+            label: "Intelligence templates",
             href: "/admin/intelligence-templates",
             icon: Shield,
             description: "Intel report structures and schemas",
@@ -395,7 +395,7 @@ const NAV_GROUPS: NavGroup[] = [
         subtitle: "Access & Roles",
         items: [
           {
-            label: "User Management",
+            label: "User management",
             href: "/admin/users",
             icon: Users,
             description: "Account roster and nation claims",
@@ -411,7 +411,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "user-roles",
           },
           {
-            label: "User Logs",
+            label: "User logs",
             href: "/admin/logs",
             icon: Terminal,
             description: "Audit trail and admin action logs",
@@ -419,7 +419,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "logs",
           },
           {
-            label: "Membership Tiers",
+            label: "Membership tiers",
             href: "/admin/membership",
             icon: Award,
             description: "Subscription levels and access perks",
@@ -447,7 +447,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "narrator",
           },
           {
-            label: "Onoma Linguistics",
+            label: "Onoma linguistics",
             href: "/admin/onoma",
             icon: Languages,
             description: "Phonetic rules and name generation",
@@ -455,7 +455,7 @@ const NAV_GROUPS: NavGroup[] = [
             section: "onoma",
           },
           {
-            label: "Facet Materials Lab",
+            label: "Facet materials lab",
             href: "/admin/facet-lab",
             icon: Layers,
             description: "Facet glass materials and token inspector",
@@ -589,7 +589,7 @@ export function AdminSidebarNavWidget({
         "flex w-full flex-col lg:sticky lg:top-14 lg:h-[calc(100vh-3.5rem)] lg:overflow-y-auto",
         className
       )}
-      aria-label="Admin Navigation"
+      aria-label="Admin navigation"
     >
       {/* Search filter */}
       <SearchField

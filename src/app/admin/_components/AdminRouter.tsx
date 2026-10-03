@@ -9,8 +9,8 @@ import { BotIntegrationCenter } from "./BotIntegrationCenter";
 import { NotificationsAdmin } from "./NotificationsAdmin";
 import { StashSettingsContent } from "./StashSettingsContent";
 import { ThinkPagesSettingsContent } from "./ThinkPagesSettingsContent";
-import { Settings } from "iconoir-react";
-import { AdminHeader } from "./AdminHeader";
+
+import { PageHeader } from "~/components/shell/PageHeader";
 import { useAdminNavigation } from "./AdminNavigationContext";
 import { Skeleton } from "~/components/ui/skeleton";
 
@@ -244,10 +244,9 @@ export function AdminRouter() {
       case "calculations":
         return (
           <div className="space-y-6">
-            <AdminHeader
-              icon={Settings}
-              title="Calculation Formula Editor"
-              description="Interactive editor for world-sim economic equations and projection formulas."
+            <PageHeader
+              title="Calculation formula editor"
+              subtitle="Edit world-sim economic equations and projection formulas."
             />
             <CalculationEditor />
           </div>

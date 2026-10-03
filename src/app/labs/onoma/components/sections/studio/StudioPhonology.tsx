@@ -457,7 +457,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
             <div className="space-y-2">
               {rows.length === 0 && (
                 <p className="text-label-secondary text-footnote py-2 text-center italic">
-                  No overrides — built-in {culture} rules apply. Add one below.
+                  No overrides; built-in {culture} rules apply. Add one below.
                 </p>
               )}
               {rows.map(([g, ipa], i) => (

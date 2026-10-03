@@ -3,8 +3,8 @@
 // Wiki Links LoreScanner Admin Panel
 
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
-import { Search } from "iconoir-react";
+import { PageHeader } from "~/components/shell/PageHeader";
+
 import { api } from "~/trpc/react";
 import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { BulkScannerSection } from "../wiki/components";
@@ -19,10 +19,9 @@ export function LoreScannerPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Search}
-        title="Wiki Links LoreScanner"
-        description="Automatically scan wiki articles for nation entities and generate cross-linked lore intelligence."
+      <PageHeader
+        title="LoreScanner"
+        subtitle="Scan wiki articles for nation entities and generate cross-links."
       />
 
       <BulkScannerSection countriesData={countriesData} />

@@ -32,7 +32,7 @@ export function CalculationSimulator({
   return (
     <Card className="space-y-4 p-5">
       <div className="border-separator flex items-center justify-between border-b pb-3">
-        <h4 className="text-label text-caption">Interactive Sandbox</h4>
+        <h4 className="text-label text-caption">Interactive sandbox</h4>
         <Button onClick={onRunSimulation} disabled={isSimulating} size="sm">
           {isSimulating ? (
             <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
@@ -105,7 +105,7 @@ export function CalculationSimulator({
 
             {sandboxResult.intermediateSteps && (
               <div className="border-separator mt-3 border-t pt-2">
-                <p className="text-label-secondary text-eyebrow mb-1">Intermediate Variables</p>
+                <p className="text-label-secondary text-eyebrow mb-1">Intermediate variables</p>
                 <div className="text-footnote grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {Object.entries(sandboxResult.intermediateSteps).map(([k, v]) => (
                     <div key={k} className="flex justify-between tabular-nums">

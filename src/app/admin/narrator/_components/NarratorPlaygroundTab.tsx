@@ -126,14 +126,14 @@ export function NarratorPlaygroundTab() {
           <div className="border-separator border-b pb-3">
             <div className="flex items-center gap-2">
               <FileCode2 className="text-yellow h-4 w-4" />
-              <h3 className="text-label text-caption">Event Simulation Telemetry</h3>
+              <h3 className="text-label text-caption">Event simulation telemetry</h3>
             </div>
           </div>
 
           {/* Mode Switcher */}
           <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
-              <Label className="text-label text-subhead">Sandbox Snapshot Mode</Label>
+              <Label className="text-label text-subhead">Sandbox snapshot mode</Label>
               <p className="text-label-secondary text-footnote">
                 Inject custom JSON metrics directly instead of querying database instances.
               </p>
@@ -220,7 +220,7 @@ export function NarratorPlaygroundTab() {
           {/* Title & Description */}
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label className="text-label-secondary text-subhead">Event Title</Label>
+              <Label className="text-label-secondary text-subhead">Event title</Label>
               <Input
                 value={playgroundTitle}
                 onChange={(e) => setPlaygroundTitle(e.target.value)}
@@ -230,7 +230,7 @@ export function NarratorPlaygroundTab() {
             </div>
 
             <div className="space-y-1">
-              <Label className="text-label-secondary text-subhead">Event Details</Label>
+              <Label className="text-label-secondary text-subhead">Event details</Label>
               <Textarea
                 value={playgroundDescription}
                 onChange={(e) => setPlaygroundDescription(e.target.value)}
@@ -283,7 +283,7 @@ export function NarratorPlaygroundTab() {
             ) : (
               <>
                 <Sparkles className="mr-2 h-3.5 w-3.5" />
-                Draft Flavor Card
+                Draft flavor card
               </>
             )}
           </Button>
@@ -293,7 +293,7 @@ export function NarratorPlaygroundTab() {
       {/* Preview Card Panel (Right) */}
       <div className="space-y-4 xl:col-span-5">
         <div className="flex items-center justify-between">
-          <Label className="text-label-secondary text-subhead">Chronicle Card Mockup Preview</Label>
+          <Label className="text-label-secondary text-subhead">Chronicle card mockup preview</Label>
           {playgroundLatency !== null && (
             <Badge variant="info" className="tabular-nums">
               {playgroundLatency}ms
@@ -306,7 +306,7 @@ export function NarratorPlaygroundTab() {
             <div className="bg-yellow/40 absolute top-0 left-0 h-full w-[3px]" />
             <div className="text-eyebrow text-yellow mb-2 flex items-center gap-2">
               <ScrollText className="h-4 w-4" />
-              <span>The Chronicle</span>
+              <span>The chronicle</span>
             </div>
             <span className="text-label-secondary text-footnote leading-relaxed italic">
               Drafting Chronicle narrative...
@@ -318,7 +318,7 @@ export function NarratorPlaygroundTab() {
             <div className="mb-2 flex items-center justify-between">
               <div className="text-eyebrow text-yellow flex items-center gap-2">
                 <ScrollText className="h-4 w-4" />
-                <span>The Chronicle</span>
+                <span>The chronicle</span>
               </div>
               <span className="text-label-secondary text-eyebrow italic tabular-nums">
                 {selectedEventType}
@@ -337,7 +337,7 @@ export function NarratorPlaygroundTab() {
         )}
 
         <Card className="text-footnote space-y-2 p-4">
-          <h4 className="text-label text-subhead">Immersion Snapshots</h4>
+          <h4 className="text-label text-subhead">Immersion snapshots</h4>
           <p className="text-label-secondary text-footnote leading-relaxed">
             During live simulation, when a player views an Issue, Policy, or Cabinet Decision, a
             contextual snapshot of live national metrics (GDP, stability, approval, government type)

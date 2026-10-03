@@ -37,7 +37,7 @@ export function DatabaseExplorer() {
             <div className="bg-fill-3 rounded-control border-separator border p-4">
               <div className="text-label-secondary text-footnote flex items-center gap-2">
                 <Server className="h-4 w-4" />
-                <span>Registered Nations</span>
+                <span>Registered nations</span>
               </div>
               <p className="text-label text-title-1 mt-2">
                 {isLoading ? "..." : (globalStats?.totalNations ?? 0)}
@@ -46,7 +46,7 @@ export function DatabaseExplorer() {
             <div className="bg-fill-3 rounded-control border-separator border p-4">
               <div className="text-label-secondary text-footnote flex items-center gap-2">
                 <HardDrive className="h-4 w-4" />
-                <span>Active Conflict Records</span>
+                <span>Active conflict records</span>
               </div>
               <p className="text-label text-title-1 mt-2">
                 {isLoading ? "..." : (globalStats?.activeConflicts ?? 0)}

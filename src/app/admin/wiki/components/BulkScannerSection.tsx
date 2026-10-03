@@ -145,7 +145,7 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
       <div className="border-separator flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <RefreshCw className="text-yellow h-4 w-4" />
-          <h3 className="text-label text-caption">Bulk Wiki Entity Scanner</h3>
+          <h3 className="text-label text-caption">Bulk wiki entity scanner</h3>
         </div>
         <Badge variant="outline" className="w-fit">
           {unlinkedCountries.length} unlinked countries
@@ -220,7 +220,7 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
               <TableRow>
                 <TableHead className="w-10 px-3 text-center" />
                 <TableHead className="px-3">Country</TableHead>
-                <TableHead className="px-3">Matched Page</TableHead>
+                <TableHead className="px-3">Matched page</TableHead>
                 <TableHead className="hidden px-3 sm:table-cell">Source</TableHead>
                 <TableHead className="px-3 text-right">Confidence</TableHead>
               </TableRow>

@@ -25,7 +25,7 @@ export const TYPE_META: Record<string, { icon: typeof Globe; label: string }> = 
   country: { icon: Globe, label: "Countries" },
   city: { icon: MapPin, label: "Cities" },
   subdivision: { icon: Hexagon, label: "Regions" },
-  poi: { icon: Landmark, label: "Points of Interest" },
+  poi: { icon: Landmark, label: "Points of interest" },
 };
 
 export const SPRING = { type: "spring" as const, stiffness: 400, damping: 30, mass: 0.8 };

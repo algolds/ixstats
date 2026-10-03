@@ -83,11 +83,11 @@ export function CorpusSelector({
           {/* Active Studio Lexicon */}
           {studioWords && studioWords.length > 0 && (
             <div className="border-separator border-b pb-1">
-              <div className="text-tint text-eyebrow px-3 py-1">Active Studio Session</div>
+              <div className="text-tint text-eyebrow px-3 py-1">Active studio session</div>
               <SelectItem value="studio-active" className="text-footnote">
                 <div className="flex items-center gap-2">
                   <OnomaGlyph name="compose-lexicon" size="xs" accentColor="#0091ff" />
-                  <span className="font-semibold">Active Studio Lexicon</span>
+                  <span className="font-semibold">Active studio lexicon</span>
                   <span className="text-label-secondary text-caption font-mono">
                     ({studioWords.length} words)
                   </span>

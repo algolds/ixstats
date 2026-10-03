@@ -106,7 +106,7 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
       {/* Primary River Metrics */}
       <div className="grid grid-cols-2 gap-2">
         <Card className="min-w-0 p-2">
-          <Eyebrow className="block truncate">Course length</Eyebrow>
+          <span className="text-stat-label text-label-secondary block truncate">Course length</span>
           <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
             <span className="text-label text-headline truncate tabular-nums">
               {lengthKm != null ? Math.round(lengthKm).toLocaleString() : "—"}
@@ -125,7 +125,9 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
         </Card>
 
         <Card className="min-w-0 p-2">
-          <Eyebrow className="block truncate">Course geometry</Eyebrow>
+          <span className="text-stat-label text-label-secondary block truncate">
+            Course geometry
+          </span>
           <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
             <span className="text-label text-headline truncate tabular-nums">
               {coords.length.toLocaleString()}
@@ -148,7 +150,7 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Waves className="text-cyan h-3.5 w-3.5" />
-            <Eyebrow>Hydrological Profile</Eyebrow>
+            <Eyebrow>Hydrological profile</Eyebrow>
           </div>
           {(sourceSample.isLoading || mouthSample.isLoading) && (
             <div className="border-separator border-t-cyan h-2.5 w-2.5 animate-spin rounded-full border-2" />
@@ -158,7 +160,7 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
         {/* Source vs Mouth comparison */}
         <div className="text-footnote grid grid-cols-2 gap-2">
           <div className="border-separator bg-fill-4 rounded-control-sm min-w-0 space-y-1 p-2">
-            <Eyebrow className="block">Headwaters (Source)</Eyebrow>
+            <span className="text-stat-label text-label-secondary block">Headwaters (Source)</span>
             <p className="text-label text-caption font-semibold tabular-nums">
               {sourceElev != null ? `${sourceElev.toLocaleString()} m` : "—"}
             </p>
@@ -173,7 +175,7 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
           </div>
 
           <div className="border-separator bg-fill-4 rounded-control-sm min-w-0 space-y-1 p-2">
-            <Eyebrow className="block">Terminus (Mouth)</Eyebrow>
+            <span className="text-stat-label text-label-secondary block">Terminus (Mouth)</span>
             <p className="text-label text-caption font-semibold tabular-nums">
               {mouthElev != null ? `${mouthElev.toLocaleString()} m` : "—"}
             </p>

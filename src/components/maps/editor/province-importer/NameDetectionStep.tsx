@@ -129,7 +129,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
         <Card className="mt-3 space-y-3 p-3">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <span className="text-label text-caption font-semibold">Import Cities</span>
+              <span className="text-label text-caption font-semibold">Import cities</span>
               <p className="text-label-secondary text-footnote">
                 Import city point markers detected in this SVG.
               </p>
@@ -145,7 +145,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
             <div className="space-y-2">
               <div className="text-footnote grid grid-cols-3 gap-2">
                 <div className="space-y-1">
-                  <Eyebrow className="block">Cities Layer</Eyebrow>
+                  <Eyebrow className="block">Cities layer</Eyebrow>
                   <OptionSelect
                     aria-label="Cities layer"
                     size="sm"

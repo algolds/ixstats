@@ -34,7 +34,7 @@ export const BorderConformanceModal = memo(function BorderConformanceModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="text-yellow h-5 w-5" aria-hidden />
-            Borders Adjusted to Country Shape
+            Borders adjusted to country shape
           </DialogTitle>
           <DialogDescription>
             {clippedNames.length === 1
@@ -68,11 +68,11 @@ export const BorderConformanceModal = memo(function BorderConformanceModal({
 
         <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" size="sm" onClick={onClose}>
-            Review Manually
+            Review manually
           </Button>
           <Button variant="ghost" size="sm" onClick={onAccept}>
             <Check className="h-3.5 w-3.5" />
-            Accept All
+            Accept all
           </Button>
         </DialogFooter>
       </DialogContent>

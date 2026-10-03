@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "./AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
@@ -21,27 +21,26 @@ export function ThinkPagesSettingsContent() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Globe}
-        title="ThinkPages Social Platform Controls"
-        description="Configure ThinkPages social feed properties, maximum character caps, auto-news election logs, and Discord RSS-style feed mirroring."
+      <PageHeader
+        title="ThinkPages settings"
+        subtitle="Feed properties, character limits, auto-news election logs and Discord feed mirroring."
       />
 
       <Tabs defaultValue="platform" className="w-full">
         <TabsList className="bg-fill-3 mb-4 flex w-full max-w-md justify-start gap-1 rounded-full p-1">
           <TabsTrigger
             value="platform"
-            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
             <Globe className="text-teal h-4 w-4" />
-            Platform Settings
+            Platform settings
           </TabsTrigger>
           <TabsTrigger
             value="discord"
-            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
             <Rss className="text-purple h-4 w-4" />
-            Discord Mirror Feed
+            Discord mirror feed
           </TabsTrigger>
         </TabsList>
 
@@ -109,7 +108,7 @@ function PlatformSettingsTab() {
       {/* Real Stats Metric Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Total Social Posts</p>
+          <p className="text-label-secondary text-eyebrow">Total social posts</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
@@ -120,7 +119,7 @@ function PlatformSettingsTab() {
         </Card>
 
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Registered Accounts</p>
+          <p className="text-label-secondary text-eyebrow">Registered accounts</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
@@ -131,7 +130,7 @@ function PlatformSettingsTab() {
         </Card>
 
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Weekly Growth</p>
+          <p className="text-label-secondary text-eyebrow">Weekly growth</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
@@ -180,7 +179,7 @@ function PlatformSettingsTab() {
           {/* Character Cap */}
           <div className="border-separator bg-fill-3 rounded-row flex flex-col justify-between gap-3 border p-4 sm:flex-row sm:items-center">
             <div>
-              <Label className="text-label text-caption">Post Character Length Cap</Label>
+              <Label className="text-label text-caption">Post character length cap</Label>
               <p className="text-label-secondary text-footnote">
                 Maximum allowed character length for post content (excluding blurb header tags)
               </p>
@@ -228,7 +227,7 @@ function PlatformSettingsTab() {
           {/* Comment Attachments */}
           <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
-              <Label className="text-label text-caption">Media & Card Attachments</Label>
+              <Label className="text-label text-caption">Media & card attachments</Label>
               <p className="text-label-secondary text-footnote">
                 Allow attaching vault cards, flags, and image links in replies
               </p>

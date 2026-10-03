@@ -129,10 +129,10 @@ export function ManufacturersTab({
     <div className="space-y-6">
       <div className="bg-surface rounded-row border-separator border p-4">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-label text-title-2">Defense Manufacturers</h2>
+          <h2 className="text-label text-title-2">Defense manufacturers</h2>
           <Button variant="destructive" onClick={onAddManufacturer}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Manufacturer
+            Add manufacturer
           </Button>
         </div>
 
@@ -153,10 +153,10 @@ export function ManufacturersTab({
           <Select value={countryFilter} onValueChange={setCountryFilter}>
             <SelectTrigger>
               <Globe className="mr-2 h-4 w-4" />
-              <SelectValue placeholder="All Countries" />
+              <SelectValue placeholder="All countries" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Countries</SelectItem>
+              <SelectItem value="all">All countries</SelectItem>
               {countries.map((country: string) => (
                 <SelectItem key={country} value={country}>
                   {country}
@@ -202,7 +202,7 @@ export function ManufacturersTab({
             <p className="text-label-secondary">No manufacturers found</p>
             <Button className="mt-4" onClick={onAddManufacturer}>
               <Plus className="mr-2 h-4 w-4" />
-              Add First Manufacturer
+              Add first manufacturer
             </Button>
           </div>
         ) : (
@@ -328,7 +328,7 @@ export function ManufacturersTab({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <div className="bg-surface border-separator rounded-control border p-4">
           <div className="text-label text-title-1">{normalizedManufacturers.length}</div>
-          <div className="text-label-secondary text-body">Total Manufacturers</div>
+          <div className="text-label-secondary text-body">Total manufacturers</div>
         </div>
         <div className="bg-surface border-separator rounded-control border p-4">
           <div className="text-label text-title-1">
@@ -344,7 +344,7 @@ export function ManufacturersTab({
           <div className="text-label text-title-1">
             {normalizedManufacturers.reduce((sum, m) => sum + (m.equipment?.length ?? 0), 0)}
           </div>
-          <div className="text-label-secondary text-body">Total Equipment</div>
+          <div className="text-label-secondary text-body">Total equipment</div>
         </div>
       </div>
     </div>

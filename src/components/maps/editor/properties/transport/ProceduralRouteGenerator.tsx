@@ -69,7 +69,7 @@ export const ProceduralRouteGenerator = memo(function ProceduralRouteGenerator({
       <Card className="space-y-2 p-3">
         <div className="text-label text-caption flex items-center gap-2 font-semibold">
           <NetworkLeft className="text-label-secondary h-3.5 w-3.5" aria-hidden />
-          <span>Procedural Network Generation</span>
+          <span>Procedural network generation</span>
         </div>
         <p className="text-label-secondary text-footnote leading-relaxed">
           Generate realistic national transit corridors connecting cities, ports, and industrial

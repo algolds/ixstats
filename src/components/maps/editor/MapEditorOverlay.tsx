@@ -490,12 +490,12 @@ export default function MapEditorOverlay({
               >
                 {(
                   [
-                    { id: "select", label: "Select Mode", icon: MousePointer2, shortcut: "V" },
-                    { id: "vertex_edit", label: "Edit Vertices", icon: Pencil, shortcut: "P" },
-                    { id: "split", label: "Split Borders", icon: Scissors, shortcut: "X" },
-                    { id: "merge", label: "Merge Borders", icon: Merge, shortcut: "M" },
-                    { id: "trace", label: "Trace Rivers", icon: Waves, shortcut: "T" },
-                    { id: "brush", label: "Brush Territory", icon: Paintbrush, shortcut: "B" },
+                    { id: "select", label: "Select mode", icon: MousePointer2, shortcut: "V" },
+                    { id: "vertex_edit", label: "Edit vertices", icon: Pencil, shortcut: "P" },
+                    { id: "split", label: "Split borders", icon: Scissors, shortcut: "X" },
+                    { id: "merge", label: "Merge borders", icon: Merge, shortcut: "M" },
+                    { id: "trace", label: "Trace rivers", icon: Waves, shortcut: "T" },
+                    { id: "brush", label: "Brush territory", icon: Paintbrush, shortcut: "B" },
                   ] as const satisfies ReadonlyArray<{
                     id: BorderEditMode;
                     label: string;

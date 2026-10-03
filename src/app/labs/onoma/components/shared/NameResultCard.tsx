@@ -41,7 +41,7 @@ interface NameResultCardProps {
   onSave?: (name: string, stashId?: string) => Promise<any> | void;
   onUse?: (name: string) => void;
   culture?: string;
-  /** Phonotactic naturalness 0–100 vs the training set (Phase 5 perplexity scorer). */
+  /** Phonotactic naturalness 0–100 vs the training set. */
   naturalness?: number | null;
   /** Stash metadata — shown in the expanded details panel. */
   savedAt?: Date | string | null;

@@ -53,12 +53,12 @@ export function AdminSidebarLayout({
           <SheetTrigger asChild>
             <Button variant="outline" size="icon-sm">
               <Menu aria-hidden className="size-4" />
-              <span className="sr-only">Toggle Admin Navigation</span>
+              <span className="sr-only">Toggle admin navigation</span>
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-80 overflow-y-auto p-0">
             <SheetHeader className="sr-only">
-              <SheetTitle>Admin Navigation Menu</SheetTitle>
+              <SheetTitle>Admin navigation menu</SheetTitle>
             </SheetHeader>
             {sidebarContent}
           </SheetContent>
@@ -70,14 +70,14 @@ export function AdminSidebarLayout({
             onClick={() => onNavigate("dashboard")}
             className="text-headline text-label-secondary hover:text-label ml-1 px-2"
           >
-            Admin Console
+            Admin console
           </Button>
         ) : (
           <Link
             href="/admin"
             className="text-headline text-label-secondary hover:text-label ml-3 transition-colors"
           >
-            Admin Console
+            Admin console
           </Link>
         )}
       </div>

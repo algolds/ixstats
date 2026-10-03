@@ -23,12 +23,12 @@ import { Slider } from "~/components/ui/slider";
 import { Checkbox } from "~/components/ui/checkbox";
 
 export const ARCHETYPES = [
-  { value: "aggressive_expansionist", label: "Aggressive Expansionist" },
-  { value: "peaceful_merchant", label: "Peaceful Merchant" },
-  { value: "cautious_isolationist", label: "Cautious Isolationist" },
-  { value: "cultural_diplomat", label: "Cultural Diplomat" },
-  { value: "pragmatic_realist", label: "Pragmatic Realist" },
-  { value: "ideological_hardliner", label: "Ideological Hardliner" },
+  { value: "aggressive_expansionist", label: "Aggressive expansionist" },
+  { value: "peaceful_merchant", label: "Peaceful merchant" },
+  { value: "cautious_isolationist", label: "Cautious isolationist" },
+  { value: "cultural_diplomat", label: "Cultural diplomat" },
+  { value: "pragmatic_realist", label: "Pragmatic realist" },
+  { value: "ideological_hardliner", label: "Ideological hardliner" },
 ] as const;
 
 export interface PersonalityFormData {
@@ -120,7 +120,7 @@ export function NPCPersonalityFormDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-label text-caption mb-2 block">Historical Basis</label>
+              <label className="text-label text-caption mb-2 block">Historical basis</label>
               <Input
                 value={formData.historicalBasis || ""}
                 onChange={(e) =>
@@ -146,7 +146,7 @@ export function NPCPersonalityFormDialog({
           </div>
 
           <div>
-            <label className="text-label text-caption mb-2 block">Historical Context</label>
+            <label className="text-label text-caption mb-2 block">Historical context</label>
             <Textarea
               value={formData.historicalContext || ""}
               onChange={(e) =>
@@ -160,18 +160,18 @@ export function NPCPersonalityFormDialog({
 
           {/* Trait Sliders */}
           <div className="border-separator space-y-3 border-t pt-4">
-            <h4 className="text-label text-caption">Psychological & Strategic Traits</h4>
+            <h4 className="text-label text-caption">Psychological & strategic traits</h4>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {[
                 { key: "assertiveness", label: "Assertiveness" },
                 { key: "cooperativeness", label: "Cooperativeness" },
                 { key: "militarism", label: "Militarism" },
-                { key: "culturalOpenness", label: "Cultural Openness" },
-                { key: "economicFocus", label: "Economic Focus" },
-                { key: "diplomaticTendency", label: "Diplomatic Tendency" },
-                { key: "riskTolerance", label: "Risk Tolerance" },
-                { key: "ideologicalRigidity", label: "Ideological Rigidity" },
+                { key: "culturalOpenness", label: "Cultural openness" },
+                { key: "economicFocus", label: "Economic focus" },
+                { key: "diplomaticTendency", label: "Diplomatic tendency" },
+                { key: "riskTolerance", label: "Risk tolerance" },
+                { key: "ideologicalRigidity", label: "Ideological rigidity" },
               ].map(({ key, label }) => {
                 const val = formData.traits[key as keyof PersonalityFormData["traits"]];
                 return (

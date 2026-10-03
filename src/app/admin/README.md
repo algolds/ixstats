@@ -2,7 +2,7 @@
 
 **Last updated:** September 2026
 
-The admin console at `/admin` is the operator surface for IxStats. It exposes **37 top-level route directories** with a `page.tsx` under `src/app/admin/` (42 `page.tsx` files including the root and the nested `diplomatic-options/analytics`, `diplomatic-scenarios/analytics`, `maps/editor` and `maps/style-editor`). Every route except the two map editors renders the shared `AdminRouter`, which switches on the active section (39 sections + the dashboard), so navigation between admin areas is instant (no Next.js route transition). Plan 344 (September 2026) removed the alias routes and the unlinked `/studio` UI.
+The admin console at `/admin` is the operator surface for IxStats. It exposes **37 top-level route directories** with a `page.tsx` under `src/app/admin/` (42 `page.tsx` files including the root and the nested `diplomatic-options/analytics`, `diplomatic-scenarios/analytics`, `maps/editor` and `maps/style-editor`). Every route except the two map editors renders the shared `AdminRouter`, which switches on the active section (39 sections + the dashboard), so navigation between admin areas is instant (no Next.js route transition).
 
 ## Scope
 - Review system status, calculation logs, live dashboard metrics, and health

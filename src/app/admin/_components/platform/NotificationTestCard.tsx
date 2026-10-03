@@ -84,7 +84,7 @@ export function NotificationTestCard() {
       actions: hasAction
         ? [
             {
-              label: "Run Test Callback",
+              label: "Run test callback",
               onClick: () => {
                 // Trigger a secondary success message to verify callback invocation
                 notify.success(
@@ -112,7 +112,7 @@ export function NotificationTestCard() {
           persistent: true,
           actions: [
             {
-              label: "Deploy Peacekeepers",
+              label: "Deploy peacekeepers",
               onClick: () =>
                 notify.success("Crisis Addressed", "Peacekeepers deployed successfully."),
             },
@@ -151,7 +151,7 @@ export function NotificationTestCard() {
           duration: 5000,
           actions: [
             {
-              label: "Accept Treaty",
+              label: "Accept treaty",
               onClick: () => notify.success("Treaty Signed", "The trade agreement is now active."),
             },
           ],
@@ -169,7 +169,7 @@ export function NotificationTestCard() {
           <div className="space-y-1">
             <CardTitle className="text-headline flex items-center gap-2">
               <Bell className="text-indigo h-4 w-4" />
-              Notification Simulator Suite
+              Notification simulator suite
             </CardTitle>
             <CardDescription className="text-footnote">
               Simulate notifications and test Dynamic Island animations (scale bump, ripple,
@@ -181,7 +181,7 @@ export function NotificationTestCard() {
               htmlFor="notif-advanced-mode"
               className="text-label-secondary text-subhead cursor-pointer select-none"
             >
-              Custom Builder
+              Custom builder
             </Label>
             <Switch
               id="notif-advanced-mode"
@@ -194,7 +194,7 @@ export function NotificationTestCard() {
       <CardContent className="space-y-6">
         {/* Preset Buttons */}
         <div className="space-y-3">
-          <Label className="text-label-secondary text-subhead">Test Presets</Label>
+          <Label className="text-label-secondary text-subhead">Test presets</Label>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Button
               variant="destructive"
@@ -202,7 +202,7 @@ export function NotificationTestCard() {
               className="flex h-16 flex-col items-center justify-center gap-1"
             >
               <ShieldAlert className="h-5 w-5" />
-              <span className="text-caption">Crisis Alert</span>
+              <span className="text-caption">Crisis alert</span>
             </Button>
             <Button
               variant="secondary"
@@ -218,7 +218,7 @@ export function NotificationTestCard() {
               className="flex h-16 flex-col items-center justify-center gap-1"
             >
               <AlertTriangle className="h-5 w-5" />
-              <span className="text-caption">Security Intel</span>
+              <span className="text-caption">Security intel</span>
             </Button>
             <Button
               variant="secondary"
@@ -226,7 +226,7 @@ export function NotificationTestCard() {
               className="flex h-16 flex-col items-center justify-center gap-1"
             >
               <Sparkles className="h-5 w-5" />
-              <span className="text-caption">Trade Pact</span>
+              <span className="text-caption">Trade pact</span>
             </Button>
           </div>
         </div>
@@ -325,7 +325,7 @@ export function NotificationTestCard() {
               <div className="bg-surface border-separator rounded-row space-y-4 border p-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label className="text-body font-medium">Persistent Alert</Label>
+                    <Label className="text-body font-medium">Persistent alert</Label>
                     <p className="text-label-secondary text-footnote">
                       Requires manual closing; will not auto-dismiss.
                     </p>
@@ -335,7 +335,7 @@ export function NotificationTestCard() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label className="text-body font-medium">Silent Alert</Label>
+                    <Label className="text-body font-medium">Silent alert</Label>
                     <p className="text-label-secondary text-footnote">
                       Only add to notification center, suppress toast banner.
                     </p>
@@ -345,7 +345,7 @@ export function NotificationTestCard() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label className="text-body font-medium">With Action Callback</Label>
+                    <Label className="text-body font-medium">With action callback</Label>
                     <p className="text-label-secondary text-footnote">
                       Includes a clickable action button on the toast.
                     </p>
@@ -371,7 +371,7 @@ export function NotificationTestCard() {
 
             <Button onClick={handleTrigger} size="lg" className="w-full">
               <Play className="mr-2 h-4 w-4" />
-              Trigger Custom Notification
+              Trigger custom notification
             </Button>
           </>
         )}

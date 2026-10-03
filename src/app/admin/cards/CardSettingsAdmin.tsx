@@ -63,7 +63,7 @@ function SeedDemoAuctionsButton() {
             <Gavel className="text-yellow h-5 w-5" />
           </div>
           <div>
-            <p className="text-label text-headline">Demo Marketplace Auctions</p>
+            <p className="text-label text-headline">Demo marketplace auctions</p>
             <p className="text-label-secondary text-footnote mt-0.5">
               Seed synthetic market auctions with active bidding for test environments.
             </p>
@@ -149,31 +149,31 @@ export function CardSettingsAdmin({
   const SUBTABS = [
     {
       id: "general" as SettingsSubtab,
-      label: "General Settings",
+      label: "General settings",
       description: "Platform switches, trading policies, marketplace tax & minting",
       icon: Sliders,
     },
     {
       id: "packs" as SettingsSubtab,
-      label: "Packs & Drop Tables",
+      label: "Packs & drop tables",
       description: "Pack catalog, probabilities, guaranteed slots & pricing",
       icon: Package,
     },
     {
       id: "seasons" as SettingsSubtab,
-      label: "Seasons & Rotation",
+      label: "Seasons & rotation",
       description: "Season configuration, release dates & active card pools",
       icon: Calendar,
     },
     {
       id: "valuation" as SettingsSubtab,
-      label: "Valuation & Floors",
+      label: "Valuation & floors",
       description: "Rarity base curves, NS premium multipliers & junk rates",
       icon: Coins,
     },
     {
       id: "takedowns" as SettingsSubtab,
-      label: "Takedowns & Legal",
+      label: "Takedowns & legal",
       description: "NS flag-owner copyright requests & retired card restore",
       icon: ShieldAlert,
       badge: hiddenCardsCount > 0 ? `${hiddenCardsCount}` : undefined,

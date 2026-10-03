@@ -60,7 +60,7 @@ export function ColourNationMapper({
   return (
     <div className="space-y-4">
       <p className="text-label-secondary text-body">
-        Name each colour after a nation of the target realm — its region is imported with that
+        Name each colour after a nation of the target realm. Its region is imported with that
         nation&apos;s name, and becomes the nation&apos;s when it is claimed. Mark the ocean and
         other background colours as ignored.
       </p>
@@ -164,7 +164,7 @@ function MappingSummary({ plan }: { plan: ColourMappingPlan }) {
       {plan.duplicates.map((nation) => (
         <p key={nation} className="text-red flex items-center gap-1">
           <WarningTriangle className="h-3.5 w-3.5" />
-          {nation} has more than one colour — a nation holds one region; merge the colours or rename
+          {nation} has more than one colour. A nation holds one region; merge the colours or rename
           one.
         </p>
       ))}

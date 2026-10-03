@@ -4,7 +4,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "./AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { WarningPanel } from "./WarningPanel";
 import { SystemCronScheduleWidget } from "./SystemCronScheduleWidget";
 import { SystemLogs } from "./SystemLogs";
@@ -12,7 +12,6 @@ import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/components/ui/tooltip";
 import {
-  Dashboard as LayoutDashboard,
   Settings,
   Gamepad as Gamepad2,
   Group as Users,
@@ -45,7 +44,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
     () => [
       {
         icon: Settings,
-        label: "General Settings",
+        label: "General settings",
         description: "Time, economy & general parameters",
         href: "/admin/platform",
         section: "platform",
@@ -61,7 +60,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
       },
       {
         icon: Users,
-        label: "User Management",
+        label: "User management",
         description: "User list & country binders",
         href: "/admin/users",
         section: "users",
@@ -69,7 +68,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
       },
       {
         icon: Users,
-        label: "User Roles",
+        label: "User roles",
         description: "Role assignments & permissions",
         href: "/admin/user-roles",
         section: "user-roles",
@@ -77,7 +76,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
       },
       {
         icon: Package,
-        label: "Card Settings",
+        label: "Card settings",
         description: "Sync, packs, lore & seasons",
         href: "/admin/cards",
         section: "cards",
@@ -85,7 +84,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
       },
       {
         icon: Layers,
-        label: "Facet Materials Lab",
+        label: "Facet materials lab",
         description: "Material configurator & sandbox",
         href: "/admin/facet-lab",
         section: "facet-lab",
@@ -93,7 +92,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
       },
       {
         icon: Coins,
-        label: "Vault Settings",
+        label: "Vault settings",
         description: "Balances, streaks & store",
         href: "/admin/vault",
         section: "vault",
@@ -109,7 +108,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
       },
       {
         icon: Database,
-        label: "Reference Data",
+        label: "Reference data",
         description: "Unified database manager",
         href: "/admin/reference-data",
         section: "reference-data",
@@ -117,7 +116,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
       },
       {
         icon: Activity,
-        label: "User Logs",
+        label: "User logs",
         description: "Audit trail & terminal outputs",
         href: "/admin/logs",
         section: "logs",
@@ -125,7 +124,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
       },
       {
         icon: Vote,
-        label: "Polls Management",
+        label: "Polls management",
         description: "Create and manage active polls",
         href: "/admin/polls",
         section: "polls",
@@ -144,16 +143,12 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={LayoutDashboard}
-        title="Admin Dashboard"
-        description="System overview and quick actions"
-      />
+      <PageHeader title="Admin dashboard" />
 
       {/* Quick Actions */}
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-label text-headline">Quick Actions</h2>
+          <h2 className="text-label text-headline">Quick actions</h2>
           <Button
             variant="ghost"
             size="sm"

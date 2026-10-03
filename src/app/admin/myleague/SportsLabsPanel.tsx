@@ -15,8 +15,8 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import { Card } from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { SportsLabsInspector } from "~/components/admin/sports-labs/SportsLabsInspector";
 import { cn } from "~/lib/utils";
 import {
@@ -25,8 +25,6 @@ import {
   Calendar,
   Tournament as Swords,
   ControlSlider as Sliders,
-  Database,
-  Flask as FlaskConical,
 } from "iconoir-react";
 
 // Custom Node Component
@@ -153,7 +151,7 @@ export default function SportsLabsPanel() {
         id: "presets",
         type: "pipelineNode",
         data: {
-          label: "Sport Presets",
+          label: "Sport presets",
           description: `Active Preset: ${sportLabel}`,
           icon: Trophy,
           inputs: [],
@@ -170,7 +168,7 @@ export default function SportsLabsPanel() {
         id: "rosters",
         type: "pipelineNode",
         data: {
-          label: "Talent & Roster Gen",
+          label: "Talent & roster gen",
           description:
             selectedSport === "hockey"
               ? "Supports line shifts, goalies & saints"
@@ -194,7 +192,7 @@ export default function SportsLabsPanel() {
         id: "schedule",
         type: "pipelineNode",
         data: {
-          label: "Schedule Generator",
+          label: "Schedule generator",
           description:
             selectedSport === "f1"
               ? "Supports Circuit race schedules"
@@ -216,7 +214,7 @@ export default function SportsLabsPanel() {
         id: "resolver",
         type: "pipelineNode",
         data: {
-          label: "Match Resolver",
+          label: "Match resolver",
           description:
             selectedSport === "hockey"
               ? "Periods, goalie pulling, shootout, blessings"
@@ -238,7 +236,7 @@ export default function SportsLabsPanel() {
         id: "standings",
         type: "pipelineNode",
         data: {
-          label: "Standings & Table",
+          label: "Standings & table",
           description:
             selectedSport === "f1"
               ? "F1 Championship points standings"
@@ -260,7 +258,7 @@ export default function SportsLabsPanel() {
         id: "aging",
         type: "pipelineNode",
         data: {
-          label: "Aging & Transition",
+          label: "Aging & transition",
           description:
             selectedSport === "soccer" || selectedSport === "hockey"
               ? "Promo-swaps & Quadrennial WC cycles"
@@ -358,42 +356,22 @@ export default function SportsLabsPanel() {
 
   return (
     <div className="space-y-6">
-      {/* Header with AdminHeader */}
-      <div className="border-separator bg-surface rounded-row flex flex-col justify-between gap-4 border p-6 md:flex-row md:items-center">
-        <div className="flex items-center gap-4">
-          <div className="border-separator bg-fill-4 rounded-row text-yellow flex h-12 w-12 items-center justify-center border">
-            <FlaskConical className="h-6 w-6" />
-          </div>
-          <div>
-            <h1 className="text-label text-title-1 flex items-center gap-2">
-              MatchResolver
-              <Badge variant="warning" className="text-eyebrow">
-                Simulation Kernel Layer
-              </Badge>
-            </h1>
-          </div>
-        </div>
-
-        {/* Toggle Mode */}
-        <div className="bg-fill-4 rounded-control flex shrink-0 items-center gap-2 self-start border p-1 md:self-auto">
-          <Button
+      <PageHeader
+        title="MatchResolver"
+        subtitle="Simulation kernel"
+        actions={
+          <SegmentedControl
             size="sm"
-            variant={isSandbox ? "default" : "ghost"}
-            onClick={() => setIsSandbox(true)}
-          >
-            <FlaskConical className="mr-1 h-3.5 w-3.5" />
-            Sandbox Playground
-          </Button>
-          <Button
-            size="sm"
-            variant={!isSandbox ? "default" : "ghost"}
-            onClick={() => setIsSandbox(false)}
-          >
-            <Database className="mr-1 h-3.5 w-3.5" />
-            Live DB Inspector
-          </Button>
-        </div>
-      </div>
+            aria-label="Mode"
+            value={isSandbox ? "sandbox" : "live"}
+            onValueChange={(mode) => setIsSandbox(mode === "sandbox")}
+            options={[
+              { value: "sandbox", label: "Sandbox" },
+              { value: "live", label: "Live DB inspector" },
+            ]}
+          />
+        }
+      />
 
       {/* Main Grid: Left canvas + Right inspector */}
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">

@@ -90,7 +90,7 @@ export function EconomicControlCard({
               <div className="rounded-control border-indigo/20 bg-indigo/10 text-indigo border p-2">
                 <Globe className="h-4 w-4" />
               </div>
-              Global Economic Controls
+              Global economic controls
             </CardTitle>
             <CardDescription className="text-footnote">
               Growth factor, inflation, tier modifiers, and diminishing returns. Changes apply on
@@ -116,7 +116,7 @@ export function EconomicControlCard({
         {/* Growth Factor Slider */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-label text-caption">Global Growth Factor</Label>
+            <Label className="text-label text-caption">Global growth factor</Label>
             <Badge variant="secondary" className="rounded-full px-3 py-0.5 tabular-nums">
               {globalGrowthFactor.toFixed(4)} ({growthPercent}%)
             </Badge>
@@ -157,7 +157,7 @@ export function EconomicControlCard({
         {/* Base Inflation Rate */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-label text-caption">Base Inflation Rate</Label>
+            <Label className="text-label text-caption">Base inflation rate</Label>
             <Badge variant="info" className="rounded-full px-3 py-0.5 tabular-nums">
               {(baseInflationRate * 100).toFixed(1)}%
             </Badge>
@@ -185,7 +185,7 @@ export function EconomicControlCard({
             {/* Diminishing Returns */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <Label className="text-label-secondary text-subhead">Diminishing Returns</Label>
+                <Label className="text-label-secondary text-subhead">Diminishing returns</Label>
                 <Info className="text-label-secondary h-3.5 w-3.5" />
               </div>
               <p className="text-label-secondary text-footnote leading-relaxed">
@@ -237,7 +237,7 @@ export function EconomicControlCard({
             {/* Min Growth Floor */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="text-label text-caption">Minimum Growth Floor</Label>
+                <Label className="text-label text-caption">Minimum growth floor</Label>
                 <Badge variant="secondary" className="rounded-full px-3 py-0.5 tabular-nums">
                   {(minGrowthFloor * 100).toFixed(1)}%
                 </Badge>
@@ -332,12 +332,12 @@ export function EconomicControlCard({
 
         {/* Toggle Settings */}
         <div className="space-y-3">
-          <span className="text-label-secondary text-eyebrow block">Calculation Automation</span>
+          <span className="text-label-secondary text-eyebrow block">Calculation automation</span>
           <div className="space-y-3">
             <div className="border-separator bg-surface rounded-control flex items-center justify-between border p-3">
               <div className="space-y-0.5">
                 <Label htmlFor="auto-update" className="text-label text-caption">
-                  Auto Calculations
+                  Auto calculations
                 </Label>
                 <p className="text-label-secondary text-footnote">
                   Enable automatic economic calculations
@@ -349,7 +349,7 @@ export function EconomicControlCard({
             <div className="border-separator bg-surface rounded-control flex items-center justify-between border p-3">
               <div className="space-y-0.5">
                 <Label htmlFor="bot-sync" className="text-label text-caption">
-                  Discord Bot Sync
+                  Discord bot sync
                 </Label>
                 <p className="text-label-secondary text-footnote">
                   Enable time synchronization with Discord bot

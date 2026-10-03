@@ -71,25 +71,25 @@ export function DiplomaticOptionsAnalyticsTab() {
       {/* KPI Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Total Options</p>
+          <p className="text-label-secondary text-stat-label">Total options</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">
             {usageStats.summary.totalOptions}
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Active Options</p>
+          <p className="text-label-secondary text-stat-label">Active options</p>
           <p className="text-title-2 text-green mt-1 tabular-nums">
             {usageStats.summary.activeOptions}
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Total Usages</p>
+          <p className="text-label-secondary text-stat-label">Total usages</p>
           <p className="text-title-2 text-teal mt-1 tabular-nums">
             {usageStats.summary.totalCurrentUsage}
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-label-secondary text-eyebrow">Categories</p>
+          <p className="text-label-secondary text-stat-label">Categories</p>
           <p className="text-title-2 text-purple mt-1 tabular-nums">
             {Object.keys(usageStats.categoryStats).length}
           </p>
@@ -129,7 +129,7 @@ export function DiplomaticOptionsAnalyticsTab() {
         <Card className="space-y-4 p-5">
           <h3 className="text-label text-caption flex items-center gap-2">
             <PieChartIcon className="text-purple h-4 w-4" />
-            Option Distribution by Category
+            Option distribution by category
           </h3>
           <div className="h-72">
             <ChartContainer config={{}} className="h-full w-full">

@@ -12,7 +12,7 @@ export default function ValidationPanel() {
   return (
     <Card className="overflow-hidden">
       <div className="p-4">
-        <Eyebrow className="border-separator mb-3 block border-b pb-2">Rule Audit</Eyebrow>
+        <Eyebrow className="border-separator mb-3 block border-b pb-2">Rule audit</Eyebrow>
 
         {validationWarnings.length === 0 ? (
           <div className="rounded-control border-green/30 text-footnote text-green flex items-center gap-2 border p-3">

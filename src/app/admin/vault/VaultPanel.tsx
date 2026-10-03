@@ -8,11 +8,10 @@ import {
   ShoppingBag,
   ClockRotateRight as History,
   Settings,
-  Coins,
   Gift,
 } from "iconoir-react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 
 // Sub-components
@@ -30,10 +29,9 @@ export default function AdminVaultPage() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Coins}
-        title="Vault & Economy Control Suite"
-        description="Oversee user credit balances, store catalog items, metagame bonuses, and real-time transaction purchase logs."
+      <PageHeader
+        title="Vault and economy"
+        subtitle="User credit balances, store items, metagame bonuses and purchase logs."
       />
 
       <Tabs
@@ -42,40 +40,25 @@ export default function AdminVaultPage() {
         className="w-full"
       >
         <TabsList className="bg-fill-3 rounded-row mb-4 flex w-full flex-wrap justify-start gap-1 p-1">
-          <TabsTrigger
-            value="users"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
-          >
+          <TabsTrigger value="users" className="text-caption flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Users & Balances
+            Users & balances
           </TabsTrigger>
-          <TabsTrigger
-            value="store"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
-          >
+          <TabsTrigger value="store" className="text-caption flex items-center gap-2">
             <ShoppingBag className="h-4 w-4" />
-            Store Inventory
+            Store inventory
           </TabsTrigger>
-          <TabsTrigger
-            value="bonuses"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
-          >
+          <TabsTrigger value="bonuses" className="text-caption flex items-center gap-2">
             <Gift className="h-4 w-4" />
-            Metagame Bonuses
+            Metagame bonuses
           </TabsTrigger>
-          <TabsTrigger
-            value="logs"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
-          >
+          <TabsTrigger value="logs" className="text-caption flex items-center gap-2">
             <History className="h-4 w-4" />
-            Purchase Logs
+            Purchase logs
           </TabsTrigger>
-          <TabsTrigger
-            value="config"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
-          >
+          <TabsTrigger value="config" className="text-caption flex items-center gap-2">
             <Settings className="h-4 w-4" />
-            System Config
+            System config
           </TabsTrigger>
         </TabsList>
 

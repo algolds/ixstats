@@ -41,8 +41,8 @@ export function GrammarRootsSection() {
           value={mode}
           onValueChange={setMode}
           options={[
-            { value: "roots", label: "Root Derivations", icon: <GitFork /> },
-            { value: "syntax", label: "Sentence Grammar", icon: <SlidersHorizontal /> },
+            { value: "roots", label: "Root derivations", icon: <GitFork /> },
+            { value: "syntax", label: "Sentence grammar", icon: <SlidersHorizontal /> },
           ]}
         />
       </div>

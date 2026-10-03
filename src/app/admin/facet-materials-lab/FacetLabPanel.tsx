@@ -4,13 +4,8 @@ import * as React from "react";
 // Lab-only materials, textures and interaction profiles (never loaded by globals.css).
 import "~/styles/facet/lab.css";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
-import {
-  Component as Layers,
-  Expand as Maximize2,
-  Compress as Minimize2,
-  Undo as RotateCcw,
-} from "iconoir-react";
+import { PageHeader } from "~/components/shell/PageHeader";
+import { Expand as Maximize2, Compress as Minimize2, Undo as RotateCcw } from "iconoir-react";
 import { LabControlPanel } from "./_components/LabControlPanel";
 import { LabSandbox } from "./_components/LabSandbox";
 import { SnippetExporter } from "./_components/SnippetExporter";
@@ -19,7 +14,7 @@ import { ColorPickerInput } from "~/components/ui/color-picker";
 import { useAdminNavigation } from "../_components/AdminNavigationContext";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { Facet3Showcase } from "./_components/Facet3Showcase";
+import { FacetShowcase } from "./_components/FacetShowcase";
 
 const DEFAULT_CONFIG: LabConfig = {
   template: "facet-card",
@@ -128,46 +123,48 @@ export default function FacetMaterialsLabPage() {
 
   return (
     <div className="w-full space-y-6 pb-16" style={customVars}>
-      <AdminHeader
-        icon={Layers}
-        title="Facet Materials Lab"
-        description="The Facet 3 system as it ships, plus a sandbox for experimental, lab-only materials and textures."
-      >
-        {view === "lab" && (
+      <PageHeader
+        title="Facet materials lab"
+        subtitle="Production primitives, plus a sandbox for lab-only materials and textures."
+        actions={
           <>
-            <ColorPickerInput
-              value={config.customAccent}
-              onChange={(color) => handleConfigChange({ customAccent: color })}
-            />
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleReset}
-              title="Reset all settings to defaults"
-              aria-label="Reset all settings to defaults"
-            >
-              <RotateCcw />
-              <span className="hidden sm:inline">Reset</span>
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              aria-pressed={config.fullscreen}
-              onClick={() => {
-                handleConfigChange({ fullscreen: !config.fullscreen });
-                setSidebarHidden(!sidebarHidden);
-              }}
-              title={config.fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-              aria-label={config.fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-            >
-              {config.fullscreen ? <Minimize2 /> : <Maximize2 />}
-              <span className="hidden sm:inline">
-                {config.fullscreen ? "Exit Fullscreen" : "Fullscreen"}
-              </span>
-            </Button>
+            {view === "lab" && (
+              <>
+                <ColorPickerInput
+                  value={config.customAccent}
+                  onChange={(color) => handleConfigChange({ customAccent: color })}
+                />
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleReset}
+                  title="Reset all settings to defaults"
+                  aria-label="Reset all settings to defaults"
+                >
+                  <RotateCcw />
+                  <span className="hidden sm:inline">Reset</span>
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  aria-pressed={config.fullscreen}
+                  onClick={() => {
+                    handleConfigChange({ fullscreen: !config.fullscreen });
+                    setSidebarHidden(!sidebarHidden);
+                  }}
+                  title={config.fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                  aria-label={config.fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                >
+                  {config.fullscreen ? <Minimize2 /> : <Maximize2 />}
+                  <span className="hidden sm:inline">
+                    {config.fullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                  </span>
+                </Button>
+              </>
+            )}
           </>
-        )}
-      </AdminHeader>
+        }
+      />
 
       <SegmentedControl
         asTabs
@@ -175,13 +172,13 @@ export default function FacetMaterialsLabPage() {
         value={view}
         onValueChange={setView}
         options={[
-          { value: "system", label: "Facet 3 system" },
+          { value: "system", label: "Primitives" },
           { value: "lab", label: "Lab materials" },
         ]}
       />
 
       {view === "system" ? (
-        <Facet3Showcase />
+        <FacetShowcase />
       ) : (
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
           {/* 1. Controls — scrollable within viewport */}
