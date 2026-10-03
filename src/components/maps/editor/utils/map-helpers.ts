@@ -165,6 +165,14 @@ export function toPolygonGeometry(geom: object | null | undefined): Polygon | Mu
   return null;
 }
 
+/** The vertex run of a route geometry (a LineString, or every part of a MultiLineString). */
+export function routeVertices(geometry: Geometry | null | undefined): [number, number][] {
+  if (geometry?.type === "LineString") return geometry.coordinates as [number, number][];
+  if (geometry?.type === "MultiLineString")
+    return geometry.coordinates.flat() as [number, number][];
+  return [];
+}
+
 export function getFeatureCoords(geometry: Geometry): Position | undefined {
   if (geometry.type === "Point") return geometry.coordinates;
   if (geometry.type === "MultiPoint") return geometry.coordinates[0];

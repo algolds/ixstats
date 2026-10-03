@@ -11,6 +11,7 @@ import type { useMapEditor } from "~/hooks/useMapEditor";
 import { useWikiScanner } from "~/hooks/useWikiScanner";
 import { notifyFromStore } from "~/hooks/useNotify";
 import { confirmEditorAction } from "~/components/maps/editor/components/EditorConfirmDialog";
+import { routeVertices } from "~/components/maps/editor/utils/map-helpers";
 import { transientMapStore } from "~/components/maps/editor/utils/transientStore";
 import type { EditorMode } from "~/hooks/map-editor/editor-types";
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
@@ -49,12 +50,7 @@ export function useEditRoute(transportRouteData: TransportRouteData, editor: Edi
       const geometry = transportRouteData?.features.find(
         (f) => String(f.properties?.id) === routeId
       )?.geometry;
-      let vertices: [number, number][] = [];
-      if (geometry?.type === "LineString") {
-        vertices = geometry.coordinates as [number, number][];
-      } else if (geometry?.type === "MultiLineString") {
-        vertices = (geometry.coordinates as [number, number][][]).flat();
-      }
+      const vertices = routeVertices(geometry);
       if (vertices.length > 0) {
         editor.startRouteEdit(routeId, vertices);
       }
