@@ -127,7 +127,7 @@ export async function saveArticleHtmlShadow(
 /**
  * Fetch revision history from PostgreSQL, falling back to MediaWiki.
  */
-async function getPageHistoryShadow(
+export async function getArticleHistoryShadow(
   title: string,
   limit = 50,
   offset?: number,
@@ -167,9 +167,6 @@ async function getPageHistoryShadow(
     fromShadow: false,
   };
 }
-
-/** Alias for getPageHistoryShadow */
-export const getArticleHistoryShadow = getPageHistoryShadow;
 
 type MediaWikiAuthorsData = Awaited<ReturnType<typeof fetchMediaWikiPageAuthorsAndRevisions>>;
 

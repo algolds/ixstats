@@ -1,5 +1,5 @@
 /**
- * useWikiIntelligence Hook
+ * useDossier Hook
  *
  * Custom hook for managing wiki intelligence data and state for country profiles.
  * Handles tRPC queries, cache management, data conflict detection, and section state.
@@ -320,7 +320,7 @@ export function useDossier({
    */
   const handleRefresh = useCallback(async () => {
     try {
-      console.log("[useWikiIntelligence] Manual refresh triggered - clearing cache");
+      console.log("[useDossier] Manual refresh triggered - clearing cache");
 
       // Clear cache and refetch
       await refreshMutation.mutateAsync({ countryName });
@@ -328,10 +328,10 @@ export function useDossier({
       // Refetch the data
       await refetch();
 
-      console.log(`[useWikiIntelligence] Refresh complete for ${countryName}`);
+      console.log(`[useDossier] Refresh complete for ${countryName}`);
       // oxlint-disable-next-line eslint/no-shadow -- shadowed 'error' is intentional in this scope
     } catch (error) {
-      console.error("[useWikiIntelligence] Refresh error:", error);
+      console.error("[useDossier] Refresh error:", error);
       throw error; // Re-throw so caller can handle it
     }
   }, [refreshMutation, refetch, countryName]);

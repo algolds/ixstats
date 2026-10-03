@@ -386,4 +386,3 @@ export class UserLogger {
 // Initialize on import
 UserLogger.initialize();
 
-export default UserLogger;

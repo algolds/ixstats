@@ -1,6 +1,6 @@
 "use client";
 // Unified Flag Hooks - Consolidates all flag loading approaches (Plan 164)
-// Replaces useFlag, useBulkFlagCache, useBatchFlags, etc.
+// Replaces the old useFlag / bulk flag cache hooks.
 
 import { useMemo, useCallback } from "react";
 import { api } from "~/trpc/react";
@@ -130,8 +130,3 @@ export function useBulkFlags(
     refetch,
   };
 }
-
-/**
- * Backward compatibility alias for useBulkFlags
- */
-export const useBulkFlagCache = useBulkFlags;

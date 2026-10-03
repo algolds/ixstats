@@ -400,4 +400,3 @@ export const userLoggingMiddleware = {
   }),
 };
 
-export default userLoggingMiddleware;

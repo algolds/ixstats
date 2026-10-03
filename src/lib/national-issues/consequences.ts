@@ -439,48 +439,6 @@ export class NationalIssuesConsequences {
     };
   }
 
-  /**
-   * Generate a human-readable description of a consequence.
-   */
-  private static describeConsequence(
-    field: string,
-    previousValue: number,
-    newValue: number,
-    delta: number
-  ): string {
-    const fieldLabels: Record<string, string> = {
-      publicApproval: "Public Approval",
-      unemploymentRate: "Unemployment Rate",
-      inflationRate: "Inflation Rate",
-      currentTotalGdp: "GDP",
-      currentGdpPerCapita: "GDP per Capita",
-      infrastructureRating: "Infrastructure Rating",
-      tradeBalance: "Trade Balance",
-      povertyRate: "Poverty Rate",
-      stabilityScore: "Stability Score",
-      crimeRate: "Crime Rate",
-      protestFrequency: "Protest Frequency",
-      riotRisk: "Riot Risk",
-      socialCohesion: "Social Cohesion",
-      ethnicTension: "Ethnic Tension",
-      trustInGovernment: "Trust in Government",
-      politicalStability: "Political Stability",
-      democracyIndex: "Democracy Index",
-      governmentEffectiveness: "Government Effectiveness",
-      corruptionIndex: "Corruption Index",
-      politicalPolarization: "Political Polarization",
-      totalDebtGDPRatio: "Debt-to-GDP Ratio",
-      economicVitality: "Economic Vitality",
-      ruleOfLaw: "Rule of Law",
-    };
-
-    const label = fieldLabels[field] || field;
-    const direction = delta > 0 ? "increased" : "decreased";
-    const absStr = Math.abs(delta).toFixed(1);
-
-    return `${label} ${direction} by ${absStr} (${previousValue.toFixed(1)} → ${newValue.toFixed(1)})`;
-  }
-
   private static calculateIxCredits(
     issue:
       | {

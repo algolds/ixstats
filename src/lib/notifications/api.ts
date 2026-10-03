@@ -667,4 +667,3 @@ class NotificationAPIService {
 export const notificationAPI = new NotificationAPIService();
 
 // Export for convenience
-export default notificationAPI;
