@@ -35,10 +35,7 @@ export const diplomaticEmbassiesQueriesEmbassyCalculatorsRouter = createTRPCRout
               ? 1.2
               : 1.0;
 
-      // Economic tier modifier (mock - would be based on actual country data)
-      const economicTierMultiplier = 1.0; // Would vary by target country's economic tier
-
-      const totalCost = baseCost * relationshipMultiplier * economicTierMultiplier;
+      const totalCost = baseCost * relationshipMultiplier;
       const approvalTime =
         relationshipStrength < 25
           ? 45
@@ -51,7 +48,6 @@ export const diplomaticEmbassiesQueriesEmbassyCalculatorsRouter = createTRPCRout
       return {
         baseCost,
         relationshipMultiplier,
-        economicTierMultiplier,
         totalCost: Math.round(totalCost),
         approvalTime,
         requirements: {

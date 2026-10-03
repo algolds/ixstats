@@ -321,15 +321,14 @@ api.intelligence.updateTemplate.useMutation() // { id, reportType?, classificati
 api.intelligence.deleteTemplate.useMutation() // { id }
 ```
 
-### diplomaticCore Router (8 procedures)
+### diplomaticCore Router (7 procedures)
 
 The former monolithic `diplomatic` router is split into `diplomaticCore`, `diplomaticEmbassies`, `diplomaticCultural` and `diplomaticPolicies`.
 
 ```typescript
-// Queries (5)
+// Queries (4)
 api.diplomaticCore.getRelationships.useQuery({ countryId })
 api.diplomaticCore.getFollowStatus.useQuery({ viewerCountryId, targetCountryId })
-api.diplomaticCore.getSharedData.useQuery({ embassyId, dataType? })
 api.diplomaticCore.getAllDiplomaticOptions.useQuery()
 api.diplomaticCore.getOptionUsageStats.useQuery()
 

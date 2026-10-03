@@ -256,10 +256,6 @@ export function EmbassyCreatorSheet({
                           <span>${costData.baseCost.toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Economic tier</span>
-                          <span>&times;{costData.economicTierMultiplier.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between">
                           <span>Relationship</span>
                           <span>&times;{costData.relationshipMultiplier.toFixed(2)}</span>
                         </div>
