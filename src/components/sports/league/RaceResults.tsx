@@ -219,7 +219,7 @@ export function RaceResults({ races, className }: RaceResultsProps) {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {race.grid
+                      {[...race.grid]
                         .sort((a, b) => a.position - b.position)
                         .map((g) => (
                           <TableRow key={g.driverId}>
@@ -252,7 +252,7 @@ export function RaceResults({ races, className }: RaceResultsProps) {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {race.results
+                      {[...race.results]
                         .sort((a, b) => a.finishPosition - b.finishPosition)
                         .map((r) => (
                           <TableRow key={r.driverId}>
