@@ -53,7 +53,13 @@ export function ThreadReplies({
             <div className="text-footnote text-red py-1">Failed to load replies.</div>
           ) : threadQuery.data?.replies && threadQuery.data.replies.length > 0 ? (
             threadQuery.data.replies.map((reply: any) => (
-              <ThinkpagesPostComponent key={reply.id} post={reply} {...ctx} compact={true} showThread={false} />
+              <ThinkpagesPostComponent
+                key={reply.id}
+                post={reply}
+                {...ctx}
+                compact={true}
+                showThread={false}
+              />
             ))
           ) : (
             <div className="text-label-secondary text-footnote py-1">No replies yet.</div>
