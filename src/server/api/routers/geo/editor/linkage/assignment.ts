@@ -8,6 +8,7 @@ import { clearLayerCache } from "../../core";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { IxTime } from "~/lib/ixtime";
 import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
+import { requirePoliticalLayer } from "../../core/shared";
 
 export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
   /**
@@ -24,15 +25,7 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Verify feature exists (featureId is unique only within a realm)
       const realmId = await viewerRealmId(ctx, input.realm);
-      const mapLayer = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId, realmId },
-      });
-      if (!mapLayer) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Map feature not found: ${input.featureId}`,
-        });
-      }
+      const mapLayer = await requirePoliticalLayer(ctx.db, input.featureId, realmId);
 
       // Verify the country exists and belongs to the feature's realm
       const country = await assertCountryInFeatureRealm(ctx.db, input.countryId, realmId);
@@ -72,20 +65,11 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
   unlinkCountryGeometry: adminProcedure
     .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
     .mutation(async ({ ctx, input }) => {
-      const mapLayer = await ctx.db.mapLayer.findFirst({
-        where: {
-          layerType: "political",
-          featureId: input.featureId,
-          realmId: await viewerRealmId(ctx, input.realm),
-        },
-      });
-
-      if (!mapLayer) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Map feature not found: ${input.featureId}`,
-        });
-      }
+      const mapLayer = await requirePoliticalLayer(
+        ctx.db,
+        input.featureId,
+        await viewerRealmId(ctx, input.realm)
+      );
 
       const previousCountryId = mapLayer.countryId;
 

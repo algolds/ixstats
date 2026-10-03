@@ -6,6 +6,7 @@ import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import type { PrismaClient } from "@prisma/client";
 import { buildGeoProfile, computeEconomicGeoModifiers } from "~/lib/maps/geo-analytics";
 import { buildClimateZones, buildElevationZones, LAYER_SELECT, type Extent } from "./profile-zones";
+import { requirePoliticalLayer } from "./shared";
 
 /** Computes and stores one country's geo profile; throws "no geometry" when it has none. */
 async function recalculateGeoProfile(db: PrismaClient, countryId: string) {
@@ -85,20 +86,11 @@ export const adminOpsProcedures = {
   recalculateArea: adminProcedure
     .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
     .mutation(async ({ ctx, input }) => {
-      const mapLayer = await ctx.db.mapLayer.findFirst({
-        where: {
-          layerType: "political",
-          featureId: input.featureId,
-          realmId: await viewerRealmId(ctx, input.realm),
-        },
-      });
-
-      if (!mapLayer) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Map feature not found: ${input.featureId}`,
-        });
-      }
+      const mapLayer = await requirePoliticalLayer(
+        ctx.db,
+        input.featureId,
+        await viewerRealmId(ctx, input.realm)
+      );
 
       try {
         const result = await ctx.db.$queryRawUnsafe<Array<{ area_sqkm: number }>>(

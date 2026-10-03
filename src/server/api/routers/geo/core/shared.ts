@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import type { PrismaClient } from "@prisma/client";
 
 /** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
 export const coordinatesSchema = z
@@ -21,6 +22,17 @@ export function assertOwnCountry(
   if (owned && owned.id !== countryId) {
     throw new TRPCError({ code: "FORBIDDEN", message: `You can only ${action} your own country` });
   }
+}
+
+/** The realm's political layer for a feature (featureId is unique only within a realm), or NOT_FOUND. */
+export async function requirePoliticalLayer(db: PrismaClient, featureId: string, realmId: string) {
+  const mapLayer = await db.mapLayer.findFirst({
+    where: { layerType: "political", featureId, realmId },
+  });
+  if (!mapLayer) {
+    throw new TRPCError({ code: "NOT_FOUND", message: `Map feature not found: ${featureId}` });
+  }
+  return mapLayer;
 }
 
 /**
