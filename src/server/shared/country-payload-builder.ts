@@ -1,13 +1,14 @@
 import { z } from "zod";
 
-/**
- * Robust JSON primitive and recursive value types for structured payloads.
- * Zero "any" or "unknown" types adhering to strict codebase quality constraints.
- */
-export type JsonPrimitive = string | number | boolean | null;
 // Object values may be undefined: superjson preserves `undefined` keys from the client
 // (e.g. `parentDepartmentId: undefined`); JSON serialization drops them on write.
-export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue | undefined };
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue | undefined };
 
 const jsonLiteralSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
 
