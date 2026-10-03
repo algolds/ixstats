@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Shield, Archive, Book, Clock } from "iconoir-react";
 import { api } from "~/trpc/react";
@@ -153,6 +153,12 @@ export function GovernanceSection({ searchFilter }: { searchFilter: string }) {
     </div>
   );
 
+  const panels: Record<string, () => ReactNode> = {
+    archive: archivePanel,
+    logs: logsPanel,
+    protection: protectionPanel,
+  };
+
   return (
     <InspectorSection
       searchFilter={searchFilter}
@@ -166,9 +172,7 @@ export function GovernanceSection({ searchFilter }: { searchFilter: string }) {
       panelCaption="Authoritative PostgreSQL transaction layer"
       closeLabel="Close console"
       panelTitle={(id) => PANEL_TITLES[id] ?? ""}
-      renderPanel={(id) =>
-        ({ archive: archivePanel, logs: logsPanel, protection: protectionPanel })[id]?.()
-      }
+      renderPanel={(id) => panels[id]?.()}
     />
   );
 }

@@ -18,10 +18,6 @@ export * from "./pg-activity";
 export * from "./pg-taxonomy";
 export * from "./pg-site";
 
-function warnDev(err: unknown): void {
-  warnDev(err);
-}
-
 /** Wikitext of one page from the live MediaWiki API; null when it is missing or the call failed. */
 async function fetchLiveWikitext(
   title: string

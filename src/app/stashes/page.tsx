@@ -33,10 +33,10 @@ import {
   StashThreadsList,
   StashSettingsMenu,
   CreateStashPopover,
-  type CommonsImage,
   type StashTab,
   type StashedQuoteItem,
 } from "~/components/wiki-os/stashes";
+import type { CommonsImage } from "~/components/wiki-os/media-search/types";
 
 export default function StashesPage() {
   usePageTitle({ title: "Stash" });

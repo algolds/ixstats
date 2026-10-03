@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { api } from "~/trpc/react";
+import { api, type RouterInputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { PersonaTraitControls, type PersonaTraitKey } from "./account/PersonaTraitControls";
 
@@ -22,11 +22,20 @@ interface AccountSettingsModalProps {
   onAccountUpdate: (updatedAccount: any) => void;
 }
 
-const SETTING_KEYS = ["postingFrequency", "politicalLean", "personality", "accountType"] as const;
+type AccountSettings = Required<
+  Pick<
+    RouterInputs["thinkpages"]["updateAccount"],
+    "postingFrequency" | "politicalLean" | "personality" | "accountType"
+  >
+>;
 
-// Values come straight from the account row, so they keep the mutation's enum typing
-const pickSettings = (account: any): Record<(typeof SETTING_KEYS)[number], any> =>
-  Object.fromEntries(SETTING_KEYS.map((key) => [key, account[key]]));
+/** The editable settings of an account row. */
+const pickSettings = (account: AccountSettings): AccountSettings => ({
+  postingFrequency: account.postingFrequency,
+  politicalLean: account.politicalLean,
+  personality: account.personality,
+  accountType: account.accountType,
+});
 
 export function AccountSettingsModal({
   isOpen,

@@ -270,7 +270,7 @@ function toggleListBlock(editor: PlateEditorLike, targetType: "ul" | "ol") {
           !["table", "tr", "td", "th"].includes(nodeType(n) ?? ""),
         mode: "lowest",
       });
-      Transforms.wrapNodes(editor, { type: targetType, children: [] } as Descendant, {
+      Transforms.wrapNodes(editor, { type: targetType, children: [] } as SlateElement, {
         match: isTypeIn("li"),
         mode: "lowest",
       });

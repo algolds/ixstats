@@ -1,5 +1,13 @@
 import type React from "react";
-import { Transforms, Editor, Range, Element as SlateElement, Node as SlateNode, Path } from "slate";
+import {
+  Transforms,
+  Editor,
+  Range,
+  Element as SlateElement,
+  Node as SlateNode,
+  Path,
+  type Node,
+} from "slate";
 
 /** The Plate editor is deeply generic; these handlers only rely on Slate runtime APIs. */
 type Ed = any;
@@ -11,12 +19,14 @@ const MARKDOWN_LISTS = new Map([
   ["1.", "ol"],
 ]);
 
+const typeOf = (n: Node) => (n as { type?: string }).type;
+
 const isTypeIn =
   (...types: string[]) =>
-  (n: Loose) =>
-    SlateElement.isElement(n) && types.includes((n as Loose).type);
+  (n: Node) =>
+    SlateElement.isElement(n) && types.includes(typeOf(n) ?? "");
 
-const firstEntry = (editor: Ed, match: (n: Loose) => boolean, mode?: "lowest") =>
+const firstEntry = (editor: Ed, match: (n: Node) => boolean, mode?: "lowest") =>
   Editor.nodes(editor, { match, mode }).next().value as [Loose, Path] | undefined;
 
 const emptyParagraph = () => ({ type: "p", children: [{ text: "" }] });
@@ -33,7 +43,7 @@ function convertMarkdownList(editor: Ed, e: React.KeyboardEvent): boolean {
   }
   const blockEntry = firstEntry(
     editor,
-    (n) => SlateElement.isElement(n) && !Editor.isInline(editor, n) && n.type === "p",
+    (n) => SlateElement.isElement(n) && !Editor.isInline(editor, n) && typeOf(n) === "p",
     "lowest"
   );
   if (!blockEntry) return false;
