@@ -124,7 +124,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
       [yourCardsData]
     );
 
-    const { data: theirCardsData } = (api.cards as any).getUserCards.useQuery(
+    const { data: theirCardsData } = api.cards.getUserCards.useQuery(
       { userId: searchRecipient },
       { enabled: !!searchRecipient }
     );
