@@ -522,7 +522,9 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
         />
       );
     }
-    if (!countryData) return null;
+    if (!countryData) {
+      return <MetricModalLayout.Empty icon={DollarSign} message="Country data unavailable" />;
+    }
     if (tab === "overview") {
       return <GdpOverview country={countryData} stats={stats} formatCurrency={formatCurrency} />;
     }
