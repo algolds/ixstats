@@ -89,6 +89,11 @@ function wikiApiUrl(wiki: WikiSource): URL {
   return new URL(base.endsWith("api.php") ? base : `${base}/api.php`);
 }
 
+/** MediaWiki returns `pages` as an array (formatversion 2) or an id-keyed object. */
+export function pagesOf<T>(raw: T[] | Record<string, T> | undefined): T[] {
+  return Array.isArray(raw) ? raw : Object.values(raw ?? {});
+}
+
 /** GET JSON from a wiki API URL; null on a non-OK response, throws on network errors. */
 async function fetchWikiJson<T>(url: URL | string, timeoutMs: number): Promise<T | null> {
   const res = await fetch(url, { headers: WIKI_HEADERS, signal: AbortSignal.timeout(timeoutMs) });

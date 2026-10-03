@@ -17,6 +17,7 @@ import * as path from "path";
 import {
   ALTHISTORY_API,
   getFullIiwikiApiUrl,
+  pagesOf,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge/http-reader";
 import { parseInfoboxWithTemplates, type UnifiedInfoboxData } from "./unified-parser";
 import { withRetrySafe } from "~/lib/system/with-retry";
@@ -117,11 +118,6 @@ async function fetchWikiJson<T>(
     { maxAttempts: 3, strategy: "linear", ...retry }
   );
   return result.success && result.value ? result.value : null;
-}
-
-/** MediaWiki returns `pages` as an array (formatversion 2) or an id-keyed object. */
-function pagesOf<T>(raw: T[] | Record<string, T> | undefined): T[] {
-  return Array.isArray(raw) ? raw : Object.values(raw ?? {});
 }
 
 async function fetchCategoryMembers(category: string, site: Site): Promise<string[]> {
