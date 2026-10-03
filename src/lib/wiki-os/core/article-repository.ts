@@ -88,6 +88,7 @@ function toArticleEntity(article: Prisma.WikiArticleGetPayload<{ select: typeof 
     ...ENTITY_DEFAULTS,
     ...defined(columns),
     id: toArticleId(article.id),
+    title: article.title,
     slug: toArticleSlug(article.title),
     status: (article.status || "PUBLISHED") as WikiArticleEntity["status"],
     format: (article.format || "STRUCTURED_JSON") as WikiArticleEntity["format"],
