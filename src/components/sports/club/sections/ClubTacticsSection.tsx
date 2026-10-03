@@ -118,6 +118,45 @@ interface ClubTacticsSectionProps {
   onSavedLineup?: () => void;
 }
 
+/** Circular gauge (stroke-dashoffset over a 26px-radius ring) with a title and caption. */
+function BiasRing({
+  offset,
+  value,
+  title,
+  description,
+}: {
+  offset: number;
+  value: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex w-full items-center justify-start gap-4">
+      <div className="relative h-16 w-16 shrink-0">
+        <svg className="h-full w-full -rotate-90">
+          <circle cx="32" cy="32" r="26" className="stroke-fill-2 fill-none" strokeWidth="6" />
+          <circle
+            cx="32"
+            cy="32"
+            r="26"
+            className="stroke-tint ease-out-facet fill-none transition-[stroke-dashoffset] duration-500"
+            strokeWidth="6"
+            strokeDasharray="163.3"
+            strokeDashoffset={offset}
+          />
+        </svg>
+        <div className="text-footnote text-label absolute inset-0 flex items-center justify-center font-semibold tabular-nums">
+          {value}
+        </div>
+      </div>
+      <div>
+        <h5 className="text-headline text-label">{title}</h5>
+        <p className="text-label-secondary text-footnote mt-0.5">{description}</p>
+      </div>
+    </div>
+  );
+}
+
 export function ClubTacticsSection({
   team,
   onUpdateTactics,
@@ -186,71 +225,18 @@ export function ClubTacticsSection({
             <CardTitle>Strategic weighting</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-stretch space-y-6 py-6">
-            {/* Offense Ring */}
-            <div className="flex w-full items-center justify-start gap-4">
-              <div className="relative h-16 w-16 shrink-0">
-                <svg className="h-full w-full -rotate-90">
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r="26"
-                    className="stroke-fill-2 fill-none"
-                    strokeWidth="6"
-                  />
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r="26"
-                    className="stroke-tint ease-out-facet fill-none transition-[stroke-dashoffset] duration-500"
-                    strokeWidth="6"
-                    strokeDasharray="163.3"
-                    strokeDashoffset={activeIntent.offenseOffset}
-                  />
-                </svg>
-                <div className="text-footnote text-label absolute inset-0 flex items-center justify-center font-semibold tabular-nums">
-                  {activeIntent.offenseVal}
-                </div>
-              </div>
-              <div>
-                <h5 className="text-headline text-label">Offense bias</h5>
-                <p className="text-label-secondary text-footnote mt-0.5">
-                  Adjusts match scoring chances
-                </p>
-              </div>
-            </div>
-
-            {/* Defense Ring */}
-            <div className="flex w-full items-center justify-start gap-4">
-              <div className="relative h-16 w-16 shrink-0">
-                <svg className="h-full w-full -rotate-90">
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r="26"
-                    className="stroke-fill-2 fill-none"
-                    strokeWidth="6"
-                  />
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r="26"
-                    className="stroke-tint ease-out-facet fill-none transition-[stroke-dashoffset] duration-500"
-                    strokeWidth="6"
-                    strokeDasharray="163.3"
-                    strokeDashoffset={activeIntent.defenseOffset}
-                  />
-                </svg>
-                <div className="text-footnote text-label absolute inset-0 flex items-center justify-center font-semibold tabular-nums">
-                  {activeIntent.defenseVal}
-                </div>
-              </div>
-              <div>
-                <h5 className="text-headline text-label">Defense bias</h5>
-                <p className="text-label-secondary text-footnote mt-0.5">
-                  Concede probability coefficient
-                </p>
-              </div>
-            </div>
+            <BiasRing
+              offset={activeIntent.offenseOffset}
+              value={activeIntent.offenseVal}
+              title="Offense bias"
+              description="Adjusts match scoring chances"
+            />
+            <BiasRing
+              offset={activeIntent.defenseOffset}
+              value={activeIntent.defenseVal}
+              title="Defense bias"
+              description="Concede probability coefficient"
+            />
 
             {/* Custom Sliders */}
             <div className="border-separator my-4 space-y-4 border-t pt-4">
