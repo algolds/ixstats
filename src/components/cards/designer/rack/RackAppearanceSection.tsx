@@ -15,6 +15,134 @@ interface RackAppearanceSectionProps {
   onOpenIconBrowser: (target: "emblem" | "watermark") => void;
 }
 
+type OnChange = RackAppearanceSectionProps["onChange"];
+
+/** Icon picker row (current icon or the category default), numeric slider and colour swatches. */
+function SigilPanel(props: {
+  state: CardDesignState;
+  onChange: OnChange;
+  onBrowse: () => void;
+  title: string;
+  browseLabel: string;
+  defaultLabel: string;
+  iconKey: "emblemIcon" | "watermarkIcon";
+  colorKey: "emblemColor" | "watermarkColor";
+  colorLabel: string;
+  slider: {
+    label: string;
+    key: "emblemScale" | "watermarkOpacity";
+    min: string;
+    max: string;
+    format: (value: number) => string;
+  };
+}) {
+  const { state, onChange, iconKey, colorKey, slider } = props;
+  const icon = state[iconKey];
+  const color = state[colorKey];
+  const sliderValue = state[slider.key];
+
+  return (
+    <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
+      <div className="flex items-center justify-between">
+        <span className="text-label text-footnote font-semibold">{props.title}</span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={props.onBrowse}
+          className="text-footnote h-6 gap-1 px-2"
+        >
+          <Library className="text-tint h-3 w-3" />
+          {props.browseLabel}
+        </Button>
+      </div>
+
+      {icon ? (
+        <div className="border-separator bg-surface rounded-control flex items-center justify-between border p-2">
+          <div className="flex items-center gap-2">
+            <div className="bg-fill-3 border-separator flex h-6 w-6 items-center justify-center rounded border p-0.5">
+              <img
+                src={icon.path}
+                alt={icon.name}
+                className="h-full w-full object-contain invert filter"
+              />
+            </div>
+            <span className="text-footnote max-w-[90px] truncate font-medium">{icon.name}</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onChange((p) => ({ ...p, [iconKey]: null }))}
+            className="text-label-secondary hover:text-destructive text-footnote h-5 px-1"
+          >
+            Reset
+          </Button>
+        </div>
+      ) : (
+        <div className="text-label-secondary text-footnote italic">{props.defaultLabel}</div>
+      )}
+
+      <div className="flex items-center gap-2 pt-1">
+        <span className="text-label-secondary text-footnote shrink-0">{slider.label}</span>
+        <input
+          type="range"
+          min={slider.min}
+          max={slider.max}
+          step="0.05"
+          value={sliderValue}
+          onChange={(e) => onChange((p) => ({ ...p, [slider.key]: Number(e.target.value) }))}
+          className="bg-fill-3 accent-primary rounded-control h-1 flex-1"
+        />
+        <span className="text-label text-footnote w-7 text-right tabular-nums">
+          {slider.format(sliderValue)}
+        </span>
+      </div>
+
+      <div className="border-separator space-y-2 border-t pt-2">
+        <div className="flex items-center justify-between">
+          <span className="text-label text-footnote font-semibold">{props.colorLabel}</span>
+          <span className="text-tint text-footnote font-mono">
+            {color ? color.toUpperCase() : "Auto"}
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {COLOR_PRESETS.map((preset) => {
+            const isActive = (color || "") === preset.value;
+            return (
+              <button
+                key={`${colorKey}-${preset.id}`}
+                type="button"
+                title={preset.label}
+                aria-label={preset.label}
+                aria-pressed={isActive}
+                onClick={() => onChange((p) => ({ ...p, [colorKey]: preset.value }))}
+                className={cn(
+                  "flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                  preset.bgClass,
+                  isActive
+                    ? "ring-tint ring-offset-surface border-separator shadow-card scale-110 ring-2 ring-offset-2"
+                    : "border-separator opacity-80 hover:opacity-100"
+                )}
+              />
+            );
+          })}
+          <label
+            className="border-separator bg-surface relative flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+            title="Custom hex color"
+          >
+            <input
+              type="color"
+              value={color || "#f59e0b"}
+              onChange={(e) => onChange((p) => ({ ...p, [colorKey]: e.target.value }))}
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+            />
+            <Palette className="text-label-secondary h-3 w-3" />
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export const RackAppearanceSection = React.memo(function RackAppearanceSection({
   state,
   onChange,
@@ -118,217 +246,43 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
 
       {/* Icons and Sigils */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {/* Primary Emblem */}
-        <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
-          <div className="flex items-center justify-between">
-            <span className="text-label text-footnote font-semibold">Primary icon</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onOpenIconBrowser("emblem")}
-              className="text-footnote h-6 gap-1 px-2"
-            >
-              <Library className="text-tint h-3 w-3" />
-              4,100+ Icons
-            </Button>
-          </div>
+        <SigilPanel
+          state={state}
+          onChange={onChange}
+          onBrowse={() => onOpenIconBrowser("emblem")}
+          title="Primary icon"
+          browseLabel="4,100+ Icons"
+          defaultLabel={`Default ${getCategoryLabel(state.category)} Sigil`}
+          iconKey="emblemIcon"
+          colorKey="emblemColor"
+          colorLabel="Emblem color"
+          slider={{
+            label: "Scale:",
+            key: "emblemScale",
+            min: "0.5",
+            max: "1.5",
+            format: (v) => `${v.toFixed(2)}x`,
+          }}
+        />
 
-          {state.emblemIcon ? (
-            <div className="border-separator bg-surface rounded-control flex items-center justify-between border p-2">
-              <div className="flex items-center gap-2">
-                <div className="bg-fill-3 border-separator flex h-6 w-6 items-center justify-center rounded border p-0.5">
-                  <img
-                    src={state.emblemIcon.path}
-                    alt={state.emblemIcon.name}
-                    className="h-full w-full object-contain invert filter"
-                  />
-                </div>
-                <span className="text-footnote max-w-[90px] truncate font-medium">
-                  {state.emblemIcon.name}
-                </span>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onChange((p) => ({ ...p, emblemIcon: null }))}
-                className="text-label-secondary hover:text-destructive text-footnote h-5 px-1"
-              >
-                Reset
-              </Button>
-            </div>
-          ) : (
-            <div className="text-label-secondary text-footnote italic">
-              Default {getCategoryLabel(state.category)} Sigil
-            </div>
-          )}
-
-          <div className="flex items-center gap-2 pt-1">
-            <span className="text-label-secondary text-footnote shrink-0">Scale:</span>
-            <input
-              type="range"
-              min="0.5"
-              max="1.5"
-              step="0.05"
-              value={state.emblemScale}
-              onChange={(e) => onChange((p) => ({ ...p, emblemScale: Number(e.target.value) }))}
-              className="bg-fill-3 accent-primary rounded-control h-1 flex-1"
-            />
-            <span className="text-label text-footnote w-7 text-right tabular-nums">
-              {state.emblemScale.toFixed(2)}x
-            </span>
-          </div>
-
-          {/* Emblem Color Swatches */}
-          <div className="border-separator space-y-2 border-t pt-2">
-            <div className="flex items-center justify-between">
-              <span className="text-label text-footnote font-semibold">Emblem color</span>
-              <span className="text-tint text-footnote font-mono">
-                {state.emblemColor ? state.emblemColor.toUpperCase() : "Auto"}
-              </span>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {COLOR_PRESETS.map((preset) => {
-                const isActive = (state.emblemColor || "") === preset.value;
-                return (
-                  <button
-                    key={`emblem-${preset.id}`}
-                    type="button"
-                    title={preset.label}
-                    aria-label={preset.label}
-                    aria-pressed={isActive}
-                    onClick={() => onChange((p) => ({ ...p, emblemColor: preset.value }))}
-                    className={cn(
-                      "flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                      preset.bgClass,
-                      isActive
-                        ? "ring-tint ring-offset-surface border-separator shadow-card scale-110 ring-2 ring-offset-2"
-                        : "border-separator opacity-80 hover:opacity-100"
-                    )}
-                  />
-                );
-              })}
-              <label
-                className="border-separator bg-surface relative flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-                title="Custom hex color"
-              >
-                <input
-                  type="color"
-                  value={state.emblemColor || "#f59e0b"}
-                  onChange={(e) => onChange((p) => ({ ...p, emblemColor: e.target.value }))}
-                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                />
-                <Palette className="text-label-secondary h-3 w-3" />
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* Watermark Icon */}
-        <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
-          <div className="flex items-center justify-between">
-            <span className="text-label text-footnote font-semibold">Background pattern</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onOpenIconBrowser("watermark")}
-              className="text-footnote h-6 gap-1 px-2"
-            >
-              <Library className="text-tint h-3 w-3" />
-              Open
-            </Button>
-          </div>
-
-          {state.watermarkIcon ? (
-            <div className="border-separator bg-surface rounded-control flex items-center justify-between border p-2">
-              <div className="flex items-center gap-2">
-                <div className="bg-fill-3 border-separator flex h-6 w-6 items-center justify-center rounded border p-0.5">
-                  <img
-                    src={state.watermarkIcon.path}
-                    alt={state.watermarkIcon.name}
-                    className="h-full w-full object-contain invert filter"
-                  />
-                </div>
-                <span className="text-footnote max-w-[90px] truncate font-medium">
-                  {state.watermarkIcon.name}
-                </span>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onChange((p) => ({ ...p, watermarkIcon: null }))}
-                className="text-label-secondary hover:text-destructive text-footnote h-5 px-1"
-              >
-                Reset
-              </Button>
-            </div>
-          ) : (
-            <div className="text-label-secondary text-footnote italic">
-              Default {getCategoryLabel(state.category)} Watermark
-            </div>
-          )}
-
-          <div className="flex items-center gap-2 pt-1">
-            <span className="text-label-secondary text-footnote shrink-0">Opacity:</span>
-            <input
-              type="range"
-              min="0.05"
-              max="0.70"
-              step="0.05"
-              value={state.watermarkOpacity}
-              onChange={(e) =>
-                onChange((p) => ({ ...p, watermarkOpacity: Number(e.target.value) }))
-              }
-              className="bg-fill-3 accent-primary rounded-control h-1 flex-1"
-            />
-            <span className="text-label text-footnote w-7 text-right tabular-nums">
-              {Math.round(state.watermarkOpacity * 100)}%
-            </span>
-          </div>
-
-          {/* Watermark Color Swatches */}
-          <div className="border-separator space-y-2 border-t pt-2">
-            <div className="flex items-center justify-between">
-              <span className="text-label text-footnote font-semibold">Watermark color</span>
-              <span className="text-tint text-footnote font-mono">
-                {state.watermarkColor ? state.watermarkColor.toUpperCase() : "Auto"}
-              </span>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {COLOR_PRESETS.map((preset) => {
-                const isActive = (state.watermarkColor || "") === preset.value;
-                return (
-                  <button
-                    key={`watermark-${preset.id}`}
-                    type="button"
-                    title={preset.label}
-                    aria-label={preset.label}
-                    aria-pressed={isActive}
-                    onClick={() => onChange((p) => ({ ...p, watermarkColor: preset.value }))}
-                    className={cn(
-                      "flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                      preset.bgClass,
-                      isActive
-                        ? "ring-tint ring-offset-surface border-separator shadow-card scale-110 ring-2 ring-offset-2"
-                        : "border-separator opacity-80 hover:opacity-100"
-                    )}
-                  />
-                );
-              })}
-              <label
-                className="border-separator bg-surface relative flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-                title="Custom hex color"
-              >
-                <input
-                  type="color"
-                  value={state.watermarkColor || "#f59e0b"}
-                  onChange={(e) => onChange((p) => ({ ...p, watermarkColor: e.target.value }))}
-                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                />
-                <Palette className="text-label-secondary h-3 w-3" />
-              </label>
-            </div>
-          </div>
-        </div>
+        <SigilPanel
+          state={state}
+          onChange={onChange}
+          onBrowse={() => onOpenIconBrowser("watermark")}
+          title="Background pattern"
+          browseLabel="Open"
+          defaultLabel={`Default ${getCategoryLabel(state.category)} Watermark`}
+          iconKey="watermarkIcon"
+          colorKey="watermarkColor"
+          colorLabel="Watermark color"
+          slider={{
+            label: "Opacity:",
+            key: "watermarkOpacity",
+            min: "0.05",
+            max: "0.70",
+            format: (v) => `${Math.round(v * 100)}%`,
+          }}
+        />
       </div>
 
       {/* Custom Hue Override */}
