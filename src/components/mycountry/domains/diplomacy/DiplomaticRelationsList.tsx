@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
+import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
@@ -74,6 +75,203 @@ const STANCE_OPTIONS: ReadonlyArray<{ value: DiplomaticGoal; label: string }> = 
   { value: "RIVAL", label: "Rival (Direct Rivalry)" },
 ];
 
+const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+const formatDate = (value: string | Date | undefined | null) =>
+  value ? DATE_FORMAT.format(new Date(value)) : "N/A";
+
+type EmbassyRow = NonNullable<RouterOutputs["diplomaticEmbassies"]["getEmbassies"]>[number];
+
+/** Relations, plus one derived relation per embassy whose partner has no relation record yet. */
+function mergeEmbassyRelations(
+  relations: RelationRow[],
+  embassies: EmbassyRow[],
+  countryId: string
+): RelationRow[] {
+  const seen = new Set<string>();
+  const markSeen = (...keys: (string | undefined | null)[]) =>
+    keys.forEach((k) => k && seen.add(k.toLowerCase()));
+  relations.forEach((r) => markSeen(r.targetCountryId, r.targetCountry, r.targetCountryName));
+
+  const derived = embassies.flatMap((e): RelationRow[] => {
+    const isGuest = e.guestCountryId === countryId;
+    const partnerId = isGuest ? e.hostCountryId : e.guestCountryId;
+    const partnerName = e.country;
+    const isNew =
+      (partnerId && !seen.has(partnerId.toLowerCase())) ||
+      (partnerName && !seen.has(partnerName.toLowerCase()));
+    if (!isNew) return [];
+    markSeen(partnerId, partnerName);
+
+    return [
+      {
+        id: `embassy-rel-${e.id}`,
+        targetCountryId: partnerId,
+        targetCountryName: partnerName,
+        targetCountryFlag: e.countryFlag ?? (isGuest ? e.hostCountryFlag : e.guestCountryFlag),
+        relationship: e.status === "ACTIVE" ? "FRIENDLY" : "NEUTRAL",
+        strength: e.strength,
+        establishedAt: e.establishedAt,
+        tradeVolume: 0,
+        goalSelf: null,
+        goalTarget: null,
+        isEmbassyDerived: true,
+      },
+    ];
+  });
+  return [...relations, ...derived];
+}
+
+type Alliance = NonNullable<RouterOutputs["diplomaticPolicies"]["getAlliances"]>[number];
+
+function RelationCard({
+  rel,
+  isOwner,
+  alliances,
+  goalPending,
+  onGoalChange,
+}: {
+  rel: RelationRow;
+  isOwner: boolean;
+  alliances: Alliance[];
+  goalPending: boolean;
+  onGoalChange: (relationId: string, goal: DiplomaticGoal) => void;
+}) {
+  const statusKey = (rel.relationship || "neutral").toLowerCase();
+  const theme = STATUS_THEMES[statusKey] || STATUS_THEMES.neutral;
+  const targetName = rel.targetCountryName || rel.targetCountry || "Unknown Nation";
+
+  const sharedBloc = alliances.find((a) =>
+    a.members?.some(
+      (m) =>
+        m.country?.name?.toLowerCase() === targetName.toLowerCase() ||
+        m.countryId === rel.targetCountryId
+    )
+  );
+
+  return (
+    <Card
+      data-focus-id={rel.targetCountryId ?? rel.id}
+      className="rounded-card flex flex-col justify-between p-4"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="border-separator rounded-control-sm shrink-0 overflow-hidden border">
+            <UnifiedCountryFlag
+              countryName={targetName}
+              flagUrl={rel.targetCountryFlag || rel.flagUrl}
+              size="md"
+            />
+          </div>
+          <div className="min-w-0">
+            <h4 className="text-label text-headline truncate">{targetName.replace(/_/g, " ")}</h4>
+            <p className="text-label-secondary text-footnote">
+              Established: {formatDate(rel.establishedAt)}
+            </p>
+            {sharedBloc && (
+              <Badge
+                variant="outline"
+                className="mt-1"
+                title={`Shares alliance membership in ${sharedBloc.name}`}
+              >
+                In bloc · {sharedBloc.name}
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        <Badge variant="outline" className={cn("shrink-0 capitalize", theme.text)}>
+          {statusKey}
+        </Badge>
+      </div>
+
+      <div className="mt-4 space-y-1">
+        <div className="text-footnote flex items-center justify-between">
+          <Eyebrow className="flex items-center gap-1">
+            <Handshake className="h-3 w-3" />
+            Relation strength
+          </Eyebrow>
+          <span className={cn("font-semibold", theme.text)}>{getStrengthLabel(rel.strength)}</span>
+        </div>
+        <Progress value={rel.strength} className="h-1.5" indicatorClassName={theme.progress} />
+      </div>
+
+      <div className="border-separator text-footnote mt-3 grid grid-cols-2 gap-2 border-t pt-3">
+        <div className="flex min-w-0 flex-col gap-1">
+          <Eyebrow>Your stance</Eyebrow>
+          {isOwner ? (
+            <Select
+              value={rel.goalSelf || undefined}
+              onValueChange={(goal) => isDiplomaticGoal(goal) && onGoalChange(rel.id, goal)}
+              disabled={goalPending}
+            >
+              <SelectTrigger size="sm" className="text-footnote w-full" aria-label="Your stance">
+                <SelectValue placeholder="Choose stance…" />
+              </SelectTrigger>
+              <SelectContent>
+                {STANCE_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <span className="text-label font-semibold">{rel.goalSelf || "Not set"}</span>
+          )}
+        </div>
+        <div className="flex flex-col gap-1">
+          <Eyebrow>Their stance</Eyebrow>
+          <Badge variant="outline" className="w-fit">
+            {rel.goalTarget || "Not declared"}
+          </Badge>
+        </div>
+      </div>
+
+      {rel.goalSelf === "ALLY" && rel.goalTarget === "ALLY" && (
+        <p className="text-caption text-green mt-2 flex items-center gap-2">
+          <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+          Goals aligned: reaching Allied status significantly faster.
+        </p>
+      )}
+      {rel.goalSelf && rel.goalTarget && rel.goalSelf !== rel.goalTarget && (
+        <p className="text-destructive text-caption mt-2 flex items-center gap-2">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+          Stance conflict: relations degradation expected.
+        </p>
+      )}
+
+      {rel.recentActivity && (
+        <p className="text-label-secondary text-footnote mt-2 italic">
+          Status: {rel.recentActivity}
+        </p>
+      )}
+
+      <div className="border-separator text-footnote mt-4 grid grid-cols-2 gap-2 border-t pt-3">
+        <div className="flex flex-col gap-0.5">
+          <Eyebrow className="flex items-center gap-1">
+            <Landmark className="h-3 w-3 shrink-0" />
+            Bilateral trade
+          </Eyebrow>
+          <span className="text-label font-semibold tabular-nums">
+            {rel.tradeVolume ? formatExactCurrency(rel.tradeVolume) : "$0"}
+          </span>
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <Eyebrow className="flex items-center gap-1">
+            <Calendar className="h-3 w-3 shrink-0" />
+            Last contact
+          </Eyebrow>
+          <span className="text-label font-semibold">{formatDate(rel.lastContact)}</span>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelationsListProps) {
   const { user } = useUser();
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
@@ -100,46 +298,10 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
     },
   });
 
-  const allRelations = React.useMemo(() => {
-    const list: RelationRow[] = [...(relations ?? [])];
-    const seenIds = new Set<string>();
-    list.forEach((r) => {
-      if (r.targetCountryId) seenIds.add(r.targetCountryId.toLowerCase());
-      if (r.targetCountry) seenIds.add(r.targetCountry.toLowerCase());
-      if (r.targetCountryName) seenIds.add(r.targetCountryName.toLowerCase());
-    });
-
-    (rawEmbassies ?? []).forEach((e) => {
-      const partnerId = e.guestCountryId === countryId ? e.hostCountryId : e.guestCountryId;
-      const partnerName = e.country;
-      const partnerFlag =
-        e.countryFlag ?? (e.guestCountryId === countryId ? e.hostCountryFlag : e.guestCountryFlag);
-
-      if (
-        (partnerId && !seenIds.has(partnerId.toLowerCase())) ||
-        (partnerName && !seenIds.has(partnerName.toLowerCase()))
-      ) {
-        if (partnerId) seenIds.add(partnerId.toLowerCase());
-        if (partnerName) seenIds.add(partnerName.toLowerCase());
-
-        list.push({
-          id: `embassy-rel-${e.id}`,
-          targetCountryId: partnerId,
-          targetCountryName: partnerName,
-          targetCountryFlag: partnerFlag,
-          relationship: e.status === "ACTIVE" ? "FRIENDLY" : "NEUTRAL",
-          strength: e.strength,
-          establishedAt: e.establishedAt,
-          tradeVolume: 0,
-          goalSelf: null,
-          goalTarget: null,
-          isEmbassyDerived: true,
-        });
-      }
-    });
-
-    return list;
-  }, [relations, rawEmbassies, countryId]);
+  const allRelations = React.useMemo(
+    () => mergeEmbassyRelations(relations ?? [], rawEmbassies ?? [], countryId),
+    [relations, rawEmbassies, countryId]
+  );
 
   useScrollToFocus(focusId, [allRelations]);
 
@@ -148,18 +310,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
     setGoalMutation.mutate({ relationId, goal });
   };
 
-  const formatDate = (dateString: string | Date | undefined | null) => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
-  const isLoading = isLoadingRelations || isLoadingEmbassies;
-
-  if (isLoading) {
+  if (isLoadingRelations || isLoadingEmbassies) {
     return (
       <div
         className="grid grid-cols-1 gap-3 md:grid-cols-2"
@@ -199,160 +350,16 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
 
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-      {allRelations.map((rel) => {
-        const statusKey = (rel.relationship || "neutral").toLowerCase();
-        const theme = STATUS_THEMES[statusKey] || STATUS_THEMES.neutral;
-        const targetName = rel.targetCountryName || rel.targetCountry || "Unknown Nation";
-
-        // Check if nation shares a Bloc / Alliance
-        const sharedBloc = (alliances ?? []).find((a) =>
-          a.members?.some(
-            (m) =>
-              m.country?.name?.toLowerCase() === targetName.toLowerCase() ||
-              m.countryId === rel.targetCountryId
-          )
-        );
-
-        return (
-          <Card
-            key={rel.id}
-            data-focus-id={rel.targetCountryId ?? rel.id}
-            className="rounded-card flex flex-col justify-between p-4"
-          >
-            {/* Header info */}
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="border-separator rounded-control-sm shrink-0 overflow-hidden border">
-                  <UnifiedCountryFlag
-                    countryName={targetName}
-                    flagUrl={rel.targetCountryFlag || rel.flagUrl}
-                    size="md"
-                  />
-                </div>
-                <div className="min-w-0">
-                  <h4 className="text-label text-headline truncate">
-                    {targetName.replace(/_/g, " ")}
-                  </h4>
-                  <p className="text-label-secondary text-footnote">
-                    Established: {formatDate(rel.establishedAt)}
-                  </p>
-                  {sharedBloc && (
-                    <Badge
-                      variant="outline"
-                      className="mt-1"
-                      title={`Shares alliance membership in ${sharedBloc.name}`}
-                    >
-                      In bloc · {sharedBloc.name}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-
-              <Badge variant="outline" className={`shrink-0 capitalize ${theme.text}`}>
-                {(rel.relationship || "neutral").toLowerCase()}
-              </Badge>
-            </div>
-
-            {/* Strength indicator */}
-            <div className="mt-4 space-y-1">
-              <div className="text-footnote flex items-center justify-between">
-                <Eyebrow className="flex items-center gap-1">
-                  <Handshake className="h-3 w-3" />
-                  Relation strength
-                </Eyebrow>
-                <span className={`font-semibold ${theme.text}`}>
-                  {getStrengthLabel(rel.strength)}
-                </span>
-              </div>
-              <Progress
-                value={rel.strength}
-                className="h-1.5"
-                indicatorClassName={theme.progress}
-              />
-            </div>
-
-            {/* Stance Selection & Partner Stance */}
-            <div className="border-separator text-footnote mt-3 grid grid-cols-2 gap-2 border-t pt-3">
-              <div className="flex min-w-0 flex-col gap-1">
-                <Eyebrow>Your stance</Eyebrow>
-                {isOwner ? (
-                  <Select
-                    value={rel.goalSelf || undefined}
-                    onValueChange={(goal) => {
-                      if (isDiplomaticGoal(goal)) handleGoalChange(rel.id, goal);
-                    }}
-                    disabled={setGoalMutation.isPending}
-                  >
-                    <SelectTrigger
-                      size="sm"
-                      className="text-footnote w-full"
-                      aria-label="Your stance"
-                    >
-                      <SelectValue placeholder="Choose stance…" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {STANCE_OPTIONS.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <span className="text-label font-semibold">{rel.goalSelf || "Not set"}</span>
-                )}
-              </div>
-              <div className="flex flex-col gap-1">
-                <Eyebrow>Their stance</Eyebrow>
-                <Badge variant="outline" className="w-fit">
-                  {rel.goalTarget || "Not declared"}
-                </Badge>
-              </div>
-            </div>
-
-            {/* Synergy & Conflict Badges */}
-            {rel.goalSelf === "ALLY" && rel.goalTarget === "ALLY" && (
-              <p className="text-caption text-green mt-2 flex items-center gap-2">
-                <CheckCircle className="h-3.5 w-3.5 shrink-0" />
-                Goals aligned: reaching Allied status significantly faster.
-              </p>
-            )}
-            {rel.goalSelf && rel.goalTarget && rel.goalSelf !== rel.goalTarget && (
-              <p className="text-destructive text-caption mt-2 flex items-center gap-2">
-                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                Stance conflict: relations degradation expected.
-              </p>
-            )}
-
-            {/* Recent Activity / Pain Points */}
-            {rel.recentActivity && (
-              <p className="text-label-secondary text-footnote mt-2 italic">
-                Status: {rel.recentActivity}
-              </p>
-            )}
-
-            {/* Details Grid */}
-            <div className="border-separator text-footnote mt-4 grid grid-cols-2 gap-2 border-t pt-3">
-              <div className="flex flex-col gap-0.5">
-                <Eyebrow className="flex items-center gap-1">
-                  <Landmark className="h-3 w-3 shrink-0" />
-                  Bilateral trade
-                </Eyebrow>
-                <span className="text-label font-semibold tabular-nums">
-                  {rel.tradeVolume ? formatExactCurrency(rel.tradeVolume) : "$0"}
-                </span>
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <Eyebrow className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3 shrink-0" />
-                  Last contact
-                </Eyebrow>
-                <span className="text-label font-semibold">{formatDate(rel.lastContact)}</span>
-              </div>
-            </div>
-          </Card>
-        );
-      })}
+      {allRelations.map((rel) => (
+        <RelationCard
+          key={rel.id}
+          rel={rel}
+          isOwner={isOwner}
+          alliances={alliances ?? []}
+          goalPending={setGoalMutation.isPending}
+          onGoalChange={handleGoalChange}
+        />
+      ))}
     </div>
   );
 }

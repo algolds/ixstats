@@ -16,8 +16,8 @@ import { Card } from "~/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";
 import { XAxis, YAxis, CartesianGrid, Area, Bar, Line, ComposedChart, Legend } from "recharts";
 import { format } from "date-fns";
-import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetailsModal";
-import type { TimeRange, ChartType } from "./types";
+import { BaseMetricDetailsModal } from "./BaseMetricDetailsModal";
+import type { MetricModalTab, TimeRange, ChartType } from "./types";
 import { MetricModalLayout } from "./MetricModalLayout";
 import { filterAndSortHistory } from "./hooks/useMetricHistoryFilter";
 

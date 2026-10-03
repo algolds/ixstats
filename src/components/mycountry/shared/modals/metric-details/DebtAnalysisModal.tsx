@@ -11,7 +11,8 @@ import {
   Percentage as Percent,
 } from "iconoir-react";
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
-import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetailsModal";
+import { BaseMetricDetailsModal } from "./BaseMetricDetailsModal";
+import type { MetricModalTab } from "./types";
 import { MetricModalLayout } from "./MetricModalLayout";
 
 interface DebtAnalysisModalProps {

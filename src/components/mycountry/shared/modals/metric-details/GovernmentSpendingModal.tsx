@@ -14,9 +14,9 @@ import {
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { api } from "~/trpc/react";
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetailsModal";
+import { BaseMetricDetailsModal } from "./BaseMetricDetailsModal";
 import { MetricModalLayout } from "./MetricModalLayout";
-import { CHART_TOOLTIP_STYLE } from "./types";
+import { CHART_TOOLTIP_STYLE, type MetricModalTab } from "./types";
 
 interface GovernmentSpendingModalProps {
   isOpen: boolean;

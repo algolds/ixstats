@@ -1,4 +1,3 @@
-export { CountryHeader } from "./CountryHeader";
 export { AuthenticationGuard } from "./AuthenticationGuard";
 export { CountryDataProvider, useCountryData } from "./CountryDataProvider";
 

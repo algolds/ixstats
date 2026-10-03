@@ -12,9 +12,9 @@ import {
 } from "iconoir-react";
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { XAxis, YAxis, CartesianGrid, BarChart, Bar, ResponsiveContainer, Tooltip } from "recharts";
-import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetailsModal";
+import { BaseMetricDetailsModal } from "./BaseMetricDetailsModal";
 import { MetricModalLayout } from "./MetricModalLayout";
-import { CHART_TOOLTIP_STYLE } from "./types";
+import { CHART_TOOLTIP_STYLE, type MetricModalTab } from "./types";
 
 interface LaborDetailsModalProps {
   isOpen: boolean;

@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { subMonths, format } from "date-fns";
 import { IxTime } from "~/lib/ixtime";
 import { getIxCutoff } from "~/lib/ixtime/range";
@@ -83,18 +82,4 @@ export function filterAndSortHistory<T extends MetricHistoryPoint, R>(
       ).getTime();
       return timeA - timeB;
     });
-}
-
-/**
- * React hook to memoize filtered and sorted historical metric chart points
- */
-export function useMetricHistoryFilter<T extends MetricHistoryPoint, R>(
-  data: T[] | undefined | null,
-  timeRange: TimeRange,
-  transform: (point: T, formattedDate: string, timestamp: string | number | Date) => R,
-  maxPoints: number = 100
-): R[] {
-  return useMemo(() => {
-    return filterAndSortHistory(data, timeRange, transform, maxPoints);
-  }, [data, timeRange, transform, maxPoints]);
 }

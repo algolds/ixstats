@@ -37,8 +37,8 @@ import {
 import { formatPopulation } from "~/lib/utils/format-utils";
 import { IxTime } from "~/lib/ixtime";
 import { cn } from "~/lib/utils/cn";
-import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetailsModal";
-import { CHART_TOOLTIP_STYLE, type TimeRange, type ChartType } from "./types";
+import { BaseMetricDetailsModal } from "./BaseMetricDetailsModal";
+import { CHART_TOOLTIP_STYLE, type MetricModalTab, type TimeRange, type ChartType } from "./types";
 import { MetricModalLayout } from "./MetricModalLayout";
 import { filterAndSortHistory } from "./hooks/useMetricHistoryFilter";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "~/components/ui/hover-card";
