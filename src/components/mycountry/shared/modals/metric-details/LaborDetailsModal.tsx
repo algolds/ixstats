@@ -30,7 +30,7 @@ const TABS: MetricModalTab[] = [
 
 type EconomicData = ReturnType<typeof useCountryEconomicData>;
 type LaborViewProps = Pick<EconomicData, "countryData"> & {
-  labor: NonNullable<EconomicData["economyData"]>["labor"];
+  labor: NonNullable<EconomicData["economyData"]>["labor"] | undefined;
 };
 
 function LaborOverview({ labor, countryData }: LaborViewProps) {

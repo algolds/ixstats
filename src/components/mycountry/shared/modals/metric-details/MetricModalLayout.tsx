@@ -34,7 +34,7 @@ const accent = (token: string) => ({
   gradientStop: `color-mix(in srgb, ${token} 15%, transparent)`,
 });
 
-const NEUTRAL_THEME = { cardClass: "bg-fill-3", textHighlight: "text-label-secondary" } as const;
+const NEUTRAL_THEME = { cardClass: "bg-fill-3", textHighlight: "text-label-secondary" };
 
 // Economy carries the MyCountry accent; the rest stay neutral so the chart series, not the
 // chrome, carry colour.

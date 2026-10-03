@@ -65,14 +65,17 @@ function QuickAction({ href, icon: Icon, label, title, children }: QuickActionPr
   );
 }
 
+type StatRow = [icon: typeof Users, tone: string, label: string, value: string];
+
 function CollapsedStats({ stats }: { stats?: Record<string, number | undefined> }) {
-  const rows = [
+  const areaRow: StatRow[] = stats?.landArea
+    ? [[MapIcon, "text-yellow", "Area", `${Math.round(stats.landArea).toLocaleString()} km²`]]
+    : [];
+  const rows: StatRow[] = [
     [Users, "text-blue", "Pop", formatCompactNumber(stats?.currentPopulation ?? 0)],
     [DollarSign, "text-green", "GDP", formatCompactCurrency(stats?.currentTotalGdp ?? 0)],
-    ...(stats?.landArea
-      ? [[MapIcon, "text-yellow", "Area", `${Math.round(stats.landArea).toLocaleString()} km²`]]
-      : []),
-  ] as const;
+    ...areaRow,
+  ];
   return (
     <dl className="space-y-1">
       {rows.map(([Icon, tone, label, value]) => (

@@ -59,7 +59,7 @@ function UnemploymentBadge({ rate }: { rate: number }) {
   return <span className="text-caption text-yellow font-semibold">Stable</span>;
 }
 
-type Labor = DataTabProps["economyData"]["labor"];
+type Labor = NonNullable<DataTabProps["economyData"]>["labor"];
 type SectionProps = { labor: Labor; section: ReturnType<typeof useAccordion> };
 
 function LaborMetrics({

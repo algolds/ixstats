@@ -84,7 +84,8 @@ export function DeclarePanel({
 }: DeclarePanelProps) {
   const cost = civCapCost ?? 0;
   const hasCivCap = !!civCap && Number.isFinite(civCap.capacity) && civCap.capacity > 0;
-  const availableAfter = hasCivCap ? Math.round(civCap.available - cost) : null;
+  const available = hasCivCap ? civCap.available : null;
+  const availableAfter = available == null ? null : Math.round(available - cost);
   const goesOver = availableAfter != null && availableAfter < 0;
   const blockedReason = blockedReasonOf(readOnly, slots, nowIxTime);
 
@@ -103,7 +104,7 @@ export function DeclarePanel({
             "—"
           ) : (
             <span className={cn("tabular-nums", goesOver && TONE_CLASSES.negative.text)}>
-              {Math.round(civCap.available)} → {availableAfter}
+              {Math.round(available ?? 0)} → {availableAfter}
             </span>
           )}
         </Row>

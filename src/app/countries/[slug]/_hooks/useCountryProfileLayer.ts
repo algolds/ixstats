@@ -19,6 +19,7 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
+import type { WikiSource } from "~/lib/wiki-os/config";
 import type { CountryWithEconomicData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
 import { formatCensusValue } from "~/components/mycountry/shell/WorldCensusCard";
 import {
@@ -254,7 +255,7 @@ function buildIdentity(
   c: Loose,
   infobox: Infobox | null,
   flagUrl: string | null,
-  imageSource: string
+  imageSource: WikiSource
 ) {
   const own = (c.nationalIdentity ?? {}) as Record<string, unknown>;
   const ib: Partial<NonNullable<Infobox>> = infobox ?? {};
@@ -348,7 +349,7 @@ function buildVitals(c: Loose) {
 }
 
 function buildGovernment(
-  gov: Output<"government", "getByCountryId"> | undefined
+  gov: RouterOutputs["government"]["getByCountryId"] | undefined
 ): ProfileState["government"] {
   if (!gov) return null;
   return {

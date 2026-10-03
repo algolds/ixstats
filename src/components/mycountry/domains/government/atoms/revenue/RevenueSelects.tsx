@@ -30,9 +30,16 @@ export function RevenueCategorySelect({
   onChange,
   disabled,
   dense,
-}: SelectProps & { value: RevenueCategory; onChange: (value: RevenueCategory) => void }) {
+}: Omit<SelectProps, "value" | "onChange"> & {
+  value: RevenueCategory;
+  onChange: (value: RevenueCategory) => void;
+}) {
   return (
-    <Select value={value} onValueChange={onChange} disabled={disabled}>
+    <Select
+      value={value}
+      onValueChange={(next) => onChange(next as RevenueCategory)}
+      disabled={disabled}
+    >
       <SelectTrigger className={dense ? "h-8" : undefined}>
         <SelectValue />
       </SelectTrigger>

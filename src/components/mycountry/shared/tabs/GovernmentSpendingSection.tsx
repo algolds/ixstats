@@ -15,7 +15,7 @@ interface GovernmentSpendingSectionProps {
   currency: string;
 }
 
-type Spending = NonNullable<MappedEconomyData["spending"]>;
+type Spending = NonNullable<NonNullable<MappedEconomyData>["spending"]>;
 
 function budgetAllocations(spending: Spending | undefined) {
   const categoryAmount = (keyword: string) =>

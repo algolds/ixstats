@@ -201,6 +201,11 @@ const SECTOR_COLUMNS = [
   { field: "government", label: "Government" },
 ] as const;
 
+const SECTOR_TABLE_COLUMNS: Array<{ field: keyof SectorData; className?: string }> = [
+  { field: "year", className: "w-24" },
+  ...SECTOR_COLUMNS,
+];
+
 const POLICY_FIELDS: {
   field: keyof PolicyData;
   label: string;
@@ -338,13 +343,13 @@ function SectorsTab({ model }: { model: Model }) {
           <TableBody>
             {sectoralOutputs.map((output: SectorData, index) => (
               <TableRow key={index}>
-                {[{ field: "year", className: "w-24" }, ...SECTOR_COLUMNS].map((column) => (
+                {SECTOR_TABLE_COLUMNS.map((column) => (
                   <TableCell key={column.field}>
                     <Input
                       type="number"
                       value={output[column.field]}
                       onChange={(e) => updateSectoralOutput(index, column.field, e.target.value)}
-                      className={"className" in column ? column.className : undefined}
+                      className={column.className}
                       disabled={!editMode}
                     />
                   </TableCell>

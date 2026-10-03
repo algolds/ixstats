@@ -2,7 +2,7 @@
 
 import React, { useId, useState } from "react";
 import { CheckCircle, GitFork, NavArrowDown, OpenNewWindow, Refresh, Undo } from "iconoir-react";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import {
   AlertDialog,
@@ -98,7 +98,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-type LinkedIssues = NonNullable<ReturnType<typeof api.intent.getLinkedIssues.useQuery>["data"]>;
+type LinkedIssues = RouterOutputs["intent"]["getLinkedIssues"];
 
 function ResistanceList({
   issues,

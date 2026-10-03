@@ -47,13 +47,13 @@ const percentOrDash = (value: number | undefined | null, digits: number) =>
 
 type EconomicData = ReturnType<typeof useCountryEconomicData>;
 type DemographicsViewProps = Pick<EconomicData, "countryData"> & {
-  demographics: NonNullable<EconomicData["economyData"]>["demographics"];
+  demographics: NonNullable<EconomicData["economyData"]>["demographics"] | undefined;
 };
 
 function DemographicsOverview({ demographics, countryData }: DemographicsViewProps) {
   const lifeExpectancy = demographics?.lifeExpectancy || countryData?.lifeExpectancy || 0;
   const healthLevel = getHealthLevel(lifeExpectancy);
-  const perThousand = (rate: number | undefined) => `${(rate || 0).toFixed(1)}/1k`;
+  const perThousand = (rate: number | null | undefined) => `${(rate || 0).toFixed(1)}/1k`;
 
   return (
     <MetricModalLayout variant="demographics">

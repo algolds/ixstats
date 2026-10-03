@@ -36,7 +36,7 @@ const RISK_LEVELS = [
 
 type EconomicData = ReturnType<typeof useCountryEconomicData>;
 type DebtViewProps = Pick<EconomicData, "countryData"> & {
-  fiscal: NonNullable<EconomicData["economyData"]>["fiscal"];
+  fiscal: NonNullable<EconomicData["economyData"]>["fiscal"] | undefined;
 };
 
 function DebtOverview({ fiscal, countryData }: DebtViewProps) {

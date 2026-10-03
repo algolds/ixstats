@@ -84,7 +84,7 @@ function HeroIdentity({
 }: {
   stats: ReturnType<typeof toHeroStats>;
   profileSlug: string;
-  flagUrl: string | undefined;
+  flagUrl: string | null | undefined;
 }) {
   const { avatarGlow, chatBadge } = useActiveCosmetics();
   const CrownIcon = (IconoirIcons as Record<string, any>)[chatBadge.icon] || IconoirIcons.Crown;
