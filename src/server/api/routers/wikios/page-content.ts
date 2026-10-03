@@ -1,9 +1,4 @@
-/**
- * wikios.ts — WikiOS tRPC router.
- *
- * Provides endpoints for WikiOS article rendering, editing, history, search,
- * template registry, watchlist, advanced search, and category tree.
- */ import { z } from "zod/v4";
+import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
@@ -35,6 +30,7 @@ import { getArticleSummaryFromShadow } from "~/lib/wiki-os/core/native-search-se
 import { resolveWikiPlaceholdersInternal } from "~/server/shared/wiki-placeholders";
 import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
+import { wikiSourceSchema } from "./_shared";
 
 // Register host-app template data provider
 registerTemplateProvider(ixstatsTemplateProvider);
@@ -61,114 +57,193 @@ async function resolveArticleTemplates(
   };
 }
 
-export const wikiosPageContentRouter = createTRPCRouter({
-  // ---------------------------------------------------------------------------
-  // Reader endpoints
-  // ---------------------------------------------------------------------------
+const RESERVED_SYSTEM_ROUTES = new Set([
+  "utilities",
+  "categories",
+  "category-index",
+  "recent-changes",
+  "recentchanges",
+  "templates",
+  "sandbox",
+  "search",
+  "watchlist",
+  "repository",
+  "history",
+  "diff",
+  "whatlinkshere",
+  "lorewards",
+  "specialpages",
+]);
 
+type ArticleHtmlParts = Pick<
+  ReturnType<typeof transformArticleHtml>,
+  "contentHtml" | "infoboxHtml" | "noticesHtml"
+>;
+
+/** Reader payload shared by every getArticleHtml branch. */
+function articleResponse(
+  html: ArticleHtmlParts,
+  toc: ReturnType<typeof transformArticleHtml>["toc"],
+  meta: {
+    title: string;
+    categories?: string[];
+    lastModified?: string | null;
+    resolvedFrom?: string | null;
+    wikiSource: "ixwiki" | "iiwiki" | "althistory";
+    authorInfo: Awaited<ReturnType<typeof getArticleAuthors>>;
+  }
+) {
+  return {
+    contentHtml: html.contentHtml,
+    infoboxHtml: html.infoboxHtml,
+    noticesHtml: html.noticesHtml,
+    toc,
+    title: meta.title,
+    categories: meta.categories ?? [],
+    lastModified: meta.lastModified ?? null,
+    isRedirect: false,
+    redirectTarget: null,
+    resolvedFrom: meta.resolvedFrom ?? null,
+    wikiSource: meta.wikiSource,
+    authorInfo: meta.authorInfo,
+  };
+}
+
+/** Render a non-ixwiki article by sending its wikitext through ixwiki's action=parse. */
+async function renderCrossWikiArticle(title: string, wikiSource: "iiwiki" | "althistory") {
+  const [article, authorInfo] = await Promise.all([
+    getArticleWikitext(title, wikiSource),
+    getArticleAuthors(title, wikiSource),
+  ]);
+  if (!article) {
+    throw new Error(`Article "${title}" not found on ${wikiSource}`);
+  }
+
+  // Templates won't resolve but basic wikitext formatting will work.
+  const apiBase = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
+  const response = await fetch(apiBase, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      action: "parse",
+      text: article.wikitext,
+      contentmodel: "wikitext",
+      prop: "text",
+      disablelimitreport: "1",
+      disableeditsection: "1",
+      wrapoutputclass: "",
+      formatversion: "2",
+      format: "json",
+    }),
+    signal: AbortSignal.timeout(15000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Cross-wiki render failed (${response.status})`);
+  }
+
+  const data = (await response.json()) as {
+    parse?: { text: string };
+    error?: { info: string };
+  };
+
+  if (data.error || !data.parse) {
+    throw new Error(`Cross-wiki render error: ${data.error?.info ?? "no parse result"}`);
+  }
+
+  const transformed = transformArticleHtml(stripConflictingStyles(data.parse.text), "", wikiSource);
+  return articleResponse(transformed, transformed.toc, {
+    title: article.title,
+    wikiSource,
+    authorInfo,
+  });
+}
+
+/** Cached HTML of a native article, re-rendered from its wikitext when missing or corrupted. */
+async function renderNativeArticleHtml(
+  nativeArticle: { contentHtml: string; wikitext: string },
+  resolvedTitle: string
+) {
+  let rawHtml = nativeArticle.contentHtml.trim() ? nativeArticle.contentHtml : "";
+
+  // Detect corrupted wikitext remnants in cached HTML (e.g. leaked table pipes or dangling image parameters)
+  const hasCorruptedMarkup =
+    Boolean(rawHtml) &&
+    (/\|\d+px\|/i.test(rawHtml) || /\|\s*(?:center|left|right|thumb)\]\]/i.test(rawHtml));
+  const wikitextHasInfobox = nativeArticle.wikitext && /\{\{[Ii]nfobox/i.test(nativeArticle.wikitext);
+  const htmlHasInfobox =
+    rawHtml && !hasCorruptedMarkup && (rawHtml.includes("infobox") || rawHtml.includes("aside"));
+
+  if (!rawHtml || hasCorruptedMarkup || (wikitextHasInfobox && !htmlHasInfobox)) {
+    // Render from the Postgres wikitext, not MediaWiki's copy of the page, which is stale
+    // right after a WikiOS save (NEW-3).
+    const parsed = await renderArticleViaMediaWiki(nativeArticle.wikitext, resolvedTitle);
+    if (parsed) {
+      rawHtml = parsed;
+      void saveArticleHtmlShadow(
+        resolvedTitle,
+        rawHtml,
+        "ixwiki",
+        nativeArticle.wikitext || undefined
+      ).catch(() => {});
+    }
+  }
+
+  if ((!rawHtml || hasCorruptedMarkup) && nativeArticle.wikitext) {
+    rawHtml = parseWikitextToHtml(nativeArticle.wikitext, "ixwiki");
+    void saveArticleHtmlShadow(resolvedTitle, rawHtml, "ixwiki", nativeArticle.wikitext).catch(
+      () => {}
+    );
+  }
+  return rawHtml;
+}
+
+/** Parsoid first, then Postgres wikitext shadow, then the MediaWiki bridge. */
+async function loadLegacyArticle(resolvedTitle: string, requestedTitle: string) {
+  try {
+    return await getArticleHtml(resolvedTitle);
+  } catch {
+    // fall through to the shadow and bridge fallbacks
+  }
+  const shadowRes = await getArticleWikitextShadow(resolvedTitle, "ixwiki");
+  if (shadowRes?.wikitext) {
+    return {
+      html: parseWikitextToHtml(shadowRes.wikitext, "ixwiki"),
+      title: resolvedTitle,
+      categories: [] as string[],
+      lastModified: shadowRes.timestamp || null,
+    };
+  }
+  const wikiRes = await getArticleWikitext(resolvedTitle, "ixwiki");
+  if (wikiRes?.wikitext) {
+    return {
+      html: parseWikitextToHtml(wikiRes.wikitext, "ixwiki"),
+      title: wikiRes.title || resolvedTitle,
+      categories: [] as string[],
+      lastModified: null,
+    };
+  }
+  throw new TRPCError({
+    code: "NOT_FOUND",
+    message: `The page "${requestedTitle}" does not exist on IxWiki.`,
+  });
+}
+
+export const wikiosPageContentRouter = createTRPCRouter({
   /**
    * Get pre-transformed article data for the reader mode.
    * ALL transformation (images, links, infobox extraction, TOC, notices)
    * happens here server-side. Client renders with zero regex work.
    */
   getArticleHtml: publicProcedure
-    .input(
-      z.object({
-        title: z.string().min(1).max(500),
-        wikiSource: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
-      })
-    )
+    .input(z.object({ title: z.string().min(1).max(500), wikiSource: wikiSourceSchema }))
     .query(async ({ input, ctx }) => {
       const { wikiSource } = input;
+      if (wikiSource !== "ixwiki") return renderCrossWikiArticle(input.title, wikiSource);
 
-      // For external wikis, fetch wikitext then render via ixwiki's action=parse
-      if (wikiSource !== "ixwiki") {
-        const [article, authorInfo] = await Promise.all([
-          getArticleWikitext(input.title, wikiSource),
-          getArticleAuthors(input.title, wikiSource),
-        ]);
-        if (!article) {
-          throw new Error(`Article "${input.title}" not found on ${wikiSource}`);
-        }
-
-        // Use ixwiki's action=parse as a cross-wiki render proxy.
-        // Templates won't resolve but basic wikitext formatting will work.
-        const apiBase = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
-        const response = await fetch(apiBase, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            action: "parse",
-            text: article.wikitext,
-            contentmodel: "wikitext",
-            prop: "text",
-            disablelimitreport: "1",
-            disableeditsection: "1",
-            wrapoutputclass: "",
-            formatversion: "2",
-            format: "json",
-          }),
-          signal: AbortSignal.timeout(15000),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Cross-wiki render failed (${response.status})`);
-        }
-
-        const data = (await response.json()) as {
-          parse?: { text: string };
-          error?: { info: string };
-        };
-
-        if (data.error || !data.parse) {
-          throw new Error(`Cross-wiki render error: ${data.error?.info ?? "no parse result"}`);
-        }
-
-        const transformed = transformArticleHtml(
-          stripConflictingStyles(data.parse.text),
-          "",
-          wikiSource
-        );
-
-        return {
-          contentHtml: transformed.contentHtml,
-          infoboxHtml: transformed.infoboxHtml,
-          noticesHtml: transformed.noticesHtml,
-          toc: transformed.toc,
-          title: article.title,
-          categories: [] as string[],
-          lastModified: null,
-          isRedirect: false,
-          redirectTarget: null,
-          resolvedFrom: null,
-          wikiSource,
-          authorInfo,
-        };
-      }
-
-      // Default ixwiki flow — direct PostgreSQL / in-process wikitext compiler
       const rawTitle = decodeURIComponent(input.title).replace(/_/g, " ").trim();
-      const rawTitleLower = rawTitle.toLowerCase().replace(/[\s_]+/g, "-");
-      const RESERVED_SYSTEM_ROUTES = new Set([
-        "utilities",
-        "categories",
-        "category-index",
-        "recent-changes",
-        "recentchanges",
-        "templates",
-        "sandbox",
-        "search",
-        "watchlist",
-        "repository",
-        "history",
-        "diff",
-        "whatlinkshere",
-        "lorewards",
-        "specialpages",
-      ]);
-
       if (
-        RESERVED_SYSTEM_ROUTES.has(rawTitleLower) ||
+        RESERVED_SYSTEM_ROUTES.has(rawTitle.toLowerCase().replace(/[\s_]+/g, "-")) ||
         RESERVED_SYSTEM_ROUTES.has(rawTitle.toLowerCase())
       ) {
         throw new TRPCError({
@@ -178,73 +253,34 @@ export const wikiosPageContentRouter = createTRPCRouter({
       }
 
       const resolvedTitle = await resolveRedirect(rawTitle);
+      const resolvedFrom = resolvedTitle !== rawTitle ? rawTitle : null;
 
       // Fast-path: Check PostgreSQL Native Article Repository (<2ms)
       const nativeArticle = await ArticleRepository.findBySlug(resolvedTitle, "ixwiki").catch(
         () => null
       );
       if (nativeArticle && (nativeArticle.contentHtml || nativeArticle.wikitext)) {
-        let rawHtml =
-          nativeArticle.contentHtml && nativeArticle.contentHtml.trim() !== ""
-            ? nativeArticle.contentHtml
-            : "";
-
-        // Detect corrupted wikitext remnants in cached HTML (e.g. leaked table pipes or dangling image parameters)
-        const hasCorruptedMarkup =
-          Boolean(rawHtml && (/\|\d+px\|/i.test(rawHtml) || /\|\s*(?:center|left|right|thumb)\]\]/i.test(rawHtml)));
-
-        const wikitextHasInfobox =
-          nativeArticle.wikitext && /\{\{[Ii]nfobox/i.test(nativeArticle.wikitext);
-        const htmlHasInfobox =
-          rawHtml && !hasCorruptedMarkup && (rawHtml.includes("infobox") || rawHtml.includes("aside"));
-
-        if (!rawHtml || hasCorruptedMarkup || (wikitextHasInfobox && !htmlHasInfobox)) {
-          // Render from the Postgres wikitext, not MediaWiki's copy of the page, which is stale
-          // right after a WikiOS save (NEW-3).
-          const parsed = await renderArticleViaMediaWiki(nativeArticle.wikitext, resolvedTitle);
-          if (parsed) {
-            rawHtml = parsed;
-            void saveArticleHtmlShadow(
-              resolvedTitle,
-              rawHtml,
-              "ixwiki",
-              nativeArticle.wikitext || undefined
-            ).catch(() => {});
-          }
-        }
-
-        if ((!rawHtml || hasCorruptedMarkup) && nativeArticle.wikitext) {
-          rawHtml = parseWikitextToHtml(nativeArticle.wikitext, "ixwiki");
-          void saveArticleHtmlShadow(
-            resolvedTitle,
-            rawHtml,
-            "ixwiki",
-            nativeArticle.wikitext
-          ).catch(() => {});
-        }
-
+        const rawHtml = await renderNativeArticleHtml(nativeArticle, resolvedTitle);
         const transformed = transformArticleHtml(stripConflictingStyles(rawHtml), "", "ixwiki");
-
-        // Pre-resolve custom templates (CountryData, BusinessData) server-side
-        const { contentHtml, infoboxHtml, noticesHtml } = await resolveArticleTemplates(ctx, transformed);
-
+        const html = await resolveArticleTemplates(ctx, transformed);
         const authorInfo = await getArticleAuthors(resolvedTitle, "ixwiki");
 
         // Native articles hold user-authored HTML (and compiled wikitext): sanitize on serve.
-        return {
-          contentHtml: sanitizeWikiArticleHtml(contentHtml),
-          infoboxHtml: infoboxHtml ? sanitizeWikiArticleHtml(infoboxHtml) : infoboxHtml,
-          noticesHtml: noticesHtml ? sanitizeWikiArticleHtml(noticesHtml) : noticesHtml,
-          toc: transformed.toc,
-          title: nativeArticle.title,
-          categories: [] as string[],
-          lastModified: nativeArticle.updatedAt.toISOString(),
-          isRedirect: false,
-          redirectTarget: null,
-          resolvedFrom: resolvedTitle !== rawTitle ? rawTitle : null,
-          wikiSource: "ixwiki" as const,
-          authorInfo,
-        };
+        return articleResponse(
+          {
+            contentHtml: sanitizeWikiArticleHtml(html.contentHtml),
+            infoboxHtml: html.infoboxHtml ? sanitizeWikiArticleHtml(html.infoboxHtml) : html.infoboxHtml,
+            noticesHtml: html.noticesHtml ? sanitizeWikiArticleHtml(html.noticesHtml) : html.noticesHtml,
+          },
+          transformed.toc,
+          {
+            title: nativeArticle.title,
+            lastModified: nativeArticle.updatedAt.toISOString(),
+            resolvedFrom,
+            wikiSource: "ixwiki",
+            authorInfo,
+          }
+        );
       }
 
       // Fast-path: Check Postgres shadow HTML cache (<3ms)
@@ -253,96 +289,33 @@ export const wikiosPageContentRouter = createTRPCRouter({
         getArticleAuthors(resolvedTitle, "ixwiki"),
       ]);
       if (shadowHtml) {
-        const transformed = transformArticleHtml(
-          stripConflictingStyles(shadowHtml.html),
-          "",
-          "ixwiki"
-        );
-
-        // Pre-resolve custom templates (CountryData, BusinessData) server-side
-        const { contentHtml, infoboxHtml, noticesHtml } = await resolveArticleTemplates(ctx, transformed);
-
-        return {
-          contentHtml,
-          infoboxHtml,
-          noticesHtml,
-          toc: transformed.toc,
+        const transformed = transformArticleHtml(stripConflictingStyles(shadowHtml.html), "", "ixwiki");
+        return articleResponse(await resolveArticleTemplates(ctx, transformed), transformed.toc, {
           title: resolvedTitle.replace(/_/g, " "),
-          categories: [] as string[],
           lastModified: shadowHtml.timestamp,
-          isRedirect: false,
-          redirectTarget: null,
-          resolvedFrom: resolvedTitle !== rawTitle ? rawTitle : null,
-          wikiSource: "ixwiki" as const,
+          resolvedFrom,
+          wikiSource: "ixwiki",
           authorInfo,
-        };
+        });
       }
 
-      let article: any;
-      try {
-        article = await getArticleHtml(resolvedTitle);
-      } catch {
-        // Direct shadow and bridge fallback
-        const shadowRes = await getArticleWikitextShadow(resolvedTitle, "ixwiki");
-        if (shadowRes?.wikitext) {
-          // oxlint-disable-next-line eslint/no-shadow -- shadowed 'parseWikitextToHtml' is intentional in this scope
-          const { parseWikitextToHtml } =
-            await import("~/lib/wiki-os/transformers/wikitext-parser");
-          article = {
-            html: parseWikitextToHtml(shadowRes.wikitext, "ixwiki"),
-            title: resolvedTitle,
-            categories: [],
-            lastModified: shadowRes.timestamp || null,
-            isRedirect: false,
-            redirectTarget: null,
-          };
-        } else {
-          const wikiRes = await getArticleWikitext(resolvedTitle, "ixwiki");
-          if (wikiRes?.wikitext) {
-            // oxlint-disable-next-line eslint/no-shadow -- shadowed 'parseWikitextToHtml' is intentional in this scope
-            const { parseWikitextToHtml } =
-              await import("~/lib/wiki-os/transformers/wikitext-parser");
-            article = {
-              html: parseWikitextToHtml(wikiRes.wikitext, "ixwiki"),
-              title: wikiRes.title || resolvedTitle,
-              categories: [],
-              lastModified: null,
-              isRedirect: false,
-              redirectTarget: null,
-            };
-          } else {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: `The page "${input.title}" does not exist on IxWiki.`,
-            });
-          }
-        }
-      }
-
+      const article = await loadLegacyArticle(resolvedTitle, input.title);
       const transformed = transformArticleHtml(stripConflictingStyles(article.html), "", "ixwiki");
-
-      // Pre-resolve custom templates (CountryData, BusinessData) server-side
-      const { contentHtml, infoboxHtml, noticesHtml } = await resolveArticleTemplates(ctx, transformed);
+      const html = await resolveArticleTemplates(ctx, transformed);
 
       // Phase 8: Backfill HTML shadow cache with complete raw Parsoid HTML so subsequent reads preserve infoboxes
       if (article.html) {
         void saveArticleHtmlShadow(resolvedTitle, article.html, "ixwiki");
       }
 
-      return {
-        contentHtml,
-        infoboxHtml,
-        noticesHtml,
-        toc: transformed.toc,
+      return articleResponse(html, transformed.toc, {
         title: article.title,
-        categories: article.categories || [],
-        lastModified: article.lastModified || null,
-        isRedirect: false,
-        redirectTarget: null,
-        resolvedFrom: resolvedTitle !== rawTitle ? rawTitle : null,
-        wikiSource: "ixwiki" as const,
+        categories: article.categories,
+        lastModified: article.lastModified,
+        resolvedFrom,
+        wikiSource: "ixwiki",
         authorInfo,
-      };
+      });
     }),
 
   /**
@@ -352,7 +325,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
     .input(
       z.object({
         title: z.string().min(1).max(500),
-        wikiSource: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+        wikiSource: wikiSourceSchema,
       })
     )
     .query(async ({ input }) => {
@@ -413,7 +386,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
     .input(
       z.object({
         title: z.string().min(1).max(500),
-        wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+        wiki: wikiSourceSchema,
       })
     )
     .query(async ({ input }) => {
@@ -453,8 +426,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
       z.object({
         title: z.string().min(1),
         section: z.string().min(1),
-        source: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
-        wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+        source: wikiSourceSchema,
+        wiki: wikiSourceSchema,
       })
     )
     .query(async ({ input }) => {
@@ -514,7 +487,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
     .input(
       z.object({
         title: z.string().min(1),
-        wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+        wiki: wikiSourceSchema,
       })
     )
     .query(async ({ input }) => {
@@ -607,7 +580,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
     .input(
       z.object({
         title: z.string().min(1).max(500),
-        wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki"),
+        wiki: wikiSourceSchema,
       })
     )
     .query(async ({ input }) => {

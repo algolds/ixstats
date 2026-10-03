@@ -20,6 +20,7 @@ import {
   extractLeadImageFromWikitext,
   normalizeWikiImageUrl,
 } from "~/lib/wiki-os/transformers/image-url";
+import { wikiSourceSchema } from "./_shared";
 
 export const wikiosCategoriesRouter = createTRPCRouter({
   /**
@@ -195,7 +196,7 @@ export const wikiosCategoriesRouter = createTRPCRouter({
         query: z.string().max(200).optional().default(""),
         from: z.string().max(200).optional(),
         limit: z.number().min(1).max(100).default(30),
-        wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki"),
+        wiki: wikiSourceSchema,
       })
     )
     .query(async ({ input }) => {
@@ -291,7 +292,7 @@ export const wikiosCategoriesRouter = createTRPCRouter({
   getCategories: publicProcedure
     .input(
       z.object({
-        wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+        wiki: wikiSourceSchema,
         limit: z.number().int().min(1).max(500).default(500),
       })
     )
@@ -342,7 +343,7 @@ export const wikiosCategoriesRouter = createTRPCRouter({
     .input(
       z.object({
         categories: z.array(z.string().min(1).max(300)).min(1).max(25),
-        wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+        wiki: wikiSourceSchema,
       })
     )
     .query(async ({ input }) => {
@@ -390,7 +391,7 @@ export const wikiosCategoriesRouter = createTRPCRouter({
       z.object({
         category: z.string().min(1).max(300),
         limit: z.number().min(1).max(200).default(50),
-        wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+        wiki: wikiSourceSchema,
       })
     )
     .query(async ({ input }) => {
@@ -423,7 +424,7 @@ export const wikiosCategoriesRouter = createTRPCRouter({
       z.object({
         prefix: z.string().min(1).max(200),
         limit: z.number().min(1).max(30).default(15),
-        wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+        wiki: wikiSourceSchema,
       })
     )
     .query(async ({ input }) => {
