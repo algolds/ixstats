@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "motion/react";
 import NumberFlow from "@number-flow/react";
 import { cn, debounce } from "~/lib/utils";
@@ -18,7 +18,6 @@ interface SliderWithDirectInputProps extends EnhancedInputProps {
   showValue?: boolean;
   showRange?: boolean;
   trackHeight?: number;
-  thumbSize?: number;
   icon?: React.ComponentType<{ className?: string }>;
   helpContent?: React.ReactNode;
   helpTitle?: string;
@@ -27,6 +26,91 @@ interface SliderWithDirectInputProps extends EnhancedInputProps {
   onCommit?: (value: number) => void;
   valueClassName?: string;
   labelClassName?: string;
+}
+
+const TRACK_HEIGHT = { sm: 8, md: 12, lg: 16 } as const;
+
+interface SliderValueOptions {
+  value: number;
+  onChange: (value: number) => void;
+  onCommit?: (value: number) => void;
+  min: number;
+  max: number;
+  step: number;
+  precision: number;
+}
+
+/** The text the field shows, kept apart from the committed value while it is edited or dragged. */
+function useSliderValue({
+  value,
+  onChange,
+  onCommit,
+  min,
+  max,
+  step,
+  precision,
+}: SliderValueOptions) {
+  const [localValue, setLocalValue] = useState(value.toString());
+  const [isFocused, setIsFocused] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const parsedValue = parseFloat(String(value));
+  const numericValue = Number.isNaN(parsedValue) ? min : parsedValue;
+
+  useEffect(() => {
+    if (!isFocused && !isDragging) setLocalValue(numericValue.toFixed(precision));
+  }, [numericValue, precision, isFocused, isDragging]);
+
+  const debouncedOnChange = useMemo(() => debounce(onChange, 16), [onChange]);
+  useEffect(() => () => debouncedOnChange.cancel(), [debouncedOnChange]);
+
+  const handleInputChange = (newValue: string) => {
+    setLocalValue(newValue);
+    const parsed = parseFloat(newValue);
+    if (Number.isNaN(parsed)) return;
+    const clamped = Math.max(min, Math.min(max, parsed));
+    onChange(Math.round(clamped / step) * step);
+  };
+
+  const handleInputFocus = () => {
+    setIsFocused(true);
+    setLocalValue(numericValue.toString());
+  };
+
+  const handleInputBlur = () => {
+    setIsFocused(false);
+    setLocalValue(numericValue.toFixed(precision));
+    onCommit?.(numericValue);
+  };
+
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = parseFloat(e.target.value);
+    if (Number.isNaN(newValue)) return;
+    setLocalValue(newValue.toFixed(precision));
+    debouncedOnChange(newValue);
+  };
+
+  const handleSliderDragEnd = () => {
+    setIsDragging(false);
+    debouncedOnChange.cancel();
+    const finalValue = parseFloat(localValue);
+    if (Number.isNaN(finalValue)) return;
+    onChange(finalValue);
+    onCommit?.(finalValue);
+  };
+
+  return {
+    localValue,
+    isFocused,
+    isDragging,
+    numericValue,
+    handleInputChange,
+    handleInputFocus,
+    handleInputBlur,
+    handleSliderChange,
+    handleSliderDragEnd,
+    startDragging: () => setIsDragging(true),
+  };
 }
 
 export function SliderWithDirectInput({
@@ -47,8 +131,6 @@ export function SliderWithDirectInput({
   referenceValue,
   referenceLabel,
   showComparison = false,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  animationDuration = 800,
   className,
   orientation = "horizontal",
   showTicks = false,
@@ -56,7 +138,6 @@ export function SliderWithDirectInput({
   showValue = true,
   showRange = false,
   trackHeight,
-  thumbSize,
   icon: Icon,
   helpContent,
   helpTitle,
@@ -67,121 +148,44 @@ export function SliderWithDirectInput({
   labelClassName,
 }: SliderWithDirectInputProps) {
   const [inputMode, setInputMode] = useState<"slider" | "input">(defaultMode);
-  const [localValue, setLocalValue] = useState(value.toString());
-  const [isFocused, setIsFocused] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
+  const { cssVars } = useSectionTheme(sectionId, theme);
 
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { colors, cssVars } = useSectionTheme(sectionId, theme);
+  const safeMin = Number.isNaN(min) ? 0 : min;
+  const safeMax = Number.isNaN(max) ? 100 : max;
+  const safeStep = Number.isNaN(step) ? 1 : step;
+  const range = safeMax - safeMin;
+  const toPercentage = (v: number) => ((v - safeMin) / range) * 100;
 
-  // Ensure all numeric values are safe for calculations
-  const safeMin = typeof min === "number" && !isNaN(min) ? min : 0;
-  const safeMax = typeof max === "number" && !isNaN(max) ? max : 100;
-  const safeStep = typeof step === "number" && !isNaN(step) ? step : 1;
-  const numericValue =
-    typeof value === "number" && !isNaN(value)
-      ? value
-      : typeof value === "string" && !isNaN(parseFloat(value))
-        ? parseFloat(value)
-        : safeMin;
+  const {
+    localValue,
+    isFocused,
+    isDragging,
+    numericValue,
+    handleInputChange,
+    handleInputFocus,
+    handleInputBlur,
+    handleSliderChange,
+    handleSliderDragEnd,
+    startDragging,
+  } = useSliderValue({
+    value,
+    onChange,
+    onCommit,
+    min: safeMin,
+    max: safeMax,
+    step: safeStep,
+    precision,
+  });
 
-  // Sync local value when external value changes (only if not focused or dragging)
-  useEffect(() => {
-    if (!isFocused && !isDragging) {
-      setLocalValue(numericValue.toFixed(precision));
-    }
-  }, [numericValue, precision, isFocused, isDragging]);
-
-  // Stable debounced onChange for active slider dragging
-  const debouncedOnChange = useMemo(
-    () =>
-      debounce((val: number) => {
-        onChange(val);
-      }, 16),
-    [onChange]
-  );
-
-  // Cleanup debounced function on unmount
-  useEffect(() => {
-    return () => {
-      debouncedOnChange.cancel();
-    };
-  }, [debouncedOnChange]);
-
-  // Size configurations
-  const config = {
-    track: trackHeight || (size === "sm" ? 8 : size === "lg" ? 16 : 12),
-    thumb: thumbSize || (size === "sm" ? 20 : size === "lg" ? 32 : 24),
-    input: size === "sm" ? "text-body" : size === "lg" ? "text-title-3" : "text-body",
-  };
-
-  // Calculate percentage position for slider based on localValue
-  const percentage = (((parseFloat(localValue) || safeMin) - safeMin) / (safeMax - safeMin)) * 100;
-
-  // Handle input change
-  const handleInputChange = useCallback(
-    (newValue: string) => {
-      setLocalValue(newValue);
-
-      // Parse and validate
-      const parsed = parseFloat(newValue);
-      if (!isNaN(parsed)) {
-        // Clamp to min/max
-        const clamped = Math.max(safeMin, Math.min(safeMax, parsed));
-        // Round to step
-        const stepped = Math.round(clamped / safeStep) * safeStep;
-        onChange(stepped);
-      }
-    },
-    [safeMin, safeMax, safeStep, onChange]
-  );
-
-  // Handle input blur (format value)
-  const handleInputBlur = useCallback(() => {
-    setIsFocused(false);
-    setLocalValue(numericValue.toFixed(precision));
-    if (onCommit) {
-      onCommit(numericValue);
-    }
-  }, [numericValue, precision, onCommit]);
-
-  // Handle slider change
-  const handleSliderChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newValue = parseFloat(e.target.value);
-      if (!isNaN(newValue)) {
-        setLocalValue(newValue.toFixed(precision));
-        debouncedOnChange(newValue);
-      }
-    },
-    [precision, debouncedOnChange]
-  );
-
-  // Handle slider drag end
-  const handleSliderDragEnd = useCallback(() => {
-    setIsDragging(false);
-    debouncedOnChange.cancel();
-    const finalValue = parseFloat(localValue);
-    if (!isNaN(finalValue)) {
-      onChange(finalValue);
-      if (onCommit) {
-        onCommit(finalValue);
-      }
-    }
-  }, [onChange, localValue, debouncedOnChange, onCommit]);
-
-  // Generate tick marks
+  const track = trackHeight || TRACK_HEIGHT[size];
+  const percentage = toPercentage(parseFloat(localValue) || safeMin);
+  const referencePercentage = referenceValue !== undefined ? toPercentage(referenceValue) : null;
   const ticks = showTicks
     ? Array.from({ length: tickCount }, (_, i) => {
-        const tickValue = safeMin + (i / (tickCount - 1)) * (safeMax - safeMin);
-        const tickPercentage = ((tickValue - safeMin) / (safeMax - safeMin)) * 100;
-        return { value: tickValue, percentage: tickPercentage };
+        const tickValue = safeMin + (i / (tickCount - 1)) * range;
+        return { value: tickValue, percentage: toPercentage(tickValue) };
       })
     : [];
-
-  // Reference value position if provided
-  const referencePercentage =
-    referenceValue !== undefined ? ((referenceValue - safeMin) / (safeMax - safeMin)) * 100 : null;
 
   return (
     <div className={cn("space-y-3", className)} style={cssVars as React.CSSProperties}>
@@ -214,7 +218,7 @@ export function SliderWithDirectInput({
                   )}
                 >
                   <NumberFlow
-                    value={!isNaN(parseFloat(localValue)) ? parseFloat(localValue) : 0}
+                    value={parseFloat(localValue) || 0}
                     format={{
                       minimumFractionDigits: precision,
                       maximumFractionDigits: precision,
@@ -263,10 +267,7 @@ export function SliderWithDirectInput({
             step={safeStep}
             value={isFocused ? localValue : numericValue.toFixed(precision)}
             onChange={(e) => handleInputChange(e.target.value)}
-            onFocus={() => {
-              setIsFocused(true);
-              setLocalValue(numericValue.toString());
-            }}
+            onFocus={handleInputFocus}
             onBlur={handleInputBlur}
             disabled={disabled}
             className={cn(
@@ -277,7 +278,7 @@ export function SliderWithDirectInput({
               "focus:border-blue/60 focus:ring-blue/20 focus:ring-2 focus:outline-none",
               "hover:shadow-card",
               "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
-              config.input,
+              size === "lg" ? "text-title-3" : "text-body",
               "font-mono", // Monospace for better number alignment
               disabled && "cursor-not-allowed opacity-60",
               unit && "pr-16" // Make room for unit suffix
@@ -307,7 +308,7 @@ export function SliderWithDirectInput({
               orientation === "horizontal" ? "w-full" : "mx-auto h-40 w-fit"
             )}
             style={{
-              [orientation === "horizontal" ? "height" : "width"]: `${config.track}px`,
+              [orientation === "horizontal" ? "height" : "width"]: `${track}px`,
             }}
           >
             {/* Background Track */}
@@ -369,9 +370,9 @@ export function SliderWithDirectInput({
               step={safeStep}
               value={parseFloat(localValue) || safeMin}
               onChange={handleSliderChange}
-              onMouseDown={() => setIsDragging(true)}
+              onMouseDown={startDragging}
               onMouseUp={handleSliderDragEnd}
-              onTouchStart={() => setIsDragging(true)}
+              onTouchStart={startDragging}
               onTouchEnd={handleSliderDragEnd}
               disabled={disabled}
               className={cn(
