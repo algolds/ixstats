@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { AdvancedConlangSettings } from "./AdvancedConlangSettings";
 import { GenerateCountPill } from "./GenerateCountPill";
 import type { NameCategory } from "~/lib/onoma/types";
@@ -73,18 +74,15 @@ export function DomainControlBar({
               />
             </Toggle>
           </div>
-          <Select value={category} onValueChange={(val) => onCategoryChange?.(val as NameCategory)}>
-            <SelectTrigger className="text-footnote h-9 w-full">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent className="max-h-[300px]">
-              {categories.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id} className="text-footnote font-medium">
-                  {cat.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={category}
+            onValueChange={(val) => onCategoryChange?.(val as NameCategory)}
+            options={categories.map((cat) => [cat.id, cat.label] as const)}
+            className="text-footnote h-9 w-full"
+            placeholder="Select category"
+            contentClassName="max-h-[300px]"
+            itemClassName="text-footnote font-medium"
+          />
         </div>
       )}
 

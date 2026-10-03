@@ -13,13 +13,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Switch } from "~/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
 import { ALL_REALMS } from "~/lib/realms/realm-ids";
@@ -241,37 +235,24 @@ function NationalIssuesPanel() {
                 className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-3"
               />
             </div>
-            <Select value={domainFilter} onValueChange={setDomainFilter}>
-              <SelectTrigger size="sm" className="w-44">
-                <SelectValue placeholder="All domains" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" className="text-footnote">
-                  All domains
-                </SelectItem>
-                <SelectItem value="economic" className="text-footnote">
-                  Economic
-                </SelectItem>
-                <SelectItem value="political" className="text-footnote">
-                  Political
-                </SelectItem>
-                <SelectItem value="social" className="text-footnote">
-                  Social
-                </SelectItem>
-                <SelectItem value="military" className="text-footnote">
-                  Military
-                </SelectItem>
-                <SelectItem value="diplomatic" className="text-footnote">
-                  Diplomatic
-                </SelectItem>
-                <SelectItem value="infrastructure" className="text-footnote">
-                  Infrastructure
-                </SelectItem>
-                <SelectItem value="environmental" className="text-footnote">
-                  Environmental
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <ValueSelect
+              value={domainFilter}
+              onValueChange={setDomainFilter}
+              options={[
+                ["all", "All domains"],
+                ["economic", "Economic"],
+                ["political", "Political"],
+                ["social", "Social"],
+                ["military", "Military"],
+                ["diplomatic", "Diplomatic"],
+                ["infrastructure", "Infrastructure"],
+                ["environmental", "Environmental"],
+              ]}
+              size="sm"
+              className="w-44"
+              placeholder="All domains"
+              itemClassName="text-footnote"
+            />
           </div>
 
           {isTemplatesLoading ? (
@@ -456,18 +437,14 @@ function NationalIssuesPanel() {
                 Live criteria evaluation test
               </h3>
               <div className="text-footnote space-y-3">
-                <Select value={evalCountryId} onValueChange={setEvalCountryId}>
-                  <SelectTrigger size="sm">
-                    <SelectValue placeholder="Select Target Country..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries?.map((c) => (
-                      <SelectItem key={c.id} value={c.id} className="text-footnote">
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <ValueSelect
+                  value={evalCountryId}
+                  onValueChange={setEvalCountryId}
+                  options={countries?.map((c) => [c.id, c.name] as const)}
+                  size="sm"
+                  placeholder="Select Target Country..."
+                  itemClassName="text-footnote"
+                />
                 <Button
                   size="sm"
                   variant="outline"

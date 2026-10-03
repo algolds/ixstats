@@ -12,13 +12,7 @@ import { Slider } from "~/components/ui/slider";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import {
   Settings,
   Database,
@@ -203,17 +197,17 @@ export function NarratorPanel() {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label className="text-label-secondary text-subhead">LLM Provider</Label>
-                  <Select value={provider} onValueChange={setProvider}>
-                    <SelectTrigger size="sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="nvidia">Nvidia API</SelectItem>
-                      <SelectItem value="openrouter">OpenRouter</SelectItem>
-                      <SelectItem value="openai">OpenAI</SelectItem>
-                      <SelectItem value="custom">Custom Endpoint (OpenAI-compatible)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <ValueSelect
+                    value={provider}
+                    onValueChange={setProvider}
+                    options={[
+                      ["nvidia", "Nvidia API"],
+                      ["openrouter", "OpenRouter"],
+                      ["openai", "OpenAI"],
+                      ["custom", "Custom Endpoint (OpenAI-compatible)"],
+                    ]}
+                    size="sm"
+                  />
                 </div>
 
                 <div className="space-y-2">

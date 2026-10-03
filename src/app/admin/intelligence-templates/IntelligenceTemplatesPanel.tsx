@@ -17,13 +17,7 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { useNotify } from "~/hooks/useNotify";
 import { Plus, Eye, Search } from "iconoir-react";
 import { PageHeader } from "~/components/shell/PageHeader";
@@ -226,42 +220,34 @@ export function IntelligenceTemplatesPanel() {
             />
           </div>
 
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger size="sm" className="w-44">
-              <SelectValue placeholder="All report types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="text-footnote">
-                All report types
-              </SelectItem>
-              <SelectItem value="economic" className="text-footnote">
-                Economic report
-              </SelectItem>
-              <SelectItem value="political" className="text-footnote">
-                Political report
-              </SelectItem>
-              <SelectItem value="security" className="text-footnote">
-                Security report
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={typeFilter}
+            onValueChange={setTypeFilter}
+            options={[
+              ["all", "All report types"],
+              ["economic", "Economic report"],
+              ["political", "Political report"],
+              ["security", "Security report"],
+            ]}
+            size="sm"
+            className="w-44"
+            placeholder="All report types"
+            itemClassName="text-footnote"
+          />
 
-          <Select value={classificationFilter} onValueChange={setClassificationFilter}>
-            <SelectTrigger size="sm" className="w-36">
-              <SelectValue placeholder="All clearances" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="text-footnote">
-                All clearances
-              </SelectItem>
-              <SelectItem value="PUBLIC" className="text-footnote">
-                PUBLIC
-              </SelectItem>
-              <SelectItem value="RESTRICTED" className="text-footnote">
-                RESTRICTED
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={classificationFilter}
+            onValueChange={setClassificationFilter}
+            options={[
+              ["all", "All clearances"],
+              ["PUBLIC", "PUBLIC"],
+              ["RESTRICTED", "RESTRICTED"],
+            ]}
+            size="sm"
+            className="w-36"
+            placeholder="All clearances"
+            itemClassName="text-footnote"
+          />
         </div>
 
         <Button
@@ -392,39 +378,33 @@ export function IntelligenceTemplatesPanel() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-label text-caption mb-2 block">Report type</label>
-                <Select
+                <ValueSelect
                   value={formData.reportType}
                   onValueChange={(val: any) =>
                     setFormData((prev) => ({ ...prev, reportType: val }))
                   }
-                >
-                  <SelectTrigger size="sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="economic">Economic report</SelectItem>
-                    <SelectItem value="political">Political report</SelectItem>
-                    <SelectItem value="security">Security report</SelectItem>
-                  </SelectContent>
-                </Select>
+                  options={[
+                    ["economic", "Economic report"],
+                    ["political", "Political report"],
+                    ["security", "Security report"],
+                  ]}
+                  size="sm"
+                />
               </div>
 
               <div>
                 <label className="text-label text-caption mb-2 block">Classification</label>
-                <Select
+                <ValueSelect
                   value={formData.classification}
                   onValueChange={(val: any) =>
                     setFormData((prev) => ({ ...prev, classification: val }))
                   }
-                >
-                  <SelectTrigger size="sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PUBLIC">PUBLIC</SelectItem>
-                    <SelectItem value="RESTRICTED">RESTRICTED</SelectItem>
-                  </SelectContent>
-                </Select>
+                  options={[
+                    ["PUBLIC", "PUBLIC"],
+                    ["RESTRICTED", "RESTRICTED"],
+                  ]}
+                  size="sm"
+                />
               </div>
             </div>
 

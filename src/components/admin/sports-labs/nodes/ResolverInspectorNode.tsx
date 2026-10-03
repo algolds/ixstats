@@ -6,13 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Slider } from "~/components/ui/slider";
 import { Checkbox } from "~/components/ui/checkbox";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Play, StatUp as TrendingUp } from "iconoir-react";
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "~/lib/utils";
@@ -204,17 +198,18 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
         <div className="border-separator grid grid-cols-2 gap-3 border-t pt-3">
           <div className="space-y-2">
             <Label className="text-subhead text-yellow">Home saint blessing</Label>
-            <Select value={homeSaint} onValueChange={setHomeSaint}>
-              <SelectTrigger size="sm">
-                <SelectValue placeholder="Select saint" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No blessing</SelectItem>
-                <SelectItem value="Saint Rais">Saint Rais (+5 ELO)</SelectItem>
-                <SelectItem value="Saint Inonsia">Saint Inonsia (+5 ELO)</SelectItem>
-                <SelectItem value="Saint Magador">Saint Magador (+5 ELO)</SelectItem>
-              </SelectContent>
-            </Select>
+            <ValueSelect
+              value={homeSaint}
+              onValueChange={setHomeSaint}
+              options={[
+                ["none", "No blessing"],
+                ["Saint Rais", "Saint Rais (+5 ELO)"],
+                ["Saint Inonsia", "Saint Inonsia (+5 ELO)"],
+                ["Saint Magador", "Saint Magador (+5 ELO)"],
+              ]}
+              size="sm"
+              placeholder="Select saint"
+            />
             <div className="mt-1 flex items-center gap-2">
               <Checkbox
                 id="homeScandal"
@@ -232,17 +227,18 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
 
           <div className="space-y-2">
             <Label className="text-subhead text-yellow">Away saint blessing</Label>
-            <Select value={awaySaint} onValueChange={setAwaySaint}>
-              <SelectTrigger size="sm">
-                <SelectValue placeholder="Select saint" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No blessing</SelectItem>
-                <SelectItem value="Saint Rais">Saint Rais (+5 ELO)</SelectItem>
-                <SelectItem value="Saint Inonsia">Saint Inonsia (+5 ELO)</SelectItem>
-                <SelectItem value="Saint Magador">Saint Magador (+5 ELO)</SelectItem>
-              </SelectContent>
-            </Select>
+            <ValueSelect
+              value={awaySaint}
+              onValueChange={setAwaySaint}
+              options={[
+                ["none", "No blessing"],
+                ["Saint Rais", "Saint Rais (+5 ELO)"],
+                ["Saint Inonsia", "Saint Inonsia (+5 ELO)"],
+                ["Saint Magador", "Saint Magador (+5 ELO)"],
+              ]}
+              size="sm"
+              placeholder="Select saint"
+            />
             <div className="mt-1 flex items-center gap-2">
               <Checkbox
                 id="awayScandal"

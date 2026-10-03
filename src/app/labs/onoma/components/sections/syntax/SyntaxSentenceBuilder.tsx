@@ -6,13 +6,7 @@
 import React from "react";
 import { Cpu, ArrowRight } from "iconoir-react";
 import { Input } from "~/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Card } from "~/components/ui/card";
 
@@ -219,16 +213,17 @@ export function SyntaxSentenceBuilder({
             className="w-full"
             placeholder="e.g. eat"
           />
-          <Select value={verbTense} onValueChange={(v) => setVerbTense(v)}>
-            <SelectTrigger size="sm" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="present">Present tense</SelectItem>
-              <SelectItem value="past">Past tense</SelectItem>
-              <SelectItem value="future">Future tense</SelectItem>
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={verbTense}
+            onValueChange={(v) => setVerbTense(v)}
+            options={[
+              ["present", "Present tense"],
+              ["past", "Past tense"],
+              ["future", "Future tense"],
+            ]}
+            size="sm"
+            className="w-full"
+          />
         </div>
 
         {/* Object */}

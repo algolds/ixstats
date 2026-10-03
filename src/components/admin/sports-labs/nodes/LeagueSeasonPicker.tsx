@@ -1,11 +1,5 @@
 import { Label } from "~/components/ui/label";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { api } from "~/trpc/react";
 
 interface LeagueSeasonPickerProps {
@@ -32,35 +26,25 @@ export function LeagueSeasonPicker({
     <>
       <div className="space-y-2">
         <Label>Select league</Label>
-        <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
-          <SelectTrigger>
-            <SelectValue placeholder="Choose league" />
-          </SelectTrigger>
-          <SelectContent>
-            {leagues?.map((l) => (
-              <SelectItem key={l.id} value={l.id}>
-                {l.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <ValueSelect
+          value={selectedLeagueId}
+          onValueChange={setSelectedLeagueId}
+          options={leagues?.map((l) => [l.id, l.name] as const)}
+          placeholder="Choose league"
+        />
       </div>
 
       {setSelectedSeasonId && league?.seasons && (
         <div className="space-y-2">
           <Label>Select season</Label>
-          <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choose season" />
-            </SelectTrigger>
-            <SelectContent>
-              {league.seasons.map((s) => (
-                <SelectItem key={s.id} value={s.id}>
-                  Season {s.seasonNumber} ({s.status})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={selectedSeasonId}
+            onValueChange={setSelectedSeasonId}
+            options={league.seasons.map(
+              (s) => [s.id, `Season ${s.seasonNumber} (${s.status})`] as const
+            )}
+            placeholder="Choose season"
+          />
         </div>
       )}
     </>

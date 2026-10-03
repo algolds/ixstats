@@ -26,13 +26,7 @@ import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Card } from "~/components/ui/card";
 
 const FAMILIES = [
@@ -162,18 +156,12 @@ export function LanguagePacksSection({
           />
         </div>
 
-        <Select value={familyFilter} onValueChange={(v) => setFamilyFilter(v)}>
-          <SelectTrigger size="sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {FAMILIES.map((fam) => (
-              <SelectItem key={fam.value} value={fam.value}>
-                {fam.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <ValueSelect
+          value={familyFilter}
+          onValueChange={(v) => setFamilyFilter(v)}
+          options={FAMILIES.map((fam) => [fam.value, fam.label] as const)}
+          size="sm"
+        />
 
         <Button
           variant="outline"

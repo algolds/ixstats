@@ -39,13 +39,7 @@ import { Badge } from "~/components/ui/badge";
 import { Slider } from "~/components/ui/slider";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { ALL_REALMS } from "~/lib/realms/realm-ids";
@@ -1674,31 +1668,20 @@ export function CountryInspector() {
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
                     <Label className="text-label-secondary text-footnote">Effect type</Label>
-                    <Select value={newEffectType} onValueChange={setNewEffectType}>
-                      <SelectTrigger size="sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="gdp_adjustment" className="text-footnote">
-                          GDP Adjustment
-                        </SelectItem>
-                        <SelectItem value="population_adjustment" className="text-footnote">
-                          Pop adjustment
-                        </SelectItem>
-                        <SelectItem value="growth_rate_modifier" className="text-footnote">
-                          Growth rate mult
-                        </SelectItem>
-                        <SelectItem value="natural_disaster" className="text-footnote">
-                          Natural Disaster (Direct)
-                        </SelectItem>
-                        <SelectItem value="trade_agreement" className="text-footnote">
-                          Trade Agreement (Direct)
-                        </SelectItem>
-                        <SelectItem value="special_event" className="text-footnote">
-                          Special Event (Direct)
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <ValueSelect
+                      value={newEffectType}
+                      onValueChange={setNewEffectType}
+                      options={[
+                        ["gdp_adjustment", "GDP Adjustment"],
+                        ["population_adjustment", "Pop adjustment"],
+                        ["growth_rate_modifier", "Growth rate mult"],
+                        ["natural_disaster", "Natural Disaster (Direct)"],
+                        ["trade_agreement", "Trade Agreement (Direct)"],
+                        ["special_event", "Special Event (Direct)"],
+                      ]}
+                      size="sm"
+                      itemClassName="text-footnote"
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-label-secondary text-footnote">Value (%)</Label>

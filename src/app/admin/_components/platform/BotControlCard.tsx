@@ -42,6 +42,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import {
   Table,
   TableHeader,
@@ -1004,15 +1005,16 @@ export function BotControlCard({
                   >
                     Daemon process
                   </Label>
-                  <Select value={logProcess} onValueChange={(v) => setLogProcess(v as any)}>
-                    <SelectTrigger size="sm" id="log-proc-select">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ixwiki-discord-bot">ixwiki-discord-bot</SelectItem>
-                      <SelectItem value="ixstats-ixtwitter">ixstats-ixtwitter</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <ValueSelect
+                    value={logProcess}
+                    onValueChange={(v) => setLogProcess(v as any)}
+                    options={[
+                      ["ixwiki-discord-bot", "ixwiki-discord-bot"],
+                      ["ixstats-ixtwitter", "ixstats-ixtwitter"],
+                    ]}
+                    size="sm"
+                    id="log-proc-select"
+                  />
                 </div>
 
                 {/* Log Type Selector */}
@@ -1023,15 +1025,16 @@ export function BotControlCard({
                   >
                     Stream type
                   </Label>
-                  <Select value={logType} onValueChange={(v) => setLogType(v as any)}>
-                    <SelectTrigger size="sm" id="log-type-select">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="out">stdout (Logs)</SelectItem>
-                      <SelectItem value="err">stderr (Errors)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <ValueSelect
+                    value={logType}
+                    onValueChange={(v) => setLogType(v as any)}
+                    options={[
+                      ["out", "stdout (Logs)"],
+                      ["err", "stderr (Errors)"],
+                    ]}
+                    size="sm"
+                    id="log-type-select"
+                  />
                 </div>
               </div>
 

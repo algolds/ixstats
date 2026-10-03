@@ -12,13 +12,7 @@ import { SyntaxSentenceBuilder } from "./syntax/SyntaxSentenceBuilder";
 import { SyntaxDictionaryEditor } from "./syntax/SyntaxDictionaryEditor";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Card } from "~/components/ui/card";
 
 const INITIAL_DICTIONARY = {
@@ -190,22 +184,15 @@ export default function SyntaxSection() {
               className="text-footnote w-64"
             />
             {profiles && profiles.length > 0 && (
-              <Select
+              <ValueSelect
                 value={selectedProfileId || "" || "__none__"}
                 onValueChange={(v) => setSelectedProfileId((v === "__none__" ? "" : v) || null)}
-              >
-                <SelectTrigger size="sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Load Existing Profile...</SelectItem>
-                  {profiles.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name} ({p.wordOrder})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                options={[
+                  ["__none__", "Load Existing Profile..."],
+                  ...profiles.map((p) => [p.id, `${p.name} (${p.wordOrder})`] as const),
+                ]}
+                size="sm"
+              />
             )}
           </div>
 
@@ -231,33 +218,35 @@ export default function SyntaxSection() {
           {/* Word Order */}
           <div className="space-y-1">
             <label className="text-label-secondary text-subhead">Word order</label>
-            <Select value={wordOrder} onValueChange={(v) => setWordOrder(v)}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="SVO">SVO (English, Romance)</SelectItem>
-                <SelectItem value="SOV">SOV (Japanese, Latin, Turkish)</SelectItem>
-                <SelectItem value="VSO">VSO (Irish, Arabic)</SelectItem>
-                <SelectItem value="VOS">VOS (Malagasy)</SelectItem>
-                <SelectItem value="OVS">OVS (Hixkaryana)</SelectItem>
-                <SelectItem value="OSV">OSV (Xavante)</SelectItem>
-              </SelectContent>
-            </Select>
+            <ValueSelect
+              value={wordOrder}
+              onValueChange={(v) => setWordOrder(v)}
+              options={[
+                ["SVO", "SVO (English, Romance)"],
+                ["SOV", "SOV (Japanese, Latin, Turkish)"],
+                ["VSO", "VSO (Irish, Arabic)"],
+                ["VOS", "VOS (Malagasy)"],
+                ["OVS", "OVS (Hixkaryana)"],
+                ["OSV", "OSV (Xavante)"],
+              ]}
+              size="sm"
+              className="w-full"
+            />
           </div>
 
           {/* Adjective Placement */}
           <div className="space-y-1">
             <label className="text-label-secondary text-subhead">Adjective order</label>
-            <Select value={adjectiveOrder} onValueChange={(v) => setAdjectiveOrder(v)}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="before">Before Noun (Red apple)</SelectItem>
-                <SelectItem value="after">After Noun (Apple red)</SelectItem>
-              </SelectContent>
-            </Select>
+            <ValueSelect
+              value={adjectiveOrder}
+              onValueChange={(v) => setAdjectiveOrder(v)}
+              options={[
+                ["before", "Before Noun (Red apple)"],
+                ["after", "After Noun (Apple red)"],
+              ]}
+              size="sm"
+              className="w-full"
+            />
           </div>
 
           {/* Accusative Suffix */}

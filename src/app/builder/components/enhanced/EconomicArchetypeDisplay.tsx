@@ -3,13 +3,7 @@
 import React, { useState, memo, useMemo } from "react";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Archery as Target, Search } from "iconoir-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Input } from "~/components/ui/input";
 import type { EconomicArchetype } from "~/lib/economy/archetypes/types";
 import type { EconomyBuilderState } from "~/types/economy-builder";
@@ -130,17 +124,18 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
                 </div>
 
                 {/* Complexity Filter */}
-                <Select value={complexityFilter} onValueChange={setComplexityFilter}>
-                  <SelectTrigger className="bg-fill-4 border-separator w-full sm:w-44">
-                    <SelectValue placeholder="Select complexity" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All complexities</SelectItem>
-                    <SelectItem value="low">Low complexity</SelectItem>
-                    <SelectItem value="medium">Medium complexity</SelectItem>
-                    <SelectItem value="high">High complexity</SelectItem>
-                  </SelectContent>
-                </Select>
+                <ValueSelect
+                  value={complexityFilter}
+                  onValueChange={setComplexityFilter}
+                  options={[
+                    ["all", "All complexities"],
+                    ["low", "Low complexity"],
+                    ["medium", "Medium complexity"],
+                    ["high", "High complexity"],
+                  ]}
+                  className="bg-fill-4 border-separator w-full sm:w-44"
+                  placeholder="Select complexity"
+                />
               </div>
 
               {/* Counter */}

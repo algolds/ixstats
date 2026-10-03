@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import {
@@ -219,7 +220,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label className="text-label text-caption">Poll type</Label>
-                      <Select
+                      <ValueSelect
                         value={pollType}
                         onValueChange={(val: "choice" | "feature-poll" | "feature-voting") => {
                           setPollType(val);
@@ -227,32 +228,24 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                             setMultiple(true);
                           }
                         }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="choice">Standard choice poll</SelectItem>
-                          <SelectItem value="feature-poll">Feature priority poll</SelectItem>
-                          <SelectItem value="feature-voting">Feature upvoting board</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        options={[
+                          ["choice", "Standard choice poll"],
+                          ["feature-poll", "Feature priority poll"],
+                          ["feature-voting", "Feature upvoting board"],
+                        ]}
+                      />
                     </div>
 
                     <div className="space-y-2">
                       <Label className="text-label text-caption">Scope & targeting</Label>
-                      <Select
+                      <ValueSelect
                         value={targetScope}
                         onValueChange={(val: "global" | "country") => setTargetScope(val)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="global">Global (All Users)</SelectItem>
-                          <SelectItem value="country">Country targeted</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        options={[
+                          ["global", "Global (All Users)"],
+                          ["country", "Country targeted"],
+                        ]}
+                      />
                     </div>
                   </div>
 

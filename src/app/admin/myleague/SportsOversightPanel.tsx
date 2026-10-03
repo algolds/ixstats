@@ -53,6 +53,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 
 const statusMeta: Record<string, { label: string; className: string }> = {
   active: {
@@ -478,20 +479,21 @@ function AINarratorLab() {
           <div className="space-y-4 md:col-span-6">
             <div className="space-y-2">
               <label className="text-label-secondary text-subhead block">Sport preset</label>
-              <Select value={sport} onValueChange={(v) => handleLoadTemplate(v)}>
-                <SelectTrigger size="sm" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="soccer">Soccer ⚽</SelectItem>
-                  <SelectItem value="f1">Formula 1 🏎️</SelectItem>
-                  <SelectItem value="boxing">Boxing 🥊</SelectItem>
-                  <SelectItem value="basketball">Basketball 🏀</SelectItem>
-                  <SelectItem value="football">Football 🏈</SelectItem>
-                  <SelectItem value="hockey">Hockey 🏒</SelectItem>
-                  <SelectItem value="baseball">Baseball ⚾</SelectItem>
-                </SelectContent>
-              </Select>
+              <ValueSelect
+                value={sport}
+                onValueChange={(v) => handleLoadTemplate(v)}
+                options={[
+                  ["soccer", "Soccer ⚽"],
+                  ["f1", "Formula 1 🏎️"],
+                  ["boxing", "Boxing 🥊"],
+                  ["basketball", "Basketball 🏀"],
+                  ["football", "Football 🏈"],
+                  ["hockey", "Hockey 🏒"],
+                  ["baseball", "Baseball ⚾"],
+                ]}
+                size="sm"
+                className="w-full"
+              />
             </div>
 
             {/* Advanced Settings Toggle */}
@@ -529,23 +531,21 @@ function AINarratorLab() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <label className="text-label-secondary text-subhead block">Provider</label>
-                    <Select
+                    <ValueSelect
                       value={provider}
                       onValueChange={(v) => {
                         setProvider(v);
                         saveConfig("provider", v);
                       }}
-                    >
-                      <SelectTrigger size="sm" className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="nvidia">Nvidia</SelectItem>
-                        <SelectItem value="openrouter">OpenRouter</SelectItem>
-                        <SelectItem value="openai">OpenAI</SelectItem>
-                        <SelectItem value="custom">Custom (OpenAI-like)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      options={[
+                        ["nvidia", "Nvidia"],
+                        ["openrouter", "OpenRouter"],
+                        ["openai", "OpenAI"],
+                        ["custom", "Custom (OpenAI-like)"],
+                      ]}
+                      size="sm"
+                      className="w-full"
+                    />
                   </div>
                   <div className="space-y-2">
                     <label

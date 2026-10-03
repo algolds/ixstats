@@ -4,13 +4,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { Globe, Plus, Search } from "iconoir-react";
 import {
@@ -65,21 +59,18 @@ export function DiplomaticScenariosHeader({
             />
           </div>
 
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger size="sm" className="w-44">
-              <SelectValue placeholder="Scenario type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="text-footnote">
-                All types
-              </SelectItem>
-              {SCENARIO_TYPES.map((t) => (
-                <SelectItem key={t.value} value={t.value} className="text-footnote">
-                  {t.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={typeFilter}
+            onValueChange={setTypeFilter}
+            options={[
+              ["all", "All types"],
+              ...SCENARIO_TYPES.map((t) => [t.value, t.label] as const),
+            ]}
+            size="sm"
+            className="w-44"
+            placeholder="Scenario type"
+            itemClassName="text-footnote"
+          />
 
           <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2 px-2 select-none">
             <Checkbox

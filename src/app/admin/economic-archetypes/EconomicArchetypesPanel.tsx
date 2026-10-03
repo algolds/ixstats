@@ -8,13 +8,7 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { useNotify } from "~/hooks/useNotify";
 import {
   Plus,
@@ -235,54 +229,45 @@ export function EconomicArchetypesPanel() {
             />
           </div>
 
-          <Select value={selectedEra} onValueChange={(v: any) => setSelectedEra(v)}>
-            <SelectTrigger size="sm" className="w-36">
-              <SelectValue placeholder="All eras" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="text-footnote">
-                All eras
-              </SelectItem>
-              <SelectItem value="modern" className="text-footnote">
-                Modern
-              </SelectItem>
-              <SelectItem value="historical" className="text-footnote">
-                Historical
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={selectedEra}
+            onValueChange={(v: any) => setSelectedEra(v)}
+            options={[
+              ["all", "All eras"],
+              ["modern", "Modern"],
+              ["historical", "Historical"],
+            ]}
+            size="sm"
+            className="w-36"
+            placeholder="All eras"
+            itemClassName="text-footnote"
+          />
 
-          <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-            <SelectTrigger size="sm" className="w-36">
-              <SelectValue placeholder="All regions" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="text-footnote">
-                All regions
-              </SelectItem>
-              {regions.map((region) => (
-                <SelectItem key={region} value={region} className="text-footnote">
-                  {region}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={selectedRegion}
+            onValueChange={setSelectedRegion}
+            options={[
+              ["all", "All regions"],
+              ...regions.map((region) => [region, region] as const),
+            ]}
+            size="sm"
+            className="w-36"
+            placeholder="All regions"
+            itemClassName="text-footnote"
+          />
 
-          <Select value={selectedComplexity} onValueChange={setSelectedComplexity}>
-            <SelectTrigger size="sm" className="w-40">
-              <SelectValue placeholder="All complexities" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="text-footnote">
-                All complexities
-              </SelectItem>
-              {COMPLEXITY_LEVELS.map((level) => (
-                <SelectItem key={level} value={level} className="text-footnote">
-                  {complexityLabel(level)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={selectedComplexity}
+            onValueChange={setSelectedComplexity}
+            options={[
+              ["all", "All complexities"],
+              ...COMPLEXITY_LEVELS.map((level) => [level, complexityLabel(level)] as const),
+            ]}
+            size="sm"
+            className="w-40"
+            placeholder="All complexities"
+            itemClassName="text-footnote"
+          />
         </div>
 
         <Button

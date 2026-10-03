@@ -8,13 +8,7 @@ import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
 import { Input } from "~/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import {
   Refresh as RefreshCw,
   Trash as Trash2,
@@ -170,66 +164,50 @@ export default function DedicatedLogsPage() {
             />
           </div>
 
-          <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-            <SelectTrigger size="sm" className="w-32">
-              <SelectValue placeholder="All levels" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL" className="text-footnote">
-                All levels
-              </SelectItem>
-              <SelectItem value="DEBUG" className="text-footnote">
-                DEBUG
-              </SelectItem>
-              <SelectItem value="INFO" className="text-footnote">
-                INFO
-              </SelectItem>
-              <SelectItem value="WARN" className="text-footnote">
-                WARN
-              </SelectItem>
-              <SelectItem value="ERROR" className="text-footnote">
-                ERROR
-              </SelectItem>
-              <SelectItem value="CRITICAL" className="text-footnote">
-                CRITICAL
-              </SelectItem>
-              <SelectItem value="FATAL" className="text-footnote">
-                FATAL
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={selectedLevel}
+            onValueChange={setSelectedLevel}
+            options={[
+              ["ALL", "All levels"],
+              ["DEBUG", "DEBUG"],
+              ["INFO", "INFO"],
+              ["WARN", "WARN"],
+              ["ERROR", "ERROR"],
+              ["CRITICAL", "CRITICAL"],
+              ["FATAL", "FATAL"],
+            ]}
+            size="sm"
+            className="w-32"
+            placeholder="All levels"
+            itemClassName="text-footnote"
+          />
 
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger size="sm" className="w-36">
-              <SelectValue placeholder="All categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL" className="text-footnote">
-                All categories
-              </SelectItem>
-              {LOG_CATEGORIES.map((cat) => (
-                <SelectItem key={cat} value={cat} className="text-footnote">
-                  {cat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={selectedCategory}
+            onValueChange={setSelectedCategory}
+            options={[
+              ["ALL", "All categories"],
+              ...LOG_CATEGORIES.map((cat) => [cat, cat] as const),
+            ]}
+            size="sm"
+            className="w-36"
+            placeholder="All categories"
+            itemClassName="text-footnote"
+          />
 
-          <Select value={selectedUser} onValueChange={setSelectedUser}>
-            <SelectTrigger size="sm" className="w-36">
-              <SelectValue placeholder="All users" />
-            </SelectTrigger>
-            <SelectContent className="max-h-56">
-              <SelectItem value="ALL" className="text-footnote">
-                All users
-              </SelectItem>
-              {usersData?.map((u) => (
-                <SelectItem key={u.id} value={u.id} className="text-footnote">
-                  {u.clerkUserId}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={selectedUser}
+            onValueChange={setSelectedUser}
+            options={[
+              ["ALL", "All users"],
+              ...(usersData?.map((u) => [u.id, u.clerkUserId] as const) ?? []),
+            ]}
+            size="sm"
+            className="w-36"
+            placeholder="All users"
+            contentClassName="max-h-56"
+            itemClassName="text-footnote"
+          />
 
           <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2 px-2 select-none">
             <Switch

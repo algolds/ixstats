@@ -26,13 +26,7 @@ import {
   Bell,
   Flask as FlaskConical,
 } from "iconoir-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 
 const CATEGORIES: { label: string; value: NotificationCategory }[] = [
   { label: "System", value: "system" },
@@ -409,52 +403,34 @@ export function TestSuitePanel() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label className="text-footnote">Type</Label>
-                  <Select value={type} onValueChange={(v) => setType(v as ToastType)}>
-                    <SelectTrigger size="sm" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TYPES.map((t) => (
-                        <SelectItem key={t.value} value={t.value}>
-                          {t.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <ValueSelect
+                    value={type}
+                    onValueChange={(v) => setType(v as ToastType)}
+                    options={TYPES.map((t) => [t.value, t.label] as const)}
+                    size="sm"
+                    className="w-full"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-footnote">Priority</Label>
-                  <Select value={priority} onValueChange={(v) => setPriority(v as ToastPriority)}>
-                    <SelectTrigger size="sm" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PRIORITIES.map((p) => (
-                        <SelectItem key={p.value} value={p.value}>
-                          {p.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <ValueSelect
+                    value={priority}
+                    onValueChange={(v) => setPriority(v as ToastPriority)}
+                    options={PRIORITIES.map((p) => [p.value, p.label] as const)}
+                    size="sm"
+                    className="w-full"
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label className="text-footnote">Category</Label>
-                <Select
+                <ValueSelect
                   value={category}
                   onValueChange={(v) => setCategory(v as NotificationCategory)}
-                >
-                  <SelectTrigger size="sm" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        {c.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  options={CATEGORIES.map((c) => [c.value, c.label] as const)}
+                  size="sm"
+                  className="w-full"
+                />
               </div>
             </div>
 

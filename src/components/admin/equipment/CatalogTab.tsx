@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Slider } from "~/components/ui/slider";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -112,21 +113,15 @@ export function CatalogTab({
           />
         </div>
 
-        <Select value={eraFilter} onValueChange={setEraFilter}>
-          <SelectTrigger size="sm" className="w-36">
-            <SelectValue placeholder="All eras" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all" className="text-footnote">
-              All eras
-            </SelectItem>
-            {ERAS.map((era) => (
-              <SelectItem key={era.value} value={era.value} className="text-footnote">
-                {era.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <ValueSelect
+          value={eraFilter}
+          onValueChange={setEraFilter}
+          options={[["all", "All eras"], ...ERAS.map((era) => [era.value, era.label] as const)]}
+          size="sm"
+          className="w-36"
+          placeholder="All eras"
+          itemClassName="text-footnote"
+        />
 
         <Select value={subcategoryFilter} onValueChange={setSubcategoryFilter}>
           <SelectTrigger size="sm" className="w-40">

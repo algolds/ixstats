@@ -13,13 +13,7 @@ import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import {
   Dialog,
   DialogContent,
@@ -473,18 +467,15 @@ function ResponseModerationSection() {
     <Card className="space-y-4 p-5">
       <div className="border-separator max-w-md space-y-2 border-b pb-4">
         <Label className="text-label-secondary text-subhead">Select discussion prompt</Label>
-        <Select value={selectedPromptId} onValueChange={setSelectedPromptId}>
-          <SelectTrigger size="sm">
-            <SelectValue placeholder="Choose a prompt to view responses..." />
-          </SelectTrigger>
-          <SelectContent>
-            {prompts?.map((p) => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.title} ({p._count.responses} responses)
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <ValueSelect
+          value={selectedPromptId}
+          onValueChange={setSelectedPromptId}
+          options={prompts?.map(
+            (p) => [p.id, `${p.title} (${p._count.responses} responses)`] as const
+          )}
+          size="sm"
+          placeholder="Choose a prompt to view responses..."
+        />
       </div>
 
       {!selectedPromptId ? (

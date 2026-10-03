@@ -17,13 +17,7 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Button } from "~/components/ui/button";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { Card } from "~/components/ui/card";
@@ -528,18 +522,19 @@ export default function EtymologySection() {
                       <label className="text-label-secondary text-caption mb-1 block font-medium">
                         Derivation type
                       </label>
-                      <Select value={newDerivType} onValueChange={(v) => setNewDerivType(v)}>
-                        <SelectTrigger size="sm" className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="prefix">Prefixation (Affix)</SelectItem>
-                          <SelectItem value="suffix">Suffixation (Affix)</SelectItem>
-                          <SelectItem value="compound">Compounding</SelectItem>
-                          <SelectItem value="semantic-shift">Semantic shift</SelectItem>
-                          <SelectItem value="reduplication">Reduplication</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <ValueSelect
+                        value={newDerivType}
+                        onValueChange={(v) => setNewDerivType(v)}
+                        options={[
+                          ["prefix", "Prefixation (Affix)"],
+                          ["suffix", "Suffixation (Affix)"],
+                          ["compound", "Compounding"],
+                          ["semantic-shift", "Semantic shift"],
+                          ["reduplication", "Reduplication"],
+                        ]}
+                        size="sm"
+                        className="w-full"
+                      />
                     </div>
                     <div>
                       <label className="text-label-secondary text-caption mb-1 block font-medium">

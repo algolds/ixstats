@@ -35,13 +35,7 @@ import {
   CommandItem,
   CommandGroup,
 } from "~/components/ui/command";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 
 export function LorewardsBotSection() {
   const notify = useNotify();
@@ -408,24 +402,24 @@ export function LorewardsBotSection() {
               <CardDescription>Auditing output stream of Discord bot processes</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Select value={selectedProcess} onValueChange={(v) => setSelectedProcess(v as any)}>
-                <SelectTrigger size="sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ixwiki-discord-bot">Discord bot</SelectItem>
-                  <SelectItem value="ixstats-ixtwitter">IxTwitter Feed</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={logType} onValueChange={(v) => setLogType(v as any)}>
-                <SelectTrigger size="sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="out">Stdout (info)</SelectItem>
-                  <SelectItem value="err">Stderr (errors)</SelectItem>
-                </SelectContent>
-              </Select>
+              <ValueSelect
+                value={selectedProcess}
+                onValueChange={(v) => setSelectedProcess(v as any)}
+                options={[
+                  ["ixwiki-discord-bot", "Discord bot"],
+                  ["ixstats-ixtwitter", "IxTwitter Feed"],
+                ]}
+                size="sm"
+              />
+              <ValueSelect
+                value={logType}
+                onValueChange={(v) => setLogType(v as any)}
+                options={[
+                  ["out", "Stdout (info)"],
+                  ["err", "Stderr (errors)"],
+                ]}
+                size="sm"
+              />
               <Button
                 size="icon"
                 variant="ghost"
@@ -823,17 +817,18 @@ export function LorewardsBotSection() {
             </div>
             <div className="space-y-1">
               <label className="text-label-secondary text-subhead">Duration</label>
-              <Select value={blacklistDuration} onValueChange={(v) => setBlacklistDuration(v)}>
-                <SelectTrigger size="sm" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="permanent">Permanent</SelectItem>
-                  <SelectItem value="7days">7 Days</SelectItem>
-                  <SelectItem value="30days">30 Days</SelectItem>
-                  <SelectItem value="custom">Custom date</SelectItem>
-                </SelectContent>
-              </Select>
+              <ValueSelect
+                value={blacklistDuration}
+                onValueChange={(v) => setBlacklistDuration(v)}
+                options={[
+                  ["permanent", "Permanent"],
+                  ["7days", "7 Days"],
+                  ["30days", "30 Days"],
+                  ["custom", "Custom date"],
+                ]}
+                size="sm"
+                className="w-full"
+              />
             </div>
             {blacklistDuration === "custom" && (
               <div className="space-y-1">
@@ -924,16 +919,17 @@ export function LorewardsBotSection() {
             </div>
             <div className="space-y-1">
               <label className="text-label-secondary text-subhead">Type</label>
-              <Select value={overrideType} onValueChange={(v) => setOverrideType(v)}>
-                <SelectTrigger size="sm" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily Loreward</SelectItem>
-                  <SelectItem value="weekly">Weekly Loreward</SelectItem>
-                  <SelectItem value="monthly">Monthly Loreward</SelectItem>
-                </SelectContent>
-              </Select>
+              <ValueSelect
+                value={overrideType}
+                onValueChange={(v) => setOverrideType(v)}
+                options={[
+                  ["daily", "Daily Loreward"],
+                  ["weekly", "Weekly Loreward"],
+                  ["monthly", "Monthly Loreward"],
+                ]}
+                size="sm"
+                className="w-full"
+              />
             </div>
           </div>
 

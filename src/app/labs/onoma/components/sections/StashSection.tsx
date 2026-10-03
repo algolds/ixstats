@@ -10,13 +10,7 @@ import { NameResultCard } from "../shared/NameResultCard";
 import { UseNameDialog } from "../shared/UseNameDialog";
 import { DictionaryEditModal, type DictEditValue } from "../shared/DictionaryEditModal";
 import { api } from "~/trpc/react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { ImportStashPanel } from "../stash/ImportStashPanel";
 import { SavedDictionaryCard } from "../stash/SavedDictionaryCard";
 import { StudioLexicon } from "./studio/StudioLexicon";
@@ -209,21 +203,18 @@ function StashSection({ onLoadToStudio, onNavigateExplore, onNavigateStudio }: S
 
             {/* Folder filter dropdown */}
             <div className="relative w-full sm:w-44">
-              <Select value={selectedStashFilterId} onValueChange={setSelectedStashFilterId}>
-                <SelectTrigger className="text-footnote w-full">
-                  <SelectValue placeholder="All folders" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px]">
-                  <SelectItem value="all" className="text-footnote">
-                    📁 All Folders
-                  </SelectItem>
-                  {stashesQuery.data?.map((s) => (
-                    <SelectItem key={s.id} value={s.id} className="text-footnote">
-                      📁 {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <ValueSelect
+                value={selectedStashFilterId}
+                onValueChange={setSelectedStashFilterId}
+                options={[
+                  ["all", "📁 All Folders"],
+                  ...(stashesQuery.data?.map((s) => [s.id, `📁 ${s.name}`] as const) ?? []),
+                ]}
+                className="text-footnote w-full"
+                placeholder="All folders"
+                contentClassName="max-h-[300px]"
+                itemClassName="text-footnote"
+              />
             </div>
 
             {/* Search Input */}

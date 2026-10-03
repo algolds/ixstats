@@ -21,13 +21,7 @@ import {
   Check,
 } from "iconoir-react";
 import type { CardRarity } from "@prisma/client";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Card } from "~/components/ui/card";
 
 function cleanCategoryTitle(input: string): string {
@@ -253,19 +247,20 @@ export function CommonsFlagImporterAdmin() {
             <label className="text-label-secondary text-caption mb-1 block">
               Target card rarity
             </label>
-            <Select value={defaultRarity} onValueChange={(v) => setDefaultRarity(v as CardRarity)}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="COMMON">Common</SelectItem>
-                <SelectItem value="UNCOMMON">Uncommon</SelectItem>
-                <SelectItem value="RARE">Rare</SelectItem>
-                <SelectItem value="ULTRA_RARE">Ultra rare</SelectItem>
-                <SelectItem value="EPIC">Epic</SelectItem>
-                <SelectItem value="LEGENDARY">Legendary</SelectItem>
-              </SelectContent>
-            </Select>
+            <ValueSelect
+              value={defaultRarity}
+              onValueChange={(v) => setDefaultRarity(v as CardRarity)}
+              options={[
+                ["COMMON", "Common"],
+                ["UNCOMMON", "Uncommon"],
+                ["RARE", "Rare"],
+                ["ULTRA_RARE", "Ultra rare"],
+                ["EPIC", "Epic"],
+                ["LEGENDARY", "Legendary"],
+              ]}
+              size="sm"
+              className="w-full"
+            />
           </div>
 
           {/* Season */}
@@ -273,16 +268,17 @@ export function CommonsFlagImporterAdmin() {
             <label className="text-label-secondary text-caption mb-1 block">
               Target card season
             </label>
-            <Select value={String(season)} onValueChange={(v) => setSeason(parseInt(v, 10))}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={String(1)}>Season 1</SelectItem>
-                <SelectItem value={String(2)}>Season 2</SelectItem>
-                <SelectItem value={String(3)}>Season 3</SelectItem>
-              </SelectContent>
-            </Select>
+            <ValueSelect
+              value={String(season)}
+              onValueChange={(v) => setSeason(parseInt(v, 10))}
+              options={[
+                [String(1), "Season 1"],
+                [String(2), "Season 2"],
+                [String(3), "Season 3"],
+              ]}
+              size="sm"
+              className="w-full"
+            />
           </div>
         </div>
       </Card>

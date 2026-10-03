@@ -51,6 +51,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Card } from "~/components/ui/card";
 
 /** Badge variant for a sync job status (colour paired with the status text). */
@@ -408,21 +409,22 @@ export function NSImportSuiteAdmin() {
             </div>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Select value={discoveryTag} onValueChange={(v) => setDiscoveryTag(v)}>
-              <SelectTrigger size="sm" className="flex-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="gargantuan">Largest regions</SelectItem>
-                <SelectItem value="Role Player">Roleplay communities</SelectItem>
-                <SelectItem value="Democratic">Democratic / Legislative</SelectItem>
-                <SelectItem value="Totalitarian">Totalitarian / Dictatorships</SelectItem>
-                <SelectItem value="Communist">Communist / Leftist</SelectItem>
-                <SelectItem value="Capitalist">Capitalist / Trade</SelectItem>
-                <SelectItem value="Monarchist">Monarchy / Feudalist</SelectItem>
-                <SelectItem value="Anarchist">Anarchist / Lawless</SelectItem>
-              </SelectContent>
-            </Select>
+            <ValueSelect
+              value={discoveryTag}
+              onValueChange={(v) => setDiscoveryTag(v)}
+              options={[
+                ["gargantuan", "Largest regions"],
+                ["Role Player", "Roleplay communities"],
+                ["Democratic", "Democratic / Legislative"],
+                ["Totalitarian", "Totalitarian / Dictatorships"],
+                ["Communist", "Communist / Leftist"],
+                ["Capitalist", "Capitalist / Trade"],
+                ["Monarchist", "Monarchy / Feudalist"],
+                ["Anarchist", "Anarchist / Lawless"],
+              ]}
+              size="sm"
+              className="flex-1"
+            />
             <Button
               variant="secondary"
               onClick={() => discoverRegionsMutation.mutate({ limit: 15, tag: discoveryTag })}
@@ -563,18 +565,15 @@ export function NSImportSuiteAdmin() {
             </div>
 
             {/* Sync type filter */}
-            <Select
+            <ValueSelect
               value={syncTypeFilter}
               onValueChange={(v) => setSyncTypeFilter(v as "all" | "region")}
-            >
-              <SelectTrigger size="sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All types</SelectItem>
-                <SelectItem value="region">Region only</SelectItem>
-              </SelectContent>
-            </Select>
+              options={[
+                ["all", "All types"],
+                ["region", "Region only"],
+              ]}
+              size="sm"
+            />
 
             <Button variant="outline" size="sm" onClick={handleRefreshAll}>
               <RefreshCw className="mr-2 h-3 w-3" /> Refresh

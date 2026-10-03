@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 // oxlint-disable-next-line eslint/no-unused-vars
 import {
   SystemRestart as Loader2,
@@ -538,18 +539,19 @@ export function VaultUserDirectory() {
 
                 <div className="space-y-2">
                   <Label htmlFor="adjust-type">Transaction type</Label>
-                  <Select value={adjustType} onValueChange={setAdjustType}>
-                    <SelectTrigger id="adjust-type">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ADMIN_ADJUSTMENT">Admin adjustment</SelectItem>
-                      <SelectItem value="EARN_ACTIVE">Earn active gameplay</SelectItem>
-                      <SelectItem value="EARN_SOCIAL">Earn social engagement</SelectItem>
-                      <SelectItem value="SPEND_MARKET">Spend marketplace</SelectItem>
-                      <SelectItem value="SPEND_BOOST">Spend deck boost</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <ValueSelect
+                    value={adjustType}
+                    onValueChange={setAdjustType}
+                    options={[
+                      ["ADMIN_ADJUSTMENT", "Admin adjustment"],
+                      ["EARN_ACTIVE", "Earn active gameplay"],
+                      ["EARN_SOCIAL", "Earn social engagement"],
+                      ["SPEND_MARKET", "Spend marketplace"],
+                      ["SPEND_BOOST", "Spend deck boost"],
+                    ]}
+                    id="adjust-type"
+                    placeholder="Select type"
+                  />
                 </div>
               </div>
 

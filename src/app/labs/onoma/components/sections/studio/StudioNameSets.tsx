@@ -26,13 +26,7 @@ import {
   type NameSlot,
 } from "~/lib/onoma/name-sets";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -251,35 +245,31 @@ export function StudioNameSets() {
             </label>
             {setNameKeys.length > 0 ? (
               <>
-                <Select value={selectedSet} onValueChange={setSelectedSet}>
-                  <SelectTrigger className="text-body w-full">
-                    <SelectValue placeholder="Select name set" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[250px]">
-                    {setNameKeys.map((s) => (
-                      <SelectItem key={s} value={s} className="text-footnote">
-                        {s} ({sets.get(s)?.length} dicts)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <ValueSelect
+                  value={selectedSet}
+                  onValueChange={setSelectedSet}
+                  options={setNameKeys.map(
+                    (s) => [s, `${s} (${sets.get(s)?.length} dicts)`] as const
+                  )}
+                  className="text-body w-full"
+                  placeholder="Select name set"
+                  contentClassName="max-h-[250px]"
+                  itemClassName="text-footnote"
+                />
 
                 <div className="border-separator space-y-2 border-t pt-3">
                   <label className="text-label-secondary text-subhead flex items-center gap-1">
                     Naming convention preset
                   </label>
-                  <Select value={presetKey} onValueChange={handlePresetChange}>
-                    <SelectTrigger className="text-body w-full">
-                      <SelectValue placeholder="Select preset" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[250px]">
-                      {CONVENTION_PRESETS.map((p) => (
-                        <SelectItem key={p.key} value={p.key} className="text-footnote">
-                          {p.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <ValueSelect
+                    value={presetKey}
+                    onValueChange={handlePresetChange}
+                    options={CONVENTION_PRESETS.map((p) => [p.key, p.name] as const)}
+                    className="text-body w-full"
+                    placeholder="Select preset"
+                    contentClassName="max-h-[250px]"
+                    itemClassName="text-footnote"
+                  />
                 </div>
 
                 {presetKey !== "custom" && (
@@ -380,37 +370,25 @@ export function StudioNameSets() {
                         <span className="text-label-secondary text-caption font-semibold">
                           #{idx + 1}
                         </span>
-                        <Select
+                        <ValueSelect
                           value={slot.role}
                           onValueChange={(val) => updateSlot(idx, { role: val as NameRole })}
-                        >
-                          <SelectTrigger className="text-footnote flex-1">
-                            <SelectValue placeholder="Select role" />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-[250px]">
-                            {NAME_ROLES.map((r) => (
-                              <SelectItem key={r.value} value={r.value} className="text-footnote">
-                                {r.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          options={NAME_ROLES.map((r) => [r.value, r.label] as const)}
+                          className="text-footnote flex-1"
+                          placeholder="Select role"
+                          contentClassName="max-h-[250px]"
+                          itemClassName="text-footnote"
+                        />
 
-                        <Select
+                        <ValueSelect
                           value={slot.gender}
                           onValueChange={(val) => updateSlot(idx, { gender: val as NameGender })}
-                        >
-                          <SelectTrigger className="text-footnote w-24">
-                            <SelectValue placeholder="Select gender" />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-[200px]">
-                            {NAME_GENDERS.map((g) => (
-                              <SelectItem key={g.value} value={g.value} className="text-footnote">
-                                {g.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          options={NAME_GENDERS.map((g) => [g.value, g.label] as const)}
+                          className="text-footnote w-24"
+                          placeholder="Select gender"
+                          contentClassName="max-h-[200px]"
+                          itemClassName="text-footnote"
+                        />
 
                         <Button
                           variant="ghost"
@@ -440,7 +418,7 @@ export function StudioNameSets() {
                         {/* Suffix Rule */}
                         <div className="flex flex-col gap-0.5">
                           <span className="text-label-secondary font-semibold">Suffix rule</span>
-                          <Select
+                          <ValueSelect
                             value={slot.suffixRule || "none"}
                             onValueChange={(
                               val:
@@ -449,25 +427,17 @@ export function StudioNameSets() {
                                 | "yonderian-patronymic"
                                 | "caphirian-lineage"
                             ) => updateSlot(idx, { suffixRule: val })}
-                          >
-                            <SelectTrigger className="text-footnote">
-                              <SelectValue placeholder="None / Static" />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-[200px]">
-                              <SelectItem value="none" className="text-footnote">
-                                None / Static
-                              </SelectItem>
-                              <SelectItem value="hendalarsk-matronymic" className="text-footnote">
-                                Hendalarsk matronymic
-                              </SelectItem>
-                              <SelectItem value="yonderian-patronymic" className="text-footnote">
-                                Yonderian patronymic
-                              </SelectItem>
-                              <SelectItem value="caphirian-lineage" className="text-footnote">
-                                Caphirian lineage
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
+                            options={[
+                              ["none", "None / Static"],
+                              ["hendalarsk-matronymic", "Hendalarsk matronymic"],
+                              ["yonderian-patronymic", "Yonderian patronymic"],
+                              ["caphirian-lineage", "Caphirian lineage"],
+                            ]}
+                            className="text-footnote"
+                            placeholder="None / Static"
+                            contentClassName="max-h-[200px]"
+                            itemClassName="text-footnote"
+                          />
                         </div>
 
                         {/* Parent Name input (matronymic/patronymic only) */}

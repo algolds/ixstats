@@ -9,13 +9,7 @@ import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Input } from "~/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import {
   Dialog,
   DialogContent,
@@ -929,31 +923,29 @@ export function UsersPanel() {
             <DialogTitle>Assign country to user</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
-            <Select value={selectedUser} onValueChange={setSelectedUser}>
-              <SelectTrigger size="sm">
-                <SelectValue placeholder="Select a user..." />
-              </SelectTrigger>
-              <SelectContent>
-                {userIdentities?.map((u) => (
-                  <SelectItem key={u.id} value={u.clerkUserId} className="text-footnote">
-                    {u.clerkUserId} {u.country ? `(${u.country.name})` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ValueSelect
+              value={selectedUser}
+              onValueChange={setSelectedUser}
+              options={userIdentities?.map(
+                (u) =>
+                  [
+                    u.clerkUserId,
+                    `${u.clerkUserId} ${u.country ? `(${u.country.name})` : ""}`,
+                  ] as const
+              )}
+              size="sm"
+              placeholder="Select a user..."
+              itemClassName="text-footnote"
+            />
 
-            <Select value={selectedCountry} onValueChange={setSelectedCountry}>
-              <SelectTrigger size="sm">
-                <SelectValue placeholder="Select a nation..." />
-              </SelectTrigger>
-              <SelectContent>
-                {countriesWithUsers?.map((c) => (
-                  <SelectItem key={c.id} value={c.id} className="text-footnote">
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ValueSelect
+              value={selectedCountry}
+              onValueChange={setSelectedCountry}
+              options={countriesWithUsers?.map((c) => [c.id, c.name] as const)}
+              size="sm"
+              placeholder="Select a nation..."
+              itemClassName="text-footnote"
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setIsAssignDialogOpen(false)}>
