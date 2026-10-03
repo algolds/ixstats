@@ -6,7 +6,7 @@ The MyCountry route (`/mycountry`) is the executive command suite for nation own
 
 ## Routes / Sections
 
-All `page.tsx` files below (except `/mycountry/editor`) render `<MyCountryRouter />`; the active section is resolved from the pathname by `getSectionFromPathname()` in `MyCountrySidebarNav.tsx`.
+All `page.tsx` files below (except `/mycountry/editor`) render `<MyCountryRouter />`; the active section is resolved from the pathname by `getSectionFromPathname()` in `mycountry-sections.ts`.
 
 | Route                     | Section    | Loading          | Notes                                                                                                                                                                                                                                                                                                                                  |
 | ------------------------- | ---------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -28,7 +28,6 @@ Premium/feature gating uses `useAbility().can("access", "MyCountryFeature", …)
 - **Single-page navigation** — instant section switches, URL kept in sync via `pushState`, back/forward handled by a `popstate` listener; document title updated per section.
 - **Compliance gate** — `useMyCountryCompliance` surfaces `MyCountryComplianceModal` on the overview when the country is incomplete; "Review" deep-links to `/mycountry/editor`. Snooze state persisted in `localStorage`.
 - **Per-section error isolation** — each section is wrapped in `DashboardErrorBoundary` with a retry/refresh fallback keyed on `activeSection`.
-- **Sidebar notifications** — `MyCountrySidebarNav` accepts a per-section `notifications` map for indicator dots.
 - **Demo / dev modes** — `layout.tsx` adds `DemoModeProvider`, `DevCountryViewProvider`, a demo banner, the dev "viewing as" toolbar, and the `MyCountryHalo` plugin.
 
 ## Architecture (v6)
@@ -37,7 +36,7 @@ The MyCountry subsystem uses a **4-tier modular domain architecture** located at
 
 | Tier        | Path       | Description                                                                                                                                                                                                                                                                        |
 | ----------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Shell**   | `shell/`   | Executive command center (`CommandSurface`, `ExecutiveConsole`, `ExecutiveHome`, `DomainSurface`, `DomainContextRail`, `DrillSheets`, `EconomyDrillDown`, `PoliticsDrillDown`, `rails/`, `agenda/`, `MyCountryRouter`, `MyCountrySidebarNav`, `domain-meta.ts`, `status-tone.ts`). |
+| **Shell**   | `shell/`   | Executive command center (`CommandSurface`, `ExecutiveConsole`, `ExecutiveHome`, `DomainSurface`, `DomainContextRail`, `DrillSheets`, `EconomyDrillDown`, `PoliticsDrillDown`, `rails/`, `agenda/`, `MyCountryRouter`, `mycountry-sections.ts`, `domain-meta.ts`, `status-tone.ts`). |
 | **Shared**  | `shared/`  | Universal reusable primitives (`cards/`, `headers/`, `modals/`, `primitives/`, `tabs/`).                                                                                                                                                                                           |
 | **Domains** | `domains/` | 5 simulation pillar modules: `defense/`, `diplomacy/`, `economy/`, `government/`, `geography/`.                                                                                                                                                                                    |
 | **Dossier** | `dossier/` | Public country dossier views, factbooks, and Wiki infobox cards.                                                                                                                                                                                                                   |
