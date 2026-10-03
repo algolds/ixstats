@@ -1,5 +1,5 @@
 /**
- * wiki-infobox-parser.ts — Parse MediaWiki infobox templates into structured data.
+ * Parse MediaWiki infobox templates into structured data.
  *
  * Handles common infobox formats used on IxWiki:
  * - {{Infobox country|...}}, {{Infobox settlement|...}}, {{Infobox city|...}}
@@ -26,8 +26,6 @@ interface ParsedInfobox {
   templateName: string;
   fields: InfoboxField[];
 }
-
-// ── Coordinate parsing ─────────────────────────────────────────────
 
 /**
  * Parse a {{coord}} template or lat/lon degree fields into [lng, lat].
@@ -111,8 +109,6 @@ function dmsToDecimal(parts: number[]): number {
   return d + m / 60 + s / 3600;
 }
 
-// ── Population parsing ─────────────────────────────────────────────
-
 /** Parse population strings like "1,234,567", "12.5 million", "{{formatnum:1234567}}" */
 export function parsePopulation(text: string): number | null {
   // Strip wiki templates
@@ -139,8 +135,6 @@ export function parsePopulation(text: string): number | null {
   return !isNaN(num) && num > 0 ? Math.round(num) : null;
 }
 
-// ── Wikitext cleanup ───────────────────────────────────────────────
-
 /** Strip wiki markup from a value: [[links]], '''bold''', templates, HTML */
 export function cleanWikiValue(raw: string): string {
   let s = raw;
@@ -158,8 +152,6 @@ export function cleanWikiValue(raw: string): string {
   s = s.replace(/\s+/g, " ").trim();
   return s;
 }
-
-// ── Field type detection ───────────────────────────────────────────
 
 /** Known field names and their semantic types */
 const FIELD_TYPE_MAP: Record<string, InfoboxField["fieldType"]> = {
@@ -203,79 +195,76 @@ function inferFieldType(key: string): InfoboxField["fieldType"] {
   return FIELD_TYPE_MAP[normalized] ?? "unknown";
 }
 
-// ── Main parser ────────────────────────────────────────────────────
+/** Index just past the `}}` closing the `{{` at `start`, or -1 when it is never closed. */
+function findInfoboxEnd(wikitext: string, start: number): number {
+  let depth = 0;
+  for (let i = start; i < wikitext.length - 1; i++) {
+    const pair = wikitext.slice(i, i + 2);
+    if (pair === "{{") {
+      depth++;
+      i++;
+    } else if (pair === "}}") {
+      depth--;
+      i++;
+      if (depth === 0) return i + 1;
+    }
+  }
+  return -1;
+}
+
+/** Nesting change per bracket pair: [template depth, link depth]. */
+const NESTING_DELTAS: Record<string, [number, number]> = {
+  "{{": [1, 0],
+  "}}": [-1, 0],
+  "[[": [0, 1],
+  "]]": [0, -1],
+};
+
+/** Splits at every `|` that is outside nested `{{ }}` and `[[ ]]`. */
+function splitTopLevelFields(text: string): string[] {
+  const parts: string[] = [];
+  let templateDepth = 0;
+  let linkDepth = 0;
+  let start = 0;
+
+  for (let i = 0; i < text.length; i++) {
+    const delta = NESTING_DELTAS[text.slice(i, i + 2)];
+    if (delta) {
+      templateDepth += delta[0];
+      linkDepth += delta[1];
+      i++;
+    } else if (text[i] === "|" && templateDepth === 0 && linkDepth === 0) {
+      parts.push(text.slice(start, i));
+      start = i + 1;
+    }
+  }
+  parts.push(text.slice(start));
+  return parts;
+}
 
 /**
- * Parse all infobox templates from wikitext.
- * Returns the first infobox found (typically the main one).
+ * Parse the first infobox template from wikitext (typically the main one), handling nested
+ * templates inside {{Infobox ...| ...}}.
  */
 export function parseInfobox(wikitext: string): ParsedInfobox | null {
-  // Find {{Infobox ...| ...}} — handle nested templates
   const infoboxStart = wikitext.search(/\{\{[Ii]nfobox[\s_]/);
   if (infoboxStart === -1) return null;
 
-  // Find the matching closing }}
-  let depth = 0;
-  let infoboxEnd = -1;
-  for (let i = infoboxStart; i < wikitext.length - 1; i++) {
-    if (wikitext[i] === "{" && wikitext[i + 1] === "{") {
-      depth++;
-      i++; // skip next char
-    } else if (wikitext[i] === "}" && wikitext[i + 1] === "}") {
-      depth--;
-      i++;
-      if (depth === 0) {
-        infoboxEnd = i + 1;
-        break;
-      }
-    }
-  }
-
+  const infoboxEnd = findInfoboxEnd(wikitext, infoboxStart);
   if (infoboxEnd === -1) return null;
 
   const infoboxContent = wikitext.slice(infoboxStart + 2, infoboxEnd - 2);
 
-  // Extract template name (first line before |)
+  // Template name: everything before the first pipe
   const firstPipe = infoboxContent.indexOf("|");
   const templateName = (
     firstPipe >= 0 ? infoboxContent.slice(0, firstPipe) : infoboxContent
   ).trim();
-
   if (firstPipe === -1) return { templateName, fields: [] };
 
-  // Split fields by | at depth 0 (not inside nested {{ }} or [[ ]])
-  const fieldsStr = infoboxContent.slice(firstPipe + 1);
-  const fields: InfoboxField[] = [];
-
-  let templateDepth = 0;
-  let linkDepth = 0;
-  let fieldStart = 0;
-
-  for (let i = 0; i < fieldsStr.length; i++) {
-    if (fieldsStr[i] === "{" && i + 1 < fieldsStr.length && fieldsStr[i + 1] === "{") {
-      templateDepth++;
-      i++;
-    } else if (fieldsStr[i] === "}" && i + 1 < fieldsStr.length && fieldsStr[i + 1] === "}") {
-      templateDepth--;
-      i++;
-    } else if (fieldsStr[i] === "[" && i + 1 < fieldsStr.length && fieldsStr[i + 1] === "[") {
-      linkDepth++;
-      i++;
-    } else if (fieldsStr[i] === "]" && i + 1 < fieldsStr.length && fieldsStr[i + 1] === "]") {
-      linkDepth--;
-      i++;
-    } else if (fieldsStr[i] === "|" && templateDepth === 0 && linkDepth === 0) {
-      const fieldStr = fieldsStr.slice(fieldStart, i);
-      const parsed = parseField(fieldStr);
-      if (parsed) fields.push(parsed);
-      fieldStart = i + 1;
-    }
-  }
-
-  // Last field
-  const lastField = fieldsStr.slice(fieldStart);
-  const parsedLast = parseField(lastField);
-  if (parsedLast) fields.push(parsedLast);
+  const fields = splitTopLevelFields(infoboxContent.slice(firstPipe + 1))
+    .map(parseField)
+    .filter((field): field is InfoboxField => field !== null);
 
   return { templateName, fields };
 }
@@ -312,16 +301,9 @@ function parseField(fieldStr: string): InfoboxField | null {
  * Call after parsing all fields to check for split coordinate fields.
  */
 export function extractCoordsFromFields(fields: InfoboxField[]): [number, number] | null {
-  const get = (key: string) => {
-    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'f' is intentional in this scope
-    const f = fields.find((f) => f.key.toLowerCase() === key);
-    return f ? parseFloat(f.cleanValue) : NaN;
-  };
-  const getStr = (key: string) => {
-    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'f' is intentional in this scope
-    const f = fields.find((f) => f.key.toLowerCase() === key);
-    return f?.cleanValue?.toUpperCase() ?? "";
-  };
+  const find = (key: string) => fields.find((f) => f.key.toLowerCase() === key);
+  const get = (key: string) => parseFloat(find(key)?.cleanValue ?? "");
+  const getStr = (key: string) => find(key)?.cleanValue?.toUpperCase() ?? "";
 
   const latd = get("latd");
   const longd = get("longd");
@@ -332,8 +314,8 @@ export function extractCoordsFromFields(fields: InfoboxField[]): [number, number
   const longm = get("longm") || 0;
   const longs = get("longs") || 0;
 
-  let lat = (isNaN(latm) ? 0 : latm) / 60 + (isNaN(lats) ? 0 : lats) / 3600 + latd;
-  let lng = (isNaN(longm) ? 0 : longm) / 60 + (isNaN(longs) ? 0 : longs) / 3600 + longd;
+  let lat = latm / 60 + lats / 3600 + latd;
+  let lng = longm / 60 + longs / 3600 + longd;
 
   if (getStr("latns") === "S") lat = -lat;
   if (getStr("longew") === "W") lng = -lng;
@@ -347,12 +329,8 @@ export function extractCoordsFromFields(fields: InfoboxField[]): [number, number
 function renderInfoboxHtml(parsed: ParsedInfobox): string {
   if (!parsed || parsed.fields.length === 0) return "";
 
-  const titleField = parsed.fields.find(
-    (f) =>
-      f.key.toLowerCase() === "name" ||
-      f.key.toLowerCase() === "common_name" ||
-      f.key.toLowerCase() === "conventional_long_name" ||
-      f.key.toLowerCase() === "title"
+  const titleField = parsed.fields.find((f) =>
+    ["name", "common_name", "conventional_long_name", "title"].includes(f.key.toLowerCase())
   );
 
   const imageField = parsed.fields.find((f) =>
