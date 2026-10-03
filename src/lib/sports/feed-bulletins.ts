@@ -263,7 +263,7 @@ export function parseSportsBulletin(content: string | null | undefined): SportsB
 
 const ORDINAL_SUFFIX = { one: "st", two: "nd", few: "rd", other: "th" } as const;
 const ordinalRules = new Intl.PluralRules("en", { type: "ordinal" });
-const ordinal = (n: number) =>
+export const ordinal = (n: number) =>
   `${n}${ORDINAL_SUFFIX[ordinalRules.select(n) as keyof typeof ORDINAL_SUFFIX]}`;
 
 const leagueLink = (name: string, id?: string) => (id ? `[${name}](/myleague/${id})` : name);

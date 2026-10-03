@@ -17,7 +17,7 @@ import { writeFileSync, mkdirSync, existsSync } from "fs";
 import * as path from "path";
 import { DOMParser } from "@xmldom/xmldom";
 import { buildDiscordPollObject } from "./poll";
-import { parseSportsBulletin } from "~/lib/sports/feed-bulletins";
+import { ordinal, parseSportsBulletin, type SportsBulletinData } from "~/lib/sports/feed-bulletins";
 import { cleanPostContent } from "./thinkpages-feed";
 
 const IXTWITTER_CHANNEL_ID = process.env.DISCORD_IXTWITTER_CHANNEL_ID || "557223534418722818";
@@ -377,62 +377,55 @@ async function getPostedMessageIds(db: PrismaClient): Promise<Map<string, string
   return postedIds;
 }
 
+/** Unicode / short-name reactions per IxStats react type. */
+const REACTION_ALIASES: Record<string, string[]> = {
+  like: ["❤️", "❤", "like", "heart"],
+  laugh: ["😂", "😆", "😄", "😀", "laugh", "smile"],
+  angry: ["😡", "😠", "angry"],
+  fire: ["🔥", "fire"],
+  thumbsup: ["👍", "thumbsup"],
+  thumbsdown: ["👎", "thumbsdown"],
+};
+const REACTION_TYPES: Record<string, string> = Object.fromEntries(
+  Object.entries(REACTION_ALIASES).flatMap(([type, names]) => names.map((name) => [name, type]))
+);
+
 function mapDiscordReactions(reactions?: DiscordMessage["reactions"]): Record<string, number> {
   const counts: Record<string, number> = {};
-  if (!reactions || reactions.length === 0) return counts;
+  for (const { emoji, count } of reactions ?? []) {
+    // Custom Discord emoji are keyed discord:name:id; anything unmapped keeps its unicode character
+    const type = emoji.id
+      ? `discord:${emoji.name}:${emoji.id}`
+      : (REACTION_TYPES[emoji.name] ?? emoji.name);
+    counts[type] = (counts[type] || 0) + count;
+  }
+  return counts;
+}
 
-  for (const react of reactions) {
-    let type: string;
-    const name = react.emoji.name;
+const IMAGE_URL_PATTERN = /\.(png|jpg|jpeg|gif|webp|svg)(\?|$)/i;
 
-    if (react.emoji.id) {
-      // Custom Discord emoji (format: discord:name:id)
-      type = `discord:${name}:${react.emoji.id}`;
-    } else {
-      // Standard emoji or custom string-based mapping
-      switch (name) {
-        case "❤️":
-        case "❤":
-        case "like":
-        case "heart":
-          type = "like";
-          break;
-        case "😂":
-        case "😆":
-        case "😄":
-        case "😀":
-        case "laugh":
-        case "smile":
-          type = "laugh";
-          break;
-        case "😡":
-        case "😠":
-        case "angry":
-          type = "angry";
-          break;
-        case "🔥":
-        case "fire":
-          type = "fire";
-          break;
-        case "👍":
-        case "thumbsup":
-          type = "thumbsup";
-          break;
-        case "👎":
-        case "thumbsdown":
-          type = "thumbsdown";
-          break;
-        default:
-          // Fallback to standard unicode character directly
-          type = name;
-          break;
-      }
+/** Up to four distinct images from a message's attachments and embeds (GIF embeds included). */
+function collectMedia(message: DiscordMessage): { url: string; mimeType: string }[] {
+  const media: { url: string; mimeType: string }[] = [];
+
+  for (const a of message.attachments ?? []) {
+    if (a.content_type?.startsWith("image/") || IMAGE_URL_PATTERN.test(a.url)) {
+      media.push({ url: a.url, mimeType: a.content_type ?? "image/jpeg" });
     }
-
-    counts[type] = (counts[type] || 0) + react.count;
   }
 
-  return counts;
+  // Embeds such as Tenor/Giphy GIFs or linked images
+  for (const embed of message.embeds ?? []) {
+    const url = embed.image?.url || embed.thumbnail?.url;
+    const isMediaEmbed = embed.type === "image" || embed.type === "gifv";
+    if (url && (isMediaEmbed || IMAGE_URL_PATTERN.test(url))) {
+      const isGif = embed.type === "gifv" || url.includes(".gif");
+      media.push({ url, mimeType: isGif ? "image/gif" : "image/jpeg" });
+    }
+  }
+
+  const seen = new Set<string>();
+  return media.filter((m) => !seen.has(m.url) && seen.add(m.url)).slice(0, 4);
 }
 
 async function createPostFromMessage(
@@ -508,48 +501,7 @@ async function createPostFromMessage(
     return true;
   }
 
-  // Extract media from both attachments and embeds
-  const mediaUrls: { url: string; mimeType: string }[] = [];
-
-  // 1. Process attachments
-  if (message.attachments) {
-    for (const a of message.attachments) {
-      if (
-        a.content_type?.startsWith("image/") ||
-        /\.(png|jpg|jpeg|gif|webp|svg)(\?|$)/i.test(a.url)
-      ) {
-        mediaUrls.push({
-          url: a.url,
-          mimeType: a.content_type ?? "image/jpeg",
-        });
-      }
-    }
-  }
-
-  // 2. Process embeds (like Tenor/Giphy GIFs or embedded links)
-  if (message.embeds) {
-    for (const embed of message.embeds) {
-      const isMediaEmbed = embed.type === "image" || embed.type === "gifv";
-      const targetUrl = embed.image?.url || embed.thumbnail?.url;
-      if (targetUrl && (isMediaEmbed || /\.(png|jpg|jpeg|gif|webp|svg)(\?|$)/i.test(targetUrl))) {
-        const isGif = embed.type === "gifv" || targetUrl.includes(".gif");
-        mediaUrls.push({
-          url: targetUrl,
-          mimeType: isGif ? "image/gif" : "image/jpeg",
-        });
-      }
-    }
-  }
-
-  // Deduplicate and limit to 4
-  const seen = new Set<string>();
-  const uniqueMedia = mediaUrls
-    .filter((m) => {
-      if (seen.has(m.url)) return false;
-      seen.add(m.url);
-      return true;
-    })
-    .slice(0, 4);
+  const uniqueMedia = collectMedia(message);
 
   const mediaEntries = await Promise.all(
     uniqueMedia.map(async (m, index) => {
@@ -700,12 +652,6 @@ function mapThinkpagesReactionToDiscord(reactionType: string): string {
   }
 }
 
-function ordinal(n: number): string {
-  const s = ["th", "st", "nd", "rd"];
-  const v = n % 100;
-  return n + (s[(v - 20) % 10] ?? s[v] ?? s[0]);
-}
-
 function formatCodeBlockTable(results: any[]): string {
   if (!results || results.length === 0) return "";
   const maxHomeLen = Math.max(...results.map((r) => String(r.home?.name || "").length), 10);
@@ -719,6 +665,66 @@ function formatCodeBlockTable(results: any[]): string {
   return `\`\`\`\n${lines.join("\n")}\n\`\`\``;
 }
 
+const THINKPAGES_FOOTER = {
+  text: "ThinkPages · Shared via IxStates",
+  icon_url: `${APP_URL}${CLEAN_BASE_PATH}/thinkpages-logo.svg`,
+};
+
+const SPORT_EMBED_COLORS: Record<string, number> = {
+  "⚽": 0x22c55e,
+  "🏀": 0xf97316,
+  "🏒": 0x38bdf8,
+  "🏈": 0x8b5cf6,
+};
+
+/** The embed plus one image-only embed per extra media URL (Discord shows several images that way). */
+function withMedia(embed: Record<string, any>, mediaUrls?: string[]): any[] {
+  const urls = (mediaUrls ?? []).map((u) => (u.startsWith("http") ? u : `${APP_URL}${u}`));
+  if (urls.length === 0) return [embed];
+  embed.image = { url: urls[0] };
+  return [embed, ...urls.slice(1).map((image) => ({ url: embed.url, image: { url: image } }))];
+}
+
+function sportsEmbedTitle(sports: SportsBulletinData): string {
+  const { sportEmoji, league } = sports;
+  if (sports.isChampionBulletin) return `🏆 ${league.name} CHAMPION CROWNED!`;
+  if (sports.isPlayoffBulletin)
+    return `${sportEmoji} ${league.name} Playoff ${sports.roundName} Results`;
+  if (sports.matchDay) return `${sportEmoji} ${league.name} — Matchday ${sports.matchDay}`;
+  return `${sportEmoji} ${league.name}`;
+}
+
+function sportsEmbedBody(sports: SportsBulletinData): { description: string; fields: any[] } {
+  const summary = (name: string) =>
+    sports.llmSummary ? [{ name, value: `*${sports.llmSummary}*`, inline: false }] : [];
+
+  if (sports.isChampionBulletin) {
+    return {
+      description: `Congratulations to **${sports.championName}** for winning the championship!`,
+      fields: summary("📝 Season Summary"),
+    };
+  }
+
+  const movers = sports.movers?.length
+    ? [
+        {
+          name: "📈 Table Movers",
+          value: sports.movers
+            .map((m) => {
+              const diff = m.oldRank - m.newRank;
+              return `${m.newRank < m.oldRank ? "▲" : "▼"} **${m.name}** (${diff > 0 ? "+" : ""}${diff} spots, ${ordinal(m.oldRank)} → ${ordinal(m.newRank)})`;
+            })
+            .join("\n"),
+          inline: false,
+        },
+      ]
+    : [];
+  return {
+    description: sports.results?.length ? formatCodeBlockTable(sports.results) : "",
+    fields: [...movers, ...summary("📝 Summary")],
+  };
+}
+
 export function formatThinkPagesEmbed(
   post: { id: string; content: string; ixTimeTimestamp?: Date | string },
   account: {
@@ -730,168 +736,49 @@ export function formatThinkPagesEmbed(
   mediaUrls?: string[]
 ): any[] {
   const url = `${APP_URL}${CLEAN_BASE_PATH}/thinkpages/post/${post.id}`;
+  const author = {
+    name: `${account.displayName} (@${account.username})${account.verified ? " \u2705" : ""}`,
+    icon_url: account.profileImageUrl
+      ? account.profileImageUrl.startsWith("http")
+        ? account.profileImageUrl
+        : `${APP_URL}${account.profileImageUrl}`
+      : "https://via.placeholder.com/150/4F46E5/FFFFFF?text=User",
+    url,
+  };
+  const timestamp = (
+    post.ixTimeTimestamp ? new Date(post.ixTimeTimestamp) : new Date()
+  ).toISOString();
 
-  const authorName = `${account.displayName} (@${account.username})${account.verified ? " \u2705" : ""}`;
-
-  const avatarUrl = account.profileImageUrl
-    ? account.profileImageUrl.startsWith("http")
-      ? account.profileImageUrl
-      : `${APP_URL}${account.profileImageUrl}`
-    : "https://via.placeholder.com/150/4F46E5/FFFFFF?text=User";
-
-  const timestamp = post.ixTimeTimestamp
-    ? new Date(post.ixTimeTimestamp).toISOString()
-    : new Date().toISOString();
-
-  // Try to parse sports bulletin
   const sports = parseSportsBulletin(post.content);
-  if (sports && sports.league && sports.league.name) {
-    let embedColor = 0xf59e0b; // default gold/yellow
-    if (sports.isPlayoffBulletin) {
-      embedColor = 0x06b6d4; // cyan
-    } else {
-      const emoji = sports.sportEmoji;
-      if (emoji === "⚽") embedColor = 0x22c55e;
-      else if (emoji === "🏀") embedColor = 0xf97316;
-      else if (emoji === "🏒") embedColor = 0x38bdf8;
-      else if (emoji === "🏈") embedColor = 0x8b5cf6;
-    }
-
-    let title = `${sports.sportEmoji} ${sports.league.name}`;
-    if (sports.isChampionBulletin) {
-      title = `🏆 ${sports.league.name} CHAMPION CROWNED!`;
-    } else if (sports.isPlayoffBulletin) {
-      title = `${sports.sportEmoji} ${sports.league.name} Playoff ${sports.roundName} Results`;
-    } else if (sports.matchDay) {
-      title = `${sports.sportEmoji} ${sports.league.name} — Matchday ${sports.matchDay}`;
-    }
-
-    let description = "";
-    const fields: any[] = [];
-
-    if (sports.isChampionBulletin) {
-      description = `Congratulations to **${sports.championName}** for winning the championship!`;
-      if (sports.llmSummary) {
-        fields.push({
-          name: "📝 Season Summary",
-          value: `*${sports.llmSummary}*`,
-          inline: false,
-        });
-      }
-    } else {
-      if (sports.results && sports.results.length > 0) {
-        description = formatCodeBlockTable(sports.results);
-      }
-
-      if (sports.movers && sports.movers.length > 0) {
-        fields.push({
-          name: "📈 Table Movers",
-          value: sports.movers
-            .map((m) => {
-              const up = m.newRank < m.oldRank;
-              const arrow = up ? "▲" : "▼";
-              const diff = m.oldRank - m.newRank;
-              const sign = diff > 0 ? "+" : "";
-              return `${arrow} **${m.name}** (${sign}${diff} spots, ${ordinal(m.oldRank)} → ${ordinal(m.newRank)})`;
-            })
-            .join("\n"),
-          inline: false,
-        });
-      }
-
-      if (sports.llmSummary) {
-        fields.push({
-          name: "📝 Summary",
-          value: `*${sports.llmSummary}*`,
-          inline: false,
-        });
-      }
-    }
-
+  if (sports?.league?.name) {
     const leagueUrl = sports.league.id
       ? `${APP_URL}${CLEAN_BASE_PATH}/myleague/${sports.league.id}`
       : url;
-
-    // Append direct link back to league page
-    if (description) {
-      description += `\n🔗 [View Matchday & Standings on IxStates](${leagueUrl})`;
-    } else {
-      description = `🔗 [View Matchday & Standings on IxStates](${leagueUrl})`;
-    }
-
-    const embeds: any[] = [
+    const { description, fields } = sportsEmbedBody(sports);
+    const link = `🔗 [View Matchday & Standings on IxStates](${leagueUrl})`;
+    return withMedia(
       {
         url: leagueUrl,
-        author: {
-          name: authorName,
-          icon_url: avatarUrl,
-          url,
-        },
-        title,
-        description,
+        author,
+        title: sportsEmbedTitle(sports),
+        description: description ? `${description}\n${link}` : link,
         fields,
-        color: embedColor,
-        footer: {
-          text: "ThinkPages · Shared via IxStates",
-          icon_url: `${APP_URL}${CLEAN_BASE_PATH}/thinkpages-logo.svg`,
-        },
+        color: sports.isPlayoffBulletin
+          ? 0x06b6d4 // cyan
+          : (SPORT_EMBED_COLORS[sports.sportEmoji] ?? 0xf59e0b), // default gold
+        footer: THINKPAGES_FOOTER,
         timestamp,
       },
-    ];
-
-    if (mediaUrls && mediaUrls.length > 0) {
-      const urls = mediaUrls.map((u) => (u.startsWith("http") ? u : `${APP_URL}${u}`));
-      embeds[0].image = { url: urls[0] };
-      for (let i = 1; i < urls.length; i++) {
-        embeds.push({
-          url: leagueUrl,
-          image: { url: urls[i] },
-        });
-      }
-    }
-
-    return embeds;
+      mediaUrls
+    );
   }
-
-  // Fallback to normal posts
-  const embedColor = 0x9835ff;
 
   let description = htmlToDiscordMarkdown(cleanPostContent(post.content));
-  if (description.length > 4000) {
-    description = description.slice(0, 3997) + "...";
-  }
-
-  const embeds: any[] = [
-    {
-      url,
-      author: {
-        name: authorName,
-        icon_url: avatarUrl,
-        url,
-      },
-      description,
-      color: embedColor,
-      footer: {
-        text: "ThinkPages · Shared via IxStates",
-        icon_url: `${APP_URL}${CLEAN_BASE_PATH}/thinkpages-logo.svg`,
-      },
-      timestamp,
-    },
-  ];
-
-  if (mediaUrls && mediaUrls.length > 0) {
-    const urls = mediaUrls.map((u) => (u.startsWith("http") ? u : `${APP_URL}${u}`));
-    embeds[0].image = { url: urls[0] };
-
-    for (let i = 1; i < urls.length; i++) {
-      embeds.push({
-        url,
-        image: { url: urls[i] },
-      });
-    }
-  }
-
-  return embeds;
+  if (description.length > 4000) description = description.slice(0, 3997) + "...";
+  return withMedia(
+    { url, author, description, color: 0x9835ff, footer: THINKPAGES_FOOTER, timestamp },
+    mediaUrls
+  );
 }
 
 export async function postThinkPagesToDiscord(
@@ -1159,141 +1046,111 @@ export function htmlToDiscordMarkdown(html: string): string {
   return fallbackHtmlToMarkdown(closedHtml);
 }
 
+/** Site-relative links become absolute so they work outside IxStates. */
+const absoluteUrl = (href: string) =>
+  href.startsWith("/") && !href.startsWith("//") ? `${APP_URL}${CLEAN_BASE_PATH}${href}` : href;
+
+const wikiEmbedMarkdown = (title: string, summary: string, source: string) => {
+  const wikiUrl = `${APP_URL}${CLEAN_BASE_PATH}/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
+  return `\n**Wiki Embed: [${title}](${wikiUrl})**\n*Source: ${source}*\n> ${summary}\n`;
+};
+
+/** Markdown wrapping per element; tags not listed pass their children through. */
+const TAG_MARKDOWN: Record<string, (children: string) => string> = {
+  p: (c) => `\n${c}\n`,
+  strong: (c) => `**${c}**`,
+  b: (c) => `**${c}**`,
+  em: (c) => `*${c}*`,
+  i: (c) => `*${c}*`,
+  u: (c) => `__${c}__`,
+  s: (c) => `~~${c}~~`,
+  del: (c) => `~~${c}~~`,
+  strike: (c) => `~~${c}~~`,
+  code: (c) => `\`${c}\``,
+  pre: (c) => `\`\`\`\n${c}\n\`\`\``,
+  ul: (c) => `\n${c}\n`,
+  ol: (c) => `\n${c}\n`,
+  li: (c) => `- ${c.trim()}\n`,
+  br: () => "\n",
+};
+
 function convertNodeToMarkdown(node: any): string {
   if (!node) return "";
+  if (node.nodeType === 3) return decodeHtmlEntities(node.nodeValue || "");
+  if (node.nodeType !== 1) return "";
 
-  // Text Node
-  if (node.nodeType === 3) {
-    return decodeHtmlEntities(node.nodeValue || "");
+  const tagName = node.tagName.toLowerCase();
+  const children = Array.from(node.childNodes || [])
+    .map((child) => convertNodeToMarkdown(child))
+    .join("");
+  const attr = (name: string): string => node.getAttribute?.(name) || "";
+
+  switch (tagName) {
+    case "div":
+      return attr("data-wikiembed") === "true"
+        ? wikiEmbedMarkdown(
+            attr("data-title"),
+            attr("data-summary"),
+            attr("data-source") || "ixwiki"
+          )
+        : children;
+    case "a":
+      return `[${children}](${absoluteUrl(attr("href"))})`;
+    case "img":
+      return `[Image: ${attr("alt") || "image"}](${attr("src")})`;
+    default:
+      return TAG_MARKDOWN[tagName]?.(children) ?? children;
   }
-
-  // Element Node
-  if (node.nodeType === 1) {
-    const tagName = node.tagName.toLowerCase();
-    const children = Array.from(node.childNodes || [])
-      .map((child) => convertNodeToMarkdown(child))
-      .join("");
-
-    switch (tagName) {
-      case "div":
-        if (node.getAttribute && node.getAttribute("data-wikiembed") === "true") {
-          const title = node.getAttribute("data-title") || "";
-          const summary = node.getAttribute("data-summary") || "";
-          const source = node.getAttribute("data-source") || "ixwiki";
-          const wikiUrl = `${APP_URL}${CLEAN_BASE_PATH}/wiki/${encodeURIComponent(
-            title.replace(/ /g, "_")
-          )}`;
-          return `\n**Wiki Embed: [${title}](${wikiUrl})**\n*Source: ${source}*\n> ${summary}\n`;
-        }
-        return children;
-      case "p":
-        return `\n${children}\n`;
-      case "strong":
-      case "b":
-        return `**${children}**`;
-      case "em":
-      case "i":
-        return `*${children}*`;
-      case "u":
-        return `__${children}__`;
-      case "s":
-      case "del":
-      case "strike":
-        return `~~${children}~~`;
-      case "code":
-        return `\`${children}\``;
-      case "pre":
-        return `\`\`\`\n${children}\n\`\`\``;
-      case "ul":
-      case "ol":
-        return `\n${children}\n`;
-      case "li":
-        return `- ${children.trim()}\n`;
-      case "br":
-        return "\n";
-      case "a": {
-        const href = node.getAttribute ? node.getAttribute("href") || "" : "";
-        let url = href;
-        if (href.startsWith("/wiki/")) {
-          url = `${APP_URL}${CLEAN_BASE_PATH}${href}`;
-        } else if (href.startsWith("/") && !href.startsWith("//")) {
-          url = `${APP_URL}${CLEAN_BASE_PATH}${href}`;
-        }
-        return `[${children}](${url})`;
-      }
-      case "img": {
-        const src = node.getAttribute ? node.getAttribute("src") || "" : "";
-        const alt = node.getAttribute ? node.getAttribute("alt") || "" : "";
-        return `[Image: ${alt || "image"}](${src})`;
-      }
-      default:
-        return children;
-    }
-  }
-
-  return "";
 }
 
 function fallbackHtmlToMarkdown(html: string): string {
-  let text = html;
+  // Tag pairs whose content is wrapped as-is
+  const wrap =
+    (tags: string[], open: string, close = open) =>
+    (text: string) =>
+      tags.reduce(
+        (acc, tag) =>
+          acc.replace(new RegExp(`<${tag}[^>]*>(.*?)</${tag}>`, "gi"), `${open}$1${close}`),
+        text
+      );
 
-  // Wiki embed cards replacement
-  text = text.replace(
+  let text = html.replace(
     /<div[^>]*data-wikiembed="true"[^>]*data-title="([^"]+)"[^>]*data-summary="([^"]*)"[^>]*data-source="([^"]*)"[^>]*><\/div>/gi,
-    (_, title, summary, source) => {
-      const decodedTitle = decodeHtmlEntities(title);
-      const decodedSummary = decodeHtmlEntities(summary);
-      const decodedSource = decodeHtmlEntities(source || "ixwiki");
-      const wikiUrl = `${APP_URL}${CLEAN_BASE_PATH}/wiki/${encodeURIComponent(
-        decodedTitle.replace(/ /g, "_")
-      )}`;
-      return `\n**Wiki Embed: [${decodedTitle}](${wikiUrl})**\n*Source: ${decodedSource}*\n> ${decodedSummary}\n`;
-    }
+    (_, title, summary, source) =>
+      wikiEmbedMarkdown(
+        decodeHtmlEntities(title),
+        decodeHtmlEntities(summary),
+        decodeHtmlEntities(source || "ixwiki")
+      )
   );
 
   // Structural elements
-  text = text.replace(/<br\s*\/?>/gi, "\n");
-  text = text.replace(/<p[^>]*>/gi, "\n").replace(/<\/p>/gi, "\n");
-  text = text.replace(/<ul[^>]*>/gi, "\n").replace(/<\/ul>/gi, "\n");
-  text = text.replace(/<ol[^>]*>/gi, "\n").replace(/<\/ol>/gi, "\n");
-  text = text.replace(/<li[^>]*>/gi, "- ").replace(/<\/li>/gi, "\n");
+  text = text
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<(?:p|ul|ol)[^>]*>|<\/(?:p|ul|ol)>/gi, "\n")
+    .replace(/<li[^>]*>/gi, "- ")
+    .replace(/<\/li>/gi, "\n");
 
-  // Formatting inline tags
-  text = text.replace(/<strong[^>]*>(.*?)<\/strong>/gi, "**$1**");
-  text = text.replace(/<b[^>]*>(.*?)<\/b>/gi, "**$1**");
-  text = text.replace(/<em[^>]*>(.*?)<\/em>/gi, "*$1*");
-  text = text.replace(/<i[^>]*>(.*?)<\/i>/gi, "*$1*");
-  text = text.replace(/<u[^>]*>(.*?)<\/u>/gi, "__$1__");
-  text = text.replace(/<s[^>]*>(.*?)<\/s>/gi, "~~$1~~");
-  text = text.replace(/<del[^>]*>(.*?)<\/del>/gi, "~~$1~~");
-  text = text.replace(/<strike[^>]*>(.*?)<\/strike>/gi, "~~$1~~");
-  text = text.replace(/<code[^>]*>(.*?)<\/code>/gi, "`$1`");
-  text = text.replace(/<pre[^>]*>(.*?)<\/pre>/gi, "```\n$1\n```");
+  // Inline formatting
+  text = wrap(["strong", "b"], "**")(text);
+  text = wrap(["em", "i"], "*")(text);
+  text = wrap(["u"], "__")(text);
+  text = wrap(["s", "del", "strike"], "~~")(text);
+  text = wrap(["code"], "`")(text);
+  text = wrap(["pre"], "```\n", "\n```")(text);
 
-  // Links formatting
-  text = text.replace(/<a[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/gi, (_, href, content) => {
-    let url = href;
-    if (href.startsWith("/wiki/")) {
-      url = `${APP_URL}${CLEAN_BASE_PATH}${href}`;
-    } else if (href.startsWith("/") && !href.startsWith("//")) {
-      url = `${APP_URL}${CLEAN_BASE_PATH}${href}`;
-    }
-    return `[${content}](${url})`;
-  });
+  text = text
+    .replace(
+      /<a[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/gi,
+      (_, href, content) => `[${content}](${absoluteUrl(href)})`
+    )
+    .replace(
+      /<img[^>]*src="([^"]+)"[^>]*alt="([^"]*)"[^>]*\/?>/gi,
+      (_, src, alt) => `[Image: ${alt || "image"}](${src})`
+    )
+    .replace(/<[^>]+>/g, "");
 
-  // Img formatting
-  text = text.replace(/<img[^>]*src="([^"]+)"[^>]*alt="([^"]*)"[^>]*\/?>/gi, (_, src, alt) => {
-    return `[Image: ${alt || "image"}](${src})`;
-  });
-
-  // Strip remaining HTML tags
-  text = text.replace(/<[^>]+>/g, "");
-
-  // Decode entities
-  text = decodeHtmlEntities(text);
-
-  // Clean up spacing
-  text = text.replace(/\n{3,}/g, "\n\n");
-
-  return text.trim();
+  return decodeHtmlEntities(text)
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
