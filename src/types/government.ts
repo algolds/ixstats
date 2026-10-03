@@ -205,7 +205,7 @@ export interface RevenueSource {
   updatedAt: Date;
 }
 
-interface KeyPerformanceIndicator {
+export interface KeyPerformanceIndicator {
   id: string;
   name: string;
   description?: string;

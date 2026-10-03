@@ -13,7 +13,7 @@ import { safeGetItemSync, safeRemoveItemSync } from "~/lib/system/local-storage-
 import type { BuilderState } from "../hooks/builderStateTypes";
 import { sanitizeEconomicInputs } from "../hooks/builderStateTypes";
 import { createDefaultEconomicInputs } from "./default-economic-inputs";
-import type { EconomicInputs } from "~/types/builder";
+import type { EconomicInputs, NationalIdentityData } from "~/types/builder";
 
 export interface RecoveredDraft {
   state: BuilderState;
@@ -48,53 +48,69 @@ export function removeStoredDraft(countryId: string): void {
   safeRemoveItemSync(keys.savedAt);
 }
 
+/** Identity text fields that keep the loaded value when the draft left them blank. */
+const IDENTITY_TEXT_DEFAULTS = {
+  officialName: "",
+  governmentType: "Republic",
+  motto: "",
+  mottoNative: "",
+  capitalCity: "",
+  largestCity: "",
+  demonym: "",
+  currency: "USD",
+  officialLanguages: "",
+  nationalLanguage: "",
+  nationalAnthem: "",
+  nationalDay: "",
+  callingCode: "",
+  internetTLD: "",
+} as const satisfies Partial<Record<keyof NationalIdentityData, string>>;
+
+const SECTION_KEYS = [
+  "coreIndicators",
+  "laborEmployment",
+  "fiscalSystem",
+  "incomeWealth",
+  "governmentSpending",
+  "demographics",
+] as const;
+
 /**
  * Applies a recovered draft on top of the loaded country. Saved fields come
  * from the draft; identity fields the draft left blank keep the loaded value.
  * Navigation state (step, tabs, view mode) stays as it is.
  */
 export function mergeRecoveredDraft(prev: BuilderState, draft: BuilderState): BuilderState {
-  const sanitizedSaved = sanitizeEconomicInputs(draft.economicInputs);
-  if (!sanitizedSaved) return prev;
+  const saved = sanitizeEconomicInputs(draft.economicInputs);
+  if (!saved) return prev;
 
-  const baseInputs: EconomicInputs = prev.economicInputs ?? createDefaultEconomicInputs();
-  const baseIdentity = baseInputs.nationalIdentity;
-  const savedIdentity = sanitizedSaved.nationalIdentity;
+  const base: EconomicInputs = prev.economicInputs ?? createDefaultEconomicInputs();
+  const baseIdentity = base.nationalIdentity;
+  const savedIdentity = saved.nationalIdentity;
+
+  const identityText = Object.fromEntries(
+    Object.entries(IDENTITY_TEXT_DEFAULTS).map(([key, fallback]) => {
+      const field = key as keyof typeof IDENTITY_TEXT_DEFAULTS;
+      return [key, savedIdentity?.[field] || baseIdentity?.[field] || fallback];
+    })
+  ) as Record<keyof typeof IDENTITY_TEXT_DEFAULTS, string>;
 
   const mergedInputs: EconomicInputs = {
-    ...baseInputs,
-    ...sanitizedSaved,
-    countryName: sanitizedSaved.countryName || baseInputs.countryName || "",
-    flagUrl: sanitizedSaved.flagUrl || baseInputs.flagUrl || "",
-    coatOfArmsUrl: sanitizedSaved.coatOfArmsUrl || baseInputs.coatOfArmsUrl || "",
+    ...base,
+    ...saved,
+    ...Object.fromEntries(SECTION_KEYS.map((key) => [key, saved[key] || base[key]])),
+    countryName: saved.countryName || base.countryName || "",
+    flagUrl: saved.flagUrl || base.flagUrl || "",
+    coatOfArmsUrl: saved.coatOfArmsUrl || base.coatOfArmsUrl || "",
     nationalIdentity: {
       ...baseIdentity,
       ...savedIdentity,
+      ...identityText,
       countryName:
-        savedIdentity?.countryName || baseIdentity?.countryName || sanitizedSaved.countryName || "",
-      officialName: savedIdentity?.officialName || baseIdentity?.officialName || "",
-      governmentType: savedIdentity?.governmentType || baseIdentity?.governmentType || "Republic",
-      motto: savedIdentity?.motto || baseIdentity?.motto || "",
-      mottoNative: savedIdentity?.mottoNative || baseIdentity?.mottoNative || "",
-      capitalCity: savedIdentity?.capitalCity || baseIdentity?.capitalCity || "",
-      largestCity: savedIdentity?.largestCity || baseIdentity?.largestCity || "",
-      demonym: savedIdentity?.demonym || baseIdentity?.demonym || "",
-      currency: savedIdentity?.currency || baseIdentity?.currency || "USD",
-      officialLanguages: savedIdentity?.officialLanguages || baseIdentity?.officialLanguages || "",
-      nationalLanguage: savedIdentity?.nationalLanguage || baseIdentity?.nationalLanguage || "",
-      nationalAnthem: savedIdentity?.nationalAnthem || baseIdentity?.nationalAnthem || "",
-      nationalDay: savedIdentity?.nationalDay || baseIdentity?.nationalDay || "",
-      callingCode: savedIdentity?.callingCode || baseIdentity?.callingCode || "",
-      internetTLD: savedIdentity?.internetTLD || baseIdentity?.internetTLD || "",
+        savedIdentity?.countryName || baseIdentity?.countryName || saved.countryName || "",
       drivingSide:
         (savedIdentity?.drivingSide ?? baseIdentity?.drivingSide) === "left" ? "left" : "right",
     },
-    coreIndicators: sanitizedSaved.coreIndicators || baseInputs.coreIndicators,
-    laborEmployment: sanitizedSaved.laborEmployment || baseInputs.laborEmployment,
-    fiscalSystem: sanitizedSaved.fiscalSystem || baseInputs.fiscalSystem,
-    incomeWealth: sanitizedSaved.incomeWealth || baseInputs.incomeWealth,
-    governmentSpending: sanitizedSaved.governmentSpending || baseInputs.governmentSpending,
-    demographics: sanitizedSaved.demographics || baseInputs.demographics,
   };
 
   return {
