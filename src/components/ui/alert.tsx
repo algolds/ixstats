@@ -40,7 +40,7 @@ const alertVariants = cva(
   }
 );
 
-export type AlertVariant = NonNullable<VariantProps<typeof alertVariants>["variant"]>;
+type AlertVariant = NonNullable<VariantProps<typeof alertVariants>["variant"]>;
 
 const POLITE: ReadonlySet<AlertVariant> = new Set<AlertVariant>(["info", "success"]);
 

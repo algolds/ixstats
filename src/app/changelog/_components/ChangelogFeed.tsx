@@ -22,7 +22,7 @@ import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 
-export type ReleaseCategory = "all" | "feature" | "improvement" | "engine" | "fix";
+type ReleaseCategory = "all" | "feature" | "improvement" | "engine" | "fix";
 
 export interface ReleaseItem {
   id: string;

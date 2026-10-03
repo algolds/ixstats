@@ -25,7 +25,7 @@ function readMotionAttribute(): boolean {
 }
 
 /** True while the in-app Reduce Motion setting is on (`html[data-motion="reduced"]`). */
-export function useInAppReducedMotion(): boolean {
+function useInAppReducedMotion(): boolean {
   return useSyncExternalStore(subscribeToMotionAttribute, readMotionAttribute, () => false);
 }
 

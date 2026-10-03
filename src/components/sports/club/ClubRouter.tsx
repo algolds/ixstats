@@ -27,15 +27,7 @@ import { type SportsNavSection, CLUB_NAV_ITEMS } from "~/components/sports/core/
 import { TeamSettingsModal } from "~/components/sports/league/TeamSettingsModal";
 import { getSportTheme } from "~/lib/sports/theming";
 import { SPORT_EMOJIS, type SportPresetKey } from "~/lib/sports/presets";
-import {
-  ArrowLeft,
-  Trophy,
-  Shield,
-  Settings,
-  OpenNewWindow as ExternalLink,
-  MapPin,
-  WhiteFlag as Flag,
-} from "iconoir-react";
+import { ArrowLeft, Trophy, Shield, Settings, MapPin, WhiteFlag as Flag } from "iconoir-react";
 
 // Modular Sections
 import { ClubOverviewSection } from "~/components/sports/club/sections/ClubOverviewSection";
@@ -49,7 +41,7 @@ import { ClubManagementSection } from "~/components/sports/club/sections/ClubMan
 import { ClubHistorySection } from "~/components/sports/club/sections/ClubHistorySection";
 import { Card } from "~/components/ui/card";
 
-export interface ClubRouterProps {
+interface ClubRouterProps {
   teamId: string;
 }
 

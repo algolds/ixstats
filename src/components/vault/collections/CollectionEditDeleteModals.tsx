@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 
-export interface CollectionEditDeleteModalsProps {
+interface CollectionEditDeleteModalsProps {
   editModalOpen: boolean;
   setEditModalOpen: (open: boolean) => void;
   deleteModalOpen: boolean;

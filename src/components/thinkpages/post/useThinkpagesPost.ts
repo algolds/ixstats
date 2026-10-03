@@ -8,14 +8,14 @@ import { extractHashtags, extractMentions } from "~/lib/utils";
 import { parseSportsBulletin } from "~/lib/sports/feed-bulletins";
 import { proxyDiscordUrl } from "./ThinkpagesPostUtils";
 
-export interface BlurbMeta {
+interface BlurbMeta {
   isBlurb: boolean;
   promptTitle?: string;
   promptSlug?: string;
   cleanContent: string;
 }
 
-export function parseBlurbMeta(post: {
+function parseBlurbMeta(post: {
   hashtags?: string[] | string | null;
   content?: string;
 }): BlurbMeta {

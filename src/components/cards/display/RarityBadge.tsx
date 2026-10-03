@@ -14,7 +14,7 @@ import type { CardRarity } from "~/lib/cards/enums";
 /**
  * RarityBadge component props
  */
-export interface RarityBadgeProps {
+interface RarityBadgeProps {
   /** Card rarity tier */
   rarity: string;
   /** Season number */

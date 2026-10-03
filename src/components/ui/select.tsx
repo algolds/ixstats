@@ -37,11 +37,11 @@ function SelectTrigger({
       data-size={size}
       className={cn(
         fieldStyles,
-        "flex w-fit cursor-pointer items-center justify-between gap-2 px-3 text-body whitespace-nowrap",
+        "text-body flex w-fit cursor-pointer items-center justify-between gap-2 px-3 whitespace-nowrap",
         "data-[placeholder]:text-label-tertiary [&_svg:not([class*='text-'])]:text-label-secondary",
-        "data-[size=default]:h-(--control-height) data-[size=default]:rounded-control",
-        "data-[size=sm]:h-(--control-height-sm) data-[size=sm]:rounded-control-sm data-[size=sm]:px-3 data-[size=sm]:text-footnote",
-        "data-[size=lg]:h-(--control-height-lg) data-[size=lg]:rounded-control-lg",
+        "data-[size=default]:rounded-control data-[size=default]:h-(--control-height)",
+        "data-[size=sm]:rounded-control-sm data-[size=sm]:text-footnote data-[size=sm]:h-(--control-height-sm) data-[size=sm]:px-3",
+        "data-[size=lg]:rounded-control-lg data-[size=lg]:h-(--control-height-lg)",
         "*:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [:where(&)_svg]:size-4",
         className
@@ -67,7 +67,7 @@ function SelectContent({
       <SelectPrimitive.Content
         data-slot="select-content"
         className={cn(
-          "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 material-thick text-label shadow-floating pointer-events-auto relative z-popover max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-row",
+          "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 material-thick text-label shadow-floating z-popover rounded-row pointer-events-auto relative max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto",
           position === "popper" &&
             "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
           className
@@ -95,10 +95,7 @@ function SelectLabel({ className, ...props }: React.ComponentProps<typeof Select
   return (
     <SelectPrimitive.Label
       data-slot="select-label"
-      className={cn(
-        "px-3 pt-2 pb-1 text-footnote font-medium text-label-secondary",
-        className
-      )}
+      className={cn("text-footnote text-label-secondary px-3 pt-2 pb-1 font-medium", className)}
       {...props}
     />
   );
@@ -113,7 +110,7 @@ function SelectItem({ className, children, description, ...props }: SelectItemPr
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "relative flex w-full cursor-pointer items-center gap-2 rounded-control-sm py-2 pr-8 pl-3 text-body text-label outline-hidden transition-colors duration-150 select-none",
+        "rounded-control-sm text-body text-label relative flex w-full cursor-pointer items-center gap-2 py-2 pr-8 pl-3 outline-hidden transition-colors duration-150 select-none",
         "hover:bg-fill-4 focus:bg-fill-3 data-[state=checked]:font-medium",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [:where(&)_svg]:size-4",
@@ -123,31 +120,18 @@ function SelectItem({ className, children, description, ...props }: SelectItemPr
     >
       <span className="absolute right-2 flex size-3.5 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
-          <CheckIcon className="size-4 text-tint" />
+          <CheckIcon className="text-tint size-4" />
         </SelectPrimitive.ItemIndicator>
       </span>
       <div className="flex flex-col py-0.5">
         <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
         {description && (
-          <span className="select-desc mt-0.5 max-w-[280px] text-footnote whitespace-normal text-label-secondary">
+          <span className="select-desc text-footnote text-label-secondary mt-0.5 max-w-[280px] whitespace-normal">
             {description}
           </span>
         )}
       </div>
     </SelectPrimitive.Item>
-  );
-}
-
-function SelectSeparator({
-  className,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.Separator>) {
-  return (
-    <SelectPrimitive.Separator
-      data-slot="select-separator"
-      className={cn("bg-separator pointer-events-none -mx-1 my-1 h-px", className)}
-      {...props}
-    />
   );
 }
 
@@ -181,15 +165,4 @@ function SelectScrollDownButton({
   );
 }
 
-export {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectScrollDownButton,
-  SelectScrollUpButton,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-};
+export { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue };

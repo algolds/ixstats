@@ -30,7 +30,7 @@ import {
 } from "~/components/ui/dialog";
 import { ReactionsDialog } from "../ReactionsDialog";
 
-export interface PostModalsProps {
+interface PostModalsProps {
   post: any;
   showDeleteConfirm: boolean;
   setShowDeleteConfirm: (val: boolean) => void;

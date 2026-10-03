@@ -8,7 +8,7 @@ import { PositionTooltip } from "~/components/sports/PositionTooltip";
 import type { PlayerRatings } from "~/lib/sports/types";
 import { Card } from "~/components/ui/card";
 
-export interface PlayerCardProps {
+interface PlayerCardProps {
   player: {
     id: string;
     firstName: string;
@@ -143,5 +143,3 @@ export function PlayerCard({ player, team, statistics, className }: PlayerCardPr
     </Card>
   );
 }
-
-export default PlayerCard;

@@ -39,7 +39,7 @@ import { SportsCommandPalette } from "~/components/sports/core/SportsCommandPale
 import { type StandingsRow } from "~/components/sports/StandingsTable";
 import { type MatchEvent } from "~/components/sports/LatestResults";
 
-export interface LeagueRouterProps {
+interface LeagueRouterProps {
   leagueId: string;
 }
 
@@ -561,5 +561,3 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
     </>
   );
 }
-
-export default LeagueRouter;

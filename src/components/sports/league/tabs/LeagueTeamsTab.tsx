@@ -2,16 +2,14 @@
 
 import React, { useState, useMemo } from "react";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { EmptyState } from "~/components/ui/empty-state";
-import { Shield, Search, ArrowRight, User, City, Star } from "iconoir-react";
+import { Shield, ArrowRight } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
-import { cn } from "~/lib/utils";
 import { Card } from "~/components/ui/card";
 
-export interface LeagueTeamItem {
+interface LeagueTeamItem {
   id: string;
   name: string;
   shortName?: string | null;
@@ -22,7 +20,7 @@ export interface LeagueTeamItem {
   budget?: number | null;
 }
 
-export interface LeagueTeamsTabProps {
+interface LeagueTeamsTabProps {
   teams: LeagueTeamItem[];
   onTeamClick: (teamId: string) => void;
 }
@@ -176,5 +174,3 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
     </div>
   );
 }
-
-export default LeagueTeamsTab;

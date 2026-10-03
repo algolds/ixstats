@@ -15,7 +15,7 @@ import {
 } from "~/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 
-export interface MultiSelectProps {
+interface MultiSelectProps {
   options: readonly string[];
   value: string[];
   onChange: (value: string[]) => void;

@@ -13,19 +13,19 @@ import { PlateEngineChipElement } from "../elements/PlateEngineChipElement";
 import { PlateCoordChipElement, PlateMapEmbedChipElement } from "../elements/PlateCoordChipElement";
 import { PlateMediaElement } from "../elements/PlateMediaElement";
 
-export const ELEMENT_RAW_HTML = "raw-html";
-export const ELEMENT_TEMPLATE = "template";
-export const ELEMENT_TEMPLATE_BLOCK = "template-block";
-export const ELEMENT_INFOBOX = "infobox";
-export const ELEMENT_INFOBOX_BLOCK = "infobox-block";
-export const ELEMENT_CHIP_ENGINE = "chip-engine";
-export const ELEMENT_CHIP_COORD = "chip-coord";
-export const ELEMENT_CHIP_MAP_EMBED = "chip-mapembed";
-export const ELEMENT_MEDIA = "media";
-export const ELEMENT_REF = "ref";
-export const ELEMENT_HR = "hr";
-export const ELEMENT_CHIP_TEMPLATE = "chip-template";
-export const ELEMENT_INLINE_TEMPLATE = "inline-template";
+const ELEMENT_RAW_HTML = "raw-html";
+const ELEMENT_TEMPLATE = "template";
+const ELEMENT_TEMPLATE_BLOCK = "template-block";
+const ELEMENT_INFOBOX = "infobox";
+const ELEMENT_INFOBOX_BLOCK = "infobox-block";
+const ELEMENT_CHIP_ENGINE = "chip-engine";
+const ELEMENT_CHIP_COORD = "chip-coord";
+const ELEMENT_CHIP_MAP_EMBED = "chip-mapembed";
+const ELEMENT_MEDIA = "media";
+const ELEMENT_REF = "ref";
+const ELEMENT_HR = "hr";
+const ELEMENT_CHIP_TEMPLATE = "chip-template";
+const ELEMENT_INLINE_TEMPLATE = "inline-template";
 
 function voidPlugin(key: string, isInline = false) {
   return createPlatePlugin({ key }).extend({

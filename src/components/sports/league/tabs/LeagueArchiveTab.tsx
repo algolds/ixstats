@@ -13,7 +13,7 @@ import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 import { Card } from "~/components/ui/card";
 
-export interface LeagueArchiveTabProps {
+interface LeagueArchiveTabProps {
   leagueId: string;
   sportPreset?: string;
 }

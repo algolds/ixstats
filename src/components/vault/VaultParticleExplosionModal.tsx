@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Sparks as Sparkles } from "iconoir-react";
 import { IxCreditsSymbol } from "./IxCreditsSymbol";
 
-export interface VaultParticle {
+interface VaultParticle {
   id: number;
   x: number;
   y: number;
@@ -16,7 +16,7 @@ export interface VaultParticle {
   scale: number;
 }
 
-export interface VaultParticleExplosionModalProps {
+interface VaultParticleExplosionModalProps {
   open: boolean;
   title: string;
   subtitle?: string;

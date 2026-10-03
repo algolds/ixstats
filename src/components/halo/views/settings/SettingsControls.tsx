@@ -7,34 +7,6 @@ import { SoundOff as VolumeX } from "iconoir-react";
 import { PreText } from "~/components/ui/pretext";
 import { Switch } from "~/components/ui/switch";
 
-export function useLocalToggle(key: string, defaultValue: boolean): [boolean, () => void] {
-  const [value, setValue] = useState(defaultValue);
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(key);
-      // oxlint-disable-next-line
-      if (stored !== null) setValue(stored === "true");
-    } catch {
-      /* SSR */
-    }
-  }, [key]);
-  const toggle = useCallback(() => {
-    setValue((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(key, String(next));
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new Event("wikios-settings-changed"));
-        }
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
-  }, [key]);
-  return [value, toggle];
-}
-
 export function useLocalPref(
   key: string,
   defaultValue: boolean

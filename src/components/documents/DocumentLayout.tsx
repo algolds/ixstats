@@ -5,8 +5,6 @@ import Link from "next/link";
 import {
   Page as FileText,
   Printer,
-  NavArrowRight as ChevronRight,
-  ArrowLeft,
   ShareAndroid as Share2,
   Check,
   Calendar,
@@ -23,7 +21,7 @@ interface NavLink {
   label: string;
 }
 
-export interface DocumentLayoutProps {
+interface DocumentLayoutProps {
   meta: DocumentMeta;
   sections: DocumentHeading[];
   back: NavLink;

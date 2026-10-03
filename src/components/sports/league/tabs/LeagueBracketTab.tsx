@@ -7,7 +7,7 @@ import { Tournament as Swords } from "iconoir-react";
 import { BracketView } from "~/components/sports/league/BracketView";
 import { Card } from "~/components/ui/card";
 
-export interface LeagueBracketTabProps {
+interface LeagueBracketTabProps {
   leagueId: string;
   activeSeasonId?: string;
   latestSeasonId?: string;
@@ -73,5 +73,3 @@ export function LeagueBracketTab({
 
   return <BracketView brackets={mapped} onTeamClick={onTeamClick} />;
 }
-
-export default LeagueBracketTab;

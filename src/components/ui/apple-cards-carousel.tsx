@@ -29,7 +29,7 @@ type Card = {
   quickActions?: React.ReactNode;
 };
 
-export const CarouselContext = createContext<{
+const CarouselContext = createContext<{
   onCardClose: (index: number) => void;
   currentIndex: number;
 }>({
@@ -326,7 +326,7 @@ export const Card = ({
   );
 };
 
-export const BlurImage = ({ height, width, src, className, alt, ...rest }: ImageProps) => {
+const BlurImage = ({ height, width, src, className, alt, ...rest }: ImageProps) => {
   const [isLoading, setLoading] = useState(true);
   return (
     <Image

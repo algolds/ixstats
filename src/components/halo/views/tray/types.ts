@@ -61,7 +61,7 @@ export function getIcon(n: NotificationItem) {
   );
 }
 
-export const PRIORITY_COLORS: Record<string, { bg: string; text: string }> = {
+const PRIORITY_COLORS: Record<string, { bg: string; text: string }> = {
   critical: { bg: "bg-destructive/15", text: "text-destructive" },
   high: { bg: "bg-warning/15", text: "text-warning" },
   medium: { bg: "bg-caution/15", text: "text-caution" },

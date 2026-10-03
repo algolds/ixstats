@@ -18,7 +18,7 @@ import {
 } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 
-export interface ClubOverviewSectionProps {
+interface ClubOverviewSectionProps {
   team: {
     id: string;
     name: string;
@@ -300,5 +300,3 @@ export function ClubOverviewSection({
     </div>
   );
 }
-
-export default ClubOverviewSection;

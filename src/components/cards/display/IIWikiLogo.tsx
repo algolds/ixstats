@@ -2,9 +2,9 @@
 
 import { cn } from "~/lib/utils";
 
-export const IIWIKI_LOGO_URL = "/images/IIWikiLogo.png";
+const IIWIKI_LOGO_URL = "/images/IIWikiLogo.png";
 
-export interface IIWikiLogoProps {
+interface IIWikiLogoProps {
   className?: string;
   size?: "xs" | "sm" | "md" | "lg";
 }

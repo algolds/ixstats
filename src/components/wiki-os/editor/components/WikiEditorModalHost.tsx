@@ -46,7 +46,7 @@ const MapCoordsModal = dynamic(
   { ssr: false }
 );
 
-export interface WikiEditorModalHostProps {
+interface WikiEditorModalHostProps {
   onInsertImage: (wikitext: string) => void;
 
   onInsertInfobox: (wikitext: string) => void;

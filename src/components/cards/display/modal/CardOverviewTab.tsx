@@ -26,7 +26,7 @@ import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 
-export interface CardOverviewTabProps {
+interface CardOverviewTabProps {
   card: CardInstance;
   rarityConfig: {
     borderColor: string;

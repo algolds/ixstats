@@ -34,7 +34,7 @@ export interface DomainTip {
   bg?: string;
 }
 
-export interface DomainWelcomeModalProps {
+interface DomainWelcomeModalProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   storageKey: string;

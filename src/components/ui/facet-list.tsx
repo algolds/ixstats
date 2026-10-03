@@ -29,11 +29,11 @@ import type { SwipeAction, SwipeCommitAction } from "~/components/ui/facet/swipe
  * `"inset"` (default): each section is an opaque rounded group — for grouped pages and sheets.
  * `"plain"`: no group background or radius — for a list inside a `Card`.
  */
-export type FacetListVariant = "inset" | "plain";
+type FacetListVariant = "inset" | "plain";
 
 const ListVariantContext = React.createContext<FacetListVariant>("inset");
 
-export interface FacetListProps extends React.HTMLAttributes<HTMLDivElement> {
+interface FacetListProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: FacetListVariant;
 }
 
@@ -52,7 +52,7 @@ export const FacetList = React.forwardRef<HTMLDivElement, FacetListProps>(
 );
 FacetList.displayName = "FacetList";
 
-export interface FacetListSectionProps extends Omit<React.HTMLAttributes<HTMLElement>, "title"> {
+interface FacetListSectionProps extends Omit<React.HTMLAttributes<HTMLElement>, "title"> {
   /** Sentence-case header above the group. */
   header?: React.ReactNode;
   /** Helper text below the group. */
@@ -135,9 +135,9 @@ FacetListSection.displayName = "FacetListSection";
 
 // ─── Row ────────────────────────────────────────────────────────────────────
 
-export type FacetRowAccessory = "chevron" | "check" | "none" | React.ReactNode;
+type FacetRowAccessory = "chevron" | "check" | "none" | React.ReactNode;
 
-export interface FacetRowSwipeActions {
+interface FacetRowSwipeActions {
   /** Revealed by swiping right. */
   leading?: SwipeAction[];
   /** Revealed by swiping left. */
@@ -189,7 +189,7 @@ interface FacetRowBaseProps {
   "aria-label"?: string;
 }
 
-export interface FacetRowLinkProps extends FacetRowBaseProps {
+interface FacetRowLinkProps extends FacetRowBaseProps {
   href: React.ComponentProps<typeof Link>["href"];
   onClick?: React.MouseEventHandler<HTMLAnchorElement>;
   target?: string;
@@ -199,12 +199,12 @@ export interface FacetRowLinkProps extends FacetRowBaseProps {
   replace?: boolean;
 }
 
-export interface FacetRowButtonProps extends FacetRowBaseProps {
+interface FacetRowButtonProps extends FacetRowBaseProps {
   href?: undefined;
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
 }
 
-export type FacetRowProps = FacetRowLinkProps | FacetRowButtonProps;
+type FacetRowProps = FacetRowLinkProps | FacetRowButtonProps;
 
 /** Pressable rows: fill washes, the focus ring and a subtle press. */
 const ROW_INTERACTIVE =

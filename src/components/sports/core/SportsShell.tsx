@@ -8,7 +8,7 @@ import { useSportsFocus } from "./SportsFocusProvider";
 import { SportsFocusPanel, SportsFocusSheet } from "./SportsFocusPanel";
 import { Card } from "~/components/ui/card";
 
-export interface SportsShellProps {
+interface SportsShellProps {
   children: React.ReactNode;
   activeSection: SportsNavSection;
   onNavigate?: (section: SportsNavSection) => void;

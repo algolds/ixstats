@@ -27,7 +27,7 @@ function TabSkeleton() {
 }
 
 /** Shown in place of a section the owner hid (the server did not send its data). */
-export function HiddenSection({
+function HiddenSection({
   what,
   handle,
   isOwner,

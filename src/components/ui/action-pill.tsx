@@ -29,7 +29,7 @@ const SIZE = {
   md: "h-(--control-height-sm) gap-1 px-3 text-footnote font-medium [:where(&)_svg]:size-4",
 } as const;
 
-export interface ActionPillProps extends Omit<React.ComponentProps<"button">, "children"> {
+interface ActionPillProps extends Omit<React.ComponentProps<"button">, "children"> {
   /** Toggle state. Omit for a one-shot action (no `aria-pressed`). */
   pressed?: boolean;
   /** Pressed colour. @default "secondary" */

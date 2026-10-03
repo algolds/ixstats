@@ -4,7 +4,7 @@ import React from "react";
 import { cn } from "~/lib/utils";
 import { REACTION_ICONS, getDiscordEmojiUrl } from "./ThinkpagesPostUtils";
 
-export interface ReactionPillsProps {
+interface ReactionPillsProps {
   post: any;
   apiDiscordEmojis?: any[];
   onOpenReactionsDialog: () => void;

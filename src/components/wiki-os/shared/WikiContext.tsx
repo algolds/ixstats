@@ -26,13 +26,13 @@ import {
 /** A reading-progress entry in localStorage ("wikios:pausedSessions"). */
 type PausedEntry = WikiPageRef & { scrollPercent: number; updatedAt: number };
 
-export interface WikiThemeColors {
+interface WikiThemeColors {
   primary: string;
   secondary: string;
   accent: string;
 }
 
-export interface WikiNarratorState {
+interface WikiNarratorState {
   isPlaying: boolean;
   activeBlockIndex: number;
   totalBlocks: number;
@@ -42,7 +42,7 @@ export interface WikiNarratorState {
   voice: string;
 }
 
-export interface WikiNarratorActions {
+interface WikiNarratorActions {
   play: () => void;
   pause: () => void;
   stop: () => void;

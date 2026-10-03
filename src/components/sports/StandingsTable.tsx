@@ -5,12 +5,7 @@ import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import Link from "next/link";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
-import {
-  OpenBook as BookOpen,
-  Download,
-  StatUp as TrendingUp,
-  StatDown as TrendingDown,
-} from "iconoir-react";
+import { OpenBook as BookOpen, Download } from "iconoir-react";
 import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -63,7 +58,7 @@ function exportStandingsCsv(title: string, rows: StandingsRow[]) {
   URL.revokeObjectURL(url);
 }
 
-export interface StandingsTableProps {
+interface StandingsTableProps {
   title?: string;
   standings: StandingsRow[];
   promotionCount?: number | null;
@@ -325,5 +320,3 @@ export function StandingsTable({
     </Card>
   );
 }
-
-export default StandingsTable;

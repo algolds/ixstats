@@ -3,7 +3,7 @@
 import React from "react";
 import { cn } from "~/lib/utils";
 
-export interface IxWikiWordmarkProps extends React.HTMLAttributes<HTMLSpanElement> {
+interface IxWikiWordmarkProps extends React.HTMLAttributes<HTMLSpanElement> {
   className?: string;
   size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "hero";
   highlightIx?: boolean;

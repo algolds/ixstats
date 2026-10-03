@@ -97,7 +97,7 @@ export function injectPlaceholderElements(html: string): string {
   return processed;
 }
 
-export function calculateDistanceAndBearing(
+function calculateDistanceAndBearing(
   lat1: number,
   lng1: number,
   lat2: number,

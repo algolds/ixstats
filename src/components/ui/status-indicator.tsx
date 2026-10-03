@@ -137,10 +137,4 @@ function StatusIndicator({ status, label, size, className, ...props }: StatusInd
   );
 }
 
-export {
-  StatusIndicator,
-  statusIndicatorVariants,
-  STATUS_CONFIG,
-  type StatusIndicatorProps,
-  type Status,
-};
+export { StatusIndicator, STATUS_CONFIG, type Status };

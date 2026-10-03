@@ -4,7 +4,7 @@ import React from "react";
 import { StandingsTable, type StandingsRow } from "~/components/sports/StandingsTable";
 import { Skeleton } from "~/components/ui/skeleton";
 
-export interface LeagueStandingsTabProps {
+interface LeagueStandingsTabProps {
   standings?: StandingsRow[];
   isLoading?: boolean;
   promotionCount?: number | null;
@@ -45,5 +45,3 @@ export function LeagueStandingsTab({
     </div>
   );
 }
-
-export default LeagueStandingsTab;

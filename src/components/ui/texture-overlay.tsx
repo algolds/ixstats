@@ -23,12 +23,12 @@ export const SANCTIONED_TEXTURES = [
   "paperGrain",
   "chevron",
 ] as const satisfies readonly TextureType[];
-export type SanctionedTexture = (typeof SANCTIONED_TEXTURES)[number];
+type SanctionedTexture = (typeof SANCTIONED_TEXTURES)[number];
 
 /** The cap for a sanctioned texture; `TextureOverlay` clamps sanctioned textures to it. */
 export const TEXTURE_MAX_OPACITY = 0.05;
 
-export function isSanctionedTexture(texture: TextureType): texture is SanctionedTexture {
+function isSanctionedTexture(texture: TextureType): texture is SanctionedTexture {
   return (SANCTIONED_TEXTURES as readonly TextureType[]).includes(texture);
 }
 

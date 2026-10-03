@@ -13,7 +13,7 @@ import {
 import { StoreItemCard, type StoreItem } from "../StoreItemCard";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 
-export interface StorePurchaseDialogProps {
+interface StorePurchaseDialogProps {
   item: StoreItem | null;
   isOpen?: boolean;
   onClose: () => void;

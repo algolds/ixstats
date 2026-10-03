@@ -34,7 +34,7 @@ import { SettingsDropdown } from "./shared/SettingsDropdown";
 import { WikiEditorHeader } from "./WikiEditorHeader";
 import { Button } from "~/components/ui/button";
 
-export interface WikiVisualToolbarProps {
+interface WikiVisualToolbarProps {
   title: string;
   wordCount: number;
   isDirty: boolean;

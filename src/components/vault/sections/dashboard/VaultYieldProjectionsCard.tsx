@@ -13,7 +13,7 @@ import { Button } from "~/components/ui/button";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 import { Card } from "~/components/ui/card";
 
-export interface VaultYieldProjectionsCardProps {
+interface VaultYieldProjectionsCardProps {
   loading: boolean;
   canClaimDailyBonus?: boolean;
   isClaimPending?: boolean;

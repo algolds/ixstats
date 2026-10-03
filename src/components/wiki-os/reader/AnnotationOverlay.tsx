@@ -77,7 +77,7 @@ export function useAnnotationOverlay({
 // DOM Highlights Helpers
 // ---------------------------------------------------------------------------
 
-export function clearHighlights(container: HTMLElement) {
+function clearHighlights(container: HTMLElement) {
   const marks = container.querySelectorAll(".wikios-annotation-mark");
   marks.forEach((el) => {
     const parent = el.parentNode;
@@ -91,7 +91,7 @@ export function clearHighlights(container: HTMLElement) {
   });
 }
 
-export function applyHighlight(
+function applyHighlight(
   container: HTMLElement,
   annotation: AnnotationItem,
   onClick?: (id: string) => void,

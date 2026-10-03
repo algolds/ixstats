@@ -6,14 +6,14 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { ChatBubble as MessageCircle, Send } from "iconoir-react";
 
-export interface CommentItem {
+interface CommentItem {
   id: string;
   userId: string;
   content: string;
   createdAt: Date;
 }
 
-export interface CollectionCommentsTabProps {
+interface CollectionCommentsTabProps {
   commentText: string;
   setCommentText: (text: string) => void;
   onAddComment: () => void;

@@ -10,7 +10,7 @@ import { useEditorModalContext } from "../../context/EditorModalContext";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 
-export interface TemplateDropdownProps {
+interface TemplateDropdownProps {
   /** Invoked after the popover closes, before the target modal opens (e.g. restoreSelection in visual mode). */
   onSelect?: () => void;
   /** Invoked on trigger click before the popover opens (e.g. saveSelection in visual mode). */

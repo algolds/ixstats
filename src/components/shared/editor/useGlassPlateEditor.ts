@@ -34,7 +34,7 @@ function getMentionItemIcon(name: string, type: "league" | "club") {
   return type === "league" ? "🏆" : "🛡️";
 }
 
-export interface UseGlassPlateEditorProps {
+interface UseGlassPlateEditorProps {
   value?: string;
   onChange?: (html: string, text: string) => void;
   onFocus?: () => void;

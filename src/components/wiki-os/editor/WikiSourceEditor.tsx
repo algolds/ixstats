@@ -42,7 +42,7 @@ import { WikiEditorSavePanel } from "./components/WikiEditorSavePanel";
 import { WikiEditorModalHost } from "./components/WikiEditorModalHost";
 import { WikiEditorStatusBar } from "./components/WikiEditorStatusBar";
 
-export interface WikiSourceEditorProps {
+interface WikiSourceEditorProps {
   initialWikitext: string;
   /** Heading text to place the cursor at and scroll to on open. */
   initialSection?: string;

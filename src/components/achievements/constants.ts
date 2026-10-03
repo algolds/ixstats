@@ -1,8 +1,6 @@
 import {
   Trophy,
   Star,
-  Crown,
-  Sparks as Sparkles,
   StatUp as TrendingUp,
   Shield,
   Bank as Landmark,
@@ -11,144 +9,6 @@ import {
 } from "iconoir-react";
 import type { BadgeVariant } from "~/components/ui/badge";
 import type { FacetAccent } from "~/lib/design/identity";
-
-export const QUEST_PATHS = [
-  {
-    name: "Merchant Path",
-    description: "Grow your economy and GDP",
-    icon: TrendingUp,
-    badgeColor: "bg-green/10 text-green border-green/20",
-    glowColor: "shadow-floating",
-    lineColor: "bg-green/30",
-    activeLineColor: "bg-green",
-    nodeColor: "emerald",
-    keys: [
-      "econ-first-million",
-      "econ-millionaire-nation",
-      "econ-economic-powerhouse",
-      "econ-trillion-club",
-      "econ-global-titan",
-    ],
-  },
-  {
-    name: "Prosperity Path",
-    description: "Raise citizen wealth and economic development",
-    icon: Sparkles,
-    badgeColor: "bg-yellow/10 text-yellow border-yellow/20",
-    glowColor: "shadow-floating",
-    lineColor: "bg-yellow/30",
-    activeLineColor: "bg-yellow",
-    nodeColor: "yellow",
-    keys: [
-      "econ-wealthy-citizens",
-      "econ-prosperity-nation",
-      "econ-first-world-status",
-      "econ-ultra-prosperity",
-      "econ-tier-advancement",
-    ],
-  },
-  {
-    name: "Warlord Path",
-    description: "Build and fund your armed forces",
-    icon: Shield,
-    badgeColor: "bg-red/10 text-red border-red/20",
-    glowColor: "shadow-floating",
-    lineColor: "bg-red/30",
-    activeLineColor: "bg-red",
-    nodeColor: "red",
-    keys: [
-      "mil-first-branch",
-      "mil-armed-forces",
-      "mil-full-spectrum",
-      "mil-defense-commitment",
-      "mil-strong-defense",
-      "mil-military-superpower",
-      "mil-standing-army",
-      "mil-large-force",
-      "mil-massive-force",
-      "mil-global-force",
-    ],
-  },
-  {
-    name: "Diplomat Path",
-    description: "Gain influence through treaties and trade",
-    icon: Globe,
-    badgeColor: "bg-blue/10 text-blue border-blue/20",
-    glowColor: "shadow-floating",
-    lineColor: "bg-blue/30",
-    activeLineColor: "bg-blue",
-    nodeColor: "blue",
-    keys: [
-      "dip-first-embassy",
-      "dip-diplomatic-network",
-      "dip-global-presence",
-      "dip-embassy-network",
-      "dip-first-treaty",
-      "dip-treaty-network",
-      "dip-trade-partners",
-      "dip-trade-hub",
-      "dip-alliance-maker",
-      "dip-alliance-network",
-    ],
-  },
-  {
-    name: "Sovereign Path",
-    description: "Build out your government structures",
-    icon: Landmark,
-    badgeColor: "bg-indigo/10 text-indigo border-indigo/20",
-    glowColor: "shadow-floating",
-    lineColor: "bg-indigo/30",
-    activeLineColor: "bg-indigo",
-    nodeColor: "indigo",
-    keys: ["gov-first-component", "gov-building-blocks", "gov-sophisticated", "gov-complex-system"],
-  },
-  {
-    name: "Thinker Path",
-    description: "Shape the conversation on ThinkPages",
-    icon: BookOpen,
-    badgeColor: "bg-blue/10 text-blue border-blue/20",
-    glowColor: "shadow-floating",
-    lineColor: "bg-blue/30",
-    activeLineColor: "bg-blue",
-    nodeColor: "blue",
-    keys: [
-      "social-first-thinkpage",
-      "social-thinkpage-author",
-      "social-prolific-author",
-      "social-popular",
-      "social-trending",
-    ],
-  },
-  {
-    name: "Vidmaster Path",
-    description: "The hardest challenges on the platform",
-    icon: Crown,
-    badgeColor: "bg-yellow/10 text-yellow border-yellow/20",
-    glowColor: "shadow-floating",
-    lineColor: "bg-yellow/30",
-    activeLineColor: "bg-yellow",
-    nodeColor: "yellow",
-    keys: ["vid-lightswitch", "vid-annual", "vid-end-of-days"],
-  },
-  {
-    name: "Lore & Meme Path",
-    description: "Community jokes, stonks and wiki archives",
-    icon: Trophy,
-    badgeColor: "bg-indigo/10 text-indigo border-indigo/20",
-    glowColor: "shadow-floating",
-    lineColor: "bg-indigo/30",
-    activeLineColor: "bg-indigo",
-    nodeColor: "indigo",
-    keys: [
-      "meme-stonks",
-      "meme-1337",
-      "meme-bankruptcy",
-      "lore-scholar",
-      "lore-collector",
-      "meme-ns-ref",
-    ],
-  },
-];
 
 /**
  * Per-category styling: a system colour carries the category on its badge, icon pedestal and icon
@@ -181,7 +41,7 @@ export interface CategoryTheme {
 /** A pale highlight of a colour, for the jewel's middle stop. */
 const pale = (color: string) => `color-mix(in srgb, ${color} 25%, white)`;
 
-export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
+const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
   Economic: {
     name: "Economic",
     icon: TrendingUp,
@@ -280,8 +140,6 @@ export const categories = [
 ];
 
 export const rarities = ["all", "Common", "Uncommon", "Rare", "Epic", "Legendary"] as const;
-export type RarityType = (typeof rarities)[number];
-
 export const getRarityColor = (rarity: string) => {
   switch (rarity) {
     case "Legendary":
@@ -319,26 +177,6 @@ export const getRarityBadgeVariant = (rarity: string, isUnlocked = true): BadgeV
       return "default";
   }
 };
-
-export const getRarityBg = (rarity: string, isUnlocked = true) => {
-  if (!isUnlocked) return "bg-fill-4 border-separator text-label-tertiary";
-  switch (rarity) {
-    case "Legendary":
-      return "bg-yellow/10 border-yellow/30";
-    case "Epic":
-      return "bg-purple/10 border-purple/30";
-    case "Ultra Rare":
-    case "ULTRA_RARE":
-      return "bg-teal/10 border-teal/30";
-    case "Rare":
-      return "bg-blue/10 border-blue/30";
-    case "Uncommon":
-      return "bg-green/10 border-green/30";
-    default:
-      return "bg-fill-3 border-separator";
-  }
-};
-
 export type TrophyTier = "platinum" | "gold" | "silver" | "bronze";
 
 export const getTrophyTier = (rarity: string): TrophyTier => {
@@ -359,7 +197,7 @@ export const getTrophyTier = (rarity: string): TrophyTier => {
 /**
  * High-res Game-Icons.net SVG mapping (4,100+ SVG manifest from GameIconsBrowser)
  */
-export const ACHIEVEMENT_GAME_ICONS: Record<string, string> = {
+const ACHIEVEMENT_GAME_ICONS: Record<string, string> = {
   // Economic GDP Series
   "econ-first-million": "/icons/game-icons/icons/ffffff/transparent/1x1/delapouite/coins.svg",
   "econ-millionaire-nation":
@@ -479,7 +317,7 @@ export function getAchievementGameIconPath(key: string, category?: string): stri
 /**
  * Multi-Level Achievement Progression Series Definitions
  */
-export interface AchievementSeriesConfig {
+interface AchievementSeriesConfig {
   id: string;
   name: string;
   category: string;
@@ -488,7 +326,7 @@ export interface AchievementSeriesConfig {
   keys: string[];
 }
 
-export const ACHIEVEMENT_SERIES_DEFINITIONS: AchievementSeriesConfig[] = [
+const ACHIEVEMENT_SERIES_DEFINITIONS: AchievementSeriesConfig[] = [
   {
     id: "series-econ-gdp",
     name: "National GDP Milestones",
@@ -707,55 +545,3 @@ export function groupAchievements(achievements: any[] = []): GroupedAchievementI
 
   return results;
 }
-
-export interface ForumRibbon {
-  id: string;
-  title: string;
-  category: string;
-  stripeGradient: string;
-  borderStyle: string;
-  badgeLabel: string;
-}
-
-export const FORUM_RIBBONS: ForumRibbon[] = [
-  {
-    id: "wiki-archivist",
-    title: "WikiOS Grand Archivist Ribbon",
-    category: "Community Wiki",
-    stripeGradient: "from-green via-teal to-green",
-    borderStyle: "border-green/60",
-    badgeLabel: "WIKI",
-  },
-  {
-    id: "forum-pioneer",
-    title: "Community Forum Pioneer Ribbon",
-    category: "Community Forum",
-    stripeGradient: "from-yellow via-yellow to-yellow",
-    borderStyle: "border-yellow/60",
-    badgeLabel: "FORUM",
-  },
-  {
-    id: "map-cartographer",
-    title: "Master Cartographer Ribbon",
-    category: "Map & Atlas",
-    stripeGradient: "from-blue via-blue to-blue",
-    borderStyle: "border-blue/60",
-    badgeLabel: "ATLAS",
-  },
-  {
-    id: "community-veteran",
-    title: "Community Veteran Commendation",
-    category: "Platform Service",
-    stripeGradient: "from-purple via-purple to-purple",
-    borderStyle: "border-purple/60",
-    badgeLabel: "VETERAN",
-  },
-  {
-    id: "lore-historian",
-    title: "Grand Lore Historian Order",
-    category: "Canon & Lore",
-    stripeGradient: "from-red via-pink to-red",
-    borderStyle: "border-red/60",
-    badgeLabel: "CANON",
-  },
-];

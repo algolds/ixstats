@@ -27,7 +27,7 @@ export interface MatchdayTapeItem {
   };
 }
 
-export interface MatchdayTapeProps {
+interface MatchdayTapeProps {
   matches: MatchdayTapeItem[];
   matchDay?: number | null;
   onMatchClick: (matchId: string) => void;
@@ -143,5 +143,3 @@ export function MatchdayTape({ matches, matchDay, onMatchClick, className }: Mat
     </div>
   );
 }
-
-export default MatchdayTape;

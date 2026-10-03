@@ -6,7 +6,7 @@ import { cn } from "~/lib/utils";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { Card } from "~/components/ui/card";
 
-export interface VaultMilestonesCardProps {
+interface VaultMilestonesCardProps {
   myAchievements?: Array<{ points?: number }>;
   leaderboard?: Array<{ countryId?: string }>;
   userCountryId?: string;

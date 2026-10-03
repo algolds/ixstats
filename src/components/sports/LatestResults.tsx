@@ -29,7 +29,7 @@ export interface MatchEvent {
   awayWikiSlug?: string | null;
 }
 
-export interface LatestResultsProps {
+interface LatestResultsProps {
   matches: MatchEvent[];
   title?: string;
   onTeamClick?: (teamId: string) => void;
@@ -268,5 +268,3 @@ export function LatestResults({
     </div>
   );
 }
-
-export default LatestResults;

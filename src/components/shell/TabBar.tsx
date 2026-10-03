@@ -39,7 +39,7 @@ import {
   type SearchParamsLike,
 } from "~/lib/navigation/app-sections";
 
-export interface TabBarProps {
+interface TabBarProps {
   /** Current pathname without the base path. */
   pathname: string;
   searchParams: SearchParamsLike | null;

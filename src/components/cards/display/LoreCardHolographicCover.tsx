@@ -32,7 +32,7 @@ import {
 
 // ─── Types ──────────────────────────────────────────────────────
 
-export interface LoreCardHolographicCoverProps {
+interface LoreCardHolographicCoverProps {
   rarity: string;
   wikiSource?: string | null;
   title?: string;

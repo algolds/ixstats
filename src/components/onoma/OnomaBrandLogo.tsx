@@ -6,8 +6,8 @@
 import React, { useState } from "react";
 import { cn } from "~/lib/utils";
 
-export type OnomaLogoVariant = "symbol" | "wordmark" | "lockup" | "app-icon";
-export type OnomaLogoTone = "default" | "monochrome" | "seal";
+type OnomaLogoVariant = "symbol" | "wordmark" | "lockup" | "app-icon";
+type OnomaLogoTone = "default" | "monochrome" | "seal";
 
 interface OnomaBrandLogoProps {
   variant?: OnomaLogoVariant;
@@ -240,41 +240,3 @@ export function OnomaBrandLogo({
     </div>
   );
 }
-
-/**
- * Standard 16x16 / 4x4 nav icon adapter with interactive wink
- */
-export function OnomaNavIcon(props: { className?: string }) {
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 154.41 148.26"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className={cn(
-        "group/logo h-4 w-4 fill-current transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] select-none",
-        props.className
-      )}
-    >
-      <g id="Logo">
-        <path d="M122.5,121.6c4.2-3.79,7.64-10.09,8.84-15.63,4.16-19.19-7.45-31.88-15.97-47.33-.46-.84-4.55-9.55-5.03-9.23-21.25,37.03-54,66-90.3,87.88-3.6,2.17-8.95,7.1-12.5,3.2-1.37-1.51-5.25-8.26-6.27-10.33-1.13-2.3-2.2-3.92.1-6,42.11-22.48,76.52-54.36,99.4-96.45,4.33-7.97,7.69-17.45,12.06-24.99C113.69,1.21,114.46.02,116.5,0c1.42-.02,11.66,4.83,13.29,5.9,2.6,1.69,2.77,2.74,1.62,5.62-1.9,4.72-6.53,10.75-7.98,15.46-.13.41-.39.77-.24,1.25,9.18,30.35,38.58,48.96,29.52,84.2-10.31,40.1-66.21,48.17-90.47,15.95-1.35-1.8-3.46-4.14-2.34-6.58.29-.63,8.05-7.44,9.18-8.27,1.53-1.13,2.66-1.98,4.67-1.34,1.46.47,7.52,7.88,9.55,9.61,11.4,9.77,27.96,9.94,39.22-.2Z" />
-        <circle
-          cx="25.02"
-          cy="68.66"
-          r="15.11"
-          style={{ transformOrigin: "25.02px 68.66px" }}
-          className={cn(
-            "transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]",
-            isHovered && "scale-x-[1.18] scale-y-[0.12]",
-            "group-hover/logo:scale-x-[1.18] group-hover/logo:scale-y-[0.12]"
-          )}
-        />
-        <path d="M74.45,3.08c2.16-.47,12.25,3.89,13.09,5.89.98,2.32-.51,4.97-1.41,7.09-2.57,6.05-7.66,18.38-11.06,23.42-.94,1.39-1.84,2.38-3.69,2.29-1.09-.05-9.16-3.54-10.23-4.29-2.69-1.88-2.11-4.45-1.13-7.1,1.97-5.39,8.51-20.22,11.49-24.7.66-1,1.73-2.34,2.95-2.6Z" />
-      </g>
-    </svg>
-  );
-}
-
-export default OnomaBrandLogo;

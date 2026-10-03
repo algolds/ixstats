@@ -9,7 +9,7 @@ import { Button } from "~/components/ui/button";
 import { createUrl } from "~/lib/utils";
 import { parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
 
-export interface NationPageItem {
+interface NationPageItem {
   title: string;
   wikiSource: string;
 }

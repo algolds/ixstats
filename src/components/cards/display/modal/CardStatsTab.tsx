@@ -6,7 +6,7 @@ import { motion } from "motion/react";
 import { Star, Flash as Zap } from "iconoir-react";
 import type { CardInstance, FormattedStats } from "~/types/cards-display";
 
-export interface CardStatsTabProps {
+interface CardStatsTabProps {
   card: CardInstance;
   stats: FormattedStats;
 }

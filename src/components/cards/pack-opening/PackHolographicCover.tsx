@@ -33,7 +33,7 @@ import {
 
 // ─── Types ──────────────────────────────────────────────────────
 
-export interface PackHolographicCoverProps {
+interface PackHolographicCoverProps {
   packType: string;
   guaranteedRarity?: string | null;
   packName?: string;

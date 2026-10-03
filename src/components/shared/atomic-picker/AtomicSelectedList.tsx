@@ -17,7 +17,7 @@ import { formatCurrency } from "~/lib/utils";
 import type { BaseAtomicComponent } from "./types";
 import { Card } from "~/components/ui/card";
 
-export interface AtomicSelectedListProps<TType extends string = string> {
+interface AtomicSelectedListProps<TType extends string = string> {
   selectedComponents: BaseAtomicComponent<TType>[];
   onDeselect: (type: TType) => void;
   maxComponents?: number;

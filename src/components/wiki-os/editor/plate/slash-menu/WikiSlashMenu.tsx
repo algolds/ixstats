@@ -17,7 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover
 import type { BaseEditor } from "slate";
 import { SLASH_ITEMS, filterSlashItems, type SlashItem } from "./slash-items";
 
-export interface WikiSlashMenuProps {
+interface WikiSlashMenuProps {
   open: boolean;
   query: string;
   anchorRect: { top: number; left: number } | null;

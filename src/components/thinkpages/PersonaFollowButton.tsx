@@ -7,7 +7,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 
-export interface PersonaFollowButtonProps {
+interface PersonaFollowButtonProps {
   accountId: string;
   username: string;
   isFollowing: boolean;

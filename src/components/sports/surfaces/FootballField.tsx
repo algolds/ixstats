@@ -3,7 +3,7 @@
 import React from "react";
 import { cn } from "~/lib/utils";
 
-export interface FootballFieldProps {
+interface FootballFieldProps {
   className?: string;
   children?: React.ReactNode;
 }
@@ -125,4 +125,3 @@ export function FootballField({ className, children }: FootballFieldProps) {
     </div>
   );
 }
-export default FootballField;

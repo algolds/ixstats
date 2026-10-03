@@ -6,13 +6,13 @@ import { springSnappy } from "~/lib/design/motion";
 import { cn } from "~/lib/utils";
 import { proxyDiscordUrl } from "./ThinkpagesPostUtils";
 
-export interface PostMediaItem {
+interface PostMediaItem {
   id?: string;
   url: string;
   filename?: string;
 }
 
-export interface PostMediaGridProps {
+interface PostMediaGridProps {
   mediaAttachments?: PostMediaItem[];
   postId: string;
   onOpenLightbox: (media: { url: string; id: string }) => void;

@@ -16,7 +16,7 @@ import { Input } from "~/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { cn } from "~/lib/utils";
 
-export interface EditorToolbarProps {
+interface EditorToolbarProps {
   onToggleMark: (mark: "bold" | "italic" | "underline") => void;
   onToggleList: (listType: "ul" | "ol") => void;
   onInsertLink: (url: string) => void;

@@ -1,11 +1,5 @@
 // src/components/wiki-os/reader/main/types.ts
 
-export interface CategoryItem {
-  name: string;
-  color: string;
-  desc?: string;
-}
-
 export interface RecentChangeItem {
   title: string | null;
   user: string | null;

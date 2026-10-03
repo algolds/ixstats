@@ -15,7 +15,7 @@ import type { CardInstance, CardDisplaySize } from "~/types/cards-display";
 /**
  * Card3DViewer component props
  */
-export interface Card3DViewerProps {
+interface Card3DViewerProps {
   /** Card instance data */
   card: CardInstance;
   /** Display size variant */

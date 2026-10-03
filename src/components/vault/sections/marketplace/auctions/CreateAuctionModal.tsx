@@ -26,7 +26,7 @@ import {
 } from "~/components/ui/select";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
-export interface CreateAuctionModalProps {
+interface CreateAuctionModalProps {
   open: boolean;
   onClose: () => void;
 }

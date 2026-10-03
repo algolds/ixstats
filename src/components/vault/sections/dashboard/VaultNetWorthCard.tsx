@@ -2,13 +2,12 @@
 
 import React from "react";
 import { Wallet, Component as Layers, Package, ShoppingBag } from "iconoir-react";
-import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import NumberFlow from "~/components/ui/number-flow";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 import { Card } from "~/components/ui/card";
 
-export interface VaultNetWorthCardProps {
+interface VaultNetWorthCardProps {
   vaultLevel: number;
   netWorth: number;
   liquidCredits: number;

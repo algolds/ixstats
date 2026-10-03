@@ -7,7 +7,7 @@ import { VaultMilestonesCard } from "./VaultMilestonesCard";
 import type { CardInstance } from "~/types/cards-display";
 import { Button } from "~/components/ui/button";
 
-export interface VaultShowcaseGridProps {
+interface VaultShowcaseGridProps {
   hasImported?: boolean;
   isNoticeDismissed: boolean;
   onDismissNotice: () => void;

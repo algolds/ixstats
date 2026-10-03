@@ -37,7 +37,7 @@ const DEV_ORIGINS =
 
 const READ_ACTIONS = ["query", "opensearch", "parse"] as const;
 
-export const WIKIS = {
+const WIKIS = {
   ixwiki: {
     label: "IxWiki",
     siteUrl: DEFAULT_MEDIAWIKI_URL.replace(/\/+$/, ""),
@@ -84,7 +84,7 @@ export const WIKIS = {
   },
 } as const satisfies Record<string, WikiConfig>;
 
-export type WikiKey = keyof typeof WIKIS;
+type WikiKey = keyof typeof WIKIS;
 
 export function getWiki(key: string): WikiConfig | null {
   return Object.prototype.hasOwnProperty.call(WIKIS, key) ? WIKIS[key as WikiKey] : null;
@@ -139,10 +139,7 @@ export const MEDIA_CORS_HEADERS = {
   "Cross-Origin-Resource-Policy": "cross-origin",
 } as const;
 
-export function apiCorsHeaders(
-  wiki: WikiConfig,
-  origin: string | null
-): Record<string, string> {
+export function apiCorsHeaders(wiki: WikiConfig, origin: string | null): Record<string, string> {
   const allowed =
     wiki.corsOrigins.includes("*") || (origin && wiki.corsOrigins.includes(origin))
       ? (origin ?? "*")

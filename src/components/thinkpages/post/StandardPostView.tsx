@@ -12,7 +12,6 @@ import {
   WhiteFlag as Flag,
   EditPencil as Edit,
   Trash as Trash2,
-  Journal as Newspaper,
   Group as Users,
   Refresh as Repeat2,
   ChatBubble as MessageCircle,
@@ -46,7 +45,7 @@ import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 
 import { ACCOUNT_TYPE_ICONS, ACCOUNT_TYPE_COLORS, RelativeTimestamp } from "./ThinkpagesPostUtils";
 
-export interface StandardPostViewProps {
+interface StandardPostViewProps {
   post: any;
   currentUserAccountId: string;
   accounts?: any[];

@@ -7,8 +7,6 @@ export interface CommandPaletteProps {
 
 // Branded string type helper for plugin & view identifiers
 export type Brand<T, B extends string> = T & { readonly __brand: B };
-export type PluginId = Brand<string, "PluginId">;
-
 // User Profile interface
 export interface UserProfile {
   id: string;
@@ -80,16 +78,7 @@ export interface DIPlugin<F = unknown, C = unknown> {
 }
 
 // Current time state interface
-export interface CurrentTimeState {
-  greeting: string;
-  dateDisplay: string;
-  timeDisplay: string;
-  multiplier: number;
-}
-
 // Setup status type
-export type SetupStatus = "loading" | "unauthenticated" | "needs-setup" | "complete";
-
 // Component prop interfaces
 export interface CompactViewProps {
   mode?: ViewMode;
@@ -129,11 +118,6 @@ export function extractCountriesList(data: CountriesData | undefined): CountrySu
   if (!data) return [];
   if (Array.isArray(data)) return data;
   return data.countries ?? [];
-}
-
-/** Type guard to check if a mode string is a plugin-provided view mode */
-export function isPluginViewMode(mode: string): mode is PluginViewMode {
-  return mode.startsWith("plugin:");
 }
 
 export interface SearchViewProps {

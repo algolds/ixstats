@@ -15,7 +15,7 @@ export interface ActivityEntry {
   createdAt: Date;
 }
 
-export interface VaultRecentActivityCardProps {
+interface VaultRecentActivityCardProps {
   loading: boolean;
   activities?: ActivityEntry[];
 }

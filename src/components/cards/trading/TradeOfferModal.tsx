@@ -31,7 +31,7 @@ import { Badge } from "~/components/ui/badge";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { StepIndicator } from "~/components/ui/step-indicator";
 
-export interface TradeOfferModalProps {
+interface TradeOfferModalProps {
   open: boolean;
   onClose: () => void;
   recipientId?: string;

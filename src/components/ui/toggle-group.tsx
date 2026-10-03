@@ -54,7 +54,7 @@ interface ToggleGroupMultipleProps extends ToggleGroupBaseProps {
   onValueChange?: (value: string[]) => void;
 }
 
-export type ToggleGroupProps = ToggleGroupSingleProps | ToggleGroupMultipleProps;
+type ToggleGroupProps = ToggleGroupSingleProps | ToggleGroupMultipleProps;
 
 function toArray(value: string | string[] | undefined): string[] {
   if (value === undefined || value === "") return [];
@@ -133,4 +133,4 @@ function ToggleGroupItem({ variant, size, className, ...props }: ToggleGroupItem
   );
 }
 
-export { ToggleGroup, ToggleGroupItem, type ToggleGroupItemProps };
+export { ToggleGroup, ToggleGroupItem };

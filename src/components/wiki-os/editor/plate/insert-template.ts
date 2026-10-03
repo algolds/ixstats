@@ -9,7 +9,7 @@ import { nanoid } from "platejs";
 import type { MasterTemplatePreset } from "~/lib/wiki-os/templates/master-presets";
 import { serializeTemplateToWikitext } from "~/lib/wiki-os/wikitext/serializer";
 
-export function templatePresetToNode(preset: MasterTemplatePreset): Record<string, unknown> {
+function templatePresetToNode(preset: MasterTemplatePreset): Record<string, unknown> {
   const params = Object.fromEntries(
     (preset.variants?.[0]?.defaultFields ?? preset.params.slice(0, 4).map((p) => p.name)).map(
       (f) => [f, ""]

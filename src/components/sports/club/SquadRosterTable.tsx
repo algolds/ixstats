@@ -8,7 +8,7 @@ import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import type { RosterPlayerItem } from "./sections/ClubRosterSection";
 
-export interface SquadRosterTableProps {
+interface SquadRosterTableProps {
   players: RosterPlayerItem[];
   sportPreset?: string;
   onListPlayer?: (player: RosterPlayerItem) => void;
@@ -292,8 +292,6 @@ export function SquadRosterTable({
     </div>
   );
 }
-
-export default SquadRosterTable;
 
 /** A sortable column header: the `<th>` carries `aria-sort`, a button inside toggles it. */
 function SortableTh({

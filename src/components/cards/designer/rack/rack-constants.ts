@@ -1,16 +1,3 @@
-import type { CardRarity } from "@prisma/client";
-
-export const ALL_RARITIES: (CardRarity | string)[] = [
-  "COMMON",
-  "UNCOMMON",
-  "RARE",
-  "ULTRA_RARE",
-  "EPIC",
-  "LEGENDARY",
-  "MYTHIC",
-  "DIVINE",
-];
-
 export const COLOR_PRESETS = [
   {
     id: "auto",

@@ -48,7 +48,7 @@ type ColorPickerContextValue = {
 
 const ColorPickerContext = createContext<ColorPickerContextValue | undefined>(undefined);
 
-export const useColorPicker = () => {
+const useColorPicker = () => {
   const context = useContext(ColorPickerContext);
 
   if (!context) {
@@ -58,7 +58,7 @@ export const useColorPicker = () => {
   return context;
 };
 
-export type ColorPickerProps = Omit<HTMLAttributes<HTMLDivElement>, "onChange"> & {
+type ColorPickerProps = Omit<HTMLAttributes<HTMLDivElement>, "onChange"> & {
   value?: any;
   defaultValue?: any;
   onChange?: (value: [number, number, number, number]) => void;
@@ -157,9 +157,9 @@ export const ColorPicker = ({
   );
 };
 
-export type ColorPickerSelectionProps = HTMLAttributes<HTMLDivElement>;
+type ColorPickerSelectionProps = HTMLAttributes<HTMLDivElement>;
 
-export const ColorPickerSelection = memo(({ className, ...props }: ColorPickerSelectionProps) => {
+const ColorPickerSelection = memo(({ className, ...props }: ColorPickerSelectionProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [positionX, setPositionX] = useState(0);
@@ -244,9 +244,9 @@ export const ColorPickerSelection = memo(({ className, ...props }: ColorPickerSe
 
 ColorPickerSelection.displayName = "ColorPickerSelection";
 
-export type ColorPickerHueProps = ComponentProps<typeof SliderPrimitive.Root>;
+type ColorPickerHueProps = ComponentProps<typeof SliderPrimitive.Root>;
 
-export const ColorPickerHue = ({ className, ...props }: ColorPickerHueProps) => {
+const ColorPickerHue = ({ className, ...props }: ColorPickerHueProps) => {
   const { hue, setHue } = useColorPicker();
 
   return (
@@ -266,9 +266,9 @@ export const ColorPickerHue = ({ className, ...props }: ColorPickerHueProps) => 
   );
 };
 
-export type ColorPickerAlphaProps = ComponentProps<typeof SliderPrimitive.Root>;
+type ColorPickerAlphaProps = ComponentProps<typeof SliderPrimitive.Root>;
 
-export const ColorPickerAlpha = ({ className, ...props }: ColorPickerAlphaProps) => {
+const ColorPickerAlpha = ({ className, ...props }: ColorPickerAlphaProps) => {
   const { alpha, setAlpha, hue, saturation, lightness } = useColorPicker();
 
   return (
@@ -295,9 +295,9 @@ export const ColorPickerAlpha = ({ className, ...props }: ColorPickerAlphaProps)
   );
 };
 
-export type ColorPickerEyeDropperProps = ComponentProps<typeof Button>;
+type ColorPickerEyeDropperProps = ComponentProps<typeof Button>;
 
-export const ColorPickerEyeDropper = ({ className, ...props }: ColorPickerEyeDropperProps) => {
+const ColorPickerEyeDropper = ({ className, ...props }: ColorPickerEyeDropperProps) => {
   const { setHue, setSaturation, setLightness, setAlpha } = useColorPicker();
 
   const handleEyeDropper = async () => {
@@ -330,12 +330,12 @@ export const ColorPickerEyeDropper = ({ className, ...props }: ColorPickerEyeDro
   );
 };
 
-export type ColorPickerOutputProps = ComponentProps<typeof SelectTrigger>;
+type ColorPickerOutputProps = ComponentProps<typeof SelectTrigger>;
 
 const formats = ["hex", "rgb", "css", "hsl"];
 
 // oxlint-disable-next-line eslint/no-unused-vars
-export const ColorPickerOutput = ({ className, ...props }: ColorPickerOutputProps) => {
+const ColorPickerOutput = ({ className, ...props }: ColorPickerOutputProps) => {
   const { mode, setMode } = useColorPicker();
 
   return (
@@ -372,9 +372,9 @@ const PercentageInput = ({ className, ...props }: PercentageInputProps) => {
   );
 };
 
-export type ColorPickerFormatProps = HTMLAttributes<HTMLDivElement>;
+type ColorPickerFormatProps = HTMLAttributes<HTMLDivElement>;
 
-export const ColorPickerFormat = ({ className, ...props }: ColorPickerFormatProps) => {
+const ColorPickerFormat = ({ className, ...props }: ColorPickerFormatProps) => {
   const { hue, saturation, lightness, alpha, mode } = useColorPicker();
 
   if (mode === "hex") {

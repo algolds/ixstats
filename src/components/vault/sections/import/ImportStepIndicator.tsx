@@ -8,7 +8,7 @@ import { cn } from "~/lib/utils";
 
 export type WizardStep = "intro" | "verify" | "preview" | "importing" | "complete";
 
-export const WIZARD_STEPS: { id: WizardStep; label: string; icon: typeof Globe }[] = [
+const WIZARD_STEPS: { id: WizardStep; label: string; icon: typeof Globe }[] = [
   { id: "intro", label: "Nation", icon: Globe },
   { id: "verify", label: "Verify", icon: ShieldCheck },
   { id: "preview", label: "Confirm", icon: CheckCircle },

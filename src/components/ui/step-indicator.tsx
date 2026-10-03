@@ -22,14 +22,14 @@ import { cn } from "~/lib/utils/cn";
  * ```
  */
 
-export interface StepIndicatorStep {
+interface StepIndicatorStep {
   id: string;
   label: React.ReactNode;
   /** Optional icon shown instead of the step number while the step is not completed. */
   icon?: React.ReactNode;
 }
 
-export interface StepIndicatorProps extends Omit<React.HTMLAttributes<HTMLElement>, "onChange"> {
+interface StepIndicatorProps extends Omit<React.HTMLAttributes<HTMLElement>, "onChange"> {
   steps: readonly StepIndicatorStep[];
   /** Zero-based index of the current step. Steps before it are completed. */
   current: number;

@@ -13,14 +13,14 @@ import {
 } from "iconoir-react";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 
-export interface CollectionStats {
+interface CollectionStats {
   cardCount: number;
   totalValue: number;
   likes: number;
   comments: number;
 }
 
-export interface CollectionHeaderStatsProps {
+interface CollectionHeaderStatsProps {
   name: string;
   description?: string | null;
   isPublic: boolean;

@@ -6,7 +6,7 @@ import React from "react";
 import { SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 
-export interface WikiEditorSavePanelProps {
+interface WikiEditorSavePanelProps {
   showSavePanel: boolean;
   summary: string;
   setSummary: (val: string) => void;

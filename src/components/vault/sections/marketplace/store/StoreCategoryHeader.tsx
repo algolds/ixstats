@@ -3,7 +3,7 @@
 import React from "react";
 import { VaultSubTabNav, type VaultTabConfig } from "~/components/vault/VaultSubTabNav";
 
-export interface StoreCategoryHeaderProps<T extends string> {
+interface StoreCategoryHeaderProps<T extends string> {
   tabs: readonly VaultTabConfig<T>[];
   activeTab: T;
   onTabChange: (tabId: T) => void;

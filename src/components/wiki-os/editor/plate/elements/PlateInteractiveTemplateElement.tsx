@@ -28,7 +28,7 @@ import {
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 
-export interface PlateTemplateBlockProps {
+interface PlateTemplateBlockProps {
   attributes: Record<string, unknown>;
   children: React.ReactNode;
 }

@@ -8,20 +8,13 @@ import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { Stat } from "~/components/ui/stat";
 // oxlint-disable-next-line eslint/no-unused-vars
-import {
-  Bank as Landmark,
-  ArrowUpRight,
-  Trophy,
-  Sparks as Sparkles,
-  HelpCircle,
-  Xmark,
-} from "iconoir-react";
+import { Bank as Landmark, ArrowUpRight, Trophy, Sparks as Sparkles, Xmark } from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import { useNotify } from "~/hooks/useNotify";
 import { springSmooth, tweenFast } from "~/lib/design/motion";
 
-export interface ClubSponsor {
+interface ClubSponsor {
   type?: string | null;
   name?: string | null;
   baseFee?: number | null;
@@ -30,7 +23,7 @@ export interface ClubSponsor {
   payoutBonus?: number | null;
 }
 
-export interface ClubTeamWallet {
+interface ClubTeamWallet {
   id: string;
   name: string;
   color?: string | null;

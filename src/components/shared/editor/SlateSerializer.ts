@@ -11,7 +11,7 @@ export function escapeAttr(str: string): string {
     .replace(/>/g, "&gt;");
 }
 
-export function serializeLeaf(node: any): string {
+function serializeLeaf(node: any): string {
   let text: string = (node.text ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -23,7 +23,7 @@ export function serializeLeaf(node: any): string {
   return text;
 }
 
-export function serializeNode(node: any): string {
+function serializeNode(node: any): string {
   if (typeof node.text === "string") {
     return serializeLeaf(node);
   }
@@ -55,7 +55,7 @@ export function slateNodesToHtml(nodes: any[]): string {
   return nodes.map((n: any) => serializeNode(n)).join("");
 }
 
-export function serializeNodeToBbcode(node: any): string {
+function serializeNodeToBbcode(node: any): string {
   if (typeof node.text === "string") {
     let text = node.text ?? "";
     if (!text) return "";
@@ -291,7 +291,7 @@ export function toggleMark(editor: any, mark: string) {
   }
 }
 
-export function isBlockActive(editor: any, type: string): boolean {
+function isBlockActive(editor: any, type: string): boolean {
   try {
     const [match] = Editor.nodes(editor, {
       match: (n: any) => n.type === type,
@@ -322,26 +322,4 @@ export function toggleBlock(editor: any, type: string) {
       match: (n: any) => n.type === "li",
     });
   }
-}
-
-export function detectWikiUrl(
-  url: string
-): { title: string; source: "ixwiki" | "iiwiki" | "althistory" } | null {
-  if (!url) return null;
-  const iiwikiMatch = url.match(/iiwiki\.com\/wiki\/([^#?]+)/i);
-  if (iiwikiMatch && iiwikiMatch[1]) {
-    return { title: decodeURIComponent(iiwikiMatch[1].replace(/_/g, " ")), source: "iiwiki" };
-  }
-  const altMatch = url.match(/althistory\.fandom\.com\/wiki\/([^#?]+)/i);
-  if (altMatch && altMatch[1]) {
-    return { title: decodeURIComponent(altMatch[1].replace(/_/g, " ")), source: "althistory" };
-  }
-  const generalMatch = url.match(/(?:ixwiki\.com)?\/wiki\/([^#?]+)/i);
-  if (generalMatch && generalMatch[1]) {
-    return { title: decodeURIComponent(generalMatch[1].replace(/_/g, " ")), source: "ixwiki" };
-  }
-  if (url.startsWith("wiki/")) {
-    return { title: decodeURIComponent(url.substring(5).replace(/_/g, " ")), source: "ixwiki" };
-  }
-  return null;
 }

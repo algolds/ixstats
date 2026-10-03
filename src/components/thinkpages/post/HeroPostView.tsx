@@ -11,7 +11,6 @@ import {
   WhiteFlag as Flag,
   EditPencil as Edit,
   Trash as Trash2,
-  Journal as Newspaper,
   Group as Users,
 } from "iconoir-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -35,7 +34,7 @@ import { cn } from "~/lib/utils";
 
 import { ACCOUNT_TYPE_ICONS, ACCOUNT_TYPE_COLORS } from "./ThinkpagesPostUtils";
 
-export interface HeroPostViewProps {
+interface HeroPostViewProps {
   post: any;
   currentUserAccountId: string;
   accounts?: any[];

@@ -41,7 +41,7 @@ import {
   type SearchParamsLike,
 } from "~/lib/navigation/app-sections";
 
-export interface AppSidebarProps {
+interface AppSidebarProps {
   /** Current pathname without the base path. */
   pathname: string;
   /** Current query, or null when not known yet (query sections fall back to their default). */
@@ -56,7 +56,7 @@ export interface AppSidebarProps {
   className?: string;
 }
 
-export const APP_SIDEBAR_ID = "facet-app-sidebar";
+const APP_SIDEBAR_ID = "facet-app-sidebar";
 
 export const rowBase =
   "relative flex min-h-9 w-full items-center gap-3 rounded-control px-2.5 text-body transition-colors duration-fast ease-out-facet pointer-coarse:min-h-11 sidebar-collapsed:justify-center sidebar-collapsed:px-0";

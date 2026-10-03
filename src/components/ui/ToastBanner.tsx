@@ -117,5 +117,3 @@ export function ToastBanner({ toast, onDismiss }: ToastBannerProps) {
     </div>
   );
 }
-
-export default ToastBanner;

@@ -18,7 +18,7 @@ import { RackPresetsSection } from "./rack/RackPresetsSection";
 import { RackPublishBar } from "./rack/RackPublishBar";
 import { Button } from "~/components/ui/button";
 
-export interface DesignerControlRackProps {
+interface DesignerControlRackProps {
   state: CardDesignState;
   onChange: (updater: (prev: CardDesignState) => CardDesignState) => void;
   onOpenIconBrowser: (target: "emblem" | "watermark") => void;

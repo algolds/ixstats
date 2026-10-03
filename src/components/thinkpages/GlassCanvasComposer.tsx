@@ -30,7 +30,7 @@ const MediaSearchModal = dynamic(
   { ssr: false }
 );
 
-export interface GlassCanvasComposerProps {
+interface GlassCanvasComposerProps {
   account: any | null;
   accounts: any[];
   onAccountSelect?: (account: any) => void;

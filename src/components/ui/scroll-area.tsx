@@ -30,7 +30,7 @@ const scrollBarVariants = cva("flex touch-none select-none transition-colors", {
   },
 });
 
-export type ScrollAreaProps = React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root> &
+type ScrollAreaProps = React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root> &
   VariantProps<typeof scrollAreaVariants>;
 
 const ScrollArea = React.forwardRef<
@@ -77,4 +77,4 @@ const ScrollBar = React.forwardRef<
 
 ScrollBar.displayName = ScrollAreaPrimitive.ScrollAreaScrollbar.displayName;
 
-export { ScrollArea, ScrollBar, scrollAreaVariants };
+export { ScrollArea };

@@ -18,7 +18,7 @@ import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { CardPriceHistoryChart } from "../CardPriceHistoryChart";
 import type { CardInstance } from "~/types/cards-display";
 
-export interface TransferEvent {
+interface TransferEvent {
   id: string;
   action: string;
   fromUserName?: string | null;

@@ -6,7 +6,7 @@ import { cn } from "~/lib/utils/cn";
 /**
  * CometCard component props
  */
-export interface CometCardProps {
+interface CometCardProps {
   /** Rotation depth in degrees (default: 17.5) */
   rotateDepth?: number;
   /** Translation depth in pixels (default: 20) */

@@ -158,8 +158,6 @@ const AlertDialogCancel = AlertDialogClose;
 export {
   AlertDialog,
   AlertDialogTrigger,
-  AlertDialogPortal,
-  AlertDialogBackdrop,
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogFooter,

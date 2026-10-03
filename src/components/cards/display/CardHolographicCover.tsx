@@ -38,7 +38,7 @@ import type { ResolvedCardDesignMetadata } from "~/lib/cards/card-metadata-resol
 
 // ─── Types ──────────────────────────────────────────────────────
 
-export interface CardHolographicCoverProps {
+interface CardHolographicCoverProps {
   cardType?: string;
   category?: LoreCategory | string | null;
   rarity: string;

@@ -10,9 +10,8 @@ import { Search, ArrowSeparate as ArrowLeftRight } from "iconoir-react";
 import { PositionTooltip } from "~/components/sports/PositionTooltip";
 import { PlayerMatchup } from "~/components/sports/PlayerMatchup";
 import { useNotify } from "~/hooks/useNotify";
-import { cn } from "~/lib/utils";
 
-export interface ComparePlayerItem {
+interface ComparePlayerItem {
   id: string;
   firstName: string;
   lastName: string;
@@ -25,7 +24,7 @@ export interface ComparePlayerItem {
   } | null;
 }
 
-export interface ClubTransfersSectionProps {
+interface ClubTransfersSectionProps {
   teamId: string;
   teamColor?: string;
   squadPlayers?: Array<{
@@ -414,5 +413,3 @@ export function ClubTransfersSection({
     </div>
   );
 }
-
-export default ClubTransfersSection;

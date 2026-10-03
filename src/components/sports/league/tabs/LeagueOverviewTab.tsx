@@ -15,7 +15,6 @@ import {
   Calendar,
   ArrowRight,
   Shield,
-  Clock,
 } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { NextMatchCountdown } from "~/components/sports/league/NextMatchCountdown";
@@ -43,7 +42,7 @@ interface StandingLeader {
   };
 }
 
-export interface LeagueOverviewTabProps {
+interface LeagueOverviewTabProps {
   leagueId: string;
   seasonId?: string;
   activeSeason?: {
@@ -354,5 +353,3 @@ export function LeagueOverviewTab({
     </div>
   );
 }
-
-export default LeagueOverviewTab;

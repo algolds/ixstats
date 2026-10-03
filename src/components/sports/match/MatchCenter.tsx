@@ -1,18 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import {
-  Play,
-  SystemRestart as Loader2,
-  Trophy,
-  CheckCircle,
-  Activity,
-  ArrowLeft,
-  Calendar,
-  Shield,
-  Clock,
-} from "iconoir-react";
+import { Play, SystemRestart as Loader2, Trophy, Activity, ArrowLeft, Clock } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
@@ -32,7 +21,7 @@ import { generateMatchAnalysisFacts, type MatchAnalysisFacts } from "~/lib/sport
 import { cn } from "~/lib/utils";
 import { Card } from "~/components/ui/card";
 
-export interface MatchCenterProps {
+interface MatchCenterProps {
   matchId: string;
   onClose?: () => void;
   sportPreset?: string;
@@ -495,5 +484,3 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
     </div>
   );
 }
-
-export default MatchCenter;

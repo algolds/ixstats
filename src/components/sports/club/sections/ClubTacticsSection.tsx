@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/com
 import { Badge } from "~/components/ui/badge";
 import { Slider } from "~/components/ui/slider";
 import { LineupBuilder } from "~/components/sports/club/LineupBuilder";
-import { SPORT_PRESETS, type SportPreset } from "~/lib/sports/presets";
+import { SPORT_PRESETS } from "~/lib/sports/presets";
 import { cn } from "~/lib/utils";
 
 const TACTICAL_INTENTS = [
@@ -88,7 +88,7 @@ const TACTICAL_INTENTS = [
   },
 ];
 
-export interface ClubTacticsSectionProps {
+interface ClubTacticsSectionProps {
   team: {
     id: string;
     name: string;
@@ -337,5 +337,3 @@ export function ClubTacticsSection({
     </div>
   );
 }
-
-export default ClubTacticsSection;

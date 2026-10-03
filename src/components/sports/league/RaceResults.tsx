@@ -20,7 +20,6 @@ import {
   SunLight,
   Rain,
   FireFlame as Flame,
-  Trophy,
 } from "iconoir-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { CircuitMap } from "~/components/sports/surfaces";
@@ -298,5 +297,3 @@ export function RaceResults({ races, className }: RaceResultsProps) {
     </div>
   );
 }
-
-export default RaceResults;

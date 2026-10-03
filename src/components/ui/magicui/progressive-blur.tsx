@@ -3,7 +3,7 @@
 import { cn } from "~/lib/utils/cn";
 import React from "react";
 
-export interface ProgressiveBlurProps {
+interface ProgressiveBlurProps {
   className?: string;
   height?: string;
   position?: "top" | "bottom" | "both";
@@ -106,5 +106,3 @@ export function ProgressiveBlur({
     </div>
   );
 }
-
-export default ProgressiveBlur;

@@ -26,7 +26,7 @@ import { CardHolographicCover } from "../display/CardHolographicCover";
 /**
  * TradeNegotiation component props
  */
-export interface TradeNegotiationProps {
+interface TradeNegotiationProps {
   /** Trade offer ID */
   tradeId: string;
   /** Is current user the recipient? */

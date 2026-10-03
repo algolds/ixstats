@@ -9,7 +9,7 @@ export interface VaultTabConfig<T extends string> {
   badgeCount?: number;
 }
 
-export interface VaultSubTabNavProps<T extends string> {
+interface VaultSubTabNavProps<T extends string> {
   tabs: readonly VaultTabConfig<T>[];
   activeTab: T;
   onTabChange: (tabId: T) => void;

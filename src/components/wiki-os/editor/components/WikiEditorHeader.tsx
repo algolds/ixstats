@@ -18,7 +18,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover
 import { Switch } from "~/components/ui/switch";
 import { Button } from "~/components/ui/button";
 
-export interface WikiEditorHeaderProps {
+interface WikiEditorHeaderProps {
   title: string;
   mode: "visual" | "source";
   wordCount?: number;

@@ -5,7 +5,7 @@
 import React from "react";
 import type { EditorCursorPos } from "../types";
 
-export interface WikiEditorStatusBarProps {
+interface WikiEditorStatusBarProps {
   cursorPos: EditorCursorPos;
   wordCount: number;
   lineCount: number;

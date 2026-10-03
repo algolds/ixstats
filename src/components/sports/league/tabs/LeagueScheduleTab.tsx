@@ -11,13 +11,11 @@ import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
   Play,
-  FastArrowRight as FastForward,
   SystemRestart as Loader2,
   Calendar,
   Check,
   FireFlame as Flame,
   ArrowRight,
-  Clock,
 } from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
@@ -25,7 +23,7 @@ import { withBasePath } from "~/lib/base-path";
 import { soundCues } from "~/lib/sound/cuelume";
 import { Card } from "~/components/ui/card";
 
-export interface LeagueScheduleTabProps {
+interface LeagueScheduleTabProps {
   leagueId: string;
   activeSeasonId?: string;
   latestSeasonId?: string;
@@ -402,5 +400,3 @@ export function LeagueScheduleTab({
     </div>
   );
 }
-
-export default LeagueScheduleTab;

@@ -479,4 +479,3 @@ export function SportsFocusSheet({ sportPreset }: { sportPreset?: string }) {
     </Sheet>
   );
 }
-export default SportsFocusPanel;

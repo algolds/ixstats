@@ -6,7 +6,7 @@ import { getPlayerPhotoUrl } from "~/lib/sports/photos";
 import { PositionTooltip } from "~/components/sports/PositionTooltip";
 import { Card } from "~/components/ui/card";
 
-export interface MatchupPlayer {
+interface MatchupPlayer {
   id: string;
   firstName: string;
   lastName: string;
@@ -18,7 +18,7 @@ export interface MatchupPlayer {
   ratings: Record<string, number | undefined>;
 }
 
-export interface PlayerMatchupProps {
+interface PlayerMatchupProps {
   playerA: MatchupPlayer;
   playerB: MatchupPlayer;
   className?: string;
@@ -175,5 +175,3 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
     </Card>
   );
 }
-
-export default PlayerMatchup;

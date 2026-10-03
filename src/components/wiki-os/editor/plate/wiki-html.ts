@@ -24,7 +24,7 @@ export type WikiText = {
   codeMark?: boolean;
 };
 
-export interface BaseEl {
+interface BaseEl {
   id?: string;
   children: Descendant[];
 }
@@ -186,10 +186,6 @@ function parseInfoboxFields(el: Element): {
     }
   });
   return { title, fields };
-}
-
-export function isVoidType(type: string): boolean {
-  return VOID_TYPES.has(type);
 }
 
 // ─── HTML → Slate ───────────────────────────────────────────────────────────

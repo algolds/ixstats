@@ -34,7 +34,7 @@ import { PlateEngineChipElement } from "./elements/PlateEngineChipElement";
 import { PlateCoordChipElement, PlateMapEmbedChipElement } from "./elements/PlateCoordChipElement";
 import { PlateMediaElement } from "./elements/PlateMediaElement";
 
-export interface PlateWikiEditorProps {
+interface PlateWikiEditorProps {
   initialHtml?: string;
   initialWikitext?: string;
   initialValue?: any[];

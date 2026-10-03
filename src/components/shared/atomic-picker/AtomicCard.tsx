@@ -17,7 +17,7 @@ import { cn, formatCurrency } from "~/lib/utils";
 import type { BaseAtomicComponent, InteractionInfo } from "./types";
 import { Card } from "~/components/ui/card";
 
-export interface AtomicCardProps<TType extends string = string> {
+interface AtomicCardProps<TType extends string = string> {
   component: BaseAtomicComponent<TType>;
   isSelected: boolean;
   onSelect: () => void;

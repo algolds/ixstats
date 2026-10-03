@@ -45,7 +45,7 @@ const SENTIMENT_CLASS = {
   neutral: "text-label-secondary",
 } as const;
 
-export function StatDeltaBadge({ delta, className }: { delta: StatDelta; className?: string }) {
+function StatDeltaBadge({ delta, className }: { delta: StatDelta; className?: string }) {
   const Icon = DIRECTION_ICON[delta.direction];
   const sentiment = delta.sentiment ?? DEFAULT_SENTIMENT[delta.direction];
   return (

@@ -9,7 +9,7 @@ import type { NotificationItem } from "./types";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { Button } from "~/components/ui/button";
 
-export interface NotificationRowProps {
+interface NotificationRowProps {
   n: NotificationItem;
   isRead: boolean;
   colors: { bg: string; text: string };

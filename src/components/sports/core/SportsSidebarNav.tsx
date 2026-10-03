@@ -41,7 +41,7 @@ export interface SportsNavItem {
   description?: string;
 }
 
-export const LEAGUE_NAV_ITEMS: SportsNavItem[] = [
+const LEAGUE_NAV_ITEMS: SportsNavItem[] = [
   {
     id: "overview",
     label: "Overview",
@@ -71,7 +71,7 @@ export const CLUB_NAV_ITEMS: SportsNavItem[] = [
   { id: "history", label: "History", icon: Clock, description: "Titles & past seasons" },
 ];
 
-export interface SportsSidebarNavProps {
+interface SportsSidebarNavProps {
   activeSection: SportsNavSection;
   onNavigate?: (section: SportsNavSection) => void;
   items?: SportsNavItem[];

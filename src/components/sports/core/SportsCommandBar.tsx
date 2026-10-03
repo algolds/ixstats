@@ -10,7 +10,7 @@ import { useSportsFocus } from "./SportsFocusProvider";
 import { getSportTheme } from "~/lib/sports/theming";
 import { cn } from "~/lib/utils";
 
-export interface SportsCommandBarProps {
+interface SportsCommandBarProps {
   title: string;
   subtitle?: string;
   lobbyHref: string;

@@ -29,13 +29,12 @@ import {
   BookmarkBook,
   DiceFive,
   TriangleFlag,
-  Flask,
 } from "iconoir-react";
 
-export type CommandCategory =
+type CommandCategory =
   "Statecraft" | "Vault" | "Geography" | "Knowledge" | "Community" | "Sports" | "Labs" | "System";
 
-export type SystemActionId =
+type SystemActionId =
   | "toggle-theme"
   | "toggle-sound"
   | "toggle-compact"
@@ -45,7 +44,7 @@ export type SystemActionId =
   | "random-country"
   | "sign-out";
 
-export interface CommandEntry {
+interface CommandEntry {
   id?: string;
   name: string;
   path?: string;
@@ -56,7 +55,7 @@ export interface CommandEntry {
   actionId?: SystemActionId;
 }
 
-export interface FeatureEntry {
+interface FeatureEntry {
   id?: string;
   name: string;
   path?: string;

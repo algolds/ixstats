@@ -143,16 +143,6 @@ function CommandItem({ className, ...props }: React.ComponentProps<typeof Comman
   );
 }
 
-function CommandShortcut({ className, ...props }: React.ComponentProps<"span">) {
-  return (
-    <span
-      data-slot="command-shortcut"
-      className={cn("text-footnote text-label-secondary ml-auto", className)}
-      {...props}
-    />
-  );
-}
-
 export {
   Command,
   CommandDialog,
@@ -161,6 +151,5 @@ export {
   CommandEmpty,
   CommandGroup,
   CommandItem,
-  CommandShortcut,
   CommandSeparator,
 };

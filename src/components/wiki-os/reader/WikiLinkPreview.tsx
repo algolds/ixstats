@@ -364,7 +364,7 @@ function getEntityIcon(
   return "";
 }
 
-export function MentionPopover({
+function MentionPopover({
   href,
   label,
   badgeStyle,
@@ -611,4 +611,3 @@ export function WikiHtmlContent({ html, className = "", as: Tag = "div" }: WikiH
 }
 
 // Re-export for backward compat
-export { WikiHtmlContent as WikiContentRenderer };

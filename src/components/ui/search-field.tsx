@@ -13,7 +13,7 @@ import { Input } from "~/components/ui/input";
  * Works controlled (`value` + `onChange` / `onValueChange`) or uncontrolled. Clearing dispatches a
  * real `input` event, so `onChange` handlers see the empty value too.
  */
-export interface SearchFieldProps extends Omit<React.ComponentProps<"input">, "type" | "size"> {
+interface SearchFieldProps extends Omit<React.ComponentProps<"input">, "type" | "size"> {
   /** Called with the new string on every change, including clears. */
   onValueChange?: (value: string) => void;
   /** Called after the field is cleared (button or Escape). */

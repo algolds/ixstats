@@ -6,7 +6,7 @@ import { api } from "~/trpc/react";
 import { ForumLinkPreview } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { InlineWikiArticlePreview } from "~/components/dashboard/sections/feed/InlineWikiArticlePreview";
 
-export function MyLeagueInlinePreview({ leagueId }: { leagueId: string }) {
+function MyLeagueInlinePreview({ leagueId }: { leagueId: string }) {
   const { data: leagueData } = api.sports.getLeague.useQuery(
     { id: leagueId },
     { enabled: !!leagueId }
@@ -35,7 +35,7 @@ export function MyLeagueInlinePreview({ leagueId }: { leagueId: string }) {
   );
 }
 
-export function MyClubInlinePreview({ teamId }: { teamId: string }) {
+function MyClubInlinePreview({ teamId }: { teamId: string }) {
   const { data: teamData } = api.sports.getTeam.useQuery({ id: teamId }, { enabled: !!teamId });
 
   return (
@@ -63,7 +63,7 @@ export function MyClubInlinePreview({ teamId }: { teamId: string }) {
   );
 }
 
-export function InlineForumThreadPreview({ threadId, url }: { threadId: number; url: string }) {
+function InlineForumThreadPreview({ threadId, url }: { threadId: number; url: string }) {
   const { data: thread } = api.wikios.getForumThreadPreview.useQuery(
     { threadId },
     { enabled: threadId > 0 }
