@@ -117,8 +117,8 @@ function flagsWhere(checks: Record<string, boolean>): string[] {
 
 /** The first projected year whose GDP per capita crosses the next economic-tier threshold. */
 function projectTierChange(thresholds: number[], currentGdpPc: number, projectedGdpPc: number[]) {
-  const nextTier = thresholds
-    .toSorted((a, b) => a - b)
+  const nextTier = [...thresholds]
+    .sort((a, b) => a - b)
     .find((threshold) => threshold > currentGdpPc);
   const crossing = nextTier ? projectedGdpPc.findIndex((gdpPc) => gdpPc >= nextTier) : -1;
   if (crossing < 0) return null;
