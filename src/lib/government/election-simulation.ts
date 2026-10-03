@@ -118,6 +118,207 @@ export function parseChambers(
 type SimulateElectionResult =
   { ok: true; election: any } | { ok: false; reason: "not_found" | "insufficient_candidates" };
 
+type PartyVote = { partyId: string; votes: number; candidateId: string };
+type ChamberAllocation = { chamberName: string; allocation: Map<string, number> };
+
+/** The seat-holding party with the most seats (none before a first election) and the economy's swing for it. */
+function incumbentAndEconomy(
+  seats: Array<{ partyId: string | null }>,
+  gdpGrowth: number
+): { incumbentPartyId: string | null; economicModifier: number } {
+  const seatsHeld = new Map<string, number>();
+  for (const seat of seats) {
+    if (seat.partyId) seatsHeld.set(seat.partyId, (seatsHeld.get(seat.partyId) ?? 0) + 1);
+  }
+  return {
+    incumbentPartyId: [...seatsHeld.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null,
+    // Good economy: up to +10 for the incumbent; bad economy: down to -15
+    economicModifier:
+      gdpGrowth > 0 ? Math.min(gdpGrowth * 100, 10) : Math.max(gdpGrowth * 150, -15),
+  };
+}
+
+/** Per-party vote totals: current support, incumbent/economy swing, candidate charisma and noise. */
+function computePartyVotes(
+  candidates: Array<{
+    id: string;
+    charisma: number;
+    party: { id: string; currentSupport: number };
+  }>,
+  incumbentPartyId: string | null,
+  economicModifier: number
+): PartyVote[] {
+  return candidates.map((candidate) => {
+    const { party } = candidate;
+    let support = party.currentSupport;
+    if (incumbentPartyId) {
+      support += party.id === incumbentPartyId ? economicModifier : -economicModifier * 0.5;
+    }
+    support += (candidate.charisma - 50) / 10; // charisma swing
+    support += (Math.random() - 0.5) * 15; // random swing
+    support = Math.max(1, Math.min(99, support));
+    return { partyId: party.id, candidateId: candidate.id, votes: Math.round(support * 1000) };
+  });
+}
+
+function allocateChamber(chamber: ChamberConfig, partyVotes: PartyVote[]): Map<string, number> {
+  if (chamber.electoralSystem === "proportional")
+    return dHondtAllocation(partyVotes, chamber.seats);
+  if (chamber.electoralSystem === "fptp") return fptpAllocation(partyVotes, chamber.seats);
+
+  // Mixed: half proportional, half first-past-the-post
+  const propSeats = Math.floor(chamber.seats / 2);
+  const propAlloc = dHondtAllocation(partyVotes, propSeats);
+  const fptpAlloc = fptpAllocation(partyVotes, chamber.seats - propSeats);
+  const alloc = new Map<string, number>();
+  for (const [partyId, seats] of propAlloc)
+    alloc.set(partyId, seats + (fptpAlloc.get(partyId) ?? 0));
+  return alloc;
+}
+
+/** Persists one ElectionResult per party and returns the vote shares and seats won. */
+async function recordResults(
+  db: PrismaClient,
+  electionId: string,
+  partyVotes: PartyVote[],
+  seatsWonPerParty: Map<string, number>,
+  totalVotesCast: number
+) {
+  const results: {
+    partyId: string;
+    candidateId: string;
+    votePercentage: number;
+    seatsWon: number;
+  }[] = [];
+  const totalRawVotes = partyVotes.reduce((sum, x) => sum + x.votes, 0);
+  for (const pv of partyVotes) {
+    const pctOfTotal = (pv.votes / totalRawVotes) * 100;
+    const votePercentage = Math.round(pctOfTotal * 100) / 100;
+    const seatsWon = seatsWonPerParty.get(pv.partyId) ?? 0;
+    await db.electionResult.create({
+      data: {
+        electionId,
+        candidateId: pv.candidateId,
+        votesReceived: Math.round((pctOfTotal / 100) * totalVotesCast),
+        votePercentage,
+        seatsWon,
+      },
+    });
+    results.push({ partyId: pv.partyId, candidateId: pv.candidateId, votePercentage, seatsWon });
+  }
+  return results;
+}
+
+/** Hands each chamber's seats to the winning parties (largest first); leftover seats go vacant. */
+async function reassignSeats(
+  db: PrismaClient,
+  legislatureId: string,
+  chambers: ChamberConfig[],
+  allocations: ChamberAllocation[]
+) {
+  const allSeats = await db.legislativeSeat.findMany({
+    where: { legislatureId },
+    orderBy: { seatNumber: "asc" },
+  });
+  const updatedSeatIds = new Set<string>();
+  let seatOffset = 0;
+
+  for (const { chamberName, allocation } of allocations) {
+    let chamberSeats = allSeats.filter((s) => s.region === chamberName);
+    if (chamberSeats.length === 0) {
+      const numSeats = chambers.find((c) => c.name === chamberName)?.seats ?? 0;
+      chamberSeats = allSeats.slice(seatOffset, seatOffset + numSeats);
+      seatOffset += numSeats;
+    }
+
+    // One partyId per seat, in order of seats won; vacant (null) for the rest
+    const assignments: Array<string | null> = [...allocation.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .flatMap(([partyId, seatsWon]) => Array<string | null>(seatsWon).fill(partyId));
+    for (const [i, seat] of chamberSeats.entries()) {
+      await db.legislativeSeat.update({
+        where: { id: seat.id },
+        data: { partyId: assignments[i] ?? null, region: chamberName },
+      });
+      updatedSeatIds.add(seat.id);
+    }
+  }
+
+  for (const seat of allSeats.filter((s) => !updatedSeatIds.has(s.id))) {
+    await db.legislativeSeat.update({ where: { id: seat.id }, data: { partyId: null } });
+  }
+}
+
+/** A comfortable win steadies the government; a razor-thin one shakes it. Democracy index +2. */
+async function updatePoliticalMetrics(
+  db: PrismaClient,
+  countryId: string,
+  marginOfVictory: number
+) {
+  const govStructure = await db.governmentStructure.findUnique({ where: { countryId } });
+  if (!govStructure) return;
+
+  const stabilityDelta =
+    marginOfVictory > 15 ? 0.05 : marginOfVictory > 5 ? 0.02 : marginOfVictory > 2 ? -0.05 : -0.1;
+  await db.governmentStructure.update({
+    where: { countryId },
+    data: {
+      politicalStability: Math.max(
+        0,
+        Math.min(1, (govStructure.politicalStability ?? 0.5) + stabilityDelta)
+      ),
+      democracyIndex: Math.min(100, (govStructure.democracyIndex ?? 50) + 2),
+      politicalMetricsUpdated: new Date(),
+    },
+  });
+}
+
+/** Diplomatic news item plus an in-app notification for the leading party. */
+async function announceResults(
+  db: PrismaClient,
+  election: {
+    id: string;
+    countryId: string;
+    candidates: Array<{ id: string; party?: { name: string } | null }>;
+  },
+  topResult: { candidateId: string; seatsWon: number; votePercentage: number },
+  extras: { marginOfVictory: number; turnout: number }
+) {
+  const partyName = election.candidates.find((c) => c.id === topResult.candidateId)?.party?.name;
+  const countryRow = await db.country.findUnique({
+    where: { id: election.countryId },
+    select: { name: true },
+  });
+  void generateDiplomaticNews(db, election.countryId, "election_result", {
+    countryName: countryRow?.name ?? "Unknown",
+    partyName: partyName ?? "Leading party",
+    seats: topResult.seatsWon,
+    percentage: topResult.votePercentage.toFixed(1),
+  });
+  try {
+    await notificationAPI.create({
+      title: "Election Results",
+      message: `${partyName ?? "Leading party"} wins with ${topResult.seatsWon} seats (${topResult.votePercentage.toFixed(1)}%). Turnout: ${extras.turnout.toFixed(1)}%`,
+      countryId: election.countryId,
+      category: "governance",
+      priority: "high",
+      type: "success",
+      source: "elections",
+      href: "/mycountry/politics",
+      actionable: true,
+      metadata: {
+        electionId: election.id,
+        winnerParty: partyName,
+        seatsWon: topResult.seatsWon,
+        marginOfVictory: extras.marginOfVictory,
+        turnout: extras.turnout,
+      },
+    });
+  } catch (e) {
+    console.warn("[Notifications] simulateElectionCore:", e);
+  }
+}
+
 /**
  * Run a full election simulation: vote shares → seat allocation → results, seat
  * reassignment, political-metric updates, storyteller effect, party support,
@@ -135,166 +336,55 @@ export async function simulateElectionCore(
       country: true,
     },
   });
-
   if (!election) return { ok: false, reason: "not_found" };
   if (election.candidates.length < 2) return { ok: false, reason: "insufficient_candidates" };
 
-  const country = election.country;
-  const legislature = election.legislature;
+  const { country, legislature } = election;
 
-  // Step 1: Economic performance modifier (good economy → incumbent benefits).
-  // The incumbent is the party holding the most seats going in; a first election (no seated
-  // party) has no incumbent, so the economy moves nobody.
-  const seatsHeld = new Map<string, number>();
-  for (const seat of legislature.seats) {
-    if (seat.partyId) seatsHeld.set(seat.partyId, (seatsHeld.get(seat.partyId) ?? 0) + 1);
-  }
-  const incumbentPartyId = [...seatsHeld.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
-  const gdpGrowth = country.adjustedGdpGrowth;
-  const economicModifier =
-    gdpGrowth > 0 ? Math.min(gdpGrowth * 100, 10) : Math.max(gdpGrowth * 150, -15);
-
-  // Step 2: Per-party vote shares
-  const partyVotes: { partyId: string; votes: number; candidateId: string }[] = [];
-  for (const candidate of election.candidates) {
-    const party = candidate.party;
-    let support = party.currentSupport;
-    if (incumbentPartyId) {
-      if (party.id === incumbentPartyId) support += economicModifier;
-      else support -= economicModifier * 0.5;
-    }
-    const charismaSwing = (candidate.charisma - 50) / 10;
-    support += charismaSwing;
-    const randomSwing = (Math.random() - 0.5) * 15;
-    support += randomSwing;
-    support = Math.max(1, Math.min(99, support));
-    partyVotes.push({
-      partyId: party.id,
-      candidateId: candidate.id,
-      votes: Math.round(support * 1000),
-    });
-  }
-
+  const { incumbentPartyId, economicModifier } = incumbentAndEconomy(
+    legislature.seats,
+    country.adjustedGdpGrowth
+  );
+  const partyVotes = computePartyVotes(election.candidates, incumbentPartyId, economicModifier);
   const totalVotesCast = Math.floor((country?.currentPopulation || 1000000) * 0.65);
   const turnout = Math.min(95, 55 + (country?.overallNationalHealth ?? 50) * 0.3);
 
-  // Step 3: Allocate seats per chamber
+  // Seats per chamber
   const chambers = parseChambers(
     legislature.chamberType,
     legislature.name,
     legislature.totalSeats,
     legislature.electoralSystem
   );
-
-  const chamberAllocations: { chamberName: string; allocation: Map<string, number> }[] = [];
-  const totalSeatsWonPerParty = new Map<string, number>();
-
-  for (const chamber of chambers) {
-    let alloc: Map<string, number>;
-    if (chamber.electoralSystem === "proportional") {
-      alloc = dHondtAllocation(partyVotes, chamber.seats);
-    } else if (chamber.electoralSystem === "fptp") {
-      alloc = fptpAllocation(partyVotes, chamber.seats);
-    } else {
-      const propSeats = Math.floor(chamber.seats / 2);
-      const fptpSeats = chamber.seats - propSeats;
-      const propAlloc = dHondtAllocation(partyVotes, propSeats);
-      const fptpAlloc = fptpAllocation(partyVotes, fptpSeats);
-      alloc = new Map<string, number>();
-      for (const [pid, s] of propAlloc) alloc.set(pid, s + (fptpAlloc.get(pid) ?? 0));
-    }
-    chamberAllocations.push({ chamberName: chamber.name, allocation: alloc });
-    for (const [partyId, seatsWon] of alloc) {
-      totalSeatsWonPerParty.set(partyId, (totalSeatsWonPerParty.get(partyId) ?? 0) + seatsWon);
+  const allocations: ChamberAllocation[] = chambers.map((chamber) => ({
+    chamberName: chamber.name,
+    allocation: allocateChamber(chamber, partyVotes),
+  }));
+  const seatsWonPerParty = new Map<string, number>();
+  for (const { allocation } of allocations) {
+    for (const [partyId, seatsWon] of allocation) {
+      seatsWonPerParty.set(partyId, (seatsWonPerParty.get(partyId) ?? 0) + seatsWon);
     }
   }
 
-  // Step 4: ElectionResult records
-  const results: {
-    partyId: string;
-    candidateId: string;
-    votePercentage: number;
-    seatsWon: number;
-  }[] = [];
-  const totalRawVotes = partyVotes.reduce((s, x) => s + x.votes, 0);
-  for (const pv of partyVotes) {
-    const pctOfTotal = (pv.votes / totalRawVotes) * 100;
-    const seatsWon = totalSeatsWonPerParty.get(pv.partyId) ?? 0;
-    await db.electionResult.create({
-      data: {
-        electionId: election.id,
-        candidateId: pv.candidateId,
-        votesReceived: Math.round((pctOfTotal / 100) * totalVotesCast),
-        votePercentage: Math.round(pctOfTotal * 100) / 100,
-        seatsWon,
-      },
-    });
-    results.push({
-      partyId: pv.partyId,
-      candidateId: pv.candidateId,
-      votePercentage: Math.round(pctOfTotal * 100) / 100,
-      seatsWon,
-    });
-  }
+  const results = await recordResults(
+    db,
+    election.id,
+    partyVotes,
+    seatsWonPerParty,
+    totalVotesCast
+  );
 
-  // Step 5: Reassign LegislativeSeat rows per chamber
-  const allSeats = await db.legislativeSeat.findMany({
-    where: { legislatureId: legislature.id },
-    orderBy: { seatNumber: "asc" },
-  });
-  const updatedSeatIds = new Set<string>();
-  let seatOffset = 0;
+  await reassignSeats(db, legislature.id, chambers, allocations);
 
-  for (const { chamberName, allocation } of chamberAllocations) {
-    let chamberSeats = allSeats.filter((s) => s.region === chamberName);
-    if (chamberSeats.length === 0) {
-      const chamberConfig = chambers.find((c) => c.name === chamberName);
-      const numSeats = chamberConfig ? chamberConfig.seats : 0;
-      chamberSeats = allSeats.slice(seatOffset, seatOffset + numSeats);
-      seatOffset += numSeats;
-    }
-    const sortedChamberParties = [...allocation.entries()].sort((a, b) => b[1] - a[1]);
-    let chamberSeatIdx = 0;
-    for (const [partyId, seatsWon] of sortedChamberParties) {
-      for (let i = 0; i < seatsWon; i++) {
-        if (chamberSeatIdx < chamberSeats.length) {
-          const seat = chamberSeats[chamberSeatIdx]!;
-          await db.legislativeSeat.update({
-            where: { id: seat.id },
-            data: { partyId, region: chamberName },
-          });
-          updatedSeatIds.add(seat.id);
-          chamberSeatIdx++;
-        }
-      }
-    }
-    while (chamberSeatIdx < chamberSeats.length) {
-      const seat = chamberSeats[chamberSeatIdx]!;
-      await db.legislativeSeat.update({
-        where: { id: seat.id },
-        data: { partyId: null, region: chamberName },
-      });
-      updatedSeatIds.add(seat.id);
-      chamberSeatIdx++;
-    }
-  }
-
-  const unassignedSeats = allSeats.filter((s) => !updatedSeatIds.has(s.id));
-  for (const seat of unassignedSeats) {
-    await db.legislativeSeat.update({ where: { id: seat.id }, data: { partyId: null } });
-  }
-
-  // Step 6: Margin of victory
   const sortedResults = [...results].sort(
-    (a, b) =>
-      (totalSeatsWonPerParty.get(b.partyId) ?? 0) - (totalSeatsWonPerParty.get(a.partyId) ?? 0)
+    (a, b) => (seatsWonPerParty.get(b.partyId) ?? 0) - (seatsWonPerParty.get(a.partyId) ?? 0)
   );
   const marginOfVictory =
     sortedResults.length >= 2
       ? sortedResults[0]!.votePercentage - sortedResults[1]!.votePercentage
       : 100;
 
-  // Step 7: Election status
   await db.election.update({
     where: { id: election.id },
     data: {
@@ -305,34 +395,9 @@ export async function simulateElectionCore(
     },
   });
 
-  // Step 8: Political metrics
-  const govStructure = await db.governmentStructure.findUnique({
-    where: { countryId: election.countryId },
-  });
-  if (govStructure) {
-    let stabilityDelta = 0;
-    if (marginOfVictory > 15) stabilityDelta = 0.05;
-    else if (marginOfVictory > 5) stabilityDelta = 0.02;
-    else if (marginOfVictory > 2) stabilityDelta = -0.05;
-    else stabilityDelta = -0.1;
+  await updatePoliticalMetrics(db, election.countryId, marginOfVictory);
 
-    const newStability = Math.max(
-      0,
-      Math.min(1, (govStructure.politicalStability ?? 0.5) + stabilityDelta)
-    );
-    const newDemocracy = Math.min(100, (govStructure.democracyIndex ?? 50) + 2);
-
-    await db.governmentStructure.update({
-      where: { countryId: election.countryId },
-      data: {
-        politicalStability: newStability,
-        democracyIndex: newDemocracy,
-        politicalMetricsUpdated: new Date(),
-      },
-    });
-  }
-
-  // Step 9: Storyteller effect for economic impact
+  // Storyteller effect for economic impact
   const growthModifier = marginOfVictory > 10 ? 0.003 : marginOfVictory > 5 ? 0.001 : -0.003;
   await db.storytellerEffect.create({
     data: {
@@ -347,7 +412,7 @@ export async function simulateElectionCore(
     },
   });
 
-  // Step 10: Party support reflects results
+  // Party support reflects results
   for (const r of results) {
     await db.politicalParty.update({
       where: { id: r.partyId },
@@ -355,43 +420,8 @@ export async function simulateElectionCore(
     });
   }
 
-  // Step 11: Auto-news + notification
   const topResult = [...results].sort((a, b) => b.seatsWon - a.seatsWon)[0];
-  if (topResult) {
-    const winnerParty = election.candidates.find((c) => c.id === topResult.candidateId);
-    const countryRow = await db.country.findUnique({
-      where: { id: election.countryId },
-      select: { name: true },
-    });
-    void generateDiplomaticNews(db, election.countryId, "election_result", {
-      countryName: countryRow?.name ?? "Unknown",
-      partyName: winnerParty?.party?.name ?? "Leading party",
-      seats: topResult.seatsWon,
-      percentage: topResult.votePercentage.toFixed(1),
-    });
-    try {
-      await notificationAPI.create({
-        title: "Election Results",
-        message: `${winnerParty?.party?.name ?? "Leading party"} wins with ${topResult.seatsWon} seats (${topResult.votePercentage.toFixed(1)}%). Turnout: ${turnout.toFixed(1)}%`,
-        countryId: election.countryId,
-        category: "governance",
-        priority: "high",
-        type: "success",
-        source: "elections",
-        href: "/mycountry/politics",
-        actionable: true,
-        metadata: {
-          electionId: election.id,
-          winnerParty: winnerParty?.party?.name,
-          seatsWon: topResult.seatsWon,
-          marginOfVictory,
-          turnout,
-        },
-      });
-    } catch (e) {
-      console.warn("[Notifications] simulateElectionCore:", e);
-    }
-  }
+  if (topResult) await announceResults(db, election, topResult, { marginOfVictory, turnout });
 
   const finalElection = await db.election.findUnique({
     where: { id: election.id },
