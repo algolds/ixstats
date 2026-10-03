@@ -8,12 +8,54 @@ import { useState } from "react";
 import Link from "next/link";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { Calendar, Page as FileText, Trophy, OpenBook as Scroll } from "iconoir-react";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { getWikiProfilePath } from "~/lib/wiki-os/profile-url";
 import { getInitials } from "~/components/wiki-os/margin/shared/MarginUserAvatar";
+
+interface ProfileStat {
+  key: string;
+  Icon: typeof Calendar;
+  iconClass: string;
+  text: string;
+}
+
+function profileStats(
+  profile: RouterOutputs["wikios"]["getAuthorProfile"] | undefined
+): ProfileStat[] {
+  const registration = profile?.registration ?? null;
+  const editCount = profile?.editCount ?? null;
+  const lorescore = profile?.loreScore ?? 0;
+  const lorewards = profile?.totalWins ?? 0;
+  return [
+    registration && {
+      key: "joined",
+      Icon: Calendar,
+      iconClass: "text-label-secondary",
+      text: `Joined ${new Date(registration).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`,
+    },
+    editCount != null && {
+      key: "edits",
+      Icon: FileText,
+      iconClass: "text-label-secondary",
+      text: `${editCount.toLocaleString()} edits`,
+    },
+    lorescore > 0 && {
+      key: "lorescore",
+      Icon: Scroll,
+      iconClass: "text-indigo",
+      text: `${lorescore.toLocaleString()} Lorescore`,
+    },
+    lorewards > 0 && {
+      key: "lorewards",
+      Icon: Trophy,
+      iconClass: "text-yellow",
+      text: `${lorewards.toLocaleString()} Loreward${lorewards !== 1 ? "s" : ""} won`,
+    },
+  ].filter(Boolean) as ProfileStat[];
+}
 
 export function WikiOSProfileWidget({
   expanded,
@@ -25,8 +67,6 @@ export function WikiOSProfileWidget({
   const { user, isSignedIn } = useWikiAuth();
   const { themeColors } = useWikiContext();
   const [imgError, setImgError] = useState(false);
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const showExpanded = expanded || isLocalHoverExpanded;
   const hoverBorderColor = themeColors?.primary ?? "var(--wikios-accent)";
 
   // Resolve the signed-in user's consolidated profile in a single query
@@ -43,11 +83,7 @@ export function WikiOSProfileWidget({
   const initials = getInitials(displayName);
   const avatarUrl = !imgError ? user?.imageUrl : undefined;
 
-  const lorescore = authorProfile?.loreScore ?? 0;
-  const lorewards = authorProfile?.totalWins ?? 0;
   const rank = authorProfile?.rank ?? null;
-  const registration = authorProfile?.registration ?? null;
-  const editCount = authorProfile?.editCount ?? null;
 
   const renderAvatar = (withBadge: boolean) => (
     <div className="relative shrink-0">
@@ -75,6 +111,8 @@ export function WikiOSProfileWidget({
   );
 
   const profileHref = withBasePath(getWikiProfilePath(displayName));
+
+  const stats = profileStats(authorProfile);
 
   if (!expanded && !isLocalHoverExpanded) {
     return (
@@ -132,38 +170,12 @@ export function WikiOSProfileWidget({
       </div>
 
       <div className="border-separator relative z-10 mt-2 flex flex-col gap-1 border-t pt-2">
-        {registration && (
-          <div className="text-footnote text-label-secondary flex items-center gap-2">
-            <Calendar className="text-label-secondary h-3 w-3 shrink-0" />
-            <span className="truncate">
-              Joined{" "}
-              {new Date(registration).toLocaleDateString("en-US", {
-                month: "short",
-                year: "numeric",
-              })}
-            </span>
+        {stats.map(({ key, Icon, iconClass, text }) => (
+          <div key={key} className="text-footnote text-label-secondary flex items-center gap-2">
+            <Icon className={`${iconClass} h-3 w-3 shrink-0`} />
+            <span className="truncate">{text}</span>
           </div>
-        )}
-        {editCount != null && (
-          <div className="text-footnote text-label-secondary flex items-center gap-2">
-            <FileText className="text-label-secondary h-3 w-3 shrink-0" />
-            <span className="truncate">{editCount.toLocaleString()} edits</span>
-          </div>
-        )}
-        {lorescore > 0 && (
-          <div className="text-footnote text-label-secondary flex items-center gap-2">
-            <Scroll className="text-indigo h-3 w-3 shrink-0" />
-            <span className="truncate">{lorescore.toLocaleString()} Lorescore</span>
-          </div>
-        )}
-        {lorewards > 0 && (
-          <div className="text-footnote text-label-secondary flex items-center gap-2">
-            <Trophy className="text-yellow h-3 w-3 shrink-0" />
-            <span className="truncate">
-              {lorewards.toLocaleString()} Loreward{lorewards !== 1 ? "s" : ""} won
-            </span>
-          </div>
-        )}
+        ))}
       </div>
     </Link>
   );
