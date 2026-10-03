@@ -1,57 +1,34 @@
 /* ==========================================================================
    NAVIGATION SHELL
 
-   The `facet-nav` flag lives on <html> as `data-nav="facet"` and the
-   sidebar's collapsed state as `data-sidebar="collapsed"`; both are written
-   before first paint by the inline script in src/app/layout.tsx
-   (src/lib/design/appearance.ts). Everything here keys off those attributes,
-   so the server HTML (which contains both shells) and the first paint agree
-   and nothing flashes.
+   The AppSidebar (≥1024px) and TabBar (<1024px) are the only navigation. The
+   sidebar's collapsed state lives on <html> as `data-sidebar="collapsed"`,
+   written before first paint by the inline script in src/app/layout.tsx
+   (src/lib/design/appearance.ts), so the server HTML and the first paint
+   agree and nothing flashes.
 
    Shell variables (read them; don't redefine them in feature code):
-   --shell-sidebar-width   Width the AppSidebar takes at ≥1024px (0 / 16rem / 4rem collapsed).
-   --shell-tabbar-height   Space the TabBar takes at the bottom below 1024px (0 when off).
-   --shell-top-offset      `top` for sticky rails so they clear the top chrome
-                           (legacy nav: 5rem = `lg:top-20`; new shell: the Halo band).
+   --shell-sidebar-width   Width the AppSidebar takes at ≥1024px (16rem / 4rem collapsed; 0 below).
+   --shell-tabbar-height   Space the TabBar takes at the bottom below 1024px (0 at ≥1024px).
+   --shell-top-offset      `top` for sticky rails so they clear the Halo band.
    --shell-header-top      `top` for a sticky page toolbar (PageHeader).
    --shell-halo-reserve    Width kept clear in the middle of a page toolbar for Halo.
 
    Hooks for feature code:
-   [data-app-subnav]       An app's own sub-navigation (tab rail, pill bar). Hidden under
-                           the new shell, where the AppSidebar / TabBar list the same
-                           destinations (src/lib/navigation/app-sections.ts).
-   facet-nav:              Variant for styles that apply only under the new shell.
-   [data-shell-page-title] A page's own title (`shellPageTitleProps`). Hidden under the new
-                           shell wherever that page's <ShellPageHeader> shows (phones, or every
-                           width with phoneOnly={false}), so the title is never shown twice.
+   [data-app-subnav]       An app's own sub-navigation (tab rail, pill bar). Hidden at every
+                           width: the AppSidebar lists the same destinations at ≥1024px and the
+                           TabBar's More sheet below (src/lib/navigation/app-sections.ts).
+   [data-shell-page-title] A page's own title (`shellPageTitleProps`). Hidden wherever that
+                           page's <ShellPageHeader> shows (phones, or every width with
+                           phoneOnly={false}), so the title is never shown twice.
    ========================================================================== */
 
 /* AppSidebar collapsed to icons. */
 @custom-variant sidebar-collapsed (&:where([data-sidebar="collapsed"] *));
 
-/* Only under the new shell (e.g. `facet-nav:lg:col-span-12` where a hidden sub-nav freed a column). */
-@custom-variant facet-nav (&:where([data-nav="facet"] *));
-
 @layer base {
   :root {
     --shell-sidebar-width: 0px;
-    --shell-tabbar-height: 0px;
-    --shell-top-offset: 5rem;
-    --shell-header-top: var(--nav-height-mobile);
-    --shell-halo-reserve: 0px;
-  }
-
-  @media (min-width: 1024px) {
-    :root {
-      --shell-header-top: var(--nav-height-desktop);
-    }
-  }
-
-  :root[data-density="compact"] {
-    --shell-header-top: var(--nav-height-compact);
-  }
-
-  :root[data-nav="facet"] {
     /* 3.5rem bar + 0.5rem float gap + the home indicator. */
     --shell-tabbar-height: calc(4rem + env(safe-area-inset-bottom));
     /* Halo floats in a 3.5rem band at the top; rails start 1rem below it. */
@@ -61,57 +38,47 @@
   }
 
   @media (min-width: 1024px) {
-    :root[data-nav="facet"] {
+    :root {
       --shell-sidebar-width: 16rem;
       --shell-tabbar-height: 0px;
       --shell-halo-reserve: 25rem;
     }
 
-    :root[data-nav="facet"][data-sidebar="collapsed"] {
+    :root[data-sidebar="collapsed"] {
       --shell-sidebar-width: 4rem;
     }
   }
 
   /* Chromeless routes (Maps, the full-screen map editors): no sidebar, no tab bar. */
-  :root[data-nav="facet"] [data-app-shell][data-chromeless] {
+  [data-app-shell][data-chromeless] {
     --shell-sidebar-width: 0px;
     --shell-tabbar-height: 0px;
   }
 }
 
 @layer components {
-  /* <ShellGate>: both variants are in the server HTML; only the active one is displayed. */
-  [data-shell-variant] {
-    display: contents;
-  }
-
-  :root[data-nav="facet"] [data-shell-variant="legacy"],
-  :root:not([data-nav="facet"]) [data-shell-variant="facet"] {
-    display: none;
-  }
-
   /* The sidebar pushes content; the tab bar reserves the bottom. */
-  :root[data-nav="facet"] [data-shell-main] {
+  [data-shell-main] {
     padding-left: var(--shell-sidebar-width);
     padding-bottom: var(--shell-tabbar-height);
   }
 }
 
 @layer utilities {
-  /* App-local sub-navigation duplicates the AppSidebar under the new shell. In the utilities layer
-     (and more specific than one class) so it beats the element's own `flex` / `lg:block`. Pure CSS,
-     so it is right before first paint and never flashes. */
-  :root[data-nav="facet"] [data-app-subnav] {
+  /* App-local sub-navigation duplicates the AppSidebar / TabBar. In the utilities layer (and more
+     specific than one class) so it beats the element's own `flex` / `lg:block`. Pure CSS, so it is
+     right before first paint and never flashes. */
+  [data-app-subnav] {
     display: none;
   }
 
   /* A page's own title next to its ShellPageHeader: only one of them shows. */
-  :root[data-nav="facet"]:has([data-shell-page-header="all"]) [data-shell-page-title] {
+  :root:has([data-shell-page-header="all"]) [data-shell-page-title] {
     display: none;
   }
 
   @media (max-width: 1023.98px) {
-    :root[data-nav="facet"]:has([data-shell-page-header="phone"]) [data-shell-page-title] {
+    :root:has([data-shell-page-header="phone"]) [data-shell-page-title] {
       display: none;
     }
   }

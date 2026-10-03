@@ -1,11 +1,10 @@
 "use client";
 
 /**
- * PageHeader (Facet 3 spec §7.4): the page's large title (`text-large-title`, the one `<h1>`), which
- * collapses into a compact toolbar title on scroll.
+ * PageHeader: the page's large title (`text-large-title`, the one `<h1>`), which collapses into a
+ * compact toolbar title on scroll.
  *
- * The toolbar is sticky at `--shell-header-top` (0 under the new shell, below the legacy nav bar
- * otherwise) and turns into a `material-thin` bar with the compact title once the large title has
+ * The toolbar is sticky at `--shell-header-top` and turns into a `material-thin` bar with the compact title once the large title has
  * scrolled under it. It holds the optional back button and trailing actions, and keeps the middle
  * `--shell-halo-reserve` clear so Halo can float over it. Without a back button or actions the
  * toolbar takes no space until it collapses. Only opacity animates (`duration-fast`); Reduce Motion

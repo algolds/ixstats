@@ -1,10 +1,9 @@
 "use client";
 
 /**
- * Halo under the new shell (Facet 3 spec §7.4): the contextual island — search, notifications,
- * live activity, quick actions — floating top-centre over the content area, clear of the sidebar
- * (`--shell-sidebar-width`). Not the primary navigation. Halo hides itself on /maps, where
- * MapDynamicIsland takes over.
+ * Halo in the shell: the contextual island (search, notifications, live activity, quick actions)
+ * floating top-centre over the content area, clear of the sidebar (`--shell-sidebar-width`). It is
+ * not the primary navigation. Halo hides itself on /maps, where MapDynamicIsland takes over.
  */
 
 import { CommandPalette } from "~/components/halo";

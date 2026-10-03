@@ -15,7 +15,7 @@ function renderSidebar(props: Partial<React.ComponentProps<typeof AppSidebar>> =
       apps={apps}
       collapsed={false}
       onCollapsedChange={onCollapsedChange}
-      account={{ name: "diplomat" }}
+      account={<button type="button">Account: diplomat</button>}
       {...props}
     />
   );
@@ -87,20 +87,12 @@ describe("AppSidebar", () => {
     );
   });
 
-  it("shows the account and the app switcher", () => {
+  it("shows the account slot and the app switcher", () => {
     renderSidebar();
-    expect(screen.getByRole("link", { name: "Account: diplomat" })).toHaveAttribute(
-      "href",
-      "/settings?tab=account"
-    );
+    expect(screen.getByRole("button", { name: "Account: diplomat" })).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Switch app, current app MyCountry" })
     ).toHaveAttribute("aria-haspopup", "menu");
-  });
-
-  it("renders the sign-in slot when signed out", () => {
-    renderSidebar({ account: null, signIn: <button type="button">Sign in</button> });
-    expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
   });
 
   it("toggles collapse with an accessible button", () => {

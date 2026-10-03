@@ -30,14 +30,10 @@ export function NationSwitcher({ onSwitched, className }: NationSwitcherProps) {
 
   return (
     <nav aria-label="Switch nation" className={className}>
-      <div className="text-muted-foreground px-4 pt-2 pb-1 text-xs font-semibold tracking-wide uppercase">
-        Play as
-      </div>
+      <div className="text-footnote text-label-secondary px-2.5 pt-1 pb-1">Play as</div>
       {data.realms.map((realm) => (
         <div key={realm.id} role="group" aria-label={realm.name}>
-          <div className="text-muted-foreground/80 px-4 pt-1 text-xs font-medium">
-            {realm.name}
-          </div>
+          <div className="text-caption text-label-secondary px-2.5 pt-1">{realm.name}</div>
           {realm.nations.map((nation) => {
             const active = nation.id === data.activeCountryId;
             return (
@@ -47,19 +43,19 @@ export function NationSwitcher({ onSwitched, className }: NationSwitcherProps) {
                 aria-current={active ? "true" : undefined}
                 disabled={active || switchNation.isPending}
                 onClick={() => switchNation.mutate({ countryId: nation.id })}
-                className="text-foreground/80 hover:bg-accent/10 hover:text-foreground flex w-full items-center gap-3 px-4 py-1.5 text-left text-sm transition-colors disabled:cursor-default disabled:hover:bg-transparent"
+                className="text-body text-label hover:bg-fill-4 rounded-control focus-visible:outline-tint flex min-h-9 w-full cursor-pointer items-center gap-3 px-2.5 text-left transition-colors focus-visible:outline-2 disabled:cursor-default disabled:hover:bg-transparent pointer-coarse:min-h-11"
               >
                 {nation.flag ? (
                   <img
                     src={nation.flag}
                     alt=""
-                    className="border-border h-4 w-6 shrink-0 rounded-sm border object-cover"
+                    className="border-separator h-4 w-6 shrink-0 rounded-sm border object-cover"
                   />
                 ) : (
-                  <span className="bg-muted h-4 w-6 shrink-0 rounded-sm" aria-hidden="true" />
+                  <span className="bg-fill-3 h-4 w-6 shrink-0 rounded-sm" aria-hidden="true" />
                 )}
                 <span className="min-w-0 flex-1 truncate">{nation.name}</span>
-                {active && <span className="text-muted-foreground text-xs">Active</span>}
+                {active && <span className="text-caption text-label-secondary">Active</span>}
               </button>
             );
           })}

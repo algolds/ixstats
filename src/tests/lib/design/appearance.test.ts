@@ -79,29 +79,19 @@ describe("appearance pre-paint script", () => {
     expect(root.style.getPropertyValue("--text-scale")).toBe("");
   });
 
-  describe("navigation shell (facet-nav)", () => {
-    it("leaves the legacy shell on by default (NEXT_PUBLIC_FACET_NAV unset)", () => {
+  describe("navigation shell", () => {
+    it("leaves the sidebar expanded by default", () => {
       mockColorScheme(false);
       runScript();
-      expect(root.hasAttribute("data-nav")).toBe(false);
       expect(root.hasAttribute("data-sidebar")).toBe(false);
     });
 
-    it("applies the per-user preview toggle and the collapsed sidebar", () => {
-      mockColorScheme(false);
-      localStorage.setItem(NAV.facetNav, "true");
+    it("applies the collapsed sidebar and still applies the appearance preferences", () => {
+      mockColorScheme(true);
       localStorage.setItem(NAV.sidebarCollapsed, "true");
       runScript();
-      expect(root.getAttribute("data-nav")).toBe("facet");
       expect(root.getAttribute("data-sidebar")).toBe("collapsed");
-    });
-
-    it("honours an opt-out and still applies the appearance preferences", () => {
-      mockColorScheme(true);
-      localStorage.setItem(NAV.facetNav, "false");
-      runScript();
       expect(root.getAttribute("data-theme")).toBe("dark");
-      expect(root.hasAttribute("data-nav")).toBe(false);
     });
   });
 });
