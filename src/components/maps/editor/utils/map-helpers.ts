@@ -1,5 +1,13 @@
-import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
-import type { Geometry, Position, Feature, Polygon, MultiPolygon } from "geojson";
+import type { GeoJSONSource, LayerSpecification, Map as MapLibreMap } from "maplibre-gl";
+import type {
+  Feature,
+  FeatureCollection,
+  GeoJsonProperties,
+  Geometry,
+  MultiPolygon,
+  Polygon,
+  Position,
+} from "geojson";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import { intersect } from "@turf/intersect";
@@ -15,13 +23,55 @@ import { SNAP_LAYER_TYPES } from "~/lib/maps/editor-prefs";
 
 export const EMPTY_FC = { type: "FeatureCollection" as const, features: [] as Feature[] };
 
-const SNAP_GUIDE_SOURCE = "editor-snap-guide";
-const SNAP_GUIDE_LAYER = "editor-snap-guide-line";
-const SNAP_GUIDE_POINT_LAYER = "editor-snap-guide-point";
+export const pointFeature = (
+  coordinates: Position,
+  properties: GeoJsonProperties = {}
+): Feature => ({
+  type: "Feature",
+  geometry: { type: "Point", coordinates },
+  properties,
+});
 
-/**
- * Helper to get a typed GeoJSON source from the map
- */
+export const lineFeature = (
+  coordinates: Position[],
+  properties: GeoJsonProperties = {}
+): Feature => ({
+  type: "Feature",
+  geometry: { type: "LineString", coordinates },
+  properties,
+});
+
+export const collection = (features: Feature[]): FeatureCollection => ({
+  type: "FeatureCollection",
+  features,
+});
+
+const SNAP_GUIDE_SOURCE = "editor-snap-guide";
+const SNAP_GUIDE_LAYERS: SourcelessLayer[] = [
+  {
+    id: "editor-snap-guide-line",
+    type: "line",
+    paint: {
+      "line-color": "#06b6d4",
+      "line-width": 1.5,
+      "line-dasharray": [3, 3],
+      "line-opacity": 0.8,
+    },
+  },
+  {
+    id: "editor-snap-guide-point",
+    type: "circle",
+    filter: ["==", "$type", "Point"],
+    paint: {
+      "circle-radius": 5,
+      "circle-color": "#06b6d4",
+      "circle-stroke-color": "#ffffff",
+      "circle-stroke-width": 1.5,
+      "circle-opacity": 0.9,
+    },
+  },
+];
+
 export function getGeoJSONSource(map: MapLibreMap | null, id: string): GeoJSONSource | undefined {
   if (!map) return;
   try {
@@ -29,6 +79,39 @@ export function getGeoJSONSource(map: MapLibreMap | null, id: string): GeoJSONSo
   } catch {
     return undefined;
   }
+}
+
+export type SourcelessLayer = LayerSpecification extends infer L
+  ? L extends unknown
+    ? Omit<L, "source">
+    : never
+  : never;
+
+/** First call adds the GeoJSON source and its layers (in order); later calls only replace the data. */
+export function upsertGeoJSONLayers(
+  map: MapLibreMap,
+  sourceId: string,
+  data: GeoJSON.GeoJSON,
+  layers: SourcelessLayer[]
+) {
+  if (map.getSource(sourceId)) {
+    getGeoJSONSource(map, sourceId)?.setData(data);
+    return;
+  }
+  map.addSource(sourceId, { type: "geojson", data });
+  for (const layer of layers) map.addLayer({ ...layer, source: sourceId } as LayerSpecification);
+}
+
+type OpacityProperty = "fill-opacity" | "line-opacity" | "circle-opacity" | "text-opacity";
+
+/** Sets a paint opacity on a layer if it exists. */
+export function setLayerOpacity(
+  map: MapLibreMap,
+  layerId: string,
+  property: OpacityProperty,
+  value: number
+) {
+  if (map.getLayer(layerId)) map.setPaintProperty(layerId, property as "line-opacity", value);
 }
 
 /**
@@ -43,18 +126,12 @@ export function toPolygonGeometry(geom: object | null | undefined): Polygon | Mu
   return null;
 }
 
-/**
- * Helper to safely extract coordinates from a feature's geometry
- */
 export function getFeatureCoords(geometry: Geometry): Position | undefined {
   if (geometry.type === "Point") return geometry.coordinates;
   if (geometry.type === "MultiPoint") return geometry.coordinates[0];
   return undefined;
 }
 
-/**
- * Helper to calculate and cache bounding box recursively for any geometry type
- */
 export interface BoundingBox {
   minLng: number;
   minLat: number;
@@ -174,65 +251,36 @@ export function calculateOverlapGeoJson(
   };
 }
 
-/**
- * Show/hide a snap guide line between drag origin and snap target
- */
+/** Shows (or, with null ends, clears) a snap guide between the drag origin and its snap target. */
 export function updateSnapGuide(map: MapLibreMap, from: Position | null, to: Position | null) {
-  const fc: GeoJSON.FeatureCollection = {
-    type: "FeatureCollection",
-    features:
-      from && to
-        ? [
-            {
-              type: "Feature",
-              geometry: { type: "LineString", coordinates: [from, to] },
-              properties: {},
-            },
-            {
-              type: "Feature",
-              geometry: { type: "Point", coordinates: to },
-              properties: {},
-            },
-          ]
-        : [],
-  };
+  const fc = collection(from && to ? [lineFeature([from, to]), pointFeature(to)] : []);
 
-  const source = map.getSource(SNAP_GUIDE_SOURCE);
-  if (source && "setData" in source) {
-    (source as GeoJSONSource).setData(fc);
-  } else {
-    map.addSource(SNAP_GUIDE_SOURCE, { type: "geojson", data: fc });
-    map.addLayer({
-      id: SNAP_GUIDE_LAYER,
-      type: "line",
-      source: SNAP_GUIDE_SOURCE,
-      paint: {
-        "line-color": "#06b6d4",
-        "line-width": 1.5,
-        "line-dasharray": [3, 3],
-        "line-opacity": 0.8,
-      },
-    });
-    map.addLayer({
-      id: SNAP_GUIDE_POINT_LAYER,
-      type: "circle",
-      source: SNAP_GUIDE_SOURCE,
-      filter: ["==", "$type", "Point"],
-      paint: {
-        "circle-radius": 5,
-        "circle-color": "#06b6d4",
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 1.5,
-        "circle-opacity": 0.9,
-      },
-    });
+  upsertGeoJSONLayers(map, SNAP_GUIDE_SOURCE, fc, SNAP_GUIDE_LAYERS);
+}
+
+export const haversineDistance = distanceKm;
+
+/** Every coordinate run (line or ring) a geometry is made of. */
+function coordinateRuns(geom: Geometry): Position[][] {
+  switch (geom.type) {
+    case "LineString":
+      return [geom.coordinates];
+    case "MultiLineString":
+    case "Polygon":
+      return geom.coordinates;
+    case "MultiPolygon":
+      return geom.coordinates.flat();
+    default:
+      return [];
   }
 }
 
-/**
- * Distance between two [lng, lat] points in km (haversine, IxEarth radius).
- */
-export const haversineDistance = distanceKm;
+/** Cached bbox of a layer feature (stored on the feature itself). */
+function featureBBox(feature: Feature, geom: Geometry): BoundingBox {
+  const cached = feature as Feature & { _bbox?: BoundingBox };
+  cached._bbox ??= getGenericBBox(geom);
+  return cached._bbox;
+}
 
 /**
  * Snap a coordinate point to visible background features (rivers, lakes, coastline,
@@ -251,23 +299,14 @@ export function snapToLayerFeatures(
 
   for (const layerType of SNAP_LAYER_TYPES) {
     if (!visibleLayers.has(layerType)) continue;
+    const features = worldMapLayers.find((l) => l.type === layerType)?.data?.features ?? [];
 
-    const layer = worldMapLayers.find((l) => l.type === layerType);
-    if (!layer || !layer.data || !layer.data.features) continue;
-
-    for (const feature of layer.data.features) {
+    for (const feature of features) {
       const geom = feature.geometry;
       if (!geom) continue;
 
-      // Retrieve cached bbox or compute and store it on feature properties
-      const featWithBBox = feature as Feature & { _bbox?: BoundingBox };
-      let bbox = featWithBBox._bbox;
-      if (!bbox) {
-        bbox = getGenericBBox(geom);
-        featWithBBox._bbox = bbox;
-      }
-
       // Skip distance checks if point is not within tolerance of feature's bounding box
+      const bbox = featureBBox(feature, geom);
       if (
         point[0] < bbox.minLng - tolerance ||
         point[0] > bbox.maxLng + tolerance ||
@@ -277,57 +316,13 @@ export function snapToLayerFeatures(
         continue;
       }
 
-      if (geom.type === "LineString") {
-        const coords = geom.coordinates;
-        for (let i = 0; i < coords.length - 1; i++) {
-          const proj = projectPointToSegment(
-            point,
-            coords[i] as Position,
-            coords[i + 1] as Position
-          );
+      for (const run of coordinateRuns(geom)) {
+        for (let i = 0; i < run.length - 1; i++) {
+          const proj = projectPointToSegment(point, run[i] as Position, run[i + 1] as Position);
           const d = distanceDeg(point, proj);
           if (d < bestDist && d <= tolerance) {
             bestDist = d;
             bestProj = proj as [number, number];
-          }
-        }
-      } else if (geom.type === "MultiLineString") {
-        for (const line of geom.coordinates) {
-          for (let i = 0; i < line.length - 1; i++) {
-            const proj = projectPointToSegment(point, line[i] as Position, line[i + 1] as Position);
-            const d = distanceDeg(point, proj);
-            if (d < bestDist && d <= tolerance) {
-              bestDist = d;
-              bestProj = proj as [number, number];
-            }
-          }
-        }
-      } else if (geom.type === "Polygon") {
-        for (const ring of geom.coordinates) {
-          for (let i = 0; i < ring.length - 1; i++) {
-            const proj = projectPointToSegment(point, ring[i] as Position, ring[i + 1] as Position);
-            const d = distanceDeg(point, proj);
-            if (d < bestDist && d <= tolerance) {
-              bestDist = d;
-              bestProj = proj as [number, number];
-            }
-          }
-        }
-      } else if (geom.type === "MultiPolygon") {
-        for (const poly of geom.coordinates) {
-          for (const ring of poly) {
-            for (let i = 0; i < ring.length - 1; i++) {
-              const proj = projectPointToSegment(
-                point,
-                ring[i] as Position,
-                ring[i + 1] as Position
-              );
-              const d = distanceDeg(point, proj);
-              if (d < bestDist && d <= tolerance) {
-                bestDist = d;
-                bestProj = proj as [number, number];
-              }
-            }
           }
         }
       }
