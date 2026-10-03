@@ -266,18 +266,20 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                       <div className="border-separator grid grid-cols-3 gap-2 border-t pt-2">
                         <div className="text-center">
                           <div className="text-footnote text-label-secondary">Cards</div>
-                          <div className="text-headline text-label">0</div>
+                          <div className="text-headline text-label">{collection.cardCount}</div>
                         </div>
                         <div className="text-center">
                           <div className="text-footnote text-label-secondary">Value</div>
                           <div className="text-headline text-yellow flex items-center justify-center gap-0.5">
-                            <IxCreditsSymbol className="h-3.5 w-3.5 shrink-0" />0
+                            <IxCreditsSymbol className="h-3.5 w-3.5 shrink-0" />
+                            {collection.totalValue.toLocaleString()}
                           </div>
                         </div>
                         <div className="text-center">
                           <div className="text-footnote text-label-secondary">Likes</div>
                           <div className="text-headline text-red flex items-center justify-center gap-1">
-                            <Heart className="h-3 w-3" />0
+                            <Heart className="h-3 w-3" />
+                            {collection.likes}
                           </div>
                         </div>
                       </div>
