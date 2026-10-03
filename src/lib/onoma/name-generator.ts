@@ -116,133 +116,138 @@ interface PresetGenerationContext {
   options?: GenerateOptions;
 }
 
-export function generatePresetName(ctx: PresetGenerationContext): string | null {
-  const {
-    category,
-    subType = "generic",
-    gender = "neutral",
-    culture = "any",
-    characterChain,
-    syllableChain,
-    options,
-  } = ctx;
+type PresetGenerator = (
+  ctx: Required<Pick<PresetGenerationContext, "gender" | "culture">> & PresetGenerationContext
+) => string | null;
 
-  if (subType === "generic") return null;
+/** Wraps a generator that takes the character chain and options. */
+const withChain =
+  (generate: (chain: MarkovChain, options?: GenerateOptions) => string): PresetGenerator =>
+  ({ characterChain, options }) =>
+    generate(characterChain, options);
 
-  if (category === "person") {
-    if (subType === "goblin") return generateGoblinName();
-    if (subType === "orc") return generateOrcName();
-    if (subType === "ogre") return generateOgreName();
-    if (subType === "primitive") return generatePrimitiveName(gender);
-    if (subType === "dwarf") return generateDwarfName(gender);
-    if (subType === "halfling") return generateHalflingName(gender);
-    if (subType === "gnome") return generateGnomeName(gender);
-    if (subType === "elf") return generateElfName(gender);
-    if (subType === "elf-alt") return generateElfName(gender, true);
-    if (subType === "faery") return generateFaeryName(gender);
-    if (subType === "faery-alt") return generateFaeryName(gender, true);
-    if (subType === "dark-elf") return generateDarkElfName(gender);
-    if (subType === "dark-elf-alt") return generateDarkElfName(gender, true);
-    if (subType === "half-demon") return generateHalfDemonName(gender);
-    if (subType === "dragon") return generateDragonName(gender);
-    if (subType === "demon") return generateDemonName();
-    if (subType === "angel") return generateAngelName(gender);
-  }
+/** Wraps a generator that takes the character's gender (and an optional alternate flag). */
+const withGender =
+  (generate: (gender: Gender, alt?: boolean) => string, alt?: boolean): PresetGenerator =>
+  ({ gender }) =>
+    generate(gender, alt);
 
-  if (category === "organization") {
-    if (subType === "mystic-order") return generateMysticOrderName(characterChain, options);
-    if (subType === "military-unit") return generateMilitaryUnitName(characterChain, options);
-    if (subType === "covert-org") return generateCovertOrgName(characterChain, options);
-    if (subType === "business-company") return generateBusinessCompanyName(characterChain, options);
-    if (subType === "academic-institution")
-      return generateAcademicInstitutionName(characterChain, options);
-    if (subType === "political-party") return generatePoliticalPartyName(characterChain, options);
-    if (subType === "government-agency")
-      return generateGovernmentAgencyName(characterChain, options);
-    if (subType === "media-outlet") return generateMediaOutletName(characterChain, options);
-    if (subType === "ngo-foundation") return generateNgoName(characterChain, options);
-    if (subType === "religious-order") return generateReligiousOrderName(characterChain, options);
-    if (subType === "tavern") {
-      const adjectives = [
-        "Golden",
-        "Prancing",
-        "Rusty",
-        "Drunken",
-        "Green",
-        "Silver",
-        "Blind",
-        "Laughing",
-        "Broken",
-        "Wandering",
-      ];
-      const nouns = [
-        "Pony",
-        "Dragon",
-        "Boar",
-        "Anchor",
-        "Goblet",
-        "Shield",
-        "Fox",
-        "Hound",
-        "Barrel",
-        "Raven",
-        "Flagon",
-      ];
-      const adj = pickRandom(adjectives);
-      const noun = pickRandom(nouns);
+const TAVERN_ADJECTIVES = [
+  "Golden",
+  "Prancing",
+  "Rusty",
+  "Drunken",
+  "Green",
+  "Silver",
+  "Blind",
+  "Laughing",
+  "Broken",
+  "Wandering",
+];
+const TAVERN_NOUNS = [
+  "Pony",
+  "Dragon",
+  "Boar",
+  "Anchor",
+  "Goblet",
+  "Shield",
+  "Fox",
+  "Hound",
+  "Barrel",
+  "Raven",
+  "Flagon",
+];
+const LANDMARK_SUFFIXES = [
+  "River",
+  "Valley",
+  "Mount",
+  "Bay",
+  "Lake",
+  "Ridge",
+  "Coast",
+  "Canyon",
+  "Forest",
+  "Peak",
+  "Hills",
+];
+
+/** A chain-made base name, falling back to the syllable chain and then fantasy syllables. */
+const chainedBase = ({ characterChain, syllableChain, options }: PresetGenerationContext) =>
+  MarkovChain.capitalize(
+    characterChain.generate(options) ||
+      syllableChain?.generate(options) ||
+      generateFantasySyllableName()
+  );
+
+const PRESET_GENERATORS: Partial<Record<NameCategory, Record<string, PresetGenerator>>> = {
+  person: {
+    goblin: () => generateGoblinName(),
+    orc: () => generateOrcName(),
+    ogre: () => generateOgreName(),
+    primitive: withGender(generatePrimitiveName),
+    dwarf: withGender(generateDwarfName),
+    halfling: withGender(generateHalflingName),
+    gnome: withGender(generateGnomeName),
+    elf: withGender(generateElfName),
+    "elf-alt": withGender(generateElfName, true),
+    faery: withGender(generateFaeryName),
+    "faery-alt": withGender(generateFaeryName, true),
+    "dark-elf": withGender(generateDarkElfName),
+    "dark-elf-alt": withGender(generateDarkElfName, true),
+    "half-demon": withGender(generateHalfDemonName),
+    dragon: withGender(generateDragonName),
+    demon: () => generateDemonName(),
+    angel: withGender(generateAngelName),
+  },
+  organization: {
+    "mystic-order": withChain(generateMysticOrderName),
+    "military-unit": withChain(generateMilitaryUnitName),
+    "covert-org": withChain(generateCovertOrgName),
+    "business-company": withChain(generateBusinessCompanyName),
+    "academic-institution": withChain(generateAcademicInstitutionName),
+    "political-party": withChain(generatePoliticalPartyName),
+    "government-agency": withChain(generateGovernmentAgencyName),
+    "media-outlet": withChain(generateMediaOutletName),
+    "ngo-foundation": withChain(generateNgoName),
+    "religious-order": withChain(generateReligiousOrderName),
+    tavern: ({ characterChain, options }) => {
+      const adj = pickRandom(TAVERN_ADJECTIVES);
+      const noun = pickRandom(TAVERN_NOUNS);
       const base = characterChain.generate(options);
-      if (base && Math.random() < 0.3) {
-        return `${MarkovChain.capitalize(base)}'s ${noun}`;
-      }
+      if (base && Math.random() < 0.3) return `${MarkovChain.capitalize(base)}'s ${noun}`;
       return `The ${adj} ${noun}`;
-    }
-  }
+    },
+  },
+  military: {
+    "military-unit": withChain(generateMilitaryUnitName),
+    "mercenary-band": withChain(generateMercenaryBandName),
+  },
+  dynasty: {
+    "fantasy-syllable": () => generateFantasySyllableName(),
+    "noble-surname": ({ culture, characterChain, options }) =>
+      generateNobleSurname(culture, characterChain, options),
+  },
+  city: {
+    "settlement-colony": (ctx) => {
+      const base = chainedBase(ctx);
+      const d3 = Math.floor(Math.random() * 3);
+      if (d3 === 0) return `New ${base}`;
+      if (d3 === 1) return `Port ${base}`;
+      return `${base} Colony`;
+    },
+  },
+  geography: {
+    "natural-landmark": (ctx) => {
+      const base = chainedBase(ctx);
+      return `${base} ${LANDMARK_SUFFIXES[Math.floor(Math.random() * LANDMARK_SUFFIXES.length)]}`;
+    },
+  },
+};
 
-  if (category === "military") {
-    if (subType === "military-unit") return generateMilitaryUnitName(characterChain, options);
-    if (subType === "mercenary-band") return generateMercenaryBandName(characterChain, options);
-  }
-
-  if (category === "dynasty") {
-    if (subType === "fantasy-syllable") return generateFantasySyllableName();
-    if (subType === "noble-surname") return generateNobleSurname(culture, characterChain, options);
-  }
-
-  if (category === "city" && subType === "settlement-colony") {
-    const base =
-      characterChain.generate(options) ||
-      syllableChain?.generate(options) ||
-      generateFantasySyllableName();
-    const d3 = Math.floor(Math.random() * 3);
-    const capitalized = MarkovChain.capitalize(base);
-    if (d3 === 0) return `New ${capitalized}`;
-    if (d3 === 1) return `Port ${capitalized}`;
-    return `${capitalized} Colony`;
-  }
-
-  if (category === "geography" && subType === "natural-landmark") {
-    const base =
-      characterChain.generate(options) ||
-      syllableChain?.generate(options) ||
-      generateFantasySyllableName();
-    const suffixes = [
-      "River",
-      "Valley",
-      "Mount",
-      "Bay",
-      "Lake",
-      "Ridge",
-      "Coast",
-      "Canyon",
-      "Forest",
-      "Peak",
-      "Hills",
-    ];
-    const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
-    return `${MarkovChain.capitalize(base)} ${suffix}`;
-  }
-
-  return null;
+export function generatePresetName(ctx: PresetGenerationContext): string | null {
+  const { category, subType = "generic", gender = "neutral", culture = "any" } = ctx;
+  if (subType === "generic") return null;
+  return PRESET_GENERATORS[category]?.[subType]?.({ ...ctx, gender, culture }) ?? null;
 }
 
 interface ExportNameItem {
