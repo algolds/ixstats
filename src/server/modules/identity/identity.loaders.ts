@@ -221,7 +221,7 @@ export async function loadThinkpagesAccount(user: IdentityUser | null) {
   );
 }
 
-export interface ClerkProfile {
+interface ClerkProfile {
   createdAt: Date;
   username: string | null;
   displayName: string | null;

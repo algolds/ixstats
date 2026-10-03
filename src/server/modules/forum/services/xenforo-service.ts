@@ -1,7 +1,7 @@
 // src/lib/xenforo-service.ts
 // Fetches recent activity from the XenForo forum REST API for the unified activity hub.
 
-export interface ForumActivityItem {
+interface ForumActivityItem {
   id: string;
   type: "thread" | "post";
   title: string;
@@ -137,27 +137,6 @@ export interface XFConversationMessage {
   Attachments?: XFAttachment[];
 }
 
-export interface XFAlert {
-  alert_id: number;
-  alerted_user_id: number;
-  user_id: number;
-  username: string;
-  content_type: string;
-  content_id: number;
-  action: string;
-  event_date: number;
-  read_date: number;
-  view_date: number;
-  alert_text?: string;
-}
-
-export interface XFSearchResult {
-  content_type: string;
-  content_id: number;
-  Thread?: XFThread;
-  Post?: XFPost;
-}
-
 // Response wrappers
 export interface XFThreadsResponse {
   threads: XFThread[];
@@ -177,25 +156,8 @@ export interface XFForumsResponse {
   nodes: XFForum[];
 }
 
-export interface XFForumResponse {
-  node: XFForum;
-  threads?: XFThread[];
-  sticky_threads?: XFThread[];
-  pagination?: XFPagination;
-}
-
 export interface XFConversationsResponse {
   conversations: XFConversation[];
-  pagination?: XFPagination;
-}
-
-export interface XFAlertsResponse {
-  alerts: XFAlert[];
-  pagination?: XFPagination;
-}
-
-export interface XFSearchResponse {
-  results: XFSearchResult[];
   pagination?: XFPagination;
 }
 
@@ -204,15 +166,6 @@ export interface XFPagination {
   last_page: number;
   per_page: number;
   total: number;
-}
-
-/** Alias for XFForum — forums are node types in XenForo */
-export type XFNodeForum = XFForum;
-
-/** Generic paginated response wrapper */
-export interface XFPaginatedResponse<T = unknown> {
-  data: T[];
-  pagination?: XFPagination;
 }
 
 export interface ForumThread {
@@ -346,30 +299,6 @@ export async function getForumTrendingThreads(limit = 15): Promise<ForumThread[]
 
   cachedThreads = { data: threads, fetchedAt: Date.now() };
   return threads.slice(0, limit);
-}
-
-/**
- * Search forum threads by title for card/article tie-in.
- * Returns matching threads sorted by last post date.
- */
-export async function searchForumThreads(query: string, limit = 5): Promise<ForumThread[]> {
-  if (!getApiKey()) return [];
-
-  const baseUrl = "https://forum.ixwiki.com";
-  const data = await xfFetch<XFThreadsResponse>(
-    `/threads/?title=${encodeURIComponent(query)}&order=last_post_date&direction=desc&limit=${limit}`
-  );
-
-  return (data?.threads ?? []).map((t) => ({
-    threadId: t.thread_id,
-    title: t.title,
-    author: t.username,
-    timestamp: new Date(t.post_date * 1000),
-    url: `${baseUrl}/threads/${t.thread_id}/`,
-    forumName: t.Forum?.title,
-    replyCount: t.reply_count,
-    viewCount: t.view_count,
-  }));
 }
 
 /**

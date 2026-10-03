@@ -67,13 +67,13 @@ export interface ScheduledTask {
   run: () => Promise<void>;
 }
 
-export interface SchedulerHandle {
+interface SchedulerHandle {
   stop: () => void;
 }
 
 type Timer = ReturnType<typeof setTimeout>;
 
-export interface SchedulerDeps {
+interface SchedulerDeps {
   now?: () => number;
   setTimer?: (fn: () => void, ms: number) => Timer;
   clearTimer?: (t: Timer) => void;

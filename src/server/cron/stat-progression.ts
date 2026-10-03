@@ -27,9 +27,9 @@ import {
 import type { CountryStats } from "~/types/ixstats";
 
 /** Countries loaded and projected per batch. */
-export const STAT_PROGRESSION_BATCH_SIZE = 50;
+const STAT_PROGRESSION_BATCH_SIZE = 50;
 /** Relative change below which a stored stat counts as unchanged. */
-export const STAT_UNCHANGED_TOLERANCE = 1e-6;
+const STAT_UNCHANGED_TOLERANCE = 1e-6;
 
 /** Start of the IxTime month containing `ixTime` (UTC): the history throttle period. */
 export function historyPeriodStart(ixTime: number): number {
@@ -122,7 +122,7 @@ const PROGRESSION_SELECT = {
   },
 } as const;
 
-export interface StatProgressionOptions {
+interface StatProgressionOptions {
   db?: PrismaClient;
   /** Target IxTime; defaults to now. */
   ixTime?: number;

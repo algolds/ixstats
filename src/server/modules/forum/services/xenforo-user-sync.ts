@@ -3,7 +3,6 @@
  *
  * Syncs IxStats data (cards, vault value, credits, country) to XenForo forum
  * user profiles via custom user fields. Provides:
- *   - One-time custom field setup via XenForo REST API
  *   - User lookup by forum username
  *   - Profile data sync (card count, vault value, credits, country)
  *   - Debounced sync to avoid excessive API calls
@@ -12,76 +11,12 @@
 import { db } from "~/server/db";
 import { getXfApiKey, getXfApiUrl, xfPost } from "./xenforo-service";
 
-// ─── Custom Field Definitions ────────────────────────────────────────────────
-
-const IXSTATS_CUSTOM_FIELDS = {
-  ixstats_cards_owned: {
-    title: "Cards Owned",
-    description: "Total IxCards in vault",
-    display_group: "personal",
-  },
-  ixstats_vault_value: {
-    title: "Vault Value",
-    description: "Total IxCards vault value (IX Points)",
-    display_group: "personal",
-  },
-  ixstats_credits: {
-    title: "IxCredits",
-    description: "IxCredits balance",
-    display_group: "personal",
-  },
-  ixstats_country: {
-    title: "Country",
-    description: "IxStats country",
-    display_group: "personal",
-  },
-} as const;
-
 // ─── Debounce Tracking ──────────────────────────────────────────────────────
 
 const SYNC_DEBOUNCE_MS = 5 * 60 * 1000; // 5 minutes
 const lastSyncTimes = new Map<string, number>();
 
 // ─── Public API ─────────────────────────────────────────────────────────────
-
-/**
- * One-time admin setup: create IxStats custom user fields in XenForo.
- * Idempotent — XenForo returns 400 if the field already exists (ignored).
- */
-export async function setupForumCustomFields(): Promise<{
-  created: string[];
-  errors: string[];
-}> {
-  if (!getXfApiKey()) {
-    return { created: [], errors: ["XENFORO_API_KEY not configured"] };
-  }
-
-  const created: string[] = [];
-  const errors: string[] = [];
-
-  for (const [fieldId, config] of Object.entries(IXSTATS_CUSTOM_FIELDS)) {
-    const result = await xfPost("/custom-user-fields/", {
-      field_id: fieldId,
-      title: config.title,
-      description: config.description,
-      display_group: config.display_group,
-      display_order: "100",
-      field_type: "textbox",
-      viewable_profile: "1",
-      viewable_message: "1",
-    });
-
-    if (result) {
-      created.push(fieldId);
-      console.log(`[XF Sync] Created custom field: ${fieldId}`);
-    } else {
-      errors.push(fieldId);
-      console.warn(`[XF Sync] Failed to create field (may already exist): ${fieldId}`);
-    }
-  }
-
-  return { created, errors };
-}
 
 /**
  * Look up a XenForo user by username.

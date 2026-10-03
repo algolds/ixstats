@@ -26,7 +26,7 @@ export interface PassportVisibility {
   achievements: boolean;
 }
 
-export const PASSPORT_VISIBILITY_KEYS = [
+const PASSPORT_VISIBILITY_KEYS = [
   "accolades",
   "impact",
   "forumStats",

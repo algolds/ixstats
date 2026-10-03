@@ -54,29 +54,6 @@ export async function applyScheduledChangesJob(): Promise<ApplyResult> {
 }
 
 /**
- * Cleanup old scheduled changes
- * Removes applied/cancelled changes older than 30 days
- */
-export async function cleanupOldChanges(): Promise<number> {
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-  const result = await db.scheduledChange.deleteMany({
-    where: {
-      status: {
-        in: ["applied", "cancelled"],
-      },
-      updatedAt: {
-        lt: thirtyDaysAgo,
-      },
-    },
-  });
-
-  console.log(`[CLEANUP] Removed ${result.count} old scheduled changes`);
-  return result.count;
-}
-
-/**
  * Get statistics about scheduled changes
  */
 export async function getScheduledChangesStats() {

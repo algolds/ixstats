@@ -16,7 +16,7 @@ interface PostDateFields {
   [key: string]: unknown;
 }
 
-export function hydratePostDates<T extends PostDateFields | null | undefined>(post: T): T {
+function hydratePostDates<T extends PostDateFields | null | undefined>(post: T): T {
   if (!post) return post;
   return {
     ...post,

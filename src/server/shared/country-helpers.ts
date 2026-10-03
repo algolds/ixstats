@@ -96,7 +96,7 @@ export async function getCountryComponentsStatsData(db: any, countryId: string) 
   return classifyComponentsStatsData(gov, econ, tax, activePolicies, now);
 }
 
-export type ComponentsStatsData = ReturnType<typeof classifyComponentsStatsData>;
+type ComponentsStatsData = ReturnType<typeof classifyComponentsStatsData>;
 
 interface ComponentRow {
   componentType: string;
@@ -108,7 +108,7 @@ interface ComponentRow {
  * Split one country's component rows into active / implementing and total its active policies'
  * maintenance (shared by the per-country and batch loaders).
  */
-export function classifyComponentsStatsData(
+function classifyComponentsStatsData(
   gov: ComponentRow[],
   econ: ComponentRow[],
   tax: ComponentRow[],

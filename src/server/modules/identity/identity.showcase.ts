@@ -8,13 +8,10 @@
 import { db } from "~/server/db";
 
 /** Highest rarity first. Unknown rarities sort after Common. */
-export const RIBBON_RARITY_ORDER = ["Legendary", "Epic", "Rare", "Uncommon", "Common"] as const;
+const RIBBON_RARITY_ORDER = ["Legendary", "Epic", "Rare", "Uncommon", "Common"] as const;
 
 /** How many ribbons the country-page rack shows. */
 export const COUNTRY_RACK_SIZE = 3;
-
-/** How many achievements the passport highlights by name. */
-export const SHOWCASE_HIGHLIGHT_SIZE = 6;
 
 export interface PassportRibbon {
   /** Achievement key, e.g. "econ-first-million". */

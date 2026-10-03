@@ -29,7 +29,7 @@ type BuilderDb = {
   user: Pick<PrismaClient["user"], "findUnique">;
 };
 
-export interface BuilderUser {
+interface BuilderUser {
   /** Platform user id (`User.id`). */
   id: string;
   clerkUserId: string;

@@ -7,18 +7,18 @@
 import { Cache } from "~/lib/cache";
 import { isDatabaseReadOnly } from "~/server/db";
 
-export type PlayAsDeniedReason =
+type PlayAsDeniedReason =
   | "not-staff"
   | "target-is-system-owner"
   | "target-not-found"
   | "target-outranks";
 
-export type PlayAsDecision =
+type PlayAsDecision =
   | { kind: "none" }
   | { kind: "granted"; targetUserId: string }
   | { kind: "denied"; reason: PlayAsDeniedReason };
 
-export interface DecidePlayAsInput {
+interface DecidePlayAsInput {
   realUserId: string;
   requestedUserId: string | null;
   requesterRole: { name?: string | null; level?: number | null } | null;
@@ -83,7 +83,7 @@ export function decidePlayAs(input: DecidePlayAsInput): PlayAsDecision {
   return { kind: "granted", targetUserId: requestedUserId };
 }
 
-export interface RecordPlayAsAuditEntry {
+interface RecordPlayAsAuditEntry {
   realUserId: string;
   requestedUserId: string;
   kind: "granted" | "denied";

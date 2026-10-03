@@ -18,7 +18,7 @@ import { assertCountryWriteAccess } from "~/server/shared/country-authorization"
 export type SelectionMethod =
   "elected" | "appointed" | "sortition" | "hereditary" | "ex-officio" | "corporatist";
 
-export type ElectoralSystem = "proportional" | "fptp" | "mixed";
+type ElectoralSystem = "proportional" | "fptp" | "mixed";
 
 export interface ChamberConfig {
   name: string;
@@ -27,7 +27,7 @@ export interface ChamberConfig {
   selectionMethod: SelectionMethod;
 }
 
-export function toElectoralSystem(val?: string): ElectoralSystem {
+function toElectoralSystem(val?: string): ElectoralSystem {
   if (val === "fptp" || val === "mixed" || val === "proportional") return val;
   return "proportional";
 }

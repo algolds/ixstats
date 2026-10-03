@@ -9,7 +9,7 @@ import type { PrismaClient } from "@prisma/client";
 /** Shown when a user has no linked name anywhere. */
 export const UNKNOWN_DISPLAY_NAME = "Unknown user";
 
-export interface DisplayNameSources {
+interface DisplayNameSources {
   country?: { name: string | null } | null;
   forumUsername?: string | null;
   wikiUsername?: string | null;
@@ -28,7 +28,7 @@ export function pickDisplayName(sources: DisplayNameSources): string | null {
 }
 
 /** The two delegates the resolver reads; accepts the Prisma client or a transaction client. */
-export type DisplayNameDb = Pick<PrismaClient, "user" | "thinkpagesAccount">;
+type DisplayNameDb = Pick<PrismaClient, "user" | "thinkpagesAccount">;
 
 /**
  * Batch-resolve display names for Clerk user IDs: one users query, plus one ThinkPages query

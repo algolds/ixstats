@@ -14,7 +14,7 @@ import type { PrismaClient } from "@prisma/client";
 
 export const FORUM_CODE_WINDOW_MS = 30 * 60 * 1000;
 
-export type ForumLinkErrorCode =
+type ForumLinkErrorCode =
   "NOT_CONFIGURED" | "FORUM_USER_NOT_FOUND" | "FORUM_UNREACHABLE" | "CODE_NOT_FOUND";
 
 export class ForumLinkError extends Error {
@@ -33,7 +33,7 @@ export interface ForumProfileProof {
   about?: string | null;
 }
 
-export interface ForumLinkDeps {
+interface ForumLinkDeps {
   /** HMAC key for the codes; null when no secret is configured. */
   secret: string | null;
   lookupUser: (username: string) => Promise<{ userId: number; username: string } | null>;

@@ -14,10 +14,10 @@
  */
 import { isValidCronPattern } from "./scheduler";
 
-export type CronJobResult = object | number;
-export type CronJobRun = () => Promise<CronJobResult>;
+type CronJobResult = object | number;
+type CronJobRun = () => Promise<CronJobResult>;
 
-export interface CronJobDefinition {
+interface CronJobDefinition {
   /** Stable kebab-case id; used in CRON_ENABLED_JOBS. */
   name: string;
   /** 5-field UTC cron. */

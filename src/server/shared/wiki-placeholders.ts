@@ -18,10 +18,10 @@ export interface WikiPlaceholderMetadata {
   comparisonRank?: string;
 }
 
-export type PlaceholderStatus =
+type PlaceholderStatus =
   "resolved" | "not-found" | "missing-context" | "unknown-field" | "malformed";
 
-export interface CanonicalPlaceholderResult {
+interface CanonicalPlaceholderResult {
   key: string;
   value: string;
   rawVal: unknown;

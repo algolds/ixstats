@@ -4,7 +4,7 @@ import {
   type TaxComponentType,
 } from "@prisma/client";
 
-export interface CreateEconomicComponentInput {
+interface CreateEconomicComponentInput {
   countryId: string;
   componentType: EconomicComponentType;
   effectivenessScore?: number;
@@ -14,14 +14,14 @@ export interface CreateEconomicComponentInput {
   notes?: string;
 }
 
-export interface UpdateEconomicComponentInput {
+interface UpdateEconomicComponentInput {
   id: string;
   effectivenessScore?: number;
   isActive?: boolean;
   notes?: string;
 }
 
-export interface BulkEconomicItem {
+interface BulkEconomicItem {
   componentType: EconomicComponentType;
   effectivenessScore?: number;
   isActive?: boolean;
@@ -31,7 +31,7 @@ export interface BulkEconomicItem {
   notes?: string;
 }
 
-export interface CreateTaxComponentInput {
+interface CreateTaxComponentInput {
   countryId: string;
   componentType: TaxComponentType;
   effectivenessScore?: number;
@@ -41,14 +41,14 @@ export interface CreateTaxComponentInput {
   notes?: string;
 }
 
-export interface UpdateTaxComponentInput {
+interface UpdateTaxComponentInput {
   id: string;
   effectivenessScore?: number;
   isActive?: boolean;
   notes?: string;
 }
 
-export interface BulkTaxItem {
+interface BulkTaxItem {
   componentType: TaxComponentType;
   effectivenessScore?: number;
   isActive?: boolean;
@@ -58,7 +58,7 @@ export interface BulkTaxItem {
   notes?: string;
 }
 
-export interface BudgetScenarioCategoryInput {
+interface BudgetScenarioCategoryInput {
   categoryName: string;
   allocatedAmount: number;
   allocatedPercent: number;
@@ -67,7 +67,7 @@ export interface BudgetScenarioCategoryInput {
   performance?: number;
 }
 
-export interface CreateBudgetScenarioInput {
+interface CreateBudgetScenarioInput {
   countryId: string;
   name: string;
   description?: string;

@@ -19,7 +19,7 @@ import {
 } from "~/lib/economy/archetypes/seed";
 
 /** An archetype as the API serves it: `id` is the row id, `key` the stable archetype id. */
-export type CatalogArchetype = EconomicArchetype & {
+type CatalogArchetype = EconomicArchetype & {
   key: string;
   era: ArchetypeEra;
   isActive: boolean;

@@ -14,7 +14,7 @@ import {
 } from "~/server/api/routers/thinkpages/thinktanks/realm-board";
 
 /** How far back "board activity" in the directory looks. */
-export const BOARD_ACTIVITY_WINDOW_DAYS = 7;
+const BOARD_ACTIVITY_WINDOW_DAYS = 7;
 
 /** Realms the directory lists: active public realms, plus IxWorld whatever its row says. */
 export const DIRECTORY_REALM_WHERE = {

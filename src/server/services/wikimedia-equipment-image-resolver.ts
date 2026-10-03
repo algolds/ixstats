@@ -13,7 +13,7 @@ const prisma = new PrismaClient();
 const THUMBNAIL_WIDTH = 300;
 const CACHE_DURATION_DAYS = 7;
 
-export interface WikimediaImageResult {
+interface WikimediaImageResult {
   success: boolean;
   imageUrl: string | null;
   thumbnailUrl?: string;
@@ -23,7 +23,7 @@ export interface WikimediaImageResult {
   error?: string;
 }
 
-export interface BatchResolveResult {
+interface BatchResolveResult {
   equipmentId: string;
   name: string;
   result: WikimediaImageResult;

@@ -10,7 +10,7 @@ import { UNKNOWN_DISPLAY_NAME } from "~/server/shared/display-names";
 
 // ─── Formatters for `api.messages` ───────────────────────────────────────────
 
-export interface MessagesConversationResult {
+interface MessagesConversationResult {
   id: string;
   type: string;
   name: string | null;
@@ -142,68 +142,6 @@ export function formatMessagesConversation(
   };
 }
 
-export function formatMessagesMessage(
-  msg: any,
-  actorId: string,
-  accountMap: Map<string, UserAccount>
-) {
-  const senderAccount = accountMap.get(msg.userId) ?? {
-    id: msg.userId,
-    username: msg.userId,
-    displayName: msg.senderName || "Unknown",
-    profileImageUrl: msg.senderAvatar || null,
-    accountType: "country" as const,
-  };
-
-  const isDeleted = Boolean(msg.deletedAt || msg.isDeleted);
-  const isEdited = Boolean(msg.editedAt || msg.isEdited);
-  const timestamp = new Date(msg.ixTimeTimestamp || msg.createdAt || Date.now());
-
-  let replyToFormatted = undefined;
-  if (msg.replyTo) {
-    const replySender = accountMap.get(msg.replyTo.userId);
-    const replyDeleted = Boolean(msg.replyTo.deletedAt || msg.replyTo.isDeleted);
-    replyToFormatted = {
-      id: msg.replyTo.id,
-      content: replyDeleted ? "This message was deleted" : msg.replyTo.content,
-      senderName: replySender?.displayName ?? msg.replyTo.senderName ?? "Unknown",
-    };
-  }
-
-  const rawReactions = msg.reactions
-    ? typeof msg.reactions === "string"
-      ? JSON.parse(msg.reactions)
-      : msg.reactions
-    : {};
-  const reactions = Object.entries(rawReactions).map(([emoji, count]) => ({
-    emoji,
-    count: count as number,
-    users: [],
-    hasReacted: false,
-  }));
-
-  return {
-    id: msg.id,
-    conversationId: msg.conversationId,
-    senderId: msg.userId,
-    sender: senderAccount,
-    content: isDeleted ? "This message was deleted" : msg.content,
-    attachments: msg.attachments
-      ? typeof msg.attachments === "string"
-        ? JSON.parse(msg.attachments)
-        : msg.attachments
-      : [],
-    reactions,
-    replyTo: replyToFormatted,
-    isDeleted,
-    isEdited,
-    createdAt: timestamp,
-    updatedAt: new Date(msg.editedAt || msg.ixTimeTimestamp || Date.now()),
-    source: msg.source || "thinkshare",
-    isOwn: msg.userId === actorId,
-  };
-}
-
 // ─── Formatters for `api.thinkpages.messaging` ───────────────────────────────
 
 export function formatThinkpagesConversation(
@@ -256,47 +194,5 @@ export function formatThinkpagesConversation(
     unreadCount,
     accountId: actorId,
     account: actorAccount,
-  };
-}
-
-export function formatThinkpagesMessage(
-  msg: any,
-  _actorId: string,
-  accountMap: Map<string, UserAccount>
-) {
-  const senderAccount = accountMap.get(msg.userId);
-  const isDeleted = Boolean(msg.deletedAt || msg.isDeleted);
-  const isEdited = Boolean(msg.editedAt || msg.isEdited);
-  const timestamp = new Date(msg.ixTimeTimestamp || msg.createdAt || Date.now());
-
-  let replyToFormatted = undefined;
-  if (msg.replyTo) {
-    const replySender = accountMap.get(msg.replyTo.userId);
-    const replyDeleted = Boolean(msg.replyTo.deletedAt || msg.replyTo.isDeleted);
-    replyToFormatted = {
-      id: msg.replyTo.id,
-      content: replyDeleted ? "This message was deleted" : msg.replyTo.content,
-      senderName: replySender?.displayName ?? msg.replyTo.senderName ?? "Unknown",
-    };
-  }
-
-  return {
-    id: msg.id,
-    conversationId: msg.conversationId,
-    userId: msg.userId,
-    content: isDeleted ? "This message was deleted" : msg.content,
-    attachments: msg.attachments
-      ? typeof msg.attachments === "string"
-        ? JSON.parse(msg.attachments)
-        : msg.attachments
-      : [],
-    replyToId: msg.replyToId ?? undefined,
-    isDeleted,
-    isEdited,
-    createdAt: timestamp,
-    updatedAt: new Date(msg.editedAt || msg.ixTimeTimestamp || Date.now()),
-    senderName: senderAccount?.displayName ?? msg.senderName ?? "Unknown",
-    senderAvatar: senderAccount?.profileImageUrl ?? msg.senderAvatar ?? null,
-    replyTo: replyToFormatted,
   };
 }

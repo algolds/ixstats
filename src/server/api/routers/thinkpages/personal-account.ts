@@ -19,7 +19,7 @@ type PersonalDb = Pick<
   "thinkpagesAccount" | "thinkpagesPersonalAccount" | "user" | "$transaction"
 >;
 
-export interface PersonalAccountPreferences {
+interface PersonalAccountPreferences {
   username?: string | null;
   displayName?: string | null;
 }

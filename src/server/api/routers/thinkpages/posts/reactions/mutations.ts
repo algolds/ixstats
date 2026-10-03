@@ -22,7 +22,7 @@ const invalidateFeeds = async () => {
  * Post update for a new reaction tally: the JSON tally plus `likeCount`, which mirrors the
  * `like` entry so feed and post views show the real number (it was never written before).
  */
-export function countersData(reactionCounts: Record<string, number>) {
+function countersData(reactionCounts: Record<string, number>) {
   return {
     reactionCounts: JSON.stringify(reactionCounts),
     likeCount: Math.max(0, reactionCounts.like ?? 0),

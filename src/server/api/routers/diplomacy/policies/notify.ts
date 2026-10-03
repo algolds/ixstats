@@ -2,7 +2,7 @@ import { notificationAPI, type NotificationType } from "~/lib/notifications/api"
 import { guardNotificationEvent } from "~/lib/notifications/guard";
 
 /** Where proposal / invite notifications send the player: the MyCountry diplomacy inbox. */
-export const DIPLOMACY_INBOX_HREF = "/mycountry/diplomacy";
+const DIPLOMACY_INBOX_HREF = "/mycountry/diplomacy";
 
 interface OwnerLookupDb {
   country: { findMany: (args: any) => Promise<any[]> };
