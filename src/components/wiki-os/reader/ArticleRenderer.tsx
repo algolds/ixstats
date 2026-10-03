@@ -4,6 +4,8 @@ import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { addSectionEditLinks, type TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 import { StickyToc } from "~/components/wiki-os/reader/StickyToc";
+import { TocDrawer } from "~/components/wiki-os/reader/ArticleToc";
+import { useWikiSetting } from "~/components/wiki-os/shared/useWikiSetting";
 import { InfoboxWithMap } from "~/components/wiki-os/reader/InfoboxWithMap";
 import { useImageLightbox } from "~/components/wiki-os/reader/ImageLightbox";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -153,6 +155,9 @@ export function ArticleRenderer({
   const marginOpen = isMarginOpen && !readOnly;
   const marginEnabled = !!title && !readOnly;
   const [companionCollapsed, setCompanionCollapsed] = useState(false);
+  const [tocOpen, setTocOpen] = useState(false);
+  const showWikiToc = useWikiSetting("wikios:showWikiToc", true);
+  const tocVisible = showWikiToc && toc.length > 0;
 
   // Persist companion collapsed preference (xl only)
   useEffect(() => {
@@ -549,6 +554,8 @@ export function ArticleRenderer({
           themeColors={themeColors}
           authorInfo={authorInfo}
           awardsData={awardsData}
+          tocLength={tocVisible ? toc.length : 0}
+          onTocClick={() => setTocOpen(true)}
         />
         <SourceWikiNote title={title} wikiSource={source} />
 
@@ -707,7 +714,7 @@ export function ArticleRenderer({
             narrator={narrator}
             readOnly={readOnly}
           />
-          {toc.length > 0 && (
+          {tocVisible && (
             <div className="-mr-1 min-h-0 flex-1 scrollbar-thin overflow-y-auto [mask-image:linear-gradient(to_bottom,transparent,black_8px,black_calc(100%-8px),transparent)] pr-1">
               <StickyToc entries={toc} contentRef={contentRef} isCollapsed={false} />
             </div>
@@ -728,6 +735,8 @@ export function ArticleRenderer({
           <ChevronLeft className="h-3.5 w-3.5" />
         </button>
       )}
+
+      {tocVisible && <TocDrawer open={tocOpen} onClose={() => setTocOpen(false)} entries={toc} />}
 
       {lightboxPortal}
       {citeTooltipPortal}

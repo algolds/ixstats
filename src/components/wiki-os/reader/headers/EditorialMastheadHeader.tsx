@@ -9,6 +9,7 @@ import { withBasePath } from "~/lib/base-path";
 import type { ArticleHeaderProps } from "../ArticleHeader";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { WatchButton } from "../WatchButton";
+import { TocButton } from "../ArticleToc";
 
 interface EditorialMastheadProps extends ArticleHeaderProps {
   primaryAward: any;
@@ -133,6 +134,8 @@ export function EditorialMastheadHeader({
   themeColors,
   authorInfo,
   awardsData,
+  tocLength = 0,
+  onTocClick,
   primaryAward,
   badgeConfig,
   showCelebration,
@@ -162,6 +165,7 @@ export function EditorialMastheadHeader({
       <div className="mb-4 flex flex-wrap items-baseline gap-3">
         <h1 className="text-large-title text-label lg:text-display">{title.replace(/_/g, " ")}</h1>
         <WatchButton title={title} wikiSource={wikiSource} />
+        <TocButton tocLength={tocLength} onClick={onTocClick} />
       </div>
 
       {/* Metadata & Awards Ledger */}

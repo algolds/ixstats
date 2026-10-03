@@ -17,6 +17,7 @@ import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext
 import { detectMediaType } from "~/lib/wiki-os/transformers/media-theme";
 import type { ActiveCountryData } from "~/components/wiki-os/shared/ActiveCountryUnifiedWidget";
 import type { FlagColors } from "~/lib/flags/flag-color-extractor";
+import { TocButton } from "./ArticleToc";
 import { EditorialMastheadHeader } from "./headers/EditorialMastheadHeader";
 import { WatchButton } from "./WatchButton";
 import { focusRing } from "~/components/ui/button";
@@ -126,6 +127,8 @@ export function WikiOSHeader({
   themeColors,
   authorInfo,
   awardsData,
+  tocLength = 0,
+  onTocClick,
 }: ArticleHeaderProps) {
   const rawBackdropUrl: string | null =
     typeof countryData?.flagUrl === "string"
@@ -233,6 +236,8 @@ export function WikiOSHeader({
         themeColors={themeColors}
         authorInfo={authorInfo}
         awardsData={awardsData}
+        tocLength={tocLength}
+        onTocClick={onTocClick}
         primaryAward={primaryAward}
         badgeConfig={badgeConfig}
         showCelebration={showCelebration}
@@ -318,6 +323,7 @@ export function WikiOSHeader({
             <h1 className="text-label text-title-2 sm:text-title-1">{title.replace(/_/g, " ")}</h1>
 
             <WatchButton title={title} wikiSource={wikiSource} />
+            <TocButton tocLength={tocLength} onClick={onTocClick} />
 
             {awardsData?.hasAwards && primaryAward && badgeConfig && (
               <Popover open={showPopover} onOpenChange={setShowPopover}>
