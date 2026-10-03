@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import {
   Group as Users,
@@ -20,7 +20,7 @@ import { SOVEREIGNTY_TYPE_MAP } from "~/lib/maps/map-config";
 import { sanitizeWikiContent } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { toTitleCase } from "~/lib/utils";
-import type { SelectedCountry } from "../IxWorldMap";
+import type { NeighborTarget } from "../IxWorldMap";
 import {
   formatPopulation,
   formatNumber,
@@ -30,28 +30,131 @@ import {
 import { Card } from "~/components/ui/card";
 
 interface CountryOverviewTabProps {
-  country: SelectedCountry;
   summary: any;
   sovereignty: any;
   neighbors: any[];
   wikiRichIntro: any;
   isOwner: boolean;
-  onNeighborClick?: (neighbor: {
-    featureId: string;
-    countryId: string | null;
-    displayName: string;
-    centroidLng?: number;
-    centroidLat?: number;
-  }) => void;
+  onNeighborClick?: (neighbor: NeighborTarget) => void;
   onGeographyFilter?: (filter: { type: "continent" | "region"; value: string } | null) => void;
   onEditMap?: () => void;
-  setActiveTab: (tab: "overview" | "info" | "geography") => void;
+  setActiveTab: (tab: Section) => void;
   setActiveModal: (modal: "gdp" | "population" | null) => void;
 }
 
+type Section = "overview" | "info" | "geography";
+
+const SOVEREIGNTY_LABELS = SOVEREIGNTY_TYPE_MAP as Record<string, { label: string; short: string }>;
+
+function OverviewSection({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: ReactNode;
+  icon?: typeof Swords;
+  children: ReactNode;
+}) {
+  return (
+    <div className="mt-3">
+      <Eyebrow className={Icon ? "flex items-center gap-2" : "block"}>
+        {Icon && <Icon className="h-3 w-3" />}
+        {title}
+      </Eyebrow>
+      {children}
+    </div>
+  );
+}
+
+/** A subject country (domain) or neighbour shown as a pill that selects it on the map. */
+function CountryPill({
+  name,
+  flag,
+  suffix,
+  variant = "outline",
+  onClick,
+}: {
+  name: string;
+  flag?: string | null;
+  suffix?: ReactNode;
+  variant?: "outline" | "secondary";
+  onClick: () => void;
+}) {
+  return (
+    <Button
+      variant={variant}
+      size="xs"
+      className={flag || suffix ? "gap-1 rounded-full" : "rounded-full"}
+      onClick={onClick}
+    >
+      {flag && <img src={flag} alt="" className="h-3 w-4 rounded-xs object-cover" />}
+      {name}
+      {suffix}
+    </Button>
+  );
+}
+
+function SovereignSection({
+  sovereign,
+  onNeighborClick,
+}: {
+  sovereign: any;
+  onNeighborClick?: (neighbor: NeighborTarget) => void;
+}) {
+  const autonomy =
+    sovereign.autonomyLevel != null ? Math.round(sovereign.autonomyLevel * 100) : null;
+  return (
+    <OverviewSection title="Sovereignty" icon={Swords}>
+      <Card className="mt-2 p-2">
+        <div className="text-label-secondary text-footnote">
+          {SOVEREIGNTY_LABELS[sovereign.relationshipType]?.label ?? sovereign.relationshipType} of
+        </div>
+        <button
+          onClick={() =>
+            onNeighborClick?.({
+              featureId: "",
+              countryId: sovereign.countryId,
+              displayName: sovereign.name,
+            })
+          }
+          className="text-label text-body hover:text-blue mt-0.5 flex items-center gap-2 font-medium transition-colors"
+        >
+          {sovereign.flag && (
+            <img
+              src={sovereign.flag}
+              alt=""
+              className="border-separator h-3.5 w-5 rounded-xs border object-cover"
+            />
+          )}
+          {sovereign.name}
+        </button>
+        {autonomy != null && (
+          <div className="mt-2 flex items-center gap-2">
+            <span className="text-label-secondary text-footnote">Autonomy</span>
+            <div className="bg-fill-3 h-1.5 flex-1 rounded-full">
+              <div className="bg-blue h-1.5 rounded-full" style={{ width: `${autonomy}%` }} />
+            </div>
+            <span className="text-label text-caption tabular-nums">{autonomy}%</span>
+          </div>
+        )}
+        {sovereign.establishedDate && (
+          <div className="text-label-secondary text-footnote mt-1">
+            Est. {sovereign.establishedDate}
+          </div>
+        )}
+      </Card>
+    </OverviewSection>
+  );
+}
+
+interface Domain {
+  countryId: string;
+  name: string;
+  flag?: string | null;
+  relationshipType?: string;
+}
+
 export function CountryOverviewTab({
-  // oxlint-disable-next-line eslint/no-unused-vars
-  country,
   summary,
   sovereignty,
   neighbors,
@@ -63,6 +166,11 @@ export function CountryOverviewTab({
   setActiveTab,
   setActiveModal,
 }: CountryOverviewTabProps) {
+  const geographyFilters = [
+    { type: "continent", value: summary.continent },
+    { type: "region", value: summary.region },
+  ] as const;
+
   return (
     <>
       {/* Brief wiki intro — first paragraph only, full content in Info tab */}
@@ -115,41 +223,30 @@ export function CountryOverviewTab({
         <StatCard icon={Crown} label="Econ. Tier" value={summary.economicTier ?? "—"} />
       </div>
 
-      {/* Geography — clickable badges to highlight on map */}
       {(summary.continent || summary.region) && (
         <div className="mt-4">
           <Eyebrow className="block">Geography</Eyebrow>
           <div className="mt-1 flex flex-wrap gap-2">
-            {summary.continent && (
-              <Button
-                variant="outline"
-                size="xs"
-                className="rounded-full"
-                onClick={() =>
-                  onGeographyFilter?.({ type: "continent", value: summary.continent! })
-                }
-              >
-                {summary.continent}
-              </Button>
-            )}
-            {summary.region && (
-              <Button
-                variant="outline"
-                size="xs"
-                className="rounded-full"
-                onClick={() => onGeographyFilter?.({ type: "region", value: summary.region! })}
-              >
-                {summary.region}
-              </Button>
+            {geographyFilters.map(
+              ({ type, value }) =>
+                value && (
+                  <Button
+                    key={type}
+                    variant="outline"
+                    size="xs"
+                    className="rounded-full"
+                    onClick={() => onGeographyFilter?.({ type, value })}
+                  >
+                    {value}
+                  </Button>
+                )
             )}
           </div>
         </div>
       )}
 
-      {/* Leader / Government */}
       {(summary.leader || summary.governmentType) && (
-        <div className="mt-3">
-          <Eyebrow className="block">Government</Eyebrow>
+        <OverviewSection title="Government">
           <div className="text-label-secondary text-footnote mt-1 space-y-0.5">
             {summary.leader && (
               <p>
@@ -165,133 +262,50 @@ export function CountryOverviewTab({
               </p>
             )}
           </div>
-        </div>
+        </OverviewSection>
       )}
 
-      {/* Sovereignty - subject of another */}
       {sovereignty.sovereign && (
-        <div className="mt-3">
-          <Eyebrow className="flex items-center gap-2">
-            <Swords className="h-3 w-3" />
-            Sovereignty
-          </Eyebrow>
-          <Card className="mt-2 p-2">
-            <div className="text-label-secondary text-footnote">
-              {SOVEREIGNTY_TYPE_MAP[
-                sovereignty.sovereign.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP
-              ]?.label ?? sovereignty.sovereign.relationshipType}{" "}
-              of
-            </div>
-            <button
-              onClick={() =>
-                onNeighborClick?.({
-                  featureId: "",
-                  countryId: sovereignty.sovereign!.countryId,
-                  displayName: sovereignty.sovereign!.name,
-                })
-              }
-              className="text-label text-body hover:text-blue mt-0.5 flex items-center gap-2 font-medium transition-colors"
-            >
-              {sovereignty.sovereign.flag && (
-                <img
-                  src={sovereignty.sovereign.flag}
-                  alt=""
-                  className="border-separator h-3.5 w-5 rounded-xs border object-cover"
-                />
-              )}
-              {sovereignty.sovereign.name}
-            </button>
-            {sovereignty.sovereign.autonomyLevel != null && (
-              <div className="mt-2 flex items-center gap-2">
-                <span className="text-label-secondary text-footnote">Autonomy</span>
-                <div className="bg-fill-3 h-1.5 flex-1 rounded-full">
-                  <div
-                    className="bg-blue h-1.5 rounded-full"
-                    style={{
-                      width: `${Math.round(sovereignty.sovereign.autonomyLevel * 100)}%`,
-                    }}
-                  />
-                </div>
-                <span className="text-label text-caption tabular-nums">
-                  {Math.round(sovereignty.sovereign.autonomyLevel * 100)}%
-                </span>
-              </div>
-            )}
-            {sovereignty.sovereign.establishedDate && (
-              <div className="text-label-secondary text-footnote mt-1">
-                Est. {sovereignty.sovereign.establishedDate}
-              </div>
-            )}
-          </Card>
-        </div>
+        <SovereignSection sovereign={sovereignty.sovereign} onNeighborClick={onNeighborClick} />
       )}
 
-      {/* Sovereignty - sovereign over others */}
       {sovereignty.subjects.length > 0 && (
-        <div className="mt-3">
-          <Eyebrow className="flex items-center gap-2">
-            <Shield className="h-3 w-3" />
-            Domains ({sovereignty.subjects.length})
-          </Eyebrow>
+        <OverviewSection title={`Domains (${sovereignty.subjects.length})`} icon={Shield}>
           <div className="mt-1 flex flex-wrap gap-1">
-            {sovereignty.subjects.map(
-              (s: {
-                countryId: string;
-                name: string;
-                flag?: string | null;
-                relationshipType?: string;
-              }) => (
-                <Button
-                  key={s.countryId}
-                  variant="outline"
-                  size="xs"
-                  className="gap-1 rounded-full"
-                  onClick={() =>
-                    onNeighborClick?.({
-                      featureId: "",
-                      countryId: s.countryId,
-                      displayName: s.name,
-                    })
-                  }
-                >
-                  {s.flag && (
-                    <img src={s.flag} alt="" className="h-3 w-4 rounded-xs object-cover" />
-                  )}
-                  {s.name}
+            {sovereignty.subjects.map((s: Domain) => (
+              <CountryPill
+                key={s.countryId}
+                name={s.name}
+                flag={s.flag}
+                suffix={
                   <span className="text-label-secondary text-footnote">
-                    (
-                    {SOVEREIGNTY_TYPE_MAP[s.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP]
-                      ?.short ?? s.relationshipType}
-                    )
+                    ({SOVEREIGNTY_LABELS[s.relationshipType ?? ""]?.short ?? s.relationshipType})
                   </span>
-                </Button>
-              )
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Neighbors */}
-      {neighbors.length > 0 && (
-        <div className="mt-3">
-          <Eyebrow className="block">Neighbors</Eyebrow>
-          <div className="mt-1 flex flex-wrap gap-1">
-            {neighbors.map((n) => (
-              <Button
-                key={n.featureId}
-                variant="secondary"
-                size="xs"
-                className="rounded-full"
-                onClick={() => onNeighborClick?.(n)}
-              >
-                {n.displayName}
-              </Button>
+                }
+                onClick={() =>
+                  onNeighborClick?.({ featureId: "", countryId: s.countryId, displayName: s.name })
+                }
+              />
             ))}
           </div>
-        </div>
+        </OverviewSection>
       )}
 
-      {/* Action buttons */}
+      {neighbors.length > 0 && (
+        <OverviewSection title="Neighbors">
+          <div className="mt-1 flex flex-wrap gap-1">
+            {neighbors.map((n) => (
+              <CountryPill
+                key={n.featureId}
+                name={n.displayName}
+                variant="secondary"
+                onClick={() => onNeighborClick?.(n)}
+              />
+            ))}
+          </div>
+        </OverviewSection>
+      )}
+
       <div className="mt-4 flex flex-col gap-2">
         {isOwner && onEditMap && (
           <Button variant="outline" size="sm" onClick={onEditMap}>

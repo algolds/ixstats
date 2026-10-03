@@ -99,7 +99,6 @@ export function CountryInfoContent({
           </div>
         ) : state.summary ? (
           <CountryOverviewTab
-            country={country}
             summary={state.summary}
             sovereignty={state.sovereignty}
             neighbors={state.neighbors}

@@ -10,7 +10,7 @@
 
 import { memo } from "react";
 import { Xmark as X } from "iconoir-react";
-import type { SelectedCountry } from "./IxWorldMap";
+import type { NeighborTarget, SelectedCountry } from "./IxWorldMap";
 import { SnapBottomSheet } from "./SnapBottomSheet";
 import { useIsMobile } from "~/hooks/useIsMobile";
 import { Button } from "~/components/ui/button";
@@ -44,13 +44,7 @@ const PopulationDetailsModal = dynamic(
 interface CountryInfoPanelProps {
   country: SelectedCountry;
   onClose: () => void;
-  onNeighborClick?: (neighbor: {
-    featureId: string;
-    countryId: string | null;
-    displayName: string;
-    centroidLng?: number;
-    centroidLat?: number;
-  }) => void;
+  onNeighborClick?: (neighbor: NeighborTarget) => void;
   onGeographyFilter?: (filter: { type: "continent" | "region"; value: string } | null) => void;
   onEditMap?: () => void;
 }

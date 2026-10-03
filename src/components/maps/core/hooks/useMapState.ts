@@ -1,9 +1,14 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import type { SelectedCountry, SelectedFeature, HoveredCountry } from "../IxWorldMap";
+import type {
+  SelectedCountry,
+  SelectedFeature,
+  HoveredCountry,
+  NeighborTarget,
+  OverlayVisibility,
+} from "../IxWorldMap";
 import type { ProjectionMode } from "~/lib/maps/map-config";
-import type { OverlayVisibility } from "../IxWorldMap";
 import { buildDefaultVisibility, applyOverlayToggle } from "~/lib/maps/overlay-registry";
 
 interface UseMapStateProps {
@@ -247,13 +252,7 @@ export function useMapState({
   );
 
   const handleNeighborClick = useCallback(
-    (neighbor: {
-      featureId: string;
-      countryId: string | null;
-      displayName: string;
-      centroidLng?: number;
-      centroidLat?: number;
-    }) => {
+    (neighbor: NeighborTarget) => {
       let lng = neighbor.centroidLng ?? 0;
       let lat = neighbor.centroidLat ?? 0;
 

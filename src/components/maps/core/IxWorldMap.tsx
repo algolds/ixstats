@@ -30,6 +30,15 @@ export interface SelectedCountry {
   countryId: string | null;
 }
 
+/** A neighbouring country picked from a panel; centroid is optional (looked up when absent). */
+export interface NeighborTarget {
+  featureId: string;
+  countryId: string | null;
+  displayName: string;
+  centroidLng?: number;
+  centroidLat?: number;
+}
+
 export interface SelectedFeature {
   id: string;
   featureType: "city" | "poi" | "capital" | "storyPin";
