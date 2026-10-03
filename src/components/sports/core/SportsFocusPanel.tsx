@@ -117,11 +117,11 @@ function OrganizationFocusContent({
           clearFocus();
           router.push(withBasePath(`/myclub/${team.id}`));
         }}
-        className="rounded-row border-separator bg-surface hover:bg-fill-3 text-label text-footnote shadow-card w-full cursor-pointer justify-between border px-3 py-2 font-semibold transition active:scale-[0.98]"
+        className="rounded-row border-separator bg-surface hover:bg-fill-3 text-label text-footnote shadow-card w-full cursor-pointer justify-between border px-3 py-2 font-semibold transition"
       >
         <span className="flex items-center gap-2">
           <Shield className="text-teal h-4 w-4" />
-          Open Club Headquarters
+          Open club headquarters
         </span>
         <ArrowRight className="text-label-secondary h-3.5 w-3.5" />
       </Button>
@@ -296,7 +296,7 @@ function AthleteFocusContent({
       {/* Ratings & Skills Matrix */}
       {skillKeys.length > 0 && (
         <div className="space-y-2">
-          <span className="text-eyebrow text-label-secondary">Attributes & Skills</span>
+          <span className="text-eyebrow text-label-secondary">Attributes & skills</span>
           <div className="grid grid-cols-2 gap-2">
             {skillKeys.map((key) => {
               const val = ratings[key] ?? 50;
@@ -430,7 +430,7 @@ export function SportsFocusPanel({
           variant="ghost"
           size="icon-sm"
           onClick={clearFocus}
-          title="Close Focus"
+          title="Close focus"
           aria-label="Close focus"
           className="text-label-secondary rounded-full"
         >

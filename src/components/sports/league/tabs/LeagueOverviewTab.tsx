@@ -141,7 +141,7 @@ export function LeagueOverviewTab({
               Standings
             </h3>
             <Button variant="ghost" size="sm" onClick={() => onNavigate("standings")}>
-              <span>Full Table</span>
+              <span>Full table</span>
               <ArrowRight />
             </Button>
           </div>
@@ -166,7 +166,7 @@ export function LeagueOverviewTab({
           {/* Next Up / Simulation Card */}
           <Card padding="md" className="space-y-4">
             <div className="flex items-center justify-between">
-              <Eyebrow>Next Round</Eyebrow>
+              <Eyebrow>Next round</Eyebrow>
               <Badge variant={activeSeason ? "success" : "default"}>
                 {activeSeason ? `Round ${nextMatchDay ?? 1}` : "Completed"}
               </Badge>
@@ -228,7 +228,7 @@ export function LeagueOverviewTab({
                         <span>Starting Season...</span>
                       </>
                     ) : (
-                      <span>Start Next Season</span>
+                      <span>Start next season</span>
                     )}
                   </Button>
                 )}
@@ -266,7 +266,7 @@ export function LeagueOverviewTab({
             <Card padding="md" className="space-y-3">
               <h3 className="text-subhead text-label-secondary flex items-center gap-2">
                 <Flame className="text-orange size-4" aria-hidden />
-                Top Teams
+                Top teams
               </h3>
 
               <FacetListSection variant="plain" aria-label="Top teams">
@@ -326,10 +326,10 @@ export function LeagueOverviewTab({
         <div className="flex items-center justify-between px-1">
           <h3 className="text-subhead text-label-secondary flex items-center gap-2">
             <Activity className="size-4" aria-hidden />
-            Recent Results
+            Recent results
           </h3>
           <Button variant="ghost" size="sm" onClick={() => onNavigate("schedule")}>
-            <span>Full Schedule</span>
+            <span>Full schedule</span>
             <ArrowRight />
           </Button>
         </div>
@@ -345,7 +345,7 @@ export function LeagueOverviewTab({
             <EmptyState
               compact
               icon={<Calendar />}
-              title="No Matches Played Yet"
+              title="No matches played yet"
               message="Simulate a round above to view match results."
             />
           </Card>

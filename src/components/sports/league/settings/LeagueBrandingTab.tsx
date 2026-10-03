@@ -42,7 +42,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
   return (
     <div className="space-y-4 py-3">
       <div className="space-y-2">
-        <Label htmlFor="league-name">League Name</Label>
+        <Label htmlFor="league-name">League name</Label>
         <Input
           id="league-name"
           value={name}
@@ -53,7 +53,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="wiki-slug">Wiki Article Slug</Label>
+        <Label htmlFor="wiki-slug">Wiki article slug</Label>
         <Input
           id="wiki-slug"
           value={wikiSlug}
@@ -67,7 +67,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
       </div>
 
       <div className="space-y-2">
-        <Label>League Logo</Label>
+        <Label>League logo</Label>
         <div className="flex items-start gap-4">
           <div
             className={cn(
@@ -106,7 +106,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
               className="text-footnote"
             >
               <ImageIcon className="mr-2 h-3.5 w-3.5" />
-              Browse Media
+              Browse media
             </Button>
             {previewSrc && (
               <Button
@@ -136,7 +136,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
 
       {/* Cover Image */}
       <div className="space-y-2">
-        <Label>Cover Image</Label>
+        <Label>Cover image</Label>
         <p className="text-label-secondary text-footnote leading-tight">
           Shown on the card carousel. Recommended 3:2 ratio.
         </p>
@@ -162,7 +162,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
               className="text-footnote"
             >
               <ImageIcon className="mr-2 h-3.5 w-3.5" />
-              Browse Media
+              Browse media
             </Button>
             {coverUrl && (
               <Button

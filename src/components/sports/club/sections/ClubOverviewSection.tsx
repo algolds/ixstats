@@ -107,7 +107,7 @@ export function ClubOverviewSection({
             {/* Match notifications toggle */}
             <Card padding="md" className="flex items-center justify-between">
               <div className="min-w-0 pr-4">
-                <p className="text-headline text-label">Match Notifications</p>
+                <p className="text-headline text-label">Match notifications</p>
                 <p className="text-label-secondary text-footnote">
                   Receive notification push alerts when {team.name} competes.
                 </p>
@@ -135,7 +135,7 @@ export function ClubOverviewSection({
                   />
                 </Card>
                 <Card padding="md">
-                  <Stat label="League Points" value={<>{currentStandings.points}</>} />
+                  <Stat label="League points" value={<>{currentStandings.points}</>} />
                 </Card>
                 <Card padding="md">
                   <Stat
@@ -171,7 +171,7 @@ export function ClubOverviewSection({
                 <div className="bg-surface-secondary rounded-row p-4">
                   <div className="mb-2 flex items-center gap-2">
                     <Users className="text-tint size-4" aria-hidden />
-                    <h4 className="text-label text-headline">Train Squad</h4>
+                    <h4 className="text-label text-headline">Train squad</h4>
                   </div>
                   <p className="text-label-secondary text-footnote leading-relaxed">
                     Improve specific athlete attributes by conducting targeted drills or initiating
@@ -182,7 +182,7 @@ export function ClubOverviewSection({
                 <div className="bg-surface-secondary rounded-row p-4">
                   <div className="mb-2 flex items-center gap-2">
                     <ArrowLeftRight className="text-tint size-4" aria-hidden />
-                    <h4 className="text-label text-headline">Scout Transfers</h4>
+                    <h4 className="text-label text-headline">Scout transfers</h4>
                   </div>
                   <p className="text-label-secondary text-footnote leading-relaxed">
                     Explore the sealed-bid transfer market to sign promising athletes or put your
@@ -193,7 +193,7 @@ export function ClubOverviewSection({
                 <div className="bg-surface-secondary rounded-row p-4">
                   <div className="mb-2 flex items-center gap-2">
                     <BarChart3 className="text-tint size-4" aria-hidden />
-                    <h4 className="text-label text-headline">Tweak Tactics</h4>
+                    <h4 className="text-label text-headline">Tweak tactics</h4>
                   </div>
                   <p className="text-label-secondary text-footnote leading-relaxed">
                     Adjust tactical layouts, team shapes, and player roles to outclass your rivals
@@ -204,7 +204,7 @@ export function ClubOverviewSection({
                 <div className="bg-surface-secondary rounded-row p-4">
                   <div className="mb-2 flex items-center gap-2">
                     <DollarSign className="text-tint size-4" aria-hidden />
-                    <h4 className="text-label text-headline">Collect Revenue</h4>
+                    <h4 className="text-label text-headline">Collect revenue</h4>
                   </div>
                   <p className="text-label-secondary text-footnote leading-relaxed">
                     Manage commercial deals, collect gate receipts, and ensure stadium operations
@@ -217,11 +217,11 @@ export function ClubOverviewSection({
             {/* Club Statistics Grid */}
             <div className="grid gap-4 sm:grid-cols-3">
               <Card padding="md">
-                <Stat label="Squad Members" value={<>{team.players?.length ?? 0}</>} />
+                <Stat label="Squad members" value={<>{team.players?.length ?? 0}</>} />
               </Card>
               <Card padding="md">
                 <Stat
-                  label="Avg Roster OVR"
+                  label="Avg roster OVR"
                   value={
                     <>
                       {team.players && team.players.length > 0
@@ -239,7 +239,7 @@ export function ClubOverviewSection({
                 />
               </Card>
               <Card padding="md">
-                <Stat label="Available Budget" value={<>₷{team.budget ?? 0}</>} />
+                <Stat label="Available budget" value={<>₷{team.budget ?? 0}</>} />
               </Card>
             </div>
           </>
@@ -258,7 +258,7 @@ export function ClubOverviewSection({
             <CardHeader>
               <CardTitle className="text-label flex items-center gap-2">
                 <Calendar className="text-label-secondary size-4" aria-hidden />
-                Upcoming Fixtures
+                Upcoming fixtures
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">

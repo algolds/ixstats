@@ -411,9 +411,9 @@ export function LeagueCreator({
         Configure the details for your {selectedPreset?.icon} {selectedPreset?.name} league.
       </DialogDescription>
 
-      {/* League Name */}
+      {/* League name */}
       <div className="space-y-2">
-        <Label htmlFor="league-name">League Name</Label>
+        <Label htmlFor="league-name">League name</Label>
         <Input
           id="league-name"
           placeholder="Enter league name"
@@ -453,7 +453,7 @@ export function LeagueCreator({
       {/* Match cadence (table-based archetypes) */}
       {!isCircuit && !isBoxing && (
         <div className="space-y-2">
-          <Label htmlFor="match-interval">IxDays Between Matchdays</Label>
+          <Label htmlFor="match-interval">IxDays between matchdays</Label>
           <Input
             id="match-interval"
             type="number"
@@ -479,7 +479,7 @@ export function LeagueCreator({
       {/* Divisions (only for division_conference) */}
       {isDivisionConference && (
         <div className="space-y-2">
-          <Label htmlFor="divisions">Number of Divisions</Label>
+          <Label htmlFor="divisions">Number of divisions</Label>
           <Input
             id="divisions"
             type="number"
@@ -501,7 +501,7 @@ export function LeagueCreator({
       {/* Weight Classes (only for boxing/bracket sports marked as boxing) */}
       {isBoxing && (
         <div className="space-y-2">
-          <Label htmlFor="weight-classes">Weight Classes</Label>
+          <Label htmlFor="weight-classes">Weight classes</Label>
           <Input
             id="weight-classes"
             placeholder="Heavyweight, Middleweight, Welterweight"
@@ -539,7 +539,7 @@ export function LeagueCreator({
 
       {/* League Cover Image */}
       <div className="space-y-2">
-        <Label>League Cover Image</Label>
+        <Label>League cover image</Label>
 
         {commonsLoading && !coverImage ? (
           <div className="border-separator bg-fill-4 rounded-control flex h-40 w-full items-center justify-center border border-dashed">
@@ -550,7 +550,7 @@ export function LeagueCreator({
           <div className="group border-separator rounded-control relative h-40 w-full overflow-hidden border">
             <img
               src={withBasePath(coverImage)}
-              alt="Suggested Cover"
+              alt="Suggested cover"
               className="h-full w-full object-cover"
             />
             <div className="duration-fast absolute inset-0 bg-black/40 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100" />
@@ -592,12 +592,12 @@ export function LeagueCreator({
                 onClick={() => setMediaSearchOpen(true)}
               >
                 <ImageIcon className="h-3 w-3" />
-                Browse Media
+                Browse media
               </Button>
               {commonsData?.images && commonsData.images.length > 0 && (
                 <Button type="button" variant="outline" size="sm" onClick={handleShuffleCover}>
                   <RotateCcw className="h-3 w-3" />
-                  Suggest Image
+                  Suggest image
                 </Button>
               )}
             </div>
@@ -610,7 +610,7 @@ export function LeagueCreator({
         <div className="border-separator bg-fill-3 rounded-control border px-3 py-3">
           <p className="text-label-secondary text-footnote leading-relaxed">
             <span className="text-label font-medium">{archetypeLabel}</span>
-            {" — "}
+            {" · "}
             {selectedPreset?.federationName}
           </p>
         </div>
@@ -655,7 +655,7 @@ export function LeagueCreator({
             <div className="relative h-36 w-full overflow-hidden">
               <img
                 src={withBasePath(coverImage)}
-                alt="League Cover"
+                alt="League cover"
                 className="h-full w-full object-cover"
               />
             </div>
@@ -691,7 +691,7 @@ export function LeagueCreator({
 
               {isBoxing && weightClasses && weightClasses.length > 0 && (
                 <div className="col-span-2">
-                  <span className="text-label-secondary text-footnote">Weight Classes</span>
+                  <span className="text-label-secondary text-footnote">Weight classes</span>
                   <p className="text-label font-medium">{weightClasses.join(", ")}</p>
                 </div>
               )}
@@ -738,7 +738,7 @@ export function LeagueCreator({
             ) : (
               <>
                 <Trophy className="h-4 w-4" />
-                Create League
+                Create league
               </>
             )}
           </Button>
@@ -772,7 +772,7 @@ export function LeagueCreator({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h3 className="text-label text-title-3 font-semibold">League Created!</h3>
+          <h3 className="text-label text-title-3 font-semibold">League created</h3>
           <p className="text-label-secondary text-body mt-1">
             {leagueName} is now active and ready for configuration.
           </p>
@@ -780,10 +780,10 @@ export function LeagueCreator({
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-        <Button onClick={handleViewLeague}>View League</Button>
+        <Button onClick={handleViewLeague}>View league</Button>
         <Button variant="outline" onClick={handleCreateAnother}>
           <RotateCcw className="h-4 w-4" />
-          Create Another
+          Create another
         </Button>
       </div>
     </motion.div>
@@ -806,7 +806,7 @@ export function LeagueCreator({
           }}
         >
           <DialogHeader className="shrink-0 px-6 pt-6 pb-0">
-            <DialogTitle>{currentStep === 4 ? "All Set!" : "Create a League"}</DialogTitle>
+            <DialogTitle>Create a league</DialogTitle>
           </DialogHeader>
 
           <div className="shrink-0 px-6 pt-4 pb-0">{stepIndicator}</div>

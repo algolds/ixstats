@@ -55,7 +55,7 @@ export function RevenueCollector({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Coins className="text-label-secondary size-5" aria-hidden />
-          Revenue Collection
+          Revenue collection
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -85,14 +85,14 @@ export function RevenueCollector({
           <div className="border-separator text-headline flex items-center justify-between border-t pt-2">
             <span className="text-label flex items-center gap-2">
               <TrendingUp className="text-success size-3.5" aria-hidden />
-              Collect Match Revenue
+              Collect match revenue
             </span>
             <span className="text-success tabular-nums">+{total.toLocaleString()}c</span>
           </div>
         </div>
 
         <div className="text-label-secondary text-footnote flex items-center justify-between">
-          <span>Club Budget</span>
+          <span>Club budget</span>
           <span className="text-label font-semibold tabular-nums">
             {teamBudget.toLocaleString()}c
           </span>

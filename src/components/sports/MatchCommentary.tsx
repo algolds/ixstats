@@ -111,7 +111,7 @@ export function MatchCommentary({ matchId, autoExpand = false, className }: Matc
       {evaluation && (
         <div className="border-separator text-footnote grid grid-cols-2 gap-3 border-b pb-3 select-none md:grid-cols-4">
           <div>
-            <span className="text-eyebrow text-label-tertiary block">Win Prob</span>
+            <span className="text-eyebrow text-label-tertiary block">Win prob</span>
             <span className="text-label font-semibold tabular-nums">
               {Math.round((evaluation.winProbability ?? 0.5) * 100)}% Home
             </span>
@@ -129,7 +129,7 @@ export function MatchCommentary({ matchId, autoExpand = false, className }: Matc
             </span>
           </div>
           <div>
-            <span className="text-eyebrow text-label-tertiary block">Upset Volatility</span>
+            <span className="text-eyebrow text-label-tertiary block">Upset volatility</span>
             <span className="text-label font-semibold tabular-nums">
               {(evaluation.volatility ?? 0.5).toFixed(1)} Index
             </span>
@@ -172,12 +172,12 @@ export function MatchCommentary({ matchId, autoExpand = false, className }: Matc
                 compact
                 className="bg-surface rounded-row"
                 icon={<Sparkles />}
-                title="No AI Commentary Generated"
-                message="Experience this match through the eyes of our premium AI sports broadcast team."
+                title="No AI commentary generated"
+                message="Generate commentary for this match."
                 action={
                   <Button size="sm" variant="secondary" onClick={handleGenerate}>
                     <Sparkles />
-                    Generate AI Commentary
+                    Generate AI commentary
                   </Button>
                 }
               />

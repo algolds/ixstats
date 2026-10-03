@@ -52,7 +52,7 @@ export const LeagueCompetitionTab = React.memo(function LeagueCompetitionTab({
     <div className="space-y-4 py-3">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="league-status">League Status</Label>
+          <Label htmlFor="league-status">League status</Label>
           <Select value={status} onValueChange={setStatus}>
             <SelectTrigger id="league-status" className="text-footnote h-9">
               <SelectValue placeholder="Select status..." />
@@ -67,7 +67,7 @@ export const LeagueCompetitionTab = React.memo(function LeagueCompetitionTab({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="league-tier">League Tier</Label>
+          <Label htmlFor="league-tier">League tier</Label>
           <Input
             id="league-tier"
             type="number"
@@ -81,7 +81,7 @@ export const LeagueCompetitionTab = React.memo(function LeagueCompetitionTab({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="promotion-count">Promotion Count</Label>
+          <Label htmlFor="promotion-count">Promotion count</Label>
           <Input
             id="promotion-count"
             type="number"
@@ -93,7 +93,7 @@ export const LeagueCompetitionTab = React.memo(function LeagueCompetitionTab({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="relegation-count">Relegation Count</Label>
+          <Label htmlFor="relegation-count">Relegation count</Label>
           <Input
             id="relegation-count"
             type="number"
@@ -108,7 +108,7 @@ export const LeagueCompetitionTab = React.memo(function LeagueCompetitionTab({
       {/* Archetype Specific Settings */}
       {isDivisionConference && (
         <div className="border-separator space-y-2 border-t pt-3">
-          <Label htmlFor="divisions-count">Divisions Count</Label>
+          <Label htmlFor="divisions-count">Divisions count</Label>
           <Input
             id="divisions-count"
             type="number"
@@ -125,7 +125,7 @@ export const LeagueCompetitionTab = React.memo(function LeagueCompetitionTab({
 
       {isCircuit && (
         <div className="border-separator space-y-2 border-t pt-3">
-          <Label htmlFor="race-count">Race Count</Label>
+          <Label htmlFor="race-count">Race count</Label>
           <Input
             id="race-count"
             type="number"

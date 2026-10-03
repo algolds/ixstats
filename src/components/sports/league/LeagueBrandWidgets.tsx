@@ -19,7 +19,7 @@ export function ReigningChampionWidget({
         <Trophy className="text-yellow h-5 w-5" />
       </div>
       <div className="min-w-0 flex-1">
-        <span className="text-eyebrow text-yellow block">Reigning Champion</span>
+        <span className="text-eyebrow text-yellow block">Reigning champion</span>
         <h5 className="text-label text-headline truncate">{championName}</h5>
         <p className="text-label-secondary text-footnote font-medium">
           Season {seasonNumber} Champions

@@ -43,7 +43,7 @@ export function ClubHistorySection({ teamId }: { teamId: string }) {
 
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
-          <CardTitle>Season by Season</CardTitle>
+          <CardTitle>Season by season</CardTitle>
         </CardHeader>
         <CardContent className="divide-separator divide-y">
           {seasons.length === 0 ? (

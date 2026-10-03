@@ -17,7 +17,6 @@ import {
 } from "~/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { EmptyState } from "~/components/ui/empty-state";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Stat } from "~/components/ui/stat";
 import { springSmooth } from "~/lib/design/motion";
 import {
@@ -36,7 +35,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { LeagueCreator } from "~/components/sports/league/LeagueCreator";
 import { LeagueCover } from "~/components/sports/LeagueCover";
 import { withBasePath } from "~/lib/base-path";
-import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
 import { type SportPresetKey } from "~/lib/sports/presets";
 import { SPORT_LABELS, ARCHETYPE_LABELS } from "~/lib/sports/theming";
@@ -45,19 +44,19 @@ import { Card } from "~/components/ui/card";
 const MYLEAGUE_HELP_STEPS: HeroHelpStep[] = [
   {
     title: "Welcome to MyLeague",
-    body: "MyLeague is the competition layer of IxStates. Run leagues, cups, circuits, and tournament brackets across 7 sports with deterministic simulation snapshots.",
+    body: "MyLeague runs leagues, cups, circuits and tournament brackets across 7 sports. Matches are simulated from saved snapshots, so a replay gives the same result.",
   },
   {
-    title: "Find a Competition",
-    body: "Filter by sport, season status, or search. Click any league to open its unified operational hub: standings, schedule, live COMPETE, and historical almanac.",
+    title: "Find a competition",
+    body: "Filter by sport or season status, or search by name. Open a league to see its standings, schedule, live matches and past champions.",
   },
   {
-    title: "Create a League",
-    body: "Hit 'Create League' to configure teams, archetypes, and rules. The engine generates balanced rosters and schedules automatically.",
+    title: "Create a league",
+    body: "Choose Create league to set teams, format and rules. Rosters and the schedule are generated for you.",
   },
   {
-    title: "Manage a Club",
-    body: "Open 'MyClub' to take the helm of a franchise: tune tactics, set lineups, upgrade stadiums, and negotiate sponsor contracts.",
+    title: "Manage a club",
+    body: "Open MyClub to run a franchise: set tactics and lineups, upgrade the stadium and negotiate sponsors.",
   },
 ];
 
@@ -127,44 +126,32 @@ export default function MyLeaguePage() {
 
   return (
     <div className="container mx-auto max-w-7xl space-y-8 px-4 py-8">
-      {/* Phone title under the new navigation shell (nothing with the flag off). */}
-      <ShellPageHeader title="MyLeague" className="px-0 pt-0" />
-      {/* Dynamic League Creator Dialog */}
-      <LeagueCreator open={showCreator} onOpenChange={setShowCreator} />
-
-      {/* ─── COMMAND STUDIO HEADER ─── v2 glass hero (no glow: sports stay flat) */}
-      <Card variant="hero" padding="lg">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Eyebrow className="text-tint">Competition engine</Eyebrow>
-              <HeroHelpModal
-                title="MyLeague Guide"
-                steps={MYLEAGUE_HELP_STEPS}
-                accentClass="text-tint"
-              />
-            </div>
-            <h1 className="text-large-title text-label">
-              MyLeague <span className="text-label-secondary font-normal">Studio</span>
-            </h1>
-            <p className="text-callout text-label-secondary max-w-2xl">
-              Operate sporting associations, schedule fixtures, and simulate matches with
-              deterministic state machines and historical almanacs.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <Button variant="secondary" onClick={() => router.push(withBasePath("/myclub"))}>
+      <PageHeader
+        title="MyLeague"
+        className="-mx-2"
+        actions={
+          <>
+            <HeroHelpModal
+              title="MyLeague guide"
+              steps={MYLEAGUE_HELP_STEPS}
+              accentClass="text-tint"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => router.push(withBasePath("/myclub"))}
+            >
               <Users />
-              MyClub Portfolio
+              MyClub
             </Button>
-            <Button onClick={() => setShowCreator(true)}>
+            <Button size="sm" onClick={() => setShowCreator(true)}>
               <Plus />
-              Create League
+              Create league
             </Button>
-          </div>
-        </div>
-      </Card>
+          </>
+        }
+      />
+      <LeagueCreator open={showCreator} onOpenChange={setShowCreator} />
 
       {/* ─── FEATURED ASSOCIATION HERO ─── */}
       {featuredLeague && (
@@ -177,7 +164,7 @@ export default function MyLeaguePage() {
             Featured competition
           </h2>
 
-          <Card variant="hero" className="overflow-hidden">
+          <Card className="overflow-hidden">
             <div className="flex flex-col md:flex-row">
               <div className="bg-fill-3 relative h-48 shrink-0 overflow-hidden md:h-auto md:w-80">
                 <LeagueCover
@@ -207,10 +194,9 @@ export default function MyLeaguePage() {
                   <div>
                     <h3 className="text-title-1 text-label">{featuredLeague.name}</h3>
                     <p className="text-callout text-label-secondary mt-2">
-                      Premier{" "}
+                      The featured{" "}
                       {SPORT_LABELS[featuredLeague.sportPreset] || featuredLeague.sportPreset}{" "}
-                      competition. Run matches, inspect athlete rosters, track live scoreboards, and
-                      explore all-time champions.
+                      competition.
                     </p>
                   </div>
 
@@ -244,7 +230,7 @@ export default function MyLeaguePage() {
                   className="group/btn w-full sm:w-auto"
                   onClick={() => router.push(withBasePath(`/myleague/${featuredLeague.id}`))}
                 >
-                  <span>Enter Competition</span>
+                  <span>Enter competition</span>
                   <ArrowRight className="transition-transform group-hover/btn:translate-x-0.5" />
                 </Button>
               </div>
@@ -265,7 +251,7 @@ export default function MyLeaguePage() {
             onValueChange={(value) => setSelectedSport(value || "all")}
             className="max-w-full flex-wrap"
           >
-            <ToggleGroupItem value="all">All Sports</ToggleGroupItem>
+            <ToggleGroupItem value="all">All sports</ToggleGroupItem>
             {sportsList.map((sport) => (
               <ToggleGroupItem key={sport} value={sport}>
                 {SPORT_LABELS[sport] || sport}
@@ -276,10 +262,10 @@ export default function MyLeaguePage() {
           {/* Search and Status Dropdown */}
           <div className="flex min-w-0 flex-wrap items-center gap-3">
             <SearchField
-              placeholder="Search associations..."
+              placeholder="Search competitions"
               value={search}
               onValueChange={setSearch}
-              aria-label="Search associations"
+              aria-label="Search competitions"
               containerClassName="min-w-[220px] flex-1"
             />
 
@@ -289,7 +275,7 @@ export default function MyLeaguePage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="all">All statuses</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="paused">Paused</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
@@ -390,7 +376,7 @@ export default function MyLeaguePage() {
                               router.push(withBasePath(`/myleague/${league.id}`));
                             }}
                           >
-                            Open Hub
+                            Open hub
                           </Button>
                           <Button
                             variant="secondary"
@@ -420,12 +406,12 @@ export default function MyLeaguePage() {
           <Card>
             <EmptyState
               icon={<Trophy />}
-              title="No Competitions Found"
-              message="Try adjusting your search query, selecting another sport chip, or launch a brand new competition."
+              title="No competitions found"
+              message="No competition matches these filters. Change the search or sport, or create a league."
               action={
                 <Button onClick={() => setShowCreator(true)}>
                   <Plus />
-                  Create League
+                  Create league
                 </Button>
               }
             />

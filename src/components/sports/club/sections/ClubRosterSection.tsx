@@ -89,7 +89,7 @@ export function ClubRosterSection({
       <div>
         <div className="border-separator mb-4 flex flex-col justify-between gap-3 border-b pb-4 sm:flex-row sm:items-center">
           <div>
-            <h3 className="text-label text-title-3">Active Roster</h3>
+            <h3 className="text-label text-title-3">Active roster</h3>
             <p className="text-label-secondary text-footnote tabular-nums">
               {players.length} Athletes Registered
             </p>
@@ -102,8 +102,8 @@ export function ClubRosterSection({
             value={viewMode}
             onValueChange={setViewMode}
             options={[
-              { value: "table", label: "Squad Table" },
-              { value: "cards", label: "Card Grid" },
+              { value: "table", label: "Squad table" },
+              { value: "cards", label: "Card grid" },
             ]}
           />
         </div>
@@ -142,7 +142,7 @@ export function ClubRosterSection({
                       className="flex-1"
                       onClick={() => onListPlayer(player)}
                     >
-                      Manage Listing
+                      Manage listing
                     </Button>
                     {sportPresetAttributes && (
                       <div className="relative">
@@ -167,7 +167,7 @@ export function ClubRosterSection({
       {/* Coaching Staff */}
       {coaches.length > 0 && (
         <div className="border-separator border-t pt-6">
-          <h3 className="text-label text-headline mb-4">Coaching Staff</h3>
+          <h3 className="text-label text-headline mb-4">Coaching staff</h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {coaches.map((coach) => {
               const stageStyle =

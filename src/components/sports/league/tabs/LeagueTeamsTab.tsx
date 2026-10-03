@@ -56,7 +56,7 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
       <div className="border-separator flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h3 className="text-title-2 text-label">Franchise Directorate</h3>
+            <h3 className="text-title-2 text-label">Franchise directorate</h3>
             <Badge variant="default" className="tabular-nums">
               {teams.length} Registered
             </Badge>
@@ -97,7 +97,7 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
         <Card>
           <EmptyState
             icon={<Shield />}
-            title="No Franchises Match Filter"
+            title="No franchises match filter"
             message="Try clearing search terms or status filters."
           />
         </Card>
@@ -160,7 +160,7 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
                   {/* Card Footer Action Bar */}
                   <div className="text-footnote border-separator flex items-center justify-between border-t pt-3 font-medium">
                     <span className="text-label-secondary group-hover:text-label transition-colors">
-                      Inspect Squad
+                      Inspect squad
                     </span>
                     <ArrowRight
                       className="text-label-tertiary group-hover:text-tint size-4 transition-colors"

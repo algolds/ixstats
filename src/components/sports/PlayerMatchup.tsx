@@ -46,7 +46,7 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
     <Card padding="lg" className={cn("mx-auto w-full max-w-[550px] overflow-hidden", className)}>
       {/* Title / Header */}
       <div className="mb-6 text-center">
-        <h3 className="text-label-secondary text-headline">Head to Head Comparison</h3>
+        <h3 className="text-label-secondary text-headline">Head to head comparison</h3>
       </div>
 
       <div className="mb-8 grid grid-cols-[1fr_120px_1fr] items-center gap-4">

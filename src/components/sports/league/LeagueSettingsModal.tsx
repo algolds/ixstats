@@ -255,7 +255,7 @@ export function LeagueSettingsModal({
         <DialogHeader>
           <DialogTitle className="text-body flex items-center gap-2">
             <Settings className="h-4 w-4" />
-            League Settings & Engine
+            League settings & engine
           </DialogTitle>
           <DialogDescription className="text-footnote">
             Manage branding, promotion structure, and simulator engine behavior.
@@ -350,7 +350,7 @@ export function LeagueSettingsModal({
             {updateLeague.isPending || isUploading ? (
               <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
             ) : null}
-            Save Changes
+            Save changes
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -223,7 +223,7 @@ export function LineupBuilder({
 
           <Button onClick={handleSave} disabled={setLineup.isPending} className="w-full" size="sm">
             {setLineup.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
-            Save Lineup
+            Save lineup
           </Button>
         </CardContent>
       </Card>

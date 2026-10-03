@@ -52,8 +52,8 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
       <Card>
         <EmptyState
           icon={<Trophy />}
-          title="No Historical Archive Yet"
-          message="Complete the active season to crown a champion and begin the historical roll-of-honor."
+          title="No historical archive yet"
+          message="Finish the active season to record its champion."
         />
       </Card>
     );
@@ -66,7 +66,7 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Trophy className="text-yellow size-5" aria-hidden />
-            <h3 className="text-headline text-label">Roll of Honor & Trophy Cabinet</h3>
+            <h3 className="text-headline text-label">Roll of honor & trophy cabinet</h3>
           </div>
           <span className="text-footnote text-label-secondary tabular-nums">
             {completedSeasons.length} Completed{" "}
@@ -179,7 +179,7 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
                     <tr
                       key={row.teamId}
                       onClick={() => focusOrganization(row.teamId)}
-                      className="hover:bg-fill-4 cursor-pointer transition-colors active:scale-[0.99]"
+                      className="hover:bg-fill-4 cursor-pointer transition-colors"
                     >
                       <td className="text-label-secondary py-3 pl-3 font-semibold tabular-nums">
                         {row.position === 1 ? (

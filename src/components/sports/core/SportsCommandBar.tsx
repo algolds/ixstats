@@ -96,9 +96,9 @@ export function SportsCommandBar({
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label="Clear Focus"
+              aria-label="Clear focus"
               onClick={clearFocus}
-              title="Clear Focus"
+              title="Clear focus"
               className="size-5 rounded-full"
             >
               <Xmark className="h-3 w-3" />

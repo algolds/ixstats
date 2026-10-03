@@ -33,7 +33,7 @@ export default function MatchDetailModal({
         className="border-separator bg-surface rounded-sheet max-h-[90vh] max-w-4xl overflow-y-auto p-6"
       >
         <DialogHeader className="sr-only">
-          <DialogTitle>Match Center</DialogTitle>
+          <DialogTitle>Match center</DialogTitle>
           <DialogDescription>
             Match details, live scoreboard, and tactical analysis
           </DialogDescription>

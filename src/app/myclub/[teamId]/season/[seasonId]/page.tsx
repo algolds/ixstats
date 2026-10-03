@@ -206,7 +206,7 @@ export default function MyClubSeasonDetailPage() {
           className="mb-4"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Team
+          Back to team
         </Button>
         <Card>
           <EmptyState
@@ -258,7 +258,7 @@ export default function MyClubSeasonDetailPage() {
         className="mb-4"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Team
+        Back to team
       </Button>
 
       <Card padding="lg" className="mb-6">
@@ -363,7 +363,7 @@ export default function MyClubSeasonDetailPage() {
           {seasonHistoryEntry && (
             <TabsTrigger value="stats">
               <Users className="mr-2 size-4" />
-              Season Stats
+              Season stats
             </TabsTrigger>
           )}
         </TabsList>
@@ -396,8 +396,8 @@ export default function MyClubSeasonDetailPage() {
               <Card>
                 <EmptyState
                   icon={<Calendar />}
-                  title="No Matches Yet"
-                  message="Match results will appear here once games are scheduled and played."
+                  title="No matches yet"
+                  message="Schedule and play games to see results."
                 />
               </Card>
             )}
@@ -409,7 +409,7 @@ export default function MyClubSeasonDetailPage() {
             <Card padding="md">
               <h2 className="text-title-3 text-label mb-4 flex items-center gap-2">
                 <Trophy className="text-label-secondary size-5" aria-hidden />
-                Full Standings
+                Full standings
               </h2>
               <Table className="tabular-nums">
                 <TableHeader>
@@ -464,7 +464,7 @@ export default function MyClubSeasonDetailPage() {
             <Card padding="md">
               <h2 className="text-title-3 text-label flex items-center gap-2">
                 <Users className="text-label-secondary size-5" aria-hidden />
-                Season Stats
+                Season stats
               </h2>
               <p className="text-callout text-label-secondary mt-1 mb-4">
                 Final team performance for Season {season.seasonNumber}
@@ -476,8 +476,8 @@ export default function MyClubSeasonDetailPage() {
                     ["Losses", seasonHistoryEntry.losses],
                     ["Draws", seasonHistoryEntry.draws],
                     ["Points", seasonHistoryEntry.points],
-                    ["Points For", seasonHistoryEntry.pointsFor],
-                    ["Points Against", seasonHistoryEntry.pointsAgainst],
+                    ["Points for", seasonHistoryEntry.pointsFor],
+                    ["Points against", seasonHistoryEntry.pointsAgainst],
                   ] as const
                 ).map(([label, value]) => (
                   <div key={label} className="bg-surface-secondary rounded-row p-4">

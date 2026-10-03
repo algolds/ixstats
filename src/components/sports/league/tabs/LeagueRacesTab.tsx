@@ -30,7 +30,7 @@ export function LeagueRacesTab({
     return (
       <Card className="space-y-3 p-12 text-center">
         <MapPin className="text-label-tertiary mx-auto h-12 w-12" />
-        <h4 className="text-headline text-label">No Season Initialized</h4>
+        <h4 className="text-headline text-label">No season initialized</h4>
         <p className="text-footnote text-label-secondary">
           Start a season in the Command overview to generate the circuit schedule.
         </p>
@@ -52,10 +52,8 @@ export function LeagueRacesTab({
     return (
       <Card className="space-y-3 p-12 text-center">
         <MapPin className="text-label-tertiary mx-auto h-12 w-12" />
-        <h4 className="text-headline text-label">No Grand Prix Results</h4>
-        <p className="text-footnote text-label-secondary">
-          Race classifications will appear once events are contested.
-        </p>
+        <h4 className="text-headline text-label">No Grand Prix results</h4>
+        <p className="text-footnote text-label-secondary">No races have been run this season.</p>
       </Card>
     );
   }

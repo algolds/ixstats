@@ -124,7 +124,7 @@ function BracketRounds({
                     variant="secondary"
                   >
                     <Trophy className="mr-1 h-3.5 w-3.5" />
-                    Championship Final
+                    Championship final
                   </Badge>
                 ) : (
                   <Badge
@@ -155,7 +155,7 @@ function BracketRounds({
                     <div
                       key={b.id}
                       className={cn(
-                        "rounded-card border-separator bg-surface-secondary shadow-card flex items-center justify-between gap-3 border px-4 py-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.99]",
+                        "rounded-card border-separator bg-surface-secondary shadow-card flex items-center justify-between gap-3 border px-4 py-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                         isCompleted && "border-separator bg-surface-secondary"
                       )}
                     >
