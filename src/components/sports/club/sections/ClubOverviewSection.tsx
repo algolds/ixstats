@@ -78,6 +78,15 @@ export function ClubOverviewSection({
 }: ClubOverviewSectionProps) {
   const router = useRouter();
 
+  // Average of the overall ratings that are recorded; none recorded shows "—"
+  const recordedOveralls = (team.players ?? []).flatMap((p) => {
+    const overall = (p.ratings as { overall?: number } | undefined)?.overall;
+    return overall === undefined ? [] : [overall];
+  });
+  const averageOverall = recordedOveralls.length
+    ? Math.round(recordedOveralls.reduce((sum, o) => sum + o, 0) / recordedOveralls.length)
+    : undefined;
+
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       {/* Left side info & Live match simulator / Off-season view */}
@@ -220,23 +229,7 @@ export function ClubOverviewSection({
                 <Stat label="Squad members" value={<>{team.players?.length ?? 0}</>} />
               </Card>
               <Card padding="md">
-                <Stat
-                  label="Avg roster OVR"
-                  value={
-                    <>
-                      {team.players && team.players.length > 0
-                        ? Math.round(
-                            team.players.reduce(
-                              (acc, p) =>
-                                acc +
-                                ((p.ratings as { overall?: number } | undefined)?.overall ?? 50),
-                              0
-                            ) / team.players.length
-                          )
-                        : 0}
-                    </>
-                  }
-                />
+                <Stat label="Avg roster OVR" value={<>{averageOverall ?? "—"}</>} />
               </Card>
               <Card padding="md">
                 <Stat label="Available budget" value={<>₷{team.budget ?? 0}</>} />

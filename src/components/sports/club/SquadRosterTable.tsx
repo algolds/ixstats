@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
 import { getPlayerPhotoUrl } from "~/lib/sports/photos";
+import { attributeBadgeClass } from "~/components/sports/rating";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
@@ -16,13 +17,6 @@ interface SquadRosterTableProps {
 }
 
 type SortField = "number" | "name" | "position" | "age" | "overall";
-
-function attributeBadgeClass(value: number): string {
-  if (value >= 90) return "bg-yellow/20 text-yellow border-yellow/40";
-  if (value >= 80) return "bg-green/20 text-green border-green/40";
-  if (value >= 70) return "bg-blue/20 text-blue border-blue/40";
-  return "bg-fill-3 text-label-secondary border-separator";
-}
 
 export function SquadRosterTable({
   players,
@@ -169,7 +163,7 @@ export function SquadRosterTable({
         <tbody className="divide-separator divide-y">
           {sortedPlayers.map((player) => {
             const ratings = (player.ratings as Record<string, number> | null) ?? {};
-            const overall = ratings.overall ?? 50;
+            const overall = ratings.overall;
 
             return (
               <tr
@@ -219,7 +213,7 @@ export function SquadRosterTable({
                     variant="outline"
                     className={cn("tabular-nums", attributeBadgeClass(overall))}
                   >
-                    {overall}
+                    {overall ?? <span aria-label="Not recorded">—</span>}
                   </Badge>
                 </td>
 

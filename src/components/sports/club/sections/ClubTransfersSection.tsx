@@ -219,7 +219,7 @@ export function ClubTransfersSection({
                         </span>
                       </PositionTooltip>{" "}
                       &middot; {l.player.team.name} &middot; OVR{" "}
-                      {(l.player.ratings as { overall?: number } | undefined)?.overall ?? 50}
+                      {(l.player.ratings as { overall?: number } | undefined)?.overall ?? "—"}
                     </p>
                     <p className="text-footnote text-tint mt-0.5 font-medium tabular-nums">
                       Asking Price: ₷{l.price}
@@ -291,8 +291,8 @@ export function ClubTransfersSection({
                   firstName: squadComparePlayer.firstName,
                   lastName: squadComparePlayer.lastName,
                   position: squadComparePlayer.position,
-                  overallRating:
-                    (squadComparePlayer.ratings as { overall?: number } | undefined)?.overall ?? 50,
+                  overallRating: (squadComparePlayer.ratings as { overall?: number } | undefined)
+                    ?.overall,
                   teamColor: teamColor,
                   ratings: (squadComparePlayer.ratings as Record<string, number>) ?? {},
                 }}
@@ -301,8 +301,8 @@ export function ClubTransfersSection({
                   firstName: comparePlayer.firstName,
                   lastName: comparePlayer.lastName,
                   position: comparePlayer.position,
-                  overallRating:
-                    (comparePlayer.ratings as { overall?: number } | undefined)?.overall ?? 50,
+                  overallRating: (comparePlayer.ratings as { overall?: number } | undefined)
+                    ?.overall,
                   teamColor: comparePlayer.team?.color ?? "#ef4444",
                   ratings: (comparePlayer.ratings as Record<string, number>) ?? {},
                 }}

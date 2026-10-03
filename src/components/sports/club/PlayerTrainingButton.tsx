@@ -47,7 +47,7 @@ export function PlayerTrainingButton({
         <p className="text-subhead text-label-secondary mb-2">Focus attribute</p>
         <div className="max-h-40 space-y-1 overflow-y-auto">
           {attributes.map((attr) => {
-            const val = currentRatings[attr] ?? 50;
+            const val = currentRatings[attr];
             return (
               <Button
                 variant="ghost"
@@ -66,9 +66,17 @@ export function PlayerTrainingButton({
                 <div className="flex items-center gap-2">
                   <Badge
                     className="tabular-nums"
-                    variant={val >= 80 ? "warning" : val >= 70 ? "success" : "default"}
+                    variant={
+                      val === undefined
+                        ? "default"
+                        : val >= 80
+                          ? "warning"
+                          : val >= 70
+                            ? "success"
+                            : "default"
+                    }
                   >
-                    {val}
+                    {val ?? "—"}
                   </Badge>
                   <span className="text-label-secondary text-footnote tabular-nums">25c</span>
                 </div>

@@ -31,7 +31,7 @@ interface PlayerCardProps {
 
 export function PlayerCard({ player, team, statistics, className }: PlayerCardProps) {
   const teamColor = team?.color ?? "#3b82f6";
-  const overallRating = player.ratings?.overall ?? 50;
+  const overallRating = player.ratings?.overall;
 
   // Dynamic background gradient based on team color
   const gradientStyle = {
@@ -39,9 +39,9 @@ export function PlayerCard({ player, team, statistics, className }: PlayerCardPr
   };
 
   const defaultStats = statistics ?? [
-    { label: "Wins", value: player.ratings?.wins ?? 0 },
-    { label: "Losses", value: player.ratings?.losses ?? 0 },
-    { label: "Overall", value: overallRating },
+    { label: "Wins", value: player.ratings?.wins ?? "—" },
+    { label: "Losses", value: player.ratings?.losses ?? "—" },
+    { label: "Overall", value: overallRating ?? "—" },
   ];
 
   const playerPhoto = getPlayerPhotoUrl(player);
@@ -78,7 +78,7 @@ export function PlayerCard({ player, team, statistics, className }: PlayerCardPr
             className="rounded-row text-title-1 shadow-card absolute start-1/2 bottom-0 flex h-12 w-12 -translate-x-1/2 items-center justify-center border border-white/30 leading-none text-white tabular-nums"
             style={{ backgroundColor: teamColor }}
           >
-            {player.number ?? overallRating}
+            {player.number ?? overallRating ?? "—"}
           </div>
 
           {/* Top-Left Crest */}
