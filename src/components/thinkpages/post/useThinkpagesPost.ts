@@ -1,12 +1,46 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { usePermissions } from "~/hooks/usePermissions";
 import { extractHashtags, extractMentions } from "~/lib/utils";
+import { escapeRegExp } from "~/lib/utils/escape-regexp";
 import { parseSportsBulletin } from "~/lib/sports/feed-bulletins";
 import { proxyDiscordUrl } from "./ThinkpagesPostUtils";
+
+const IMAGE_URL_PATTERN = /https?:\/\/[^\s<"']+\.(?:png|jpg|jpeg|gif|webp)(?:\?[^\s<"']*)?/gi;
+
+const extractImageUrls = (content?: string | null): string[] => [
+  ...new Set((content ?? "").match(IMAGE_URL_PATTERN) ?? []),
+];
+
+/** Declared attachments plus bare image URLs found in the text, routed through the Discord proxy. */
+function buildMediaAttachments(declared: unknown, urls: string[], prefix: string) {
+  return [
+    ...(Array.isArray(declared) ? declared : []),
+    ...urls.map((url, i) => ({
+      id: `${prefix}raw_${i}`,
+      url,
+      type: "image",
+      filename: `${prefix}image_${i + 1}`,
+    })),
+  ].map((att: any) => ({ ...att, url: proxyDiscordUrl(att.url) }));
+}
+
+const stripUrls = (content: string, urls: string[]) =>
+  urls
+    .reduce((c, url) => c.replace(new RegExp(`\\s*${escapeRegExp(url)}\\s*`, "gi"), " "), content)
+    .trim();
+
+function parseVisualizations(raw: unknown) {
+  try {
+    return typeof raw === "string" ? JSON.parse(raw) : raw || [];
+  } catch (e) {
+    console.warn("Failed to parse visualizations:", e);
+    return [];
+  }
+}
 
 interface BlurbMeta {
   isBlurb: boolean;
@@ -50,11 +84,7 @@ function parseBlurbMeta(post: {
   return { isBlurb: true, cleanContent: cleaned };
 }
 
-export function useThinkpagesPost(post: any, currentUserAccountId: string, showThread = false) {
-  const notify = useNotify();
-  const utils = api.useUtils();
-  const blurbMeta = parseBlurbMeta(post);
-
+function usePostPermissions(post: any, currentUserAccountId: string) {
   const { user: currentUserData } = usePermissions();
   const currentUserRoleLevel = currentUserData?.role?.level ?? 100;
 
@@ -72,99 +102,42 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
 
   const targetUserRoleLevel = targetUserQuery.data?.user?.role?.level ?? 100;
 
-  const canEdit =
+  const canModify =
     isOwnPost ||
     currentUserRoleLevel <= 10 ||
     (currentUserRoleLevel === 20 && targetUserRoleLevel >= 20);
 
-  const canDelete =
-    isOwnPost ||
-    currentUserRoleLevel <= 10 ||
-    (currentUserRoleLevel === 20 && targetUserRoleLevel >= 20);
+  return { isOwnPost, canModify };
+}
 
-  const visualizations = useMemo(() => {
-    try {
-      if (typeof post.visualizations === "string") {
-        return JSON.parse(post.visualizations);
-      }
-      return post.visualizations || [];
-    } catch (e) {
-      console.warn("Failed to parse visualizations:", e);
-      return [];
-    }
-  }, [post.visualizations]);
+function derivePostContent(post: any, blurbMeta: BlurbMeta) {
+  const rawImageUrls = extractImageUrls(post.content);
+  const repostImageUrls = extractImageUrls(post.repostOf?.content);
+  const cleanPostContent = stripUrls(
+    (blurbMeta.isBlurb ? blurbMeta.cleanContent : post.content) ?? "",
+    rawImageUrls
+  );
 
-  const rawImageUrls = useMemo(() => {
-    const content = post.content ?? "";
-    const imageRegex = /https?:\/\/[^\s<"']+\.(?:png|jpg|jpeg|gif|webp)(?:\?[^\s<"']*)?/gi;
-    const matches = content.match(imageRegex);
-    return matches ? Array.from(new Set(matches)) : [];
-  }, [post.content]);
+  return {
+    visualizations: parseVisualizations(post.visualizations),
+    mediaAttachments: buildMediaAttachments(post.mediaAttachments, rawImageUrls, ""),
+    cleanPostContent,
+    sportsBulletin: parseSportsBulletin(cleanPostContent),
+    repostMediaAttachments: buildMediaAttachments(
+      post.repostOf?.mediaAttachments,
+      repostImageUrls,
+      "repost_"
+    ),
+    cleanRepostContent: stripUrls(post.repostOf?.content ?? "", repostImageUrls),
+  };
+}
 
-  const mediaAttachments = useMemo(() => {
-    const raw = [
-      ...(Array.isArray(post.mediaAttachments) ? post.mediaAttachments : []),
-      ...rawImageUrls.map((url, i) => ({
-        id: `raw_${i}`,
-        url,
-        type: "image",
-        filename: `image_${i + 1}`,
-      })),
-    ];
-    return raw.map((att: any) => ({
-      ...att,
-      url: proxyDiscordUrl(att.url),
-    }));
-  }, [post.mediaAttachments, rawImageUrls]);
+export function useThinkpagesPost(post: any, currentUserAccountId: string, showThread = false) {
+  const notify = useNotify();
+  const utils = api.useUtils();
+  const blurbMeta = parseBlurbMeta(post);
 
-  const cleanPostContent = useMemo(() => {
-    let c = blurbMeta.isBlurb ? blurbMeta.cleanContent : post.content;
-    if (!c) return "";
-    rawImageUrls.forEach((url: any) => {
-      const stringUrl = String(url);
-      const escapedUrl = stringUrl.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
-      const reg = new RegExp(`\\s*${escapedUrl}\\s*`, "gi");
-      c = c.replace(reg, " ");
-    });
-    return c.trim();
-  }, [blurbMeta.isBlurb, blurbMeta.cleanContent, post.content, rawImageUrls]);
-
-  const sportsBulletin = useMemo(() => parseSportsBulletin(cleanPostContent), [cleanPostContent]);
-
-  const repostImageUrls = useMemo(() => {
-    const content = post.repostOf?.content ?? "";
-    const imageRegex = /https?:\/\/[^\s<"']+\.(?:png|jpg|jpeg|gif|webp)(?:\?[^\s<"']*)?/gi;
-    const matches = content.match(imageRegex);
-    return matches ? Array.from(new Set(matches)) : [];
-  }, [post.repostOf?.content]);
-
-  const repostMediaAttachments = useMemo(() => {
-    const raw = [
-      ...(Array.isArray(post.repostOf?.mediaAttachments) ? post.repostOf.mediaAttachments : []),
-      ...repostImageUrls.map((url, i) => ({
-        id: `repost_raw_${i}`,
-        url,
-        type: "image",
-        filename: `repost_image_${i + 1}`,
-      })),
-    ];
-    return raw.map((att: any) => ({
-      ...att,
-      url: proxyDiscordUrl(att.url),
-    }));
-  }, [post.repostOf?.mediaAttachments, repostImageUrls]);
-
-  const cleanRepostContent = useMemo(() => {
-    let c = post.repostOf?.content;
-    if (!c) return "";
-    repostImageUrls.forEach((url: any) => {
-      const stringUrl = String(url);
-      const escapedUrl = stringUrl.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
-      const reg = new RegExp(`\\s*${escapedUrl}\\s*`, "gi");
-      c = c.replace(reg, " ");
-    });
-    return c.trim();
-  }, [post.repostOf?.content, repostImageUrls]);
+  const { isOwnPost, canModify } = usePostPermissions(post, currentUserAccountId);
 
   const [showReplies, setShowReplies] = useState(false);
   const threadQuery = api.thinkpages.getPost.useQuery(
@@ -172,7 +145,6 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
     { enabled: showReplies && showThread }
   );
 
-  const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [showReplyComposer, setShowReplyComposer] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [showEditComposer, setShowEditComposer] = useState(false);
@@ -182,6 +154,7 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
   const [flagReason, setFlagReason] = useState("");
   const [showReactionsDialog, setShowReactionsDialog] = useState(false);
   const [lightboxMedia, setLightboxMedia] = useState<{ url: string; id: string } | null>(null);
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
 
   useEffect(() => {
     if (!lightboxMedia) return;
@@ -192,206 +165,163 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [lightboxMedia]);
 
+  useEffect(() => {
+    if (!showMoreOptions) return;
+    const handleClickOutside = () => setShowMoreOptions(false);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [showMoreOptions]);
+
   const { data: discordEmojisData } = api.thinkpages.getDiscordEmojis.useQuery(
     {},
     { staleTime: 5 * 60_000 }
   );
-  const apiDiscordEmojis = discordEmojisData?.emojis;
 
-  useEffect(() => {
-    const handleClickOutside = () => {
-      if (showMoreOptions) {
-        setShowMoreOptions(false);
-      }
-    };
-
-    if (showMoreOptions) {
-      document.addEventListener("click", handleClickOutside);
-    }
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, [showMoreOptions]);
-
-  const createPostMutation = api.thinkpages.createPost.useMutation({
-    onSuccess: () => {
-      void utils.thinkpages.getFeed.invalidate();
+  /** Refreshes the feeds and post queries a mutation on this post can affect. */
+  const invalidatePost = ({ activities = false, parent = false } = {}) => {
+    void utils.thinkpages.getFeed.invalidate();
+    if (activities) {
       void utils.activities.getGlobalFeed.invalidate();
       void utils.activities.getFollowingFeed.invalidate();
-      if (post.account?.clerkUserId) {
-        void utils.thinkpages.getPostsByClerkUserId.invalidate({
-          clerkUserId: post.account.clerkUserId,
-        });
-      }
-      void utils.thinkpages.getPost.invalidate({ postId: post.id });
-    },
-  });
+    }
+    if (post.account?.clerkUserId) {
+      void utils.thinkpages.getPostsByClerkUserId.invalidate({
+        clerkUserId: post.account.clerkUserId,
+      });
+    }
+    if (parent && post.parentPostId) {
+      void utils.thinkpages.getPost.invalidate({ postId: post.parentPostId });
+    }
+    void utils.thinkpages.getPost.invalidate({ postId: post.id });
+  };
 
+  const createPostMutation = api.thinkpages.createPost.useMutation({
+    onSuccess: () => invalidatePost({ activities: true }),
+  });
   const updatePostMutation = api.thinkpages.updatePost.useMutation({
-    onSuccess: () => {
-      void utils.thinkpages.getFeed.invalidate();
-      if (post.account?.clerkUserId) {
-        void utils.thinkpages.getPostsByClerkUserId.invalidate({
-          clerkUserId: post.account.clerkUserId,
-        });
-      }
-      void utils.thinkpages.getPost.invalidate({ postId: post.id });
-    },
+    onSuccess: () => invalidatePost(),
   });
-
   const deletePostMutation = api.thinkpages.deletePost.useMutation({
-    onSuccess: () => {
-      void utils.thinkpages.getFeed.invalidate();
-      if (post.account?.clerkUserId) {
-        void utils.thinkpages.getPostsByClerkUserId.invalidate({
-          clerkUserId: post.account.clerkUserId,
-        });
-      }
-      if (post.parentPostId) {
-        void utils.thinkpages.getPost.invalidate({ postId: post.parentPostId });
-      }
-      void utils.thinkpages.getPost.invalidate({ postId: post.id });
-    },
+    onSuccess: () => invalidatePost({ parent: true }),
   });
-
-  const pinPostMutation = api.thinkpages.pinPost.useMutation({
-    onSuccess: () => {
-      void utils.thinkpages.getFeed.invalidate();
-      if (post.account?.clerkUserId) {
-        void utils.thinkpages.getPostsByClerkUserId.invalidate({
-          clerkUserId: post.account.clerkUserId,
-        });
-      }
-      void utils.thinkpages.getPost.invalidate({ postId: post.id });
-    },
-  });
-
+  const pinPostMutation = api.thinkpages.pinPost.useMutation({ onSuccess: () => invalidatePost() });
   const bookmarkPostMutation = api.thinkpages.bookmarkPost.useMutation({
-    onSuccess: () => {
-      void utils.thinkpages.getFeed.invalidate();
-      if (post.account?.clerkUserId) {
-        void utils.thinkpages.getPostsByClerkUserId.invalidate({
-          clerkUserId: post.account.clerkUserId,
-        });
-      }
-      void utils.thinkpages.getPost.invalidate({ postId: post.id });
-    },
+    onSuccess: () => invalidatePost(),
   });
-
   const flagPostMutation = api.thinkpages.flagPost.useMutation();
 
-  const handlePin = useCallback(async () => {
-    if (!currentUserAccountId) return;
+  /** Runs a mutation, toasting the outcome; resolves true when it succeeded. */
+  const attempt = async (action: () => Promise<unknown>, success: string, failure: string) => {
     try {
-      await pinPostMutation.mutateAsync({
-        postId: post.id,
-        accountId: currentUserAccountId,
-        pinned: !post.pinned,
-      });
-      notify.success(post.pinned ? "Post unpinned" : "Post pinned");
+      await action();
+      notify.success(success);
+      return true;
     } catch (error: any) {
-      notify.error(error.message || "Failed to pin post");
+      notify.error(error.message || failure);
+      return false;
     }
-  }, [pinPostMutation, post.id, post.pinned, currentUserAccountId, notify]);
+  };
 
-  const handleBookmark = useCallback(async () => {
-    if (!currentUserAccountId) return;
-    try {
-      await bookmarkPostMutation.mutateAsync({
-        postId: post.id,
-        bookmarked: true,
-      });
-      notify.success("Post bookmarked");
-    } catch (error: any) {
-      notify.error(error.message || "Failed to bookmark post");
-    }
-  }, [bookmarkPostMutation, post.id, currentUserAccountId, notify]);
-
-  const handleFlag = useCallback(() => {
-    if (!currentUserAccountId) return;
-    setShowFlagDialog(true);
+  const closeMenuAnd = (open: () => void) => {
+    open();
     setShowMoreOptions(false);
-  }, [currentUserAccountId]);
+  };
 
-  const handleSubmitFlag = useCallback(async () => {
+  const handlePin = async () => {
+    if (!currentUserAccountId) return;
+    await attempt(
+      () =>
+        pinPostMutation.mutateAsync({
+          postId: post.id,
+          accountId: currentUserAccountId,
+          pinned: !post.pinned,
+        }),
+      post.pinned ? "Post unpinned" : "Post pinned",
+      "Failed to pin post"
+    );
+  };
+
+  const handleBookmark = async () => {
+    if (!currentUserAccountId) return;
+    await attempt(
+      () => bookmarkPostMutation.mutateAsync({ postId: post.id, bookmarked: true }),
+      "Post bookmarked",
+      "Failed to bookmark post"
+    );
+  };
+
+  const handleFlag = () => {
+    if (currentUserAccountId) closeMenuAnd(() => setShowFlagDialog(true));
+  };
+
+  const handleSubmitFlag = async () => {
     if (!flagReason.trim()) return;
-
-    try {
-      await flagPostMutation.mutateAsync({
-        postId: post.id,
-        userId: currentUserAccountId,
-        reason: flagReason,
-      });
-      notify.success("Post flagged");
+    const flagged = await attempt(
+      () =>
+        flagPostMutation.mutateAsync({
+          postId: post.id,
+          userId: currentUserAccountId,
+          reason: flagReason,
+        }),
+      "Post flagged",
+      "Failed to flag post"
+    );
+    if (flagged) {
       setShowFlagDialog(false);
       setFlagReason("");
-    } catch (error: any) {
-      notify.error(error.message || "Failed to flag post");
     }
-  }, [flagPostMutation, post.id, currentUserAccountId, flagReason, notify]);
+  };
 
-  const handleEdit = useCallback(() => {
-    if (!canEdit) return;
+  const handleEdit = () => {
+    if (!canModify) return;
     setEditText(post.content);
-    setShowEditComposer(true);
-    setShowMoreOptions(false);
-  }, [post.content, canEdit]);
+    closeMenuAnd(() => setShowEditComposer(true));
+  };
 
-  const handleSubmitEdit = useCallback(async () => {
+  const handleSubmitEdit = async () => {
     if (!editText.trim() || editText === post.content) {
       setShowEditComposer(false);
       return;
     }
+    const updated = await attempt(
+      () => updatePostMutation.mutateAsync({ postId: post.id, content: editText }),
+      "Post updated",
+      "Failed to update post"
+    );
+    if (updated) setShowEditComposer(false);
+  };
 
-    try {
-      await updatePostMutation.mutateAsync({
-        postId: post.id,
-        content: editText,
-      });
-      notify.success("Post updated");
-      setShowEditComposer(false);
-    } catch (error: any) {
-      notify.error(error.message || "Failed to update post");
-    }
-  }, [updatePostMutation, post.id, editText, post.content, notify]);
+  const handleDelete = () => {
+    if (canModify) closeMenuAnd(() => setShowDeleteConfirm(true));
+  };
 
-  const handleDelete = useCallback(() => {
-    if (!canDelete) return;
-    setShowDeleteConfirm(true);
-    setShowMoreOptions(false);
-  }, [canDelete]);
+  const handleConfirmDelete = async () => {
+    const deleted = await attempt(
+      () => deletePostMutation.mutateAsync({ postId: post.id }),
+      "Post deleted",
+      "Failed to delete post"
+    );
+    if (deleted) setShowDeleteConfirm(false);
+  };
 
-  const handleConfirmDelete = useCallback(async () => {
-    try {
-      await deletePostMutation.mutateAsync({
-        postId: post.id,
-      });
-      notify.success("Post deleted");
-      setShowDeleteConfirm(false);
-    } catch (error: any) {
-      notify.error(error.message || "Failed to delete post");
-    }
-  }, [deletePostMutation, post.id, notify]);
-
-  const handleReply = useCallback(() => {
+  const handleReply = () => {
     setShowReplyComposer(!showReplyComposer);
-    if (!showReplyComposer) {
-      const mentionText = `@${post.account?.username} `;
-      setReplyText(mentionText);
+    if (!showReplyComposer) setReplyText(`@${post.account?.username} `);
+  };
+
+  const handleSubmitReply = async (mediaUrls: string[] = []) => {
+    if (!currentUserAccountId) {
+      notify.error("Please select or create an account first to reply.");
+      return;
     }
-  }, [showReplyComposer, post.account?.username]);
+    if (!replyText.trim() && mediaUrls.length === 0) {
+      notify.error("Please enter a reply or attach media.");
+      return;
+    }
 
-  const handleSubmitReply = useCallback(
-    async (mediaUrls: string[] = []) => {
-      if (!currentUserAccountId) {
-        notify.error("Please select or create an account first to reply.");
-        return;
-      }
-      if (!replyText.trim() && mediaUrls.length === 0) {
-        notify.error("Please enter a reply or attach media.");
-        return;
-      }
-
-      try {
-        await createPostMutation.mutateAsync({
+    const posted = await attempt(
+      () =>
+        createPostMutation.mutateAsync({
           accountId: currentUserAccountId,
           content: replyText.trim(),
           parentPostId: post.id,
@@ -399,29 +329,23 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
           hashtags: extractHashtags(replyText),
           mentions: extractMentions(replyText),
           mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
-        });
-        notify.success("Reply posted");
-        setReplyText("");
-        setShowReplyComposer(false);
-        setShowReplies(true);
-      } catch (error: any) {
-        notify.error(error.message || "Failed to post reply");
-      }
-    },
-    [createPostMutation, replyText, currentUserAccountId, post.id, notify]
-  );
+        }),
+      "Reply posted",
+      "Failed to post reply"
+    );
+    if (posted) {
+      setReplyText("");
+      setShowReplyComposer(false);
+      setShowReplies(true);
+    }
+  };
 
   return {
     blurbMeta,
     isOwnPost,
-    canEdit,
-    canDelete,
-    visualizations,
-    mediaAttachments,
-    cleanPostContent,
-    sportsBulletin,
-    repostMediaAttachments,
-    cleanRepostContent,
+    canEdit: canModify,
+    canDelete: canModify,
+    ...derivePostContent(post, blurbMeta),
     showReplies,
     setShowReplies,
     threadQuery,
@@ -445,7 +369,7 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
     setShowReactionsDialog,
     lightboxMedia,
     setLightboxMedia,
-    apiDiscordEmojis,
+    apiDiscordEmojis: discordEmojisData?.emojis,
     createPostMutation,
     updatePostMutation,
     deletePostMutation,

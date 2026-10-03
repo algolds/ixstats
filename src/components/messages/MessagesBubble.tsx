@@ -16,6 +16,7 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { sanitizeUserContent } from "~/lib/utils/sanitize-html";
+import { escapeRegExp } from "~/lib/utils/escape-regexp";
 import { usePretextWithSegments, useShrinkwrap } from "~/lib/pretext/use-pretext";
 import { soundEffects } from "~/lib/sound/cuelume";
 import type { MessagesSettings } from "./MessagesFolderNav";
@@ -96,7 +97,7 @@ const stripTags = (html: string) => html.replace(/<[^>]*>/g, "");
 /** Wraps search matches in <mark>, leaving HTML tags untouched. */
 function highlightMatches(content: string, query?: string): string {
   if (!query?.trim()) return content;
-  const regex = new RegExp(`(${query.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")})`, "gi");
+  const regex = new RegExp(`(${escapeRegExp(query)})`, "gi");
   return content
     .split(/(<[^>]+>)/g)
     .map((part) =>
