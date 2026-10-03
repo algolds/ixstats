@@ -4,7 +4,8 @@ import React from "react";
 import { Dollar as DollarSign } from "iconoir-react";
 import { CollapsibleSection } from "./CollapsibleSection";
 import { SectorBreakdownCard } from "~/components/mycountry/shared/primitives";
-import { formatCompactCurrency, formatExactCurrency } from "~/lib/utils";
+import { formatCompactCurrency, formatExactCurrency, formatPercent } from "~/lib/utils";
+import { StatGrid } from "./tabParts";
 import type { MappedEconomyData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
 
 interface GovernmentSpendingSectionProps {
@@ -14,18 +15,37 @@ interface GovernmentSpendingSectionProps {
   currency: string;
 }
 
+type Spending = NonNullable<MappedEconomyData["spending"]>;
+
+function budgetAllocations(spending: Spending | undefined) {
+  const categoryAmount = (keyword: string) =>
+    spending?.spendingCategories?.find((c) => c.category.toLowerCase().includes(keyword))?.amount ??
+    0;
+  return [
+    { id: "education", name: "Education", value: spending?.education ?? 0, color: "blue" },
+    { id: "healthcare", name: "Healthcare", value: spending?.healthcare ?? 0, color: "emerald" },
+    { id: "welfare", name: "Social welfare", value: spending?.socialSafety ?? 0, color: "indigo" },
+    { id: "defense", name: "Military & defense", value: categoryAmount("defense"), color: "red" },
+    {
+      id: "infrastructure",
+      name: "Infrastructure",
+      value: categoryAmount("infra"),
+      color: "amber",
+    },
+  ];
+}
+
 export function GovernmentSpendingSection({
   isExpanded,
   onToggle,
   economyData,
   currency,
 }: GovernmentSpendingSectionProps): React.JSX.Element {
-  const spendingCats = economyData?.spending?.spendingCategories ?? [];
-  const defenseAmount =
-    spendingCats.find((c) => c.category.toLowerCase().includes("defense"))?.amount ?? 0;
-  const infraAmount =
-    spendingCats.find((c) => c.category.toLowerCase().includes("infra"))?.amount ?? 0;
-  const totalSpending = economyData?.spending?.totalSpending || 1;
+  const spending = economyData?.spending;
+  const balance = spending?.deficitSurplus ?? 0;
+  const spendingCats = spending?.spendingCategories ?? [];
+  const totalSpending = spending?.totalSpending || 1;
+  const allocations = budgetAllocations(spending);
 
   return (
     <CollapsibleSection
@@ -34,45 +54,31 @@ export function GovernmentSpendingSection({
       isExpanded={isExpanded}
       onToggle={onToggle}
     >
-      <div className="bg-fill-3 rounded-row grid grid-cols-2 gap-4 p-3 md:grid-cols-4">
-        <div className="min-w-0">
-          <span className="text-stat-label text-label-secondary block">Total spending</span>
-          <p className="text-label text-headline mt-0.5">
-            {formatCompactCurrency(economyData?.spending?.totalSpending ?? 0, "N/A", currency)}
-          </p>
-          <p className="text-label-secondary text-footnote mt-0.5">Annual expenditure</p>
-        </div>
-        <div className="min-w-0">
-          <span className="text-stat-label text-label-secondary block">Spending % GDP</span>
-          <p className="text-label text-headline mt-0.5">
-            {`${(economyData?.spending?.spendingGDPPercent ?? 0).toFixed(1)}%`}
-          </p>
-          <p className="text-label-secondary text-footnote mt-0.5">GDP share percentage</p>
-        </div>
-        <div className="min-w-0">
-          <span className="text-stat-label text-label-secondary block">Spending per capita</span>
-          <p className="text-label text-headline mt-0.5">
-            {formatExactCurrency(economyData?.spending?.spendingPerCapita ?? 0, currency)}
-          </p>
-          <p className="text-label-secondary text-footnote mt-0.5">Per citizen share</p>
-        </div>
-        <div className="min-w-0">
-          <span className="text-stat-label text-label-secondary block">Budget balance</span>
-          <p
-            className={(() => {
-              const balance = economyData?.spending?.deficitSurplus ?? 0;
-              return balance >= 0
-                ? "text-headline text-green mt-0.5"
-                : "text-destructive text-headline mt-0.5";
-            })()}
-          >
-            {formatCompactCurrency(economyData?.spending?.deficitSurplus ?? 0, "N/A", currency)}
-          </p>
-          <p className="text-label-secondary text-footnote mt-0.5">
-            {(economyData?.spending?.deficitSurplus ?? 0) >= 0 ? "Surplus" : "Deficit"}
-          </p>
-        </div>
-      </div>
+      <StatGrid
+        stats={[
+          {
+            label: "Total spending",
+            value: formatCompactCurrency(spending?.totalSpending ?? 0, "N/A", currency),
+            detail: "Annual expenditure",
+          },
+          {
+            label: "Spending % GDP",
+            value: formatPercent(spending?.spendingGDPPercent ?? 0),
+            detail: "GDP share percentage",
+          },
+          {
+            label: "Spending per capita",
+            value: formatExactCurrency(spending?.spendingPerCapita ?? 0, currency),
+            detail: "Per citizen share",
+          },
+          {
+            label: "Budget balance",
+            value: formatCompactCurrency(balance, "N/A", currency),
+            detail: balance >= 0 ? "Surplus" : "Deficit",
+            tone: balance >= 0 ? "text-green" : "text-destructive",
+          },
+        ]}
+      />
 
       {/* The allocation split is served to the nation's owner only. */}
       {spendingCats.length > 0 && (
@@ -82,43 +88,10 @@ export function GovernmentSpendingSection({
           layout="list"
           showProgressBars={true}
           currency={currency}
-          sectors={[
-            {
-              id: "education",
-              name: "Education",
-              value: economyData?.spending?.education ?? 0,
-              percentage: ((economyData?.spending?.education ?? 0) / totalSpending) * 100,
-              color: "blue",
-            },
-            {
-              id: "healthcare",
-              name: "Healthcare",
-              value: economyData?.spending?.healthcare ?? 0,
-              percentage: ((economyData?.spending?.healthcare ?? 0) / totalSpending) * 100,
-              color: "emerald",
-            },
-            {
-              id: "welfare",
-              name: "Social welfare",
-              value: economyData?.spending?.socialSafety ?? 0,
-              percentage: ((economyData?.spending?.socialSafety ?? 0) / totalSpending) * 100,
-              color: "indigo",
-            },
-            {
-              id: "defense",
-              name: "Military & defense",
-              value: defenseAmount,
-              percentage: (defenseAmount / totalSpending) * 100,
-              color: "red",
-            },
-            {
-              id: "infrastructure",
-              name: "Infrastructure",
-              value: infraAmount,
-              percentage: (infraAmount / totalSpending) * 100,
-              color: "amber",
-            },
-          ]}
+          sectors={allocations.map((allocation) => ({
+            ...allocation,
+            percentage: (allocation.value / totalSpending) * 100,
+          }))}
         />
       )}
     </CollapsibleSection>
