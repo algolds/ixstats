@@ -4,8 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/u
 import { FacetMaterial } from "~/components/ui/facet";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useEffect, useRef, useCallback, useState } from "react";
-import type { Map as MapLibreMap, Marker, LayerSpecification } from "maplibre-gl";
-import type { Feature, FeatureCollection, Geometry } from "geojson";
+import type { Map as MapLibreMap, Marker } from "maplibre-gl";
+import type { Feature, Geometry } from "geojson";
 import { MapPin, WarningTriangle as AlertTriangle, CheckCircle } from "iconoir-react";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { buildBaseStyle, getCountryColor } from "~/lib/maps/map-config";
@@ -14,16 +14,9 @@ import { Button } from "~/components/ui/button";
 import { booleanPointInPolygon } from "@turf/boolean-point-in-polygon";
 import { point } from "@turf/helpers";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
+import { addGeoLayers } from "~/components/maps/shared/geo-layers";
 
 type EmbedData = ReturnType<typeof useCountryMapEmbed>;
-type LayerDef = Omit<LayerSpecification, "source">;
-
-/** Add a GeoJSON source and the given layers drawn from it. */
-function addGeoLayers(map: MapLibreMap, sourceId: string, features: Feature[], layers: LayerDef[]) {
-  const data: FeatureCollection = { type: "FeatureCollection", features };
-  map.addSource(sourceId, { type: "geojson", data });
-  for (const layer of layers) map.addLayer({ ...layer, source: sourceId } as LayerSpecification);
-}
 
 /** Draw the picked country (plus greyed neighbours and subdivision outlines) and fit to its bounds. */
 function drawCountryLayers(
