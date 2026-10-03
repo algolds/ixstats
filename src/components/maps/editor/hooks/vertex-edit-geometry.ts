@@ -1,9 +1,18 @@
 import type { Polygon, MultiPolygon, Position, Feature } from "geojson";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
-import { getAllRings, clampToGeometry, snapPointToGeometries } from "~/lib/maps/border-editor";
+import {
+  getAllRings,
+  clampToGeometry,
+  snapPointToGeometries,
+  snapToNeighborBorders,
+} from "~/lib/maps/border-editor";
+import {
+  findNearestBorderRing,
+  snapGeometryToBorder,
+} from "~/lib/maps/province-importer/alignment";
 import { withoutDisabledSnapLayers } from "~/lib/maps/editor-prefs";
-import { snapToLayerFeatures } from "../utils/map-helpers";
+import { midpointFeatures, snapToLayerFeatures } from "../utils/map-helpers";
 
 interface CalculateSnapTargetOptions {
   coords: [number, number];
@@ -98,23 +107,29 @@ export function buildNeighborGeometries(
  * Generates GeoJSON point features for all polygon edge midpoints (used for add-vertex handles).
  */
 export function buildMidpointFeatures(geo: Polygon | MultiPolygon): Feature[] {
-  const rings = getAllRings(geo);
-  const midFeatures: Feature[] = [];
-  for (let ri = 0; ri < rings.length; ri++) {
-    const ring = rings[ri]!;
-    const len = ring.length;
-    for (let i = 0; i < len - 1; i++) {
-      const a = ring[i]!;
-      const b = ring[i + 1]!;
-      midFeatures.push({
-        type: "Feature",
-        geometry: {
-          type: "Point",
-          coordinates: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2],
-        },
-        properties: { ringIndex: ri, startIndex: i },
-      });
-    }
-  }
-  return midFeatures;
+  return getAllRings(geo).flatMap((ring, ringIndex) =>
+    midpointFeatures(ring, (startIndex) => ({ ringIndex, startIndex }))
+  );
+}
+
+/** Snaps a region's edges onto the stretch of country border it lies along. */
+export function snapToCountryBorderRing(
+  geo: Polygon | MultiPolygon,
+  border: Polygon | MultiPolygon,
+  tolerance = 0.015
+): Polygon | MultiPolygon {
+  const ring = findNearestBorderRing(geo, border);
+  const edges = ring.slice(1).map((end, i): [Position, Position] => [ring[i]!, end]);
+  return snapGeometryToBorder(geo, edges, ring, tolerance);
+}
+
+/** Snaps a region's shared edges onto the neighbouring regions' borders. */
+export function snapToNeighbors(
+  geo: Polygon | MultiPolygon,
+  features: EditorFeature[],
+  editingId: string,
+  border: Polygon | MultiPolygon
+): Polygon | MultiPolygon {
+  const neighbors = buildNeighborGeometries(features, editingId);
+  return neighbors.length > 0 ? snapToNeighborBorders(geo, neighbors, border, 0.015) : geo;
 }

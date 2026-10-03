@@ -5,6 +5,7 @@ import type { EditorFeature } from "~/hooks/useMapEditor";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import {
   EMPTY_FC,
+  buildPointFeatures,
   collection,
   lineFeature,
   setLayerOpacity,
@@ -152,27 +153,6 @@ function buildGridLines(bbox: UseMapLayersProps["countryBbox"], zoomBucket: numb
     );
   }
   return lines;
-}
-
-function buildPointFeatures(visibleFeatures: EditorFeature[]) {
-  return visibleFeatures
-    .filter((f) => f.coordinates)
-    .map((f) => ({
-      type: "Feature" as const,
-      geometry: { type: "Point" as const, coordinates: f.coordinates! },
-      properties: {
-        id: f.id,
-        name: f.name,
-        featureType: f.type,
-        isCapital: f.properties.isNationalCapital ?? false,
-        rotation: Number(f.properties.rotation) || 0,
-        opacity: f.properties.opacity !== undefined ? Number(f.properties.opacity) : 1,
-        color: f.properties.color || "#374151",
-        fontSize: Number(f.properties.fontSize) || 11,
-        fontWeight: f.properties.fontWeight || "normal",
-        letterSpacing: Number(f.properties.letterSpacing) || 0,
-      },
-    }));
 }
 
 export function useMapLayers({

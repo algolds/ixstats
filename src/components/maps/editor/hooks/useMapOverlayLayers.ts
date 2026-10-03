@@ -6,6 +6,7 @@ import {
   collection,
   haversineDistance,
   lineFeature,
+  midpointFeatures,
   pointFeature,
   upsertGeoJSONLayers,
 } from "../utils/map-helpers";
@@ -37,16 +38,11 @@ interface UseMapOverlayLayersProps {
 }
 
 /** One point per segment midpoint, carrying the segment's haversine length ("12.3 km"). */
-function segmentLabels(
+const segmentLabels = (
   points: [number, number][],
   toProperties: (label: string) => GeoJsonProperties
-) {
-  return points.slice(1).map((b, i) => {
-    const a = points[i]!;
-    const label = `${haversineDistance(a, b).toFixed(1)} km`;
-    return pointFeature([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], toProperties(label));
-  });
-}
+) =>
+  midpointFeatures(points, (_, a, b) => toProperties(`${haversineDistance(a, b).toFixed(1)} km`));
 
 /** Transient editor overlays: pending marker, route/ruler drafts, gap/empty/lasso highlights. */
 export function useMapOverlayLayers({

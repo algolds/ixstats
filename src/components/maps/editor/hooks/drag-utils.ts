@@ -91,3 +91,14 @@ export function isKeyboardInputTarget(target: EventTarget | null): boolean {
     Boolean(target.closest("input, textarea, select, [contenteditable='true']"))
   );
 }
+
+/** Shift locks the drag axis (detected once from the drag so far); releasing Shift clears it. */
+export function nextLockedAxis(
+  current: DragAxis | null,
+  shiftKey: boolean,
+  start: ScreenPoint,
+  now: ScreenPoint
+): DragAxis | null {
+  if (!shiftKey) return null;
+  return current ?? detectAxis(now.x - start.x, now.y - start.y);
+}
