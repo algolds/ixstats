@@ -210,6 +210,33 @@ function ChamberRow({
   );
 }
 
+function ChamberLayout({
+  chambers,
+  onChange,
+  onSeatsBlur,
+}: {
+  chambers: ChamberItem[];
+  onChange: (index: number, field: keyof ChamberItem, value: string) => void;
+  onSeatsBlur: (index: number, value: string) => void;
+}) {
+  return (
+    <div className="rounded-control border-separator bg-fill-2 space-y-3 border p-3">
+      <h4 className="text-eyebrow text-label-tertiary">Chamber layout and settings</h4>
+      <div className="space-y-3">
+        {chambers.map((chamber, index) => (
+          <ChamberRow
+            key={index}
+            index={index}
+            chamber={chamber}
+            onChange={(field, value) => onChange(index, field, value)}
+            onSeatsBlur={(value) => onSeatsBlur(index, value)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 interface LegislatureConfigProps {
   countryId: string;
 }
@@ -455,20 +482,11 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
           </div>
 
           {isMultiChamber && chambers.length > 0 && (
-            <div className="rounded-control border-separator bg-fill-2 space-y-3 border p-3">
-              <h4 className="text-eyebrow text-label-tertiary">Chamber layout and settings</h4>
-              <div className="space-y-3">
-                {chambers.map((chamber, index) => (
-                  <ChamberRow
-                    key={index}
-                    index={index}
-                    chamber={chamber}
-                    onChange={(field, value) => updateChamber(index, field, value)}
-                    onSeatsBlur={(value) => handleBlurChamber(index, value)}
-                  />
-                ))}
-              </div>
-            </div>
+            <ChamberLayout
+              chambers={chambers}
+              onChange={updateChamber}
+              onSeatsBlur={handleBlurChamber}
+            />
           )}
 
           {legislature && (
