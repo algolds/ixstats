@@ -224,7 +224,7 @@ export function OnomaHeader({
       </div>
 
       {/* Console: the return bar for Stash/Settings, or the pillar + section tabs */}
-      <FacetMaterial material="thin" className="rounded-card p-2">
+      <FacetMaterial layer="chrome" className="rounded-card p-2">
         <AnimatePresence mode="wait" initial={false}>
           {isUtilitySection ? (
             <motion.div

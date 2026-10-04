@@ -269,7 +269,7 @@ describe("Virtual-anchor Popover / HoverCard", () => {
     const toolbar = screen.getByRole("toolbar", { name: "Selection actions" });
     expect(toolbar).toHaveAttribute("data-slot", "virtual-anchor-popover");
     expect(toolbar).toHaveAttribute("data-surface", "material");
-    expect(classOf(toolbar)).toMatch(/\bmaterial-thick\b/);
+    expect(classOf(toolbar)).toMatch(/\bfacet-overlay\b/);
     expect(before).toHaveFocus();
 
     rerender(

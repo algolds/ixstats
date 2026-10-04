@@ -69,7 +69,7 @@ function ReplyCapsule({
 }: ReplyCapsuleProps) {
   return (
     <div className="z-sticky fixed bottom-[calc(var(--shell-tabbar-height)+1.5rem)] left-[calc(50%+var(--shell-sidebar-width)/2)] w-full max-w-lg -translate-x-1/2 px-4">
-      <div className="material-regular shadow-floating focus-within:outline-tint flex w-full items-center gap-3 rounded-full px-4 py-2 focus-within:outline-2 focus-within:outline-offset-2">
+      <div className="facet-chrome shadow-floating focus-within:outline-tint flex w-full items-center gap-3 rounded-full px-4 py-2 focus-within:outline-2 focus-within:outline-offset-2">
         <Avatar className="border-separator size-8 shrink-0 border">
           {account?.profileImageUrl ? <AvatarImage src={account.profileImageUrl} /> : null}
           <AvatarFallback className="bg-fill-3 text-caption text-label-secondary">

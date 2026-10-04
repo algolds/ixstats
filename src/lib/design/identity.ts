@@ -30,7 +30,7 @@ export function accentColor(accent: FacetAccent): string {
 
 /**
  * The scoped accent for an element that is not a Facet primitive: sets `--facet-accent`, which the
- * identity paints (`material-hero` wash and glow, the achievement layers, `bg-facet-accent-fill`,
+ * identity paints (the pane wash, the achievement layers, `bg-facet-accent-fill`,
  * `text-facet-accent`) read before the app tint. It does not change `--tint`. Primitives take
  * `accent`.
  */

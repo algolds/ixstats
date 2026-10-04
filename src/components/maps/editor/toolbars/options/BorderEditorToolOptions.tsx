@@ -88,7 +88,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
   const notify = useNotify();
   return (
     <FacetMaterial
-      material="regular"
+      layer="chrome"
       role="toolbar"
       aria-label="Border editor options"
       className="pointer-events-auto flex h-9 shrink-0 items-center justify-between rounded-none px-3"

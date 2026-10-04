@@ -29,7 +29,7 @@ export function ArchetypeConfirmationPanel({
           className="z-sticky fixed right-0 bottom-[calc(var(--shell-tabbar-height)+1.5rem)] left-(--shell-sidebar-width) flex justify-center px-4"
         >
           <FacetMaterial
-            material="regular"
+            layer="chrome"
             className="rounded-card shadow-floating flex w-full max-w-2xl items-center justify-between gap-6 px-6 py-4"
           >
             <div className="space-y-1">

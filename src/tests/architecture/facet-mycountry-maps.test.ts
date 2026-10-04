@@ -66,7 +66,7 @@ describe("Facet 3 re-check: MyCountry and maps", () => {
     expect(hits(/data-cuelume-(?:hover|press)/g)).toEqual([]);
   });
 
-  it("styles the map island with Facet materials, not the retired acrylic shell", () => {
+  it("styles the map island with the chrome layer, not the retired island shell", () => {
     expect(hits(/dynamic-island-shell/g)).toEqual([]);
   });
 

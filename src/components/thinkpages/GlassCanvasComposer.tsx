@@ -311,7 +311,7 @@ export function GlassCanvasComposer({
                     type="button"
                     onClick={() => removeImage(imageUrl)}
                     aria-label="Remove image"
-                    className="material-thin text-label hover:text-destructive absolute top-2 right-2 z-10 cursor-pointer rounded-full p-0.5 transition-colors"
+                    className="facet-chrome text-label hover:text-destructive absolute top-2 right-2 z-10 cursor-pointer rounded-full p-0.5 transition-colors"
                   >
                     <X className="size-3.5" />
                   </button>

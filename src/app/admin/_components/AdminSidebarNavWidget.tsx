@@ -600,7 +600,7 @@ export function AdminSidebarNavWidget({
             <h3 className="text-subhead text-label-secondary px-2">{group.title}</h3>
 
             {/* Inset-grouped rail surface (a thin glass group) */}
-            <div className="material-thin border-separator space-y-2 rounded-2xl border p-1">
+            <div className="facet-chrome border-separator space-y-2 rounded-2xl border p-1">
               {group.subgroups.map((sub, sIdx) => (
                 <div
                   key={sub.subtitle}

@@ -1,0 +1,74 @@
+/* Facet layers. The only stylesheet that paints glass, blur or elevation. Utilities paint only:
+   no position, z-index, radius, margin or letter-spacing (the component owns those). Anything
+   that mixes --tint is composed here at the element, so each [data-app] scope resolves its own
+   tint. The scalars live in tokens.css and go opaque under Reduce Transparency and Increase
+   Contrast. */
+
+/* 0 · The page background: a static wash of the app tint so panes have colour to sit on. */
+@utility facet-canvas {
+  background-color: var(--color-background-grouped);
+  background-image: radial-gradient(
+    120% 80% at 50% -10%,
+    color-mix(in srgb, var(--tint) var(--canvas-wash), transparent),
+    transparent 70%
+  );
+  background-attachment: fixed;
+}
+
+/* 1 · Content. Translucent over the canvas; no backdrop-filter because only the soft static wash
+   is behind it, so blur would cost GPU for no visible change. */
+@utility facet-pane {
+  background-color: color-mix(in srgb, var(--color-surface) var(--pane-fill), transparent);
+  background-image: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--facet-accent, var(--tint)) var(--pane-wash), transparent),
+    transparent 55%
+  );
+  border: 1px solid var(--glass-hairline);
+  --tw-shadow: var(--shadow-card);
+  box-shadow:
+    var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
+    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+    var(--tw-shadow, 0 0 #0000);
+}
+
+/* 2 · Inside a pane. Solid so glass never stacks; a little tint keeps it in the app's colour. */
+@utility facet-well {
+  background-color: color-mix(
+    in srgb,
+    var(--facet-accent, var(--tint)) var(--well-tint),
+    var(--color-surface-secondary)
+  );
+}
+
+/* 3 · Floating navigation over scrolling content. Secondary labels use the vibrant role because
+   anything can scroll underneath. */
+@utility facet-chrome {
+  --color-label-secondary: var(--color-label-vibrant-secondary);
+  background-color: color-mix(in srgb, var(--color-surface) var(--chrome-fill), transparent);
+  -webkit-backdrop-filter: blur(var(--chrome-blur)) saturate(170%);
+  backdrop-filter: blur(var(--chrome-blur)) saturate(170%);
+  border: 1px solid var(--glass-hairline);
+  --tw-shadow: var(--shadow-floating);
+  box-shadow:
+    var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
+    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+    var(--tw-shadow, 0 0 #0000);
+}
+
+/* 4 · Dialogs, sheets, popovers. Always over a scrim, so it never blurs another layer's glass. */
+@utility facet-overlay {
+  background-color: color-mix(
+    in srgb,
+    var(--color-surface-elevated) var(--overlay-fill),
+    transparent
+  );
+  -webkit-backdrop-filter: blur(var(--overlay-blur)) saturate(180%);
+  backdrop-filter: blur(var(--overlay-blur)) saturate(180%);
+  border: 1px solid var(--glass-hairline);
+  --tw-shadow: var(--shadow-sheet);
+  box-shadow:
+    var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
+    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+    var(--tw-shadow, 0 0 #0000);
+}

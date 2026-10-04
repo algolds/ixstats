@@ -330,7 +330,7 @@ const DynamicIslandContent = ({
         // Halo is the acrylic island: a pill, then a frosted sheet once `data-expanded` opens it
         // into a panel. Content inside stays on opaque roles.
         className={cn(
-          "material-acrylic relative mx-auto items-center justify-center text-center",
+          "facet-chrome relative mx-auto items-center justify-center text-center",
           isImpersonating && "ring-destructive ring-2"
         )}
         initial={{
@@ -420,7 +420,7 @@ export const Halo = ({ children, id, ...props }: { children: ReactNode; id: stri
   if (!mounted) {
     return (
       <HaloOuterWrapper>
-        <div className="material-acrylic relative isolate mx-auto h-11 items-center justify-center rounded-full px-4 text-center">
+        <div className="facet-chrome relative isolate mx-auto h-11 items-center justify-center rounded-full px-4 text-center">
           <DynamicIslandEffects />
           {children}
         </div>

@@ -45,7 +45,7 @@ export const cutoutCardSurfaceClassName = cn(
 );
 
 const cutoutCardGlassClassName =
-  "group/cutout material-hero text-label rounded-cutout relative overflow-hidden";
+  "group/cutout facet-pane text-label rounded-cutout relative overflow-hidden";
 
 type CutoutCardVariant = "card" | "glass";
 

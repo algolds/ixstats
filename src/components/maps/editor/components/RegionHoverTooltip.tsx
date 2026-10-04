@@ -52,7 +52,7 @@ export const RegionHoverTooltip = React.memo(function RegionHoverTooltip({
         maxWidth: 220,
       }}
     >
-      <FacetMaterial material="regular" className="rounded-control px-3 py-2">
+      <FacetMaterial layer="chrome" className="rounded-control px-3 py-2">
         <div className="text-label text-caption font-semibold">{feature.name}</div>
         <div className="text-label-secondary text-footnote mt-1 space-y-0.5">
           <div className="flex justify-between gap-3">

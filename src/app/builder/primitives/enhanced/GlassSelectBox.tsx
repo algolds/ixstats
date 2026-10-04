@@ -214,7 +214,7 @@ export function GlassSelectBox({
             className={cn(
               "z-popover absolute top-full right-0 left-0 mt-1",
               getGlassClasses("modal"),
-              "material-thick",
+              "facet-overlay",
               "border-separator border",
               "rounded-control shadow-floating overflow-hidden"
             )}

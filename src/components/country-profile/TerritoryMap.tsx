@@ -58,7 +58,7 @@ export function TerritoryMap({
       />
       <Link
         href={createUrl(`/maps?country=${encodeURIComponent(countryId)}`)}
-        className="material-thin text-caption text-label focus-visible:outline-tint z-raised absolute right-3 bottom-3 inline-flex items-center gap-1 rounded-full px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
+        className="facet-chrome text-caption text-label focus-visible:outline-tint z-raised absolute right-3 bottom-3 inline-flex items-center gap-1 rounded-full px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
       >
         Open on map
         <NavArrowRight aria-hidden className="size-3.5" />

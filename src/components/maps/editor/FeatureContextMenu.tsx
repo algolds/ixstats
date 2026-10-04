@@ -142,7 +142,7 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
       style={{ left: clampedX, top: clampedY }}
     >
       <FacetMaterial
-        material="thick"
+        layer="overlay"
         role="menu"
         aria-label={`${feature.name} actions`}
         className="rounded-row overflow-hidden py-2"

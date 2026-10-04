@@ -3,7 +3,7 @@
 /**
  * TabBar: the primary navigation below 1024px.
  *
- * A floating `material-regular` bar at the bottom (`z-chrome`, clear of the home indicator via the
+ * A floating `facet-chrome` bar at the bottom (`z-chrome`, clear of the home indicator via the
  * safe-area inset) with up to four primary apps (`TAB_BAR_PRIORITY`) and "More". More opens a
  * bottom `Sheet` with detents listing the current app's sections (the phone path for every app's
  * own `data-app-subnav`), the remaining apps (`FacetList`) and the account.

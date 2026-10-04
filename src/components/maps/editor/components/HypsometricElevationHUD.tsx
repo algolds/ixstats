@@ -18,7 +18,7 @@ export function HypsometricElevationHUD({ onClose }: HypsometricElevationHUDProp
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 absolute bottom-9 left-1/2 z-40 -translate-x-1/2">
-      <FacetMaterial material="regular" className="text-label rounded-row flex flex-col p-3">
+      <FacetMaterial layer="chrome" className="text-label rounded-row flex flex-col p-3">
         <div className="flex items-center justify-between gap-6">
           <div className="flex items-center gap-2">
             <Mountain className="text-label-secondary h-4 w-4" aria-hidden />

@@ -315,7 +315,7 @@ export function WikiOSHeader({
 
       {/* Title card floating over the lead image */}
       <div className="relative z-10 m-3 max-w-xl self-start sm:m-4">
-        <div className="material-thick text-label relative isolate space-y-2 overflow-hidden rounded-2xl p-4 text-left sm:p-5">
+        <div className="facet-overlay text-label relative isolate space-y-2 overflow-hidden rounded-2xl p-4 text-left sm:p-5">
           {/* Breadcrumb Path */}
           <div className="text-label-secondary text-eyebrow flex items-center gap-1">
             <CategoryBreadcrumb title={title} />

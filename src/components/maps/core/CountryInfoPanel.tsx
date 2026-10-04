@@ -63,7 +63,7 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
       className="absolute top-0 right-0 z-20 hidden h-full w-96 sm:block"
       style={{ animation: "slideInRight 0.25s ease-out" }}
     >
-      <FacetMaterial material="regular" className="flex h-full flex-col rounded-none">
+      <FacetMaterial layer="chrome" className="flex h-full flex-col rounded-none">
         <div className="border-separator flex shrink-0 items-center justify-between border-b px-4 py-3">
           <div className="flex items-center gap-2 overflow-hidden">
             {state.flagUrl ? (

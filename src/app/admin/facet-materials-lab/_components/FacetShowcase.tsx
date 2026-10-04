@@ -2,7 +2,7 @@
 
 /**
  * Showcase of the production primitives from `src/components/ui`: per-app tints, surfaces and
- * materials, stats and grouped lists, controls and badges, text styles and system colours.
+ * layers, stats and grouped lists, controls and badges, text styles and system colours.
  * Nothing here is lab-only.
  */
 
@@ -20,6 +20,7 @@ import {
   Trophy,
 } from "iconoir-react";
 import { FacetMaterial } from "~/components/ui/facet/shared/FacetMaterial";
+import { cn } from "~/lib/utils/cn";
 import {
   CutoutCard,
   CutoutCardHeader,
@@ -99,6 +100,55 @@ function SectionTitle({ title, description }: { title: string; description: stri
   );
 }
 
+type LayerSwatchProps = { className?: string; children?: React.ReactNode };
+
+/** One swatch per layer, in stacking order. */
+const LAYER_SWATCHES: {
+  name: string;
+  use: string;
+  Swatch: React.ComponentType<LayerSwatchProps>;
+}[] = [
+  {
+    name: "facet-canvas",
+    use: "Page background",
+    Swatch: ({ className, children }) => (
+      <div className={cn("facet-canvas", className)}>{children}</div>
+    ),
+  },
+  {
+    name: "facet-pane",
+    use: "Cards and content",
+    Swatch: ({ className, children }) => (
+      <div className={cn("facet-pane", className)}>{children}</div>
+    ),
+  },
+  {
+    name: "facet-well",
+    use: "Insets inside a pane",
+    Swatch: ({ className, children }) => (
+      <div className={cn("facet-well", className)}>{children}</div>
+    ),
+  },
+  {
+    name: "facet-chrome",
+    use: "Sidebar, tab bar, toolbars",
+    Swatch: ({ className, children }) => (
+      <FacetMaterial layer="chrome" className={className}>
+        {children}
+      </FacetMaterial>
+    ),
+  },
+  {
+    name: "facet-overlay",
+    use: "Popovers, menus, sheets",
+    Swatch: ({ className, children }) => (
+      <FacetMaterial layer="overlay" className={className}>
+        {children}
+      </FacetMaterial>
+    ),
+  },
+];
+
 export function FacetShowcase() {
   const [tint, setTint] = React.useState<AppTint>("admin");
   const [period, setPeriod] = React.useState("week");
@@ -132,8 +182,8 @@ export function FacetShowcase() {
 
       <section>
         <SectionTitle
-          title="Surfaces and materials"
-          description="Dense content is opaque (Card on the grouped background); glass is for floating chrome and, since 3.1, hero/feature cards. "
+          title="Surfaces and layers"
+          description="Five layers: canvas, pane, well, chrome and overlay. Only chrome and overlay blur; a well sits inside a pane."
         />
         <div className="grid gap-4 lg:grid-cols-2">
           <Card padding="md" className="space-y-3">
@@ -155,21 +205,14 @@ export function FacetShowcase() {
               <div className="bg-teal absolute bottom-0 left-1/3 size-28 rounded-full opacity-50" />
             </div>
             <div className="grid gap-3">
-              {(["thin", "regular", "thick"] as const).map((material) => (
-                <FacetMaterial
-                  key={material}
-                  material={material}
+              {LAYER_SWATCHES.map(({ name, use, Swatch }) => (
+                <Swatch
+                  key={name}
                   className="rounded-row flex items-center justify-between px-4 py-3"
                 >
-                  <span className="text-headline text-label">material-{material}</span>
-                  <span className="text-footnote text-label-secondary">
-                    {material === "thin"
-                      ? "Toolbars, sub-headers"
-                      : material === "regular"
-                        ? "Sidebar, tab bar, Halo"
-                        : "Popovers, menus"}
-                  </span>
-                </FacetMaterial>
+                  <span className="text-headline text-label">{name}</span>
+                  <span className="text-footnote text-label-secondary">{use}</span>
+                </Swatch>
               ))}
             </div>
           </div>
@@ -333,13 +376,13 @@ export function FacetShowcase() {
   );
 }
 
-/** CutoutCard, acrylic chrome and the achievement aurora, on a busy backdrop so the glass has something to blur. */
+/** CutoutCard, chrome and the achievement aurora, on a busy backdrop so the glass has something to blur. */
 function CardsAndChrome() {
   return (
     <section>
       <SectionTitle
         title="Cards and chrome"
-        description="CutoutCard, the acrylic Halo pill and the achievement aurora."
+        description="CutoutCard, the Halo pill and the achievement aurora."
       />
       <div className="bg-grouped rounded-card relative isolate overflow-hidden p-4 md:p-6">
         <div aria-hidden className="absolute inset-0 -z-10">
@@ -370,12 +413,12 @@ function CardsAndChrome() {
             </CutoutCardStagger>
           </CutoutCard>
 
-          {/* Acrylic chrome (Halo) */}
+          {/* Chrome (Halo) */}
           <FacetMaterial
-            material="acrylic"
+            layer="chrome"
             className="flex items-center justify-between rounded-full px-5 py-3"
           >
-            <span className="text-headline text-label">material-acrylic</span>
+            <span className="text-headline text-label">facet-chrome</span>
             <Badge variant="secondary">3</Badge>
           </FacetMaterial>
 

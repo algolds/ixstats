@@ -22,7 +22,7 @@ export function MiniPlayer() {
     <>
       <div className="z-chrome fixed right-4 bottom-[calc(var(--shell-tabbar-height)+1rem)] left-4 md:right-4 md:left-auto md:w-96">
         <FacetMaterial
-          material="regular"
+          layer="chrome"
           className="rounded-card shadow-floating relative flex items-center justify-between gap-4 overflow-hidden p-3"
         >
           {/* Top edge progress bar */}

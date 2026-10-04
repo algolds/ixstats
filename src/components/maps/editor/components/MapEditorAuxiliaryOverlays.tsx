@@ -173,7 +173,7 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
 
       {editor.selectedIds.size > 1 && (
         <div className="pointer-events-auto absolute bottom-10 left-1/2 z-30 max-w-[calc(100vw-2rem)] -translate-x-1/2">
-          <FacetMaterial material="regular" className="rounded-row overflow-hidden">
+          <FacetMaterial layer="chrome" className="rounded-row overflow-hidden">
             <BatchActionsBar
               selectedCount={editor.selectedIds.size}
               subdivisionCount={subdivisionCount}

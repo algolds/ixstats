@@ -231,7 +231,7 @@ export function DashboardSidebarLayout({
                   variant="outline"
                   size="icon"
                   onClick={handleToggleSidebar}
-                  className="material-thin z-chrome shadow-floating fixed top-[calc(var(--shell-top-offset)+1rem)] left-[calc(var(--shell-sidebar-width)+1rem)] rounded-full"
+                  className="facet-chrome z-chrome shadow-floating fixed top-[calc(var(--shell-top-offset)+1rem)] left-[calc(var(--shell-sidebar-width)+1rem)] rounded-full"
                   title="Expand sidebar"
                   aria-label="Expand sidebar"
                 >

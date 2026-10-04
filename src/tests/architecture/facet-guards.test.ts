@@ -144,13 +144,12 @@ const DARK_OVERRIDE_ALLOWED = new Set([
 
 /**
  * Gradients come from sanctioned classes, not ad-hoc palette stops. The identity sheet
- * (styles/facet/identity.css) owns the glass wash, aurora/foil/radiance and jewel paints; card art
+ * (styles/facet/identity.css) owns the aurora/foil/radiance and jewel paints, and the layer sheet
+ * (styles/facet/layers.css) owns the pane wash; card art
  * owns `card-art-linear-*` (styles/card-art.css); raw gradient utilities are only image scrims on
  * role/black/white/transparent stops.
  */
 const SANCTIONED_GRADIENT_CLASSES = [
-  "material-hero",
-  "material-acrylic",
   "facet-primary",
   "facet-gold",
   "facet-aurora",
@@ -176,8 +175,7 @@ const ART_GRADIENT_FILES = [
 ].map((dir) => dir.split("/").join(path.sep));
 
 /**
- * Blur comes from the glass/acrylic materials (`material-*`, FacetCard
- * `variant="glass"`, FacetMaterial). A raw `backdrop-blur-*`/`backdrop-saturate-*` utility or an
+ * Blur comes from the floating layers (`facet-chrome`, `facet-overlay`, FacetMaterial). A raw `backdrop-blur-*`/`backdrop-saturate-*` utility or an
  * inline `backdropFilter` in converted feature code is a hand-rolled material. `backdrop-blur-none`
  * (turning a primitive's blur off) is fine.
  */
@@ -336,7 +334,7 @@ describe("Facet anti-slop guards", () => {
       expect(offenders).toEqual([]);
     });
 
-    it("blur only through the glass/acrylic materials (no raw backdrop-blur utilities)", () => {
+    it("blur only through the chrome and overlay layers (no raw backdrop-blur utilities)", () => {
       const raw = convertedHits(RAW_BACKDROP, RAW_BACKDROP_ALLOWED).filter(
         (hit) => !hit.endsWith(": backdrop-blur-none")
       );

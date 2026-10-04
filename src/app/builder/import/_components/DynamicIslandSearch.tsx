@@ -386,7 +386,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
 
             {/* Dropdown Live Results Area (if searching via MediaWiki API) */}
             {showResults && searchTerm.trim().length > 0 && (
-              <div className="material-thick rounded-row z-popover shadow-floating absolute top-full right-0 left-0 mt-2 max-h-72 overflow-y-auto p-2">
+              <div className="facet-overlay rounded-row z-popover shadow-floating absolute top-full right-0 left-0 mt-2 max-h-72 overflow-y-auto p-2">
                 {isSearching && searchResults.length === 0 && (
                   <div className="flex items-center justify-center gap-3 py-6">
                     <motion.div

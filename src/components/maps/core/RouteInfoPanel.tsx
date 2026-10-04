@@ -574,7 +574,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
   if (isLoading) {
     return (
       <div className="absolute top-16 right-4 z-30 w-72">
-        <FacetMaterial material="regular" className="rounded-card space-y-3 p-4" aria-busy="true">
+        <FacetMaterial layer="chrome" className="rounded-card space-y-3 p-4" aria-busy="true">
           <Skeleton className="h-5 w-2/3" />
           <Skeleton className="h-3 w-full" />
           <Skeleton className="h-3 w-5/6" />
@@ -586,7 +586,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
   if (!route) {
     return (
       <div className="absolute top-16 right-4 z-30 w-72">
-        <FacetMaterial material="regular" className="rounded-card p-4">
+        <FacetMaterial layer="chrome" className="rounded-card p-4">
           <p className="text-label-secondary text-body">Route not found</p>
           <Button variant="link" size="xs" onClick={onClose} className="mt-1 px-0">
             Close
@@ -608,7 +608,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
       className="animate-in slide-in-from-right-4 absolute top-16 right-4 z-30 w-72 duration-200"
     >
       <FacetMaterial
-        material="regular"
+        layer="chrome"
         className="rounded-card max-h-[calc(100dvh-5rem)] overflow-y-auto"
       >
         <RouteHeader route={route} editor={editor} onClose={onClose} />

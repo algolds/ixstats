@@ -2,7 +2,7 @@
 
 /**
  * Search, auth, help, notifications and settings in one Halo acrylic island. It expands into the
- * search input (results in a `material-regular` panel) and retracts on click-outside. Desktop
+ * search input (results in a `facet-chrome` panel) and retracts on click-outside. Desktop
  * springs its size (layout animation); phones swap content without it.
  */
 
@@ -347,7 +347,7 @@ export function MapDynamicIsland({
 
   const mobilePill = (
     <FacetMaterial
-      material="acrylic"
+      layer="chrome"
       data-expanded={searchOpen ? "true" : undefined}
       className={islandClass}
     >
@@ -363,7 +363,7 @@ export function MapDynamicIsland({
 
   const desktopPill = (
     <MotionFacetMaterial
-      material="acrylic"
+      layer="chrome"
       layout
       transition={SPRING}
       animate={isFlashing ? { scale: [1, 1.05, 1] } : { scale: 1 }}
@@ -403,7 +403,7 @@ export function MapDynamicIsland({
       {isMobile ? (
         showResults && (
           <FacetMaterial
-            material="regular"
+            layer="chrome"
             id="map-search-results"
             role="listbox"
             aria-label="Search results"
@@ -423,7 +423,7 @@ export function MapDynamicIsland({
               className="mt-2"
             >
               <FacetMaterial
-                material="regular"
+                layer="chrome"
                 id="map-search-results"
                 role="listbox"
                 aria-label="Search results"

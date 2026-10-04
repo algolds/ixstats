@@ -84,7 +84,7 @@ function PopoverVirtualAnchor({ anchor }: { anchor: VirtualAnchor }) {
 /** Surfaces for `VirtualAnchorPopover`: menus/toolbars, hover cards/tooltips, or bare. */
 const VIRTUAL_SURFACES = {
   /** Floating chrome — toolbars, menus, pickers (like `PopoverContent`). */
-  material: "material-thick text-label shadow-floating rounded-card p-4",
+  material: "facet-overlay text-label shadow-floating rounded-card p-4",
   /** Hover cards and previews (like `HoverCardContent`). */
   elevated:
     "rounded-card border border-separator bg-surface-elevated p-4 text-label shadow-floating",
@@ -195,7 +195,7 @@ function PopoverContent({
           "z-popover rounded-card pointer-events-auto max-h-(--radix-popover-content-available-height) w-72 max-w-(--radix-popover-content-available-width) origin-(--radix-popover-content-transform-origin) overflow-x-hidden overflow-y-auto overscroll-contain p-4 outline-none",
           // Floating chrome: thick material + floating shadow. Anything inside uses
           // opaque roles — never another material.
-          "material-thick text-label shadow-floating",
+          "facet-overlay text-label shadow-floating",
           // Origin-aware scale .96 + fade in, 120ms out.
           presentMotionClassName,
           className

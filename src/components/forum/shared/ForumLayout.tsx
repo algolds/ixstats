@@ -1,6 +1,6 @@
 "use client";
 // Forum content wrapper with icon rail sidebar on desktop, horizontal pills on mobile.
-// The rail and pill bar are chrome (material-thin pill bar); the Forum tint (orange) comes
+// The rail and pill bar are chrome (facet-chrome pill bar); the Forum tint (orange) comes
 // from data-app="forum" on the route layout.
 
 import { type ReactNode, useState, useEffect, useRef } from "react";
@@ -168,7 +168,7 @@ export function ForumLayout({ children }: ForumLayoutProps) {
       <nav
         data-app-subnav=""
         aria-label="Forum"
-        className="forum-mobile-nav material-thin lg:hidden"
+        className="forum-mobile-nav facet-chrome lg:hidden"
       >
         <div className="flex gap-1 overflow-x-auto px-3 py-2">
           {NAV_GROUP_1.map((item) => (

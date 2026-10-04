@@ -47,7 +47,7 @@ describe("glass hero tier", () => {
       </Card>
     );
     const hero = screen.getByTestId("hero");
-    expect(classOf(hero)).toMatch(/\bmaterial-hero\b/);
+    expect(classOf(hero)).toMatch(/\bfacet-pane\b/);
     expect(classOf(hero)).toMatch(/\brounded-card\b/);
     expect(classOf(hero)).not.toMatch(/\bbg-surface\b|\bshadow-card\b/);
     expect(hero.querySelector("[aria-hidden]")).toBeNull();
@@ -65,10 +65,10 @@ describe("glass hero tier", () => {
   });
 });
 
-describe("acrylic and hero materials", () => {
-  it.each(["acrylic", "hero"] as const)("FacetMaterial %s maps to its utility", (material) => {
-    render(<FacetMaterial data-testid="m" material={material} />);
-    expect(classOf(screen.getByTestId("m"))).toContain(`material-${material}`);
+describe("floating glass layers", () => {
+  it.each(["chrome", "overlay"] as const)("FacetMaterial %s maps to its utility", (layer) => {
+    render(<FacetMaterial data-testid="m" layer={layer} />);
+    expect(classOf(screen.getByTestId("m"))).toContain(`facet-${layer}`);
   });
 
   it("DynamicIslandEffects is a decorative glow underlay", () => {
@@ -270,9 +270,9 @@ describe("CutoutCard", () => {
     expect(screen.queryByRole("button")).toBeNull();
   });
 
-  it("variant=glass uses the hero material", () => {
+  it("variant=glass uses the pane layer", () => {
     render(<CutoutCard data-testid="cut" variant="glass" />);
-    expect(classOf(screen.getByTestId("cut"))).toMatch(/\bmaterial-hero\b/);
+    expect(classOf(screen.getByTestId("cut"))).toMatch(/\bfacet-pane\b/);
   });
 
   it("is keyboard accessible when pressable and lifts/presses", () => {

@@ -209,7 +209,7 @@ export function CoordinatesMapEmbed({
       )}
 
       {mapReady && (
-        <div className="material-thin rounded-control text-footnote text-label-secondary pointer-events-none absolute bottom-3 left-3 z-10 flex items-center gap-2 px-3 py-1 select-none">
+        <div className="facet-chrome rounded-control text-footnote text-label-secondary pointer-events-none absolute bottom-3 left-3 z-10 flex items-center gap-2 px-3 py-1 select-none">
           <MapPin className="text-blue h-2.5 w-2.5" />
           <span className="font-semibold">{titleVal || "Map Embed"}</span>
           <span className="text-footnote text-label-secondary font-mono">

@@ -37,7 +37,7 @@ export function BorderToolRail({
 }) {
   return (
     <FacetMaterial
-      material="regular"
+      layer="chrome"
       role="toolbar"
       aria-label="Border tools"
       aria-orientation="vertical"

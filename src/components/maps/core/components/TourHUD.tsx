@@ -100,7 +100,7 @@ export function TourHUD({
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
         className="fixed bottom-6 left-6 z-40 w-[calc(100%-3rem)] max-w-[380px]"
       >
-        <FacetMaterial material="regular" className="rounded-card overflow-hidden">
+        <FacetMaterial layer="chrome" className="rounded-card overflow-hidden">
           <div className="border-separator flex items-start justify-between border-b px-5 py-4">
             <div className="flex items-center gap-3">
               {statsLoading ? (

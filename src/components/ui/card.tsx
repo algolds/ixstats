@@ -10,7 +10,7 @@ type CardPadding = "none" | "sm" | "md" | "lg";
 const VARIANT: Record<CardVariant, string> = {
   default: "bg-surface text-label border-separator rounded-card shadow-card border",
   inset: "bg-surface-secondary text-label rounded-row",
-  hero: "material-hero text-label rounded-card",
+  hero: "facet-pane text-label rounded-card",
 };
 
 const PADDING: Record<CardPadding, string> = {

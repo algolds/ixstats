@@ -188,7 +188,7 @@ export function WikiMarginDrawer({
             className={cn(
               // Floating side inspector (non-modal: the article stays interactive), so chrome
               // material rather than a modal Sheet.
-              "material-regular z-chrome border-separator text-label shadow-floating fixed top-14 right-0 bottom-(--shell-tabbar-height) flex flex-col border-l",
+              "facet-chrome z-chrome border-separator text-label shadow-floating fixed top-14 right-0 bottom-(--shell-tabbar-height) flex flex-col border-l",
               isExpandedFull ? "w-full sm:w-[440px]" : "w-full sm:w-80"
             )}
           >

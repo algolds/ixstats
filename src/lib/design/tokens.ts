@@ -24,8 +24,9 @@ export const COLOR_ROLES = {
     "label-secondary": "#52525b",
     "label-tertiary": "#a1a1aa",
     "label-quaternary": "#d4d4d8",
-    // HIG vibrant secondary label: what `label-secondary` resolves to inside `material-acrylic`
-    // (chrome over arbitrary content) — ≥ 4.5:1 over a black / white backdrop (see `GLASS`).
+    // HIG vibrant secondary label: what `label-secondary` resolves to inside `facet-chrome`
+    // (chrome over arbitrary content) — ≥ 4.5:1 over a black / white backdrop under the chrome
+    // fill (token-contrast.test.ts, "chrome").
     "label-vibrant-secondary": "#46464e",
     background: "#ffffff",
     "background-grouped": "#f2f3f6",
@@ -276,7 +277,7 @@ export const GLASS = {
     paneWash: 0.08,
     canvasWash: 0.1,
     wellTint: 0.08,
-    chromeFill: 0.72,
+    chromeFill: 0.8,
     overlayFill: 0.86,
   },
 } as const satisfies Record<Appearance, Record<string, number>>;

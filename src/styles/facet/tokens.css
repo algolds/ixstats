@@ -63,9 +63,9 @@
   --color-label-secondary: #52525b;
   --color-label-tertiary: #a1a1aa;
   --color-label-quaternary: #d4d4d8;
-  /* HIG vibrant secondary label: `label-secondary` inside `material-acrylic` (identity.css), where
+  /* HIG vibrant secondary label: `label-secondary` inside `facet-chrome` (layers.css), where
      chrome floats over arbitrary content — ≥ 4.5:1 over a black (light) / white (dark) backdrop
-     under the thinnest acrylic fill and its glow (token-contrast.test.ts, "acrylic"). */
+     under the chrome fill (token-contrast.test.ts, "chrome"). */
   --color-label-vibrant-secondary: #46464e;
 
   /* Backgrounds & surfaces */
@@ -450,74 +450,6 @@
   text-transform: uppercase;
 }
 
-/* ─── Materials (floating chrome only; never nested) ─────────────────────── */
-/* No position / z-index / radius / margin — those belong to the component. Reduce Transparency
-   makes them opaque. */
-
-@utility material-thin {
-  --material-blur: 12px;
-  --material-saturate: 150%;
-  background-color: color-mix(in srgb, var(--color-surface) 72%, transparent);
-  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
-  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
-  border: 1px solid var(--color-separator-opaque);
-  --tw-inset-shadow: inset 0 1px 0 0 var(--material-highlight);
-  box-shadow:
-    var(--tw-inset-shadow), var(--tw-inset-ring-shadow, 0 0 #0000),
-    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
-    var(--tw-shadow, 0 0 #0000);
-  @media (max-width: 768px) {
-    --material-blur: 8px;
-  }
-  @variant transparency-reduced {
-    background-color: var(--color-surface);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-}
-@utility material-regular {
-  --material-blur: 20px;
-  --material-saturate: 170%;
-  background-color: color-mix(in srgb, var(--color-surface) 80%, transparent);
-  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
-  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
-  border: 1px solid var(--color-separator-opaque);
-  --tw-inset-shadow: inset 0 1px 0 0 var(--material-highlight);
-  box-shadow:
-    var(--tw-inset-shadow), var(--tw-inset-ring-shadow, 0 0 #0000),
-    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
-    var(--tw-shadow, 0 0 #0000);
-  @media (max-width: 768px) {
-    --material-blur: 12px;
-  }
-  @variant transparency-reduced {
-    background-color: var(--color-surface);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-}
-@utility material-thick {
-  --material-blur: 28px;
-  --material-saturate: 180%;
-  background-color: color-mix(in srgb, var(--color-surface-elevated) 88%, transparent);
-  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
-  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
-  border: 1px solid var(--color-separator-opaque);
-  --tw-inset-shadow: inset 0 1px 0 0 var(--material-highlight);
-  box-shadow:
-    var(--tw-inset-shadow), var(--tw-inset-ring-shadow, 0 0 #0000),
-    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
-    var(--tw-shadow, 0 0 #0000);
-  @media (max-width: 768px) {
-    --material-blur: 20px;
-  }
-  @variant transparency-reduced {
-    background-color: var(--color-surface-elevated);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-}
-
 /* ─── Runtime values: appearance, app tints, preferences ─────────────────── */
 
 @layer base {
@@ -525,7 +457,6 @@
     color-scheme: light;
     --text-scale: 1;
     --shadow-strength: 1;
-    --material-highlight: rgba(255, 255, 255, 0.2);
 
     /* Density: component padding/gap multiplier and control heights 28/36/44 */
     --density: 1;
@@ -538,7 +469,6 @@
   :root[data-theme="dark"] {
     color-scheme: dark;
     --shadow-strength: 0.5;
-    --material-highlight: rgba(255, 255, 255, 0.08);
 
     --color-label: #e4e4e7;
     --color-label-secondary: #a1a1aa;
@@ -803,7 +733,7 @@
     --pane-wash: 8%;
     --canvas-wash: 10%;
     --well-tint: 8%;
-    --chrome-fill: 72%;
+    --chrome-fill: 80%;
     --overlay-fill: 86%;
     --facet-lift-shadow: 0 12px 32px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.2);
     --primary-mono: #e4e4e7;

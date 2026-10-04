@@ -76,7 +76,7 @@ function BorderEditorLoading({ countryName }: { countryName?: string | null }) {
       className="bg-surface absolute inset-0 z-30 flex items-center justify-center"
     >
       <FacetMaterial
-        material="regular"
+        layer="chrome"
         className="rounded-card flex items-center gap-3 px-5 py-4 text-left"
       >
         <Loader aria-hidden className="text-label-secondary h-5 w-5 animate-spin" />

@@ -13,7 +13,7 @@ describe("cn with Facet 3 token utilities", () => {
     expect(cn("rounded-xl", "rounded-card")).toBe("rounded-card");
     expect(cn("shadow-lg", "shadow-floating")).toBe("shadow-floating");
     expect(cn("z-50", "z-popover")).toBe("z-popover");
-    expect(cn("material-thin", "material-thick")).toBe("material-thick");
+    expect(cn("facet-chrome", "facet-overlay")).toBe("facet-overlay");
   });
 
   it("still resolves plain colour conflicts", () => {

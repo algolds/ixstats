@@ -527,6 +527,21 @@ describe("identity: contrast", () => {
       }
     });
 
+    it("chrome: label and vibrant secondary stay ≥ 4.5:1 on the chrome fill over any backdrop", () => {
+      // Chrome floats over arbitrary content: the worst backdrop for dark text is black, for light
+      // text white (saturate() leaves both unchanged).
+      const backdrop = appearance === "light" ? "#000000" : "#ffffff";
+      for (const more of [false, true]) {
+        const surface = role(appearance, "surface", more);
+        // Increase Contrast and Reduce Transparency make the chrome fill opaque.
+        const fill = more ? surface : mix(surface, backdrop, GLASS[appearance].chromeFill);
+        for (const label of ["label", "label-vibrant-secondary"]) {
+          const ratio = contrast(role(appearance, label, more), fill);
+          expect({ more, label, ok: ratio >= AA_TEXT, ratio }).toMatchObject({ ok: true });
+        }
+      }
+    });
+
     it("gold: on-gold ≥ 4.5:1 on the fill and hover; as accent text ≥ 4.5:1 and as an edge ≥ 3:1", () => {
       for (const bg of [GOLD.fill, GOLD.hover]) {
         const ratio = contrast(GOLD.on, bg);

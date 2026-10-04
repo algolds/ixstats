@@ -3,6 +3,7 @@
 
 /* Tokens: colour roles, app tints, type, radius, materials, elevation, z, motion. */
 @import "./facet/tokens.css";
+@import "./facet/layers.css";
 
 /* Import modular CSS files */
 @import "./typography.css";

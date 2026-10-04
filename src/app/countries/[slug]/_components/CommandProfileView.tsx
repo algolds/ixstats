@@ -571,7 +571,7 @@ function CommandBody({
           {/* Bottom dock (<1024px), pinned while the stream is on screen: tab-bar acrylic */}
           <FacetMaterial
             as="nav"
-            material="acrylic"
+            layer="chrome"
             aria-label="Domains"
             className="shadow-floating z-sticky sticky bottom-[calc(var(--shell-tabbar-height,0px)+1rem)] mx-auto w-fit max-w-full overflow-x-auto rounded-full p-1 lg:hidden"
           >

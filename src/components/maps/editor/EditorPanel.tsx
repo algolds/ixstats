@@ -322,7 +322,7 @@ function CollapsedStrip({
 }: Pick<EditorPanelProps, "tabs" | "onToggleCollapse"> & { placement: Placement }) {
   return (
     <FacetMaterial
-      material="regular"
+      layer="chrome"
       className={`flex shrink-0 items-center justify-between px-2 py-2 ${
         placement === "bottom" ? "rounded-control-sm h-9 w-32" : "h-9 w-full rounded-none"
       }`}
@@ -435,7 +435,7 @@ export function EditorPanel(props: EditorPanelProps) {
       <div className="relative flex h-full">
         {!collapsed && (
           <FacetMaterial
-            material="regular"
+            layer="chrome"
             className="flex flex-col rounded-none"
             style={frameStyle}
           >
@@ -465,7 +465,7 @@ export function EditorPanel(props: EditorPanelProps) {
 
       {!collapsed && (
         <FacetMaterial
-          material="regular"
+          layer="chrome"
           className={`flex flex-col rounded-none ${isBottom ? "w-full" : "h-full"}`}
           style={frameStyle}
         >

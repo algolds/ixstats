@@ -73,7 +73,7 @@ export function ReplyComposer({
     (plainText.trim().length > 0 || bbcode.trim().length > 0) && !createPost.isPending;
 
   return (
-    <div className="forum-composer material-thin rounded-card p-2">
+    <div className="forum-composer facet-chrome rounded-card p-2">
       {createPost.error && (
         <div
           role="alert"

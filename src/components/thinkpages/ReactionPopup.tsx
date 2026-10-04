@@ -48,7 +48,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
   const availableReactions = Object.keys(REACTION_ICONS);
 
   return (
-    // Presented inside a Popover (material-thick), so this content stays opaque roles only.
+    // Presented inside a Popover (facet-overlay), so this content stays opaque roles only.
     <div className="min-w-[290px]">
       <Tabs
         value={activeTab}

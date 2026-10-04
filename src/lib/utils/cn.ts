@@ -5,7 +5,7 @@ import { extendTailwindMerge } from "tailwind-merge";
  * tailwind-merge that knows the Facet token utilities (src/styles/facet/tokens.css). Without this it
  * reads every unknown `text-*` as a colour, so `cn("text-body text-label")` would drop one of them.
  */
-const twMerge = extendTailwindMerge<"material">({
+const twMerge = extendTailwindMerge<"facet-layer">({
   extend: {
     theme: {
       text: [
@@ -43,7 +43,7 @@ const twMerge = extendTailwindMerge<"material">({
           ],
         },
       ],
-      material: [{ material: ["thin", "regular", "thick"] }],
+      "facet-layer": [{ facet: ["canvas", "pane", "well", "chrome", "overlay"] }],
     },
   },
 });

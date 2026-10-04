@@ -240,7 +240,7 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
           className="absolute top-0 right-0 z-20 hidden h-full w-96 sm:block"
           style={{ animation: "slideInRight 0.25s ease-out" }}
         >
-          <FacetMaterial material="regular" className="h-full rounded-none">
+          <FacetMaterial layer="chrome" className="h-full rounded-none">
             {panelContent}
           </FacetMaterial>
         </div>

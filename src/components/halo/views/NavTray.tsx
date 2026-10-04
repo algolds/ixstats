@@ -122,7 +122,7 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
         >
           {/* The island's expanded acrylic sheet. */}
           <FacetMaterial
-            material="acrylic"
+            layer="chrome"
             data-expanded="true"
             className="rounded-card isolate overflow-hidden"
           >

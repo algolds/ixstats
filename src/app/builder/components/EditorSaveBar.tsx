@@ -65,7 +65,7 @@ export function EditorSaveBar({
         className="z-sticky pointer-events-none fixed right-0 bottom-[calc(var(--shell-tabbar-height)+1rem)] left-(--shell-sidebar-width) flex justify-center px-4 pb-[env(safe-area-inset-bottom)]"
       >
         <FacetMaterial
-          material="regular"
+          layer="chrome"
           className="rounded-card shadow-floating pointer-events-auto flex w-full max-w-2xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3"
         >
           <div aria-live="polite" className="flex min-w-0 flex-1 items-center gap-3">

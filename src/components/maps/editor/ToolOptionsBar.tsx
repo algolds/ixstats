@@ -120,7 +120,7 @@ const ICON = "h-3 w-3";
 function ToolOptionsShell({ children }: { children: React.ReactNode }) {
   return (
     <FacetMaterial
-      material="regular"
+      layer="chrome"
       role="toolbar"
       aria-label="Tool options"
       className="flex h-9 shrink-0 items-center gap-2 rounded-none px-3"

@@ -106,7 +106,7 @@ export function WikiEditorHeader({
           transition={springSmooth}
         >
           <FacetMaterial
-            material="thin"
+            layer="chrome"
             title="Toggle Editing Mode (Source / Canvas)"
             className="text-caption shadow-floating flex items-center gap-2 rounded-full px-3 py-2 select-none"
           >

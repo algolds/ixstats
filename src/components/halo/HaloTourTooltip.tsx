@@ -115,7 +115,7 @@ export function HaloTourTooltip() {
             )}
           >
             <FacetMaterial
-              material="acrylic"
+              layer="chrome"
               role="dialog"
               aria-label="Halo walkthrough"
               className="text-label rounded-card ring-tint/25 p-6 ring-1"

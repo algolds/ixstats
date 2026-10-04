@@ -32,7 +32,7 @@
   }
 
   /* ─── Reduce Transparency: no backdrop blur on the legacy glass classes ──
-     The `material-*` utilities handle themselves (tokens.css). */
+     The layer utilities handle themselves (their scalars go opaque, tokens.css). */
 
   :is(.facet-hierarchy-child, .facet-modal) {
     @variant transparency-reduced {

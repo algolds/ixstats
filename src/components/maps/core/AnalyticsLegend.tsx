@@ -31,7 +31,7 @@ export function AnalyticsLegend({ overlayVisibility, overlayData }: AnalyticsLeg
 
   return (
     <FacetMaterial
-      material="regular"
+      layer="chrome"
       onMouseDown={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}

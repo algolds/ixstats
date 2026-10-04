@@ -46,7 +46,7 @@ export function AdminSidebarLayout({
           shell, where the TabBar's More sheet lists the console's sections) */}
       <div
         data-app-subnav=""
-        className="border-separator material-thin sticky top-14 right-0 left-0 z-30 flex h-12 items-center border-b px-4 lg:hidden"
+        className="border-separator facet-chrome sticky top-14 right-0 left-0 z-30 flex h-12 items-center border-b px-4 lg:hidden"
       >
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>

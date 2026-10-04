@@ -62,7 +62,7 @@ export function BetaNotice() {
 
   return (
     <FacetMaterial
-      material="regular"
+      layer="chrome"
       role="note"
       className="rounded-card pointer-events-auto w-full max-w-sm p-3"
       onMouseDown={(e) => e.stopPropagation()}
@@ -105,7 +105,7 @@ export function MapFailureOverlay({
       role="alert"
       className="bg-map-ocean z-chrome absolute inset-0 flex items-center justify-center p-6 text-center"
     >
-      <FacetMaterial material="thick" className="rounded-card max-w-md space-y-6 p-8">
+      <FacetMaterial layer="overlay" className="rounded-card max-w-md space-y-6 p-8">
         <WarningTriangle className="text-destructive mx-auto h-8 w-8" aria-hidden />
         <div className="space-y-2">
           <h3 className="text-label text-title-2">

@@ -52,7 +52,7 @@ describe("Card", () => {
     expect(inset).toContain("p-4");
     expect(inset).not.toContain("shadow-card");
     const hero = classOf(screen.getByTestId("hero"));
-    expect(hero).toContain("material-hero");
+    expect(hero).toContain("facet-pane");
     expect(hero).not.toContain("bg-surface");
   });
 
@@ -113,19 +113,24 @@ describe("Card", () => {
 });
 
 describe("FacetMaterial", () => {
-  it.each(["thin", "regular", "thick", "hero", "acrylic"] as const)(
-    "maps %s to its material utility and positions itself",
-    (material) => {
+  it.each(["chrome", "overlay"] as const)(
+    "maps %s to its layer utility and positions itself",
+    (layer) => {
       render(
-        <FacetMaterial data-testid="m" material={material}>
+        <FacetMaterial data-testid="m" layer={layer}>
           x
         </FacetMaterial>
       );
       const cls = classOf(screen.getByTestId("m"));
-      expect(cls).toContain(`material-${material}`);
+      expect(cls).toContain(`facet-${layer}`);
       expect(cls).toContain("relative");
     }
   );
+
+  it("defaults to chrome", () => {
+    render(<FacetMaterial data-testid="m">x</FacetMaterial>);
+    expect(classOf(screen.getByTestId("m"))).toContain("facet-chrome");
+  });
 });
 
 describe("Skeleton, Eyebrow, Progress", () => {

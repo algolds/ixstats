@@ -146,7 +146,7 @@ export function SculptedEmblemHero({
           data-cuelume-hover="tick"
           className={cn(
             "text-caption flex cursor-pointer items-center gap-2 rounded-full px-3 py-1",
-            "material-thin border-separator border",
+            "facet-chrome border-separator border",
             "hover:border-yellow/40 hover:bg-yellow/6",
             "text-label-secondary hover:text-label group focus-visible:ring-tint focus-visible:ring-2 focus-visible:outline-none"
           )}
@@ -165,7 +165,7 @@ export function SculptedEmblemHero({
           data-cuelume-hover="tick"
           className={cn(
             "text-caption flex cursor-pointer items-center gap-2 rounded-full px-3 py-1",
-            "material-thin border-separator border",
+            "facet-chrome border-separator border",
             "hover:border-tint/40 hover:bg-tint-fill",
             "text-label-secondary hover:text-label group focus-visible:ring-tint focus-visible:ring-2 focus-visible:outline-none"
           )}
@@ -184,7 +184,7 @@ export function SculptedEmblemHero({
           data-cuelume-hover="tick"
           className={cn(
             "text-caption flex cursor-pointer items-center gap-2 rounded-full px-3 py-1",
-            "material-thin border-separator border",
+            "facet-chrome border-separator border",
             "hover:border-green/40 hover:bg-green/6",
             "text-label-secondary hover:text-label group focus-visible:ring-tint focus-visible:ring-2 focus-visible:outline-none"
           )}

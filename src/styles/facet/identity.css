@@ -1,6 +1,6 @@
 /* ==========================================================================
-   Press and lift physics, the hero and Halo materials, the flat primary and gold paints, the flag
-   watermark and the achievement layers. Scalars live in facet/tokens.css.
+   Press and lift physics, the flat primary and gold paints, the flag watermark and the
+   achievement layers. Scalars live in facet/tokens.css; glass lives in facet/layers.css.
 
    Utilities are `@utility`, classes live in `@layer components`, nothing is unlayered and nothing
    uses `!important`, so a Tailwind utility on the same element always wins. Everything here paints
@@ -51,55 +51,6 @@
         translate: none;
       }
     }
-  }
-}
-
-/* The hero material: a tint wash over glass, a hairline edge and a soft tint glow. Never nest it;
-   content inside uses opaque roles. Reduce Transparency and Increase Contrast flip the `--glass-*`
-   tokens (tokens.css) to an opaque card. */
-@utility material-hero {
-  background-color: color-mix(in srgb, var(--color-surface) var(--glass-fill), transparent);
-  background-image: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--facet-accent, var(--tint)) var(--glass-wash), transparent),
-    transparent 60%
-  );
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
-  backdrop-filter: blur(var(--glass-blur)) saturate(160%);
-  border: 1px solid var(--glass-hairline);
-  --tw-shadow: 0 4px var(--glow-size)
-    color-mix(in srgb, var(--facet-accent, var(--tint)) var(--glow-alpha), transparent);
-  box-shadow:
-    var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
-    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
-    var(--tw-shadow, 0 0 #0000);
-}
-
-/* The Halo material: acrylic with a brand glow. Chrome floats over arbitrary content, so secondary
-   labels inside resolve to the vibrant role. */
-@utility material-acrylic {
-  --color-label-secondary: var(--color-label-vibrant-secondary);
-  background-color: var(--acrylic-fill);
-  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 1.5)) saturate(180%);
-  backdrop-filter: blur(calc(var(--glass-blur) * 1.5)) saturate(180%);
-  border: 1px solid var(--glass-hairline);
-  --tw-shadow:
-    0 0 var(--glow-size) color-mix(in srgb, var(--color-indigo) var(--glow-alpha), transparent),
-    0 12px 32px -8px rgb(0 0 0 / 0.35);
-  box-shadow:
-    var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
-    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
-    var(--tw-shadow, 0 0 #0000);
-  transition-property: border-color, box-shadow, backdrop-filter;
-  transition-duration: var(--tw-duration, var(--duration-slow));
-  transition-timing-function: var(--tw-ease, var(--ease-out-facet));
-  &[data-expanded="true"] {
-    -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 2)) saturate(180%);
-    backdrop-filter: blur(calc(var(--glass-blur) * 2)) saturate(180%);
-    --tw-shadow:
-      0 0 calc(var(--glow-size) * 1.5)
-        color-mix(in srgb, var(--color-indigo) var(--glow-alpha), transparent),
-      0 24px 48px -12px rgb(0 0 0 / 0.5);
   }
 }
 

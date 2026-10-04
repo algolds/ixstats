@@ -3,34 +3,27 @@
 import * as React from "react";
 import { cn } from "~/lib/utils/cn";
 
-/**
- * Glass chrome: `thin` (toolbars), `regular` (sidebar, tab bar), `thick` (sheets, popovers, menus),
- * `hero` (glass hero surface), `acrylic` (Halo island). Glass never holds more glass; anything
- * inside uses opaque roles.
- */
-type FacetMaterialType = "thin" | "regular" | "thick" | "hero" | "acrylic";
+/** Floating glass: `chrome` (sidebar, tab bar, toolbars, map controls, Halo) or `overlay` (sheets, popovers, menus). Content cards are `Card`, never this. */
+type FacetLayer = "chrome" | "overlay";
 
 interface FacetMaterialProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** @default "regular" */
-  material?: FacetMaterialType;
+  /** @default "chrome" */
+  layer?: FacetLayer;
   as?: React.ElementType;
   children?: React.ReactNode;
 }
 
-const MATERIAL: Record<FacetMaterialType, string> = {
-  thin: "material-thin",
-  regular: "material-regular",
-  thick: "material-thick",
-  hero: "material-hero",
-  acrylic: "material-acrylic",
+const LAYER: Record<FacetLayer, string> = {
+  chrome: "facet-chrome",
+  overlay: "facet-overlay",
 };
 
 export const FacetMaterial = React.forwardRef<HTMLDivElement, FacetMaterialProps>(
-  ({ material = "regular", as: Component = "div", className, ...props }, ref) => (
+  ({ layer = "chrome", as: Component = "div", className, ...props }, ref) => (
     <Component
       ref={ref}
       data-slot="facet-material"
-      className={cn("text-label rounded-card relative", MATERIAL[material], className)}
+      className={cn("text-label rounded-card relative", LAYER[layer], className)}
       {...props}
     />
   )

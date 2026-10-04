@@ -8,7 +8,7 @@
    `--forum-*` are aliases of the Facet roles plus the Forum tint (orange, from
    `data-app="forum"`). Surfaces are opaque (Card / FacetList in the
    components); only the mobile pill bar and the reply composer are chrome
-   (material-thin, set in the components). These classes style layout and the
+   (facet-chrome, set in the components). These classes style layout and the
    BBCode/XenForo post HTML the forum renders.
    =================================== */
 
@@ -103,7 +103,7 @@
     height: calc(100vh - 48px);
   }
 
-  /* Mobile pill bar (material-thin chrome, set on the element) */
+  /* Mobile pill bar (set on the element with facet-chrome) */
 
   .forum-mobile-nav {
     position: sticky;
@@ -578,7 +578,7 @@
   }
 
   /* ---------------------------------------------------------------------------
-     Reply composer — sticky chrome (material-thin is set on the element)
+     Reply composer — sticky chrome (facet-chrome is set on the element)
      --------------------------------------------------------------------------- */
 
   .forum-composer {

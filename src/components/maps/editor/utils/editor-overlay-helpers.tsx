@@ -15,7 +15,7 @@ export function EditorLoadingScreen({ countryName }: { countryName?: string | nu
       className="bg-surface absolute inset-0 z-40 flex items-center justify-center p-6"
     >
       <FacetMaterial
-        material="regular"
+        layer="chrome"
         className="rounded-card w-full max-w-xs space-y-4 p-6 text-center"
       >
         <Map className="text-label-secondary mx-auto h-6 w-6" aria-hidden />

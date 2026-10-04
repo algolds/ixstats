@@ -248,7 +248,7 @@ function ReplyComposer({
                         setSelectedImages((prev) => prev.filter((_, i) => i !== index))
                       }
                       type="button"
-                      className="material-thin text-label hover:text-destructive absolute top-1 right-1 z-10 cursor-pointer rounded-full p-1 transition-colors"
+                      className="facet-chrome text-label hover:text-destructive absolute top-1 right-1 z-10 cursor-pointer rounded-full p-1 transition-colors"
                       aria-label="Remove image"
                     >
                       <X className="h-3 w-3" />

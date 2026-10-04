@@ -90,7 +90,7 @@ function BrandingSection({
             size="sm"
             variant="secondary"
             onClick={() => onPick("banner")}
-            className="material-thin"
+            className="facet-chrome"
           >
             <MediaImage />
             {bannerUrl ? "Change Banner" : "Choose Banner"}
@@ -101,7 +101,7 @@ function BrandingSection({
               size="sm"
               variant="ghost"
               onClick={onClearBanner}
-              className="material-thin text-label-secondary hover:text-label size-7 p-0"
+              className="facet-chrome text-label-secondary hover:text-label size-7 p-0"
               title="Remove banner"
             >
               <Xmark />

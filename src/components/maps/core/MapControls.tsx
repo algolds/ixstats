@@ -124,7 +124,7 @@ export function MapControls({
       onTouchMove={(e) => e.stopPropagation()}
     >
       <FacetMaterial
-        material="regular"
+        layer="chrome"
         role="toolbar"
         aria-label="Map controls"
         className="rounded-row flex w-fit items-center gap-0.5 p-1"
@@ -309,7 +309,7 @@ function IconButton({
 function DropdownPanel({ children, label }: { children: React.ReactNode; label: string }) {
   return (
     <FacetMaterial
-      material="regular"
+      layer="chrome"
       id="map-controls-panel"
       role="region"
       aria-label={label}

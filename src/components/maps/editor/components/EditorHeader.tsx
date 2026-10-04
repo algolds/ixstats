@@ -161,7 +161,7 @@ export const EditorHeader = React.memo(function EditorHeader({
 
   return (
     <FacetMaterial
-      material="regular"
+      layer="chrome"
       className="pointer-events-auto flex h-11 shrink-0 items-center gap-2 rounded-none px-3"
     >
       <HeaderIconButton onClick={handleRequestExit} title="Exit Editor (Esc)">

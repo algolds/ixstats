@@ -20,7 +20,7 @@ export function DrawingToolbar({
 
   return (
     <div className="absolute bottom-6 left-1/2 z-30 -translate-x-1/2 duration-200">
-      <FacetMaterial material="regular" className="flex items-center gap-3 rounded-full px-4 py-2">
+      <FacetMaterial layer="chrome" className="flex items-center gap-3 rounded-full px-4 py-2">
         <span className="text-label text-caption mr-2 font-semibold select-none">
           Drawing Subdivision:{" "}
           <span className="text-tint font-semibold tabular-nums">{drawVertices.length}</span>{" "}

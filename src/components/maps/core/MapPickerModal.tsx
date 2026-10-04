@@ -130,7 +130,7 @@ function PickerStatus({
 
   return (
     <FacetMaterial
-      material="regular"
+      layer="chrome"
       role="status"
       className="rounded-control text-caption inline-flex items-center gap-2 px-3 py-2 font-semibold"
     >

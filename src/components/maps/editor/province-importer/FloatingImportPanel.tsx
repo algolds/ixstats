@@ -141,7 +141,7 @@ export const FloatingImportPanel = memo(function FloatingImportPanel({
       }}
     >
       <FacetMaterial
-        material="regular"
+        layer="chrome"
         className="rounded-row flex h-full flex-col overflow-hidden"
       >
         <div

@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
- * Compiles the real token and identity sheets with Tailwind and checks the accent and acrylic
- * utilities: the card accent falls back to the app tint, and the hero reads the accent first.
+ * Compiles the real token and identity sheets with Tailwind and checks the accent utilities: the
+ * card accent falls back to the app tint, and secondary labels re-resolve at the element.
  */
 import path from "path";
 
@@ -78,8 +78,6 @@ let rules: Rule[] = [];
 beforeAll(async () => {
   const compiler = await compile(ENTRY, { base: STYLES, onDependency: () => undefined });
   const css = compiler.build([
-    "material-hero",
-    "material-acrylic",
     "facet-press",
     "facet-lift",
     "bg-facet-accent-fill",
@@ -114,26 +112,11 @@ describe("accent utilities", () => {
       rulesFor("text-facet-accent-ink").some((r) => /80%, var\(--color-label\)/.test(r.body))
     ).toBe(true);
   });
-
-  it("material-hero reads the accent before the tint for its wash and glow", () => {
-    const body = rulesFor("material-hero")
-      .map((r) => r.body)
-      .join("");
-    expect(body).not.toMatch(/color-mix\(in srgb, var\(--tint\)/);
-    expect(body.match(/var\(--facet-accent, var\(--tint\)\)/g)!.length).toBeGreaterThanOrEqual(2);
-  });
 });
 
-describe("vibrant labels on acrylic", () => {
-  it("material-acrylic points the secondary label at the vibrant role", () => {
-    const body = rulesFor("material-acrylic")
-      .map((r) => r.body)
-      .join("");
-    expect(body).toMatch(/--color-label-secondary:\s*var\(--color-label-vibrant-secondary\)/);
-  });
-
+describe("secondary labels re-resolve at the element", () => {
   it.each(["text-label-secondary", "text-muted-foreground"])(
-    "%s reads the variable at the element, so the acrylic scope re-resolves it",
+    "%s reads the variable at the element, so a chrome scope re-resolves it",
     (cls) => {
       expect(
         rulesFor(cls).some((r) => /color:\s*var\(--color-label-secondary\)/.test(r.body))

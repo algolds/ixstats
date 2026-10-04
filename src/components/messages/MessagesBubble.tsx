@@ -190,7 +190,7 @@ function HoverActions({ message, isOwn, actions, onReply, onEdit }: HoverActions
       className={cn(
         // Shown on hover and whenever focus is inside the message, so keyboard users reach
         // the actions too; invisible but still in the tab order otherwise.
-        "material-thick shadow-floating duration-fast pointer-events-none absolute -top-4 z-20 flex items-center gap-0.5 rounded-full px-1 py-0.5 opacity-0 transition-opacity group-focus-within/bubble:pointer-events-auto group-focus-within/bubble:opacity-100 group-hover/bubble:pointer-events-auto group-hover/bubble:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100",
+        "facet-overlay shadow-floating duration-fast pointer-events-none absolute -top-4 z-20 flex items-center gap-0.5 rounded-full px-1 py-0.5 opacity-0 transition-opacity group-focus-within/bubble:pointer-events-auto group-focus-within/bubble:opacity-100 group-hover/bubble:pointer-events-auto group-hover/bubble:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100",
         showReactions && "pointer-events-auto opacity-100",
         isOwn ? "right-1" : "left-1"
       )}

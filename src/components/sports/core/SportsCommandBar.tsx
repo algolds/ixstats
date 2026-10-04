@@ -39,7 +39,7 @@ export function SportsCommandBar({
   const theme = getSportTheme(sportPreset);
 
   return (
-    <div className="material-thin z-sticky shadow-floating rounded-card sticky top-[calc(var(--shell-top-offset)-1rem)] mb-4 flex flex-col gap-3 p-3 md:flex-row md:items-center md:justify-between">
+    <div className="facet-chrome z-sticky shadow-floating rounded-card sticky top-[calc(var(--shell-top-offset)-1rem)] mb-4 flex flex-col gap-3 p-3 md:flex-row md:items-center md:justify-between">
       {/* Left: Breadcrumbs & Entity Identity */}
       <div className="flex flex-wrap items-center gap-2">
         <Link

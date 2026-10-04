@@ -3,7 +3,7 @@
 /**
  * AppSidebar: the primary navigation at ≥1024px.
  *
- * A `material-regular` panel floating on the leading edge (`z-chrome`, 256px, collapsible to 64px
+ * A `facet-chrome` panel floating on the leading edge (`z-chrome`, 256px, collapsible to 64px
  * icons; the width is the `--shell-sidebar-width` variable from `src/styles/facet/shell.css`, so
  * the persisted collapsed state is right before first paint). Top: the app switcher. Middle: the
  * current app's sections from the section map, the current one tinted and `aria-current="page"`.

@@ -9,7 +9,7 @@ import { presentMotionClassName } from "~/components/ui/dialog";
 
 /** Menu surface: thick material, floating shadow, origin-aware pop. */
 const menuSurface =
-  "z-popover min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) rounded-row p-1 text-label material-thick shadow-floating";
+  "z-popover min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) rounded-row p-1 text-label facet-overlay shadow-floating";
 
 /** Menu rows: nested radius (12 − 4 padding = 8), fill-3 highlight, body text. */
 const menuRow =

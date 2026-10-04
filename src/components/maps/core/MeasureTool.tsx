@@ -51,7 +51,7 @@ export const MeasureTool = forwardRef<MeasureToolRef, MeasureToolProps>(function
       {active && points.length >= 2 && (
         <div className="fixed top-36 left-6 z-30 sm:absolute sm:top-14 sm:left-3">
           <FacetMaterial
-            material="regular"
+            layer="chrome"
             role="status"
             className="rounded-row text-body flex items-center gap-2 px-3 py-2"
           >

@@ -93,7 +93,7 @@ function CoverPicker({
   return (
     <>
       <Popover open={open} onOpenChange={setOpen}>
-        <FacetMaterial material="thin" className="rounded-control-sm">
+        <FacetMaterial layer="chrome" className="rounded-control-sm">
           <PopoverTrigger asChild>
             <Button variant="ghost" size="sm">
               <Camera aria-hidden />
