@@ -4,6 +4,7 @@ import * as React from "react";
 import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
 
 import { cn } from "~/lib/utils/cn";
+import { SurfaceReset } from "~/components/ui/card";
 import { presentMotionClassName } from "~/components/ui/dialog";
 import { VirtualAnchorPopover, type VirtualAnchorPopoverProps } from "~/components/ui/popover";
 
@@ -19,6 +20,7 @@ function HoverCardContent({
   className,
   align = "center",
   sideOffset = 4,
+  children,
   ...props
 }: React.ComponentProps<typeof HoverCardPrimitive.Content>) {
   return (
@@ -28,12 +30,14 @@ function HoverCardContent({
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          "z-popover rounded-card border-separator bg-surface-elevated text-label shadow-floating w-64 origin-(--radix-hover-card-content-transform-origin) border p-4 outline-none",
+          "z-popover rounded-card facet-overlay text-label w-64 origin-(--radix-hover-card-content-transform-origin) p-4 outline-none",
           presentMotionClassName,
           className
         )}
         {...props}
-      />
+      >
+        <SurfaceReset>{children}</SurfaceReset>
+      </HoverCardPrimitive.Content>
     </HoverCardPrimitive.Portal>
   );
 }

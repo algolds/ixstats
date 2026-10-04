@@ -85,10 +85,9 @@ function PopoverVirtualAnchor({ anchor }: { anchor: VirtualAnchor }) {
 /** Surfaces for `VirtualAnchorPopover`: menus/toolbars, hover cards/tooltips, or bare. */
 const VIRTUAL_SURFACES = {
   /** Floating chrome — toolbars, menus, pickers (like `PopoverContent`). */
-  material: "facet-overlay text-label shadow-floating rounded-card p-4",
+  material: "facet-overlay text-label rounded-card p-4",
   /** Hover cards and previews (like `HoverCardContent`). */
-  elevated:
-    "rounded-card border border-separator bg-surface-elevated p-4 text-label shadow-floating",
+  elevated: "facet-overlay text-label rounded-card p-4",
   /** No surface: the children draw their own. */
   none: "",
 } as const;
@@ -194,9 +193,8 @@ function PopoverContent({
         sideOffset={sideOffset}
         className={cn(
           "z-popover rounded-card pointer-events-auto max-h-(--radix-popover-content-available-height) w-72 max-w-(--radix-popover-content-available-width) origin-(--radix-popover-content-transform-origin) overflow-x-hidden overflow-y-auto overscroll-contain p-4 outline-none",
-          // Floating chrome: thick material + floating shadow. Anything inside uses
-          // opaque roles — never another material.
-          "facet-overlay text-label shadow-floating",
+          // Floating chrome paints the overlay layer; Cards inside reset to panes.
+          "facet-overlay text-label",
           // Origin-aware scale .96 + fade in, 120ms out.
           presentMotionClassName,
           className

@@ -92,7 +92,7 @@ function DialogContent({
         className={cn(
           "z-sheet fixed top-1/2 left-1/2 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 p-6 outline-none",
           !className?.includes("max-w-") && "sm:max-w-lg",
-          "rounded-sheet border-separator bg-surface-elevated text-label shadow-sheet border",
+          "rounded-sheet facet-overlay text-label",
           animated && presentMotionClassName,
           className
         )}

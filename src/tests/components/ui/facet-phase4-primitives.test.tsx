@@ -307,7 +307,7 @@ describe("Virtual-anchor Popover / HoverCard", () => {
     const card = screen.getByTestId("card");
     expect(card).not.toHaveAttribute("role");
     expect(card).toHaveAttribute("data-surface", "elevated");
-    expect(classOf(card)).toMatch(/\bbg-surface-elevated\b/);
+    expect(classOf(card)).toMatch(/\bfacet-overlay\b/);
     el.remove();
   });
 

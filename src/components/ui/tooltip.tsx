@@ -4,6 +4,7 @@ import * as React from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 
 import { cn } from "~/lib/utils/cn";
+import { SurfaceReset } from "~/components/ui/card";
 
 function TooltipProvider({
   delayDuration = 0,
@@ -89,15 +90,15 @@ function TooltipContent({
         data-slot="tooltip-content"
         sideOffset={sideOffset}
         className={cn(
-          "z-tooltip w-fit max-w-sm origin-(--radix-tooltip-content-transform-origin) rounded-row px-3 py-1 text-footnote text-balance",
-          "border border-separator bg-surface-elevated text-label shadow-floating",
+          "z-tooltip rounded-row text-footnote w-fit max-w-sm origin-(--radix-tooltip-content-transform-origin) px-3 py-1 text-balance",
+          "facet-overlay text-label",
           // Radix tooltips open with data-state="delayed-open" / "instant-open".
           "animate-facet-in data-[state=closed]:animate-facet-out",
           className
         )}
         {...props}
       >
-        {children}
+        <SurfaceReset>{children}</SurfaceReset>
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>
   );

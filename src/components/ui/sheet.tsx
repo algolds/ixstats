@@ -75,8 +75,7 @@ const SheetOverlay = React.forwardRef<
 ));
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
 
-const sheetSurface =
-  "fixed z-sheet border-separator bg-surface-elevated text-label shadow-sheet outline-none";
+const sheetSurface = "fixed z-sheet facet-overlay text-label outline-none";
 
 const sheetSideClassNames: Record<SheetSide, string> = {
   top: "inset-x-0 top-0 rounded-b-sheet border-b p-6 sheet-from-top",

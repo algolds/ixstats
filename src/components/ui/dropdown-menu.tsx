@@ -5,11 +5,12 @@ import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { Circle } from "iconoir-react";
 
 import { cn } from "~/lib/utils/cn";
+import { SurfaceReset } from "~/components/ui/card";
 import { presentMotionClassName } from "~/components/ui/dialog";
 
-/** Menu surface: thick material, floating shadow, origin-aware pop. */
+/** Menu surface: the overlay layer with an origin-aware pop. */
 const menuSurface =
-  "z-popover min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) rounded-row p-1 text-label facet-overlay shadow-floating";
+  "z-popover min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) rounded-row p-1 facet-overlay text-label";
 
 /** Menu rows: nested radius (12 − 4 padding = 8), fill-3 highlight, body text. */
 const menuRow =
@@ -44,7 +45,7 @@ function DropdownMenuContent({
         )}
         {...props}
       >
-        {children}
+        <SurfaceReset>{children}</SurfaceReset>
       </DropdownMenuPrimitive.Content>
     </DropdownMenuPrimitive.Portal>
   );
