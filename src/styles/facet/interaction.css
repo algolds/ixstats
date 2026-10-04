@@ -1,0 +1,110 @@
+/* Press, lift and the primary/gold paints, then the user-preference kill switches. The kill
+   switches are the only rules in Facet allowed !important: they must beat Tailwind utilities and
+   inline motion styles. Nothing decorative belongs here. */
+
+/* The standard control transition. Do not add another `transition-*` utility next to these. They
+   use the individual `scale` / `translate` properties so they compose with motion/react. */
+@utility facet-press {
+  transition-property:
+    color, background-color, border-color, outline-color, box-shadow, opacity, scale, translate;
+  transition-duration: var(--tw-duration, var(--duration-fast));
+  transition-timing-function: var(--tw-ease, var(--ease-out-facet));
+  &:active {
+    scale: var(--facet-press-scale);
+    @variant motion-reduce {
+      scale: none;
+    }
+  }
+}
+
+/* Small controls: icon buttons, pills, segments. */
+@utility facet-press-sm {
+  --facet-press-scale: 0.95;
+}
+
+/* Full-width rows and large tiles. */
+@utility facet-press-subtle {
+  --facet-press-scale: 0.99;
+}
+
+@utility facet-lift {
+  transition-property:
+    color, background-color, border-color, outline-color, box-shadow, opacity, scale, translate;
+  transition-duration: var(--tw-duration, var(--duration-fast));
+  transition-timing-function: var(--tw-ease, var(--ease-out-facet));
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      translate: 0 var(--facet-lift-y);
+      --tw-shadow: var(--facet-lift-shadow);
+      box-shadow:
+        var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
+        var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+        var(--tw-shadow, 0 0 #0000);
+      @variant motion-reduce {
+        translate: none;
+      }
+    }
+  }
+}
+
+/* The primary action role (monochrome; flat gold inside MyCountry and the Builder) for an element
+   that is not a Button. */
+@utility facet-primary {
+  background-color: var(--primary-fill);
+  color: var(--on-primary);
+  &:hover {
+    background-color: var(--primary-fill-hover);
+  }
+}
+
+/* Gold as a surface paint: progress fills, step markers, count pills. */
+@utility facet-gold {
+  background-color: var(--gold);
+  color: var(--on-gold);
+}
+
+@layer components {
+  /* ─── Reduce animations (Settings → data-reduce-animations) ───────────── */
+
+  html[data-reduce-animations="true"] *,
+  html[data-reduce-animations="true"] *::before,
+  html[data-reduce-animations="true"] *::after {
+    animation-delay: -1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* ─── Reduce Motion: stop looping card-cover layers ─────────────────────
+     PackHolographicCover / LoreCardHolographicCover set `animation` inline,
+     so only an important declaration can stop them. */
+
+  :is(.pack-holo-drift, .pack-foil-sweep, .pack-geo-spin, .lore-ink-flow) {
+    @variant motion-reduce {
+      animation: none !important;
+    }
+  }
+
+  /* ─── Textures toggle (Settings → data-enable-textures) ───────────────── */
+
+  html[data-enable-textures="false"] .texture-overlay {
+    display: none !important;
+  }
+
+  /* ─── Print ───────────────────────────────────────────────────────────── */
+
+  @media print {
+    .aurora-bg,
+    .animate-spin,
+    .animate-pulse {
+      display: none !important;
+    }
+
+    body {
+      background: white !important;
+      color: black !important;
+    }
+  }
+}

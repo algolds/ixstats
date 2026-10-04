@@ -143,17 +143,16 @@ const DARK_OVERRIDE_ALLOWED = new Set([
 ]);
 
 /**
- * Gradients come from sanctioned classes, not ad-hoc palette stops. The identity sheet
- * (styles/facet/identity.css) owns the aurora/foil/radiance and jewel paints, and the layer sheet
- * (styles/facet/layers.css) owns the pane wash; card art
- * owns `card-art-linear-*` (styles/card-art.css); raw gradient utilities are only image scrims on
- * role/black/white/transparent stops.
+ * Gradients come from sanctioned classes, not ad-hoc palette stops. The interaction sheet
+ * (styles/facet/interaction.css) owns the primary and gold paints, the layer sheet
+ * (styles/facet/layers.css) owns the pane wash, and the content-art sheet (styles/card-art.css)
+ * owns the aurora, foil and jewel paints and `card-art-linear-*`; raw gradient utilities are only
+ * image scrims on role/black/white/transparent stops.
  */
 const SANCTIONED_GRADIENT_CLASSES = [
   "facet-primary",
   "facet-gold",
   "facet-aurora",
-  "facet-radiance",
   "facet-foil",
   "facet-jewel",
 ] as const;
@@ -274,11 +273,10 @@ describe("Facet anti-slop guards", () => {
       ).toEqual([]);
     });
 
-    it("defines every sanctioned gradient class in the identity sheet (Facet 3.1)", () => {
-      const identity = fs.readFileSync(
-        path.join(srcDir, "styles", "facet", "identity.css"),
-        "utf-8"
-      );
+    it("defines every sanctioned gradient class in its sheet", () => {
+      const identity = ["facet/interaction.css", "card-art.css"]
+        .map((sheet) => fs.readFileSync(path.join(srcDir, "styles", sheet), "utf-8"))
+        .join("\n");
       for (const name of SANCTIONED_GRADIENT_CLASSES) {
         expect([name, new RegExp(`(@utility ${name} \\{|\\.${name}\\b)`).test(identity)]).toEqual([
           name,

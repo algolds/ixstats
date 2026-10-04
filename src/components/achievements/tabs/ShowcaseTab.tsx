@@ -96,7 +96,6 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                 )}
               >
                 <AchievementCardBackdrop
-                  iconPath={iconPath}
                   categoryTheme={categoryTheme}
                   isUnlocked={!!isUnlocked}
                   isLegendaryOrEpic={

@@ -422,7 +422,7 @@ function CardsAndChrome() {
             <Badge variant="secondary">3</Badge>
           </FacetMaterial>
 
-          {/* Achievement aurora / radiance / foil / ghost heraldry */}
+          {/* Achievement aurora / foil */}
           <Card
             padding="md"
             className="group isolate overflow-hidden"
@@ -433,17 +433,12 @@ function CardsAndChrome() {
               data-interactive="true"
               className="facet-aurora absolute -inset-px -z-10 rounded-[inherit]"
             />
-            <div
-              aria-hidden
-              data-interactive="true"
-              className="facet-radiance absolute inset-0 -z-10"
-            />
             <div aria-hidden className="facet-foil absolute -inset-px -z-10 rounded-[inherit]" />
             <div className="relative flex items-center gap-3">
               <Trophy className="text-green size-6" aria-hidden />
               <div>
                 <h3 className="text-title-3 text-label">Economic titan</h3>
-                <p className="text-footnote text-label-secondary">Aurora, radiance and foil</p>
+                <p className="text-footnote text-label-secondary">Aurora and foil</p>
               </div>
             </div>
           </Card>

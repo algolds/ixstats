@@ -5,9 +5,6 @@ const ROOT = path.resolve(__dirname, "../../..");
 const STYLES = path.join(ROOT, "src/styles");
 const LAYERS = path.join(STYLES, "facet/layers.css");
 
-/** Stylesheets that still carry their own glass until they are deleted. */
-const LEGACY_UNTIL_TASK_3 = ["core.css", "components.css"];
-
 function walk(dir: string, ext: RegExp): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
     const p = path.join(dir, e.name);
@@ -58,10 +55,9 @@ describe("Facet layers", () => {
 
   // A blur that is switched off (`none`) and a scalar declaration are not glass; painting one is.
   it("is the only stylesheet in src/styles/facet that blurs or paints a glass fill", () => {
-    const paintsGlass = /backdrop-filter:\s*(?!none)\S|var\(--(?:pane|chrome|overlay)-fill\)/;
+    const paintsGlass = /backdrop-filter:\s*(?!none)\S|var\(--(?:pane|chrome|overlay)-fill[,)]/;
     const offenders = walk(path.join(STYLES, "facet"), /\.css$/)
       .filter((f) => f !== LAYERS)
-      .filter((f) => !LEGACY_UNTIL_TASK_3.includes(path.basename(f)))
       .filter((f) => paintsGlass.test(stripComments(fs.readFileSync(f, "utf8"))));
     expect(offenders.map((f) => path.relative(ROOT, f))).toEqual([]);
   });
@@ -71,6 +67,28 @@ describe("Facet layers", () => {
       .filter((f) => !f.includes(`${path.sep}tests${path.sep}`))
       .filter((f) =>
         /\bmaterial-(thin|regular|thick|hero|acrylic)\b|\bmaterial="(thin|regular|thick|hero|acrylic)"/.test(
+          fs.readFileSync(f, "utf8")
+        )
+      );
+    expect(offenders.map((f) => path.relative(ROOT, f))).toEqual([]);
+  });
+});
+
+describe("Facet stylesheet layout", () => {
+  it("has exactly four Facet sheets", () => {
+    const sheets = fs
+      .readdirSync(path.join(STYLES, "facet"))
+      .filter((f) => f.endsWith(".css"))
+      .sort();
+    expect(sheets).toEqual(["interaction.css", "layers.css", "shell.css", "tokens.css"]);
+    expect(fs.existsSync(path.join(STYLES, "facet.css"))).toBe(false);
+  });
+
+  it("keeps the deleted identity decoration out of the source", () => {
+    const offenders = walk(path.join(ROOT, "src"), /\.(tsx?|css)$/)
+      .filter((f) => !f.includes(`${path.sep}tests${path.sep}`))
+      .filter((f) =>
+        /facet-radiance|facet-ghost-heraldry|facet-hierarchy-child|facet-modal\b|facet-layout-(grid-3|main-span-2|sidebar-span-1)/.test(
           fs.readFileSync(f, "utf8")
         )
       );

@@ -2,7 +2,7 @@
    FACET — TEXTURES (TextureOverlay)
 
    Layered in `@layer components`; no `!important` (utilities on an element win).
-   User-preference kill switches live in `facet/overrides.css`.
+   User-preference kill switches live in `facet/interaction.css`.
    ========================================================================== */
 
 @layer components {
@@ -150,5 +150,14 @@
   }
   50% {
     background-position: 100% 50%;
+  }
+}
+
+@layer base {
+  :root {
+    --facet-texture-color: rgba(0, 0, 0, 0.25);
+  }
+  [data-theme="dark"] {
+    --facet-texture-color: rgba(255, 255, 255, 0.08);
   }
 }

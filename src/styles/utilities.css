@@ -3,7 +3,7 @@
 
    Layered: element defaults in `@layer base`, classes in `@layer components`, single-class
    helpers as `@utility`. Increase Contrast lives in facet/tokens.css and print rules in
-   facet/overrides.css.
+   facet/interaction.css.
    ========================================================================== */
 
 @layer base {

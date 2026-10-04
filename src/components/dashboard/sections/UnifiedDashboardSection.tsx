@@ -268,8 +268,8 @@ export function UnifiedDashboardSection({
       className="space-y-5 pb-16 sm:pb-20 md:space-y-7 md:pb-24"
     >
       <motion.div variants={staggerItem}>
-        <div className="facet-layout-grid-3">
-          <div className="facet-layout-main-span-2 space-y-5">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-6">
+          <div className="flex flex-col space-y-5 lg:col-span-2">
             <motion.div variants={staggerItem} className="flex items-center gap-2">
               <SegmentedControl
                 options={tabs}
@@ -322,7 +322,7 @@ export function UnifiedDashboardSection({
             )}
           </div>
 
-          <div className="facet-layout-sidebar-span-1 space-y-4 md:sticky md:top-(--shell-top-offset) md:self-start">
+          <div className="flex flex-col space-y-4 md:sticky md:top-(--shell-top-offset) md:self-start">
             <TrendingSectionWidget />
             <BlurbSection />
             <CountriesToExploreCard currentUserCountryId={countryId} />

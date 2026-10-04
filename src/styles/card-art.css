@@ -28,3 +28,98 @@
     background-image: linear-gradient(var(--tw-gradient-stops, to top right));
   }
 }
+
+/* Content art: flag watermarks and achievement medal layers keep their own palette. */
+@layer components {
+  /* Flag watermark. The hover host is the nearest `.group` or CutoutCard. */
+  .facet-flag-watermark {
+    --watermark-opacity: 0.14;
+    pointer-events: none;
+    opacity: var(--watermark-opacity);
+    mix-blend-mode: luminosity;
+    /* The tone caps the flag's extremes so labels stay legible over any flag. */
+    filter: blur(1px) contrast(0.7);
+    transition:
+      opacity var(--duration-slow) var(--ease-out-facet),
+      scale var(--duration-slow) var(--ease-out-facet);
+  }
+  :where([data-theme="dark"]) .facet-flag-watermark {
+    --watermark-opacity: 0.18;
+    mix-blend-mode: normal;
+    filter: blur(1px) brightness(0.6);
+  }
+  @media (hover: hover) {
+    :is(.group, [data-slot="card"], [data-slot="cutout-card"]):hover
+      .facet-flag-watermark[data-interactive="true"] {
+      opacity: 0.25;
+      scale: 1.05;
+      @variant motion-reduce {
+        scale: none;
+      }
+      @variant contrast-more {
+        opacity: var(--watermark-opacity);
+      }
+    }
+  }
+
+  /* Achievement backdrop layers. The category colour is the card's accent (`--facet-accent`); the
+     aurora's second hue is `--facet-accent-2`. Place each layer with utilities. Hover intensifies
+     when the card (the direct parent) is hovered. */
+  .facet-aurora {
+    pointer-events: none;
+    background-image: linear-gradient(
+      to top right,
+      color-mix(in srgb, var(--facet-accent, var(--tint)) 15%, transparent),
+      color-mix(in srgb, var(--facet-accent-2, var(--color-yellow)) 10%, transparent),
+      transparent
+    );
+    opacity: 0.4;
+    filter: blur(24px);
+    transition: opacity var(--duration-slow) var(--ease-out-facet);
+  }
+  .facet-foil {
+    pointer-events: none;
+    background-image: linear-gradient(
+      to top right,
+      color-mix(in srgb, var(--foil-color, var(--gold)) 15%, transparent),
+      transparent,
+      color-mix(in srgb, var(--foil-color, var(--gold)) 10%, transparent)
+    );
+    opacity: 0.6;
+    filter: blur(24px);
+  }
+  :hover > .facet-aurora[data-interactive="true"] {
+    opacity: 0.75;
+  }
+  .facet-aurora,
+  .facet-foil {
+    @variant transparency-reduced {
+      display: none;
+    }
+    @variant contrast-more {
+      display: none;
+    }
+    @variant motion-reduce {
+      transition: none;
+    }
+  }
+
+  /* The achievement's icon as a gem; the icon comes from `--heraldry-mask`. */
+  .facet-jewel {
+    -webkit-mask-image: var(--heraldry-mask);
+    mask-image: var(--heraldry-mask);
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    /* A metallic gem gradient; `--jewel-from/-via/-to` recolour it. */
+    background-image: linear-gradient(
+      to top right,
+      var(--jewel-from, var(--gold)),
+      var(--jewel-via, #fef9c3),
+      var(--jewel-to, var(--gold))
+    );
+  }
+}

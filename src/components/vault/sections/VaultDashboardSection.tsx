@@ -164,9 +164,9 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
   return (
     <div className="space-y-6">
       {/* 2-Column Premium Banking Grid Layout */}
-      <div className="facet-layout-grid-3">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-6">
         {/* Left Column (Financial Center & Ledger) */}
-        <div className="facet-layout-main-span-2 space-y-6">
+        <div className="flex flex-col space-y-6 lg:col-span-2">
           <VaultNetWorthCard
             vaultLevel={levelData?.vaultLevel ?? 1}
             netWorth={netWorth}

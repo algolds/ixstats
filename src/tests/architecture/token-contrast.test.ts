@@ -387,7 +387,7 @@ const identity = {
   )!,
 } as const;
 const pct = (value: number) => `${+(value * 100).toFixed(1)}%`;
-const identityCss = fs.readFileSync(path.join(ROOT, "src/styles/facet/identity.css"), "utf8");
+const cardArtCss = fs.readFileSync(path.join(ROOT, "src/styles/card-art.css"), "utf8");
 
 /** Every accent a card takes, as the colour it resolves to per appearance. */
 const ACCENTS: [string, Record<Appearance, string>][] = [
@@ -474,11 +474,11 @@ describe("identity tokens: CSS matches src/lib/design/tokens.ts", () => {
   });
 
   it("flag watermark opacities and tone", () => {
-    expect(identityCss).toContain(`--watermark-opacity: ${FLAG_WATERMARK.light.opacity};`);
-    expect(identityCss).toContain(`--watermark-opacity: ${FLAG_WATERMARK.dark.opacity};`);
-    expect(identityCss).toContain(`opacity: ${FLAG_WATERMARK.light.hover};`);
-    expect(identityCss).toContain(`contrast(${FLAG_WATERMARK.light.toneContrast})`);
-    expect(identityCss).toContain(`brightness(${FLAG_WATERMARK.dark.toneBrightness})`);
+    expect(cardArtCss).toContain(`--watermark-opacity: ${FLAG_WATERMARK.light.opacity};`);
+    expect(cardArtCss).toContain(`--watermark-opacity: ${FLAG_WATERMARK.dark.opacity};`);
+    expect(cardArtCss).toContain(`opacity: ${FLAG_WATERMARK.light.hover};`);
+    expect(cardArtCss).toContain(`contrast(${FLAG_WATERMARK.light.toneContrast})`);
+    expect(cardArtCss).toContain(`brightness(${FLAG_WATERMARK.dark.toneBrightness})`);
   });
 });
 

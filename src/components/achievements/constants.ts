@@ -11,7 +11,7 @@ import type { FacetAccent } from "~/lib/design/identity";
 
 /**
  * Per-category styling: a system colour carries the category on its badge, icon pedestal and icon
- * fill. The card decoration is driven by `accent` / `accent2` (aurora, radiance) and the `jewel`
+ * fill. The card decoration is driven by `accent` / `accent2` (aurora) and the `jewel`
  * stops (the metallic icon fill); all are system colour roles, so they follow the theme.
  */
 export interface CategoryTheme {
@@ -28,7 +28,7 @@ export interface CategoryTheme {
   /** Solid fill painted through the achievement icon's mask (locked/fallback). */
   iconFill: string;
   /**
-   * Category accent: the aurora / radiance colour of `AchievementCardBackdrop`.
+   * Category accent: the aurora colour of `AchievementCardBackdrop`.
    */
   accent: FacetAccent;
   /** The aurora's secondary hue. */

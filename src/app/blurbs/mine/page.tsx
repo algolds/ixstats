@@ -29,7 +29,7 @@ function MyBlurbsList() {
 
   if (responses.length === 0) {
     return (
-      <Card className="facet-hierarchy-child flex flex-col gap-6 py-6">
+      <Card className="facet-pane rounded-row flex flex-col gap-6 py-6">
         <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
           <BookOpen className="text-muted-foreground h-10 w-10" />
           <h3 className="text-base font-semibold">No blurbs yet</h3>
@@ -50,7 +50,7 @@ function MyBlurbsList() {
         <Link
           key={r.id}
           href={withBasePath(`/blurbs/${r.prompt.slug}`)}
-          className="facet-hierarchy-child block rounded-xl border border-white/10 p-4 transition-colors hover:border-white/20"
+          className="facet-pane rounded-row block border border-white/10 p-4 transition-colors hover:border-white/20"
         >
           <div className="mb-2 flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
@@ -117,7 +117,7 @@ export default function MyBlurbsPage() {
         {isSignedIn ? (
           <MyBlurbsList />
         ) : (
-          <Card className="facet-hierarchy-child flex flex-col gap-6 py-6">
+          <Card className="facet-pane rounded-row flex flex-col gap-6 py-6">
             <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
               <User className="text-muted-foreground h-10 w-10" />
               <h3 className="text-base font-semibold">Sign in required</h3>

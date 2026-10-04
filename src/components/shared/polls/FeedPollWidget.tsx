@@ -172,7 +172,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
     }));
 
     return (
-      <div className="facet-hierarchy-child/40 mt-4 rounded-xl border p-4 sm:p-5">
+      <div className="facet-pane rounded-row mt-4 border p-4 sm:p-5">
         <PollWidget
           question={poll.question}
           description={poll.description || undefined}
@@ -214,7 +214,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
 
   // 3. Feature Voting Render
   return (
-    <div className="facet-hierarchy-child/40 mt-4 space-y-4 rounded-xl border p-4 sm:p-5">
+    <div className="facet-pane rounded-row mt-4 space-y-4 border p-4 sm:p-5">
       <div className="flex flex-col gap-1">
         <h3 className="text-foreground text-base font-semibold sm:text-lg">{poll.question}</h3>
         {poll.description && (

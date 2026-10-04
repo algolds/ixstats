@@ -27,7 +27,7 @@ const EXEMPT_FILES = new Set([
 const IMPORTANT_ALLOWED = new Set([
   // User-preference kill switches (reduce motion, low fidelity, print) must beat
   // utilities *and* inline styles written by Framer Motion.
-  "facet/overrides.css",
+  "facet/interaction.css",
   // Overrides for MediaWiki/Parsoid HTML with inline styles and CodeMirror's injected theme.
   "wiki-os/mediawiki.css",
 ]);
@@ -41,15 +41,15 @@ const ALLOWED_TOP_LEVEL_STATEMENTS =
 const CONDITIONAL_GROUP = /^@(media|supports|container)\b/;
 
 /**
- * Material/surface classes that must never set layout-affecting properties — including the Facet
- * 3.1 identity paints (glow, refraction, acrylic glow, flag watermark, aurora/radiance/foil, ghost
- * heraldry, jewel), which the primitives place with utilities.
+ * Material/surface classes that must never set layout-affecting properties, including the content
+ * art paints (flag watermark, aurora, foil, jewel), which the primitives place with utilities.
  */
 const MATERIAL_CLASS =
-  /\.facet-(depth-\d|hierarchy-[a-z]+|material(?:-[a-z]+)?|surface|floating|overlay|modal|tint-glow|refraction-line|acrylic-glow|flag-watermark|aurora|radiance|foil|ghost-heraldry|jewel)(?![\w-])/;
+  /\.facet-(depth-\d|hierarchy-[a-z]+|material(?:-[a-z]+)?|surface|floating|overlay|modal|tint-glow|refraction-line|acrylic-glow|flag-watermark|aurora|foil|jewel)(?![\w-])/;
 
 /** `@utility` materials and Facet 3.1 identity utilities: paint only, like the classes above. */
 const MATERIAL_UTILITY = /^@utility (material-[\w-]+|facet-[\w-]+)$/;
+const UTILITY_SHEETS = new Set(["facet/layers.css", "facet/interaction.css"]);
 const LAYOUT_PROPERTIES = ["position", "z-index", "border-radius", "margin", "letter-spacing"];
 
 type Node =
@@ -193,9 +193,11 @@ describe("Facet 3 cascade guard (src/styles)", () => {
   it("finds the stylesheets it guards", () => {
     expect(files).toEqual(
       expect.arrayContaining([
-        "facet/core.css",
-        "facet/physics.css",
-        "facet/identity.css",
+        "facet/layers.css",
+        "facet/interaction.css",
+        "facet/shell.css",
+        "card-art.css",
+        "textures.css",
         "wiki-os/components.css",
       ])
     );
@@ -222,28 +224,30 @@ describe("Facet 3 cascade guard (src/styles)", () => {
       });
     }
 
-    it("material and identity utilities set no position, z-index, radius, margin or letter-spacing", () => {
-      const offenders: string[] = [];
-      const visit = (nodes: Node[]) => {
-        for (const node of nodes) {
-          if (node.kind !== "block") continue;
-          const match = MATERIAL_UTILITY.exec(node.prelude);
-          if (match) {
-            // Only the utility's own declarations (nested `&:hover`/`@media` blocks included).
-            const body = node.body.replace(/@media[^{]*\{/g, "{");
-            for (const property of LAYOUT_PROPERTIES) {
-              if (new RegExp(`(^|[;{\\s])${property}\\s*:`).test(body)) {
-                offenders.push(`${match[1]} → ${property}`);
+    // The `@utility` sheets: layer glass and the press/lift/primary/gold paints.
+    if (UTILITY_SHEETS.has(file))
+      it("utilities set no position, z-index, radius, margin or letter-spacing", () => {
+        const offenders: string[] = [];
+        const visit = (nodes: Node[]) => {
+          for (const node of nodes) {
+            if (node.kind !== "block") continue;
+            const match = MATERIAL_UTILITY.exec(node.prelude);
+            if (match) {
+              // Only the utility's own declarations (nested `&:hover`/`@media` blocks included).
+              const body = node.body.replace(/@media[^{]*\{/g, "{");
+              for (const property of LAYOUT_PROPERTIES) {
+                if (new RegExp(`(^|[;{\\s])${property}\\s*:`).test(body)) {
+                  offenders.push(`${match[1]} → ${property}`);
+                }
               }
+            } else if (node.children) {
+              visit(node.children);
             }
-          } else if (node.children) {
-            visit(node.children);
           }
-        }
-      };
-      visit(tree);
-      expect(offenders).toEqual([]);
-    });
+        };
+        visit(tree);
+        expect(offenders).toEqual([]);
+      });
 
     it("material/surface classes set no position, z-index, radius, margin or letter-spacing", () => {
       const offenders: string[] = [];

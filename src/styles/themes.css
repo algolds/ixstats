@@ -15,7 +15,6 @@
   --color-bg-secondary: var(--color-surface);
   --color-bg-tertiary: var(--color-surface-secondary);
   --color-bg-surface: var(--color-surface);
-  --background-rgb: 15, 17, 20; /* background-grouped (dark) for rgba() glass */
   --color-bg-accent: #282a33;
   --color-bg-hover: #32343e;
 
@@ -43,8 +42,6 @@
   /* Special purpose */
   --color-overlay: rgba(0, 0, 0, 0.75);
   --color-backdrop: rgba(0, 0, 0, 0.5);
-  --color-glass: rgba(22, 24, 29, 0.8);
-  --color-surface-blur: rgba(22, 24, 29, 0.95);
 
   /* Component specific */
   --color-input-bg: var(--color-surface-secondary);
@@ -121,7 +118,6 @@
 
 /* Light overrides for the literal values above */
 .light {
-  --background-rgb: 242, 243, 246; /* background-grouped (light) */
   --color-bg-accent: #e2e8f0;
   --color-bg-hover: #e2e8f0;
 
@@ -130,8 +126,6 @@
 
   --color-overlay: rgba(0, 0, 0, 0.4);
   --color-backdrop: rgba(0, 0, 0, 0.2);
-  --color-glass: rgba(255, 255, 255, 0.88);
-  --color-surface-blur: rgba(255, 255, 255, 0.95);
 
   --color-input-border: rgba(0, 0, 0, 0.1);
 

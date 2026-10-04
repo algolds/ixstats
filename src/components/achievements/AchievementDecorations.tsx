@@ -7,7 +7,7 @@ import { accentColor } from "~/lib/design/identity";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import type { CategoryTheme } from "./constants";
 
-/** The icon as a CSS mask image, for the jewel and ghost-heraldry layers (`--heraldry-mask`). */
+/** The icon as a CSS mask image, for the jewel layer (`--heraldry-mask`). */
 function maskVar(iconPath: string): string {
   return `url("${iconPath.replace(/"/g, '\\"')}")`;
 }
@@ -20,7 +20,7 @@ function auroraStyle(categoryTheme: CategoryTheme): CSSProperties {
 }
 
 /**
- * Jewel achievement icon: the achievement icon filled with a category-tuned metallic gem gradient (`facet-jewel`, styles/facet/identity.css). Locked: a
+ * Jewel achievement icon: the achievement icon filled with a category-tuned metallic gem gradient (`facet-jewel`, styles/card-art.css). Locked: a
  * faint blurred icon under a lock.
  */
 export function JewelAchievementIcon({
@@ -66,24 +66,19 @@ export function JewelAchievementIcon({
 }
 
 /**
- * Achievement card backdrop, layered from the identity sheet:
+ * Achievement card backdrop, layered from the content-art sheet (styles/card-art.css):
  * - the dot texture,
  * - the multi-stop aurora mesh (`facet-aurora`: category → secondary hue, .4 → .75 on card hover),
- * - the category radiance from the top (`facet-radiance`, .45 → .7 on card hover),
- * - the holographic foil sheen on unlocked epic/legendary achievements (`facet-foil`),
- * - the 144px ghost heraldic watermark of the icon in the bottom-right corner
- *   (`facet-ghost-heraldry`).
+ * - the holographic foil sheen on unlocked epic/legendary achievements (`facet-foil`).
  * All decorative (`aria-hidden`, no pointer events). Render it as the first children of a
  * `relative overflow-hidden` card and keep the content `relative`; the hover brighten follows the
  * card (the layers' direct parent).
  */
 export function AchievementCardBackdrop({
-  iconPath,
   categoryTheme,
   isUnlocked,
   isLegendaryOrEpic = false,
 }: {
-  iconPath: string;
   categoryTheme: CategoryTheme;
   isUnlocked: boolean;
   /** Adds the foil sheen (unlocked only). */
@@ -100,24 +95,12 @@ export function AchievementCardBackdrop({
         style={auroraStyle(categoryTheme)}
       />
 
-      <span
-        aria-hidden
-        data-interactive={isUnlocked ? "true" : undefined}
-        className="facet-radiance absolute inset-0 rounded-[inherit] print:hidden"
-      />
-
       {isLegendaryOrEpic && isUnlocked && (
         <span
           aria-hidden
           className="facet-foil absolute -inset-px rounded-[inherit] print:hidden"
         />
       )}
-
-      <span
-        aria-hidden
-        className="facet-ghost-heraldry absolute -right-6 -bottom-6 size-36 print:hidden"
-        style={{ "--heraldry-mask": maskVar(iconPath) } as CSSProperties}
-      />
     </>
   );
 }

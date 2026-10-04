@@ -12,7 +12,7 @@ const ENTRY = [
   '@import "tailwindcss/theme.css" layer(theme);',
   '@import "tailwindcss/utilities.css" layer(utilities);',
   '@import "./facet/tokens.css";',
-  '@import "./facet/identity.css";',
+  '@import "./facet/interaction.css";',
 ].join("\n");
 
 interface Rule {

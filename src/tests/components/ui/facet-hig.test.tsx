@@ -26,15 +26,16 @@ import { Card } from "~/components/ui/card";
 const classOf = (el: Element) => el.getAttribute("class") ?? "";
 const styleVar = (el: Element, name: string) => (el as HTMLElement).style.getPropertyValue(name);
 const ROOT = path.resolve(__dirname, "../../../..");
-const identityCss = fs.readFileSync(path.join(ROOT, "src/styles/facet/identity.css"), "utf8");
+const interactionCss = fs.readFileSync(path.join(ROOT, "src/styles/facet/interaction.css"), "utf8");
+const cardArtCss = fs.readFileSync(path.join(ROOT, "src/styles/card-art.css"), "utf8");
 const tokensCss = fs.readFileSync(path.join(ROOT, "src/styles/facet/tokens.css"), "utf8");
 const typographyCss = fs.readFileSync(path.join(ROOT, "src/styles/typography.css"), "utf8");
 
 /** The body of a top-level `@utility name { … }` block. */
 function utility(name: string): string {
-  const start = identityCss.indexOf(`@utility ${name} {`);
+  const start = interactionCss.indexOf(`@utility ${name} {`);
   expect(start).toBeGreaterThanOrEqual(0);
-  const body = identityCss.slice(start);
+  const body = interactionCss.slice(start);
   return body.slice(0, body.indexOf("\n}\n"));
 }
 
@@ -148,18 +149,16 @@ describe("textures", () => {
   });
 });
 
-describe("accessibility preferences in the identity sheet", () => {
+describe("accessibility preferences in the content-art sheet", () => {
   it("Reduce Transparency and Increase Contrast remove the blurred / translucent layers", () => {
-    const block = identityCss.slice(
-      identityCss.indexOf(".facet-aurora,\n  .facet-radiance,\n  .facet-foil {")
-    );
+    const block = cardArtCss.slice(cardArtCss.indexOf(".facet-aurora,\n  .facet-foil {"));
     expect(block.slice(0, 300)).toContain("@variant transparency-reduced {\n      display: none;");
     expect(block.slice(0, 300)).toContain("@variant contrast-more {\n      display: none;");
   });
 
   it("Increase Contrast turns the hairline into the opaque separator and stops the watermark brightening", () => {
     expect(tokensCss).toContain("--glass-hairline: var(--color-separator-opaque);");
-    expect(identityCss).toMatch(/@variant contrast-more \{\s*opacity: var\(--watermark-opacity\);/);
+    expect(cardArtCss).toMatch(/@variant contrast-more \{\s*opacity: var\(--watermark-opacity\);/);
   });
 
   it("Reduce Transparency / Increase Contrast make every glass layer opaque", () => {
@@ -171,8 +170,8 @@ describe("accessibility preferences in the identity sheet", () => {
   });
 
   it("the flag watermark carries the HIG tone filter", () => {
-    expect(identityCss).toContain("filter: blur(1px) contrast(0.7);");
-    expect(identityCss).toContain("filter: blur(1px) brightness(0.6);");
+    expect(cardArtCss).toContain("filter: blur(1px) contrast(0.7);");
+    expect(cardArtCss).toContain("filter: blur(1px) brightness(0.6);");
   });
 });
 
@@ -184,7 +183,7 @@ describe("motion uses the named durations", () => {
         "transition-duration: var(--tw-duration, var(--duration-fast));"
       );
     }
-    expect(identityCss).not.toMatch(/transition-duration: var\(--tw-duration, 200ms\)/);
+    expect(interactionCss).not.toMatch(/transition-duration: var\(--tw-duration, 200ms\)/);
   });
 });
 
@@ -210,32 +209,26 @@ describe("typography (HIG Dynamic Type)", () => {
 
 // ─── HIG follow-ups (spec §16.8: vibrant labels, achievement accents, tour, IxCredits, badge) ──
 
-describe("achievement aurora / radiance follow the card's accent", () => {
+describe("achievement aurora follows the card's accent", () => {
   it("the layers read --facet-accent (and --facet-accent-2), never shadcn's --accent", () => {
-    for (const cls of [".facet-aurora {", ".facet-radiance {"]) {
-      const body = identityCss.slice(identityCss.indexOf(cls));
-      const rule = body.slice(0, body.indexOf("}"));
-      expect(rule).toContain("var(--facet-accent, var(--tint))");
-      expect(rule).not.toMatch(/var\(--accent[,)-]/);
-    }
-    expect(identityCss).toContain("var(--facet-accent-2, var(--color-yellow))");
+    const body = cardArtCss.slice(cardArtCss.indexOf(".facet-aurora {"));
+    const rule = body.slice(0, body.indexOf("}"));
+    expect(rule).toContain("var(--facet-accent, var(--tint))");
+    expect(rule).not.toMatch(/var\(--accent[,)-]/);
+    expect(cardArtCss).toContain("var(--facet-accent-2, var(--color-yellow))");
   });
 
   it("AchievementCardBackdrop sets only the aurora's second hue", () => {
     const theme = getCategoryTheme("Economic");
     const { container } = render(
       <Card data-testid="card">
-        <AchievementCardBackdrop iconPath="/x.svg" categoryTheme={theme} isUnlocked />
+        <AchievementCardBackdrop categoryTheme={theme} isUnlocked />
       </Card>
     );
     const aurora = container.querySelector(".facet-aurora")!;
-    const radiance = container.querySelector(".facet-radiance")!;
     expect(styleVar(aurora, "--facet-accent-2")).toBe(accentColor(theme.accent2));
-    for (const layer of [aurora, radiance]) {
-      expect(styleVar(layer, "--accent")).toBe("");
-      expect(styleVar(layer, "--accent-2")).toBe("");
-    }
-    expect(radiance.getAttribute("style")).toBeNull();
+    expect(styleVar(aurora, "--accent")).toBe("");
+    expect(styleVar(aurora, "--accent-2")).toBe("");
   });
 
   it("no consumer bridges --accent onto the layers any more", () => {

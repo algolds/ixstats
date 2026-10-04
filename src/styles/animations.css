@@ -2,7 +2,7 @@
    ANIMATIONS — SHARED KEYFRAMES & ANIMATION CLASSES
 
    Keyframes stay top-level; classes are layered. Reduced-motion guards for the inline-animated
-   card layers (.pack-*, .lore-ink-flow) live in facet/overrides.css because they must beat
+   card layers (.pack-*, .lore-ink-flow) live in facet/interaction.css because they must beat
    inline `animation` styles.
    ========================================================================== */
 

@@ -36,7 +36,8 @@ import { Card } from "~/components/ui/card";
 
 const classOf = (el: Element) => el.getAttribute("class") ?? "";
 const ROOT = path.resolve(__dirname, "../../../..");
-const identityCss = fs.readFileSync(path.join(ROOT, "src/styles/facet/identity.css"), "utf8");
+const interactionCss = fs.readFileSync(path.join(ROOT, "src/styles/facet/interaction.css"), "utf8");
+const cardArtCss = fs.readFileSync(path.join(ROOT, "src/styles/card-art.css"), "utf8");
 const tokensCss = fs.readFileSync(path.join(ROOT, "src/styles/facet/tokens.css"), "utf8");
 
 describe("glass hero tier", () => {
@@ -146,13 +147,17 @@ describe("press and lift physics", () => {
 
   it("the physics utilities honour Reduce Motion (OS and in-app) and use scale/translate", () => {
     for (const utility of ["facet-press", "facet-lift"]) {
-      const body = identityCss.slice(identityCss.indexOf(`@utility ${utility} {`));
+      const body = interactionCss.slice(interactionCss.indexOf(`@utility ${utility} {`));
       const rule = body.slice(0, body.indexOf("\n}\n"));
       expect(rule).toContain("@variant motion-reduce");
       expect(rule).not.toMatch(/\btransform:/);
     }
-    expect(identityCss).toMatch(/@utility facet-press \{[\s\S]*?scale: var\(--facet-press-scale\)/);
-    expect(identityCss).toMatch(/@utility facet-lift \{[\s\S]*?translate: 0 var\(--facet-lift-y\)/);
+    expect(interactionCss).toMatch(
+      /@utility facet-press \{[\s\S]*?scale: var\(--facet-press-scale\)/
+    );
+    expect(interactionCss).toMatch(
+      /@utility facet-lift \{[\s\S]*?translate: 0 var\(--facet-lift-y\)/
+    );
   });
 });
 
@@ -352,9 +357,9 @@ describe("FlagWatermark", () => {
   });
 
   it("the CSS brightens to .25 and scales to 105% on hover, and drops the scale under Reduce Motion", () => {
-    expect(identityCss).toContain("--watermark-opacity: 0.14;");
-    expect(identityCss).toContain("--watermark-opacity: 0.18;");
-    expect(identityCss).toMatch(
+    expect(cardArtCss).toContain("--watermark-opacity: 0.14;");
+    expect(cardArtCss).toContain("--watermark-opacity: 0.18;");
+    expect(cardArtCss).toMatch(
       /\.facet-flag-watermark\[data-interactive="true"\] \{\s*opacity: 0\.25;\s*scale: 1\.05;\s*@variant motion-reduce \{\s*scale: none;/
     );
   });

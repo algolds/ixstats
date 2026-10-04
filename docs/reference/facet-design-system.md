@@ -2,7 +2,7 @@
 
 The canonical UI reference. Reset on 2026-10-02: the Facet 3 / 3.1 decoration layer (refraction, rims, retint, glow props, acrylic chrome, auto-mono numerals, eyebrow-title-subtitle heroes, HIG button names) was removed. This file describes what exists now. The old spec in `docs/specs/2026-09-30-facet-3-design-system.md` is history only.
 
-Sources of truth: `src/styles/facet/tokens.css` (tokens), `identity.css` (hero and Halo materials, press and lift), `shell.css` (navigation variables), `src/lib/design/{appearance,motion,tokens}.ts`, `src/components/ui/**`, `src/components/shell/**`.
+Sources of truth: `src/styles/facet/tokens.css` (tokens), `layers.css` (the five glass layers), `interaction.css` (press, lift, primary and gold paints, preference kill switches), `card-art.css` (flag watermark and achievement layers), `shell.css` (navigation variables), `src/lib/design/{appearance,motion,tokens}.ts`, `src/components/ui/**`, `src/components/shell/**`.
 
 Evolve the existing design. No redesign without an explicit owner request.
 
@@ -15,7 +15,7 @@ Evolve the existing design. No redesign without an explicit owner request.
   - Gold primary for MyCountry and the Builder.
   - `material-hero` glass with the `FlagWatermark`.
   - Halo's `material-acrylic` glow.
-  - Achievement aurora, radiance, foil, ghost heraldry and jewel layers (`identity.css`).
+  - Achievement aurora, foil and jewel layers (`card-art.css`).
 - Everywhere else: opaque cards, and tint only for interaction (selection, links, focus, the one primary action).
 - Reuse a primitive before writing one. If a primitive is missing, add it to `src/components/ui/`.
 
@@ -183,7 +183,7 @@ Name every group with `aria-label` or `aria-labelledby`. Never hand-roll roving 
 
 - `src/styles/globals.css` imports `facet/tokens.css` first, then the layered sheets, then `facet/shell.css`. Everything is in `@layer`, so a Tailwind utility on the same element always wins.
 - Material and identity utilities paint only: they never set position, z-index, radius, margin or letter-spacing.
-- A token that mixes `--tint` is composed at the element (`identity.css`), not on `:root`, so each `data-app` scope resolves its own tint.
+- A token that mixes `--tint` is composed at the element (`layers.css`, `card-art.css`), not on `:root`, so each `data-app` scope resolves its own tint.
 - Third-party overrides (Clerk, sonner, MapLibre) live in `integrations.css` and `clerk.css` with a comment.
 
 ## 11. Guards

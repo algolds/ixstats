@@ -28,7 +28,7 @@ function SubmitPromptForm() {
 
   if (submitted) {
     return (
-      <Card className="facet-hierarchy-child flex flex-col gap-6 py-6">
+      <Card className="facet-pane rounded-row flex flex-col gap-6 py-6">
         <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
           <CheckCircle className="h-10 w-10 text-emerald-400" />
           <h3 className="text-base font-semibold">Prompt submitted</h3>
@@ -50,7 +50,7 @@ function SubmitPromptForm() {
 
   return (
     <div className="space-y-4">
-      <Card className="facet-hierarchy-child flex flex-col gap-6 py-6">
+      <Card className="facet-pane rounded-row flex flex-col gap-6 py-6">
         <CardContent className="space-y-4 p-5">
           <div>
             <label className="text-muted-foreground mb-1.5 block text-xs font-medium">Title</label>
@@ -132,7 +132,7 @@ export default function SubmitBlurbPage() {
         {isSignedIn ? (
           <SubmitPromptForm />
         ) : (
-          <Card className="facet-hierarchy-child flex flex-col gap-6 py-6">
+          <Card className="facet-pane rounded-row flex flex-col gap-6 py-6">
             <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
               <User className="text-muted-foreground h-10 w-10" />
               <h3 className="text-base font-semibold">Sign in required</h3>

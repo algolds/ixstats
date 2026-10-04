@@ -4,17 +4,19 @@
 /* Tokens: colour roles, app tints, type, radius, materials, elevation, z, motion. */
 @import "./facet/tokens.css";
 @import "./facet/layers.css";
+@import "./facet/interaction.css";
 
 /* Import modular CSS files */
 @import "./typography.css";
 @import "./utilities.css";
 @import "./animations.css";
+@import "./textures.css";
+@import "./card-art.css";
 @import "./themes.css";
 @import "./theming.css";
 @import "./components.css";
 @import "./domains.css";
 @import "./wiki-os/tokens.css";
-@import "./facet.css";
 @import "./integrations.css";
 @import "./layout.css";
 @import "./facet/shell.css";

@@ -679,8 +679,8 @@
 }
 
 /* ─── Identity: glass, glow, primary ─────────────────────────────────────── */
-/* Scalars only. Anything that mixes the app tint (`--tint`) is composed at the element in
-   styles/facet/identity.css: a custom property that reads `var(--tint)` on :root would bake the
+/* Scalars only. Anything that mixes the app tint (`--tint`) is composed at the element, in
+   layers.css and card-art.css: a custom property that reads `var(--tint)` on :root would bake the
    root tint into every `[data-app]` subtree. */
 
 @theme static {

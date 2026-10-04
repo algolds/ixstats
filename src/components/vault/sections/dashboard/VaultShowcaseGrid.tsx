@@ -31,7 +31,7 @@ export function VaultShowcaseGrid({
   userCountryId,
 }: VaultShowcaseGridProps) {
   return (
-    <div className="facet-layout-sidebar-span-1 space-y-6">
+    <div className="flex flex-col space-y-6">
       {!isNoticeDismissed && (
         <div className="rounded-row border-yellow/25 bg-yellow/10 shadow-card relative overflow-hidden border p-4">
           <Button

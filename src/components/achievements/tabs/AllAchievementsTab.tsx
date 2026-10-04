@@ -131,7 +131,7 @@ function GroupedSeriesCard({
   const isLegendaryOrEpic = activeLevel.rarity === "Legendary" || activeLevel.rarity === "Epic";
 
   return (
-    // Unlocked achievements lift on hover and carry the aurora / radiance / foil / heraldry
+    // Unlocked achievements lift on hover and carry the aurora / foil
     // backdrop; locked ones stay a dashed opaque slot.
     <MotionCard
       initial={{ opacity: 0, y: 12 }}
@@ -147,7 +147,6 @@ function GroupedSeriesCard({
       )}
     >
       <AchievementCardBackdrop
-        iconPath={iconPath}
         categoryTheme={categoryTheme}
         isUnlocked={!!isUnlocked}
         isLegendaryOrEpic={isLegendaryOrEpic}
