@@ -37,7 +37,7 @@ function HiddenSection({
   isOwner: boolean;
 }) {
   return (
-    <Card variant="inset" padding="none">
+    <Card variant="well" padding="none">
       <EmptyState
         compact
         icon={<EyeClosed />}

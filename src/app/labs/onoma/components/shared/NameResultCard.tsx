@@ -229,7 +229,7 @@ export function NameResultCard({
 
   return (
     <Card
-      variant="inset"
+      variant="well"
       padding="none"
       onClick={expandOnCardClick ? () => setShowDetailsModal(!showDetailsModal) : undefined}
       className={cn(

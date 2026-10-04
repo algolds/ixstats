@@ -116,7 +116,7 @@ function InteractionCard({
   const [component1, component2] = components.map((c) => ATOMIC_ECONOMIC_COMPONENTS[c]);
   if (!component1 || !component2) return null;
   return (
-    <Card variant="inset" className="p-3">
+    <Card variant="well" className="p-3">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-label text-caption font-semibold">
@@ -185,7 +185,7 @@ function InteractionsTab({
 
 function StatsCard({ cells }: { cells: [label: string, value: string, className?: string][] }) {
   return (
-    <Card variant="inset" className="grid grid-cols-2 gap-4 p-4 text-center">
+    <Card variant="well" className="grid grid-cols-2 gap-4 p-4 text-center">
       {cells.map(([label, value, className], i) => (
         <div key={label} className={cn("space-y-1", i > 1 && "mt-2")}>
           <span className="text-stat-label text-label-secondary block">{label}</span>

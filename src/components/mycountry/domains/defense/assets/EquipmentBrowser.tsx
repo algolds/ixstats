@@ -45,7 +45,7 @@ function EquipmentRow({
 
   return (
     <Card
-      variant="inset"
+      variant="well"
       padding="sm"
       onClick={() => onSelect(equipment)}
       className="flex w-full items-start gap-3 text-left"

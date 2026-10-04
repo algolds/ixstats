@@ -198,7 +198,7 @@ export function OrthographySandbox({
   };
 
   return (
-    <Card variant="inset" padding="none" className="flex flex-col space-y-4 p-4">
+    <Card variant="well" padding="none" className="flex flex-col space-y-4 p-4">
       {/* Header Bar with Direction Segmented Control */}
       <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-3">
         <div className="flex items-center gap-2">

@@ -407,7 +407,7 @@ function GdpComparison({
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="space-y-3">
               <h4 className="text-headline">Current economic tier</h4>
-              <Card variant="inset" padding="none" className="p-4">
+              <Card variant="well" padding="none" className="p-4">
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-title-3">{country.economicTier}</span>
                   <Badge className={current?.color} variant="secondary">
@@ -430,7 +430,7 @@ function GdpComparison({
             <div className="space-y-3">
               <h4 className="text-headline">Next tier target</h4>
               <Card
-                variant="inset"
+                variant="well"
                 padding="none"
                 className="flex min-h-[106px] flex-col justify-center p-4"
               >

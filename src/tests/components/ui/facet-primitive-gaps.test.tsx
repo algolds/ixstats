@@ -15,29 +15,27 @@ const MotionCard = motion.create(Card);
 
 const classOf = (el: Element) => el.getAttribute("class") ?? "";
 
-describe('Card variant="inset"', () => {
-  it("is a surface-secondary rounded-row panel with 16px padding and no hairline or shadow", () => {
+describe('Card variant="well"', () => {
+  it("is a facet-well rounded-row panel with 16px padding and no hairline or shadow", () => {
     render(
-      <Card data-testid="inset" variant="inset">
+      <Card data-testid="inset" variant="well">
         Panel
       </Card>
     );
     const el = screen.getByTestId("inset");
     const cls = classOf(el);
-    expect(cls).toMatch(/\bbg-surface-secondary\b/);
+    expect(cls).toMatch(/\bfacet-well\b/);
     expect(cls).toMatch(/\brounded-row\b/);
     expect(cls).toMatch(/(^|\s)p-4(\s|$)/);
-    expect(cls).not.toMatch(
-      /\bshadow-card\b|\brounded-card\b|(^|\s)border(\s|$)|\bbg-surface(\s|$)/
-    );
+    expect(cls).not.toMatch(/\bshadow-card\b|\brounded-card\b|(^|\s)border(\s|$)|\bfacet-pane\b/);
     expect(el).toHaveAttribute("data-slot", "card");
   });
 
   it("takes the padding scale and caller classes", () => {
     render(
       <>
-        <Card data-testid="none" variant="inset" padding="none" />
-        <Card data-testid="sm" variant="inset" padding="sm" className="space-y-2" />
+        <Card data-testid="none" variant="well" padding="none" />
+        <Card data-testid="sm" variant="well" padding="sm" className="space-y-2" />
       </>
     );
     expect(classOf(screen.getByTestId("none"))).not.toMatch(/(^|\s)p-\d/);
@@ -48,7 +46,7 @@ describe('Card variant="inset"', () => {
   it("stays pressable with onClick", () => {
     const onClick = jest.fn();
     render(
-      <Card variant="inset" onClick={onClick} interactive>
+      <Card variant="well" onClick={onClick} interactive>
         Open
       </Card>
     );
@@ -60,8 +58,7 @@ describe('Card variant="inset"', () => {
   it("leaves the default card unpadded", () => {
     render(<Card data-testid="default">x</Card>);
     const el = screen.getByTestId("default");
-    expect(classOf(el)).toContain("bg-surface");
-    expect(classOf(el)).toContain("shadow-card");
+    expect(classOf(el)).toContain("facet-pane");
     expect(classOf(el)).not.toMatch(/(^|\s)p-\d/);
   });
 });
@@ -82,7 +79,7 @@ describe("motion.create(Card)", () => {
     const el = screen.getByTestId("m");
     const cls = classOf(el);
     expect(el).toHaveAttribute("data-slot", "card");
-    expect(cls).toContain("bg-surface");
+    expect(cls).toContain("facet-pane");
     expect(cls).toContain("rounded-card");
     expect(cls).toContain("p-4");
     expect(cls).toContain("overflow-hidden");
@@ -90,15 +87,15 @@ describe("motion.create(Card)", () => {
     expect(el).not.toHaveAttribute("animate");
   });
 
-  it("supports the inset variant and forwards its ref", () => {
+  it("supports the well variant and forwards its ref", () => {
     const ref = React.createRef<HTMLDivElement>();
     render(
-      <MotionCard ref={ref} variant="inset" data-testid="m">
+      <MotionCard ref={ref} variant="well" data-testid="m">
         x
       </MotionCard>
     );
     expect(ref.current).toBe(screen.getByTestId("m"));
-    expect(classOf(ref.current!)).toContain("bg-surface-secondary");
+    expect(classOf(ref.current!)).toContain("facet-well");
   });
 });
 

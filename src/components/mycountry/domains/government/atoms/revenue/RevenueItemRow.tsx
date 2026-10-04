@@ -40,7 +40,7 @@ export function RevenueItemRow({
   const Icon = revenueCategoryIcons[item.category];
 
   return (
-    <Card variant="inset" className="p-4">
+    <Card variant="well" className="p-4">
       {!isReadOnly && (
         <Button
           variant="ghost"

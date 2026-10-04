@@ -222,7 +222,7 @@ export function MidRibbonPassportDocument({
 
                   {/* ThinkPages bio */}
                   {data.thinkpages.bio && (
-                    <Card variant="inset" padding="sm" className="space-y-1">
+                    <Card variant="well" padding="sm" className="space-y-1">
                       <div className="text-label-secondary text-subhead flex items-center gap-2">
                         <Sparkles aria-hidden className="size-3.5" />
                         <span>ThinkPages bio</span>

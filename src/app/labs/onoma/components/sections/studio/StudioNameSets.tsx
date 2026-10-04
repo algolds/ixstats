@@ -238,7 +238,7 @@ export function StudioNameSets() {
     <div className="grid items-start gap-6 lg:grid-cols-12">
       {/* Left: set + template config */}
       <div className="space-y-4 lg:col-span-5">
-        <Card variant="inset" padding="none" className="space-y-4 p-4">
+        <Card variant="well" padding="none" className="space-y-4 p-4">
           <div className="space-y-2">
             <label className="text-label-secondary text-footnote flex items-center gap-1 font-semibold">
               <Users className="h-3.5 w-3.5" /> Name set
@@ -529,7 +529,7 @@ export function StudioNameSets() {
       <div className="space-y-4 lg:col-span-7">
         {names.length > 0 ? (
           <Card
-            variant="inset"
+            variant="well"
             padding="none"
             className="animate-in fade-in space-y-4 p-4 duration-300"
           >
@@ -559,7 +559,7 @@ export function StudioNameSets() {
           </Card>
         ) : (
           <Card
-            variant="inset"
+            variant="well"
             padding="none"
             className="text-label-secondary text-body border-dashed p-8 text-center"
           >

@@ -153,7 +153,7 @@ export default function HistorySection({
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <Card variant="inset" padding="none" className="p-4">
+            <Card variant="well" padding="none" className="p-4">
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <div className="text-center">
                   <p className="text-title-1 text-yellow font-bold">
@@ -251,7 +251,7 @@ export default function HistorySection({
       </div>
 
       {filteredEvents.length === 0 ? (
-        <Card variant="inset" padding="none">
+        <Card variant="well" padding="none">
           <div className="flex flex-col items-center justify-center space-y-2 p-8 text-center">
             <Clock className="text-label-secondary mb-1 h-10 w-10 opacity-40" />
             <p className="text-label-secondary text-body max-w-sm">
@@ -276,7 +276,7 @@ export default function HistorySection({
 
                   return (
                     <Card
-                      variant="inset"
+                      variant="well"
                       padding="none"
                       key={event.id}
                       className="transition-[color,background-color,border-color,box-shadow,opacity,transform]"

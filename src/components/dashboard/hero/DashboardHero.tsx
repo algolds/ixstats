@@ -175,7 +175,7 @@ function DashboardHeroComponent({
   const DetailModal = activeModal && activeModal !== "vitality" ? DETAIL_MODALS[activeModal] : null;
 
   return (
-    <Card variant="hero" className="overflow-hidden">
+    <Card className="overflow-hidden">
       <FlagWatermark src={flagUrl} />
 
       <NeonFrameOverlay neonFrame={neonFrame} className="rounded-card" />

@@ -236,7 +236,7 @@ export function ToggleMetric({
   );
 
   return variant === "card" ? (
-    <Card variant="inset" padding="sm" className="text-left" onClick={onToggle} interactive>
+    <Card variant="well" padding="sm" className="text-left" onClick={onToggle} interactive>
       {body}
     </Card>
   ) : (
@@ -311,7 +311,7 @@ export function StatGrid({
     </div>
   ));
   return inset ? (
-    <Card variant="inset" padding="none" className={className}>
+    <Card variant="well" padding="none" className={className}>
       {cells}
     </Card>
   ) : (

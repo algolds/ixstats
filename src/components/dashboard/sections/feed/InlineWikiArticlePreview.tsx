@@ -41,7 +41,7 @@ export function InlineWikiArticlePreview({
   const wikiHref = titleToWikiOSRoute(cleanTitle);
 
   return (
-    <Card variant="inset" padding="sm" className="mt-2 sm:p-4">
+    <Card variant="well" padding="sm" className="mt-2 sm:p-4">
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1 space-y-1">
           {formattedHtml && (

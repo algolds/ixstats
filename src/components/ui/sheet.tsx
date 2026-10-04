@@ -6,6 +6,7 @@ import { animate, motion, useDragControls, useMotionValue, type PanInfo } from "
 import { Xmark as X } from "iconoir-react";
 
 import { cn } from "~/lib/utils/cn";
+import { SurfaceReset } from "~/components/ui/card";
 import { soundCues } from "~/lib/sound/cuelume";
 import { springSmooth } from "~/lib/design/motion";
 import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
@@ -220,7 +221,7 @@ const SheetContent = React.forwardRef<
               className={className}
               closeButton={closeButton}
             >
-              {children}
+              <SurfaceReset>{children}</SurfaceReset>
             </DetentSheetBody>
           </SheetPrimitive.Content>
         ) : (
@@ -235,7 +236,7 @@ const SheetContent = React.forwardRef<
               className
             )}
           >
-            {children}
+            <SurfaceReset>{children}</SurfaceReset>
             {closeButton}
           </SheetPrimitive.Content>
         )}

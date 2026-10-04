@@ -6,6 +6,7 @@ import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import { type VariantProps } from "class-variance-authority";
 
 import { cn } from "~/lib/utils/cn";
+import { SurfaceReset } from "~/components/ui/card";
 import { buttonVariants } from "~/components/ui/button";
 import { soundCues } from "~/lib/sound/cuelume";
 import {
@@ -64,7 +65,7 @@ function AlertDialogContent({
         )}
         {...props}
       >
-        {children}
+        <SurfaceReset>{children}</SurfaceReset>
       </AlertDialogPrimitive.Content>
     </AlertDialogPortal>
   );

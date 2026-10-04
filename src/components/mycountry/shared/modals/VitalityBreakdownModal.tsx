@@ -142,7 +142,7 @@ export function VitalityBreakdownModal({
               const pillarStatus = getPillarStatus(ring.value);
 
               return (
-                <Card variant="inset" key={ring.id} className="flex flex-col justify-between p-4">
+                <Card variant="well" key={ring.id} className="flex flex-col justify-between p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <Icon className="text-label-secondary h-4 w-4 shrink-0" />

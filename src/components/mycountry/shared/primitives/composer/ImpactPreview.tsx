@@ -83,7 +83,7 @@ export function ImpactPreview({ pkg, broker }: ImpactPreviewProps) {
 
       <div>
         <SubHeading>Stakeholders</SubHeading>
-        <Card variant="inset" padding="none">
+        <Card variant="well" padding="none">
           <dl className="divide-separator text-body divide-y">
             <div className="flex items-center justify-between gap-3 px-3 py-2">
               <dt className="text-label-secondary">Acceptance</dt>

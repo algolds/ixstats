@@ -327,7 +327,7 @@ function PerformanceSummary({ metrics }: { metrics: PerformanceMetrics }) {
       contentClassName="flex flex-1 flex-col justify-center"
     >
       <MetricModalLayout.TileGrid columns="grid-cols-1 md:grid-cols-3">
-        <Card variant="inset" padding="none" className={tileClass}>
+        <Card variant="well" padding="none" className={tileClass}>
           <div className="text-label-secondary text-eyebrow mb-1 flex items-center justify-center gap-2">
             <GrowthIcon className={cn("h-4 w-4", signedTone(metrics.growth))} />
             Recent Growth
@@ -338,7 +338,7 @@ function PerformanceSummary({ metrics }: { metrics: PerformanceMetrics }) {
           </span>
         </Card>
 
-        <Card variant="inset" padding="none" className={tileClass}>
+        <Card variant="well" padding="none" className={tileClass}>
           <span className="text-stat-label text-label-secondary mb-1 block">vs Global Average</span>
           <span
             className={cn(
@@ -354,7 +354,7 @@ function PerformanceSummary({ metrics }: { metrics: PerformanceMetrics }) {
           </span>
         </Card>
 
-        <Card variant="inset" padding="none" className={tileClass}>
+        <Card variant="well" padding="none" className={tileClass}>
           <span className="text-stat-label text-label-secondary mb-1 block">World ranking</span>
           <span className="text-label text-title-2">#{metrics.rank}</span>
           <span className="text-label-secondary text-footnote mt-0.5">

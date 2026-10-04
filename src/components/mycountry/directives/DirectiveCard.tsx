@@ -108,7 +108,7 @@ function ResistanceList({
   onOpenIssue?: (issueId: string) => void;
 }) {
   return (
-    <Card variant="inset" padding="none">
+    <Card variant="well" padding="none">
       <ul className="divide-separator divide-y">
         {issues.map((issue) => {
           const resolved = RESOLVED_ISSUE.has(issue.status);

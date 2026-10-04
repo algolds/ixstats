@@ -225,7 +225,7 @@ export function UnifiedAtomicComponentSelector<T extends string>({
 
         {/* Selected Components Summary */}
         {selectedComponents.length > 0 && (
-          <Card variant="inset" padding="none" className="space-y-4 p-4">
+          <Card variant="well" padding="none" className="space-y-4 p-4">
             <h4 className="text-label flex items-center gap-2 font-semibold">
               <CheckCircle className={cn("h-4 w-4", `text-${themeClasses.primary}`)} />
               Selected Components ({selectedComponents.length})

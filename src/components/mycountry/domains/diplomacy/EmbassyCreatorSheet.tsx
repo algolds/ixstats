@@ -226,7 +226,7 @@ export function EmbassyCreatorSheet({
                 {costLoading ? (
                   <Skeleton className="rounded-control h-16" aria-label="Calculating cost" />
                 ) : costData ? (
-                  <Card variant="inset" padding="none" className="p-3">
+                  <Card variant="well" padding="none" className="p-3">
                     <div className="flex items-center justify-between">
                       <span className="text-body font-medium">Total</span>
                       <span className="text-label text-title-3 tabular-nums">
@@ -277,7 +277,7 @@ export function EmbassyCreatorSheet({
             </>
           )}
 
-          <Card variant="inset" padding="none" className="text-label-secondary text-footnote p-2">
+          <Card variant="well" padding="none" className="text-label-secondary text-footnote p-2">
             Both countries will be notified of the embassy establishment. The host country can view
             your embassy details.
           </Card>

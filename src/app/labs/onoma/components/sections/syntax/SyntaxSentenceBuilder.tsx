@@ -149,7 +149,7 @@ export function SyntaxSentenceBuilder({
   const englishSentence = `${engSubjArt} ${engSubjAdj}${engSubjNoun} ${engVerb} ${engObjArt} ${engObjAdj}${engObjNoun}.`;
 
   return (
-    <Card variant="inset" padding="none" className="space-y-4 p-5 text-left">
+    <Card variant="well" padding="none" className="space-y-4 p-5 text-left">
       <h4 className="text-label text-subhead flex items-center gap-2">
         <Cpu className="text-indigo h-4 w-4" /> Live sentence generator
       </h4>

@@ -170,7 +170,7 @@ export function ScheduleFields({
       />
 
       {preset === "custom" && (
-        <Card variant="inset" padding="none" className="mt-2 space-y-2 p-3">
+        <Card variant="well" padding="none" className="mt-2 space-y-2 p-3">
           <Label htmlFor="custom-date" className={EYEBROW}>
             Date
           </Label>

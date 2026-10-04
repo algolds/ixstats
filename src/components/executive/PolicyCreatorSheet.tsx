@@ -392,7 +392,7 @@ export function PolicyCreatorSheet({
               )}
 
               {isTemplate && currentTemplate && (
-                <Card variant="inset" padding="none" className="p-3">
+                <Card variant="well" padding="none" className="p-3">
                   <h4 className="text-headline">{currentTemplate.name}</h4>
                   <p className="text-label-secondary text-footnote mt-1 leading-relaxed">
                     {currentTemplate.description}

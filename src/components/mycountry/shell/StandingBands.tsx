@@ -270,7 +270,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
 
         {/* Population, GDP, approval, stability and CivCap */}
         {country && (
-          <Card variant="inset" padding="none" className="relative flex flex-col gap-2 p-3">
+          <Card variant="well" padding="none" className="relative flex flex-col gap-2 p-3">
             <div className="border-separator flex items-center justify-between gap-2 border-b pb-2">
               <button
                 type="button"

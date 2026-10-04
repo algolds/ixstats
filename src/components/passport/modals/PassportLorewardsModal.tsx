@@ -407,7 +407,7 @@ function MetricCard({
   subtext?: string;
 }) {
   return (
-    <Card variant="inset" padding="sm">
+    <Card variant="well" padding="sm">
       <Stat label={label} value={value} hint={subtext} icon={icon} iconPlacement="trailing" />
     </Card>
   );

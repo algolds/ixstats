@@ -55,7 +55,7 @@ export const DepartmentAtomicSelector = React.memo(function DepartmentAtomicSele
   if (!onGovernmentComponentsChange) return null;
 
   return (
-    <Card variant="inset" className="space-y-3 p-4">
+    <Card variant="well" className="space-y-3 p-4">
       <div className="flex items-center justify-between gap-2">
         <h4 className="text-label text-headline">Contextual policy components ({data.category})</h4>
         <span className="text-label-secondary text-footnote">

@@ -105,7 +105,7 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
 
   return (
     <Card
-      variant="inset"
+      variant="well"
       padding="none"
       className="flex h-full flex-col justify-between space-y-5 p-4"
     >

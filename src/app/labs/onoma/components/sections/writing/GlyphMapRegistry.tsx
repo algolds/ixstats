@@ -55,7 +55,7 @@ export function GlyphMapRegistry({
   };
 
   return (
-    <Card variant="inset" padding="none" className="flex h-full flex-col space-y-3 p-4">
+    <Card variant="well" padding="none" className="flex h-full flex-col space-y-3 p-4">
       {/* Header Bar with Search & Starter Pack Button (Single line, aligned with Canvas header) */}
       <div className="border-separator flex items-center justify-between gap-2 border-b pb-2">
         <div className="flex items-center gap-2">

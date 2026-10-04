@@ -48,7 +48,7 @@ export const BorderConformanceModal = memo(function BorderConformanceModal({
             All borders must conform to the country shape. The following subdivisions were adjusted:
           </p>
 
-          <Card variant="inset" padding="none" className="max-h-[200px] overflow-y-auto">
+          <Card variant="well" padding="none" className="max-h-[200px] overflow-y-auto">
             {clippedNames.map((name) => (
               <div
                 key={name}

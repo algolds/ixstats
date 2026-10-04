@@ -110,7 +110,7 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
       </div>
 
       {groups.length === 0 ? (
-        <Card variant="inset" padding="none" className="px-4 py-8 text-center">
+        <Card variant="well" padding="none" className="px-4 py-8 text-center">
           <p className="text-label text-body font-medium">No presets match</p>
           <p className="text-label-secondary text-footnote mt-1">
             {query.trim()

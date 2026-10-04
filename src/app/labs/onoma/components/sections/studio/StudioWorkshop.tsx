@@ -77,7 +77,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
       <div className="grid items-start gap-6 lg:grid-cols-12">
         {/* Left Column (5/12): Seed input and parameters */}
         <div className="space-y-4 lg:col-span-5">
-          <Card variant="inset" padding="none" className="space-y-4 p-4">
+          <Card variant="well" padding="none" className="space-y-4 p-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-label-secondary text-footnote font-semibold">
@@ -348,7 +348,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
         <div className="space-y-4 lg:col-span-7">
           {generatedNames.length > 0 ? (
             <Card
-              variant="inset"
+              variant="well"
               padding="none"
               className="animate-in fade-in space-y-4 p-4 duration-300"
             >
@@ -382,7 +382,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
             </Card>
           ) : (
             <Card
-              variant="inset"
+              variant="well"
               padding="none"
               className="text-label-secondary text-body border-dashed p-8 text-center"
             >

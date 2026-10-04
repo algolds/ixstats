@@ -242,7 +242,7 @@ MetricModalLayout.Tile = function MetricModalTile({
   labelStyle?: keyof typeof TILE_LABEL | "eyebrow";
 }) {
   return (
-    <Card variant="inset" padding="none" className="p-4 text-center">
+    <Card variant="well" padding="none" className="p-4 text-center">
       <div className={cn("text-title-3", tone, valueClassName)}>{value}</div>
       {labelStyle === "eyebrow" ? (
         <Eyebrow className="mt-1 block">{label}</Eyebrow>
@@ -276,7 +276,7 @@ MetricModalLayout.Metric = function MetricModalMetric({
   tone?: string;
 }) {
   return (
-    <Card variant="inset" padding="none" className="p-3">
+    <Card variant="well" padding="none" className="p-3">
       <span className="text-stat-label text-label-secondary">{label}</span>
       <div className={cn("text-title-3 mt-1", tone)}>{value}</div>
     </Card>
@@ -293,7 +293,7 @@ MetricModalLayout.Note = function MetricModalNote({
 }) {
   return (
     <Card
-      variant="inset"
+      variant="well"
       padding="none"
       className={cn(
         "text-label-secondary text-footnote mt-6 p-4",

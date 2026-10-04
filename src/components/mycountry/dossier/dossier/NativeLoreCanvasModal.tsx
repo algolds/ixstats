@@ -104,7 +104,7 @@ export function NativeLoreCanvasModal({
           {/* WikiOS Visual Canvas Editor */}
           <div>
             <Eyebrow className="mb-1 block">Canvas lore content</Eyebrow>
-            <Card variant="inset" padding="none" className="min-h-[360px] p-2">
+            <Card variant="well" padding="none" className="min-h-[360px] p-2">
               <WikiVisualEditor
                 initialHtml={content}
                 title={title || "Untitled Lore Document"}

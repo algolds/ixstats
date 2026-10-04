@@ -334,7 +334,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
       {pendingForMe.length > 0 && (
         <ConflictGroup title="Incoming challenges">
           {pendingForMe.map((c) => (
-            <Card variant="inset" key={c.id} className="border-yellow/40 border p-3">
+            <Card variant="well" key={c.id} className="border-yellow/40 border p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <span className="text-label text-body font-medium">
@@ -374,7 +374,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
           {activeConflicts
             .filter((c) => !pendingForMe.some((p) => p.id === c.id))
             .map((c) => (
-              <Card variant="inset" key={c.id} className="text-body p-3">
+              <Card variant="well" key={c.id} className="text-body p-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Swords aria-hidden="true" className="text-red h-3.5 w-3.5" />
                   <span>

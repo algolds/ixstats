@@ -160,7 +160,7 @@ function StoryPinHeader({
 
 function WikiIntroCard({ intro, wikiUrl }: { intro: string; wikiUrl: string | null | undefined }) {
   return (
-    <Card variant="inset" className="p-4">
+    <Card variant="well" className="p-4">
       <Eyebrow className="mb-2 flex items-center gap-2">
         <BookOpen className="h-3.5 w-3.5" aria-hidden />
         From IxWiki

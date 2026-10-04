@@ -280,7 +280,7 @@ export default function LoanwordsSection() {
             transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
             className="overflow-hidden"
           >
-            <Card variant="inset" padding="none" className="space-y-2 p-4">
+            <Card variant="well" padding="none" className="space-y-2 p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <BookOpen className="text-tint h-4 w-4" />
@@ -329,7 +329,7 @@ export default function LoanwordsSection() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
         {/* Left Column: Contact Links & Configuration (5 cols) */}
         <div className="space-y-4 lg:col-span-5">
-          <Card variant="inset" padding="none" className="space-y-3 p-4">
+          <Card variant="well" padding="none" className="space-y-3 p-4">
             <div className="border-separator flex items-center justify-between border-b pb-2">
               <div className="flex items-center gap-2">
                 <div className="bg-tint/10 text-tint rounded-control flex h-6 w-6 items-center justify-center">
@@ -397,7 +397,7 @@ export default function LoanwordsSection() {
           </Card>
 
           {/* Form to configure Contact Registry */}
-          <Card variant="inset" padding="none" className="space-y-4 p-4">
+          <Card variant="well" padding="none" className="space-y-4 p-4">
             <form onSubmit={handleSaveContact} className="space-y-4">
               <div className="border-separator flex items-center justify-between border-b pb-2">
                 <div className="flex items-center gap-2">
@@ -625,7 +625,7 @@ export default function LoanwordsSection() {
 
         {/* Right Column: Loanword Adaptation Simulator Sandbox (7 cols) */}
         <div className="space-y-4 lg:col-span-7">
-          <Card variant="inset" padding="none" className="space-y-4 p-4">
+          <Card variant="well" padding="none" className="space-y-4 p-4">
             {/* Simulator Header & Action Toolbar */}
             <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-b pb-3">
               <div className="flex items-center gap-2">

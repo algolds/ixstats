@@ -25,7 +25,7 @@ export function TaxRevenueProjections({ yields }: TaxRevenueProjectionsProps) {
         {TAX_CHANNELS.map((ch) => {
           const value = yields.byChannel[ch.key] ?? null;
           return (
-            <Card variant="inset" key={ch.key} className="space-y-1 p-2">
+            <Card variant="well" key={ch.key} className="space-y-1 p-2">
               <div className="flex items-center gap-2">
                 <span
                   aria-hidden="true"

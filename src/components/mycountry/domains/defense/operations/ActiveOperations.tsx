@@ -109,7 +109,7 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
         const isActive = op.status === "active" || op.status === "planned";
 
         return (
-          <Card variant="inset" key={op.id} className={cn("p-3", !isActive && "opacity-60")}>
+          <Card variant="well" key={op.id} className={cn("p-3", !isActive && "opacity-60")}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3">
                 <Icon aria-hidden="true" className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />

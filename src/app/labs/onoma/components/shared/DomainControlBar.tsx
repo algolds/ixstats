@@ -49,7 +49,7 @@ export function DomainControlBar({
   handleGenerate,
 }: DomainControlBarProps) {
   return (
-    <Card variant="inset" padding="none" className="space-y-4 p-4">
+    <Card variant="well" padding="none" className="space-y-4 p-4">
       {/* 1. Category / Type Selector (if categories are provided) */}
       {categories.length > 1 && (
         <div className="space-y-2">

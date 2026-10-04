@@ -218,7 +218,7 @@ export function MapEditorWelcomeModal({
                 <div className="max-h-[260px] scrollbar-thin space-y-2 overflow-y-auto pr-1">
                   {CHANGELOG.map((item) => (
                     <Card
-                      variant="inset"
+                      variant="well"
                       key={item.title}
                       className="flex flex-col gap-0.5 p-2 text-left"
                     >

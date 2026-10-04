@@ -60,7 +60,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
           </SheetHeader>
 
           <div className="space-y-4">
-            <Card variant="inset" className="p-5">
+            <Card variant="well" className="p-5">
               <h4 className="text-label text-headline mb-4">Relationship state evolution</h4>
               <div className="flex items-center justify-center gap-4">
                 <div className="text-center">
@@ -91,7 +91,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
                 { label: "Cultural bonus", value: impact.culturalBonusDelta || 0 },
                 { label: "Diplomatic bonus", value: impact.diplomaticBonusDelta || 0 },
               ].map((m) => (
-                <Card variant="inset" key={m.label} className="p-4">
+                <Card variant="well" key={m.label} className="p-4">
                   <Stat
                     label={m.label}
                     value={<>+{m.value}</>}
@@ -102,7 +102,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
             </div>
 
             {impact.longTermEffects && (
-              <Card variant="inset" className="p-5">
+              <Card variant="well" className="p-5">
                 <h4 className="text-label text-headline mb-4">Long-term effects</h4>
                 <div className="space-y-4">
                   {[
@@ -133,7 +133,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
             )}
 
             {impact.reasoning && Array.isArray(impact.reasoning) && impact.reasoning.length > 0 && (
-              <Card variant="inset" className="p-5">
+              <Card variant="well" className="p-5">
                 <h4 className="text-label text-headline mb-4">Impact analysis</h4>
                 <ul className="space-y-2">
                   {impact.reasoning.map((reason, idx) => (

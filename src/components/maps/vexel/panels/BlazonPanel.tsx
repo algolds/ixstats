@@ -27,7 +27,7 @@ export default function BlazonPanel() {
           </Button>
         </div>
 
-        <Card variant="inset" padding="none" className="p-3">
+        <Card variant="well" padding="none" className="p-3">
           <p className="text-label-secondary text-body leading-relaxed italic">
             {blazon || "No composition loaded."}
           </p>

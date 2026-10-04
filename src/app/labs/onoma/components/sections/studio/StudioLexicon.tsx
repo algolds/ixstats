@@ -129,7 +129,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
     <div className="animate-in fade-in grid items-start gap-6 duration-300 lg:grid-cols-12">
       {/* Left Column: Terms List (4/12) */}
       <div className="space-y-4 lg:col-span-4">
-        <Card variant="inset" padding="none" className="space-y-4 p-4">
+        <Card variant="well" padding="none" className="space-y-4 p-4">
           <div className="space-y-1">
             <h3 className="text-label text-body font-semibold">Lexicon terms</h3>
             <p className="text-label-secondary text-footnote">
@@ -216,7 +216,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
       <div className="lg:col-span-8">
         {selectedTerm ? (
           <Card
-            variant="inset"
+            variant="well"
             padding="none"
             className="animate-in fade-in space-y-6 p-5 duration-300"
           >
@@ -472,7 +472,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
           </Card>
         ) : (
           <Card
-            variant="inset"
+            variant="well"
             padding="none"
             className="text-label-secondary text-body flex min-h-[400px] flex-col items-center justify-center border-dashed p-8 text-center"
           >

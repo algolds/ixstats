@@ -57,7 +57,7 @@ export default function PreviewPanel() {
         ))}
 
         <Card
-          variant="inset"
+          variant="well"
           padding="none"
           className="relative flex flex-1 items-center justify-center overflow-hidden p-6"
         >

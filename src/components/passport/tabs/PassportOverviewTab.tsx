@@ -197,7 +197,7 @@ export const PassportOverviewTab = React.memo(function PassportOverviewTab({
           <Crown aria-hidden className="size-4" />
           <span>Featured realm</span>
         </h2>
-        <Card variant="inset">
+        <Card variant="well">
           <FeaturedRealm data={data} cleanUsername={cleanUsername} />
         </Card>
       </section>

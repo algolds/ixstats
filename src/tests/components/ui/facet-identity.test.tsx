@@ -32,39 +32,12 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { DynamicIslandEffects } from "~/components/halo/DynamicIslandEffects";
 import { TEXT_STYLES } from "~/lib/design/tokens";
-import { Card } from "~/components/ui/card";
 
 const classOf = (el: Element) => el.getAttribute("class") ?? "";
 const ROOT = path.resolve(__dirname, "../../../..");
 const interactionCss = fs.readFileSync(path.join(ROOT, "src/styles/facet/interaction.css"), "utf8");
 const cardArtCss = fs.readFileSync(path.join(ROOT, "src/styles/card-art.css"), "utf8");
 const tokensCss = fs.readFileSync(path.join(ROOT, "src/styles/facet/tokens.css"), "utf8");
-
-describe("glass hero tier", () => {
-  it("Card variant=hero is only the hero material", () => {
-    render(
-      <Card data-testid="hero" variant="hero">
-        Nation
-      </Card>
-    );
-    const hero = screen.getByTestId("hero");
-    expect(classOf(hero)).toMatch(/\bfacet-pane\b/);
-    expect(classOf(hero)).toMatch(/\brounded-card\b/);
-    expect(classOf(hero)).not.toMatch(/\bbg-surface\b|\bshadow-card\b/);
-    expect(hero.querySelector("[aria-hidden]")).toBeNull();
-  });
-
-  it("pressable hero lifts and presses", () => {
-    render(
-      <Card variant="hero" onClick={() => undefined} interactive>
-        Open
-      </Card>
-    );
-    const card = screen.getByRole("button", { name: "Open" });
-    expect(classOf(card)).toMatch(/\bfacet-lift\b/);
-    expect(classOf(card)).toMatch(/\bfacet-press\b/);
-  });
-});
 
 describe("floating glass layers", () => {
   it.each(["chrome", "overlay"] as const)("FacetMaterial %s maps to its utility", (layer) => {
@@ -260,7 +233,7 @@ describe("headings", () => {
 });
 
 describe("CutoutCard", () => {
-  it("variant=card is the 28px opaque cutout surface", () => {
+  it("variant=card is the 28px cutout pane", () => {
     render(
       <CutoutCard data-testid="cut" variant="card">
         <CutoutCardContent>Body</CutoutCardContent>
@@ -268,9 +241,10 @@ describe("CutoutCard", () => {
     );
     const card = screen.getByTestId("cut");
     expect(classOf(card)).toMatch(/\brounded-cutout\b/);
-    expect(classOf(card)).toMatch(/\bbg-surface\b/);
+    expect(classOf(card)).toMatch(/\bfacet-pane\b/);
+    expect(classOf(card)).not.toMatch(/\bbg-surface\b/);
     expect(classOf(card)).toContain("group/cutout");
-    expect(cutoutCardSurfaceClassName).toContain("shadow-(--cutout-shadow)");
+    expect(cutoutCardSurfaceClassName).toContain("facet-pane");
     // Not pressable: no button role.
     expect(screen.queryByRole("button")).toBeNull();
   });

@@ -357,7 +357,7 @@ export function SynthesisResultsGrid({
         </div>
       ) : (
         <Card
-          variant="inset"
+          variant="well"
           padding="none"
           className="flex min-h-[260px] flex-col items-center justify-center p-8 text-center"
         >

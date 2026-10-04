@@ -206,7 +206,7 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
                 const Icon = MODAL_ICONS[key] ?? RouteIcon;
                 return (
                   <Card
-                    variant="inset"
+                    variant="well"
                     key={key}
                     className="text-footnote flex items-center justify-between gap-2 px-3 py-2"
                   >
@@ -236,7 +236,7 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
         {topCorridors.length > 0 && (
           <div className="space-y-2">
             <Eyebrow className="block">Primary intercity travel corridors</Eyebrow>
-            <Card variant="inset" padding="none" className="max-h-48 overflow-y-auto">
+            <Card variant="well" padding="none" className="max-h-48 overflow-y-auto">
               <ul className="divide-separator divide-y">
                 {topCorridors.map((c) => (
                   <li

@@ -103,7 +103,7 @@ function ShortcutsPage() {
         ))}
       </div>
 
-      <Card variant="inset" className="mt-4 p-3">
+      <Card variant="well" className="mt-4 p-3">
         <div className="mb-1 flex items-center gap-2">
           <Compass className="text-blue h-4 w-4" aria-hidden />
           <h4 className="text-label text-headline">Tip</h4>

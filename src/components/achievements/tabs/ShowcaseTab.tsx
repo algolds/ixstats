@@ -89,7 +89,6 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ ...springSmooth, delay: Math.min(idx * 0.02, 0.2) }}
-                variant="hero"
                 className={cn(
                   "flex flex-col justify-between overflow-hidden p-4",
                   categoryTheme.cardBorderHover

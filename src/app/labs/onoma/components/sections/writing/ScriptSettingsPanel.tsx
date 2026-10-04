@@ -66,7 +66,7 @@ export function ScriptSettingsPanel({
 }: ScriptSettingsPanelProps) {
   return (
     <div className="space-y-4">
-      <Card variant="inset" padding="none" className="space-y-3 p-4">
+      <Card variant="well" padding="none" className="space-y-3 p-4">
         <div className="border-separator flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
             <div className="bg-tint/10 text-tint rounded-row flex h-7 w-7 items-center justify-center">
@@ -118,7 +118,7 @@ export function ScriptSettingsPanel({
       </Card>
 
       {/* Script Typology & Configuration Form */}
-      <Card variant="inset" padding="none" className="space-y-4 p-4">
+      <Card variant="well" padding="none" className="space-y-4 p-4">
         <div className="border-separator flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
             <div className="bg-fill-3 text-label rounded-row flex h-7 w-7 items-center justify-center">

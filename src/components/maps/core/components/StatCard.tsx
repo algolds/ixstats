@@ -18,7 +18,7 @@ interface StatCardProps {
  */
 export function StatCard({ icon: Icon, label, value, onClick }: StatCardProps) {
   return (
-    <Card variant="inset" padding="none" onClick={onClick} className="px-3 py-2" interactive>
+    <Card variant="well" padding="none" onClick={onClick} className="px-3 py-2" interactive>
       <Stat size="sm" label={label} value={value} icon={<Icon className="size-3.5" />} />
       {onClick && (
         <ChevronRight

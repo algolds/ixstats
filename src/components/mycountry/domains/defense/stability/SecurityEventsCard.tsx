@@ -53,7 +53,7 @@ export const SecurityEventsCard = React.memo(function SecurityEventsCard({
         {activeEvents.length > 0 ? (
           <div className="space-y-3">
             {activeEvents.map((event) => (
-              <Card variant="inset" key={event.id} className="p-3">
+              <Card variant="well" key={event.id} className="p-3">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="mb-2 flex flex-wrap items-center gap-2">

@@ -5,6 +5,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Xmark as XIcon } from "iconoir-react";
 
 import { cn } from "~/lib/utils/cn";
+import { SurfaceReset } from "~/components/ui/card";
 import { soundCues } from "~/lib/sound/cuelume";
 
 /**
@@ -101,7 +102,7 @@ function DialogContent({
         onPointerDownOutside={(e) => e.preventDefault()}
         onFocusOutside={(e) => e.preventDefault()}
       >
-        {children}
+        <SurfaceReset>{children}</SurfaceReset>
         {showCloseButton && (
           <DialogPrimitive.Close
             data-cuelume-press="droplet"

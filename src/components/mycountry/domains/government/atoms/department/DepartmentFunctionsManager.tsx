@@ -32,7 +32,7 @@ export const DepartmentFunctionsManager = React.memo(function DepartmentFunction
   };
 
   return (
-    <Card variant="inset" className="space-y-3 p-4">
+    <Card variant="well" className="space-y-3 p-4">
       <div className="flex items-center justify-between">
         <Label htmlFor="dept-new-function" className="text-label text-headline">
           Core operational functions

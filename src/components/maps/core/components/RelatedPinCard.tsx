@@ -22,7 +22,7 @@ export function RelatedPinCard({ pin, onNavigate }: RelatedPinCardProps) {
   const Icon = getCategoryIcon(pin.category);
   return (
     <Card
-      variant="inset"
+      variant="well"
       padding="sm"
       onClick={() => onNavigate?.(pin.id)}
       className="flex w-full items-center gap-2 p-2 text-left"

@@ -21,7 +21,7 @@ export interface EffectItem {
  */
 export function EffectList({ items, className }: { items: EffectItem[]; className?: string }) {
   return (
-    <Card variant="inset" padding="none" className={className}>
+    <Card variant="well" padding="none" className={className}>
       <ul className="divide-separator divide-y">
         {items.map((item) => {
           const tone =

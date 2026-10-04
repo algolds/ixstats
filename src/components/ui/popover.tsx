@@ -4,6 +4,7 @@ import * as React from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 
 import { cn } from "~/lib/utils/cn";
+import { SurfaceReset } from "~/components/ui/card";
 import { presentMotionClassName } from "~/components/ui/dialog";
 
 function Popover({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
@@ -171,7 +172,7 @@ function VirtualAnchorPopover({
           )}
           {...props}
         >
-          {children}
+          <SurfaceReset>{children}</SurfaceReset>
         </PopoverPrimitive.Content>
       </PopoverPrimitive.Portal>
     </PopoverPrimitive.Root>
@@ -202,7 +203,7 @@ function PopoverContent({
         )}
         {...props}
       >
-        {children}
+        <SurfaceReset>{children}</SurfaceReset>
       </PopoverPrimitive.Content>
     </PopoverPrimitive.Portal>
   );

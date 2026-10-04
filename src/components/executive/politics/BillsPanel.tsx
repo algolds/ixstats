@@ -168,7 +168,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
             </div>
 
             {showForm && canManage && (
-              <Card variant="inset" padding="none" className="space-y-2 p-3">
+              <Card variant="well" padding="none" className="space-y-2 p-3">
                 <input
                   className="bg-surface border-separator rounded-control-sm text-body focus:ring-tint w-full border px-2 py-2 focus:ring-1 focus:outline-none"
                   placeholder="Bill name (e.g. Healthcare Reform Act)"
@@ -278,7 +278,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                           )}
                           {bill.status === "in_committee" && <WhipCount billId={bill.id} />}
                           {result && (
-                            <Card variant="inset" padding="none" className="space-y-1 p-2">
+                            <Card variant="well" padding="none" className="space-y-1 p-2">
                               <p className="text-label text-caption mb-1">Floor vote breakdown</p>
                               {result.breakdown.map((pv) => (
                                 <div

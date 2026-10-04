@@ -36,22 +36,15 @@ import { EASE_OUT_FACET, springGentle, tweenFast } from "~/lib/design/motion";
 
 // Tokens — the card chrome
 
-const cutoutCardSurfaceShadowClassName =
-  "border border-separator shadow-(--cutout-shadow) hover:shadow-(--cutout-shadow-hover) [--facet-lift-shadow:var(--cutout-shadow-hover)]";
-
-export const cutoutCardSurfaceClassName = cn(
-  "group/cutout bg-surface text-label rounded-cutout relative overflow-hidden",
-  cutoutCardSurfaceShadowClassName
-);
-
-const cutoutCardGlassClassName =
+export const cutoutCardSurfaceClassName =
   "group/cutout facet-pane text-label rounded-cutout relative overflow-hidden";
 
 type CutoutCardVariant = "card" | "glass";
 
+// ponytail: both variants are the pane now; the sweep removes the prop.
 const VARIANT_CLASS: Record<CutoutCardVariant, string> = {
   card: cutoutCardSurfaceClassName,
-  glass: cutoutCardGlassClassName,
+  glass: cutoutCardSurfaceClassName,
 };
 
 /** Blur-in rise for staggered text; a 150ms cross-fade under Reduce Motion. */

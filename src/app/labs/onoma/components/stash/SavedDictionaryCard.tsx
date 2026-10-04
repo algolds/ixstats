@@ -109,7 +109,7 @@ export function SavedDictionaryCard({
 
   return (
     <Card
-      variant="inset"
+      variant="well"
       padding="none"
       className="p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
     >

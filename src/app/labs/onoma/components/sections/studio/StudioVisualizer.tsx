@@ -74,7 +74,7 @@ export function StudioVisualizer({ state }: StudioVisualizerProps) {
           />
         ) : (
           <Card
-            variant="inset"
+            variant="well"
             padding="none"
             className="text-label-secondary text-body flex h-full min-h-[300px] flex-col items-center justify-center border-dashed p-8 text-center"
           >

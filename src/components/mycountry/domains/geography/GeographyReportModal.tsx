@@ -64,7 +64,7 @@ function MetricsCard({
   cells: { label: string; value: React.ReactNode; truncate?: boolean; title?: string }[];
 }) {
   return (
-    <Card variant="inset" padding="sm" className="space-y-1">
+    <Card variant="well" padding="sm" className="space-y-1">
       <Eyebrow className="block">{title}</Eyebrow>
       <div className="text-footnote grid grid-cols-2 gap-2">
         {cells.map((c) => (
@@ -91,7 +91,7 @@ function RowsCard({
   rows: [label: string, value: React.ReactNode][];
 }) {
   return (
-    <Card variant="inset" padding="sm" className="space-y-1">
+    <Card variant="well" padding="sm" className="space-y-1">
       <Eyebrow className="block">{title}</Eyebrow>
       <div className="text-footnote space-y-2">
         {rows.map(([label, value]) => (
@@ -196,7 +196,7 @@ function OverviewTab({ profile: p }: { profile: GeoProfileData }) {
         />
       </div>
 
-      <Card variant="inset" className="space-y-2 p-3">
+      <Card variant="well" className="space-y-2 p-3">
         <div className="flex items-center gap-2">
           <Globe2 aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
           <Eyebrow>Geographic classification</Eyebrow>
@@ -395,7 +395,7 @@ function SuperlativeCard({
   fallbackMsg,
 }: SuperlativeCardProps) {
   return (
-    <Card variant="inset" padding="sm" className="space-y-1">
+    <Card variant="well" padding="sm" className="space-y-1">
       <div className="flex items-center justify-between">
         <Eyebrow>{title}</Eyebrow>
       </div>

@@ -62,7 +62,7 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
           </SheetHeader>
 
           <div className="space-y-6">
-            <Card variant="inset" className="p-5">
+            <Card variant="well" className="p-5">
               <h4 className="text-label text-title-3 mb-3">{scenario.title}</h4>
               <p className="text-label-secondary text-body whitespace-pre-line">
                 {scenario.narrative}
@@ -76,7 +76,7 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
                   const outcome = option.predictedOutcomes?.immediate;
                   const signed = (n: number) => `${n > 0 ? "+" : ""}${n}`;
                   return (
-                    <Card variant="inset" key={option.id || index} className="p-4">
+                    <Card variant="well" key={option.id || index} className="p-4">
                       <div className="mb-3 flex items-start justify-between gap-3">
                         <div>
                           <h6 className="text-label text-body font-medium">{option.label}</h6>

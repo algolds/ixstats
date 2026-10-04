@@ -271,7 +271,7 @@ export default function EtymologySection() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left Column: Roots & Creation */}
         <div className="space-y-4 lg:col-span-4">
-          <Card variant="inset" padding="none" className="space-y-4 p-4">
+          <Card variant="well" padding="none" className="space-y-4 p-4">
             <h3 className="text-label text-body flex items-center gap-2 font-semibold">
               <Network className="text-indigo h-4 w-4" />
               Roots directory
@@ -327,7 +327,7 @@ export default function EtymologySection() {
             )}
           </Card>
 
-          <Card variant="inset" padding="none" className="p-4">
+          <Card variant="well" padding="none" className="p-4">
             <form onSubmit={handleCreateRoot} className="space-y-3">
               <h4 className="text-label text-subhead">Create new root word</h4>
               <div className="grid grid-cols-2 gap-2">
@@ -399,7 +399,7 @@ export default function EtymologySection() {
         <div className="space-y-4 lg:col-span-8">
           {activeRoot ? (
             <div className="space-y-4">
-              <Card variant="inset" padding="none" className="p-4">
+              <Card variant="well" padding="none" className="p-4">
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="text-label text-title-3 flex items-baseline gap-2 font-bold">
@@ -433,7 +433,7 @@ export default function EtymologySection() {
                 </div>
               </Card>
 
-              <Card variant="inset" padding="none" className="relative min-h-[300px] space-y-4 p-4">
+              <Card variant="well" padding="none" className="relative min-h-[300px] space-y-4 p-4">
                 <div className="border-separator flex items-center justify-between border-b pb-2">
                   <h4 className="text-label text-subhead flex items-center gap-2">
                     <GitFork className="text-indigo h-4 w-4" />
@@ -474,7 +474,7 @@ export default function EtymologySection() {
                 )}
               </Card>
 
-              <Card variant="inset" padding="none" className="p-4">
+              <Card variant="well" padding="none" className="p-4">
                 <form onSubmit={handleAddDerivation} className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h4 className="text-label text-subhead">Add derivation</h4>
@@ -592,7 +592,7 @@ export default function EtymologySection() {
               </Card>
             </div>
           ) : (
-            <Card variant="inset" padding="none" className="h-full min-h-[460px]">
+            <Card variant="well" padding="none" className="h-full min-h-[460px]">
               <div className="flex h-full min-h-[460px] w-full flex-col items-center justify-center space-y-3 p-8 text-center">
                 <div className="rounded-card border-indigo/20 bg-indigo/10 shadow-card flex h-14 w-14 items-center justify-center border">
                   <Network className="text-indigo h-7 w-7" />

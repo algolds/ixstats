@@ -28,7 +28,7 @@ export const PassportHistoryTab = React.memo(function PassportHistoryTab({
 }: PassportHistoryTabProps) {
   if (!history || history.length === 0) {
     return (
-      <Card variant="inset" padding="none" className="border-separator border">
+      <Card variant="well" padding="none" className="border-separator border">
         <EmptyState
           icon={<Clock />}
           title="No activity yet"
@@ -81,7 +81,7 @@ export const PassportHistoryTab = React.memo(function PassportHistoryTab({
                 className="bg-fill ring-surface absolute top-4 -left-[31px] size-3 rounded-full ring-4"
               />
 
-              <Card variant="inset" className="space-y-2">
+              <Card variant="well" className="space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <Badge variant="default">

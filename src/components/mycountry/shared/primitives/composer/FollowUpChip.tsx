@@ -9,7 +9,7 @@ import { Card } from "~/components/ui/card";
 export function FollowUpChip({ goal, onClear }: { goal: string; onClear?: () => void }) {
   return (
     <Card
-      variant="inset"
+      variant="well"
       padding="none"
       className="text-footnote flex items-center gap-2 py-1 pr-1 pl-3"
     >

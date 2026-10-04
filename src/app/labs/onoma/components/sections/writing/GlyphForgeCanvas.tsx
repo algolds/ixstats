@@ -342,7 +342,7 @@ export function GlyphForgeCanvas({
   );
 
   return (
-    <Card variant="inset" padding="none" className="relative flex flex-col space-y-3 p-4">
+    <Card variant="well" padding="none" className="relative flex flex-col space-y-3 p-4">
       {/* 1. Apple-Style Header: Studio Badge & History Tools */}
       <div className="border-separator flex items-center justify-between gap-2 border-b pb-2">
         <div className="flex items-center gap-2">

@@ -165,7 +165,7 @@ export default function ComparatorSection({
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card
-          variant="inset"
+          variant="well"
           padding="none"
           className={`flex flex-col items-center justify-center p-4 text-center ${getDistanceColor(
             comparison.linguisticDistance
@@ -185,7 +185,7 @@ export default function ComparatorSection({
           </span>
         </Card>
 
-        <Card variant="inset" padding="none" className="p-4 text-center">
+        <Card variant="well" padding="none" className="p-4 text-center">
           <span className="text-label text-large-title font-mono font-bold">
             {comparison.phonemeOverlap}%
           </span>
@@ -197,7 +197,7 @@ export default function ComparatorSection({
           </span>
         </Card>
 
-        <Card variant="inset" padding="none" className="p-4 text-center">
+        <Card variant="well" padding="none" className="p-4 text-center">
           <GitCompare className="text-indigo mx-auto mb-2 h-6 w-6 opacity-80" />
           <span className="text-label text-large-title font-mono font-bold">
             {comparison.bigramSimilarity}%
@@ -213,7 +213,7 @@ export default function ComparatorSection({
 
       <div className="space-y-3">
         <h3 className="text-label-secondary text-subhead">Phoneme inventory overlap analysis</h3>
-        <Card variant="inset" padding="none" className="space-y-4 p-4">
+        <Card variant="well" padding="none" className="space-y-4 p-4">
           <div className="space-y-2">
             <span className="text-caption text-green font-semibold">
               Shared Phonemes ({comparison.sharedPhonemes.length})
@@ -278,7 +278,7 @@ export default function ComparatorSection({
       {/* Phonetic Diversity / Shannon Entropy comparison */}
       <div className="space-y-3">
         <h3 className="text-label-secondary text-subhead">Phonetic diversity & entropy</h3>
-        <Card variant="inset" padding="none" className="p-4">
+        <Card variant="well" padding="none" className="p-4">
           <div className="space-y-3">
             <div className="text-label-secondary text-footnote flex items-center justify-between">
               <span>Entropy difference</span>

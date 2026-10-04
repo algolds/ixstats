@@ -21,7 +21,7 @@ export function TipCard({
   headerClassName?: string;
 }) {
   return (
-    <Card variant="inset" className={className}>
+    <Card variant="well" className={className}>
       <div className={`flex items-center gap-2 ${headerClassName}`}>
         <Icon className="text-blue h-4 w-4" aria-hidden />
         <h3 className="text-label text-headline">{title}</h3>

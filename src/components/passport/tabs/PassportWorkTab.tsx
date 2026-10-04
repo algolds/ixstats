@@ -45,7 +45,7 @@ export const PassportWorkTab = React.memo(function PassportWorkTab({
 
   if (total === 0 && !wiki.linked) {
     return (
-      <Card variant="inset" padding="none" className="border-separator border">
+      <Card variant="well" padding="none" className="border-separator border">
         <EmptyState
           icon={<BookOpen />}
           title="No published work"

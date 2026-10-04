@@ -133,7 +133,7 @@ function CongratulateRow({
   };
 
   return (
-    <Card variant="inset" padding="none" className="flex flex-wrap items-center gap-2 p-2 pl-4">
+    <Card variant="well" padding="none" className="flex flex-wrap items-center gap-2 p-2 pl-4">
       <Heart className="text-label-secondary h-4 w-4 shrink-0" />
       <Select value={selected} onValueChange={setSelected}>
         <SelectTrigger

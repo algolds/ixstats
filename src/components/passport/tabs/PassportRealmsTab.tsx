@@ -115,7 +115,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
 }: PassportRealmsTabProps) {
   if (!realms || realms.length === 0) {
     return (
-      <Card variant="inset" padding="none" className="border-separator border">
+      <Card variant="well" padding="none" className="border-separator border">
         <EmptyState
           icon={<Globe />}
           title="No realms joined"

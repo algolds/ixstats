@@ -54,7 +54,7 @@ export function MyCountryComplianceModal({
             <div className="space-y-3 pb-4 sm:space-y-4">
               {sections.map((section) => (
                 <Fragment key={section.id}>
-                  <Card variant="inset" padding="none" className="p-3 transition-colors sm:p-4">
+                  <Card variant="well" padding="none" className="p-3 transition-colors sm:p-4">
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">

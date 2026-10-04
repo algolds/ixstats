@@ -246,7 +246,7 @@ export const PassportShowcase = React.memo(function PassportShowcase({
         <span>Showcase</span>
       </h2>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <Card variant="inset" className="space-y-3 lg:col-span-3">
+        <Card variant="well" className="space-y-3 lg:col-span-3">
           <h3 className={SECTION_LABEL}>
             <Trophy aria-hidden className={SECTION_ICON} />
             <span>Achievements and ribbons</span>
@@ -258,7 +258,7 @@ export const PassportShowcase = React.memo(function PassportShowcase({
           />
         </Card>
         <div className="space-y-4 lg:col-span-2">
-          <Card variant="inset" className="space-y-3">
+          <Card variant="well" className="space-y-3">
             <h3 className={SECTION_LABEL}>
               <Crown aria-hidden className={SECTION_ICON} />
               <span>Collection highlight</span>
@@ -270,7 +270,7 @@ export const PassportShowcase = React.memo(function PassportShowcase({
               onOpenVault={onOpenVault}
             />
           </Card>
-          <Card variant="inset" className="space-y-3">
+          <Card variant="well" className="space-y-3">
             <h3 className={SECTION_LABEL}>
               <Trophy aria-hidden className={SECTION_ICON} />
               <span>Lorewards standing</span>

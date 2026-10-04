@@ -268,7 +268,7 @@ function EventResponseBody({ event }: { event: DiplomaticEvent }) {
           <h4 className="text-label text-headline mb-3">Response options</h4>
           <div className="space-y-3">
             {event.responseOptions.map((option, idx) => (
-              <Card variant="inset" key={idx} className="p-4">
+              <Card variant="well" key={idx} className="p-4">
                 <div className="mb-2 flex items-start justify-between">
                   <h5 className="text-label text-body font-medium">
                     {option.label || `Option ${idx + 1}`}

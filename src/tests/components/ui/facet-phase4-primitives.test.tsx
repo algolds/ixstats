@@ -33,7 +33,7 @@ const read = (file: string) => fs.readFileSync(path.join(ROOT, file), "utf8");
 const classOf = (el: Element) => el.getAttribute("class") ?? "";
 const STATUSES = Object.keys(STATUS_ALIASES) as (keyof typeof STATUS_ALIASES)[];
 const BADGE_STATUSES = ["success", "warning", "destructive", "info"] as const;
-const CARD_SURFACE = ["bg-surface", "border-separator", "rounded-card", "shadow-card"];
+const CARD_SURFACE = ["facet-pane", "rounded-card"];
 
 beforeAll(() => {
   globalThis.ResizeObserver ??= class {
@@ -356,7 +356,7 @@ describe("FacetDataTable family on Facet 3", () => {
     expect(container.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(0);
   });
 
-  it("mobile cards are opaque FacetCards, pressable by keyboard", () => {
+  it("mobile cards are pane FacetCards, pressable by keyboard", () => {
     const onRowClick = jest.fn();
     const { container } = render(
       <FacetDataTable data={rows} columns={columns} layoutMode="cards" onRowClick={onRowClick} />

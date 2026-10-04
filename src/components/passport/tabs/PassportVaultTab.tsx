@@ -42,7 +42,7 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
 
   if (totalCards === 0) {
     return (
-      <Card variant="inset" padding="none" className="border-separator border">
+      <Card variant="well" padding="none" className="border-separator border">
         <EmptyState
           icon={<Crown />}
           title="No collection yet"
@@ -79,7 +79,7 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
       </div>
 
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-        <Card variant="inset" className="space-y-2">
+        <Card variant="well" className="space-y-2">
           <Stat
             label="Collector level"
             value={`Lv. ${level}`}
@@ -94,7 +94,7 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
           </div>
         </Card>
 
-        <Card variant="inset">
+        <Card variant="well">
           <Stat
             label="Deck value"
             value={formatDeckValue(deckValue)}

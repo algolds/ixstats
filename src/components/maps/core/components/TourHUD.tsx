@@ -147,7 +147,7 @@ export function TourHUD({
 
             <dl className="border-separator grid grid-cols-3 gap-2 border-t pt-3">
               {quickStats.map(({ icon: Icon, label, value }) => (
-                <Card variant="inset" key={label} className="space-y-1 p-2 text-center">
+                <Card variant="well" key={label} className="space-y-1 p-2 text-center">
                   <dt>
                     <Eyebrow className="flex items-center justify-center gap-1">
                       <Icon className="h-3 w-3" aria-hidden />

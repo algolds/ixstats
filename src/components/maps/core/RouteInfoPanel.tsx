@@ -642,7 +642,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
             <span className="text-label font-medium capitalize">{modalFamily} Logistics</span>
           </StatRow>
           {note && (
-            <Card variant="inset" className="text-footnote px-3 py-2">
+            <Card variant="well" className="text-footnote px-3 py-2">
               <span className="text-label font-semibold">{note.title}</span>
               <p className="text-label-secondary text-footnote mt-0.5">{note.detail}</p>
             </Card>

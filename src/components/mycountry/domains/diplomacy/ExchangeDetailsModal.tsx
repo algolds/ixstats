@@ -183,7 +183,7 @@ function enthusiasmColor(level: number) {
 
 function NpcResponseCard({ response }: { response: NPCResponse }) {
   return (
-    <Card variant="inset" className="p-3">
+    <Card variant="well" className="p-3">
       <CountryHeader
         name={response.countryName}
         flagUrl={response.flagUrl}
@@ -427,7 +427,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>((props
                         <NpcResponseCard key={response.countryId} response={response} />
                       ))
                     : exchange.participatingCountries.map((country) => (
-                        <Card variant="inset" key={country.id} className="p-3">
+                        <Card variant="well" key={country.id} className="p-3">
                           <CountryHeader
                             name={country.name}
                             flagUrl={country.flagUrl}

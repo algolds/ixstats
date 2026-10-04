@@ -108,7 +108,7 @@ function ExecutiveOpportunityHeroComponent({
         transition={{ type: "spring", stiffness: 450, damping: 32 }}
         className="w-full"
       >
-        <Card variant="hero" className="p-5 sm:p-6">
+        <Card className="p-5 sm:p-6">
           <FlagWatermark src={flagUrl} />
           <Button
             type="button"

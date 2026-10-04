@@ -60,7 +60,7 @@ export function LanguagePackCard({
   return (
     <div className="flex w-full flex-col">
       <Card
-        variant="inset"
+        variant="well"
         padding="lg"
         onClick={() => onSelect?.(pack)}
         aria-pressed={isSelected}

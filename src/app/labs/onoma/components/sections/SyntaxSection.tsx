@@ -170,7 +170,7 @@ export default function SyntaxSection() {
 
   return (
     <div className="space-y-6">
-      <Card variant="inset" padding="none" className="space-y-4 p-5 text-left">
+      <Card variant="well" padding="none" className="space-y-4 p-5 text-left">
         <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-3">
           <div className="flex items-center gap-2">
             <Input

@@ -30,7 +30,7 @@ export const DepartmentIconPicker = React.memo(function DepartmentIconPicker({
   const FallbackIcon = categoryIcons[data.category] || categoryIcons.Other!;
 
   return (
-    <Card variant="inset" className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2">
+    <Card variant="well" className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2">
       <div className="space-y-2">
         <Eyebrow className="block">Department emblem / icon</Eyebrow>
         <div className="flex items-center gap-3">

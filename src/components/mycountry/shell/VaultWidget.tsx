@@ -144,7 +144,7 @@ function TreasuryRevenue({
 }) {
   const change = budgetMultiplier?.percentChange ?? 0;
   return (
-    <Card variant="inset" className="animate-in fade-in slide-in-from-top-1 p-2 duration-200">
+    <Card variant="well" className="animate-in fade-in slide-in-from-top-1 p-2 duration-200">
       <Eyebrow className="mb-1 flex items-center gap-1">
         <Coins aria-hidden="true" className="size-3" />
         Treasury revenue

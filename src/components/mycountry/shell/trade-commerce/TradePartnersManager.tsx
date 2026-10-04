@@ -58,7 +58,7 @@ export const TradePartnersManager = React.memo(function TradePartnersManager({
       <CardContent className="grid grid-cols-1 gap-2 px-4 pb-4 sm:grid-cols-2 lg:grid-cols-3">
         {partners.map((partner) => (
           <Card
-            variant="inset"
+            variant="well"
             key={partner.countryId}
             className="flex items-center justify-between gap-2 p-2"
           >
