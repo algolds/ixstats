@@ -46,4 +46,20 @@ describe("AppShell", () => {
     const { container } = render(<Shell />);
     expect(container.querySelector("[data-app-shell]")).not.toHaveAttribute("data-chromeless");
   });
+
+  it("paints the tinted canvas and scopes the current app's tint on the shell root", () => {
+    mockPathname = "/vault";
+    const { container } = render(<Shell />);
+    const shell = container.querySelector("[data-app-shell]")!;
+    expect(shell.getAttribute("class")).toMatch(/\bfacet-canvas\b/);
+    expect(shell).toHaveAttribute("data-app", "vault");
+  });
+
+  it("gives chromeless routes no canvas wash", () => {
+    mockPathname = "/maps";
+    const { container } = render(<Shell />);
+    const shell = container.querySelector("[data-app-shell]")!;
+    expect(shell).toHaveAttribute("data-chromeless");
+    expect(shell.getAttribute("class") ?? "").not.toMatch(/\bfacet-canvas\b/);
+  });
 });
