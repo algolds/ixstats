@@ -13,7 +13,6 @@ import React, {
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "~/lib/utils/cn";
 import { springSnappy } from "~/lib/design/motion";
-import { DynamicIslandEffects } from "./DynamicIslandEffects";
 
 // The island morphs with the snappy spring: it answers a press directly, at the same settle
 // speed as the controls inside it.
@@ -309,21 +308,6 @@ const DynamicIslandContent = ({
 
   return (
     <div className="relative">
-      {isImpersonating && (
-        <motion.div
-          className="pointer-events-none absolute inset-0 rounded-[inherit]"
-          animate={{
-            borderRadius: currentSize.borderRadius,
-            opacity: isCompactSize(state.size) ? 0.8 : 0.3,
-          }}
-          transition={springSnappy}
-        >
-          {/* Red to orange alert glow. */}
-          <div className="bg-destructive/35 transparency-reduced:hidden absolute inset-0 rounded-[inherit] blur-xl contrast-more:hidden" />
-          <div className="bg-orange/25 transparency-reduced:hidden absolute inset-0 rounded-[inherit] blur-lg contrast-more:hidden" />
-        </motion.div>
-      )}
-
       <motion.div
         id={id}
         data-expanded={!isCompact ? "true" : undefined}
@@ -353,8 +337,6 @@ const DynamicIslandContent = ({
         }}
         {...props}
       >
-        <DynamicIslandEffects />
-
         <div
           ref={contentRef}
           className={`z-raised relative h-auto w-full ${isAutoHeight ? "overflow-visible" : "overflow-hidden"}`}
@@ -421,7 +403,6 @@ export const Halo = ({ children, id, ...props }: { children: ReactNode; id: stri
     return (
       <HaloOuterWrapper>
         <div className="facet-chrome relative isolate mx-auto h-11 items-center justify-center rounded-full px-4 text-center">
-          <DynamicIslandEffects />
           {children}
         </div>
       </HaloOuterWrapper>

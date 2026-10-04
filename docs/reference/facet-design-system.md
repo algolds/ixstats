@@ -259,7 +259,7 @@ Name every group with `aria-label` or `aria-labelledby`. Never hand-roll roving 
 - Use emoji in UI.
 - Add decorative `Sparks`.
 - Use `hover:scale-*`.
-- Add glows, glow blobs or `--glow-*` tokens, or `animate-ping` pulses.
+- Add glows, glow blobs or glow tokens (`--color-*-glow`), or `animate-ping` pulses.
 - Put gradients on UI (buttons, palette gradient stops). Gradients belong to content art in `card-art.css`.
 - Use `[#hex]` colours or raw palette steps.
 - Use `dark:` overrides.

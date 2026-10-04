@@ -30,7 +30,6 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
-import { DynamicIslandEffects } from "~/components/halo/DynamicIslandEffects";
 import { TEXT_STYLES } from "~/lib/design/tokens";
 
 const classOf = (el: Element) => el.getAttribute("class") ?? "";
@@ -43,14 +42,6 @@ describe("floating glass layers", () => {
   it.each(["chrome", "overlay"] as const)("FacetMaterial %s maps to its utility", (layer) => {
     render(<FacetMaterial data-testid="m" layer={layer} />);
     expect(classOf(screen.getByTestId("m"))).toContain(`facet-${layer}`);
-  });
-
-  it("DynamicIslandEffects is a decorative glow underlay", () => {
-    const { container } = render(<DynamicIslandEffects />);
-    const glow = container.firstElementChild!;
-    expect(glow).toHaveAttribute("aria-hidden", "true");
-    expect(classOf(glow)).toContain("print:hidden");
-    expect(container.innerHTML).not.toContain("animate-pulse");
   });
 });
 
