@@ -56,7 +56,8 @@
     var(--tw-shadow, 0 0 #0000);
 }
 
-/* 4 · Dialogs, sheets, popovers. Always over a scrim, so it never blurs another layer's glass. */
+/* 4 · Dialogs, sheets, popovers, menus and tooltips. Dialogs and sheets sit over a scrim;
+   popovers, menus and tooltips float without one. */
 @utility facet-overlay {
   background-color: color-mix(
     in srgb,
@@ -71,4 +72,40 @@
     var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
     var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
     var(--tw-shadow, 0 0 #0000);
+}
+
+/* Content types. A surface declares what it holds with data-content (Card's content prop); the
+   type sets reading width, figures and density. Types not listed here get their standard from a
+   primitive. */
+@layer components {
+  [data-content="prose"] > * {
+    max-width: 70ch;
+    margin-inline: auto;
+  }
+  [data-content="prose"] {
+    font-size: calc(1.0625rem * var(--text-scale, 1));
+    line-height: 1.6;
+  }
+  [data-content="prose"] a {
+    color: var(--tint);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
+
+  [data-content="data"] {
+    font-variant-numeric: tabular-nums;
+  }
+  [data-content="data"] tbody tr:hover,
+  [data-content="data"] [data-row]:hover {
+    background-color: var(--color-fill-4);
+  }
+
+  [data-content="visualization"] {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  [data-content="feed"] > * + * {
+    border-top: 1px solid var(--color-separator);
+  }
 }

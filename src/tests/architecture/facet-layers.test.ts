@@ -124,3 +124,17 @@ describe("Stylesheets imported from components", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe("content-type scopes", () => {
+  const layers = stripComments(fs.readFileSync(LAYERS, "utf8"));
+  it.each([
+    ["prose", /max-width:\s*70ch/],
+    ["data", /font-variant-numeric:\s*tabular-nums/],
+    ["visualization", /padding:\s*0/],
+    ["feed", /border-top:\s*1px solid var\(--color-separator\)/],
+  ])("[data-content=%s] carries its standard", (type, rule) => {
+    const body =
+      new RegExp(`\\[data-content="${type}"\\][^{]*\\{([^}]*)\\}`).exec(layers)?.[1] ?? "";
+    expect(body).toMatch(rule);
+  });
+});
