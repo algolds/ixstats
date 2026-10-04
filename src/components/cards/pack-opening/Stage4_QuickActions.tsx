@@ -1,6 +1,5 @@
 "use client";
 
-import "~/styles/card-art.css";
 // src/components/cards/pack-opening/Stage4_QuickActions.tsx
 // Stage 4: Post-reveal quick actions for cards
 

@@ -1,6 +1,5 @@
 "use client";
 
-import "~/styles/card-art.css";
 // src/components/cards/pack-opening/Stage2_PackExplosion.tsx
 // Stage 2: Enhanced explosion effect with premium glass physics and rarity-aware particles
 

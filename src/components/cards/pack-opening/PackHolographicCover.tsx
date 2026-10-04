@@ -1,7 +1,5 @@
 "use client";
 
-import "~/styles/card-art.css";
-
 /**
  * PackHolographicCover — Procedural holographic pack cover
  *

@@ -1,7 +1,5 @@
 "use client";
 
-import "~/styles/card-art.css";
-
 /**
  * LoreCardHolographicCover — Procedural holographic fallback for lore cards
  *

@@ -1,6 +1,5 @@
 "use client";
 
-import "~/styles/card-art.css";
 // src/components/cards/pack-opening/GlassSplashEffect.tsx
 // Premium glass splash effect for card reveals with rarity-specific particles
 

@@ -4,6 +4,7 @@ import path from "path";
 const ROOT = path.resolve(__dirname, "../../..");
 const STYLES = path.join(ROOT, "src/styles");
 const LAYERS = path.join(STYLES, "facet/layers.css");
+const GLOBALS = path.join(STYLES, "globals.css");
 
 function walk(dir: string, ext: RegExp): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
@@ -93,5 +94,33 @@ describe("Facet stylesheet layout", () => {
         )
       );
     expect(offenders.map((f) => path.relative(ROOT, f))).toEqual([]);
+  });
+});
+
+describe("Stylesheets imported from components", () => {
+  // A stylesheet imported from TypeScript is compiled on its own, without tokens.css, so it cannot
+  // use Tailwind directives or the custom variants. globals.css is the one entry that carries them.
+  it("use no @variant, @utility, @apply or @theme", () => {
+    const importRe = /^\s*import\s+["']([^"']+\.css)["']/gm;
+    const offenders: string[] = [];
+    for (const file of walk(path.join(ROOT, "src"), /\.tsx?$/)) {
+      for (const [, spec] of fs.readFileSync(file, "utf8").matchAll(importRe)) {
+        const resolved = spec!.startsWith("~/")
+          ? path.join(ROOT, "src", spec!.slice(2))
+          : path.resolve(path.dirname(file), spec!);
+        if (
+          !resolved.startsWith(STYLES + path.sep) ||
+          resolved === GLOBALS ||
+          !fs.existsSync(resolved)
+        )
+          continue;
+        if (
+          /@(variant|utility|apply|theme)\b/.test(stripComments(fs.readFileSync(resolved, "utf8")))
+        ) {
+          offenders.push(`${path.relative(ROOT, file)} -> ${path.relative(ROOT, resolved)}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
   });
 });

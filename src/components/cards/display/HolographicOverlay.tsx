@@ -1,6 +1,5 @@
 "use client";
 
-import "~/styles/card-art.css";
 /**
  * HolographicOverlay Component
  * Provides premium holographic effects for IxCards

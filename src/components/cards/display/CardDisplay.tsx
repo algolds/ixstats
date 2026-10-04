@@ -1,6 +1,5 @@
 "use client";
 
-import "~/styles/card-art.css";
 /**
  * CardDisplay Component - PREMIUM EDITION
  * Yu-Gi-Oh style digital trading card with holographic effects

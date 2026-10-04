@@ -1,4 +1,3 @@
-import "~/styles/card-art.css";
 import React from "react";
 import { MediaImage as ImageIcon, BookStack as Library, Palette } from "iconoir-react";
 import { cn } from "~/lib/utils";

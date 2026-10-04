@@ -1,6 +1,5 @@
 "use client";
 
-import "~/styles/card-art.css";
 /**
  * CraftingAnimation Component
  * Crafting success/failure animation with glass fusion effects

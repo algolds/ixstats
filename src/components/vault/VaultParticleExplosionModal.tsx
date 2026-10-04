@@ -1,7 +1,5 @@
 "use client";
 
-import "~/styles/card-art.css";
-
 import React, { useMemo } from "react";
 import { springGentle } from "~/lib/design/motion";
 import { motion, AnimatePresence } from "motion/react";

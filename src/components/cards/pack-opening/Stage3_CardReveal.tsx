@@ -1,6 +1,5 @@
 "use client";
 
-import "~/styles/card-art.css";
 // src/components/cards/pack-opening/Stage3_CardReveal.tsx
 // Stage 3: Sequential card flip reveals with rarity effects
 

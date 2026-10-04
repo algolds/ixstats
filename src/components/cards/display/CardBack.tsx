@@ -1,7 +1,5 @@
 "use client";
 
-import "~/styles/card-art.css";
-
 /**
  * CardBack Component - Premium Physical Card Back Design
  * Unified Rarity-Driven Card Back with 3 Selectable Visual Layouts:

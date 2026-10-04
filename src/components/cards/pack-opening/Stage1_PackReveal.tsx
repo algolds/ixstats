@@ -1,6 +1,5 @@
 "use client";
 
-import "~/styles/card-art.css";
 // src/components/cards/pack-opening/Stage1_PackReveal.tsx
 // Stage 1: Pack appearance with 3D rotation and pulsing glow
 

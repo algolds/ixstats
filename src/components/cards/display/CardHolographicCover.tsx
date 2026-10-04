@@ -1,7 +1,5 @@
 "use client";
 
-import "~/styles/card-art.css";
-
 /**
  * CardHolographicCover — Universal procedural holographic fallback for ALL card types
  *
