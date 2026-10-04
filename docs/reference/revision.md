@@ -115,8 +115,8 @@ Versioning communicates:
  │ 8. 🎨 FACET UI DESIGN SYSTEM & AMBIENT RUNTIME                                                 │
  │    Visual, Motion & Tactile Foundation                                                         │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
- │ • Facet Primitives (v2)    │ Volumetric Z-depth, physical materials, glare, 100% Radix slots.  │
- │ • Halo Contextual Overlay  │ Floating header capsule, live telemetry, and `Cmd+K` palette (v5).│
+ │ • Facet (v4)               │ Layers, content types, tinted canvas, Radix slots.                │
+ │ • Halo Contextual Overlay  │ Floating header capsule, live telemetry, and `Cmd+K` palette (v6).│
  │ • Cuelume Audio Engine (v1)│ 17 Web Audio synthesized haptic sound cues (`data-cuelume-*`).    │
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
@@ -142,7 +142,7 @@ The platform maintains strict separation between the **Platform SemVer Level** a
    *Current:* **`IxStates 1.4.0 "Lobster Crosby"`** (Channel: *Release Candidate*).
 2. **First-Party Apps**: A single monotonic capability integer (`IXWORLD_VERSION = 2`, `WIKIOS_VERSION = 1`, `IXVAULT_VERSION = 2`).
 3. **Simulation Engines**: Internal capability integers surfaced only in the Developer Panel (`MYCOUNTRY_ENGINE_VERSION = 4`, `CONCORD_ENGINE_VERSION = 2`, `ATLAS_ENGINE_VERSION = 5`).
-4. **UI / Feature Systems & Design**: Independent capability integers (`MYCOUNTRY_VERSION = 6`, `BUILDER_VERSION = 4`, `THINKPAGES_VERSION = 2`, `ACHIEVEMENTS_VERSION = 2` (incl. LoreWards / Wiki Awards), `STASH_VERSION = 1`, `REPOSITORY_VERSION = 2`, `HALO_VERSION = 5`, `ONOMA_VERSION = 4`), the design system (`FACET_VERSION = 3.1`) and the WikiOS sub-system `CANVAS_VERSION = 1`.
+4. **UI / Feature Systems & Design**: Independent capability integers (`MYCOUNTRY_VERSION = 6`, `BUILDER_VERSION = 4`, `THINKPAGES_VERSION = 2`, `ACHIEVEMENTS_VERSION = 2` (incl. LoreWards / Wiki Awards), `STASH_VERSION = 1`, `REPOSITORY_VERSION = 2`, `HALO_VERSION = 6`, `ONOMA_VERSION = 4`), the design system (`FACET_VERSION = 4`) and the WikiOS sub-system `CANVAS_VERSION = 1`.
 5. **Inherited Components**: Components that do not version independently inherit the platform version: **IxForum** (`1.4`), **IxTime / IxnayID**, **Labs**, and **Navigation Hubs**.
 
 ---

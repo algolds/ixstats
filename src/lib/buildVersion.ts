@@ -53,13 +53,13 @@ export const VERSIONS = {
     achievements: 2, // incl. LoreWards; v2: automatic collector resync on page load
     stash: 1, // save-for-later wiki articles (was "LoreStash")
     repository: 2, // WikiOS Commons image explorer
-    halo: 5, // global contextual overlay (was "Dynamic Island"); v5: modular views directory, comprehensive multi-domain command palette, keyword synonym indexing, and in-palette system execution
+    halo: 6, // global contextual overlay (was "Dynamic Island"); v5: modular views directory, comprehensive multi-domain command palette, keyword synonym indexing, and in-palette system execution; v6: standard chrome glass with no glow
     onoma: 4, // name generation + linguistics studio; v4: codebase modularization, custom studio advanced conlang & phonotactics constraints
   },
 
   // Design system.
   design: {
-    facet: 3.1, // v3: HIG roles, per-app tints, text styles, layered CSS; v3.1: identity restored — glass hero tier, monochrome/gold primary, mono data numerals, heavy headings, press/lift physics, CutoutCard, domain glows (docs/reference/facet-design-system.md)
+    facet: 4, // v4: five layers (canvas, pane, well, chrome, overlay), content types, tinted canvas, one layers.css (docs/reference/facet-design-system.md)
   },
 
   // WikiOS sub-systems (nested, not top-level).

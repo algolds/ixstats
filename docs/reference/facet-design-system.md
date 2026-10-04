@@ -1,27 +1,37 @@
 # Facet design system
 
-The canonical UI reference. Reset on 2026-10-02: the Facet 3 / 3.1 decoration layer (refraction, rims, retint, glow props, acrylic chrome, auto-mono numerals, eyebrow-title-subtitle heroes, HIG button names) was removed. This file describes what exists now. The old spec in `docs/specs/2026-09-30-facet-3-design-system.md` is history only.
+The canonical UI reference for Facet 4 (2026-10-04). Design rationale: `docs/superpowers/specs/2026-10-04-facet-4-design.md`.
 
-Sources of truth: `src/styles/facet/tokens.css` (tokens), `layers.css` (the five glass layers), `interaction.css` (press, lift, primary and gold paints, preference kill switches), `card-art.css` (flag watermark and achievement layers), `shell.css` (navigation variables), `src/lib/design/{appearance,motion,tokens}.ts`, `src/components/ui/**`, `src/components/shell/**`.
+Sources of truth: `src/styles/facet/tokens.css` (raw values), `layers.css` (the five layers and the content-type scopes), `interaction.css` (press, lift, primary and gold paints, preference kill switches), `shell.css` (navigation variables), `src/styles/card-art.css` (content art, imported globally) and `src/styles/textures.css`, `src/lib/design/{appearance,motion,tokens}.ts`, `src/components/ui/**`, `src/components/shell/**`.
 
-Evolve the existing design. No redesign without an explicit owner request.
+Reuse a primitive before writing one. If a primitive is missing, add it to `src/components/ui/`.
 
-## 1. Principles
+## 1. Identity
 
-- Apple HIG plus anti-slop. A plain opaque card is the default surface.
-- Glass is for floating chrome only: sidebar, tab bar, sheets, popovers, toolbars, map overlays. Glass never holds more glass; anything inside it uses opaque roles.
-- One hero per app at most, and not on every page.
-- The v2 identity is allowed only in four places: the dashboard hero, the MyCountry hero, Halo, and achievements.
-  - Gold primary for MyCountry and the Builder.
-  - `material-hero` glass with the `FlagWatermark`.
-  - Halo's `material-acrylic` glow.
-  - Achievement aurora, foil and jewel layers (`card-art.css`).
-- Everywhere else: opaque cards, and tint only for interaction (selection, links, focus, the one primary action).
-- Reuse a primitive before writing one. If a primitive is missing, add it to `src/components/ui/`.
+Facet is a material and physics design system for content: data, text, worldbuilding and data visualisation. It is built for IxStates and is web-first: pointer and keyboard, wide layouts, dense information, hover as a real state. Mobile adapts from desktop.
 
-## 2. Theme
+Depth is structural. Every piece of content lives at a defined layer, and the type of content decides its material and its rules, so every page, component and element behaves the same across apps.
 
-- Dark-first. With no stored choice the theme follows the OS and falls back to dark when the OS states no light preference. The choice is written to `html[data-theme="light"|"dark"]` before first paint by the inline script in `src/app/layout.tsx` (`src/lib/design/appearance.ts`).
+Borrowed from Apple HIG and Liquid Glass:
+
+- Hierarchy through materials.
+- Concentric radii.
+- 44px touch targets.
+- Springs.
+- Honouring every accessibility preference.
+- One primary action per surface.
+
+Facet's own:
+
+- A tinted canvas behind glass content panes.
+- The no-glass-on-glass rule.
+- Content types as a first-class axis.
+- Per-app tints as real accents.
+- Web-first density.
+
+## 2. Theme and colour
+
+- Dark-first. With no stored choice the theme follows the OS and falls back to dark when the OS states no light preference. The choice is written to `html[data-theme="light"|"dark"]` before first paint by the inline script in `src/app/layout.tsx` (`src/lib/design/appearance.ts`). Light mode is white frosted glass over a lighter wash.
 - Write colour as roles, never hex or Tailwind palette steps. Roles switch with the theme, so feature code has no `dark:` overrides.
 
 | Role | Tokens |
@@ -52,30 +62,96 @@ Evolve the existing design. No redesign without an explicit owner request.
 | `sports` | Teal |
 
 - `data-app="builder"` changes only the primary action (flat gold); its tint stays the default.
-- Radius (concentric): `rounded-sheet` 20, `rounded-card` 16, `rounded-row` 12, `rounded-control-lg` 12, `rounded-control` 10, `rounded-control-sm` 8, `rounded-full` for chips and avatars. `rounded-cutout` 28 belongs to `CutoutCard` only.
-- Elevation: `shadow-card`, `shadow-floating`, `shadow-sheet`. Dark mode halves the strength.
-- z-index: use the named scale (`z-sticky`, `z-chrome`, `z-sheet`, `z-popover`, `z-toast`, `z-command`). No arbitrary `z-[…]` in `components/ui`.
+
+Tint is a real accent everywhere:
+
+- Section-title icons (`CardTitle icon`).
+- A pane's top wash.
+- Well fills.
+- Progress bars.
+- Key figures (`Stat`).
+
+Semantic colours (destructive, warning, success, info) always win over tint where they carry meaning. One primary action per surface. Charts use only `chart-1..8` and semantic tokens.
+
+- Radius (concentric): `rounded-sheet` for overlays, `rounded-card` for panes, `rounded-row` for wells and rows, `rounded-control-lg`, `rounded-control`, `rounded-control-sm` for controls, `rounded-full` for chips and avatars. `rounded-cutout` belongs to `CutoutCard` only. Values live in `tokens.css`.
+- Elevation: `shadow-card`, `shadow-floating`, `shadow-sheet`. Layers apply them; do not add shadows to a layer by hand.
+- z-index: use the named scale (`z-sticky`, `z-chrome`, `z-sheet`, `z-popover`, `z-toast`, `z-command`). No arbitrary `z-[...]` in `components/ui`.
 - Spacing: Tailwind 4px scale, 8px rhythm. Avoid `x.5` steps except hairline tweaks.
 
-## 3. Type
+## 3. Layers
+
+Every surface is one of five layers. All glass, blur, hairline and elevation live in `src/styles/facet/layers.css`, as Tailwind utilities.
+
+| # | Name | Utility | Paint | Shadow | Radius | z |
+|---|---|---|---|---|---|---|
+| 0 | Canvas | `facet-canvas` (shell root) | `bg-background-grouped` plus a static full-bleed radial wash of `--tint` | none | none | base |
+| 1 | Pane | `facet-pane` | translucent surface fill, a tint wash and a glass hairline; no `backdrop-filter` | `shadow-card` | `rounded-card` | base |
+| 2 | Well | `facet-well` | solid `bg-surface-secondary` with a little tint mixed in | none | `rounded-row` | none |
+| 3 | Chrome | `facet-chrome` | glass with `backdrop-filter` | `shadow-floating` | per component | `z-chrome` |
+| 4 | Overlay | `facet-overlay` | thickest glass with `backdrop-filter`, over a scrim | `shadow-sheet` | `rounded-sheet` | `z-sheet` / `z-popover` |
+
+Components that provide each layer:
+
+- Canvas: `AppShell` paints `facet-canvas` on its root, in the current app's tint through `data-app`. Chromeless routes (`data-chromeless`) skip it.
+- Pane: `Card`. Well: a `Card` nested inside a `Card`, or `variant="well"`.
+- Chrome: `FacetMaterial layer="chrome"` (sidebar, tab bar, toolbars, map controls, Halo).
+- Overlay: `Dialog`, `AlertDialog`, `Sheet`, `Popover`, `HoverCard`, `Select`, `Tooltip`, toasts, and `FacetMaterial layer="overlay"`.
+
+Rules:
+
+- Glass never sits directly on glass. A `Card` inside a `Card` renders as a Well. Overlays reset this: `SurfaceReset` makes a `Card` inside a Dialog, Sheet or Popover a pane again.
+- Panes have no `backdrop-filter`. Only the static, soft canvas wash is behind them, so blur would add GPU cost and no visible change. Real blur is for Chrome and Overlay, where content scrolls underneath.
+- Layer utilities paint only. They never set position, z-index, radius, margin or letter-spacing; the component owns those.
+- Reduce Transparency makes Pane, Chrome and Overlay opaque. Increase Contrast strengthens hairlines and labels. Both themes are supported.
+- Do not write `backdrop-blur-*`, glass fills or elevation outside `layers.css`.
+
+## 4. Content types
+
+Set the type with `<Card content="...">`, or `data-content` on any element. CSS scoped to `[data-content=...]` in `layers.css` applies the standard, the same mechanism `data-app` uses for tint. `ContentType` is exported from `~/components/ui/card`.
+
+| Type | Surface | Type scale | Density and measure | Behaviour |
+|---|---|---|---|---|
+| `prose` | Pane | `text-body` at 17px with 1.6 leading; `text-title-2` and `text-title-3` headings | 70ch measure | No Wells inside except Embeds. Links are tint-underlined. Variant: Annotation (margin notes) |
+| `data` | Pane, rows are Wells | `text-callout`; `tabular-nums`, right-aligned figures | 36px rows (44px on coarse pointers) | `fill-4` row hover. Units always. Sortable headers. An empty cell is "–". Variant: Comparison (diffs) |
+| `visualization` | Flush Pane | Axis labels in `text-caption` | Fills its container | `chart-1..8` and semantic colours only. Tooltips are Overlays. The map is the Canvas and everything over it is Chrome |
+| `entity` | `EntityHeader` on the Canvas, then Panes | Name in `text-large-title`; facts in `text-callout` | Facts in a 2 to 4 column Well grid | The only place for identity art (flag, emblem, watermark) |
+| `collectible` | `CutoutCard` | `text-headline` | Min-width grid | Art keeps its palette and is never tinted. Variant: Listing (adds a price row) |
+| `input` | Pane, fields are Wells | Labels in `text-subhead` | 8px field rhythm | Focus ring, inline validation, full keyboard. Variants: Flow (stepper in Chrome, one Pane per step), Workspace (tools over a Visualization: map editor, Vexel, lineup boards), Commit (Directives: one primary plus a confirm) |
+| `feed` | Pane list | `text-callout`; timestamps in `text-caption` | Separator-divided, not boxed per item | Relative IxTime. Variant: Conversation (chat) |
+| `signal` | `Signal` banner Pane in a semantic colour | `text-headline` plus one line | Full width, top of its section | At most one per section. Dismissible unless critical |
+| `navigation` | Chrome | `text-body` | 36px rows | Source-list sidebar, toolbars, tabs |
+| `transient` | Overlay and scrim | Per component | n/a | Dialog, Sheet, Popover, toast |
+| `reveal` | Overlay on a full-bleed art stage | `text-large-title` figure | Centred | Art keeps its palette. One spring entrance. The `reveal` sound cue. Reduce Motion fades |
+
+What `layers.css` applies today: `prose` (70ch measure, body size, 1.6 leading, tint-underlined links), `data` (`tabular-nums`, `fill-4` row hover on `tbody tr` and `[data-row]`), `visualization` (no padding, clipped overflow) and `feed` (separator between items). The other types get their standard from the primitive that owns them (`EntityHeader`, `Signal`, `RevealStage`, `CutoutCard`).
+
+Embed rule: live data embedded in another type (stat cards in a post) is always a Well.
+
+Three rules for every type:
+
+- A section title is a tinted icon plus `text-headline` (`<CardTitle icon={...}>`). No eyebrow above it.
+- A subtitle only when it adds information the title lacks.
+- `Stat` is a large tinted figure with a regular-case label below. No uppercase labels.
+
+## 5. Type
 
 - Font: Schibsted Grotesk, weights 400 to 800 (`font-sans`). Do not set another family.
 - Use the text styles, not raw `text-sm`/`text-xl`. Sizes scale with the user's text size (`--text-scale`, 0.9 to 1.3).
 
 | Utility | Use |
 |---|---|
-| `text-display`, `text-large-title`, `text-title-1` | Headings. Weight 700, tracking -0.015em. `text-large-title` is the page `<h1>` in `PageHeader` |
+| `text-display`, `text-large-title`, `text-title-1` | Headings. Weight 700, tracking -0.015em. `text-large-title` is the page `<h1>` in `PageHeader` and the name in `EntityHeader` |
 | `text-title-2`, `text-title-3`, `text-headline` | Smaller titles. Weight 600 |
 | `text-body`, `text-callout`, `text-subhead`, `text-footnote`, `text-caption` | Running text and secondary text |
-| `text-eyebrow` (or `Eyebrow`) | Sentence-case label above a section or field |
-| `text-stat-label` | Uppercase label, only directly above a number |
+| `text-eyebrow` (or `Eyebrow`) | Being removed: do not add |
+| `text-stat-label` | Being removed: do not add |
 
 - Figures use `tabular-nums`. Numbers are not mono by default.
 - `font-data` (Azeret Mono) is for IDs, codes and coordinates only. Never for prices, counts, percentages or stats.
-- Uppercase is `text-stat-label` above a figure and nothing else. Do not use uppercase tracked labels as generic eyebrows.
+- No uppercase labels.
 - Minimum text size is 12px.
 
-## 4. Components and when to use them
+## 6. Primitives
 
 Import from `~/components/ui/*`. Feature code never imports `@radix-ui/*`; the wrappers own that. Icons are `iconoir-react` (`lucide-react` is not installed).
 
@@ -85,14 +161,20 @@ Import from `~/components/ui/*`. Feature code never imports `@radix-ui/*`; the w
   - No hero card as a header.
   - No subtitle that restates the title. Use `subtitle` only when it says something the title does not.
   - `ShellPageHeader` and `shellPageTitleProps` handle pages that own their title (see `shell.css`).
-- `Card` is the default surface.
-  - `variant`: `default` (opaque, border, `shadow-card`), `inset` (a panel inside a card, `bg-surface-secondary`), `hero` (the glass hero; only where section 1 allows it).
-  - `padding`: `none | sm | md | lg`. `interactive` adds press feedback and makes a clickable card a keyboard-operable button.
-  - Parts: `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`.
-  - A hero never nests another glass element.
-- `CutoutCard` is the feature or media card with the notched corner. Use it for media and landing tiles. Dense UI (lists, tables, forms) uses `Card`.
-- `FacetMaterial` (`thin | regular | thick | hero | acrylic`) is the primitive for floating chrome. Do not use it for content cards.
-- `FlagWatermark`, `TintHairline`, `WatermarkGlyph` (`~/components/ui/facet`) are hero-only decoration, subject to the section 1 limit.
+- `EntityHeader`: the header of an entity page (country, person, organisation). Unboxed on the Canvas. Props: `art` (identity art), `name` (the `<h1>`), `facts`, and at most one `action`. It sets `data-content="entity"`.
+- `Card` is a Pane at the top level and a Well inside another `Card`.
+  - `variant`: `pane | well`. Leave it unset and let nesting decide; set `well` to force the inset look.
+  - `content`: a `ContentType` (section 4). Sets `data-content`.
+  - `padding`: `none | sm | md | lg`. A pane defaults to `none` (parts supply padding); a well defaults to `md`.
+  - `interactive` adds press and lift feedback and makes a clickable card a keyboard-operable button.
+  - Parts: `CardHeader`, `CardTitle` (takes an `icon`, rendered tinted), `CardDescription`, `CardContent`, `CardFooter`.
+  - `SurfaceReset` marks an overlay surface so Cards inside it are panes again. The overlay primitives already wrap their children in it.
+- `CutoutCard` is the feature or media card with the notched corner, the surface for collectibles. Dense UI (lists, tables, forms) uses `Card`.
+- `FacetMaterial layer="chrome" | "overlay"` (default `chrome`) is the primitive for floating glass. Do not use it for content cards.
+- `Signal`: an inline semantic banner. Props: `tone` (`info | success | warning | destructive`), `title`, optional body, optional `onDismiss` (omit for critical signals). At most one per section.
+- `Inspector`: the one optional trailing column of a page, 320px wide and sticky from 1280px up, a `Sheet` below that. Props: `title`, `open`, `onOpenChange`. Use it for entity details, a table of contents or supporting data in Wells.
+- `RevealStage`: a `Dialog` with a full-bleed `art` stage and a centred title, for pack openings, crafting results and claimed rewards. It plays the `reveal` sound cue on open.
+- `FlagWatermark` (`~/components/ui/facet`) is identity art for entity pages and heroes that have not moved to `EntityHeader` yet. Do not add it elsewhere.
 
 ### Actions and data
 
@@ -101,7 +183,7 @@ Import from `~/components/ui/*`. Feature code never imports `@radix-ui/*`; the w
   - Pressed is a colour change. There is no scale and no glow.
   - One primary per surface. Use `asChild` to render a link.
 - `Badge`: 7 variants (`default`, `secondary`, `success`, `warning`, `destructive`, `info`, `outline`). Status and count chips only. Pair colour with text or an icon.
-- `Stat`: `label`, `value`, optional `delta` (direction and sentiment) and `hint`; `size="sm" | "md"`. The label is `text-stat-label`; the value is `tabular-nums`.
+- `Stat`: a large tinted figure with its label below in regular case. Props: `label`, `value`, optional `delta` (direction and sentiment), `hint`, `icon`; `size="sm" | "md"`. The value is `tabular-nums`.
 - `FacetList`, `FacetListSection`, `FacetRow`: inset grouped lists. Sections have sentence-case headers; rows are at least 44px; use the `plain` variant inside a `Card`. Rows can be links, buttons or swipeable.
 - `EmptyState`: icon, title, message, at most one action.
 
@@ -121,18 +203,20 @@ Name every group with `aria-label` or `aria-labelledby`. Never hand-roll roving 
 
 - `Sheet` for tasks, detail views and multi-step flows. It is a right side sheet at 768px and up and a bottom sheet with `medium`/`large` detents below. `size="wide"` is for two-column details.
 - `Dialog` and `AlertDialog` for short confirmations. Popovers, menus and tooltips use the `ui` wrappers.
+- All of them paint `facet-overlay`. Do not restyle their surface.
 
-## 5. Navigation
+## 7. Layout
 
-- `AppSidebar` is the primary navigation at 1024px and up (256px, collapsible to 64px icons). `TabBar` is the primary navigation below that: up to four apps plus a More sheet holding the current app's sections, the remaining apps and the account.
+- Sidebar direction: a macOS source list. Every app is a top-level row; the current app discloses its sections; widgets (Vault balance, daily reward, active country) become native sidebar items. Phones keep the TabBar and its More sheet. Until the sidebar sub-project lands, `AppSidebar` is the primary navigation at 1024px and up (256px, collapsible to 64px icons) and `TabBar` below that.
 - Both read the one section map in `src/lib/navigation/app-sections.ts`. Add a destination there, not in a page.
-- Halo is the floating island at the top. `PageHeader` keeps `--shell-halo-reserve` clear for it. Do not build a second top bar.
-- Mark an app's own section navigation (tab rail, pill bar) with `data-app-subnav`. It is hidden at every width because the sidebar and the More sheet already list the same sections. Do not rely on it being visible.
+- Halo is the floating island at the top, in Chrome glass. `PageHeader` keeps `--shell-halo-reserve` clear for it. Do not build a second top bar.
 - `AccountMenu` is the account: `layout="sidebar"` is a popover from the sidebar footer, `layout="sheet"` is inline in the More sheet.
 - Layout variables (read, never redefine): `--shell-sidebar-width`, `--shell-tabbar-height`, `--shell-top-offset`, `--shell-header-top`, `--shell-halo-reserve`. Sticky rails use `top-(--shell-top-offset)`.
 - Chromeless routes (Maps, full-screen editors) set `data-chromeless` on the app shell.
+- Inspector: at most one trailing column per page. It replaces hand-rolled side rails.
+- Headers: `PageHeader` for pages, `EntityHeader` for entity pages. No hero card as a header.
 
-## 6. Motion and feedback
+## 8. Motion and feedback
 
 - Use the named motion from `src/lib/design/motion.ts` and the matching CSS tokens. No ad hoc spring numbers.
   - Springs: `springSnappy` (controls), `springSmooth` (sheets, sidebar, layout), `springGentle` (emphasis, reveals).
@@ -152,40 +236,63 @@ Name every group with `aria-label` or `aria-labelledby`. Never hand-roll roving 
   - Sound off: `data-sound="off"`.
 - Targets are at least 44px on coarse pointers (`hitSlop`). Focus is a 2px tint outline (`focusRing`).
 
-## 7. Copy
+## 9. Copy
 
 - Sentence case everywhere: buttons, headings, labels, tabs. Capitalise product nouns: IxStats, MyCountry, Directive(s), ThinkPages, IxVault, Halo, IxTime, IxWorld, WikiOS.
 - Say what the thing is and does. Empty states say what is missing and what to do next ("No drafts yet. Start one from the Builder."). Errors say what happened and how to recover.
-- Banned: filler, taglines, em-dash flourishes, and the words seamless, powerful, "at a glance", "command center", unlock, comprehensive.
+- No em dashes in UI strings. Use a full stop, comma, colon or "·" as a separator, and "–" for an empty value.
+- No subtitle that restates its title.
+- Banned: filler, taglines, AI phrasing ("Detailed X metrics", "in O(1) time"), and the words seamless, powerful, "at a glance", "command center", unlock, comprehensive.
 - Numbers keep units and context ("$1.2T", "+2.4% vs. last year").
 
-## 8. Code comments
+## 10. Code comments
 
 - Comments explain why, not what.
 - Never write spec section citations (`§7.1`), commit hashes, version provenance ("v2", "Facet 3.1", "restored from") or contrast ratios in code comments. They rot and mislead.
 
-## 9. Do not
+## 11. Do not
 
-- Add glow props, glow blobs, tint glows or acrylic glows to anything outside Halo.
-- Add refraction or rim layers, sheens, chromatic edges, or `facet-refraction` / `facet-gold-rim` style classes.
-- Stack translucent layers (glass in glass, blur on blur) or use `backdrop-blur-*` directly. Blur comes from the materials.
-- Make a content card glass. Content cards are opaque.
-- Use gradient buttons, palette gradient stops, or `[#hex]` colours.
+- Put glass on glass, or stack translucent layers (blur on blur).
+- Use `backdrop-blur-*`, glass fills or custom elevation outside `src/styles/facet/layers.css`.
+- Use a hero card as a header.
+- Add eyebrows (`Eyebrow`, `text-eyebrow`) or uppercase labels (`text-stat-label`, uppercase tracked text).
+- Use emoji in UI.
+- Add decorative `Sparks`.
+- Use `hover:scale-*`.
+- Add glows, glow blobs or `--glow-*` tokens, or `animate-ping` pulses.
+- Put gradients on UI (buttons, palette gradient stops). Gradients belong to content art in `card-art.css`.
+- Use `[#hex]` colours or raw palette steps.
+- Use `dark:` overrides.
+- Use `!important` (the preferences section of `interaction.css` is the one exception).
+- Use arbitrary z-index, or inline `--tint`.
 - Set body or stat figures in `font-data` or `font-mono`.
-- Build an eyebrow + title + subtitle hero template, or a hero card as a page header.
-- Use uppercase tracked labels as generic eyebrows.
 - Hand-roll roving tabindex, tab lists, radio groups or switches.
 - Import `@radix-ui/*` in feature code, or add `lucide-react`.
-- Use `dark:` overrides, `!important`, arbitrary z-index, or inline `--tint`.
-- Bring back the removed names: `FacetCard`, `FacetContainer`, `FacetTabs`, `TintGlow`, `AcrylicGlow`, the `facet-nav` flag, HIG button variants (`filled`, `tinted`, `plain`), or more than 7 badge variants.
+- Bring back removed names: `material-*` utilities, `material-hero`, `material-acrylic`, Card `hero` and `inset`, `FacetMaterial material=...`, `FacetCard`, `FacetContainer`, `FacetTabs`, `TintGlow`, `AcrylicGlow`, HIG button variants (`filled`, `tinted`, `plain`), or more than 7 badge variants.
 
-## 10. CSS architecture
+## 12. CSS architecture
 
-- `src/styles/globals.css` imports `facet/tokens.css` first, then the layered sheets, then `facet/shell.css`. Everything is in `@layer`, so a Tailwind utility on the same element always wins.
-- Material and identity utilities paint only: they never set position, z-index, radius, margin or letter-spacing.
-- A token that mixes `--tint` is composed at the element (`layers.css`, `card-art.css`), not on `:root`, so each `data-app` scope resolves its own tint.
+Four Facet files, one job each:
+
+| File | Holds |
+|---|---|
+| `src/styles/facet/tokens.css` | Raw values only: colour roles, tints, type, radius, spacing, motion, z |
+| `src/styles/facet/layers.css` | The five layers and the content-type scopes. The only file allowed `backdrop-filter`, glass fill, hairline or elevation. Transparency and contrast fallbacks |
+| `src/styles/facet/interaction.css` | Press, lift, primary and gold paints, focus, preference kill switches |
+| `src/styles/facet/shell.css` | Navigation variables |
+
+Beside them: `src/styles/card-art.css` holds content art (card faces, holographic layers, achievement aurora and foil) that keeps its own palette, and `src/styles/textures.css` holds the `TextureOverlay` textures.
+
+- `src/styles/globals.css` imports `facet/tokens.css` first, then `facet/layers.css` and `facet/interaction.css`, the other sheets, and `facet/shell.css` last. Everything is in `@layer`, so a Tailwind utility on the same element always wins.
+- A token that mixes `--tint` is composed at the element (`layers.css`), not on `:root`, so each `data-app` scope resolves its own tint.
 - Third-party overrides (Clerk, sonner, MapLibre) live in `integrations.css` and `clerk.css` with a comment.
 
-## 11. Guards
+## 13. Guards
 
-The tests under `src/tests/architecture/` and `src/tests/components/ui/` enforce parts of this file (no stray Radix or lucide imports, no `transition-all`, no `dark:` or hex classes in converted apps, layered CSS, AA contrast for every label and tint pair in both themes). Run the relevant test when you change tokens or a primitive. Some of them still assert the removed Facet 3.1 identity and need updating to match this reset.
+The tests under `src/tests/architecture/` enforce parts of this file. Run the relevant one when you change tokens, layers or a primitive.
+
+- `facet-layers.test.ts`: the five layer utilities exist; only Chrome and Overlay blur; `layers.css` is the only Facet sheet that blurs or paints glass; exactly four Facet sheets; no `material-*` class or `material=` prop; the content-type scopes.
+- `facet-ratchet.test.ts`: counts of eyebrows, uppercase stat labels, em dashes, `Sparks`, emoji, `hover:scale`, hex classes, raw palette classes and `animate-ping` may only fall. Lower the baseline with `UPDATE_FACET_RATCHET=1 bun run test -- facet-ratchet` after removing tells.
+- `token-contrast.test.ts`: CSS tokens match `src/lib/design/tokens.ts`; AA contrast for label, tint and ink pairs, and for labels on the Pane over the tinted canvas and on Chrome, in both themes; Reduce Transparency and Increase Contrast make every layer opaque.
+- `css-layering.test.ts`: every Facet sheet is layered (no top-level rules, no `!important`), and utilities set no position, z-index, radius, margin or letter-spacing.
+- `facet-guards.test.ts`: no `transition-all`, sub-12px text, arbitrary z-index, `dark:` or hex classes in converted apps, `@radix-ui` outside `src/components/ui`, `lucide-react`, removed decoration, or raw `backdrop-blur-*`; gradients and textures stay on sanctioned classes.
