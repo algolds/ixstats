@@ -1,6 +1,5 @@
 "use client";
 
-import { springSmooth } from "~/lib/design/motion";
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
@@ -9,15 +8,14 @@ import { Trophy, FireFlame as Flame, SystemRestart as Loader } from "iconoir-rea
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
-import { Progress } from "~/components/ui/progress";
-import { vaultNotify } from "~/lib/vault/vault-notifications";
-import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "~/components/ui/dialog";
-import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
-import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Card } from "~/components/ui/card";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "~/components/ui/dialog";
+import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
+import { vaultNotify } from "~/lib/vault/vault-notifications";
+import { soundCues } from "~/lib/sound/cuelume";
+import { springGentle, springSmooth } from "~/lib/design/motion";
+import { cn } from "~/lib/utils";
 
 const IxCardIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg
@@ -50,14 +48,13 @@ const utcDayKey = () => new Date().toISOString().slice(0, 10);
 const autoOpenStorageKey = (userId: string) => `ixstats:dailyReward:autoOpened:${userId}`;
 
 /**
- * Module-level guard: the widget can be mounted by more than one layout (and remounts on
- * navigation), so remember in-memory as well as in localStorage that today's auto-open happened.
+ * The widget can be mounted by more than one layout and remounts on navigation, so today's
+ * auto-open is remembered in memory as well as in localStorage.
  */
 let autoOpenedInSession: string | null = null;
 
 function hasAutoOpenedToday(userId: string): boolean {
-  const today = `${userId}:${utcDayKey()}`;
-  if (autoOpenedInSession === today) return true;
+  if (autoOpenedInSession === `${userId}:${utcDayKey()}`) return true;
   try {
     return window.localStorage.getItem(autoOpenStorageKey(userId)) === utcDayKey();
   } catch {
@@ -70,25 +67,20 @@ function markAutoOpenedToday(userId: string) {
   try {
     window.localStorage.setItem(autoOpenStorageKey(userId), utcDayKey());
   } catch {
-    // Storage unavailable (private mode, blocked) — the in-memory guard still covers this session.
+    // Storage unavailable (private mode, blocked): the in-memory guard still covers this session.
   }
 }
 
-/** Seven-day streak progress: how far into the current week of the streak the player is. */
-function StreakProgress({ streak }: { streak: number }) {
-  const filled = streak > 0 ? ((streak - 1) % 7) + 1 : 0;
+function StreakPill({ streak }: { streak: number }) {
   return (
-    <Progress
-      value={(filled / 7) * 100}
-      aria-label="Streak this week"
-      aria-valuetext={`${filled} of 7 days`}
-      className="bg-fill-3 h-1.5"
-      indicatorClassName="bg-yellow"
-    />
+    <span className="bg-tint-fill text-tint-ink text-footnote inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1 font-medium tabular-nums">
+      <Flame aria-hidden className="size-3.5" />
+      {streak > 0 ? `${streak}-day streak` : "New streak"}
+    </span>
   );
 }
 
-function ChoiceCard({
+function ChoiceTile({
   title,
   description,
   icon,
@@ -110,25 +102,70 @@ function ChoiceCard({
       disabled={disabled}
       aria-busy={loading}
       className={cn(
-        "group rounded-card text-left transition-[opacity,transform] duration-150",
-        "focus-visible:outline-tint focus-visible:outline-2 focus-visible:outline-offset-2",
-        "enabled:active:scale-[0.98] disabled:cursor-not-allowed",
+        "facet-well facet-press rounded-row flex min-h-36 flex-col items-center justify-center gap-3 p-4 text-center",
+        "enabled:hover:bg-tint-fill focus-visible:outline-tint focus-visible:outline-2 focus-visible:outline-offset-2",
+        "disabled:cursor-not-allowed",
         disabled && !loading && "opacity-50"
       )}
     >
-      {/* Interactive row (depth 3) inside the dialog: solid, so blur never stacks. */}
-      <Card className="duration-fast group-enabled:group-hover:border-tint/50 flex h-full min-h-[148px] flex-col items-center justify-center gap-3 p-4 text-center transition-[border-color]">
-        <span aria-hidden="true" className="grid h-8 place-items-center">
-          {loading ? <Loader className="text-label-secondary h-6 w-6 animate-spin" /> : icon}
+      <span
+        aria-hidden
+        className="bg-tint-fill text-tint grid size-12 place-items-center rounded-full"
+      >
+        {loading ? <Loader className="size-6 animate-spin" /> : icon}
+      </span>
+      <span className="space-y-1">
+        <span className="text-headline text-label block">{title}</span>
+        <span className="text-footnote text-label-secondary block leading-snug">
+          {description}
         </span>
-        <span className="space-y-1">
-          <span className="text-label text-headline block">{title}</span>
-          <span className="text-label-secondary text-footnote block leading-snug">
-            {description}
-          </span>
-        </span>
-      </Card>
+      </span>
     </button>
+  );
+}
+
+function CreditsReveal({ amount }: { amount: number }) {
+  return (
+    <motion.div
+      initial={{ scale: 0.95, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={springGentle}
+      className="flex flex-col items-center gap-1"
+    >
+      <span className="text-tint flex items-center gap-2">
+        <IxCreditsSymbol decorative className="size-9" />
+        <span className="text-large-title tabular-nums">+{amount.toLocaleString()}</span>
+      </span>
+      <p className="text-body text-label-secondary">IxCredits added to your vault</p>
+    </motion.div>
+  );
+}
+
+function CardReveal({ card }: { card: NonNullable<ClaimResult["cardAwarded"]> }) {
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <motion.div
+        initial={{ y: 12, rotate: -2, opacity: 0 }}
+        animate={{ y: 0, rotate: 0, opacity: 1 }}
+        transition={springGentle}
+        className="rounded-card shadow-floating relative h-56 w-40 overflow-hidden"
+      >
+        <CardHolographicCover cardType="LORE" rarity={card.rarity} title={card.title} />
+        {card.artwork && (
+          <img
+            src={card.artwork}
+            alt={card.title}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        )}
+        <span className="bg-surface-elevated text-label text-footnote absolute inset-x-0 bottom-0 truncate px-2 py-2 font-semibold">
+          {card.title}
+        </span>
+      </motion.div>
+      <Badge variant="secondary" className="capitalize">
+        {card.rarity.toLowerCase().replace(/_/g, " ")}
+      </Badge>
+    </div>
   );
 }
 
@@ -147,7 +184,7 @@ export const DailyBonusWidget: React.FC = () => {
   const canClaim = balanceData?.canClaimDailyBonus ?? false;
   const streak = balanceData?.loginStreak ?? 0;
 
-  // Auto-open at most once per user per (UTC) day — not on every page load or navigation.
+  // Auto-open at most once per user per UTC day, not on every page load or navigation.
   useEffect(() => {
     if (!userId || !canClaim || hasAutoOpenedToday(userId)) return;
     markAutoOpenedToday(userId);
@@ -159,13 +196,14 @@ export const DailyBonusWidget: React.FC = () => {
     onSuccess: (data) => {
       setClaiming(null);
       setClaimResult(data);
+      soundCues?.reveal?.();
       void utils.vault.getBalance.invalidate();
       void utils.cards.getMyCards.invalidate();
     },
     onError: (err) => {
       setClaiming(null);
-      vaultNotify.error(err.message || "Failed to claim daily reward");
-      // The server refuses a second claim (e.g. from another tab) — resync and close.
+      vaultNotify.error(err.message || "Couldn't claim the daily reward");
+      // The server refuses a second claim (another tab, another device): resync and close.
       void utils.vault.getBalance.invalidate();
       if (/already/i.test(err.message)) setIsOpen(false);
     },
@@ -179,27 +217,21 @@ export const DailyBonusWidget: React.FC = () => {
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
-      // Don't allow dismissing mid-claim; the result would be lost.
+      // Closing mid-claim would lose the result.
       if (!open && claiming) return;
       setIsOpen(open);
-      if (!open) {
-        // Clear after the exit animation to avoid a flash of the choice screen.
-        setTimeout(() => setClaimResult(null), 200);
-      }
+      // Clear after the exit animation so the choice screen does not flash.
+      if (!open) setTimeout(() => setClaimResult(null), 200);
     },
     [claiming]
   );
 
   if (!userId) return null;
+  if (isLoading) return <Skeleton className="h-8 w-full" />;
 
-  if (isLoading) {
-    return <Skeleton className="h-8 w-full" />;
-  }
+  const showClaimed = !canClaim && !claimResult && !isOpen;
 
-  // Nothing to claim and no reveal in progress — stay out of the sidebar.
-  if (!canClaim && !claimResult && !isOpen) return null;
-
-  // Transforms are dropped automatically for reduced-motion users by the root <MotionConfig>.
+  // Transforms are dropped for reduced-motion users by the root <MotionConfig>.
   const fade = {
     initial: { opacity: 0, y: 8 },
     animate: { opacity: 1, y: 0 },
@@ -208,168 +240,95 @@ export const DailyBonusWidget: React.FC = () => {
 
   return (
     <>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => setIsOpen(true)}
-        className="border-yellow/40 text-footnote w-full justify-start gap-2 px-3 font-semibold"
-      >
-        <Trophy aria-hidden="true" className="text-yellow h-3.5 w-3.5 shrink-0" />
-        <span className="flex-1 text-left leading-tight select-none">Claim daily reward</span>
-        {streak > 0 && (
-          <span className="text-label-secondary flex items-center gap-0.5 tabular-nums">
-            <Flame aria-hidden="true" className="text-yellow h-3 w-3" />
-            {streak}d
-          </span>
-        )}
-      </Button>
+      {showClaimed ? (
+        <div
+          data-slot="daily-reward-claimed"
+          className="bg-fill-4 text-label-secondary text-footnote rounded-control flex min-h-(--control-height-sm) w-full items-center gap-2 px-3 select-none"
+        >
+          <Trophy aria-hidden className="size-3.5 shrink-0" />
+          <span className="flex-1">Daily claimed</span>
+          {streak > 0 && <span className="tabular-nums">· {streak}d streak</span>}
+        </div>
+      ) : (
+        <div data-app="vault">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsOpen(true)}
+            className="bg-tint-fill text-tint-ink text-footnote w-full justify-start gap-2 px-3 font-semibold"
+          >
+            <Trophy aria-hidden className="size-3.5 shrink-0" />
+            <span className="flex-1 text-left">Daily reward</span>
+            {streak > 0 && (
+              <span className="flex items-center gap-1 tabular-nums">
+                <Flame aria-hidden className="size-3" />
+                {streak}d
+              </span>
+            )}
+          </Button>
+        </div>
+      )}
 
       <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogContent
+          data-app="vault"
           showCloseButton={!claiming}
-          className="rounded-card max-w-[calc(100%-2rem)] gap-0 overflow-hidden p-0 sm:max-w-md"
+          className="max-w-[calc(100%-2rem)] gap-0 overflow-hidden p-0 sm:max-w-md"
         >
           <AnimatePresence mode="wait" initial={false}>
             {!claimResult ? (
-              <motion.div key="choice" {...fade} transition={springSmooth}>
-                <div className="space-y-4 px-6 pt-6 pb-5">
-                  <div className="flex items-start gap-3 pr-6">
-                    <Trophy aria-hidden="true" className="text-yellow mt-0.5 h-6 w-6 shrink-0" />
-                    <div className="min-w-0">
-                      <DialogTitle className="text-label text-title-3 leading-tight font-semibold">
-                        Daily reward
-                      </DialogTitle>
-                      <DialogDescription className="text-label-secondary text-body">
-                        Pick one reward. Come back tomorrow for another.
-                      </DialogDescription>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-label text-body flex items-center gap-1 font-medium">
-                        <Flame aria-hidden="true" className="text-yellow h-4 w-4" />
-                        {streak > 0 ? `${streak}-day streak` : "Start a streak today"}
-                      </span>
-                      <Eyebrow>Claim daily to grow bonuses</Eyebrow>
-                    </div>
-                    <StreakProgress streak={streak} />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <ChoiceCard
-                      title="IxCredits"
-                      description="A random roll boosted by vault level and streak, paid up to your daily earning cap"
-                      icon={<IxCreditsSymbol decorative className="text-yellow h-6 w-6" />}
-                      loading={claiming === "CREDITS"}
-                      disabled={claiming !== null}
-                      onClick={() => handleClaim("CREDITS")}
-                    />
-                    <ChoiceCard
-                      title="Card pull"
-                      description="One random collectible card for your collection"
-                      icon={<IxCardIcon className="text-label-secondary h-6 w-6" />}
-                      loading={claiming === "CARD"}
-                      disabled={claiming !== null}
-                      onClick={() => handleClaim("CARD")}
-                    />
-                  </div>
+              <motion.div key="choice" {...fade} transition={springSmooth} className="space-y-5 p-6">
+                <div className="flex items-center gap-3 pr-8">
+                  <Trophy aria-hidden className="text-tint size-6 shrink-0" />
+                  <DialogTitle className="text-title-3 text-label flex-1">Daily reward</DialogTitle>
+                  <StreakPill streak={streak} />
                 </div>
-
-                <div className="border-separator border-t px-6 py-3">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => handleOpenChange(false)}
+                <DialogDescription className="sr-only">
+                  Choose IxCredits or a card pull. You can claim again tomorrow.
+                </DialogDescription>
+                <div className="grid grid-cols-2 gap-3">
+                  <ChoiceTile
+                    title="IxCredits"
+                    description="Random roll, boosted by level and streak"
+                    icon={<IxCreditsSymbol decorative className="size-6" />}
+                    loading={claiming === "CREDITS"}
                     disabled={claiming !== null}
-                    className="text-label-secondary w-full"
-                  >
-                    Maybe later
-                  </Button>
+                    onClick={() => handleClaim("CREDITS")}
+                  />
+                  <ChoiceTile
+                    title="Card pull"
+                    description="One random card"
+                    icon={<IxCardIcon className="size-6" />}
+                    loading={claiming === "CARD"}
+                    disabled={claiming !== null}
+                    onClick={() => handleClaim("CARD")}
+                  />
                 </div>
               </motion.div>
             ) : (
               <motion.div
                 key="reveal"
+                data-content="reveal"
                 {...fade}
                 transition={springSmooth}
-                className="flex flex-col items-center gap-4 px-6 pt-8 pb-6 text-center"
+                className="flex flex-col items-center gap-5 px-6 pt-8 pb-6 text-center"
               >
-                <DialogTitle className="sr-only">Reward claimed</DialogTitle>
+                <DialogTitle className="text-title-3 text-label">Reward claimed</DialogTitle>
                 <DialogDescription className="sr-only">
                   {claimResult.message ?? "Your daily reward has been added."}
                 </DialogDescription>
 
                 {claimResult.creditsAwarded != null && (
-                  <>
-                    <motion.span
-                      initial={{ scale: 0.95, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
-                      className="text-yellow"
-                    >
-                      <IxCreditsSymbol decorative className="h-10 w-10" />
-                    </motion.span>
-                    <div>
-                      <p className="text-label text-large-title tabular-nums">
-                        +{claimResult.creditsAwarded.toLocaleString()}
-                      </p>
-                      <p className="text-label-secondary text-body mt-1">
-                        IxCredits added to your vault
-                      </p>
-                    </div>
-                  </>
+                  <CreditsReveal amount={claimResult.creditsAwarded} />
                 )}
+                {claimResult.cardAwarded && <CardReveal card={claimResult.cardAwarded} />}
 
-                {claimResult.cardAwarded && (
-                  <>
-                    <motion.div
-                      initial={{ y: 12, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
-                      className="border-separator bg-fill-3 rounded-card relative h-56 w-40 overflow-hidden border"
-                    >
-                      <CardHolographicCover
-                        cardType="LORE"
-                        rarity={claimResult.cardAwarded.rarity}
-                        title={claimResult.cardAwarded.title}
-                      />
-                      {claimResult.cardAwarded.artwork && (
-                        <img
-                          src={claimResult.cardAwarded.artwork}
-                          alt={claimResult.cardAwarded.title}
-                          className="absolute inset-0 h-full w-full object-cover"
-                        />
-                      )}
-                    </motion.div>
-                    <div className="space-y-2">
-                      <p className="text-label text-headline max-w-60 truncate">
-                        {claimResult.cardAwarded.title}
-                      </p>
-                      <div className="flex items-center justify-center gap-2">
-                        <Badge variant="default" className="capitalize">
-                          {claimResult.cardAwarded.rarity.toLowerCase().replace(/_/g, " ")}
-                        </Badge>
-                        <span className="text-label-secondary text-body">
-                          Added to your collection
-                        </span>
-                      </div>
-                    </div>
-                  </>
-                )}
+                <StreakPill streak={claimResult.streak} />
 
-                <Badge variant="outline" className="border-yellow/40">
-                  <Flame aria-hidden="true" className="text-yellow" />
-                  {claimResult.streak}-day streak
-                </Badge>
-
-                <div className="flex w-full flex-col gap-2 pt-1 sm:flex-row-reverse">
-                  <Button
-                    className="bg-yellow text-on-yellow hover:bg-yellow/90 flex-1"
-                    onClick={() => handleOpenChange(false)}
-                  >
-                    Done
+                <div className="flex w-full flex-col gap-2 sm:flex-row-reverse">
+                  <Button className="flex-1" onClick={() => handleOpenChange(false)}>
+                    Collect
                   </Button>
                   {claimResult.cardAwarded && (
                     <Button variant="outline" className="flex-1" asChild>
