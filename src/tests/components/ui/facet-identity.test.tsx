@@ -15,7 +15,6 @@ import {
   CutoutCardStagger,
   CutoutCardStaggerItem,
   CutoutCorner,
-  cutoutCardSurfaceClassName,
 } from "~/components/ui/cutout-card";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { FacetMaterial, FlagWatermark } from "~/components/ui/facet";
@@ -224,9 +223,9 @@ describe("headings", () => {
 });
 
 describe("CutoutCard", () => {
-  it("variant=card is the 28px cutout pane", () => {
+  it("is the 28px cutout pane", () => {
     render(
-      <CutoutCard data-testid="cut" variant="card">
+      <CutoutCard data-testid="cut">
         <CutoutCardContent>Body</CutoutCardContent>
       </CutoutCard>
     );
@@ -235,20 +234,14 @@ describe("CutoutCard", () => {
     expect(classOf(card)).toMatch(/\bfacet-pane\b/);
     expect(classOf(card)).not.toMatch(/\bbg-surface\b/);
     expect(classOf(card)).toContain("group/cutout");
-    expect(cutoutCardSurfaceClassName).toContain("facet-pane");
     // Not pressable: no button role.
     expect(screen.queryByRole("button")).toBeNull();
-  });
-
-  it("variant=glass uses the pane layer", () => {
-    render(<CutoutCard data-testid="cut" variant="glass" />);
-    expect(classOf(screen.getByTestId("cut"))).toMatch(/\bfacet-pane\b/);
   });
 
   it("is keyboard accessible when pressable and lifts/presses", () => {
     const onClick = jest.fn();
     render(
-      <CutoutCard variant="card" onClick={onClick} aria-label="Open vault">
+      <CutoutCard onClick={onClick} aria-label="Open vault">
         <CutoutCardContent>Vault</CutoutCardContent>
       </CutoutCard>
     );
@@ -264,7 +257,7 @@ describe("CutoutCard", () => {
 
   it("focus inside reveals hover-only actions (keyboard users reach them)", () => {
     render(
-      <CutoutCard data-testid="cut" variant="card">
+      <CutoutCard data-testid="cut">
         <button type="button">Inner</button>
         <CutoutCardAction data-testid="action">Act</CutoutCardAction>
       </CutoutCard>
@@ -276,7 +269,7 @@ describe("CutoutCard", () => {
 
   it("CutoutCardHeader draws the tinted tab with two inverted-corner notches", () => {
     const { container } = render(
-      <CutoutCard variant="card">
+      <CutoutCard>
         <CutoutCardHeader>Vault sections</CutoutCardHeader>
       </CutoutCard>
     );
@@ -298,7 +291,7 @@ describe("CutoutCard", () => {
 
   it("CutoutCardStagger renders its items (blur-in stagger)", () => {
     render(
-      <CutoutCard variant="card">
+      <CutoutCard>
         <CutoutCardStagger>
           <CutoutCardStaggerItem>Headline</CutoutCardStaggerItem>
           <CutoutCardStaggerItem>Detail</CutoutCardStaggerItem>

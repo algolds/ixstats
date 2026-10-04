@@ -268,7 +268,6 @@ describe("Virtual-anchor Popover / HoverCard", () => {
     );
     const toolbar = screen.getByRole("toolbar", { name: "Selection actions" });
     expect(toolbar).toHaveAttribute("data-slot", "virtual-anchor-popover");
-    expect(toolbar).toHaveAttribute("data-surface", "material");
     expect(classOf(toolbar)).toMatch(/\bfacet-overlay\b/);
     expect(before).toHaveFocus();
 
@@ -296,7 +295,7 @@ describe("Virtual-anchor Popover / HoverCard", () => {
     el.remove();
   });
 
-  it("VirtualAnchorHoverCard is an elevated card with no dialog role", () => {
+  it("VirtualAnchorHoverCard is an overlay card with no dialog role", () => {
     const el = document.createElement("a");
     document.body.appendChild(el);
     render(
@@ -306,7 +305,6 @@ describe("Virtual-anchor Popover / HoverCard", () => {
     );
     const card = screen.getByTestId("card");
     expect(card).not.toHaveAttribute("role");
-    expect(card).toHaveAttribute("data-surface", "elevated");
     expect(classOf(card)).toMatch(/\bfacet-overlay\b/);
     el.remove();
   });

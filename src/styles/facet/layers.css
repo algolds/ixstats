@@ -54,6 +54,15 @@
     var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
     var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
     var(--tw-shadow, 0 0 #0000);
+  /* The scalars zero the blur, but a blur(0) filter still creates a backdrop root. */
+  @variant transparency-reduced {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  @variant contrast-more {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 /* 4 · Dialogs, sheets, popovers, menus and tooltips. Dialogs and sheets sit over a scrim;
@@ -72,6 +81,15 @@
     var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
     var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
     var(--tw-shadow, 0 0 #0000);
+  /* The scalars zero the blur, but a blur(0) filter still creates a backdrop root. */
+  @variant transparency-reduced {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  @variant contrast-more {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 /* Content types. A surface declares what it holds with data-content (Card's content prop); the
@@ -87,7 +105,9 @@
     line-height: 1.6;
   }
   [data-content="prose"] a {
-    color: var(--tint);
+    /* The tint ink, composed here so it resolves the surrounding [data-app] tint. The bare tint
+       falls under 4.5:1 on the washed pane in light MyCountry. */
+    color: color-mix(in srgb, var(--tint) 80%, var(--color-label));
     text-decoration: underline;
     text-underline-offset: 0.15em;
   }

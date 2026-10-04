@@ -123,7 +123,14 @@ Set the type with `<Card content="...">`, or `data-content` on any element. CSS 
 | `transient` | Overlay and scrim | Per component | n/a | Dialog, Sheet, Popover, toast |
 | `reveal` | Overlay on a full-bleed art stage | `text-large-title` figure | Centred | Art keeps its palette. One spring entrance. The `reveal` sound cue. Reduce Motion fades |
 
-What `layers.css` applies today: `prose` (70ch measure, body size, 1.6 leading, tint-underlined links), `data` (`tabular-nums`, `fill-4` row hover on `tbody tr` and `[data-row]`), `visualization` (no padding, clipped overflow) and `feed` (separator between items). The other types get their standard from the primitive that owns them (`EntityHeader`, `Signal`, `RevealStage`, `CutoutCard`).
+Enforced by `layers.css` today, and nothing more:
+
+- `prose`: 70ch measure, 17px body size, 1.6 leading, and underlined links in the tint ink (the tint pulled toward the label, so they pass AA on the washed pane).
+- `data`: `tabular-nums`, and the `fill-4` row hover on `tbody tr` and `[data-row]`.
+- `visualization`: no padding, clipped overflow.
+- `feed`: a separator between items.
+
+Everything else in the table is enforced by the primitive that owns the type (`EntityHeader`, `Signal`, `RevealStage`, `CutoutCard`, `Stat`) or by the per-app sweep, not by CSS: the prose heading scale (`text-title-2` and `text-title-3`), the 36px and 44px data rows, right-aligned figures, the "–" empty cell, units, sortable headers, chart colours, the Well grid for facts, and the input field rhythm.
 
 Embed rule: live data embedded in another type (stat cards in a post) is always a Well.
 

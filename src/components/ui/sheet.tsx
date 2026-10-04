@@ -78,11 +78,11 @@ SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
 const sheetSurface = "fixed z-sheet facet-overlay text-label outline-none";
 
 const sheetSideClassNames: Record<SheetSide, string> = {
-  top: "inset-x-0 top-0 rounded-b-sheet border-b p-6 sheet-from-top",
+  top: "inset-x-0 top-0 rounded-b-sheet p-6 sheet-from-top",
   bottom:
-    "inset-x-0 bottom-0 rounded-t-sheet border-t p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sheet-from-bottom",
-  left: "inset-y-0 left-0 h-full w-3/4 border-r p-6 sm:max-w-sm sheet-from-left",
-  right: "inset-y-0 right-0 h-full w-3/4 border-l p-6 sm:max-w-sm sheet-from-right",
+    "inset-x-0 bottom-0 rounded-t-sheet p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sheet-from-bottom",
+  left: "inset-y-0 left-0 h-full w-3/4 p-6 sm:max-w-sm sheet-from-left",
+  right: "inset-y-0 right-0 h-full w-3/4 p-6 sm:max-w-sm sheet-from-right",
 };
 
 /** Edge slide in (280ms) / out (200ms); a fade under Reduce Motion. */
@@ -360,7 +360,7 @@ const DetentSheetBody = React.forwardRef<HTMLDivElement, DetentSheetBodyProps>(
         data-detent={detent}
         className={cn(
           sheetSurface,
-          "rounded-t-sheet inset-x-0 bottom-0 flex flex-col border-t",
+          "rounded-t-sheet inset-x-0 bottom-0 flex flex-col",
           "sheet-from-bottom data-[state=open]:animate-sheet-in data-[state=closed]:animate-sheet-out",
           className
         )}

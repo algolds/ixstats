@@ -164,7 +164,7 @@ export function SystemStatusWidget() {
 
   return (
     // A CutoutCard whose tinted header tab toggles the collapse.
-    <CutoutCard variant="card" trackPointerHover={false} className="w-full rounded-xl">
+    <CutoutCard trackPointerHover={false} className="w-full rounded-xl">
       {/* Cutout header tab (toggles collapse) */}
       <Button
         variant="ghost"

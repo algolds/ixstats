@@ -15,11 +15,7 @@ import {
   Coins,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import {
-  CutoutCard,
-  CutoutCardContent,
-  cutoutCardSurfaceClassName,
-} from "~/components/ui/cutout-card";
+import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { PreText } from "~/components/ui/pretext";
 import { useTheme } from "~/context/theme-context";
@@ -269,7 +265,7 @@ export function VaultWidget() {
 
   return (
     <CutoutCard
-      className={cn(cutoutCardSurfaceClassName, "rounded-card w-48 overflow-hidden")}
+      className="rounded-card w-48 overflow-hidden"
       trackPointerHover={false}
     >
       <div className="border-separator flex items-center gap-2 border-b px-3 py-2">

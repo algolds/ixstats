@@ -36,7 +36,7 @@ export function Signal({ tone, title, children, onDismiss, className }: SignalPr
       <Icon aria-hidden className={cn("mt-0.5 size-5 shrink-0", ink)} />
       <div className="min-w-0 flex-1">
         <p className="text-headline text-label">{title}</p>
-        {children != null && <p className="text-callout text-label-secondary mt-1">{children}</p>}
+        {children != null && <div className="text-callout text-label-secondary mt-1">{children}</div>}
       </div>
       {onDismiss && (
         <Button

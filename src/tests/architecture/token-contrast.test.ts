@@ -527,6 +527,44 @@ describe("identity: contrast", () => {
       }
     });
 
+    it("prose links: the tint ink stays ≥ 4.5:1 on the pane and the pane wash over the tinted canvas", () => {
+      const layers = fs.readFileSync(path.join(ROOT, "src/styles/facet/layers.css"), "utf8");
+      const rule = /\[data-content="prose"\] a \{([^}]*)\}/.exec(layers)![1]!;
+      expect(rule).toContain(
+        `color: color-mix(in srgb, var(--tint) ${TINTED_FILL.inkMix * 100}%, var(--color-label));`
+      );
+      const g = GLASS[appearance];
+      for (const [app, sets] of Object.entries(APP_TINTS)) {
+        const tint = sets[appearance].tint;
+        const canvas = mix(tint, role(appearance, "background-grouped"), g.canvasWash);
+        const pane = mix(role(appearance, "surface"), canvas, g.paneFill);
+        const washed = mix(tint, pane, g.paneWash);
+        const ink = mix(tint, role(appearance, "label"), TINTED_FILL.inkMix);
+        for (const [surface, bg] of [
+          ["pane", pane],
+          ["pane+wash", washed],
+        ] as const) {
+          const ratio = contrast(ink, bg);
+          expect({ app, surface, ok: ratio >= AA_TEXT, ratio }).toMatchObject({ ok: true });
+        }
+      }
+    });
+
+    it("overlay: label and secondary label stay ≥ 4.5:1 on the overlay fill over any backdrop", () => {
+      // Dialogs, sheets and popovers float over arbitrary content, so the worst backdrop applies.
+      // Overlay keeps the plain secondary label (no vibrant role), so the fill must carry it.
+      const backdrop = appearance === "light" ? "#000000" : "#ffffff";
+      const fill = mix(
+        role(appearance, "surface-elevated"),
+        backdrop,
+        GLASS[appearance].overlayFill
+      );
+      for (const label of ["label", "label-secondary"]) {
+        const ratio = contrast(role(appearance, label), fill);
+        expect({ label, ok: ratio >= AA_TEXT, ratio }).toMatchObject({ ok: true });
+      }
+    });
+
     it("chrome: label and vibrant secondary stay ≥ 4.5:1 on the chrome fill over any backdrop", () => {
       // Chrome floats over arbitrary content: the worst backdrop for dark text is black, for light
       // text white (saturate() leaves both unchanged).

@@ -19,7 +19,6 @@ export function ThinktankLayout({
     <div className="relative grid h-[calc(100vh-8.5rem)] min-h-[500px] grid-cols-1 gap-5 lg:grid-cols-3">
       {/* Column 1: Directory list panel (1/3 width on large screens) */}
       <CutoutCard
-        variant="card"
         trackPointerHover={false}
         className={cn(
           "h-full min-w-0 cursor-default flex-col overflow-hidden lg:col-span-1",
@@ -31,7 +30,6 @@ export function ThinktankLayout({
 
       {/* Column 2: Workspace panel (2/3 width on large screens) */}
       <CutoutCard
-        variant="card"
         trackPointerHover={false}
         className={cn(
           "h-full min-w-0 cursor-default flex-col overflow-hidden",

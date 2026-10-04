@@ -82,18 +82,6 @@ function PopoverVirtualAnchor({ anchor }: { anchor: VirtualAnchor }) {
   return <PopoverPrimitive.Anchor data-slot="popover-virtual-anchor" virtualRef={virtualRef} />;
 }
 
-/** Surfaces for `VirtualAnchorPopover`: menus/toolbars, hover cards/tooltips, or bare. */
-const VIRTUAL_SURFACES = {
-  /** Floating chrome — toolbars, menus, pickers (like `PopoverContent`). */
-  material: "facet-overlay text-label rounded-card p-4",
-  /** Hover cards and previews (like `HoverCardContent`). */
-  elevated: "facet-overlay text-label rounded-card p-4",
-  /** No surface: the children draw their own. */
-  none: "",
-} as const;
-
-type VirtualAnchorPopoverSurface = keyof typeof VIRTUAL_SURFACES;
-
 export interface VirtualAnchorPopoverProps extends Omit<
   React.ComponentProps<typeof PopoverPrimitive.Content>,
   "asChild" | "forceMount"
@@ -109,8 +97,6 @@ export interface VirtualAnchorPopoverProps extends Omit<
    * collapse the selection and a hover card must not steal focus from the page.
    */
   autoFocus?: boolean;
-  /** @default "material" */
-  surface?: VirtualAnchorPopoverSurface;
 }
 
 /**
@@ -133,7 +119,6 @@ function VirtualAnchorPopover({
   open,
   onOpenChange,
   autoFocus = false,
-  surface = "material",
   className,
   align = "center",
   sideOffset = 8,
@@ -150,7 +135,6 @@ function VirtualAnchorPopover({
       <PopoverPrimitive.Portal>
         <PopoverPrimitive.Content
           data-slot="virtual-anchor-popover"
-          data-surface={surface}
           align={align}
           sideOffset={sideOffset}
           collisionPadding={collisionPadding}
@@ -165,7 +149,7 @@ function VirtualAnchorPopover({
           }}
           className={cn(
             "z-popover pointer-events-auto max-w-(--radix-popover-content-available-width) origin-(--radix-popover-content-transform-origin) outline-none",
-            VIRTUAL_SURFACES[surface],
+            "facet-overlay text-label rounded-card p-4",
             presentMotionClassName,
             className
           )}

@@ -717,15 +717,6 @@
 
     /* `bg-facet-accent-fill`: the accent at the `tint-fill` strength */
     --accent-fill-mix: 14%;
-
-    --cutout-shadow:
-      0 1px 2px -1px color-mix(in oklab, var(--color-label) 8%, transparent),
-      0 4px 8px -2px color-mix(in oklab, var(--color-label) 6%, transparent),
-      0 8px 16px -4px color-mix(in oklab, var(--color-label) 5%, transparent);
-    --cutout-shadow-hover:
-      0 2px 4px -1px color-mix(in oklab, var(--color-label) 10%, transparent),
-      0 8px 16px -4px color-mix(in oklab, var(--color-label) 8%, transparent),
-      0 16px 32px -8px color-mix(in oklab, var(--color-label) 6%, transparent);
   }
 
   :root[data-theme="dark"] {
@@ -734,7 +725,7 @@
     --canvas-wash: 10%;
     --well-tint: 8%;
     --chrome-fill: 80%;
-    --overlay-fill: 86%;
+    --overlay-fill: 90%;
     --facet-lift-shadow: 0 12px 32px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.2);
     --primary-mono: #e4e4e7;
     --primary-mono-hover: #d4d4d8;

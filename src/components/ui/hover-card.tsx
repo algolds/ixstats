@@ -61,7 +61,6 @@ function VirtualAnchorHoverCard({
 }: VirtualAnchorHoverCardProps) {
   return (
     <VirtualAnchorPopover
-      surface="elevated"
       sideOffset={sideOffset}
       role={role}
       className={cn("w-64", className)}

@@ -31,6 +31,17 @@ describe("Signal", () => {
     expect(onDismiss).toHaveBeenCalled();
   });
 
+  it("wraps children in a div so block children nest validly", () => {
+    render(
+      <Signal tone="info" title="Notice">
+        <ul>
+          <li>One</li>
+        </ul>
+      </Signal>
+    );
+    expect(screen.getByRole("list").parentElement?.tagName).toBe("DIV");
+  });
+
   it("uses role=alert for destructive and has no dismiss without onDismiss", () => {
     render(<Signal tone="destructive" title="Crisis" />);
     expect(screen.getByRole("alert")).toBeInTheDocument();

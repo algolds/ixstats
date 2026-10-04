@@ -393,7 +393,7 @@ function CardsAndChrome() {
 
         <div className="grid gap-4 lg:grid-cols-3">
           {/* CutoutCard: the header title is a real h3. */}
-          <CutoutCard variant="card" onClick={() => {}} aria-label="Open the Vault">
+          <CutoutCard onClick={() => {}} aria-label="Open the Vault">
             <CutoutCardHeader
               as="h3"
               icon={<Wallet />}

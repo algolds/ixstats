@@ -63,7 +63,7 @@ describe("CutoutCardHeader", () => {
     'as="%s" makes the title a real heading, with the icon and trailing outside it',
     (as) => {
       render(
-        <CutoutCard variant="card">
+        <CutoutCard>
           <CutoutCardHeader as={as} icon={<svg />} trailing={<Badge variant="secondary">12</Badge>}>
             Countries to explore
           </CutoutCardHeader>
@@ -81,7 +81,7 @@ describe("CutoutCardHeader", () => {
 
   it("defaults to a span title (no heading role)", () => {
     render(
-      <CutoutCard variant="card">
+      <CutoutCard>
         <CutoutCardHeader>Vault</CutoutCardHeader>
       </CutoutCard>
     );
@@ -99,7 +99,7 @@ describe("touch targets, focus and keyboard (HIG)", () => {
         <Card onClick={onCard} interactive>
           Open nation
         </Card>
-        <CutoutCard variant="card" onClick={onCutout} aria-label="Open vault" />
+        <CutoutCard onClick={onCutout} aria-label="Open vault" />
       </>
     );
     for (const [name, handler] of [

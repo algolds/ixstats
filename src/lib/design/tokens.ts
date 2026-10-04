@@ -278,7 +278,7 @@ export const GLASS = {
     canvasWash: 0.1,
     wellTint: 0.08,
     chromeFill: 0.8,
-    overlayFill: 0.86,
+    overlayFill: 0.9,
   },
 } as const satisfies Record<Appearance, Record<string, number>>;
 

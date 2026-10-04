@@ -6,7 +6,7 @@
  * and a hover-revealed action region. Dense UI (lists, tables, forms) uses `Card`.
  *
  * ```tsx
- * <CutoutCard variant="card" onClick={open} aria-label="Open the Vault">
+ * <CutoutCard onClick={open} aria-label="Open the Vault">
  *   <CutoutCardHeader icon={<Wallet />}>Vault</CutoutCardHeader>
  *   <CutoutCardMedia className="aspect-video">
  *     <CutoutCardImage src={cover} alt="" />
@@ -36,16 +36,7 @@ import { EASE_OUT_FACET, springGentle, tweenFast } from "~/lib/design/motion";
 
 // Tokens — the card chrome
 
-export const cutoutCardSurfaceClassName =
-  "group/cutout facet-pane text-label rounded-cutout relative overflow-hidden";
-
-type CutoutCardVariant = "card" | "glass";
-
-// ponytail: both variants are the pane now; the sweep removes the prop.
-const VARIANT_CLASS: Record<CutoutCardVariant, string> = {
-  card: cutoutCardSurfaceClassName,
-  glass: cutoutCardSurfaceClassName,
-};
+const SURFACE_CLASS = "group/cutout facet-pane text-label rounded-cutout relative overflow-hidden";
 
 /** Blur-in rise for staggered text; a 150ms cross-fade under Reduce Motion. */
 function useCutoutContentStaggerVariants() {
@@ -100,8 +91,6 @@ function useCutoutCard() {
 // Root
 
 type CutoutCardProps = Omit<ComponentProps<typeof motion.div>, "defaultValue"> & {
-  /** `card` is the opaque cutout surface, `glass` the hero glass. Omit to style it yourself. */
-  variant?: CutoutCardVariant;
   /**
    * Interactive without being a button (e.g. it holds a stretched link): lifts on hover. A card with
    * `onClick` is a button (focusable, Enter/Space) and also presses.
@@ -123,7 +112,6 @@ type CutoutCardProps = Omit<ComponentProps<typeof motion.div>, "defaultValue"> &
 
 export function CutoutCard({
   className,
-  variant,
   interactive = false,
   hovered: hoveredProp,
   defaultHovered = false,
@@ -200,8 +188,7 @@ export function CutoutCard({
       <motion.div
         animate={{ opacity: 1 }}
         className={cn(
-          "relative",
-          variant && VARIANT_CLASS[variant],
+          SURFACE_CLASS,
           lifts && "facet-lift",
           pressable &&
             "facet-press focus-visible:outline-tint cursor-pointer select-none focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11",
@@ -272,7 +259,7 @@ type CutoutCornerProps = ComponentProps<"svg"> & {
 
 /**
  * The inverted-corner notch: a concave fillet painted in `currentColor`. Colour it with the
- * surface it continues (`text-surface` on a `card` cutout) and place it where a tab, label or pin
+ * surface it continues (`text-surface` on a cutout card) and place it where a tab, label or pin
  * meets the card edge; mirror with `-scale-x-100` / `-scale-y-100`.
  */
 export function CutoutCorner({
@@ -317,7 +304,7 @@ interface CutoutCardHeaderProps extends HTMLAttributes<HTMLDivElement> {
 
 /**
  * The cutout tab header: a tinted strip whose bottom corners curve into the card body with
- * `CutoutCorner` notches in the card's surface colour. Use on `variant="card"` cards; `as="h3"`
+ * `CutoutCorner` notches in the card's surface colour. `as="h3"`
  * makes the title a heading.
  */
 export function CutoutCardHeader({
