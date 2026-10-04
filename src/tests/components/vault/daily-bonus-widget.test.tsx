@@ -112,4 +112,60 @@ describe("DailyBonusWidget", () => {
     expect(screen.getByText("Daily claimed")).toBeInTheDocument();
     expect(screen.getByText("· 4d streak")).toBeInTheDocument();
   });
+
+  it("shows the claimed state at once after Collect, without the claimable trigger", async () => {
+    const { rerender } = render(<DailyBonusWidget />);
+    fireEvent.click(within(dialog()).getByRole("button", { name: /IxCredits/ }));
+    act(() => mutationOptions.onSuccess({ creditsAwarded: 10, streak: 5 }));
+    await screen.findByRole("heading", { name: "Reward claimed" });
+    balance = { canClaimDailyBonus: false, loginStreak: 5 };
+    rerender(<DailyBonusWidget />);
+    fireEvent.click(screen.getByRole("button", { name: "Collect" }));
+    expect(screen.getByText("Daily claimed")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Daily reward/ })).toBeNull();
+  });
+
+  it("keeps the trigger copper on hover and press", () => {
+    render(<DailyBonusWidget />);
+    // The open dialog hides the trigger from the accessibility tree.
+    const trigger = screen.getByRole("button", { name: /Daily reward/, hidden: true });
+    expect(trigger.className).not.toContain("hover:bg-fill-4");
+    expect(trigger.className).not.toContain("active:bg-fill-3");
+    expect(trigger.className).toContain("hover:bg-tint-fill");
+  });
+
+  it("keeps the solid well on tile hover", () => {
+    render(<DailyBonusWidget />);
+    const tile = within(dialog()).getByRole("button", { name: /IxCredits/ });
+    expect(tile.className).toContain("facet-well");
+    expect(tile.className).not.toContain("hover:bg-tint-fill");
+  });
+
+  it("cannot be dismissed while a claim is in flight", () => {
+    render(<DailyBonusWidget />);
+    fireEvent.click(within(dialog()).getByRole("button", { name: /IxCredits/ }));
+    expect(within(dialog()).queryByRole("button", { name: /close/i })).toBeNull();
+    fireEvent.keyDown(dialog(), { key: "Escape" });
+    expect(dialog()).toBeInTheDocument();
+  });
+
+  it("marks only the chosen tile busy and disables both while claiming", () => {
+    render(<DailyBonusWidget />);
+    const credits = within(dialog()).getByRole("button", { name: /IxCredits/ });
+    const card = within(dialog()).getByRole("button", { name: /Card pull/ });
+    fireEvent.click(credits);
+    expect(credits).toHaveAttribute("aria-busy", "true");
+    expect(card).toHaveAttribute("aria-busy", "false");
+    expect(credits).toBeDisabled();
+    expect(card).toBeDisabled();
+  });
+
+  it("auto-opens only once per user per day", async () => {
+    const first = render(<DailyBonusWidget />);
+    fireEvent.click(within(dialog()).getByRole("button", { name: /close/i }));
+    await act(async () => {});
+    first.unmount();
+    render(<DailyBonusWidget />);
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
 });

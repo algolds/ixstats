@@ -103,7 +103,7 @@ function ChoiceTile({
       aria-busy={loading}
       className={cn(
         "facet-well facet-press rounded-row flex min-h-36 flex-col items-center justify-center gap-3 p-4 text-center",
-        "enabled:hover:bg-tint-fill focus-visible:outline-tint focus-visible:outline-2 focus-visible:outline-offset-2",
+        "enabled:hover:ring-tint/40 enabled:hover:ring-2 focus-visible:outline-tint focus-visible:outline-2 focus-visible:outline-offset-2",
         "disabled:cursor-not-allowed",
         disabled && !loading && "opacity-50"
       )}
@@ -229,7 +229,7 @@ export const DailyBonusWidget: React.FC = () => {
   if (!userId) return null;
   if (isLoading) return <Skeleton className="h-8 w-full" />;
 
-  const showClaimed = !canClaim && !claimResult && !isOpen;
+  const showClaimed = !canClaim && !isOpen;
 
   // Transforms are dropped for reduced-motion users by the root <MotionConfig>.
   const fade = {
@@ -256,7 +256,7 @@ export const DailyBonusWidget: React.FC = () => {
             variant="ghost"
             size="sm"
             onClick={() => setIsOpen(true)}
-            className="bg-tint-fill text-tint-ink text-footnote w-full justify-start gap-2 px-3 font-semibold"
+            className="bg-tint-fill text-tint-ink hover:bg-tint-fill hover:text-tint active:bg-tint-fill text-footnote w-full justify-start gap-2 px-3 font-semibold"
           >
             <Trophy aria-hidden className="size-3.5 shrink-0" />
             <span className="flex-1 text-left">Daily reward</span>
