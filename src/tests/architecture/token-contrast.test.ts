@@ -11,7 +11,6 @@ import path from "path";
 
 import {
   ACCENT_FILL,
-  ACRYLIC,
   APP_IDS,
   APP_TINTS,
   BACKGROUND_ROLES,
@@ -19,7 +18,7 @@ import {
   COLOR_ROLES_MORE_CONTRAST,
   CUTOUT_RADIUS,
   FLAG_WATERMARK,
-  GLASS_HERO,
+  GLASS,
   GOLD,
   ON_SYSTEM_COLOR,
   PHYSICS,
@@ -430,21 +429,29 @@ describe("identity tokens: CSS matches src/lib/design/tokens.ts", () => {
     expect(css).not.toContain("--primary-fill-image");
   });
 
-  it.each(APPEARANCES)("hero glass (%s)", (appearance) => {
-    const b = identity[appearance];
-    expect(decl(b, "--glass-fill")).toBe(pct(GLASS_HERO[appearance].fill));
-    expect(decl(b, "--glass-wash")).toBe(pct(GLASS_HERO[appearance].wash));
-    expect(decl(b, "--acrylic-fill")).toBe(ACRYLIC[appearance].fill);
-    expect(decl(identity.light, "--glow-alpha")).toBe(pct(GLASS_HERO.glow));
-  });
-
-  it("Reduce Transparency and Increase Contrast make the glass opaque", () => {
+  it("Reduce Transparency and Increase Contrast make every layer opaque and drop the washes", () => {
     for (const variant of ["@variant transparency-reduced", "@variant contrast-more"]) {
       const b = block("@layer base", ":root[data-theme]", variant);
-      expect(decl(b, "--glass-fill")).toBe("100%");
-      expect(decl(b, "--glass-wash")).toBe("0%");
-      expect(decl(b, "--acrylic-fill")).toBe("var(--color-surface-elevated)");
+      for (const name of ["--pane-fill", "--chrome-fill", "--overlay-fill"]) {
+        expect(decl(b, name)).toBe("100%");
+      }
+      for (const name of ["--pane-wash", "--canvas-wash", "--well-tint"]) {
+        expect(decl(b, name)).toBe("0%");
+      }
+      expect(decl(b, "--chrome-blur")).toBe("0px");
+      expect(decl(b, "--overlay-blur")).toBe("0px");
     }
+  });
+
+  it.each(APPEARANCES)("glass scalars match GLASS (%s)", (appearance) => {
+    const b = identity[appearance];
+    const g = GLASS[appearance];
+    expect(decl(b, "--pane-fill")).toBe(pct(g.paneFill));
+    expect(decl(b, "--pane-wash")).toBe(pct(g.paneWash));
+    expect(decl(b, "--canvas-wash")).toBe(pct(g.canvasWash));
+    expect(decl(b, "--well-tint")).toBe(pct(g.wellTint));
+    expect(decl(b, "--chrome-fill")).toBe(pct(g.chromeFill));
+    expect(decl(b, "--overlay-fill")).toBe(pct(g.overlayFill));
   });
 
   it("accent gold, accent fill, press, lift and the cutout radius", () => {
@@ -497,22 +504,24 @@ describe("identity: contrast", () => {
       }
     });
 
-    it("hero glass: labels stay ≥ 4.5:1 over the thinnest fill and the full tint wash", () => {
-      const g = GLASS_HERO[appearance];
-      const glass = mix(
-        role(appearance, "surface"),
-        role(appearance, "background-grouped"),
-        g.fill
-      );
-      for (const [name, color] of [
-        ...Object.entries(APP_TINTS).map(([app, sets]) => [app, sets[appearance].tint] as const),
-        ...ACCENTS.map(([name, value]) => [name, value[appearance]] as const),
-      ]) {
-        const washed = mix(color, glass, g.wash);
+    it("pane: labels stay ≥ 4.5:1 on the pane over the tinted canvas, at the full pane wash", () => {
+      const g = GLASS[appearance];
+      for (const [app, sets] of Object.entries(APP_TINTS)) {
+        const tint = sets[appearance].tint;
+        const canvas = mix(tint, role(appearance, "background-grouped"), g.canvasWash);
+        const pane = mix(role(appearance, "surface"), canvas, g.paneFill);
+        const washed = mix(tint, pane, g.paneWash);
+        const well = mix(tint, role(appearance, "surface-secondary"), g.wellTint);
         for (const label of ["label", "label-secondary"]) {
-          for (const bg of [glass, washed]) {
+          for (const [surface, bg] of [
+            ["pane", pane],
+            ["pane+wash", washed],
+            ["well", well],
+          ] as const) {
             const ratio = contrast(role(appearance, label), bg);
-            expect({ name, label, bg, ok: ratio >= AA_TEXT, ratio }).toMatchObject({ ok: true });
+            expect({ app, surface, label, ok: ratio >= AA_TEXT, ratio }).toMatchObject({
+              ok: true,
+            });
           }
         }
       }
@@ -576,13 +585,13 @@ describe("identity: contrast", () => {
         appearance === "light"
           ? filterColor("#000000", { contrast: FLAG_WATERMARK.light.toneContrast })
           : filterColor("#ffffff", { brightness: FLAG_WATERMARK.dark.toneBrightness });
-      const g = GLASS_HERO[appearance];
+      const g = GLASS[appearance];
       for (const more of [false, true]) {
         const surfaces = {
-          "hero glass": mix(
+          pane: mix(
             role(appearance, "surface", more),
             role(appearance, "background-grouped", more),
-            g.fill
+            g.paneFill
           ),
           surface: role(appearance, "surface", more),
         };
@@ -629,56 +638,6 @@ function filterColor(hex: string, tone: { contrast?: number; brightness?: number
     })
     .join("")}`;
 }
-
-// ─── Vibrant labels on the Halo acrylic ──────────────────────────────────────
-
-/** `rgb(r g b / a)` → [#rrggbb, a]. */
-function parseRgba(value: string): [string, number] {
-  const match = /^rgb\((\d+) (\d+) (\d+) \/ ([\d.]+)\)$/.exec(value);
-  if (!match) throw new Error(`Expected rgb(r g b / a), got "${value}"`);
-  const hex = `#${[match[1], match[2], match[3]]
-    .map((c) => Number(c).toString(16).padStart(2, "0"))
-    .join("")}`;
-  return [hex, Number(match[4])];
-}
-
-describe("acrylic: vibrant labels over any content", () => {
-  it("material-acrylic resolves secondary labels to the vibrant role", () => {
-    const body = identityCss.slice(identityCss.indexOf("@utility material-acrylic {"));
-    expect(body.slice(0, body.indexOf("background-color"))).toContain(
-      "--color-label-secondary: var(--color-label-vibrant-secondary);"
-    );
-  });
-
-  describe.each(APPEARANCES)("%s", (appearance) => {
-    // Chrome floats over arbitrary content: the worst backdrop for dark text is black, for light
-    // text white (saturate() leaves both unchanged).
-    const backdrop = appearance === "light" ? "#000000" : "#ffffff";
-
-    it.each([false, true])("increase contrast: %s", (more) => {
-      const [rgb, alpha] = parseRgba(ACRYLIC[appearance].fill);
-      const fills = {
-        acrylic: mix(rgb, backdrop, alpha),
-        // Reduce Transparency / Increase Contrast: the opaque `surface-elevated`.
-        "surface-elevated": role(appearance, "surface-elevated", more),
-      };
-      const failures = Object.entries(fills).flatMap(([fill, bg]) =>
-        ["label", "label-vibrant-secondary"]
-          .map((label) => ({ fill, label, ratio: contrast(role(appearance, label, more), bg) }))
-          .filter((r) => r.ratio < AA_TEXT)
-      );
-      expect(failures).toEqual([]);
-      // The vibrant role is never weaker than the plain secondary label on the opaque surfaces.
-      for (const bg of BACKGROUND_ROLES) {
-        expect(
-          contrast(role(appearance, "label-vibrant-secondary", more), role(appearance, bg, more))
-        ).toBeGreaterThanOrEqual(
-          contrast(role(appearance, "label-secondary", more), role(appearance, bg, more))
-        );
-      }
-    });
-  });
-});
 
 describe('Badge variant="secondary" (tint-ink on tint-fill)', () => {
   it("the secondary Badge uses the tint's ink, never the bare tint, on its fill", () => {

@@ -759,14 +759,16 @@
 
 @layer base {
   :root {
-    /* Hero glass (`material-hero`) and the Halo acrylic (`material-acrylic`) */
-    --glass-fill: 85%;
-    --glass-blur: 16px;
+    /* Layer glass scalars. Composed into paints in facet/layers.css. */
+    --pane-fill: 82%;
+    --pane-wash: 10%;
+    --canvas-wash: 7%;
+    --well-tint: 6%;
+    --chrome-fill: 80%;
+    --overlay-fill: 90%;
+    --chrome-blur: 20px;
+    --overlay-blur: 28px;
     --glass-hairline: color-mix(in srgb, var(--color-label) 10%, transparent);
-    --glass-wash: 12%;
-    --glow-alpha: 18%;
-    --glow-size: 28px;
-    --acrylic-fill: rgb(255 255 255 / 0.85);
 
     /* Press and lift (`facet-press`, `facet-lift`) */
     --facet-press-scale: 0.98;
@@ -797,9 +799,12 @@
   }
 
   :root[data-theme="dark"] {
-    --glass-fill: 65%;
-    --glass-wash: 10%;
-    --acrylic-fill: rgb(15 17 24 / 0.88);
+    --pane-fill: 64%;
+    --pane-wash: 8%;
+    --canvas-wash: 10%;
+    --well-tint: 8%;
+    --chrome-fill: 72%;
+    --overlay-fill: 86%;
     --facet-lift-shadow: 0 12px 32px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.2);
     --primary-mono: #e4e4e7;
     --primary-mono-hover: #d4d4d8;
@@ -824,23 +829,32 @@
 
   @media (max-width: 768px) {
     :root {
-      --glass-blur: 12px;
+      --chrome-blur: 12px;
+      --overlay-blur: 20px;
     }
   }
-  /* Reduce Transparency and Increase Contrast turn the glass materials into opaque cards. */
+  /* Reduce Transparency and Increase Contrast turn every glass layer opaque. */
   :root[data-theme] {
     @variant transparency-reduced {
-      --glass-fill: 100%;
-      --glass-wash: 0%;
-      --glass-blur: 0px;
-      --acrylic-fill: var(--color-surface-elevated);
+      --pane-fill: 100%;
+      --pane-wash: 0%;
+      --canvas-wash: 0%;
+      --well-tint: 0%;
+      --chrome-fill: 100%;
+      --overlay-fill: 100%;
+      --chrome-blur: 0px;
+      --overlay-blur: 0px;
     }
     @variant contrast-more {
-      --glass-fill: 100%;
-      --glass-wash: 0%;
-      --glass-blur: 0px;
+      --pane-fill: 100%;
+      --pane-wash: 0%;
+      --canvas-wash: 0%;
+      --well-tint: 0%;
+      --chrome-fill: 100%;
+      --overlay-fill: 100%;
+      --chrome-blur: 0px;
+      --overlay-blur: 0px;
       --glass-hairline: var(--color-separator-opaque);
-      --acrylic-fill: var(--color-surface-elevated);
     }
   }
 }

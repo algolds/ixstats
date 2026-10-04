@@ -162,13 +162,11 @@ describe("accessibility preferences in the identity sheet", () => {
     expect(identityCss).toMatch(/@variant contrast-more \{\s*opacity: var\(--watermark-opacity\);/);
   });
 
-  it("Reduce Transparency / Increase Contrast make both identity materials opaque", () => {
+  it("Reduce Transparency / Increase Contrast make every glass layer opaque", () => {
     for (const variant of ["transparency-reduced", "contrast-more"]) {
-      const start = tokensCss.indexOf(`@variant ${variant} {\n      --glass-fill: 100%;`);
+      const start = tokensCss.indexOf(`@variant ${variant} {\n      --pane-fill: 100%;`);
       expect(start).toBeGreaterThanOrEqual(0);
-      expect(tokensCss.slice(start, start + 260)).toContain(
-        "--acrylic-fill: var(--color-surface-elevated);"
-      );
+      expect(tokensCss.slice(start, start + 260)).toContain("--overlay-fill: 100%;");
     }
   });
 

@@ -25,7 +25,7 @@ export const COLOR_ROLES = {
     "label-tertiary": "#a1a1aa",
     "label-quaternary": "#d4d4d8",
     // HIG vibrant secondary label: what `label-secondary` resolves to inside `material-acrylic`
-    // (chrome over arbitrary content) — ≥ 4.5:1 over a black / white backdrop (see `ACRYLIC`).
+    // (chrome over arbitrary content) — ≥ 4.5:1 over a black / white backdrop (see `GLASS`).
     "label-vibrant-secondary": "#46464e",
     background: "#ffffff",
     "background-grouped": "#f2f3f6",
@@ -258,23 +258,28 @@ export const ACCENT_FILL = { light: 0.14, dark: 0.18 } as const satisfies Record
 >;
 
 /**
- * Hero glass (`material-hero`): `fill` of the surface over the page and the tint `wash` at its
- * strongest stop. `glow` is the tint glow's strength (a shadow outside the card, never under text).
+ * Facet layer glass. `paneFill`: the surface over the canvas. `paneWash`: the tint at the pane's
+ * strongest stop. `canvasWash`: the tint in the page background. `wellTint`: tint mixed into the
+ * solid well. `chromeFill` / `overlayFill`: floating glass over arbitrary content.
  */
-export const GLASS_HERO = {
-  light: { fill: 0.85, wash: 0.12 },
-  dark: { fill: 0.65, wash: 0.1 },
-  glow: 0.18,
-} as const;
-
-/**
- * The Halo acrylic fill as `--acrylic-fill` declares it. Chrome floats over arbitrary content, so
- * the contrast guard uses a black (light) / white (dark) backdrop under it.
- */
-export const ACRYLIC = {
-  light: { fill: "rgb(255 255 255 / 0.85)" },
-  dark: { fill: "rgb(15 17 24 / 0.88)" },
-} as const;
+export const GLASS = {
+  light: {
+    paneFill: 0.82,
+    paneWash: 0.1,
+    canvasWash: 0.07,
+    wellTint: 0.06,
+    chromeFill: 0.8,
+    overlayFill: 0.9,
+  },
+  dark: {
+    paneFill: 0.64,
+    paneWash: 0.08,
+    canvasWash: 0.1,
+    wellTint: 0.08,
+    chromeFill: 0.72,
+    overlayFill: 0.86,
+  },
+} as const satisfies Record<Appearance, Record<string, number>>;
 
 /**
  * Flag watermark: opacity at rest and on hover. `tone` caps the flag's extremes (light: pulls
