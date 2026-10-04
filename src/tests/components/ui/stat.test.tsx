@@ -3,19 +3,19 @@ import { render, screen } from "@testing-library/react";
 import { Stat } from "~/components/ui/stat";
 
 describe("Stat", () => {
-  it("renders a stat label and a tabular title-3 value", () => {
-    render(<Stat label="GDP" value="$1.2T" hint="vs. last year" />);
-    const label = screen.getByText("GDP");
-    expect(label.className).toContain("text-stat-label");
+  it("puts a large tinted tabular figure above a regular-case label", () => {
+    render(<Stat label="GDP" value="$1.2T" />);
     const value = screen.getByText("$1.2T");
-    expect(value.className).toContain("text-title-3");
-    expect(value.className).toContain("tabular-nums");
-    expect(screen.getByText("vs. last year").className).toContain("text-footnote");
+    const label = screen.getByText("GDP");
+    expect(value).toHaveClass("text-title-1", "text-tint", "tabular-nums");
+    expect(label).toHaveClass("text-footnote", "text-label-secondary");
+    expect(label.className).not.toMatch(/stat-label|uppercase/);
+    expect(value.compareDocumentPosition(label) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("uses text-headline for the small size", () => {
-    render(<Stat size="sm" label="Pop." value="12M" />);
-    expect(screen.getByText("12M").className).toContain("text-headline");
+  it("uses text-title-3 for the small size", () => {
+    render(<Stat label="GDP" value="$1.2T" size="sm" />);
+    expect(screen.getByText("$1.2T")).toHaveClass("text-title-3");
   });
 
   it.each([

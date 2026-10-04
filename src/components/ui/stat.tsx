@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUp, Minus } from "iconoir-react";
 import { cn } from "~/lib/utils/cn";
 
 /**
- * A data label, a value, an optional delta and hint.
+ * A figure, its label below it, an optional delta and hint.
  *
  *   <Stat label="GDP" value="$1.2T" delta={{ value: "+2.4%", direction: "up" }} hint="vs. last year" />
  *
@@ -28,7 +28,7 @@ interface StatProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> 
   value: React.ReactNode;
   delta?: StatDelta;
   hint?: React.ReactNode;
-  /** `md` (default): `text-title-3` value. `sm`: `text-headline` value for dense grids. */
+  /** `md` (default): `text-title-1` value. `sm`: `text-title-3` value for dense grids. */
   size?: "sm" | "md";
   /** Decorative glyph in the label row (14px, `aria-hidden`). */
   icon?: React.ReactNode;
@@ -85,14 +85,26 @@ export const Stat = React.forwardRef<HTMLDivElement, StatProps>(
       className={cn("flex min-w-0 flex-col gap-1", className)}
       {...props}
     >
-      {icon != null && icon !== false ? (
+      <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
         <span
-          data-slot="stat-label-row"
+          data-slot="stat-value"
           className={cn(
-            "flex min-w-0 items-center gap-2",
-            iconPlacement === "trailing" && "flex-row-reverse justify-between gap-2"
+            "text-tint min-w-0 truncate tabular-nums",
+            size === "sm" ? "text-title-3" : "text-title-1"
           )}
         >
+          {value}
+        </span>
+        {delta && <StatDeltaBadge delta={delta} />}
+      </div>
+      <span
+        data-slot="stat-label-row"
+        className={cn(
+          "flex min-w-0 items-center gap-2",
+          iconPlacement === "trailing" && "flex-row-reverse justify-between"
+        )}
+      >
+        {icon != null && icon !== false && (
           <span
             aria-hidden
             data-slot="stat-icon"
@@ -100,27 +112,11 @@ export const Stat = React.forwardRef<HTMLDivElement, StatProps>(
           >
             {icon}
           </span>
-          <span className="text-stat-label text-label-secondary block min-w-0 truncate">
-            {label}
-          </span>
-        </span>
-      ) : (
-        <span className="text-stat-label text-label-secondary block truncate">{label}</span>
-      )}
-      <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-        <span
-          data-slot="stat-value"
-          className={cn(
-            "text-label min-w-0 truncate tabular-nums",
-            size === "sm" ? "text-headline" : "text-title-3"
-          )}
-        >
-          {value}
-        </span>
-        {delta && <StatDeltaBadge delta={delta} />}
-      </div>
+        )}
+        <span className="text-footnote text-label-secondary block min-w-0 truncate">{label}</span>
+      </span>
       {hint != null && hint !== false && (
-        <span data-slot="stat-hint" className="text-footnote text-label-secondary">
+        <span data-slot="stat-hint" className="text-footnote text-label-tertiary">
           {hint}
         </span>
       )}

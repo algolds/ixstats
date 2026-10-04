@@ -100,9 +100,9 @@ describe("motion.create(Card)", () => {
 });
 
 describe("Stat icon", () => {
-  it("renders no label row without an icon (unchanged default)", () => {
+  it("renders the label row without an icon element when no icon is given", () => {
     const { container } = render(<Stat label="GDP" value="1" />);
-    expect(container.querySelector('[data-slot="stat-label-row"]')).toBeNull();
+    expect(container.querySelector('[data-slot="stat-label-row"]')).not.toBeNull();
     expect(container.querySelector('[data-slot="stat-icon"]')).toBeNull();
   });
 
@@ -117,7 +117,7 @@ describe("Stat icon", () => {
     expect(classOf(icon)).toContain("[:where(&)_svg]:size-3.5");
     expect(classOf(icon)).toContain("text-label-secondary");
     expect(row.firstElementChild).toBe(icon);
-    expect(classOf(screen.getByText("Heart rate"))).toContain("text-stat-label");
+    expect(classOf(screen.getByText("Heart rate"))).toContain("text-footnote");
   });
 
   it("pins the icon to the end of the label row with iconPlacement=trailing", () => {
