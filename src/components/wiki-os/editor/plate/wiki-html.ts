@@ -11,136 +11,16 @@
 
 import type { Descendant } from "slate";
 
-type WikiText = {
-  text: string;
-  bold?: boolean;
-  italic?: boolean;
-  underline?: boolean;
-  strike?: boolean;
-  sup?: boolean;
-  sub?: boolean;
-  codeMark?: boolean;
-};
-
-interface BaseEl {
-  id?: string;
-  children: Descendant[];
-}
-interface PEl extends BaseEl {
-  type: "p";
-}
-interface HeadingEl extends BaseEl {
-  type: "h2" | "h3" | "h4";
-}
-interface QuoteEl extends BaseEl {
-  type: "blockquote";
-}
-interface ListEl extends BaseEl {
-  type: "ul" | "ol";
-}
-interface ListItemEl extends BaseEl {
-  type: "li";
-  level?: number;
-  prefix?: string;
-}
-interface CodeBlockEl extends BaseEl {
-  type: "code-block";
-}
-interface TableEl extends BaseEl {
-  type: "table";
-  caption?: string;
-  attributes?: string;
-}
-interface RowEl extends BaseEl {
-  type: "tr";
-  attributes?: string;
-}
-interface CellEl extends BaseEl {
-  type: "td" | "th";
-  attributes?: string;
-  isHeader?: boolean;
-}
-interface HrEl extends BaseEl {
-  type: "hr";
-}
-interface LinkEl extends BaseEl {
-  type: "link";
-  url: string;
-  internal?: boolean;
-}
-interface TemplateEl extends BaseEl {
-  type: "template";
-  name: string;
-  params: Record<string, string>;
-  dataMw: string;
-  html: string;
-  /** Canonical MediaWiki invocation — emitted verbatim by serializePlateToWikitext. */ wikitext?: string;
-}
-export interface ChipEngineEl extends BaseEl {
-  type: "chip-engine";
-  name: string;
-  params: Record<string, string>;
-  dataMw: string;
-  label: string;
-}
-export interface ChipCoordEl extends BaseEl {
-  type: "chip-coord";
-  href: string;
-  title: string;
-  label: string;
-}
-export interface ChipMapEmbedEl extends BaseEl {
-  type: "chip-mapembed";
-  href: string;
-  title: string;
-}
-interface MediaEl extends BaseEl {
-  type: "media";
-  html: string;
-  filename?: string;
-}
-interface RawHtmlEl extends BaseEl {
-  type: "raw-html";
-  html: string;
-  kind?: "infobox" | "generic";
-  name?: string;
-  params?: Record<string, string>;
-  dataMw?: string;
-  /** Canonical MediaWiki invocation — emitted verbatim by serializePlateToWikitext. */ wikitext?: string;
-}
-interface RefEl extends BaseEl {
-  type: "ref";
-  label: string;
-}
-interface InfoboxBoxEl extends BaseEl {
-  type: "infobox-box";
-  title?: string;
-  fields: Array<{ label: string; value: string }>;
-  html: string;
-  edited?: boolean;
-  /** Canonical MediaWiki invocation — emitted verbatim by serializePlateToWikitext. */ wikitext?: string;
-}
-
-type WikiElement =
-  | PEl
-  | HeadingEl
-  | QuoteEl
-  | ListEl
-  | ListItemEl
-  | CodeBlockEl
-  | TableEl
-  | RowEl
-  | CellEl
-  | HrEl
-  | LinkEl
-  | TemplateEl
-  | ChipEngineEl
-  | ChipCoordEl
-  | ChipMapEmbedEl
-  | MediaEl
-  | RawHtmlEl
-  | RefEl
-  | InfoboxBoxEl;
+import type {
+  WikiText,
+  ListItemEl,
+  TableEl,
+  RowEl,
+  CellEl,
+  InfoboxBoxEl,
+  WikiElement,
+} from "./wiki-html-types";
+export type { ChipEngineEl, ChipCoordEl, ChipMapEmbedEl } from "./wiki-html-types";
 
 let idCounter = 0;
 const nextId = () => `wn${Date.now().toString(36)}${(idCounter++).toString(36)}`;
