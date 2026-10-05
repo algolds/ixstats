@@ -333,6 +333,33 @@ model SystemConfig {
   @@index([key])
 }
 
+/// Lease that single-flights a scheduled job across processes (src/lib/system/job-lock.ts).
+/// A row exists only while a run holds it; an expired row is taken over by the next run.
+model JobLease {
+  name       String   @id
+  holder     String
+  acquiredAt DateTime @default(now())
+  expiresAt  DateTime
+
+  @@map("job_leases")
+}
+
+/// One row per scheduled-job run (cron-runner.mjs), read by /api/health. Pruned by log-retention.
+model CronRun {
+  id         String    @id @default(cuid())
+  job        String
+  /// success | failed | skipped
+  status     String
+  startedAt  DateTime
+  finishedAt DateTime?
+  durationMs Int?
+  summary    String?
+  error      String?
+
+  @@index([job, startedAt])
+  @@index([startedAt])
+}
+
 model AdminAuditLog {
   id         String   @id @default(cuid())
   action     String

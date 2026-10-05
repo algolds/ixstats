@@ -8,8 +8,8 @@
  * Jobs are defined in src/server/cron/jobs.ts. At startup every job module is imported and
  * the process exits non-zero if any import fails. Only the jobs named in CRON_ENABLED_JOBS
  * (comma-separated job names, or "*" for all; unset/empty = none) are scheduled. Each run
- * holds the Postgres advisory lock from src/lib/system/job-lock.ts, so a slow run, a second
- * runner or a manual trigger skips instead of double-applying.
+ * holds the lease from src/lib/system/job-lock.ts, so a slow run, a second runner or a manual
+ * trigger skips instead of double-applying, and is recorded as a CronRun row.
  *
  * ixtwitter sync is intentionally not a job here: it runs as the separate
  * "ixstats-ixtwitter" PM2 process.
@@ -30,12 +30,14 @@ async function main() {
     { CRON_JOBS, resolveEnabledJobs, resolveSchedule, summarizeResult },
     { startScheduler },
     { withJobLock },
+    { recordCronRun, alertCronFailure },
     { db },
     { env },
   ] = await Promise.all([
     import("./src/server/cron/jobs.js"),
     import("./src/server/cron/scheduler.js"),
     import("./src/lib/system/job-lock.js"),
+    import("./src/lib/system/cron-runs.js"),
     import("./src/server/db.js"),
     import("./src/env.js"),
   ]);
@@ -78,20 +80,36 @@ async function main() {
     }
   }
 
-  // Cross-process single-flight for every job (plan 328): a Postgres advisory lock via the
-  // shared db singleton. A run that finds the lock held is skipped.
+  // Cross-process single-flight for every job (plan 328): a lease row via the shared db
+  // singleton. A run that finds the lease held is skipped. Every run is recorded as a CronRun
+  // row (read by /api/health), and a failure also alerts the Discord webhook.
   const runLocked = async (job) => {
-    const startedAt = Date.now();
-    const outcome = await withJobLock(db, job.lockName, runs.get(job.name), {
-      timeoutMs: job.timeoutMs,
-    });
-    if (!outcome.ran) {
-      console.log(`[Cron] ${job.name} skipped — another run holds the "${job.lockName}" lock`);
-      return;
+    const startedAt = new Date();
+    try {
+      const outcome = await withJobLock(db, job.lockName, runs.get(job.name), {
+        timeoutMs: job.timeoutMs,
+      });
+      const finishedAt = new Date();
+      if (!outcome.ran) {
+        console.log(`[Cron] ${job.name} skipped — another run holds the "${job.lockName}" lease`);
+        await recordCronRun(db, { job: job.name, status: "skipped", startedAt, finishedAt });
+        return;
+      }
+      const summary = summarizeResult(outcome.result);
+      console.log(`[Cron] ${job.name} done in ${finishedAt - startedAt}ms: ${summary}`);
+      await recordCronRun(db, { job: job.name, status: "success", startedAt, finishedAt, summary });
+    } catch (error) {
+      const detail = error instanceof Error ? (error.stack ?? error.message) : String(error);
+      await recordCronRun(db, {
+        job: job.name,
+        status: "failed",
+        startedAt,
+        finishedAt: new Date(),
+        error: detail,
+      });
+      await alertCronFailure(job.name, detail);
+      throw error; // the scheduler logs it
     }
-    console.log(
-      `[Cron] ${job.name} done in ${Date.now() - startedAt}ms: ${summarizeResult(outcome.result)}`
-    );
   };
 
   const tasks = enabled.map((job) => {

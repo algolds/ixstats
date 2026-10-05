@@ -1,8 +1,8 @@
 /**
  * The scheduled-job table (plan 330). cron-runner.mjs is the ONLY scheduler: it imports every
  * row's module at startup (exiting non-zero if any fails), schedules the rows named in
- * CRON_ENABLED_JOBS, and runs each one under the advisory job lock `lockName`
- * (src/lib/system/job-lock.ts).
+ * CRON_ENABLED_JOBS, and runs each one under the job lease `lockName`
+ * (src/lib/system/job-lock.ts), recording every run as a CronRun row (src/lib/system/cron-runs.ts).
  *
  * Adding a job: add a row here (jobs.test.ts checks `modulePath` and `exportName` against the
  * source), then the operator adds its name to CRON_ENABLED_JOBS. Lock names are shared with any
@@ -24,9 +24,9 @@ interface CronJobDefinition {
   defaultSchedule: string;
   /** SystemConfig key whose value may override the schedule. */
   scheduleConfigKey?: string;
-  /** Advisory lock name (withJobLock). Jobs sharing a name never overlap. */
+  /** Lease name (withJobLock). Jobs sharing a name never overlap. */
   lockName: string;
-  /** Lock transaction timeout; raise it if logs show "Transaction already closed". */
+  /** Lease length; keep it above the job's worst-case run time. */
   timeoutMs: number;
   /** `~/` specifier of the module `load` imports (checked by jobs.test.ts). */
   modulePath: string;
@@ -245,6 +245,16 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     modulePath: "~/lib/system/db-backup",
     exportName: "runDatabaseBackup",
     load: async () => (await import("~/lib/system/db-backup")).runDatabaseBackup,
+  },
+  {
+    // Prunes old user-action logs, log files and CronRun records (PL-6).
+    name: "log-retention",
+    defaultSchedule: "41 4 * * *",
+    lockName: "log-retention",
+    timeoutMs: 15 * MINUTE,
+    modulePath: "~/lib/system/log-retention",
+    exportName: "runLogRetention",
+    load: async () => (await import("~/lib/system/log-retention")).runLogRetention,
   },
 ];
 

@@ -1,113 +1,81 @@
 /**
- * withJobLock (plan 328): cross-process single-flight for scheduled jobs.
- *
- * The lock is a transaction-scoped Postgres advisory lock taken inside a
- * dedicated interactive transaction; these tests fake `$transaction` and
- * `$queryRaw` and check the contract, not Postgres.
+ * withJobLock: cross-process single-flight for scheduled jobs via a lease row (job_leases).
+ * These tests fake `$queryRaw` / `$executeRaw` and check the contract; the SQL itself was
+ * exercised against PostgreSQL (one of eight concurrent runs executes, expired leases are
+ * taken over, a throwing job still releases).
  */
 
 import type { PrismaClient } from "@prisma/client";
 import { withJobLock } from "~/lib/system/job-lock";
 
-interface TxOptions {
-  maxWait?: number;
-  timeout?: number;
-}
-
-type LockRows = Array<{ locked: boolean }>;
-
-function makeDb(lockRows: LockRows) {
-  const tx = { $queryRaw: jest.fn().mockResolvedValue(lockRows) };
-  const $transaction = jest.fn(async (cb: (t: typeof tx) => Promise<unknown>, _opts?: TxOptions) =>
-    cb(tx)
+/** A fake table: the upsert returns our holder only when the lease is free. */
+function makeDb(initiallyHeldBy?: string) {
+  const leases = new Map<string, string>();
+  if (initiallyHeldBy) leases.set("passive-income", initiallyHeldBy);
+  const $queryRaw = jest.fn(
+    async (_strings: TemplateStringsArray, name: string, holder: string) => {
+      if (!leases.has(name)) leases.set(name, holder);
+      return [{ holder: leases.get(name)! }];
+    }
   );
-  return { db: { $transaction } as unknown as PrismaClient, tx, $transaction };
+  const $executeRaw = jest.fn(
+    async (_strings: TemplateStringsArray, name: string, holder: string) => {
+      if (leases.get(name) === holder) leases.delete(name);
+      return 1;
+    }
+  );
+  return { db: { $queryRaw, $executeRaw } as unknown as PrismaClient, leases, $queryRaw };
 }
 
 describe("withJobLock", () => {
-  it("runs fn and returns its result when the lock is free", async () => {
-    const { db, tx } = makeDb([{ locked: true }]);
+  it("runs fn, returns its result and releases the lease", async () => {
+    const { db, leases } = makeDb();
     const fn = jest.fn().mockResolvedValue(42);
 
-    const outcome = await withJobLock(db, "passive-income", fn);
-
-    expect(outcome).toEqual({ ran: true, result: 42 });
+    await expect(withJobLock(db, "passive-income", fn)).resolves.toEqual({ ran: true, result: 42 });
     expect(fn).toHaveBeenCalledTimes(1);
-    expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
-    // Tagged template: (strings, ...values) — the only value is the namespaced key.
-    expect(tx.$queryRaw.mock.calls[0][1]).toBe("ixstats:job:passive-income");
+    expect(leases.size).toBe(0);
   });
 
-  it("skips fn when the lock is held", async () => {
-    const { db } = makeDb([{ locked: false }]);
-    const fn = jest.fn().mockResolvedValue(42);
+  it("skips fn while another holder's lease is live", async () => {
+    const { db, leases } = makeDb("other-runner");
+    const fn = jest.fn();
 
-    const outcome = await withJobLock(db, "passive-income", fn);
-
-    expect(outcome).toEqual({ ran: false });
+    await expect(withJobLock(db, "passive-income", fn)).resolves.toEqual({ ran: false });
     expect(fn).not.toHaveBeenCalled();
+    expect(leases.get("passive-income")).toBe("other-runner");
   });
 
   it("two concurrent runs → exactly one executes", async () => {
-    const held = new Set<string>();
-    const $transaction = jest.fn(async (cb: (t: { $queryRaw: jest.Mock }) => Promise<unknown>) => {
-      let acquired: string | null = null;
-      const tx = {
-        $queryRaw: jest.fn(async (_strings: TemplateStringsArray, key: string) => {
-          const locked = !held.has(key);
-          if (locked) {
-            held.add(key);
-            acquired = key;
-          }
-          return [{ locked }];
-        }),
-      };
-      try {
-        return await cb(tx);
-      } finally {
-        if (acquired) held.delete(acquired);
-      }
-    });
-    const db = { $transaction } as unknown as PrismaClient;
-
-    let release: () => void = () => {};
-    const gate = new Promise<void>((resolve) => {
-      release = resolve;
-    });
+    const { db } = makeDb();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
     const fn = jest.fn(async () => {
       await gate;
       return "done";
     });
 
-    const first = withJobLock(db, "lorewards", fn);
-    const second = withJobLock(db, "lorewards", fn);
-    // Let the second call reach its lock probe before the first releases.
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    const first = withJobLock(db, "card-value", fn);
+    const second = withJobLock(db, "card-value", fn);
+    await expect(second).resolves.toEqual({ ran: false });
     release();
-
-    const outcomes = await Promise.all([first, second]);
-
-    expect(outcomes.filter((o) => o.ran)).toHaveLength(1);
-    expect(outcomes.filter((o) => !o.ran)).toHaveLength(1);
+    await expect(first).resolves.toEqual({ ran: true, result: "done" });
     expect(fn).toHaveBeenCalledTimes(1);
-    expect(held.size).toBe(0);
   });
 
-  it("passes the timeout to $transaction", async () => {
-    const { db, $transaction } = makeDb([{ locked: true }]);
-
-    await withJobLock(db, "card-value", async () => null, { timeoutMs: 123 });
-
-    const opts = $transaction.mock.calls[0]?.[1];
-    expect(opts?.timeout).toBe(123);
-    expect(opts?.maxWait).toBeDefined();
+  it("releases the lease when fn throws, and rethrows", async () => {
+    const { db, leases } = makeDb();
+    await expect(
+      withJobLock(db, "passive-income", async () => {
+        throw new Error("boom");
+      })
+    ).rejects.toThrow("boom");
+    expect(leases.size).toBe(0);
   });
 
-  it("propagates fn errors", async () => {
-    const { db } = makeDb([{ locked: true }]);
-    const boom = new Error("job exploded");
-    const fn = jest.fn().mockRejectedValue(boom);
-
-    await expect(withJobLock(db, "trade-expiry", fn)).rejects.toBe(boom);
+  it("passes the lease length in seconds", async () => {
+    const { db, $queryRaw } = makeDb();
+    await withJobLock(db, "db-backup", async () => 1, { timeoutMs: 60 * 60_000 });
+    expect($queryRaw.mock.calls[0]![3]).toBe(3600);
   });
 });
