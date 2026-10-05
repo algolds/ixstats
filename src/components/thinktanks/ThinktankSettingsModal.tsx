@@ -254,6 +254,36 @@ function InviteMembersSection({ groupId, isOpen }: { groupId: string; isOpen: bo
       {!inviteTarget && inviteQuery.length >= 2 && inviteResults?.length === 0 && (
         <p className="text-label-secondary text-footnote">No invitable users found.</p>
       )}
+      <InviteCodeRow groupId={groupId} />
+    </div>
+  );
+}
+
+/** A single-use invite code, valid for a week, that anyone can enter under "Invite code". */
+function InviteCodeRow({ groupId }: { groupId: string }) {
+  const notify = useNotify();
+  const createCode = api.thinkpages.createThinktankInviteCode.useMutation({
+    onError: (err) => {
+      soundEffects.error();
+      notify.error(err.message || "Failed to create an invite code");
+    },
+  });
+  return (
+    <div className="border-separator flex items-center justify-between gap-2 border-t pt-2">
+      <p className="text-footnote text-label-secondary">
+        {createCode.data
+          ? `Code ${createCode.data.code}: single use, valid for 7 days.`
+          : "Or share a single-use invite code."}
+      </p>
+      <Button
+        type="button"
+        size="sm"
+        variant="secondary"
+        disabled={createCode.isPending}
+        onClick={() => createCode.mutate({ groupId })}
+      >
+        New code
+      </Button>
     </div>
   );
 }
