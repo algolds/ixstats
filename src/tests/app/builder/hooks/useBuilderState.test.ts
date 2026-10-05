@@ -5,6 +5,7 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useBuilderState } from "~/app/builder/hooks/useBuilderState";
 import type { BuilderState } from "~/app/builder/hooks/useBuilderState";
+import type { GovernmentBuilderState } from "~/types/government";
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -101,7 +102,20 @@ describe("useBuilderState", () => {
     it("updates government structure", () => {
       const { result } = renderHook(() => useBuilderState());
 
-      const mockStructure = { type: "democracy" };
+      const mockStructure: GovernmentBuilderState = {
+        structure: {
+          governmentName: "Government of Testland",
+          governmentType: "Parliamentary Democracy",
+          totalBudget: 1_000_000,
+          fiscalYear: "Calendar Year",
+          budgetCurrency: "USD",
+        },
+        departments: [],
+        budgetAllocations: [],
+        revenueSources: [],
+        isValid: true,
+        errors: {},
+      };
 
       act(() => {
         result.current.updateGovernmentStructure(mockStructure);
@@ -128,7 +142,7 @@ describe("useBuilderState", () => {
       const { result } = renderHook(() => useBuilderState());
 
       act(() => {
-        result.current.updateStep("core", null);
+        result.current.updateStep("core");
       });
 
       expect(result.current.builderState.step).toBe("government");
@@ -139,8 +153,8 @@ describe("useBuilderState", () => {
       const { result } = renderHook(() => useBuilderState());
 
       act(() => {
-        result.current.updateStep("foundation", null);
-        result.current.updateStep("core", null);
+        result.current.updateStep("foundation");
+        result.current.updateStep("core");
       });
 
       expect(result.current.builderState.completedSteps).toContain("foundation");
@@ -151,8 +165,8 @@ describe("useBuilderState", () => {
       const { result } = renderHook(() => useBuilderState());
 
       act(() => {
-        result.current.updateStep("foundation", null);
-        result.current.updateStep("foundation", null);
+        result.current.updateStep("foundation");
+        result.current.updateStep("foundation");
       });
 
       const foundationCount = result.current.builderState.completedSteps.filter(
@@ -173,7 +187,7 @@ describe("useBuilderState", () => {
       const { result } = renderHook(() => useBuilderState());
 
       act(() => {
-        result.current.updateStep("foundation", null);
+        result.current.updateStep("foundation");
       });
 
       expect(result.current.canAccessStep("foundation")).toBe(true);

@@ -45,6 +45,9 @@ jest.mock("~/lib/auth", () => ({
   isSystemOwner: jest.fn(() => true),
 }));
 
+// Clerk's auth() is typed as a function with a `protect` helper, not a jest mock.
+const mockAuth = auth as unknown as jest.Mock;
+
 describe("TTS Proxy API Route (/api/onoma/tts)", () => {
   let originalFetch: typeof global.fetch;
 
@@ -63,7 +66,7 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
   });
 
   test("should block unauthenticated requests with 401", async () => {
-    (auth as jest.Mock).mockResolvedValue(null);
+    mockAuth.mockResolvedValue(null);
 
     const request = new NextRequest("http://localhost/api/onoma/tts?text=test");
     const response = await GET(request);
@@ -74,7 +77,7 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
   });
 
   test("should block rate-limited requests with 429", async () => {
-    (auth as jest.Mock).mockResolvedValue({ userId: "user_123" });
+    mockAuth.mockResolvedValue({ userId: "user_123" });
     (rateLimiter.check as jest.Mock).mockResolvedValue({ success: false });
 
     const request = new NextRequest("http://localhost/api/onoma/tts?text=test");
@@ -86,7 +89,7 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
   });
 
   test("should return 503 if Kokoro is not enabled in DB", async () => {
-    (auth as jest.Mock).mockResolvedValue({ userId: "user_123" });
+    mockAuth.mockResolvedValue({ userId: "user_123" });
     (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
     (db.systemConfig.findMany as jest.Mock).mockResolvedValue([
       { key: "onoma.kokoro.enabled", value: "false" },
@@ -101,7 +104,7 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
   });
 
   test("should return cached audio on cache hit", async () => {
-    (auth as jest.Mock).mockResolvedValue({ userId: "user_123" });
+    mockAuth.mockResolvedValue({ userId: "user_123" });
     (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
     (db.systemConfig.findMany as jest.Mock).mockResolvedValue([
       { key: "onoma.kokoro.enabled", value: "true" },
@@ -121,7 +124,7 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
   });
 
   test("should proxy to Kokoro and store in cache on cache miss", async () => {
-    (auth as jest.Mock).mockResolvedValue({ userId: "user_123" });
+    mockAuth.mockResolvedValue({ userId: "user_123" });
     (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
     (db.systemConfig.findMany as jest.Mock).mockResolvedValue([
       { key: "onoma.kokoro.enabled", value: "true" },
@@ -180,7 +183,7 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
   });
 
   test("should proxy to Kokoro-web using legacy path if engine is kokoro-web", async () => {
-    (auth as jest.Mock).mockResolvedValue({ userId: "user_123" });
+    mockAuth.mockResolvedValue({ userId: "user_123" });
     (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
     (db.systemConfig.findMany as jest.Mock).mockResolvedValue([
       { key: "onoma.kokoro.enabled", value: "true" },
@@ -231,7 +234,7 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
   });
 
   test("should return 502 if Kokoro fetch fails", async () => {
-    (auth as jest.Mock).mockResolvedValue({ userId: "user_123" });
+    mockAuth.mockResolvedValue({ userId: "user_123" });
     (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
     (db.systemConfig.findMany as jest.Mock).mockResolvedValue([
       { key: "onoma.kokoro.enabled", value: "true" },
@@ -257,7 +260,7 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
   });
 
   test("speaks the re-spelled IPA, not the raw name", async () => {
-    (auth as jest.Mock).mockResolvedValue({ userId: "user_123" });
+    mockAuth.mockResolvedValue({ userId: "user_123" });
     (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
     (db.systemConfig.findMany as jest.Mock).mockResolvedValue([
       { key: "onoma.kokoro.enabled", value: "true" },
@@ -286,7 +289,7 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
   });
 
   test("a POST body of JSON null is a 400, not a gateway error", async () => {
-    (auth as jest.Mock).mockResolvedValue({ userId: "user_123" });
+    mockAuth.mockResolvedValue({ userId: "user_123" });
     (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
     (db.systemConfig.findMany as jest.Mock).mockResolvedValue([
       { key: "onoma.kokoro.enabled", value: "true" },
@@ -303,7 +306,7 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
   });
 
   test("engine=fastapi posts normalized phonemes to /dev/generate_from_phonemes", async () => {
-    (auth as jest.Mock).mockResolvedValue({ userId: "user_123" });
+    mockAuth.mockResolvedValue({ userId: "user_123" });
     (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
     (db.systemConfig.findMany as jest.Mock).mockResolvedValue([
       { key: "onoma.kokoro.enabled", value: "true" },
@@ -340,7 +343,7 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
   });
 
   test("an admin test uses the unsaved kokoro-fastapi engine and URL from the request", async () => {
-    (auth as jest.Mock).mockResolvedValue({ userId: "user_123" });
+    mockAuth.mockResolvedValue({ userId: "user_123" });
     (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
     // Saved config: kokoro-web, no FastAPI URL.
     (db.systemConfig.findMany as jest.Mock).mockResolvedValue([
@@ -376,7 +379,7 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
   });
 
   test("an admin test with a blank apiKey uses the saved key", async () => {
-    (auth as jest.Mock).mockResolvedValue({ userId: "user_123" });
+    mockAuth.mockResolvedValue({ userId: "user_123" });
     (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
     (db.systemConfig.findMany as jest.Mock).mockResolvedValue([
       { key: "onoma.kokoro.enabled", value: "true" },
@@ -410,7 +413,7 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
   });
 
   test("on fastapi 5xx, falls back to kokoro-web", async () => {
-    (auth as jest.Mock).mockResolvedValue({ userId: "user_123" });
+    mockAuth.mockResolvedValue({ userId: "user_123" });
     (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
     (db.systemConfig.findMany as jest.Mock).mockResolvedValue([
       { key: "onoma.kokoro.enabled", value: "true" },
@@ -461,7 +464,7 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
   });
 
   test("should prepend http:// to baseUrl if it lacks a protocol", async () => {
-    (auth as jest.Mock).mockResolvedValue({ userId: "admin_123" });
+    mockAuth.mockResolvedValue({ userId: "admin_123" });
     (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
     (db.user.findUnique as jest.Mock).mockResolvedValue({
       role: { name: "admin", level: 10 },

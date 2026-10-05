@@ -10,6 +10,7 @@ describe("useBuilderActions", () => {
   const createMockState = (overrides?: Partial<BuilderState>): BuilderState => ({
     step: "foundation",
     selectedCountry: null,
+    selectedArchetypeId: null,
     economicInputs: null,
     governmentComponents: [],
     taxSystemData: null,
@@ -19,6 +20,7 @@ describe("useBuilderActions", () => {
     activeGovernmentTab: "components",
     activeEconomicsTab: "economy",
     showAdvancedMode: false,
+    economyBuilderState: null,
     ...overrides,
   });
 
