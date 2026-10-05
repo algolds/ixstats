@@ -1,8 +1,8 @@
 /**
  * cloudflare-guardian.ts — WikiGuardian Cloudflare Defense Suite
  *
- * Cloudflare Turnstile invisible CAPTCHA verification, Zero-Trust Access header
- * checking, and non-blocking Cloudflare Zone edge CDN cache purging.
+ * Cloudflare Turnstile CAPTCHA verification and non-blocking Cloudflare zone
+ * edge-cache purging.
  */
 
 import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
