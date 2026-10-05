@@ -106,9 +106,9 @@ code-health track runs throughout.
 | Branch model (D13, decided): promote `rose-garden` → `development` → `master`; `master` stays production and the default branch; Dependabot targets `rose-garden` (done); obsolete Dependabot PRs closed (done) | PL-14, PL-15 | S | Partial: CI and the security scan run on `master`, `development` and `rose-garden`; `dependabot.yml` cleaned up (2026-10-05). Dependabot and scheduled workflows read config from `master` only, so these take effect after promotion |
 | Fix or delete the failing scheduled workflows (security scan → `bun audit`; image validation; Gemini triage and review need `GEMINI_API_KEY` or removal) | PL-14 | S | Partial: the security scan uses `bun audit` and `image-validation.yml` is deleted (2026-10-05); Gemini (D15) open |
 | Fix the 5 rules-of-hooks errors, set `--max-warnings` to ~160, make `lint:strict` blocking | PL-17 | S | ✅ Done (2026-10-05): 0 errors and 25 warnings; `--max-warnings 25` and the CI step is blocking |
-| Typecheck tests, `proxy.ts`, `instrumentation.ts`, `content` and `scripts/` in CI; add `typecheck:db` | PL-16 | S | Partial: `typecheck:db` and `typecheck:scripts` (scripts, proxy, instrumentation, content) run in CI (2026-10-05); `src/tests` is not covered |
+| Typecheck tests, `proxy.ts`, `instrumentation.ts`, `content` and `scripts/` in CI; add `typecheck:db` | PL-16 | S | Mostly done (2026-10-05): `typecheck:db` and `typecheck:scripts` (scripts, prisma seeds, proxy, instrumentation, content) run in CI. Left: `src/tests` (≈890 type errors) — ratchet it down before adding it |
 | Fix the 7 package scripts that fail on import | PL-5 | S | ✅ Done (2026-10-05); the `check:script-imports` CI step keeps them working |
-| `audit:arch`: split the 15 files over the ceiling or add them to `RELAXED_FILES`, then make it blocking | PF§6 | M | Partial: the baseline holds real line counts (38 files), so the ratchet fires (2026-10-05); still non-blocking in CI |
+| `audit:arch`: split the 15 files over the ceiling or add them to `RELAXED_FILES`, then make it blocking | PF§6 | M | ✅ Done (2026-10-05): the oversized files are split (or the navigation table relaxed; the WikiOS templates router frozen until #52), no cross-router imports remain, and the CI step is blocking |
 
 **Deploy & runtime**
 | Item | Refs | Size | Status |

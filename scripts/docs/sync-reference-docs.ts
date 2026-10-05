@@ -90,7 +90,6 @@ export const IN_SCOPE_DOCS = [
   "docs/processes/testing.md",
   "docs/processes/refactoring.md",
   "docs/operations/deployment.md",
-  "docs/operations/deployment-checklist.md",
   "scripts/README.md",
 ];
 

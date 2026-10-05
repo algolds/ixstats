@@ -151,7 +151,6 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | --- | --- |
 | [operations/local-dev-setup.md](operations/local-dev-setup.md) | Local dev environment, empty-database bootstrap (`db:bootstrap`), dev scripts |
 | [operations/deployment.md](operations/deployment.md) | Production reference: PM2 apps (web, ws, cron), env vars, health checks |
-| [operations/deployment-checklist.md](operations/deployment-checklist.md) | Retired pointer to the release guide (kept for `docs:check`) |
 | [operations/release-guide.md](operations/release-guide.md) | Release guide: pre-deploy checklist, build and deploy from `master`, verification, rollback, and this release's one-off steps |
 | [operations/deploy-rose-garden-2026-09.md](operations/deploy-rose-garden-2026-09.md) | Release runbook for rose-garden (Realms schema push, backfill, Eurth) |
 | [operations/credentials.md](operations/credentials.md) | Credentials and environment variables |

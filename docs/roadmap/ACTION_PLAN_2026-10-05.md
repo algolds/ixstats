@@ -16,6 +16,23 @@ It is the to-do list that gets both of them back in step with the code. Item IDs
 
 **Size:** S under a day · M 1–3 days · L more than 3 days. **Priority:** P0 now · P1 this cycle · P2 when capacity allows.
 
+## Progress (end of 2026-10-05)
+
+All five phases were worked the same day on `rose-garden`; the commits and merges are in `git log`. What is left:
+
+- **Owner and ops actions (0.3):** rotate the leaked database password, check the IxWiki bot grants, run
+  `audit:vault-exploits:apply` and a production restore test, run the deploy-time backfills
+  (`db:mark-match-revenue-collected`, `db:backfill-transport-realm`, `bun prisma/seeds/achievement-cards.ts`).
+- **Decisions:** D18 (get `.github/` onto `master` so Dependabot and scheduled workflows use the fixes), D20 (PR #52 —
+  WikiOS edit integrity, uploads and the `wikios` rate limits wait on it), D2 (defense force structure), and the
+  sign-offs listed in the final hand-off: annual policy upkeep, the stability policy scale, Vexel attach refusing until
+  rendering exists, notification preferences now applying to saved rows.
+- **Engineering still open:** typecheck `src/tests` (≈890 errors); Vexel PNG rendering; blocking inside group chats;
+  crisis-event producer and meeting decisions on the event spine (M4); M3–M7 as planned. The live backlog is
+  [backlog.md](backlog.md).
+- **Ops still open:** deploy 1.4 (runbook), Redis on in production, remove the nginx CSP override, run the web process
+  under PM2 if wanted, enable cron jobs one per cycle.
+
 ## Contents
 
 - [Summary](#summary)

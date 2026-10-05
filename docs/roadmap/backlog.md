@@ -106,7 +106,7 @@ partly done item.
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
 | VT-12 | UNFINISHED | Only the buyer sees their own cosmetics (no public equipped-cosmetics query) | `hooks/useActiveCosmetics.ts` | M |
-| VT-14 | BUG | Crafting. Left: the workbench sends card IDs where crafting expects ownership IDs; the crafting seed is not in `db:seed`; MYTHIC recipe (D6) | `crafting/recipes.ts` | M |
+| VT-14 | BUG | Crafting. Left: the MYTHIC recipe (D6). The workbench sends ownership IDs and `db:seed` runs the crafting seed (2026-10-05) | `crafting/recipes.ts` | S |
 | VT-16 | DEAD | The Exchange (₷) economy exists only in the schema (11 of 13 models unused); wallets seeded with 10,000 ₷; `spend` has no conditional decrement. D5 | `exchange.prisma`; `lib/vault/exchange-service.ts` | L |
 | VT-19 | DEAD | `pdsConfig` is seeded on all 20 packs and never read | `prisma/seeds/data/card-packs.json`; `cards.prisma` | S |
 | VT-21 | UNFINISHED | Inventory bulk Move and List Market buttons are permanently disabled | `InventoryTab.tsx` | M |
@@ -118,7 +118,7 @@ partly done item.
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
 | SL-4 | FLAGGED | Privacy. Left: blocking inside group chats; the hidden toggles (DM/mention/trade permissions, online status, read receipts, indexing, telemetry, muted words, clear history) have no enforcement | `routers/users/preferences.ts`; `server/shared/user-blocks.ts` | M |
-| SL-5 | FLAGGED | Notifications. Left: admin broadcasts, sports club results and the messaging broadcast bypass recipient preferences; no email or push delivery | `lib/notifications/recipient-preferences.ts`; `lib/sports/club-notify.ts` | M |
+| SL-5 | FLAGGED | Notifications. Left: admin broadcasts and the messaging broadcast bypass recipient preferences (sports results now respect the minimum urgency, 2026-10-05); no email or push delivery | `lib/notifications/recipient-preferences.ts` | M |
 | SL-6 | DEAD | 12 of 23 notification hooks are never called but still appear in the admin registry | `lib/notifications/hooks.ts` | M |
 | SL-7 | DEAD | 23 of 29 activity producers have no caller, so the feed's Economic and Diplomatic filters are nearly empty | `lib/activity/generator.ts` | M |
 | SL-8 | STUB | Engagement. Left: view counts and a trending ranking beyond the `thinkpages-trending` job (#49) | `routers/activities/trending.ts` | M |
@@ -134,7 +134,7 @@ partly done item.
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
 | PL-12 | DEBT | `next.config.js` isn't tracked; the web process isn't under PM2 (see §1) | — | S |
-| PL-16 | DEBT | `src/tests` isn't typechecked in CI | `ci.yml` | S |
+| PL-16 | DEBT | `src/tests` isn't typechecked in CI (≈890 errors on 2026-10-05; scripts, seeds, proxy, instrumentation and content are) | `ci.yml` | M |
 | PL-18 | DEAD | Left: `AdvancedCacheSystem` (`lib/cache/advanced-cache-system.ts`), `image-cache-service`, `readOnlyProcedure`, `cleanupOldAuctions` (re-check each) | — | S |
 | PL-19 | DEBT | Env hygiene: declared variables never read; `.env.example` missing many | `src/env.ts` | S |
 | PL-21 | FLAGGED | `editableByOwner` is never read, so that map permission isn't enforced | `maps.prisma:59,104` | S |
@@ -273,7 +273,7 @@ See §1 above (password rotation, CSP).
 ### PF§6 Code health & tech debt
 
 - **Git-ignored fixtures:** three checks read files CI doesn't have (`next.config.js`, `public/icons/game-icons-manifest.json`, `public/data/vector-seeds/`); they only run where the file exists.
-- **`audit:arch` is non-blocking in CI.** Its baseline holds real line counts, so growth fails the check; fix the violations or relax files, then make it blocking. The 800+-line files are tracked in [src-monolith-candidates.md](../audits/src-monolith-candidates.md).
+- **Size ratchet:** `audit:arch` is blocking (2026-10-05); keep shrinking the 39 baselined files. The 800+-line files are tracked in [src-monolith-candidates.md](../audits/src-monolith-candidates.md).
 - **Service layer:** about 200 router files query `ctx.db` directly.
 - **Arch guard coverage:** no pre-commit hook for `audit:arch`; the router-split parity check covers 5 routers.
 - **Logging:** a handful of `logger.*` calls against ~1,700 `console.*`; decide the framework's fate.
