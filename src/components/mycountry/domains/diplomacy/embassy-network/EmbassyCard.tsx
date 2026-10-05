@@ -31,9 +31,11 @@ interface EmbassyWithSynergies {
   guestCountryFlag?: string | null;
   status: string;
   strength: number;
-  /** Economic tiers for the asymmetry badge; not yet supplied by getEmbassies. */
+  /** Economic tiers for the asymmetry badge; the badge is hidden when either is unknown. */
   hostCountryTier?: string | null;
   guestCountryTier?: string | null;
+  /** The viewed country's side of the embassy, which sets the badge's point of view. */
+  role?: "host" | "guest";
   totalSynergyScore: number;
   economicBonus: number;
   diplomaticBonus: number;
@@ -98,11 +100,12 @@ export const EmbassyCard = React.memo(function EmbassyCard({
       : embassy.hostCountry;
 
   const asymmetry = React.useMemo(() => {
+    const viewedIsHost = embassy.role === "host";
     return calculateRelativeDevelopment(
-      embassy.guestCountryTier || "DEVELOPED",
-      embassy.hostCountryTier || "DEVELOPED"
+      viewedIsHost ? embassy.hostCountryTier : embassy.guestCountryTier,
+      viewedIsHost ? embassy.guestCountryTier : embassy.hostCountryTier
     );
-  }, [embassy]);
+  }, [embassy.role, embassy.hostCountryTier, embassy.guestCountryTier]);
 
   const synergy = getSynergyBand(embassy.totalSynergyScore);
   const benefits = [
@@ -172,9 +175,11 @@ export const EmbassyCard = React.memo(function EmbassyCard({
               <ShieldCheck />
               {synergy.label} Synergy
             </Badge>
-            <Badge variant="outline" className="text-label-secondary">
-              {asymmetry.label}
-            </Badge>
+            {asymmetry && (
+              <Badge variant="outline" className="text-label-secondary">
+                {asymmetry.label}
+              </Badge>
+            )}
           </div>
         </div>
       </CardHeader>

@@ -35,6 +35,8 @@ interface EmbassyWithSynergies {
   guestCountry: string;
   guestCountryFlag: string | null;
   guestCountrySlug: string | null;
+  hostCountryTier: string | null;
+  guestCountryTier: string | null;
   countryId: string | null;
   country: string;
   countryFlag: string | null;

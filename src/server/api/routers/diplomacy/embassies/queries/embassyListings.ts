@@ -7,7 +7,9 @@ import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { countriesWithWriteAccess } from "~/server/shared/country-authorization";
 import { missionTimeProgress } from "~/lib/diplomacy/embassy-mission-sweep";
 
-const COUNTRY_SELECT = { select: { id: true, name: true, flag: true, slug: true } } as const;
+const COUNTRY_SELECT = {
+  select: { id: true, name: true, flag: true, slug: true, economicTier: true },
+} as const;
 const LISTING_INCLUDE = { hostCountry: COUNTRY_SELECT, guestCountry: COUNTRY_SELECT } as const;
 
 type ListedEmbassy = Prisma.EmbassyGetPayload<{ include: typeof LISTING_INCLUDE }>;
@@ -35,6 +37,9 @@ function embassyListing(embassy: ListedEmbassy, countryId: string, funders: Set<
     guestCountry: nameOf(embassy.guestCountry),
     guestCountryFlag: flagOf(embassy.guestCountry),
     guestCountrySlug: slugOf(embassy.guestCountry),
+    // Economic tiers drive the relative-development badge on the network card.
+    hostCountryTier: embassy.hostCountry?.economicTier ?? null,
+    guestCountryTier: embassy.guestCountry?.economicTier ?? null,
     countryId: partnerCountry?.id ?? null,
     country: nameOf(partnerCountry),
     countryFlag: flagOf(partnerCountry),
