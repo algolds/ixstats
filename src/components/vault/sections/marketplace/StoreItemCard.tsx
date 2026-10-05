@@ -12,7 +12,6 @@ export interface StoreItem {
   description: string;
   price: number;
   icon: React.ComponentType<{ className?: string }>;
-  glowColor: string;
   quality: string; // "LEGENDARY" | "EPIC" | "RARE" | "COMMON"
   badgeText: string;
   category?: string;
@@ -113,7 +112,6 @@ export function StoreItemCard({
           scale,
           y: translateY,
           perspective: "1000px",
-          ["--glow" as string]: item.glowColor,
         }}
       >
         {/* Card Header */}

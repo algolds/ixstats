@@ -126,7 +126,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
                 <div className="relative flex h-64 items-center justify-center">
                   {/* Left circle */}
                   <motion.div
-                    className="card-art-linear-br absolute h-32 w-32 rounded-full from-blue-500 to-indigo-500 opacity-50"
+                    className="card-art-linear-br from-blue to-indigo absolute h-32 w-32 rounded-full opacity-50"
                     animate={{
                       x: [-100, 0],
                       scale: [1, 1.2, 0.8],
@@ -140,7 +140,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
 
                   {/* Right circle */}
                   <motion.div
-                    className="card-art-linear-br absolute h-32 w-32 rounded-full from-amber-500 to-indigo-500 opacity-50"
+                    className="card-art-linear-br from-yellow to-indigo absolute h-32 w-32 rounded-full opacity-50"
                     animate={{
                       x: [100, 0],
                       scale: [1, 1.2, 0.8],
@@ -193,7 +193,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
                 <motion.div
                   className={cn(
                     "mb-4 text-6xl font-bold tracking-tight",
-                    success ? "text-green-400" : "text-red-400"
+                    success ? "text-green" : "text-red"
                   )}
                   animate={{
                     scale: [0.5, 1.2, 1],
@@ -228,7 +228,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
                     {particles.map((particle) => (
                       <motion.div
                         key={particle.id}
-                        className="absolute h-2 w-2 rounded-full bg-yellow-400"
+                        className="bg-yellow absolute h-2 w-2 rounded-full"
                         initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
                         animate={{
                           x: particle.x * 5,
@@ -267,9 +267,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
                       >
                         <div className="rounded-card inline-block bg-white/10 px-6 py-3">
                           <div className="text-footnote text-white/60">XP gained</div>
-                          <div className="text-large-title text-blue-400 tabular-nums">
-                            +{xpGained}
-                          </div>
+                          <div className="text-large-title text-blue tabular-nums">+{xpGained}</div>
                         </div>
                       </motion.div>
                     )}

@@ -409,7 +409,6 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
                       style={{
                         backgroundColor: `${rarityColor}80`,
                         color: "white",
-                        boxShadow: `0 0 20px ${rarityColor}`,
                       }}
                     >
                       {card.rarity.replace("_", " ")}

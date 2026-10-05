@@ -191,7 +191,7 @@ export function PackHolographicCard({
         <div className="mt-2 space-y-2 px-1">
           <div className="flex items-center justify-between">
             <span className="text-label text-footnote line-clamp-1 font-semibold">{pack.name}</span>
-            <Badge variant="outline" className={cn("text-eyebrow px-1 py-0", config.color)}>
+            <Badge variant="outline" className={cn("text-caption px-1 py-0", config.color)}>
               {config.label}
             </Badge>
           </div>
