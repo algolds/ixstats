@@ -27,8 +27,8 @@ export function RealmUsersTab() {
     return <div className="text-label-secondary py-16 text-center">No users found.</div>;
   }
 
-  const withCountry = users.filter((u) => u.country);
-  const withoutCountry = users.filter((u) => !u.country);
+  const withCountry = users.filter((u) => u.nations.length > 0);
+  const withoutCountry = users.filter((u) => u.nations.length === 0);
 
   return (
     <div className="space-y-6">
@@ -48,8 +48,7 @@ export function RealmUsersTab() {
           <TableRow>
             <TableHead className="px-4">Clerk User ID</TableHead>
             <TableHead className="px-4">Membership</TableHead>
-            <TableHead className="px-4">Country</TableHead>
-            <TableHead className="px-4">Realm</TableHead>
+            <TableHead className="px-4">Nations</TableHead>
             <TableHead className="px-4">Status</TableHead>
             <TableHead className="px-4">Joined</TableHead>
           </TableRow>
@@ -72,23 +71,26 @@ export function RealmUsersTab() {
                 </span>
               </TableCell>
               <TableCell className="px-4">
-                {user.country ? (
-                  <span className="font-medium">{user.country.name}</span>
+                {user.nations.length > 0 ? (
+                  <ul className="space-y-1">
+                    {user.nations.map((nation) => (
+                      <li key={nation.id} className="flex items-center gap-2">
+                        <span className="font-medium">{nation.name}</span>
+                        <span
+                          className={`text-footnote ${nation.realmId === "default" ? "text-green" : "text-purple"}`}
+                        >
+                          {nation.realmId === "default"
+                            ? "IxWorld"
+                            : (nation.realmName ?? nation.realmId.slice(0, 12))}
+                        </span>
+                        {nation.active && (
+                          <span className="text-label-tertiary text-footnote">active</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 ) : (
-                  <span className="text-label-tertiary text-footnote">No country</span>
-                )}
-              </TableCell>
-              <TableCell className="px-4">
-                {user.country?.realmId ? (
-                  <span
-                    className={`text-footnote ${user.country.realmId === "default" ? "text-green" : "text-purple"}`}
-                  >
-                    {user.country.realmId === "default"
-                      ? "IxWorld"
-                      : user.country.realmId.slice(0, 12)}
-                  </span>
-                ) : (
-                  <span className="text-label-tertiary text-footnote">N/A</span>
+                  <span className="text-label-tertiary text-footnote">No nations</span>
                 )}
               </TableCell>
               <TableCell className="px-4">

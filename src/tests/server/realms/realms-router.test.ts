@@ -473,3 +473,60 @@ describe("realms.adminUpdateRealm", () => {
     expect(realm.update).not.toHaveBeenCalled();
   });
 });
+
+describe("realms.adminListUsers (AT-19)", () => {
+  const admin = { id: "db_admin", clerkUserId: "admin_1", role: { name: "admin", level: 10 } };
+  const nation = (id: string, name: string, realmId: string, realmName: string | null) => ({
+    id,
+    name,
+    realmId,
+    realm: realmName ? { name: realmName } : null,
+  });
+
+  it("lists every nation a user holds across realms and marks the active one", async () => {
+    const findMany = jest.fn().mockResolvedValue([
+      {
+        id: "u1",
+        clerkUserId: "clerk_u1",
+        countryId: "e1",
+        membershipTier: "premium",
+        isActive: true,
+        createdAt: new Date(0),
+        country: nation("e1", "Gallambria", "eurth-id", "Eurth"),
+        ownedCountries: [
+          nation("c1", "Aurelia", "default", null),
+          nation("e1", "Gallambria", "eurth-id", "Eurth"),
+        ],
+      },
+      {
+        id: "u2",
+        clerkUserId: "clerk_u2",
+        countryId: "c2",
+        membershipTier: "basic",
+        isActive: true,
+        createdAt: new Date(0),
+        // A legacy active link without an ownership row is still shown.
+        country: nation("c2", "Borea", "default", null),
+        ownedCountries: [],
+      },
+    ]);
+    const ctx = createMockRouterContext({
+      db: { user: { findMany }, auditLog: { create: jest.fn() } },
+      auth: { userId: admin.clerkUserId },
+      user: admin,
+    });
+    const users = await realmsRouter.createCaller(ctx as never).adminListUsers();
+
+    expect(users.map((u) => u.nations)).toEqual([
+      [
+        { id: "c1", name: "Aurelia", realmId: "default", realmName: null, active: false },
+        { id: "e1", name: "Gallambria", realmId: "eurth-id", realmName: "Eurth", active: true },
+      ],
+      [{ id: "c2", name: "Borea", realmId: "default", realmName: null, active: true }],
+    ]);
+    for (const u of users) {
+      expect(u).not.toHaveProperty("country");
+      expect(u).not.toHaveProperty("ownedCountries");
+    }
+  });
+});

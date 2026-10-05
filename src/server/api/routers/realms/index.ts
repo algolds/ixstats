@@ -154,9 +154,13 @@ export const realmsRouter = createTRPCRouter({
     }));
   }),
 
-  /** Admin: list users with their realm associations (via country) */
+  /**
+   * Admin: list users with every nation they hold, in every realm (AT-19). `active` marks the nation they act as;
+   * an active nation without an ownership row (legacy link) is still listed.
+   */
   adminListUsers: adminProcedure.query(async ({ ctx }) => {
-    return ctx.db.user.findMany({
+    const nation = { id: true, name: true, realmId: true, realm: { select: { name: true } } };
+    const users = await ctx.db.user.findMany({
       orderBy: { updatedAt: "desc" },
       select: {
         id: true,
@@ -165,14 +169,23 @@ export const realmsRouter = createTRPCRouter({
         membershipTier: true,
         isActive: true,
         createdAt: true,
-        country: {
-          select: {
-            id: true,
-            name: true,
-            realmId: true,
-          },
-        },
+        country: { select: nation },
+        ownedCountries: { orderBy: { name: "asc" }, select: nation },
       },
+    });
+    return users.map(({ country, ownedCountries, ...user }) => {
+      const held =
+        country && !ownedCountries.some((c) => c.id === country.id)
+          ? [country, ...ownedCountries]
+          : ownedCountries;
+      return {
+        ...user,
+        nations: held.map(({ realm, ...c }) => ({
+          ...c,
+          realmName: realm?.name ?? null,
+          active: c.id === user.countryId,
+        })),
+      };
     });
   }),
 
