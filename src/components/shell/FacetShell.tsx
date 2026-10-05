@@ -3,8 +3,9 @@
 /**
  * The navigation shell: AppSidebar (≥1024px), TabBar (<1024px) and Halo as the floating island.
  * Wires the presentational components to the route, the signed-in user, the admin role, the
- * `labs.access` grant, the admin navigation settings and the persisted sidebar state. Chromeless
- * routes (`CHROMELESS_PREFIXES`: Maps and the full-screen map editors) get no sidebar or tab bar.
+ * `labs.access` grant, the admin navigation settings, the persisted sidebar state and the source
+ * list's disclosure state and live badges. Chromeless routes (`CHROMELESS_PREFIXES`: Maps and the
+ * full-screen map editors) get no sidebar or tab bar.
  */
 
 import { Suspense, useMemo, type ReactNode } from "react";
@@ -21,10 +22,12 @@ import {
   type SearchParamsLike,
 } from "~/lib/navigation/app-sections";
 import { useSidebarCollapsed } from "~/lib/navigation/use-sidebar-collapsed";
+import { useNavExpanded } from "~/lib/navigation/use-nav-expanded";
 import { AccountMenu } from "./AccountMenu";
 import { AppSidebar } from "./AppSidebar";
 import { TabBar } from "./TabBar";
 import { ShellHalo } from "./ShellHalo";
+import { useNavBadges } from "./use-nav-badges";
 
 function WithSearchParams({ render }: { render: (params: SearchParamsLike | null) => ReactNode }) {
   const params = useSearchParams();
@@ -55,8 +58,11 @@ export function FacetShell() {
     refetchOnWindowFocus: false,
   });
   const { collapsed, setCollapsed } = useSidebarCollapsed();
+  const { expanded, toggle } = useNavExpanded();
 
   const signedIn = Boolean(user);
+  // Once here so the sidebar and the More sheet never run the queries twice.
+  const badges = useNavBadges(signedIn);
   const apps = useMemo(
     () =>
       getVisibleApps({
@@ -80,12 +86,18 @@ export function FacetShell() {
                 apps={apps}
                 collapsed={collapsed}
                 onCollapsedChange={setCollapsed}
+                expanded={expanded}
+                onToggle={toggle}
+                badges={badges}
                 account={<AccountMenu layout="sidebar" collapsed={collapsed} />}
               />
               <TabBar
                 pathname={pathname}
                 searchParams={searchParams}
                 apps={apps}
+                expanded={expanded}
+                onToggle={toggle}
+                badges={badges}
                 account={<AccountMenu layout="sheet" />}
               />
             </>

@@ -5,8 +5,8 @@
  *
  * A floating `facet-chrome` bar at the bottom (`z-chrome`, clear of the home indicator via the
  * safe-area inset) with up to four primary apps (`TAB_BAR_PRIORITY`) and "More". More opens a
- * bottom `Sheet` with detents listing the current app's sections (the phone path for every app's
- * own `data-app-subnav`), the remaining apps (`FacetList`) and the account.
+ * bottom `Sheet` with detents holding the shared `SourceList` (the phone path for every app's
+ * own `data-app-subnav`, plus the other apps) and the account.
  * Targets are at least 44px; the current tab and rows carry `aria-current="page"`. Content reserves
  * the bar's height through `--shell-tabbar-height` (`src/styles/facet/shell.css`).
  */
@@ -25,16 +25,17 @@ import {
   SheetTitle,
   SheetDescription,
 } from "~/components/ui/sheet";
-import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { springSnappy } from "~/lib/design/motion";
 import { FacetMaterial } from "~/components/ui/facet";
+import { SourceList } from "./SourceList";
 import {
   getActiveSectionId,
   getAppForPath,
   getTintForPath,
-  groupSections,
   splitTabBarApps,
   type AppDefinition,
+  type NavAction,
+  type NavBadges,
   type NavIcon,
   type SearchParamsLike,
 } from "~/lib/navigation/app-sections";
@@ -45,6 +46,11 @@ interface TabBarProps {
   searchParams: SearchParamsLike | null;
   /** Apps this user can see (`getVisibleApps`). */
   apps: readonly AppDefinition[];
+  /** Opened apps and section groups, remembered by the host. */
+  expanded: ReadonlySet<string>;
+  onToggle: (id: string) => void;
+  badges: NavBadges;
+  onAction?: (action: NavAction) => void;
   /** The account (`AccountMenu layout="sheet"`), listed at the end of the More sheet. */
   account?: React.ReactNode;
   className?: string;
@@ -76,15 +82,23 @@ function TabLabel({ icon: Icon, label }: { icon: NavIcon; label: string }) {
   );
 }
 
-export function TabBar({ pathname, searchParams, apps, account, className }: TabBarProps) {
+export function TabBar({
+  pathname,
+  searchParams,
+  apps,
+  expanded,
+  onToggle,
+  badges,
+  onAction,
+  account,
+  className,
+}: TabBarProps) {
   const [moreOpen, setMoreOpen] = React.useState(false);
-  const { primary, more } = splitTabBarApps(apps.filter((app) => app.id !== "settings"));
-  const settingsApp = apps.find((app) => app.id === "settings");
+  const { primary } = splitTabBarApps(apps.filter((app) => app.id !== "settings"));
   const current = getAppForPath(pathname);
   const activeSectionId = current ? getActiveSectionId(current, pathname, searchParams) : undefined;
   const tint = getTintForPath(current, activeSectionId);
   const currentIsPrimary = primary.some((app) => app.id === current?.id);
-  const moreApps = settingsApp ? [...more, settingsApp] : more;
   const close = () => setMoreOpen(false);
 
   return (
@@ -148,50 +162,23 @@ export function TabBar({ pathname, searchParams, apps, account, className }: Tab
           <SheetHeader>
             <SheetTitle>More</SheetTitle>
             <SheetDescription className="sr-only">
-              Sections of the current app, the other apps and your account.
+              Every app and its sections, and your account.
             </SheetDescription>
           </SheetHeader>
           <div className="-mx-2 min-h-0 flex-1 overflow-y-auto pb-2">
-            <FacetList>
-              {current &&
-                groupSections(current.sections).map(({ group, sections }, index) => (
-                  <FacetListSection
-                    key={group ?? `ungrouped-${index}`}
-                    header={group ? `${current.label} · ${group}` : current.label}
-                  >
-                    {sections.map((section) => {
-                      const Icon = section.icon;
-                      return (
-                        <FacetRow
-                          key={section.id}
-                          href={section.href}
-                          leading={<Icon className="size-5" />}
-                          title={section.label}
-                          selected={section.id === activeSectionId}
-                          onClick={close}
-                        />
-                      );
-                    })}
-                  </FacetListSection>
-                ))}
-              {moreApps.length > 0 && (
-                <FacetListSection header="Apps">
-                  {moreApps.map((app) => {
-                    const Icon = app.icon;
-                    return (
-                      <FacetRow
-                        key={app.id}
-                        href={app.href}
-                        leading={<Icon className="size-5" />}
-                        title={app.label}
-                        selected={app.id === current?.id}
-                        onClick={close}
-                      />
-                    );
-                  })}
-                </FacetListSection>
-              )}
-            </FacetList>
+            <div className="px-2">
+              <SourceList
+                variant="sheet"
+                pathname={pathname}
+                searchParams={searchParams}
+                apps={apps}
+                expanded={expanded}
+                onToggle={onToggle}
+                badges={badges}
+                onAction={onAction}
+                onNavigate={close}
+              />
+            </div>
             {account && (
               // Any link in the account panel closes the sheet.
               <div
