@@ -23,12 +23,6 @@ export class PackError extends Error {
 }
 
 /**
- * `Card.metadata` marker set on cards minted by crafting. Crafted cards (and SPECIAL cards,
- * which are achievement and event rewards) never drop from packs.
- */
-export const CRAFTED_CARD_MARKER = { crafted: true } as const;
-
-/**
  * Optional `CardPack.themeFilter` shape. Each listed key narrows the pool (keys combine with
  * AND, values within a key with OR); unknown keys are ignored.
  *   { "categories": ["MILITARY"], "subcategories": [...], "cardTypes": ["LORE"], "countryIds": [...] }
@@ -241,8 +235,9 @@ async function packPoolWhere(
   tx: Prisma.TransactionClient,
   pack: { cardType: string | null; season: number | null; themeFilter: unknown }
 ): Promise<Prisma.CardWhereInput> {
-  // Positive JSON match (a NOT on a JSON path would also drop every card without metadata).
-  // Legacy crafts carry no marker, only the generic "Crafted via <recipe>" description.
+  // Crafted cards carry CRAFTED_CARD_MARKER (crafting-rules.ts). Matched positively, as a NOT
+  // on a JSON path would also drop every card without metadata. Legacy crafts carry no
+  // marker, only the generic "Crafted via <recipe>" description.
   const crafted = await tx.card.findMany({
     where: {
       OR: [

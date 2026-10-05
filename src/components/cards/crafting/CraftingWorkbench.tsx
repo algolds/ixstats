@@ -166,8 +166,8 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
   const hasEnoughCredits =
     vaultBalance && recipeData && vaultBalance.credits >= recipeData.ixCreditsCost;
 
-  // Calculate success rate
-  const successRate = recipeData?.successRate ?? 0;
+  // Success rate as a percentage (the API returns 0.0-1.0)
+  const successRate = (recipeData?.successRate ?? 0) * 100;
 
   if (!recipeId) {
     return (
