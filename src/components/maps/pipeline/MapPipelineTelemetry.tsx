@@ -5,6 +5,7 @@ import { Activity, Component as Layers } from "iconoir-react";
 import type { NormalizedCountryPayload } from "~/lib/maps/pipeline/azgaar-normalizer";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Badge } from "~/components/ui/badge";
 import type {
   GeoProfilePayload,
   ResourcePlacementPayload,
@@ -52,6 +53,14 @@ const Box = ({ className = "p-3", children }: { className?: string; children: Re
 
 const Empty = ({ children }: { children: ReactNode }) => (
   <p className="text-label-secondary text-footnote italic">{children}</p>
+);
+
+/** GeoProfiles and resources are placeholder values, not computed from the map (AT-9). */
+const SampleNote = () => (
+  <p className="text-label-secondary text-footnote flex items-center gap-2">
+    <Badge variant="warning">Sample data</Badge>
+    Placeholder values, not computed from this map.
+  </p>
 );
 
 function StatsTab({ stats }: { stats: PipelineStats }) {
@@ -112,6 +121,7 @@ function GeoProfileTab({
 
   return (
     <div className="space-y-4">
+      <SampleNote />
       <Box className="space-y-2 p-3">
         <div className="text-tint text-caption font-semibold">{countryName} GeoProfile</div>
         <div className="text-footnote grid grid-cols-2 gap-2">
@@ -159,6 +169,7 @@ function ResourcesTab({ resources }: { resources: ResourcePlacementPayload[] }) 
       <div className="text-label text-caption font-semibold">
         Procedurally Placed Geographic Resources ({resources.length})
       </div>
+      <SampleNote />
       {resources.length === 0 ? (
         <Empty>No resources placed for this nation.</Empty>
       ) : (
