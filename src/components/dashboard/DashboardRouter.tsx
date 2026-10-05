@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import { DashboardSidebarLayout } from "./sidebar/DashboardSidebarLayout";
-import { NewVersionNotice } from "./NewVersionNotice";
 import { UnifiedDashboardSection } from "./sections/UnifiedDashboardSection";
 import { DashboardHero } from "./hero/DashboardHero";
 import { useUser } from "~/context/auth-context";
@@ -46,7 +45,6 @@ export function DashboardRouter({ initialCountryId = "" }: DashboardRouterProps)
 
   return (
     <DashboardSidebarLayout
-      alerts={<NewVersionNotice />}
       heroSection={
         !heroCollapsed ? (
           <DashboardHero collapsed={heroCollapsed} onCollapsedChange={setHeroCollapsed} />

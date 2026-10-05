@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { SourceList } from "~/components/shell/SourceList";
 import { getVisibleApps, type NavBadges } from "~/lib/navigation/app-sections";
 
@@ -110,6 +110,25 @@ describe("SourceList", () => {
     expect(within(nav).queryByRole("button", { name: /Daily reward/ })).toBeNull();
   });
 
+  it("renders a conditional row only while its badge exists, as a normal link", () => {
+    const hidden = setup("/dashboard");
+    expect(within(hidden.nav).queryByRole("link", { name: /What's new/ })).toBeNull();
+    cleanup();
+    const { nav } = setup("/dashboard", {
+      badges: { "whats-new": { kind: "action", label: "New" } },
+    });
+    const row = within(nav).getByRole("link", { name: /What's new/ });
+    expect(row).toHaveAttribute("href", "/changelog");
+    expect(row).toHaveTextContent("New");
+  });
+
+  it("shows the messages unread count on the Messages row", () => {
+    const { nav } = setup("/dashboard", {
+      badges: { "messages-unread": { kind: "count", value: 7 } },
+    });
+    expect(within(nav).getByRole("link", { name: /Messages/ })).toHaveTextContent("7");
+  });
+
   it("switches to area mode in admin, with the current group open", () => {
     const admin = apps.find((a) => a.id === "admin")!;
     const deep = admin.sections[admin.sections.length - 1]!;
@@ -191,7 +210,7 @@ describe("SourceList", () => {
       const hrefs = within(nav)
         .getAllByRole("link")
         .map((l) => l.getAttribute("href"));
-      for (const section of app.sections.filter((s) => !s.action)) {
+      for (const section of app.sections.filter((s) => !s.action && !s.conditional)) {
         expect({
           app: app.id,
           href: section.href,

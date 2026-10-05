@@ -17,6 +17,7 @@
  */
 
 import type { ComponentType, SVGProps } from "react";
+import { WikiLogomark } from "./icons/WikiLogomark";
 import {
   Activity,
   Archive,
@@ -81,7 +82,13 @@ import {
 
 export type NavIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
-type NavBadgeKey = "mycountry-flag" | "diplomacy-inbox" | "vault-balance" | "daily-reward";
+type NavBadgeKey =
+  | "mycountry-flag"
+  | "diplomacy-inbox"
+  | "vault-balance"
+  | "daily-reward"
+  | "messages-unread"
+  | "whats-new";
 export type NavAction = "daily-reward";
 export type NavBadge =
   | { kind: "count"; value: number }
@@ -102,7 +109,6 @@ type AppId =
   | "vault"
   | "wiki"
   | "forum"
-  | "sports"
   | "countries"
   | "labs"
   | "help"
@@ -142,6 +148,8 @@ interface AppSection {
   badge?: NavBadgeKey;
   /** Rendered as a button that runs the action; shown only while its badge is present. */
   action?: NavAction;
+  /** A normal link that is listed only while its badge is present (e.g. "What's new"). */
+  conditional?: true;
 }
 
 export interface AppDefinition {
@@ -182,13 +190,27 @@ export const APPS: readonly AppDefinition[] = [
     label: "Home",
     href: "/dashboard",
     icon: HomeSimple,
-    match: ["/", "/dashboard", "/feed", "/achievements", "/hashtags", "/changelog"],
+    // /feed, /achievements and /hashtags are not listed but stay Home's, so the sidebar keeps its place.
+    match: ["/", "/dashboard", "/feed", "/achievements", "/hashtags", "/changelog", "/messages"],
     requiresAuth: true,
     sections: [
       { id: "dashboard", label: "Dashboard", href: "/dashboard", icon: StatsReport },
-      { id: "feed", label: "Activity", href: "/feed", icon: Bell, match: ["/hashtags"] },
-      { id: "achievements", label: "Achievements", href: "/achievements", icon: Medal },
-      { id: "changelog", label: "What's new", href: "/changelog", icon: Clock },
+      {
+        id: "messages",
+        label: "Messages",
+        href: "/messages",
+        icon: Mail,
+        badge: "messages-unread",
+      },
+      // Listed only while this build is unseen; Help keeps a permanent changelog row.
+      {
+        id: "whats-new",
+        label: "What's new",
+        href: "/changelog",
+        icon: Clock,
+        badge: "whats-new",
+        conditional: true,
+      },
     ],
   },
   {
@@ -246,12 +268,11 @@ export const APPS: readonly AppDefinition[] = [
     href: "/thinkpages",
     icon: ChatLines,
     tint: "thinkpages",
-    match: ["/thinkpages", "/thinktanks", "/messages"],
+    match: ["/thinkpages", "/thinktanks"],
     requiresAuth: true,
     sections: [
       { id: "accounts", label: "Accounts", href: "/thinkpages", icon: User },
       { id: "thinktanks", label: "ThinkTanks", href: "/thinktanks", icon: Group },
-      { id: "messages", label: "Messages", href: "/messages", icon: Mail },
     ],
   },
   {
@@ -299,7 +320,7 @@ export const APPS: readonly AppDefinition[] = [
     id: "wiki",
     label: "Wiki",
     href: "/wiki",
-    icon: OpenBook,
+    icon: WikiLogomark,
     tint: "wiki",
     match: ["/wiki", "/util", "/blurbs", "/stashes"],
     navSetting: "showWikiTab",
@@ -374,19 +395,6 @@ export const APPS: readonly AppDefinition[] = [
     ],
   },
   {
-    id: "sports",
-    label: "Sports",
-    href: "/myleague",
-    icon: Trophy,
-    tint: "sports",
-    match: ["/myleague", "/myclub"],
-    requiresAuth: true,
-    sections: [
-      { id: "myleague", label: "MyLeague", href: "/myleague", icon: Trophy },
-      { id: "myclub", label: "MyClub", href: "/myclub", icon: Group },
-    ],
-  },
-  {
     id: "countries",
     label: "Countries",
     href: "/countries",
@@ -407,13 +415,17 @@ export const APPS: readonly AppDefinition[] = [
     icon: Flask,
     // Onoma's brand is blue; the sky `maps` tint is the closest app tint.
     tint: "maps",
-    match: ["/labs"],
+    match: ["/labs", "/myleague", "/myclub"],
     requiresAuth: true,
     navSetting: "showLabsTab",
     navSettingBypass: { admin: true, labsAccess: true },
-    // As the legacy "Labs" menu: only labs with a shipped entry point (MyLeague lives in Sports).
-    // Onoma keeps its own in-app navigation (src/app/labs/onoma).
-    sections: [{ id: "onoma", label: "Onoma", href: "/labs/onoma", icon: Translate }],
+    // Labs with a shipped entry point. Onoma keeps its own in-app navigation (src/app/labs/onoma);
+    // the sports sections carry their own tint, which the sidebar applies while one is current.
+    sections: [
+      { id: "onoma", label: "Onoma", href: "/labs/onoma", icon: Translate },
+      { id: "myleague", label: "MyLeague", href: "/myleague", icon: Trophy, tint: "sports" },
+      { id: "myclub", label: "MyClub", href: "/myclub", icon: Group, tint: "sports" },
+    ],
   },
   {
     id: "help",
@@ -422,7 +434,7 @@ export const APPS: readonly AppDefinition[] = [
     icon: HelpCircle,
     match: ["/help"],
     navSetting: "showHelpTab",
-    sections: [],
+    sections: [{ id: "changelog", label: "What's new", href: "/changelog", icon: Clock }],
   },
   {
     id: "admin",
@@ -592,7 +604,6 @@ const TAB_BAR_PRIORITY: readonly AppId[] = [
   "wiki",
   "forum",
   "vault",
-  "sports",
   "labs",
   "help",
 ];

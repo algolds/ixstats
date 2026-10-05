@@ -174,7 +174,10 @@ function SectionRows({
   collapsibleGroups: boolean;
   id?: string;
 }) {
-  const visible = app.sections.filter((s) => !s.action || (s.badge && ctx.badges[s.badge]));
+  // Action and conditional rows exist only while their badge does.
+  const visible = app.sections.filter(
+    (s) => (!s.action && !s.conditional) || (s.badge && ctx.badges[s.badge])
+  );
   const rowCtx = app.id === ctx.activeAppId ? ctx : { ...ctx, activeSectionId: undefined };
   return (
     <div id={id} className={cn("flex flex-col", !collapsibleGroups && "pl-4")} data-app={app.tint}>

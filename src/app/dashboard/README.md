@@ -9,8 +9,8 @@ sidebar's source list. There is a single route that renders `DashboardRouter`.
 
 ## Routes
 
-| Route | Page title | File |
-|-------|-----------|------|
+| Route        | Page title            | File                                   |
+| ------------ | --------------------- | -------------------------------------- |
 | `/dashboard` | "Dashboard - IxStats" | `page.tsx` → `DashboardPageClient.tsx` |
 
 The former `/dashboard/world`, `/dashboard/diplomacy`, `/dashboard/feed`, and
@@ -37,7 +37,8 @@ The former `/dashboard/world`, `/dashboard/diplomacy`, `/dashboard/feed`, and
 - There is no player widget, Vault card or quick-links column: the page is a plain
   centred column. The Vault balance and Daily reward are badges and a row in the
   sidebar's Vault entry, and links to other apps are the source list.
-- `NewVersionNotice` alert banner; `BlurbSection` daily-prompt widget.
+- `BlurbSection` daily-prompt widget. A new build is announced by the sidebar's "What's new" row
+  (shown while the build is unseen; `src/lib/navigation/seen-version.ts`), not a banner.
 - **Widgets**: the Inspector's trend and community widgets are plain `Card`s with an `h2` title under
   the page's visually hidden `h1` ("Dashboard"). The pressable Blurb card is itself the
   button, so its "Respond" pill is visual. Only the hero keeps the glass material.
@@ -49,22 +50,21 @@ page.tsx (server: resolves signed-in country id) → DashboardPageClient
   → DashboardErrorBoundary → DashboardRouter(initialCountryId)
   DashboardSidebarLayout (a plain centred column; no rail)
     ├ heroSection:  DashboardHero      (collapsible; HeroSnapshotPanels)
-    ├ alerts:       NewVersionNotice
     └ children:     UnifiedDashboardSection (feed + Inspector)
 ```
 
 Key files (all under `src/components/dashboard/`):
 
-| Component | Role |
-|-----------|------|
-| `DashboardRouter.tsx` | Top-level orchestration (global stats, map-link status, hero collapse) |
-| `hero/DashboardHero.tsx`, `hero/HeroSnapshotPanels.tsx` | Nation hero and snapshot panels |
-| `sidebar/DashboardSidebarLayout.tsx` | Shared content layout: a plain centred column (hero, alerts, children) |
-| `sections/UnifiedDashboardSection.tsx` | Feed tabs, composer, Inspector with the community widgets |
-| `sections/UnifiedFeedContent.tsx` | Feed/Following stream rendering |
-| `sections/TrendingSectionWidget.tsx` | Trending content |
-| `sections/CountriesToExploreCard.tsx` | Suggested countries |
-| `sections/BlurbSection.tsx` | Daily blurb prompt |
+| Component                                               | Role                                                                   |
+| ------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `DashboardRouter.tsx`                                   | Top-level orchestration (global stats, map-link status, hero collapse) |
+| `hero/DashboardHero.tsx`, `hero/HeroSnapshotPanels.tsx` | Nation hero and snapshot panels                                        |
+| `sidebar/DashboardSidebarLayout.tsx`                    | Shared content layout: a plain centred column (hero, children)         |
+| `sections/UnifiedDashboardSection.tsx`                  | Feed tabs, composer, Inspector with the community widgets              |
+| `sections/UnifiedFeedContent.tsx`                       | Feed/Following stream rendering                                        |
+| `sections/TrendingSectionWidget.tsx`                    | Trending content                                                       |
+| `sections/CountriesToExploreCard.tsx`                   | Suggested countries                                                    |
+| `sections/BlurbSection.tsx`                             | Daily blurb prompt                                                     |
 
 Hooks: `useUser` (auth), `usePremium`, `useActiveCosmetics` (avatar glow / chat
 badge / neon frame), `useNotify`, `usePageTitle`.

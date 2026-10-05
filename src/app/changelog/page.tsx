@@ -4,6 +4,7 @@ import { StatusIndicator } from "~/components/ui/status-indicator";
 import { cn } from "~/lib/utils";
 import { ChangelogFeed, type Release } from "./_components/ChangelogFeed";
 import { PageHeader } from "~/components/shell/PageHeader";
+import { MarkVersionSeen } from "./_components/MarkVersionSeen";
 
 export const metadata: Metadata = {
   title: "Changelog | IxStates",
@@ -180,6 +181,7 @@ export default function ChangelogPage() {
 
   return (
     <div className="bg-background text-label relative min-h-screen">
+      <MarkVersionSeen />
       <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         <PageHeader
           title="What's new in IxStates"

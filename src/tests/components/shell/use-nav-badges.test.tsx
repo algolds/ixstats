@@ -1,10 +1,12 @@
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 
 let country: { id: string; name: string; flag: string } | null = null;
 let inboxCount = 0;
 let flagNormalizes = true;
 let balance: { credits: number; canClaimDailyBonus: boolean; loginStreak: number } | undefined;
+let folderCounts: { inbox: number } | undefined;
 const balanceQuery = jest.fn();
+const folderCountsQuery = jest.fn();
 
 jest.mock("~/hooks/useUserCountry", () => ({ useUserCountry: () => ({ country }) }));
 jest.mock("~/components/mycountry/domains/diplomacy/inbox/useDiplomacyInbox", () => ({
@@ -17,6 +19,14 @@ jest.mock("~/lib/flags/normalization", () => ({
 }));
 jest.mock("~/trpc/react", () => ({
   api: {
+    messages: {
+      getFolderCounts: {
+        useQuery: (_input: unknown, opts: { enabled: boolean }) => {
+          folderCountsQuery(opts);
+          return { data: opts.enabled ? folderCounts : undefined };
+        },
+      },
+    },
     vault: {
       getBalance: {
         useQuery: (_input: unknown, opts: { enabled: boolean }) => {
@@ -29,13 +39,18 @@ jest.mock("~/trpc/react", () => ({
 }));
 
 import { useNavBadges } from "~/components/shell/use-nav-badges";
+import { markVersionSeen } from "~/lib/navigation/seen-version";
 
 beforeEach(() => {
   country = { id: "c1", name: "Caphiria", flag: "flag.png" };
   inboxCount = 3;
   balance = { credits: 1240.7, canClaimDailyBonus: true, loginStreak: 4 };
   flagNormalizes = true;
+  folderCounts = { inbox: 0 };
   balanceQuery.mockClear();
+  folderCountsQuery.mockClear();
+  // A build the user has already seen, so only the what's-new tests see that badge.
+  markVersionSeen();
 });
 
 describe("useNavBadges", () => {
@@ -43,6 +58,7 @@ describe("useNavBadges", () => {
     const { result } = renderHook(() => useNavBadges(false));
     expect(result.current).toEqual({});
     expect(balanceQuery).toHaveBeenCalledWith(expect.objectContaining({ enabled: false }));
+    expect(folderCountsQuery).toHaveBeenCalledWith(expect.objectContaining({ enabled: false }));
   });
 
   it("maps flag, inbox, balance and the claimable reward", () => {
@@ -70,5 +86,28 @@ describe("useNavBadges", () => {
     const { result } = renderHook(() => useNavBadges(true));
     expect(result.current["daily-reward"]).toEqual({ kind: "action", label: "New" });
     expect(result.current["mycountry-flag"]).toBeUndefined();
+  });
+
+  it("counts unread messages from the inbox and hides a zero count", () => {
+    folderCounts = { inbox: 5 };
+    const { result, rerender } = renderHook(() => useNavBadges(true));
+    expect(result.current["messages-unread"]).toEqual({ kind: "count", value: 5 });
+    folderCounts = { inbox: 0 };
+    rerender();
+    expect(result.current["messages-unread"]).toBeUndefined();
+  });
+
+  it("flags an unseen build as New and clears it once the changelog is visited", () => {
+    window.localStorage.clear();
+    const { result } = renderHook(() => useNavBadges(true));
+    expect(result.current["whats-new"]).toEqual({ kind: "action", label: "New" });
+    act(() => markVersionSeen());
+    expect(result.current["whats-new"]).toBeUndefined();
+  });
+
+  it("shows no what's-new flag for a seen build or when signed out", () => {
+    expect(renderHook(() => useNavBadges(true)).result.current["whats-new"]).toBeUndefined();
+    window.localStorage.clear();
+    expect(renderHook(() => useNavBadges(false)).result.current).toEqual({});
   });
 });
