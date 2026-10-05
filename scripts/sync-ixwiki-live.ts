@@ -11,10 +11,8 @@
 
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
-import {
-  cleanExcerpt,
-  extractLeadImageFromWikitext,
-} from "../src/lib/wiki-os/transformers/excerpt";
+import { cleanExcerpt } from "../src/lib/wiki-os/transformers/wikitext-parser";
+import { extractLeadImageFromWikitext } from "../src/lib/wiki-os/transformers/image-url";
 
 dotenv.config({ path: ".env.local.dev" });
 dotenv.config({ path: ".env.local" });

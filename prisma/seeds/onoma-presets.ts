@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { DEFAULT_DICTIONARIES } from "../../src/lib/onoma/data/default-dictionaries";
+import { DEFAULT_DICTIONARIES } from "./data/onoma-default-dictionaries";
 
 export async function seedOnomaPresets(db: PrismaClient) {
   console.log("🌱 Seeding Onoma default dictionaries...");

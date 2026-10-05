@@ -57,5 +57,8 @@ jobs:
       - name: Validate script targets
         run: bun run validate:script-targets
 
+      - name: Package script imports resolve
+        run: bun run check:script-imports
+
       - name: Validate reference documentation
         run: bun run docs:check

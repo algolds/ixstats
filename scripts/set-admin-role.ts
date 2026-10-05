@@ -1,6 +1,6 @@
 // Script to set admin role for system owners
 import { db } from "../src/server/db";
-import { SYSTEM_OWNER_IDS } from "../src/lib/system-owner-constants";
+import { SYSTEM_OWNER_IDS } from "../src/lib/auth/system-owner-constants";
 
 async function setAdminRole() {
   try {

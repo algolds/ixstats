@@ -3,7 +3,7 @@
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (77 Routers, 925 Endpoints)
+### Live tRPC API Inventory (77 Routers, 922 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
@@ -17,7 +17,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.builderDraft`** | 1 | 2 | 0 | **3** | `src/server/api/routers/builderDraft.ts` |
 | **`api.cache`** | 1 | 0 | 0 | **1** | `src/server/api/routers/cache.ts` |
 | **`api.cardImages`** | 2 | 2 | 0 | **4** | `src/server/api/routers/cardImages.ts` |
-| **`api.cardMarket`** | 7 | 5 | 0 | **12** | `src/server/api/routers/card-market/index.ts` |
+| **`api.cardMarket`** | 7 | 4 | 0 | **11** | `src/server/api/routers/card-market/index.ts` |
 | **`api.cardPacks`** | 3 | 6 | 0 | **9** | `src/server/api/routers/card-packs/index.ts` |
 | **`api.cards`** | 13 | 11 | 0 | **24** | `src/server/api/routers/cards/index.ts` |
 | **`api.commons`** | 6 | 0 | 0 | **6** | `src/server/api/routers/commons.ts` |
@@ -27,7 +27,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.crisisEvents`** | 2 | 0 | 0 | **2** | `src/server/api/routers/crisis-events.ts` |
 | **`api.customTypes`** | 2 | 2 | 0 | **4** | `src/server/api/routers/customTypes.ts` |
 | **`api.demoMode`** | 1 | 0 | 0 | **1** | `src/server/api/routers/demo-mode.ts` |
-| **`api.diplomaticCore`** | 5 | 3 | 0 | **8** | `src/server/api/routers/diplomacy/core/index.ts` |
+| **`api.diplomaticCore`** | 4 | 3 | 0 | **7** | `src/server/api/routers/diplomacy/core/index.ts` |
 | **`api.diplomaticCultural`** | 2 | 8 | 0 | **10** | `src/server/api/routers/diplomacy/cultural/index.ts` |
 | **`api.diplomaticEmbassies`** | 3 | 5 | 0 | **8** | `src/server/api/routers/diplomacy/embassies/index.ts` |
 | **`api.diplomaticPolicies`** | 7 | 10 | 0 | **17** | `src/server/api/routers/diplomacy/policies/index.ts` |
@@ -80,11 +80,11 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.trading`** | 4 | 3 | 0 | **7** | `src/server/api/routers/trading/index.ts` |
 | **`api.transport`** | 5 | 5 | 0 | **10** | `src/server/api/routers/transport/index.ts` |
 | **`api.userLogging`** | 0 | 1 | 0 | **1** | `src/server/api/routers/user-logging.ts` |
-| **`api.users`** | 10 | 12 | 0 | **22** | `src/server/api/routers/users/index.ts` |
+| **`api.users`** | 10 | 11 | 0 | **21** | `src/server/api/routers/users/index.ts` |
 | **`api.vault`** | 25 | 19 | 0 | **44** | `src/server/api/routers/vault/index.ts` |
 | **`api.wikiCache`** | 2 | 1 | 0 | **3** | `src/server/api/routers/wikiCache.ts` |
-| **`api.wikios`** | 55 | 20 | 0 | **75** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **460** | **464** | **0** | **925** | **77 registered namespaces** |
+| **`api.wikios`** | 53 | 20 | 0 | **75** | `src/server/api/routers/wikios/index.ts` |
+| **TOTALS** | **457** | **462** | **0** | **922** | **77 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
 > **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand.

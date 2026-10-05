@@ -35,12 +35,12 @@ export default function WikiTemplatesPage() {
 
   const categories = [
     { id: "all", label: "All suites" },
-    { id: "sovereign", label: "🏛️ Sovereign & Lands" },
-    { id: "biography", label: "👤 Biographies" },
-    { id: "defense", label: "⚔️ Defense & Fleet" },
-    { id: "economy", label: "🏢 Enterprise & Infra" },
-    { id: "engine", label: "⚡ Live Engine Sync" },
-    { id: "formatting", label: "📜 Layout & Citations" },
+    { id: "sovereign", label: "Sovereign & Lands" },
+    { id: "biography", label: "Biographies" },
+    { id: "defense", label: "Defense & Fleet" },
+    { id: "economy", label: "Enterprise & Infra" },
+    { id: "engine", label: "Live Engine Sync" },
+    { id: "formatting", label: "Layout & Citations" },
   ];
 
   const presetMatch = MASTER_TEMPLATE_PRESETS.find(

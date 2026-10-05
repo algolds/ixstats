@@ -37,6 +37,7 @@
     "build:ixworld": "./scripts/deploy-ixworld.sh",
     "check": "bun run typecheck && echo '✓ Type checking complete. Run bun run build for full validation.'",
     "check:entrypoints": "bun scripts/verification/check-entrypoints.ts",
+    "check:script-imports": "bun scripts/verification/check-script-imports.ts",
     "clean": "rm -rf .next dist build",
     "clean:all": "bun run clean && rm -rf node_modules",
     "cleanup:logs": "bun scripts/cleanup-logs.ts",

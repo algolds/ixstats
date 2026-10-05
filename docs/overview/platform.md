@@ -39,9 +39,9 @@ IxStates follows an OS-inspired model (`Major.Minor.Patch` + permanent epoch **r
 | | Achievements | v2 | Awards & LoreWards Resync |
 | | Stash | v1 | Article Stashing (was LoreStash) |
 | | Repository | v2 | Commons Media Explorer |
-| | Halo | v5 | Contextual Overlay System |
+| | Halo | v6 | Contextual Overlay System |
 | | Onoma | v4 | Conlang & Linguistics Studio |
-| **Design** | Facet | v3.1 | Opaque-first design system (see `docs/reference/facet-design-system.md`) |
+| **Design** | Facet | v4 | Refraction / Depth Design System |
 <!-- END_DOCS:VERSION_MATRIX -->
 
 ### Active Frameworks & Tooling

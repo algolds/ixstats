@@ -11,7 +11,7 @@
  */
 
 import { PrismaClient } from "@prisma/client";
-import { SYSTEM_OWNER_IDS } from "../../src/lib/system-owner-constants";
+import { SYSTEM_OWNER_IDS } from "../../src/lib/auth/system-owner-constants";
 
 const prisma = new PrismaClient();
 const SYSTEM_OWNER_SET = new Set<string>(SYSTEM_OWNER_IDS);
