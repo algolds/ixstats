@@ -22,6 +22,7 @@ The repository consolidates production deployment tooling behind a single canoni
    - Maps standalone instance is managed via `ecosystem.ixworld.config.cjs`; the standalone WebSocket backend (`ws-backend.mjs`, PM2 `ixstats-ws`) and cron runner (`cron-runner.mjs`, PM2 `ixstats-cron`) run as separate processes.
    - The `ecosystem*.config.cjs` files are server-local (git-ignored). [`ecosystem.config.example.cjs`](../../ecosystem.config.example.cjs) is the tracked template (`ixstats-cron`, `ixstats-ws`, `ixstats-ixtwitter`). `deploy-production.sh` fails if the PM2 reload fails, and warns if the file is missing.
    - Node process runs standalone on port 3550 with basePath `/projects/ixstates`.
+   - Env files: `server.mjs`, `ws-backend.mjs` and `cron-runner.mjs` load them through `load-env.mjs` in the order `.env.production.local`, `.env.local`, `.env.production`, `.env` (first file to set a key wins; real env vars always win). `start-production.sh` sources `.env.production` and then `.env.production.local`, so the secrets file wins there too.
 
 3. **Schema Migration Strategy**:
    - Schema deployment runs through explicit, guarded operations (`prisma db push` / `prisma migrate deploy`).
@@ -52,5 +53,5 @@ Validates:
 | --- | --- | --- |
 | `rollback-deployment.sh` | `bun run deploy:rollback -- <remote-branch> [--restore <dump>]` | Checks out a rollback branch, optionally restores the pre-deploy dump listed in `backups/deploy-history.log`, then redeploys with `ALLOW_NON_MASTER_DEPLOY=1` ([release guide](../../docs/operations/release-guide.md#rollback)) |
 | `post-deployment-validation.ts` | `bun run post:deploy:validate` | Post-deploy smoke checks |
-| `verify-environment.ts` | `bun run verify:environment` | Environment variable verification |
+| `verify-environment.ts` | `bun run verify:environment` | Checks the environment it runs in. With `NODE_ENV=production` it fails when a secret `src/env.ts` requires in production is missing or too short (Clerk keys, `IXTIME_BOT_SECRET`, `CRON_SECRET` and `WIKI_SYNC_WEBHOOK_SECRET`, the last two at least 32 characters) and warns about Redis, `NEXT_PUBLIC_APP_URL` and the Discord webhook. It reads `process.env` only, so load the production env files first |
 | `setup-monitoring.ts` | `bun run setup:monitoring` | Monitoring setup |

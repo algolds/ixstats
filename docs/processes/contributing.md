@@ -1,6 +1,6 @@
 # Contributing Guide
 
-**Last updated:** September 2026
+**Last updated:** 2026-10-05
 
 This guide outlines expectations for contributing to IxStats. Use it alongside the architectural and system docs when planning work.
 
@@ -23,11 +23,20 @@ Work flows up through three long-lived branches, always by merge pull request (n
   `rose-garden`.
 
 ## Workflow
-1. Create a feature branch with a descriptive name: from `rose-garden` for nightly/experimental work, or from
-   `development` for work that should land in the stable-experimental branch (junior devs)
-2. Install dependencies and prepare the database (`bun install`, `bun run db:setup`)
+1. Create a feature branch with a descriptive name. **Contributors branch from `development` and open their PR
+   against it** (decision D13); only the maintainer works on `rose-garden`.
+2. Install dependencies and prepare an empty local database: `bun install`, start PostgreSQL + PostGIS and Redis
+   with `docker compose -f docker-compose.dev.yml up -d`, then `bun run db:setup` (it runs `db:generate` and
+   `db:bootstrap`). See [local-dev-setup.md](../operations/local-dev-setup.md#part-4--create-the-local-database).
 3. Implement changes with accompanying tests and documentation updates
-4. Run quality gates: `bun run test`, `bun run typecheck`, `bun run audit:arch`, `bun run lint:strict`, `bun run docs:check` (the same gates CI runs in `.github/workflows/ci.yml`)
+4. Run the gates CI runs (`.github/workflows/ci.yml`), all blocking unless noted:
+   - `bun run test:ci` (Jest; files listed in `scripts/verification/test-quarantine.json` are skipped)
+   - `bun run check:entrypoints`
+   - `bun run typecheck` (runs `typecheck:ui`, `typecheck:server`, `typecheck:trpc`, `typecheck:db` and `typecheck:scripts`)
+   - `bun run validate:script-targets` and `bun run check:script-imports`
+   - `bun run docs:check`
+   - `bun run audit:arch` and `bun run lint:strict` (`--max-warnings 2100`) run in CI too, but **non-blocking**;
+     `audit:arch` fails today on known violations. Don't add new ones
 5. Submit a pull request referencing the relevant documentation or help articles
 
 ## Code Standards
