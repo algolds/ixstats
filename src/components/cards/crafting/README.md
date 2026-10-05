@@ -79,7 +79,7 @@ interface CraftingAnimationProps {
 ### Page
 
 #### `/vault/crafting`
-Main crafting page (`src/app/vault/crafting/page.tsx`), rendered inside the Vault layout but not listed in the Vault sidebar.
+Main crafting page (`src/app/vault/crafting/page.tsx`), rendered inside the Vault layout and listed as **Crafting** in the Vault group of the app sidebar (`src/lib/navigation/app-sections.ts`).
 
 **Layout:**
 - "Select Crafting Recipe" row of recipe buttons

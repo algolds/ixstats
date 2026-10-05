@@ -822,9 +822,8 @@ Procedures are built from the builders in `src/server/api/trpc/procedures.ts`. A
 | `adminProcedure` | auth → admin role → input validation → rate limit (100/min) → audit log → admin logging |
 | `standardMutationCountryOwnerProcedure` | `countryOwnerProcedure` + 60 mutations/min + input validation |
 | `lightMutationProcedure` | `protectedProcedure` + 100/min (`light_mutations`) |
-| `readOnlyProcedure` | `protectedProcedure` + 120/min (`queries`) |
 | `rateLimitedPublicProcedure` | `publicProcedure` + 100/min (`public`) |
-| `cachedPublicProcedure` / `cachedProtectedProcedure` / `cachedStaticProcedure` | response-cache variants |
+| `cachedPublicProcedure` / `cachedStaticProcedure` | response-cache variants (per-user caching: `.use(userCacheMiddleware)`) |
 
 ---
 
@@ -900,11 +899,9 @@ api.autosaveMonitoring.getSystemHealth.useQuery()
 
 ### Autosave Mutations
 
-There is no per-builder `autosave` mutation. Builder hooks debounce and then call the builder's regular persistence procedures:
-
-**Government:** `useGovernmentBuilderAutoSync` (`src/hooks/useBuilderAutoSync.ts`) → `api.government.checkConflicts` / `create` / `update`
-
-**Tax System:** `useTaxBuilderAutoSync` (`src/hooks/useBuilderAutoSync.ts`) → `api.taxSystem.checkConflicts` / `create` / `update`
+Only the Economy Builder autosaves; the government and tax builders save explicitly. (The old
+`useBuilderAutoSync.ts` hooks were deleted, and no client calls `api.government.create` / `update` or
+`api.taxSystem.create` / `update` today.)
 
 **Economy Builder:** `useEconomyAutoSync` (`src/app/builder/components/enhanced/economy-builder/useEconomyAutoSync.ts`) →
 ```typescript
@@ -1094,7 +1091,6 @@ type Country = RouterOutputs["countries"]["getByIdBasic"];
 | Endpoint Type | Rate Limit |
 |---------------|-----------|
 | `rateLimitedPublicProcedure` | 100 requests/minute |
-| `readOnlyProcedure` | 120 requests/minute |
 | `standardMutationCountryOwnerProcedure` | 60 requests/minute |
 | `lightMutationProcedure` | 100 requests/minute |
 | `adminProcedure` | 100 requests/minute |

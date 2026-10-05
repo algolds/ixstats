@@ -55,9 +55,9 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
 | Builder | Access Level | Description |
 | :--- | :--- | :--- |
 | **`publicProcedure`** | Unauthenticated | Open to public queries (cached reads, public stats, factbook data). |
-| **`cachedPublicProcedure`** | Public + Cache | Realm-aware response cache, 60s TTL (`cachedStaticProcedure`: 1h; `cachedProtectedProcedure`: 30s per user). TTLs live in `src/lib/cache/trpc-cache.ts`. |
+| **`cachedPublicProcedure`** | Public + Cache | Realm-aware response cache, 60s TTL (`cachedStaticProcedure`: 1h). There is no cached protected builder: per-user caching is `.use(userCacheMiddleware)` (30s) on a protected procedure. TTLs live in `cacheConfigs` in `src/lib/cache/trpc-cache.ts`. |
 | **`rateLimitedPublicProcedure`** | Public + Rate Limit | Public procedure with the public rate-limit bucket. |
-| **`protectedProcedure`** | Authenticated User | Requires valid Clerk session; guarantees `ctx.auth.userId` and `ctx.user` are non-null. Variants: `lightMutationProcedure`, `readOnlyProcedure` (rate-limited). |
+| **`protectedProcedure`** | Authenticated User | Requires valid Clerk session; guarantees `ctx.auth.userId` and `ctx.user` are non-null. Variant: `lightMutationProcedure` (rate-limited mutations). |
 | **`countryOwnerProcedure`** | Country Owner | Authenticated + owns the target country (`standardMutationCountryOwnerProcedure` adds rate limiting and input validation). |
 | **`premiumProcedure`** | Premium User | Authenticated + premium membership. |
 | **`adminProcedure`** | System Owner / Admin | System owner bypass, else role name `owner`/`admin`/`staff` or role level ≤ 20; blocked while impersonating (play-as). Adds rate limiting and audit logging. |

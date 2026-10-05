@@ -2,7 +2,7 @@
 
 **Framework**: Next.js 16.3.6 App Router · React 19.2.8 · Tailwind CSS 4.3.3 · TypeScript 7.0.2  
 **Design System**: **Facet** (opaque cards, glass only for floating chrome)  
-**Location**: `src/app/` (180+ page routes, 40+ API route handlers) · `src/components/` (900+ `.tsx` components) · `src/hooks/` (90+ custom hooks)
+**Location**: `src/app/` (180+ page routes, 40+ API route handlers) · `src/components/` (900+ `.tsx` components) · `src/hooks/` (95 hook and helper modules)
 
 ---
 
@@ -13,7 +13,7 @@ The frontend is structured around Next.js App Router conventions with strong dom
 ```
 src/
 ├── app/                              # Route tree & server layouts
-│   ├── layout.tsx                    # Root HTML document, fonts, Clerk provider, global providers + <Navigation />
+│   ├── layout.tsx                    # Root HTML document, fonts, Clerk provider, global providers + <AppShell>
 │   ├── page.tsx                      # Root route (splash vs signed-in command center)
 │   ├── mycountry/                    # Single-page executive command suite (/mycountry/*)
 │   ├── dashboard/                    # Signed-in executive overview & feed hub
@@ -39,7 +39,7 @@ src/
 3. **`ThemeProvider`** (`src/context/theme-context.tsx`): Theme and preference context (light / dark / system — default system; density, contrast, transparency, motion, text size), wrapped in a `MotionConfig reducedMotion="user"`. The same attributes are applied pre-paint by the inline script in the root layout (see [Tokens](#tokens)).
 4. **`AbilityProvider` → `IxTimeProvider` → `ExecutiveNotificationProvider` → `WikiContextProvider` → `LazyGameProviders`**: Permissions, IxTime clock, executive notifications, wiki context, and lazily loaded gameplay providers.
 5. **`CuelumeSoundProvider`**: Bootstraps the **Cuelume** audio-tactile engine, delegates declarative `data-cuelume-*` listeners globally to the `document`, and plays subtle route transition cues (`soundEffects.arrival()`).
-6. **`<Navigation />`** (`src/app/_components/navigation.tsx`): Global navigation bar, which hosts the Halo `CommandPalette` (`src/components/halo/`).
+6. **`<AppShell>`** (`src/components/shell/AppShell.tsx`): the page frame. It renders `FacetShell` (the `AppSidebar` source list from 1024px up, the `TabBar` below that, and the Halo island, `ShellHalo`) and `<main>`, and paints the canvas in the current app's tint (`data-app`). The navigation source is `src/lib/navigation/app-sections.ts`.
 
 > See the **[Facet design system reference](../reference/facet-design-system.md)** for colour roles and app tints, text styles, radii, materials, z-index, motion, the primitives (Card, FacetList, controls, Sheet, dialogs), sound, appearance and accessibility preferences, and the guard tests.
 
@@ -198,33 +198,19 @@ To ensure optimal initial load times and eliminate client-side waterfalls, route
 
 ---
 
-## 7. Unified 3-Mode Navigation & Dynamic Repulsion Physics
+## 7. Navigation shell
 
-All frontend routes map to one of three standardized navigation modes:
+There is one navigation: the app sidebar, a source list built from `src/lib/navigation/app-sections.ts`
+(`AppSidebar` / `SourceList` from 1024px up; the `TabBar` and its More sheet below that). Every app is a top-level
+row and the current app discloses its sections; Admin and Settings use area mode. There are no per-app sidebars,
+rails or hidden sub-navigation.
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ Mode 1: DEFAULT (Global Scroll-Hide & Morph)                                │
-│ • Standard pages: Home, MyCountry, Dashboard, Vault, ThinkPages, Forum,     │
-│   Countries, Admin, MyClub/MyLeague, Settings, Changelog, Labs.             │
-│ • Sits in top anchor zone (<50px). Morphs tabs inwards (40px → 100px).     │
-│ • Scroll down hides with cubic-bezier / spring; scroll up reveals instantly.│
-├─────────────────────────────────────────────────────────────────────────────┤
-│ Mode 2: HIDDEN (Immersion & Canvas Focus)                                   │
-│ • Canvas & focus surfaces: /messages, /builder, /mycountry/builder,         │
-│   /mycountry/editor, /wiki/*, /blurbs/*                                     │
-│ • Starts with navbar translated out of view (translateY(-100%)).           │
-│ • Reveals smoothly on upward scroll (>10px) or top-edge hover (<=16px).    │
-│ • WikiHalo or Halo floating capsules remain interactive.                   │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ Mode 3: MAPS (Chromeless Standalone Exception)                              │
-│ • Maps & spatial workflows: /maps.                                          │
-│ • Global <Navigation /> returns null; MapDynamicIsland handles controls.    │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+- **Chromeless routes:** `/maps`, `/mycountry/map-editor`, `/admin/maps/editor` and `/admin/maps/style-editor`
+  (`isChromelessPath`) get no canvas wash; Halo hides on `/maps`, where `MapDynamicIsland` takes over.
+- **Page titles:** `PageHeader` (`~/components/shell`) renders the one `<h1>`, a back button and trailing actions in
+  a sticky toolbar that collapses to a compact title on scroll.
+- **Sticky rails** use `top-(--shell-top-offset)`; read the shell layout variables (`--shell-sidebar-width`,
+  `--shell-tabbar-height`, `--shell-top-offset`, …) from `src/styles/facet/shell.css`, never redefine them.
+- **Colour:** semantic tokens only; no arbitrary `[#...]` classes or inline hex colours.
 
-### Dynamic Repulsion Physics & Rail Standards:
-- **Repulsion Progress**: $\text{repulsionProgress} = \text{clamp}(\text{scrollY} / 56, 0, 1)$ drives center branding glides, action button tucks, and ambient refraction glows under the Halo pill via `useNavigationScroll`.
-- **Desktop Sticky Rails Clearance**: Desktop sidebars must use `lg:sticky lg:top-20` (80px) to maintain a clean 16px buffer beneath the 64px floating navbar. Never use `top-6` or `top-0` on page-level sidebars.
-- **Zero Raw Arbitrary Hex Codes**: 100% of styles must utilize semantic Tailwind v4 tokens (`text-foreground`, `bg-card`, `border-border/40`, `text-wiki`, `text-onoma-primary`, `bg-map-ocean`, etc.). Arbitrary `[#...]` classes and inline hex colors are strictly forbidden.
-
+The [Facet design system reference](../reference/facet-design-system.md) has the full rules.

@@ -88,7 +88,7 @@ IxStats implements four tRPC rate limiting tiers plus a limit on admin procedure
 |------|-------------|-----------|----------------|
 | **Standard Mutations** | 60 | `mutations` | `standardMutationCountryOwnerProcedure` (country owner required) |
 | **Light Mutations** | 100 | `light_mutations` | `lightMutationProcedure` |
-| **Read-Only** | 120 | `queries` | `readOnlyProcedure` (defined, currently used by no router) |
+| **Read-Only** | 120 | `queries` | `readOnlyRateLimit` middleware only (`trpc/middleware.ts`); there is no `readOnlyProcedure` builder and no router uses it |
 | **Public** | 100 | `public` | `rateLimitedPublicProcedure` |
 | **Admin** | 100 | `default` | `adminProcedure` |
 
@@ -332,7 +332,7 @@ When creating or updating tRPC endpoints, select the appropriate procedure type 
 Is this a mutation (creates/updates/deletes data)?
 ├─ NO → Is it public?
 │   ├─ YES → rateLimitedPublicProcedure (100/min)
-│   └─ NO  → readOnlyProcedure (120/min)
+│   └─ NO  → protectedProcedure (unlimited; add a limit with .use(createRateLimitMiddleware(…)))
 └─ YES → Does it write country-owned data?
     ├─ YES → standardMutationCountryOwnerProcedure (60/min, ownership checked)
     └─ NO  → lightMutationProcedure (100/min)
@@ -353,19 +353,12 @@ import { publicProcedure, protectedProcedure } from "~/server/api/trpc";
 // builders are also unlimited.
 ```
 
-#### Read-Only and Public Procedures
+#### Public Procedures
 
 ```typescript
-import { readOnlyProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import { rateLimitedPublicProcedure } from "~/server/api/trpc";
 
 export const dataRouter = createTRPCRouter({
-  // 120/min, signed-in callers (namespace "queries")
-  getCountries: readOnlyProcedure
-    .input(z.object({ limit: z.number().optional() }))
-    .query(async ({ ctx, input }) => {
-      // Query logic here
-    }),
-
   // 100/min, no auth (namespace "public")
   publicSearch: rateLimitedPublicProcedure
     .input(z.object({ query: z.string() }))
@@ -540,7 +533,7 @@ async function testRateLimit() {
 testRateLimit().catch(console.error);
 ```
 
-Run the test:
+Run it once you have created it:
 
 ```bash
 bun scripts/test-rate-limit.ts

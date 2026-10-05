@@ -36,7 +36,7 @@ IxStates employs a 3-tier caching hierarchy to deliver sub-millisecond response 
 ## 2. Procedure & In-Memory Caches
 
 ### 2.1 tRPC Procedure Cache (`src/lib/cache/trpc-cache.ts`)
-Redis-backed (in-memory fallback only while Redis is not ready) and realm-aware. Used by `cachedPublicProcedure` (60s), `cachedStaticProcedure` (1h) and `cachedProtectedProcedure` (30s, per user):
+Redis-backed (in-memory fallback only while Redis is not ready) and realm-aware. Used by `cachedPublicProcedure` (60s) and `cachedStaticProcedure` (1h); per-user reads add `.use(userCacheMiddleware)` (30s) to a protected procedure (there is no `cachedProtectedProcedure`):
 ```typescript
 import { cachedPublicProcedure } from "~/server/api/trpc";
 
