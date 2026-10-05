@@ -7,7 +7,6 @@ import {
 } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 
 const mockGetArticleWikitext = jest.fn();
-const mockGetCurrentRevMeta = jest.fn();
 const mockGetPageHistory = jest.fn();
 const mockGetRevisionWikitext = jest.fn();
 
@@ -43,7 +42,6 @@ jest.mock("~/server/db", () => ({
 
 jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
   getArticleWikitext: (...a: unknown[]) => mockGetArticleWikitext(...a),
-  getCurrentRevMeta: (...a: unknown[]) => mockGetCurrentRevMeta(...a),
   getPageHistory: (...a: unknown[]) => mockGetPageHistory(...a),
   getRevisionWikitext: (...a: unknown[]) => mockGetRevisionWikitext(...a),
 }));
@@ -94,7 +92,6 @@ test("fresh shadow row is served without touching MediaWiki", async () => {
 test("stale/missing shadow refetches from MediaWiki and backfills", async () => {
   mockWikiArticleFindFirst.mockResolvedValue(null);
   mockGetArticleWikitext.mockResolvedValue({ wikitext: "fresh body", pageId: 42, length: 10 });
-  mockGetCurrentRevMeta.mockResolvedValue({ revid: 42, timestamp: "2026-06-01T00:00:00Z" });
 
   const res = await getArticleWikitextShadow("Foo");
 

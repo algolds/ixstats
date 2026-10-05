@@ -103,26 +103,6 @@ export async function ixwikiGetRevisionWikitext(ref: string): Promise<RevisionCo
   return null;
 }
 
-export async function ixwikiGetCurrentRevMeta(
-  title: string
-): Promise<{ revid: number; timestamp: string } | null> {
-  try {
-    const art: any = await (db as any).wikiArticle.findFirst({
-      where: { source: "ixwiki", title },
-      select: { mwLatestRevId: true, syncedAt: true, updatedAt: true },
-    });
-    if (art) {
-      return {
-        revid: Number(art.mwLatestRevId || 0),
-        timestamp: (art.syncedAt || art.updatedAt || new Date()).toISOString(),
-      };
-    }
-  } catch (err) {
-    warnDev(err);
-  }
-  return null;
-}
-
 export async function ixwikiGetNamespacedWikitext(
   title: string,
   namespace: number

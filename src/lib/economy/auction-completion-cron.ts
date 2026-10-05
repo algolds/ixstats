@@ -7,10 +7,7 @@
  * - Refunds unsuccessful auctions
  * - Updates market values
  *
- * Usage:
- *   import { processExpiredAuctions } from '~/lib/auction-completion-cron';
- *   // Run via node-cron or similar scheduler
- *   cron.schedule('* * * * *', processExpiredAuctions);
+ * Scheduled by the cron registry (`src/server/cron/jobs.ts`).
  */
 
 import { db } from "~/server/db";
@@ -108,24 +105,3 @@ export async function processExpiredAuctions() {
     };
   }
 }
-
-/**
- * Example node-cron setup (for reference)
- *
- * Add to your server initialization file:
- *
- * ```typescript
- * import cron from 'node-cron';
- * import { processExpiredAuctions, cleanupOldAuctions } from '~/lib/auction-completion-cron';
- *
- * // Process expired auctions every minute
- * cron.schedule('* * * * *', async () => {
- *   await processExpiredAuctions();
- * });
- *
- * // Cleanup old auctions daily at 3 AM
- * cron.schedule('0 3 * * *', async () => {
- *   await cleanupOldAuctions();
- * });
- * ```
- */
