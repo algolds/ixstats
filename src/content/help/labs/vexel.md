@@ -1,6 +1,6 @@
 ---
 title: Vexel
-description: Design a coat of arms, read its blazon, export it, and publish it to the registry.
+description: Design a coat of arms, read its blazon, export it, publish it to the registry, and attach it to your nation.
 badge: Labs
 prevHref: /help/labs/onoma
 prevLabel: Onoma
@@ -30,9 +30,15 @@ Only the shield is drawn today. Crests, helmets, supporters and mottos aren't sh
 
 ## Using your arms on your nation
 
-The **Attach to map** button (shown for a saved Country design) doesn't work yet. It needs a stored image of the design, and Vexel doesn't make one yet, so attaching gives an error and your nation's coat of arms stays as it was.
+Each time you save, Vexel makes an image of your shield. To make it your nation's coat of arms:
 
-For now, export the design and add the image to your nation yourself: the coat of arms in the [Country Editor](/help/mycountry/editor), or your flag in [Settings](/help/getting-started/settings).
+1. Set the subject to **Country** and choose your nation. You need to be able to edit that nation.
+2. Choose **Save changes**.
+3. Choose **Attach to map**. The saved image becomes your nation's coat of arms, and the political map picks it up.
+
+Attach uses the last saved version, so save first if you've changed anything. If a design has no image yet (for example, one saved before images were made), the button shows **Rendering...** while it makes one, then attaches it.
+
+You can still set a coat of arms by hand, for example from an exported PNG, in the [Country Editor](/help/mycountry/editor).
 
 ## Ideas and inspiration
 

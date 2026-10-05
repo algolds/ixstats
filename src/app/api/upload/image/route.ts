@@ -15,6 +15,7 @@ import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 import { rateLimiter } from "~/lib/cache";
+import { uploadsDir as getUploadsDir, UPLOADS_URL_PREFIX } from "~/server/shared/upload-storage";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -126,9 +127,7 @@ export async function POST(request: NextRequest) {
     const fileName = path.basename(generateSafeFileName(file.name, userId));
 
     // Ensure uploads directory exists
-    const uploadsDir =
-      process.env.UPLOAD_DIR ||
-      path.join(/*turbopackIgnore: true*/ process.cwd(), "public", "images", "uploads");
+    const uploadsDir = getUploadsDir();
     await mkdir(uploadsDir, { recursive: true });
 
     // Get file content
@@ -149,7 +148,7 @@ export async function POST(request: NextRequest) {
     await writeFile(filePath, buffer);
 
     // Generate public URL without base path (dynamic base path resolved on frontend)
-    const publicUrl = `/images/uploads/${fileName}`;
+    const publicUrl = `${UPLOADS_URL_PREFIX}${fileName}`;
 
     console.log(
       `[ImageUpload] Successfully saved ${file.name} as ${fileName} (${file.size} bytes) for user ${userId} at ${publicUrl}`
