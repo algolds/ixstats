@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { CulturalScenario, PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
+import { IxTime } from "~/lib/ixtime";
 import { vaultService } from "~/lib/vault/vault-service";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
@@ -165,7 +166,7 @@ export const diplomaticScenariosChoicesRouter = createTRPCRouter({
               status: "completed",
               startDate: scenario.createdAt,
               endDate: new Date(),
-              ixTimeContext: Date.now(),
+              ixTimeContext: IxTime.getCurrentIxTime(),
               culturalImpact: selectedChoice.effects?.culturalImpact || 0,
               scenarioId: input.scenarioId,
               scenarioType: scenario.type,

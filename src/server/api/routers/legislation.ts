@@ -18,6 +18,7 @@ import {
   type VoteResult,
 } from "~/lib/statecraft/legislative-vote";
 import { computeApproval } from "~/lib/government/approval";
+import { IxTime } from "~/lib/ixtime";
 import { fogVoteProjection } from "~/lib/statecraft/whip";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
@@ -186,7 +187,7 @@ export const legislationRouter = createTRPCRouter({
           reviewNotes: JSON.stringify({
             ...meta,
             voteResult: result,
-            votedIxTime: Date.now(),
+            votedIxTime: IxTime.getCurrentIxTime(),
           } satisfies BillMeta),
         },
       });
