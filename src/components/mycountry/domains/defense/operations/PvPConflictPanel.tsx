@@ -206,6 +206,10 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
     onSuccess: () => void refetch(),
   });
 
+  const concludeMutation = api.security.concludePvPConflict.useMutation({
+    onSuccess: () => void refetch(),
+  });
+
   const resolvePvNPCMutation = api.security.resolvePvNPCConflict.useMutation({
     onSuccess: (conflict) => {
       setStrikeResult({
@@ -245,6 +249,29 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
   );
   const resolvedConflicts = allConflicts.filter((c) => c.status === "resolved");
   const noNpcTargets = npcTargets?.length === 0;
+
+  // An active PvP conflict runs until `endsAt`; then either side may conclude it.
+  const concludeControl = (conflict: Conflict) => {
+    const endsAt = new Date(conflict.endsAt!);
+    if (endsAt.getTime() > Date.now()) {
+      return (
+        <span className="text-label-secondary text-footnote">
+          Ends {endsAt.toLocaleDateString()}
+        </span>
+      );
+    }
+    return (
+      <Button
+        size="sm"
+        variant="outline"
+        className="ml-auto"
+        onClick={() => concludeMutation.mutate({ conflictId: conflict.id, countryId })}
+        disabled={concludeMutation.isPending}
+      >
+        {concludeMutation.isPending ? "Resolving…" : "Resolve conflict"}
+      </Button>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -369,6 +396,8 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
         </ConflictGroup>
       )}
 
+      <Alert message={concludeMutation.error?.message} />
+
       {activeConflicts.length > 0 && (
         <ConflictGroup title="Active conflicts">
           {activeConflicts
@@ -387,6 +416,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                   <Badge variant="outline" className="capitalize">
                     {c.status}
                   </Badge>
+                  {c.endsAt && concludeControl(c)}
                 </div>
               </Card>
             ))}

@@ -6,10 +6,22 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, premiumProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  lightMutationProcedure,
+  publicProcedure,
+  premiumProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import {
+  computeConflictOutcome,
+  conflictEconomicEffects,
+  militaryStrength,
+  pvpConflictEndsAt,
+} from "~/lib/military/conflict-outcome";
 
 export const securityConflictsRouter = createTRPCRouter({
   // Propose a PvP conflict (requires mutual acceptance)
@@ -240,6 +252,115 @@ export const securityConflictsRouter = createTRPCRouter({
       return accepted;
     }),
 
+  // Conclude an active PvP conflict once its duration has run. Either party may call it; the
+  // battle resolves with the same strength calculation as a PvNPC strike.
+  concludePvPConflict: lightMutationProcedure
+    .input(z.object({ conflictId: z.string(), countryId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+
+      const conflict = await ctx.db.militaryConflict.findUnique({
+        where: { id: input.conflictId },
+        include: {
+          initiator: { select: { id: true, name: true } },
+          defender: { select: { id: true, name: true } },
+        },
+      });
+      if (!conflict || conflict.type !== "pvp") {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Conflict not found." });
+      }
+      if (conflict.initiatorId !== input.countryId && conflict.defenderId !== input.countryId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only a party to the conflict can conclude it.",
+        });
+      }
+      if (conflict.status !== "active") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Conflict is not active." });
+      }
+      const endsAt = pvpConflictEndsAt(conflict);
+      if (endsAt && endsAt.getTime() > Date.now()) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Hostilities continue until ${endsAt.toISOString().slice(0, 10)}.`,
+        });
+      }
+
+      const [initiatorBranches, defenderBranches] = await Promise.all(
+        [conflict.initiatorId, conflict.defenderId].map((countryId) =>
+          ctx.db.militaryBranch.findMany({
+            where: { countryId, isActive: true },
+            include: { units: true, assets: true },
+          })
+        )
+      );
+      const outcome = computeConflictOutcome(
+        militaryStrength(initiatorBranches ?? []),
+        militaryStrength(defenderBranches ?? [])
+      );
+      const winnerId = outcome.initiatorWins ? conflict.initiatorId : conflict.defenderId;
+
+      // Claim atomically so a repeated call cannot resolve (and damage economies) twice.
+      const claimed = await ctx.db.militaryConflict.updateMany({
+        where: { id: conflict.id, status: "active" },
+        data: {
+          status: "resolved",
+          endDate: new Date(),
+          winner: winnerId,
+          initiatorCasualties: outcome.initiatorCasualties,
+          defenderCasualties: outcome.defenderCasualties,
+          economicDamage: outcome.economicDamage,
+        },
+      });
+      if (claimed.count === 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Conflict is no longer active." });
+      }
+
+      await ctx.db.storytellerEffect.createMany({
+        data: conflictEconomicEffects({
+          initiator: conflict.initiator,
+          defender: conflict.defender,
+          outcome,
+          createdBy: ctx.user?.id ?? "system",
+          defenderWinLabel: "victory",
+        }),
+      });
+
+      const winnerName = outcome.initiatorWins ? conflict.initiator.name : conflict.defender.name;
+      for (const side of [conflict.initiator, conflict.defender]) {
+        void generateDiplomaticNews(ctx.db as any, side.id, "pvnpc_conflict_resolved", {
+          countryName: conflict.initiator.name,
+          targetName: conflict.defender.name,
+          winner: winnerName,
+        });
+      }
+
+      // Notification: tell both owners the outcome (fire-and-forget)
+      try {
+        const owners = await ctx.db.country.findMany({
+          where: { id: { in: [conflict.initiatorId, conflict.defenderId] } },
+          select: { id: true, owner: { select: { clerkUserId: true } } },
+        });
+        for (const c of owners) {
+          if (!c.owner?.clerkUserId) continue;
+          await notificationAPI.create({
+            userId: c.owner.clerkUserId,
+            countryId: c.id,
+            title: c.id === winnerId ? "Conflict Won" : "Conflict Lost",
+            message: `The conflict between ${conflict.initiator.name} and ${conflict.defender.name} has ended: ${winnerName} prevails.`,
+            type: c.id === winnerId ? "success" : "warning",
+            category: "military",
+            priority: "high",
+            metadata: { conflictId: conflict.id },
+          });
+        }
+      } catch (err) {
+        console.warn("[Conflicts] Resolution notification failed for conflict", conflict.id, err);
+      }
+
+      return { conflictId: conflict.id, status: "resolved" as const, winner: winnerId };
+    }),
+
   // Get conflicts involving a country
   getConflicts: publicProcedure
     .input(z.object({ countryId: z.string() }))
@@ -257,6 +378,8 @@ export const securityConflictsRouter = createTRPCRouter({
 
       return conflicts.map((c) => ({
         ...c,
+        // When an active PvP conflict may be concluded (concludePvPConflict).
+        endsAt: c.type === "pvp" && c.status === "active" ? pvpConflictEndsAt(c) : null,
         initiator: c.initiator
           ? {
               id: c.initiator.id,
@@ -354,43 +477,16 @@ export const securityConflictsRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
       }
 
-      // Calculate military strength
-      const calcStrength = (branches: typeof initiatorBranches) =>
-        branches.reduce((sum, b) => {
-          const unitStr = b.units.reduce(
-            (s, u) => s + (u.personnel ?? 0) * ((u.readiness ?? 50) / 100),
-            0
-          );
-          const assetStr = b.assets.reduce(
-            (s, a) => s + (a.quantity ?? 0) * (a.operational ?? 0) * 10,
-            0
-          );
-          return sum + unitStr + assetStr;
-        }, 0);
-
-      const initiatorStrength = calcStrength(initiatorBranches);
-      const defenderStrength = calcStrength(defenderBranches);
-      const totalStrength = initiatorStrength + defenderStrength || 1;
-
-      // Random swing factor (10-30%)
-      const swing = 0.1 + Math.random() * 0.2;
-      const effectiveRatio =
-        initiatorStrength / totalStrength + (Math.random() > 0.5 ? swing : -swing);
-
-      const initiatorWins = effectiveRatio > 0.5;
-      const marginOfVictory = Math.abs(effectiveRatio - 0.5);
-
-      // Calculate casualties proportional to strength ratio
-      const baseCasualties = Math.round((initiatorStrength + defenderStrength) * 0.05);
-      const initiatorCasualties = Math.round(
-        baseCasualties * (initiatorWins ? 0.3 : 0.7) * (1 + Math.random() * 0.3)
+      const outcome = computeConflictOutcome(
+        militaryStrength(initiatorBranches),
+        militaryStrength(defenderBranches)
       );
-      const defenderCasualties = Math.round(
-        baseCasualties * (initiatorWins ? 0.7 : 0.3) * (1 + Math.random() * 0.3)
-      );
-
-      // Economic damage
-      const econDamage = marginOfVictory < 0.1 ? 0.02 : marginOfVictory < 0.2 ? 0.01 : 0.005;
+      const {
+        initiatorWins,
+        initiatorCasualties,
+        defenderCasualties,
+        economicDamage: econDamage,
+      } = outcome;
 
       const conflict = await ctx.db.militaryConflict.create({
         data: {
@@ -416,28 +512,13 @@ export const securityConflictsRouter = createTRPCRouter({
 
       // Create storyteller effects for economic damage
       await ctx.db.storytellerEffect.createMany({
-        data: [
-          {
-            countryId: userProfile.countryId,
-            ixTimeTimestamp: new Date(),
-            inputType: "GDP_ADJUSTMENT",
-            value: -econDamage * (initiatorWins ? 0.5 : 1.5),
-            description: `Military conflict with ${defender.name}: ${initiatorWins ? "victory" : "defeat"}`,
-            duration: 2,
-            isActive: true,
-            createdBy: userProfile.id,
-          },
-          {
-            countryId: input.targetCountryId,
-            ixTimeTimestamp: new Date(),
-            inputType: "GDP_ADJUSTMENT",
-            value: -econDamage * (initiatorWins ? 1.5 : 0.5),
-            description: `Military conflict with ${initiator.name}: ${initiatorWins ? "defeat" : "defense"}`,
-            duration: 2,
-            isActive: true,
-            createdBy: userProfile.id,
-          },
-        ],
+        data: conflictEconomicEffects({
+          initiator,
+          defender,
+          outcome,
+          createdBy: userProfile.id,
+          defenderWinLabel: "defense",
+        }),
       });
 
       const winnerName = initiatorWins ? initiator.name : defender.name;
