@@ -71,6 +71,24 @@ describe("SourceList", () => {
     ).toBeInTheDocument();
   });
 
+  it("marks only the current app's section when section ids repeat across apps", () => {
+    const vault = setup("/vault", { expanded: ["home", "countries"] });
+    const current = within(vault.nav).getAllByRole("link", { current: "page" });
+    expect(current).toHaveLength(1);
+    expect(current[0]).toHaveTextContent("Dashboard");
+    expect(current[0]).toHaveAttribute(
+      "href",
+      apps.find((a) => a.id === "vault")!.sections.find((s) => s.id === "dashboard")!.href
+    );
+  });
+
+  it("does not mark another expanded app's same-named section as current", () => {
+    const { nav } = setup("/dashboard", { expanded: ["vault"] });
+    const current = within(nav).getAllByRole("link", { current: "page" });
+    expect(current).toHaveLength(1);
+    expect(current[0]).toHaveAttribute("href", "/dashboard");
+  });
+
   it("hides the reward row when nothing is claimable", () => {
     const { nav } = setup("/vault");
     expect(within(nav).queryByRole("button", { name: /Daily reward/ })).toBeNull();

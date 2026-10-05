@@ -42,6 +42,8 @@ export interface SourceListProps {
 }
 
 type Ctx = Pick<SourceListProps, "badges" | "onAction" | "onNavigate" | "expanded" | "onToggle"> & {
+  /** Section ids repeat across apps, so a current section only counts inside its own app. */
+  activeAppId: string | undefined;
   activeSectionId: string | undefined;
   indicatorId: string;
 };
@@ -169,11 +171,12 @@ function SectionRows({
   id?: string;
 }) {
   const visible = app.sections.filter((s) => !s.action || (s.badge && ctx.badges[s.badge]));
+  const rowCtx = app.id === ctx.activeAppId ? ctx : { ...ctx, activeSectionId: undefined };
   return (
     <div id={id} className={cn("flex flex-col", !collapsibleGroups && "pl-4")} data-app={app.tint}>
       {groupSections(visible).map(({ group, sections }, index) => {
         const groupKey = `${app.id}:${group}`;
-        const containsActive = sections.some((s) => s.id === ctx.activeSectionId);
+        const containsActive = sections.some((s) => s.id === rowCtx.activeSectionId);
         const open = !collapsibleGroups || !group || containsActive || ctx.expanded.has(groupKey);
         const listId = `source-list-${ctx.indicatorId}-${groupKey}`.replace(/[^a-zA-Z0-9-]+/g, "-");
         return (
@@ -202,7 +205,7 @@ function SectionRows({
                       ctx={ctx}
                     />
                   ) : (
-                    <SectionRow key={section.id} section={section} ctx={ctx} />
+                    <SectionRow key={section.id} section={section} ctx={rowCtx} />
                   )
                 )}
               </ul>
@@ -325,6 +328,7 @@ export function SourceList({
     onNavigate,
     expanded,
     onToggle,
+    activeAppId: current?.id,
     activeSectionId,
     indicatorId: `source-list-${variant}`,
   };
@@ -332,11 +336,7 @@ export function SourceList({
   if (variant === "popover" && app) {
     return (
       <nav aria-label={app.label} data-slot="source-list" data-mode="popover">
-        <SectionRows
-          app={app}
-          ctx={{ ...ctx, activeSectionId: app.id === current?.id ? activeSectionId : undefined }}
-          collapsibleGroups={false}
-        />
+        <SectionRows app={app} ctx={ctx} collapsibleGroups={false} />
       </nav>
     );
   }
