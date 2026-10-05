@@ -17,10 +17,9 @@ export function useNavBadges(signedIn: boolean): NavBadges {
   const inbox = useDiplomacyInboxCount(country?.id, signedIn);
   const { data: balance } = api.vault.getBalance.useQuery(undefined, { enabled: signedIn });
 
-  // The input is optional and the server reads the user from the session. The Messages page calls
-  // this with `{ userId }`, so it is a separate cache entry; both are refreshed by a no-argument
-  // invalidate, which is how an unread change there reaches this badge. Polled lightly, as other
-  // unread badges.
+  // The input is optional and the server reads the user from the session. The shell is the only
+  // reader of this no-argument entry; the Messages hooks invalidate it when mail is read or moved,
+  // which is how an unread change reaches this badge. Polled lightly, as other unread badges.
   const { data: folderCounts } = api.messages.getFolderCounts.useQuery(undefined, {
     enabled: signedIn,
     staleTime: 60_000,

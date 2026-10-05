@@ -43,8 +43,8 @@ interface InspectorProps {
  *
  * The aside is plain markup shown by CSS from xl, so it is in the server HTML and never pops in
  * after hydration. Its children stay mounted through hydration (matching that HTML), then only
- * while the viewport is wide; below xl the content lives in the sheet, so it is mounted at most
- * once and a phone never fetches for a column it cannot see.
+ * while the viewport is wide. Below xl the children mount in the aside once during hydration, then
+ * unmount; after that they exist only inside the sheet, and only while it is open.
  */
 export function Inspector({
   title,

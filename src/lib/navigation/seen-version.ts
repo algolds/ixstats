@@ -7,7 +7,7 @@ import { APP_VERSION, BUILD_VERSION } from "~/lib/buildVersion";
 
 const STORAGE_KEY = "ixstats:version-seen";
 /** Same-tab change signal: the `storage` event only fires in other tabs. */
-export const VERSION_SEEN_EVENT = "ixstats:version-seen";
+const VERSION_SEEN_EVENT = "ixstats:version-seen";
 
 export function currentVersionKey(): string {
   return `${APP_VERSION}+${BUILD_VERSION}`;

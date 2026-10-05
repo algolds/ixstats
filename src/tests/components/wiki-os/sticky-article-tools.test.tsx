@@ -24,7 +24,6 @@ beforeEach(() => {
       observe = cb;
       options = opts;
     }
-    observeCalls = 0;
     observe() {}
     unobserve() {}
     disconnect() {}
