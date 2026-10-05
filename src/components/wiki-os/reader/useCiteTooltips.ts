@@ -96,8 +96,8 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
   }, [contentRef, show, hide]);
 
   // The tooltip: a popover above the citation (flips below near the top of the viewport). The
-  // inner `.wikios-cite-tooltip-inner` keeps the reading-face footnote styling and its arrow, which
-  // is hidden when the card flips.
+  // popover overlay is the only surface; the inner `.wikios-cite-tooltip-inner` just sets the
+  // reading-face footnote type.
   return createElement(
     VirtualAnchorPopover,
     {
@@ -109,8 +109,7 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
       side: "top",
       sideOffset: 0,
       role: "tooltip",
-      className:
-        "relative z-tooltip max-w-[min(420px,90vw)] pb-2 data-[side=bottom]:pt-2 data-[side=bottom]:pb-0 data-[side=bottom]:*:after:hidden",
+      className: "z-tooltip max-w-[min(420px,90vw)] px-3.5 py-2.5",
       onMouseEnter: tooltipMouseEnter,
       onMouseLeave: tooltipMouseLeave,
     },

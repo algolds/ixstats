@@ -877,16 +877,12 @@
     max-width: min(420px, 90vw);
   }
 
+  /* The popover overlay is the surface; this only sets the footnote's reading face. */
   .wikios-cite-tooltip-inner {
-    background: var(--color-surface-elevated);
-    border: 1px solid var(--color-separator);
-    border-radius: var(--radius-control);
-    padding: 10px 14px;
     font-family: var(--wikios-font-reading);
     font-size: 12px;
     line-height: 1.55;
     color: var(--wikios-text-muted);
-    box-shadow: var(--shadow-floating);
     word-wrap: break-word;
   }
 
@@ -901,21 +897,6 @@
 
   .wikios-cite-tooltip-inner .external {
     word-break: break-all;
-  }
-
-  /* Arrow */
-
-  .wikios-cite-tooltip-inner::after {
-    content: "";
-    position: absolute;
-    bottom: 2px;
-    left: 50%;
-    transform: translateX(-50%) rotate(45deg);
-    width: 8px;
-    height: 8px;
-    background: var(--color-surface-elevated);
-    border-right: 1px solid var(--color-separator);
-    border-bottom: 1px solid var(--color-separator);
   }
 
   /* --- Metadata / hidden categories --- */

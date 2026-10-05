@@ -70,12 +70,12 @@ describe("TabBar", () => {
     expect(within(sheet).queryByText("Apps")).not.toBeInTheDocument();
   });
 
-  it("closes the sheet when a section link is followed", () => {
+  it("closes the sheet when a current-app section link is followed", () => {
     mockPhoneWidth();
     render(<TabBar pathname="/mycountry/economy" searchParams={null} apps={apps} {...navProps} />);
     fireEvent.click(screen.getByRole("button", { name: "More" }));
     fireEvent.click(
-      within(screen.getByRole("dialog", { name: "More" })).getByRole("link", { name: "Wiki" })
+      within(screen.getByRole("dialog", { name: "More" })).getByRole("link", { name: "Economy" })
     );
     expect(screen.queryByRole("dialog", { name: "More" })).not.toBeInTheDocument();
   });
@@ -91,6 +91,9 @@ describe("TabBar", () => {
       "aria-current",
       "page"
     );
+    // Forum's own section list is open (the current app always is), with no disclosure to
+    // collapse it.
+    expect(within(sheet).queryByRole("button", { name: /Forum/ })).not.toBeInTheDocument();
   });
 
   it("lists the account at the end of More and closes the sheet when one of its links is used", () => {
