@@ -93,4 +93,4 @@ The admin tRPC router was split by domain on 2026-06-13 and recombined with `mer
 
 - Update `docs/systems/admin-cms.md` when adding or removing admin interfaces, and keep this directory table in sync with `AdminRouter.renderContent()` and the Admin sections in `src/lib/navigation/app-sections.ts` (the sidebar area list).
 - New admin mutations must go through a domain service and be guarded; never bypass the layout auth check.
-- Register any new admin router file in `routers/admin/index.ts` and verify procedure parity at the AST level after splitting (`scripts/verify-router-splits.ts`).
+- Register any new admin router file in `routers/admin/index.ts` and verify procedure parity at the AST level after splitting (`scripts/split-router-template.ts` runs that check itself).
