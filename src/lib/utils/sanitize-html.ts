@@ -443,3 +443,12 @@ export function validateNoXSS(content: string): { valid: boolean; reason?: strin
 
   return { valid: true };
 }
+
+/**
+ * SVG markup (heraldry charges, imported artwork): DOMPurify's SVG profile, which drops
+ * scripts, event handlers, foreignObject and javascript: links. Use before any
+ * dangerouslySetInnerHTML of stored or fetched SVG.
+ */
+export function sanitizeSvgMarkup(svg: string): string {
+  return purify.sanitize(svg, { USE_PROFILES: { svg: true, svgFilters: true } });
+}

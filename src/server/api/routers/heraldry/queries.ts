@@ -2,6 +2,13 @@ import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { generateRandomComposition } from "~/lib/heraldry/generator";
+import { isSystemOwner } from "~/lib/auth";
+
+/** The design's owner or a system owner (Clerk ids). */
+function canSeeDraft(ctx: { auth?: { userId?: string | null } | null }, ownerId: string): boolean {
+  const viewer = ctx.auth?.userId;
+  return !!viewer && (viewer === ownerId || isSystemOwner(viewer));
+}
 
 export const heraldryQueriesRouter = createTRPCRouter({
   getAchievement: publicProcedure
@@ -10,7 +17,8 @@ export const heraldryQueriesRouter = createTRPCRouter({
       const achievement = await ctx.db.heraldryAchievement.findUnique({
         where: { id: input.id },
       });
-      if (!achievement) {
+      // An unpublished design is its owner's draft: anyone else gets NOT_FOUND.
+      if (!achievement || (!achievement.isPublished && !canSeeDraft(ctx, achievement.ownerId))) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: `Heraldry achievement with ID ${input.id} not found`,
@@ -121,6 +129,14 @@ export const heraldryQueriesRouter = createTRPCRouter({
   getRevisionHistory: protectedProcedure
     .input(z.object({ achievementId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
+      const achievement = await ctx.db.heraldryAchievement.findUnique({
+        where: { id: input.achievementId },
+        select: { ownerId: true },
+      });
+      // Revision history is the owner's working record, published or not.
+      if (!achievement || !canSeeDraft(ctx, achievement.ownerId)) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Design not found" });
+      }
       return ctx.db.heraldryRevision.findMany({
         where: { achievementId: input.achievementId },
         orderBy: { createdAt: "desc" },

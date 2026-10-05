@@ -41,7 +41,7 @@ jobs:
         run: bun run audit:arch
         continue-on-error: true
 
-      # 0 errors and 25 warnings on 2026-10-05; the limit only ratchets down.
+      # 0 errors and 24 warnings on 2026-10-05; the limit only ratchets down.
       - name: Lint (strict)
         run: bun run lint:strict
 

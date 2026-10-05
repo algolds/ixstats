@@ -3,6 +3,7 @@
 import type { MouseEvent } from "react";
 import type { HeraldryComposition } from "~/lib/heraldry";
 import { computeLayout } from "~/lib/heraldry";
+import { sanitizeSvgMarkup } from "~/lib/utils/sanitize-html";
 import {
   renderShieldOutline,
   renderDivisionPaths,
@@ -113,7 +114,9 @@ export default function ShieldRenderer({
                     onClick={handleChargeClick}
                     className="cursor-pointer hover:brightness-110"
                     dangerouslySetInnerHTML={{
-                      __html: customSvg.replace(/<svg[^>]*>/, "").replace(/<\/svg>/, ""),
+                      __html: sanitizeSvgMarkup(customSvg)
+                        .replace(/<svg[^>]*>/, "")
+                        .replace(/<\/svg>/, ""),
                     }}
                   />
                 );

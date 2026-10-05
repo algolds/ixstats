@@ -11,6 +11,7 @@ import { SearchField } from "~/components/ui/search-field";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { Card } from "~/components/ui/card";
 import { BUILTIN_CHARGES } from "../builtin-charges";
+import { sanitizeSvgMarkup } from "~/lib/utils/sanitize-html";
 
 interface ChargeLibraryPanelProps {
   onOpenCommons: () => void;
@@ -116,7 +117,7 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
                       <div
                         className="text-label-secondary flex h-8 w-8 items-center justify-center overflow-hidden"
                         dangerouslySetInnerHTML={{
-                          __html: item.svgData
+                          __html: sanitizeSvgMarkup(item.svgData)
                             .replace(/width="[^"]*"/, 'width="100%"')
                             .replace(/height="[^"]*"/, 'height="100%"'),
                         }}

@@ -1,8 +1,5 @@
 import { z } from "zod/v4";
-import {
-  createTRPCRouter,
-  rateLimitedMutationProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 import { compositionSchema } from "~/lib/heraldry/composition-schema";
@@ -12,6 +9,19 @@ import { isSystemOwner } from "~/lib/auth";
 import { invalidateCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { sanitizeSvgMarkup } from "~/lib/utils/sanitize-html";
+
+const MAX_CHARGE_SVG_BYTES = 512 * 1024;
+
+/** https URLs on Wikimedia's file host, the only source "Commons" charges come from. */
+export function isCommonsFileUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" && parsed.hostname === "upload.wikimedia.org";
+  } catch {
+    return false;
+  }
+}
 
 /** The achievement, or NOT_FOUND / FORBIDDEN unless the caller owns it (or is a system owner). */
 async function loadOwnedAchievement(
@@ -164,14 +174,32 @@ export const heraldryMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const res = await fetch(input.url);
+      // The server fetches this URL, so only Wikimedia Commons file hosts are allowed (SSRF),
+      // and the SVG is sanitized before it is stored and shown to other players (XSS).
+      if (!isCommonsFileUrl(input.url)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Charges can only be imported from upload.wikimedia.org over https.",
+        });
+      }
+      const res = await fetch(input.url, {
+        redirect: "error",
+        signal: AbortSignal.timeout(10_000),
+      });
       if (!res.ok) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: `Failed to download SVG from ${input.url}: ${res.statusText}`,
         });
       }
-      const svgData = await res.text();
+      const raw = await res.text();
+      if (raw.length > MAX_CHARGE_SVG_BYTES) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "That SVG is larger than 512 KB." });
+      }
+      const svgData = sanitizeSvgMarkup(raw);
+      if (!/<svg[\s>]/i.test(svgData)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "That file is not an SVG image." });
+      }
 
       return ctx.db.heraldryCharge.create({
         data: {

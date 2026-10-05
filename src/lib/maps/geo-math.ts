@@ -44,7 +44,7 @@ interface WorldScale {
  * Default 1.0 — IxEarth scale is baked into the map geometry.
  * Only change this for communities using a different world/map scale.
  */
-let activeScale: WorldScale = {
+const activeScale: WorldScale = {
   areaScale: 1.0,
   distanceScale: 1.0,
   radiusKm: IXEARTH_REFERENCE.earthRadiusKm,

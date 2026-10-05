@@ -168,11 +168,12 @@ export const notificationsUserRouter = createTRPCRouter({
     .input(
       z.object({
         notificationId: z.string(),
+        /** Ignored: the caller's own notifications are always the ones changed. */
         userId: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) =>
-      updateVisibleNotification(ctx.db, input.userId || ctx.auth?.userId, input.notificationId, {
+      updateVisibleNotification(ctx.db, ctx.auth?.userId, input.notificationId, {
         read: true,
       })
     ),
@@ -183,11 +184,12 @@ export const notificationsUserRouter = createTRPCRouter({
     .input(
       z.object({
         notificationId: z.string(),
+        /** Ignored: the caller's own notifications are always the ones changed. */
         userId: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) =>
-      updateVisibleNotification(ctx.db, input.userId || ctx.auth?.userId, input.notificationId, {
+      updateVisibleNotification(ctx.db, ctx.auth?.userId, input.notificationId, {
         dismissed: true,
         read: true,
       })
@@ -201,9 +203,11 @@ export const notificationsUserRouter = createTRPCRouter({
         userId: z.string().optional(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx }) => {
       const { db } = ctx;
-      const userId = input.userId || ctx.auth?.userId;
+      // Always the caller: a client-supplied userId is ignored (it let anyone clear
+      // another user's tray).
+      const userId = ctx.auth?.userId;
 
       if (!userId) return { success: true };
 
