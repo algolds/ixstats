@@ -31,6 +31,7 @@ export function ClaimableNations({
       if (result.status === "approved") {
         notify.success(`${title} is yours`, "Manage it from MyCountry.");
         void utils.realms.getBySlug.invalidate({ slug: realmSlug });
+        void utils.realms.region.invalidate();
         return;
       }
       setSubmitted((titles) => new Set(titles).add(title));
