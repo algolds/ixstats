@@ -338,12 +338,16 @@
     min-height: 0;
   }
 
+  /* The editors fill what is left of the viewport: everything above them (shell top offset,
+     header, tabs row) is measured by WikiOSContentWrapper into --wikios-chrome-height, minus a
+     bottom gap. dvh follows mobile browser bars. */
   .wikios-ve-container {
+    --wikios-editor-height: calc(100dvh - var(--wikios-chrome-height, 0px) - 1rem);
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 120px);
+    height: var(--wikios-editor-height);
     min-height: 520px;
-    max-height: calc(100vh - 100px);
+    max-height: var(--wikios-editor-height);
     border: 1px solid var(--wikios-border);
     border-radius: 14px;
     overflow: hidden;
@@ -707,11 +711,12 @@
      --------------------------------------------------------------------------- */
 
   .wikios-editor-modern {
+    --wikios-editor-height: calc(100dvh - var(--wikios-chrome-height, 0px) - 1rem);
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 120px);
+    height: var(--wikios-editor-height);
     min-height: 520px;
-    max-height: calc(100vh - 100px);
+    max-height: var(--wikios-editor-height);
     border: 1px solid var(--wikios-border);
     border-radius: 14px;
     overflow: hidden;

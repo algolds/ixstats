@@ -1,7 +1,7 @@
 "use client";
 // Animating page transition wrapper for WikiOS routes.
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { PageHeader } from "~/components/shell/PageHeader";
 
@@ -22,7 +22,27 @@ export function WikiOSContentWrapper({
 }: WikiOSContentWrapperProps) {
   const contentRef = useRef<HTMLElement>(null);
   const pathname = usePathname();
+  const bodyRef = useRef<HTMLDivElement>(null);
   const prevPathRef = useRef(pathname);
+
+  // The editors fill the viewport below everything above them. That distance (shell offset,
+  // header, tabs row) varies with the page, so measure it where the body starts and publish it
+  // for editors.css instead of subtracting a guessed pixel count.
+  useLayoutEffect(() => {
+    const main = contentRef.current;
+    const body = bodyRef.current;
+    if (!main || !body) return;
+    const publish = () => {
+      const top = Math.round(body.getBoundingClientRect().top + window.scrollY);
+      main.style.setProperty("--wikios-chrome-height", `${top}px`);
+    };
+    publish();
+    if (typeof ResizeObserver === "undefined") return;
+    // The tabs row can wrap and the header can change height; either moves the body.
+    const observer = new ResizeObserver(publish);
+    observer.observe(main);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (pathname !== prevPathRef.current) {
@@ -49,7 +69,7 @@ export function WikiOSContentWrapper({
           <div className="ml-auto flex items-center gap-2">{actions}</div>
         </div>
       )}
-      {children}
+      <div ref={bodyRef}>{children}</div>
     </main>
   );
 }
