@@ -58,6 +58,30 @@ function laborMarketView(
   };
 }
 
+/**
+ * The Country columns the economy builder may autosave. Anything else in `changes` (ownership,
+ * realm, live GDP and population, or unmapped builder keys) is ignored, so the autosave can't
+ * be used to write arbitrary Country fields.
+ */
+const AUTOSAVE_COUNTRY_FIELDS = [
+  "unemploymentRate",
+  "inflationRate",
+  "laborForceParticipationRate",
+  "lifeExpectancy",
+  "literacyRate",
+  "urbanPopulationPercent",
+  "populationGrowthRate",
+] as const;
+
+function autosaveCountryData(changes: Record<string, unknown>): Record<string, number> {
+  const data: Record<string, number> = {};
+  for (const field of AUTOSAVE_COUNTRY_FIELDS) {
+    const value = changes[field];
+    if (typeof value === "number" && Number.isFinite(value)) data[field] = value;
+  }
+  return data;
+}
+
 const economicsBuilderRouter = createTRPCRouter({
   // Get economy builder state with all related data
   getEconomyBuilderState: publicProcedure
@@ -139,12 +163,14 @@ const economicsBuilderRouter = createTRPCRouter({
 
       await assertCountryWriteAccess(ctx, countryId);
 
+      const data = autosaveCountryData(changes);
+
       try {
-        // Update country with changes
+        // Update country with the allowed changes
         const _updated = await ctx.db.country.update({
           where: { id: countryId },
           data: {
-            ...changes,
+            ...data,
             updatedAt: new Date(),
           },
         });
@@ -156,7 +182,7 @@ const economicsBuilderRouter = createTRPCRouter({
             action: "autosave:economy",
             target: countryId,
             details: JSON.stringify({
-              fields: Object.keys(changes),
+              fields: Object.keys(data),
               timestamp: new Date().toISOString(),
             }),
             success: true,
