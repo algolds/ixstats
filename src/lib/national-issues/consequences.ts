@@ -330,8 +330,9 @@ export class NationalIssuesConsequences {
       );
     }
 
-    // A country gets its stability row only when someone views the Defense panel; create it
-    // from the same formula first so the delta has a real value to move.
+    // A country gets its stability row only when an event first touches it (viewing the
+    // Defense panel computes without writing); create it from the same formula first so the
+    // delta has a real value to move.
     if (consequence.targetModel === "InternalStabilityMetrics") {
       try {
         await ensureInternalStabilityMetrics(db, countryId);

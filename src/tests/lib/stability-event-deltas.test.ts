@@ -4,7 +4,8 @@
 // Stability deltas from national issues survive the Defense panel's recalculation
 // (security.getInternalStability used to upsert the raw formula over them), and an issue that
 // targets stability on a country with no InternalStabilityMetrics row creates the row from the
-// same formula first instead of being dropped.
+// same formula first instead of being dropped. Viewing never writes (MC-13): the panel computes
+// on the fly and the stat-progression job re-persists stored rows.
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: { user: { findUnique: jest.fn() }, auditLog: { create: jest.fn() } },
@@ -39,7 +40,11 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { securityStabilityRouter } from "~/server/api/routers/security/stability";
 import { NationalIssuesConsequences } from "~/lib/national-issues/consequences";
 import { calculateStabilityMetrics } from "~/lib/statecraft/stability-formulas";
-import { stabilityRowData, STABILITY_NUMERIC_FIELDS } from "~/lib/statecraft/stability-store";
+import {
+  refreshStoredInternalStability,
+  stabilityRowData,
+  STABILITY_NUMERIC_FIELDS,
+} from "~/lib/statecraft/stability-store";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 const formulaMock = calculateStabilityMetrics as unknown as jest.Mock;
@@ -52,7 +57,10 @@ function formula(stabilityScore: number, extra: Record<string, number> = {}) {
 }
 
 /** A db whose InternalStabilityMetrics row is real state across calls. */
-function makeDb(initialRow: Record<string, unknown> | null = null) {
+function makeDb(
+  initialRow: Record<string, unknown> | null = null,
+  policies: Record<string, unknown>[] = []
+) {
   const state = { row: initialRow ? { id: "ism1", countryId: COUNTRY, ...initialRow } : null } as {
     row: Record<string, unknown> | null;
   };
@@ -70,8 +78,10 @@ function makeDb(initialRow: Record<string, unknown> | null = null) {
     economicProfile: { findUnique: jest.fn(async () => null) },
     demographics: { findUnique: jest.fn(async () => null) },
     governmentStructure: { findUnique: jest.fn(async () => null) },
+    policy: { findMany: jest.fn(async () => policies) },
     internalStabilityMetrics: {
       findUnique: jest.fn(async () => (state.row ? { ...state.row } : null)),
+      findMany: jest.fn(async () => (state.row ? [{ countryId: COUNTRY }] : [])),
       upsert: jest.fn(
         async (args: { create: Record<string, unknown>; update: Record<string, unknown> }) => {
           state.row = state.row ? { ...state.row, ...args.update } : { id: "ism1", ...args.create };
@@ -146,6 +156,7 @@ describe("stability event deltas", () => {
     formulaMock.mockReturnValue(formula(70));
     const db = makeDb();
     await NationalIssuesConsequences.resolveIssue("issue1", "o1", db as any);
+    db.internalStabilityMetrics.upsert.mockClear();
 
     // The formula moves (economy changed) and the panel recalculates: the -3 is carried over.
     formulaMock.mockReturnValue(formula(72, { trustInGovernment: 55 }));
@@ -156,6 +167,25 @@ describe("stability event deltas", () => {
     // Recalculating again with the same inputs does not drift.
     const second = await viewDefensePanel(db);
     expect(second.metrics.stabilityScore).toBe(69);
+
+    // The job persists the same values; the panel then reads them back unchanged.
+    await refreshStoredInternalStability(db as any);
+    expect(db.state.row?.stabilityScore).toBe(69);
+    expect((await viewDefensePanel(db)).metrics.stabilityScore).toBe(69);
+  });
+
+  it("never writes when the panel is viewed", async () => {
+    formulaMock.mockReturnValue(formula(70));
+    const db = makeDb();
+
+    const view = await viewDefensePanel(db);
+
+    expect(view.metrics).toEqual(
+      expect.objectContaining({ id: null, countryId: COUNTRY, stabilityScore: 70 })
+    );
+    expect(db.internalStabilityMetrics.upsert).not.toHaveBeenCalled();
+    expect(db.internalStabilityMetrics.update).not.toHaveBeenCalled();
+    expect(db.state.row).toBeNull();
   });
 
   it("keeps a legacy row's stored values once, then tracks the formula from there", async () => {
@@ -166,9 +196,31 @@ describe("stability event deltas", () => {
 
     formulaMock.mockReturnValue(formula(72));
     expect((await viewDefensePanel(db)).metrics.stabilityScore).toBe(55);
+    await refreshStoredInternalStability(db as any);
 
     formulaMock.mockReturnValue(formula(74));
     expect((await viewDefensePanel(db)).metrics.stabilityScore).toBe(57);
+  });
+
+  it("feeds recent active policies into the formula", async () => {
+    formulaMock.mockReturnValue(formula(70));
+    const db = makeDb(null, [
+      {
+        category: "social",
+        gdpEffect: 1,
+        calculatedEffects: JSON.stringify({ stabilityEffect: -4 }),
+        effectiveDate: new Date(),
+        effectiveIxTime: null,
+      },
+    ]);
+
+    await viewDefensePanel(db);
+
+    const recentPolicies = formulaMock.mock.calls[0]![4] as Array<Record<string, number>>;
+    expect(recentPolicies).toHaveLength(1);
+    expect(recentPolicies[0]).toEqual(
+      expect.objectContaining({ type: "social", popularityImpact: -40, economicImpact: 10 })
+    );
   });
 });
 
