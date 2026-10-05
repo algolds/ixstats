@@ -61,7 +61,7 @@ On the [world map](/maps), Halo is replaced by the map's own floating bar.
 
 ### Search
 
-Search finds countries, pages and features, wiki articles and commands. Press `Tab` to cycle the filter: all, countries, commands, features, wiki. Typing a command such as "Toggle Dark/Light Theme", "Toggle Audio" or "Mark All Notifications Read" runs it straight away. You can turn wiki results off with **Wiki results in search** in [Settings](/help/getting-started/settings#wikios).
+Search finds countries, pages and features, wiki articles and commands. Press `Tab` to cycle the filter: all, countries, commands, features, wiki. Typing a command such as "Toggle dark or light theme", "Toggle sound effects" or "Mark all notifications read" runs it straight away. You can turn wiki results off with **Wiki results in search** in [Settings](/help/getting-started/settings#wikios).
 
 ### Notifications and messages
 

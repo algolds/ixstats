@@ -242,7 +242,7 @@ api.admin.saveLorewardWinnerOverride.useMutation() // { date, type?, winnerUser,
 api.admin.pushLorewardToBot.useMutation() // { date, winner, runnerUp?, candidates?, editCount? }
 api.admin.purgeWikiCache.useMutation() // { pageTitle }
 api.admin.purgeAllWikiCache.useMutation()
-api.admin.saveLorewardWeights.useMutation() // { lorewardWeight_bytesAdded, lorewardWeight_proseRatio, lorewardWeight_editDepth, lorewardWeight_collaborationBonus, lorewardWeight_newArticleBonus }
+api.admin.saveLorewardWeights.useMutation() // { proseWeight, depthMaxBonus, noveltyBonus, importanceMaxBonus, listPenalty, minorOnlyPenalty } (stored as lorewardWeight_<field>)
 api.admin.createWikiArticleAwardBatch.useMutation() // { pageTitles, category, name, description?, recipientUsers?, metadata? }
 api.admin.evaluateWikiMilestones.useMutation() // { pageTitles? }
 api.admin.syncWikiTemplateByName.useMutation() // { name }

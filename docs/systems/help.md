@@ -1,6 +1,6 @@
 # In-App Help System
 
-**Last updated:** 30 September 2026  
+**Last updated:** 2026-10-05  
 **Status:** Production. Every article is registered in the hub and link-checked by tests.  
 **Hierarchy:** Platform Support & Documentation Suite.
 
@@ -22,20 +22,20 @@ The in-app help center at `/help` holds plain, task-oriented player guides. Arti
 
 ## Sections
 
-**Coverage (30 September 2026):** 55 articles in 13 folders, all registered, in 11 hub sections. An article's folder does not have to match its section (for example `gameplay/national-issues` is listed under MyCountry).
+**Coverage (5 October 2026):** 63 articles in 13 folders, all registered, in 11 hub sections. An article's folder does not have to match its section (for example `gameplay/national-issues` is listed under MyCountry).
 
 | Hub section | Articles | Key system guide |
 | :--- | :--- | :--- |
-| **Start Here** | welcome, first-country, gameplay/country-building, gameplay-overview, navigation, ixtime, ixnayid, premium | [builder.md](./builder.md), [ixnayid-passport.md](./ixnayid-passport.md) |
-| **MyCountry** | mycountry/overview, mycountry/executive, gameplay/national-issues, mycountry/economy, mycountry/politics, mycountry/intelligence, mycountry/editor, mycountry/map-editor | [mycountry.md](./mycountry.md), [elections.md](./elections.md) |
+| **Start Here** | welcome, first-country, gameplay/country-building, gameplay-overview, navigation, halo, settings, ixtime, ixnayid, premium | [builder.md](./builder.md), [halo.md](./halo.md), [settings.md](./settings.md), [ixnayid-passport.md](./ixnayid-passport.md) |
+| **MyCountry** | mycountry/overview, mycountry/executive, gameplay/national-issues, mycountry/economy, mycountry/politics, mycountry/intelligence, mycountry/editor, mycountry/map-editor, mycountry/canvas-editor | [mycountry.md](./mycountry.md), [elections.md](./elections.md), [WIKIOS.md](./wikios/WIKIOS.md) (Canvas editor) |
 | **Economy & Government** | economy/{tiers, calculations, tax-system, trade, modeling}, government/{atomic, components, synergy, traditional} | [economy.md](./economy.md), [calculations.md](./calculations.md) |
 | **Diplomacy** | mycountry/diplomacy, diplomacy/{embassies, cultural, scenarios, npc-personalities} | [diplomacy.md](./diplomacy.md), [npc-ai.md](./npc-ai.md) |
 | **Defense** | mycountry/defense, defense/{equipment, stability} | [defense.md](./defense.md) |
-| **The World** | world/{maps, realms, countries}, gameplay/{simulation, world-events} | [maps.md](./maps.md), [realms.md](./realms.md), [crisis-events.md](./crisis-events.md) |
-| **Wiki & Lore** | wiki/{wikios, stash} | [wikios.md](./wikios.md), [stash.md](./stash.md) |
+| **The World** | world/{maps, realms, countries, explore}, gameplay/{simulation, world-events} | [maps.md](./maps.md), [realms.md](./realms.md), [explore-and-country-profiles.md](./explore-and-country-profiles.md), [crisis-events.md](./crisis-events.md) |
+| **Wiki & Lore** | wiki/{wikios, stash} | [WIKIOS.md](./wikios/WIKIOS.md), [stash.md](./stash.md) |
 | **Vault, Cards & Rewards** | vault/{overview, ixcredits, card-packs, trading, lore-cards, ns-import}, gameplay/{achievements, leaderboards} | [ixcredits.md](./ixcredits.md), [cards.md](./cards.md), [achievements.md](./achievements.md) |
-| **Community** | social/{thinkpages, thinkshare, thinktanks, forum} | [social.md](./social.md), [forum.md](./forum.md) |
-| **Labs** | labs/overview | [myleague.md](./myleague.md), [onoma-roadmap.md](./onoma-roadmap.md) |
+| **Community** | social/{thinkpages, thinkshare, thinktanks, forum, blurbs} | [social.md](./social.md), [thinktanks.md](./thinktanks.md), [forum.md](./forum.md) |
+| **Labs** | labs/{overview, myleague-myclub, onoma, vexel} | [myleague.md](./myleague.md), [onoma-roadmap.md](./onoma-roadmap.md), [vexel.md](./vexel.md) |
 | **For Admins** | admin/{cms-overview, reference-data} | [admin-cms.md](./admin-cms.md) |
 
 ### Retired articles

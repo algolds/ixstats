@@ -32,7 +32,7 @@ Administrators can toggle individual economic features at runtime (`VaultConfig`
 - `isTradingEnabled`: P2P card and credit trade offers
 - `isAuctionsEnabled`: Marketplace listing and bidding
 - `isMaintenanceMode`: Emergency master switch blocking all ledger writes
-- Also tunable: `activeDailyCap` (100), `socialDailyCap` (50), `xpPerLevel` (1,000), `maxStreakBonus` (7), store prices, and `premiumMultiplier` (display-only today)
+- Also tunable: `activeDailyCap` (100), `socialDailyCap` (50), `xpPerLevel` (1,000), `maxStreakBonus` (7) and `premiumMultiplier` (display-only today). Store prices are each item's `VaultStoreItem.price`, edited in the store-item editor (the old `vault_price*` keys were removed on 2026-10-05)
 
 ---
 

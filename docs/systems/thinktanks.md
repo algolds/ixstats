@@ -1,7 +1,7 @@
 # ThinkTanks — Collaborative Groups & Research Engine
 
 **Last updated:** 2026-10-05  
-**Status:** 🟡 Partial — ThinkTanks v2 (Feed, Members, Docs and Chat tabs live; no invite inbox or join-by-code); see [SYSTEM_STATUS.md](SYSTEM_STATUS.md)  
+**Status:** 🟡 Partial — ThinkTanks v2 (Feed, Members, Docs and Chat tabs live; invite inbox and join-by-code since 2026-10-05); see [SYSTEM_STATUS.md](SYSTEM_STATUS.md)  
 **Route:** `/thinktanks` · `/thinktanks/[groupId]` · realm boards at `/r/[realm]/board`  
 **Design System:** Facet Glass Physics (see [Facet Design System](../reference/facet-design-system.md); there is no `/apple-design` route)  
 
@@ -170,6 +170,8 @@ Group owners and administrators can customize the visual identity of their Think
   - **Group Banner Artwork**: Select panoramic headers rendered as a frosted glass backdrop across the workspace header chrome.
 - **Member Invitations**:
   - Invitations via `api.thinkpages.inviteToThinktank`, choosing the invitee through a username search (`searchInvitableUsers`, which respects invite privacy in `invite-privacy.ts`). Joining a private or invite-only group consumes an open invite (`membership.ts`).
+  - **Invite inbox:** "My groups" lists the caller's open invites (`getMyThinktankInvites`) with Accept (joins through the `joinThinktank` path) and Decline.
+  - **Invite codes:** group owners and admins create a single-use code valid for 1–30 days (`createThinktankInviteCode`, "New code" under Invite members); anyone signed in can join with it (`joinThinktankByCode`, the "Invite code" field). Realm boards refuse codes.
 - **Multi-Persona Posting Toggle**:
   - Switch between authentic sovereign user accounts (default) and multi-persona identity chips (`Government`, `Media`, `Citizen`).
 
@@ -205,6 +207,10 @@ All ThinkTank operations are exposed via the `thinkpages` tRPC router (`src/serv
 | `api.thinkpages.leaveThinktank` | Mutation | `{ groupId: string }` | Leaves a group as the caller and updates membership counts |
 | `api.thinkpages.updateGroupSettings` | Mutation | `{ groupId, allowPersonaPosting?, bannerUrl?, rules?, themeAccent?, pinnedDocIds? }` | Updates group configurations and banner art |
 | `api.thinkpages.inviteToThinktank` | Mutation | `{ groupId, userIds }` | Dispatches group invitations to specified users |
+| `api.thinkpages.getMyThinktankInvites` | Query | none | The caller's open invites to active groups they haven't joined |
+| `api.thinkpages.acceptThinktankInvite` / `declineThinktankInvite` | Mutation | `{ inviteId }` | Accept (joins the group) or decline one of the caller's invites |
+| `api.thinkpages.createThinktankInviteCode` | Mutation | `{ groupId, days? }` (1–30, default 7) | Owner or group admin: a single-use invite code |
+| `api.thinkpages.joinThinktankByCode` | Mutation | `{ code }` | Join a group with an invite code (consumes it) |
 | `api.thinkpages.getGroupFeed` | Query | `{ groupId: string, limit?: number, cursor?: string }` | Returns group timeline posts with author accounts and reactions |
 | `api.thinkpages.createGroupPost` | Mutation | `{ groupId, accountId?, content, hashtags?, mediaUrls? }` | Publishes a note to the group feed (realm boards: see §4a) |
 | `api.thinkpages.removeGroupPost` | Mutation | `{ groupId, postId }` | Group owners and admins (realm-board moderators) remove a post from the group feed and hide it |

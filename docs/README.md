@@ -93,7 +93,7 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | System | Document | Scope | Status |
 | :--- | :--- | :--- | :---: |
 | **Feed & accounts** | [systems/social.md](systems/social.md) | Posts, reactions, polls, hashtags, personas, Discord mirror | ✅ Live |
-| **ThinkTanks** | [systems/thinktanks.md](systems/thinktanks.md) | Group feed, members, Docs and Chat tabs; realm boards | 🟡 Partial (no invite inbox or join-by-code) |
+| **ThinkTanks** | [systems/thinktanks.md](systems/thinktanks.md) | Group feed, members, Docs and Chat tabs; realm boards | 🟡 Partial |
 
 ### 🗨️ Forum & identity
 | System | Document | Scope | Status |

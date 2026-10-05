@@ -75,9 +75,9 @@ export const helpSections: HelpSection[] = [
       {
         id: "navigation",
         title: "Finding Your Way Around",
-        description: "The top menu, the Halo search palette, keyboard shortcuts, and Settings.",
+        description: "The sidebar, the tab bar on phones, Halo search and shortcuts, and Settings.",
         path: "/help/getting-started/navigation",
-        tags: ["menu", "search", "shortcuts", "settings", "halo"],
+        tags: ["sidebar", "menu", "search", "shortcuts", "settings", "halo"],
       },
       {
         id: "halo",
@@ -519,7 +519,7 @@ export const helpSections: HelpSection[] = [
     articles: [
       {
         id: "labs-overview",
-        title: "Labs: Onoma, MyLeague & More",
+        title: "Labs: Onoma, Vexel, MyLeague & More",
         description: "The experimental tools: language generation, sports leagues, flags.",
         path: "/help/labs/overview",
         tags: ["labs", "onoma", "myleague", "myclub", "vexel"],

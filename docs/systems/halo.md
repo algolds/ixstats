@@ -115,8 +115,8 @@ A second `CORE_FEATURES` list adds quick shortcuts (Dashboard, Leaderboards, Map
 Each entry contains an array of search keywords and synonyms. Queries match against title, description, category, and keywords in a single normalized lookup pass:
 - Typing `"military"`, `"army"`, `"fleet"`, or `"war"` matches **National Defense & Readiness**.
 - Typing `"booster"`, `"unbox"`, or `"gacha"` matches **Open Card Packs**.
-- Typing `"dark mode"`, `"light mode"`, or `"appearance"` matches **Toggle Dark/Light Theme**.
-- Typing `"sfx"`, `"audio"`, `"mute"`, or `"volume"` matches **Toggle Audio & Sound Effects**.
+- Typing `"dark mode"`, `"light mode"`, or `"appearance"` matches **Toggle dark or light theme**.
+- Typing `"sfx"`, `"audio"`, `"mute"`, or `"volume"` matches **Toggle sound effects**.
 
 ### 3. In-Palette System Execution
 System actions execute instantly via hook callbacks without requiring full-page navigation:
