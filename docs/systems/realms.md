@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-10-05
 **Routes:** `/realms` (directory) · `/r/[realm]` (realm page: Overview) · `/r/[realm]/board` · `/r/[realm]/nations` ·
-`/r/[realm]/manage` · `/admin/realms`
+`/r/[realm]/manage` · `/r/[realm]/happenings` · `/admin/realms`
 **Code:** `src/server/api/routers/realms/` (`index.ts`, `places.ts`, `region.ts`), `src/server/modules/realms/`
 (`realms.region.ts`, `realms.region-actions.ts`), `src/app/r/[realm]/(region)/`, `src/lib/realms/realm-region.ts`,
 `src/server/api/routers/thinkpages/thinktanks/realm-board.ts`, `src/server/api/routers/thinkpages/realm-feed.ts`
@@ -144,7 +144,10 @@ board posts, and claimable nations. The sidebar (stacked under the main column b
 - **Realm poll:** the one open poll (`Poll.realmId`); owners of a nation in the realm vote (`polls.vote` checks);
 - **Embassies:** realms with an active embassy;
 - **Happenings** (`realms.region.happenings`): new nations, approved claims, embassies opened, officers
-  appointed and the realm's nations' public game events (`ActivityFeed`), newest first. Composed on read.
+  appointed and the realm's nations' public game events (`ActivityFeed`), newest first. Composed on read. The
+  panel shows the latest 15 and links to **See all** (`/r/[realm]/happenings`): the whole history, filtered by
+  kind (`kinds`) and loaded a page at a time (`cursor` is the previous page's `nextCursor`, the oldest time it
+  showed; each source reads one more than the page to know whether more remain).
 
 **Nations:** every nation, the viewer's first, with **Play as** and **Leave realm** on their own, then the viewer's
 claims in this realm (`realms.myClaims({ realmSlug })`) and the claimable nations. A claimable nation the viewer
@@ -197,7 +200,6 @@ sanitized), the same path flags and coats of arms use, and keep the address fiel
 - Chat participants who lose their last nation are removed on the next time anyone opens the board, not the
   moment the nation changes hands.
 - The `/dashboard` feed and trending are not realm-scoped. The realm feed is shown only on `/realms` and the board.
-- Happenings has no history page beyond the latest 15 items.
 
 ## 6. Map and transport isolation
 

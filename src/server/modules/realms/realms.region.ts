@@ -4,7 +4,7 @@
  * staff checks every Manage action goes through.
  */
 import type { PrismaClient } from "@prisma/client";
-import { STAFF_FOUNDER_ID, type RealmPower } from "~/lib/realms/realm-region";
+import { STAFF_FOUNDER_ID, type HappeningKind, type RealmPower } from "~/lib/realms/realm-region";
 import { resolveDisplayNames } from "~/server/shared/display-names";
 import {
   activeBoardRestrictions,
@@ -314,76 +314,98 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
   };
 }
 
-const HAPPENINGS_SIZE = 15;
+/** The sidebar shows this many; the full history pages through them this many at a time by default. */
+export const HAPPENINGS_SIZE = 15;
 
 export interface Happening {
   id: string;
   at: Date;
-  kind: "nation" | "claim" | "embassy" | "officer" | "activity";
+  kind: HappeningKind;
   text: string;
   href: string | null;
 }
 
+export interface HappeningsQuery {
+  /** Only happenings strictly older than this (the previous page's `nextCursor`). */
+  before?: Date | null;
+  /** Only these kinds; all when omitted or empty. */
+  kinds?: readonly HappeningKind[];
+  limit?: number;
+}
+
 /**
  * The realm's happenings: game events from its nations (the activity feed), new nations, approved claims,
- * embassies opened and officers appointed — newest first. Composed on read; nothing is stored twice.
+ * embassies opened and officers appointed — newest first, a page at a time. Composed on read (nothing is stored
+ * twice): each source reads one more than the page from before `before`, and `nextCursor` is the oldest item
+ * shown when more remain.
  */
-export async function getRealmHappenings(db: OverviewDb, slug: string, viewer: RealmActor | null) {
+export async function getRealmHappenings(
+  db: OverviewDb,
+  slug: string,
+  viewer: RealmActor | null,
+  query: HappeningsQuery = {}
+): Promise<{ items: Happening[]; nextCursor: string | null }> {
   const realm = await loadRegionRealm(db, slug, viewer);
-  const take = HAPPENINGS_SIZE;
-  const [nations, claims, embassies, officers] = await Promise.all([
-    db.country.findMany({
-      where: { realmId: realm.id },
-      orderBy: { createdAt: "desc" },
-      take,
-      select: { id: true, name: true, slug: true, createdAt: true },
-    }),
-    db.realmClaim.findMany({
-      where: { realmId: realm.id, status: "approved", reviewedAt: { not: null } },
-      orderBy: { reviewedAt: "desc" },
-      take,
-      select: {
-        id: true,
-        reviewedAt: true,
-        wikiPageTitle: true,
-        country: { select: { name: true, slug: true } },
-      },
-    }),
-    db.realmEmbassy.findMany({
-      where: {
-        status: "active",
-        openedAt: { not: null },
-        OR: [{ fromRealmId: realm.id }, { toRealmId: realm.id }],
-      },
-      orderBy: { openedAt: "desc" },
-      take,
-      select: {
-        id: true,
-        openedAt: true,
-        fromRealmId: true,
-        fromRealm: { select: { name: true, slug: true } },
-        toRealm: { select: { name: true, slug: true } },
-      },
-    }),
-    db.realmOfficer.findMany({
-      where: { realmId: realm.id },
-      orderBy: { createdAt: "desc" },
-      take,
-      select: { id: true, userId: true, title: true, createdAt: true },
-    }),
-  ]);
-  const countryIds = (
-    await db.country.findMany({ where: { realmId: realm.id }, select: { id: true } })
-  ).map((c) => c.id);
-  const activity =
-    countryIds.length > 0
-      ? await db.activityFeed.findMany({
-          where: { countryId: { in: countryIds }, visibility: "public", category: "game" },
+  const limit = query.limit ?? HAPPENINGS_SIZE;
+  const take = limit + 1;
+  const wants = (kind: HappeningKind) => !query.kinds?.length || query.kinds.includes(kind);
+  const older = query.before ? { lt: query.before } : undefined;
+  const none = Promise.resolve([]);
+
+  const [nations, claims, embassies, officers, activity] = await Promise.all([
+    wants("nation")
+      ? db.country.findMany({
+          where: { realmId: realm.id, ...(older && { createdAt: older }) },
           orderBy: { createdAt: "desc" },
           take,
-          select: { id: true, title: true, createdAt: true },
+          select: { id: true, name: true, slug: true, createdAt: true },
         })
-      : [];
+      : none,
+    wants("claim")
+      ? db.realmClaim.findMany({
+          where: {
+            realmId: realm.id,
+            status: "approved",
+            reviewedAt: older ?? { not: null },
+          },
+          orderBy: { reviewedAt: "desc" },
+          take,
+          select: {
+            id: true,
+            reviewedAt: true,
+            wikiPageTitle: true,
+            country: { select: { name: true, slug: true } },
+          },
+        })
+      : none,
+    wants("embassy")
+      ? db.realmEmbassy.findMany({
+          where: {
+            status: "active",
+            openedAt: older ?? { not: null },
+            OR: [{ fromRealmId: realm.id }, { toRealmId: realm.id }],
+          },
+          orderBy: { openedAt: "desc" },
+          take,
+          select: {
+            id: true,
+            openedAt: true,
+            fromRealmId: true,
+            fromRealm: { select: { name: true, slug: true } },
+            toRealm: { select: { name: true, slug: true } },
+          },
+        })
+      : none,
+    wants("officer")
+      ? db.realmOfficer.findMany({
+          where: { realmId: realm.id, ...(older && { createdAt: older }) },
+          orderBy: { createdAt: "desc" },
+          take,
+          select: { id: true, userId: true, title: true, createdAt: true },
+        })
+      : none,
+    wants("activity") ? realmActivity(db, realm.id, take, older) : none,
+  ]);
   const people = await staffNames(
     db,
     realm.id,
@@ -431,8 +453,34 @@ export async function getRealmHappenings(db: OverviewDb, slug: string, viewer: R
       text: a.title,
       href: null,
     })),
-  ];
-  return items.sort((a, b) => b.at.getTime() - a.at.getTime()).slice(0, HAPPENINGS_SIZE);
+  ].sort((a, b) => b.at.getTime() - a.at.getTime());
+  const page = items.slice(0, limit);
+  const more = items.length > limit;
+  return { items: page, nextCursor: more ? page[page.length - 1]!.at.toISOString() : null };
+}
+
+/** The public game events of the realm's nations. */
+async function realmActivity(
+  db: OverviewDb,
+  realmId: string,
+  take: number,
+  older: { lt: Date } | undefined
+) {
+  const countryIds = (await db.country.findMany({ where: { realmId }, select: { id: true } })).map(
+    (c) => c.id
+  );
+  if (countryIds.length === 0) return [];
+  return db.activityFeed.findMany({
+    where: {
+      countryId: { in: countryIds },
+      visibility: "public",
+      category: "game",
+      ...(older && { createdAt: older }),
+    },
+    orderBy: { createdAt: "desc" },
+    take,
+    select: { id: true, title: true, createdAt: true },
+  });
 }
 
 /** The Manage tab's data. Each section is filled only when the actor holds its power. */

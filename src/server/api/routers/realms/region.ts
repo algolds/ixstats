@@ -13,6 +13,7 @@ import {
 } from "~/server/api/trpc";
 import {
   BOARD_RESTRICTIONS,
+  HAPPENING_KINDS,
   isRealmImageUrl,
   MAX_REALM_TAGS,
   REALM_POWERS,
@@ -70,11 +71,25 @@ export const realmRegionRouter = createTRPCRouter({
     .input(z.object({ slug }))
     .query(({ ctx, input }) => getRealmOverview(ctx.db, input.slug, ctx.user ?? null)),
 
-  /** New nations, claims, embassies, officers and the nations' game events, newest first. */
+  /**
+   * New nations, claims, embassies, officers and the nations' game events, newest first, a page at a time:
+   * `cursor` is the previous page's `nextCursor`; `kinds` filters.
+   */
   happenings: publicProcedure
-    .input(z.object({ slug }))
+    .input(
+      z.object({
+        slug,
+        cursor: z.string().datetime().nullish(),
+        kinds: z.array(z.enum(HAPPENING_KINDS)).max(HAPPENING_KINDS.length).optional(),
+        limit: z.number().int().min(1).max(50).optional(),
+      })
+    )
     .query(({ ctx, input }) =>
-      getRealmHappenings(ctx.db, input.slug, ctx.user ?? null).catch(regionError)
+      getRealmHappenings(ctx.db, input.slug, ctx.user ?? null, {
+        before: input.cursor ? new Date(input.cursor) : null,
+        kinds: input.kinds,
+        limit: input.limit,
+      }).catch(regionError)
     ),
 
   /** The Manage tab (founder and officers): each section the caller's powers allow. */

@@ -53,6 +53,19 @@ export const STAFF_FOUNDER_ID = "system";
 
 export const MAX_OFFICERS = 12;
 
+/** What a realm's happenings are made of, each with the label its filter shows. */
+export const HAPPENING_KINDS = ["nation", "claim", "embassy", "officer", "activity"] as const;
+
+export type HappeningKind = (typeof HAPPENING_KINDS)[number];
+
+export const HAPPENING_KIND_LABELS: Record<HappeningKind, string> = {
+  nation: "New nations",
+  claim: "Claims",
+  embassy: "Embassies",
+  officer: "Officers",
+  activity: "Nation events",
+};
+
 /**
  * An image uploaded through `/api/upload/image` (which checks the type and the 5MB limit, and sanitizes SVG): it
  * is served from `UPLOADS_URL_PREFIX` (`src/server/shared/upload-storage.ts`) under a generated `uploaded_…` name.

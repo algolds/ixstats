@@ -535,12 +535,62 @@ describe("overview and happenings", () => {
         toRealm: { name: "Terra", slug: "terra" },
       },
     ]);
-    const items = await callerAs(PLAYER, db).region.happenings({ slug: "eurth" });
+    const { items, nextCursor } = await callerAs(PLAYER, db).region.happenings({ slug: "eurth" });
     expect(items.map((i) => i.text)).toEqual([
       "An embassy with Terra opened",
       "Aurelia was founded",
     ]);
     expect(items[0]?.href).toBe("/r/terra");
+    expect(nextCursor).toBeNull();
+  });
+
+  it("pages through the history with a cursor", async () => {
+    const db = makeDb();
+    const day = (d: number) => new Date(Date.UTC(2026, 0, d));
+    const nations = [5, 4, 3, 2, 1].map((d) => ({
+      id: `c${d}`,
+      name: `Nation ${d}`,
+      slug: null,
+      createdAt: day(d),
+    }));
+    db.country.findMany.mockImplementation(async ({ where, take }: any) => {
+      if (!take) return [];
+      const before: Date | undefined = where.createdAt?.lt;
+      return nations.filter((n) => !before || n.createdAt < before).slice(0, take);
+    });
+    const caller = callerAs(PLAYER, db).region;
+    const first = await caller.happenings({ slug: "eurth", limit: 2 });
+    expect(first.items.map((i) => i.text)).toEqual([
+      "Nation 5 was founded",
+      "Nation 4 was founded",
+    ]);
+    expect(first.nextCursor).toBe(day(4).toISOString());
+    // Every source reads one more than the page to know whether more remain.
+    expect(db.country.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 3 }));
+
+    const second = await caller.happenings({ slug: "eurth", limit: 2, cursor: first.nextCursor });
+    expect(second.items.map((i) => i.text)).toEqual([
+      "Nation 3 was founded",
+      "Nation 2 was founded",
+    ]);
+    expect(db.realmClaim.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ reviewedAt: { lt: day(4) } }),
+      })
+    );
+    const last = await caller.happenings({ slug: "eurth", limit: 2, cursor: second.nextCursor });
+    expect(last.items.map((i) => i.text)).toEqual(["Nation 1 was founded"]);
+    expect(last.nextCursor).toBeNull();
+  });
+
+  it("filters by kind, reading only the chosen sources", async () => {
+    const db = makeDb();
+    await callerAs(PLAYER, db).region.happenings({ slug: "eurth", kinds: ["embassy"] });
+    expect(db.realmEmbassy.findMany).toHaveBeenCalled();
+    expect(db.realmClaim.findMany).not.toHaveBeenCalled();
+    expect(db.realmOfficer.findMany).not.toHaveBeenCalled();
+    expect(db.country.findMany).not.toHaveBeenCalled();
+    expect(db.activityFeed.findMany).not.toHaveBeenCalled();
   });
 });
 
