@@ -11,7 +11,9 @@ function readExpanded(): Set<string> {
   try {
     const raw = window.localStorage.getItem(NAV_STORAGE_KEYS.expanded);
     const parsed: unknown = raw ? JSON.parse(raw) : [];
-    return new Set(Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : []);
+    return new Set(
+      Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : []
+    );
   } catch {
     return new Set();
   }
