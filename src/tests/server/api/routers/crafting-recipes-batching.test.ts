@@ -1,3 +1,6 @@
+// Crafting is retired (./_retired refuses every call); these tests cover the logic kept for its return.
+jest.mock("~/server/api/routers/crafting/_retired", () => ({ assertCraftingEnabled: jest.fn() }));
+
 import { craftingRecipesRouter } from "~/server/api/routers/crafting/recipes";
 import { createCallerFactory } from "~/server/api/trpc";
 import { createMockRouterContext } from "~/tests/helpers/router-context";

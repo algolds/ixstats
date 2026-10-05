@@ -28,7 +28,6 @@ export function VaultSystemConfig() {
     isTradingEnabled: true,
     isAuctionsEnabled: true,
     isStoreEnabled: true,
-    isCraftingEnabled: true,
     isPacksEnabled: true,
     isMaintenanceMode: false,
     exemptStaffFromLimit: true,
@@ -46,7 +45,6 @@ export function VaultSystemConfig() {
         isTradingEnabled: vaultConfig.isTradingEnabled ?? true,
         isAuctionsEnabled: vaultConfig.isAuctionsEnabled ?? true,
         isStoreEnabled: vaultConfig.isStoreEnabled ?? true,
-        isCraftingEnabled: vaultConfig.isCraftingEnabled ?? true,
         isPacksEnabled: vaultConfig.isPacksEnabled ?? true,
         isMaintenanceMode: vaultConfig.isMaintenanceMode ?? false,
         exemptStaffFromLimit: vaultConfig.exemptStaffFromLimit ?? true,
@@ -224,20 +222,6 @@ export function VaultSystemConfig() {
                       checked={configForm.isStoreEnabled}
                       onCheckedChange={(val) =>
                         setConfigForm((f) => ({ ...f, isStoreEnabled: val }))
-                      }
-                    />
-                  </div>
-                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-label text-caption">Enable crafting</span>
-                      <span className="text-label-secondary text-footnote">
-                        Allows fusing and evolving collector cards.
-                      </span>
-                    </div>
-                    <Switch
-                      checked={configForm.isCraftingEnabled}
-                      onCheckedChange={(val) =>
-                        setConfigForm((f) => ({ ...f, isCraftingEnabled: val }))
                       }
                     />
                   </div>

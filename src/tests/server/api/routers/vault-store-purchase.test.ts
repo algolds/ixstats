@@ -185,6 +185,35 @@ describe("vault.purchaseStoreItem", () => {
       code: "BAD_REQUEST",
     });
   });
+
+  it("refuses a retired item without charging, even if its row is reactivated", async () => {
+    const { caller } = makeCaller({
+      id: "upgrade_archetype_proposal",
+      name: "Archetype Proposal Token",
+      price: 3500,
+      category: "upgrades",
+      isActive: true,
+    });
+
+    await expect(
+      caller.purchaseStoreItem({ itemId: "upgrade_archetype_proposal" })
+    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    expect(spendMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("vault.listStoreItems", () => {
+  it("hides retired items from the storefront", async () => {
+    const { db, caller } = makeCaller(null);
+    db.vaultStoreItem.findMany = jest.fn().mockResolvedValue([]);
+
+    await caller.listStoreItems();
+
+    expect(db.vaultStoreItem.findMany.mock.calls[0][0].where).toEqual({
+      isActive: true,
+      id: { notIn: ["upgrade_archetype_proposal"] },
+    });
+  });
 });
 
 describe("the vault router no longer lets clients spend arbitrary amounts", () => {

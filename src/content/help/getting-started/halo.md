@@ -24,7 +24,7 @@ The sidebar on the left lists the areas ("apps") of IxStats. Selecting one opens
 | **Home** | [Dashboard](/dashboard), [Messages](/messages), ThinkTanks, ThinkPages, and What's new when there's an update |
 | **MyCountry** | Your nation: Overview, Directives, Economy, Diplomacy, Politics and Defense (Defense with [Premium](/help/getting-started/premium)) |
 | **Maps** | The world map |
-| **Vault** | IxCredits, your daily reward, cards, collections, the marketplace, crafting and import |
+| **Vault** | IxCredits, your daily reward, cards, collections, the marketplace and import |
 | **Wiki** | The wiki, search, recent changes, categories, your watchlist and contributions, Stashes, the media repository and [Blurbs](/help/social/blurbs) |
 | **Forum** | Forums, trending, new posts, search, bookmarks and new thread |
 | **Realms** | [Countries](/countries), [Explore](/explore), Collections, [Leaderboards](/leaderboards) and [Realms](/realms) |

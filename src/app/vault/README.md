@@ -1,8 +1,8 @@
 # IxVault — Trading Cards, Marketplace & IxCredits
 
-**Last updated:** September 2026
+**Last updated:** 2026-10-05
 
-IxVault is the trading-card and virtual-economy product in IxStats. Players earn **IxCredits (IxC)** through gameplay, buy and open card packs, craft and trade cards, run marketplace auctions, organize collections, and import their NationStates card decks. The `/vault` area is a page container (`AuthenticationGuard` → container) wrapping per-route section components — there is no client-side `*Router` here; navigation uses normal Next.js routes.
+IxVault is the trading-card and virtual-economy product in IxStats. Players earn **IxCredits (IxC)** through gameplay, buy and open card packs, trade cards, run marketplace auctions, organize collections, and import their NationStates card decks. The `/vault` area is a page container (`AuthenticationGuard` → container) wrapping per-route section components — there is no client-side `*Router` here; navigation uses normal Next.js routes.
 
 ## Routes
 
@@ -17,7 +17,7 @@ IxVault is the trading-card and virtual-economy product in IxStats. Players earn
 | `/vault/ns-library`                               | `VaultCardsSection`       | Gallery sub-tab                                                               |
 | `/vault/lore-generator`                           | `LoreCardGenerator`       | Request generation of a lore card                                             |
 | `/vault/marketplace`                              | `VaultMarketplaceSection` | Tabs: Vault Shop / Auctions / Trading (`?tab=` deep-links)                    |
-| `/vault/crafting`                                 | `CraftingWorkbench`       | Fusion / evolution crafting (not in the source list)                          |
+| `/vault/crafting`                                 | `EmptyState`              | "Crafting is retired for now" notice (crafting deprecated 2026-10-05)         |
 | `/vault/import`                                   | `VaultImportSection`      | NationStates deck import wizard                                               |
 | `/vault/ns-deck`                                  | `ImportWizard`            | Legacy NS deck import wizard (the source list uses `/vault/import`)           |
 | `/vault/ns-deck/[nation]`                         | NS deck viewer            | Public NS deck for a nation                                                   |
@@ -31,10 +31,10 @@ There is no Vault rail: the global source list (`src/lib/navigation/app-sections
 - **Card packs** — Browse/purchase packs (`cardPacks.getAvailablePacks`, `purchasePack`), open via the cards pipeline. Pack types and odds are documented in `docs/systems/cards.md`.
 - **Marketplace** — Three tabs in one section: **Vault Shop** (`vault.listStoreItems` / `getPurchasedItems`), **Auctions** (`cardMarket.*` — active/ending-soon/my-bids/my-auctions, `createAuction`), and **Trading** (`trading.getActiveTrades` / `getTradeHistory`).
 - **Collections** — Create/delete and organize cards (`cards.getMyCollections`, `createCollection`, `deleteCollection`, `getCollectionCards`); collection pages support comments and likes (`vault.getCollectionComments`, `addCollectionComment`, `likeCollection`).
-- **Crafting** — Fusion and evolution recipes (`crafting.getRecipes`, `getRecipeById`, `craftCard`) consuming owned cards; cost tables in `docs/systems/ixcredits.md`. Known issue: the page maps card-definition IDs into `CraftingWorkbench`, while `craftCard` expects `CardOwnership` IDs.
+- **Crafting** — Retired for now (2026-10-05): every `crafting.*` procedure refuses and the workbench is gone; see `docs/systems/cards.md`.
 - **Card junking** — Recycle unlocked cards for IxC (`cards.junkCards`); cards escrow-locked by an auction or trade are refused.
 - **NationStates import** — Verify ownership and import an NS deck (`nsImport.requestVerification`, `checkVerification`, `importDeck`, `hasImported`, `fetchPublicDeck`); see `docs/systems/ns-integration.md`.
-- **IxCredits** — Earn (passive nation dividend, active gameplay, social, uncapped metagame bonuses) and spend (packs, crafting, market, store). Caps, formulas, and transaction types in `docs/systems/ixcredits.md`.
+- **IxCredits** — Earn (passive nation dividend, active gameplay, social, uncapped metagame bonuses) and spend (packs, market, store). Caps, formulas, and transaction types in `docs/systems/ixcredits.md`.
 
 ## Architecture
 
@@ -49,7 +49,7 @@ There is no Vault rail: the global source list (`src/lib/navigation/app-sections
 | Shared widgets      | `src/components/vault/` — `DailyRewardProvider`, `VaultParticleExplosionModal`, `VaultSubTabNav`, `IxCreditsSymbol`, cosmetic overlays (`AvatarGlow`, `NeonFrameOverlay`, `CosmeticParticles*`)                                                                                                                           |
 | Vault Services      | `src/lib/vault/` — `vault-service.ts` (facade), `vault-ledger.ts`, `vault-passive-income.ts`, `vault-daily-bonus.ts`, `vault-bonus.ts`, `vault-perks.ts`, `vault-notifications.ts`, `store-purchases.ts`, `exchange-*.ts`, `trade-settlement.ts`                                                                        |
 | Hooks               | `src/hooks/vault/` — `useVaultBalance`, `useVaultStats`, `useCollections`, `useRecentActivity`                                                                                                                                                                                                                            |
-| Reused card UI      | `src/components/cards/` — `CardDisplay`, `CardDetailsModal` (`cards/display/modal/`), `CraftingWorkbench`, `lore/LoreCardGenerator`                                                                                                                                                                                       |
+| Reused card UI      | `src/components/cards/` — `CardDisplay`, `CardDetailsModal` (`cards/display/modal/`), `lore/LoreCardGenerator`                                                                                                                                                                                       |
 
 `VaultCardsSection` dispatches between modular sub-components in `src/components/vault/sections/cards/`, supporting **Inventory / Collections / Gallery** sub-tabs. Monolithic services in `vault-service.ts` are decoupled into single-responsibility domain modules under `src/lib/vault/`.
 
@@ -61,7 +61,6 @@ There is no Vault rail: the global source list (`src/lib/navigation/app-sections
 | `cards`        | `getMyCards`, `getMyCollections`, `getCollectionCards`, `createCollection`, `deleteCollection`, `getNSCards`, `getNSLibraryStats`, `junkCards`                                                                                                                                                                                                         |
 | `cardPacks`    | `getAvailablePacks`, `getMyPacks`, `purchasePack`                                                                                                                                                                                                                                                                                                      |
 | `cardMarket`   | `getActiveAuctions`, `getEndingSoon`, `getMyActiveAuctions`, `getMyActiveBids`, `getMyAuctionParticipation`, `createAuction`                                                                                                                                                                                                                           |
-| `crafting`     | `getRecipes`                                                                                                                                                                                                                                                                                                                                           |
 | `trading`      | `getActiveTrades`, `getTradeHistory`                                                                                                                                                                                                                                                                                                                   |
 | `nsImport`     | `requestVerification`, `checkVerification`, `hasImported`, `importDeck`, `fetchPublicDeck`                                                                                                                                                                                                                                                             |
 | `loreCards`    | `getAllLoreCards`, `requestLoreCard`                                                                                                                                                                                                                                                                                                                   |

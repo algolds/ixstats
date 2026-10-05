@@ -8,7 +8,7 @@ nextLabel: IxCredits
 
 ## What the Vault is
 
-The [Vault](/vault) holds your IxCredits (the platform currency), your trading cards and your progress. Everyone with an account has one; you don't need a nation to use it, though a nation earns you a daily dividend. Open it from **Vault** in the top menu. Its sidebar has **Dashboard**, **Daily reward**, **Cards**, **Collections**, **Marketplace**, **Crafting** and **Import**.
+The [Vault](/vault) holds your IxCredits (the platform currency), your trading cards and your progress. Everyone with an account has one; you don't need a nation to use it, though a nation earns you a daily dividend. Open it from **Vault** in the top menu. Its sidebar has **Dashboard**, **Daily reward**, **Cards**, **Collections**, **Marketplace** and **Import**.
 
 ## Dashboard
 
@@ -53,7 +53,7 @@ Rarities, from most to least common: **Common**, **Uncommon**, **Rare**, **Ultra
 
 ## Vault level
 
-You gain 1 XP for every IxCredit you earn, and each 1,000 XP is a level. A higher level makes the daily IxCredit roll larger and unlocks more [crafting](/help/vault/crafting) recipes.
+You gain 1 XP for every IxCredit you earn, and each 1,000 XP is a level. A higher level makes the daily IxCredit roll larger.
 
 ## Recycling cards
 
@@ -62,4 +62,4 @@ You can recycle ("junk") a card you don't want for a small amount of IxCredits b
 ## Also in the Vault
 
 - [Achievements](/help/gameplay/achievements) and [Leaderboards](/help/gameplay/leaderboards).
-- **Crafting** at [/vault/crafting](/vault/crafting): combine cards into a rarer card. See [Crafting Cards](/help/vault/crafting).
+- **Crafting** is retired for now. Your cards and IxCredits are untouched.

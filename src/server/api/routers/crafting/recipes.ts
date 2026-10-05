@@ -1,6 +1,9 @@
 /**
  * Crafting Router
  *
+ * Retired for now (2026-10-05): every procedure refuses through `assertCraftingEnabled`
+ * (`./_retired`). The logic below is kept, and tested, for when crafting returns.
+ *
  * tRPC router for IxCards crafting system
  * Provides endpoints for:
  * - Recipe browsing and filtering
@@ -29,6 +32,7 @@ import {
   type MaterialCriterion,
 } from "~/lib/cards/crafting-rules";
 import { type CardType } from "@prisma/client";
+import { assertCraftingEnabled } from "./_retired";
 
 /**
  * Recipe type enum
@@ -47,6 +51,7 @@ export const craftingRecipesRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
+      assertCraftingEnabled();
       const userId = ctx.user.id;
 
       // Fetch all recipes
@@ -121,6 +126,7 @@ export const craftingRecipesRouter = createTRPCRouter({
   getRecipeById: protectedProcedure
     .input(z.object({ recipeId: z.string() }))
     .query(async ({ ctx, input }) => {
+      assertCraftingEnabled();
       const userId = ctx.user.id;
 
       const recipe = await ctx.db.craftingRecipe.findUnique({
@@ -175,20 +181,15 @@ export const craftingRecipesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      assertCraftingEnabled();
       const userId = ctx.user.id;
 
-      // Check crafting switch or maintenance mode
+      // Check maintenance mode
       const config = await getVaultConfig(ctx.db);
       if (config.isMaintenanceMode) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Vault economy is currently in maintenance mode.",
-        });
-      }
-      if (!config.isCraftingEnabled) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Card crafting is currently disabled globally.",
         });
       }
 

@@ -20,13 +20,14 @@ export async function seedVaultStoreItems() {
       {
         id: "upgrade_archetype_proposal",
         name: "Archetype Proposal Token",
-        description:
-          "Submit a custom Archetype proposal to the platform administrators for review and addition to the global catalog.",
+        // Retired 2026-10-05: nothing ever consumed it. Kept inactive so ledger rows still resolve;
+        // purchases are refused and refunded (src/lib/vault/retired-store-items.ts).
+        description: "Retired. Purchases were refunded.",
         price: 3500,
         quality: "EPIC",
         icon: "Ticket",
         category: "upgrades",
-        isActive: true,
+        isActive: false,
         badgeText: "Proposal",
         effects: null,
       },

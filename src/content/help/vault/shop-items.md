@@ -4,8 +4,8 @@ description: Cosmetics and account upgrades in the Vault Shop, what each one doe
 badge: Vault, Cards & Rewards
 prevHref: /help/vault/card-packs
 prevLabel: Card Packs
-nextHref: /help/vault/crafting
-nextLabel: Crafting Cards
+nextHref: /help/vault/trading
+nextLabel: Auctions & Trading
 ---
 
 ## What the shop sells
@@ -33,9 +33,10 @@ If you don't have enough IxCredits, the purchase is refused and nothing is taken
 | Mega Card Capacity Boost | Adds 150 card slots. It appears only after you've bought five Card Capacity Boosts |
 | MyClub Team License Token | Needed to claim a club in [MyLeague](/help/labs/myleague-myclub) |
 | MyLeague Franchise Pass | Also needed to claim a club in a canonical league |
-| Archetype Proposal Token | Doesn't do anything in the app yet; nothing reads it |
 
 You only need one license token or pass, even though the shop lets you buy more.
+
+The **Archetype Proposal Token** has been retired: it never did anything in the app. It is no longer sold, and everyone who bought one gets back what they paid, shown as a refund in your Vault's transaction history.
 
 ### Card capacity
 
@@ -45,14 +46,15 @@ You can hold 150 cards by default, plus any capacity boosts. Your Vault dashboar
 
 Equip and unequip the cosmetics you own in [Settings](/settings) → **Cosmetics & upgrades** → **Owned cosmetics**: choose **Equip**, or **Equipped** to take one off.
 
-Equipped cosmetics show **only to you** at the moment:
+Everyone sees the cosmetics you equip:
 
-- A badge cosmetic adds its badge next to your name on your own forum posts and threads.
-- Glows, frames and badges show on your profile in Halo's wiki panel.
+- Your passport photo wears your equipped glow and frame, and your badge sits next to your name.
+- A badge cosmetic adds its badge next to your name on your forum posts and threads.
+- Glows, frames and badges also show on your own dashboard and on your profile in Halo's wiki panel.
 
-Other players don't see your cosmetics yet, and they don't appear on your passport.
+Unequip a cosmetic to stop showing it. Other players see only what you have equipped, never your IxCredits or what else you own.
 
 ## Good to know
 
-- Purchases can't be refunded or sold on.
+- Purchases can't be refunded or sold on (the retired Archetype Proposal Token is the one exception).
 - Upgrades apply to your account, not to one nation.

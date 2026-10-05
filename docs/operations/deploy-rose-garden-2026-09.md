@@ -263,6 +263,14 @@ bun run audit:vault-exploits:apply
 bun run audit:forum-links                   # read-only: forum links made without proof (WK-1)
 ```
 
+The Archetype Proposal Token is retired (it never did anything). After `audit:vault-exploits:apply`, refund every
+purchase of it, once, at what was paid:
+
+```bash
+bun run db:refund-retired-store-items             # dry run: lists each purchase and the refund
+bun run db:refund-retired-store-items -- --apply  # REFUND rows keyed retired_item_refund:<purchase id>; re-runs change nothing
+```
+
 Existing storyteller effects were stored with second-scale IxTime and never applied (plan 329):
 
 ```bash

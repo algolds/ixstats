@@ -54,9 +54,8 @@ export function IxCardSeasonAdmin() {
             <h2 className="text-label text-title-3">IxCard Season Configuration</h2>
             <p className="text-label-secondary text-body">
               Set the current active IxCard season. This controls which season newly created cards
-              (crafting, lore, special) are assigned to. NS-imported cards keep their original
-              season in the <code className="text-tint text-footnote tabular-nums">nsSeason</code>{" "}
-              field.
+              (lore, special) are assigned to. NS-imported cards keep their original season in the{" "}
+              <code className="text-tint text-footnote tabular-nums">nsSeason</code> field.
             </p>
           </div>
         </div>

@@ -8,7 +8,6 @@
 import { PrismaClient } from "@prisma/client";
 import { seedCardPacks } from "../../prisma/seeds/card-packs";
 import { seedAchievementCards } from "../../prisma/seeds/achievement-cards";
-import { seedCraftingRecipes } from "../../prisma/seeds/crafting-recipes";
 import { seedSmallArmsEquipment } from "../../prisma/seeds/seed-small-arms-equipment";
 import { seedMilitaryEquipmentCatalog } from "../../prisma/seeds/military-equipment-catalog";
 import { seedOnomaPresets } from "../../prisma/seeds/onoma-presets";
@@ -55,8 +54,7 @@ async function seedDatabase() {
     // Seed commemorative achievement cards (and backfill earlier unlocks)
     await seedAchievementCards(db);
 
-    // Crafting recipes (skips recipes that already exist by name)
-    await seedCraftingRecipes();
+    // Crafting is retired for now (2026-10-05): prisma/seeds/crafting-recipes.ts is not run.
 
     // Seed reference catalogs (idempotent — each clears + repopulates its own tables)
     console.log("🔫 Seeding small arms equipment catalog...");

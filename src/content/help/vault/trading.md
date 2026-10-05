@@ -2,8 +2,8 @@
 title: Auctions & Trading
 description: Auction cards, bid, buy outright, and trade cards and IxCredits directly with other players.
 badge: Vault, Cards & Rewards
-prevHref: /help/vault/crafting
-prevLabel: Crafting Cards
+prevHref: /help/vault/shop-items
+prevLabel: Vault Shop Items
 nextHref: /help/vault/lore-cards
 nextLabel: Lore Cards
 ---

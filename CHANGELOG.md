@@ -14,6 +14,16 @@ Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-30 
 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22 work. The version registry (`src/lib/buildVersion.ts`) still
 reads 1.4.0 until the RC2 cut.
 
+### 💎 Vault Cleanup (2026-10-05)
+
+- **Crafting retired for now:** every `crafting.*` call refuses (`CRAFTING_ENABLED = false`); the workbench, its
+  sidebar, Halo and help entries and the admin switch are gone, `/vault/crafting` says crafting is retired, and
+  `db:seed` skips the crafting seed. The schema and rows stay until the schema-drop decision. VT-14 and D6 are moot.
+- **Cosmetics visible to other players (VT-12):** the public, batched `vault.getEquippedCosmeticsFor` returns render
+  data only; the passport photo and name and forum post and thread authors now wear their equipped glow, frame and badge.
+- **Archetype Proposal Token retired:** it never did anything. It is hidden and refused, and
+  `db:refund-retired-store-items -- --apply` refunds each purchase once through the ledger.
+
 ### 🛡️ Security, CI, Operations & Cron (2026-10-05)
 
 - **Security:** sports commentary no longer sends the server's LLM or TTS key to a caller-supplied URL (a caller config
@@ -1083,7 +1093,7 @@ reads 1.4.0 until the RC2 cut.
 - **Phase 2: IxVault & Cards System (28 Components)**:
   - **IxVault Marketplace & Store**: Aligned [VaultAuctionsTab.tsx](src/components/vault/sections/marketplace/VaultAuctionsTab.tsx), [VaultTradingTab.tsx](src/components/vault/sections/marketplace/VaultTradingTab.tsx), [VaultStoreTab.tsx](src/components/vault/sections/marketplace/VaultStoreTab.tsx), [PackHolographicCard.tsx](src/components/vault/sections/marketplace/store/PackHolographicCard.tsx), [AuctionCardItem.tsx](src/components/vault/sections/marketplace/auctions/AuctionCardItem.tsx), [CreateAuctionModal.tsx](src/components/vault/sections/marketplace/auctions/CreateAuctionModal.tsx), and [StorePurchaseDialog.tsx](src/components/vault/sections/marketplace/store/StorePurchaseDialog.tsx).
   - **Vault Dashboard & Inventory**: Aligned `src/components/vault/sections/dashboard/VaultNetWorthCard.tsx`, [VaultYieldProjectionsCard.tsx](src/components/vault/sections/dashboard/VaultYieldProjectionsCard.tsx), `src/components/vault/sections/cards/InventorySidebarContent.tsx`, `src/components/vault/sections/cards/CollectionsSidebarContent.tsx`, `src/components/vault/sections/cards/GallerySidebarContent.tsx`, [ImportVerifyStep.tsx](src/components/vault/sections/import/ImportVerifyStep.tsx), and [ImportConfirmStep.tsx](src/components/vault/sections/import/ImportConfirmStep.tsx).
-  - **Cards System & 3D Viewer**: Aligned [CardBack.tsx](src/components/cards/display/CardBack.tsx), [CardDisplay.tsx](src/components/cards/display/CardDisplay.tsx), [CardDetailsModal.tsx](src/components/cards/display/CardDetailsModal.tsx), [CardOverviewTab.tsx](src/components/cards/display/modal/CardOverviewTab.tsx), [CardLoreTab.tsx](src/components/cards/display/modal/CardLoreTab.tsx), [PackHolographicCover.tsx](src/components/cards/pack-opening/PackHolographicCover.tsx), [CraftingWorkbench.tsx](src/components/cards/crafting/CraftingWorkbench.tsx), and [CraftingAnimation.tsx](src/components/cards/crafting/CraftingAnimation.tsx).
+  - **Cards System & 3D Viewer**: Aligned [CardBack.tsx](src/components/cards/display/CardBack.tsx), [CardDisplay.tsx](src/components/cards/display/CardDisplay.tsx), [CardDetailsModal.tsx](src/components/cards/display/CardDetailsModal.tsx), [CardOverviewTab.tsx](src/components/cards/display/modal/CardOverviewTab.tsx), [CardLoreTab.tsx](src/components/cards/display/modal/CardLoreTab.tsx), [PackHolographicCover.tsx](src/components/cards/pack-opening/PackHolographicCover.tsx), `CraftingWorkbench.tsx`, and `CraftingAnimation.tsx` (both removed with crafting, 2026-10-05).
 
 - **Phase 3: Thinkpages, Sports, MyLeague & Messaging (17 Components)**:
   - **Thinkpages**: Aligned [SportsBulletinCard.tsx](src/components/thinkpages/SportsBulletinCard.tsx) and [AccountCreationModal.tsx](src/components/thinkpages/AccountCreationModal.tsx).

@@ -14,7 +14,7 @@ interface RevealStageProps {
   children: React.ReactNode;
 }
 
-/** A reveal: a pack opening, a crafting result, a claimed reward. */
+/** A reveal: a pack opening, a claimed reward. */
 export function RevealStage({ open, onOpenChange, art, title, children }: RevealStageProps) {
   React.useEffect(() => {
     if (open) soundCues?.reveal?.();
@@ -23,7 +23,11 @@ export function RevealStage({ open, onOpenChange, art, title, children }: Reveal
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-content="reveal" className="overflow-hidden p-0 sm:max-w-md">
-        {art != null && <div aria-hidden className="absolute inset-0 -z-10">{art}</div>}
+        {art != null && (
+          <div aria-hidden className="absolute inset-0 -z-10">
+            {art}
+          </div>
+        )}
         <div className="flex flex-col items-center gap-4 px-6 pt-8 pb-6 text-center">
           <DialogTitle className="text-title-3 text-label">{title}</DialogTitle>
           {children}

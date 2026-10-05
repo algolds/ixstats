@@ -2,6 +2,8 @@
  * Crafting gate: recipes unlock by Vault level (derived from Vault XP), not by
  * User.collectorLevel, which nothing ever writes. Materials must be unlocked and still owned.
  */
+// Crafting is retired (./_retired refuses every call); these tests cover the logic kept for its return.
+jest.mock("~/server/api/routers/crafting/_retired", () => ({ assertCraftingEnabled: jest.fn() }));
 jest.mock("~/lib/cards/season", () => ({ getCurrentIxCardSeason: jest.fn().mockResolvedValue(1) }));
 jest.mock("~/lib/cards/xp-utils", () => ({ grantCardXp: jest.fn() }));
 

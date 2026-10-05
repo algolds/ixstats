@@ -3,7 +3,7 @@
 **Last updated:** 2026-10-05
 
 **Parent App Suite:** Vault (`IXVAULT_VERSION = 2`, dev codename `IxVault`)  
-**Subsystems:** 3D Card Engine, Booster Pack Gacha, Crafting & Recycling, NS Import Bridge  
+**Subsystems:** 3D Card Engine, Booster Pack Gacha, Recycling, NS Import Bridge (crafting is retired for now)  
 **Primary Action:** `COLLECT` | **Domain Accent:** Burnished Copper (`#D97706` / `--color-amber-600`)  
 **Route:** `/vault/cards`, `/vault/marketplace?tab=store` (`/vault/packs` redirects here) | **Status:** Release Candidate (platform 1.4.0) — see [Known Gaps](#known-gaps)  
 
@@ -15,7 +15,7 @@ The Vault Cards system provides 3D holographic collectibles integrating sovereig
 
 - **Multi-Source Card Types**: NATION, LORE, NS_IMPORT, SPECIAL, COMMUNITY
 - **Lore Categories**: 13-value `LoreCategory` enum (`prisma/schema/enums.prisma`) with per-category icons and themes
-- **Ownership & Upgrades**: Serial numbers, escrow locking (`isLocked` while listed/traded), card XP/leveling, and crafting
+- **Ownership & Upgrades**: Serial numbers, escrow locking (`isLocked` while listed/traded), and card XP/leveling
 - **Pack Mechanics**: Data-driven `CardPack` rows (`packType` BASIC, PREMIUM, ELITE and EVENT seeded; THEMED/SEASONAL defined in `PackType` but unseeded; limited releases are EVENT packs with `limitedQuantity`)
 - **Card Recycling & Junking**: Recycle unlocked cards for instant IxCredits based on rarity
 - **Marketplace & P2P Trading**: Live auctions with fee schedules (`cardMarket`), peer-to-peer trade offers with escrow (`trading`)
@@ -29,7 +29,7 @@ The Vault Cards system provides 3D holographic collectibles integrating sovereig
 Linked to an IxStates country via `Card.countryId`:
 - **Stats**: Shared Force / Wealth / Influence / Legacy stat set (`src/lib/cards/stat-config.ts`; special stats via `src/lib/country-geo/special-stats-populator.ts`)
 - **Valuation**: The daily `card-values` cron (`src/lib/lorewards/card-value-cron.ts`) re-prices NATION cards against their country's GDP and growth, but in practice does nothing today: no NATION card has a `countryId`.
-- **Minting**: There is no automatic per-country card generator; NATION cards come from admin creation and crafting results (crafted cards default to `cardType: "NATION"`).
+- **Minting**: There is no automatic per-country card generator; NATION cards come from admin creation (and, before crafting was retired, crafting results, which defaulted to `cardType: "NATION"`).
 
 ### 2. LORE Cards
 Generated from IxWiki/IIWiki articles via `loreCardsRouter`, the admin Lore Batch tool, user requests (`loreCards.requestLoreCard` → admin queue), and the daily `lore-card-generation` cron:
@@ -90,12 +90,19 @@ Packs are rows in `CardPack`, seeded from `prisma/seeds/data/card-packs.json` an
 
 ---
 
-## Card Crafting, Evolution & Junking
+## Crafting (retired) & Junking
 
-### Crafting & Fusion Recipes (`craftingRouter`)
-- **Fusion**: Combine cards into higher rarity (e.g. 2 Commons $\to$ 1 Uncommon for 250 IxC; 3 Rares $\to$ 1 Ultra-Rare for 1,000 IxC).
-- **Evolution**: Upgrade toward a higher rarity using IxCredits (200–4,000 IxC).
-- A successful craft mints a new `Card` row (from `resultCardId`, else a generic "<recipe> Result" NATION card); materials are consumed on every attempt. Recipes are listed in `prisma/seeds/crafting-recipes.ts`.
+### Crafting: retired for now (2026-10-05)
+The owner deprecated crafting. Nothing can craft:
+- Every `crafting.*` procedure (`getRecipes`, `getRecipeById`, `craftCard`) refuses with `PRECONDITION_FAILED`
+  ("Crafting is retired for now.") before touching the database. The switch is `CRAFTING_ENABLED` in
+  `src/server/api/routers/crafting/_retired.ts`; the Vault config's `isCraftingEnabled` key and its admin toggle are gone.
+- `/vault/crafting` shows a short "Crafting is retired for now" empty state; the workbench components, the sidebar,
+  Halo and help-centre entries are removed. `db:seed` no longer runs `prisma/seeds/crafting-recipes.ts`.
+- Kept until the schema-drop decision (it waits on a backup): the `CraftingRecipe` / `CraftingHistory` models and rows,
+  `SPEND_CRAFT` / `CRAFT` enum values, `src/lib/cards/crafting-rules.ts` (packs still exclude crafted cards with
+  `CRAFTED_CARD_MARKER`) and the router logic, whose tests mock the flag on.
+- Moot with it: decision D6 (a MYTHIC recipe) and "failed rolls consume materials".
 
 ### Card Recycling (Junking)
 - Unlocked cards (`isLocked === false`) can be recycled via `api.cards.junkCards`, in batches of at most the admin junk batch limit (`card_system_max_junk_batch_size`, default 100), permanently deleting the ownership record and crediting IxCredits through the ledger as `EARN_CARDS` (`junkValue()` = rarity floor × `junkRate`, currently 0.25 and capped at `JUNK_RATE_MAX` 0.5, `src/lib/cards/valuation.ts`). Cards locked in escrow (listed at auction or in a pending trade) cannot be junked; there is no manual lock toggle.
@@ -111,14 +118,13 @@ All card operations route through modularized subdirectories:
 - `src/server/api/routers/cardImages.ts` (card XP helpers live in `src/lib/cards/xp-utils.ts`)
 - `src/server/api/routers/lore-cards/`
 - `src/server/api/routers/ns-import/`
-- `src/server/api/routers/crafting/` & `trading/`
+- `src/server/api/routers/trading/` (`crafting/` is retired and refuses every call)
 
 ---
 
 ## Known Gaps
 
 - `guaranteedRarity` / `themeFilter` on packs are not enforced; Stage 4 "Keep" and "List" quick actions only log.
-- Crafting: `/vault/crafting` passes card-definition IDs where `crafting.craftCard` expects `CardOwnership` IDs; `CraftingRecipe.successRate` is documented as 0–1 in the schema but rolled as 0–100 in the router; the crafting seed uses fields (`materialsRequired`, `resultType`, `collectorXP`, `unlockRequirement`) and a `MYTHIC` rarity that the schema does not have.
 - Pack artwork referenced by the seed (`/images/packs/pack_*.svg`) is not in the repo (`public/images/*` is git-ignored).
 
 ---

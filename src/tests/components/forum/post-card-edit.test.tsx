@@ -1,9 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { PostCard } from "~/components/forum/reader/PostCard";
 
-jest.mock("~/hooks/useActiveCosmetics", () => ({
-  useActiveCosmetics: () => ({ chatBadge: { icon: "Crown", enabled: false } }),
-}));
 jest.mock("~/lib/utils", () => ({
   ...jest.requireActual("~/lib/utils"),
   sanitizeHtml: (html: string) => html,
