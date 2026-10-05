@@ -1,6 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { DiplomacyInbox } from "~/components/mycountry/domains/diplomacy/inbox/DiplomacyInbox";
-import { InboxCountPill } from "~/components/mycountry/domains/diplomacy/inbox/InboxCountPill";
 import { formatExpiry } from "~/components/mycountry/domains/diplomacy/inbox/useDiplomacyInbox";
 
 type QueryState = { data?: unknown; isLoading?: boolean; error?: { message: string } | null };
@@ -188,12 +187,5 @@ describe("inbox helpers", () => {
     expect(formatExpiry(new Date(now + 1.2 * DAY), now)).toBe("Expires in 1 day");
     expect(formatExpiry(new Date(now + 3_600_000), now)).toBe("Expires within a day");
     expect(formatExpiry(new Date(now - 1), now)).toBe("Expired");
-  });
-
-  it("the count pill renders only when something is waiting", () => {
-    const { container, rerender } = render(<InboxCountPill count={0} />);
-    expect(container).toBeEmptyDOMElement();
-    rerender(<InboxCountPill count={3} />);
-    expect(screen.getByText("3")).toHaveAccessibleName("3 diplomatic items awaiting your answer");
   });
 });

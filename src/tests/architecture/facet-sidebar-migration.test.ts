@@ -108,4 +108,15 @@ describe("per-app sidebars are migrated to the source list", () => {
     const layout = read("src/components/dashboard/sidebar/DashboardSidebarLayout.tsx");
     expect(layout).not.toMatch(/sidebarContent|useSidebar|RailBalancer/);
   });
+
+  it("mycountry: no hidden domain tiles or segmented control in the command bar", () => {
+    const bar = read("src/components/mycountry/shell/headers/UnifiedGlassCommandBar.tsx");
+    expect(bar).not.toMatch(/data-app-subnav/);
+    expect(bar).not.toMatch(/SegmentedControl/);
+    expect(bar).not.toMatch(/DomainTileButton|DOMAIN_TILES|InboxCountPill/);
+    expect(read("src/components/mycountry/shell/ExecutiveHome.tsx")).toMatch(/<DomainPeeksCard\b/);
+    expect(read("src/components/mycountry/shell/DomainPeeksCard.tsx")).toMatch(
+      /content="navigation"/
+    );
+  });
 });

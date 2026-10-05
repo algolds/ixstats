@@ -10,6 +10,7 @@ import { StandingBands } from "./StandingBands";
 import { WorldCensusCard } from "./WorldCensusCard";
 import { TerritoryMapWidget } from "./TerritoryMapWidget";
 import { ExecutiveRecordFeed } from "./ExecutiveRecordFeed";
+import { DomainPeeksCard } from "./DomainPeeksCard";
 import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
@@ -43,11 +44,13 @@ export const CooldownTimer = React.memo(function CooldownTimer({
 function ExecutiveHomeComponent({
   countryId,
   onDeclare,
+  onNavigate,
   onOpenDrill,
   onOpenIntent,
 }: {
   countryId: string;
   onDeclare: (prefilled?: string) => void;
+  onNavigate?: (section: string) => void;
   onOpenDrill: (d: DrillSheetKind) => void;
   onOpenIntent: (intentId: string) => void;
 }) {
@@ -87,6 +90,8 @@ function ExecutiveHomeComponent({
             onOpenIntent={onOpenIntent}
             onOpenDrill={onOpenDrill}
           />
+
+          <DomainPeeksCard onNavigate={onNavigate} />
 
           <Card role="region" aria-labelledby="recent-activity-title">
             <CardHeader className="p-4 pb-0 sm:p-5 sm:pb-0">

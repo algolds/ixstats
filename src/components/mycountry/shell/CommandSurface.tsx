@@ -73,13 +73,7 @@ function CommandSurfaceComponent({
       )}
     >
       {/* Permanent Unified Glass Command Bar */}
-      <UnifiedGlassCommandBar
-        mode={mode}
-        activeSection={section}
-        onChangeMode={setMode}
-        onNavigate={onNavigate}
-        onDeclare={() => declare()}
-      />
+      <UnifiedGlassCommandBar mode={mode} onChangeMode={setMode} onDeclare={() => declare()} />
 
       {/* Main Surface Body */}
       {mode === "executive" ? (
@@ -105,6 +99,7 @@ function CommandSurfaceComponent({
         <ExecutiveHome
           countryId={countryId}
           onDeclare={declare}
+          onNavigate={onNavigate}
           onOpenIntent={openIntent}
           onOpenDrill={openDrill}
         />
