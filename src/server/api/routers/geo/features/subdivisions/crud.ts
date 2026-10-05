@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
 import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
@@ -117,8 +118,21 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
         "Subdivision not found"
       );
       assertOwnerMayEdit(ctx, existing, "subdivision");
-      // A topology cascade may not reshape a neighbour the owner cannot edit either
-      const cascaded = input.cascadedNeighbors?.map((n) => n.subdivisionId) ?? [];
+      // A topology cascade may only reshape this country's own subdivisions: the ids come
+      // from the client, so check them (a foreign id would edit another nation's map).
+      const cascaded = [...new Set(input.cascadedNeighbors?.map((n) => n.subdivisionId) ?? [])];
+      if (cascaded.length > 0) {
+        const own = await ctx.db.subdivision.count({
+          where: { id: { in: cascaded }, countryId: input.countryId },
+        });
+        if (own !== cascaded.length) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Cascaded neighbours must be subdivisions of this country",
+          });
+        }
+      }
+      // ...and may not reshape a neighbour the owner cannot edit either
       if (ctx.country && cascaded.length > 0) {
         const locked = await ctx.db.subdivision.findFirst({
           where: { id: { in: cascaded }, editableByOwner: false },
@@ -170,8 +184,8 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
       if (input.cascadedNeighbors && input.cascadedNeighbors.length > 0) {
         await ctx.db.$transaction(
           input.cascadedNeighbors.map((neighbor) =>
-            ctx.db.subdivision.update({
-              where: { id: neighbor.subdivisionId },
+            ctx.db.subdivision.updateMany({
+              where: { id: neighbor.subdivisionId, countryId: input.countryId },
               data: { geometry: neighbor.geometry as any },
             })
           )

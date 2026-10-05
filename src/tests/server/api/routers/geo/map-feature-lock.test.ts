@@ -64,7 +64,9 @@ function model(found: unknown) {
   return {
     findFirst: jest.fn().mockResolvedValue(found),
     findMany: jest.fn().mockResolvedValue([]),
+    count: jest.fn().mockResolvedValue(1),
     update: jest.fn().mockResolvedValue({ id: "f1", name: "Feature", subdivisionId: null }),
+    updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     delete: jest.fn().mockResolvedValue({}),
   };
 }
@@ -180,6 +182,24 @@ describe("map feature lock (PL-21) — geoFeatures", () => {
       select: { editableByOwner: true },
     });
     expect(db.subdivision.update).not.toHaveBeenCalled();
+  });
+
+  it("a topology cascade may not reshape another country's subdivision", async () => {
+    const db = setup(row(true));
+    db.subdivision.count.mockResolvedValue(0); // "foreign" is not a subdivision of c1
+    await expect(
+      subdivisions(db).updateSubdivision({
+        countryId: "c1",
+        subdivisionId: "f1",
+        population: 1,
+        cascadedNeighbors: [{ subdivisionId: "foreign", geometry: { type: "Polygon" } }],
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN", message: expect.stringMatching(/this country/) });
+    expect(db.subdivision.count).toHaveBeenCalledWith({
+      where: { id: { in: ["foreign"] }, countryId: "c1" },
+    });
+    expect(db.subdivision.update).not.toHaveBeenCalled();
+    expect(db.$transaction).not.toHaveBeenCalled();
   });
 
   it("an owner's batch simplify leaves locked subdivisions out; an admin's includes them", async () => {
