@@ -20,6 +20,8 @@ export async function register() {
   // Turbopack uses this check to tree-shake Node.js imports from the Edge bundle.
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
+  syncBaselineAchievements();
+
   if (process.env.NODE_ENV === "production") {
     console.log("[Instrumentation] Initializing production optimizations...");
 
@@ -91,4 +93,18 @@ export async function register() {
       console.warn("[Instrumentation] Dev geo cache import failed (non-fatal):", error);
     }
   }
+}
+
+/**
+ * Upsert the built-in achievement definitions once per web-server start, in the
+ * background. Lives here rather than in server/db.ts so scripts, cron runners and
+ * tests that import the database client don't trigger it.
+ */
+function syncBaselineAchievements() {
+  if (process.env.DATABASE_READONLY === "true" || process.env.NODE_ENV === "test") return;
+  void Promise.all([import("./server/db"), import("~/lib/achievements/sync")])
+    .then(([{ db }, { syncAchievements }]) => syncAchievements(db))
+    .catch((err: unknown) =>
+      console.error("[Instrumentation] Baseline achievements sync failed:", err)
+    );
 }

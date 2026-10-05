@@ -9,6 +9,9 @@ import { prismaErrorToAppError } from "~/lib/prisma-error";
 // Check if we're in read-only mode (development with production data)
 const isReadOnlyMode = process.env.DATABASE_READONLY === "true";
 
+/** Production times each operation and records the slow ones (see queryMonitor). */
+const trackSlowQueries = !isDevMode;
+
 /** Models that stay writable in read-only mode (vault, demo seeding, sync caches, gameplay). */
 const WRITABLE_MODELS_IN_READONLY = new Set(
   [
@@ -109,35 +112,16 @@ const BLOCKED_WRITE_OPERATIONS = new Set([
  * Memory optimization: In development, we reduce logging verbosity to save memory.
  */
 const createPrismaClient = () => {
-  // Configure logging based on environment
-  // In development: minimal logging to reduce memory usage
-  // In production: log queries as events for duration tracking
+  // Warnings and errors only. Per-query events are not emitted in any environment;
+  // slow queries are timed in the extension at the bottom of this file instead.
   const baseClient = new PrismaClient({
     log: isDevMode
-      ? [
-          // Development: errors only to reduce memory from query logging
-          { level: "error", emit: "stdout" },
-        ]
+      ? [{ level: "error", emit: "stdout" }]
       : [
-          // Production: full query logging for performance analysis
-          { level: "query", emit: "event" },
           { level: "error", emit: "stdout" },
           { level: "warn", emit: "stdout" },
         ],
   });
-
-  // Only set up query monitoring in production (saves memory in dev)
-  if (!isDevMode) {
-    baseClient.$on("query", (e) => {
-      // Record query metrics; the monitor logs slow queries (>100ms) once
-      queryMonitor.recordQuery({
-        queryKey: e.query.substring(0, 200),
-        duration: e.duration,
-        success: true,
-        timestamp: Date.now(),
-      });
-    });
-  }
 
   // Log memory config on startup in development
   if (isDevMode) {
@@ -209,11 +193,27 @@ export const db = (globalForPrisma.prisma ??
     .$extends({
       query: {
         $allModels: {
-          async $allOperations({ args, query }) {
+          async $allOperations({ model, operation, args, query }) {
+            const startedAt = trackSlowQueries ? performance.now() : 0;
+            let success = true;
             try {
               return await query(args);
             } catch (error) {
+              success = false;
               prismaErrorToAppError(error);
+            } finally {
+              if (trackSlowQueries) {
+                const duration = performance.now() - startedAt;
+                // Only slow operations are recorded; the monitor logs them once.
+                if (duration > queryMonitor.slowThresholdMs) {
+                  queryMonitor.recordQuery({
+                    queryKey: `${model ?? "raw"}.${operation}`,
+                    duration: Math.round(duration),
+                    success,
+                    timestamp: Date.now(),
+                  });
+                }
+              }
             }
           },
         },
@@ -224,21 +224,5 @@ export { db as prisma };
 
 // Export read-only mode flag for use in other parts of the application
 export const isDatabaseReadOnly = isReadOnlyMode;
-
-if (
-  typeof (globalThis as any).window === "undefined" &&
-  !isReadOnlyMode &&
-  env.NODE_ENV !== "test" &&
-  typeof process.env.JEST_WORKER_ID === "undefined"
-) {
-  // Asynchronously synchronize baseline achievements in background on server start
-  import("~/lib/achievements/sync")
-    .then(({ syncAchievements }) => {
-      syncAchievements(db).catch((err: unknown) =>
-        console.error("[DATABASE] Baseline achievements sync failed:", err)
-      );
-    })
-    .catch((err: unknown) => console.error("[DATABASE] Failed to load achievement-sync:", err));
-}
 
 if (env.NODE_ENV !== "production") globalForPrisma.prisma = db as unknown as PrismaClient;
