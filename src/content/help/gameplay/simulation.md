@@ -2,8 +2,8 @@
 title: How the World Moves
 description: What changes on its own, what only changes when someone acts, and how often.
 badge: The World
-prevHref: /help/world/countries
-prevLabel: Exploring Countries
+prevHref: /help/world/explore
+prevLabel: Explore & Comparing Nations
 nextHref: /help/gameplay/world-events
 nextLabel: Crises & World Events
 ---

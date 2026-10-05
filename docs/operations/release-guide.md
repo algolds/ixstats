@@ -5,7 +5,9 @@
 This is the one place to start a release. Part A is the procedure for **every** release. Part B lists the one-off
 steps for the **first release under the new branch model** (1.4, promoting the September `rose-garden` work),
 which carries schema changes and data fixes that later releases won't. Where a step is long, this guide links to the
-[September runbook](deploy-rose-garden-2026-09.md) instead of repeating it.
+[September runbook](deploy-rose-garden-2026-09.md) instead of repeating it. Part A absorbed the useful checks of
+the old deployment checklist (now [retired](../history/operations/deployment-checklist.md)); the production reference
+is [deployment.md](deployment.md).
 
 Branches: `rose-garden` (nightly) → `development` (stable-experimental) → `master` (production); see
 [contributing.md](../processes/contributing.md#branches). Production only ever runs `master`.
@@ -32,6 +34,10 @@ Branches: `rose-garden` (nightly) → `development` (stable-experimental) → `m
       required in production must be on the server before A4 (A2 has the full list).
 - [ ] **One-off scripts:** check the PR descriptions and `scripts/migrations/` for anything the release says to run
       (dry run first). Part B has this release's.
+- [ ] **Version and changelog:** the version in `src/lib/buildVersion.ts` is the one you're releasing, and
+      `CHANGELOG.md` has its entry, with breaking changes called out.
+- [ ] **Tag (optional):** `git tag -a v<version> -m "Release IxStats <version>"` on the `master` merge, so a
+      rollback has a named target.
 - [ ] **Announce** the maintenance window to players. Expect about 5–10 minutes of downtime (see A4).
 
 ### A2. Server prep
@@ -43,11 +49,18 @@ tmux new -s deploy            # the deploy ends by running the server in the for
 ```
 
 - [ ] **Disk:** `df -h /` — keep at least a few GB free. A full disk puts Postgres into recovery mode.
+- [ ] **Services up:** `docker ps --filter name=ixstats-postgres` shows the container Up;
+      `docker exec ixstats-redis-cache redis-cli ping` returns `PONG`; `pm2 status` lists `ixstats-cron`,
+      `ixstats-ws` and `ixstats-ixtwitter`.
+- [ ] **TLS certificate** isn't about to expire:
+      `openssl s_client -connect ixwiki.com:443 -servername ixwiki.com </dev/null 2>/dev/null | openssl x509 -noout -dates`.
 - [ ] **Note the running commit** for rollback: `git log -1 --oneline` → write it down (the last line of
       `backups/deploy-history.log` also has it).
 - [ ] **Back up:** `bun run db:backup` → `backups/ixstats-<UTC timestamp>.dump` (via the `ixstats-postgres`
       container). The deploy script takes another one before `db push`; this one is your pre-deploy copy.
-      Check it: `ls -lh backups/ | tail -3` (a healthy dump is not tiny).
+      Check it: `ls -lh backups/ | tail -3` (a healthy dump is not tiny). `db:backup` keeps the newest 14 dumps.
+- [ ] **Back up the env files:** `cp .env.production .env.production.backup-$(date +%Y%m%d)` and the same for
+      `.env.production.local`.
 - [ ] **Env** in `.env.production` / `.env.production.local`. The web app refuses to start in production without:
 
       | Variable | Notes |
@@ -73,7 +86,8 @@ tmux new -s deploy            # the deploy ends by running the server in the for
       `bun run verify:environment` in a shell that has the production env loaded
       (`set -a; source .env.production; source .env.production.local; set +a; NODE_ENV=production bun run verify:environment`):
       it fails when a secret from the first table is missing or too short, and warns about missing Redis,
-      `NEXT_PUBLIC_APP_URL` and Discord settings.
+      `NEXT_PUBLIC_APP_URL` and Discord settings. `bun run auth:check:prod` checks the Clerk configuration the same
+      way.
 - [ ] **PM2 env:** `ecosystem.config.cjs` (git-ignored) gives `ixstats-cron` and `ixstats-ws` their env. They need
       the same Redis settings, and `ixstats-cron` needs `CRON_ENABLED_JOBS` (see A7).
 - [ ] **Server-only config:** `next.config.js` is not tracked; if the release changes rewrites/redirects, edit the
@@ -125,6 +139,8 @@ pm2 jlist | python3 -c "import sys,json;[print(p['name'],p['pm2_env'].get('NODE_
 pm2 logs ixstats-cron --lines 30 --nostream     # no import errors; lists the scheduled jobs
 pm2 logs ixstats-ws --lines 30 --nostream       # "[WS] ✓ ThinkPages WebSocket initialized", no "Redis disabled"
 curl -sI https://ixwiki.com/projects/ixstates/ | head -5
+curl -s http://localhost:3550/projects/ixstates/api/health   # 200 ok / 503 degraded: db, Redis, memory, cron runs
+curl -s http://localhost:3551/healthz                        # ixstats-ws
 ```
 
 In a browser (console open):
@@ -132,7 +148,8 @@ In a browser (console open):
 - [ ] `/`, `/dashboard`, `/mycountry`, `/maps` load with no console errors, and **no "Refused to execute inline
       script" / CSP violations**.
 - [ ] Sign in and out; `/admin` works for an admin.
-- [ ] Send a message and see it arrive in a second browser (Redis bridge).
+- [ ] Send a message and see it arrive in a second browser (Redis bridge); DevTools → Network → WS shows the
+      socket connected.
 - [ ] The Vault store loads; a purchase shows the right price.
 - [ ] Whatever this release changed (see the promotion PRs).
 
@@ -157,9 +174,14 @@ log. The job table is `src/server/cron/jobs.ts` (21 jobs, listed in
 
 - [ ] Tell players it's done.
 - [ ] Merge `development` back into `rose-garden` if junior work landed only on `development`.
-- [ ] Keep an eye on `pm2 logs` and the admin audit log for the first hours.
+- [ ] Keep an eye on `pm2 logs`, the web app's output (the `start-production.sh` session; `[ERROR_LOGGER]`,
+      `[RATE_LIMIT]` and `[SECURITY_AUDIT]` lines), `docker logs --tail 100 ixstats-postgres` and the admin audit log
+      for the first hours. Only `ERROR`-level logs reach the Discord webhook; the deploy itself sends no notification.
 
 ### Rollback
+
+Roll back when a critical path is broken (sign-in, data loss, the Vault ledger), errors or latency jump and stay up,
+data looks corrupted, or the release opened a security hole. Note why before you start.
 
 If the release is broken and a fix-forward isn't quick:
 
@@ -176,7 +198,10 @@ If the release is broken and a fix-forward isn't quick:
    bun run db:restore -- backups/ixstats-<stamp>.dump   # prints the pg_restore command
    bun run db:restore -- backups/ixstats-<stamp>.dump --yes --i-know-this-is-production
    ```
+   After a restore, spot-check it:
+   `docker exec ixstats-postgres psql -U postgres -d ixstats -c 'SELECT count(*) FROM "Country";'`.
 3. Revert or fix on `master` (via `development`), then deploy `master` again.
+4. Re-run the A5 checks, watch the logs for a while, and write down what failed and why.
 
 `scripts/deployment/rollback-deployment.sh` (`bun run deploy:rollback`) does steps 1–2 in one go:
 

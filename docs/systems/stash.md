@@ -1,5 +1,7 @@
 # 📖 Stash — Personal Reading Lists & Lore Archives
 
+**Last updated:** 2026-09-30
+
 **Parent App Suite:** WikiOS (`WIKIOS_VERSION = 1`)  
 **Subsystem:** Stash (`STASH_VERSION = 1`)  
 **Primary Action:** `STASH` | **Domain Accent:** Crimson Rose (`#f43f5e` / rose-500, see [stash-style-guide.md](stash-style-guide.md))  

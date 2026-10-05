@@ -1,5 +1,7 @@
 # Rate Limiting Configuration Guide
 
+**Last updated:** 2026-10-05
+
 ## Table of Contents
 1. [Overview](#overview)
 2. [Why Rate Limiting is Critical](#why-rate-limiting-is-critical)

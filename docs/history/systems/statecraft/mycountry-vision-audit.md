@@ -1,5 +1,7 @@
 # MyCountry: Vision–Implementation Audit
 
+> **Retired 2026-10-05** to [docs/history/](../../README.md). A dated June 2026 snapshot; see [mycountry.md](../../../systems/mycountry.md) and [statecraft-game-loops.md](../../../systems/statecraft/statecraft-game-loops.md).
+
 > **Historical snapshot (written 2026-06-30).** The "Code audit" in §2 describes the codebase as it was then. **What has changed since (verified 2026-09-29):**
 > - **Intent Engine: built, following recommendation (b).** `Intent` model (`prisma/schema/government.prisma`) with a parent/child tree (no `NationalIntent` / `IntentDependency` DAG, no Vision/Strategic/Operational layers). `intent` router (`suggest`, `commit`, `getTree`, `getStatus`, `updateStatus`, `getLinkedIssues`, `getOutcome`, `generateSummationDraft`). Packages (measured / moderate / extreme / custom) are assembled server-side from the policy registry (`src/lib/intent/assemble.ts`). Commits are capped at 3 per IxTime week with a cooldown (every commit in the window counts, including ones later abandoned), and each commit spawns resistance issues (`src/lib/intent/resistance.ts`). Branded "Directives" in the UI.
 > - **Spine callers changed:** `recordCountryEvent` (now `src/lib/activity/event-spine.ts`) is called by `intent.ts`, `national-issues/consequences.ts`, and `policies/maintenance-cron.ts`. `diplomacy/inbox.ts` no longer exists, and meeting completion (`completeMeeting` / decisions) was deleted in plans 312/332, so meetings are schedule-only. The spine is still not universal.

@@ -3,7 +3,7 @@
 **Platform:** 1.4.0 "Lobster Crosby", Release Candidate (integration branch `rose-garden`)
 **Last verified:** 2026-10-05, against the code at `rose-garden` @ `6d53b0c` (after PRs #48–#49 and the 2026-10-05 docs audit)
 **Version registry:** [`src/lib/buildVersion.ts`](../../src/lib/buildVersion.ts) · **Versioning spec:** [`docs/reference/revision.md`](../reference/revision.md)
-**Open work:** [`ROADMAP.md`](../roadmap/ROADMAP.md) (the plan) · [`pending-features.md`](../roadmap/pending-features.md) · [`code-audit-2026-09-30.md`](../roadmap/code-audit-2026-09-30.md)
+**Open work:** [`ROADMAP.md`](../roadmap/ROADMAP.md) (the plan) · [`pending-features.md`](../history/roadmap/pending-features.md) · [`code-audit-2026-09-30.md`](../history/roadmap/code-audit-2026-09-30.md)
 
 This page replaces the August "Gold Master (100%)" matrix. That matrix rated every system as finished; the September audit
 found several that are partly built, read-only, or broken, so each row now carries the status the code supports.
@@ -87,7 +87,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 |---|:---:|---|---|:---:|---|
 | Feed | v2 | `/dashboard`, `/thinkpages/post/[id]`, `/hashtags/[tag]` | `thinkpages/`, `polls/` | ✅ Live | `[blurb:slug]` is a Blurbs cross-post prefix. Trending and "hot" are scored by the `thinkpages-trending` cron (off until enabled); a realm filter scopes the feed to one realm |
 | Accounts (personas) | v2 | `/thinkpages` | `thinkpages/accounts.ts` | 🟡 Partial | 25 accounts per user plus one personal persona ("post as yourself", no country); persona follows with real counts. The Discord mirror is off by default and cannot be enabled from the UI; the verified flag is admin-only |
-| ThinkTanks | v2 | `/thinktanks` | `thinkpages/thinktanks/` | 🟡 Partial | Feed, Members, Docs and Chat tabs; invites by username search; realm boards are a ThinkTank type |
+| ThinkTanks | v2 | `/thinktanks` | `thinkpages/thinktanks/` | 🟡 Partial | Feed, Members, Docs and Chat tabs; invites by username search, an invite inbox and single-use invite codes; realm boards are a ThinkTank type |
 | ThinkShare messages | v2 | `/messages` | `messages/` | 🟡 Partial | Live for 1:1 and group DMs over `/ws/thinkpages`; diplomatic conversation creation from the UI is unreachable, joining a thinktank-linked conversation requires active membership of that group, and encryption fields exist but no cryptography |
 | Blurbs | — | `/blurbs` | `blurbs/` | ✅ Live | |
 
@@ -116,7 +116,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 | Halo overlay & command palette | v6 | global | `src/components/halo/` | ✅ Live | |
 | Cuelume audio | v1 | global | `src/lib/sound/cuelume.ts` | ✅ Live | 17 synthesized cues |
 | Admin console | platform | `/admin/*` | `admin/`, `AdminRouter.tsx` | ✅ Live | The sidebar's area list is the admin navigation; `/admin/calculations` has a page; `auditLogMiddleware` persists every admin mutation and failed call to `AuditLog` (PL-1) |
-| Help center | platform | `/help` | `src/content/help/`, `src/app/help/_lib/help-sections.ts` | ✅ Live | All 55 articles are registered (a test checks it); see [help.md](help.md) |
+| Help center | platform | `/help` | `src/content/help/`, `src/app/help/_lib/help-sections.ts` | ✅ Live | All 63 articles are registered (a test checks it); see [help.md](help.md) |
 | Rate limiting | platform | — | `src/lib/cache/rate-limiter.ts`, `trpc/middleware.ts` | 🟡 Partial | Fewer than 100 non-admin procedures of 922 are limited; 243 mutations are unlimited; no `X-RateLimit-*` headers |
 
 ## 🧪 Labs

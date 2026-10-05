@@ -117,4 +117,4 @@ None. Profiles read live data; country figures change through the economy jobs d
 
 - [Realms](./realms.md): realm scoping
 - [MyCountry](./mycountry.md): the owner's side and the visibility list
-- [WikiOS](./wikios.md): the Canvas editor
+- [WikiOS](./wikios/WIKIOS.md): the Canvas editor

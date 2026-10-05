@@ -360,7 +360,7 @@ Current `premiumProcedure` users: `security/military.ts`, `security/operations.t
 ### Intelligence & Defense Page Behavior
 
 **Basic Users:**
-- Intelligence/Defense nav items are hidden unless an admin enables `showIntelligenceTab` / `showDefenseTab`, in which case they show as locked "(Premium)" teasers
+- The sidebar's Defense row is hidden (it shows only for MyCountry Premium users and beta testers); Intelligence has no row of its own. The admin `showIntelligenceTab` / `showDefenseTab` switches were removed on 2026-10-05
 - `/mycountry/defense` (and `/mycountry/intelligence`, which resolves to the Defense domain) renders a read-only live preview with an Upgrade banner (links to `/help/getting-started/welcome`)
 - Defense mutations are rejected server-side
 
@@ -449,7 +449,7 @@ IxStats follows a **generous freemium model**:
 - [Intelligence System Documentation](../systems/intelligence.md)
 - [API Catalog](./api-complete.md)
 - [Rate Limiting Guide](../operations/rate-limiting.md)
-- [User Profile Utils](./user-profile-utils.md)
+- [User Profile Utils](../history/reference/user-profile-utils.md)
 
 ---
 

@@ -2,8 +2,8 @@
 title: The World Clock (IxTime)
 description: The shared world clock runs at twice real speed. What that means for your nation.
 badge: Start Here
-prevHref: /help/getting-started/navigation
-prevLabel: Finding Your Way Around
+prevHref: /help/getting-started/settings
+prevLabel: Your Settings
 nextHref: /help/getting-started/ixnayid
 nextLabel: IxnayID & Your Passport
 ---

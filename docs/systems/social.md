@@ -1,5 +1,7 @@
 # 💬 ThinkPages — Sovereign Feed, ThinkTanks & ThinkShare
 
+**Last updated:** 2026-10-05
+
 **Parent App Suite:** ThinkPages (`THINKPAGES_VERSION = 2`)  
 **Subsystems:** Sovereign Feed, Account Manager, Collaborative ThinkTanks, ThinkShare Messaging  
 **Primary Action:** `DELIBERATE` | **Domain Accent:** Blue (`#3B82F6` / `--color-blue-500`, the `/thinkpages` accent in `NavTray.tsx` and [branding.md](../reference/branding.md))  

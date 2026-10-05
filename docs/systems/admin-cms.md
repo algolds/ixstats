@@ -1,5 +1,7 @@
 # 🛡️ Admin CMS & Platform Control Center
 
+**Last updated:** 2026-09-30
+
 **Parent Platform Layer:** Platform Runtime & Shared Substrate  
 **Subsystems:** Dynamic Reference CMS, Role-Based Access Control (RBAC), Audit Trails, System Oversight  
 **Primary Action:** `ADMINISTER` | **Domain Accent:** Crimson Slate (`#E11D48` / `--color-rose-600`)  

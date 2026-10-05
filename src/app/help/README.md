@@ -4,7 +4,7 @@
 
 The help center at `/help` renders Markdown articles from `src/content/help/<folder>/<slug>.md` through one shared layout (`src/components/documents/DocumentPage.tsx`), the same one used by `/terms` and `/privacy` (`src/content/legal/*.md`). There is no tRPC data source and no `help` router.
 
-**Coverage:** 55 articles, all registered in the hub across 11 sections. See [docs/systems/help.md](../../../docs/systems/help.md) for the section list, retired articles and authoring rules.
+**Coverage:** 63 articles, all registered in the hub across 11 sections. See [docs/systems/help.md](../../../docs/systems/help.md) for the section list, retired articles and authoring rules.
 
 ## Routes
 

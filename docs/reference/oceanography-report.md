@@ -1,5 +1,7 @@
 # IxWorld Comprehensive Oceanography Report
 
+**Last updated:** 2026-08-20
+
 *Prepared by the IxWorld Bureau of Oceanographic Sciences*
 *Date: IxYear 2041 — Compiled from climate simulation data, geographic survey, and economic analysis*
 

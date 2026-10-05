@@ -1,8 +1,16 @@
 # WikiOS native architecture
 
-Status: Release candidate (Plan 170 & Plan 191 complete)  
-Package: `src/lib/wiki-os/` (in-repo module, imported as `~/lib/wiki-os`; not a published package)  
-Runtime: TypeScript 7.0, Next.js 16 App Router  
+**Last updated:** 2026-10-05 (the former `systems/wikios.md` overview is merged in)
+**Status:** Release candidate (Plan 170 & Plan 191 complete; platform 1.4.0)  
+**Package:** `src/lib/wiki-os/` (in-repo module, imported as `~/lib/wiki-os`; not a published package)  
+**Runtime:** TypeScript 7.0, Next.js 16 App Router  
+**Versions** (`src/lib/buildVersion.ts`): WikiOS app `WIKIOS_VERSION = 1`; Canvas editor `CANVAS_VERSION = 1`; Stash
+`STASH_VERSION = 1`; Image Repository `REPOSITORY_VERSION = 2`. Lorewards and article awards (`WikiArticleAward`) are
+versioned with Achievements.  
+**Routes:** `/wiki/*` (reader, `/wiki/[slug]/edit`, `?source=` foreign-wiki pages), `/util/*` (utility pages, including
+`/util/repository` and `/util/lorewards`), `/stashes`  
+**Related:** [style guide](style-guide.md) · [Margin spec](wikios-margin-spec.md) ·
+[Stage 3 config plan](wikios-stage3-config-plan.md) · [Stash](../stash.md) · [Lore lifecycle](../lore-lifecycle.md)
 
 WikiOS is the knowledge engine and structured worldbuilding platform for IxStates. PostgreSQL is the primary database for article content (4,685+ articles), append-only revisions, directed link graphs (48,200+ edges), taxonomies, and 7,555+ media assets (`wiki_assets`). Saves commit to PostgreSQL first (target under 10ms); rendering still goes through MediaWiki (see below).
 
@@ -18,8 +26,38 @@ WikiOS is the knowledge engine and structured worldbuilding platform for IxState
 - **Inbound recent-changes sync.** `services/auto-sync-service.ts` (`runAutoSyncCycle`) pulls edits made directly on classic MediaWiki into PostgreSQL, from the `wiki-recentchanges` cron job and the `/api/wikios/inbound-sync` webhook.
 - **Outbound export (`MediaWikiExportWorker`).** Queues upstream `action=edit` calls asynchronously over the shared bot session. Authorship lives in `WikiRevision.author`; per-user `rev_actor` patching is not implemented (`updateRevisionActor` is a no-op).
 - **Multi-wiki reader.** `?source=iiwiki|althistory` opens another wiki's page read-only (Sept 2026).
-- **Cloudflare edge defense (`src/lib/wiki-os/guardian/`).** Turnstile verification and non-blocking Cloudflare Zone edge cache purges on save.
+- **Cloudflare edge defense (`src/lib/wiki-os/guardian/`).** Non-blocking Cloudflare Zone edge cache purges on save
+  (not on revert or rollback). Turnstile is inert: `saveWikitext` accepts an optional `turnstileToken` and calls
+  `CloudflareGuardian.verifyTurnstile` when one is sent, but ignores the result, and no client sends a token. There is
+  no mass-blanking or homoglyph abuse filter; the editor client blocks saves that lost content.
 - **Canvas visual editor (`CANVAS_VERSION = 1`).** Plate-based block editor (Plan 206) with a WikiAST ↔ wikitext converter (Plans 205/208) and lossless template serialization (Plan 301).
+
+---
+
+## Engine details
+
+- **Edit policy.** `checkEditPolicy` (`src/lib/wiki-os/namespace-policy.ts`) lets signed-in users edit Main and the
+  talk namespaces, plus their own `User:` page once their wiki account link is verified (not `.js`, `.css`, `.json` or
+  `.less` subpages). Every other namespace is admin-only; Special and Media are never editable. Page protection can't
+  be set yet.
+- **Search scoring.** Spotlight autocomplete (`NativeSearchService`) is a case-insensitive Prisma `contains` on titles
+  that scores exact titles 1.0, prefixes 0.8 and other matches 0.5; it is not typo-tolerant, and there is no
+  `pg_trgm` extension or GIN index on `wiki_articles`. Deep search builds a weighted `tsvector` query with snippets at
+  query time, with no index behind it.
+- **Infobox-first images** (`transformers/image-url.ts`). Lead images come from infobox parameters (`| logo =`,
+  `| image =`, `| flag =`, `| coat_of_arms =`) in the stored wikitext (`extractLeadImageFromWikitext`).
+  `isNoticeOrUtilityIcon` skips maintenance and construction badges, and URLs are normalised to `Special:FilePath`.
+- **Main page** (`components/wiki-os/reader/WikiOSMainPage.tsx`). Two header layouts, `editorial-masthead` and
+  `sculpted-emblem`, a featured-image hero, a daily rotation of statistics articles from
+  `Category:Bureau of International Statistics`, and a shuffled deck of featured countries.
+- **Drafts.** `src/lib/wiki-os/editor/draft-store.ts` autosaves client-side drafts under
+  `wikios_draft:${source}:${title}`.
+- **Export switch and bot.** `SKIP_MEDIAWIKI_SYNC=true` stops the export worker. Upstream edits use the bot in
+  `WIKIOS_MEDIAWIKI_BOT_USER` (default `Heku@WikiOS`, a bot password on a personal account); there is no dedicated
+  bridge account.
+- **Sister wikis.** `http-reader.ts` reads IIWiki and AltHistory; a host that returns 403 or is offline is skipped
+  for 5 minutes. On a `?source=` page, links stay on that wiki, and editing, Watch, `?margin` and the Halo follow the
+  page's wiki (Sept 2026 rulings E-l/E-m). Searching with `wikiSource: "all"` queries all three wikis at once.
 
 ---
 
@@ -143,7 +181,7 @@ src/lib/wiki-os/
 | Action toolbar | Save, Cancel, and Preview action buttons |
 | Keyboard shortcuts | `Ctrl+B` (bold), `Ctrl+I` (italic), `Ctrl+K` (link) |
 | Template insertion | Slash-command menu with template presets (Plan 207), TemplateData-driven parameter forms (Plan 302), and tiered preview cache (Plan 303) |
-| Image search | File search across local assets and Wikimedia Commons |
+| Image search | File search across IxWiki files (`wikios.searchFiles`); the Commons tab has no search behind it yet (WK-6) |
 | Mode toggle | Switch between visual and source editor modes |
 | Edit summary | Summary input field and minor edit checkbox |
 | Rollback | Reads the revision history, then saves the old revision as a new one via `saveArticle` (two steps, not one transaction; no cache purge) |
@@ -179,7 +217,7 @@ WikiOS Margin replaces standalone talk pages with an inspector docked to the rea
 | Leaderboards | Filterable by daily, weekly, monthly, and all-time periods |
 | Streak calendar | Calendar heatmap showing consecutive contribution days |
 | User stats | Total wins, runner-up finishes, bytes contributed, current and longest streaks |
-| Scoring engine | Evaluates bytes added, prose ratio, edit depth, and topic importance |
+| Scoring engine | Evaluates bytes added, prose ratio, edit depth, novelty and topic importance (`lib/lorewards/scoring.ts`); admins tune the weights in Admin → Wiki → Lorewards (`lorewardWeight_<field>`) |
 
 ### Search
 

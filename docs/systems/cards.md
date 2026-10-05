@@ -1,5 +1,7 @@
 # 💎 Vault Cards & Booster Packs Engine
 
+**Last updated:** 2026-10-05
+
 **Parent App Suite:** Vault (`IXVAULT_VERSION = 2`, dev codename `IxVault`)  
 **Subsystems:** 3D Card Engine, Booster Pack Gacha, Crafting & Recycling, NS Import Bridge  
 **Primary Action:** `COLLECT` | **Domain Accent:** Burnished Copper (`#D97706` / `--color-amber-600`)  
@@ -96,7 +98,7 @@ Packs are rows in `CardPack`, seeded from `prisma/seeds/data/card-packs.json` an
 - A successful craft mints a new `Card` row (from `resultCardId`, else a generic "<recipe> Result" NATION card); materials are consumed on every attempt. Recipes are listed in `prisma/seeds/crafting-recipes.ts`.
 
 ### Card Recycling (Junking)
-- Unlocked cards (`isLocked === false`) can be recycled via `api.cards.junkCards`, permanently deleting the ownership record and crediting IxCredits through the ledger as `EARN_CARDS` (`junkValue()` = rarity floor × `junkRate`, currently 0.25 and capped at `JUNK_RATE_MAX` 0.5, `src/lib/cards/valuation.ts`). Cards locked in escrow (listed at auction or in a pending trade) cannot be junked; there is no manual lock toggle.
+- Unlocked cards (`isLocked === false`) can be recycled via `api.cards.junkCards`, in batches of at most the admin junk batch limit (`card_system_max_junk_batch_size`, default 100), permanently deleting the ownership record and crediting IxCredits through the ledger as `EARN_CARDS` (`junkValue()` = rarity floor × `junkRate`, currently 0.25 and capped at `JUNK_RATE_MAX` 0.5, `src/lib/cards/valuation.ts`). Cards locked in escrow (listed at auction or in a pending trade) cannot be junked; there is no manual lock toggle.
 
 ---
 

@@ -1,14 +1,16 @@
 # IxStates Feature Roadmap
 
 **Updated:** 2026-10-05 · **Baseline:** `rose-garden` @ `b7cc2392`, statuses re-checked at `6d53b0c` (1.4.0 "Lobster Crosby", Release Candidate)
-**Sources:** [code audit 2026-09-30](code-audit-2026-09-30.md) (IDs `MC-`, `AT-`, `WK-`, `VT-`, `SL-`, `PL-`) ·
-[pending-features.md](pending-features.md) (the doc-based backlog) · [System Status](../systems/SYSTEM_STATUS.md) (what is live)
+**Backlog:** [backlog.md](backlog.md), the single list of open items with their evidence. It keeps the code audit's
+IDs (`MC-`, `AT-`, `WK-`, `VT-`, `SL-`, `PL-`) and cites the old doc-based backlog's sections as `PF§1`–`PF§7`. The
+source audits are kept in [docs/history/roadmap/](../history/roadmap/) ·
+[System Status](../systems/SYSTEM_STATUS.md) (what is live)
 
 > **2026-10-05:** statuses below include PRs #48–#49 and the 2026-10-05 security, CI, ops and cron commits. Items done
 > in code are marked ✅; [ACTION_PLAN_2026-10-05.md](ACTION_PLAN_2026-10-05.md) has the evidence and the ordered next
 > steps.
 
-This is the plan: what to do, in what order, and why. Items refer to the two backlogs above, which keep the evidence
+This is the plan: what to do, in what order, and why. Items refer to the backlog above, which keeps the evidence
 (file paths, callers, sizes). Milestones are ordered by risk and dependency, not by calendar. Version targets are
 proposals for the version registry (`src/lib/buildVersion.ts`).
 
@@ -84,10 +86,10 @@ code-health track runs throughout.
 | 13 | `collectMatchRevenue` pays per home match, not per click (with the sponsor `winBonus` fix) | SL-14 | S | P0 | Merged ([#43](https://github.com/algolds/ixstats/pull/43)); run `db:mark-match-revenue-collected` at deploy (ops) |
 | 14 | Budget year: one IxTime-based year for writers, readers and the zod bound (it breaks on 2027-01-01) | MC-1 | S | P0 | Merged ([#37](https://github.com/algolds/ixstats/pull/37)) |
 | 15 | Backups: a working `db:backup` / `db:restore` for Postgres, a `pg_dump` in `deploy-production.sh` before `db push`, and a tested restore | PL-11 | M | P0 | Merged ([#37](https://github.com/algolds/ixstats/pull/37)); a `db:backup` → `db:restore` round trip passed on a scratch catalog DB (2026-10-05); restoring a production dump is still to do (ops) |
-| 16 | Rotate the `ixstats_readonly` password (it's in git history) | pending-features §1 | S | P0 (ops) | Open (ops) |
+| 16 | Rotate the `ixstats_readonly` password (it's in git history) | PF§1 | S | P0 (ops) | Open (ops) |
 | 17 | After 1–4: audit `vault_transactions` for exploit rows and correct balances | — | S | P0 | Report ([#36](https://github.com/algolds/ixstats/pull/36)) and `audit:vault-exploits:apply` ([#40](https://github.com/algolds/ixstats/pull/40)); run on production (ops) |
 | 18 | Small hardening: take the audit IP from `cf-connecting-ip`, drop the `X-RateLimit-Identifier` echo, compare secrets in constant time | PL-20 | S | P1 | Done ([#38](https://github.com/algolds/ixstats/pull/38), [#39](https://github.com/algolds/ixstats/pull/39)) |
-| 19 | Rate-limit the 243 unlimited mutations | PL-3, pending-features §3 | M | P1 | ✅ Done (2026-10-05) outside `wikios`: `rateLimitedMutationProcedure` / `premiumMutationProcedure` (60/min per user per mutation); an architecture test blocks new unlimited mutations. `wikios` (20) waits on #52 |
+| 19 | Rate-limit the 243 unlimited mutations | PL-3, PF§3 | M | P1 | ✅ Done (2026-10-05) outside `wikios`: `rateLimitedMutationProcedure` / `premiumMutationProcedure` (60/min per user per mutation); an architecture test blocks new unlimited mutations. `wikios` (20) waits on #52 |
 | 20 | Sports commentary: a caller-supplied LLM/TTS config no longer receives the server keys; `generateMatchCommentary` is rate-limited and only the league manager can force a regenerate. Admin gates on lorewards `getCrossValidationHistory` / `getBlacklist` and sports `getAdminGlobalStats` / `testLLMNarrator` | action plan 0.1 | S | P0 | Done (2026-10-05) |
 
 **Exit:** every P0 merged with tests; a backup restored into a scratch database; the exploit audit is done.
@@ -106,19 +108,19 @@ code-health track runs throughout.
 | Fix the 5 rules-of-hooks errors, set `--max-warnings` to ~160, make `lint:strict` blocking | PL-17 | S | ✅ Done (2026-10-05): 0 errors and 25 warnings; `--max-warnings 25` and the CI step is blocking |
 | Typecheck tests, `proxy.ts`, `instrumentation.ts`, `content` and `scripts/` in CI; add `typecheck:db` | PL-16 | S | Partial: `typecheck:db` and `typecheck:scripts` (scripts, proxy, instrumentation, content) run in CI (2026-10-05); `src/tests` is not covered |
 | Fix the 7 package scripts that fail on import | PL-5 | S | ✅ Done (2026-10-05); the `check:script-imports` CI step keeps them working |
-| `audit:arch`: split the 15 files over the ceiling or add them to `RELAXED_FILES`, then make it blocking | pending-features §6 | M | Partial: the baseline holds real line counts (38 files), so the ratchet fires (2026-10-05); still non-blocking in CI |
+| `audit:arch`: split the 15 files over the ceiling or add them to `RELAXED_FILES`, then make it blocking | PF§6 | M | Partial: the baseline holds real line counts (38 files), so the ratchet fires (2026-10-05); still non-blocking in CI |
 
 **Deploy & runtime**
 | Item | Refs | Size | Status |
 |---|---|---|---|
 | Deploy rose-garden via [the runbook](../operations/deploy-rose-garden-2026-09.md) (Realms schema, backfill, Eurth) | runbook | M | Open (ops) |
-| Redis in production (required for realtime across processes and for shared rate limits) | pending-features §5 | S | Partial: `/api/health` reports Redis state and `verify:environment` recommends `REDIS_ENABLED` in production (2026-10-05); enabling it on the server is ops |
+| Redis in production (required for realtime across processes and for shared rate limits) | PF§5 | S | Partial: `/api/health` reports Redis state and `verify:environment` recommends `REDIS_ENABLED` in production (2026-10-05); enabling it on the server is ops |
 | Market WebSocket Redis bridge | PL-4 | M | ✅ Done (2026-10-05, `src/server/market-broadcast-bridge.ts`) |
 | Commit `ecosystem.config.example.cjs`; run the web process under PM2 | PL-12 | S | Partial: the template (cron, ws, ixtwitter) is committed and a failed PM2 reload fails the deploy (2026-10-05); the web app still runs from `start-production.sh` |
 | Rewrite the rollback script around tags and the real restart | PL-13 | S | ✅ Done (2026-10-05): `rollback-deployment.sh` checks out a rollback branch from the `master` remote, optionally restores a pre-deploy dump and redeploys |
-| CSP: ~~propagate the nonce on request headers~~ (done, [#46](https://github.com/algolds/ixstats/pull/46)) → remove the nginx override and check for violations → drop `'unsafe-inline'` | PL-2, pending-features §1 | M | Partial: production no longer allows `http:` images or `ws:` sockets (2026-10-05); nginx override and `'unsafe-inline'` remain |
+| CSP: ~~propagate the nonce on request headers~~ (done, [#46](https://github.com/algolds/ixstats/pull/46)) → remove the nginx override and check for violations → drop `'unsafe-inline'` | PL-2, PF§1 | M | Partial: production no longer allows `http:` images or `ws:` sockets (2026-10-05); nginx override and `'unsafe-inline'` remain |
 
-**Scheduled jobs** (order matters; see [code audit §9](code-audit-2026-09-30.md#9-cron-job-readiness))
+**Scheduled jobs** (order matters; see [code audit §9](../history/roadmap/code-audit-2026-09-30.md#9-cron-job-readiness))
 | Item | Refs | Size | Status |
 |---|---|---|---|
 | Cron monitoring: a `CronRun` row per run, a Discord alert on failure, last success in `/api/health` | PL-10 | M | ✅ Done (2026-10-05) |
@@ -141,25 +143,25 @@ half-built features players can already see, and remove every fabricated number.
 ### M2.1 Restore broken core loops
 | Item | Refs | Size | Depends on |
 |---|---|---|---|
-| ✅ **Done (#49):** first elections are scheduled once a legislature has at least 2 parties, candidates come from the parties, resolution seats them and bills can pass (D1 option a; seat-by-vote-share not built) | MC-2, pending-features §2 | M–L | Decision D1 |
-| ✅ **Done (2026-10-05):** `meetings.concludeMeeting` records the outcome and one decision per agenda item; `CabinetMeetingsPanel` in the Cabinet tab. Left: decisions don't reach the event spine or become policies (M4) | pending-features §2 | M | — |
+| ✅ **Done (#49):** first elections are scheduled once a legislature has at least 2 parties, candidates come from the parties, resolution seats them and bills can pass (D1 option a; seat-by-vote-share not built) | MC-2, PF§2 | M–L | Decision D1 |
+| ✅ **Done (2026-10-05):** `meetings.concludeMeeting` records the outcome and one decision per agenda item; `CabinetMeetingsPanel` in the Cabinet tab. Left: decisions don't reach the event spine or become policies (M4) | PF§2 | M | — |
 | ✅ **Done (2026-10-05):** `policies.repealPolicy` (Repeal on passed bills), expiry in `policy-maintenance`, CivCap released (the shared sum counts active policies only); upkeep debited once per IxTime budget year (PL-8) | MC-5 | S–M | — |
 | Defense: force-structure authoring (branches and units) → meaningful PvNPC and PvP results. **Partial:** PvP conflicts resolve after `maxDuration` via `security.concludePvPConflict` (MC-4, 2026-10-05) using the PvNPC strength calculation; force structure (MC-3) still waits on D2 | MC-3, MC-4 | L | Decision D2 |
 | ✅ **Done:** pending invites (#48), the diplomacy Inbox (#49), and NPC targets answer at invite time from their personality's alliance prediction (2026-10-05) | MC-10 | S–M | — |
 | ✅ **Done (2026-10-05):** `diplomatic-drift` completes exchange missions when the exchange ends (cancels them with it); embassy details show elapsed-time progress | MC-11 | S | — |
 | ✅ **Done (#49):** the `stat-progression` job persists current stats and one `HistoricalDataPoint` per IxTime month; off until enabled | MC-7 | M | M1 jobs |
-| Crafting end to end. **Mostly done:** ownership IDs (#48); `resultCardId` granted, criteria validated, `successRate` 0–1, seed fixed (2026-10-05). Left: the workbench sends card IDs where crafting expects ownership IDs; the crafting seed is not in `db:seed`; MYTHIC recipe (D6) | VT-14, pending-features §2 | M | Decision D6 (rarity enum) |
+| Crafting end to end. **Mostly done:** ownership IDs (#48); `resultCardId` granted, criteria validated, `successRate` 0–1, seed fixed (2026-10-05). Left: the workbench sends card IDs where crafting expects ownership IDs; the crafting seed is not in `db:seed`; MYTHIC recipe (D6) | VT-14, PF§2 | M | Decision D6 (rarity enum) |
 | ✅ **Done:** packs, junk payouts and lore requests go through the ledger (VT-4, VT-5, #48); the earning kill switch covers EARN_BONUS and EARN_CARDS (VT-23, 2026-10-05; REFUND stays allowed) | VT-4, VT-5, VT-23 | M | M0 |
-| ✅ **Done (2026-10-05):** `guaranteedRarity` and `themeFilter` enforced, SPECIAL and crafted cards excluded, empty tiers fall back, typed `PackError`s | VT-18, pending-features §3 | S–M | — |
+| ✅ **Done (2026-10-05):** `guaranteedRarity` and `themeFilter` enforced, SPECIAL and crafted cards excluded, empty tiers fall back, typed `PackError`s | VT-18, PF§3 | S–M | — |
 | ✅ **Done (2026-10-05):** the 11 achievement cards are defined in `src/lib/achievements/card-rewards.ts`; the seed upserts them, back-grants earlier unlocks and runs in `db:seed` (production: `bun prisma/seeds/achievement-cards.ts`) | VT-17 | S | — |
 | ✅ **Done:** the owned state shows (VT-11); every owned perk applies (VT-13, 2026-10-05) | VT-11, VT-13 | S | M0 #1 |
 | WikiOS edit integrity: conflict detection → Turnstile → cache purge on revert → page protection (admin UI + `WikiLog`) | WK-2, WK-4, WK-16, WK-3 | M | — |
 | WikiOS uploads (and the Commons tab fix) | WK-5, WK-6 | M | Decision D3 |
-| ✅ **Done:** Docs and Chat tabs and username invites (#48); an invites inbox with accept/decline and join-by-code on the existing `inviteCode` (SL-13, 2026-10-05) | pending-features §3, SL-22, SL-13 | M | M0 #7 |
+| ✅ **Done:** Docs and Chat tabs and username invites (#48); an invites inbox with accept/decline and join-by-code on the existing `inviteCode` (SL-13, 2026-10-05) | PF§3, SL-22, SL-13 | M | M0 #7 |
 | ✅ **Done (2026-10-05):** routes and hubs are saved with the owning country's realm, with `db:backfill-transport-realm` (dry run, then `--apply`); `flags.resolveBatch` filters by realm | AT-1, AT-18 | S | — |
 | ✅ **Done (2026-10-05):** ocean labels and the tour only on IxWorld; map wiki lookups use the realm's lore-index wiki source | AT-2, AT-12 | S | — |
-| ✅ **Done:** the admin role counts as admin in the map editor, and `/mycountry/map-editor` renders the editor full-screen | AT-13, pending-features §2 | S–M | — |
-| Vexel. **Partial (2026-10-05):** attaching a design with no image now refuses instead of blanking the coat of arms, and Vexel is in the Labs menu. Left: render a PNG on attach (no render utility exists, so attach always refuses today) | pending-features §2 | M | — |
+| ✅ **Done:** the admin role counts as admin in the map editor, and `/mycountry/map-editor` renders the editor full-screen | AT-13, PF§2 | S–M | — |
+| Vexel. **Partial (2026-10-05):** attaching a design with no image now refuses instead of blanking the coat of arms, and Vexel is in the Labs menu. Left: render a PNG on attach (no render utility exists, so attach always refuses today) | PF§2 | M | — |
 
 ### M2.2 Remove fabricated data (the trust pass)
 Replace each with real data, or show an empty state. All S or S–M.
@@ -193,7 +195,7 @@ Replace each with real data, or show an empty state. All S or S–M.
   slug (WK-15, 2026-10-05).
 
 ### M2.5 Help centre
-✅ **Done:** all 55 articles are registered in `src/app/help/_lib/help-sections.ts`; the admin article is rewritten
+✅ **Done:** all 63 articles are registered in `src/app/help/_lib/help-sections.ts` (8 added on 2026-10-05: Blurbs, MyLeague/MyClub, Onoma, Vexel, the Canvas editor, Explore, Settings and Halo); the admin article is rewritten
 (WK-21); Realms, the IxnayID passport, Atlas maps, WikiOS, Stash, Forum, Economy and Premium have articles.
 
 **Exit:** a walkthrough of every system finds no inert control, no fabricated number and no dead link; help covers every
@@ -210,16 +212,16 @@ shipped system.
 | 1 | `isRealmOpen()` status guard for the hub and claims (later reused by jobs and payouts) | AT-7 | S |
 | 2 | Assign founders (`ownerId`, thumbnail, delete realm) | AT-8 | S |
 | 3 | Claimants see pending and rejected claims; rejection notifies | AT-5 | S |
-| 4 | Builder creates nations in any realm (realm input, nation cap), with prefill from a claimed nation page. **Partial (#49):** the builder is realm-aware with nation caps; prefill is open | AT-3, pending-features §4 | M |
-| 5 | ✅ **Done (#49):** nation switcher in the nav and on the passport | pending-features §4 | M |
+| 4 | Builder creates nations in any realm (realm input, nation cap), with prefill from a claimed nation page. **Partial (#49):** the builder is realm-aware with nation caps; prefill is open | AT-3, PF§4 | M |
+| 5 | ✅ **Done (#49):** nation switcher in the nav and on the passport | PF§4 | M |
 | 6 | Realm directory filtered by visibility and status. **Partial:** `/realms` lists open realms (#49) and has a sidebar entry in the Realms group (2026-10-05) | AT-6 | M |
-| 7 | Founder tooling: settings, moderation, removing nations, succession using `lastSeenAt` | pending-features §4 | L |
-| 8 | Archived realms: read-only; excluded from jobs and payouts; every job made realm-aware | pending-features §4, code audit §9 | M |
-| 9 | Public founding application (decisions 6–7) | pending-features §4 | M |
-| 10 | Per-realm ThinkPages feed plus a global-feed setting. **Partial (#49):** a realm filter on the ThinkPages feed and realm boards; the dashboard feed and trending are not realm-scoped | pending-features §4 | M |
-| 11 | WikiOS portal to every realm's lore; realm-tagged forum | pending-features §4 | M |
-| 12 | Per-realm calendar label (a new settings key; there is no `yearOffset` field today) | pending-features §4 | S–M |
-| 13 | Procedural realm generation: wizard option plus `Realm.seed` / `generationParams` writes (the pipeline already supports it) | AT-15, pending-features §4 | M |
+| 7 | Founder tooling: settings, moderation, removing nations, succession using `lastSeenAt` | PF§4 | L |
+| 8 | Archived realms: read-only; excluded from jobs and payouts; every job made realm-aware | PF§4, code audit §9 | M |
+| 9 | Public founding application (decisions 6–7) | PF§4 | M |
+| 10 | Per-realm ThinkPages feed plus a global-feed setting. **Partial (#49):** a realm filter on the ThinkPages feed and realm boards; the dashboard feed and trending are not realm-scoped | PF§4 | M |
+| 11 | WikiOS portal to every realm's lore; realm-tagged forum | PF§4 | M |
+| 12 | Per-realm calendar label (a new settings key; there is no `yearOffset` field today) | PF§4 | S–M |
+| 13 | Procedural realm generation: wizard option plus `Realm.seed` / `generationParams` writes (the pipeline already supports it) | AT-15, PF§4 | M |
 | 14 | PNG realms get adjacency (`rebuildAdjacency` after import) | AT-16 | S |
 | 15 | Admin Realm Users tab supports several realms per user | AT-19 | S |
 
@@ -241,7 +243,7 @@ IxWorld.
 
 **Living world**
 - **Crisis engine:** a producer, the lifecycle state machine, player response postures, an admin UI; `auto-post.ts` wired
-  (pending-features §3).
+  (PF§3).
 - **NPC AI:** trait drift applied; responses to embassies, alliances and treaties; event-fatigue dampening.
 - **Diplomatic Response AI;** relative-development asymmetry used in trade maths.
 
@@ -265,17 +267,17 @@ the spine.
 
 | Item | Refs | Size | Depends on |
 |---|---|---|---|
-| Unify the three premium definitions → apply the real yield multiplier → enforce tier limits | pending-features §3, code audit §10 | M | — |
-| Payments/checkout (or keep premium admin-granted) | pending-features §4 | L | Decision D4 |
-| ✅ **Done (#49):** background evaluation (event hooks and the `achievements-evaluate` job) and 19 account-level achievements that need no nation. `db.ts` still runs `syncAchievements` at startup | pending-features §2–3, VT-26 | M | — |
-| Ribbons: model, award pipeline, Ribbons tab, signature shelf. **Partial (#49):** ribbons derived from real unlocks and a pinned shelf on the passport; the Ribbons tab and community ribbons are open | pending-features §4, VT-8 | L | Background evaluation |
-| NATION card minting per country; then `card-values` does real work | pending-features §3 | M | — |
-| Lore-first schema cleanup and the `CardRarity` enum; 40/25/20/10/4/1 distribution | pending-features §4 | M | — |
-| Vault reorder (Lore Gallery primary, category filters); themed packs; seasons | pending-features §4 | M | — |
+| Unify the three premium definitions → apply the real yield multiplier → enforce tier limits | PF§3 | M | — |
+| Payments/checkout (or keep premium admin-granted) | PF§4 | L | Decision D4 |
+| ✅ **Done (#49):** background evaluation (event hooks and the `achievements-evaluate` job) and 19 account-level achievements that need no nation. `db.ts` still runs `syncAchievements` at startup | PF§2–3, VT-26 | M | — |
+| Ribbons: model, award pipeline, Ribbons tab, signature shelf. **Partial (#49):** ribbons derived from real unlocks and a pinned shelf on the passport; the Ribbons tab and community ribbons are open | PF§4, VT-8 | L | Background evaluation |
+| NATION card minting per country; then `card-values` does real work | PF§3 | M | — |
+| Lore-first schema cleanup and the `CardRarity` enum; 40/25/20/10/4/1 distribution | PF§4 | M | — |
+| Vault reorder (Lore Gallery primary, category filters); themed packs; seasons | PF§4 | M | — |
 | Cosmetics visible to other players (a public equipped-cosmetics query) | VT-12 | M | — |
 | Inventory bulk Move and List Market | VT-21 | M | — |
 | Exchange (₷) economy: build (fix `spend`, 0 ₷ seed, conversion) or drop 11 models | VT-16 | L | Decision D5 |
-| Crafting extensions (catalysts, discovery, guilds, bulk) | pending-features §4 | L | M2 crafting |
+| Crafting extensions (catalysts, discovery, guilds, bulk) | PF§4 | L | M2 crafting |
 
 ---
 
@@ -308,10 +310,10 @@ the spine.
 
 | Lab | Next items | Refs |
 |---|---|---|
-| MyLeague / MyClub | Boxing bout engine; prediction market placing (SL-15); rivalries created (SL-16); Golden Box stage config and double elimination; patron-saint MyClub UI; promotion/relegation bulletin; broadcast mode, athlete cards, scouting/academy | pending-features §3–4 |
+| MyLeague / MyClub | Boxing bout engine; rivalries created (SL-16); Golden Box stage config and double elimination; patron-saint MyClub UI; promotion/relegation bulletin; broadcast mode, athlete cards, scouting/academy | PF§3–4 |
 | Onoma | Publish path for language packs (SL-18) → phases 4, 5, 8, 9 finished → phases 6, 10 (LLM) → platform integration (toponyms, demonyms, dynasties) | [onoma-roadmap.md](../systems/onoma-roadmap.md) |
-| Vexel | External ornaments, Commons charge seed, attribution, autosave, `[id]/preview`, P1 templates and conflicts | [vexel-prd.md](../specs/vexel-prd.md) |
-| Map pipeline | Real enrichment (AT-9); editor Wiki tab (AT-10); SmartPlacement (AT-11); storylines (AT-14) | code audit §3 |
+| Vexel | External ornaments, Commons charge seed, attribution, autosave, `[id]/preview`, P1 templates and conflicts | [Vexel PRD](../specs/2026-07-15-vexel-prd.md) |
+| Map pipeline | Real enrichment (AT-9); SmartPlacement (AT-11); storylines (AT-14). The editor Wiki tab (AT-10) is wired | [backlog](backlog.md#atlas-realms--identity-at) |
 | Strata, Dynas | Not started; scope first | — |
 
 ---
@@ -320,7 +322,7 @@ the spine.
 
 Run throughout, preferably in PRs that already touch the area.
 
-- **Dead schema:** drop the 57 fully dead models, and the always-empty ones once their feature is decided (code audit §8).
+- **Dead schema:** drop the 57 fully dead models, and the always-empty ones once their feature is decided ([backlog §5](backlog.md#5-dead-schema)).
   Needs M0 backups and Decisions D1, D2, D5 and D9.
 - **Dead code:** delete MC-18, PL-18, WK-18, SL-25 and AT-16. (The dead intelligence calculator, `calculator.ts` and
   `live-data-transformers.ts`, is already deleted; the models it alone wrote remain in the schema.)
@@ -349,7 +351,7 @@ Owner calls that block or reshape roadmap items. For each, the recommendation fr
 | D6 | Card rarity model | `CardRarity` enum without MYTHIC (lore-first spec) vs the current strings | Enum per the spec | Crafting fix |
 | D7 | ThinkShare encryption | Build real end-to-end encryption, or drop the schema fields and the flag | Drop | Schema drop |
 | D8 | ThinkPages follows | Build following, or remove the follower counters | Remove the counters for now | SL-9 |
-| D9 | Unused Prisma models | Approve the drop list in code audit §8 (57 models) | Approve after M0 backups | Code health |
+| D9 | Unused Prisma models | Approve the drop list in [backlog §5](backlog.md#5-dead-schema) (57 models) | Approve after M0 backups | Code health |
 | D10 | Narrator/LLM | Wire it into issues and decisions, or retire it | Retire until M4 needs it | WK-12 |
 | D11 | ScheduledChange pipeline | Use it for impact-delayed edits, or delete it | Delete unless M4 needs delays | MC-6 |
 | D12 | Forum moderation | In-app, or XenForo only | XenForo only; fix the help copy | WK-20 |

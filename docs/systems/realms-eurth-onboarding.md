@@ -1,5 +1,7 @@
 # Eurth Onboarding Runbook
 
+**Last updated:** 2026-10-05
+
 **Audience:** the site admin deploying the Realms feature and bringing up Eurth, the first realm outside
 IxWorld. Exact commands, no fluff. Background/decisions: [`docs/architecture/realms-framework-spec.md`](../architecture/realms-framework-spec.md).
 

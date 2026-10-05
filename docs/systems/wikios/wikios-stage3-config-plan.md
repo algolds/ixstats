@@ -20,7 +20,7 @@ snippet below is a **proposal to review** and is marked **DO NOT APPLY without s
 locked-down **headless render + template + Lua + edit engine** reachable only as an API/asset
 backend. No data changes, no parser changes — UI is hidden/redirected, everything reversible.
 
-**Scope reality (from `wikios-independence-2b-3.md` §Stage 3):** this is **ops in the OUTER repo**
+**Scope reality (from [wikios-independence-2b-3.md](../../history/systems/wikios/wikios-independence-2b-3.md) §Stage 3, now historical):** this is **ops in the OUTER repo**
 (`/etc/nginx/...`, `/ixwiki/config/LocalSettings.php`, `/ixwiki/mediawiki/...`), executed by a human
 with sign-off. It is independent of Stage 2b. Cross-wiki external sources (iiwiki / althistory /
 commons) are **separate origins and out of Stage 3 scope** — see Open Questions.
@@ -324,7 +324,7 @@ If any *(public)* asset line fails, **stop / rollback** — that's the over-bloc
 ---
 
 **Reminder:** this document changes nothing. Stage 3 is human-executed ops in the outer repo, behind
-the review gates in `wikios-longevity-workflow.md` (no prod config change without explicit go-ahead).
+the review gates in [wikios-longevity-workflow.md](../../history/systems/wikios/wikios-longevity-workflow.md) (historical) (no prod config change without explicit go-ahead).
 
 ---
 

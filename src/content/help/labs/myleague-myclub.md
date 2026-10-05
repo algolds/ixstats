@@ -3,7 +3,7 @@ title: MyLeague & MyClub
 description: Run simulated sports leagues, claim a team, and manage its roster, tactics, transfers and money.
 badge: Labs
 prevHref: /help/labs/overview
-prevLabel: Labs: Onoma, MyLeague & More
+prevLabel: Labs: Onoma, Vexel, MyLeague & More
 nextHref: /help/labs/onoma
 nextLabel: Onoma
 ---

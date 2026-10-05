@@ -1,5 +1,7 @@
 # Research Spike Decision Document: Sports LLM Commentary
 
+**Last updated:** 2026-09-29
+
 This document summarizes the research and recommendations for integrating LLM-generated play-by-play match commentary into the IxStates sports engine.
 
 ## Executive Summary

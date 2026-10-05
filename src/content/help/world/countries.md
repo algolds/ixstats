@@ -1,32 +1,35 @@
 ---
 title: Exploring Countries
-description: Browse every nation, read its factbook, and act on its profile.
+description: Browse every nation, read its profile and factbook, and act on it.
 badge: The World
 prevHref: /help/world/realms
 prevLabel: Realms & Claiming a Nation
-nextHref: /help/gameplay/simulation
-nextLabel: How the World Moves
+nextHref: /help/world/explore
+nextLabel: Explore & Comparing Nations
 ---
 
 ## The country directory
 
-**Explore** in the top menu opens [/countries](/countries), a directory of every nation in your realm (or another realm with `?realm=<realm>` in the address). Anyone can browse it.
+**Countries** ([/countries](/countries)), under **Realms** in the sidebar, lists every nation in your realm (or another realm with `?realm=<realm>` in the address). Anyone can browse it, signed in or not.
 
-- **Search** by name.
-- **Filter** by economic tier, continent, region and population range.
-- **Sort** by name, population, GDP per person, total GDP, economic tier, continent, region, land area or population density.
+- Nations appear in a **shuffled order** that changes on each visit, which makes it a good place to discover new ones. **Feeling lucky** opens a random nation from the current results.
+- **Search** by name, economic tier, continent or region.
+- **Filter** by continent and economic tier.
+
+To sort, filter by population or compare nations side by side, use [Explore](/help/world/explore) instead.
 
 ## A country's profile
 
-Select a nation to open its profile at `/countries/<name>`. The header shows its flag, name, key figures and, if it has an active owner, the owner's top three achievement ribbons. The profile has three parts:
+Select a nation to open its profile at `/countries/<name>`. The header shows its flag, name, key figures and, if it has an active owner, the owner's top achievement ribbons. The profile has four tabs:
 
 | Tab | What's there |
 | --- | --- |
-| **Factbook** | The nation's figures, with pages for Economy, Geography, Government and Labor |
-| **Dossier** | Its lore and write-ups |
+| **Profile** | The nation at a glance: vitals, economy, government, land, relations and its chronicle |
+| **Factbook** | The full figures, with pages for Economy, Labor, Government and Geography |
+| **Dossier** | Its lore from the wiki, plus lore documents you write in the [Canvas editor](/help/mycountry/canvas-editor), which are kept in your own browser |
 | **Activity** | Its recent activity and history |
 
-You may also see alternative experimental layouts offered on the profile; those use sample figures, so switch back to the standard factbook for real data.
+Every figure comes from live data. Visitors see the nation's public record only: enacted directives and resolved national issues, not drafts, open issues or detailed budgets.
 
 ## Country Actions
 

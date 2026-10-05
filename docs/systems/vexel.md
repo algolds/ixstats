@@ -7,7 +7,7 @@ design that has a rendered image URL, and nothing renders one yet.
 `/labs/vexel/registry` · `/labs/vexel/registry/[id]`
 **Code:** `src/server/api/routers/heraldry/` (`queries.ts`, `mutations.ts`), `src/lib/heraldry/`,
 `src/components/maps/vexel/`, `prisma/schema/heraldry.prisma`
-**Product spec:** [Vexel PRD](../specs/vexel-prd.md)
+**Product spec:** [Vexel PRD](../specs/2026-07-15-vexel-prd.md)
 
 Vexel designs coats of arms as structured data. A design (a "heraldic achievement") is a JSON composition: field,
 divisions, ordinaries, charges and tinctures. Vexel draws it as SVG and writes its blazon (the formal text
@@ -113,5 +113,5 @@ None.
 
 ## Related documentation
 
-- [Vexel PRD](../specs/vexel-prd.md) (requirements and status table)
+- [Vexel PRD](../specs/2026-07-15-vexel-prd.md) (requirements and status table)
 - [Maps](./maps.md): the political map layer whose cache attach clears

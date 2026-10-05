@@ -1,31 +1,36 @@
 ---
 title: Finding Your Way Around
-description: The top menu, the Halo search palette, keyboard shortcuts, and Settings.
+description: The sidebar, the tab bar on phones, Halo search and shortcuts, and where Settings lives.
 badge: Start Here
 prevHref: /help/getting-started/gameplay-overview
 prevLabel: How It All Fits Together
-nextHref: /help/getting-started/ixtime
-nextLabel: The World Clock (IxTime)
+nextHref: /help/getting-started/halo
+nextLabel: Halo & the Sidebar
 ---
 
-## The top menu
+## The sidebar
 
-The bar at the top of every page gets you to the main areas. Some items only show once you're signed in or have a nation.
+The sidebar on the left of every page (except the full-screen maps) lists the main areas of IxStats. Select one to open it and see its sections underneath. Some areas only show once you're signed in.
 
-- **Dashboard** ([/dashboard](/dashboard)): the activity feed, trending posts and quick links.
-- **Explore** ([/countries](/countries)): every nation, with search and filters. See [Exploring Countries](/help/world/countries).
-- **MyCountry** ([/mycountry](/mycountry)): run your nation. Needs a nation.
+- **Home**: your [Dashboard](/dashboard) with the activity feed, plus Messages, ThinkTanks and ThinkPages.
+- **MyCountry** ([/mycountry](/mycountry)): run your nation. Its sections (Overview, Directives, Economy, Diplomacy, Politics and, with Premium, Defense) are listed right in the sidebar.
 - **Maps** ([/maps](/maps)): the world map.
-- **Forum** ([/forum](/forum)) and **Wiki** ([/wiki](/wiki)).
-- **Vault** ([/vault](/vault)): IxCredits, cards and achievements.
-- **Labs**: experimental tools such as MyLeague and Onoma, when Labs is switched on for you. See [Labs](/help/labs/overview).
-- **Help** ([/help](/help)): these guides.
+- **Vault** ([/vault](/vault)): IxCredits, your daily reward, cards, the marketplace and crafting.
+- **Wiki** ([/wiki](/wiki)) and **Forum** ([/forum](/forum)).
+- **Realms**: [Countries](/countries) and [Explore](/explore) to browse every nation, card collections, [Leaderboards](/leaderboards) and the [realm directory](/realms). See [Exploring Countries](/help/world/countries).
+- **Labs**: experimental tools (Onoma, Vexel, MyLeague and MyClub), when Labs is switched on for you. See [Labs](/help/labs/overview).
+- **Help** ([/help](/help)): these guides and What's new.
+- **Settings** ([/settings](/settings)): every settings panel.
 
-Click your avatar for the user menu: your nation, the nation switcher (if you own more than one nation), Dashboard, Account Settings, IxnayID Connections and Sign Out.
+Your **account** sits at the bottom of the sidebar: your nation, your passport, IxnayID connections, sign out and, if you own more than one nation, the nation switcher. Below it are links to the changelog, Feedback, Privacy and Terms.
+
+The collapse button shrinks the sidebar to a strip of icons. On a phone or narrow window the sidebar becomes a **tab bar** at the bottom with four areas and **More**, which holds everything else.
+
+The full tour of every area is in [Halo & the Sidebar](/help/getting-started/halo).
 
 ## Halo: search and shortcuts
 
-Halo is the floating bar at the top of the screen. It shows the IxTime clock and gives you search, notifications and quick settings.
+Halo is the floating bar at the top of the page. It shows the IxTime clock and gives you search, notifications, messages and quick settings.
 
 | Shortcut | What it does |
 | --- | --- |
@@ -34,29 +39,12 @@ Halo is the floating bar at the top of the screen. It shows the IxTime clock and
 | `Ctrl` + `,` (`Cmd` + `,`) | Open quick settings |
 | `Esc` | Clear the search, or close Halo |
 
-Search finds countries, wiki articles and pages. Typing a command name such as "Toggle Dark/Light Theme", "Toggle Audio" or "Mark All Notifications Read" runs it.
+Search finds countries, wiki articles and pages. Typing a command such as "Toggle dark or light theme", "Toggle sound effects" or "Mark all notifications read" runs it. You can also type a MyCountry area (for example "Fiscal" or "Legislature") to jump straight to it.
 
 Shortcuts are ignored while you are typing in a text box, except `Ctrl`/`Cmd` + `K` inside the search box itself.
 
-## Getting around MyCountry
-
-MyCountry has its own navigation for its sections: the home page, Executive directives, Economy, Politics, Diplomacy, Defense, the Country Editor and the map editor. You can also type any of these into Halo search (for example "Fiscal" or "Legislature"). See the [MyCountry overview](/help/mycountry/overview).
-
 ## Settings
 
-[Settings](/settings) has a searchable sidebar with these panels:
+[Settings](/settings) has ten panels, listed under **Settings** in the sidebar: IxnayID & Passport, MyCountry, Appearance & accessibility, WikiOS, Notifications, Social & ThinkPages, Privacy & security, Vault status, Cosmetics and NationStates cards. What each one does is in [Your Settings](/help/getting-started/settings).
 
-| Panel | What's there |
-| --- | --- |
-| IxnayID & Passport | Username, email, linked wiki/forum/Discord accounts, your passport |
-| MyCountry Settings | Nation details, custom flag, map data sync |
-| Appearance & Theme | Light, dark or system theme; motion and density |
-| WikiOS Options | Reader layout and article navigation |
-| Notifications | Which notifications you get and how |
-| Social & Thinkpages | Your ThinkPages persona settings |
-| Privacy & Security | Profile visibility and data export |
-| Vault Status | IxCredits balance, streak and level |
-| Cosmetics & Upgrades | Items you've bought in the Vault Shop |
-| NationStates Card Sync | Your imported NationStates cards |
-
-Your theme choice is remembered on this device.
+Your theme and other appearance choices are remembered on this device.

@@ -1,5 +1,7 @@
 # 🗺️ Atlas — Spatial Geography & Cartographic Studio
 
+**Last updated:** 2026-09-30
+
 **Parent App Suite:** Atlas (app version 2 — `VERSIONS.apps.ixworld`, exported as `IXWORLD_VERSION`; `IxWorld` is the in-code app name)  
 **Engine:** Atlas Spatial Engine (`ATLAS_ENGINE_VERSION = 5`)  
 **Subsystems:** Interactive World Map, Vector Map Editor Studio, Spatial Geographic Analyzer  

@@ -1,5 +1,7 @@
 # User Profile Utils - Usage Guide
 
+> **Retired 2026-10-05** to [docs/history/](../README.md). Its module was deleted in June 2026.
+
 > **OBSOLETE (verified 2026-09-29):** `src/lib/user-profile-utils.ts` was deleted on 2026-06-14 in commit `312b73018` ("remove 475 unreachable files") and none of the functions below (`getUserProfile`, `getUserProfiles`, `getUserDisplayName`, `formatUserDisplay`, `preloadUserProfiles`) exist anywhere in `src/`. Author display now goes through the tRPC `users` router (e.g. `users.resolveWikiAuthor`) and per-feature queries. This page is kept for history only and is a candidate for `docs/archive/`.
 
 ## Overview

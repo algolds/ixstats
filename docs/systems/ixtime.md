@@ -1,5 +1,7 @@
 # ⚙️ IxTime: Concord Living-World Temporal Engine
 
+**Last updated:** 2026-10-02
+
 **Parent Engine:** Concord Simulation Engine (`CONCORD_ENGINE_VERSION = 2`)  
 **Platform Pillar:** Temporal Master World Clock & Simulation Ticks  
 **Role:** Living-World Simulation Backend | **Status:** ✅ Live; see [SYSTEM_STATUS.md](SYSTEM_STATUS.md)  

@@ -1,5 +1,7 @@
 # 🎯 Halo — Facet UI Contextual Overlay & Command Palette
 
+**Last updated:** 2026-10-05
+
 **Parent Platform Layer:** Facet UI Design System (`FACET_VERSION = 4` / `HALO_VERSION = 6`)  
 **Subsystems:** Contextual Floating Capsule, `Cmd+K` Command Palette, Unified Notification Tray, Plugin Registry  
 **Primary Action:** `NAVIGATE` | **Domain Accent:** Universal Slate / Context-Adaptive  
@@ -115,8 +117,8 @@ A second `CORE_FEATURES` list adds quick shortcuts (Dashboard, Leaderboards, Map
 Each entry contains an array of search keywords and synonyms. Queries match against title, description, category, and keywords in a single normalized lookup pass:
 - Typing `"military"`, `"army"`, `"fleet"`, or `"war"` matches **National Defense & Readiness**.
 - Typing `"booster"`, `"unbox"`, or `"gacha"` matches **Open Card Packs**.
-- Typing `"dark mode"`, `"light mode"`, or `"appearance"` matches **Toggle Dark/Light Theme**.
-- Typing `"sfx"`, `"audio"`, `"mute"`, or `"volume"` matches **Toggle Audio & Sound Effects**.
+- Typing `"dark mode"`, `"light mode"`, or `"appearance"` matches **Toggle dark or light theme**.
+- Typing `"sfx"`, `"audio"`, `"mute"`, or `"volume"` matches **Toggle sound effects**.
 
 ### 3. In-Palette System Execution
 System actions execute instantly via hook callbacks without requiring full-page navigation:
@@ -265,7 +267,7 @@ Under clean modular boundaries:
 ## Related Documentation
 
 - [MyCountry Design & Statecraft Guide](./mycountry.md)
-- [WikiOS System Guide](./wikios.md)
+- [WikiOS System Guide](./wikios/WIKIOS.md)
 - [Forum Integration](./forum.md)
 - [Cards & Vault System](./cards.md)
 - [Facet Design System](../reference/facet-design-system.md)

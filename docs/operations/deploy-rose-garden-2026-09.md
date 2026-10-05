@@ -1,5 +1,8 @@
 # Deploying `rose-garden` to production (September 2026 plan wave)
 
+> **One-off runbook.** It retires to [docs/history/](../history/README.md) once 1.4 is released; the standing
+> procedure is the [release guide](release-guide.md).
+
 **For:** whoever deploys IxStats on the prod host (`ssh ixwiki`, root). **Written:** 2026-09-27.
 Read it end to end once before starting. Every command here is meant to be run by hand.
 
@@ -194,7 +197,7 @@ pm2 logs ixstats-ws --lines 30 --nostream       # expect "[WS] ✓ ThinkPages We
 
 ## 6b. Serve Eurth (the first outside realm)
 
-Full detail and player instructions: `docs/realms/eurth-onboarding.md`. On prod:
+Full detail and player instructions: [`docs/systems/realms-eurth-onboarding.md`](../systems/realms-eurth-onboarding.md). On prod:
 
 1. Re-run `bun scripts/realms/backfill-foundation.ts` (dry run): expect `0 to assign, 0 collisions` — anything else
    means someone linked a nation between the backfill and the deploy; resolve as in 5a.

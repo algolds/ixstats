@@ -1,5 +1,8 @@
 # IxStates Community Feedback Analysis (Discord, June 2026)
 
+**Last updated:** 2026-10-05 (merged in the former `systems/community-feedback-audit.md` as
+[How the feedback was addressed](#how-the-feedback-was-addressed))
+
 Analysis of a design debate among Heku (dev), Urcea, and Burg about IxStates' direction. Grounded in
 the lore-first platform vision (wiki = truth → maps → mycountry → thinkpages → forum).
 
@@ -69,3 +72,63 @@ The most powerful unifying idea — "data = lore = world" — is also what trigg
 reconcile with data). Don't resolve it by insisting there's no trade-off. There *is* a texture change;
 win by showing the trade is favorable: trade hand-wavium for a world where story and numbers can never
 silently disagree. Name the trade instead of denying it.
+
+---
+
+## How the feedback was addressed
+
+Later co-design sessions with **Urcea**, **Keaor**, **Burg** and **Heku** (summarised in August 2026) turned these
+positions into the design of the Intent Engine, the Command Surface and the Statecraft loop of MyCountry. Status
+notes were checked against the code on 2026-10-05; open items are in the [backlog](../roadmap/backlog.md).
+
+### Urcea — narrative first
+
+*"Systems should serve the story players tell themselves, not become something to manage."* Urcea objected to
+"cognitive friction", where a formula contradicts what players agreed in roleplay (for example, penalising two nations
+that chose to be close allies).
+
+- **Qualitative bands** (Tense, Neutral, Cooperative) on the home surface instead of raw percentages.
+- **The canonical loop:** action → world effect → narrative → ledger. One declared intent produces a computed effect
+  and a ThinkPages headline, with no manual wiki-table edits.
+- **Proactive / reactive split:** Directives for initiatives, the Issues inbox for situations.
+
+### Keaor — political structure
+
+*"Mechanics must reflect political realities, asymmetry, and delegation."*
+
+- **Relative-development asymmetry:** free trade with a poor nation is not free trade with a rich one, so benefits
+  should be priced by both nations' tiers. Status: shown on embassy cards; not yet used in trade maths.
+- **Coalitions and mandate:** a leader balances cabinet support and party polling, which became the Mandate and
+  Cabinet Deliberation designs. Status: cabinet meetings conclude with decisions; the deliberation loop and mandate as a
+  gate are not built.
+- **Civil Service Capacity (CivCap):** shown as `Allocated (+Temp) / Total`, for example `100 (+50) / 300`
+  (`src/lib/government/civcap.ts`).
+- **Issue delegation:** hand a non-urgent issue to the civil service for 15 CivCap (`DELEGATED_ISSUE_CIVCAP`).
+
+### Burg — guardrails
+
+*"The engine must prevent unearned power."*
+
+- **Stat inflation:** players must not be able to inflate numbers into unearned dominance.
+- **Legible governance:** every stat change should be visible and auditable. This became the executive record on
+  MyCountry (`ExecutiveRecordFeed`), fed by bounded changes from the event spine.
+
+### Heku — integration
+
+*"Data = Lore = World."*
+
+- **Hiding the math:** qualitative bands on the Command Surface, the formulas in drill-down sheets.
+- **The narrative spine:** `CountryEventSpine` (`src/lib/activity/event-spine.ts`) applies a bounded stat change
+  (clamped per field), writes the ledger and publishes the headline, serving Burg and Urcea at once. Status: directives
+  use it (`routers/intent.ts`); diplomacy, defense, elections and meetings don't yet.
+
+### The resulting Statecraft loop
+
+1. **IN:** the world (or power brokers) presents an issue or crisis.
+2. **SEE:** the player spends CivCap to assess it, limited by information fog.
+3. **OUT:** the player declares an intent or directive, or responds to the issue.
+4. **RIPPLE:** the engine clamps the change, writes it to the ledger (Burg's guardrail) and broadcasts the story to
+   ThinkPages (Urcea's canonical loop).
+
+The loop's design and what is built are tracked in
+[statecraft-game-loops.md](../systems/statecraft/statecraft-game-loops.md).

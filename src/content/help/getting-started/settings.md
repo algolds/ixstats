@@ -38,13 +38,19 @@ These are saved **in this browser**, so set them again on another device. When a
 ## WikiOS
 
 - **Article outline** (the floating table of contents) and **Wiki results in search** work.
+- **Citation tooltips**: when off, hovering a citation number no longer shows a preview card.
+- **Open links in a new tab**: when on, clicking a link in an article opens it in a new tab. Links within the page and citation links stay put.
 - **Image backplate** changes how transparent flags and diagrams look in dark mode.
-- **Citation tooltips** and **Open links in a new tab**: not active yet.
 - **MyCountry inline lore**: not active yet.
 
 ## Notifications
 
-Email summaries, desktop push alerts, the alert categories and the minimum urgency are saved, but **none of them is active yet**: IxStats only shows notifications inside the site, in Halo, and doesn't filter them by these choices. See [Halo & the Sidebar](/help/getting-started/halo#notifications-and-messages).
+IxStats shows notifications inside the site, in Halo; there are no email or push notifications.
+
+- **Alert categories**: switch off Economic events, Crisis and security, Diplomacy or Platform notices to stop notifications of that kind reaching you.
+- **Priority threshold**: hide notifications below the urgency you choose.
+
+These apply to notifications sent to you personally. Announcements to your whole nation or to everyone always show. See [Halo & the Sidebar](/help/getting-started/halo#notifications-and-messages).
 
 ## Social & ThinkPages
 
@@ -52,10 +58,12 @@ Post frequency, political lean and writing tone for your ThinkPages persona are 
 
 ## Privacy & security
 
-- **Blocked accounts**: a blocked player can't invite you to a [ThinkTank](/help/social/thinktanks). Blocking doesn't affect messages, mentions or feeds yet.
-- **ThinkTank invites** (everyone, followers or nobody): active.
-- **Muted accounts and muted words**, and the options for direct messages, mentions, trade offers, search visibility, online status, read receipts and profile details: **not active yet**.
-- **Clear search and browsing history**: not active yet.
+This panel shows only the options that work today.
+
+- **Blocked accounts**: a blocked player can't message you or start a conversation with you, can't invite you to a [ThinkTank](/help/social/thinktanks), and their posts are hidden from your ThinkPages and activity feeds. You can also block a whole nation.
+- **Muted accounts**: their posts are hidden from your feeds, but they can still message you.
+- **ThinkTank invites** (everyone, followers or nobody): who may invite you.
+- **Appear in invite search**: turn off to stop ThinkTank owners finding you by name when they invite members.
 - **Export your data**: downloads a copy of your account data as a file.
 - **Sessions and two-step verification**: opens your sign-in account's security page.
 

@@ -1,5 +1,7 @@
 # Autosave & Auto-Sync Architecture
 
+**Last updated:** 2026-10-05
+
 **Core Engine**: `src/hooks/useGenericAutoSync.ts`  
 **Consumers**: Economy Builder only (`useEconomyAutoSync`, `src/app/builder/components/enhanced/economy-builder/useEconomyAutoSync.ts`). There are no government or tax autosave hooks (the `useBuilderAutoSync.ts` module with `useGovernmentBuilderAutoSync` / `useTaxBuilderAutoSync` no longer exists). National Identity and the Map Editor do not use this engine.  
 **Protocol**: Client-driven debounced delta sync with deep equality detection and optimistic conflict handling

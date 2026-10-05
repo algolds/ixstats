@@ -1,11 +1,13 @@
 # Code Audit — Unfinished & Broken Work (2026-09-30)
 
+> **Retired 2026-10-05** to [docs/history/](../README.md). Open IDs live in [backlog.md](../../roadmap/backlog.md); this copy keeps the original evidence.
+
 **Scope:** every product area on `rose-garden` @ `b7cc2392`, read from the code rather than the docs.
-**Companion docs:** [ROADMAP.md](ROADMAP.md) (the plan) · [pending-features.md](pending-features.md) (the doc-based backlog of
+**Companion docs:** [ROADMAP.md](../../roadmap/ROADMAP.md) (the plan) · [pending-features.md](pending-features.md) (the doc-based backlog of
 2026-09-29).
 
 This register lists what the doc audit missed. Each item was found by reading code, grepping for callers and writers,
-and checking the plan 312 deletion diff (`cc12cf122`). IDs are stable; [ROADMAP.md](ROADMAP.md) refers to them.
+and checking the plan 312 deletion diff (`cc12cf122`). IDs are stable; [ROADMAP.md](../../roadmap/ROADMAP.md) refers to them.
 Security-relevant items marked ★ were re-checked by hand.
 
 **Type:** `BUG` broken behaviour · `SEC` security or economy exploit · `STUB` fake or placeholder behaviour that ships ·

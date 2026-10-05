@@ -1,5 +1,7 @@
 # Credential Management & Security Guide
 
+**Last updated:** 2026-09-29
+
 ## Table of Contents
 1. [Security Overview](#security-overview)
 2. [Required Credentials](#required-credentials)

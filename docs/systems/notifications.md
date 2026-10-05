@@ -1,7 +1,8 @@
 # Notifications
 
 **Last updated:** 2026-10-05
-**Status:** Live. In-app notifications only: there is no email, push or Discord delivery.
+**Status:** Live. In-app notifications only: there is no email, push or Discord delivery. Per-user category and
+minimum-urgency preferences are enforced for single-user notifications (2026-10-05, SL-5).
 **Routes:** the Halo notification tray (every page except `/maps`), `/settings?tab=notifications`, `/admin/notifications`
 **Code:** `src/server/api/routers/notifications/` (`user.ts`, `preferences.ts`, `events.ts`), `src/lib/notifications/`,
 `src/components/halo/views/NotificationsView.tsx`, `src/stores/notificationStore.ts`, `src/hooks/useLiveNotifications.ts`
@@ -20,7 +21,7 @@ count. A separate client-only path shows toasts.
 | :--- | :--- |
 | `Notification` | One notification. `userId` set: for that user. `countryId` set: for that country's players. Both null: global. Also `title`, `message`, `description`, `href`, `type`, `category`, `priority` (default `medium`), `severity` (default `informational`), `source`, `actionable`, `deliveryMethod`, `metadata` (JSON string), `read`, `dismissed` |
 | `NotificationEventConfig` | Admin on/off switch per event key (`eventKey`, `enabled`, `category`, `source`, `triggerType`). Rows are created by `seedEvents` |
-| `UserPreferences` | Per-user preference row: `emailNotifications`, `pushNotifications`, `economicAlerts`, `crisisAlerts`, `diplomaticAlerts`, `systemAlerts`, `notificationLevel` (plus the wiki preferences) |
+| `UserPreferences` | Per-user preference row, keyed by Clerk id: `economicAlerts`, `crisisAlerts`, `diplomaticAlerts`, `systemAlerts`, `notificationLevel` (read when notifying; see §3), `emailNotifications`, `pushNotifications` (stored, no control and no delivery), plus the wiki preferences |
 | `IntelligenceAlertThreshold` | Admin-set metric thresholds per country (`prisma/schema/intelligence.prisma`) |
 
 ### Who sees a notification
@@ -32,7 +33,7 @@ count. A separate client-only path shows toasts.
 - rows for the caller's country (`countryId` = `User.countryId`).
 
 `getUnreadCount` and `markAllAsRead` use `visibleNotificationFiltersById`, which also matches the internal `User.id`.
-The list query does not (see [Known gaps](#6-known-gaps)).
+The list query and single-row `markAsRead` / `dismissNotification` do not (see [Known gaps](#8-known-gaps)).
 
 ## 2. Categories and events
 
@@ -61,13 +62,40 @@ cache. An event with no config row is enabled. Two places check it:
 
 A suppressed `create` throws; callers wrap it in try/catch.
 
-## 3. Delivery paths
+## 3. Recipient preferences
+
+Settings → Notifications (`NotificationSettingsPanel`) saves four category switches and a minimum urgency to
+`UserPreferences`. `recipientAccepts()` (`src/lib/notifications/recipient-preferences.ts`) applies them inside
+`notificationAPI.create` and `createMany`, after the event guard:
+
+| Switch | Field | Categories it governs |
+| :--- | :--- | :--- |
+| Economic events | `economicAlerts` | `economic`, `cards` |
+| Crisis and security | `crisisAlerts` | `crisis`, `security`, `military` |
+| Diplomacy | `diplomaticAlerts` | `diplomatic` |
+| Platform notices | `systemAlerts` | `system` |
+
+Other categories (governance, social, achievement, …) have no switch and always pass.
+
+**Priority threshold** (`notificationLevel`): `low` and `all` let everything through, `medium` drops `low`-priority
+notifications, `high` drops `low` and `medium`. A notification with no priority counts as `medium`.
+
+- Only notifications with a `userId` are filtered. Country-wide and global notifications always show.
+- The recipient may be addressed by Clerk id or internal `User.id`; both resolve to the Clerk-keyed preference row.
+- A user who never saved preferences gets the panel's defaults (everything on, `low`).
+- A filtered `create` returns `""` and writes nothing (unlike the event guard, it does not throw). `createMany` drops
+  the filtered rows and writes the rest.
+- Preference reads fail open: a database error delivers the notification.
+- Writers that bypass `notificationAPI` (`lib/sports/club-notify.ts`, the messaging module's admin broadcast (`sendAdminBroadcast`),
+  admin `createNotification`) are not filtered.
+
+## 4. Delivery paths
 
 | Path | What it does | Persisted |
 | :--- | :--- | :--- |
 | `notificationAPI` (`api.ts`) | `create`, `createMany`, `trigger` and helpers (`notifyCountry`, `notifyGlobal`, `notifyEconomicChange`, `notifyQuickActionResult`, `notifyAdminAction`, …). About 30 server files call `notificationAPI.create` | `Notification` row |
 | `notificationHooks` (`hooks.ts`) | Domain hooks (`onDiplomaticEvent`, `onAchievementUnlock`, `onThinktankActivity`, …) that check the guard and then create rows | `Notification` row |
-| Direct `db.notification.create` | `lib/sports/club-notify.ts` (club match results, when the sports `clubDms` setting is on) and `notifications.createNotification` | `Notification` row |
+| Direct `notification.create` | `lib/sports/club-notify.ts` (club match results, when the sports `clubDms` setting is on), `server/modules/messaging/conversation-operations.ts` (`sendAdminBroadcast`) and the admin `notifications.createNotification`. Not filtered by recipient preferences | `Notification` row |
 | `notifyFromStore` (`notify-store.ts`, `useNotify`) | Client toast (sonner `ToastBanner` with a Cuelume sound). `priority: "low"` and `silent` skip the toast. With `persistent: true` it also adds an entry to the in-memory `useNotificationStore` | Browser memory only |
 
 Server writers include achievements, auctions and card market, budget year rollover, elections, diplomacy (embassies,
@@ -79,7 +107,7 @@ called from `countries.update`).
 `notifyAdminAction` sets `deliveryMethod` (`modal`, `dynamic-island` or `toast`), but the tray does not read
 `deliveryMethod`; every row is shown the same way.
 
-## 4. The Halo tray
+## 5. The Halo tray
 
 `NotificationsView` (`src/components/halo/views/NotificationsView.tsx`) opens from the Halo bell or `Ctrl`/`Cmd` + `N`.
 
@@ -98,7 +126,7 @@ called from `countries.update`).
 `getUnreadCount` every 30 seconds and on window focus. It prefixes the page title with `(N) `.
 `title-badge.ts` keeps the prefix right when several instances are mounted.
 
-## 5. Procedures
+## 6. Procedures
 
 `api.notifications.*` (the three files are merged with `mergeRouters`):
 
@@ -106,7 +134,7 @@ called from `countries.update`).
 | :--- | :--- | :--- |
 | `getUserNotifications` | public | Empty result when signed out. Filters `dismissed: false`; optional `unreadOnly`, `type` |
 | `getUnreadCount` | public | 0 when signed out. Identity from `ctx` only |
-| `markAsRead`, `dismissNotification`, `markAllAsRead` | protected, light rate limit | Accept an optional `userId` input (see gaps) |
+| `markAsRead`, `dismissNotification`, `markAllAsRead` | protected, light rate limit | Always act on the caller. An optional `userId` input is still accepted for old clients and ignored. A row the caller can't see is `NOT_FOUND` |
 | `getPreferences`, `upsertPreferences` | protected / protected light rate limit | Caller may only read or write their own row (`input.userId` must equal `ctx.auth.userId`) |
 | `createNotification`, `deleteNotification`, `deleteAllNotifications` | admin | Admin composer and browser |
 | `getAllEvents`, `seedEvents`, `toggleEvent`, `batchToggleEvents` | admin | Event registry panel |
@@ -116,22 +144,20 @@ called from `countries.update`).
 The admin console page `/admin/notifications` has the composer, browser, events registry, alert rules and a test
 suite panel (`src/app/admin/notifications/_components/`).
 
-## 6. Jobs
+## 7. Jobs
 
 There is no notification job. Notifications are written by the code paths above, including cron jobs such as
 `budget-year-rollover`, `elections` and the sports season cron.
 
-## 7. Known gaps
+## 8. Known gaps
 
-- **Preferences have no effect.** `UserPreferences` notification fields are saved by Settings, but no delivery path
-  reads them. Email summaries, desktop push, the category switches and the minimum urgency are display-only.
-- **No email or push delivery** exists.
+- **No email or push delivery** exists; the Settings toggles for them are hidden. `emailNotifications` and
+  `pushNotifications` are still stored.
+- **Preferences cover single-user notifications only**, and only those written through `notificationAPI` (see §3).
 - **List and badge disagree for rows keyed by internal user id.** `getUserNotifications` and single-row
-  `markAsRead`/`dismissNotification` match `userId` against the Clerk id only, while `getUnreadCount` also matches
-  `User.id`. Sports club results (`club-notify.ts`) are written with `SportTeam.ownerUserId` (an internal id), so they
-  raise the badge but never appear in the tray list.
-- **`markAsRead`, `dismissNotification` and `markAllAsRead` trust `input.userId`** over the session
-  (`user.ts:175`, `:190`, `:206`), so a signed-in caller can mark another user's notifications read or dismissed.
+  `markAsRead`/`dismissNotification` match `userId` against the Clerk id only, while `getUnreadCount` and
+  `markAllAsRead` also match `User.id`. Sports club results (`club-notify.ts`) are written with
+  `SportTeam.ownerUserId` (an internal id), so they raise the badge but never appear in the tray list.
 - The tray loads 8 rows; there is no full notification history page.
 - `deliveryMethod` and `severity` are stored but the tray ignores them.
 - "Executive" notifications have no producer, and "enhanced" (client) entries are lost on reload.

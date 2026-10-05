@@ -73,7 +73,7 @@ Commitments produce a **bounded, clamped** world-state change and a narrative en
 
 ### Realm-First Product Model
 
-IxWorld is one realm among several: every country belongs to a realm (`Country.realmId`) and has an owner (`Country.ownerUserId`). Realms Phase 1 shipped in September 2026 with **Eurth** as the first hosted realm — players claim a realm's nation page (auto-approved when their verified wiki account created it), realm hubs list claimable nations and lore, and cross-country listings and map layers are realm-scoped while the simulation stays global. See [`docs/architecture/realms-framework-spec.md`](docs/architecture/realms-framework-spec.md) and the [Eurth onboarding runbook](docs/realms/eurth-onboarding.md).
+IxWorld is one realm among several: every country belongs to a realm (`Country.realmId`) and has an owner (`Country.ownerUserId`). Realms Phase 1 shipped in September 2026 with **Eurth** as the first hosted realm — players claim a realm's nation page (auto-approved when their verified wiki account created it), realm hubs list claimable nations and lore, and cross-country listings and map layers are realm-scoped while the simulation stays global. See [`docs/architecture/realms-framework-spec.md`](docs/architecture/realms-framework-spec.md) and the [Eurth onboarding runbook](docs/systems/realms-eurth-onboarding.md).
 
 ### 🏛️ MyCountry — Head of State Command Suite & Simulation
 

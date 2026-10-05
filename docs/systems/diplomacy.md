@@ -1,5 +1,7 @@
 # 🏛️ MyCountry Diplomacy Domain
 
+**Last updated:** 2026-10-04
+
 **Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
 **Engine:** Concord Living-World Simulation Engine (`CONCORD_ENGINE_VERSION = 2`)  
 **Primary Action:** `ALLIED` | **Domain Accent:** Cyan Blue (`#06B6D4` / `--color-cyan-500`)  

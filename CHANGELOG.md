@@ -56,8 +56,8 @@ reads 1.4.0 until the RC2 cut.
   Inspector, and tool pages take the full width. MyCountry's flag is the header cover banner, the Overview shows
   domain peeks, and the executive console is URL-driven (`?mode=executive`).
 - Docs: [Facet 4 reference](docs/reference/facet-design-system.md) ·
-  [spec](docs/superpowers/specs/2026-10-04-facet-4-design.md) ·
-  [sidebar spec](docs/superpowers/specs/2026-10-04-facet-4-sidebar-design.md). The per-app sweep is in progress.
+  [spec](docs/specs/2026-10-04-facet-4-design.md) ·
+  [sidebar spec](docs/specs/2026-10-04-facet-4-sidebar-design.md). The per-app sweep is in progress.
 
 ### 🔁 Seven Audit Loops Closed (PR #49, 2026-09-30)
 
@@ -111,7 +111,7 @@ reads 1.4.0 until the RC2 cut.
   MenuButton, SearchField; opaque FacetCard, FacetList/FacetRow, Stat, EmptyState; opaque dialogs, glass popovers and
   menus, a responsive Sheet (bottom sheet with detents on phones); full ARIA for tabs, switches and toggles.
 - **Sound:** Cuelume plays only for meaningful moments and is muted by Reduce Motion or the sound setting.
-- Docs: [Facet 3 reference](docs/reference/facet-design-system.md) · [spec](docs/specs/2026-09-30-facet-3-design-system.md)
+- Docs: [Facet 3 reference](docs/reference/facet-design-system.md) · [spec](docs/history/specs/2026-09-30-facet-3-design-system.md)
   · [audit](docs/audits/FACET_STYLE_AUDIT_2026-09-30.md). Facet version 2 → 3.
 
 ### 📚 Admin Reference Catalogs Reach Players (2026-09-30)
@@ -143,7 +143,7 @@ reads 1.4.0 until the RC2 cut.
 - **Realm maps**: PNG realm maps run through the Full Pipeline with colour → nation mapping; claimed nations take their
   map region; the map's IndexedDB cache is keyed by the realm the server resolved.
 - **Operations**: throttled `lastSeenAt`, the Phase 1 ownership backfill script (refuses `--apply` while owner
-  collisions remain), an admin-set nation cap, and the [Eurth onboarding runbook](docs/realms/eurth-onboarding.md).
+  collisions remain), an admin-set nation cap, and the [Eurth onboarding runbook](docs/systems/realms-eurth-onboarding.md).
   Spec: [realms-framework-spec.md](docs/architecture/realms-framework-spec.md).
 
 ### 🪪 Identity: Verified Wiki Accounts & Passport (Plan 188)
@@ -826,7 +826,7 @@ reads 1.4.0 until the RC2 cut.
   - **System Bibles (`docs/systems/`)**: Canonically documented all 16 platform systems in [`SYSTEM_STATUS.md`](docs/systems/SYSTEM_STATUS.md), along with dedicated sub-suites for Statecraft game loops (`statecraft/`), WikiOS Stage 2b/3 isolation (`wikios/`), Halo v4 plugin system, UPG v2 Voronoi map engine, Onoma brand/voice, and IxVault collectibles.
   - **Operations & Processes (`docs/operations/`, `docs/processes/`)**: Standardized deployment workflows, standalone build outputs, PM2 process management, Discord DM alert infrastructure, Jest testing best practices, and the 4-layer modular refactoring pattern.
   - **Interactive Master Index ([`docs/README.md`](docs/README.md))**: Rebuilt master hub index with verified links across all domains.
-  - Archived superseded PRDs, legacy logs, and completed plans into `docs/archive/` and `plans/archive/`.
+  - Archived superseded PRDs, legacy logs, and completed plans into `docs/archive/` and `plans/archive/` (local-only folders, not in the repository).
 
 ### ✂️ Legacy Country Economy Purge, Flag Hook Deduplication & Type Monolith Condensation (Plan 139)
 

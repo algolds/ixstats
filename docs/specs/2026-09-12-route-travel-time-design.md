@@ -64,7 +64,7 @@ $$T_{\text{transit}} = \frac{\text{lengthKm}}{v_{\text{eff}}} \times 60 \text{ m
 - **Rail / HSR**: $+5\text{ mins}$ per intermediate stop (city).
 - **Commuter Rail**: $+2\text{ mins}$ per stop.
 - **Air Corridor**: $+45\text{ mins}$ airport ground handling/clearance.
-- **Maritime / Ferry**: $+20\text{ mins}$ harbor approach and docking, plus $15\text{ mins}$ per intermediate stop. Sea routes with a path also apply ocean currents and prevailing winds along each segment ([oceanography report](../../reference/oceanography-report.md)).
+- **Maritime / Ferry**: $+20\text{ mins}$ harbor approach and docking, plus $15\text{ mins}$ per intermediate stop. Sea routes with a path also apply ocean currents and prevailing winds along each segment ([oceanography report](../reference/oceanography-report.md)).
 - **Road / Motorway**: $+0\text{ mins}$ (free-flow).
 - **Power Grid / Fiber**: Instantaneous light speed (`"< 1ms"`).
 - **Pipeline**: Fluid transit velocity ($10\text{--}15\text{ km/h}$).

@@ -1,5 +1,7 @@
 # Testing & Type Safety Practices
 
+**Last updated:** 2026-10-05
+
 **Test Runner**: Jest 30.4.2 (@swc/jest, jsdom) · TypeScript 7.0.2 · Bun 1.4 Runtime  
 **Coverage**: Unit Tests, Integration Tests, Wire Audits, Type Partition Gates, Architecture Guards
 
@@ -108,6 +110,6 @@ describe("MarkovChain", () => {
 ## 5. Test Suite Invariants & Audit
 
 For the August 2026 audit of the test suite (122 files at the time), value stack rankings (Tiers 0–4), test runner environment notes, and candidates for pruning, see:
-- [**Test Suite Audit & Justification (August 2026)**](../audits/test-suite-audit-and-justification.md)
+- [**Test Suite Audit & Justification (August 2026)**](../history/audits/test-suite-audit-and-justification.md)
 
 

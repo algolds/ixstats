@@ -1,5 +1,7 @@
 # 🏛️ Country Builder — Sovereign Creation & Onboarding Wizard
 
+**Last updated:** 2026-09-30
+
 **Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
 **Subsystem:** Country Builder (`BUILDER_VERSION = 4`)  
 **Primary Action:** `CREATE` | **Domain Accent:** Amber Gold (`#F59E0B` / `--color-amber-500`)  
