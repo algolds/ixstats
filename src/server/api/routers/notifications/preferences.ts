@@ -40,9 +40,9 @@ export const notificationsPreferencesRouter = createTRPCRouter({
           pushNotifications: true,
           economicAlerts: true,
           crisisAlerts: true,
-          diplomaticAlerts: false,
+          diplomaticAlerts: true,
           systemAlerts: true,
-          notificationLevel: "medium",
+          notificationLevel: "low",
           createdAt: new Date(),
           updatedAt: new Date(),
         };
@@ -93,9 +93,9 @@ export const notificationsPreferencesRouter = createTRPCRouter({
           pushNotifications: data.pushNotifications ?? true,
           economicAlerts: data.economicAlerts ?? true,
           crisisAlerts: data.crisisAlerts ?? true,
-          diplomaticAlerts: data.diplomaticAlerts ?? false,
+          diplomaticAlerts: data.diplomaticAlerts ?? true,
           systemAlerts: data.systemAlerts ?? true,
-          notificationLevel: data.notificationLevel ?? "medium",
+          notificationLevel: data.notificationLevel ?? "low",
         },
       });
 

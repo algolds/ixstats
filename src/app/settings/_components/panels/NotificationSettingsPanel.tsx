@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import {
-  Bell,
-  Mail,
   StatUp as TrendingUp,
   WarningTriangle as AlertTriangle,
   Globe,
@@ -37,34 +35,24 @@ export function NotificationSettingsPanel({ userId }: NotificationSettingsPanelP
     onError: (err) => notify.error(err.message || "Failed to update preferences"),
   });
 
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [pushNotifications, setPushNotifications] = useState(true);
   const [economicAlerts, setEconomicAlerts] = useState(true);
   const [crisisAlerts, setCrisisAlerts] = useState(true);
-  const [diplomaticAlerts, setDiplomaticAlerts] = useState(false);
+  const [diplomaticAlerts, setDiplomaticAlerts] = useState(true);
   const [systemAlerts, setSystemAlerts] = useState(true);
-  const [notificationLevel, setNotificationLevel] = useState<NotificationLevel>("medium");
+  const [notificationLevel, setNotificationLevel] = useState<NotificationLevel>("low");
 
   useEffect(() => {
     if (preferences) {
-      setEmailNotifications(preferences.emailNotifications);
-      setPushNotifications(preferences.pushNotifications);
       setEconomicAlerts(preferences.economicAlerts);
       setCrisisAlerts(preferences.crisisAlerts);
       setDiplomaticAlerts(preferences.diplomaticAlerts);
       setSystemAlerts(preferences.systemAlerts);
-      setNotificationLevel((preferences.notificationLevel || "medium") as NotificationLevel);
+      setNotificationLevel((preferences.notificationLevel || "low") as NotificationLevel);
     }
   }, [preferences]);
 
   const handleToggle = (field: string, checked: boolean) => {
     switch (field) {
-      case "emailNotifications":
-        setEmailNotifications(checked);
-        break;
-      case "pushNotifications":
-        setPushNotifications(checked);
-        break;
       case "economicAlerts":
         setEconomicAlerts(checked);
         break;
@@ -98,41 +86,15 @@ export function NotificationSettingsPanel({ userId }: NotificationSettingsPanelP
       <SettingsHeader
         title="Notifications"
         category="Platform & preferences"
-        description="Choose how you are notified, which events count and how urgent they must be."
+        description="Choose which in-app notifications reach you and how urgent they must be."
       />
 
-      {/* Delivery channels */}
-      <SettingsGroup
-        title="Delivery channels"
-        description="Where updates and urgent alerts are sent."
-      >
-        <SettingsSwitchRow
-          id="email-channel"
-          label="Email summaries"
-          description="Periodic digests, monthly economic reports and security summaries"
-          icon={Mail}
-          glyphClass="bg-blue-500/15 text-blue-500"
-          checked={emailNotifications}
-          onCheckedChange={(checked) => handleToggle("emailNotifications", checked)}
-          disabled={updatePrefsMutation.isPending}
-        />
-
-        <SettingsSwitchRow
-          id="push-channel"
-          label="Desktop push alerts"
-          description="Browser alerts as major events happen"
-          icon={Bell}
-          glyphClass="bg-indigo-500/15 text-indigo-500"
-          checked={pushNotifications}
-          onCheckedChange={(checked) => handleToggle("pushNotifications", checked)}
-          disabled={updatePrefsMutation.isPending}
-        />
-      </SettingsGroup>
+      {/* Email and push delivery are not offered: notifications arrive in-app only. */}
 
       {/* Alert categories */}
       <SettingsGroup
         title="Alert categories"
-        description="Choose which kinds of events send an alert."
+        description="Choose which kinds of events notify you. Country-wide and global announcements always show."
       >
         <SettingsSwitchRow
           id="alert-economic"
