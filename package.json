@@ -165,7 +165,7 @@
     "@clerk/nextjs": "^6.39.6",
     "@codemirror/state": "^6.7.1",
     "@codemirror/view": "^6.43.8",
-    "@number-flow/react": "^0.5.14",
+    "@number-flow/react": "^0.6.2",
     "@platejs/combobox": "^52.3.10",
     "@platejs/link": "^52.3.17",
     "@platejs/markdown": "^52.3.22",
