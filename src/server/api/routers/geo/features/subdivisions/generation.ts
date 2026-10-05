@@ -25,7 +25,8 @@ export const geoFeaturesSubdivisionsGenerationRouter = createTRPCRouter({
       assertOwnCountry(ctx, input.countryId);
 
       const subdivisions = await ctx.db.subdivision.findMany({
-        where: { countryId: input.countryId },
+        // An owner's batch leaves admin-locked subdivisions (PL-21) as they are
+        where: { countryId: input.countryId, ...(ctx.country ? { editableByOwner: true } : {}) },
         take: 200,
         select: { id: true, name: true, geometry: true },
       });

@@ -6,6 +6,7 @@ import { getTerrainForArea } from "~/lib/country-geo";
 import { clipAndValidatePolygon, checkNameUniqueness } from "~/lib/maps/geo-validation";
 import { syncGeographicDemographics } from "~/lib/country-geo/sync";
 import { assertFound, assertOwnCountry } from "../../core/shared";
+import { assertOwnerMayEdit } from "~/server/shared/map-feature-lock";
 
 export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
   /**
@@ -109,12 +110,22 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       assertOwnCountry(ctx, input.countryId);
 
-      assertFound(
+      const existing = assertFound(
         await ctx.db.subdivision.findFirst({
           where: { id: input.subdivisionId, countryId: input.countryId },
         }),
         "Subdivision not found"
       );
+      assertOwnerMayEdit(ctx, existing, "subdivision");
+      // A topology cascade may not reshape a neighbour the owner cannot edit either
+      const cascaded = input.cascadedNeighbors?.map((n) => n.subdivisionId) ?? [];
+      if (ctx.country && cascaded.length > 0) {
+        const locked = await ctx.db.subdivision.findFirst({
+          where: { id: { in: cascaded }, editableByOwner: false },
+          select: { editableByOwner: true },
+        });
+        assertOwnerMayEdit(ctx, locked, "neighbouring subdivision");
+      }
 
       // Validate new geometry if provided
       let clippedGeometry = undefined;
@@ -188,12 +199,13 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       assertOwnCountry(ctx, input.countryId);
 
-      assertFound(
+      const existing = assertFound(
         await ctx.db.subdivision.findFirst({
           where: { id: input.subdivisionId, countryId: input.countryId },
         }),
         "Subdivision not found"
       );
+      assertOwnerMayEdit(ctx, existing, "subdivision");
 
       await ctx.db.subdivision.delete({ where: { id: input.subdivisionId } });
       await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS);

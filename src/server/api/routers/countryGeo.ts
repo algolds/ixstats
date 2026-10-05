@@ -21,6 +21,7 @@ import {
   rebaseNationalFromGeography,
   distributeSubdivisionDemographicsToCities,
 } from "~/lib/country-geo";
+import { assertOwnerMayEdit } from "~/server/shared/map-feature-lock";
 
 const GEO_CACHE_KEYS = [
   "geoCore.getCountryFeatures",
@@ -198,6 +199,14 @@ export const countryGeoRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       assertOwnCountry(ctx, input.countryId);
+      if (input.id && ctx.country) {
+        const where = { id: input.id, countryId: input.countryId };
+        const existing = await ctx.db.city.findFirst({
+          where,
+          select: { editableByOwner: true },
+        });
+        assertOwnerMayEdit(ctx, existing, "city");
+      }
       const city = await upsertCity(ctx.db, input.countryId, {
         ...input,
         submittedBy: submitterId(ctx),
@@ -248,6 +257,14 @@ export const countryGeoRouter = createTRPCRouter({
           code: "BAD_REQUEST",
           message: "Name is required when creating a subdivision",
         });
+      }
+      if (input.id && ctx.country) {
+        const where = { id: input.id, countryId: input.countryId };
+        const existing = await ctx.db.subdivision.findFirst({
+          where,
+          select: { editableByOwner: true },
+        });
+        assertOwnerMayEdit(ctx, existing, "subdivision");
       }
 
       const subdivision = await upsertSubdivision(ctx.db, input.countryId, {
@@ -357,6 +374,7 @@ export const countryGeoRouter = createTRPCRouter({
       if (!existing) {
         throw new TRPCError({ code: "NOT_FOUND", message: `${config.label} not found` });
       }
+      assertOwnerMayEdit(ctx, existing, config.label.toLowerCase());
       const wikiTitle: string | null = existing.wikiPageTitle?.trim() || existing.name;
       if (!wikiTitle) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "No wiki title to look up." });

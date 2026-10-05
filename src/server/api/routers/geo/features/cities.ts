@@ -10,6 +10,7 @@ import {
 
 import { syncGeographicDemographics } from "~/lib/country-geo/sync";
 import { assertFound, assertOwnCountry, coordinatesSchema } from "../core/shared";
+import { assertOwnerMayEdit } from "~/server/shared/map-feature-lock";
 
 export const geoFeaturesCitiesRouter = createTRPCRouter({
   /**
@@ -110,12 +111,13 @@ export const geoFeaturesCitiesRouter = createTRPCRouter({
       assertOwnCountry(ctx, input.countryId);
 
       // Verify city belongs to country
-      assertFound(
+      const existing = assertFound(
         await ctx.db.city.findFirst({
           where: { id: input.cityId, countryId: input.countryId },
         }),
         "City not found"
       );
+      assertOwnerMayEdit(ctx, existing, "city");
 
       // If coordinates changed, validate containment + collision
       if (input.coordinates) {
@@ -185,6 +187,7 @@ export const geoFeaturesCitiesRouter = createTRPCRouter({
         }),
         "City not found"
       );
+      assertOwnerMayEdit(ctx, city, "city");
 
       const wasCapital = city.isNationalCapital;
       await ctx.db.city.delete({ where: { id: input.cityId } });
