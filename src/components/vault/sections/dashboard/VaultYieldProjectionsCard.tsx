@@ -1,23 +1,14 @@
 "use client";
 
 import React from "react";
-import {
-  StatUp as TrendingUp,
-  FireFlame as Flame,
-  Gift,
-  SystemRestart as Loader2,
-} from "iconoir-react";
+import { StatUp as TrendingUp, FireFlame as Flame } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Button } from "~/components/ui/button";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 import { Card, CardTitle } from "~/components/ui/card";
 
 interface VaultYieldProjectionsCardProps {
   loading: boolean;
-  canClaimDailyBonus?: boolean;
-  isClaimPending?: boolean;
-  onClaimDailyBonus: () => void;
   passiveIncomeData?: {
     dailyDividend?: number;
     weeklyDividend?: number;
@@ -79,9 +70,6 @@ function CapProgress({
 
 export function VaultYieldProjectionsCard({
   loading,
-  canClaimDailyBonus,
-  isClaimPending,
-  onClaimDailyBonus,
   passiveIncomeData,
   loginStreak = 0,
   budgetMultiplierPercent = 0,
@@ -95,26 +83,6 @@ export function VaultYieldProjectionsCard({
     <Card padding="lg" className="overflow-hidden">
       <div className="border-separator mb-5 flex items-center justify-between border-b pb-4">
         <CardTitle icon={<TrendingUp />}>Treasury revenue &amp; yields</CardTitle>
-        {canClaimDailyBonus && (
-          <Button
-            size="sm"
-            onClick={onClaimDailyBonus}
-            disabled={isClaimPending}
-            className="border-yellow/40 rounded-full border px-4 hover:brightness-110 disabled:opacity-50"
-          >
-            {isClaimPending ? (
-              <>
-                <Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin" />
-                Claiming...
-              </>
-            ) : (
-              <>
-                <Gift aria-hidden className="h-3.5 w-3.5" />
-                Claim daily bonus
-              </>
-            )}
-          </Button>
-        )}
       </div>
 
       {loading ? (

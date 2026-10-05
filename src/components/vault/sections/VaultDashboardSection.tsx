@@ -3,8 +3,6 @@ import { useVaultStats } from "~/hooks/vault/useVaultStats";
 import { useRecentActivity } from "~/hooks/vault/useRecentActivity";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-import { vaultNotify } from "~/lib/vault/vault-notifications";
-import { VaultParticleExplosionModal } from "~/components/vault/VaultParticleExplosionModal";
 import type { CardInstance } from "~/types/cards-display";
 import { VaultCollectionCard } from "./dashboard/VaultCollectionCard";
 import { VaultYieldProjectionsCard } from "./dashboard/VaultYieldProjectionsCard";
@@ -24,9 +22,6 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
     activities: ActivityEntry[] | undefined;
     loading: boolean;
   };
-
-  const [showCoinExplosion, setShowCoinExplosion] = useState(false);
-  const [claimedBonusAmount, setClaimedBonusAmount] = useState(0);
 
   const { data: hasImported } = api.nsImport.hasImported.useQuery(undefined, {
     enabled: !!user,
@@ -52,13 +47,10 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
     { enabled: !!user }
   );
 
-  const {
-    data: balanceData,
-    isLoading: balanceLoading,
-    refetch: refetchBalance,
-  } = api.vault.getBalance.useQuery(undefined, {
-    enabled: !!user?.id,
-  });
+  const { data: balanceData, isLoading: balanceLoading } = api.vault.getBalance.useQuery(
+    undefined,
+    { enabled: !!user?.id }
+  );
 
   const { data: levelData } = api.vault.getVaultLevel.useQuery(undefined, {
     enabled: !!user?.id,
@@ -145,23 +137,6 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
     [topCardsData]
   );
 
-  const claimDailyBonus = api.vault.claimDailyBonus.useMutation({
-    onSuccess: (data) => {
-      setClaimedBonusAmount(data.bonus);
-      setShowCoinExplosion(true);
-
-      vaultNotify.dailyBonusClaimed(data.message);
-      void refetchBalance();
-
-      setTimeout(() => {
-        setShowCoinExplosion(false);
-      }, 3200);
-    },
-    onError: (error) => {
-      vaultNotify.error(error.message);
-    },
-  });
-
   const loading = statsLoading || activitiesLoading || earningsLoading;
 
   const collectionValuation = stats?.deckValue ?? 0;
@@ -179,8 +154,6 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
             credits={balanceData?.credits}
             balanceLoading={balanceLoading}
             todayEarnings={todayEarnings}
-            treasuryRevenue={passiveIncomeData}
-            budgetBonusPercent={budgetMultiplierData?.percentChange}
           />
 
           <VaultCollectionCard
@@ -195,9 +168,6 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
 
           <VaultYieldProjectionsCard
             loading={loading}
-            canClaimDailyBonus={balanceData?.canClaimDailyBonus}
-            isClaimPending={claimDailyBonus.isPending}
-            onClaimDailyBonus={() => claimDailyBonus.mutate()}
             passiveIncomeData={passiveIncomeData}
             loginStreak={balanceData?.loginStreak ?? 0}
             budgetMultiplierPercent={budgetMultiplierData?.percentChange ?? 0}
@@ -225,14 +195,6 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
           userCountryId={userData?.countryId}
         />
       </div>
-
-      <VaultParticleExplosionModal
-        open={showCoinExplosion}
-        title="Daily bonus claimed"
-        subtitle="Added to Vault balance"
-        amount={claimedBonusAmount}
-        icon={<div className="text-large-title animate-bounce">🎁</div>}
-      />
     </div>
   );
 }

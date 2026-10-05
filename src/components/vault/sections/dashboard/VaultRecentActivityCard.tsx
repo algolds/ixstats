@@ -6,6 +6,8 @@ import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 import { Card, CardTitle } from "~/components/ui/card";
+import { timeAgo } from "~/lib/format/compact";
+import { activitySourceLabel } from "~/lib/vault/activity-labels";
 
 export interface ActivityEntry {
   id: string;
@@ -64,9 +66,16 @@ export function VaultRecentActivityCard({ loading, activities }: VaultRecentActi
                     )}
                   </div>
                   <div>
-                    <p className="text-label font-semibold">{activity.source.replace(/_/g, " ")}</p>
+                    <p className="text-label font-semibold">
+                      {activitySourceLabel(activity.source)}
+                    </p>
                     <p className="text-label-secondary text-footnote mt-0.5">
-                      {new Date(activity.createdAt).toLocaleString()}
+                      <time
+                        dateTime={new Date(activity.createdAt).toISOString()}
+                        title={new Date(activity.createdAt).toLocaleString()}
+                      >
+                        {timeAgo(activity.createdAt)}
+                      </time>
                     </p>
                   </div>
                 </div>

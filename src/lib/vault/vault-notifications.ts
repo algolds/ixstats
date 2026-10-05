@@ -81,14 +81,6 @@ export const vaultNotify = {
       category: "system",
     }),
 
-  dailyBonusClaimed: (message: string) =>
-    sendVaultNotification({
-      title: "Daily Bonus",
-      message,
-      type: "success",
-      category: "achievement",
-    }),
-
   tradeCompleted: (action: string) =>
     sendVaultNotification({
       title: "Trade Update",
