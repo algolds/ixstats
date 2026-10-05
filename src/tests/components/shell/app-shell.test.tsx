@@ -12,6 +12,11 @@ jest.mock("~/components/shell/FacetShell", () => ({
   FacetShell: () => <div data-testid="facet-shell" />,
 }));
 
+// The provider's own behaviour is covered in the vault tests; here it only wraps the page.
+jest.mock("~/components/vault/DailyRewardProvider", () => ({
+  DailyRewardProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
 // eslint-disable-next-line import/first
 import { AppShell } from "~/components/shell/AppShell";
 

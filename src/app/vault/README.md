@@ -46,7 +46,7 @@ The sidebar (`VAULT_NAV_ITEMS` in `VaultSidebarNav`) has 4 entries: **dashboard,
 | Dashboard Section | `src/components/vault/sections/dashboard/` — `VaultNetWorthCard`, `VaultYieldProjectionsCard`, `VaultCardHoldingsCard`, `VaultMilestonesCard`, `VaultRecentActivityCard`, `VaultShowcaseGrid` |
 | Marketplace Section | `src/components/vault/sections/marketplace/` — Store (`store/`), Auctions (`auctions/` incl. `CreateAuctionModal`), Trading |
 | Import Section | `src/components/vault/sections/import/` — `ImportNationStep`, `ImportVerifyStep`, `ImportConfirmStep`, `ImportStepIndicator` |
-| Shared widgets | `src/components/vault/` — `DailyBonusWidget`, `VaultParticleExplosionModal`, `VaultSubTabNav`, `IxCreditsSymbol`, cosmetic overlays (`AvatarGlow`, `NeonFrameOverlay`, `CosmeticParticles*`) |
+| Shared widgets | `src/components/vault/` — `DailyRewardProvider`, `VaultParticleExplosionModal`, `VaultSubTabNav`, `IxCreditsSymbol`, cosmetic overlays (`AvatarGlow`, `NeonFrameOverlay`, `CosmeticParticles*`) |
 | Vault Services | `src/lib/vault/` — `vault-service.ts` (facade), `vault-ledger.ts`, `vault-passive-income.ts`, `vault-daily-bonus.ts`, `vault-bonus.ts`, `vault-perks.ts`, `vault-notifications.ts`, `vault-type-guards.ts`, `exchange-*.ts`, `trade-settlement.ts` |
 | Hooks | `src/hooks/vault/` — `useVaultBalance`, `useVaultStats`, `useCollections`, `useRecentActivity` |
 | Reused card UI | `src/components/cards/` — `CardDisplay`, `CardDetailsModal` (`cards/display/modal/`), `CraftingWorkbench`, `lore/LoreCardGenerator` |

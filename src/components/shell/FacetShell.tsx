@@ -18,9 +18,11 @@ import { stripBasePath } from "~/lib/base-path";
 import {
   getVisibleApps,
   isChromelessPath,
+  type NavAction,
   type NavigationVisibilitySettings,
   type SearchParamsLike,
 } from "~/lib/navigation/app-sections";
+import { useDailyReward } from "~/components/vault/DailyRewardProvider";
 import { useSidebarCollapsed } from "~/lib/navigation/use-sidebar-collapsed";
 import { useNavExpanded } from "~/lib/navigation/use-nav-expanded";
 import { AccountMenu } from "./AccountMenu";
@@ -59,6 +61,10 @@ export function FacetShell() {
   });
   const { collapsed, setCollapsed } = useSidebarCollapsed();
   const { expanded, toggle } = useNavExpanded();
+  const { open: openDailyReward } = useDailyReward();
+  const onAction = (action: NavAction) => {
+    if (action === "daily-reward") openDailyReward();
+  };
 
   const signedIn = Boolean(user);
   // Once here so the sidebar and the More sheet never run the queries twice.
@@ -89,6 +95,7 @@ export function FacetShell() {
                 expanded={expanded}
                 onToggle={toggle}
                 badges={badges}
+                onAction={onAction}
                 account={<AccountMenu layout="sidebar" collapsed={collapsed} />}
               />
               <TabBar
@@ -98,6 +105,7 @@ export function FacetShell() {
                 expanded={expanded}
                 onToggle={toggle}
                 badges={badges}
+                onAction={onAction}
                 account={<AccountMenu layout="sheet" />}
               />
             </>

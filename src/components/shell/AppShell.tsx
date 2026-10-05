@@ -13,6 +13,7 @@ import { usePathname } from "next/navigation";
 import { stripBasePath } from "~/lib/base-path";
 import { getAppForPath, getTintForPath, isChromelessPath } from "~/lib/navigation/app-sections";
 import { cn } from "~/lib/utils/cn";
+import { DailyRewardProvider } from "~/components/vault/DailyRewardProvider";
 import { FacetShell } from "./FacetShell";
 
 interface AppShellProps {
@@ -25,17 +26,19 @@ export function AppShell({ beforeMain, children }: AppShellProps) {
   const pathname = stripBasePath(usePathname() || "/");
   const chromeless = isChromelessPath(pathname);
   return (
-    <div
-      data-app-shell=""
-      data-app={getTintForPath(getAppForPath(pathname), undefined)}
-      data-chromeless={chromeless ? "" : undefined}
-      className={cn("flex min-h-screen flex-col", !chromeless && "facet-canvas")}
-    >
-      <FacetShell />
-      {beforeMain}
-      <main data-shell-main="" className="flex flex-1 flex-col">
-        {children}
-      </main>
-    </div>
+    <DailyRewardProvider>
+      <div
+        data-app-shell=""
+        data-app={getTintForPath(getAppForPath(pathname), undefined)}
+        data-chromeless={chromeless ? "" : undefined}
+        className={cn("flex min-h-screen flex-col", !chromeless && "facet-canvas")}
+      >
+        <FacetShell />
+        {beforeMain}
+        <main data-shell-main="" className="flex flex-1 flex-col">
+          {children}
+        </main>
+      </div>
+    </DailyRewardProvider>
   );
 }

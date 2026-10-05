@@ -21,7 +21,6 @@ import { PreText } from "~/components/ui/pretext";
 import { useTheme } from "~/context/theme-context";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { DailyBonusWidget } from "~/components/vault/DailyBonusWidget";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Card } from "~/components/ui/card";
 
@@ -264,10 +263,7 @@ export function VaultWidget() {
   const treasuryLabel = `${showPassiveIncome ? "Hide" : "Show"} Treasury Revenue Details`;
 
   return (
-    <CutoutCard
-      className="rounded-card w-48 overflow-hidden"
-      trackPointerHover={false}
-    >
+    <CutoutCard className="rounded-card w-48 overflow-hidden" trackPointerHover={false}>
       <div className="border-separator flex items-center gap-2 border-b px-3 py-2">
         <Wallet aria-hidden="true" className="text-yellow size-4 shrink-0" />
         <h3 className="text-label text-headline">IxVault</h3>
@@ -316,8 +312,6 @@ export function VaultWidget() {
               )}
             </>
           )}
-
-          <DailyBonusWidget />
 
           {isOnVault ? (
             <VaultNav pathname={pathname} />

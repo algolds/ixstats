@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "motion/react";
@@ -48,7 +48,7 @@ const utcDayKey = () => new Date().toISOString().slice(0, 10);
 const autoOpenStorageKey = (userId: string) => `ixstats:dailyReward:autoOpened:${userId}`;
 
 /**
- * The widget can be mounted by more than one layout and remounts on navigation, so today's
+ * The provider remounts on a full reload and the dialog can remount with it, so today's
  * auto-open is remembered in memory as well as in localStorage.
  */
 let autoOpenedInSession: string | null = null;
@@ -103,7 +103,7 @@ function ChoiceTile({
       aria-busy={loading}
       className={cn(
         "facet-well facet-press rounded-row flex min-h-36 flex-col items-center justify-center gap-3 p-4 text-center",
-        "enabled:hover:ring-tint/40 enabled:hover:ring-2 focus-visible:outline-tint focus-visible:outline-2 focus-visible:outline-offset-2",
+        "enabled:hover:ring-tint/40 focus-visible:outline-tint focus-visible:outline-2 focus-visible:outline-offset-2 enabled:hover:ring-2",
         "disabled:cursor-not-allowed",
         disabled && !loading && "opacity-50"
       )}
@@ -116,9 +116,7 @@ function ChoiceTile({
       </span>
       <span className="space-y-1">
         <span className="text-headline text-label block">{title}</span>
-        <span className="text-footnote text-label-secondary block leading-snug">
-          {description}
-        </span>
+        <span className="text-footnote text-label-secondary block leading-snug">{description}</span>
       </span>
     </button>
   );
@@ -169,28 +167,50 @@ function CardReveal({ card }: { card: NonNullable<ClaimResult["cardAwarded"]> })
   );
 }
 
-export const DailyBonusWidget: React.FC = () => {
-  const { userId } = useAuth();
+interface DailyRewardContextValue {
+  open: () => void;
+  isOpen: boolean;
+}
+
+const DailyRewardContext = createContext<DailyRewardContextValue | null>(null);
+
+function useDailyRewardContext(): DailyRewardContextValue {
+  const ctx = useContext(DailyRewardContext);
+  if (!ctx) throw new Error("useDailyReward must be used inside <DailyRewardProvider>");
+  return ctx;
+}
+
+/** Opens the daily reward dialog from anywhere under the provider (the sidebar row, page content). */
+export function useDailyReward(): { open: () => void } {
+  const { open } = useDailyRewardContext();
+  return { open };
+}
+
+function DailyRewardDialog({
+  userId,
+  isOpen,
+  setIsOpen,
+}: {
+  userId: string;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+}) {
   const utils = api.useUtils();
 
-  const [isOpen, setIsOpen] = useState(false);
   const [claiming, setClaiming] = useState<ClaimChoice | null>(null);
   const [claimResult, setClaimResult] = useState<ClaimResult | null>(null);
 
-  const { data: balanceData, isLoading } = api.vault.getBalance.useQuery(undefined, {
-    enabled: !!userId,
-  });
+  const { data: balanceData } = api.vault.getBalance.useQuery(undefined);
 
   const canClaim = balanceData?.canClaimDailyBonus ?? false;
   const streak = balanceData?.loginStreak ?? 0;
 
   // Auto-open at most once per user per UTC day, not on every page load or navigation.
   useEffect(() => {
-    if (!userId || !canClaim || hasAutoOpenedToday(userId)) return;
+    if (!canClaim || hasAutoOpenedToday(userId)) return;
     markAutoOpenedToday(userId);
-    // oxlint-disable-next-line
     setIsOpen(true);
-  }, [userId, canClaim]);
+  }, [userId, canClaim, setIsOpen]);
 
   const claimMutation = api.vault.claimCombinedDailyClaim.useMutation({
     onSuccess: (data) => {
@@ -223,13 +243,8 @@ export const DailyBonusWidget: React.FC = () => {
       // Clear after the exit animation so the choice screen does not flash.
       if (!open) setTimeout(() => setClaimResult(null), 200);
     },
-    [claiming]
+    [claiming, setIsOpen]
   );
-
-  if (!userId) return null;
-  if (isLoading) return <Skeleton className="h-8 w-full" />;
-
-  const showClaimed = !canClaim && !isOpen;
 
   // Transforms are dropped for reduced-motion users by the root <MotionConfig>.
   const fade = {
@@ -239,110 +254,141 @@ export const DailyBonusWidget: React.FC = () => {
   };
 
   return (
-    <>
-      {showClaimed ? (
-        <div
-          data-slot="daily-reward-claimed"
-          className="bg-fill-4 text-label-secondary text-footnote rounded-control flex min-h-(--control-height-sm) w-full items-center gap-2 px-3 select-none"
-        >
-          <Trophy aria-hidden className="size-3.5 shrink-0" />
-          <span className="flex-1">Daily claimed</span>
-          {streak > 0 && <span className="tabular-nums">· {streak}d streak</span>}
-        </div>
-      ) : (
-        <div data-app="vault">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsOpen(true)}
-            className="bg-tint-fill text-tint-ink hover:bg-tint-fill hover:text-tint active:bg-tint-fill text-footnote w-full justify-start gap-2 px-3 font-semibold"
-          >
-            <Trophy aria-hidden className="size-3.5 shrink-0" />
-            <span className="flex-1 text-left">Daily reward</span>
-            {streak > 0 && (
-              <span className="flex items-center gap-1 tabular-nums">
-                <Flame aria-hidden className="size-3" />
-                {streak}d
-              </span>
-            )}
-          </Button>
-        </div>
-      )}
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent
+        data-app="vault"
+        showCloseButton={!claiming}
+        className="max-w-[calc(100%-2rem)] gap-0 overflow-hidden p-0 sm:max-w-md"
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          {!claimResult ? (
+            <motion.div key="choice" {...fade} transition={springSmooth} className="space-y-5 p-6">
+              <div className="flex items-center gap-3 pr-8">
+                <Trophy aria-hidden className="text-tint size-6 shrink-0" />
+                <DialogTitle className="text-title-3 text-label flex-1">Daily reward</DialogTitle>
+                <StreakPill streak={streak} />
+              </div>
+              <DialogDescription className="sr-only">
+                Choose IxCredits or a card pull. You can claim again tomorrow.
+              </DialogDescription>
+              <div className="grid grid-cols-2 gap-3">
+                <ChoiceTile
+                  title="IxCredits"
+                  description="Random roll, boosted by level and streak"
+                  icon={<IxCreditsSymbol decorative className="size-6" />}
+                  loading={claiming === "CREDITS"}
+                  disabled={claiming !== null}
+                  onClick={() => handleClaim("CREDITS")}
+                />
+                <ChoiceTile
+                  title="Card pull"
+                  description="One random card"
+                  icon={<IxCardIcon className="size-6" />}
+                  loading={claiming === "CARD"}
+                  disabled={claiming !== null}
+                  onClick={() => handleClaim("CARD")}
+                />
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="reveal"
+              data-content="reveal"
+              {...fade}
+              transition={springSmooth}
+              className="flex flex-col items-center gap-5 px-6 pt-8 pb-6 text-center"
+            >
+              <DialogTitle className="text-title-3 text-label">Reward claimed</DialogTitle>
+              <DialogDescription className="sr-only">
+                {claimResult.message ?? "Your daily reward has been added."}
+              </DialogDescription>
 
-      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-        <DialogContent
-          data-app="vault"
-          showCloseButton={!claiming}
-          className="max-w-[calc(100%-2rem)] gap-0 overflow-hidden p-0 sm:max-w-md"
-        >
-          <AnimatePresence mode="wait" initial={false}>
-            {!claimResult ? (
-              <motion.div key="choice" {...fade} transition={springSmooth} className="space-y-5 p-6">
-                <div className="flex items-center gap-3 pr-8">
-                  <Trophy aria-hidden className="text-tint size-6 shrink-0" />
-                  <DialogTitle className="text-title-3 text-label flex-1">Daily reward</DialogTitle>
-                  <StreakPill streak={streak} />
-                </div>
-                <DialogDescription className="sr-only">
-                  Choose IxCredits or a card pull. You can claim again tomorrow.
-                </DialogDescription>
-                <div className="grid grid-cols-2 gap-3">
-                  <ChoiceTile
-                    title="IxCredits"
-                    description="Random roll, boosted by level and streak"
-                    icon={<IxCreditsSymbol decorative className="size-6" />}
-                    loading={claiming === "CREDITS"}
-                    disabled={claiming !== null}
-                    onClick={() => handleClaim("CREDITS")}
-                  />
-                  <ChoiceTile
-                    title="Card pull"
-                    description="One random card"
-                    icon={<IxCardIcon className="size-6" />}
-                    loading={claiming === "CARD"}
-                    disabled={claiming !== null}
-                    onClick={() => handleClaim("CARD")}
-                  />
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="reveal"
-                data-content="reveal"
-                {...fade}
-                transition={springSmooth}
-                className="flex flex-col items-center gap-5 px-6 pt-8 pb-6 text-center"
-              >
-                <DialogTitle className="text-title-3 text-label">Reward claimed</DialogTitle>
-                <DialogDescription className="sr-only">
-                  {claimResult.message ?? "Your daily reward has been added."}
-                </DialogDescription>
+              {claimResult.creditsAwarded != null && (
+                <CreditsReveal amount={claimResult.creditsAwarded} />
+              )}
+              {claimResult.cardAwarded && <CardReveal card={claimResult.cardAwarded} />}
 
-                {claimResult.creditsAwarded != null && (
-                  <CreditsReveal amount={claimResult.creditsAwarded} />
-                )}
-                {claimResult.cardAwarded && <CardReveal card={claimResult.cardAwarded} />}
+              <StreakPill streak={claimResult.streak} />
 
-                <StreakPill streak={claimResult.streak} />
-
-                <div className="flex w-full flex-col gap-2 sm:flex-row-reverse">
-                  <Button className="flex-1" onClick={() => handleOpenChange(false)}>
-                    Collect
+              <div className="flex w-full flex-col gap-2 sm:flex-row-reverse">
+                <Button className="flex-1" onClick={() => handleOpenChange(false)}>
+                  Collect
+                </Button>
+                {claimResult.cardAwarded && (
+                  <Button variant="outline" className="flex-1" asChild>
+                    <Link href="/vault/inventory" onClick={() => handleOpenChange(false)}>
+                      View collection
+                    </Link>
                   </Button>
-                  {claimResult.cardAwarded && (
-                    <Button variant="outline" className="flex-1" asChild>
-                      <Link href="/vault/inventory" onClick={() => handleOpenChange(false)}>
-                        View collection
-                      </Link>
-                    </Button>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </DialogContent>
-      </Dialog>
-    </>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </DialogContent>
+    </Dialog>
   );
-};
+}
+
+export function DailyRewardProvider({ children }: { children: React.ReactNode }) {
+  const { userId } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const open = useCallback(() => setIsOpen(true), []);
+  const value = useMemo(() => ({ open, isOpen }), [open, isOpen]);
+
+  return (
+    <DailyRewardContext.Provider value={value}>
+      {children}
+      {userId && <DailyRewardDialog userId={userId} isOpen={isOpen} setIsOpen={setIsOpen} />}
+    </DailyRewardContext.Provider>
+  );
+}
+
+/** The claimable button, or the "Daily claimed" row once today's reward is taken. */
+export function DailyRewardStatus() {
+  const { userId } = useAuth();
+  const { open, isOpen } = useDailyRewardContext();
+  const { data: balanceData, isLoading } = api.vault.getBalance.useQuery(undefined, {
+    enabled: !!userId,
+  });
+
+  if (!userId) return null;
+  if (isLoading) return <Skeleton className="h-8 w-full" />;
+
+  const canClaim = balanceData?.canClaimDailyBonus ?? false;
+  const streak = balanceData?.loginStreak ?? 0;
+
+  if (!canClaim && !isOpen) {
+    return (
+      <div
+        data-slot="daily-reward-claimed"
+        className="bg-fill-4 text-label-secondary text-footnote rounded-control flex min-h-(--control-height-sm) w-full items-center gap-2 px-3 select-none"
+      >
+        <Trophy aria-hidden className="size-3.5 shrink-0" />
+        <span className="flex-1">Daily claimed</span>
+        {streak > 0 && <span className="tabular-nums">· {streak}d streak</span>}
+      </div>
+    );
+  }
+
+  return (
+    <div data-app="vault">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={open}
+        className="bg-tint-fill text-tint-ink hover:bg-tint-fill hover:text-tint active:bg-tint-fill text-footnote w-full justify-start gap-2 px-3 font-semibold"
+      >
+        <Trophy aria-hidden className="size-3.5 shrink-0" />
+        <span className="flex-1 text-left">Daily reward</span>
+        {streak > 0 && (
+          <span className="flex items-center gap-1 tabular-nums">
+            <Flame aria-hidden className="size-3" />
+            {streak}d
+          </span>
+        )}
+      </Button>
+    </div>
+  );
+}

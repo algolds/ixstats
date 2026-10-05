@@ -29,13 +29,28 @@ jest.mock("~/trpc/react", () => ({
   },
 }));
 const reveal = jest.fn();
-jest.mock("~/lib/sound/cuelume", () => ({ soundCues: { reveal: () => reveal() }, soundEffects: {} }));
-jest.mock("~/lib/vault/vault-notifications", () => ({ vaultNotify: { error: jest.fn(), success: jest.fn() } }));
+jest.mock("~/lib/sound/cuelume", () => ({
+  soundCues: { reveal: () => reveal() },
+  soundEffects: {},
+}));
+jest.mock("~/lib/vault/vault-notifications", () => ({
+  vaultNotify: { error: jest.fn(), success: jest.fn() },
+}));
 jest.mock("~/components/cards/display/CardHolographicCover", () => ({
   CardHolographicCover: () => <div data-testid="holo-cover" />,
 }));
 
-import { DailyBonusWidget } from "~/components/vault/DailyBonusWidget";
+import {
+  DailyRewardProvider,
+  DailyRewardStatus,
+  useDailyReward,
+} from "~/components/vault/DailyRewardProvider";
+
+const Widget = () => (
+  <DailyRewardProvider>
+    <DailyRewardStatus />
+  </DailyRewardProvider>
+);
 
 // Each test uses its own user so the once-per-day auto-open guard never carries over.
 let n = 0;
@@ -50,9 +65,9 @@ beforeEach(() => {
 
 const dialog = () => screen.getByRole("dialog");
 
-describe("DailyBonusWidget", () => {
+describe("DailyRewardProvider", () => {
   it("auto-opens a copper dialog with two choices and the streak", () => {
-    render(<DailyBonusWidget />);
+    render(<Widget />);
     expect(dialog()).toHaveAttribute("data-app", "vault");
     expect(within(dialog()).getByRole("heading", { name: "Daily reward" })).toBeInTheDocument();
     expect(within(dialog()).getByText("4-day streak")).toBeInTheDocument();
@@ -62,7 +77,7 @@ describe("DailyBonusWidget", () => {
   });
 
   it("claims once even if both tiles are clicked", () => {
-    render(<DailyBonusWidget />);
+    render(<Widget />);
     fireEvent.click(within(dialog()).getByRole("button", { name: /IxCredits/ }));
     fireEvent.click(within(dialog()).getByRole("button", { name: /Card pull/ }));
     expect(mutate).toHaveBeenCalledTimes(1);
@@ -70,7 +85,7 @@ describe("DailyBonusWidget", () => {
   });
 
   it("reveals credits, including a capped +0, and plays the reveal cue", async () => {
-    render(<DailyBonusWidget />);
+    render(<Widget />);
     fireEvent.click(within(dialog()).getByRole("button", { name: /IxCredits/ }));
     act(() => mutationOptions.onSuccess({ creditsAwarded: 0, streak: 5 }));
     expect(await screen.findByRole("heading", { name: "Reward claimed" })).toBeInTheDocument();
@@ -81,7 +96,7 @@ describe("DailyBonusWidget", () => {
   });
 
   it("reveals a card without artwork and links to the collection", async () => {
-    render(<DailyBonusWidget />);
+    render(<Widget />);
     fireEvent.click(within(dialog()).getByRole("button", { name: /Card pull/ }));
     act(() =>
       mutationOptions.onSuccess({
@@ -93,11 +108,14 @@ describe("DailyBonusWidget", () => {
     expect(screen.getByTestId("holo-cover")).toBeInTheDocument();
     expect(screen.queryByRole("img")).toBeNull();
     expect(screen.getByText("ultra rare")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "View collection" })).toHaveAttribute("href", "/vault/inventory");
+    expect(screen.getByRole("link", { name: "View collection" })).toHaveAttribute(
+      "href",
+      "/vault/inventory"
+    );
   });
 
   it("closes and resyncs when the claim was already made elsewhere", async () => {
-    render(<DailyBonusWidget />);
+    render(<Widget />);
     fireEvent.click(within(dialog()).getByRole("button", { name: /IxCredits/ }));
     act(() => mutationOptions.onError({ message: "Daily reward already claimed" }));
     expect(invalidateBalance).toHaveBeenCalled();
@@ -107,26 +125,26 @@ describe("DailyBonusWidget", () => {
 
   it("shows the greyed claimed state when nothing is claimable", () => {
     balance = { canClaimDailyBonus: false, loginStreak: 4 };
-    render(<DailyBonusWidget />);
+    render(<Widget />);
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(screen.getByText("Daily claimed")).toBeInTheDocument();
     expect(screen.getByText("· 4d streak")).toBeInTheDocument();
   });
 
   it("shows the claimed state at once after Collect, without the claimable trigger", async () => {
-    const { rerender } = render(<DailyBonusWidget />);
+    const { rerender } = render(<Widget />);
     fireEvent.click(within(dialog()).getByRole("button", { name: /IxCredits/ }));
     act(() => mutationOptions.onSuccess({ creditsAwarded: 10, streak: 5 }));
     await screen.findByRole("heading", { name: "Reward claimed" });
     balance = { canClaimDailyBonus: false, loginStreak: 5 };
-    rerender(<DailyBonusWidget />);
+    rerender(<Widget />);
     fireEvent.click(screen.getByRole("button", { name: "Collect" }));
     expect(screen.getByText("Daily claimed")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Daily reward/ })).toBeNull();
   });
 
   it("keeps the trigger copper on hover and press", () => {
-    render(<DailyBonusWidget />);
+    render(<Widget />);
     // The open dialog hides the trigger from the accessibility tree.
     const trigger = screen.getByRole("button", { name: /Daily reward/, hidden: true });
     expect(trigger.className).not.toContain("hover:bg-fill-4");
@@ -135,14 +153,14 @@ describe("DailyBonusWidget", () => {
   });
 
   it("keeps the solid well on tile hover", () => {
-    render(<DailyBonusWidget />);
+    render(<Widget />);
     const tile = within(dialog()).getByRole("button", { name: /IxCredits/ });
     expect(tile.className).toContain("facet-well");
     expect(tile.className).not.toContain("hover:bg-tint-fill");
   });
 
   it("cannot be dismissed while a claim is in flight", () => {
-    render(<DailyBonusWidget />);
+    render(<Widget />);
     fireEvent.click(within(dialog()).getByRole("button", { name: /IxCredits/ }));
     expect(within(dialog()).queryByRole("button", { name: /close/i })).toBeNull();
     fireEvent.keyDown(dialog(), { key: "Escape" });
@@ -150,7 +168,7 @@ describe("DailyBonusWidget", () => {
   });
 
   it("marks only the chosen tile busy and disables both while claiming", () => {
-    render(<DailyBonusWidget />);
+    render(<Widget />);
     const credits = within(dialog()).getByRole("button", { name: /IxCredits/ });
     const card = within(dialog()).getByRole("button", { name: /Card pull/ });
     fireEvent.click(credits);
@@ -161,11 +179,39 @@ describe("DailyBonusWidget", () => {
   });
 
   it("auto-opens only once per user per day", async () => {
-    const first = render(<DailyBonusWidget />);
+    const first = render(<Widget />);
     fireEvent.click(within(dialog()).getByRole("button", { name: /close/i }));
     await act(async () => {});
     first.unmount();
-    render(<DailyBonusWidget />);
+    render(<Widget />);
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("opens from anywhere via useDailyReward", async () => {
+    const Opener = () => {
+      const { open } = useDailyReward();
+      return <button onClick={open}>Open reward</button>;
+    };
+    render(
+      <DailyRewardProvider>
+        <Opener />
+      </DailyRewardProvider>
+    );
+    fireEvent.click(within(dialog()).getByRole("button", { name: /close/i }));
+    await act(async () => {});
+    expect(screen.queryByRole("dialog")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Open reward" }));
+    expect(within(dialog()).getByRole("heading", { name: "Daily reward" })).toBeInTheDocument();
+  });
+
+  it("renders its children and no dialog for a signed-out visitor", () => {
+    mockUserId = null as unknown as string;
+    render(
+      <DailyRewardProvider>
+        <p>Page</p>
+      </DailyRewardProvider>
+    );
+    expect(screen.getByText("Page")).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 });
