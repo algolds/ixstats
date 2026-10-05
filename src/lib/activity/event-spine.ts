@@ -123,7 +123,7 @@ interface AppliedConsequence {
 interface RecordEventParams {
   db: PrismaClient;
   countryId: string;
-  sourceType: "issue" | "policy" | "decision" | "diplomacy" | "election" | "other";
+  sourceType: "issue" | "policy" | "decision" | "diplomacy" | "election" | "meeting" | "other";
   sourceId?: string;
   description: string;
   consequences?: ConsequenceInput[];

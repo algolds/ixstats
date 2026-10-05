@@ -22,6 +22,7 @@ import {
   MessagingValidationError,
 } from "./errors";
 import { recipientsBlockingSender } from "~/server/shared/user-blocks";
+import { recipientAccepts } from "~/lib/notifications/recipient-preferences";
 
 export class MessagingConversationOperations {
   private db: any;
@@ -170,17 +171,26 @@ export class MessagingConversationOperations {
     return { success: true };
   }
 
+  /**
+   * Returns null without writing anything when a single-user notice is filtered out by the
+   * recipient's notification preferences. Country-wide and global notices are not filtered.
+   */
   public async sendAdminBroadcast(input: SendAdminBroadcastInput) {
+    const userId = input.scope === "user" && input.userId ? input.userId : null;
+    const category = input.category || "system";
+    const priority = input.level || "medium";
+    if (userId && !(await recipientAccepts(userId, category, priority))) return null;
+
     const notification = await this.db.notification.create({
       data: {
         title: input.title,
         description: input.description,
         message: input.message || input.description,
         type: input.type || "system",
-        category: input.category || "system",
-        priority: input.level || "medium",
+        category,
+        priority,
         href: input.href,
-        userId: input.scope === "user" && input.userId ? input.userId : null,
+        userId,
         countryId: input.scope === "country" && input.countryId ? input.countryId : null,
         actionable: input.actionable ?? false,
         metadata: input.metadata

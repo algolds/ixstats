@@ -6,8 +6,6 @@ import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
 import {
   CheckSquare,
-  Folder,
-  ShoppingBag,
   Trash as Trash2,
   WarningCircle as AlertCircle,
   SystemRestart as Loader2,
@@ -193,25 +191,6 @@ export function InventoryTab({
                     className="text-footnote h-8"
                   >
                     Deselect all
-                  </Button>
-
-                  <div className="bg-border/60 h-4 w-px" />
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled
-                    className="text-label-secondary opacity-50"
-                  >
-                    <Folder className="mr-2 h-3.5 w-3.5" /> Move
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled
-                    className="text-label-secondary opacity-50"
-                  >
-                    <ShoppingBag className="mr-2 h-3.5 w-3.5" /> List Market
                   </Button>
 
                   <div className="border-separator flex items-center gap-2 border-l pl-2">

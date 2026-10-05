@@ -81,7 +81,6 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
     onSuccess: () => {
       notify.success("Settings Saved", "Club settings updated.");
       utils.sports.getTeam.invalidate({ id: team.id });
-      utils.sports.getMyClubOverview.invalidate({ teamId: team.id });
       onSaved?.();
       onOpenChange(false);
     },

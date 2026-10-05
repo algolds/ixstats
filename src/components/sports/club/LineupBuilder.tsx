@@ -44,7 +44,6 @@ export function LineupBuilder({
   currentLineup,
   onSaved,
 }: LineupBuilderProps) {
-  const utils = api.useUtils();
   const notify = useNotify();
   const preset = presets.find((p) => p.key === sportPreset);
 
@@ -66,7 +65,6 @@ export function LineupBuilder({
 
   const setLineup = api.sports.setLineup.useMutation({
     onSuccess: () => {
-      utils.sports.getMyClubOverview.invalidate({ teamId });
       onSaved?.();
     },
   });

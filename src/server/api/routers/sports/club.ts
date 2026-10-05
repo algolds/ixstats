@@ -638,29 +638,6 @@ export const sportsClubRouter = createTRPCRouter({
     }
   }),
 
-  getMyClubOverview: protectedProcedure
-    .input(z.object({ teamId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      try {
-        const team = await ctx.db.sportTeam.findUnique({
-          where: { id: input.teamId, ownerUserId: ctx.user.id },
-          include: TEAM_OVERVIEW_INCLUDE,
-        });
-
-        if (!team) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Club not found or not owned by you" });
-        }
-
-        return buildTeamOverview(ctx.db, team);
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch club overview",
-        });
-      }
-    }),
-
   getTeamOverview: publicProcedure
     .input(z.object({ teamId: z.string() }))
     .query(async ({ ctx, input }) => {

@@ -8,18 +8,18 @@ Blurbs is the platform's "Topic Tuesday" community prompt system. Admins (or use
 
 ## Routes
 
-| Route | File | Auth | Purpose |
-|-------|------|------|---------|
-| `/blurbs` | `page.tsx` | Public | Browse active prompts (`BlurbPromptList`) |
-| `/blurbs/[slug]` | `[slug]/page.tsx` | Public (submit requires sign-in) | Single prompt, its responses, and submission form |
-| `/blurbs/mine` | `mine/page.tsx` | Signed-in | Current user's own responses across all prompts |
-| `/blurbs/submit` | `submit/page.tsx` | Signed-in | Suggest a new prompt (saved as `DRAFT` for admin review) |
+| Route            | File              | Auth                             | Purpose                                                  |
+| ---------------- | ----------------- | -------------------------------- | -------------------------------------------------------- |
+| `/blurbs`        | `page.tsx`        | Public                           | Browse active prompts (`BlurbPromptList`)                |
+| `/blurbs/[slug]` | `[slug]/page.tsx` | Public (submit requires sign-in) | Single prompt, its responses, and submission form        |
+| `/blurbs/mine`   | `mine/page.tsx`   | Signed-in                        | Current user's own responses across all prompts          |
+| `/blurbs/submit` | `submit/page.tsx` | Signed-in                        | Suggest a new prompt (saved as `DRAFT` for admin review) |
 
 Admin moderation is **not** under `/blurbs` — it lives at `src/app/admin/blurbs/BlurbsPanel.tsx`.
 
 ## Key features
 
-- **Prompts** with lifecycle status: `DRAFT → ACTIVE → CLOSED → ARCHIVED`; optional `scheduledFor`, `closedAt`, `isRecurring`, `featured`.
+- **Prompts** with lifecycle status: `DRAFT → ACTIVE → CLOSED → ARCHIVED`; optional `featured`. Prompts open and close by status only; the `scheduledFor`, `closedAt` and `isRecurring` columns are unused and the API does not accept them (SL-23).
 - **One response per user per prompt** (DB `@@unique([promptId, userId])`); requires the user to have a country.
 - **Response content** up to 1000 chars; optional `linkedArticles` (title + url, max 5; URL defaults to `/wiki/<Title>`).
 - **Responses are not editable after submission** — the former `updateResponse` procedure (24-hour edit window) was removed on 2026-09-27 (plan 312, zero callers).
@@ -29,15 +29,15 @@ Admin moderation is **not** under `/blurbs` — it lives at `src/app/admin/blurb
 
 ## Architecture
 
-| Component / file | Role |
-|------------------|------|
-| `src/app/blurbs/*` | 4 page shells, all wrapped in `WikiOSLayout` |
-| `src/components/thinkpages/blurbs/BlurbPromptList.tsx` | Active-prompt browse list |
-| `src/components/thinkpages/blurbs/BlurbPromptDetail.tsx` | Prompt header, responses list, internal `BlurbSubmissionForm` (content + wiki-article linker) |
-| `src/components/thinkpages/blurbs/BlurbsNav.tsx` | Browse / My Blurbs / Submit nav (basePath-aware) |
-| `src/app/admin/blurbs/BlurbsPanel.tsx` | Admin moderation UI |
-| `components/dashboard/sections/BlurbSection.tsx` | Dashboard surface |
-| `components/wiki-os/reader/WikiOSMainPage.tsx`, `InfoboxWithMap.tsx`, `categories/CountryPortal.tsx` | WikiOS surfaces (homepage prompt, country blurbs) |
+| Component / file                                                                                     | Role                                                                                          |
+| ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `src/app/blurbs/*`                                                                                   | 4 page shells, all wrapped in `WikiOSLayout`                                                  |
+| `src/components/thinkpages/blurbs/BlurbPromptList.tsx`                                               | Active-prompt browse list                                                                     |
+| `src/components/thinkpages/blurbs/BlurbPromptDetail.tsx`                                             | Prompt header, responses list, internal `BlurbSubmissionForm` (content + wiki-article linker) |
+| `src/components/thinkpages/blurbs/BlurbsNav.tsx`                                                     | Browse / My Blurbs / Submit nav (basePath-aware)                                              |
+| `src/app/admin/blurbs/BlurbsPanel.tsx`                                                               | Admin moderation UI                                                                           |
+| `components/dashboard/sections/BlurbSection.tsx`                                                     | Dashboard surface                                                                             |
+| `components/wiki-os/reader/WikiOSMainPage.tsx`, `InfoboxWithMap.tsx`, `categories/CountryPortal.tsx` | WikiOS surfaces (homepage prompt, country blurbs)                                             |
 
 State is plain tRPC React Query (infinite queries with cursor pagination); no dedicated hooks directory.
 
@@ -49,21 +49,21 @@ Two Prisma models in `prisma/schema/wiki.prisma`: `BlurbPrompt` (`blurb_prompts`
 
 Router: `src/server/api/routers/blurbs/` (`mergeRouters` of three files; registered in `root.ts` as `blurbs`).
 
-| Procedure | File | Access | Notes |
-|-----------|------|--------|-------|
-| `getActivePrompts` | `browse.ts` | public | Active prompts, newest first, cursor-paginated |
-| `getPrompt` | `browse.ts` | public | By slug, with response count |
-| `getResponsesForPrompt` | `browse.ts` | public | Paginated, featured-first option |
-| `getResponsesForCountry` | `browse.ts` | public | All blurbs for a country |
-| `getBlurbCount` | `browse.ts` | public | Total response count (WikiOS stat card) |
-| `getRandomActivePrompt` | `browse.ts` | public | Random/featured prompt for WikiOS homepage |
-| `getMyBlurbs` | `respond.ts` | protected | Current user's responses |
-| `getMyResponse` | `respond.ts` | protected | Whether user already answered a prompt |
-| `submitResponse` | `respond.ts` | protected | Create response (+ThinkPages cross-post) |
-| `submitPrompt` | `respond.ts` | protected | Suggest a prompt (→ `DRAFT`) |
-| `getAllPrompts` | `moderate.ts` | admin | All prompts incl. drafts/closed/archived |
-| `createPrompt` / `updatePrompt` | `moderate.ts` | admin | Prompt lifecycle management |
-| `featureResponse` / `featurePrompt` | `moderate.ts` | admin | Toggle featured flags |
+| Procedure                           | File          | Access    | Notes                                          |
+| ----------------------------------- | ------------- | --------- | ---------------------------------------------- |
+| `getActivePrompts`                  | `browse.ts`   | public    | Active prompts, newest first, cursor-paginated |
+| `getPrompt`                         | `browse.ts`   | public    | By slug, with response count                   |
+| `getResponsesForPrompt`             | `browse.ts`   | public    | Paginated, featured-first option               |
+| `getResponsesForCountry`            | `browse.ts`   | public    | All blurbs for a country                       |
+| `getBlurbCount`                     | `browse.ts`   | public    | Total response count (WikiOS stat card)        |
+| `getRandomActivePrompt`             | `browse.ts`   | public    | Random/featured prompt for WikiOS homepage     |
+| `getMyBlurbs`                       | `respond.ts`  | protected | Current user's responses                       |
+| `getMyResponse`                     | `respond.ts`  | protected | Whether user already answered a prompt         |
+| `submitResponse`                    | `respond.ts`  | protected | Create response (+ThinkPages cross-post)       |
+| `submitPrompt`                      | `respond.ts`  | protected | Suggest a prompt (→ `DRAFT`)                   |
+| `getAllPrompts`                     | `moderate.ts` | admin     | All prompts incl. drafts/closed/archived       |
+| `createPrompt` / `updatePrompt`     | `moderate.ts` | admin     | Prompt lifecycle management                    |
+| `featureResponse` / `featurePrompt` | `moderate.ts` | admin     | Toggle featured flags                          |
 
 ## Connections
 

@@ -27,11 +27,9 @@ export function PlayerTrainingButton({
   onTrained,
 }: PlayerTrainingButtonProps) {
   const [open, setOpen] = useState(false);
-  const utils = api.useUtils();
 
   const trainPlayer = api.sports.trainPlayer.useMutation({
     onSuccess: () => {
-      utils.sports.getMyClubOverview.invalidate({ teamId });
       onTrained?.();
     },
   });

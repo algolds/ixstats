@@ -16,6 +16,7 @@ import { MessagingForbiddenError } from "./errors";
 import { formatMessagesConversation, formatThinkpagesConversation } from "./formatters";
 import { recordMessagingTelemetry } from "./telemetry";
 import { batchResolveMessagingAccounts } from "./account-resolver";
+import { blockedUserClerkIds } from "~/server/shared/user-blocks";
 
 const FOLDER_SOURCES = new Set(["diplomatic", "wiki", "forum"]);
 const COUNTED_SOURCES = ["thinktank", "diplomatic", "wiki", "forum"] as const;
@@ -393,6 +394,12 @@ export class MessagingQueryOperations {
     }
 
     const where: any = { conversationId: targetConvId };
+
+    // In group conversations, messages from accounts the viewer blocked are hidden from them.
+    if (conv && conv.type !== "direct") {
+      const blocked = await blockedUserClerkIds(this.db, actorId);
+      if (blocked.length > 0) where.userId = { notIn: blocked };
+    }
 
     if (cursor) {
       where.ixTimeTimestamp =

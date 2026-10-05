@@ -851,7 +851,7 @@ model StorytellerEffect {
 model CountryChangeLog {
   id              String   @id @default(cuid())
   countryId       String
-  sourceType      String   // "issue" | "policy" | "decision" | "diplomacy" | "election" | "other"
+  sourceType      String   // "issue" | "policy" | "decision" | "diplomacy" | "election" | "meeting" | "other"
   sourceId        String?
   targetModel     String?  // "Country" | "GovernmentStructure" | "InternalStabilityMetrics"
   targetField     String?

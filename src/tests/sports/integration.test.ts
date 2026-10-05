@@ -476,6 +476,14 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
     });
   });
 
+  describe("club overview", () => {
+    it("serves the club page through getTeamOverview only (SL-25: getMyClubOverview was never queried)", () => {
+      const procedures = Object.keys(sportsRouter._def.procedures);
+      expect(procedures).toContain("getTeamOverview");
+      expect(procedures).not.toContain("getMyClubOverview");
+    });
+  });
+
   describe("getMyClubs query", () => {
     it("returns clubs owned by the user with active season standing, position, and championships", async () => {
       mockPrisma.sportTeam.findMany.mockResolvedValue([

@@ -10,6 +10,7 @@ import {
   lightMutationProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { recipientAccepts } from "~/lib/notifications/recipient-preferences";
 
 const NotificationLevel = z.enum(["low", "medium", "high", "critical"]);
 const NotificationType = z.enum([
@@ -237,6 +238,12 @@ export const notificationsUserRouter = createTRPCRouter({
       const { db } = ctx;
 
       // Admin role verified by adminProcedure middleware
+
+      // A notice for one user respects their notification preferences (null = filtered out).
+      // Country-wide and global notices are not filtered.
+      if (input.userId && !(await recipientAccepts(input.userId, input.category, input.level))) {
+        return null;
+      }
 
       const notification = await db.notification.create({
         data: {
