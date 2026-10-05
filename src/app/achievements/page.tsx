@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { VaultSidebarLayout } from "~/components/vault/VaultSidebarLayout";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { Trophy as Award } from "iconoir-react";
@@ -89,85 +88,83 @@ export default function AchievementsPage() {
   const globalRank = rankIndex !== undefined && rankIndex !== -1 ? rankIndex + 1 : 0;
 
   return (
-    <VaultSidebarLayout>
-      <div className="space-y-6">
-        <PageHeader
-          title="Achievements"
-          subtitle={isMounted && userProfile ? `${completionPercent}% mastered` : undefined}
-          actions={
-            <>
-              <Button asChild variant="secondary" size="sm">
-                <Link href="/leaderboards">
-                  <Award aria-hidden />
-                  <span>Global leaderboards</span>
-                </Link>
-              </Button>
+    <div className="container mx-auto space-y-6 px-4 py-4 sm:py-6 md:py-8">
+      <PageHeader
+        title="Achievements"
+        subtitle={isMounted && userProfile ? `${completionPercent}% mastered` : undefined}
+        actions={
+          <>
+            <Button asChild variant="secondary" size="sm">
+              <Link href="/leaderboards">
+                <Award aria-hidden />
+                <span>Global leaderboards</span>
+              </Link>
+            </Button>
 
-              <div className="bg-fill-3 rounded-control-sm flex h-(--control-height-sm) items-center gap-2 px-3">
-                <Label
-                  htmlFor="cabinet-toggle"
-                  className="text-label text-footnote cursor-pointer font-medium select-none"
-                >
-                  Showcase shelf
-                </Label>
-                <Switch id="cabinet-toggle" checked={showCabinet} onCheckedChange={toggleCabinet} />
-              </div>
-            </>
-          }
-        />
+            <div className="bg-fill-3 rounded-control-sm flex h-(--control-height-sm) items-center gap-2 px-3">
+              <Label
+                htmlFor="cabinet-toggle"
+                className="text-label text-footnote cursor-pointer font-medium select-none"
+              >
+                Showcase shelf
+              </Label>
+              <Switch id="cabinet-toggle" checked={showCabinet} onCheckedChange={toggleCabinet} />
+            </div>
+          </>
+        }
+      />
 
-        {isMounted && userProfile && (
-          <Card padding="lg">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <Stat
-                label="Achievements unlocked"
-                value={<NumberFlowDisplay value={totalUnlocked} />}
-              />
-              <Stat
-                label="Achievement points"
-                value={
-                  <span className="flex items-baseline gap-1">
-                    <span className="text-success-ink">
-                      <NumberFlowDisplay value={gameplayPoints} />
-                    </span>
-                    <span className="text-footnote text-label-secondary">pts</span>
+      {isMounted && userProfile && (
+        <Card padding="lg">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Stat
+              label="Achievements unlocked"
+              value={<NumberFlowDisplay value={totalUnlocked} />}
+            />
+            <Stat
+              label="Achievement points"
+              value={
+                <span className="flex items-baseline gap-1">
+                  <span className="text-success-ink">
+                    <NumberFlowDisplay value={gameplayPoints} />
                   </span>
-                }
-              />
-              <Stat
-                label="Global rank"
-                value={
-                  globalRank > 0 ? (
-                    <span className="flex items-baseline">
-                      #<NumberFlowDisplay value={globalRank} />
-                    </span>
-                  ) : (
-                    "—"
-                  )
-                }
-              />
-            </div>
-          </Card>
-        )}
-
-        {/* Showcase shelf */}
-        {!isLoading && showCabinet && <ShowcaseTab achievements={achievements} />}
-
-        {/* Loading */}
-        {isLoading && (
-          <div aria-busy className="space-y-4">
-            <Skeleton className="rounded-card h-40" />
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <Skeleton className="rounded-card h-48" />
-              <Skeleton className="rounded-card h-48" />
-              <Skeleton className="rounded-card h-48" />
-            </div>
+                  <span className="text-footnote text-label-secondary">pts</span>
+                </span>
+              }
+            />
+            <Stat
+              label="Global rank"
+              value={
+                globalRank > 0 ? (
+                  <span className="flex items-baseline">
+                    #<NumberFlowDisplay value={globalRank} />
+                  </span>
+                ) : (
+                  "—"
+                )
+              }
+            />
           </div>
-        )}
+        </Card>
+      )}
 
-        {/* Catalog */}
-        {!isLoading && <AllAchievementsTab achievements={achievements} />}
-      </div>
-    </VaultSidebarLayout>
+      {/* Showcase shelf */}
+      {!isLoading && showCabinet && <ShowcaseTab achievements={achievements} />}
+
+      {/* Loading */}
+      {isLoading && (
+        <div aria-busy className="space-y-4">
+          <Skeleton className="rounded-card h-40" />
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Skeleton className="rounded-card h-48" />
+            <Skeleton className="rounded-card h-48" />
+            <Skeleton className="rounded-card h-48" />
+          </div>
+        </div>
+      )}
+
+      {/* Catalog */}
+      {!isLoading && <AllAchievementsTab achievements={achievements} />}
+    </div>
   );
 }

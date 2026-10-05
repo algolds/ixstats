@@ -26,7 +26,7 @@ export function AppShell({ beforeMain, children }: AppShellProps) {
   const pathname = stripBasePath(usePathname() || "/");
   const chromeless = isChromelessPath(pathname);
   return (
-    <DailyRewardProvider>
+    <DailyRewardProvider autoOpen={!chromeless}>
       <div
         data-app-shell=""
         data-app={getTintForPath(getAppForPath(pathname), undefined)}

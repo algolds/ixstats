@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
 import type { Metadata } from "next";
 import { PortalTintSync } from "~/components/providers/PortalTintSync";
 
@@ -19,7 +18,7 @@ export default function ThinktanksLayout({ children }: { children: React.ReactNo
     >
       <div data-app="thinkpages" className="relative min-h-screen">
         <PortalTintSync />
-        <DashboardSidebarLayout disableCollapse={true}>{children}</DashboardSidebarLayout>
+        <div className="container mx-auto px-4 py-4 sm:py-6 md:py-8">{children}</div>
       </div>
     </Suspense>
   );

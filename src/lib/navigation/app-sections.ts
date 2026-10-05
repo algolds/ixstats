@@ -265,7 +265,7 @@ export const APPS: readonly AppDefinition[] = [
     match: ["/vault"],
     requiresAuth: true,
     navSetting: "showCardsTab",
-    // Mirrors the vault's pill bar (VaultSidebarLayout); its Achievements entry is Home → Achievements.
+    // Achievements lives under Home → Achievements, not here.
     sections: [
       { id: "dashboard", label: "Dashboard", href: "/vault", icon: Wallet, exact: true },
       {

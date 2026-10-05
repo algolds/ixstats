@@ -12,7 +12,7 @@ see `docs/systems/achievements.md` for the full guide.
 | Path              | Purpose                                                                            |
 | ----------------- | ---------------------------------------------------------------------------------- |
 | `/achievements`   | Header card + optional Showcase shelf + full catalog (no tabs; `?tab=` is ignored) |
-| `/leaderboards`   | Standalone global leaderboards (`LeaderboardTab`) wrapped in `VaultSidebarLayout`  |
+| `/leaderboards`   | Standalone global leaderboards (`LeaderboardTab`) in a plain page container  |
 | `/wiki/lorewards` | Wiki Lorewards (moved out of `/achievements`; lives under WikiOS)                  |
 
 ## Key features
@@ -39,7 +39,7 @@ in-page leaderboard tab. The planned Ribbons tab is not built yet — see
 | Layer         | Files                                                                                     |
 | ------------- | ----------------------------------------------------------------------------------------- |
 | Page          | `src/app/achievements/page.tsx` (profile card, showcase toggle, catalog, layout)          |
-| Layout        | `VaultSidebarLayout`                                                                      |
+| Layout        | Page container (no rail; the source list lists the sections)                              |
 | Tabs / panels | `components/achievements/tabs/{AllAchievementsTab,ShowcaseTab,LeaderboardTab}.tsx`        |
 | Widgets       | `components/achievements/{AchievementDecorations,FloatingRibbonRack}.tsx`, `constants.ts` |
 

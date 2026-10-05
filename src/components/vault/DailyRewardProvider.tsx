@@ -190,10 +190,12 @@ function DailyRewardDialog({
   userId,
   isOpen,
   setIsOpen,
+  autoOpen,
 }: {
   userId: string;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
+  autoOpen: boolean;
 }) {
   const utils = api.useUtils();
 
@@ -205,12 +207,13 @@ function DailyRewardDialog({
   const canClaim = balanceData?.canClaimDailyBonus ?? false;
   const streak = balanceData?.loginStreak ?? 0;
 
-  // Auto-open at most once per user per UTC day, not on every page load or navigation.
+  // Auto-open at most once per user per UTC day, not on every page load or navigation. Routes
+  // without chrome (maps, full-screen editors) opt out, and do not spend the day's auto-open.
   useEffect(() => {
-    if (!canClaim || hasAutoOpenedToday(userId)) return;
+    if (!autoOpen || !canClaim || hasAutoOpenedToday(userId)) return;
     markAutoOpenedToday(userId);
     setIsOpen(true);
-  }, [userId, canClaim, setIsOpen]);
+  }, [autoOpen, userId, canClaim, setIsOpen]);
 
   const claimMutation = api.vault.claimCombinedDailyClaim.useMutation({
     onSuccess: (data) => {
@@ -330,7 +333,14 @@ function DailyRewardDialog({
   );
 }
 
-export function DailyRewardProvider({ children }: { children: React.ReactNode }) {
+export function DailyRewardProvider({
+  children,
+  autoOpen = true,
+}: {
+  children: React.ReactNode;
+  /** Open the dialog by itself once a day when a reward is claimable. */
+  autoOpen?: boolean;
+}) {
   const { userId } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const open = useCallback(() => setIsOpen(true), []);
@@ -339,7 +349,14 @@ export function DailyRewardProvider({ children }: { children: React.ReactNode })
   return (
     <DailyRewardContext.Provider value={value}>
       {children}
-      {userId && <DailyRewardDialog userId={userId} isOpen={isOpen} setIsOpen={setIsOpen} />}
+      {userId && (
+        <DailyRewardDialog
+          userId={userId}
+          isOpen={isOpen}
+          setIsOpen={setIsOpen}
+          autoOpen={autoOpen}
+        />
+      )}
     </DailyRewardContext.Provider>
   );
 }

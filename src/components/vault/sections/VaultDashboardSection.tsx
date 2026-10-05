@@ -10,6 +10,8 @@ import { VaultNetWorthCard } from "./dashboard/VaultNetWorthCard";
 import { VaultYieldProjectionsCard } from "./dashboard/VaultYieldProjectionsCard";
 import { VaultRecentActivityCard, type ActivityEntry } from "./dashboard/VaultRecentActivityCard";
 import { VaultShowcaseGrid } from "./dashboard/VaultShowcaseGrid";
+import { VaultWalletCard } from "./dashboard/VaultWalletCard";
+import { DailyRewardStatus } from "~/components/vault/DailyRewardProvider";
 
 interface VaultDashboardSectionProps {
   onNavigate?: (section: any) => void;
@@ -45,11 +47,16 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
     }
   };
 
-  const { isLoading: earningsLoading } = api.vault.getTodayEarnings.useQuery(undefined, {
-    enabled: !!user,
-  });
+  const { data: todayEarnings, isLoading: earningsLoading } = api.vault.getTodayEarnings.useQuery(
+    undefined,
+    { enabled: !!user }
+  );
 
-  const { data: balanceData, refetch: refetchBalance } = api.vault.getBalance.useQuery(undefined, {
+  const {
+    data: balanceData,
+    isLoading: balanceLoading,
+    refetch: refetchBalance,
+  } = api.vault.getBalance.useQuery(undefined, {
     enabled: !!user?.id,
   });
 
@@ -167,6 +174,15 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-6">
         {/* Left Column (Financial Center & Ledger) */}
         <div className="flex flex-col space-y-6 lg:col-span-2">
+          <VaultWalletCard
+            reward={<DailyRewardStatus />}
+            credits={balanceData?.credits}
+            balanceLoading={balanceLoading}
+            todayEarnings={todayEarnings}
+            treasuryRevenue={passiveIncomeData}
+            budgetBonusPercent={budgetMultiplierData?.percentChange}
+          />
+
           <VaultNetWorthCard
             vaultLevel={levelData?.vaultLevel ?? 1}
             netWorth={netWorth}

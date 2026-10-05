@@ -6,7 +6,6 @@ import {
   Lock,
   ShareAndroid,
   Settings,
-  ArrowLeft,
   Check,
   Plus,
   LogOut,
@@ -14,8 +13,6 @@ import {
   Book,
   RssFeed,
   Group,
-  SidebarCollapse,
-  SidebarExpand,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -48,11 +45,10 @@ interface ThinktankHeaderProps {
   onOpenSettings: () => void;
   onJoin: () => void;
   onLeave: () => void;
-  onBack?: () => void;
+  /** Opens the directory; shown only where the directory is a sheet rather than a column. */
+  onOpenDirectory?: () => void;
   isJoining?: boolean;
   isLeaving?: boolean;
-  isSidebarCollapsed?: boolean;
-  onToggleSidebar?: () => void;
 }
 
 const TABS: Array<{
@@ -104,15 +100,12 @@ export function ThinktankHeader({
   onOpenSettings,
   onJoin,
   onLeave,
-  onBack,
+  onOpenDirectory,
   isJoining = false,
   isLeaving = false,
-  isSidebarCollapsed = false,
-  onToggleSidebar,
 }: ThinktankHeaderProps) {
   const isOwnerOrAdmin = group.userRole === "owner" || group.userRole === "admin";
   const isMember = Boolean(group.isMember);
-  const sidebarLabel = isSidebarCollapsed ? "Show Directory Sidebar" : "Collapse Sidebar for Focus";
 
   return (
     <div className="border-separator bg-surface relative flex shrink-0 flex-col overflow-hidden border-b">
@@ -133,29 +126,16 @@ export function ThinktankHeader({
 
       <div className="relative z-10 flex items-center justify-between gap-3 px-4 py-3 md:px-5">
         <div className="flex min-w-0 items-center gap-2">
-          {onBack && (
+          {onOpenDirectory && (
             <Button
               variant="ghost"
-              size="sm"
-              onClick={withPress(onBack)}
-              className="text-label-secondary hover:text-label size-8 shrink-0 p-0 md:hidden"
-              title="Back to directory"
-              aria-label="Back to directory"
+              size="icon"
+              onClick={withPress(onOpenDirectory)}
+              className="text-label-secondary hover:text-label shrink-0 xl:hidden"
+              title="All ThinkTanks"
+              aria-label="All ThinkTanks"
             >
-              <ArrowLeft />
-            </Button>
-          )}
-
-          {onToggleSidebar && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={withPress(onToggleSidebar)}
-              className="text-label-secondary hover:text-label hidden size-8 shrink-0 p-0 lg:flex"
-              title={sidebarLabel}
-              aria-label={sidebarLabel}
-            >
-              {isSidebarCollapsed ? <SidebarExpand /> : <SidebarCollapse />}
+              <Group />
             </Button>
           )}
 

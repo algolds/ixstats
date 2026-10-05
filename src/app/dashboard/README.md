@@ -76,7 +76,7 @@ Verified `api.*` (tRPC) calls used across the dashboard tree:
   `countries.getGlobalStats`, `countries.getRandomCountries`,
   `countries.getActivityRingsData`, `countries.getMapLinkStatus`,
   `mycountry.getRankings`, `mycountry.getCountryDashboard`
-- **Vault**: `vault.getBalance` (via `VaultWidget`), `achievements.getAllWithStatus`
+- **Vault**: `vault.getBalance` (via the Vault dashboard wallet card), `achievements.getAllWithStatus`
 - **Executive / sim**: `meetings.getMeetings`,
   `nationalIssues.getPendingCount`, `crisisEvents.getStatistics`
 - **Social feed**: `activities.getGlobalFeed`, `activities.getFollowingFeed`,
@@ -95,7 +95,7 @@ The dashboard is a hub that links/surfaces:
 
 - **MyCountry** — hero "MyCountry" link; Issues/Actions deep-link
   to `/mycountry/executive`; crisis banner.
-- **IxVault** — credit balance, login streak, `VaultWidget`, collector
+- **IxVault** — credit balance, login streak, collector
   achievement badges.
 - **ThinkPages / Activities** — global & following feeds, in-feed composer.
 - **Messages** — `/messages` quick action with unread counts.

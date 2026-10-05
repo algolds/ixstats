@@ -14,7 +14,7 @@ import { soundEffects } from "~/lib/sound/cuelume";
 import { timeAgo } from "~/lib/format/compact";
 import { isGroupMember } from "./groupMembership";
 
-interface ThinktankDirectorySidebarProps {
+interface ThinktankDirectoryProps {
   groups: any[];
   isLoading: boolean;
   selectedGroupId: string | null;
@@ -26,14 +26,14 @@ interface ThinktankDirectorySidebarProps {
 const formatRelativeTime = (date?: string | Date | null) =>
   date ? timeAgo(date, { suffix: false }) : "";
 
-export function ThinktankDirectorySidebar({
+export function ThinktankDirectory({
   groups,
   isLoading,
   selectedGroupId,
   currentUserId = "",
   onSelectGroup,
   onCreateGroup,
-}: ThinktankDirectorySidebarProps) {
+}: ThinktankDirectoryProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"my" | "discover">("my");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");

@@ -204,6 +204,33 @@ describe("DailyRewardProvider", () => {
     expect(within(dialog()).getByRole("heading", { name: "Daily reward" })).toBeInTheDocument();
   });
 
+  it("skips the auto-open when autoOpen is off, but useDailyReward().open() still opens it", () => {
+    const Opener = () => {
+      const { open } = useDailyReward();
+      return <button onClick={open}>Open reward</button>;
+    };
+    render(
+      <DailyRewardProvider autoOpen={false}>
+        <Opener />
+      </DailyRewardProvider>
+    );
+    expect(screen.queryByRole("dialog")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Open reward" }));
+    expect(within(dialog()).getByRole("heading", { name: "Daily reward" })).toBeInTheDocument();
+  });
+
+  it("does not spend today's auto-open while autoOpen is off", async () => {
+    const off = render(
+      <DailyRewardProvider autoOpen={false}>
+        <p>Map</p>
+      </DailyRewardProvider>
+    );
+    expect(screen.queryByRole("dialog")).toBeNull();
+    off.unmount();
+    render(<Widget />);
+    expect(dialog()).toBeInTheDocument();
+  });
+
   it("renders its children and no dialog for a signed-out visitor", () => {
     mockUserId = null as unknown as string;
     render(

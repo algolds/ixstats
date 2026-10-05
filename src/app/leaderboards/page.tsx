@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { VaultSidebarLayout } from "~/components/vault/VaultSidebarLayout";
 import { LeaderboardTab } from "~/components/achievements/tabs/LeaderboardTab";
 import { PageHeader } from "~/components/shell/PageHeader";
 
@@ -11,11 +10,9 @@ export default function LeaderboardsPage() {
   }, []);
 
   return (
-    <VaultSidebarLayout>
-      <div className="space-y-6">
-        <PageHeader title="Global leaderboards" className="-mx-2" />
-        <LeaderboardTab />
-      </div>
-    </VaultSidebarLayout>
+    <div className="container mx-auto space-y-6 px-4 py-4 sm:py-6 md:py-8">
+      <PageHeader title="Global leaderboards" className="-mx-2" />
+      <LeaderboardTab />
+    </div>
   );
 }

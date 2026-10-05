@@ -134,7 +134,6 @@ describe("app section map routes", () => {
  * owns. Hrefs are read from the source (`href: "/…"`, `withBasePath("/…")`).
  */
 const HIDDEN_SUBNAVS: { file: string; marker: string }[] = [
-  { file: "components/vault/VaultSidebarLayout.tsx", marker: "data-app-subnav" },
   { file: "app/admin/_components/AdminSidebarNavWidget.tsx", marker: "data-app-subnav" },
   { file: "app/admin/_components/AdminSidebarLayout.tsx", marker: "data-app-subnav" },
   { file: "app/settings/_components/SettingsContent.tsx", marker: "data-app-subnav" },

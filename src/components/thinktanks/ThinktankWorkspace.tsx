@@ -1,18 +1,19 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
-import { Group, Plus } from "iconoir-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Group } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { useNotify } from "~/hooks/useNotify";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
+import { PageHeader } from "~/components/shell/PageHeader";
 
 import { ThinktankLayout } from "./ThinktankLayout";
-import { isGroupMember } from "./groupMembership";
-import { ThinktankDirectorySidebar } from "./ThinktankDirectorySidebar";
+import { ThinktankDirectory } from "./ThinktankDirectory";
 import { ThinktankHeader, type ThinktankTab } from "./ThinktankHeader";
 import { ThinktankFeedTab } from "./ThinktankFeedTab";
 import { ThinktankPapersTab } from "./ThinktankPapersTab";
@@ -23,21 +24,6 @@ import { ThinktankCreateModal } from "./ThinktankCreateModal";
 
 interface ThinktankWorkspaceProps {
   initialGroupId?: string;
-}
-
-const lastSelectedKey = (userId: string) => `ix_thinktanks_last_selected_${userId || "guest"}`;
-
-/** The remembered group, else a group the user belongs to, else the first one. */
-function pickDefaultGroup(groups: any[], currentUserId: string): string {
-  try {
-    const lastGroupId = localStorage.getItem(lastSelectedKey(currentUserId));
-    if (lastGroupId && groups.some((g) => g.id === lastGroupId)) return lastGroupId;
-  } catch {
-    // storage unavailable (private mode): fall back to the default group
-  }
-
-  const mine = groups.find((g) => isGroupMember(g, currentUserId));
-  return (mine ?? groups[0]).id;
 }
 
 function useThinktankMembership(groupId: string | null, currentUserId: string) {
@@ -130,35 +116,35 @@ function GroupContent({ group, activeTab, currentUserId, onJoin }: GroupContentP
 }
 
 export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWorkspaceProps = {}) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const utils = api.useUtils();
   const { user } = useUser();
   const currentUserId = user?.id ?? "";
 
-  const initialGroupId = propGroupId || searchParams.get("group") || null;
+  // The group lives in the URL: /thinktanks/[groupId], or the older ?group= links.
+  const selectedGroupId = propGroupId || searchParams.get("group") || null;
   const tabParam = searchParams.get("tab");
   const initialTab: ThinktankTab =
     tabParam === "roster" || tabParam === "docs" || tabParam === "chat" ? tabParam : "feed";
 
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(initialGroupId);
   const [activeTab, setActiveTab] = useState<ThinktankTab>(initialTab);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [directoryOpen, setDirectoryOpen] = useState(false);
 
-  // Mirror the selected group and tab into the URL without a page reload
+  // Mirror the tab into the URL without a page reload
   useEffect(() => {
     const current = new URLSearchParams(window.location.search);
     const next = new URLSearchParams(current);
-    if (selectedGroupId) next.set("group", selectedGroupId);
-    else next.delete("group");
     if (activeTab !== "feed") next.set("tab", activeTab);
     else next.delete("tab");
 
     if (next.toString() !== current.toString()) {
-      window.history.replaceState(null, "", `${window.location.pathname}?${next.toString()}`);
+      const query = next.toString();
+      window.history.replaceState(null, "", `${window.location.pathname}${query && `?${query}`}`);
     }
-  }, [selectedGroupId, activeTab]);
+  }, [activeTab]);
 
   const { data: allGroupsData, isLoading: isLoadingGroups } = api.thinkpages.getThinktanks.useQuery(
     { type: "all" },
@@ -166,21 +152,6 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
   );
 
   const groups = useMemo(() => (allGroupsData as any[]) ?? [], [allGroupsData]);
-
-  useEffect(() => {
-    if (selectedGroupId || groups.length === 0) return;
-    // oxlint-disable-next-line
-    setSelectedGroupId(initialGroupId ?? pickDefaultGroup(groups, currentUserId));
-  }, [groups, selectedGroupId, initialGroupId, currentUserId]);
-
-  useEffect(() => {
-    if (!selectedGroupId) return;
-    try {
-      localStorage.setItem(lastSelectedKey(currentUserId), selectedGroupId);
-    } catch {
-      // storage unavailable (private mode): the preference is not persisted
-    }
-  }, [selectedGroupId, currentUserId]);
 
   const { data: activeGroupData, isLoading: isLoadingActiveGroup } =
     api.thinkpages.getThinktankById.useQuery(
@@ -200,76 +171,80 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
 
   const membership = useThinktankMembership(selectedGroupId, currentUserId);
 
+  const openGroup = (id: string) => {
+    soundEffects.press();
+    setDirectoryOpen(false);
+    router.push(`/thinktanks/${id}`);
+  };
+
+  const directory = (
+    <ThinktankDirectory
+      groups={groups}
+      isLoading={isLoadingGroups}
+      selectedGroupId={selectedGroupId}
+      currentUserId={currentUserId}
+      onSelectGroup={openGroup}
+      onCreateGroup={() => setShowCreateModal(true)}
+    />
+  );
+
   return (
     <>
-      <ThinktankLayout
-        isSidebarCollapsed={isSidebarCollapsed}
-        directoryPanel={
-          <ThinktankDirectorySidebar
-            groups={groups}
-            isLoading={isLoadingGroups}
-            selectedGroupId={selectedGroupId}
-            currentUserId={currentUserId}
-            onSelectGroup={(id) => {
-              soundEffects.press();
-              setSelectedGroupId(id);
-              setIsSidebarCollapsed(true);
-            }}
-            onCreateGroup={() => setShowCreateModal(true)}
-          />
-        }
-        workspacePanel={
-          isLoadingActiveGroup && selectedGroupId ? (
-            <div className="flex h-full flex-col items-center justify-center gap-3">
-              <span className="border-tint size-5 animate-spin rounded-full border-2 border-t-transparent" />
-              <p className="text-footnote text-label-secondary">Loading group...</p>
-            </div>
-          ) : activeGroup ? (
-            <div className="flex h-full flex-col overflow-hidden">
-              <ThinktankHeader
-                group={activeGroup}
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-                onOpenSettings={() => setShowSettingsModal(true)}
-                onJoin={membership.join}
-                onLeave={membership.leave}
-                onBack={() => setIsSidebarCollapsed(false)}
-                isJoining={membership.isJoining}
-                isLeaving={membership.isLeaving}
-                isSidebarCollapsed={isSidebarCollapsed}
-                onToggleSidebar={() => setIsSidebarCollapsed((prev) => !prev)}
-              />
-
-              <div className="min-h-0 flex-1 overflow-y-auto">
-                <GroupContent
+      {selectedGroupId ? (
+        <ThinktankLayout
+          directoryOpen={directoryOpen}
+          onDirectoryOpenChange={setDirectoryOpen}
+          directoryPanel={directory}
+          workspacePanel={
+            isLoadingActiveGroup ? (
+              <div className="flex h-full flex-col items-center justify-center gap-3">
+                <span className="border-tint size-5 animate-spin rounded-full border-2 border-t-transparent" />
+                <p className="text-footnote text-label-secondary">Loading group...</p>
+              </div>
+            ) : activeGroup ? (
+              <div className="flex h-full flex-col overflow-hidden">
+                <ThinktankHeader
                   group={activeGroup}
                   activeTab={activeTab}
-                  currentUserId={currentUserId}
+                  onTabChange={setActiveTab}
+                  onOpenSettings={() => setShowSettingsModal(true)}
                   onJoin={membership.join}
+                  onLeave={membership.leave}
+                  onOpenDirectory={() => setDirectoryOpen(true)}
+                  isJoining={membership.isJoining}
+                  isLeaving={membership.isLeaving}
                 />
+
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                  <GroupContent
+                    group={activeGroup}
+                    activeTab={activeTab}
+                    currentUserId={currentUserId}
+                    onJoin={membership.join}
+                  />
+                </div>
               </div>
-            </div>
-          ) : (
-            <EmptyState
-              className="h-full"
-              icon={<Group />}
-              title="Select a group"
-              message="Choose a group to see its feed, discussions and roster."
-              action={
-                <Button
-                  onClick={() => {
-                    soundEffects.press();
-                    setShowCreateModal(true);
-                  }}
-                >
-                  <Plus />
-                  Create a group
-                </Button>
-              }
-            />
-          )
-        }
-      />
+            ) : (
+              <EmptyState
+                className="h-full"
+                icon={<Group />}
+                title="Group not found"
+                message="This group is not available. Pick another from the directory."
+                action={
+                  <Button variant="secondary" onClick={() => router.push("/thinktanks")}>
+                    All ThinkTanks
+                  </Button>
+                }
+              />
+            )
+          }
+        />
+      ) : (
+        <div className="space-y-6">
+          <PageHeader title="ThinkTanks" subtitle="Collaborative groups, chats and working notes" />
+          <Card className="flex flex-col overflow-hidden">{directory}</Card>
+        </div>
+      )}
 
       {activeGroup && showSettingsModal && (
         <ThinktankSettingsModal
@@ -283,8 +258,8 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
           initialAvatar={activeGroup.avatar}
           initialSettings={activeGroup.settings as any}
           onDeleteSuccess={() => {
-            setSelectedGroupId(null);
             void utils.thinkpages.getThinktanks.invalidate();
+            router.push("/thinktanks");
           }}
         />
       )}
@@ -293,7 +268,7 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
         <ThinktankCreateModal
           isOpen={showCreateModal}
           onClose={() => setShowCreateModal(false)}
-          onCreated={setSelectedGroupId}
+          onCreated={openGroup}
         />
       )}
     </>

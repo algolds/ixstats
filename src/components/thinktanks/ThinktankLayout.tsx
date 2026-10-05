@@ -1,43 +1,35 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { cn } from "~/lib/utils";
-import { CutoutCard } from "~/components/ui/cutout-card";
+import { Card } from "~/components/ui/card";
+import { Inspector } from "~/components/ui/inspector";
 
 interface ThinktankLayoutProps {
   directoryPanel: ReactNode;
   workspacePanel: ReactNode;
-  isSidebarCollapsed: boolean;
+  /** Whether the directory sheet is open; the directory is a column at 1280px and wider. */
+  directoryOpen: boolean;
+  onDirectoryOpenChange: (open: boolean) => void;
 }
 
+const PANEL_HEIGHT = "h-[calc(100vh-8.5rem)] min-h-[500px]";
+
+/** The open group, with the directory of ThinkTanks beside it in an Inspector. */
 export function ThinktankLayout({
   directoryPanel,
   workspacePanel,
-  isSidebarCollapsed,
+  directoryOpen,
+  onDirectoryOpenChange,
 }: ThinktankLayoutProps) {
   return (
-    <div className="relative grid h-[calc(100vh-8.5rem)] min-h-[500px] grid-cols-1 gap-5 lg:grid-cols-3">
-      {/* Column 1: Directory list panel (1/3 width on large screens) */}
-      <CutoutCard
-        trackPointerHover={false}
-        className={cn(
-          "h-full min-w-0 cursor-default flex-col overflow-hidden lg:col-span-1",
-          isSidebarCollapsed ? "hidden" : "flex"
-        )}
-      >
-        {directoryPanel}
-      </CutoutCard>
-
-      {/* Column 2: Workspace panel (2/3 width on large screens) */}
-      <CutoutCard
-        trackPointerHover={false}
-        className={cn(
-          "h-full min-w-0 cursor-default flex-col overflow-hidden",
-          isSidebarCollapsed ? "col-span-full flex lg:col-span-3" : "hidden lg:col-span-2 lg:flex"
-        )}
-      >
+    <div className="flex gap-5 lg:gap-6">
+      <Card className={`flex min-w-0 flex-1 flex-col overflow-hidden ${PANEL_HEIGHT}`}>
         {workspacePanel}
-      </CutoutCard>
+      </Card>
+
+      <Inspector title="ThinkTanks" open={directoryOpen} onOpenChange={onDirectoryOpenChange}>
+        <Card className={`flex flex-col overflow-hidden ${PANEL_HEIGHT}`}>{directoryPanel}</Card>
+      </Inspector>
     </div>
   );
 }

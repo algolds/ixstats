@@ -2,7 +2,7 @@
 
 **Last updated:** September 2026
 
-IxVault is the trading-card and virtual-economy product in IxStats. Players earn **IxCredits (IxC)** through gameplay, buy and open card packs, craft and trade cards, run marketplace auctions, organize collections, and import their NationStates card decks. The `/vault` area is a shared sidebar layout (`AuthenticationGuard` → `VaultSidebarLayout`) wrapping per-route section components — there is no client-side `*Router` here; navigation uses normal Next.js routes.
+IxVault is the trading-card and virtual-economy product in IxStats. Players earn **IxCredits (IxC)** through gameplay, buy and open card packs, craft and trade cards, run marketplace auctions, organize collections, and import their NationStates card decks. The `/vault` area is a page container (`AuthenticationGuard` → container) wrapping per-route section components — there is no client-side `*Router` here; navigation uses normal Next.js routes.
 
 ## Routes
 
@@ -24,7 +24,7 @@ IxVault is the trading-card and virtual-economy product in IxStats. Players earn
 | `/vault/admin` | admin gate | Admin-only vault tools (`useIsAdmin`) |
 | `/vault/market`, `/vault/packs`, `/vault/trading` | — | **Redirect stubs** → `/vault/marketplace?tab=auctions\|store\|trading` |
 
-The sidebar (`VAULT_NAV_ITEMS` in `VaultSidebarNav`) has 4 entries: **dashboard, cards, marketplace, import**; `VaultSidebarLayout` adds an **Achievements** link, and `/achievements` / `/leaderboards` render inside the same layout (`VaultSection` also includes `achievements` and `leaderboards`).
+There is no Vault rail: the global source list (`src/lib/navigation/app-sections.ts`) lists the sections. `/achievements` and `/leaderboards` render in their own page container. The daily reward, balance, today's earnings and treasury revenue live in the wallet card on the dashboard (`VaultWalletCard`).
 
 ## Key Features
 
@@ -40,7 +40,7 @@ The sidebar (`VAULT_NAV_ITEMS` in `VaultSidebarNav`) has 4 entries: **dashboard,
 
 | Layer | Location |
 |-------|----------|
-| Layout + auth | `src/app/vault/layout.tsx` (`AuthenticationGuard` + `VaultSidebarLayout`) |
+| Layout + auth | `src/app/vault/layout.tsx` (`AuthenticationGuard` + page container) |
 | Sidebar nav | `src/components/vault/VaultSidebarNav.tsx` (`VaultSection`, `VAULT_NAV_ITEMS`, `getSectionFromPathname`) |
 | Cards Section | `src/components/vault/sections/cards/` — `InventoryTab`, `CollectionsTab`, `CardGalleryTab`, `*SidebarContent`, `useVaultCardsState`, `types.ts` |
 | Dashboard Section | `src/components/vault/sections/dashboard/` — `VaultNetWorthCard`, `VaultYieldProjectionsCard`, `VaultCardHoldingsCard`, `VaultMilestonesCard`, `VaultRecentActivityCard`, `VaultShowcaseGrid` |
