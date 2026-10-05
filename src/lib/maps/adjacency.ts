@@ -11,7 +11,10 @@ export interface AdjacencyResult {
   skipped?: true;
 }
 
-/** Requires PostGIS (skipped without it). Safe to re-run; overwrites the neighbors of every feature it pairs. */
+/**
+ * Requires PostGIS (skipped without it). Safe to re-run: every active political feature's neighbors are
+ * overwritten, and a feature that no longer touches anything is cleared.
+ */
 export async function rebuildAdjacency(
   db: PrismaClient,
   realmId: string
@@ -35,6 +38,17 @@ export async function rebuildAdjacency(
     (adj.get(a) ?? adj.set(a, new Set()).get(a)!).add(b);
     (adj.get(b) ?? adj.set(b, new Set()).get(b)!).add(a);
   }
+  // Features left without a neighbour (an island, or a neighbour removed) would keep a stale list
+  await db.mapLayer.updateMany({
+    where: {
+      layerType: "political",
+      isActive: true,
+      realmId,
+      featureId: { notIn: Array.from(adj.keys()) },
+      NOT: { neighbors: { equals: [] } },
+    },
+    data: { neighbors: [] },
+  });
   let updated = 0;
   for (const [featureId, set] of Array.from(adj.entries())) {
     await db.mapLayer.updateMany({

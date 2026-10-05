@@ -388,7 +388,21 @@ describe("the world editor works inside the realm it edits (ruling E-o)", () => 
     const [sql, realmParam] = db.$queryRawUnsafe!.mock.calls[0];
     expect(sql).toContain(`a."worldId" = $1 AND b."worldId" = $1`);
     expect(realmParam).toBe(EURTH);
-    expect(wheres(db, "mapLayer", "updateMany").map(realmOf)).toEqual([EURTH, EURTH]);
+    expect(wheres(db, "mapLayer", "updateMany").map(realmOf)).toEqual([EURTH, EURTH, EURTH]);
+  });
+
+  it("rebuilding adjacency clears the neighbours of features that no longer touch anything", async () => {
+    const db = emptyDb();
+    db.$queryRawUnsafe!.mockResolvedValue([{ a: "A", b: "B" }]);
+    await createCallerFactory(geoEditorBordersRouter)(adminCtx(db)).rebuildAdjacency({
+      realmId: EURTH,
+    });
+
+    expect(wheres(db, "mapLayer", "updateMany")[0]).toMatchObject({
+      featureId: { notIn: ["A", "B"] },
+      NOT: { neighbors: { equals: [] } },
+    });
+    expect(db.mapLayer!.updateMany!.mock.calls[0]![0]).toMatchObject({ data: { neighbors: [] } });
   });
 });
 
