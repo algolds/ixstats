@@ -61,6 +61,8 @@ export const RELAXED_FILES = new Set<string>([
   "src/types/ixstats.ts",
   "src/types/economy-builder.ts",
   "src/server/api/routers/taxSystem/crud.ts",
+  // Navigation data: one table of every app section, row per route.
+  "src/lib/navigation/app-sections.ts",
 ]);
 
 /**

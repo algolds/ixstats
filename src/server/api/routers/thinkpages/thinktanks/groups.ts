@@ -47,13 +47,18 @@ function rejectRealmBoard(group: { type: string }, action: string): void {
   }
 }
 import { filterInvitableUserIds } from "./invite-privacy";
+import {
+  parseGroupSettings,
+  parseGroupTags,
+  viewerMembership,
+  type GroupMemberRow,
+} from "./group-helpers";
 import { ensurePersonalAccount } from "../personal-account";
 
 type GroupDb = Pick<
   PrismaClient,
   "thinkshareConversation" | "thinktankGroup" | "user" | "thinkpagesAccount"
 >;
-type GroupMemberRow = { userId: string; role: string };
 
 /** Auto-heal a missing ThinkShare conversation for the group (mutates `group` to match). */
 async function healGroupConversation(
@@ -154,47 +159,6 @@ async function enrichGroupMembers<M extends GroupMemberRow>(
         : null,
     };
   });
-}
-
-type GroupSettings = {
-  allowPersonaPosting?: boolean;
-  rules?: string;
-  bannerUrl?: string;
-  themeAccent?: string;
-  pinnedDocIds?: string[];
-};
-
-function parseGroupSettings(raw: string | null, groupId: string): GroupSettings {
-  const settings: GroupSettings = { allowPersonaPosting: false };
-  if (!raw) return settings;
-  try {
-    return { ...settings, ...JSON.parse(raw) };
-  } catch (err) {
-    console.warn("[ThinkTanks] Malformed settings on group", groupId, err);
-    return settings;
-  }
-}
-
-function parseGroupTags(raw: string | null): string[] {
-  if (!raw) return [];
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return [raw];
-  }
-}
-
-function viewerMembership(
-  group: { createdBy: string; members: GroupMemberRow[] },
-  viewerId: string
-) {
-  if (!viewerId) return { isMember: false, userRole: null };
-  const isOwner = group.createdBy === viewerId;
-  const isMember = isOwner || group.members.some((m) => m.userId === viewerId);
-  const userRole = isOwner
-    ? "owner"
-    : group.members.find((m) => m.userId === viewerId)?.role || (isMember ? "member" : null);
-  return { isMember, userRole };
 }
 
 export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({

@@ -18,7 +18,7 @@ jobs:
         run: bun run db:generate
 
       # Unit tests are blocking; pre-existing failures live in scripts/verification/test-quarantine.json (shrink-only).
-      # Architecture guard and strict lint stay non-blocking until their measured baselines are green.
+      # Architecture guard and strict lint are blocking (green since 2026-10-05).
       - name: Fetch base branch for quarantine growth check
         if: github.event_name == 'pull_request'
         env:
@@ -37,9 +37,9 @@ jobs:
       - name: Entrypoint syntax check
         run: bun run check:entrypoints
 
-      - name: "Architecture guard (2026-08-20 baseline: non-blocking pending Plan 154 ratchet split)"
+      # Ratchet: no new file over the ceiling, no growth past arch-baseline.json, no cross-router imports.
+      - name: Architecture guard
         run: bun run audit:arch
-        continue-on-error: true
 
       # 0 errors and 24 warnings on 2026-10-05; the limit only ratchets down.
       - name: Lint (strict)
