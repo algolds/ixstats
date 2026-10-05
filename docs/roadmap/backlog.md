@@ -61,9 +61,8 @@ partly done item.
 |---|---|---|---|---|
 | MC-3 | UNFINISHED | Defense force structure can't be created (branch and unit CRUD deleted in plan 312), so PvNPC strength is 0. Waits on D2 | `security/military.ts:64-74`; `DeploymentWizard.tsx:136` | M–L |
 | MC-6 | DEAD | The ScheduledChange pipeline (service, cron job, `usePendingLocks`) has no producer. Use or delete (D11); see [scheduled-changes.md](../systems/scheduled-changes.md) | `server/modules/scheduled-changes/service.ts` | M |
-| MC-16 | BUG | Wall-clock time stored as IxTime (for example `votedIxTime: Date.now()`) | `routers/legislation.ts:~190`; `diplomaticScenarios/choices.ts` | S |
 | MC-17 | UNFINISHED | Threshold alerts are written to `IntelligenceAlert` but nothing reads them; their notifications link to `/mycountry/intelligence`, which renders Defense | `server/shared/intelligence-alert-thresholds.ts` | M |
-| MC-18 | DEAD | Zero-importer files. Left: `lib/government/builder-validation.ts`, `lib/builder/tax-revenue-mapping.ts`, builder `government-preview/*` and the other components listed in the audit (re-check each) | — | S |
+| MC-18 | DEAD | Zero-importer files. Left: the other components listed in the audit (re-check each; `builder-validation.ts` is in use, `tax-revenue-mapping.ts` and `government-preview/*` are gone) | — | S |
 | MC-19 | DEAD | Area models read but never written outside the seed (`Treaty`, `DiplomaticChannel`, `TaxPolicy`, `QuickActionTemplate`, `VitalityHistory`, …) | `prisma/schema/*` | S |
 
 ### Atlas, Realms & identity (AT)
@@ -89,10 +88,8 @@ partly done item.
 | WK-6 | BUG | The image picker's Commons tab has no search procedure behind it, so it is always empty | `editor/ImageSearchGrid.tsx:67` | S |
 | WK-7 | UNFINISHED | Pages can't be moved or archived (plan 312 removed the procedures) | `core/page-management-service.ts` | M |
 | WK-12 | DEAD | Narrator LLM narration has no production caller (the key is masked). Wire or retire (D10) | `routers/narrator/index.ts` | M |
-| WK-13 | UNFINISHED | Stash notes and ordering were removed, but the welcome modal still promises notes | `StashPagesList.tsx` | S |
 | WK-16 | BUG | Revert and rollback skip the edge-cache purge | `editing.ts` | S |
 | WK-17 | STUB | BlurHashes are generated from the filename, not the image | `core/blurhash-service.ts` | S–M |
-| WK-18 | DEAD | Dispatchers, components and `setupForumCustomFields` left behind by plan 312 | `bridge/dispatchers.ts` | S |
 | WK-19 | DEAD | Watchers are never notified when a watched page changes | `wiki.prisma` | S–M |
 | WK-20 | UNFINISHED | Forum moderation happens on XenForo only (D12); make the help copy say so | `routers/forum/account.ts` | S |
 
@@ -104,24 +101,19 @@ partly done item.
 | VT-14 | BUG | Crafting. Left: the MYTHIC recipe (D6). The workbench sends ownership IDs and shows one slot per card a recipe consumes, and `db:seed` runs the crafting seed (2026-10-05) | `crafting/recipes.ts` | S |
 | VT-16 | DEAD | The Exchange (₷) economy exists only in the schema (11 of 13 models unused); wallets seeded with 10,000 ₷; `spend` has no conditional decrement. D5 | `exchange.prisma`; `lib/vault/exchange-service.ts` | L |
 | VT-19 | DEAD | `pdsConfig` is seeded on all 20 packs and never read | `prisma/seeds/data/card-packs.json`; `cards.prisma` | S |
-| VT-21 | UNFINISHED | Inventory bulk Move and List Market buttons are permanently disabled | `InventoryTab.tsx` | M |
 | VT-25 | DEAD | `NSImport`, `SyncCheckpoint` and `CardTrade` are unused | `cards.prisma` | S |
-| VT-26 | BUG | `getVaultLevel` hard-codes 1,000 XP per level; `/images/cards/placeholder-nation.png` is referenced but not tracked | `vault/balance-credits.ts:61`; `VaultAuctionsTab.tsx:134` | S |
 
 ### Social, Halo & Labs (SL)
 
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
-| SL-4 | FLAGGED | Privacy. Left: blocking inside group chats; the hidden toggles (DM/mention/trade permissions, online status, read receipts, indexing, telemetry, muted words, clear history) have no enforcement | `routers/users/preferences.ts`; `server/shared/user-blocks.ts` | M |
-| SL-5 | FLAGGED | Notifications. Left: admin broadcasts and the messaging broadcast bypass recipient preferences (sports results now respect the minimum urgency, 2026-10-05); no email or push delivery | `lib/notifications/recipient-preferences.ts` | M |
-| SL-6 | DEAD | 12 of 23 notification hooks are never called but still appear in the admin registry | `lib/notifications/hooks.ts` | M |
+| SL-4 | FLAGGED | Privacy. Blocking now covers group chats (messages, unread counts, previews, notifications). Left: the hidden toggles (DM/mention/trade permissions, online status, read receipts, indexing, telemetry, muted words, clear history) have no enforcement | `routers/users/preferences.ts`; `server/shared/user-blocks.ts` | M |
+| SL-5 | FLAGGED | Notifications. Admin notices to one user and sports results respect recipient preferences (2026-10-05). Left: country-wide and global admin broadcasts are unfiltered by design; no email or push delivery | `lib/notifications/recipient-preferences.ts` | M |
 | SL-7 | DEAD | 23 of 29 activity producers have no caller, so the feed's Economic and Diplomatic filters are nearly empty | `lib/activity/generator.ts` | M |
 | SL-8 | STUB | Engagement. Left: view counts and a trending ranking beyond the `thinkpages-trending` job (#49) | `routers/activities/trending.ts` | M |
 | SL-10 | UNFINISHED | Bookmarks are write-only and flags have no moderation queue | `posts/bookmarks.ts`; `flags.ts` | M |
 | SL-16 | UNFINISHED | Rivalries are read but never created | `simulate-and-persist.ts` | M |
 | SL-18 | UNFINISHED | The Onoma language-pack marketplace has no way to publish a pack | `routers/onoma/marketplace.ts` | M |
-| SL-23 | UNFINISHED | Blurb scheduling fields are never acted on | `routers/blurbs/moderate.ts` | S |
-| SL-25 | DEAD | `sports.getMyClubOverview` is only invalidated, never queried | `routers/sports/club.ts:641` | S |
 | SL-27 | FLAGGED | The Discord mirror, sports LLM commentary and sports TTS are off by default; Labs routes have no server-side gate (`src/app/labs/layout.tsx`) | `narrator.ts` | S |
 
 ### Platform & infrastructure (PL)
@@ -130,9 +122,6 @@ partly done item.
 |---|---|---|---|---|
 | PL-12 | DEBT | `next.config.js` isn't tracked; the web process isn't under PM2 (see §1) | — | S |
 | PL-16 | DEBT | `src/tests` isn't typechecked in CI (≈890 errors on 2026-10-05; scripts, seeds, proxy, instrumentation and content are) | `ci.yml` | M |
-| PL-18 | DEAD | Left: `AdvancedCacheSystem` (`lib/cache/advanced-cache-system.ts`), `image-cache-service`, `readOnlyProcedure`, `cleanupOldAuctions` (re-check each) | — | S |
-| PL-19 | DEBT | Env hygiene: declared variables never read; `.env.example` missing many | `src/env.ts` | S |
-| PL-22 | DEBT | Production logs every Prisma query as an event | `server/db.ts:123` | S |
 
 **Router test gaps:** 35 of 69 routers had no router-level test on 2026-09-30; the largest are thinkpages, lore-cards,
 national-issues, forum, blurbs and card-market.
@@ -296,7 +285,7 @@ items not already listed above:
 
 - **PR #49 known gaps:** no region filter on rankings (`mycountry.getRankings` takes only `countryId`); DMs can't be sent as a persona or country; appointed chambers are still seated by the vote simulation.
 - **Atlas:** worldgen is a Labs demo that saves nothing; geography modifiers (profiles, resources, climate) are displayed but never read by the economy; every map feature needs a country; no GeoJSON/Azgaar import or export; no terrain raster (atlas report).
-- **Two sources of truth:** projected vs stored country stats; `ixTimeTimestamp` columns with two meanings (see MC-16); Clerk ids and internal ids mixed across tables (for example, sports club notifications keyed by internal id never show in the tray list — [notifications.md](../systems/notifications.md#8-known-gaps)).
+- **Two sources of truth:** projected vs stored country stats; `ixTimeTimestamp` columns with two meanings (MC-16 fixed the wall-clock writers); Clerk ids and internal ids mixed across tables (for example, sports club notifications keyed by internal id never show in the tray list — [notifications.md](../systems/notifications.md#8-known-gaps)).
 - **Country where the platform should be:** the dividend and many achievements still need a country; personas live in ThinkPages rather than IxnayID.
 - **Five nations per realm:** a platform default of 5 with a tier-aware cap (`min(realm cap, tier cap)`) tied to one premium definition; decide dividends and achievements per account or per nation (PA §7).
 - **Halo plugins** for ThinkPages, Messages, Vault and Maps are missing.

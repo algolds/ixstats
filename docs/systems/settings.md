@@ -96,7 +96,7 @@ Only controls the server enforces are shown. Lists and options are stored as `Us
 
 | Control | Effect |
 | :--- | :--- |
-| Blocked accounts | `users.blockAccount` / `unblockAccount`. Posts by blocked accounts (or a blocked nation's accounts) are left out of your ThinkPages feed (`thinkpages.getFeed`) and the global activity feed. Someone you blocked can't start a conversation with you or send messages in a direct conversation with you (`MessagingBlockedError` → `FORBIDDEN`). ThinkTank invites also honour blocks (`thinktanks/invite-privacy.ts`) |
+| Blocked accounts | `users.blockAccount` / `unblockAccount`. Posts by blocked accounts (or a blocked nation's accounts) are left out of your ThinkPages feed (`thinkpages.getFeed`) and the global activity feed. Someone you blocked can't start a conversation with you or send messages in a direct conversation with you (`MessagingBlockedError` → `FORBIDDEN`). In group conversations their messages are hidden from you and don't count toward your unread badges, previews or notifications. ThinkTank invites also honour blocks (`thinktanks/invite-privacy.ts`) |
 | Muted accounts | `users.muteAccount` / `unmuteAccount`. Their posts are left out of your ThinkPages and activity feeds; they can still message you |
 | ThinkTank invites (everyone, followers, nobody) | Enforced by `filterInvitableUserIds` when someone invites you |
 | Appear in invite search | `searchDiscoverable`. When off, ThinkTank owners can't find you in the invite search (`invite-privacy.ts`) |

@@ -178,9 +178,10 @@ Replace each with real data, or show an empty state. All S or S–M.
 ### M2.3 Settings that do nothing: wire or hide
 ✅ **Done (2026-10-05)**, each wired or hidden:
 - **Privacy & Safety:** blocks and mutes filter the ThinkPages and activity feeds, and a block stops new DMs; every
-  control the server doesn't enforce is hidden (SL-4). Left: blocking inside group chats.
+  control the server doesn't enforce is hidden (SL-4). Blocking also covers group chats: messages, unread counts,
+  previews and notifications.
 - **Notifications:** per-user categories and minimum urgency are enforced; email and push toggles hidden (SL-5). Admin
-  broadcasts and sports notifications still bypass preferences.
+  notices to one user and sports results respect preferences; country-wide and global broadcasts are unfiltered by design.
 - **Admin panels:** card rake, capacity and junk batch limit wired (VT-9); the unused vault price keys removed (VT-10);
   the ThinkPages account limit wired and unread Stash/ThinkPages controls hidden (WK-11); Loreward weights read by the
   scorer (WK-8); the unused `showDefenseTab` and Intelligence switches removed.
@@ -275,7 +276,7 @@ the spine.
 | Lore-first schema cleanup and the `CardRarity` enum; 40/25/20/10/4/1 distribution | PF§4 | M | — |
 | Vault reorder (Lore Gallery primary, category filters); themed packs; seasons | PF§4 | M | — |
 | Cosmetics visible to other players (a public equipped-cosmetics query) | VT-12 | M | — |
-| Inventory bulk Move and List Market | VT-21 | M | — |
+| ✅ **Done (2026-10-05):** the permanently disabled inventory bulk Move and List Market buttons are removed | VT-21 | S | — |
 | Exchange (₷) economy: build (fix `spend`, 0 ₷ seed, conversion) or drop 11 models | VT-16 | L | Decision D5 |
 | Crafting extensions (catalysts, discovery, guilds, bulk) | PF§4 | L | M2 crafting |
 
@@ -287,7 +288,8 @@ the spine.
 - **Feed producers through the event spine:** engagement counters (likes, comments, views), a real trending ranking, the
   `trending` flag set (SL-7, SL-8, SL-9). *Needs M4 spine.* **Partial (#49):** the `thinkpages-trending` job scores
   posts with engagement decay and reconciles the like/reply/repost counters; persona follows have real counts.
-- **Notifications:** the 12 unused hooks wired after M2 category filtering; email and push digests if wanted (SL-6, SL-5).
+- **Notifications:** email and push digests if wanted (SL-5). The 12 unused hooks are removed and a test keeps the admin
+  registry to hooks that fire (SL-6).
 - **Privacy:** full enforcement of the remaining toggles (SL-4). *Needs M0 #7.*
 - **Moderation:** bookmarks list; flag moderation queue (SL-10).
 - ✅ **Follows:** persona follows with real counts, notifications and a Following feed (SL-9, #49).
@@ -295,7 +297,7 @@ the spine.
 
 **WikiOS**
 - **Restorations (each with its UI):** move/archive (WK-7); Margin reactions, delete, Stash tab and Inspect tab; Stash
-  notes and ordering (WK-13).
+  notes and ordering (the welcome guide no longer promises notes, WK-13).
 - **Stash share links** with a visibility field.
 - **Watchlist notifications** (WK-19).
 - **Guardian:** mass-blanking and homoglyph abuse filter (after M2 protection).
@@ -324,7 +326,7 @@ Run throughout, preferably in PRs that already touch the area.
 
 - **Dead schema:** drop the 57 fully dead models, and the always-empty ones once their feature is decided ([backlog §5](backlog.md#5-dead-schema)).
   Needs M0 backups and Decisions D1, D2, D5 and D9.
-- **Dead code:** delete MC-18, PL-18, WK-18 and SL-25 (AT-16 is done). (The dead intelligence calculator, `calculator.ts` and
+- **Dead code:** re-check the remaining MC-18 components. PL-18, WK-18 and SL-25 are done (2026-10-05), as is AT-16. (The dead intelligence calculator, `calculator.ts` and
   `live-data-transformers.ts`, is already deleted; the models it alone wrote remain in the schema.)
 - **Tests:** router tests for the 35 untested routers, largest first (thinkpages, lore-cards, national-issues, forum, blurbs,
   card-market).
@@ -332,7 +334,7 @@ Run throughout, preferably in PRs that already touch the area.
   line counts since 2026-10-05, so a file can no longer grow past its recorded size unnoticed.
 - **Refactors:** a service layer over direct `ctx.db` in 199 router files; one shared CivCap module (MC-21).
 - **Other decisions:** logging framework decision; design-token cleanup (hex colours, blur and pulse counts) from the
-  Facet audits; env hygiene (PL-19); Prisma query logging (PL-22). Done: `alert()` → `notify` in the map editor (AT-20); `editableByOwner` enforced (PL-21).
+  Facet audits. Done: env hygiene (PL-19); Prisma logs only slow queries (PL-22); IxTime fields store IxTime (MC-16); `alert()` → `notify` in the map editor (AT-20); `editableByOwner` enforced (PL-21).
 - **Dependencies:** Prisma 7 migration (dependabot #25), after M0 backups.
 
 ---
