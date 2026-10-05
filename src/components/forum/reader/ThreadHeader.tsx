@@ -28,14 +28,28 @@ interface ThreadHeaderProps {
 export function ThreadHeader({ thread, onReply }: ThreadHeaderProps) {
   const notify = useNotify();
 
+  const copyLink = (url: string) => {
+    // `navigator.clipboard` is missing outside secure contexts; a refused write rejects.
+    const written = navigator.clipboard
+      ? navigator.clipboard.writeText(url)
+      : Promise.reject(new Error("Clipboard unavailable"));
+    written.then(
+      () => notify.success("Link copied to clipboard"),
+      () => notify.error("Couldn't copy the link", "Copy the address from your browser instead.")
+    );
+  };
+
   const handleShare = () => {
     const url = window.location.href;
-    if (navigator.share) {
-      // Dismissing the share sheet rejects; that is not an error worth surfacing.
-      navigator.share({ title: thread.title, url }).catch(() => {});
+    if (!navigator.share) {
+      copyLink(url);
       return;
     }
-    void navigator.clipboard.writeText(url).then(() => notify.success("Link copied to clipboard"));
+    navigator.share({ title: thread.title, url }).catch((error: unknown) => {
+      // Dismissing the share sheet rejects with AbortError; any other failure falls back to copying.
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      copyLink(url);
+    });
   };
 
   return (

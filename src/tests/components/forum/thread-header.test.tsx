@@ -2,8 +2,9 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { ThreadHeader } from "~/components/forum/reader/ThreadHeader";
 
 const notifySuccess = jest.fn();
+const notifyError = jest.fn();
 jest.mock("~/hooks/useNotify", () => ({
-  useNotify: () => ({ success: notifySuccess }),
+  useNotify: () => ({ success: notifySuccess, error: notifyError }),
 }));
 
 const thread = {
@@ -20,6 +21,7 @@ const setShare = (share: unknown) =>
 describe("ThreadHeader", () => {
   beforeEach(() => {
     notifySuccess.mockClear();
+    notifyError.mockClear();
     setShare(undefined);
     Object.defineProperty(navigator, "clipboard", {
       value: { writeText: jest.fn().mockResolvedValue(undefined) },
@@ -70,5 +72,61 @@ describe("ThreadHeader", () => {
 
     expect(share).toHaveBeenCalledWith({ title: "Budget talks", url: window.location.href });
     expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
+  });
+
+  it("Share falls back to copying when the share sheet fails for a real reason", async () => {
+    setShare(jest.fn().mockRejectedValue(new DOMException("blocked", "NotAllowedError")));
+    render(<ThreadHeader thread={thread} onReply={jest.fn()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+
+    await waitFor(() => expect(notifySuccess).toHaveBeenCalledWith("Link copied to clipboard"));
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(window.location.href);
+  });
+
+  it("Share does nothing more when the reader dismisses the share sheet", async () => {
+    setShare(jest.fn().mockRejectedValue(new DOMException("cancelled", "AbortError")));
+    render(<ThreadHeader thread={thread} onReply={jest.fn()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+
+    await waitFor(() => expect(navigator.share).toHaveBeenCalled());
+    await Promise.resolve();
+    expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
+    expect(notifySuccess).not.toHaveBeenCalled();
+    expect(notifyError).not.toHaveBeenCalled();
+  });
+
+  it("Share tells the reader when the clipboard write is refused", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: jest.fn().mockRejectedValue(new Error("denied")) },
+      configurable: true,
+    });
+    render(<ThreadHeader thread={thread} onReply={jest.fn()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+
+    await waitFor(() =>
+      expect(notifyError).toHaveBeenCalledWith(
+        "Couldn't copy the link",
+        "Copy the address from your browser instead."
+      )
+    );
+    expect(notifySuccess).not.toHaveBeenCalled();
+  });
+
+  it("Share tells the reader when there is no clipboard", async () => {
+    Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+    render(<ThreadHeader thread={thread} onReply={jest.fn()} />);
+
+    expect(() => fireEvent.click(screen.getByRole("button", { name: "Share" }))).not.toThrow();
+
+    await waitFor(() =>
+      expect(notifyError).toHaveBeenCalledWith(
+        "Couldn't copy the link",
+        "Copy the address from your browser instead."
+      )
+    );
+    expect(notifySuccess).not.toHaveBeenCalled();
   });
 });
