@@ -7,7 +7,7 @@ import { Button } from "~/components/ui/button";
 import { CardDisplay } from "~/components/cards/display/CardDisplay";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 import type { CardInstance } from "~/types/cards-display";
-import { Card } from "~/components/ui/card";
+import { Card, CardTitle } from "~/components/ui/card";
 
 interface VaultCardHoldingsCardProps {
   featuredCards: CardInstance[];
@@ -23,12 +23,7 @@ export function VaultCardHoldingsCard({
   return (
     <Card padding="lg" className="overflow-hidden">
       <div className="border-separator mb-4 flex items-center justify-between border-b pb-3">
-        <div className="flex items-center gap-2">
-          <div className="rounded-row bg-tint-fill text-tint shadow-card flex h-8 w-8 items-center justify-center border font-medium">
-            <Layers aria-hidden className="text-tint h-4.5 w-4.5" />
-          </div>
-          <span className="text-label-secondary text-eyebrow">Card holdings</span>
-        </div>
+        <CardTitle icon={<Layers />}>Card holdings</CardTitle>
         {featuredCards.length > 0 && (
           <Button
             variant="link"

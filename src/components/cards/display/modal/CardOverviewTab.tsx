@@ -25,6 +25,7 @@ import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser"
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
+import { CardTitle } from "~/components/ui/card";
 
 interface CardOverviewTabProps {
   card: CardInstance;
@@ -119,7 +120,7 @@ export function CardOverviewTab({
         <div className="border-separator bg-fill-4 rounded-card relative flex min-h-[380px] flex-col items-center justify-center border p-4">
           {card.isRetired && (
             <div className="pointer-events-none absolute top-4 z-30 flex items-center justify-center">
-              <div className="rounded-control border-red/80 bg-surface text-headline text-red shadow-floating rotate-[-12deg] border-4 px-4 py-1 text-center uppercase select-none">
+              <div className="rounded-control border-red/80 bg-surface text-headline text-red shadow-floating rotate-[-12deg] border-4 px-4 py-1 text-center select-none">
                 Retired
               </div>
             </div>
@@ -163,10 +164,10 @@ export function CardOverviewTab({
           <div className="bg-surface-secondary border-separator rounded-control border p-3">
             <div className="text-label-secondary text-footnote flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              Serial #{card.serialNumber ?? "—"}
+              Serial #{card.serialNumber ?? "–"}
             </div>
             <div className="text-label text-title-3 mt-1 font-semibold">
-              {card.level > 0 ? `Lv.${card.level}` : "—"}
+              {card.level > 0 ? `Lv.${card.level}` : "–"}
             </div>
           </div>
         </div>
@@ -216,10 +217,9 @@ export function CardOverviewTab({
       >
         {card.inscription && (
           <div className="rounded-control border-yellow/20 bg-yellow/5 shadow-card border p-4">
-            <div className="text-eyebrow text-yellow mb-2 flex items-center gap-2">
-              <ScrollText className="h-4 w-4" />
+            <CardTitle icon={<ScrollText />} className="text-yellow mb-2">
               Card inscription
-            </div>
+            </CardTitle>
             <p className="text-label border-yellow/40 bg-yellow/[0.02] text-body border-l-2 py-1 pl-3 font-medium italic">
               "{card.inscription}"
             </p>
@@ -272,10 +272,9 @@ export function CardOverviewTab({
 
           return (
             <div className="bg-surface-secondary border-separator rounded-row space-y-3 border p-4">
-              <h3 className="text-label text-label-secondary text-eyebrow mb-2 flex items-center gap-2">
-                <Layers className="text-tint h-3.5 w-3.5" />
+              <CardTitle icon={<Layers />} className="mb-2">
                 Card specifications
-              </h3>
+              </CardTitle>
 
               <div className="divide-separator text-footnote space-y-2 divide-y">
                 {resolvedCategory && (

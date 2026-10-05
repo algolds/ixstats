@@ -4,6 +4,7 @@ import { springSmooth } from "~/lib/design/motion";
 import React from "react";
 import { motion } from "motion/react";
 import { Globe, EditPencil as PenTool } from "iconoir-react";
+import { CardTitle } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
 import { LoreWikiExcerpt } from "../LoreWikiExcerpt";
 import type { CardInstance } from "~/types/cards-display";
@@ -66,7 +67,7 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
       <div className="flex flex-wrap items-center gap-2">
         <span
           className={cn(
-            "rounded-control text-eyebrow shadow-card inline-flex items-center gap-1 border px-3 py-1",
+            "rounded-control text-caption shadow-card inline-flex items-center gap-1 border px-3 py-1",
             card.wikiSource === "iiwiki"
               ? "border-green/30 bg-green/15 text-green"
               : "border-wiki/30 bg-wiki/15 text-wiki"
@@ -116,14 +117,14 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
         if (!loreStats) return null;
         return (
           <div className="bg-surface-secondary border-separator rounded-row space-y-3 border p-4">
-            <h4 className="text-label text-label-secondary text-eyebrow">Historical metrics</h4>
+            <CardTitle>Historical metrics</CardTitle>
             <div className="grid grid-cols-2 gap-3">
               <div className="border-separator bg-surface rounded-control border p-3">
                 <div className="text-label-secondary text-footnote font-medium">
                   Historical significance
                 </div>
                 <div className="text-title-2 text-yellow mt-1 tabular-nums">
-                  {loreStats.historicalSignificance ?? "—"}/100
+                  {loreStats.historicalSignificance ?? "–"}/100
                 </div>
               </div>
               <div className="border-separator bg-surface rounded-control border p-3">
@@ -131,7 +132,7 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
                   Cultural impact
                 </div>
                 <div className="text-title-2 text-indigo mt-1 tabular-nums">
-                  {loreStats.culturalImpact ?? "—"}/100
+                  {loreStats.culturalImpact ?? "–"}/100
                 </div>
               </div>
             </div>

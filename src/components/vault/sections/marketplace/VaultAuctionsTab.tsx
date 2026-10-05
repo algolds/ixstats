@@ -34,7 +34,7 @@ import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { AuctionCardItem } from "./auctions/AuctionCardItem";
 import { CreateAuctionModal } from "./auctions/CreateAuctionModal";
 import type { MarketAuctionItem } from "./auctions/types";
-import { Card } from "~/components/ui/card";
+import { Card, CardTitle } from "~/components/ui/card";
 
 interface AuctionFilters {
   rarity: string;
@@ -161,12 +161,9 @@ export function VaultAuctionsTab() {
     <div className="space-y-6">
       {/* Header with Create Listing button */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <ShoppingCart className="text-tint h-4.5 w-4.5" />
-          <h3 className="text-label-secondary text-eyebrow">Auction house</h3>
-        </div>
+        <CardTitle icon={<ShoppingCart />}>Auction house</CardTitle>
         <Button size="sm" onClick={() => setCreateAuctionOpen(true)}>
-          <Plus className="mr-2 h-3.5 w-3.5" /> Sell Card
+          <Plus className="mr-2 h-3.5 w-3.5" /> Sell card
         </Button>
       </div>
 
@@ -257,7 +254,7 @@ export function VaultAuctionsTab() {
           }}
           className="h-(--control-height-sm) w-24 tabular-nums"
         />
-        <span className="text-label-secondary text-footnote">—</span>
+        <span className="text-label-secondary text-footnote">–</span>
         <Input
           type="number"
           min="0"
@@ -293,13 +290,13 @@ export function VaultAuctionsTab() {
         <Tabs value={selectedTab} onValueChange={handleTabChange}>
           <TabsList className="mb-4">
             <TabsTrigger value="browse">
-              <ShoppingCart className="mr-2 h-3.5 w-3.5" /> Browse Auctions
+              <ShoppingCart className="mr-2 h-3.5 w-3.5" /> Browse auctions
             </TabsTrigger>
             <TabsTrigger value="ending">
-              <Clock className="mr-2 h-3.5 w-3.5" /> Ending Soon
+              <Clock className="mr-2 h-3.5 w-3.5" /> Ending soon
             </TabsTrigger>
             <TabsTrigger value="listings" className="relative">
-              <Store className="mr-2 h-3.5 w-3.5" /> My Listings
+              <Store className="mr-2 h-3.5 w-3.5" /> My listings
               {myListings.length > 0 && (
                 <span className="bg-tint text-caption text-on-tint ml-2 rounded-full px-2 leading-4 tabular-nums">
                   {myListings.length}
@@ -307,7 +304,7 @@ export function VaultAuctionsTab() {
               )}
             </TabsTrigger>
             <TabsTrigger value="bids" className="relative">
-              <Gavel className="mr-2 h-3.5 w-3.5" /> My Bids
+              <Gavel className="mr-2 h-3.5 w-3.5" /> My bids
               {myBids.length > 0 && (
                 <span className="bg-blue text-footnote text-on-blue ml-2 rounded-full px-2 py-0 leading-none font-semibold">
                   {myBids.length}
@@ -597,7 +594,7 @@ export function VaultAuctionsTab() {
                       <div className="flex items-center gap-2">
                         <span
                           className={cn(
-                            "text-eyebrow rounded-full border px-2 py-0 leading-none",
+                            "text-caption rounded-full border px-2 py-0 leading-none",
                             badgeColor
                           )}
                         >

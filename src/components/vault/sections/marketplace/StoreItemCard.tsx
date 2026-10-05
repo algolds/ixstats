@@ -120,14 +120,14 @@ export function StoreItemCard({
         <div className="flex items-center justify-between">
           <Badge
             variant="outline"
-            className={cn("text-eyebrow px-1 py-0", colors.text, colors.border)}
+            className={cn("text-caption px-1 py-0", colors.text, colors.border)}
           >
             {item.badgeText}
           </Badge>
           {isOwned ? (
             <Badge
               variant="outline"
-              className="border-green/35 bg-green/20 text-eyebrow text-green px-1 py-0"
+              className="border-green/35 bg-green/20 text-caption text-green px-1 py-0"
             >
               {maxPurchases > 1 ? "Maxed out" : "Owned"}
             </Badge>
@@ -135,7 +135,7 @@ export function StoreItemCard({
             purchaseCount > 0 && (
               <Badge
                 variant="outline"
-                className="border-yellow/35 bg-yellow/20 text-eyebrow text-yellow px-1 py-0"
+                className="border-yellow/35 bg-yellow/20 text-caption text-yellow px-1 py-0"
               >
                 Owned x{purchaseCount}
               </Badge>

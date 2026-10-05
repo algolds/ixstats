@@ -11,7 +11,7 @@ import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
-import { Card } from "~/components/ui/card";
+import { Card, CardTitle } from "~/components/ui/card";
 
 interface VaultYieldProjectionsCardProps {
   loading: boolean;
@@ -61,7 +61,7 @@ function CapProgress({
               {used} / {data.cap}
             </>
           ) : (
-            <span aria-label="Not recorded">—</span>
+            <span aria-label="Not recorded">–</span>
           )}
         </span>
       </div>
@@ -94,12 +94,7 @@ export function VaultYieldProjectionsCard({
   return (
     <Card padding="lg" className="overflow-hidden">
       <div className="border-separator mb-5 flex items-center justify-between border-b pb-4">
-        <div className="flex items-center gap-2">
-          <div className="rounded-row border-blue/30 bg-blue/15 text-blue shadow-card flex h-8 w-8 items-center justify-center border">
-            <TrendingUp aria-hidden className="text-blue h-4.5 w-4.5" />
-          </div>
-          <span className="text-label-secondary text-eyebrow">Treasury revenue & yields</span>
-        </div>
+        <CardTitle icon={<TrendingUp />}>Treasury revenue &amp; yields</CardTitle>
         {canClaimDailyBonus && (
           <Button
             size="sm"
@@ -132,7 +127,7 @@ export function VaultYieldProjectionsCard({
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Projections */}
             <div className="space-y-3">
-              <span className="text-label-secondary text-eyebrow block">
+              <span className="text-label-secondary text-footnote block font-medium">
                 Treasury revenue forecasts
               </span>
               <div className="space-y-2">
@@ -142,7 +137,7 @@ export function VaultYieldProjectionsCard({
                     +<IxCreditsSymbol aria-hidden className="h-3 w-3 shrink-0" />
                     {passiveIncomeData
                       ? Math.round(passiveIncomeData.dailyDividend ?? 0).toLocaleString()
-                      : "—"}
+                      : "–"}
                   </span>
                 </div>
                 <div className="text-footnote flex items-center justify-between">
@@ -151,7 +146,7 @@ export function VaultYieldProjectionsCard({
                     ~<IxCreditsSymbol aria-hidden className="h-3 w-3 shrink-0" />
                     {passiveIncomeData
                       ? Math.round(passiveIncomeData.weeklyDividend ?? 0).toLocaleString()
-                      : "—"}
+                      : "–"}
                   </span>
                 </div>
                 <div className="text-footnote flex items-center justify-between">
@@ -160,7 +155,7 @@ export function VaultYieldProjectionsCard({
                     ~<IxCreditsSymbol aria-hidden className="h-3 w-3 shrink-0" />
                     {passiveIncomeData
                       ? Math.round(passiveIncomeData.monthlyDividend ?? 0).toLocaleString()
-                      : "—"}
+                      : "–"}
                   </span>
                 </div>
               </div>
@@ -168,8 +163,8 @@ export function VaultYieldProjectionsCard({
 
             {/* active multipliers */}
             <div className="md:border-separator space-y-3 md:border-l md:pl-6">
-              <span className="text-label-secondary text-eyebrow block">
-                Active multipliers & streaks
+              <span className="text-label-secondary text-footnote block font-medium">
+                Active multipliers &amp; streaks
               </span>
               <div className="space-y-2">
                 <div className="text-footnote flex items-center justify-between">
@@ -209,7 +204,7 @@ export function VaultYieldProjectionsCard({
 
           {/* Daily Allowances (Earning Caps) */}
           <div className="border-separator mt-5 space-y-3 border-t pt-5">
-            <span className="text-label-secondary text-eyebrow block">
+            <span className="text-label-secondary text-footnote block font-medium">
               Daily allowance progress
             </span>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">

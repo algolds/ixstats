@@ -266,7 +266,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
                         transition={{ delay: 0.5, type: "spring" }}
                       >
                         <div className="rounded-card inline-block bg-white/10 px-6 py-3">
-                          <div className="text-eyebrow text-white/60">XP gained</div>
+                          <div className="text-footnote text-white/60">XP gained</div>
                           <div className="text-large-title text-blue-400 tabular-nums">
                             +{xpGained}
                           </div>

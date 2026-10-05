@@ -263,7 +263,7 @@ const CardActionItem = React.memo<CardActionItemProps>(
 
               {/* Card info */}
               <div className="absolute right-0 bottom-0 left-0 p-3">
-                <div className="text-eyebrow text-label-secondary">
+                <div className="text-footnote text-label-secondary">
                   {card.rarity.replace("_", " ")}
                 </div>
                 <div className="text-headline text-label mt-1">
@@ -310,7 +310,7 @@ const CardActionItem = React.memo<CardActionItemProps>(
               {/* Action indicator */}
               {action && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-                  <div className="rounded-control bg-fill-3 text-headline text-label px-4 py-2 uppercase">
+                  <div className="rounded-control bg-fill-3 text-headline text-label px-4 py-2">
                     {action}
                   </div>
                 </div>

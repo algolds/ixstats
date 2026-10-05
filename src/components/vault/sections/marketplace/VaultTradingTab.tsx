@@ -17,7 +17,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Stat } from "~/components/ui/stat";
 import { api } from "~/trpc/react";
 import { useAuth } from "@clerk/nextjs";
-import { Card } from "~/components/ui/card";
+import { Card, CardTitle } from "~/components/ui/card";
 
 const TradeOfferModal = dynamic(
   () => import("~/components/cards/trading/TradeOfferModal").then((m) => m.TradeOfferModal),
@@ -58,12 +58,9 @@ export function VaultTradingTab() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <ArrowRightLeft className="text-blue h-4.5 w-4.5" />
-          <h3 className="text-label-secondary text-eyebrow">P2P Trading Hub</h3>
-        </div>
+        <CardTitle icon={<ArrowRightLeft />}>P2P trading hub</CardTitle>
         <Button onClick={() => setCreateTradeOpen(true)} size="sm">
-          <Plus className="mr-2 h-3.5 w-3.5" /> New Trade
+          <Plus className="mr-2 h-3.5 w-3.5" /> New trade
         </Button>
       </div>
 
@@ -101,7 +98,7 @@ export function VaultTradingTab() {
         <Tabs value={selectedTab} onValueChange={setSelectedTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="active" className="relative">
-              <ArrowRightLeft className="mr-2 h-3.5 w-3.5" /> Active Offer List
+              <ArrowRightLeft className="mr-2 h-3.5 w-3.5" /> Active offers
               {activeTrades && activeTrades.length > 0 && (
                 <span className="bg-blue text-footnote text-on-blue ml-2 rounded-full px-2 py-0 leading-none font-semibold">
                   {activeTrades.length}
@@ -109,7 +106,7 @@ export function VaultTradingTab() {
               )}
             </TabsTrigger>
             <TabsTrigger value="incoming" className="relative">
-              <Inbox className="mr-2 h-3.5 w-3.5" /> Incoming Offers
+              <Inbox className="mr-2 h-3.5 w-3.5" /> Incoming offers
               {incomingTrades.length > 0 && (
                 <span className="bg-green text-footnote text-on-green ml-2 rounded-full px-2 py-0 leading-none font-semibold">
                   {incomingTrades.length}
@@ -117,7 +114,7 @@ export function VaultTradingTab() {
               )}
             </TabsTrigger>
             <TabsTrigger value="outgoing" className="relative">
-              <Send className="mr-2 h-3.5 w-3.5" /> Sent Offers
+              <Send className="mr-2 h-3.5 w-3.5" /> Sent offers
               {outgoingTrades.length > 0 && (
                 <span className="bg-tint text-caption text-on-tint ml-2 rounded-full px-2 leading-4 tabular-nums">
                   {outgoingTrades.length}
@@ -125,7 +122,7 @@ export function VaultTradingTab() {
               )}
             </TabsTrigger>
             <TabsTrigger value="history" className="relative">
-              <History className="mr-2 h-3.5 w-3.5" /> Trade History
+              <History className="mr-2 h-3.5 w-3.5" /> Trade history
             </TabsTrigger>
           </TabsList>
 

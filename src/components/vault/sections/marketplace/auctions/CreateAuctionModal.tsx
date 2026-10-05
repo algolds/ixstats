@@ -118,7 +118,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
         <div className="space-y-4">
           {/* Step 1: Select Card */}
           <div>
-            <label className="text-label-secondary text-eyebrow mb-2 block">
+            <label className="text-label-secondary text-footnote mb-2 block">
               Select card to sell
             </label>
             {inventoryLoading ? (
@@ -166,7 +166,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
                             {card.title}
                             <span
                               className={cn(
-                                "text-eyebrow ml-2",
+                                "text-caption ml-2",
                                 rarityColor[card.rarity] || "text-label-secondary"
                               )}
                             >
@@ -197,7 +197,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
             <>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-label-secondary text-eyebrow mb-1 flex items-center gap-1">
+                  <label className="text-label-secondary text-footnote mb-1 flex items-center gap-1">
                     Starting bid (<IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />)
                   </label>
                   <Input
@@ -210,7 +210,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
                   />
                 </div>
                 <div>
-                  <label className="text-label-secondary text-eyebrow mb-1 block">
+                  <label className="text-label-secondary text-footnote mb-1 block">
                     Buyout price (optional)
                   </label>
                   <Input
@@ -225,7 +225,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
               </div>
 
               <div>
-                <label className="text-label-secondary text-eyebrow mb-1 block">
+                <label className="text-label-secondary text-footnote mb-1 block">
                   Listing duration
                 </label>
                 <Select value={duration} onValueChange={(v) => setDuration(v as "30" | "60")}>
@@ -255,7 +255,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
             onClick={handleSubmit}
             disabled={!selectedCardId || !startingPrice || createAuction.isPending}
           >
-            {createAuction.isPending ? "Creating..." : "Create Listing"}
+            {createAuction.isPending ? "Creating..." : "Create listing"}
           </Button>
         </DialogFooter>
       </DialogContent>

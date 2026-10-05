@@ -148,7 +148,9 @@ export function CardTakedownVerificationModal({
             {/* Verification Instructions — OAuth-style steps */}
             <div className="border-separator bg-fill-3 text-label-secondary rounded-row text-footnote space-y-2 border p-3">
               <div className="flex items-center justify-between">
-                <span className="text-label text-eyebrow">How to verify ownership</span>
+                <span className="text-label text-footnote font-semibold">
+                  How to verify ownership
+                </span>
                 <a
                   href="https://www.nationstates.net/pages/api.html#verification"
                   target="_blank"

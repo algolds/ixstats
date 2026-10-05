@@ -339,8 +339,8 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                     {/* Your Cards */}
                     <div className="flex flex-col">
                       <div className="mb-2 flex items-center justify-between">
-                        <span className="text-eyebrow text-label-secondary">
-                          Your Cards ({selectedYourCards.length})
+                        <span className="text-footnote text-label-secondary font-medium">
+                          Your cards ({selectedYourCards.length})
                         </span>
                         <span className="text-footnote text-blue font-semibold tabular-nums">
                           {yourValue.toLocaleString()} IxC
@@ -381,8 +381,8 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                     {/* Their Cards */}
                     <div className="flex flex-col">
                       <div className="mb-2 flex items-center justify-between">
-                        <span className="text-eyebrow text-label-secondary">
-                          Their Cards ({selectedTheirCards.length})
+                        <span className="text-footnote text-label-secondary font-medium">
+                          Their cards ({selectedTheirCards.length})
                         </span>
                         <span className="text-footnote text-green font-semibold tabular-nums">
                           {theirValue.toLocaleString()} IxC

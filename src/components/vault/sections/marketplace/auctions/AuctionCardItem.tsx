@@ -6,6 +6,7 @@ import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { Stat } from "~/components/ui/stat";
 import { IxCreditsSymbol } from "../../../IxCreditsSymbol";
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
 import { getRarityTheme } from "~/lib/cards/display-utils";
@@ -76,7 +77,7 @@ export function AuctionCardItem({
           <span className="text-label text-footnote truncate font-semibold">{title}</span>
           <Badge
             variant="outline"
-            className={cn("text-eyebrow shrink-0 px-1 py-0", theme.badgeStyle)}
+            className={cn("text-caption shrink-0 px-1 py-0", theme.badgeStyle)}
           >
             {rarity}
           </Badge>
@@ -99,15 +100,17 @@ export function AuctionCardItem({
 
       {/* Bidding Actions */}
       <div className="relative z-10 flex flex-col items-end justify-between gap-2 select-none">
-        <div className="text-right">
-          <span className="text-label-secondary text-stat-label block leading-none">
-            Current bid
-          </span>
-          <span className="text-headline text-yellow mt-0.5 flex items-center justify-end gap-0.5 leading-none tabular-nums">
-            <IxCreditsSymbol className="h-3 w-3 shrink-0" />
-            {currentBid.toLocaleString()}
-          </span>
-        </div>
+        <Stat
+          size="sm"
+          label="Current bid"
+          className="items-end text-right"
+          value={
+            <span className="flex items-center justify-end gap-1">
+              <IxCreditsSymbol decorative className="size-3 shrink-0" />
+              {currentBid.toLocaleString()}
+            </span>
+          }
+        />
 
         <div className="flex items-center gap-2">
           {/* Custom bid input */}

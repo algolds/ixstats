@@ -81,7 +81,7 @@ export function CardStatsTab({ card, stats }: CardStatsTabProps) {
                   <div className="text-label-secondary text-body">{special.def.label}</div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-title-2" style={{ color: special.def.color }}>
-                      {special.rawValue === 0 ? "—" : special.formattedRaw}
+                      {special.rawValue === 0 ? "–" : special.formattedRaw}
                     </span>
                   </div>
                 </div>

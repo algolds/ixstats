@@ -83,7 +83,7 @@ export function ImportVerifyStep({
 
       {/* Code input */}
       <Card className="rounded-row bg-tint-fill space-y-2 p-5">
-        <label className="text-eyebrow text-yellow-ink">
+        <label className="text-footnote text-yellow-ink font-medium">
           Paste verification code from NationStates
         </label>
         <Input

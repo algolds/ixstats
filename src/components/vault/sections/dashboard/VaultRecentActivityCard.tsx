@@ -5,7 +5,7 @@ import { ClockRotateRight as History, ArrowUp, ArrowDown } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
-import { Card } from "~/components/ui/card";
+import { Card, CardTitle } from "~/components/ui/card";
 
 export interface ActivityEntry {
   id: string;
@@ -23,12 +23,9 @@ interface VaultRecentActivityCardProps {
 export function VaultRecentActivityCard({ loading, activities }: VaultRecentActivityCardProps) {
   return (
     <Card padding="lg" className="overflow-hidden">
-      <div className="border-separator mb-4 flex items-center gap-2 border-b pb-4">
-        <div className="text-label-secondary rounded-row border-separator bg-fill-3 shadow-card flex h-8 w-8 items-center justify-center border">
-          <History aria-hidden className="text-label-secondary h-4.5 w-4.5" />
-        </div>
-        <span className="text-label-secondary text-eyebrow">Recent activity</span>
-      </div>
+      <CardTitle icon={<History />} className="border-separator mb-4 border-b pb-4">
+        Recent activity
+      </CardTitle>
 
       {loading ? (
         <div className="space-y-2">

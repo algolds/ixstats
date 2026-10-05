@@ -57,7 +57,7 @@ import { PackHolographicCard, type PackItem } from "./store/PackHolographicCard"
 import { StoreCategoryHeader } from "./store/StoreCategoryHeader";
 import { StorePurchaseDialog } from "./store/StorePurchaseDialog";
 import { VaultParticleExplosionModal } from "~/components/vault/VaultParticleExplosionModal";
-import { Card } from "~/components/ui/card";
+import { Card, CardTitle } from "~/components/ui/card";
 
 const PackOpeningSequence = dynamic(
   () =>
@@ -267,14 +267,11 @@ export function VaultStoreTab() {
         {/* Storefront Window Header */}
         <div className="border-separator mb-4 flex flex-col items-start justify-between gap-2 border-b pb-4 sm:flex-row sm:items-center">
           <div>
-            <h3 className="text-eyebrow text-label flex items-center gap-2">
-              {activeConfig.icon}
-              {activeConfig.title}
-            </h3>
+            <CardTitle icon={activeConfig.icon}>{activeConfig.title}</CardTitle>
             <p className="text-label-secondary text-footnote mt-1">{activeConfig.description}</p>
           </div>
           <span
-            className={cn("text-eyebrow rounded-full border px-2 py-0.5", activeConfig.badgeStyle)}
+            className={cn("text-caption rounded-full border px-2 py-0.5", activeConfig.badgeStyle)}
           >
             {activeConfig.statusText}
           </span>
