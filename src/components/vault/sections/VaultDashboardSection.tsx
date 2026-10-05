@@ -6,7 +6,7 @@ import { useUser } from "~/context/auth-context";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { VaultParticleExplosionModal } from "~/components/vault/VaultParticleExplosionModal";
 import type { CardInstance } from "~/types/cards-display";
-import { VaultNetWorthCard } from "./dashboard/VaultNetWorthCard";
+import { VaultCollectionCard } from "./dashboard/VaultCollectionCard";
 import { VaultYieldProjectionsCard } from "./dashboard/VaultYieldProjectionsCard";
 import { VaultRecentActivityCard, type ActivityEntry } from "./dashboard/VaultRecentActivityCard";
 import { VaultShowcaseGrid } from "./dashboard/VaultShowcaseGrid";
@@ -183,10 +183,9 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
             budgetBonusPercent={budgetMultiplierData?.percentChange}
           />
 
-          <VaultNetWorthCard
+          <VaultCollectionCard
             vaultLevel={levelData?.vaultLevel ?? 1}
             netWorth={netWorth}
-            liquidCredits={liquidCredits}
             collectionValuation={collectionValuation}
             totalCards={stats?.totalCards ?? 0}
             capacityBoost={stats?.capacityBoost ?? 0}
