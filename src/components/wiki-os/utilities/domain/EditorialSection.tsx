@@ -40,10 +40,11 @@ const TOOLS: UtilityTool[] = [
     id: "export",
     title: "Portable MDX & JSON snapshot exporter",
     description:
-      "Download portable Markdown files with YAML frontmatter or structured JSON AST dumps.",
+      "Download an article as Markdown with YAML frontmatter or as JSON. Opens the Main Page; change ?slug= for another article.",
     legacyAlias: "Special:Export",
     icon: Download,
-    href: "/api/wiki/export?format=json",
+    // The hub has no current article, so like the editor card it opens the Main Page (WK-15).
+    href: "/api/wiki/export?slug=Main_Page&format=json",
     isExternal: true,
     badge: "MDX / JSON",
     color: "border-yellow/20 bg-yellow/10 text-yellow",
