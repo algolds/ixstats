@@ -104,7 +104,8 @@ function SectionRow({ section, ctx }: { section: Section; ctx: Ctx }) {
     ? ({ target: "_blank", rel: "noopener noreferrer" } as const)
     : {};
   return (
-    <li>
+    // A section's own tint wins over the wrapper's app tint (Labs is sky, MyLeague is teal).
+    <li data-app={section.tint}>
       <RowLink
         href={section.href}
         {...externalProps}

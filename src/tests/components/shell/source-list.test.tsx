@@ -332,3 +332,20 @@ describe("SourceList external sections", () => {
     expect(onNavigate).toHaveBeenCalled();
   });
 });
+
+describe("SourceList section tint", () => {
+  afterEach(cleanup);
+
+  it("scopes a section's own tint on its row, so the Labs app tint does not recolour MyLeague", () => {
+    const { nav } = setup("/myleague");
+    const row = within(nav).getByRole("link", { name: "MyLeague" });
+    expect(row).toHaveAttribute("aria-current", "page");
+    expect(row.closest("li")).toHaveAttribute("data-app", "sports");
+  });
+
+  it("leaves rows without a section tint to inherit the app's", () => {
+    const { nav } = setup("/myleague");
+    const onoma = within(nav).getByRole("link", { name: "Onoma" }).closest("li");
+    expect(onoma).not.toHaveAttribute("data-app");
+  });
+});
