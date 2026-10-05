@@ -241,7 +241,7 @@ IxWorld.
 1. **Universal event spine:** diplomacy, defense, elections and meetings write to it (PRD Rule 6). *Needs M2 politics, meetings and defense.*
 2. **Recon returns minutes and cables; `STATECRAFT_SPINE` on by default.** *Needs meeting outcomes (M2).*
 3. **Information fog bands:** mask previews into qualitative bands at governance-competence thresholds. *Needs MC-7 history.*
-4. **Intelligence dashboard:** threshold alerts are read and resolved (MC-17); `/mycountry/intelligence` gets its own surface.
+4. **Intelligence dashboard:** ✅ threshold alerts are read and resolved in an alerts card on the MyCountry overview, and their notifications link there (MC-17, 2026-10-05). Left: `/mycountry/intelligence` gets its own surface (it still renders Defense).
 
 **Living world**
 - **Crisis engine:** a producer, the lifecycle state machine, player response postures, an admin UI; `auto-post.ts` wired

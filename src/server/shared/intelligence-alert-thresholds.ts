@@ -7,6 +7,12 @@
 import { notificationAPI } from "~/lib/notifications/api";
 
 /**
+ * Where the owner reads and resolves these alerts: the Intelligence alerts card on the
+ * MyCountry overview (`?focus=alerts` scrolls to it). `/mycountry/intelligence` renders Defense.
+ */
+export const INTELLIGENCE_ALERTS_HREF = "/mycountry?focus=alerts";
+
+/**
  * Calculate real-time country metrics (social, security, political)
  */
 async function calculateRealTimeMetrics(db: any, countryId: string) {
@@ -127,14 +133,15 @@ async function raiseBreachAlert(
   severityBreached: Severity,
   val: number
 ) {
-  const alertTitle = `🚨 ${t.metricName} breached ${severityBreached} threshold`;
+  const alertTitle = `${t.metricName} breached ${severityBreached} threshold`;
   const alertDescription = `Current value: ${val.toFixed(2)}. Threshold ranges breached: ${severityBreached.toUpperCase()}`;
 
   const existingAlert = await db.intelligenceAlert.findFirst({
     where: {
       countryId,
       alertType: "threshold_breach",
-      title: alertTitle,
+      // Alerts raised before 2026-10-05 carried a leading siren emoji in the title.
+      title: { in: [alertTitle, `\u{1F6A8} ${alertTitle}`] },
       isActive: true,
       isResolved: false,
     },
@@ -169,7 +176,7 @@ async function raiseBreachAlert(
     category: "intelligence",
     priority: severityBreached as any,
     type: "alert",
-    href: "/mycountry/intelligence",
+    href: INTELLIGENCE_ALERTS_HREF,
     source: "intelligence-system",
     actionable: false,
     metadata: { alertId: alert.id, thresholdId: t.id, metricName: t.metricName, val },

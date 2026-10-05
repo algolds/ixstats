@@ -27,6 +27,7 @@ Read it end to end once before starting. Every command here is meant to be run b
   - realm region pages (2026-10-05, additive): `Realm` banner, factbook, tags and `foundedAt` columns;
     `realm_officers`, `realm_embassies` and `realm_board_bans` tables; a nullable `Poll.realmId`. `db push` applies
     them with no data-loss prompt
+  - a nullable `IntelligenceAlert.readAt` (2026-10-05, additive): when the owner read a threshold alert (MC-17)
 - **Profile URLs:** `/@user` becomes the canonical profile URL.
 
 ## What prod looked like on 2026-09-27 (read-only check)

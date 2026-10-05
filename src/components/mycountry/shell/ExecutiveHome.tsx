@@ -12,6 +12,7 @@ import { WorldCensusCard } from "./WorldCensusCard";
 import { TerritoryMapWidget } from "./TerritoryMapWidget";
 import { ExecutiveRecordFeed } from "./ExecutiveRecordFeed";
 import { DomainPeeksCard } from "./DomainPeeksCard";
+import { IntelligenceAlertsCard } from "./IntelligenceAlertsCard";
 import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
@@ -121,8 +122,12 @@ function ExecutiveHomeComponent({
           </Card>
         </div>
 
-        {/* Rail: national standing, rank among peers and the territory */}
-        <aside className="min-w-0 space-y-6" aria-label="National standing, rankings and territory">
+        {/* Rail: open intelligence alerts, national standing, rank among peers and the territory */}
+        <aside
+          className="min-w-0 space-y-6"
+          aria-label="Intelligence alerts, national standing, rankings and territory"
+        >
+          <IntelligenceAlertsCard countryId={countryId} />
           <StandingBands countryId={countryId} />
           <WorldCensusCard countryId={countryId} />
           <TerritoryMapWidget countryId={countryId} />

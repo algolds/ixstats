@@ -61,7 +61,6 @@ partly done item.
 |---|---|---|---|---|
 | MC-3 | UNFINISHED | Defense force structure can't be created (branch and unit CRUD deleted in plan 312), so PvNPC strength is 0. Waits on D2 | `security/military.ts:64-74`; `DeploymentWizard.tsx:136` | M–L |
 | MC-6 | DEAD | The ScheduledChange pipeline (service, cron job, `usePendingLocks`) has no producer. Use or delete (D11); see [scheduled-changes.md](../systems/scheduled-changes.md) | `server/modules/scheduled-changes/service.ts` | M |
-| MC-17 | UNFINISHED | Threshold alerts are written to `IntelligenceAlert` but nothing reads them; their notifications link to `/mycountry/intelligence`, which renders Defense | `server/shared/intelligence-alert-thresholds.ts` | M |
 | MC-18 | DEAD | Zero-importer files. Left: the other components listed in the audit (re-check each; `builder-validation.ts` is in use, `tax-revenue-mapping.ts` and `government-preview/*` are gone) | — | S |
 | MC-19 | DEAD | Area models read but never written outside the seed (`Treaty`, `DiplomaticChannel`, `TaxPolicy`, `QuickActionTemplate`, `VitalityHistory`, …) | `prisma/schema/*` | S |
 
@@ -151,7 +150,7 @@ See §1 above (password rotation, CSP).
 - **Information fog:** qualitative bands at governance-competence thresholds. Source: [design PRDs](../systems/mycountry-design-philosophy-and-prds.md) :39, :449; [game loops](../systems/statecraft/statecraft-game-loops.md) :115.
 - **Universal event spine:** diplomacy, defense, elections and meetings bypass it (PRD Rule 6, :374). Meeting decisions don't reach it yet.
 - **Issue recon ("SEE"):** enable `STATECRAFT_SPINE` and have recon meetings return minutes/cables (game loops :14).
-- **Intelligence:** no dashboard; `/mycountry/intelligence` renders Defense (MC-17).
+- **Intelligence:** no dashboard; `/mycountry/intelligence` renders Defense. Threshold alerts are read and resolved on the overview (MC-17, done 2026-10-05).
 - **Crisis events:** taxonomy, lifecycle, response postures, mutations, admin UI ([crisis-events.md](../systems/crisis-events.md)); nothing writes `CrisisEvent` rows.
 - **NPC AI:** trait drift (no callers); NPC responses for embassies and treaties; event-fatigue dampening ([npc-ai.md](../systems/npc-ai.md) :41, :54).
 - **Relative-development asymmetry:** feed it into trade maths.
