@@ -15,9 +15,15 @@ import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { CooldownTimer } from "../ExecutiveHome";
 import type { CommandNavMode } from "../command-nav-mode";
-import { PageHeader } from "~/components/shell/PageHeader";
+import { PageHeader, BACKDROP_PLATE } from "~/components/shell/PageHeader";
 import { assetUrl } from "~/lib/base-path";
 import { FlagBanner } from "./FlagBanner";
+
+/** Ghost actions over the flag get the title plate's strength, with an opaque hover and press. */
+const ACTION_PLATE = cn(
+  BACKDROP_PLATE,
+  "hover:bg-surface-secondary active:bg-surface-secondary rounded-full"
+);
 
 interface UnifiedGlassCommandBarProps {
   mode: CommandNavMode;
@@ -95,7 +101,8 @@ export function UnifiedGlassCommandBar({
   return (
     <PageHeader
       title={country?.name ?? "MyCountry"}
-      backdrop={flagUrl ? <FlagBanner src={flagUrl} /> : undefined}
+      // Always present, so the header's padding never jumps when the flag arrives late or fails.
+      backdrop={<FlagBanner key={flagUrl} src={flagUrl} />}
       subtitle={
         <>
           {identity ? <p>{identity}</p> : null}
@@ -104,7 +111,7 @@ export function UnifiedGlassCommandBar({
       }
       actions={
         <>
-          <Button asChild variant="ghost" className="text-label-secondary">
+          <Button asChild variant="ghost" className={cn("text-label-secondary", ACTION_PLATE)}>
             <Link href={profileHref} aria-label="Open public profile" title="Open public profile">
               <User aria-hidden="true" />
               <span className="hidden md:inline">Profile</span>
@@ -114,7 +121,7 @@ export function UnifiedGlassCommandBar({
             type="button"
             variant="ghost"
             onClick={() => router.push("/mycountry/editor")}
-            className="text-label-secondary"
+            className={cn("text-label-secondary", ACTION_PLATE)}
             aria-label="Edit country"
             title="Edit country and territory"
           >

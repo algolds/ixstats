@@ -84,51 +84,6 @@
   }
 }
 
-@layer components {
-  /* Readability scrim over a header cover image (PageHeader `backdrop`). Flags are content art with
-     any palette, so the guarantee is arithmetic, not taste: the page background role is laid over
-     the art at --scrim-text (90%) across the text column (title, facts: up to 46rem, past the
-     43rem the title block can reach) and at --scrim-bar (85%) across the toolbar band that holds
-     the actions, fading out beyond. Worst case is a pure black (light) or pure white (dark) flag
-     pixel: light label-secondary stays at 4.85:1 (bar) and 5.5:1 (text), dark at 5.1:1 and 6:1,
-     both over the 4.5:1 AA bar, and the primary label is higher still. Reduce Transparency and
-     Increase Contrast make it opaque (100%), so the art simply drops out. */
-  .shell-banner-scrim {
-    --scrim-text: 90%;
-    --scrim-bar: 85%;
-    background-image:
-      linear-gradient(
-        to bottom,
-        color-mix(in oklab, var(--color-background-grouped) var(--scrim-bar), transparent) 4rem,
-        transparent 7rem
-      ),
-      linear-gradient(
-        to right,
-        color-mix(in oklab, var(--color-background-grouped) var(--scrim-text), transparent) 46rem,
-        transparent 58rem
-      );
-  }
-
-  @media (prefers-reduced-transparency: reduce) {
-    .shell-banner-scrim {
-      --scrim-text: 100%;
-      --scrim-bar: 100%;
-    }
-  }
-
-  @media (prefers-contrast: more) {
-    .shell-banner-scrim {
-      --scrim-text: 100%;
-      --scrim-bar: 100%;
-    }
-  }
-
-  :where([data-transparency="reduced"], [data-contrast="more"]) .shell-banner-scrim {
-    --scrim-text: 100%;
-    --scrim-bar: 100%;
-  }
-}
-
 @layer utilities {
   /* A page's own title next to its ShellPageHeader: only one of them shows. */
   :root:has([data-shell-page-header="all"]) [data-shell-page-title] {

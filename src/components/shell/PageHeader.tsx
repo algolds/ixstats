@@ -38,13 +38,22 @@ export interface PageHeaderProps {
   /** Trailing toolbar actions (buttons, a dropdown menu). */
   actions?: React.ReactNode;
   /**
-   * Decorative art behind the expanded header (a cover image with its own scrim). It is clipped to
-   * the header's rounded box, fades out once the header collapses, and never reaches the compact
-   * toolbar. The slot owns no readability: the art must bring its own scrim.
+   * Decorative art behind the expanded header. It is clipped to the header's rounded box, fades out
+   * once the header collapses, and never reaches the compact toolbar. Readability is the header's
+   * job, not the art's: the title block sits on a plate (`BACKDROP_PLATE`), and trailing actions
+   * that need one apply the same classes.
    */
   backdrop?: React.ReactNode;
   className?: string;
 }
+
+/**
+ * The page background role at 90% behind text over backdrop art, opaque under Reduce Transparency
+ * and Increase Contrast. At 90% the worst case (a pure black flag pixel in light mode, pure white
+ * in dark) leaves label-secondary at 5.5:1 (light) and 6:1 (dark), over the 4.5:1 AA bar.
+ */
+export const BACKDROP_PLATE =
+  "bg-grouped/90 transparency-reduced:bg-grouped contrast-more:bg-grouped";
 
 const fade = "transition-opacity duration-fast ease-out-facet motion-reduce:transition-none";
 
@@ -95,15 +104,17 @@ export function PageHeader({
     <header
       data-slot="page-header"
       data-collapsed={collapsed ? "" : undefined}
-      // `isolate` keeps the backdrop's negative z-index inside the header, above the page.
-      className={cn("flex flex-col", backdrop != null && "relative isolate", className)}
+      // No `isolate`/z-index here: a stacking context would trap the sticky toolbar's `z-sticky`
+      // and let later page content paint over the compact bar. The backdrop sits at z-base and the
+      // expanded block at z-raised (below z-sticky) instead.
+      className={cn("flex flex-col", backdrop != null && "relative", className)}
     >
       {backdrop != null && (
         <div
           aria-hidden="true"
           data-slot="page-header-backdrop"
           className={cn(
-            "rounded-card pointer-events-none absolute inset-0 -z-10 overflow-hidden print:hidden",
+            "rounded-card z-base pointer-events-none absolute inset-0 overflow-hidden print:hidden",
             fade,
             collapsed ? "opacity-0" : "opacity-100"
           )}
@@ -166,11 +177,18 @@ export function PageHeader({
       <div
         className={cn(
           "flex items-center gap-4",
-          backdrop != null ? "px-4 pt-2 pb-6" : "px-2 pt-2 pb-4"
+          backdrop != null ? "z-raised relative px-4 pt-2 pb-6" : "px-2 pt-2 pb-4"
         )}
       >
         {leading}
-        <div className="flex min-w-0 flex-col gap-1">
+        <div
+          data-slot={backdrop != null ? "page-header-plate" : undefined}
+          className={cn(
+            "flex min-w-0 flex-col gap-1",
+            // Sized to the text, so long names are covered too.
+            backdrop != null && cn("rounded-card px-4 py-3", BACKDROP_PLATE)
+          )}
+        >
           <h1 ref={titleRef} className="text-large-title text-label">
             {title}
           </h1>

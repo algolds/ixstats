@@ -1,7 +1,7 @@
 import React from "react";
 import fs from "fs";
 import path from "path";
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, fireEvent } from "@testing-library/react";
 
 let observerCallback: ((entries: Partial<IntersectionObserverEntry>[]) => void) | undefined;
 const originalObserver = globalThis.IntersectionObserver;
@@ -30,8 +30,11 @@ let mockCountry: Record<string, unknown> | null = null;
 jest.mock("next/navigation", () => ({ useRouter: () => ({ push: jest.fn() }) }));
 jest.mock("next/link", () => ({
   __esModule: true,
-  default: ({ children, href }: { children: React.ReactNode; href: string }) => (
-    <a href={href}>{children}</a>
+  default: ({
+    children,
+    ...props
+  }: { children: React.ReactNode } & React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+    <a {...props}>{children}</a>
   ),
 }));
 jest.mock("~/trpc/react", () => ({
@@ -76,9 +79,10 @@ describe("MyCountry header flag banner", () => {
     expect(img).toHaveAttribute("alt", "");
     expect(img!.className).toContain("object-cover");
 
-    const scrim = backdrop!.querySelector('[data-slot="flag-banner-scrim"]');
-    expect(scrim).not.toBeNull();
-    expect(scrim!.className).toContain("shell-banner-scrim");
+    // The flag stays vivid: at most a light wash over the art, not a readability scrim.
+    const wash = backdrop!.querySelector('[data-slot="flag-banner-wash"]');
+    expect(wash!.className).toMatch(/\bbg-grouped\/(?:\d|1[0-5])\b/);
+    expect(img!.className).toContain("object-[center_35%]");
   });
 
   it("keeps the banner out of the compact sticky bar", () => {
@@ -96,39 +100,53 @@ describe("MyCountry header flag banner", () => {
     expect(backdrop.className).toContain("opacity-0");
   });
 
-  it("renders no banner when the country has no flag", () => {
+  it("renders no image when the country has no flag, with the same header padding", () => {
+    const { container: withFlag } = renderBar();
+    const flagged = withFlag.querySelector('[data-slot="page-header-plate"]')!.parentElement!
+      .className;
     mockCountry = { name: "Pelaxia" };
     const { container } = renderBar();
-    expect(container.querySelector('[data-slot="page-header-backdrop"]')).toBeNull();
-    expect(screen.getByRole("heading", { level: 1, name: "Pelaxia" })).toBeInTheDocument();
+    expect(container.querySelector("img")).toBeNull();
+    expect(screen.getAllByRole("heading", { level: 1, name: "Pelaxia" }).length).toBeGreaterThan(0);
+    expect(
+      container.querySelector('[data-slot="page-header-plate"]')!.parentElement!.className
+    ).toBe(flagged);
   });
 
-  it("keeps Declare Directive and the title readable (still rendered in the header)", () => {
-    renderBar();
-    expect(screen.getByRole("button", { name: "Declare Directive" })).toBeInTheDocument();
-  });
-});
-
-describe("flag banner scrim CSS", () => {
-  const css = fs
-    .readFileSync(path.resolve(__dirname, "../../../styles/facet/shell.css"), "utf-8")
-    .replace(/\/\*[\s\S]*?\*\//g, "");
-
-  it("uses colour roles only, never a hex value", () => {
-    const rule = css.match(/\.shell-banner-scrim \{([^}]*)\}/)?.[1] ?? "";
-    expect(rule).toContain("var(--color-background-grouped)");
-    expect(rule).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+  it("puts the title, subtitle and facts on a page-background plate, opaque when transparency is reduced", () => {
+    mockCountry = { name: "Pelaxia", leader: "Ana", flagUrl: "https://example.test/f.svg" };
+    const { container } = renderBar();
+    const plate = container.querySelector('[data-slot="page-header-plate"]')!;
+    expect(plate.contains(screen.getByRole("heading", { level: 1, name: "Pelaxia" }))).toBe(true);
+    expect(plate.textContent).toContain("Ana");
+    expect(plate.className).toMatch(/\bbg-grouped\/90\b/);
+    expect(plate.className).toContain("transparency-reduced:bg-grouped");
+    expect(plate.className).toContain("contrast-more:bg-grouped");
+    expect(plate.className).toContain("rounded-card");
   });
 
-  it("is effectively opaque under Reduce Transparency and Increase Contrast", () => {
-    expect(css).toMatch(
-      /prefers-reduced-transparency: reduce\) \{[^}]*\.shell-banner-scrim \{[^}]*--scrim-text: 100%;[^}]*--scrim-bar: 100%;/
-    );
-    expect(css).toMatch(
-      /prefers-contrast: more\) \{[^}]*\.shell-banner-scrim \{[^}]*--scrim-text: 100%;[^}]*--scrim-bar: 100%;/
-    );
-    expect(css).toMatch(
-      /\[data-transparency="reduced"\][^{]*\.shell-banner-scrim \{[^}]*--scrim-text: 100%;/
+  it("gives the ghost actions their own pill plate; Declare Directive stays filled", () => {
+    const { container } = renderBar();
+    for (const name of ["Open public profile", "Edit country"]) {
+      const action = container.querySelector(`[aria-label="${name}"]`)!;
+      expect(action.className).toMatch(/\bbg-grouped\/90\b/);
+      expect(action.className).toContain("transparency-reduced:bg-grouped");
+      expect(action.className).toContain("rounded-full");
+      expect(action.className).not.toContain("bg-transparent");
+    }
+    const declare = screen.getByRole("button", { name: "Declare Directive" });
+    expect(declare.className).toContain("bg-primary-fill");
+  });
+
+  it("resets a failed flag load when the flag changes", () => {
+    const { container, rerender } = renderBar();
+    fireEvent.error(container.querySelector("img")!);
+    expect(container.querySelector("img")).toBeNull();
+    mockCountry = { name: "Pelaxia", flagUrl: "https://example.test/flags/new.svg" };
+    rerender(<UnifiedGlassCommandBar mode="home" onChangeMode={() => undefined} />);
+    expect(container.querySelector("img")).toHaveAttribute(
+      "src",
+      "https://example.test/flags/new.svg"
     );
   });
 });

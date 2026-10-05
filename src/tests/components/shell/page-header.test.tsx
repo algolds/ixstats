@@ -111,6 +111,20 @@ describe("PageHeader backdrop", () => {
     );
   });
 
+  it("does not create a stacking context that would trap the sticky toolbar", () => {
+    const { container } = render(
+      <PageHeader title="Pelaxia" actions={<button type="button">Go</button>} backdrop={<i />} />
+    );
+    const header = container.querySelector('[data-slot="page-header"]')!;
+    expect(header.className).not.toMatch(/\bisolate\b|\bz-/);
+    expect(container.querySelector('[data-slot="page-header-toolbar"]')!.className).toContain(
+      "z-sticky"
+    );
+    expect(container.querySelector('[data-slot="page-header-backdrop"]')!.className).toContain(
+      "z-base"
+    );
+  });
+
   it("is unchanged without a backdrop", () => {
     const { container } = render(<PageHeader title="Help" />);
     expect(container.querySelector('[data-slot="page-header-backdrop"]')).toBeNull();
