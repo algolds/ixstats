@@ -287,11 +287,16 @@ describe("geoEditor.importPipelineResult — adjacency (AT-16)", () => {
     ).importPipelineResult({ realmId: "r_eurth", layers });
   }
   function importDb() {
-    const db = {
+    const db: {
+      realm: { findUnique: jest.Mock };
+      mapLayer: { updateMany: jest.Mock; upsert: jest.Mock };
+      sharedVertex: { deleteMany: jest.Mock; createMany: jest.Mock };
+      $transaction: jest.Mock;
+    } = {
       realm: { findUnique: jest.fn().mockResolvedValue({ id: "r_eurth" }) },
       mapLayer: { updateMany: jest.fn(), upsert: jest.fn().mockResolvedValue({}) },
       sharedVertex: { deleteMany: jest.fn(), createMany: jest.fn() },
-      $transaction: jest.fn((fn: (tx: unknown) => unknown) => fn(db)),
+      $transaction: jest.fn((fn: (tx: unknown) => unknown): unknown => fn(db)),
     };
     return db;
   }
