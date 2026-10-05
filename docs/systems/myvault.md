@@ -45,9 +45,21 @@ Organized into modular sub-files:
 - `vault/balance-credits.ts` – Balance, level, today's earnings, user stats, transaction history, passive income & budget multiplier projections. `getBalance` also pays the one-time new-player bonus to an account that never received it (see [ixcredits.md](./ixcredits.md#4-metagame-bonuses-earn_bonus--uncapped)); new accounts are paid at sign-up, with or without a country
 - `vault/daily-claims.ts` – Daily bonus / combined daily claim, daily cap checks
 - `vault/store.ts` – Store listing, purchased items, cosmetic equip
+- `vault/public-cosmetics.ts` – `getEquippedCosmeticsFor`, another player's equipped cosmetics (public)
 - `vault/collections.ts` – Collection details, likes, comments, public collections
 - `vault/admin/` (`store.ts`, `items.ts`, `users.ts`) – Configuration toggles, store catalog, credit adjustments
 - Ledger logic lives in `src/lib/vault/` (`vault-ledger.ts`, `vault-passive-income.ts`, `vault-daily-bonus.ts`, `vault-bonus.ts`, `vault-service.ts`)
+
+### Public equipped cosmetics
+
+`vault.getEquippedCosmeticsFor({ userIds?, forumUserIds? })` (rate-limited public query, at most 50 ids of each kind)
+returns, per user with something equipped, the equipped cosmetic ids and the resolved `avatarGlow`, `chatBadge` and
+`neonFrame`; never the balance, purchases or inventory. `userIds` take the internal `User.id` or the Clerk id;
+`forumUserIds` take linked XenForo ids. Resolution (`src/lib/vault/public-cosmetics.ts`) matches the owner's own
+`useActiveCosmetics`: the catalog in `src/lib/media/cosmetics.ts` first, the item's `effects.customizations` second,
+active `cosmetics` items only. Two queries answer a whole page. Client hooks: `useUserCosmetics` (passport) and
+`useForumAuthorCosmetics` (thread lists and threads, one request per page). Equipping is the opt-in; there is no
+separate visibility setting.
 
 Related routers: `cards/`, `card-packs/`, `card-market/` (auctions & bids), `trading/`, `crafting/` (retired), `lore-cards/`, `ns-import/`, `achievements/`.
 

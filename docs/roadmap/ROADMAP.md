@@ -276,7 +276,7 @@ the spine.
 | NATION card minting per country; then `card-values` does real work | PF§3 | M | — |
 | Lore-first schema cleanup and the `CardRarity` enum; 40/25/20/10/4/1 distribution | PF§4 | M | — |
 | Vault reorder (Lore Gallery primary, category filters); themed packs; seasons | PF§4 | M | — |
-| Cosmetics visible to other players (a public equipped-cosmetics query) | VT-12 | M | — |
+| ✅ **Done (2026-10-05):** cosmetics visible to other players: the public, batched `vault.getEquippedCosmeticsFor` feeds the passport photo and name and forum post and thread authors | VT-12 | M | — |
 | ✅ **Done (2026-10-05):** the permanently disabled inventory bulk Move and List Market buttons are removed | VT-21 | S | — |
 | Exchange (₷) economy: build (fix `spend`, 0 ₷ seed, conversion) or drop 11 models | VT-16 | L | Decision D5 |
 | 💤 Crafting extensions (catalysts, discovery, guilds, bulk): deprecated with crafting (2026-10-05) | PF§4 | — | — |

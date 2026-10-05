@@ -1,6 +1,6 @@
 # IxnayID Passport
 
-**Last updated:** 2026-09-30
+**Last updated:** 2026-10-05
 
 **Routes:** `/@user`, `/id/[username]`, `/r/[realm]/[username]` | **Module:** `src/server/modules/identity/` | **Router:** `api.ixnayid` (`src/server/api/routers/ixnayid/`) | **UI:** `src/components/passport/`
 
@@ -19,6 +19,8 @@ The passport is the public face of an IxnayID account. It is readable signed-out
 | History  | `getHistory`            | Cross-platform activity stream, paged                                          |
 
 The front face also carries a stat row (Lorewards, Focus, Forum, IxCredits) and the owner's signature inscription.
+The photo wears the holder's equipped Vault glow and frame and the name carries their badge, for every visitor
+(`PassportPortrait`, `vault.getEquippedCosmeticsFor`; equipping is the opt-in, there is no separate toggle).
 
 ---
 

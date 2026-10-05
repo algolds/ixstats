@@ -8,6 +8,7 @@ import { EditPencil as PenSquare, CheckCircle as CheckCheck } from "iconoir-reac
 import { ForumLayout } from "~/components/forum/shared/ForumLayout";
 import { ForumBreadcrumbs } from "~/components/forum/reader/Breadcrumbs";
 import { ThreadListItem } from "~/components/forum/reader/ThreadListItem";
+import { useForumAuthorCosmetics } from "~/hooks/usePublicCosmetics";
 import { ForumPagination } from "~/components/forum/reader/Pagination";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { withBasePath } from "~/lib/base-path";
@@ -46,6 +47,8 @@ export default function ForumThreadListPage() {
 
   const forum = data?.forum;
   const threads = data?.threads ?? [];
+  // Every author's equipped cosmetics on this page, in one request (VT-12)
+  const cosmeticsFor = useForumAuthorCosmetics(threads.map((thread: any) => thread.authorId));
   const pagination = data?.pagination;
 
   // Separate sticky and regular threads
@@ -103,7 +106,11 @@ export default function ForumThreadListPage() {
       ) : (
         <Card className="overflow-hidden">
           {stickyThreads.map((thread: any) => (
-            <ThreadListItem key={thread.threadId} {...thread} />
+            <ThreadListItem
+              key={thread.threadId}
+              {...thread}
+              authorBadge={cosmeticsFor(thread.authorId)?.chatBadge}
+            />
           ))}
 
           {stickyThreads.length > 0 && regularThreads.length > 0 && (
@@ -111,7 +118,11 @@ export default function ForumThreadListPage() {
           )}
 
           {regularThreads.map((thread: any) => (
-            <ThreadListItem key={thread.threadId} {...thread} />
+            <ThreadListItem
+              key={thread.threadId}
+              {...thread}
+              authorBadge={cosmeticsFor(thread.authorId)?.chatBadge}
+            />
           ))}
 
           {threads.length === 0 && (

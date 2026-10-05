@@ -11,12 +11,15 @@ import { Stat } from "~/components/ui/stat";
 import { REDUCED_MOTION_FADE, springSmooth, tweenFast } from "~/lib/design/motion";
 import { PassportBackFace } from "./document/PassportBackFace";
 import { PassportMasthead } from "./document/PassportMasthead";
+import { PassportPortrait } from "./document/PassportPortrait";
 import { PassportStatGrid } from "./document/PassportStatGrid";
 import { PassportTabRibbon, passportTabId, passportTabPanelId } from "./document/PassportTabRibbon";
 import { PassportLorewardsModal } from "./modals/PassportLorewardsModal";
 import { PassportTabBody } from "./PassportTabPanels";
 import type { PassportPayload, PassportTabType } from "./types";
 import { Card } from "~/components/ui/card";
+import { CosmeticChatBadge } from "~/components/vault/CosmeticChatBadge";
+import { useUserCosmetics } from "~/hooks/usePublicCosmetics";
 
 const MotionCard = motion.create(Card);
 
@@ -74,6 +77,8 @@ export function MidRibbonPassportDocument({
   const roleName = data.account.roleName || featuredRealm?.role || "Leader";
 
   const highResAvatarUrl = getHighResolutionAvatar(avatarUrl, 800);
+  // The holder's equipped cosmetics, the same for every visitor (VT-12).
+  const cosmetics = useUserCosmetics(data.account.userId);
 
   // Saved signature inscription (PassportPreference.signature); the display name when unset.
   const signature = data.account.signature || displayName;
@@ -144,22 +149,11 @@ export function MidRibbonPassportDocument({
               <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
                 {/* Portrait and signature */}
                 <div className="flex flex-col items-center gap-4 sm:items-start lg:col-span-4">
-                  <div className="bg-fill-3 border-separator rounded-card shadow-card relative h-44 w-38 overflow-hidden border-2 sm:h-52 sm:w-44">
-                    {highResAvatarUrl ? (
-                      <img
-                        src={highResAvatarUrl}
-                        alt={displayName}
-                        className="h-full w-full transform-gpu object-cover select-none"
-                        loading="eager"
-                        decoding="async"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <div className="bg-fill-3 text-large-title text-label-secondary flex h-full w-full items-center justify-center select-none">
-                        {displayName.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
+                  <PassportPortrait
+                    displayName={displayName}
+                    avatarUrl={highResAvatarUrl}
+                    cosmetics={cosmetics}
+                  />
 
                   <div className="border-separator w-full max-w-[175px] space-y-0.5 border-t pt-2 text-center sm:text-left">
                     <Eyebrow className="block">Signature</Eyebrow>
@@ -175,6 +169,7 @@ export function MidRibbonPassportDocument({
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-label text-title-1">{displayName}</h2>
+                      <CosmeticChatBadge badge={cosmetics?.chatBadge} className="size-5" />
                       <Button
                         type="button"
                         variant="secondary"

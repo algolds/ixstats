@@ -30,6 +30,7 @@ jest.mock("~/trpc/react", () => ({
       },
       getLinkStatus: { useQuery: () => ({ data: null }) },
     },
+    vault: { getEquippedCosmeticsFor: { useQuery: () => ({ data: undefined }) } },
   },
 }));
 jest.mock("~/components/forum/shared/ForumContext", () => ({

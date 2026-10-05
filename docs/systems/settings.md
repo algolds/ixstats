@@ -118,8 +118,9 @@ server** refetches.
 ### Cosmetics (`cosmetics`) — `CosmeticsUpgradesPanel`
 
 Lists owned store items (`vault.listStoreItems`, `vault.getPurchasedItems`). Equip toggles call
-`vault.toggleEquipCosmetic`, which writes `MyVault.equippedCosmetics`. **Display-only:** no page outside Settings and
-the admin Vault tools reads equipped cosmetics, so equipping changes nothing visible.
+`vault.toggleEquipCosmetic`, which writes `MyVault.equippedCosmetics`. Every viewer sees what is equipped: the passport
+photo and name, and forum post and thread authors, read it through the public `vault.getEquippedCosmeticsFor`
+([myvault.md](./myvault.md#public-equipped-cosmetics)).
 
 ### NationStates cards (`cards`) — `NationStatesCardsPanel`
 
@@ -165,7 +166,7 @@ panel's Defense and Intelligence tab switches (the sidebar gates Defense on MyCo
 
 ## 5. Known gaps
 
-- A few controls are display-only (listed above): persona posting rules, equipped cosmetics, MyCountry inline lore
+- A few controls are display-only (listed above): persona posting rules, MyCountry inline lore
   (`wikiAutoScan`), and the Discord "bot alerts" wording on the account panel.
 - Appearance and most WikiOS reader settings are per browser and don't follow the account to another device.
 - Muted accounts are hidden from feeds but can still message you; there are no muted words.

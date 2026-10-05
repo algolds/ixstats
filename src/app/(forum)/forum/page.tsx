@@ -7,6 +7,7 @@ import { FireFlame as Flame, Clock, HomeSimple as HomeIcon } from "iconoir-react
 import { ForumLayout } from "~/components/forum/shared/ForumLayout";
 import { ForumCategoryCard } from "~/components/forum/reader/ForumCategoryCard";
 import { ThreadListItem } from "~/components/forum/reader/ThreadListItem";
+import { useForumAuthorCosmetics } from "~/hooks/usePublicCosmetics";
 import { ForumPagination } from "~/components/forum/reader/Pagination";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { withBasePath } from "~/lib/base-path";
@@ -151,6 +152,8 @@ export default function ForumIndexPage() {
   );
 
   const threads = threadsData?.threads ?? [];
+  // Every author's equipped cosmetics on this page, in one request (VT-12)
+  const cosmeticsFor = useForumAuthorCosmetics(threads.map((thread: any) => thread.authorId));
 
   return (
     <ForumLayout>
@@ -179,7 +182,11 @@ export default function ForumIndexPage() {
         <div>
           <Card className="overflow-hidden">
             {threads.map((thread: any) => (
-              <ThreadListItem key={thread.threadId} {...thread} />
+              <ThreadListItem
+                key={thread.threadId}
+                {...thread}
+                authorBadge={cosmeticsFor(thread.authorId)?.chatBadge}
+              />
             ))}
 
             {threads.length === 0 && <EmptyState compact title="No threads found" />}

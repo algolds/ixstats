@@ -14,8 +14,8 @@ import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { ActionPill } from "~/components/ui/action-pill";
 import { api } from "~/trpc/react";
-import * as IconoirIcons from "iconoir-react";
-import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
+import { CosmeticChatBadge } from "~/components/vault/CosmeticChatBadge";
+import type { ChatBadgeDisplay } from "~/lib/vault/public-cosmetics";
 import { sanitizeHtml } from "~/lib/utils";
 import { Textarea } from "~/components/ui/textarea";
 import { Button } from "~/components/ui/button";
@@ -59,6 +59,8 @@ interface PostCardProps {
   }>;
   threadTitle?: string;
   currentForumUserId?: number | null;
+  /** The author's equipped chat badge, from the thread's batched public-cosmetics lookup. */
+  authorBadge?: ChatBadgeDisplay | null;
   onQuote?: (authorName: string, content: string) => void;
   onReply?: () => void;
 }
@@ -209,6 +211,7 @@ export function PostCard({
   attachments,
   threadTitle,
   currentForumUserId,
+  authorBadge,
   onQuote,
   onReply,
 }: PostCardProps) {
@@ -220,9 +223,6 @@ export function PostCard({
 
   const isOwnPost = currentForumUserId != null && currentForumUserId === authorId;
   const utils = api.useUtils();
-  const { chatBadge } = useActiveCosmetics();
-  const CrownIcon = (IconoirIcons as any)[chatBadge.icon] || IconoirIcons.Crown;
-  const showBadge = isOwnPost && chatBadge.enabled;
   const { isStashed, toggle: toggleStash } = useThreadStash(threadId, threadTitle);
   const memberHref = withBasePath(`/forum/members/${authorId}`);
 
@@ -281,9 +281,7 @@ export function PostCard({
         </Link>
         <Link href={memberHref} className="forum-post-username flex items-center gap-1">
           <span>{authorName}</span>
-          {showBadge && (
-            <CrownIcon className="h-3.5 w-3.5 shrink-0" style={{ color: chatBadge.color }} />
-          )}
+          <CosmeticChatBadge badge={authorBadge} className="size-4" />
         </Link>
         {authorTitle && <span className="forum-post-user-title">{authorTitle}</span>}
         <div className="forum-post-user-stats">
@@ -315,9 +313,7 @@ export function PostCard({
               className="text-footnote text-label flex items-center gap-1 font-medium"
             >
               <span>{authorName}</span>
-              {showBadge && (
-                <CrownIcon className="h-3 w-3 shrink-0" style={{ color: chatBadge.color }} />
-              )}
+              <CosmeticChatBadge badge={authorBadge} />
             </Link>
           </div>
           <span className="forum-post-date">{formatDate(postDate)}</span>

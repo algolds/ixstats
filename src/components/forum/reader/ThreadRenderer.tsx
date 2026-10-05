@@ -12,6 +12,7 @@ import { ForumPagination } from "~/components/forum/reader/Pagination";
 import { ReplyComposer, type ReplyComposerHandle } from "~/components/forum/composer/ReplyComposer";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
+import { useForumAuthorCosmetics } from "~/hooks/usePublicCosmetics";
 
 interface ThreadRendererProps {
   threadId: number;
@@ -35,6 +36,9 @@ export function ThreadRenderer({ threadId, initialPage = 1 }: ThreadRendererProp
     staleTime: 5 * 60_000,
   });
   const currentForumUserId = linkStatus?.forumUserId ?? null;
+
+  // Every author's equipped cosmetics on this page, in one request (VT-12)
+  const cosmeticsFor = useForumAuthorCosmetics(data?.posts.map((post) => post.authorId) ?? []);
 
   // Update forum context when thread loads
   useEffect(() => {
@@ -124,6 +128,7 @@ export function ThreadRenderer({ threadId, initialPage = 1 }: ThreadRendererProp
             {...post}
             threadTitle={thread.title}
             currentForumUserId={currentForumUserId}
+            authorBadge={cosmeticsFor(post.authorId)?.chatBadge}
             onQuote={handleQuote}
             onReply={handleReply}
           />
