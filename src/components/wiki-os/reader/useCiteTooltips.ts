@@ -5,6 +5,8 @@
 import { useEffect, useState, useCallback, useRef, type RefObject } from "react";
 import { createElement } from "react";
 import { VirtualAnchorPopover } from "~/components/ui/popover";
+import { useWikiSetting } from "~/components/wiki-os/shared/useWikiSetting";
+import { useLinkTargetPreference } from "./useLinkTargetPreference";
 
 interface TooltipState {
   html: string;
@@ -13,6 +15,10 @@ interface TooltipState {
 }
 
 export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
+  // The renderer wires its link preferences through this hook: "open links in a new tab" ...
+  useLinkTargetPreference(contentRef);
+  // ... and "citation tooltips" (Settings → WikiOS options).
+  const enabled = useWikiSetting("wikios:showCitationTooltips", true);
   // Kept after closing so the content stays during the exit animation.
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [open, setOpen] = useState(false);
@@ -77,6 +83,7 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
   useEffect(() => {
     const container = contentRef.current;
     if (!container) return;
+    if (!enabled) return;
 
     const handleMouseEnter = (e: Event) => {
       const target = e.target as HTMLElement;
@@ -96,7 +103,7 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
       container.removeEventListener("mouseenter", handleMouseEnter, true);
       container.removeEventListener("mouseleave", handleMouseLeave, true);
     };
-  }, [contentRef, show, hide]);
+  }, [contentRef, show, hide, enabled]);
 
   // The tooltip: a popover above the citation (flips below near the top of the viewport). The
   // popover overlay is the only surface; the inner `.wikios-cite-tooltip-inner` just sets the
@@ -105,7 +112,7 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
     VirtualAnchorPopover,
     {
       anchor: tooltip?.anchor ?? null,
-      open,
+      open: open && enabled,
       onOpenChange: (next: boolean) => {
         if (!next) setOpen(false);
       },
