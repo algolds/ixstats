@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import React from "react";
 import { springGentle } from "~/lib/design/motion";
 import { motion } from "motion/react";
@@ -204,12 +206,14 @@ export function HeroPostView({ post, ctx, state }: HeroPostViewProps) {
       {Array.isArray(post.hashtags) && post.hashtags.length > 0 && (
         <div className="flex flex-wrap gap-2 pt-1">
           {post.hashtags.map((hashtag: string, index: number) => (
-            <button
+            <Link
               key={index}
+              href={`/hashtags/${encodeURIComponent(hashtag.replace(/^#/, ""))}`}
+              onClick={(e) => e.stopPropagation()}
               className="text-body text-blue hover:text-blue font-medium hover:underline"
             >
               #{hashtag}
-            </button>
+            </Link>
           ))}
         </div>
       )}

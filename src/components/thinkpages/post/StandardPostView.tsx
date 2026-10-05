@@ -264,9 +264,14 @@ export function StandardPostView({
           {Array.isArray(post.hashtags) && post.hashtags.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-1">
               {post.hashtags.map((hashtag: string, index: number) => (
-                <button key={index} type="button" className="text-body text-tint hover:underline">
+                <Link
+                  key={index}
+                  href={`/hashtags/${encodeURIComponent(hashtag.replace(/^#/, ""))}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-body text-tint hover:underline"
+                >
                   #{hashtag}
-                </button>
+                </Link>
               ))}
             </div>
           )}
