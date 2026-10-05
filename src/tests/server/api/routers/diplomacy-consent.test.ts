@@ -264,7 +264,7 @@ describe("alliances: invite requires consent", () => {
         update: jest.fn().mockResolvedValue({}),
       },
       country: {
-        findUnique: jest.fn().mockResolvedValue({ id: "B", owner: null }),
+        findUnique: jest.fn().mockResolvedValue({ id: "B", ownerUserId: "uB", owner: null }),
         findMany: jest.fn().mockResolvedValue([]),
       },
       foreignPolicyAction: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) },

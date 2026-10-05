@@ -1,11 +1,14 @@
 import { db } from "~/server/db";
 import { expireStaleDiplomaticProposals } from "~/lib/diplomacy/proposal-lifecycle";
+import { closeDueEmbassyMissions } from "~/lib/diplomacy/embassy-mission-sweep";
 
 interface DiplomaticDriftResult {
   relationsProcessed: number;
   relationsUpdated: number;
   proposalsExpired: number;
   invitesExpired: number;
+  missionsCompleted: number;
+  missionsCancelled: number;
 }
 
 export async function runDiplomaticDrift(): Promise<DiplomaticDriftResult> {
@@ -14,6 +17,8 @@ export async function runDiplomaticDrift(): Promise<DiplomaticDriftResult> {
     relationsUpdated: 0,
     proposalsExpired: 0,
     invitesExpired: 0,
+    missionsCompleted: 0,
+    missionsCancelled: 0,
   };
 
   // Sweep pending proposals / alliance invites past their answer window (also enforced lazily).
@@ -23,6 +28,15 @@ export async function runDiplomaticDrift(): Promise<DiplomaticDriftResult> {
     result.invitesExpired = expired.invitesExpired;
   } catch (err) {
     console.error("[DiplomaticDrift] Proposal expiry sweep failed:", err);
+  }
+
+  // Close cultural-exchange embassy missions that are due (or whose exchange was cancelled).
+  try {
+    const missions = await closeDueEmbassyMissions(db);
+    result.missionsCompleted = missions.missionsCompleted;
+    result.missionsCancelled = missions.missionsCancelled;
+  } catch (err) {
+    console.error("[DiplomaticDrift] Embassy mission sweep failed:", err);
   }
 
   const relations = await db.diplomaticRelation.findMany({

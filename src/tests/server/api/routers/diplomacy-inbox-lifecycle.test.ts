@@ -27,9 +27,9 @@ const DAY = 24 * 60 * 60 * 1000;
 const daysAgo = (n: number) => new Date(Date.now() - n * DAY);
 
 const COUNTRIES = [
-  { id: "A", name: "Alpha", owner: { clerkUserId: "clerk_uA" } },
-  { id: "B", name: "Beta", owner: { clerkUserId: "clerk_uB" } },
-  { id: "C", name: "Gamma", owner: { clerkUserId: "clerk_uC" } },
+  { id: "A", name: "Alpha", ownerUserId: "uA", owner: { clerkUserId: "clerk_uA" } },
+  { id: "B", name: "Beta", ownerUserId: "uB", owner: { clerkUserId: "clerk_uB" } },
+  { id: "C", name: "Gamma", ownerUserId: "uC", owner: { clerkUserId: "clerk_uC" } },
 ];
 
 const callerFor = (db: any, userId: string, countryId: string | null) =>

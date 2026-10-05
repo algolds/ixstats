@@ -6,7 +6,8 @@ import {
   NPCCulturalParticipation,
   type NPCParticipationContext,
 } from "~/lib/diplomacy/npc-cultural-participation";
-import { NPCPersonalitySystem, type ObservableData } from "~/lib/diplomacy/npc-personality";
+import { NPCPersonalitySystem } from "~/lib/diplomacy/npc-personality";
+import { buildNpcObservableData } from "~/lib/diplomacy/npc-observable-data";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticCulturalNpcResponsesRouter = createTRPCRouter({
@@ -83,96 +84,7 @@ export const diplomaticCulturalNpcResponsesRouter = createTRPCRouter({
             );
 
             // Build observable data for personality calculation
-            const observableData: ObservableData = {
-              relationships: {
-                total: relationships.length,
-                allied: relationships.filter(
-                  (r: { relationship: string }) => r.relationship === "alliance"
-                ).length,
-                friendly: relationships.filter(
-                  (r: { relationship: string }) =>
-                    r.relationship === "friendly" || r.relationship === "cooperative"
-                ).length,
-                tense: relationships.filter(
-                  (r: { relationship: string }) =>
-                    r.relationship === "cool" || r.relationship === "strained"
-                ).length,
-                hostile: relationships.filter(
-                  (r: { relationship: string }) => r.relationship === "hostile"
-                ).length,
-                neutral: relationships.filter(
-                  (r: { relationship: string }) => r.relationship === "neutral"
-                ).length,
-                averageStrength:
-                  relationships.length > 0
-                    ? relationships.reduce(
-                        (sum: number, r: { strength: number }) => sum + r.strength,
-                        0
-                      ) / relationships.length
-                    : 50,
-                deterioratingCount: 0, // Could track this in future
-              },
-              embassies: {
-                total: embassies.length,
-                culturalSpecialized: embassies.filter(
-                  (e: { specialization: string | null }) => e.specialization === "cultural"
-                ).length,
-                economicSpecialized: embassies.filter(
-                  (e: { specialization: string | null }) => e.specialization === "economic"
-                ).length,
-                securitySpecialized: embassies.filter(
-                  (e: { specialization: string | null }) => e.specialization === "security"
-                ).length,
-                averageLevel:
-                  embassies.length > 0
-                    ? embassies.reduce((sum: number, e: { level: number }) => sum + e.level, 0) /
-                      embassies.length
-                    : 1,
-                averageInfluence:
-                  embassies.length > 0
-                    ? embassies.reduce(
-                        (sum: number, e: { influence: number }) => sum + e.influence,
-                        0
-                      ) / embassies.length
-                    : 50,
-              },
-              treaties: {
-                total: 0, // Would need treaty data
-                multilateral: 0,
-                defensive: 0,
-                trade: 0,
-                cultural: 0,
-              },
-              economic: {
-                totalTradeVolume: 0, // Would need trade data
-                highValuePartners: 0,
-                tradeTreatyCount: 0,
-                tradeGrowthTrend: 0,
-              },
-              cultural: {
-                highExchangeCount: relationships.filter(
-                  (r: { culturalExchange: string | null }) => r.culturalExchange === "High"
-                ).length,
-                mediumExchangeCount: relationships.filter(
-                  (r: { culturalExchange: string | null }) => r.culturalExchange === "Medium"
-                ).length,
-                culturalTreatyCount: 0,
-                totalExchangePrograms: 0, // Could calculate from cultural exchange data
-              },
-              historical: {
-                totalActions: Math.max(1, relationships.length + embassies.length),
-                cooperativeActions: relationships.filter(
-                  (r: { relationship: string }) =>
-                    r.relationship === "alliance" || r.relationship === "friendly"
-                ).length,
-                aggressiveActions: relationships.filter(
-                  (r: { relationship: string }) =>
-                    r.relationship === "hostile" || r.relationship === "strained"
-                ).length,
-                consistencyScore: 70, // Default moderate consistency
-                policyVolatility: 30, // Default moderate volatility
-              },
-            };
+            const observableData = buildNpcObservableData(relationships, embassies);
 
             // Calculate NPC personality
             const npcPersonality = NPCPersonalitySystem.calculatePersonality(

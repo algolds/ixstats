@@ -5,8 +5,11 @@ import { TRPCError } from "@trpc/server";
 
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { countriesWithWriteAccess } from "~/server/shared/country-authorization";
+import { missionTimeProgress } from "~/lib/diplomacy/embassy-mission-sweep";
 
-const COUNTRY_SELECT = { select: { id: true, name: true, flag: true, slug: true } } as const;
+const COUNTRY_SELECT = {
+  select: { id: true, name: true, flag: true, slug: true, economicTier: true },
+} as const;
 const LISTING_INCLUDE = { hostCountry: COUNTRY_SELECT, guestCountry: COUNTRY_SELECT } as const;
 
 type ListedEmbassy = Prisma.EmbassyGetPayload<{ include: typeof LISTING_INCLUDE }>;
@@ -34,6 +37,9 @@ function embassyListing(embassy: ListedEmbassy, countryId: string, funders: Set<
     guestCountry: nameOf(embassy.guestCountry),
     guestCountryFlag: flagOf(embassy.guestCountry),
     guestCountrySlug: slugOf(embassy.guestCountry),
+    // Economic tiers drive the relative-development badge on the network card.
+    hostCountryTier: embassy.hostCountry?.economicTier ?? null,
+    guestCountryTier: embassy.guestCountry?.economicTier ?? null,
     countryId: partnerCountry?.id ?? null,
     country: nameOf(partnerCountry),
     countryFlag: flagOf(partnerCountry),
@@ -120,7 +126,10 @@ export const diplomaticEmbassiesQueriesEmbassyListingsRouter = createTRPCRouter(
         maintenanceCost: budgetVisible ? embassy.maintenanceCost : undefined,
         hostCountryName: embassy.hostCountry?.name,
         guestCountryName: embassy.guestCountry?.name,
-        missions: embassy.missions,
+        // Cultural-outreach missions run on a clock; show elapsed time, not the stored 0.
+        missions: embassy.missions.map((m) =>
+          m.status === "active" ? { ...m, progress: missionTimeProgress(m) } : m
+        ),
         upgrades: embassy.upgrades,
         nextLevelRequirement: embassy.level * 1000 + 500, // Experience needed for next level
         maintenanceDue:

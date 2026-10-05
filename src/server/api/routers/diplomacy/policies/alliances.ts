@@ -13,28 +13,11 @@ import {
   proposalExpiresAt,
 } from "~/lib/diplomacy/proposal-lifecycle";
 import { notifyCountryOwners } from "./notify";
-
-const ALLIANCE_LEADER_ROLES = ["founder", "leader"];
-
-/**
- * The countries that speak for a pending invite: the country that issued it, or — for
- * invites issued before `invitedByCountryId` was recorded — the alliance's active leadership.
- */
-async function inviteProposerCountryIds(
-  db: any,
-  invite: { allianceId: string; invitedByCountryId?: string | null }
-): Promise<string[]> {
-  if (invite.invitedByCountryId) return [invite.invitedByCountryId];
-  const leaders: { countryId: string }[] = await db.allianceMember.findMany({
-    where: {
-      allianceId: invite.allianceId,
-      isActive: true,
-      role: { in: ALLIANCE_LEADER_ROLES },
-    },
-    select: { countryId: true },
-  });
-  return leaders.map((l) => l.countryId);
-}
+import {
+  ALLIANCE_LEADER_ROLES,
+  autoRespondNpcAllianceInvite,
+  inviteProposerCountryIds,
+} from "./alliance-invites";
 
 /** Mark a stale pending invite expired and refuse the action with a clear message. */
 async function rejectExpiredInvite(
@@ -299,18 +282,20 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
         invitedByCountryId: ctx.user.countryId,
         invitedAt: new Date(),
       };
-      if (existing) {
-        // Previously left, declined, withdrawn or expired: re-issue the invite.
-        await ctx.db.allianceMember.update({ where: { id: existing.id }, data: inviteFields });
-      } else {
-        await ctx.db.allianceMember.create({
-          data: {
-            allianceId: input.allianceId,
-            countryId: input.targetCountryId,
-            ...inviteFields,
-          },
-        });
-      }
+      // Previously left, declined, withdrawn or expired: re-issue the invite.
+      const invite = existing
+        ? await ctx.db.allianceMember.update({ where: { id: existing.id }, data: inviteFields })
+        : await ctx.db.allianceMember.create({
+            data: {
+              allianceId: input.allianceId,
+              countryId: input.targetCountryId,
+              ...inviteFields,
+            },
+          });
+
+      // NPC (unowned) nations answer at once from their personality; players use their inbox.
+      const npcStatus = await autoRespondNpcAllianceInvite(ctx.db, invite);
+      if (npcStatus) return { success: true, pending: false, status: npcStatus };
 
       // Notification: notify invited country's owner (best effort)
       const alliance = await ctx.db.alliance.findUnique({

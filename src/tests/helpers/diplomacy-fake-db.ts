@@ -13,6 +13,9 @@ export interface DiplomacyFakeState {
   alliances: Row[];
   allianceMembers: Row[];
   countries: Row[];
+  relations: Row[];
+  /** Users acting as a nation via `User.countryId` (the nation is then player-controlled). */
+  actingUsers: Row[];
 }
 
 function matchValue(value: any, cond: any): boolean {
@@ -49,6 +52,8 @@ export function createDiplomacyFakeDb(seed: Partial<DiplomacyFakeState> = {}) {
     alliances: seed.alliances ?? [],
     allianceMembers: seed.allianceMembers ?? [],
     countries: seed.countries ?? [],
+    relations: seed.relations ?? [],
+    actingUsers: seed.actingUsers ?? [],
   };
   let seq = 0;
 
@@ -169,6 +174,7 @@ export function createDiplomacyFakeDb(seed: Partial<DiplomacyFakeState> = {}) {
     },
     diplomaticRelation: {
       findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn(async ({ where }: any) => state.relations.filter((r) => matches(r, where))),
       update: jest.fn().mockResolvedValue({}),
     },
     bilateralTrade: {
@@ -178,6 +184,9 @@ export function createDiplomacyFakeDb(seed: Partial<DiplomacyFakeState> = {}) {
     storytellerEffect: { createMany: jest.fn().mockResolvedValue({ count: 2 }) },
     user: {
       findUnique: jest.fn().mockResolvedValue({ countryId: null, role: { name: "member" } }),
+      findFirst: jest.fn(
+        async ({ where }: any) => state.actingUsers.find((u) => matches(u, where)) ?? null
+      ),
     },
   });
 

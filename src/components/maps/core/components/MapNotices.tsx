@@ -1,12 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Xmark, WarningTriangle } from "iconoir-react";
+import { WarningTriangle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { FacetMaterial } from "~/components/ui/facet";
-import { useIsStaff } from "~/hooks/usePermissions";
-
-const BETA_DISMISS_KEY = "ixmaps:beta-notice-dismissed";
 
 export function MapLoadError({
   className,
@@ -33,63 +29,6 @@ export function MapLoadError({
         </Button>
       </div>
     </div>
-  );
-}
-
-/** Private-beta banner for non-staff; stays dismissed for this browser. */
-export function BetaNotice() {
-  const isStaff = useIsStaff();
-  // Read after mount (not in the initialiser) so server and client render the same markup.
-  const [dismissed, setDismissed] = useState(false);
-  useEffect(() => {
-    try {
-      if (localStorage.getItem(BETA_DISMISS_KEY) === "1") setDismissed(true);
-    } catch {
-      /* storage unavailable — show the notice */
-    }
-  }, []);
-
-  if (isStaff || dismissed) return null;
-
-  const dismiss = () => {
-    setDismissed(true);
-    try {
-      localStorage.setItem(BETA_DISMISS_KEY, "1");
-    } catch {
-      /* storage unavailable (private mode) — dismissal lasts for this visit only */
-    }
-  };
-
-  return (
-    <FacetMaterial
-      layer="chrome"
-      role="note"
-      className="rounded-card pointer-events-auto w-full max-w-sm p-3"
-      onMouseDown={(e) => e.stopPropagation()}
-      onPointerDown={(e) => e.stopPropagation()}
-      onTouchStart={(e) => e.stopPropagation()}
-    >
-      <div className="flex items-start gap-2">
-        <WarningTriangle className="text-yellow mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-        <div className="min-w-0 flex-1 space-y-1">
-          <h4 className="text-label text-headline">Maps private beta</h4>
-          <p className="text-label-secondary text-footnote leading-relaxed">
-            Explore the world map, terrain and other nations freely. Adding your own borders or
-            claiming territory isn&apos;t open to external players yet.
-          </p>
-        </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={dismiss}
-          className="text-label-secondary -m-2 h-8 w-8 shrink-0 rounded-full"
-          aria-label="Dismiss private beta notice"
-        >
-          <Xmark aria-hidden />
-        </Button>
-      </div>
-    </FacetMaterial>
   );
 }
 

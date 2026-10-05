@@ -13,6 +13,9 @@ interface EmbassyWithSynergies {
   hostCountryFlag?: string | null;
   guestCountry: string;
   guestCountryFlag?: string | null;
+  hostCountryTier?: string | null;
+  guestCountryTier?: string | null;
+  role?: "host" | "guest";
   status: string;
   strength: number;
   totalSynergyScore: number;

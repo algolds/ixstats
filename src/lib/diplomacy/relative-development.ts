@@ -5,6 +5,7 @@
  * Calculates GDP-per-capita / economic tier ratios between partner nations and
  * derives asymmetric trade, tax, and diplomatic standing multipliers.
  */
+import { ECONOMIC_TIERS } from "~/lib/economic-tier-filter";
 
 interface AsymmetryAnalysis {
   ratio: number; // Partner tier / Self tier (>1 = partner higher development)
@@ -18,20 +19,24 @@ interface AsymmetryAnalysis {
   badgeColor: string;
 }
 
-const TIER_WEIGHTS: Record<string, number> = {
-  DEVELOPING: 1,
-  EMERGING: 2,
-  DEVELOPED: 3,
-  ADVANCED: 4,
-  SUPERPOWER: 5,
-};
+/** A country's economic tier (`Country.economicTier`) as a 1-based rank, lowest GDP per capita first. */
+function tierRank(tier: string | null | undefined): number | null {
+  if (!tier) return null;
+  const index = ECONOMIC_TIERS.findIndex((t) => t.toLowerCase() === tier.toLowerCase());
+  return index === -1 ? null : index + 1;
+}
 
+/**
+ * The asymmetry between two nations' economic tiers, seen from `selfTier`. Null when either
+ * tier is missing or not a real economic tier, so callers show nothing rather than a guess.
+ */
 export function calculateRelativeDevelopment(
-  selfTier: string = "DEVELOPED",
-  partnerTier: string = "DEVELOPED"
-): AsymmetryAnalysis {
-  const selfWeight = TIER_WEIGHTS[selfTier.toUpperCase()] ?? 3;
-  const partnerWeight = TIER_WEIGHTS[partnerTier.toUpperCase()] ?? 3;
+  selfTier: string | null | undefined,
+  partnerTier: string | null | undefined
+): AsymmetryAnalysis | null {
+  const selfWeight = tierRank(selfTier);
+  const partnerWeight = tierRank(partnerTier);
+  if (selfWeight === null || partnerWeight === null) return null;
   const tierDiff = partnerWeight - selfWeight;
   const ratio = Number((partnerWeight / Math.max(1, selfWeight)).toFixed(2));
 

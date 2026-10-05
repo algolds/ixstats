@@ -31,7 +31,7 @@ import { useMapDataQueries } from "./hooks/useMapDataQueries";
 import { getMapZoomBucket } from "~/hooks/useMapDataBatched";
 import { useMapTour } from "./hooks/useMapTour";
 import { TourHUD } from "./components/TourHUD";
-import { BetaNotice, MapFailureOverlay, MapLoadError } from "./components/MapNotices";
+import { MapFailureOverlay, MapLoadError } from "./components/MapNotices";
 import { useHistoricalMapLayers } from "./hooks/useHistoricalMapLayers";
 import { isIxWorldView } from "~/lib/realms/realm-ids";
 
@@ -551,15 +551,13 @@ export function MapContainer({
         realm={realm}
       />
 
-      {/* Bottom-left stack: analytics legend + private-beta notice. Stacked in one column so
-          they never overlap each other; hidden on mobile while the bottom sheet is up. */}
+      {/* Bottom-left stack: analytics legend; hidden on mobile while the bottom sheet is up. */}
       <div
         className={`pointer-events-none absolute bottom-4 left-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-col-reverse items-start gap-2 sm:bottom-6 ${
           sidePanelOpen ? "max-sm:hidden" : ""
         }`}
       >
         <AnalyticsLegend overlayVisibility={state.overlayVisibility} overlayData={overlayData} />
-        <BetaNotice />
       </div>
 
       {/* Keyboard navigation + bottom-right credits (shifted left of the desktop side panel) */}
