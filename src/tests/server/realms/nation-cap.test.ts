@@ -106,7 +106,7 @@ describe("the tier cap is enforced by assignNation and claims", () => {
     id: "c1",
     realmId: "r1",
     ownerUserId: null,
-    realm: { settings: { maxNationsPerUser: 5 } },
+    realm: { settings: { maxNationsPerUser: 5 }, status: "active" },
   };
 
   function tx(held: number, membershipTier: string) {

@@ -209,7 +209,7 @@ shipped system.
 
 | Order | Item | Refs | Size |
 |---|---|---|---|
-| 1 | `isRealmOpen()` status guard for the hub and claims (later reused by jobs and payouts) | AT-7 | S |
+| 1 | ✅ **Done (2026-10-05):** `isRealmOpen()` status guard for the hub and claims (later reused by jobs and payouts) | AT-7 | S |
 | 2 | Assign founders (`ownerId`, thumbnail, delete realm) | AT-8 | S |
 | 3 | Claimants see pending and rejected claims; rejection notifies | AT-5 | S |
 | 4 | Builder creates nations in any realm (realm input, nation cap), with prefill from a claimed nation page. **Partial (#49):** the builder is realm-aware with nation caps; prefill is open | AT-3, PF§4 | M |
@@ -222,8 +222,8 @@ shipped system.
 | 11 | WikiOS portal to every realm's lore; realm-tagged forum | PF§4 | M |
 | 12 | Per-realm calendar label (a new settings key; there is no `yearOffset` field today) | PF§4 | S–M |
 | 13 | Procedural realm generation: wizard option plus `Realm.seed` / `generationParams` writes (the pipeline already supports it) | AT-15, PF§4 | M |
-| 14 | PNG realms get adjacency (`rebuildAdjacency` after import) | AT-16 | S |
-| 15 | Admin Realm Users tab supports several realms per user | AT-19 | S |
+| 14 | ✅ **Done (2026-10-05):** PNG realms get adjacency (`rebuildAdjacency` after import) | AT-16 | S |
+| 15 | ✅ **Done (2026-10-05):** Admin Realm Users tab supports several realms per user | AT-19 | S |
 
 **Exit:** a test founder creates a realm (by application), approves claims, moderates, archives it, and nothing leaks into
 IxWorld.
@@ -313,7 +313,7 @@ the spine.
 | MyLeague / MyClub | Boxing bout engine; rivalries created (SL-16); Golden Box stage config and double elimination; patron-saint MyClub UI; promotion/relegation bulletin; broadcast mode, athlete cards, scouting/academy | PF§3–4 |
 | Onoma | Publish path for language packs (SL-18) → phases 4, 5, 8, 9 finished → phases 6, 10 (LLM) → platform integration (toponyms, demonyms, dynasties) | [onoma-roadmap.md](../systems/onoma-roadmap.md) |
 | Vexel | External ornaments, Commons charge seed, attribution, autosave, `[id]/preview`, P1 templates and conflicts | [Vexel PRD](../specs/2026-07-15-vexel-prd.md) |
-| Map pipeline | Real enrichment (AT-9); SmartPlacement (AT-11); storylines (AT-14). The editor Wiki tab (AT-10) is wired | [backlog](backlog.md#atlas-realms--identity-at) |
+| Map pipeline | Real enrichment (AT-9); storylines (AT-14). SmartPlacement and coast snapping (AT-11) are wired. The editor Wiki tab (AT-10) is wired | [backlog](backlog.md#atlas-realms--identity-at) |
 | Strata, Dynas | Not started; scope first | — |
 
 ---
@@ -324,7 +324,7 @@ Run throughout, preferably in PRs that already touch the area.
 
 - **Dead schema:** drop the 57 fully dead models, and the always-empty ones once their feature is decided ([backlog §5](backlog.md#5-dead-schema)).
   Needs M0 backups and Decisions D1, D2, D5 and D9.
-- **Dead code:** delete MC-18, PL-18, WK-18, SL-25 and AT-16. (The dead intelligence calculator, `calculator.ts` and
+- **Dead code:** delete MC-18, PL-18, WK-18 and SL-25 (AT-16 is done). (The dead intelligence calculator, `calculator.ts` and
   `live-data-transformers.ts`, is already deleted; the models it alone wrote remain in the schema.)
 - **Tests:** router tests for the 35 untested routers, largest first (thinkpages, lore-cards, national-issues, forum, blurbs,
   card-market).
@@ -332,7 +332,7 @@ Run throughout, preferably in PRs that already touch the area.
   line counts since 2026-10-05, so a file can no longer grow past its recorded size unnoticed.
 - **Refactors:** a service layer over direct `ctx.db` in 199 router files; one shared CivCap module (MC-21).
 - **Other decisions:** logging framework decision; design-token cleanup (hex colours, blur and pulse counts) from the
-  Facet audits; env hygiene (PL-19); Prisma query logging (PL-22); `alert()` → `notify` in the map editor (AT-20).
+  Facet audits; env hygiene (PL-19); Prisma query logging (PL-22). Done: `alert()` → `notify` in the map editor (AT-20); `editableByOwner` enforced (PL-21).
 - **Dependencies:** Prisma 7 migration (dependabot #25), after M0 backups.
 
 ---

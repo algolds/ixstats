@@ -5,6 +5,7 @@ import { invalidateCache } from "~/lib/cache";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import { MAX_PNG_BASE64_LENGTH, MAX_PNG_BYTES, PngDecodeError } from "~/lib/maps/png-realm-map";
 import { polygonMetrics } from "~/lib/maps/feature-metrics";
+import { rebuildAdjacency } from "~/lib/maps/adjacency";
 import type { PipelineInput } from "~/lib/maps/map-pipeline";
 import { clearLayerCache } from "../core";
 
@@ -185,10 +186,21 @@ export const geoEditorProceduralRouter = createTRPCRouter({
         }
       }
 
+      // Store which regions border each other, so an imported (e.g. PNG) realm has neighbours (AT-16)
+      let adjacencyBuilt = false;
+      if (layers.political) {
+        try {
+          adjacencyBuilt = !(await rebuildAdjacency(ctx.db, input.realmId)).skipped;
+        } catch (error) {
+          // Non-blocking like the shared vertices: the layers are imported; an admin can rebuild adjacency later
+          console.error("[importPipelineResult] Adjacency rebuild failed:", error);
+        }
+      }
+
       // Invalidate the assembled-layer cache and the cached map responses (keys carry the realm)
       clearLayerCache();
       invalidateCache(["geoCore.getWorldMap", "geoCore.getMapBundle"]);
 
-      return { imported, mode: input.mode };
+      return { imported, mode: input.mode, adjacencyBuilt };
     }),
 });

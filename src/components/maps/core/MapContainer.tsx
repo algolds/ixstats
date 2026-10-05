@@ -3,6 +3,7 @@
 import { useRef, useCallback, useState, useEffect, useDeferredValue, type RefObject } from "react";
 import dynamic from "next/dynamic";
 import { useIsAdmin } from "~/hooks/usePermissions";
+import { useNotify } from "~/hooks/useNotify";
 import { useMapPinInfo } from "~/hooks/useMapPinInfo";
 import { useMapLiveSync } from "~/hooks/useMapLiveSync";
 import { api } from "~/trpc/react";
@@ -477,13 +478,17 @@ export function MapContainer({
   const handleProjectionChange = forceFlatProjection ? noopProjectionChange : setProjectionMode;
 
   const { handleOpenMyEditor } = state;
+  const notify = useNotify();
   const handleOpenMyEditorWithUser = useCallback(() => {
     if (userCountryId) {
       handleOpenMyEditor();
     } else {
-      alert("You must have a country to edit the map. Go to /mycountry to create or claim one.");
+      notify.warning(
+        "You need a country to edit the map",
+        "Create or claim one from MyCountry first."
+      );
     }
-  }, [userCountryId, handleOpenMyEditor]);
+  }, [userCountryId, handleOpenMyEditor, notify]);
 
   if (error) {
     return (

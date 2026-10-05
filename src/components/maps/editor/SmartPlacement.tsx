@@ -20,8 +20,6 @@ interface SmartPlacementProps {
   } | null;
   /** Current pending coordinates */
   coordinates?: [number, number] | null;
-  /** Whether the point is near coast */
-  isCoastal?: boolean;
   /** Feature type being placed */
   featureType: "city" | "poi";
   /** Optional callback to apply suggested type/name directly to form */
@@ -45,16 +43,11 @@ const has = (text: string, ...words: string[]) => {
 
 const clampScore = (score: number) => Math.min(100, Math.max(5, score));
 
-function computeCivCapMetrics(elev: string, climate: string, isCoastal?: boolean) {
+function computeCivCapMetrics(elev: string, climate: string) {
   let agriScore = 50;
   let tradeScore = 40;
   let defenseScore = 40;
   let waterScore = 60;
-
-  if (isCoastal) {
-    tradeScore += 35;
-    waterScore += 20;
-  }
 
   if (has(elev, "mountain", "highland")) {
     defenseScore += 45;
@@ -85,18 +78,6 @@ function generateSuggestions(props: SmartPlacementProps): Suggestion[] {
   const suggestions: Suggestion[] = [];
   const elev = props.terrainInfo?.elevation?.zoneName ?? "";
   const climate = props.terrainInfo?.climate?.climateName ?? "";
-
-  if (props.isCoastal) {
-    suggestions.push({
-      icon: Anchor,
-      title: "Maritime Haven",
-      text: "Sheltered coastal waters provide superior maritime access and trade throughput.",
-      suggestedType: "port",
-      suggestedName: "Port Valen",
-      color: "text-blue",
-      civCapImpact: "+35% Trade CivCap",
-    });
-  }
 
   if (has(elev, "highland", "mountain")) {
     suggestions.push({
@@ -158,7 +139,7 @@ export function SmartPlacement(props: SmartPlacementProps) {
   const elev = props.terrainInfo.elevation?.zoneName ?? "";
   const climate = props.terrainInfo.climate?.climateName ?? "";
   const suggestions = generateSuggestions(props);
-  const metrics = computeCivCapMetrics(elev, climate, props.isCoastal);
+  const metrics = computeCivCapMetrics(elev, climate);
 
   return (
     <Card className="space-y-2 p-2">

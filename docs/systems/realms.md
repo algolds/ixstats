@@ -22,6 +22,10 @@ talk, and a feed that can be scoped to one realm.
 
 Unlisted realms stay readable by link only (`/r/[realm]`). The rule is `DIRECTORY_REALM_WHERE` in `places.ts`.
 
+The realm page (`realms.getBySlug`) follows `Realm.status` (`isRealmOpen` / `isRealmPublished` in
+`realms.access.ts`): a draft or generating realm is shown only to its moderators; an archived realm stays
+readable but takes no claims. Claims (filing, and approving a pending one) need an active realm or IxWorld.
+
 Each row reports only counted facts:
 
 | Field               | Source                                                                                                                                                                                                    |

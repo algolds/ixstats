@@ -12,7 +12,7 @@ Atlas is the spatial, cartographic, and worldbuilding studio for IxStates. Built
 
 ### Core Foundation: "Geography is King"
 In IxStates, geography is the source of truth for borders, area and adjacency. Its reach into the economy is narrower than the aspiration:
-- **Topological Ground Truth**: Live neighbour queries use PostGIS spatial geometry (`ST_Touches`, `ST_Intersection`; `geo/core/geo-profile.ts`, `national-issues/neighbors.ts`). The stored `MapLayer.neighbors` column is filled only by the admin `rebuildAdjacency` mutation, which nothing calls in production.
+- **Topological Ground Truth**: Live neighbour queries use PostGIS spatial geometry (`ST_Touches`, `ST_Intersection`; `geo/core/geo-profile.ts`, `national-issues/neighbors.ts`). The stored `MapLayer.neighbors` column is rebuilt from PostGIS after every map import that carries political regions (`importPipelineResult`, so PNG realms get neighbours too) and by the admin `rebuildAdjacency` mutation (`lib/maps/adjacency.ts`).
 - **Climate & Biomes**: The bbox-estimated geo profile derives `CountryGeoProfile.gdpModifier`, `tradeModifier` and `infraCostModifier` (`computeEconomicGeoModifiers`, `src/lib/maps/geo-analytics.ts`). These are written and displayed only (`GeoProfileContent.tsx`); no economy code reads them. The simulation's geographic inputs are `landArea`, transport effects (`transport-sync.ts`), the national-issues snapshot (landlocked, coastline) and the bottom-up rollup. `GeographicResource` has no writer.
 - **Dual Pipeline Architecture**: The Atlas Engine unifies two distinct cartographic streams under one high-performance WebGL renderer:
   1. **Grounded Manual IxEarth Pipeline**: Exact affine transformation ($25625 \times 15729$ viewBox $\to$ WGS84 coordinates), manual hypsometric contour stacking, topological seam-locking, and 12 Trewartha climate biomes.
@@ -138,6 +138,7 @@ The overlay architecture (`src/lib/maps/overlay-registry.ts`) enables declarativ
 Geography serves as the foundational data source across the platform:
 - **Spatial Boundaries**: `MapLayer` plus the cached geometry columns on `Country` (`src/lib/country-geo/sync.ts`) and `BorderHistory` are authoritative for geometry, area, centroid and bounding box. `Territory` is used only by the demo seed. Adjacency is computed live with PostGIS `ST_Touches`.
 - **Settlements**: `City`, `Subdivision`, `PointOfInterest`, `StoryPin`, `MapLabel` foreign-key linked to `Country.id`.
+- **Admin lock**: `editableByOwner: false` on a subdivision, city, peak, named river or lake stops its country's owner from changing or deleting it (`geoFeatures` update/delete, `countryGeo` upserts of an existing row and `populateFromWiki`, topology cascades; an owner's batch simplify skips it). Admins can always edit (`server/shared/map-feature-lock.ts`). No UI sets the flag yet.
 - **Attribute Rollups**: `hybrid` (default), `top-down`, and `bottom-up` rollup modes aggregate population and GDP only. Bottom-up overwrites the national figures, and with no approved subdivisions it falls back to the sum of city populations.
 
 ---

@@ -4,6 +4,7 @@ import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { upsertPeak, upsertNamedRiver, upsertNamedLake } from "~/lib/country-geo/named-features";
 import { assertFound, assertOwnCountry, coordinatesSchema } from "../core/shared";
+import { assertOwnerMayEdit } from "~/server/shared/map-feature-lock";
 
 export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
   // ─── Peak CRUD ───
@@ -55,6 +56,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
         }),
         "Peak not found"
       );
+      assertOwnerMayEdit(ctx, existing, "peak");
 
       const peak = await upsertPeak(ctx.db, input.countryId, {
         id: input.peakId,
@@ -84,12 +86,13 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       assertOwnCountry(ctx, input.countryId);
 
-      assertFound(
+      const existing = assertFound(
         await ctx.db.peak.findFirst({
           where: { id: input.peakId, countryId: input.countryId },
         }),
         "Peak not found"
       );
+      assertOwnerMayEdit(ctx, existing, "peak");
 
       await ctx.db.peak.delete({ where: { id: input.peakId } });
 
@@ -142,6 +145,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
         }),
         "NamedRiver not found"
       );
+      assertOwnerMayEdit(ctx, existing, "river");
 
       const river = await upsertNamedRiver(ctx.db, input.countryId, {
         id: input.riverId,
@@ -167,12 +171,13 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       assertOwnCountry(ctx, input.countryId);
 
-      assertFound(
+      const existing = assertFound(
         await ctx.db.namedRiver.findFirst({
           where: { id: input.riverId, countryId: input.countryId },
         }),
         "NamedRiver not found"
       );
+      assertOwnerMayEdit(ctx, existing, "river");
 
       await ctx.db.namedRiver.delete({ where: { id: input.riverId } });
 
@@ -227,6 +232,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
         }),
         "NamedLake not found"
       );
+      assertOwnerMayEdit(ctx, existing, "lake");
 
       const lake = await upsertNamedLake(ctx.db, input.countryId, {
         id: input.lakeId,
@@ -253,12 +259,13 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       assertOwnCountry(ctx, input.countryId);
 
-      assertFound(
+      const existing = assertFound(
         await ctx.db.namedLake.findFirst({
           where: { id: input.lakeId, countryId: input.countryId },
         }),
         "NamedLake not found"
       );
+      assertOwnerMayEdit(ctx, existing, "lake");
 
       await ctx.db.namedLake.delete({ where: { id: input.lakeId } });
 
