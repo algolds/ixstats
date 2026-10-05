@@ -4,6 +4,7 @@ import { getVaultConfig } from "~/lib/vault/vault-perks";
 import { grantCardXp } from "~/lib/cards/xp-utils";
 import { allocateSerialNumberTx } from "~/lib/cards/serial-number";
 import { syncUserToForum } from "~/server/modules/forum";
+import { newCardOwnershipId } from "~/lib/cards/ownership-id";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -266,7 +267,7 @@ export async function claimCombinedDailyClaim(
 
       const ownership = await tx.cardOwnership.create({
         data: {
-          id: `co_${Date.now()}_${vault.userId}_${card.id}`,
+          id: newCardOwnershipId(),
           userId: vault.userId,
           cardId: card.id,
           ownerId: vault.userId,
