@@ -122,6 +122,7 @@ const VAULT = {
   deckValue: 2000,
   collectorLevel: 3,
   collectorXp: 120,
+  xpPerLevel: 1000,
   credits: 5150,
   focus: { categoryCount: 2, categoryTotal: 12, topCategory: "MILITARY" },
   topCards: [],

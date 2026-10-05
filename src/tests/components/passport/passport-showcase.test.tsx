@@ -53,6 +53,7 @@ function payload(overrides: Partial<PassportPayload> = {}): PassportPayload {
       deckValue: 0,
       collectorLevel: 1,
       collectorXp: 0,
+      xpPerLevel: 1000,
       credits: 0,
       focus: null,
       topCards: [

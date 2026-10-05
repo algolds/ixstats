@@ -5,6 +5,7 @@
  */
 import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
+import { getVaultConfig, VAULT_CONFIG_DEFAULTS } from "~/lib/vault/vault-perks";
 import type { CardInstance } from "~/types/cards-display";
 
 const CARD_SELECT = {
@@ -57,7 +58,10 @@ export interface PassportVaultSummary {
   totalCards: number;
   deckValue: number;
   collectorLevel: number;
+  /** Total XP; level = floor(collectorXp / xpPerLevel) + 1. */
   collectorXp: number;
+  /** The vault's configured XP per collector level (`vault_xpPerLevel`). */
+  xpPerLevel: number;
   credits: number;
   /** Collection breadth; null when the owner hides it. */
   focus: PassportVaultFocus | null;
@@ -146,11 +150,13 @@ export async function resolvePassportVault(
     deckValue: 0,
     collectorLevel: 1,
     collectorXp: 0,
+    xpPerLevel: VAULT_CONFIG_DEFAULTS.xpPerLevel,
     credits: 0,
     focus: toVaultFocus([]),
     topCards: [],
   };
   if (!userId) return summary;
+  summary.xpPerLevel = (await getVaultConfig(db)).xpPerLevel;
 
   const live = { ownerId: userId, cards: { isRetired: false } };
   try {

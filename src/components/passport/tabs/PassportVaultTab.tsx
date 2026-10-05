@@ -28,8 +28,8 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
   vault,
   cleanUsername,
 }: PassportVaultTabProps) {
-  const { totalCards, deckValue, collectorLevel: level, collectorXp: xp } = vault;
-  const nextLevelXp = level * 1000;
+  const { totalCards, deckValue, collectorLevel: level, collectorXp: xp, xpPerLevel } = vault;
+  const nextLevelXp = level * xpPerLevel;
   const xpPct = Math.min(100, Math.round((xp / nextLevelXp) * 100));
   const [selectedCard, setSelectedCard] = useState<CardInstance | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);

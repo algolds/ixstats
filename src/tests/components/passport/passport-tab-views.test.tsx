@@ -73,6 +73,7 @@ const passport: PassportPayload = {
     deckValue: 0,
     collectorLevel: 3,
     collectorXp: 120,
+    xpPerLevel: 1000,
     credits: 0,
     focus: { categoryCount: 0, categoryTotal: 12, topCategory: null },
     topCards: [],
