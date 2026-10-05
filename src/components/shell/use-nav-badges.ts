@@ -4,7 +4,6 @@ import { useMemo, useSyncExternalStore } from "react";
 import { api } from "~/trpc/react";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { useDiplomacyInboxCount } from "~/components/mycountry/domains/diplomacy/inbox/useDiplomacyInbox";
-import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import type { NavBadges } from "~/lib/navigation/app-sections";
 import {
   currentVersionKey,
@@ -48,36 +47,18 @@ export function useNavBadges(signedIn: boolean): NavBadges {
   return useMemo(() => {
     if (!signedIn) return {};
     const badges: NavBadges = {};
-    const flag = normalizeFlagUrl(country?.flag);
-    if (flag && country) {
-      badges["mycountry-flag"] = { kind: "icon", src: flag, alt: country.name };
-    }
     if (inbox.count > 0) badges["diplomacy-inbox"] = { kind: "count", value: inbox.count };
     const unread = folderCounts?.inbox ?? 0;
     if (unread > 0) badges["messages-unread"] = { kind: "count", value: unread };
     const issues = pendingIssues?.total ?? 0;
     if (issues > 0) badges["issues-pending"] = { kind: "count", value: issues };
     if (unseenBuild) badges["whats-new"] = { kind: "action", label: "New" };
-    if (balance) {
-      badges["vault-balance"] = {
-        kind: "value",
-        label: `${Math.floor(balance.credits).toLocaleString()} IxC`,
+    if (balance?.canClaimDailyBonus) {
+      badges["daily-reward"] = {
+        kind: "action",
+        label: balance.loginStreak > 0 ? `${balance.loginStreak}d` : "New",
       };
-      if (balance.canClaimDailyBonus) {
-        badges["daily-reward"] = {
-          kind: "action",
-          label: balance.loginStreak > 0 ? `${balance.loginStreak}d` : "New",
-        };
-      }
     }
     return badges;
-  }, [
-    signedIn,
-    country,
-    inbox.count,
-    balance,
-    folderCounts?.inbox,
-    pendingIssues?.total,
-    unseenBuild,
-  ]);
+  }, [signedIn, inbox.count, balance, folderCounts?.inbox, pendingIssues?.total, unseenBuild]);
 }

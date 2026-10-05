@@ -49,8 +49,8 @@ describe("AppSidebar", () => {
     );
   });
 
-  it("uses the section tint (Intelligence is crimson)", () => {
-    const { container } = renderSidebar({ pathname: "/mycountry/intelligence" });
+  it("uses the section tint (Defense is crimson)", () => {
+    const { container } = renderSidebar({ pathname: "/mycountry/defense" });
     expect(container.querySelector('[data-slot="app-sidebar"]')).toHaveAttribute(
       "data-app",
       "intel"

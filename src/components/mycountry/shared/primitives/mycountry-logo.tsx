@@ -198,19 +198,5 @@ export function MyCountryLogo({
   );
 }
 
-// Simplified icon version for use in navigation, etc.
-
-export function MyCountryLogomark({ className }: { className?: string }) {
-  return (
-    <div
-      className={cn("relative flex h-3.5 w-3.5 shrink-0 items-center justify-center", className)}
-    >
-      <div className="shadow-card relative flex h-full w-full items-center justify-center rounded-full border border-amber-300/50 bg-gradient-to-br from-amber-200 to-amber-400">
-        <Globe className="h-2.5 w-2.5 text-amber-900/80" />
-      </div>
-      <div className="shadow-card absolute -top-0.5 -right-0.5 flex items-center justify-center rounded-full border border-amber-300 bg-amber-400 p-px">
-        <Crown className="h-1.5 w-1.5 text-amber-900" />
-      </div>
-    </div>
-  );
-}
+// The navigation icon: one SVG source in `src/lib` (the navigation map cannot import components).
+export { MyCountryLogomark } from "~/lib/navigation/icons/MyCountryLogomark";

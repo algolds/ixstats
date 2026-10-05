@@ -5,6 +5,7 @@ import {
   getVisibleApps,
   splitTabBarApps,
 } from "~/lib/navigation/app-sections";
+import { MyCountryLogomark } from "~/lib/navigation/icons/MyCountryLogomark";
 import { WikiLogomark } from "~/lib/navigation/icons/WikiLogomark";
 
 const apps = getVisibleApps({
@@ -16,15 +17,16 @@ const apps = getVisibleApps({
 const app = (id: string) => apps.find((a) => a.id === id)!;
 
 describe("section map badges", () => {
-  it("MyCountry shows the flag and Diplomacy carries the inbox count", () => {
-    expect(app("mycountry").badge).toBe("mycountry-flag");
+  it("MyCountry wears its logo, not a flag badge, and Diplomacy carries the inbox count", () => {
+    expect(app("mycountry").badge).toBeUndefined();
+    expect(app("mycountry").icon).toBe(MyCountryLogomark);
     expect(app("mycountry").sections.find((s) => s.id === "diplomacy")?.badge).toBe(
       "diplomacy-inbox"
     );
   });
 
-  it("Vault shows the balance and a daily reward action row", () => {
-    expect(app("vault").badge).toBe("vault-balance");
+  it("Vault has no balance badge (the sidebar footer card shows it) but keeps the daily reward action row", () => {
+    expect(app("vault").badge).toBeUndefined();
     const reward = app("vault").sections.find((s) => s.id === "daily-reward");
     expect(reward).toMatchObject({
       action: "daily-reward",
@@ -39,8 +41,14 @@ describe("section map badges", () => {
 });
 
 describe("Home, Messages, Sports and Help in the map", () => {
-  it("Home lists exactly Dashboard, Messages and a conditional What's new", () => {
-    expect(app("home").sections.map((s) => s.id)).toEqual(["dashboard", "messages", "whats-new"]);
+  it("Home lists Dashboard, Messages, ThinkTanks, ThinkPages and a conditional What's new", () => {
+    expect(app("home").sections.map((s) => s.id)).toEqual([
+      "dashboard",
+      "messages",
+      "thinktanks",
+      "thinkpages",
+      "whats-new",
+    ]);
     expect(app("home").sections.find((s) => s.id === "messages")).toMatchObject({
       href: "/messages",
       badge: "messages-unread",
@@ -53,12 +61,11 @@ describe("Home, Messages, Sports and Help in the map", () => {
     });
   });
 
-  it("owns /messages in Home, leaving ThinkPages Accounts and ThinkTanks", () => {
+  it("owns /messages in Home, and ThinkPages is no longer an app", () => {
     expect(getAppForPath("/messages")?.id).toBe("home");
     expect(getAppForPath("/messages/abc")?.id).toBe("home");
     expect(getActiveSectionId(app("home"), "/messages/abc", null)).toBe("messages");
-    expect(app("thinkpages").sections.map((s) => s.id)).toEqual(["accounts", "thinktanks"]);
-    expect(app("thinkpages").match).not.toContain("/messages");
+    expect(apps.find((a) => (a.id as string) === "thinkpages")).toBeUndefined();
   });
 
   it("no longer lists Activity or Achievements, though Home still owns their routes", () => {

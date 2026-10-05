@@ -12,7 +12,8 @@ import { Suspense, useMemo, type ReactNode } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { useUser } from "~/context/auth-context";
-import { useHasPermission, useHasRoleLevel } from "~/hooks/usePermissions";
+import { useHasPermission, useHasRoleLevel, useIsBetaTester } from "~/hooks/usePermissions";
+import { useAbility } from "~/components/providers/AbilityProvider";
 import { api } from "~/trpc/react";
 import { stripBasePath } from "~/lib/base-path";
 import {
@@ -55,6 +56,10 @@ export function FacetShell() {
   const isAdmin = useHasRoleLevel(10);
   // A `labs.access` grant (or a dev build) shows Labs despite `showLabsTab`.
   const hasLabsAccess = useHasPermission("labs.access") || process.env.NODE_ENV === "development";
+  // Defense: the premium ability (premium tier, owner, admin, staff) or the beta-tester role.
+  const hasPremiumAbility = useAbility().can("access", "MyCountryFeature", "defense");
+  const isBetaTester = useIsBetaTester();
+  const hasMycountryPremium = hasPremiumAbility || isBetaTester;
   const { data: navigationSettings } = api.admin.getNavigationSettings.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
@@ -75,9 +80,10 @@ export function FacetShell() {
         signedIn,
         isAdmin,
         hasLabsAccess,
+        hasMycountryPremium,
         navigationSettings: navigationSettings as NavigationVisibilitySettings | undefined,
       }),
-    [signedIn, isAdmin, hasLabsAccess, navigationSettings]
+    [signedIn, isAdmin, hasLabsAccess, hasMycountryPremium, navigationSettings]
   );
 
   return (

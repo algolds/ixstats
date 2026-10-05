@@ -1,0 +1,91 @@
+import React from "react";
+import { render, screen, within } from "@testing-library/react";
+
+let premium = false;
+let betaTester = false;
+
+jest.mock("next/navigation", () => ({
+  usePathname: () => "/mycountry",
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ push: jest.fn(), replace: jest.fn(), prefetch: jest.fn() }),
+}));
+jest.mock("@clerk/nextjs", () => ({ useAuth: () => ({ userId: "shell-user" }) }));
+jest.mock("~/context/auth-context", () => ({ useUser: () => ({ user: { id: "shell-user" } }) }));
+jest.mock("~/hooks/usePermissions", () => ({
+  useHasPermission: () => false,
+  useHasRoleLevel: () => false,
+  useIsBetaTester: () => betaTester,
+}));
+jest.mock("~/components/providers/AbilityProvider", () => ({
+  useAbility: () => ({
+    can: (action: string, subject: string, field?: string) =>
+      premium && action === "access" && subject === "MyCountryFeature" && field === "defense",
+  }),
+}));
+jest.mock("~/trpc/react", () => ({
+  api: {
+    useUtils: () => ({
+      vault: { getBalance: { invalidate: jest.fn() } },
+      cards: { getMyCards: { invalidate: jest.fn() } },
+    }),
+    admin: { getNavigationSettings: { useQuery: () => ({ data: undefined }) } },
+    vault: {
+      getBalance: { useQuery: () => ({ data: undefined, isLoading: false }) },
+      claimCombinedDailyClaim: { useMutation: () => ({ mutate: jest.fn() }) },
+    },
+  },
+}));
+jest.mock("~/components/shell/use-nav-badges", () => ({ useNavBadges: () => ({}) }));
+jest.mock("~/components/shell/AccountMenu", () => ({ AccountMenu: () => null }));
+jest.mock("~/components/shell/ShellHalo", () => ({ ShellHalo: () => null }));
+jest.mock("~/lib/sound/cuelume", () => ({ soundCues: {}, soundEffects: {} }));
+jest.mock("~/lib/vault/vault-notifications", () => ({
+  vaultNotify: { error: jest.fn(), success: jest.fn() },
+}));
+jest.mock("~/components/cards/display/CardHolographicCover", () => ({
+  CardHolographicCover: () => null,
+}));
+
+import { AppShell } from "~/components/shell/AppShell";
+
+function sidebarLinks() {
+  render(
+    <AppShell>
+      <p>Page</p>
+    </AppShell>
+  );
+  return within(screen.getByRole("navigation", { name: "App navigation" }));
+}
+
+beforeEach(() => {
+  premium = false;
+  betaTester = false;
+  window.localStorage.setItem(
+    "ixstats:dailyReward:autoOpened:shell-user",
+    new Date().toISOString().slice(0, 10)
+  );
+});
+
+describe("FacetShell MyCountry Defense gating", () => {
+  it("hides Defense without MyCountry Premium or the beta-tester role", () => {
+    const nav = sidebarLinks();
+    expect(nav.getByRole("link", { name: "Politics" })).toBeInTheDocument();
+    expect(nav.queryByRole("link", { name: "Defense" })).toBeNull();
+    for (const name of ["Intelligence", "Map editor", "Editor"]) {
+      expect(nav.queryByRole("link", { name })).toBeNull();
+    }
+  });
+
+  it("shows Defense to users who pass the premium ability", () => {
+    premium = true;
+    expect(sidebarLinks().getByRole("link", { name: "Defense" })).toHaveAttribute(
+      "href",
+      "/mycountry/defense"
+    );
+  });
+
+  it("shows Defense to beta testers", () => {
+    betaTester = true;
+    expect(sidebarLinks().getByRole("link", { name: "Defense" })).toBeInTheDocument();
+  });
+});

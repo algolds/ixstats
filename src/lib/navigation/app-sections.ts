@@ -18,6 +18,7 @@
 
 import type { ComponentType, SVGProps } from "react";
 import { DiscordLogomark } from "./icons/DiscordLogomark";
+import { MyCountryLogomark } from "./icons/MyCountryLogomark";
 import { WikiLogomark } from "./icons/WikiLogomark";
 import {
   Activity,
@@ -25,7 +26,6 @@ import {
   Bell,
   Bookmark,
   BookStack,
-  Brain,
   Building,
   Cart,
   ChatBubble,
@@ -40,7 +40,6 @@ import {
   Database,
   DocMagnifyingGlass,
   Download,
-  EditPencil,
   FireFlame,
   Flask,
   Folder,
@@ -57,7 +56,6 @@ import {
   Lock,
   Mail,
   Map as MapIcon,
-  MapPin,
   MediaImage,
   Medal,
   MultiplePages,
@@ -84,18 +82,11 @@ import {
 export type NavIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
 type NavBadgeKey =
-  | "mycountry-flag"
-  | "diplomacy-inbox"
-  | "vault-balance"
-  | "daily-reward"
-  | "messages-unread"
-  | "issues-pending"
-  | "whats-new";
+  "diplomacy-inbox" | "daily-reward" | "messages-unread" | "issues-pending" | "whats-new";
 export type NavAction = "daily-reward";
 export type NavBadge =
   | { kind: "count"; value: number }
   | { kind: "value"; label: string }
-  | { kind: "icon"; src: string; alt: string }
   | { kind: "action"; label: string };
 export type NavBadges = Partial<Record<NavBadgeKey, NavBadge>>;
 
@@ -107,7 +98,6 @@ type AppId =
   | "home"
   | "mycountry"
   | "maps"
-  | "thinkpages"
   | "vault"
   | "wiki"
   | "forum"
@@ -139,7 +129,7 @@ interface AppSection {
   match?: string[];
   /** For query sections: also current when the page has no query (the page's default tab). */
   isDefault?: boolean;
-  /** Overrides the app tint while this section is current (e.g. Intelligence is crimson). */
+  /** Overrides the app tint while this section is current (e.g. Defense is crimson). */
   tint?: AppTint;
   /**
    * Sub-heading the section is listed under. Consecutive sections with the same `group` form one
@@ -154,7 +144,15 @@ interface AppSection {
   conditional?: true;
   /** An absolute URL outside the app: opens in a new tab, and is never the current section. */
   external?: true;
+  /**
+   * Listed only for users who pass this check (`getVisibleApps` context). The route itself is not
+   * gated by the map: the page keeps its own premium preview for anyone who arrives by URL.
+   */
+  requires?: SectionRequirement;
 }
+
+/** `mycountry-premium`: MyCountry Premium (the premium ability) or the beta-tester role. */
+type SectionRequirement = "mycountry-premium";
 
 export interface AppDefinition {
   id: AppId;
@@ -195,7 +193,16 @@ export const APPS: readonly AppDefinition[] = [
     href: "/dashboard",
     icon: HomeSimple,
     // /feed, /achievements and /hashtags are not listed but stay Home's, so the sidebar keeps its place.
-    match: ["/", "/dashboard", "/feed", "/achievements", "/hashtags", "/messages"],
+    match: [
+      "/",
+      "/dashboard",
+      "/feed",
+      "/achievements",
+      "/hashtags",
+      "/messages",
+      "/thinkpages",
+      "/thinktanks",
+    ],
     requiresAuth: true,
     sections: [
       { id: "dashboard", label: "Dashboard", href: "/dashboard", icon: StatsReport },
@@ -205,6 +212,21 @@ export const APPS: readonly AppDefinition[] = [
         href: "/messages",
         icon: Mail,
         badge: "messages-unread",
+      },
+      // ThinkPages is part of Home; these pages keep their emerald tint through the section tint.
+      {
+        id: "thinktanks",
+        label: "ThinkTanks",
+        href: "/thinktanks",
+        icon: Group,
+        tint: "thinkpages",
+      },
+      {
+        id: "thinkpages",
+        label: "ThinkPages",
+        href: "/thinkpages",
+        icon: ChatLines,
+        tint: "thinkpages",
       },
       // Listed only while this build is unseen; Help keeps a permanent changelog row.
       {
@@ -221,9 +243,8 @@ export const APPS: readonly AppDefinition[] = [
     id: "mycountry",
     label: "MyCountry",
     href: "/mycountry",
-    icon: Crown,
+    icon: MyCountryLogomark,
     tint: "mycountry",
-    badge: "mycountry-flag",
     match: ["/mycountry"],
     requiresAuth: true,
     sections: [
@@ -249,23 +270,15 @@ export const APPS: readonly AppDefinition[] = [
         icon: Globe,
         badge: "diplomacy-inbox",
       },
+      { id: "politics", label: "Politics", href: "/mycountry/politics", icon: Community },
       {
         id: "defense",
         label: "Defense",
         href: "/mycountry/defense",
         icon: Shield,
         tint: "intel",
+        requires: "mycountry-premium",
       },
-      { id: "politics", label: "Politics", href: "/mycountry/politics", icon: Community },
-      {
-        id: "intelligence",
-        label: "Intelligence",
-        href: "/mycountry/intelligence",
-        icon: Brain,
-        tint: "intel",
-      },
-      { id: "map-editor", label: "Map editor", href: "/mycountry/map-editor", icon: MapPin },
-      { id: "editor", label: "Editor", href: "/mycountry/editor", icon: EditPencil },
     ],
   },
   {
@@ -279,25 +292,11 @@ export const APPS: readonly AppDefinition[] = [
     sections: [],
   },
   {
-    id: "thinkpages",
-    label: "ThinkPages",
-    href: "/thinkpages",
-    icon: ChatLines,
-    tint: "thinkpages",
-    match: ["/thinkpages", "/thinktanks"],
-    requiresAuth: true,
-    sections: [
-      { id: "accounts", label: "Accounts", href: "/thinkpages", icon: User },
-      { id: "thinktanks", label: "ThinkTanks", href: "/thinktanks", icon: Group },
-    ],
-  },
-  {
     id: "vault",
     label: "Vault",
     href: "/vault",
     icon: MultiplePages,
     tint: "vault",
-    badge: "vault-balance",
     match: ["/vault"],
     requiresAuth: true,
     navSetting: "showCardsTab",
@@ -412,12 +411,12 @@ export const APPS: readonly AppDefinition[] = [
   },
   {
     id: "countries",
-    label: "Countries",
+    label: "Realms",
     href: "/countries",
     icon: Globe,
     match: ["/countries", "/explore", "/leaderboards", "/realms", "/r"],
     sections: [
-      { id: "directory", label: "Directory", href: "/countries", icon: Globe },
+      { id: "countries", label: "Countries", href: "/countries", icon: Globe },
       { id: "explore", label: "Explore", href: "/explore", icon: DocMagnifyingGlass },
       { id: "collections", label: "Collections", href: "/explore/collections", icon: Archive },
       { id: "leaderboards", label: "Leaderboards", href: "/leaderboards", icon: LeaderboardStar },
@@ -626,7 +625,6 @@ const TAB_BAR_PRIORITY: readonly AppId[] = [
   "home",
   "mycountry",
   "maps",
-  "thinkpages",
   "countries",
   "wiki",
   "forum",
@@ -761,6 +759,8 @@ interface AppVisibilityContext {
   isAdmin: boolean;
   /** Holds the `labs.access` permission (sees Labs even when `showLabsTab` is off). */
   hasLabsAccess?: boolean;
+  /** MyCountry Premium (the premium ability) or a beta tester: sees `requires: "mycountry-premium"` sections. */
+  hasMycountryPremium?: boolean;
   navigationSettings?: NavigationVisibilitySettings | null;
 }
 
@@ -769,9 +769,13 @@ export function getVisibleApps({
   signedIn,
   isAdmin,
   hasLabsAccess = false,
+  hasMycountryPremium = false,
   navigationSettings,
 }: AppVisibilityContext): AppDefinition[] {
-  return APPS.filter((app) => {
+  const granted: Record<SectionRequirement, boolean> = {
+    "mycountry-premium": hasMycountryPremium,
+  };
+  const visibleApps = APPS.filter((app) => {
     if (app.requiresAuth && !signedIn) return false;
     if (app.adminOnly && !isAdmin) return false;
     if (app.navSetting && navigationSettings && navigationSettings[app.navSetting] === false) {
@@ -781,6 +785,17 @@ export function getVisibleApps({
     }
     return true;
   });
+  // Copies only where a section is hidden, so apps without gated sections stay the shared objects.
+  return visibleApps.map((app) =>
+    app.sections.some((section) => section.requires && !granted[section.requires])
+      ? {
+          ...app,
+          sections: app.sections.filter(
+            (section) => !section.requires || granted[section.requires]
+          ),
+        }
+      : app
+  );
 }
 
 /** The TabBar's primary apps (up to `TAB_BAR_SLOTS`) and the rest (listed under "More"). */

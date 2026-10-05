@@ -11,6 +11,7 @@ jest.mock("~/context/auth-context", () => ({ useUser: () => ({ user: { id: "shel
 jest.mock("~/hooks/usePermissions", () => ({
   useHasPermission: () => false,
   useHasRoleLevel: () => false,
+  useIsBetaTester: () => false,
 }));
 jest.mock("~/trpc/react", () => ({
   api: {

@@ -8,10 +8,12 @@ import {
   EditPencil as Edit3,
   User,
   ClockRotateRight as FileClock,
+  MapPin,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
+import { useAbility } from "~/components/providers/AbilityProvider";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { CooldownTimer } from "../ExecutiveHome";
 import type { CommandNavMode } from "../command-nav-mode";
@@ -72,7 +74,7 @@ function DirectiveStatusLine({ countryId }: { countryId?: string }) {
 
 /**
  * The MyCountry page header: the country's name and identity over its flag as cover art, and a
- * toolbar (Profile, Editor) with the one Declare Directive button. The banner is the identity art
+ * toolbar (Profile, Editor, and Map editor for premium users) with the one Declare Directive button. The banner is the identity art
  * (no small flag beside the title) and collapses with the header. Section switching is the global
  * source list.
  */
@@ -83,6 +85,8 @@ export function UnifiedGlassCommandBar({
 }: UnifiedGlassCommandBarProps) {
   const router = useRouter();
   const { country } = useCountryData();
+  // The map editor is a premium feature (same ability as the server gate), so others never see the entry.
+  const canUseMapEditor = useAbility().can("access", "MyCountryFeature", "map-editor");
 
   const profileHref = country?.slug ? `/countries/${country.slug}` : "/countries";
 
@@ -137,6 +141,22 @@ export function UnifiedGlassCommandBar({
             <Edit3 aria-hidden="true" />
             <span className="hidden md:inline">Editor</span>
           </Button>
+          {canUseMapEditor && (
+            <Button
+              asChild
+              variant="ghost"
+              className={cn("text-label-secondary", plate(collapsed))}
+            >
+              <Link
+                href="/mycountry/map-editor"
+                aria-label="Open map editor"
+                title="Open the map editor"
+              >
+                <MapPin aria-hidden="true" />
+                <span className="hidden md:inline">Map editor</span>
+              </Link>
+            </Button>
+          )}
           <Button
             type="button"
             aria-pressed={isExecutiveMode}

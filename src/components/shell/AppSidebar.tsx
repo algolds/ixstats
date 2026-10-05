@@ -91,24 +91,11 @@ const railButtonClassName = (current: boolean) =>
     current ? "bg-tint-fill text-tint" : "text-label hover:bg-fill-4"
   );
 
-function RailGlyph({
-  app,
-  badges,
-  showDot,
-}: {
-  app: AppDefinition;
-  badges: NavBadges;
-  showDot: boolean;
-}) {
+function RailGlyph({ app, showDot }: { app: AppDefinition; showDot: boolean }) {
   const Icon = app.icon;
-  const badge = app.badge ? badges[app.badge] : undefined;
   return (
     <>
-      {badge?.kind === "icon" ? (
-        <img src={badge.src} alt="" className="size-5 rounded-sm object-cover" />
-      ) : (
-        <Icon aria-hidden className="size-5" />
-      )}
+      <Icon aria-hidden className="size-5" />
       {showDot && (
         <span
           role="img"
@@ -136,7 +123,7 @@ function RailApp({
   const close = React.useCallback(() => setOpen(false), []);
   const hasSections = app.sections.length > 0 && !plain;
   const pending = app.sections.some((s) => s.badge && isPending(list.badges[s.badge]));
-  const glyph = <RailGlyph app={app} badges={list.badges} showDot={pending} />;
+  const glyph = <RailGlyph app={app} showDot={pending} />;
 
   if (!hasSections) {
     return (

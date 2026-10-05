@@ -62,14 +62,14 @@ describe("SourceList", () => {
 
   it("shows badges, the reward action row and collapsed dots", () => {
     const { nav, onAction } = setup("/dashboard", {
-      expanded: ["vault"],
+      expanded: ["vault", "home"],
       badges: {
-        "vault-balance": { kind: "value", label: "1,240 IxC" },
+        "messages-unread": { kind: "count", value: 7 },
         "daily-reward": { kind: "action", label: "4d" },
         "diplomacy-inbox": { kind: "count", value: 3 },
       },
     });
-    expect(within(nav).getByText("1,240 IxC")).toBeInTheDocument();
+    expect(within(nav).getByText("7")).toBeInTheDocument();
     fireEvent.click(within(nav).getByRole("button", { name: /Daily reward/ }));
     expect(onAction).toHaveBeenCalledWith("daily-reward");
     // MyCountry is collapsed, so its Diplomacy count shows as a dot on the app row.

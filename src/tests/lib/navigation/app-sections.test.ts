@@ -107,18 +107,65 @@ describe("app section map routes", () => {
     }
   });
 
-  it("lists MyCountry's sections in order", () => {
+  it("lists MyCountry's sections in order (Intelligence, Map editor and Editor are not rows)", () => {
     expect(getApp("mycountry").sections.map((section) => section.id)).toEqual([
       "overview",
       "executive",
       "economy",
       "diplomacy",
-      "defense",
       "politics",
-      "intelligence",
-      "map-editor",
-      "editor",
+      "defense",
     ]);
+  });
+
+  it("calls the Countries app Realms, keeping its route, with Countries as the first section", () => {
+    const realms = getApp("countries");
+    expect(realms).toMatchObject({ label: "Realms", href: "/countries" });
+    expect(realms.sections.map((section) => section.label)).toEqual([
+      "Countries",
+      "Explore",
+      "Collections",
+      "Leaderboards",
+      "Realms",
+    ]);
+    expect(realms.sections[0]?.href).toBe("/countries");
+  });
+
+  it("folds ThinkPages into Home as emerald-tinted sections", () => {
+    expect(APPS.map((app) => app.id)).not.toContain("thinkpages");
+    const home = getApp("home");
+    expect(home.sections.filter((s) => !s.conditional).map((s) => s.label)).toEqual([
+      "Dashboard",
+      "Messages",
+      "ThinkTanks",
+      "ThinkPages",
+    ]);
+    expect(home.sections.find((s) => s.label === "ThinkTanks")).toMatchObject({
+      href: "/thinktanks",
+      tint: "thinkpages",
+    });
+    expect(home.sections.find((s) => s.label === "ThinkPages")).toMatchObject({
+      href: "/thinkpages",
+      tint: "thinkpages",
+    });
+  });
+
+  it.each([
+    ["/thinkpages", "thinkpages"],
+    ["/thinkpages/post/abc", "thinkpages"],
+    ["/thinkpages/profile/someone", "thinkpages"],
+    ["/thinktanks", "thinktanks"],
+    ["/thinktanks/abc", "thinktanks"],
+  ])("resolves %s to Home's %s section with the thinkpages tint", (pathname, sectionId) => {
+    const home = getAppForPath(pathname);
+    expect(home?.id).toBe("home");
+    const active = getActiveSectionId(home!, pathname, null);
+    expect(active).toBe(sectionId);
+    expect(getTintForPath(home, active)).toBe("thinkpages");
+  });
+
+  it("keeps Home untinted on its own pages", () => {
+    expect(getTintForPath(getApp("home"), "messages")).toBeUndefined();
   });
 });
 
@@ -142,7 +189,7 @@ describe("app section map resolvers", () => {
     ["/", "home"],
     ["/dashboard", "home"],
     ["/mycountry/intelligence", "mycountry"],
-    ["/thinktanks/abc", "thinkpages"],
+    ["/thinktanks/abc", "home"],
     ["/messages/inbox", "home"],
     ["/vault/ns-deck/foo", "vault"],
     ["/util/search", "wiki"],
@@ -217,9 +264,9 @@ describe("app section map resolvers", () => {
 
   it("uses a section's tint over the app's", () => {
     const mycountry = getApp("mycountry");
-    expect(getTintForPath(mycountry, "intelligence")).toBe("intel");
+    expect(getTintForPath(mycountry, "defense")).toBe("intel");
     expect(getTintForPath(mycountry, "economy")).toBe("mycountry");
-    expect(getTintForPath(getApp("countries"), "directory")).toBeUndefined();
+    expect(getTintForPath(getApp("countries"), "countries")).toBeUndefined();
   });
 
   it("keeps Maps and the full-screen map editors chromeless", () => {
@@ -282,13 +329,38 @@ describe("app visibility and the tab bar", () => {
     expect(wikiOff.map((app) => app.id)).not.toContain("wiki");
   });
 
+  it("shows Defense only with MyCountry Premium (premium tier, beta tester, staff)", () => {
+    const defense = (hasMycountryPremium?: boolean) =>
+      getVisibleApps({ signedIn: true, isAdmin: false, hasMycountryPremium })
+        .find((app) => app.id === "mycountry")!
+        .sections.map((section) => section.id);
+    expect(defense()).not.toContain("defense");
+    expect(defense(false)).not.toContain("defense");
+    expect(defense(true)).toContain("defense");
+    // Only Defense is gated: the rest of the condensed group is for everyone.
+    expect(defense(false)).toEqual(["overview", "executive", "economy", "diplomacy", "politics"]);
+    expect(defense(true)).toEqual([
+      "overview",
+      "executive",
+      "economy",
+      "diplomacy",
+      "politics",
+      "defense",
+    ]);
+  });
+
+  it("does not mutate the shared map when it filters gated sections", () => {
+    getVisibleApps({ signedIn: true, isAdmin: false, hasMycountryPremium: false });
+    expect(getApp("mycountry").sections.map((section) => section.id)).toContain("defense");
+  });
+
   it("gives the tab bar four primary apps and puts the rest under More", () => {
     const visible = getVisibleApps({ signedIn: true, isAdmin: true });
     const { primary, more } = splitTabBarApps(visible);
-    expect(primary.map((app) => app.id)).toEqual(["home", "mycountry", "maps", "thinkpages"]);
+    expect(primary.map((app) => app.id)).toEqual(["home", "mycountry", "maps", "countries"]);
     expect(primary).toHaveLength(TAB_BAR_SLOTS);
     expect(more.map((app) => app.id)).toEqual(
-      expect.arrayContaining(["countries", "wiki", "forum", "vault", "labs", "admin"])
+      expect.arrayContaining(["wiki", "forum", "vault", "labs", "admin"])
     );
     const signedOut = splitTabBarApps(getVisibleApps({ signedIn: false, isAdmin: false }));
     expect(signedOut.primary.map((app) => app.id)).toEqual(["maps", "countries", "wiki", "forum"]);

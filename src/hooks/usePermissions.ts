@@ -89,7 +89,7 @@ export function useIsStaff(): boolean {
 
 // Hook to check if user is moderator or higher
 // Hook to check if user has beta tester privileges or higher (system owner, admin, staff, beta_tester)
-function useIsBetaTester(): boolean {
+export function useIsBetaTester(): boolean {
   const { user: authUser } = useUser();
   const { user: permissionUser, isLoading } = usePermissions();
 

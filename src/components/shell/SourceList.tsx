@@ -58,7 +58,7 @@ export const isPending = (badge: NavBadge | undefined) =>
   badge?.kind === "action" || (badge?.kind === "count" && badge.value > 0);
 
 function Trailing({ badge }: { badge: NavBadge | undefined }) {
-  if (!badge || badge.kind === "icon") return null;
+  if (!badge) return null;
   if (badge.kind === "count") {
     return badge.value > 0 ? (
       <span className="bg-tint-fill text-tint-ink text-caption rounded-full px-2 font-medium tabular-nums">
@@ -265,11 +265,7 @@ function AppRow({ app, isCurrent, ctx }: { app: AppDefinition; isCurrent: boolea
           )}
         >
           <span data-app={app.tint} className="text-tint inline-flex shrink-0">
-            {appBadge?.kind === "icon" ? (
-              <img src={appBadge.src} alt="" className="size-5 rounded-sm object-cover" />
-            ) : (
-              <Icon aria-hidden className="size-5" />
-            )}
+            <Icon aria-hidden className="size-5" />
           </span>
           <span className="min-w-0 flex-1 truncate">{app.label}</span>
           <Trailing badge={appBadge} />

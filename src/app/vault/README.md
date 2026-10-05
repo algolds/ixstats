@@ -6,23 +6,23 @@ IxVault is the trading-card and virtual-economy product in IxStats. Players earn
 
 ## Routes
 
-| Route | Renders | Purpose |
-|-------|---------|---------|
-| `/vault` | `VaultDashboardSection` | Balance, level/XP, daily claim, passive income, today's earnings, quick stats |
-| `/vault/cards` | `VaultCardsSection` | Card hub: Gallery (default, lore-first) / Inventory / Collections sub-tabs |
-| `/vault/inventory` | `VaultCardsSection` | Same hub (inventory entry) |
-| `/vault/collections` | `VaultCardsSection` | Same hub (collections entry) |
-| `/vault/collections/[slug]` | collection detail | View a collection; comments / likes |
-| `/vault/lore-gallery` | `VaultCardsSection` | Gallery sub-tab |
-| `/vault/ns-library` | `VaultCardsSection` | Gallery sub-tab |
-| `/vault/lore-generator` | `LoreCardGenerator` | Request generation of a lore card |
-| `/vault/marketplace` | `VaultMarketplaceSection` | Tabs: Vault Shop / Auctions / Trading (`?tab=` deep-links) |
-| `/vault/crafting` | `CraftingWorkbench` | Fusion / evolution crafting (not in the source list) |
-| `/vault/import` | `VaultImportSection` | NationStates deck import wizard |
-| `/vault/ns-deck` | `ImportWizard` | Legacy NS deck import wizard (the source list uses `/vault/import`) |
-| `/vault/ns-deck/[nation]` | NS deck viewer | Public NS deck for a nation |
-| `/vault/admin` | admin gate | Admin-only vault tools (`useIsAdmin`) |
-| `/vault/market`, `/vault/packs`, `/vault/trading` | — | **Redirect stubs** → `/vault/marketplace?tab=auctions\|store\|trading` |
+| Route                                             | Renders                   | Purpose                                                                       |
+| ------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------- |
+| `/vault`                                          | `VaultDashboardSection`   | Balance, level/XP, daily claim, passive income, today's earnings, quick stats |
+| `/vault/cards`                                    | `VaultCardsSection`       | Card hub: Gallery (default, lore-first) / Inventory / Collections sub-tabs    |
+| `/vault/inventory`                                | `VaultCardsSection`       | Same hub (inventory entry)                                                    |
+| `/vault/collections`                              | `VaultCardsSection`       | Same hub (collections entry)                                                  |
+| `/vault/collections/[slug]`                       | collection detail         | View a collection; comments / likes                                           |
+| `/vault/lore-gallery`                             | `VaultCardsSection`       | Gallery sub-tab                                                               |
+| `/vault/ns-library`                               | `VaultCardsSection`       | Gallery sub-tab                                                               |
+| `/vault/lore-generator`                           | `LoreCardGenerator`       | Request generation of a lore card                                             |
+| `/vault/marketplace`                              | `VaultMarketplaceSection` | Tabs: Vault Shop / Auctions / Trading (`?tab=` deep-links)                    |
+| `/vault/crafting`                                 | `CraftingWorkbench`       | Fusion / evolution crafting (not in the source list)                          |
+| `/vault/import`                                   | `VaultImportSection`      | NationStates deck import wizard                                               |
+| `/vault/ns-deck`                                  | `ImportWizard`            | Legacy NS deck import wizard (the source list uses `/vault/import`)           |
+| `/vault/ns-deck/[nation]`                         | NS deck viewer            | Public NS deck for a nation                                                   |
+| `/vault/admin`                                    | admin gate                | Admin-only vault tools (`useIsAdmin`)                                         |
+| `/vault/market`, `/vault/packs`, `/vault/trading` | —                         | **Redirect stubs** → `/vault/marketplace?tab=auctions\|store\|trading`        |
 
 There is no Vault rail: the global source list (`src/lib/navigation/app-sections.ts`) lists the sections. `/achievements` and `/leaderboards` render in their own page container. The daily reward, balance, today's earnings and treasury revenue live in the wallet card on the Vault dashboard (`/vault`, `VaultWalletCard`).
 
@@ -38,35 +38,35 @@ There is no Vault rail: the global source list (`src/lib/navigation/app-sections
 
 ## Architecture
 
-| Layer | Location |
-|-------|----------|
-| Layout + auth | `src/app/vault/layout.tsx` (`AuthenticationGuard` + page container; no rail) |
-| Navigation | The sidebar's source list (the Vault entry in `src/lib/navigation/app-sections.ts`: sections, `vault-balance` badge, Daily reward row opening `DailyRewardProvider`'s dialog). `src/components/vault/vault-sections.ts` only exports `VaultSection` and `getSubTabFromPathname` |
-| Cards Section | `src/components/vault/sections/cards/` — `InventoryTab`, `CollectionsTab`, `CardGalleryTab`, `*SidebarContent`, `useVaultCardsState`, `types.ts` |
-| Dashboard Section | `src/components/vault/sections/dashboard/` — `VaultNetWorthCard`, `VaultYieldProjectionsCard`, `VaultCardHoldingsCard`, `VaultMilestonesCard`, `VaultRecentActivityCard`, `VaultShowcaseGrid` |
-| Marketplace Section | `src/components/vault/sections/marketplace/` — Store (`store/`), Auctions (`auctions/` incl. `CreateAuctionModal`), Trading |
-| Import Section | `src/components/vault/sections/import/` — `ImportNationStep`, `ImportVerifyStep`, `ImportConfirmStep`, `ImportStepIndicator` |
-| Shared widgets | `src/components/vault/` — `DailyRewardProvider`, `VaultParticleExplosionModal`, `VaultSubTabNav`, `IxCreditsSymbol`, cosmetic overlays (`AvatarGlow`, `NeonFrameOverlay`, `CosmeticParticles*`) |
-| Vault Services | `src/lib/vault/` — `vault-service.ts` (facade), `vault-ledger.ts`, `vault-passive-income.ts`, `vault-daily-bonus.ts`, `vault-bonus.ts`, `vault-perks.ts`, `vault-notifications.ts`, `vault-type-guards.ts`, `exchange-*.ts`, `trade-settlement.ts` |
-| Hooks | `src/hooks/vault/` — `useVaultBalance`, `useVaultStats`, `useCollections`, `useRecentActivity` |
-| Reused card UI | `src/components/cards/` — `CardDisplay`, `CardDetailsModal` (`cards/display/modal/`), `CraftingWorkbench`, `lore/LoreCardGenerator` |
+| Layer               | Location                                                                                                                                                                                                                                                 |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Layout + auth       | `src/app/vault/layout.tsx` (`AuthenticationGuard` + page container; no rail)                                                                                                                                                                             |
+| Navigation          | The sidebar's source list (the Vault entry in `src/lib/navigation/app-sections.ts`: sections, Daily reward row opening `DailyRewardProvider`'s dialog). `src/components/vault/vault-sections.ts` only exports `VaultSection` and `getSubTabFromPathname` |
+| Cards Section       | `src/components/vault/sections/cards/` — `InventoryTab`, `CollectionsTab`, `CardGalleryTab`, `*SidebarContent`, `useVaultCardsState`, `types.ts`                                                                                                         |
+| Dashboard Section   | `src/components/vault/sections/dashboard/` — `VaultNetWorthCard`, `VaultYieldProjectionsCard`, `VaultCardHoldingsCard`, `VaultMilestonesCard`, `VaultRecentActivityCard`, `VaultShowcaseGrid`                                                            |
+| Marketplace Section | `src/components/vault/sections/marketplace/` — Store (`store/`), Auctions (`auctions/` incl. `CreateAuctionModal`), Trading                                                                                                                              |
+| Import Section      | `src/components/vault/sections/import/` — `ImportNationStep`, `ImportVerifyStep`, `ImportConfirmStep`, `ImportStepIndicator`                                                                                                                             |
+| Shared widgets      | `src/components/vault/` — `DailyRewardProvider`, `VaultParticleExplosionModal`, `VaultSubTabNav`, `IxCreditsSymbol`, cosmetic overlays (`AvatarGlow`, `NeonFrameOverlay`, `CosmeticParticles*`)                                                          |
+| Vault Services      | `src/lib/vault/` — `vault-service.ts` (facade), `vault-ledger.ts`, `vault-passive-income.ts`, `vault-daily-bonus.ts`, `vault-bonus.ts`, `vault-perks.ts`, `vault-notifications.ts`, `vault-type-guards.ts`, `exchange-*.ts`, `trade-settlement.ts`       |
+| Hooks               | `src/hooks/vault/` — `useVaultBalance`, `useVaultStats`, `useCollections`, `useRecentActivity`                                                                                                                                                           |
+| Reused card UI      | `src/components/cards/` — `CardDisplay`, `CardDetailsModal` (`cards/display/modal/`), `CraftingWorkbench`, `lore/LoreCardGenerator`                                                                                                                      |
 
 `VaultCardsSection` dispatches between modular sub-components in `src/components/vault/sections/cards/`, supporting **Inventory / Collections / Gallery** sub-tabs. Monolithic services in `vault-service.ts` are decoupled into single-responsibility domain modules under `src/lib/vault/`.
 
 ## Data Sources (verified `api.*`)
 
-| Router | Endpoints used |
-|--------|----------------|
-| `vault` | `getBalance`, `getVaultLevel`, `getTodayEarnings`, `getUserStats`, `getTransactions`, `checkDailyCap`, `calculatePassiveIncome`, `getBudgetMultiplier`, `claimDailyBonus`, `claimCombinedDailyClaim`, `spendCredits`, `listStoreItems`, `getPurchasedItems`, `getCollectionDetails`, `getCollectionComments`, `addCollectionComment`, `likeCollection` |
-| `cards` | `getMyCards`, `getMyCollections`, `getCollectionCards`, `createCollection`, `deleteCollection`, `getNSCards`, `getNSLibraryStats`, `junkCards` |
-| `cardPacks` | `getAvailablePacks`, `getMyPacks`, `purchasePack` |
-| `cardMarket` | `getActiveAuctions`, `getEndingSoon`, `getMyActiveAuctions`, `getMyActiveBids`, `getMyAuctionParticipation`, `createAuction` |
-| `crafting` | `getRecipes` |
-| `trading` | `getActiveTrades`, `getTradeHistory` |
-| `nsImport` | `requestVerification`, `checkVerification`, `hasImported`, `importDeck`, `fetchPublicDeck` |
-| `loreCards` | `getAllLoreCards`, `requestLoreCard` |
-| `achievements` | `getAllByCountry`, `getLeaderboard` |
-| `users` | `getProfile` |
+| Router         | Endpoints used                                                                                                                                                                                                                                                                                                                                         |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `vault`        | `getBalance`, `getVaultLevel`, `getTodayEarnings`, `getUserStats`, `getTransactions`, `checkDailyCap`, `calculatePassiveIncome`, `getBudgetMultiplier`, `claimDailyBonus`, `claimCombinedDailyClaim`, `spendCredits`, `listStoreItems`, `getPurchasedItems`, `getCollectionDetails`, `getCollectionComments`, `addCollectionComment`, `likeCollection` |
+| `cards`        | `getMyCards`, `getMyCollections`, `getCollectionCards`, `createCollection`, `deleteCollection`, `getNSCards`, `getNSLibraryStats`, `junkCards`                                                                                                                                                                                                         |
+| `cardPacks`    | `getAvailablePacks`, `getMyPacks`, `purchasePack`                                                                                                                                                                                                                                                                                                      |
+| `cardMarket`   | `getActiveAuctions`, `getEndingSoon`, `getMyActiveAuctions`, `getMyActiveBids`, `getMyAuctionParticipation`, `createAuction`                                                                                                                                                                                                                           |
+| `crafting`     | `getRecipes`                                                                                                                                                                                                                                                                                                                                           |
+| `trading`      | `getActiveTrades`, `getTradeHistory`                                                                                                                                                                                                                                                                                                                   |
+| `nsImport`     | `requestVerification`, `checkVerification`, `hasImported`, `importDeck`, `fetchPublicDeck`                                                                                                                                                                                                                                                             |
+| `loreCards`    | `getAllLoreCards`, `requestLoreCard`                                                                                                                                                                                                                                                                                                                   |
+| `achievements` | `getAllByCountry`, `getLeaderboard`                                                                                                                                                                                                                                                                                                                    |
+| `users`        | `getProfile`                                                                                                                                                                                                                                                                                                                                           |
 
 All registered in `src/server/api/root.ts`.
 

@@ -2,7 +2,6 @@ import { act, renderHook } from "@testing-library/react";
 
 let country: { id: string; name: string; flag: string } | null = null;
 let inboxCount = 0;
-let flagNormalizes = true;
 const inboxEnabled = jest.fn();
 let balance: { credits: number; canClaimDailyBonus: boolean; loginStreak: number } | undefined;
 let folderCounts: { inbox: number } | undefined;
@@ -17,9 +16,6 @@ jest.mock("~/components/mycountry/domains/diplomacy/inbox/useDiplomacyInbox", ()
     inboxEnabled(enabled);
     return { count: enabled ? inboxCount : 0 };
   },
-}));
-jest.mock("~/lib/flags/normalization", () => ({
-  normalizeFlagUrl: (u: string) => (flagNormalizes ? `norm:${u}` : null),
 }));
 jest.mock("~/trpc/react", () => ({
   api: {
@@ -57,7 +53,6 @@ beforeEach(() => {
   country = { id: "c1", name: "Caphiria", flag: "flag.png" };
   inboxCount = 3;
   balance = { credits: 1240.7, canClaimDailyBonus: true, loginStreak: 4 };
-  flagNormalizes = true;
   folderCounts = { inbox: 0 };
   pendingIssues = undefined;
   issuesQuery.mockClear();
@@ -78,12 +73,10 @@ describe("useNavBadges", () => {
     expect(inboxEnabled).not.toHaveBeenCalledWith(true);
   });
 
-  it("maps flag, inbox, balance and the claimable reward", () => {
+  it("maps the inbox and the claimable reward, with no flag or balance badge", () => {
     const { result } = renderHook(() => useNavBadges(true));
     expect(result.current).toEqual({
-      "mycountry-flag": { kind: "icon", src: "norm:flag.png", alt: "Caphiria" },
       "diplomacy-inbox": { kind: "count", value: 3 },
-      "vault-balance": { kind: "value", label: "1,240 IxC" },
       "daily-reward": { kind: "action", label: "4d" },
     });
   });
@@ -94,15 +87,12 @@ describe("useNavBadges", () => {
     const { result } = renderHook(() => useNavBadges(true));
     expect(result.current["daily-reward"]).toBeUndefined();
     expect(result.current["diplomacy-inbox"]).toBeUndefined();
-    expect(result.current["vault-balance"]).toEqual({ kind: "value", label: "0 IxC" });
   });
 
-  it("labels a first claim New and skips a flag that normalizes to nothing", () => {
+  it("labels a first claim New", () => {
     balance = { credits: 5, canClaimDailyBonus: true, loginStreak: 0 };
-    flagNormalizes = false;
     const { result } = renderHook(() => useNavBadges(true));
     expect(result.current["daily-reward"]).toEqual({ kind: "action", label: "New" });
-    expect(result.current["mycountry-flag"]).toBeUndefined();
   });
 
   it("counts unread messages from the inbox and hides a zero count", () => {
