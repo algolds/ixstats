@@ -4,7 +4,7 @@
 
 **Database Engine**: PostgreSQL with PostGIS Extension  
 **ORM**: Prisma 6.19.3 (Multi-file Schema Architecture, `prisma.config.ts` → `prisma/schema`)  
-**Location**: `prisma/schema/*.prisma` (<!-- BEGIN_DOCS:COUNT:schemaFiles -->21<!-- END_DOCS:COUNT:schemaFiles --> schema files, <!-- BEGIN_DOCS:COUNT:models -->338<!-- END_DOCS:COUNT:models --> models, <!-- BEGIN_DOCS:COUNT:enums -->33<!-- END_DOCS:COUNT:enums --> enums) · `src/server/db.ts`
+**Location**: `prisma/schema/*.prisma` (<!-- BEGIN_DOCS:COUNT:schemaFiles -->21<!-- END_DOCS:COUNT:schemaFiles --> schema files, <!-- BEGIN_DOCS:COUNT:models -->341<!-- END_DOCS:COUNT:models --> models, <!-- BEGIN_DOCS:COUNT:enums -->33<!-- END_DOCS:COUNT:enums --> enums) · `src/server/db.ts`
 
 ---
 

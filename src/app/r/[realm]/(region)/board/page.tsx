@@ -9,9 +9,8 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { createUrl } from "~/lib/utils";
 import { ThinktankFeedTab } from "~/components/thinktanks/ThinktankFeedTab";
 import { ThinktankChatTab } from "~/components/thinktanks/ThinktankChatTab";
-import { RealmFeed } from "../_components/RealmFeed";
+import { RealmFeed } from "../../_components/RealmFeed";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { PageHeader } from "~/components/shell/PageHeader";
 
 type BoardTab = "board" | "chat" | "feed";
 
@@ -28,30 +27,33 @@ export default function RealmBoardPage({ params }: { params: Promise<{ realm: st
   const currentUserId = user?.id ?? "";
   const [tab, setTab] = useState<BoardTab>("board");
   const { data: board, isLoading, error } = api.realms.getBoard.useQuery({ slug });
+  const { data: overview } = api.realms.region.overview.useQuery({ slug });
+  const restriction = overview?.viewer.boardRestriction ?? null;
   const { data: group } = api.thinkpages.getThinktankById.useQuery(
     { groupId: board?.groupId ?? "" },
     { enabled: Boolean(board?.groupId) }
   );
   usePageTitle({ title: board ? `${board.realm.name} · Board` : "Realm board" });
 
-  if (isLoading)
-    return (
-      <div className="text-label-secondary text-body mx-auto max-w-5xl p-8">Loading board…</div>
-    );
+  if (isLoading) return <p className="text-label-secondary text-body">Loading board…</p>;
   if (error?.data?.code === "NOT_FOUND") notFound();
   if (!board)
-    return (
-      <div className="text-label-secondary text-body mx-auto max-w-5xl p-8">
-        The board could not be loaded.
-      </div>
-    );
+    return <p className="text-label-secondary text-body">The board could not be loaded.</p>;
 
   const realmHref = createUrl(`/r/${encodeURIComponent(board.realm.slug)}`);
   const visibleTabs = TABS.filter((t) => !t.membersOnly || board.canPost);
-  const notice = currentUserId ? (
+  const notice = restriction ? (
+    <>
+      Your nation is {restriction.kind === "ban" ? "banned from" : "muted on"} this board
+      {restriction.until
+        ? ` until ${new Date(restriction.until).toLocaleDateString()}`
+        : " until a moderator lifts it"}
+      {restriction.reason ? `: ${restriction.reason}` : "."}
+    </>
+  ) : currentUserId ? (
     <>
       Only owners of a nation in {board.realm.name} can post here.{" "}
-      <Link href={realmHref} className="text-label font-medium underline">
+      <Link href={`${realmHref}/nations`} className="text-label font-medium underline">
         Claim a nation
       </Link>{" "}
       to join the board.
@@ -71,40 +73,38 @@ export default function RealmBoardPage({ params }: { params: Promise<{ realm: st
   );
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 md:p-8">
-      <PageHeader
-        title={`${board.realm.name} board`}
-        subtitle={`${group ? `${group.memberCount.toLocaleString()} members · ` : ""}${
-          board.canModerate
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-label-secondary text-footnote">
+          {group ? `${group.memberCount.toLocaleString()} members · ` : ""}
+          {board.canModerate
             ? "You moderate this board"
-            : board.canPost
+            : board.canPost && !restriction
               ? "You can post here"
-              : "Read-only"
-        }`}
-        back={{ href: realmHref, label: board.realm.name }}
-        actions={
-          <SegmentedControl
-            aria-label="Board sections"
-            size="sm"
-            value={tab}
-            onValueChange={setTab}
-            options={visibleTabs.map((t) => ({ value: t.id, label: t.label }))}
-          />
-        }
-      />
+              : "Read-only"}
+        </p>
+        <SegmentedControl
+          aria-label="Board sections"
+          size="sm"
+          value={tab}
+          onValueChange={setTab}
+          options={visibleTabs.map((t) => ({ value: t.id, label: t.label }))}
+        />
+      </div>
 
       <section className="border-separator bg-surface rounded-card overflow-hidden border">
         {tab === "board" && (
           <ThinktankFeedTab
             groupId={board.groupId}
             groupName={`${board.realm.name} board`}
-            isMember={board.canPost}
+            isMember={board.canPost && !restriction}
             canReadFeed
             allowPersonaPosting={board.ownedCountryIds.length > 0}
             accountCountryIds={board.ownedCountryIds}
             canModerate={board.canModerate}
             currentUserId={currentUserId}
             readOnlyNotice={notice}
+            embassyPosting={(overview?.embassies.length ?? 0) > 0}
           />
         )}
         {tab === "chat" && board.canPost && (

@@ -32,6 +32,10 @@ export async function listRealmDirectory(db: PrismaClient, viewerUserId: string 
       name: true,
       description: true,
       thumbnail: true,
+      bannerUrl: true,
+      tags: true,
+      foundedAt: true,
+      createdAt: true,
       settings: true,
       _count: { select: { countries: true } },
     },
@@ -81,8 +85,9 @@ export async function listRealmDirectory(db: PrismaClient, viewerUserId: string 
   const unclaimedBy = countBy(unclaimed);
   const mineBy = countBy(mine);
 
-  return realms.map(({ settings, _count, ...realm }) => ({
+  return realms.map(({ settings, _count, foundedAt, createdAt, ...realm }) => ({
     ...realm,
+    foundedAt: foundedAt ?? createdAt,
     nationCount: _count.countries,
     openNationCount: unclaimedBy.get(realm.id) ?? 0,
     myNationCount: mineBy.get(realm.id) ?? 0,

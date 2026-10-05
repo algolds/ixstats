@@ -50,10 +50,12 @@ function ClaimedNation({ claim }: { claim: Claim }) {
   );
 }
 
-export function ClaimsTab() {
+/** Pending claims the caller may review; `realmId` narrows them to one realm (a founder's Manage tab). */
+export function ClaimsTab({ realmId }: { realmId?: string } = {}) {
   const utils = api.useUtils();
   const notify = useNotify();
-  const { data: claims, isLoading } = api.realms.listClaims.useQuery({ status: "pending" });
+  const { data: allClaims, isLoading } = api.realms.listClaims.useQuery({ status: "pending" });
+  const claims = realmId ? allClaims?.filter((claim) => claim.realm.id === realmId) : allClaims;
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const review = api.realms.reviewClaim.useMutation({
     onSuccess: (result, input) => {
@@ -65,7 +67,10 @@ export function ClaimsTab() {
       }
     },
     onError: (error) => notify.error("Review failed", error.message),
-    onSettled: () => void utils.realms.listClaims.invalidate(),
+    onSettled: () => {
+      void utils.realms.listClaims.invalidate();
+      void utils.realms.region.invalidate();
+    },
   });
 
   if (isLoading) return <p className="text-label-secondary text-body">Loading claims…</p>;

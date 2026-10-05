@@ -19,6 +19,7 @@ import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Badge } from "~/components/ui/badge";
+import { Checkbox } from "~/components/ui/checkbox";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import {
   AlertDialog,
@@ -54,6 +55,8 @@ interface ThinktankFeedTabProps {
   accountCountryIds?: string[];
   /** Group managers (realm-board moderators) may remove posts from the feed. */
   canModerate?: boolean;
+  /** A realm board with embassies: the composer offers to show the post on partner realms' boards too. */
+  embassyPosting?: boolean;
 }
 
 const INTENT_TAGS = [
@@ -91,7 +94,12 @@ const memberAuthor = (post: any) => {
 
 type FeedComposerProps = Pick<
   ThinktankFeedTabProps,
-  "groupId" | "groupName" | "allowPersonaPosting" | "accountCountryIds" | "currentUserId"
+  | "groupId"
+  | "groupName"
+  | "allowPersonaPosting"
+  | "accountCountryIds"
+  | "currentUserId"
+  | "embassyPosting"
 >;
 
 function FeedComposer({
@@ -100,11 +108,13 @@ function FeedComposer({
   allowPersonaPosting = false,
   accountCountryIds,
   currentUserId,
+  embassyPosting = false,
 }: FeedComposerProps) {
   const notify = useNotify();
   const utils = api.useUtils();
 
   const [postContent, setPostContent] = useState("");
+  const [toEmbassies, setToEmbassies] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [mediaUrlInput, setMediaUrlInput] = useState("");
   const [showMediaInput, setShowMediaInput] = useState(false);
@@ -148,6 +158,7 @@ function FeedComposer({
       accountId: allowPersonaPosting && activeAccountId ? activeAccountId : undefined,
       content: postContent.trim(),
       mediaUrls: mediaUrlInput.trim() ? [mediaUrlInput.trim()] : undefined,
+      embassy: embassyPosting && toEmbassies ? true : undefined,
     });
   };
 
@@ -238,6 +249,15 @@ function FeedComposer({
               <MediaImage />
               Media
             </Button>
+            {embassyPosting && (
+              <label className="text-label-secondary text-footnote flex items-center gap-2 px-2">
+                <Checkbox
+                  checked={toEmbassies}
+                  onCheckedChange={(checked) => setToEmbassies(checked === true)}
+                />
+                Also show at our embassies
+              </label>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -305,6 +325,7 @@ function FeedPostCard({
               </span>
             )}
             {personaType && <Badge variant="info">{personaType}</Badge>}
+            {post.embassyFrom && <Badge variant="outline">From {post.embassyFrom.name}</Badge>}
           </div>
           <span className="text-label-secondary text-footnote">
             {new Date(post.createdAt).toLocaleDateString()}
@@ -334,7 +355,7 @@ function FeedPostCard({
             <span className="sr-only">{label}</span>
           </span>
         ))}
-        {canModerate && (
+        {canModerate && !post.embassyFrom && (
           <Button
             type="button"
             variant="ghost"
@@ -426,6 +447,7 @@ export function ThinktankFeedTab({
   readOnlyNotice,
   accountCountryIds,
   canModerate = false,
+  embassyPosting = false,
 }: ThinktankFeedTabProps) {
   const notify = useNotify();
   const utils = api.useUtils();
@@ -475,6 +497,7 @@ export function ThinktankFeedTab({
             allowPersonaPosting={allowPersonaPosting}
             accountCountryIds={accountCountryIds}
             currentUserId={currentUserId}
+            embassyPosting={embassyPosting}
           />
         )}
 

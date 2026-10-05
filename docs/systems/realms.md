@@ -1,15 +1,19 @@
 # Realms — Places
 
-**Last updated:** 2026-09-30
-**Routes:** `/realms` (directory) · `/r/[realm]` (realm page) · `/r/[realm]/board` (realm board) · `/admin/realms`
-**Code:** `src/server/api/routers/realms/` (`index.ts`, `places.ts`), `src/server/modules/realms/`,
+**Last updated:** 2026-10-05
+**Routes:** `/realms` (directory) · `/r/[realm]` (realm page: Overview) · `/r/[realm]/board` · `/r/[realm]/nations` ·
+`/r/[realm]/manage` · `/admin/realms`
+**Code:** `src/server/api/routers/realms/` (`index.ts`, `places.ts`, `region.ts`), `src/server/modules/realms/`
+(`realms.region.ts`, `realms.region-actions.ts`), `src/app/r/[realm]/(region)/`, `src/lib/realms/realm-region.ts`,
 `src/server/api/routers/thinkpages/thinktanks/realm-board.ts`, `src/server/api/routers/thinkpages/realm-feed.ts`
-**Product model and decisions:** [Realms framework spec](../architecture/realms-framework-spec.md)
+**Product model and decisions:** [Realms framework spec](../architecture/realms-framework-spec.md) ·
+[region page design](../specs/2026-10-05-realm-regions-design.md)
 
 A realm is a world that nations live in (`Country.realmId`; IxWorld is `id: "default"`). The ownership,
 claims, lore index and admin parts are described in the framework spec. This page covers realms as
 **places**, the equivalent of a NationStates region: a directory to find them, a board where their nations
-talk, and a feed that can be scoped to one realm.
+talk, a region page with its founder, officers, factbook, embassies and poll, and a feed that can be scoped to
+one realm.
 
 ---
 
@@ -36,8 +40,10 @@ Each row reports only counted facts:
 | `maxNationsPerUser` | The realm's nation cap (`Realm.settings`, default 1)                                                                                                                                                      |
 | `board`             | `null` until someone first opens the board. Then `{ recentPosts, lastPostAt }`: board posts in the last `BOARD_ACTIVITY_WINDOW_DAYS` (7) days and the newest post's time, both from real-time `createdAt` |
 
-The page shows each realm with links to its page and board. It shows "Join · claim a nation" (or "Claim
-another nation") while the viewer is under the realm's cap. The link goes to the realm page, where
+Each row also carries `bannerUrl`, `tags` and `foundedAt` (`Realm.foundedAt`, else `createdAt`). The page shows
+each realm as a banner card with links to its page and board, and can be searched (name and description),
+sorted (name, most nations, most active board, newest) and filtered by tag; only tags some realm uses are
+offered. It shows "Join · claim a nation" (or "Claim another nation") while the viewer is under the realm's cap. The link goes to the realm page, where
 claiming happens (`ClaimableNations`, `realms.claimNationPage`).
 
 Below the list, a **realm feed** panel shows the ThinkPages feed for one realm. It defaults to the realm of
@@ -68,7 +74,7 @@ is no bulk migration. The full rules are in [ThinkTanks §4a](./thinktanks.md#4a
 | :------------------------------------------------------- | :------------------------------------------------------------------- |
 | Anyone (signed out included)                             | Read the board feed and the realm feed                               |
 | Owners of a nation in the realm                          | Post as a persona of one of their nations there, chat, join or leave |
-| Site admins and the realm's founder (`canModerateRealm`) | Everything members can, plus remove posts (`removeGroupPost`)        |
+| Site admins, the founder, officers with the `board` power | Everything members can, plus remove posts (`removeGroupPost`), mute and ban nations |
 
 `realms.getBoard({ slug })` returns:
 
@@ -86,16 +92,74 @@ The page has three tabs:
 - **Chat**: the board's ThinkShare conversation, for members only.
 - **Realm feed**: the realm-filtered ThinkPages feed.
 
-The realm page (`/r/[realm]`) links to the board.
+The board is the **Board** tab of the realm page. Board moderation (section 4):
 
-## 4. Known gaps
+- a **muted** nation's owner can read and chat but not post (`createGroupPost` refuses with the reason);
+- a **banned** nation's owner is not a board member (no posts, no chat; the membership sync drops them);
+- restrictions run for 1, 7 or 30 days or until lifted (`RealmBoardBan.until`), and the founder's and
+  officers' nations can't be restricted. Nobody can remove a nation from the realm.
+
+**Embassy posts:** a member can tick "Also show at our embassies". The post gets the pseudo-tag
+`embassy:<realmId>`, and `getGroupFeed` on a partner realm's board includes it (labelled "From <realm>") while
+the embassy is active. Moderators remove such posts on their own board only. Callers can't set `group:` or
+`embassy:` tags themselves; `createGroupPost` drops them.
+
+## 4. Realm page (`/r/[realm]`)
+
+The NationStates-style region page. Every tab shares a layout (`(region)/layout.tsx`): the banner, the name,
+description and tags, a key-stats strip (nations, population, founded, founder) and the tab bar: **Overview**,
+**Board**, **Nations**, **Map** (opens `/maps?realm=`) and, for the founder and officers, **Manage**.
+`realms.region.overview` serves the header and front page in one call; it hides draft and generating realms
+from everyone but their staff, like `getBySlug`.
+
+**Overview:** the factbook (or the description), "Read the lore" to the realm's `Portal:` page, the latest five
+board posts, and claimable nations. The sidebar (stacked under the main column below 1024px) has:
+
+- **Officers:** the founder, or "Administered by IxStats staff" when `Realm.ownerId` is `"system"`, and each
+  officer's title and nation;
+- **World Census:** the realm's top five nations in one of ten categories (`achievements.getCountryLeaderboard`
+  with `realm`), linking to `/leaderboards?realm=`;
+- **Realm poll:** the one open poll (`Poll.realmId`); owners of a nation in the realm vote (`polls.vote` checks);
+- **Embassies:** realms with an active embassy;
+- **Happenings** (`realms.region.happenings`): new nations, approved claims, embassies opened, officers
+  appointed and the realm's nations' public game events (`ActivityFeed`), newest first. Composed on read.
+
+**Nations:** every nation, the viewer's first, with **Play as** and **Leave realm** on their own. Leaving
+(`realms.region.abandonNation`) needs the nation's name typed; the nation is released (unclaimed), its board
+restriction cleared, and the player loses an officer post if it was their last nation there.
+
+### Governance
+
+| Who | Powers |
+| :-- | :----- |
+| Founder (`Realm.ownerId`), and site admins | Everything below, plus claims review and appointing officers |
+| Officer (`RealmOfficer`, custom title) | The powers the founder grants: `appearance` (factbook and header), `board` (moderation), `diplomacy` (embassies and the poll) |
+
+`realmPowers` / `hasRealmPower` (`realms.access.ts`) decide; `requireRealmStaff` (`realms.region.ts`) gates every
+Manage action and makes an archived realm read-only. Officers must own a nation in the realm (at most 12).
+Site admins assign founders in `/admin/realms` (the Founder column, `realms.region.assignFounder`); until then a
+realm is administered by staff.
+
+### Manage tab (`/r/[realm]/manage`)
+
+Sections follow the caller's powers: **Appearance** (banner `https://` address, description, up to five tags
+from `REALM_TAGS`), **Factbook** (the WikiOS canvas editor or wikitext; saved as wikitext plus rendered,
+sanitized HTML), **Officers**, **Claims** (founder only; the admin claims list narrowed to the realm),
+**Embassies** (propose to a directory realm; the other realm accepts or declines; either side closes; a
+proposal crossing one from the other realm opens the embassy at once), **Poll** (one open at a time, 2 to 10
+options, optional end date) and **Board moderation**.
+
+## 5. Known gaps
 
 - A member who leaves the board stays out until they press Join; their first visit is the only automatic join.
 - Chat participants who lose their last nation are removed on the next time anyone opens the board, not the
   moment the nation changes hands.
 - The `/dashboard` feed and trending are not realm-scoped. The realm feed is shown only on `/realms` and the board.
+- A mute stops board posts, not chat messages.
+- The banner is an image address; there is no upload.
+- Happenings has no history page beyond the latest 15 items.
 
-## 5. Map and transport isolation
+## 6. Map and transport isolation
 
 - Transport routes and hubs take their owning country's `realmId` when created (AT-1). Rows created before this
   were all saved to IxWorld: run `bun run db:backfill-transport-realm` (dry run) and then with `-- --apply`. It is

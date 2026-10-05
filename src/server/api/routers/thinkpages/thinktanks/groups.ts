@@ -30,10 +30,13 @@ import {
 } from "./access";
 import {
   getRealmBoardAccess,
+  groupFeedScope,
   groupPostTag,
+  groupPostTags,
   isRealmBoard,
   REALM_BOARD_TYPE,
   realmBoardPersona,
+  realmBoardPoster,
   requireRealmPersona,
 } from "./realm-board";
 
@@ -571,12 +574,11 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       const limit = input.limit ?? 20;
 
       // Signed-out callers and non-members see public groups only (SL-2).
-      await requireGroupReader(db, input.groupId, ctx.auth?.userId);
+      const { group } = await requireGroupReader(db, input.groupId, ctx.auth?.userId);
+      const { where, embassyFrom } = await groupFeedScope(db, group); // + embassy partners' posts
 
       const posts = await db.thinkpagesPost.findMany({
-        where: {
-          hashtags: { contains: `group:${input.groupId}` },
-        },
+        where,
         take: limit + 1,
         orderBy: { ixTimeTimestamp: "desc" },
         include: {
@@ -608,8 +610,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
 
       let nextCursor: string | undefined = undefined;
       if (posts.length > limit) {
-        const nextItem = posts.pop()!;
-        nextCursor = nextItem.id;
+        nextCursor = posts.pop()!.id;
       }
 
       return {
@@ -619,6 +620,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
           likeCount: p._count.reactions,
           replyCount: p._count.replies,
           repostCount: p._count.reposts,
+          embassyFrom: embassyFrom(p.hashtags),
         })),
         nextCursor,
       };
@@ -635,6 +637,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
         content: z.string().min(1).max(5000),
         hashtags: z.array(z.string()).optional(),
         mediaUrls: z.array(z.string()).optional(),
+        embassy: z.boolean().optional(), // realm boards: also show it on embassy partners' boards
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -642,9 +645,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       const currentUserId = auth.userId;
 
       const { group } = await requireGroupMember(db, input.groupId, currentUserId);
-      const board = isRealmBoard(group)
-        ? await getRealmBoardAccess(db, group.id, currentUserId)
-        : null;
+      const board = await realmBoardPoster(db, group, currentUserId); // throws when muted or banned
 
       let targetAccountId = input.accountId;
 
@@ -668,8 +669,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
         targetAccountId = personal.id;
       }
 
-      const groupTag = groupPostTag(input.groupId);
-      const allTags = input.hashtags ? [...new Set([...input.hashtags, groupTag])] : [groupTag];
+      const allTags = groupPostTags(input.groupId, input.hashtags, input.embassy && board?.realmId);
 
       const post = await db.thinkpagesPost.create({
         data: {

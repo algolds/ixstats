@@ -1,5 +1,6 @@
 import { isSystemOwner } from "~/lib/auth";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { REALM_POWERS, type RealmPower } from "~/lib/realms/realm-region";
 
 // ponytail: mirrors adminMiddleware's rule (owner/admin/staff or level ≤ 20); share it if a third caller appears.
 const SITE_ADMIN_ROLES: readonly string[] = ["owner", "admin", "staff"];
@@ -15,9 +16,42 @@ export function isSiteAdmin(actor: RealmActor): boolean {
   return SITE_ADMIN_ROLES.includes(actor.role?.name ?? "") || (actor.role?.level ?? 999) <= 20;
 }
 
-/** Realm moderation (claims, removals, content): site admins or the realm's founder (`Realm.ownerId` is a Clerk id). */
+/**
+ * The realm's founder powers (claims review, appointing officers, and every officer power): site admins or the
+ * realm's founder (`Realm.ownerId` is a Clerk id).
+ */
 export function canModerateRealm(actor: RealmActor, realm: { ownerId: string }): boolean {
   return isSiteAdmin(actor) || realm.ownerId === actor.clerkUserId;
+}
+
+export interface RealmOfficerGrant {
+  userId: string;
+  powers: readonly string[];
+}
+
+/**
+ * The officer powers `actor` holds in the realm: all of them for the founder and site admins, else the ones the
+ * founder granted them (`RealmOfficer.powers`, unknown entries ignored).
+ */
+export function realmPowers(
+  actor: RealmActor | null,
+  realm: { ownerId: string },
+  officers: readonly RealmOfficerGrant[]
+): RealmPower[] {
+  if (!actor) return [];
+  if (canModerateRealm(actor, realm)) return [...REALM_POWERS];
+  const grant = officers.find((o) => o.userId === actor.clerkUserId);
+  return REALM_POWERS.filter((power) => grant?.powers.includes(power));
+}
+
+/** Whether `actor` holds `power` in the realm (founder, site admin, or an officer granted it). */
+export function hasRealmPower(
+  actor: RealmActor | null,
+  realm: { ownerId: string },
+  officers: readonly RealmOfficerGrant[],
+  power: RealmPower
+): boolean {
+  return realmPowers(actor, realm, officers).includes(power);
 }
 
 /**

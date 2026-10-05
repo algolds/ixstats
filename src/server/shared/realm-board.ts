@@ -5,14 +5,16 @@
  * time someone opens it. Access follows nation ownership, not invites:
  *  - anyone may read the board feed (realms are never private — decision 19), see REALM_BOARD_PUBLIC_READ;
  *  - owners of a nation in the realm are members: they post, chat and write docs;
- *  - realm moderators (site admins and the realm's founder, `canModerateRealm`) manage it.
+ *  - realm moderators (site admins, the realm's founder and officers with the `board` power) manage it;
+ *  - a nation muted on the board cannot post; a banned nation's owner is not a member (no posts, no chat).
  * ThinktankMember rows are kept in step with ownership when the board is opened (`openRealmBoard`) so
  * the group chat (a ThinkShare conversation) and the roster work unchanged.
  */
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
-import { canModerateRealm } from "~/server/modules/realms/realms.access";
+import { hasRealmPower } from "~/server/modules/realms/realms.access";
 import { parsePrismaError } from "~/lib/prisma-error";
+import { embassyPostTag } from "~/lib/realms/realm-region";
 
 export const REALM_BOARD_TYPE = "realm_board";
 
@@ -24,7 +26,16 @@ export const groupPostTag = (groupId: string) => `group:${groupId}`;
 
 export const isRealmBoard = (group: { type: string }) => group.type === REALM_BOARD_TYPE;
 
-type BoardDb = Pick<PrismaClient, "realmBoard" | "realm" | "user" | "country">;
+type BoardDb = Pick<
+  PrismaClient,
+  "realmBoard" | "realm" | "user" | "country" | "realmOfficer" | "realmBoardBan"
+>;
+
+interface RealmBoardRestriction {
+  kind: "mute" | "ban";
+  until: Date | null;
+  reason: string | null;
+}
 
 interface RealmBoardAccess {
   isMember: boolean;
@@ -33,6 +44,8 @@ interface RealmBoardAccess {
   realmId: string | null;
   /** The caller's nations in the realm (empty when signed out or they own none). */
   ownedCountryIds: string[];
+  /** A mute or ban on one of the caller's nations; a ban outranks a mute. Never set for managers. */
+  restriction: RealmBoardRestriction | null;
 }
 
 const NO_ACCESS: RealmBoardAccess = {
@@ -41,7 +54,36 @@ const NO_ACCESS: RealmBoardAccess = {
   role: null,
   realmId: null,
   ownedCountryIds: [],
+  restriction: null,
 };
+
+/** Board mutes and bans in force on any of `countryIds` (expired ones are ignored). */
+export async function activeBoardRestrictions(
+  db: Pick<PrismaClient, "realmBoardBan">,
+  realmId: string,
+  countryIds: string[]
+) {
+  if (countryIds.length === 0) return [];
+  return db.realmBoardBan.findMany({
+    where: {
+      realmId,
+      countryId: { in: countryIds },
+      OR: [{ until: null }, { until: { gt: new Date() } }],
+    },
+    select: { countryId: true, kind: true, until: true, reason: true },
+  });
+}
+
+/** The strongest of `rows`: any ban over a mute, then the one that lasts longest. */
+function strongestRestriction(
+  rows: Array<{ kind: string; until: Date | null; reason: string | null }>
+): RealmBoardRestriction | null {
+  const rank = (r: { kind: string; until: Date | null }) =>
+    (r.kind === "ban" ? 2 : 1) * 1e15 + (r.until ? r.until.getTime() : 1e15 - 1);
+  const top = [...rows].sort((a, b) => rank(b) - rank(a))[0];
+  if (!top) return null;
+  return { kind: top.kind === "ban" ? "ban" : "mute", until: top.until, reason: top.reason };
+}
 
 /** Access of `clerkUserId` to the board group `groupId`, from nation ownership and realm moderation. */
 export async function getRealmBoardAccess(
@@ -62,16 +104,35 @@ export async function getRealmBoardAccess(
   ]);
   if (!realm || !user) return { ...NO_ACCESS, realmId: board.realmId };
 
-  const owned = await db.country.findMany({
-    where: { realmId: board.realmId, ownerUserId: user.id },
-    select: { id: true },
-  });
+  const [owned, officers] = await Promise.all([
+    db.country.findMany({
+      where: { realmId: board.realmId, ownerUserId: user.id },
+      select: { id: true },
+    }),
+    db.realmOfficer.findMany({
+      where: { realmId: board.realmId, userId: clerkUserId },
+      select: { userId: true, powers: true },
+    }),
+  ]);
   const ownedCountryIds = owned.map((c) => c.id);
-  const isManager = canModerateRealm(user, realm);
-  const isMember = isManager || ownedCountryIds.length > 0;
+  const isManager = hasRealmPower(user, realm, officers, "board");
+  const restriction = isManager
+    ? null
+    : strongestRestriction(await activeBoardRestrictions(db, board.realmId, ownedCountryIds));
+  const isMember = isManager || (ownedCountryIds.length > 0 && restriction?.kind !== "ban");
   const role =
     realm.ownerId === clerkUserId ? "owner" : isManager ? "admin" : isMember ? "member" : null;
-  return { isMember, isManager, role, realmId: board.realmId, ownedCountryIds };
+  return { isMember, isManager, role, realmId: board.realmId, ownedCountryIds, restriction };
+}
+
+/** A message for a restricted caller ("…until 12 Oct"), or null when they may post. */
+export function boardRestrictionMessage(restriction: RealmBoardRestriction | null): string | null {
+  if (!restriction) return null;
+  const until = restriction.until
+    ? ` until ${restriction.until.toISOString().slice(0, 10)}`
+    : " until a moderator lifts it";
+  const verb = restriction.kind === "ban" ? "banned from" : "muted on";
+  return `Your nation is ${verb} this board${until}${restriction.reason ? `: ${restriction.reason}` : ""}`;
 }
 
 type EnsureDb = Pick<
@@ -130,13 +191,14 @@ export async function ensureRealmBoard(
 
 type SyncDb = Pick<
   PrismaClient,
-  "thinktankMember" | "thinktankGroup" | "conversationParticipant" | "country"
+  "thinktankMember" | "thinktankGroup" | "conversationParticipant" | "country" | "realmBoardBan"
 >;
 
 /**
  * Keep ThinktankMember rows (and the chat's participants) in step with nation ownership:
  *  - the caller joins on first open when they are a member (a later "Leave" is respected);
- *  - members who no longer own a nation in the realm, and are not its founder, are deactivated.
+ *  - members who no longer own a nation in the realm (or whose every nation there is banned from the board),
+ *    and are not its founder, are deactivated.
  */
 export async function syncRealmBoardMembers(
   db: SyncDb,
@@ -150,10 +212,26 @@ export async function syncRealmBoardMembers(
     }),
     db.country.findMany({
       where: { realmId: board.realmId, ownerUserId: { not: null } },
-      select: { owner: { select: { clerkUserId: true } } },
+      select: { id: true, owner: { select: { clerkUserId: true } } },
     }),
   ]);
-  const ownerIds = new Set(owners.map((c) => c.owner?.clerkUserId).filter(Boolean));
+  const banned = new Set(
+    (
+      await activeBoardRestrictions(
+        db,
+        board.realmId,
+        owners.map((c) => c.id)
+      )
+    )
+      .filter((r) => r.kind === "ban")
+      .map((r) => r.countryId)
+  );
+  const ownerIds = new Set(
+    owners
+      .filter((c) => !banned.has(c.id))
+      .map((c) => c.owner?.clerkUserId)
+      .filter(Boolean)
+  );
 
   const keep = (userId: string) =>
     ownerIds.has(userId) ||
@@ -270,4 +348,98 @@ export async function realmBoardPersona(
     select: { id: true },
   });
   return created.id;
+}
+
+/** The realms `realmId` has an active embassy with, by id. */
+export interface EmbassyPartner {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export async function embassyPartners(
+  db: Pick<PrismaClient, "realmEmbassy">,
+  realmId: string
+): Promise<Map<string, EmbassyPartner>> {
+  const realm = { select: { id: true, name: true, slug: true } } as const;
+  const rows = await db.realmEmbassy.findMany({
+    where: { status: "active", OR: [{ fromRealmId: realmId }, { toRealmId: realmId }] },
+    select: { fromRealmId: true, fromRealm: realm, toRealm: realm },
+  });
+  return new Map(
+    rows.map((row) => {
+      const partner = row.fromRealmId === realmId ? row.toRealm : row.fromRealm;
+      return [partner.id, partner] as const;
+    })
+  );
+}
+
+/** The partner realm whose embassy tag a post carries, if any. */
+export function embassySource(
+  hashtags: string | null,
+  partners: Map<string, EmbassyPartner>
+): EmbassyPartner | null {
+  if (!hashtags || partners.size === 0) return null;
+  for (const [realmId, partner] of partners) {
+    if (hashtags.includes(`"${embassyPostTag(realmId)}"`)) return partner;
+  }
+  return null;
+}
+
+/**
+ * Where a group feed reads from: the group's own posts, plus — on a realm board — the embassy-flagged posts
+ * of realms it has an active embassy with. `embassyFrom` labels those posts with their realm.
+ */
+export async function groupFeedScope(
+  db: Pick<PrismaClient, "realmBoard" | "realmEmbassy">,
+  group: { id: string; type: string }
+) {
+  const onGroup = { hashtags: { contains: `group:${group.id}` } };
+  const board = isRealmBoard(group)
+    ? await db.realmBoard.findUnique({ where: { groupId: group.id }, select: { realmId: true } })
+    : null;
+  const partners = board
+    ? await embassyPartners(db, board.realmId)
+    : new Map<string, EmbassyPartner>();
+  /** The partner realm a post was cross-posted from, if any. */
+  const embassyFrom = (hashtags: string | null) => embassySource(hashtags, partners);
+  if (partners.size === 0) return { where: onGroup, embassyFrom };
+  const embassyPosts = [...partners.keys()].map((realmId) => ({
+    visibility: { not: "removed" },
+    hashtags: { contains: `"${embassyPostTag(realmId)}"` },
+  }));
+  return { where: { OR: [onGroup, ...embassyPosts] }, embassyFrom };
+}
+
+/**
+ * A group post's tags: the caller's own (never a `group:` or `embassy:` pseudo-tag, which would place the post
+ * on another board), the group's tag, and the realm's embassy tag when the post is flagged for embassies.
+ */
+export function groupPostTags(
+  groupId: string,
+  own: string[] = [],
+  embassyRealmId?: string | false | null
+) {
+  const system = [
+    groupPostTag(groupId),
+    ...(embassyRealmId ? [embassyPostTag(embassyRealmId)] : []),
+  ];
+  const mine = own.filter((t) => !t.startsWith("group:") && !t.startsWith("embassy:"));
+  return [...new Set([...mine, ...system])];
+}
+
+/**
+ * The caller's access to a realm board they are posting to (null for any other group). Throws FORBIDDEN, with
+ * the reason, when one of their nations is muted or banned on the board.
+ */
+export async function realmBoardPoster(
+  db: BoardDb,
+  group: { id: string; type: string },
+  clerkUserId: string
+): Promise<RealmBoardAccess | null> {
+  if (!isRealmBoard(group)) return null;
+  const access = await getRealmBoardAccess(db, group.id, clerkUserId);
+  const restricted = boardRestrictionMessage(access.restriction);
+  if (restricted) throw new TRPCError({ code: "FORBIDDEN", message: restricted });
+  return access;
 }

@@ -17,7 +17,14 @@ import {
 
 type AccessDb = Pick<
   PrismaClient,
-  "thinktankGroup" | "thinktankMember" | "realmBoard" | "realm" | "user" | "country"
+  | "thinktankGroup"
+  | "thinktankMember"
+  | "realmBoard"
+  | "realm"
+  | "user"
+  | "country"
+  | "realmOfficer"
+  | "realmBoardBan"
 >;
 type AccountDb = Pick<PrismaClient, "thinkpagesAccount">;
 

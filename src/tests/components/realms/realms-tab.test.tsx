@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { RealmsTab } from "~/app/admin/realms/_components/RealmsTab";
 
 const mutate = jest.fn();
+const assignFounder = jest.fn();
 const realm = {
   id: "r_eurth",
   slug: "eurth",
@@ -28,12 +29,27 @@ jest.mock("~/trpc/react", () => ({
       },
       adminCreateRealm: { useMutation: () => ({ mutate: jest.fn(), isPending: false }) },
       adminUpdateRealm: { useMutation: () => ({ mutate, isPending: false }) },
+      adminListUsers: { useQuery: () => ({ data: [] }) },
+      region: {
+        assignFounder: {
+          useMutation: () => ({ mutateAsync: assignFounder, isPending: false }),
+        },
+      },
     },
   },
 }));
 
 describe("RealmsTab nation cap (decision 15)", () => {
-  beforeEach(() => mutate.mockClear());
+  beforeEach(() => {
+    mutate.mockClear();
+    assignFounder.mockClear();
+  });
+
+  it("shows a staff-administered realm's founder as IxStats staff", () => {
+    render(<RealmsTab />);
+    expect(screen.getByRole("columnheader", { name: "Founder" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "IxStats staff" })).toBeInTheDocument();
+  });
 
   it("shows each realm's nations-per-player cap", () => {
     render(<RealmsTab />);
@@ -53,5 +69,7 @@ describe("RealmsTab nation cap (decision 15)", () => {
     expect(mutate).toHaveBeenCalledWith(
       expect.objectContaining({ id: "r_eurth", maxNationsPerUser: 5 })
     );
+    // The founder was left as it was: nothing to assign.
+    expect(assignFounder).not.toHaveBeenCalled();
   });
 });

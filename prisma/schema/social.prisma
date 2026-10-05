@@ -511,6 +511,7 @@ model Poll {
   isActive         Boolean        @default(true)
   endDate          DateTime?
   countryId        String?        // Target country (optional, if null, global)
+  realmId          String?        // A realm poll (the realm page's sidebar); only its nations' owners vote
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   options          PollOption[]
@@ -519,8 +520,10 @@ model Poll {
   thinkpagesPosts  ThinkpagesPost[] @relation("PostPolls")
 
   country          Country?       @relation("CountryPolls", fields: [countryId], references: [id], onDelete: Cascade)
+  realm            Realm?         @relation("RealmPolls", fields: [realmId], references: [id], onDelete: Cascade)
 
   @@index([countryId])
+  @@index([realmId, isActive])
   @@index([isActive])
 }
 

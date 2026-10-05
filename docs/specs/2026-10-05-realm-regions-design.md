@@ -1,6 +1,6 @@
 # Realms as NationStates-style regions — design
 
-**Last updated:** 2026-10-05 · **Status:** design agreed with the owner, not yet built
+**Last updated:** 2026-10-05 · **Status:** built on `rose-garden` (2026-10-05); see [realms.md §4](../systems/realms.md#4-realm-page-rrealm)
 
 Turns `/r/[realm]` into a NationStates-style region page. Decisions below were made by the owner on 2026-10-05; the
 current-state audit is summarised at the end. Related: [realms.md](../systems/realms.md),
@@ -44,15 +44,17 @@ On phones (below 1024px) the sidebar panels stack under the main column in the o
 
 ## Data model (additive)
 
-- `Realm`: `bannerUrl`, `factbookHtml` (sanitized), `factbookUpdatedAt`, `tags String[]`, `foundedAt` (default
-  `createdAt`). `ownerId` stays the founder (`"system"` = staff-administered).
+- `Realm`: `bannerUrl`, `factbookWikitext` and `factbookHtml` (sanitized), `factbookUpdatedAt`, `factbookUpdatedBy`,
+  `tags String[]`, `foundedAt` (nullable; null shows `createdAt`). `ownerId` stays the founder (`"system"` =
+  staff-administered).
 - `RealmOfficer`: `realmId`, `userId` (Clerk id), `title`, `powers String[]` (`appearance`, `board`, `diplomacy`),
   `appointedBy`, timestamps; unique `(realmId, userId)`.
-- `RealmEmbassy`: `realmAId`, `realmBId`, `status` (`proposed` / `active` / `closing` / `closed`), `proposedBy`,
-  timestamps; unique pair.
+- `RealmEmbassy`: `fromRealmId`, `toRealmId`, `pairKey` (unique pair), `status` (`proposed` / `active` /
+  `closed`), `proposedBy`, `respondedBy`, `openedAt`, `closedAt`.
 - `RealmBoardBan`: `realmId`, `countryId`, `kind` (`mute` / `ban`), `reason`, `until?`, `createdBy`.
 - Polls: reuse `Poll` with a nullable `realmId` (one active per realm).
-- Board posts: an `embassyVisible` flag on realm-board posts for cross-posting.
+- Board posts: an `embassy:<realmId>` pseudo-hashtag on realm-board posts for cross-posting (built this way
+  instead of a column, like the existing `group:<id>` tag).
 - Happenings: reuse the event spine / activity rows filtered by realm rather than a new table, where possible.
 
 ## Server

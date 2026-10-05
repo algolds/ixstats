@@ -40,6 +40,20 @@ export const pollsVotingRouter = createTRPCRouter({
         });
       }
 
+      // A realm poll is for the realm's nations: the voter must own one there.
+      if (poll.realmId) {
+        const nation = await db.country.findFirst({
+          where: { realmId: poll.realmId, ownerUserId: user.id },
+          select: { id: true },
+        });
+        if (!nation) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Only owners of a nation in this realm can vote in its poll.",
+          });
+        }
+      }
+
       // Validate optionIds belong to this poll
       const validOptionIds = new Set(poll.options.map((o: { id: string }) => o.id));
       for (const optId of input.optionIds) {

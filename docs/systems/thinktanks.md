@@ -122,11 +122,15 @@ Every realm has a board, the NationStates regional message board, built on this 
   - **Read:** anyone, signed out included (`REALM_BOARD_PUBLIC_READ = true`; realms are never private).
     Non-members see the feed without the frosted blur, and a notice replaces the composer.
   - **Member (post, chat, docs):** owners of a nation in the realm (`Country.ownerUserId`), and its moderators.
-  - **Manager (moderate):** site admins and the realm's founder (`canModerateRealm`).
+    A nation **banned** from the board (`RealmBoardBan`) makes its owner a non-member; a **muted** one keeps
+    them a member who can't post (`restriction`, checked by `createGroupPost`).
+  - **Manager (moderate):** site admins, the realm's founder and officers with the `board` power
+    (`hasRealmPower`). See [realms §4](./realms.md#4-realm-page-rrealm).
   - A leftover `ThinktankMember` row never lets someone post after they lose their last nation there.
 - **Membership sync.** Each `realms.getBoard` call joins the caller on their first visit (a member row
   plus a chat participant; a later Leave is respected until they press Join). It also deactivates the
-  rows and chat participants of anyone who no longer owns a nation in the realm (the founder is kept),
+  rows and chat participants of anyone who no longer owns a nation in the realm, or whose every nation there
+  is banned from the board (the founder is kept),
   and recounts `memberCount`. `joinThinktank` on a board needs nation ownership, not an invite.
 - **Personas.** A persona posting to a board must belong to a nation of the realm (`requireRealmPersona`).
   "Post as yourself" uses the caller's oldest persona of one of their nations there, or creates a

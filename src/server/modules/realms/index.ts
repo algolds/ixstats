@@ -10,6 +10,9 @@ export { listMyNations } from "./realms.my-nations";
 export { DEFAULT_REALM_ID, resolveViewerRealmId } from "./realms.context";
 export {
   canModerateRealm,
+  hasRealmPower,
+  realmPowers,
+  type RealmOfficerGrant,
   isRealmOpen,
   isRealmPublished,
   isSiteAdmin,

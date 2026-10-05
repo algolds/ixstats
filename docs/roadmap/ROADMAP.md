@@ -211,7 +211,7 @@ shipped system.
 | Order | Item | Refs | Size |
 |---|---|---|---|
 | 1 | ✅ **Done (2026-10-05):** `isRealmOpen()` status guard for the hub and claims (later reused by jobs and payouts) | AT-7 | S |
-| 2 | Assign founders (`ownerId`, thumbnail, delete realm) | AT-8 | S |
+| 2 | Assign founders (`ownerId`, thumbnail, delete realm). **Partial (2026-10-05):** site admins assign founders in `/admin/realms`; thumbnail upload and delete are open | AT-8 | S |
 | 3 | Claimants see pending and rejected claims; rejection notifies | AT-5 | S |
 | 4 | Builder creates nations in any realm (realm input, nation cap), with prefill from a claimed nation page. **Partial (#49):** the builder is realm-aware with nation caps; prefill is open | AT-3, PF§4 | M |
 | 5 | ✅ **Done (#49):** nation switcher in the nav and on the passport | PF§4 | M |
@@ -225,6 +225,7 @@ shipped system.
 | 13 | Procedural realm generation: wizard option plus `Realm.seed` / `generationParams` writes (the pipeline already supports it) | AT-15, PF§4 | M |
 | 14 | ✅ **Done (2026-10-05):** PNG realms get adjacency (`rebuildAdjacency` after import) | AT-16 | S |
 | 15 | ✅ **Done (2026-10-05):** Admin Realm Users tab supports several realms per user | AT-19 | S |
+| 16 | ✅ **Done (2026-10-05):** NationStates-style realm pages: banner and stats strip, factbook, founder and officers with powers, embassies with cross-posting, realm poll, census, happenings, board mutes and bans, Manage tab, leaving a realm, directory tags, search and sort ([design](../specs/2026-10-05-realm-regions-design.md)) | — | L |
 
 **Exit:** a test founder creates a realm (by application), approves claims, moderates, archives it, and nothing leaks into
 IxWorld.

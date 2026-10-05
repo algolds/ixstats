@@ -517,6 +517,19 @@ model Realm {
   countries       Country[]        @relation("RealmCountries")
   claims          RealmClaim[]
   pages           RealmPage[]
+  /// Region page (docs/specs/2026-10-05-realm-regions-design.md): banner, factbook, directory tags.
+  bannerUrl         String?
+  factbookWikitext  String?   // source, edited with the WikiOS canvas editor
+  factbookHtml      String?   // rendered and sanitized on save
+  factbookUpdatedAt DateTime?
+  factbookUpdatedBy String?   // Clerk userId
+  tags              String[]  @default([]) // from REALM_TAGS (src/lib/realms/realm-tags.ts)
+  foundedAt         DateTime? // shown as "founded"; null = createdAt
+  officers          RealmOfficer[]
+  embassiesProposed RealmEmbassy[]   @relation("EmbassyFrom")
+  embassiesReceived RealmEmbassy[]   @relation("EmbassyTo")
+  boardBans         RealmBoardBan[]
+  polls             Poll[]           @relation("RealmPolls")
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
@@ -765,6 +778,63 @@ model RealmClaim {
   @@index([userId])
   @@index([countryId])
   @@map("realm_claims")
+}
+
+/// A realm officer appointed by its founder: a custom title and a set of powers
+/// (`appearance` = factbook and header, `board` = board moderation, `diplomacy` = embassies and polls).
+model RealmOfficer {
+  id          String   @id @default(cuid())
+  realmId     String
+  realm       Realm    @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  userId      String   // Clerk userId
+  title       String
+  powers      String[] @default([])
+  appointedBy String   // Clerk userId
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([realmId, userId])
+  @@index([userId])
+  @@map("realm_officers")
+}
+
+/// An embassy between two realms: one proposes, the other accepts. Board posts flagged for embassies show
+/// on the partner realm's board while the embassy is active.
+model RealmEmbassy {
+  id          String    @id @default(cuid())
+  fromRealmId String
+  fromRealm   Realm     @relation("EmbassyFrom", fields: [fromRealmId], references: [id], onDelete: Cascade)
+  toRealmId   String
+  toRealm     Realm     @relation("EmbassyTo", fields: [toRealmId], references: [id], onDelete: Cascade)
+  pairKey     String    @unique // the two realm ids, sorted and joined with ":" — one embassy per pair
+  status      String    @default("proposed") // proposed | active | closed
+  proposedBy  String    // Clerk userId
+  respondedBy String?   // Clerk userId who accepted, declined or closed it
+  openedAt    DateTime?
+  closedAt    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([fromRealmId, status])
+  @@index([toRealmId, status])
+  @@map("realm_embassies")
+}
+
+/// A nation stopped from using its realm's board: `mute` = no board posts, `ban` = off the board (posts and
+/// chat). Founders and officers can only mute or ban; they cannot remove a nation from the realm.
+model RealmBoardBan {
+  id        String    @id @default(cuid())
+  realmId   String
+  realm     Realm     @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  countryId String
+  kind      String    // mute | ban
+  reason    String?
+  until     DateTime? // null = until lifted
+  createdBy String    // Clerk userId
+  createdAt DateTime  @default(now())
+
+  @@unique([realmId, countryId])
+  @@map("realm_board_bans")
 }
 
 /// One wiki page belonging to a realm's lore (indexed, not copied — WikiOS renders it live from `wikiSource`).
