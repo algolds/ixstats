@@ -91,7 +91,6 @@ partly done item.
 | WK-16 | BUG | Revert and rollback skip the edge-cache purge | `editing.ts` | S |
 | WK-17 | STUB | BlurHashes are generated from the filename, not the image | `core/blurhash-service.ts` | S–M |
 | WK-19 | DEAD | Watchers are never notified when a watched page changes | `wiki.prisma` | S–M |
-| WK-20 | UNFINISHED | Forum moderation happens on XenForo only (D12); make the help copy say so | `routers/forum/account.ts` | S |
 
 ### Vault, cards & achievements (VT)
 
@@ -120,11 +119,11 @@ partly done item.
 
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
-| PL-12 | DEBT | `next.config.js` isn't tracked; the web process isn't under PM2 (see §1) | — | S |
-| PL-16 | DEBT | `src/tests` isn't typechecked in CI (≈890 errors on 2026-10-05; scripts, seeds, proxy, instrumentation and content are) | `ci.yml` | M |
+| PL-12 | DEBT | The web process isn't under PM2 (ops, see §1). `next.config.js` is per-environment by design; `next.config.example.js` is its template | — | S |
 
-**Router test gaps:** 35 of 69 routers had no router-level test on 2026-09-30; the largest are thinkpages, lore-cards,
-national-issues, forum, blurbs and card-market.
+**Router test gaps:** all 69 routers have a router-level test (2026-10-05). 63 sub-router files are still imported by
+no test; the largest are `wikios/templates`, `wikios/page-content`, `admin/worldEvents`, `admin/wiki` and
+`diplomaticScenarios/scenarios`.
 
 ## 3. Doc-audit items (PF§1–PF§7)
 

@@ -27,7 +27,7 @@ All five phases were worked the same day on `rose-garden`; the commits and merge
   WikiOS edit integrity, uploads and the `wikios` rate limits wait on it), D2 (defense force structure), and the
   sign-offs listed in the final hand-off: annual policy upkeep, the stability policy scale, Vexel attach refusing until
   rendering exists, notification preferences now applying to saved rows.
-- **Engineering still open:** typecheck `src/tests` (≈890 errors); Vexel PNG rendering; blocking inside group chats;
+- **Engineering still open:** Vexel PNG rendering; blocking inside group chats;
   crisis-event producer and meeting decisions on the event spine (M4); M3–M7 as planned. The live backlog is
   [backlog.md](backlog.md).
 - **Ops still open:** deploy 1.4 (runbook), Redis on in production, remove the nginx CSP override, run the web process
