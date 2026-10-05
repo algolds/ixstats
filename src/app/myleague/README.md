@@ -12,11 +12,11 @@ The route tree is wrapped in `AuthenticationGuard` (`layout.tsx`), so a signed-i
 
 ## Routes
 
-| Route | Description |
-|-------|-------------|
-| `/myleague` | Lobby — featured league hero, sport/status filters, search, "Create League" wizard |
-| `/myleague/[id]` | League workspace — tabbed SPA (overview, standings, schedule, bracket/races, draft, teams, history) with inline simulation controls |
-| `/myleague/[id]/season/[seasonId]` | Season detail — final standings, schedule, bracket/races for one historical season |
+| Route                              | Description                                                                                                                         |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `/myleague`                        | Lobby — featured league hero, sport/status filters, search, "Create League" wizard                                                  |
+| `/myleague/[id]`                   | League workspace — tabbed SPA (overview, standings, schedule, bracket/races, draft, teams, history) with inline simulation controls |
+| `/myleague/[id]/season/[seasonId]` | Season detail — final standings, schedule, bracket/races for one historical season                                                  |
 
 The workspace is a single page; tabs sync to a `?tab=` query param via `pushState` + a `popstate`
 listener (no Next.js route transitions). Sub-route segments for standings/bracket/etc. do **not**
@@ -27,15 +27,15 @@ exist — they are tabs.
 Sport presets live in `src/lib/sports/presets.ts`. Archetype drives which tabs and schedule format
 apply.
 
-| Sport | Archetype | Governing body |
-|-------|-----------|----------------|
-| Soccer ⚽ | `league` | World Association Football Federation |
-| American Football 🏈 | `division_conference` | International Gridiron Federation |
-| Ice Hockey 🏒 | `division_conference` | World Ice Hockey Federation |
-| Basketball 🏀 | `division_conference` | Global Basketball Association |
-| Baseball ⚾ | `division_conference` | World Baseball Confederation |
-| Formula 1 🏎️ | `circuit` | International Racing Federation |
-| Boxing 🥊 | `bracket` | Istroyan Combat Commission |
+| Sport                | Archetype             | Governing body                        |
+| -------------------- | --------------------- | ------------------------------------- |
+| Soccer ⚽            | `league`              | World Association Football Federation |
+| American Football 🏈 | `division_conference` | International Gridiron Federation     |
+| Ice Hockey 🏒        | `division_conference` | World Ice Hockey Federation           |
+| Basketball 🏀        | `division_conference` | Global Basketball Association         |
+| Baseball ⚾          | `division_conference` | World Baseball Confederation          |
+| Formula 1 🏎️         | `circuit`             | International Racing Federation       |
+| Boxing 🥊            | `bracket`             | Istroyan Combat Commission            |
 
 Boxing (`bracket`) exposes a **Bracket** tab; F1 (`circuit`) exposes a **Race Results** tab. A
 **Draft** tab appears only when the active/latest season has draft picks.
@@ -77,15 +77,15 @@ server-side ownership check.
 
 Page components are thin; the workspace is `LeagueRouter` in `src/components/sports/league/`:
 
-| Component | Role |
-|-----------|------|
-| `LeagueCreator` | Multi-step create-league dialog |
-| `SportsShell` / `SportsSectionTabs` (`src/components/sports/core/`) | Shared workspace shell (page header, Inspector for the focus panel) + section tabs (also used by MyClub) |
-| `SportsFocusProvider` / `SportsFocusPanel` | URL-reflected Focus panel for teams, athletes, and matches |
-| `LeagueMasthead`, `LeagueBrandWidgets`, `LeagueControlDeck`, `MatchdayTape`, `NextMatchCountdown` | Header, brand/champion widgets, simulation controls |
-| `tabs/League*Tab.tsx` (`BracketView`, `RaceResults`, `DraftPicksView`) | Tab content views |
-| `MatchTickerSim`, `MatchDetailModal`, `match/MatchCenter` | Live match replay, per-match detail, COMPETE match center |
-| `TeamSettingsModal`, `LeagueSettingsModal` (`settings/`) | Team and league settings |
+| Component                                                                                         | Role                                                                                                     |
+| ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `LeagueCreator`                                                                                   | Multi-step create-league dialog                                                                          |
+| `SportsShell` / `SportsSectionTabs` (`src/components/sports/core/`)                               | Shared workspace shell (page header, Inspector for the focus panel) + section tabs (also used by MyClub) |
+| `SportsFocusProvider` / `SportsFocusPanel`                                                        | URL-reflected Focus panel for teams, athletes, and matches                                               |
+| `LeagueMasthead`, `LeagueBrandWidgets`, `LeagueControlDeck`, `MatchdayTape`, `NextMatchCountdown` | Header, brand/champion widgets, simulation controls                                                      |
+| `tabs/League*Tab.tsx` (`BracketView`, `RaceResults`, `DraftPicksView`)                            | Tab content views                                                                                        |
+| `MatchTickerSim`, `MatchDetailModal`, `match/MatchCenter`                                         | Live match replay, per-match detail, COMPETE match center                                                |
+| `TeamSettingsModal`, `LeagueSettingsModal` (`settings/`)                                          | Team and league settings                                                                                 |
 
 Shared sport views `StandingsTable`, `LatestResults`, `Scoreboard`, `PlayerCard` come from
 `src/components/sports/`; match surfaces from `src/components/sports/surfaces/`; sport
@@ -97,20 +97,20 @@ All data flows through `api.sports.*` (tRPC). The `sports` router is split by do
 `src/server/api/routers/sports/` and recombined with `mergeRouters` in `index.ts`, then registered
 in `root.ts`. Procedures used by these pages:
 
-| Procedure | Use |
-|-----------|-----|
-| `getLeagues` | Lobby grid + featured league |
-| `getLeague` | Workspace (league, teams, seasons) |
-| `createLeague` / `updateLeague` | Create wizard / settings modal |
-| `getStandings`, `getSchedule`, `getSeason` | Standings, schedule, season detail |
-| `getBracket`, `getRaceResults`, `getDraftPicks` | Boxing / F1 / draft tabs |
-| `getLeagueArchive`, `getAllTimeRecords` | History tab (`almanac.ts`) |
+| Procedure                                                                                                | Use                                                                                           |
+| -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `getLeagues`                                                                                             | Lobby grid + featured league                                                                  |
+| `getLeague`                                                                                              | Workspace (league, teams, seasons)                                                            |
+| `createLeague` / `updateLeague`                                                                          | Create wizard / settings modal                                                                |
+| `getStandings`, `getSchedule`, `getSeason`                                                               | Standings, schedule, season detail                                                            |
+| `getBracket`, `getRaceResults`, `getDraftPicks`                                                          | Boxing / F1 / draft tabs                                                                      |
+| `getLeagueArchive`, `getAllTimeRecords`                                                                  | History tab (`almanac.ts`)                                                                    |
 | `startSeason`, `simulateMatchDay`, `simulateSingleMatch`, `simulateFullSeason`, `transitionToNextSeason` | Simulation controls — the league's creator or a system owner only (`sports/league-access.ts`) |
-| `resetSeason`, `regenerateSchedule`, `overrideMatchResult`, `transferTeam`, `setFeaturedLeague` | Commissioner / admin controls |
+| `resetSeason`, `regenerateSchedule`, `overrideMatchResult`, `transferTeam`, `setFeaturedLeague`          | Commissioner / admin controls                                                                 |
 
 Other domains in the same router: `teams` (`getTeam`, `updateTeam`, `claimTeam`, `getPlayer`),
 `club` (tactics, lineups, training, sponsors, stadium upgrades, ticket pricing, patron saints,
-`getMyClubs`, `getMyClubOverview`), `transfers` (listings/bids), `standings` (standings, brackets,
+`getMyClubs`), `transfers` (listings/bids), `standings` (standings, brackets,
 races, team history, live matches), `almanac` (archive, athlete careers, records), and
 `seasons/lifecycle.ts` (`collectMatchRevenue`, `getMatchDetails`).
 

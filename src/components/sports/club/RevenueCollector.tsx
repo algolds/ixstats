@@ -38,7 +38,6 @@ export function RevenueCollector({
   const { data: pending } = api.sports.previewMatchRevenue.useQuery({ teamId });
   const collect = api.sports.collectMatchRevenue.useMutation({
     onSuccess: () => {
-      void utils.sports.getMyClubOverview.invalidate({ teamId });
       void utils.sports.previewMatchRevenue.invalidate({ teamId });
       onCollected?.();
     },

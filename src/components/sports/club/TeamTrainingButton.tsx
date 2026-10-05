@@ -11,11 +11,8 @@ interface TeamTrainingButtonProps {
 }
 
 export function TeamTrainingButton({ teamId, playerCount, onTrained }: TeamTrainingButtonProps) {
-  const utils = api.useUtils();
-
   const teamTraining = api.sports.teamTraining.useMutation({
     onSuccess: () => {
-      utils.sports.getMyClubOverview.invalidate({ teamId });
       onTrained?.();
     },
   });
