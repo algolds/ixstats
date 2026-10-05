@@ -31,10 +31,11 @@ The former `/dashboard/world`, `/dashboard/diplomacy`, `/dashboard/feed`, and
 - **Unified feed** (`UnifiedDashboardSection`): tabbed activity stream — All
   activity, Following (country owners only), Community — with an inline
   ThinkPages composer (`GlassCanvasComposer`) and account switching.
-- **Community sidebar**: Trending Now (`TrendingSectionWidget`), Countries to
-  Explore (`CountriesToExploreCard`), and Economic Tier Distribution.
-- **Left rail widgets**: player/nation widget with Mail / Issues / Actions
-  quick-actions and active-crisis banner, `VaultWidget`, and quick links.
+- **Around IxStates Inspector**: Trending Now (`TrendingSectionWidget`), Countries to
+  Explore (`CountriesToExploreCard`), and Economic Tier Distribution. An aside at
+  1280px and up; below that the "Trends" button in the feed toolbar opens it as a sheet.
+- The player widget, Vault and quick links no longer have a page column: they live in
+  the account menu and the app source list.
 - `NewVersionNotice` alert banner; `BlurbSection` daily-prompt widget.
 - **Widgets**: sidebar and community widgets are plain `Card`s with an `h2` title under
   the page's visually hidden `h1` ("Dashboard"). The pressable Blurb card is itself the
@@ -45,11 +46,10 @@ The former `/dashboard/world`, `/dashboard/diplomacy`, `/dashboard/feed`, and
 ```
 page.tsx (server: resolves signed-in country id) → DashboardPageClient
   → DashboardErrorBoundary → DashboardRouter(initialCountryId)
-  DashboardSidebarLayout (icon rail + content; collapse disabled here)
+  DashboardSidebarLayout (a plain centred column; no rail)
     ├ heroSection:  DashboardHero      (collapsible; HeroSnapshotPanels)
     ├ alerts:       NewVersionNotice
-    ├ left rail:    DashboardPlayerWidget · VaultWidget · DashboardQuickLinks
-    └ children:     UnifiedDashboardSection (feed + community sidebar)
+    └ children:     UnifiedDashboardSection (feed + Inspector)
 ```
 
 Key files (all under `src/components/dashboard/`):
@@ -58,10 +58,8 @@ Key files (all under `src/components/dashboard/`):
 |-----------|------|
 | `DashboardRouter.tsx` | Top-level orchestration (global stats, map-link status, hero collapse) |
 | `hero/DashboardHero.tsx`, `hero/HeroSnapshotPanels.tsx` | Nation hero and snapshot panels |
-| `sidebar/DashboardSidebarLayout.tsx` | Shared rail/content grid; mounts `DashboardPlayerWidget`, `VaultWidget` (from `src/components/mycountry/shell/`) and `DashboardQuickLinks` |
-| `sidebar/DashboardPlayerWidget.tsx` | Nation widget, message/issue/action counts |
-| `sidebar/DashboardQuickLinks.tsx` | Quick links, status, build version |
-| `sections/UnifiedDashboardSection.tsx` | Feed tabs, composer, community widgets |
+| `sidebar/DashboardSidebarLayout.tsx` | Shared content layout; renders a collapsible rail only when given `sidebarContent` |
+| `sections/UnifiedDashboardSection.tsx` | Feed tabs, composer, Inspector with the community widgets |
 | `sections/UnifiedFeedContent.tsx` | Feed/Following stream rendering |
 | `sections/TrendingSectionWidget.tsx` | Trending content |
 | `sections/CountriesToExploreCard.tsx` | Suggested countries |

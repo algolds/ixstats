@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, type ReactNode } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DashboardSidebarLayout } from "./sidebar/DashboardSidebarLayout";
 import { NewVersionNotice } from "./NewVersionNotice";
 import { UnifiedDashboardSection } from "./sections/UnifiedDashboardSection";
@@ -9,12 +9,11 @@ import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 
 interface DashboardRouterProps {
-  discordBadge?: ReactNode;
   /** Country id resolved on the server, used until getProfile loads so map status fetches in parallel. */
   initialCountryId?: string;
 }
 
-export function DashboardRouter({ discordBadge, initialCountryId = "" }: DashboardRouterProps) {
+export function DashboardRouter({ initialCountryId = "" }: DashboardRouterProps) {
   const { data: globalStats } = api.countries.getGlobalStats.useQuery(undefined, {
     staleTime: 300_000,
   });
@@ -53,9 +52,6 @@ export function DashboardRouter({ discordBadge, initialCountryId = "" }: Dashboa
           <DashboardHero collapsed={heroCollapsed} onCollapsedChange={setHeroCollapsed} />
         ) : undefined
       }
-      heroCollapsed={heroCollapsed}
-      onHeroExpand={() => setHeroCollapsed(false)}
-      discordBadge={discordBadge}
       disableCollapse={true}
     >
       <UnifiedDashboardSection globalStats={globalStats} />

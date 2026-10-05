@@ -4,14 +4,8 @@ import { useUser } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { DashboardRouter } from "~/components/dashboard/DashboardRouter";
 import { IxStatsSplashPage } from "./IxStatsSplashPage";
-import type { ReactNode } from "react";
 
-interface HomeClientProps {
-  /** Server-rendered Discord badge to pass into the dashboard sidebar. */
-  discordBadge?: ReactNode;
-}
-
-export function HomeClient({ discordBadge }: HomeClientProps) {
+export function HomeClient() {
   const { isSignedIn, isLoaded } = useUser();
 
   usePageTitle({
@@ -33,5 +27,5 @@ export function HomeClient({ discordBadge }: HomeClientProps) {
     return <IxStatsSplashPage />;
   }
 
-  return <DashboardRouter discordBadge={discordBadge} />;
+  return <DashboardRouter />;
 }

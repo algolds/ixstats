@@ -105,7 +105,6 @@ export function SettingsContent() {
   const initialSection = tabParam && VALID_TABS.has(tabParam) ? tabParam : "account";
 
   const [activeSection, setActiveSection] = useState<SettingSectionId>(initialSection);
-  const [heroCollapsed, setHeroCollapsed] = useState(true);
 
   // Sync state if URL query param changes
   useEffect(() => {
@@ -174,11 +173,7 @@ export function SettingsContent() {
           {/* Phone title under the new navigation shell (nothing with the flag off). */}
           <ShellPageHeader title="Settings" className="relative" />
 
-          <DashboardSidebarLayout
-            heroCollapsed={heroCollapsed}
-            onHeroExpand={() => setHeroCollapsed(false)}
-            disableCollapse={true}
-          >
+          <DashboardSidebarLayout disableCollapse={true}>
             {/* Incomplete Setup Banner */}
             {setupStatus === "needs-setup" && (
               <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">

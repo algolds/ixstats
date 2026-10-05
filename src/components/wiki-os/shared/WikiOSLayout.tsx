@@ -165,10 +165,8 @@ export function WikiOSLayout({
     <div className="wikios-shell wikios-root">
       <DashboardSidebarLayout
         sidebarContent={sidebarContent}
-        showFloatingExpand={false}
         defaultCollapsed={true}
         disableCollapse={false}
-        variant="rail"
         expandedWidthClassName="w-48"
         expandedWidthStyle="12rem"
         disableGlobalHover={true}

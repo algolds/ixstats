@@ -9,6 +9,7 @@ import {
   OpenBook as BookOpen,
   Settings,
   FireFlame as Flame,
+  StatsUpSquare,
 } from "iconoir-react";
 import { Card } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -59,6 +60,7 @@ import { TrendingSectionWidget } from "./TrendingSectionWidget";
 import { BlurbSection } from "./BlurbSection";
 import { CountriesToExploreCard } from "./CountriesToExploreCard";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Inspector } from "~/components/ui/inspector";
 
 type FeedTab = "all" | "following" | "trending" | "community";
 
@@ -178,6 +180,7 @@ export function UnifiedDashboardSection({
   const [settingsAccount, setSettingsAccount] = useState<ThinkpagesAccountItem | null>(null);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
+  const [inspectorOpen, setInspectorOpen] = useState(false);
   const [repostingPost, setRepostingPost] = useState<any>(null);
 
   const { data: queriedGlobalStats } = api.countries.getGlobalStats.useQuery(undefined, {
@@ -268,8 +271,8 @@ export function UnifiedDashboardSection({
       className="space-y-5 pb-16 sm:pb-20 md:space-y-7 md:pb-24"
     >
       <motion.div variants={staggerItem}>
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-6">
-          <div className="flex flex-col space-y-5 lg:col-span-2">
+        <div className="flex gap-5 lg:gap-6">
+          <div className="flex min-w-0 flex-1 flex-col space-y-5">
             <motion.div variants={staggerItem} className="flex items-center gap-2">
               <SegmentedControl
                 options={tabs}
@@ -279,6 +282,15 @@ export function UnifiedDashboardSection({
                 className="flex-1"
                 asTabs
               />
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setInspectorOpen(true)}
+                className="shrink-0 xl:hidden"
+              >
+                <StatsUpSquare className="size-4" />
+                Trends
+              </Button>
               {isSignedIn && (
                 <Button
                   variant="secondary"
@@ -322,12 +334,14 @@ export function UnifiedDashboardSection({
             )}
           </div>
 
-          <div className="flex flex-col space-y-4 md:sticky md:top-(--shell-top-offset) md:self-start">
-            <TrendingSectionWidget />
-            <BlurbSection />
-            <CountriesToExploreCard currentUserCountryId={countryId} />
-            {tierDistribution && <EconomicTiersCard tiers={tierDistribution} />}
-          </div>
+          <Inspector title="Around IxStates" open={inspectorOpen} onOpenChange={setInspectorOpen}>
+            <div className="flex flex-col space-y-4">
+              <TrendingSectionWidget />
+              <BlurbSection />
+              <CountriesToExploreCard currentUserCountryId={countryId} />
+              {tierDistribution && <EconomicTiersCard tiers={tierDistribution} />}
+            </div>
+          </Inspector>
         </div>
       </motion.div>
 
