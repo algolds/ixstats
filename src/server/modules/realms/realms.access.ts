@@ -66,3 +66,16 @@ export function isRealmOpen(realmId: string, status: string | null | undefined):
 export function isRealmPublished(realmId: string, status: string | null | undefined): boolean {
   return isRealmOpen(realmId, status) || status === "archived";
 }
+
+/**
+ * AT-6: whether a realm is hidden from `viewer`. Draft and generating realms are visible only to their staff
+ * (the founder and site admins); public, unlisted and archived realms are readable by anyone with the link.
+ * Listing is a separate rule (`DIRECTORY_REALM_WHERE`): only public, active realms (and IxWorld) are listed.
+ */
+export function isRealmHiddenFrom(
+  viewer: RealmActor | null | undefined,
+  realm: { status?: string | null; ownerId?: string | null }
+): boolean {
+  const unpublished = realm.status === "draft" || realm.status === "generating";
+  return unpublished && !(viewer && canModerateRealm(viewer, { ownerId: realm.ownerId ?? "" }));
+}

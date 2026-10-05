@@ -451,6 +451,24 @@ describe("overview and happenings", () => {
     expect(await callerAs(FOUNDER, db).region.overview({ slug: "eurth" })).not.toBeNull();
   });
 
+  it("leaves draft partner realms out of the embassies panel (AT-6)", async () => {
+    const db = overviewDb();
+    db.realmEmbassy.findMany.mockResolvedValue([
+      {
+        fromRealmId: "eurth",
+        fromRealm: { id: "eurth", name: "Eurth", slug: "eurth" },
+        toRealm: { id: "terra", name: "Terra", slug: "terra" },
+      },
+    ]);
+    db.realm.findMany.mockResolvedValue([]);
+    await callerAs(PLAYER, db).region.overview({ slug: "eurth" });
+    expect(db.realm.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: { in: ["terra"] }, status: { notIn: ["draft", "generating"] } },
+      })
+    );
+  });
+
   it("lists happenings newest first", async () => {
     const db = makeDb();
     db.country.findMany.mockImplementation(async ({ take }: any) =>

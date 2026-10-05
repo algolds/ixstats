@@ -24,11 +24,24 @@ one realm.
 - every realm with `visibility: "public"` and `status: "active"`;
 - IxWorld (`DEFAULT_REALM_ID`), whatever its row says.
 
-Unlisted realms stay readable by link only (`/r/[realm]`). The rule is `DIRECTORY_REALM_WHERE` in `places.ts`.
+**Visibility and status rule (AT-6):**
 
-The realm page (`realms.getBySlug`) follows `Realm.status` (`isRealmOpen` / `isRealmPublished` in
-`realms.access.ts`): a draft or generating realm is shown only to its moderators; an archived realm stays
-readable but takes no claims. Claims (filing, and approving a pending one) need an active realm or IxWorld.
+| Realm | Listed (directory, its feed picker, embassy proposals) | Reachable by link (page, board, `?realm=`) |
+| :---- | :---- | :---- |
+| Public and active, or IxWorld | Yes | Yes |
+| Unlisted and active | No | Yes |
+| Archived | No | Yes, read-only and closed to claims |
+| Draft or generating | No | Only its staff (founder, site admins) |
+
+- Listing is `DIRECTORY_REALM_WHERE` in `places.ts`. Nothing else lists realms to other players.
+- The builder's realm picker also offers an active unlisted realm to the player who founded it or holds a nation
+  there (their own realm, not a listing).
+- Draft and generating realms are hidden by `isRealmHiddenFrom` / `isRealmPublished` (`realms.access.ts`): the realm
+  page and header (`getBySlug`, `region.overview`, happenings, Manage), its board (`realms.getBoard`), the
+  `?realm=<slug>` scope of the countries directory, leaderboards and maps (`resolveViewerRealmId`, which falls back
+  to IxWorld as for an unknown slug), and other realms' embassy panels.
+- Claims (filing, and approving a pending one) need an active realm or IxWorld (`isRealmOpen`).
+- The realm feed (`thinkpages.getFeed({ realmId })`) takes a realm id, which only the pages above hand out.
 
 Each row reports only counted facts:
 
@@ -117,7 +130,7 @@ The NationStates-style region page. Every tab shares a layout (`(region)/layout.
 description and tags, a key-stats strip (nations, population, founded, founder) and the tab bar: **Overview**,
 **Board**, **Nations**, **Map** (opens `/maps?realm=`) and, for the founder and officers, **Manage**.
 `realms.region.overview` serves the header and front page in one call; it hides draft and generating realms
-from everyone but their staff, like `getBySlug`.
+from everyone but their staff, like `getBySlug` (§1, visibility rule).
 
 **Overview:** the factbook (or the description), "Read the lore" to the realm's `Portal:` page, the latest five
 board posts, and claimable nations. The sidebar (stacked under the main column below 1024px) has:

@@ -266,7 +266,8 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
   const partnerLooks =
     partnerIds.length > 0
       ? await db.realm.findMany({
-          where: { id: { in: partnerIds } },
+          // A partner that went back to draft is hidden from everyone but its own staff (AT-6).
+          where: { id: { in: partnerIds }, status: { notIn: ["draft", "generating"] } },
           orderBy: { name: "asc" },
           select: { slug: true, name: true, bannerUrl: true, thumbnail: true },
         })

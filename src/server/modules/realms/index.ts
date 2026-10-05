@@ -13,6 +13,7 @@ export {
   hasRealmPower,
   realmPowers,
   type RealmOfficerGrant,
+  isRealmHiddenFrom,
   isRealmOpen,
   isRealmPublished,
   isSiteAdmin,

@@ -215,7 +215,7 @@ shipped system.
 | 3 | ✅ **Done (2026-10-05):** claimants see pending, approved and rejected claims (with the reason) on `/realms` and the realm's Nations tab; a rejection notifies them | AT-5 | S |
 | 4 | Builder creates nations in any realm (realm input, nation cap), with prefill from a claimed nation page. **Partial (#49):** the builder is realm-aware with nation caps; prefill is open | AT-3, PF§4 | M |
 | 5 | ✅ **Done (#49):** nation switcher in the nav and on the passport | PF§4 | M |
-| 6 | Realm directory filtered by visibility and status. **Partial:** `/realms` lists open realms (#49) and has a sidebar entry in the Realms group (2026-10-05) | AT-6 | M |
+| 6 | ✅ **Done (2026-10-05):** realm visibility and status rule: only public, active realms (and IxWorld) are listed; unlisted realms are reachable by link only; draft and generating realms (page, board, `?realm=` scope, embassy panels) only for their staff | AT-6 | M |
 | 7 | Founder tooling: settings, moderation, removing nations, succession using `lastSeenAt` | PF§4 | L |
 | 8 | Archived realms: read-only; excluded from jobs and payouts; every job made realm-aware | PF§4, code audit §9 | M |
 | 9 | Public founding application (decisions 6–7) | PF§4 | M |

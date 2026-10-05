@@ -246,5 +246,5 @@ export const realmsRouter = createTRPCRouter({
   /** Open a realm's board (created on first open) and sync the caller's membership from their nations. */
   getBoard: publicProcedure
     .input(z.object({ slug: z.string().min(1).max(100) }))
-    .query(({ ctx, input }) => openRealmBoard(ctx.db, input.slug, ctx.auth?.userId ?? null)),
+    .query(({ ctx, input }) => openRealmBoard(ctx.db, input.slug, ctx.user ?? null)),
 });
