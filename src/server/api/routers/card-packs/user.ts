@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { purchasePack, openPack, getUserPacks } from "~/lib/cards/pack-service";
+import { purchasePack, openPack, getUserPacks, PackError } from "~/lib/cards/pack-service";
 import { LedgerError } from "~/lib/vault/vault-ledger";
 import { syncUserToForum } from "~/server/modules/forum";
 import { notificationAPI } from "~/lib/notifications/api";
@@ -112,33 +112,15 @@ export const cardPacksUserRouter = createTRPCRouter({
           userPack,
         };
       } catch (error) {
+        if (error instanceof TRPCError) throw error;
         if (error instanceof LedgerError) {
           throw new TRPCError({
             code: error.code === "INSUFFICIENT_CREDITS" ? "FORBIDDEN" : "PRECONDITION_FAILED",
             message: error.message,
           });
         }
-        // Handle specific error messages from service
-        if (error instanceof Error) {
-          if (
-            error.message.includes("not found") ||
-            error.message.includes("not available") ||
-            error.message.includes("expired") ||
-            error.message.includes("sold out") ||
-            error.message.includes("limit reached")
-          ) {
-            throw new TRPCError({
-              code: "BAD_REQUEST",
-              message: error.message,
-            });
-          }
-
-          if (error.message.includes("Insufficient credits")) {
-            throw new TRPCError({
-              code: "FORBIDDEN",
-              message: error.message,
-            });
-          }
+        if (error instanceof PackError) {
+          throw new TRPCError({ code: error.code, message: error.message });
         }
 
         console.error("[CardPacks] Error purchasing pack:", error);
@@ -218,18 +200,9 @@ export const cardPacksUserRouter = createTRPCRouter({
           cards: revealData,
         };
       } catch (error) {
-        // Handle specific error messages from service
-        if (error instanceof Error) {
-          if (
-            error.message.includes("not found") ||
-            error.message.includes("Unauthorized") ||
-            error.message.includes("already been opened")
-          ) {
-            throw new TRPCError({
-              code: "BAD_REQUEST",
-              message: error.message,
-            });
-          }
+        if (error instanceof TRPCError) throw error;
+        if (error instanceof PackError) {
+          throw new TRPCError({ code: error.code, message: error.message });
         }
 
         console.error("[CardPacks] Error opening pack:", error);
