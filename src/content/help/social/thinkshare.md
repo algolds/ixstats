@@ -2,8 +2,8 @@
 title: Messages
 description: Direct and group messages with other players in one inbox.
 badge: Community
-prevHref: /help/social/thinkpages
-prevLabel: ThinkPages & the Feed
+prevHref: /help/social/activity-feed
+prevLabel: The Activity Feed & Hashtags
 nextHref: /help/social/thinktanks
 nextLabel: ThinkTanks
 ---

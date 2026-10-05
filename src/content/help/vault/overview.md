@@ -8,7 +8,7 @@ nextLabel: IxCredits
 
 ## What the Vault is
 
-The [Vault](/vault) holds your IxCredits (the platform currency), your trading cards and your progress. Everyone with an account has one; you don't need a nation to use it, though a nation earns you a daily dividend. Open it from **Vault** in the top menu. Its sidebar has four areas: **Dashboard**, **Cards**, **Marketplace** and **Import**.
+The [Vault](/vault) holds your IxCredits (the platform currency), your trading cards and your progress. Everyone with an account has one; you don't need a nation to use it, though a nation earns you a daily dividend. Open it from **Vault** in the top menu. Its sidebar has **Dashboard**, **Daily reward**, **Cards**, **Collections**, **Marketplace**, **Crafting** and **Import**.
 
 ## Dashboard
 
@@ -49,11 +49,11 @@ Rarities, from most to least common: **Common**, **Uncommon**, **Rare**, **Ultra
 
 ## Marketplace
 
-**Marketplace** has three tabs: **Vault Shop** (buy card packs, and cosmetics or boosts when stocked; see [Card Packs](/help/vault/card-packs)), **Auctions** and **Trading** (see [Auctions & Trading](/help/vault/trading)).
+**Marketplace** has three tabs: **Vault Shop** (card packs, plus cosmetics and account upgrades; see [Card Packs](/help/vault/card-packs) and [Vault Shop Items](/help/vault/shop-items)), **Auctions** and **Trading** (see [Auctions & Trading](/help/vault/trading)).
 
 ## Vault level
 
-You gain 1 XP for every IxCredit you earn, and each 1,000 XP is a level. A higher level makes the daily IxCredit roll larger.
+You gain 1 XP for every IxCredit you earn, and each 1,000 XP is a level. A higher level makes the daily IxCredit roll larger and unlocks more [crafting](/help/vault/crafting) recipes.
 
 ## Recycling cards
 
@@ -62,4 +62,4 @@ You can recycle ("junk") a card you don't want for a small amount of IxCredits b
 ## Also in the Vault
 
 - [Achievements](/help/gameplay/achievements) and [Leaderboards](/help/gameplay/leaderboards).
-- **Crafting** at [/vault/crafting](/vault/crafting): an experimental page for combining cards into higher rarities. It's still being balanced.
+- **Crafting** at [/vault/crafting](/vault/crafting): combine cards into a rarer card. See [Crafting Cards](/help/vault/crafting).

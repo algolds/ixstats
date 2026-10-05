@@ -2,8 +2,8 @@
 title: Leaderboards
 description: Rank nations by GDP, population, achievements and more.
 badge: Vault, Cards & Rewards
-prevHref: /help/gameplay/achievements
-prevLabel: Achievements & Ribbons
+prevHref: /help/gameplay/ribbons
+prevLabel: Ribbons & Your Showcase
 ---
 
 ## What the leaderboards show

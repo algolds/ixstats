@@ -2,8 +2,8 @@
 title: The Wiki (WikiOS)
 description: Read, search, edit and discuss wiki articles, and earn Lorewards.
 badge: Wiki & Lore
-nextHref: /help/wiki/stash
-nextLabel: Stash
+nextHref: /help/wiki/lorewards
+nextLabel: Lorewards
 ---
 
 ## What the wiki is
@@ -43,7 +43,7 @@ A player's wiki user profile now opens their [IxnayID passport](/help/getting-st
 
 ## Lorewards
 
-[Lorewards](/util/lorewards) recognise wiki writing. Edits are scored on how much prose you add, how deep the edit goes, whether it's a new article, how many other articles link to it, and collaboration across nations. Daily, weekly and monthly results and streaks come from the community's Lorewards bot. Winning a Loreward pays 2,500 IxCredits (default amount), and your standing shows on your passport.
+Lorewards are the community's daily, weekly and monthly awards for wiki writing, picked by the Lorewards bot. A win pays 2,500 IxCredits (default amount) once your IxWiki account is linked, your standing shows on your passport, and winning articles carry a **Loreward winner** badge. See [Lorewards](/help/wiki/lorewards).
 
 ## Good to know
 

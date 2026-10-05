@@ -106,7 +106,7 @@ partly done item.
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
 | VT-12 | UNFINISHED | Only the buyer sees their own cosmetics (no public equipped-cosmetics query) | `hooks/useActiveCosmetics.ts` | M |
-| VT-14 | BUG | Crafting. Left: the MYTHIC recipe (D6). The workbench sends ownership IDs and `db:seed` runs the crafting seed (2026-10-05) | `crafting/recipes.ts` | S |
+| VT-14 | BUG | Crafting. Left: the MYTHIC recipe (D6). The workbench sends ownership IDs and shows one slot per card a recipe consumes, and `db:seed` runs the crafting seed (2026-10-05) | `crafting/recipes.ts` | S |
 | VT-16 | DEAD | The Exchange (₷) economy exists only in the schema (11 of 13 models unused); wallets seeded with 10,000 ₷; `spend` has no conditional decrement. D5 | `exchange.prisma`; `lib/vault/exchange-service.ts` | L |
 | VT-19 | DEAD | `pdsConfig` is seeded on all 20 packs and never read | `prisma/seeds/data/card-packs.json`; `cards.prisma` | S |
 | VT-21 | UNFINISHED | Inventory bulk Move and List Market buttons are permanently disabled | `InventoryTab.tsx` | M |
@@ -286,7 +286,7 @@ See §1 above (password rotation, CSP).
 
 ### PF§7 Documentation gaps
 
-- **Help center:** shipped systems still with no article: Lorewards; ribbons and the showcase shelf; Vault import, crafting and shop items; the activity feed and hashtags. Remove the "Preview feature" / "Not available yet" notes as features land ([help.md](../systems/help.md)).
+- **Help center:** remove the "Not available yet" notes as features land ([help.md](../systems/help.md#known-gaps)). Every shipped system now has an article (Lorewards, ribbons and showcase, crafting, shop items and the activity feed added 2026-10-05).
 - **Specs to retire once implemented and confirmed:** the realms foundation, realms Eurth and route travel-time specs; [myleague-top5-features](../systems/myleague-top5-features.md), [sports-llm-commentary](../research/sports-llm-commentary.md), [myleague-lore-integration](../systems/myleague-lore-integration.md) (mostly obsolete); [deploy-rose-garden-2026-09](../operations/deploy-rose-garden-2026-09.md) after the 1.4 release. Move them to [docs/history/](../history/README.md).
 - **Trim:** [rate-limiting.md](../operations/rate-limiting.md) (~1,350 lines, mostly sketches); [refactoring.md](../processes/refactoring.md) (~1,000 lines of generic guidance).
 - **Phase 4 follow-ups** ([action plan](ACTION_PLAN_2026-10-05.md#phase-4--consolidate-the-documentation-set)): one MyLeague system doc; Onoma and Stash subfolders; add doc updates to the PR checklist.
