@@ -37,7 +37,9 @@ const ALERT = {
 };
 
 describe("notifications.createNotification", () => {
-  beforeEach(() => accepts.mockReset());
+  beforeEach(() => {
+    accepts.mockReset();
+  });
 
   it("writes nothing and returns null when the recipient's preferences filter it out", async () => {
     accepts.mockResolvedValue(false);
@@ -68,7 +70,9 @@ describe("notifications.createNotification", () => {
 });
 
 describe("messaging sendAdminBroadcast", () => {
-  beforeEach(() => accepts.mockReset());
+  beforeEach(() => {
+    accepts.mockReset();
+  });
 
   function service(db: ReturnType<typeof createMockPrisma>) {
     const websocket = { broadcastMessage: jest.fn() };
