@@ -27,8 +27,11 @@ description) from the same data.
 
 Vexel is listed in the Labs app of the sidebar (`src/lib/navigation/app-sections.ts`). Labs requires sign-in and is
 hidden when admins switch off `showLabsTab`, except for admins and holders of the `labs.access` permission. The Halo
-command palette also lists it (`halo-registry.ts`). The pages themselves are client components with no auth guard,
-but saving needs a session.
+command palette also lists it (`halo-registry.ts`). The same rule is enforced on the server for every `/labs/*` page
+(SL-27): `src/app/labs/layout.tsx` calls `getLabsAccess()` (`src/lib/auth/labs-access.server.ts`, decision in
+`src/lib/navigation/labs-gate.ts`, which reuses the sidebar's `getVisibleApps`). Signed-out visitors are redirected to
+`/sign-in`; signed-in users who may not see Labs get a 404, and so does anyone when the lookup fails. `/myleague` and
+`/myclub` sit in the Labs sidebar app but live outside `/labs`, so this gate does not cover them.
 
 ## 2. Key files
 

@@ -194,6 +194,8 @@ Replace each with real data, or show an empty state. All S or S–M.
   `/blurbs/<slug>` (2026-10-05).
 - ✅ **Pages:** the `/explore` mobile filters (SL-24); `/admin/calculations` has a page; the WikiOS export link passes a
   slug (WK-15, 2026-10-05).
+- ✅ **Labs gate:** `/labs/*` pages check on the server the same rule the sidebar uses (signed in, `showLabsTab` or the
+  admin / `labs.access` bypass) (SL-27, 2026-10-05).
 
 ### M2.5 Help centre
 ✅ **Done:** all 63 articles are registered in `src/app/help/_lib/help-sections.ts` (8 added on 2026-10-05: Blurbs, MyLeague/MyClub, Onoma, Vexel, the Canvas editor, Explore, Settings and Halo); the admin article is rewritten
