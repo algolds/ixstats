@@ -135,6 +135,21 @@ export function boardRestrictionMessage(restriction: RealmBoardRestriction | nul
   return `Your nation is ${verb} this board${until}${restriction.reason ? `: ${restriction.reason}` : ""}`;
 }
 
+/**
+ * Why `clerkUserId` may not send a message to this conversation, when it is a realm board's chat and one of their
+ * nations is muted or banned on the board; null otherwise. A board conversation is a ThinkTank chat whose
+ * `sourceId` is the board group, so any other conversation costs nothing and other ThinkTank chats one lookup.
+ */
+export async function realmBoardChatRestriction(
+  db: BoardDb,
+  conversation: { source?: string | null; sourceId?: string | null } | null | undefined,
+  clerkUserId: string
+): Promise<string | null> {
+  if (conversation?.source !== "thinktank" || !conversation.sourceId) return null;
+  const access = await getRealmBoardAccess(db, conversation.sourceId, clerkUserId);
+  return boardRestrictionMessage(access.restriction);
+}
+
 type EnsureDb = Pick<
   PrismaClient,
   "realmBoard" | "thinktankGroup" | "thinkshareConversation" | "$transaction"

@@ -110,7 +110,9 @@ The page has three tabs:
 
 The board is the **Board** tab of the realm page. Board moderation (section 4):
 
-- a **muted** nation's owner can read and chat but not post (`createGroupPost` refuses with the reason);
+- a **muted** nation's owner can read but not post or chat: `createGroupPost` refuses with the reason, and so
+  does `sendMessage` for the board's ThinkShare conversation (`realmBoardChatRestriction`, checked only for a
+  ThinkTank chat whose group is a realm board);
 - a **banned** nation's owner is not a board member (no posts, no chat): the ban deactivates their member row
   and chat participant at once (`removeFromRealmBoard`), and a ban on any one of a player's nations there
   counts;
@@ -195,7 +197,6 @@ sanitized), the same path flags and coats of arms use, and keep the address fiel
 - Chat participants who lose their last nation are removed on the next time anyone opens the board, not the
   moment the nation changes hands.
 - The `/dashboard` feed and trending are not realm-scoped. The realm feed is shown only on `/realms` and the board.
-- A mute stops board posts, not chat messages.
 - Happenings has no history page beyond the latest 15 items.
 
 ## 6. Map and transport isolation
