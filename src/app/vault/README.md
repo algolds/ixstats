@@ -17,9 +17,9 @@ IxVault is the trading-card and virtual-economy product in IxStats. Players earn
 | `/vault/ns-library` | `VaultCardsSection` | Gallery sub-tab |
 | `/vault/lore-generator` | `LoreCardGenerator` | Request generation of a lore card |
 | `/vault/marketplace` | `VaultMarketplaceSection` | Tabs: Vault Shop / Auctions / Trading (`?tab=` deep-links) |
-| `/vault/crafting` | `CraftingWorkbench` | Fusion / evolution crafting (not linked from the sidebar) |
+| `/vault/crafting` | `CraftingWorkbench` | Fusion / evolution crafting (not in the source list) |
 | `/vault/import` | `VaultImportSection` | NationStates deck import wizard |
-| `/vault/ns-deck` | `ImportWizard` | Legacy NS deck import wizard (the sidebar uses `/vault/import`) |
+| `/vault/ns-deck` | `ImportWizard` | Legacy NS deck import wizard (the source list uses `/vault/import`) |
 | `/vault/ns-deck/[nation]` | NS deck viewer | Public NS deck for a nation |
 | `/vault/admin` | admin gate | Admin-only vault tools (`useIsAdmin`) |
 | `/vault/market`, `/vault/packs`, `/vault/trading` | — | **Redirect stubs** → `/vault/marketplace?tab=auctions\|store\|trading` |
@@ -40,8 +40,8 @@ There is no Vault rail: the global source list (`src/lib/navigation/app-sections
 
 | Layer | Location |
 |-------|----------|
-| Layout + auth | `src/app/vault/layout.tsx` (`AuthenticationGuard` + page container) |
-| Sidebar nav | `src/components/vault/VaultSidebarNav.tsx` (`VaultSection`, `VAULT_NAV_ITEMS`, `getSectionFromPathname`) |
+| Layout + auth | `src/app/vault/layout.tsx` (`AuthenticationGuard` + page container; no rail) |
+| Navigation | The sidebar's source list (the Vault entry in `src/lib/navigation/app-sections.ts`: sections, `vault-balance` badge, Daily reward row opening `DailyRewardProvider`'s dialog). `src/components/vault/VaultSidebarNav.tsx` only exports `VaultSection` and `getSubTabFromPathname` |
 | Cards Section | `src/components/vault/sections/cards/` — `InventoryTab`, `CollectionsTab`, `CardGalleryTab`, `*SidebarContent`, `useVaultCardsState`, `types.ts` |
 | Dashboard Section | `src/components/vault/sections/dashboard/` — `VaultNetWorthCard`, `VaultYieldProjectionsCard`, `VaultCardHoldingsCard`, `VaultMilestonesCard`, `VaultRecentActivityCard`, `VaultShowcaseGrid` |
 | Marketplace Section | `src/components/vault/sections/marketplace/` — Store (`store/`), Auctions (`auctions/` incl. `CreateAuctionModal`), Trading |
@@ -87,7 +87,7 @@ All registered in `src/server/api/root.ts`.
 
 The previous README described an architecture that no longer matches the code and was corrected:
 
-- **No `VaultRouter`, `VaultDashboard`, `VaultHeader`, `VaultNavigation`, or `QuickActions` components** exist — replaced by a `layout.tsx` + `VaultSidebarNav` + per-route section components.
+- **No `VaultRouter`, `VaultDashboard`, `VaultHeader`, `VaultNavigation`, or `QuickActions` components** exist: navigation is the shell sidebar, and the pages are a `layout.tsx` plus per-route section components.
 - Documented routes (`/vault/packs`, `/vault/market`) are now **redirect stubs** into `/vault/marketplace`; real routes include `crafting`, `import`, `ns-deck`, `lore-gallery`/`lore-generator`, `ns-library`, `admin`.
 - Marketplace is a single tabbed section (Shop/Auctions/Trading), not separate "Agent 1/2/3" components.
 - Auction/market endpoints live on `cardMarket` (not `market`); packs on `cardPacks`; NS on `nsImport`; crafting on `crafting`; trading on `trading` — the prior "API endpoints needed" wishlist is now live.

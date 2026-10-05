@@ -11,9 +11,8 @@ Vault is the central incentive, social currency, and metagame reward platform fo
 
 ## Layout & Sections
 
-There is no client-side `VaultRouter` — `/vault` uses normal Next.js routes wrapped in a shared layout (`src/app/vault/layout.tsx`: `AuthenticationGuard` → `VaultSidebarLayout`):
-- `src/components/vault/VaultSidebarNav.tsx` – Section navigation (`VAULT_NAV_ITEMS`: Dashboard, Cards, Marketplace, Import; Import is hidden unless the localStorage flag `ixstats-show-ns-importer` is set, which no UI sets, and an admin setting (`showCardsTab`) can hide the whole Vault) plus `getSectionFromPathname` / `getSubTabFromPathname`
-- `src/components/vault/VaultSidebarLayout.tsx` – Grid layout (adds the Achievements / Leaderboards links)
+There is no client-side `VaultRouter`: `/vault` uses normal Next.js routes wrapped in a shared layout (`src/app/vault/layout.tsx`: `AuthenticationGuard` + page container). Navigation is the shell sidebar's source list (Vault entry in `src/lib/navigation/app-sections.ts`); the Vault wallet card on the dashboard shows the balance:
+- `src/components/vault/VaultSidebarNav.tsx` – the `VaultSection` type and `getSubTabFromPathname` only; the navigation itself is the Vault entry of the source list
 - **Sections** (`src/components/vault/sections/`):
   - `Dashboard` (`VaultDashboardSection.tsx`, `/vault`): Balance overview, today's earnings breakdown, XP progress bar, yield projections, recent activity
   - `Cards` (`VaultCardsSection.tsx`, `/vault/cards`, `/vault/inventory`, `/vault/collections`): Card Gallery (the default; `/vault/lore-gallery`, `/vault/ns-library`, lore source selected first), Inventory (rarity/type filters, bulk junking), Collections

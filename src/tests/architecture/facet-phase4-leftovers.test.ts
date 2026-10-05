@@ -42,7 +42,6 @@ const AREAS = [
   "components/messages",
   "app/messages",
   "components/halo",
-  "app/settings/_components/SettingsSidebarNav.tsx",
 ];
 
 // The ThinkPages account hub belongs to the navigation-shell pass.
@@ -105,9 +104,5 @@ describe("Facet 3 Phase 4 leftovers", () => {
 
   it("shows no made-up Diplomatic Standing on the Factbook sidebar", () => {
     expect(hits(/diplomaticStanding\s*=\s*\d+/g, inDir("app/countries"))).toEqual([]);
-  });
-
-  it("renders the settings sidebar tier with a Badge variant, not hand-rolled classes", () => {
-    expect(hits(/badgeClass/g, (file) => file.endsWith("SettingsSidebarNav.tsx"))).toEqual([]);
   });
 });

@@ -5,8 +5,8 @@
  *
  * A floating `facet-chrome` bar at the bottom (`z-chrome`, clear of the home indicator via the
  * safe-area inset) with up to four primary apps (`TAB_BAR_PRIORITY`) and "More". More opens a
- * bottom `Sheet` with detents holding the shared `SourceList` (the phone path for every app's
- * own `data-app-subnav`, plus the other apps) and the account.
+ * bottom `Sheet` with detents holding the shared `SourceList` (the current app's sections, the
+ * other apps and the account).
  * Targets are at least 44px; the current tab and rows carry `aria-current="page"`. Content reserves
  * the bar's height through `--shell-tabbar-height` (`src/styles/facet/shell.css`).
  */

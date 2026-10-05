@@ -12,9 +12,8 @@
  * `sections`; use `match` for extra path prefixes that belong to it (sub-pages, legacy aliases) and
  * `group` to list it under a sub-heading (admin, settings).
  *
- * Under the new shell the apps' own sub-navigation (vault, admin, settings, forum) is hidden
- * with `data-app-subnav` (`src/styles/facet/shell.css`), so every destination it offered must be
- * listed here.
+ * The sidebar and the More sheet are the only navigation, so every destination an app offers must
+ * be listed here; an app renders no navigation of its own.
  */
 
 import type { ComponentType, SVGProps } from "react";
@@ -364,8 +363,7 @@ export const APPS: readonly AppDefinition[] = [
     tint: "forum",
     match: ["/forum"],
     navSetting: "showForumTab",
-    // Mirrors the forum's own rail/pill bar (ForumLayout), hidden under the new shell. Its
-    // "Messages" entry is ThinkPages → Messages.
+    // The forum's rail entry "Messages" is ThinkPages → Messages.
     sections: [
       { id: "forums", label: "All forums", href: "/forum", icon: ChatBubble },
       { id: "trending", label: "Trending", href: "/forum?sort=trending", icon: FireFlame },
@@ -507,8 +505,7 @@ export const APPS: readonly AppDefinition[] = [
     match: ["/settings"],
     requiresAuth: true,
     placement: "footer",
-    // Tabs of src/app/settings (`?tab=` ids and categories from src/app/settings/_lib/sections.ts);
-    // the page's own tab rail is hidden under the new shell.
+    // Tabs of src/app/settings (`?tab=` ids and categories from src/app/settings/_lib/sections.ts).
     sections: [
       {
         id: "account",

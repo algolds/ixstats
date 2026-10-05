@@ -15,9 +15,6 @@
    --shell-halo-reserve    Width kept clear in the middle of a page toolbar for Halo.
 
    Hooks for feature code:
-   [data-app-subnav]       An app's own sub-navigation (tab rail, pill bar). Hidden at every
-                           width: the AppSidebar lists the same destinations at ≥1024px and the
-                           TabBar's More sheet below (src/lib/navigation/app-sections.ts).
    [data-shell-page-title] A page's own title (`shellPageTitleProps`). Hidden wherever that
                            page's <ShellPageHeader> shows (phones, or every width with
                            phoneOnly={false}), so the title is never shown twice.
@@ -65,13 +62,6 @@
 }
 
 @layer utilities {
-  /* App-local sub-navigation duplicates the AppSidebar / TabBar. In the utilities layer (and more
-     specific than one class) so it beats the element's own `flex` / `lg:block`. Pure CSS, so it is
-     right before first paint and never flashes. */
-  [data-app-subnav] {
-    display: none;
-  }
-
   /* A page's own title next to its ShellPageHeader: only one of them shows. */
   :root:has([data-shell-page-header="all"]) [data-shell-page-title] {
     display: none;

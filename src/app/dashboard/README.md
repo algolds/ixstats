@@ -2,10 +2,10 @@
 
 **Last updated:** September 2026
 
-The signed-in dashboard is a navigation hub and social home. It surfaces the
-user's nation at a glance, a platform-wide activity feed (ThinkPages), trending
-content, community widgets, and quick links into the rest of IxStats. There is
-a single route that renders `DashboardRouter`.
+The signed-in dashboard is a social home. It surfaces the user's nation at a
+glance, a platform-wide activity feed (ThinkPages), and trending content and
+community cards in an Inspector. Links into the rest of IxStats are the
+sidebar's source list. There is a single route that renders `DashboardRouter`.
 
 ## Routes
 
@@ -34,10 +34,11 @@ The former `/dashboard/world`, `/dashboard/diplomacy`, `/dashboard/feed`, and
 - **Around IxStates Inspector**: Trending Now (`TrendingSectionWidget`), Countries to
   Explore (`CountriesToExploreCard`), and Economic Tier Distribution. An aside at
   1280px and up; below that the "Trends" button in the feed toolbar opens it as a sheet.
-- The player widget, Vault and quick links no longer have a page column: they live in
-  the account menu and the app source list.
+- There is no player widget, Vault card or quick-links column: the page is a plain
+  centred column. The Vault balance and Daily reward are badges and a row in the
+  sidebar's Vault entry, and links to other apps are the source list.
 - `NewVersionNotice` alert banner; `BlurbSection` daily-prompt widget.
-- **Widgets**: sidebar and community widgets are plain `Card`s with an `h2` title under
+- **Widgets**: the Inspector's trend and community widgets are plain `Card`s with an `h2` title under
   the page's visually hidden `h1` ("Dashboard"). The pressable Blurb card is itself the
   button, so its "Respond" pill is visual. Only the hero keeps the glass material.
 
@@ -58,7 +59,7 @@ Key files (all under `src/components/dashboard/`):
 |-----------|------|
 | `DashboardRouter.tsx` | Top-level orchestration (global stats, map-link status, hero collapse) |
 | `hero/DashboardHero.tsx`, `hero/HeroSnapshotPanels.tsx` | Nation hero and snapshot panels |
-| `sidebar/DashboardSidebarLayout.tsx` | Shared content layout; renders a collapsible rail only when given `sidebarContent` |
+| `sidebar/DashboardSidebarLayout.tsx` | Shared content layout: a plain centred column (hero, alerts, children) |
 | `sections/UnifiedDashboardSection.tsx` | Feed tabs, composer, Inspector with the community widgets |
 | `sections/UnifiedFeedContent.tsx` | Feed/Following stream rendering |
 | `sections/TrendingSectionWidget.tsx` | Trending content |
@@ -75,15 +76,11 @@ Verified `api.*` (tRPC) calls used across the dashboard tree:
 - **User / nation**: `users.getProfile`, `countries.getByIdAtTime`,
   `countries.getGlobalStats`, `countries.getRandomCountries`,
   `countries.getActivityRingsData`, `countries.getMapLinkStatus`,
-  `mycountry.getRankings`, `mycountry.getCountryDashboard`
-- **Vault**: `vault.getBalance` (via the Vault dashboard wallet card), `achievements.getAllWithStatus`
-- **Executive / sim**: `meetings.getMeetings`,
-  `nationalIssues.getPendingCount`, `crisisEvents.getStatistics`
+  `mycountry.getCountryDashboard`
 - **Social feed**: `activities.getGlobalFeed`, `activities.getFollowingFeed`,
   `activities.getUnifiedTrending`, `activities.followCountry`,
   `thinkpages.getMyAccounts`, `blurbs.*`
-- **Messaging / notifications**: `messages.getFolderCounts`,
-  `notifications.getUserNotifications`, `userLogging.submitFeedback`
+- **Feedback**: `userLogging.submitFeedback`
 - **Wiki**: `wikios.getIntro`, `wikios.getRecentChanges`,
   `wikios.getForumThreadPreview`, `wikios.getPageImages`,
   `wikios.getArticleMarginData`, `wikios.createThread`, `wikios.*Stash*`,
@@ -91,14 +88,10 @@ Verified `api.*` (tRPC) calls used across the dashboard tree:
 
 ## Connections to other systems
 
-The dashboard is a hub that links/surfaces:
+The dashboard surfaces:
 
-- **MyCountry** — hero "MyCountry" link; Issues/Actions deep-link
-  to `/mycountry/executive`; crisis banner.
-- **IxVault** — credit balance, login streak, collector
-  achievement badges.
+- **MyCountry**: hero "MyCountry" link and the country's vitality data.
+- **IxVault**: credit balance and Daily reward are sidebar badges (`src/components/shell/use-nav-badges.ts`).
 - **ThinkPages / Activities** — global & following feeds, in-feed composer.
-- **Messages** — `/messages` quick action with unread counts.
 - **Maps (IxWorld)** — embedded `CountryMapEmbed` of the user's nation.
-- **Crises** — active-crisis count in the player widget (`crisisEvents.getStatistics`).
-- **Wiki & Stashes** — quick links and wiki-sourced feed content.
+- **Wiki & Stashes**: wiki-sourced feed content.

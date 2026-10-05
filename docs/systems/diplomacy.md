@@ -17,7 +17,7 @@ The diplomacy domain handles international relations, embassy networks, cultural
 - `src/components/mycountry/shell/DrillSheets.tsx` – Slide-over relations sheet
 - `src/components/mycountry/domains/diplomacy/` – Embassy network (`embassy-network/`, `EmbassyCreatorSheet`, `EmbassyDetailSheet`), relations list, cultural exchange wizard/program, `DiplomaticEventsHub`, `ScenarioModal`, shared data
 - `src/components/mycountry/domains/diplomacy/alliances/` – `AllianceDashboard`, `CollectiveActionsPanel` (alliance creation via `AllianceCreatorSheet`)
-- `src/components/mycountry/domains/diplomacy/inbox/` – `DiplomacyInbox` (the owner-only **Inbox** tab of `EmbassiesAndRelationsPanel`), `useDiplomacyInboxCount`, and the `InboxCountPill` count badge shown on the Diplomacy entries of `shell/headers/UnifiedGlassCommandBar.tsx` and on the Inbox tab
+- `src/components/mycountry/domains/diplomacy/inbox/` – `DiplomacyInbox` (the owner-only **Inbox** tab of `EmbassiesAndRelationsPanel`), `useDiplomacyInboxCount`, and the unread count, shown as the sidebar's `diplomacy-inbox` badge (`src/components/shell/use-nav-badges.ts`), in the Diplomacy peek on the MyCountry Overview (`shell/DomainPeeksCard.tsx`) and on the Inbox tab
 
 ### Backend Routers
 - `src/server/api/routers/diplomacy/core/` (`diplomaticCore`) – Relationships, stances (`setDiplomaticGoal`), follows, shared data, diplomatic options

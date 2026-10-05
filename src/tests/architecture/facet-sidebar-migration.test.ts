@@ -119,4 +119,24 @@ describe("per-app sidebars are migrated to the source list", () => {
       /content="navigation"/
     );
   });
+
+  it("no data-app-subnav anywhere", () => {
+    const walk = (dir: string): string[] =>
+      fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+        const p = path.join(dir, e.name);
+        return e.isDirectory() ? walk(p) : /\.(tsx?|css)$/.test(e.name) ? [p] : [];
+      });
+    const offenders = walk(path.join(ROOT, "src"))
+      .filter((f) => !f.includes(`${path.sep}tests${path.sep}`))
+      .filter((f) => fs.readFileSync(f, "utf8").includes("data-app-subnav"));
+    expect(offenders.map((f) => path.relative(ROOT, f))).toEqual([]);
+  });
+
+  it("settings: the page renders its panels only; the sidebar's area list is the navigation", () => {
+    const exists = (p: string) => fs.existsSync(path.join(ROOT, p));
+    expect(exists("src/app/settings/_components/SettingsSidebarNav.tsx")).toBe(false);
+    expect(read("src/app/settings/_components/SettingsContent.tsx")).not.toMatch(
+      /SettingsSidebarNav|<aside/
+    );
+  });
 });

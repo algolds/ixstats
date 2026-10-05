@@ -214,7 +214,8 @@ Name every group with `aria-label` or `aria-labelledby`. Never hand-roll roving 
 
 ## 7. Layout
 
-- Sidebar direction: a macOS source list. Every app is a top-level row; the current app discloses its sections; widgets (Vault balance, daily reward, active country) become native sidebar items. Phones keep the TabBar and its More sheet. Until the sidebar sub-project lands, `AppSidebar` is the primary navigation at 1024px and up (256px, collapsible to 64px icons) and `TabBar` below that.
+- The sidebar is a macOS source list (`SourceList`, in `AppSidebar` at 1024px and up: 256px, collapsible to 64px icons, where rows become icons with popovers). It has two levels: every app is a top-level row and the current app discloses its sections. Admin and Settings use area mode: their sections are grouped under sub-headings and replace the app list while you are inside them. Rows carry badges (active country flag, diplomacy inbox count, Vault balance) and a Daily reward action row opens the reward dialog. Below 1024px the `TabBar` holds the primary apps and its More sheet reuses the same `SourceList`.
+- The sidebar and the More sheet are the only navigation. A page renders no navigation of its own (no tab rail, pill bar or hidden sub-nav); in-page `Tabs` switch views of one thing, not destinations.
 - Both read the one section map in `src/lib/navigation/app-sections.ts`. Add a destination there, not in a page.
 - Halo is the floating island at the top, in Chrome glass. `PageHeader` keeps `--shell-halo-reserve` clear for it. Do not build a second top bar.
 - `AccountMenu` is the account: `layout="sidebar"` is a popover from the sidebar footer, `layout="sheet"` is inline in the More sheet.

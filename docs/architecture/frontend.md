@@ -111,7 +111,7 @@ export function MyCountryRouter() {
 | Hub | Location | Sub-Sections |
 | :--- | :--- | :--- |
 | **`MyCountryRouter`** | [`src/components/mycountry/shell/MyCountryRouter.tsx`](../../src/components/mycountry/shell/MyCountryRouter.tsx) | Overview, Executive, Economy, Diplomacy, Intelligence, Defense, Politics, Map Editor |
-| **`VaultSidebarLayout`** | [`src/app/vault/layout.tsx`](../../src/app/vault/layout.tsx) → [`src/components/vault/VaultSidebarLayout.tsx`](../../src/components/vault/VaultSidebarLayout.tsx) | Dashboard, Cards, Marketplace, Import, Achievements, Leaderboards |
+| **Vault routes** | [`src/app/vault/layout.tsx`](../../src/app/vault/layout.tsx) (guard + page container; navigation is the sidebar's source list) | Dashboard, Cards, Marketplace, Import, Achievements, Leaderboards |
 | **`ThinktankWorkspace`** | [`src/components/thinktanks/ThinktankWorkspace.tsx`](../../src/components/thinktanks/ThinktankWorkspace.tsx) | Feed, Roster |
 | **`MessagesRouter`** | [`src/components/messages/MessagesRouter.tsx`](../../src/components/messages/MessagesRouter.tsx) | Conversations (single folder, conversation list + thread view) |
 | **`ThinkPagesAccountHub`**| [`src/components/thinkpages/ThinkPagesAccountHub.tsx`](../../src/components/thinkpages/ThinkPagesAccountHub.tsx) | Feed, composer (`UnifiedComposerContainer`), accounts |

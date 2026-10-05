@@ -15,7 +15,7 @@ In accordance with [reference/revision.md](../reference/revision.md), the system
 
 ### Frontend Modules
 - `src/app/achievements/page.tsx` – Header card (Total Unlocked, Achievement Points, Global Rank), optional Showcase shelf, and the full catalog
-- `src/app/leaderboards/page.tsx` – Standalone global leaderboards (`LeaderboardTab`) in `VaultSidebarLayout`
+- `src/app/leaderboards/page.tsx` – Standalone global leaderboards (`LeaderboardTab`)
 - `src/components/achievements/tabs/` – `AllAchievementsTab` (category/rarity filters, search, grid/list toggle, secret reveal), `ShowcaseTab`, `LeaderboardTab`
 - `src/components/achievements/FloatingRibbonRack.tsx` – `RibbonBar`, `FloatingRibbonRack` and `CountryOwnerRibbonRack`: ribbons drawn from the owner's real unlocks (see [Ribbons](#ribbons))
 

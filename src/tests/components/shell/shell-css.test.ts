@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
- * Navigation shell CSS hooks (src/styles/facet/shell.css): app-local sub-navigation is hidden at
- * every width, in the utilities layer so it beats the element's own display utilities.
+ * Navigation shell CSS hooks (src/styles/facet/shell.css): the shell variables and the page-title
+ * hook. No app hides navigation of its own here; apps render none.
  */
 import fs from "fs";
 import path from "path";
@@ -11,10 +11,8 @@ const css = fs
   .replace(/\/\*[\s\S]*?\*\//g, "");
 
 describe("shell.css hooks", () => {
-  it("hides [data-app-subnav] in @layer utilities", () => {
-    const utilities = css.slice(css.indexOf("@layer utilities"));
-    expect(utilities).toMatch(/\[data-app-subnav\]\s*\{\s*display:\s*none;\s*\}/);
-    expect(css.match(/\[data-app-subnav\]/g)).toHaveLength(1);
+  it("carries no sub-navigation hiding rule", () => {
+    expect(css).not.toContain("data-app-subnav");
   });
 
   it("has no flag-keyed selectors left", () => {

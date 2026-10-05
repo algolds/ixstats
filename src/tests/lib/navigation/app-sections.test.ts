@@ -128,16 +128,7 @@ describe("app section map routes", () => {
   });
 });
 
-/** Sub-navigation the shell hides (`data-app-subnav`); the map lists its destinations instead. */
-const HIDDEN_SUBNAVS: { file: string; marker: string }[] = [
-  { file: "app/settings/_components/SettingsContent.tsx", marker: "data-app-subnav" },
-];
-
-describe("hidden app sub-navigation", () => {
-  it.each(HIDDEN_SUBNAVS)("$file is marked data-app-subnav", ({ file, marker }) => {
-    expect(fs.readFileSync(path.join(srcDir, file), "utf-8")).toContain(marker);
-  });
-
+describe("admin sections", () => {
   it("lists the admin console's full set of pages", () => {
     const admin = APPS.find((app) => app.id === "admin")!;
     expect(admin.sections.length).toBeGreaterThan(25);

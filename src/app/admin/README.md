@@ -2,7 +2,7 @@
 
 **Last updated:** September 2026
 
-The admin console at `/admin` is the operator surface for IxStats. It exposes **37 top-level route directories** with a `page.tsx` under `src/app/admin/` (42 `page.tsx` files including the root and the nested `diplomatic-options/analytics`, `diplomatic-scenarios/analytics`, `maps/editor` and `maps/style-editor`). Every route except the two map editors renders the shared `AdminRouter`, which switches on the active section (39 sections + the dashboard), so navigation between admin areas is instant (no Next.js route transition).
+The admin console at `/admin` is the operator surface for IxStats. It exposes **37 top-level route directories** with a `page.tsx` under `src/app/admin/` (42 `page.tsx` files including the root and the nested `diplomatic-options/analytics`, `diplomatic-scenarios/analytics`, `maps/editor` and `maps/style-editor`). Every route except the two map editors renders the shared `AdminRouter`, which picks the active section from the pathname (39 sections + the dashboard). Navigation between areas is the sidebar's Admin area list: plain Next `Link`s, so each move is a normal route transition. The console renders no navigation of its own.
 
 ## Scope
 - Review system status, calculation logs, live dashboard metrics, and health
@@ -67,7 +67,7 @@ Directories without a `page.tsx`: `calculations/` (formula editor components; th
 
 - **Shared layout guard** — `src/app/admin/layout.tsx` enforces access before rendering any admin route. It requires a signed-in Clerk user who is either a system owner (`isSystemOwner(user.id)`) **or** has a role `∈ {admin, owner, staff}` in Clerk `publicMetadata.role` or in the database role. Anyone else sees the `AccessDeniedScreen`; signed-out users get a sign-in modal.
 - **System owner** — `src/lib/auth/system-owner-constants.ts` defines `SYSTEM_OWNER_IDS` and `isSystemOwner()`, which audit-logs owner access in production.
-- **Single-page router** — `_components/AdminRouter.tsx` + `_components/AdminNavigationContext.tsx` (`useAdminNavigation`) drive section state and URL sync via `window.history.pushState()` with a `popstate` listener. Section panels are `dynamic()`-imported (`ssr: false`) for code-splitting.
+- **Section router**: `_components/AdminRouter.tsx` + `_components/AdminNavigationContext.tsx` (`useAdminNavigation`) derive the active section from the pathname (re-synced on route changes and `popstate`); the dashboard's tiles can also switch section in place with `pushState`. Section panels are `dynamic()`-imported (`ssr: false`) for code-splitting. The sidebar's Admin area list in `app-sections.ts` is the only navigation between sections.
 - **Exceptions to the router** — `maps/editor` and `maps/style-editor` bypass the sidebar layout and render inside an `AdminErrorBoundary` directly.
 
 ## Data Sources

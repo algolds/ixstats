@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "~/components/ui/button";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -11,7 +11,6 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 import { useUserCountry } from "~/hooks/useUserCountry";
 
-import { SettingsSidebarNav } from "./SettingsSidebarNav";
 import { SettingsSkeleton } from "./SettingsSkeleton";
 import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
 import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
@@ -113,13 +112,6 @@ export function SettingsContent() {
     }
   }, [tabParam, activeSection]);
 
-  const handleSelectSection = useCallback((id: SettingSectionId) => {
-    setActiveSection(id);
-    const url = new URL(window.location.href);
-    url.searchParams.set("tab", id);
-    window.history.replaceState({}, "", url.toString());
-  }, []);
-
   const setupStatus: "loading" | "unauthenticated" | "needs-setup" | "complete" =
     !isLoaded || profileLoading
       ? "loading"
@@ -194,63 +186,48 @@ export function SettingsContent() {
               </div>
             )}
 
-            {/* Two-Pane Layout: Left Main Viewport (8 cols), Right Navigation Rail (4 cols) */}
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-              {/* The AppSidebar and TabBar list the tabs; the rail below is hidden. */}
-              <main className="min-w-0 lg:col-span-12">
-                {activeSection === "account" && <AccountIdentityPanel user={user} />}
+            {/* The sidebar's Settings area list (and the More sheet) switch the tab. */}
+            <main className="min-w-0">
+              {activeSection === "account" && <AccountIdentityPanel user={user} />}
 
-                {activeSection === "country" &&
-                  (country?.newStats || userProfile?.country ? (
-                    <CountryNationPanel
-                      country={country?.newStats ?? userProfile?.country}
-                      membershipTier={userProfile?.membershipTier}
-                      roleDisplayName={userProfile?.role?.displayName || userProfile?.role?.name}
-                    />
-                  ) : (
-                    <div className="border-separator bg-surface rounded-card border p-8 text-center">
-                      <Globe className="text-muted-foreground/60 mx-auto mb-2 h-8 w-8" />
-                      <h3 className="text-foreground text-sm font-bold">No country linked</h3>
-                      <p className="text-muted-foreground mt-1 mb-4 text-xs">
-                        Link or create a country to manage its settings.
-                      </p>
-                      <Button asChild variant="default" size="sm">
-                        <Link href="/setup">Set up a country</Link>
-                      </Button>
-                    </div>
-                  ))}
+              {activeSection === "country" &&
+                (country?.newStats || userProfile?.country ? (
+                  <CountryNationPanel
+                    country={country?.newStats ?? userProfile?.country}
+                    membershipTier={userProfile?.membershipTier}
+                    roleDisplayName={userProfile?.role?.displayName || userProfile?.role?.name}
+                  />
+                ) : (
+                  <div className="border-separator bg-surface rounded-card border p-8 text-center">
+                    <Globe className="text-muted-foreground/60 mx-auto mb-2 h-8 w-8" />
+                    <h3 className="text-foreground text-sm font-bold">No country linked</h3>
+                    <p className="text-muted-foreground mt-1 mb-4 text-xs">
+                      Link or create a country to manage its settings.
+                    </p>
+                    <Button asChild variant="default" size="sm">
+                      <Link href="/setup">Set up a country</Link>
+                    </Button>
+                  </div>
+                ))}
 
-                {activeSection === "appearance" && <AppearanceAccessibilityPanel />}
+              {activeSection === "appearance" && <AppearanceAccessibilityPanel />}
 
-                {activeSection === "wikios" && <WikiOSOptionsPanel />}
+              {activeSection === "wikios" && <WikiOSOptionsPanel />}
 
-                {activeSection === "notifications" && user?.id && (
-                  <NotificationSettingsPanel userId={user.id} />
-                )}
+              {activeSection === "notifications" && user?.id && (
+                <NotificationSettingsPanel userId={user.id} />
+              )}
 
-                {activeSection === "social" && user?.id && <SocialPersonaPanel userId={user.id} />}
+              {activeSection === "social" && user?.id && <SocialPersonaPanel userId={user.id} />}
 
-                {activeSection === "privacy" && <PrivacySecurityPanel />}
+              {activeSection === "privacy" && <PrivacySecurityPanel />}
 
-                {activeSection === "vault" && <VaultStatusPanel />}
+              {activeSection === "vault" && <VaultStatusPanel />}
 
-                {activeSection === "cosmetics" && <CosmeticsUpgradesPanel />}
+              {activeSection === "cosmetics" && <CosmeticsUpgradesPanel />}
 
-                {activeSection === "cards" && <NationStatesCardsPanel />}
-              </main>
-
-              {/* Right Column: Sticky Navigation Rail */}
-              <div data-app-subnav="" className="lg:col-span-4">
-                <SettingsSidebarNav
-                  activeSection={activeSection}
-                  onSelectSection={handleSelectSection}
-                  hasCountryId={Boolean(userProfile?.countryId)}
-                  user={user}
-                  membershipTier={userProfile?.membershipTier}
-                  roleDisplayName={userProfile?.role?.displayName || userProfile?.role?.name}
-                />
-              </div>
-            </div>
+              {activeSection === "cards" && <NationStatesCardsPanel />}
+            </main>
           </DashboardSidebarLayout>
         </div>
       </SignedIn>
