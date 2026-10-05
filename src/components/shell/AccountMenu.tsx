@@ -105,11 +105,9 @@ function IdentityLinks({ onClose }: { onClose?: () => void }) {
     staleTime: 5 * 60_000,
   });
   const done = () => onClose?.();
-  // A passport handle drops the trailing underscore Clerk adds to usernames; the passport also
-  // resolves a raw wiki username, so the wiki link falls back to the account username.
-  const accountName = user?.username ?? "";
-  const passportHandle = accountName.replace(/_$/, "");
-  const wikiName = wikiProfile?.displayName ?? accountName;
+  // The passport resolver never matches Clerk usernames, but it treats the handle "me" as the
+  // signed-in player. The wiki link falls back to the account username, which it resolves.
+  const wikiName = wikiProfile?.displayName ?? user?.username ?? "";
 
   return (
     <ul className="flex flex-col gap-0.5 pb-1">
@@ -129,7 +127,7 @@ function IdentityLinks({ onClose }: { onClose?: () => void }) {
         </li>
       )}
       <li>
-        <Link href={`/@${encodeURIComponent(passportHandle)}`} onClick={done} className={itemClass}>
+        <Link href="/@me" onClick={done} className={itemClass}>
           <UserCircle aria-hidden className="size-4 shrink-0" />
           Your profile
         </Link>

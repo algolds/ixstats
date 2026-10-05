@@ -64,7 +64,7 @@ describe("AccountMenu identity rows", () => {
 
   it("links your passport profile and your wiki profile", () => {
     render(<AccountMenu layout="sheet" />);
-    expect(screen.getByRole("link", { name: "Your profile" })).toHaveAttribute("href", "/@dee");
+    expect(screen.getByRole("link", { name: "Your profile" })).toHaveAttribute("href", "/@me");
     expect(screen.getByRole("link", { name: "Wiki profile" })).toHaveAttribute(
       "href",
       "/@Dee%20Wiki?tab=work"
