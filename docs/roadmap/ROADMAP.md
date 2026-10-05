@@ -87,7 +87,7 @@ code-health track runs throughout.
 | 16 | Rotate the `ixstats_readonly` password (it's in git history) | pending-features §1 | S | P0 (ops) | Open (ops) |
 | 17 | After 1–4: audit `vault_transactions` for exploit rows and correct balances | — | S | P0 | Report ([#36](https://github.com/algolds/ixstats/pull/36)) and `audit:vault-exploits:apply` ([#40](https://github.com/algolds/ixstats/pull/40)); run on production (ops) |
 | 18 | Small hardening: take the audit IP from `cf-connecting-ip`, drop the `X-RateLimit-Identifier` echo, compare secrets in constant time | PL-20 | S | P1 | Done ([#38](https://github.com/algolds/ixstats/pull/38), [#39](https://github.com/algolds/ixstats/pull/39)) |
-| 19 | Move the 243 unlimited mutations (234 `protectedProcedure`, 9 `premiumProcedure`) onto `lightMutationProcedure` | PL-3, pending-features §3 | M | P1 | Open |
+| 19 | Rate-limit the 243 unlimited mutations | PL-3, pending-features §3 | M | P1 | ✅ Done (2026-10-05) outside `wikios`: `rateLimitedMutationProcedure` / `premiumMutationProcedure` (60/min per user per mutation); an architecture test blocks new unlimited mutations. `wikios` (20) waits on #52 |
 | 20 | Sports commentary: a caller-supplied LLM/TTS config no longer receives the server keys; `generateMatchCommentary` is rate-limited and only the league manager can force a regenerate. Admin gates on lorewards `getCrossValidationHistory` / `getBlacklist` and sports `getAdminGlobalStats` / `testLLMNarrator` | action plan 0.1 | S | P0 | Done (2026-10-05) |
 
 **Exit:** every P0 merged with tests; a backup restored into a scratch database; the exploit audit is done.
@@ -103,7 +103,7 @@ code-health track runs throughout.
 |---|---|---|---|
 | Branch model (D13, decided): promote `rose-garden` → `development` → `master`; `master` stays production and the default branch; Dependabot targets `rose-garden` (done); obsolete Dependabot PRs closed (done) | PL-14, PL-15 | S | Partial: CI and the security scan run on `master`, `development` and `rose-garden`; `dependabot.yml` cleaned up (2026-10-05). Dependabot and scheduled workflows read config from `master` only, so these take effect after promotion |
 | Fix or delete the failing scheduled workflows (security scan → `bun audit`; image validation; Gemini triage and review need `GEMINI_API_KEY` or removal) | PL-14 | S | Partial: the security scan uses `bun audit` and `image-validation.yml` is deleted (2026-10-05); Gemini (D15) open |
-| Fix the 5 rules-of-hooks errors, set `--max-warnings` to ~160, make `lint:strict` blocking | PL-17 | S | Open (`--max-warnings 2100`, non-blocking) |
+| Fix the 5 rules-of-hooks errors, set `--max-warnings` to ~160, make `lint:strict` blocking | PL-17 | S | ✅ Done (2026-10-05): 0 errors and 25 warnings; `--max-warnings 25` and the CI step is blocking |
 | Typecheck tests, `proxy.ts`, `instrumentation.ts`, `content` and `scripts/` in CI; add `typecheck:db` | PL-16 | S | Partial: `typecheck:db` and `typecheck:scripts` (scripts, proxy, instrumentation, content) run in CI (2026-10-05); `src/tests` is not covered |
 | Fix the 7 package scripts that fail on import | PL-5 | S | ✅ Done (2026-10-05); the `check:script-imports` CI step keeps them working |
 | `audit:arch`: split the 15 files over the ceiling or add them to `RELAXED_FILES`, then make it blocking | pending-features §6 | M | Partial: the baseline holds real line counts (38 files), so the ratchet fires (2026-10-05); still non-blocking in CI |
@@ -122,8 +122,8 @@ code-health track runs throughout.
 | Item | Refs | Size | Status |
 |---|---|---|---|
 | Cron monitoring: a `CronRun` row per run, a Discord alert on failure, last success in `/api/health` | PL-10 | M | ✅ Done (2026-10-05) |
-| Page through cron reads (the 1,000-row cap); log when the cap is hit | PL-7 | S | Partial: `db.ts` logs when a `findMany` hits the cap (2026-10-05); paging the drift jobs is open |
-| Make `policy-maintenance` idempotent with a per-period key (confirm the `totalBudget` debit design) | PL-8 | S | Open |
+| Page through cron reads (the 1,000-row cap); log when the cap is hit | PL-7 | S | ✅ Done (2026-10-05): `db.ts` logs when the cap is hit; `findAllById` pages diplomatic-drift, politics-drift, thinkpages-trending, passive-income, national-issues and policy-maintenance |
+| Make `policy-maintenance` idempotent with a per-period key (confirm the `totalBudget` debit design) | PL-8 | S | ✅ Done (2026-10-05): one upkeep debit per policy per IxTime budget year (marker row in `PolicyEffectLog`); the annual period needs owner sign-off |
 | Enable the 21 jobs one per cycle, in the [runbook's order](../operations/deploy-rose-garden-2026-09.md#7-turn-cron-jobs-on-one-per-cycle) (now including `db-backup`, `log-retention`, `stat-progression`, `thinkpages-trending` and `achievements-evaluate`) | VT-15, §9 | S | Open (ops) |
 | New jobs: log retention; nightly backup | PL-6, PL-11 | S | ✅ Done: `db-backup` (#37) and `log-retention` (2026-10-05) |
 | Replace the cron job lock's long transaction with a lease row | PL-9 | M | ✅ Done (2026-10-05, `job_leases`) |
@@ -142,51 +142,55 @@ half-built features players can already see, and remove every fabricated number.
 | Item | Refs | Size | Depends on |
 |---|---|---|---|
 | ✅ **Done (#49):** first elections are scheduled once a legislature has at least 2 parties, candidates come from the parties, resolution seats them and bills can pass (D1 option a; seat-by-vote-share not built) | MC-2, pending-features §2 | M–L | Decision D1 |
-| Cabinet meetings conclude with recorded outcomes and decisions (restore the mutations with UI) | pending-features §2 | M | — |
-| Policies: repeal, expiry sweep, CivCap released | MC-5 | S–M | — |
-| Defense: force-structure authoring (branches and units) → PvNPC and PvP give meaningful results → PvP conflicts resolve | MC-3, MC-4 | L | Decision D2 |
-| Alliance invites become pending, with accept/decline and an NPC auto-response. **Partial:** pending invites (#48) and the diplomacy Inbox with accept, decline and withdraw (#49) are done; NPC targets never answer | MC-10 | S–M | — |
-| Stop cultural exchanges creating never-ending missions | MC-11 | S | — |
+| ✅ **Done (2026-10-05):** `meetings.concludeMeeting` records the outcome and one decision per agenda item; `CabinetMeetingsPanel` in the Cabinet tab. Left: decisions don't reach the event spine or become policies (M4) | pending-features §2 | M | — |
+| ✅ **Done (2026-10-05):** `policies.repealPolicy` (Repeal on passed bills), expiry in `policy-maintenance`, CivCap released (the shared sum counts active policies only); upkeep debited once per IxTime budget year (PL-8) | MC-5 | S–M | — |
+| Defense: force-structure authoring (branches and units) → meaningful PvNPC and PvP results. **Partial:** PvP conflicts resolve after `maxDuration` via `security.concludePvPConflict` (MC-4, 2026-10-05) using the PvNPC strength calculation; force structure (MC-3) still waits on D2 | MC-3, MC-4 | L | Decision D2 |
+| ✅ **Done:** pending invites (#48), the diplomacy Inbox (#49), and NPC targets answer at invite time from their personality's alliance prediction (2026-10-05) | MC-10 | S–M | — |
+| ✅ **Done (2026-10-05):** `diplomatic-drift` completes exchange missions when the exchange ends (cancels them with it); embassy details show elapsed-time progress | MC-11 | S | — |
 | ✅ **Done (#49):** the `stat-progression` job persists current stats and one `HistoricalDataPoint` per IxTime month; off until enabled | MC-7 | M | M1 jobs |
-| Crafting end to end. **Partial:** ownership IDs and `getVaultLevel()` (#48). Left: grant `resultCardId`, validate criteria (not just counts), one `successRate` unit, seed/schema, locked cards | VT-14, pending-features §2 | M | Decision D6 (rarity enum) |
-| Ledger consolidation. ✅ Packs, junk payouts and lore requests go through the ledger (VT-4, VT-5, #48). Left: `isEarningEnabled` exempts EARN_BONUS, EARN_CARDS and REFUND (VT-23) | VT-4, VT-5, VT-23 | M | M0 |
-| Pack opening: enforce `guaranteedRarity`/`themeFilter`, rarity fallback, exclude SPECIAL/crafted, proper errors | VT-18, pending-features §3 | S–M | — |
-| Achievement cards awarded (fix the seed import and wire it into `db:seed`) | VT-17 | S | — |
-| Store: ✅ the owned state shows (VT-11); perks still vanish (`vault-perks.ts` `take: 100`, `isActive: true`; VT-13) | VT-11, VT-13 | S | M0 #1 |
+| Crafting end to end. **Mostly done:** ownership IDs (#48); `resultCardId` granted, criteria validated, `successRate` 0–1, seed fixed (2026-10-05). Left: the workbench sends card IDs where crafting expects ownership IDs; the crafting seed is not in `db:seed`; MYTHIC recipe (D6) | VT-14, pending-features §2 | M | Decision D6 (rarity enum) |
+| ✅ **Done:** packs, junk payouts and lore requests go through the ledger (VT-4, VT-5, #48); the earning kill switch covers EARN_BONUS and EARN_CARDS (VT-23, 2026-10-05; REFUND stays allowed) | VT-4, VT-5, VT-23 | M | M0 |
+| ✅ **Done (2026-10-05):** `guaranteedRarity` and `themeFilter` enforced, SPECIAL and crafted cards excluded, empty tiers fall back, typed `PackError`s | VT-18, pending-features §3 | S–M | — |
+| ✅ **Done (2026-10-05):** the 11 achievement cards are defined in `src/lib/achievements/card-rewards.ts`; the seed upserts them, back-grants earlier unlocks and runs in `db:seed` (production: `bun prisma/seeds/achievement-cards.ts`) | VT-17 | S | — |
+| ✅ **Done:** the owned state shows (VT-11); every owned perk applies (VT-13, 2026-10-05) | VT-11, VT-13 | S | M0 #1 |
 | WikiOS edit integrity: conflict detection → Turnstile → cache purge on revert → page protection (admin UI + `WikiLog`) | WK-2, WK-4, WK-16, WK-3 | M | — |
 | WikiOS uploads (and the Commons tab fix) | WK-5, WK-6 | M | Decision D3 |
-| ThinkTanks: ✅ the Docs and Chat tabs are mounted and invites go by username (#48). Left: an invite inbox with decline, and join-by-code (SL-13) | pending-features §3, SL-22, SL-13 | M | M0 #7 |
-| Realm data isolation: transport routes carry `realmId` (+ backfill); flag lookup scoped to the realm | AT-1, AT-18 | S | — |
-| Realm-aware maps: IxWorld-only labels and tour gated; realm wiki source for map lookups | AT-2, AT-12 | S | — |
+| ✅ **Done:** Docs and Chat tabs and username invites (#48); an invites inbox with accept/decline and join-by-code on the existing `inviteCode` (SL-13, 2026-10-05) | pending-features §3, SL-22, SL-13 | M | M0 #7 |
+| ✅ **Done (2026-10-05):** routes and hubs are saved with the owning country's realm, with `db:backfill-transport-realm` (dry run, then `--apply`); `flags.resolveBatch` filters by realm | AT-1, AT-18 | S | — |
+| ✅ **Done (2026-10-05):** ocean labels and the tour only on IxWorld; map wiki lookups use the realm's lore-index wiki source | AT-2, AT-12 | S | — |
 | ✅ **Done:** the admin role counts as admin in the map editor, and `/mycountry/map-editor` renders the editor full-screen | AT-13, pending-features §2 | S–M | — |
-| Vexel: attach-to-country renders a PNG and stops blanking the coat of arms; add Vexel to the Labs menu | pending-features §2 | M | — |
+| Vexel. **Partial (2026-10-05):** attaching a design with no image now refuses instead of blanking the coat of arms, and Vexel is in the Labs menu. Left: render a PNG on attach (no render utility exists, so attach always refuses today) | pending-features §2 | M | — |
 
 ### M2.2 Remove fabricated data (the trust pass)
 Replace each with real data, or show an empty state. All S or S–M.
 - ✅ **Ribbons:** the fake ribbon rack renders nothing (VT-8, #48); #49 derives ribbons from real unlocks.
 - ✅ **Leaderboard:** no made-up defaults (VT-20).
-- **MyCountry:** ✅ editorial profile prose removed (MC-12); ✅ budget utilisation (MC-15); ✅ embassy shared data removed
-  (MC-8). Open: one lint comment rendered as text in `NotificationRow.tsx` (MC-9); stability inputs, and move DB writes
-  out of queries (MC-13); embassy tiers (MC-14).
+- ✅ **MyCountry:** editorial profile prose removed (MC-12); budget utilisation (MC-15); embassy shared data removed
+  (MC-8); the `NotificationRow.tsx` text leak (MC-9), read-only stability, border and security-assessment queries with
+  real recent policies (MC-13), and real embassy tiers (MC-14) on 2026-10-05.
 - ✅ **Passport realm tiles:** real values (AT-4).
 - ✅ **Sports standings form:** computed from the last 5 matches (SL-17).
 - ✅ **LiveDataCard:** empty state instead of a fake GDP series (SL-26).
-- **Maps:** the stale "Private Beta" banner (AT-17); Labs pipeline enrichment (AT-9, or label it as a demo).
+- ✅ **Maps:** the "Private Beta" notice is removed (AT-17); the Labs pipeline's placeholder enrichment is labelled sample data (AT-9). Real enrichment stays in M7.
 
 ### M2.3 Settings that do nothing: wire or hide
-- **Privacy & Safety:** enforce block/mute (feed, messaging, mentions) and hide the rest until built (SL-4, first step).
-- **Notifications:** filter by category in `notificationAPI.create`; hide email and push (SL-5).
-- **Admin panels:** card general settings (rake, capacity) (VT-9); vault price settings (VT-10); Stash/ThinkPages admin
-  config (WK-11); Loreward weights (WK-8).
-- **WikiOS reader toggles:** (WK-14).
-- **ThinkPages→Discord feed:** restore the save and add an admin card (WK-10).
+✅ **Done (2026-10-05)**, each wired or hidden:
+- **Privacy & Safety:** blocks and mutes filter the ThinkPages and activity feeds, and a block stops new DMs; every
+  control the server doesn't enforce is hidden (SL-4). Left: blocking inside group chats.
+- **Notifications:** per-user categories and minimum urgency are enforced; email and push toggles hidden (SL-5). Admin
+  broadcasts and sports notifications still bypass preferences.
+- **Admin panels:** card rake, capacity and junk batch limit wired (VT-9); the unused vault price keys removed (VT-10);
+  the ThinkPages account limit wired and unread Stash/ThinkPages controls hidden (WK-11); Loreward weights read by the
+  scorer (WK-8); the unused `showDefenseTab` and Intelligence switches removed.
+- **WikiOS reader toggles:** citation tooltips and open-in-new-tab work (WK-14).
+- **ThinkPages→Discord feed:** `saveThinkpagesDiscordFeedConfig` and a real admin card (WK-10).
 
 ### M2.4 Quick navigation fixes (all S)
 - ✅ **Halo:** Sign Out actually signs out (SL-19); Mark-all-read reaches the server (SL-20).
-- **Links:** ✅ Create League/Club (SL-21, the old links removed); ✅ mention notifications (SL-11, #49). Open: ThinkPages
-  topic links in `PostBody.tsx` still point to `/thinkpages/topic/…`, which has no route (pending-features §2).
-- **Pages:** ✅ the `/explore` mobile filters (SL-24); ✅ `/admin/calculations` has a page. Open: the WikiOS export link
-  (WK-15).
+- ✅ **Links:** Create League/Club (SL-21); mention notifications (SL-11, #49); ThinkPages topic links go to
+  `/blurbs/<slug>` (2026-10-05).
+- ✅ **Pages:** the `/explore` mobile filters (SL-24); `/admin/calculations` has a page; the WikiOS export link passes a
+  slug (WK-15, 2026-10-05).
 
 ### M2.5 Help centre
 ✅ **Done:** all 55 articles are registered in `src/app/help/_lib/help-sections.ts`; the admin article is rewritten

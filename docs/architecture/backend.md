@@ -1,7 +1,7 @@
 # Backend Architecture
 
 **Framework**: tRPC 11.18.0 · Prisma 6.19.3 · Next.js 16 route handlers + custom Node `http` server (`server.mjs`) · TypeScript 7.0.2  
-**Location**: `src/server/api/` (77 routers registered in `root.ts`, 922 procedures — the generated count is in [`api-complete.md`](../reference/api-complete.md)) · `src/server/db.ts` · `src/server/shared/`
+**Location**: `src/server/api/` (77 routers registered in `root.ts`, 932 procedures — the generated count is in [`api-complete.md`](../reference/api-complete.md)) · `src/server/db.ts` · `src/server/shared/`
 
 ---
 
