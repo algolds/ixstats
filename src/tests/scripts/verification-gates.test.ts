@@ -130,9 +130,12 @@ describe("verification-gates", () => {
   describe("CI configuration (.github/workflows/ci.yml)", () => {
     const ciContent = fs.readFileSync(path.resolve(rootDir, ".github/workflows/ci.yml"), "utf-8");
 
-    it("includes v2 branch in push triggers and retains pull_request", () => {
+    it("runs on the three promotion branches and retains pull_request", () => {
       expect(ciContent).toMatch(/pull_request:/);
-      expect(ciContent).toMatch(/branches:.*v2/);
+      const branches = /branches:\s*\[([^\]]*)\]/.exec(ciContent)?.[1] ?? "";
+      for (const branch of ["master", "development", "rose-garden"]) {
+        expect(branches).toContain(branch);
+      }
     });
 
     it("uses bun run lint:strict and not masking bun run lint", () => {

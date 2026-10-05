@@ -2,9 +2,9 @@ name: Security Scan
 
 on:
   push:
-    branches: [main, master]
+    branches: [master, development, rose-garden]
   pull_request:
-    branches: [main, master]
+    branches: [master, development, rose-garden]
   schedule:
     # Run security scan daily at 6 AM UTC
     - cron: '0 6 * * *'
@@ -29,13 +29,15 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      # bun.lock is the lockfile; `npm audit` has none to read and always failed here.
       - name: Run security audit
-        run: bunx npm audit --audit-level=moderate
+        run: bun audit --audit-level=moderate
         continue-on-error: true
 
       - name: Generate audit report
+        if: always()
         run: |
-          bunx npm audit --json > audit-report.json
+          bun audit --json > audit-report.json || true
           echo "## Security Audit Report" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
           cat audit-report.json >> $GITHUB_STEP_SUMMARY

@@ -4,13 +4,19 @@ import { resolve } from "path";
 /**
  * Loads `.env*` files into process.env for the standalone entry points (server.mjs,
  * ws-backend.mjs, cron-runner.mjs). Variables already set win, then earlier files win.
- * `.env.production.local` holds the prod secrets.
+ * The order follows Next.js precedence and start-production.sh (which sources
+ * `.env.production` then `.env.production.local`): `.env.production.local` holds the
+ * prod secrets and must beat the `.env.production` template, or the ws and cron
+ * processes can run with a placeholder the web process overrides.
  */
+export const ENV_FILES = {
+  production: [".env.production.local", ".env.local", ".env.production", ".env"],
+  development: [".env.local.dev", ".env.local", ".env"],
+};
+
 export function loadEnvVariables(logPrefix) {
   const envFiles =
-    process.env.NODE_ENV === "production"
-      ? [".env.production", ".env.local", ".env.production.local", ".env"]
-      : [".env.local.dev", ".env.local", ".env"];
+    process.env.NODE_ENV === "production" ? ENV_FILES.production : ENV_FILES.development;
 
   for (const file of envFiles) {
     const absolutePath = resolve(process.cwd(), file);

@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 /**
- * Environment Verification Script for IxStates v1.2
+ * Environment Verification Script for IxStates
  * Validates all required environment variables and external connections
  */
 
@@ -30,12 +30,31 @@ const RECOMMENDED_VARS = [
   "NEXT_PUBLIC_BASE_PATH",
 ] as const;
 
-// Production-specific requirements
-const PRODUCTION_VARS = [
-  "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
-  "CLERK_SECRET_KEY",
-  "DISCORD_WEBHOOK_URL",
-] as const;
+// Production-specific requirements. Mirrors the keys src/env.ts refuses to boot without
+// in production (with the same minimum lengths), so a deploy fails here, not at startup.
+export const PRODUCTION_REQUIRED: ReadonlyArray<{ name: string; minLength: number }> = [
+  { name: "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", minLength: 1 },
+  { name: "CLERK_SECRET_KEY", minLength: 1 },
+  { name: "IXTIME_BOT_SECRET", minLength: 1 },
+  { name: "CRON_SECRET", minLength: 32 },
+  { name: "WIKI_SYNC_WEBHOOK_SECRET", minLength: 32 },
+];
+
+// Recommended in production (warnings only)
+const PRODUCTION_RECOMMENDED = ["DISCORD_WEBHOOK_URL", "NEXT_PUBLIC_APP_URL", "REDIS_URL"] as const;
+
+/** Production-required variables that are missing or shorter than src/env.ts allows. */
+export function checkProductionRequired(env: NodeJS.ProcessEnv = process.env): string[] {
+  const errors: string[] = [];
+  for (const { name, minLength } of PRODUCTION_REQUIRED) {
+    const value = env[name]?.trim() ?? "";
+    if (!value) errors.push(`${name} is required in production`);
+    else if (value.length < minLength) {
+      errors.push(`${name} must be at least ${minLength} characters in production`);
+    }
+  }
+  return errors;
+}
 
 interface ValidationResult {
   passed: boolean;
@@ -590,9 +609,18 @@ async function main() {
   // Production-specific checks
   if (process.env.NODE_ENV === "production") {
     printHeader("Production-Specific Variables");
-    for (const varName of PRODUCTION_VARS) {
+    for (const { name } of PRODUCTION_REQUIRED) {
+      checkEnvVar(name, true);
+    }
+    for (const varName of PRODUCTION_RECOMMENDED) {
       checkEnvVar(varName, false);
     }
+    const productionErrors = checkProductionRequired();
+    allResults.push({
+      passed: productionErrors.length === 0,
+      warnings: [],
+      errors: productionErrors,
+    });
   }
 
   // Validate configurations
@@ -691,7 +719,9 @@ async function main() {
 }
 
 // Run verification
-main().catch((error) => {
-  print(`\n❌ Verification failed: ${error}`, "red");
-  exit(1);
-});
+if (import.meta.main || process.argv[1]?.endsWith("verify-environment.ts")) {
+  main().catch((error) => {
+    print(`\n❌ Verification failed: ${error}`, "red");
+    exit(1);
+  });
+}

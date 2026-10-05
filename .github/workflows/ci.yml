@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [master, development, main, v2, rose-garden]
+    branches: [master, development, rose-garden]
 
 jobs:
   verify:
@@ -53,6 +53,9 @@ jobs:
 
       - name: Typecheck (tRPC)
         run: bun run typecheck:trpc
+
+      - name: Typecheck (DB)
+        run: bun run typecheck:db
 
       - name: Validate script targets
         run: bun run validate:script-targets
