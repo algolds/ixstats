@@ -67,7 +67,7 @@ export function WikiWatchlistFeed() {
               <div className="rounded-control bg-yellow/15 text-yellow flex h-8 w-8 items-center justify-center">
                 <Eye className="h-5 w-5" />
               </div>
-              <h1 className="text-label text-title-2">Stash watchlist</h1>
+              <h2 className="text-label text-title-2">Stash watchlist</h2>
             </div>
             <p className="text-label-secondary text-footnote">
               Tracking changes across{" "}

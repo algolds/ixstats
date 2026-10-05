@@ -110,7 +110,7 @@ export default function WikiTemplatesPage() {
                 <ViewGrid className="h-6 w-6" />
               </div>
               <div>
-                <h1 className="text-label text-title-2">Template registry & infobox suite</h1>
+                <h2 className="text-label text-title-2">Template registry & infobox suite</h2>
                 <p className="text-label-secondary text-footnote mt-0.5">
                   Unified polymorphic realm factbooks, dynamic variant schemas, and live simulation
                   data connectors
