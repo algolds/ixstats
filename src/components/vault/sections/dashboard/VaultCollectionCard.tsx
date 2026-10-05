@@ -8,9 +8,6 @@ import { Stat } from "~/components/ui/stat";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Credits } from "./credits";
 
-/** Base card capacity before the account's capacity boost. */
-const BASE_CARD_CAPACITY = 150;
-
 interface VaultCollectionCardProps {
   vaultLevel: number;
   /** IxCredits balance plus card deck value; undefined while either loads, null if either failed. The balance itself lives in the Wallet card. */
@@ -18,7 +15,8 @@ interface VaultCollectionCardProps {
   /** Undefined while the stats load, null if they failed. */
   collectionValuation: number | null | undefined;
   totalCards: number;
-  capacityBoost: number;
+  /** Base capacity plus Vault upgrades; null until loaded. */
+  cardCapacity: number | null;
   unopenedPacks: number;
   activeAuctions: number;
 }
@@ -61,7 +59,7 @@ export function VaultCollectionCard({
   netWorth,
   collectionValuation,
   totalCards,
-  capacityBoost,
+  cardCapacity,
   unopenedPacks,
   activeAuctions,
 }: VaultCollectionCardProps) {
@@ -85,7 +83,7 @@ export function VaultCollectionCard({
 
       <div className="border-separator flex flex-wrap gap-2 border-t pt-4">
         <Count icon={<Layers />} label="Cards">
-          {totalCards} / {BASE_CARD_CAPACITY + capacityBoost}
+          {totalCards} / {cardCapacity ?? "–"}
         </Count>
         <Count icon={<Package />} label="Packs">
           {unopenedPacks}

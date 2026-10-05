@@ -25,6 +25,9 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
         findUnique: jest.fn().mockResolvedValue(null),
         findFirst: jest.fn().mockResolvedValue(null),
       },
+      userConnection: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
       country: {
         findMany: jest.fn().mockResolvedValue([]),
       },

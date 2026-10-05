@@ -27,6 +27,9 @@ export async function mapMessagingErrors<T>(
     if (err.name === "MessagingNotFoundError" && messages.notFound) {
       throw new TRPCError({ code: "NOT_FOUND", message: messages.notFound });
     }
+    if (err.name === "MessagingBlockedError") {
+      throw new TRPCError({ code: "FORBIDDEN", message: err.message });
+    }
     if (err.name === "MessagingForbiddenError") {
       throw new TRPCError({ code: "FORBIDDEN", message: messages.forbidden });
     }

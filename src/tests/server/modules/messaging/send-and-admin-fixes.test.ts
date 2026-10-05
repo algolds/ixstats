@@ -29,7 +29,11 @@ function makeDb(conv: any) {
       count: jest.fn().mockResolvedValue(0),
     },
     thinktankGroup: { findFirst: jest.fn().mockResolvedValue(null) },
-    user: { findFirst: jest.fn().mockResolvedValue(null) },
+    user: {
+      findFirst: jest.fn().mockResolvedValue(null),
+      findUnique: jest.fn().mockResolvedValue(null),
+    },
+    userConnection: { findMany: jest.fn().mockResolvedValue([]) },
   };
   return db;
 }

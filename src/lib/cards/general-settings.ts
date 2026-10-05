@@ -3,6 +3,10 @@
  *
  * SystemConfig-backed global settings for card trading, marketplace tax,
  * pack claims, inventory limits, and minting permissions.
+ *
+ * Read by the game: auctionHouseRakePct (marketplaceFee), maxInventoryCards
+ * (baseCardCapacity) and maxJunkBatchSize (cards.junkCards). The others are stored
+ * but nothing reads them yet, so the admin panel hides their controls (VT-9).
  */
 
 import { type PrismaClient } from "@prisma/client";
@@ -28,11 +32,11 @@ export interface CardGeneralSettings {
 
 const CARD_GENERAL_DEFAULTS: CardGeneralSettings = {
   tradingEnabled: 1,
-  auctionHouseRakePct: 5,
+  auctionHouseRakePct: 10,
   dailyFreePacks: 1,
   dailyPackCooldownHours: 24,
   allowPlayerMinting: 0,
-  maxInventoryCards: 2500,
+  maxInventoryCards: 150,
   maxJunkBatchSize: 100,
   autoGenerateLoreThumbnails: 1,
 };
@@ -51,7 +55,9 @@ const KEY = {
 let cache: { value: CardGeneralSettings; expires: number } | null = null;
 const CACHE_TTL_MS = 60_000;
 
-export async function getGeneralCardSettings(db: PrismaClient): Promise<CardGeneralSettings> {
+export async function getGeneralCardSettings(
+  db: Pick<PrismaClient, "systemConfig">
+): Promise<CardGeneralSettings> {
   const now = Date.now();
   if (cache && cache.expires > now) return cache.value;
 
@@ -85,4 +91,23 @@ export async function setGeneralCardSetting(
     update: { value: String(value) },
   });
   cache = null;
+}
+
+/**
+ * Marketplace fee on card sales over 100 IxC, at the admin "house rake" rate
+ * (10% unless configured, clamped to 0-50%).
+ */
+export async function marketplaceFee(
+  db: Pick<PrismaClient, "systemConfig">,
+  price: number
+): Promise<number> {
+  if (price <= 100) return 0;
+  const { auctionHouseRakePct } = await getGeneralCardSettings(db);
+  const rate = Math.min(Math.max(auctionHouseRakePct, 0), 50) / 100;
+  return Math.floor(price * rate);
+}
+
+/** Cards a player may hold before any Vault capacity upgrades. */
+export async function baseCardCapacity(db: Pick<PrismaClient, "systemConfig">): Promise<number> {
+  return (await getGeneralCardSettings(db)).maxInventoryCards;
 }

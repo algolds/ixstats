@@ -23,6 +23,7 @@
 import { db } from "~/server/db";
 import { withBasePath } from "~/lib/base-path";
 import { isNotificationEventEnabled } from "./guard";
+import { recipientAccepts } from "./recipient-preferences";
 
 function resolveHref(href?: string | null): string | null {
   if (!href) return null;
@@ -133,7 +134,9 @@ interface NotificationTriggerOptions {
 
 class NotificationAPIService {
   /**
-   * Create a single notification
+   * Create a single notification.
+   * Returns "" without creating anything when the recipient has switched off the
+   * notification's category or set a higher minimum urgency.
    */
   async create(input: CreateNotificationInput): Promise<string> {
     try {
@@ -141,6 +144,10 @@ class NotificationAPIService {
       if (guardKey && !(await isNotificationEventEnabled(guardKey))) {
         console.debug(`[NotificationAPI] Suppressed by guard: ${guardKey}`);
         throw new Error(`Notification suppressed: ${guardKey} is disabled`);
+      }
+      if (!(await recipientAccepts(input.userId, input.category, input.priority))) {
+        console.debug("[NotificationAPI] Suppressed by recipient preferences:", input.category);
+        return "";
       }
       const notification = await db.notification.create({
         data: {
@@ -182,24 +189,29 @@ class NotificationAPIService {
    */
   async createMany(inputs: CreateNotificationInput[]): Promise<string[]> {
     try {
+      const accepted = await Promise.all(
+        inputs.map((input) => recipientAccepts(input.userId, input.category, input.priority))
+      );
       const notifications = await db.notification.createMany({
-        data: inputs.map((input) => ({
-          title: input.title,
-          message: input.message ?? null,
-          description: input.description ?? null,
-          userId: input.userId ?? null,
-          countryId: input.countryId ?? null,
-          category: input.category ?? null,
-          type: input.type ?? "info",
-          priority: input.priority ?? "medium",
-          severity: input.severity ?? "informational",
-          href: resolveHref(input.href),
-          source: input.source ?? "system",
-          actionable: input.actionable ?? false,
-          deliveryMethod: input.deliveryMethod ?? null,
-          metadata: input.metadata ? JSON.stringify(input.metadata) : null,
-          relevanceScore: input.relevanceScore ?? null,
-        })),
+        data: inputs
+          .filter((_, i) => accepted[i])
+          .map((input) => ({
+            title: input.title,
+            message: input.message ?? null,
+            description: input.description ?? null,
+            userId: input.userId ?? null,
+            countryId: input.countryId ?? null,
+            category: input.category ?? null,
+            type: input.type ?? "info",
+            priority: input.priority ?? "medium",
+            severity: input.severity ?? "informational",
+            href: resolveHref(input.href),
+            source: input.source ?? "system",
+            actionable: input.actionable ?? false,
+            deliveryMethod: input.deliveryMethod ?? null,
+            metadata: input.metadata ? JSON.stringify(input.metadata) : null,
+            relevanceScore: input.relevanceScore ?? null,
+          })),
       });
 
       console.log("[NotificationAPI] Created", notifications.count, "notifications");

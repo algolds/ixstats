@@ -4,6 +4,7 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { getRecentChanges as getWikiBridgeRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getForumActivity } from "~/server/modules/forum";
 import { globalCache } from "~/lib/cache";
+import { hiddenThinkpagesAccountIds } from "~/server/shared/user-blocks";
 import { formatPollForClient } from "../../thinkpages/post-utils";
 import {
   activityFeedItem,
@@ -325,6 +326,14 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
         combinedActivities = await buildCombinedActivities(ctx.db, input);
         // Cache the combined activities for 60 seconds (matches the dashboard poll)
         await globalCache.set(cacheKey, { combinedActivities }, { ttl: 60 });
+      }
+
+      // Leave out ThinkPages posts by accounts the viewer blocked or muted.
+      const hidden = new Set(await hiddenThinkpagesAccountIds(ctx.db, ctx.auth?.userId));
+      if (hidden.size) {
+        combinedActivities = combinedActivities.filter(
+          (a) => !(a.source === "thinkpages" && hidden.has(a.rawPost?.accountId))
+        );
       }
 
       // Apply pagination limit to combined results

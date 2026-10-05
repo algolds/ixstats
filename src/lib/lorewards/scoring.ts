@@ -20,7 +20,7 @@ export interface ScoringWeights {
   minSingleEdit: number; // Min bytes for winner qualification (default 1000)
 }
 
-const DEFAULT_WEIGHTS: ScoringWeights = {
+export const DEFAULT_WEIGHTS: ScoringWeights = {
   proseWeight: 0.7,
   collaborativeBonus: 1.3,
   depthMaxBonus: 0.3,
@@ -197,10 +197,40 @@ const unenrichedScore = (c: Candidate, weights: ScoringWeights): CandidateScore 
   scoreBreakdown: `base:${c.bytesAdded} (unenriched)`,
 });
 
+/** Weights admins tune in Admin → Wiki → Lorewards, stored as `lorewardWeight_<field>`. */
+export const TUNABLE_WEIGHTS = [
+  "proseWeight",
+  "depthMaxBonus",
+  "noveltyBonus",
+  "importanceMaxBonus",
+  "listPenalty",
+  "minorOnlyPenalty",
+] as const satisfies readonly (keyof ScoringWeights)[];
+
+export const lorewardWeightKey = (field: (typeof TUNABLE_WEIGHTS)[number]) =>
+  `lorewardWeight_${field}`;
+
+/** The configured scoring weights, with DEFAULT_WEIGHTS for anything unset or unreadable. */
+export async function loadScoringWeights(
+  store: { systemConfig: Pick<typeof db.systemConfig, "findMany"> } = db
+): Promise<ScoringWeights> {
+  const rows = await store.systemConfig
+    .findMany({ where: { key: { in: TUNABLE_WEIGHTS.map(lorewardWeightKey) } } })
+    .catch(() => []);
+  const byKey = new Map(rows.map((r) => [r.key, Number(r.value)]));
+  const weights = { ...DEFAULT_WEIGHTS };
+  for (const field of TUNABLE_WEIGHTS) {
+    const value = byKey.get(lorewardWeightKey(field));
+    if (value !== undefined && Number.isFinite(value) && value >= 0) weights[field] = value;
+  }
+  return weights;
+}
+
 export async function scoreDailyWikiOS(
   dateStr: string,
-  weights: ScoringWeights = DEFAULT_WEIGHTS
+  weightsOverride?: ScoringWeights
 ): Promise<WikiOSScoringResult> {
+  const weights = weightsOverride ?? (await loadScoringWeights());
   const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
   const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
 

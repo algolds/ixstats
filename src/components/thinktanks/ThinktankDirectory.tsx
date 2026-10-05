@@ -13,6 +13,7 @@ import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { timeAgo } from "~/lib/format/compact";
 import { isGroupMember } from "./groupMembership";
+import { ThinktankInvitesPanel } from "./ThinktankInvitesPanel";
 
 interface ThinktankDirectoryProps {
   groups: any[];
@@ -106,6 +107,8 @@ export function ThinktankDirectory({
             <Plus aria-hidden="true" /> New
           </Button>
         </div>
+
+        {activeTab === "my" && currentUserId && <ThinktankInvitesPanel onJoined={onSelectGroup} />}
 
         <SearchField
           size="sm"

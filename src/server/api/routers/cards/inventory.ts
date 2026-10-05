@@ -8,6 +8,7 @@ import { getUserCards } from "~/lib/cards/card-service";
 import { CardRarity } from "@prisma/client";
 import { globalCache } from "~/lib/cache";
 import { getValuationConfig, junkValue } from "~/lib/cards/valuation";
+import { getGeneralCardSettings } from "~/lib/cards/general-settings";
 import { vaultService, LedgerError } from "~/lib/vault/vault-service";
 import { LoreCategory } from "~/lib/cards/category-enums";
 
@@ -404,6 +405,14 @@ export const cardsInventoryRouter = createTRPCRouter({
           throw new TRPCError({
             code: "UNAUTHORIZED",
             message: "User ID not found",
+          });
+        }
+
+        const { maxJunkBatchSize } = await getGeneralCardSettings(ctx.db);
+        if (input.ownershipIds.length > maxJunkBatchSize) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `You can junk at most ${maxJunkBatchSize} cards at a time.`,
           });
         }
 

@@ -8,14 +8,17 @@
  *  - groups:     ThinkTank group lifecycle (create / get / update / delete) and invites
  *  - membership: joining, leaving, role management, removal
  *  - documents:  collaborative documents (create / get / update / delete)
+ *  - invites:    the invitee side of invites (inbox, accept / decline) and invite codes
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { thinkpagesThinktanksGroupsRouter } from "./groups";
 import { thinkpagesThinktanksMembershipRouter } from "./membership";
 import { thinkpagesThinktanksDocumentsRouter } from "./documents";
+import { thinkpagesThinktanksInvitesRouter } from "./invites";
 
 export const thinkpagesThinktanksRouter = mergeRouters(
   thinkpagesThinktanksGroupsRouter,
   thinkpagesThinktanksMembershipRouter,
-  thinkpagesThinktanksDocumentsRouter
+  thinkpagesThinktanksDocumentsRouter,
+  thinkpagesThinktanksInvitesRouter
 );

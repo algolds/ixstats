@@ -4,7 +4,7 @@
 
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { messagingFor } from "./_service";
+import { mapMessagingErrors, messagingFor } from "./_service";
 
 const MessageFolderSchema = z.enum([
   "inbox",
@@ -105,14 +105,18 @@ export const messagesConversationsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const messagingService = messagingFor(ctx);
 
-      return await messagingService.createConversation(ctx.auth.userId, {
-        participantIds: input.participantIds,
-        subject: input.name,
-        source: input.source as any,
-        conversationType: input.conversationType,
-        diplomaticClassification: input.diplomaticClassification,
-        priority: input.priority,
-        channelType: input.channelType,
-      });
+      return await mapMessagingErrors(
+        () =>
+          messagingService.createConversation(ctx.auth.userId, {
+            participantIds: input.participantIds,
+            subject: input.name,
+            source: input.source as any,
+            conversationType: input.conversationType,
+            diplomaticClassification: input.diplomaticClassification,
+            priority: input.priority,
+            channelType: input.channelType,
+          }),
+        { forbidden: "You cannot start this conversation" }
+      );
     }),
 });

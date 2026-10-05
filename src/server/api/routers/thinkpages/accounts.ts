@@ -3,6 +3,7 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { TRPCError } from "@trpc/server";
 import { isSystemOwner } from "~/lib/auth";
 import { assertCountryWriteAccess, getRoleName } from "~/server/shared/country-authorization";
+import { maxThinkpagesAccountsPerUser } from "~/server/shared/thinkpages-config";
 import {
   ensurePersonalAccount,
   findPersonalAccount,
@@ -161,15 +162,16 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
       });
     }
 
-    // Check account limit - 25 accounts per clerk user (the personal persona does not count)
+    // Account limit per clerk user, set in Admin → ThinkPages (the personal persona does not count)
+    const maxAccounts = await maxThinkpagesAccountsPerUser(db);
     const existingAccounts = await db.thinkpagesAccount.findMany({
       where: { clerkUserId, accountType: { not: PERSONAL_ACCOUNT_TYPE } },
     });
 
-    if (existingAccounts.length >= 25) {
+    if (existingAccounts.length >= maxAccounts) {
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: "You have reached the maximum of 25 ThinkPages accounts per user",
+        message: `You have reached the maximum of ${maxAccounts} ThinkPages accounts per user`,
       });
     }
 
@@ -269,6 +271,9 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
 
       return accounts;
     }),
+
+  // How many feed accounts one user may create (Admin → ThinkPages)
+  getAccountLimit: publicProcedure.query(({ ctx }) => maxThinkpagesAccountsPerUser(ctx.db)),
 
   // Get current user's ThinkPages accounts
   getMyAccounts: protectedProcedure.query(async ({ ctx }) => {

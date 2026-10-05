@@ -56,7 +56,7 @@ export function PostBody({
           <BookOpen className="size-3.5" aria-hidden="true" />
           <span>{blurbMeta.promptTitle ?? "Topic Tuesday"}</span>
           {blurbMeta.promptSlug && (
-            <Link href={`/thinkpages/topic/${blurbMeta.promptSlug}`} className="hover:underline">
+            <Link href={`/blurbs/${blurbMeta.promptSlug}`} className="hover:underline">
               View Topic →
             </Link>
           )}

@@ -2,67 +2,23 @@
 // src/app/admin/_components/StashSettingsContent.tsx
 // Stash and WikiOS Article Caching Administration Panel
 
-import { useEffect, useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { PageHeader } from "~/components/shell/PageHeader";
-import { Button } from "~/components/ui/button";
-import { Label } from "~/components/ui/label";
-import { Switch } from "~/components/ui/switch";
-import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
-import { FloppyDisk as Save } from "iconoir-react";
-import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
 import { Card } from "~/components/ui/card";
 
 export function StashSettingsContent() {
   usePageTitle({ title: "Admin - Stash Settings" });
-  const notify = useNotify();
 
+  // Stash limits and storage switches were never enforced (WK-11), so only usage is shown.
   const { data: stats, isLoading: statsLoading } = api.admin.getStashStats.useQuery();
-  const {
-    data: configData,
-    isLoading: configLoading,
-    refetch: refetchConfig,
-  } = api.admin.getStashConfig.useQuery();
-
-  const [settings, setSettings] = useState({
-    maxStashCount: 100,
-    offlineCacheEnabled: true,
-    autoCategorization: true,
-    highlightTracking: true,
-    welcomeVersion: "1.0",
-  });
-
-  useEffect(() => {
-    if (configData) {
-      setSettings(configData);
-    }
-  }, [configData]);
-
-  const saveMutation = api.admin.saveStashConfig.useMutation({
-    onSuccess: () => {
-      notify.success("Settings Saved", "Stash configuration updated successfully.");
-      void refetchConfig();
-    },
-    onError: (err: { message?: string }) => {
-      notify.error("Save Failed", err.message || "Failed to update stash configuration.");
-    },
-  });
-
-  const handleSave = () => {
-    saveMutation.mutate(settings);
-  };
-
-  const handleToggle = (key: keyof typeof settings, value: boolean | number | string) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
-  };
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Stash and wiki caching"
-        subtitle="WikiOS article stash, offline storage, highlights tracker and welcome modals."
+        subtitle="WikiOS article stash and highlight usage."
       />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -88,82 +44,6 @@ export function StashSettingsContent() {
           )}
         </Card>
       </div>
-
-      <Card className="space-y-5 p-5">
-        <div className="border-separator flex items-center justify-between border-b pb-4">
-          <div>
-            <h3 className="text-label text-caption">Stash configuration parameters</h3>
-            <p className="text-label-secondary text-footnote mt-0.5">
-              Client storage policies and offline synchronization settings
-            </p>
-          </div>
-          <Button size="sm" onClick={handleSave} disabled={saveMutation.isPending || configLoading}>
-            <Save className="mr-2 h-3.5 w-3.5" />
-            {saveMutation.isPending ? "Saving..." : "Save Settings"}
-          </Button>
-        </div>
-
-        <div className="space-y-3">
-          <div className="border-separator bg-fill-3 rounded-row flex flex-col justify-between gap-3 border p-4 sm:flex-row sm:items-center">
-            <div>
-              <Label className="text-label text-caption">Max Stash Limit per Account</Label>
-              <p className="text-label-secondary text-footnote">
-                Cap the maximum number of stashed wiki pages per user
-              </p>
-            </div>
-            <Input
-              type="number"
-              value={settings.maxStashCount}
-              onChange={(e) => handleToggle("maxStashCount", parseInt(e.target.value) || 10)}
-              className="rounded-control-sm md:text-footnote h-(--control-height-sm) w-28 font-mono"
-              min={10}
-              max={500}
-            />
-          </div>
-
-          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
-            <div>
-              <Label className="text-label text-caption">Offline storage syncing</Label>
-              <p className="text-label-secondary text-footnote">
-                Cache stashed articles locally in browser IndexedDB storage
-              </p>
-            </div>
-            <Switch
-              checked={settings.offlineCacheEnabled}
-              onCheckedChange={(checked) => handleToggle("offlineCacheEnabled", checked)}
-              className="scale-90"
-            />
-          </div>
-
-          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
-            <div>
-              <Label className="text-label text-caption">Automatic image categorization</Label>
-              <p className="text-label-secondary text-footnote">
-                Group stashed images by orientation and type filters automatically
-              </p>
-            </div>
-            <Switch
-              checked={settings.autoCategorization}
-              onCheckedChange={(checked) => handleToggle("autoCategorization", checked)}
-              className="scale-90"
-            />
-          </div>
-
-          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
-            <div>
-              <Label className="text-label text-caption">Text highlight tracking</Label>
-              <p className="text-label-secondary text-footnote">
-                Persist user annotations and text highlights across sessions
-              </p>
-            </div>
-            <Switch
-              checked={settings.highlightTracking}
-              onCheckedChange={(checked) => handleToggle("highlightTracking", checked)}
-              className="scale-90"
-            />
-          </div>
-        </div>
-      </Card>
     </div>
   );
 }

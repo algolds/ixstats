@@ -7,6 +7,7 @@ import { getVaultConfig, vaultService } from "~/lib/vault/vault-service";
 import { spendCreditsTx } from "~/lib/vault/vault-ledger";
 import { grantCardXp } from "./xp-utils";
 import { newCardOwnershipId } from "./ownership-id";
+import { baseCardCapacity } from "./general-settings";
 
 /**
  * A pack-service failure the caller can act on. `code` is the tRPC error code the router
@@ -292,7 +293,7 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
 
     if (!isExempt) {
       const capacityBoost = await vaultService.getCardCapacityBoost(userId, tx as any);
-      const maxCards = 150 + capacityBoost;
+      const maxCards = (await baseCardCapacity(tx)) + capacityBoost;
       const currentCardsCount = await tx.cardOwnership.count({
         where: { userId },
       });

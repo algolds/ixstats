@@ -16,6 +16,14 @@ export class MessagingForbiddenError extends MessagingError {
   }
 }
 
+/** The recipient has blocked the sender (Settings → Privacy & Security). */
+export class MessagingBlockedError extends MessagingError {
+  constructor(message = "This user is not accepting messages from you") {
+    super(message);
+    this.name = "MessagingBlockedError";
+  }
+}
+
 export class MessagingNotFoundError extends MessagingError {
   constructor(message = "Conversation or message not found") {
     super(message);

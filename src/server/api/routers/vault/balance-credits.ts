@@ -13,6 +13,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
+import { baseCardCapacity } from "~/lib/cards/general-settings";
 import { grantNewPlayerBonus, NEW_PLAYER_BONUS_ON_VAULT_OPEN } from "~/lib/vault/vault-bonus";
 import { budgetVaultCalculator } from "~/lib/economy/budget-vault-calculator";
 import { globalCache } from "~/lib/cache";
@@ -178,6 +179,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       }, 0);
 
       const capacityBoost = await vaultService.getCardCapacityBoost(ctx.user.id, ctx.db as any);
+      const cardCapacity = (await baseCardCapacity(ctx.db)) + capacityBoost;
 
       const stats = {
         totalCards,
@@ -185,6 +187,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
         collectorLevel: ctx.user.collectorLevel ?? 1,
         collectorXp: ctx.user.collectorXp ?? 0,
         capacityBoost,
+        cardCapacity,
       };
 
       await globalCache.set(cacheKey, stats, { ttl: 30 });
