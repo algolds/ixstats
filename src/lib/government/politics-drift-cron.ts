@@ -25,6 +25,7 @@ interface PoliticsDriftResult {
 }
 
 import { clamp } from "~/lib/utils";
+import { findAllById } from "~/lib/system/find-all-by-id";
 
 export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
   const result: PoliticsDriftResult = {
@@ -33,10 +34,9 @@ export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
     metricsRecomputed: 0,
   };
 
-  const owned = await db.country.findMany({
-    where: { ownerUserId: { not: null } },
-    select: { id: true },
-  });
+  const owned = await findAllById((page) =>
+    db.country.findMany({ where: { ownerUserId: { not: null } }, select: { id: true }, ...page })
+  );
   const countryIds = owned.map((c) => c.id);
 
   for (const countryId of countryIds) {

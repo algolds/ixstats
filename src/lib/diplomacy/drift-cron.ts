@@ -1,6 +1,7 @@
 import { db } from "~/server/db";
 import { expireStaleDiplomaticProposals } from "~/lib/diplomacy/proposal-lifecycle";
 import { closeDueEmbassyMissions } from "~/lib/diplomacy/embassy-mission-sweep";
+import { findAllById } from "~/lib/system/find-all-by-id";
 
 interface DiplomaticDriftResult {
   relationsProcessed: number;
@@ -39,9 +40,9 @@ export async function runDiplomaticDrift(): Promise<DiplomaticDriftResult> {
     console.error("[DiplomaticDrift] Embassy mission sweep failed:", err);
   }
 
-  const relations = await db.diplomaticRelation.findMany({
-    where: { status: "active" },
-  });
+  const relations = await findAllById((page) =>
+    db.diplomaticRelation.findMany({ where: { status: "active" }, ...page })
+  );
 
   for (const rel of relations) {
     try {
