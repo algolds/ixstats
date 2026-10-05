@@ -58,15 +58,15 @@ async function fetchThinkPagesLinks(): Promise<SummaryRow[]> {
 }
 
 async function fetchUnlinkedUsers(): Promise<SummaryRow[]> {
-  const users = await prisma.user
-    .findMany({
+  const users = (
+    await prisma.user.findMany({
       where: { OR: [{ countryId: null }, { countryId: "" }] },
       select: {
         clerkUserId: true,
         countryId: true,
       },
     })
-    .filter((row) => !SYSTEM_OWNER_SET.has(row.clerkUserId));
+  ).filter((row) => !SYSTEM_OWNER_SET.has(row.clerkUserId));
 
   return users.map((user) => ({
     clerkUserId: user.clerkUserId,

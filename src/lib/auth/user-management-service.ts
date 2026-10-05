@@ -187,9 +187,10 @@ export class UserManagementService {
   }
 
   /**
-   * Ensure basic roles exist in the database
+   * Ensure basic roles exist in the database. Idempotent; also run by
+   * scripts/sync-system-owner-roles.ts.
    */
-  private async ensureRolesExist(tx?: any): Promise<void> {
+  async ensureRolesExist(tx?: any): Promise<void> {
     const db = tx || this.db;
 
     // Create owner role

@@ -248,7 +248,7 @@ export async function seedVaultStoreItems() {
           glowColor: item.glowColor ?? null,
           effects: item.effects ?? undefined,
         },
-        create: item,
+        create: { ...item, glowColor: item.glowColor ?? null, effects: item.effects ?? undefined },
       });
       console.log(`✅ Seeded Vault Store Item: ${item.name} (${item.id})`);
     }

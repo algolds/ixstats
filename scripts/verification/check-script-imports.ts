@@ -31,6 +31,16 @@ export function collectTargets(scripts: Record<string, string>): Map<string, str
   return byFile;
 }
 
+// Runs under Bun; the repo's typecheck has no Bun types, so declare the one call used here.
+declare const Bun: {
+  build(options: {
+    entrypoints: string[];
+    target: "bun";
+    packages: "external";
+    throw: boolean;
+  }): Promise<{ success: boolean; logs: Array<{ message?: string }> }>;
+};
+
 async function resolves(file: string, rootDir: string): Promise<string | null> {
   try {
     const result = await Bun.build({

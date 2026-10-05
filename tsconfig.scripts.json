@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": ".next/cache/tsbuildinfo.scripts",
+    "incremental": true
+  },
+  "include": ["src/proxy.ts", "src/instrumentation.ts", "src/content", "scripts"],
+  "exclude": [
+    "scripts/archive",
+    "scripts/verification/fixtures",
+    "**/node_modules",
+    ".next",
+    "**/*.test.ts"
+  ]
+}
