@@ -201,7 +201,15 @@ export const heraldryMutationsRouter = createTRPCRouter({
 
       await assertCountryWriteAccess(ctx, input.countryId);
 
-      const coatOfArmsUrl = achievement.thumbnailUrl || achievement.largeUrl || "";
+      // Nothing renders a design to an image yet; writing "" would blank the country's coat of arms.
+      const coatOfArmsUrl = achievement.thumbnailUrl || achievement.largeUrl;
+      if (!coatOfArmsUrl) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "This design has no rendered image yet, so it can't be used as a coat of arms. The country's current coat of arms is unchanged.",
+        });
+      }
 
       await ctx.db.country.update({
         where: { id: input.countryId },
