@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { useTheme } from "~/context/theme-context";
 import { cn } from "~/lib/utils";
+import { withBasePath } from "~/lib/base-path";
 import { useNotify } from "~/hooks/useNotify";
 import { UnifiedGlassCommandBar } from "./headers/UnifiedGlassCommandBar";
 import { ExecutiveHome } from "./ExecutiveHome";
@@ -27,30 +29,48 @@ function CommandSurfaceComponent({
   const notify = useNotify();
   const countryId = country?.id ?? "";
 
-  const [mode, setMode] = useState<CommandNavMode>("home");
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [drill, setDrill] = useState<DrillSheetKind>(null);
   const [goal, setGoal] = useState("");
 
-  // Sync mode with route section: set executive mode if on executive section, or reset to home when navigating to a specific domain surface
-  useEffect(() => {
-    if (section === "executive") {
-      // oxlint-disable-next-line
-      setMode("executive");
-    } else if (DOMAIN_SECTIONS.has(section)) {
-      setMode("home");
-    }
-  }, [section]);
+  // The console is a URL state (?mode=executive), not component state: the sidebar Overview
+  // link (/mycountry, no param) must reset to home even when we are already on that path,
+  // and back/forward must move between home and the console. The executive section is the
+  // console by definition; domain surfaces never show it.
+  const mode: CommandNavMode =
+    section === "executive" ||
+    (!DOMAIN_SECTIONS.has(section) && searchParams.get("mode") === "executive")
+      ? "executive"
+      : "home";
+
+  // Same history pattern as MyCountryRouter: write the URL without a Next route transition.
+  // useSearchParams follows pushState/replaceState, so the surface re-renders from the URL.
+  const setMode = useCallback(
+    (next: CommandNavMode, options?: { replace?: boolean }) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (next === "executive") params.set("mode", "executive");
+      else params.delete("mode");
+      const query = params.toString();
+      const href = withBasePath(query ? `${pathname}?${query}` : pathname);
+      if (options?.replace) window.history.replaceState(null, "", href);
+      else window.history.pushState(null, "", href);
+    },
+    [pathname, searchParams]
+  );
 
   const declare = useCallback(
     (prefilled?: string) => {
       if (prefilled) setGoal(prefilled);
-      setMode("executive");
       if (section !== "executive" && section !== "overview") {
+        // Domain surfaces hand over to the Directives section, which is the console.
         onNavigate?.("executive");
+      } else if (section === "overview") {
+        setMode("executive");
       }
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
-    [onNavigate, section]
+    [onNavigate, section, setMode]
   );
 
   const openIntent = useCallback((intentId: string) => {
@@ -82,7 +102,7 @@ function CommandSurfaceComponent({
           initialGoal={goal}
           onDone={(msg) => {
             // On the Directives page itself, stay put: it shows the declared directive.
-            if (section !== "executive") setMode("home");
+            if (section !== "executive") setMode("home", { replace: true });
             setGoal("");
             if (msg) notify.success("Directive committed", msg);
           }}
