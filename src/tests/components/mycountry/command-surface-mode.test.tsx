@@ -107,6 +107,14 @@ describe("CommandSurface executive mode", () => {
     expect(pushState).toHaveBeenCalledWith(null, "", "/mycountry?mode=executive");
   });
 
+  it("declaring while already on ?mode=executive does not stack a duplicate entry", () => {
+    mockSearch = "mode=executive";
+    render(<CommandSurface section="overview" />);
+    fireEvent.click(screen.getByText("declare"));
+    expect(pushState).not.toHaveBeenCalled();
+    expect(replaceState).not.toHaveBeenCalled();
+  });
+
   it("leaving the console clears the param", () => {
     mockSearch = "mode=executive";
     render(<CommandSurface section="overview" />);

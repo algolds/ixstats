@@ -65,12 +65,13 @@ function CommandSurfaceComponent({
       if (section !== "executive" && section !== "overview") {
         // Domain surfaces hand over to the Directives section, which is the console.
         onNavigate?.("executive");
-      } else if (section === "overview") {
+      } else if (section === "overview" && mode !== "executive") {
+        // Already on ?mode=executive: another push would add a duplicate history entry.
         setMode("executive");
       }
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
-    [onNavigate, section, setMode]
+    [mode, onNavigate, section, setMode]
   );
 
   const openIntent = useCallback((intentId: string) => {
