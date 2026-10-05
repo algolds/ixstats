@@ -10,9 +10,93 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased] — `rose-garden` (1.4 RC2)
 
-Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-22 → 2026-09-29) is listed first; the
-2026-08-21 → 2026-09-22 work follows it. The version registry (`src/lib/buildVersion.ts`) still reads 1.4.0 until the
-RC2 cut.
+Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-30 → 2026-10-05) is listed first, then
+2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22 work. The version registry (`src/lib/buildVersion.ts`) still
+reads 1.4.0 until the RC2 cut.
+
+### 🛡️ Security, CI, Operations & Cron (2026-10-05)
+
+- **Security:** sports commentary no longer sends the server's LLM or TTS key to a caller-supplied URL (a caller config
+  is used only with its own key and an allowlisted host); `generateMatchCommentary` is rate-limited and only the
+  league's manager can force a regenerate. Lorewards `getCrossValidationHistory` / `getBlacklist` and sports
+  `getAdminGlobalStats` / `testLLMNarrator` are `adminProcedure`. Production CSP drops plain `http:` images and `ws:`
+  sockets.
+- **CI:** `docs:check` is green again (`docs:sync`); new blocking steps `typecheck:db`, `typecheck:scripts` (scripts,
+  `proxy.ts`, `instrumentation.ts`, `content/`) and `check:script-imports`; seven package scripts that failed on import
+  work again. CI and the security scan run on `master`, `development` and `rose-garden`; the scan uses `bun audit`;
+  `image-validation.yml` is deleted. The `audit:arch` baseline holds real line counts, so its ratchet fires; the Facet
+  ratchet locks emoji at 530.
+- **Setup:** `bun run db:bootstrap` (`scripts/setup/bootstrap-dev-db.ts`) and `docker-compose.dev.yml` take a fresh
+  clone to a running app on an empty database (PostGIS, schema push, catalog seeds); `db:setup`, `dev:db` and `fresh`
+  use it. `.env.example` lists every `src/env.ts` key (a test enforces it). The small-arms and Onoma default-dictionary
+  seed data are restored, so `db:seed` runs.
+- **Operations:** `scripts/deployment/rollback-deployment.sh <remote-branch> [--restore <dump>] [--yes]` wraps the
+  release guide's rollback; each deploy appends time, commit and dump to `backups/deploy-history.log`, and a failed PM2
+  reload fails the deploy. `ecosystem.config.example.cjs` is the tracked PM2 template. Env files load in one order
+  everywhere (`.env.production.local` beats `.env.production`), and `verify:environment` fails on missing production
+  secrets. `deploy-to-staging.sh` and the legacy `deploy-to-production.sh` are removed.
+- **Cron:** a lease row (`job_leases`) replaces the advisory lock; every run writes a `CronRun` row, a failed run
+  alerts Discord, and `/api/health` shows each job's last run, status and last success plus Redis state. New
+  `log-retention` job (21 jobs in all).
+- **Realtime:** market WebSocket events go through a Redis bridge (`src/server/market-broadcast-bridge.ts`), so bids,
+  buyouts and cron completions reach every socket. `db.ts` logs when an unbounded `findMany` hits the 1,000-row cap.
+- **Docs:** a docs audit against the code and an ordered action plan
+  ([ACTION_PLAN_2026-10-05.md](docs/roadmap/ACTION_PLAN_2026-10-05.md)); the planning, status, onboarding and ops
+  docs follow the code.
+
+### 🧭 Facet 4 & the Sidebar (2026-10-04 → 10-05)
+
+- **Facet 4:** five layers (canvas, pane, well, chrome, overlay), content types as their own axis, a tinted canvas
+  behind glass panes and no glass on glass; eyebrows, em dashes, emoji, `Sparks` and `hover:scale` are counted by a ratchet that only
+  falls. Facet version 3.1 → 4, Halo 5 → 6 (standard chrome glass, no glow).
+- **Sidebar:** one macOS-style source list (`src/lib/navigation/app-sections.ts`) is the only navigation, with a
+  `TabBar` below 1024px. Per-app sidebars, rails and hidden sub-navigation are gone; admin and settings navigation are
+  the sidebar's area lists; the footer carries the Vault card, version, feedback and legal links.
+- **Shell:** a proportional sidebar / content / Inspector grid; WikiOS articles keep contents and page info in the
+  Inspector, and tool pages take the full width. MyCountry's flag is the header cover banner, the Overview shows
+  domain peeks, and the executive console is URL-driven (`?mode=executive`).
+- Docs: [Facet 4 reference](docs/reference/facet-design-system.md) ·
+  [spec](docs/superpowers/specs/2026-10-04-facet-4-design.md) ·
+  [sidebar spec](docs/superpowers/specs/2026-10-04-facet-4-sidebar-design.md). The per-app sweep is in progress.
+
+### 🔁 Seven Audit Loops Closed (PR #49, 2026-09-30)
+
+- **Decisions move stats:** issue GDP and population consequences become phased level effects (±3% / ±1% caps);
+  directives use the same effects and consume CivCap; issue stability deltas survive recalculation. The new
+  `stat-progression` job persists stats and writes monthly `HistoricalDataPoint` rows.
+- **Elections:** a first election is scheduled once a legislature has at least 2 parties; candidates come from the
+  parties, results seat them, follow-up elections resolve, and bills can pass.
+- **Diplomacy inbox:** incoming and outgoing foreign-policy proposals and alliance invites with accept, decline and
+  withdraw, a count badge, notifications and 14-day expiry.
+- **Social loop:** mention, repost and quote notifications; the `thinkpages-trending` job; persona follows with real
+  counts; a personal persona for posting as yourself.
+- **IxnayID economy:** the 5,000 IxC welcome bonus at account creation, 19 account-level achievements, background
+  evaluation (`achievements-evaluate`), a passport showcase and ribbons derived from real unlocks; passport privacy is
+  persisted and enforced on the server.
+- **Realms:** nation caps (realm cap and tier), a realm-aware builder, the nav and passport nation switcher, realm
+  boards (`/r/<realm>/board`), a `/realms` directory and a realm filter on the ThinkPages feed.
+- **True numbers:** Diplomatic Standing computed from the real record, Governmental Efficiency from
+  `governmentEffectiveness`, real CivCap in the Capacity band, and realm-scoped World Census rankings.
+- New jobs `stat-progression`, `thinkpages-trending` and `achievements-evaluate` are off until named in
+  `CRON_ENABLED_JOBS`. Additive schema: `ThinkpagesFollow`, `ThinkpagesPersonalAccount`, `PassportPreference`,
+  `RealmBoard` and new fields.
+
+### 🧰 Audit Fix Batch (PR #48, 2026-09-30)
+
+- Fixes from the 2026-09-30 platform audit (ten parallel branches) plus a 17-item site bug list.
+- **Security and integrity:** ThinkShare thinktank conversations need active membership; ThinkPages account creation
+  needs write access to the country and only admins set `verified`; a WikiOS namespace edit policy; the Narrator LLM
+  URL has an SSRF guard; `IXWIKI_DB_PASSWORD` has no hard-coded fallback; Lorewards pays only verified wiki links.
+- **Economy:** packs, junk payouts and lore-card requests go through the ledger; junk rate 0.25 (capped at 0.5);
+  crafting uses ownership IDs.
+- **Loops:** hostile foreign-policy actions apply their effects; cooperative proposals and alliance invites can be
+  accepted; directives move GDP and stability; ThinkTank Chat and Docs tabs are mounted, with invites by username;
+  sports predictions can be placed.
+- **Honest UI:** no fabricated ribbons; Halo and profile Sign Out sign out; dead Create League/Club links removed; the
+  Approval and Stability bands read real values; one premium definition (`hasPremiumTier`).
+- **Site bugs:** flags and seals, the maps build (the 14 `@turf/*` packages declared, the MapLibre worker shipped),
+  icon stroke width, stashes under the old user ID, Daily Prompt, ThinkPages reposts and MyCountry layout fixes.
+- Schema: `AllianceMember.status`.
 
 ### 🎨 Facet 3 Design System, Phases 1–2 (2026-09-30)
 
