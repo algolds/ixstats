@@ -2,6 +2,7 @@
 
 **Compiled:** 2026-09-29 from a doc-by-doc audit of `docs/`, the `src/**/README.md` files and the in-app help, each
 claim checked against the code on `rose-garden`.
+**Rows updated 2026-10-05** for PRs #48–#49 and the 2026-10-05 commits; resolved rows are struck through with the fix.
 **Companion:** [System Status](../systems/SYSTEM_STATUS.md) lists what is live. **The plan** built from this backlog is
 [ROADMAP.md](ROADMAP.md); a follow-up code-level audit ([code-audit-2026-09-30.md](code-audit-2026-09-30.md)) found
 ~130 more items, including 16 security and economy exploits, and corrects several entries below.
@@ -37,16 +38,16 @@ masked in the admin config; sports season and simulation procedures require the 
 
 | Item | System | Detail |
 |---|---|---|
-| Elections and legislation can't work | MyCountry › Politics | Nothing creates a first `Election` or any `ElectionCandidate` outside the demo seed, and seats have no party, so `holdVote` always fails and no bill can pass. Plan 312 deleted `registerCandidate`, `scheduleElection` and `simulateElection` (MC-2, M–L; [elections.md](../systems/elections.md)) |
+| ~~Elections and legislation can't work~~ | MyCountry › Politics | ✅ Fixed in #49: a first election is scheduled once a legislature has at least 2 parties, candidates come from the parties, resolution seats them, and bills can pass (`src/lib/government/election-lifecycle.ts`, MC-2) |
 | Cabinet meetings can't conclude | MyCountry | `completeMeeting` and the decision/implement mutations were deleted (plans 312/332); meetings are schedule-only |
-| Crafting fails end to end | Vault | `/vault/crafting` sends card IDs where `CardOwnership` IDs are expected; `successRate` 0–1 vs 0–100; seed uses fields and a `MYTHIC` rarity the schema lacks ([cards.md](../systems/cards.md)) |
+| Crafting fails end to end | Vault | Ownership IDs fixed in #48. Still open: `successRate` 0–1 vs 0–100; a generic card is minted instead of `resultCardId`; seed uses fields and a `MYTHIC` rarity the schema lacks ([cards.md](../systems/cards.md), VT-14) |
 | Vexel attach-to-country blanks the coat of arms | Labs › Vexel | Writes an empty `coatOfArms` to `Country` |
-| `/mycountry/map-editor` inside the shell | MyCountry | Loading the URL opens the full-screen map editor (2026-09-30), but the shell's client-side switch to the `map-editor` section (Editor toggle) still renders the Executive home |
-| `/admin/calculations` 404s on reload | Admin | No `page.tsx`; works only via client routing |
-| Topic links 404 | ThinkPages | `PostBody.tsx:61` links `/thinkpages/topic/<slug>`, which has no route |
-| Premium check disagrees | Premium | Three definitions: `lib/tier-utils.ts` (also counts `premium`/`executive`), `premiumMiddleware`/`getMembershipStatus` (`mycountry_premium` only), and `ability.ts` (also passes owners, admins, staff) |
-| `db.ts` runs `syncAchievements` on import | Platform | Fires whenever the module loads, including in scripts |
-| Defense/Intelligence admin toggles do nothing | Admin › MyCountry | `showDefenseTab` / `showIntelligenceTab` only feed `MyCountrySidebarNav`, which nothing renders; the command bar and mobile menu show both to everyone |
+| ~~`/mycountry/map-editor` inside the shell~~ | MyCountry | ✅ Fixed: the route renders the full-screen editor, and the shell's `map-editor` section navigates to it (`MyCountryRouter.tsx`) |
+| ~~`/admin/calculations` 404s on reload~~ | Admin | ✅ Fixed: `src/app/admin/calculations/page.tsx` exists |
+| Topic links 404 | ThinkPages | `PostBody.tsx:59` links `/thinkpages/topic/<slug>`, which has no route |
+| ~~Premium check disagrees~~ | Premium | ✅ Fixed (#48, 2026-10-05): `src/lib/auth/premium.ts` (`hasPremiumTier`, `isBetaTesterRole`) is the one definition `premiumMiddleware`, `ability.ts` and `getMembershipStatus` share |
+| `db.ts` runs `syncAchievements` on import | Platform | Fires whenever the module loads on the server outside tests and read-only mode, including in scripts |
+| Defense/Intelligence admin toggles do nothing | Admin › MyCountry | `showDefenseTab` / `showIntelligenceTab` are saved by `admin/users.ts` and the admin Navigation Settings panel, and nothing else reads them |
 | Auctions filter offers "Mythic" | Vault | Not a `CardRarity` value |
 | Diplomatic missions and embassy upgrades removed | MyCountry › Diplomacy | `startMission`, `completeMission`, `upgradeEmbassy`, `allocateBudget` deleted as zero-caller (plan 312); the UI shows "Coming Soon" and help articles still describe them |
 
@@ -57,14 +58,14 @@ masked in the admin config; sports season and simulation procedures require the 
 - **Universal event spine:** diplomacy, defense, elections and meetings bypass it (PRD Rule 6, :374).
 - **Issue recon ("SEE"):** enable `STATECRAFT_SPINE` and have recon meetings return minutes/cables (game loops :14).
 - **Intelligence:** no dashboard; `/mycountry/intelligence` renders Defense. The 5-tab Intelligence page in [premium-features.md](../reference/premium-features.md) is unbuilt.
-- **Crisis events:** taxonomy, lifecycle state machine, player response postures, mutations and an admin UI ([crisis-events.md](../systems/crisis-events.md)). Only `getActive`/`getStatistics` exist.
+- **Crisis events:** taxonomy, lifecycle state machine, player response postures, mutations and an admin UI ([crisis-events.md](../systems/crisis-events.md)). Only `getActive`/`getStatistics` exist, and nothing writes `CrisisEvent` rows now that the demo seed is gone.
 - **NPC AI:** apply trait drift (no callers); NPC responses for embassies, alliances and treaties; event-fatigue dampening ([npc-ai.md](../systems/npc-ai.md) :41, :54).
 - **Relative-development asymmetry:** display-only; feed it into trade maths (vision audit :80).
 - **Embassy missions:** not playable.
 - **Builder companion guide:** diagnostics tab and subheader deep links ([spec](../superpowers/specs/2026-09-08-builder-unified-companion-guide-design.md) :79).
 - **Autosave rollout:** mount the government/tax hooks, add National Identity and Map Editor, a navigation flush (`syncAllNow`) and a shared sync badge ([autosave.md](../architecture/autosave.md)).
 - **Reference formulas → live engine:** ERI, embassy synergy, GDP projection; PII is design-only ([calculations.md](../systems/calculations.md)).
-- **Delete dead code:** `src/lib/intelligence/calculator.ts` and `live-data-transformers.ts` (~1,480 lines) with the `VitalitySnapshot`, `IntelligenceBriefing` and `IntelligenceRecommendation` models they alone write. `lib/intelligence/cache.ts` and `engine.ts` are live.
+- ~~**Delete dead code:** `src/lib/intelligence/calculator.ts` and `live-data-transformers.ts`~~ ✅ deleted. The `VitalitySnapshot`, `IntelligenceBriefing` and `IntelligenceRecommendation` models they alone wrote are still in the schema.
 
 ### Atlas & Realms
 - **Map editor inspector** ([2026-09-11 spec](../superpowers/specs/2026-09-11-map-editor-properties-history-deep-overhaul-design.md)):
@@ -86,12 +87,12 @@ masked in the admin config; sports season and simulation procedures require the 
 ### Vault
 - **Packs:** enforce `guaranteedRarity` (set on 16 of 20 packs) and `themeFilter` (the `cardType`/`season` filters already work); wire the Keep/List quick actions; add pack artwork (the sounds are silenced on purpose in favour of Cuelume).
 - **NATION cards:** automatic per-country minting. The `card-values` job (every 6 hours, off by default) does nothing today, because no NATION card has a `countryId`.
-- **Achievements:** background evaluation (today they unlock only when `/achievements` is visited).
+- ~~**Achievements:** background evaluation~~ ✅ #49: event hooks plus the `achievements-evaluate` job.
 - **NS dump sync:** schedule it (admin-triggered today).
 - **Premium:** real yield multiplier (`isPremium` hard-coded false in `vault-ledger.ts`); enforce tier limits.
 
 ### ThinkPages
-- **ThinkTanks Docs:** mount `ThinktankPapersTab` in the workspace.
+- ~~**ThinkTanks Docs:** mount `ThinktankPapersTab` in the workspace~~ ✅ #48: the Docs and Chat tabs are mounted (`ThinktankWorkspace.tsx`).
 - **ThinkShare encryption & signatures:** schema fields exist, no cryptography.
 
 ### Labs
@@ -100,10 +101,10 @@ masked in the admin config; sports season and simulation procedures require the 
 - **Vexel:** add to the Labs menu; full external ornaments (crest, mantling, supporters, compartment); Commons charge seed; embedded attribution; autosave; `[id]/preview` route ([vexel-prd.md](../specs/vexel-prd.md)).
 
 ### Platform
-- **Rate limiting:** 347 of 958 procedures use a rate-limited builder, but 274 of those are admin procedures: only 73 non-admin procedures are limited, and 228 protected mutations are not; `X-RateLimit-*` headers; stats endpoint, metrics and Discord alerts ([rate-limiting.md](../operations/rate-limiting.md)).
-- **Admin audit log:** it persists nothing today (PL-1): tRPC v11 `next()` returns `{ ok: false }` rather than throwing, and no admin path contains "execute".
+- **Rate limiting:** 347 of 958 procedures use a rate-limited builder, but 274 of those are admin procedures: only 73 non-admin procedures are limited, and 243 mutations are not (234 `protectedProcedure`, 9 `premiumProcedure`; recount 2026-10-05); `X-RateLimit-*` headers; stats endpoint, metrics and Discord alerts ([rate-limiting.md](../operations/rate-limiting.md)).
+- ~~**Admin audit log:** it persists nothing today (PL-1)~~ ✅ #38: `auditLogMiddleware` checks `result.ok` and logs every admin mutation (`trpc/middleware.ts`).
 - **Admin cache:** evict/flush (only `getStats` exists).
-- **Help center:** register the unregistered articles and add sections for shipped systems (see §7).
+- ~~**Help center:** register the unregistered articles~~ ✅ all 55 are registered; see §7 for systems still without an article.
 
 ## 4. Not started — planned features
 
@@ -111,9 +112,9 @@ masked in the admin config; sports season and simulation procedures require the 
 - Public founding application (decisions 6–7)
 - Founder tooling: settings, moderation, removing nations, succession using `lastSeenAt` (decisions 20–21). Part of the backend exists (`canModerateRealm`, founder claim review); founders just can't be assigned (AT-8)
 - Archived realms: read-only, excluded from crons and payouts (decision 21)
-- Per-realm ThinkPages feed and a global-feed setting (decision 2)
+- Per-realm ThinkPages feed and a global-feed setting (decision 2). #49 added a realm filter on the feed and realm boards; the dashboard feed and trending are not realm-scoped
 - WikiOS front page as a portal to every realm's lore; realm-tagged forum (decision 3)
-- Passport realm/nation switcher and nav chip (decision 22)
+- ~~Passport realm/nation switcher and nav chip (decision 22)~~ ✅ #49: nation switcher in the nav and on the passport
 - Per-realm calendar label (no `yearOffset` field exists; needs a new realm settings key)
 - Builder prefill from a claimed nation page (Eurth E-f)
 - Procedural realm generation: `runPipeline` already accepts a `procedural` source; the wizard option and the `Realm.seed` / `generationParams` writes are missing (M)
@@ -137,7 +138,7 @@ masked in the admin config; sports season and simulation procedures require the 
 - Edge cases never built: tier-transition smoothing, "IMF intervention" recession event, optimistic locking via a `version` column ([edge-cases.md](../reference/edge-cases.md))
 
 ### Vault & cards
-- Ribbons: Ribbons tab, signature shelf, tab sync ([ribbons spec](../specs/2026-08-10-achievements-ribbons-design.md) §2, §3.2)
+- Ribbons: Ribbons tab and tab sync (#49 derives ribbons from real unlocks and adds a pinned shelf on the passport) ([ribbons spec](../specs/2026-08-10-achievements-ribbons-design.md) §2, §3.2)
 - Lore-first schema cleanup: unique slug, `@@unique([wikiArticleTitle, wikiSource])`, drop stats/cardType, `CardRarity` enum ([ixcards spec](../specs/2026-08-13-ixcards-lore-first-rebuild.md) Part III)
 - 40/25/20/10/4/1 rarity distribution (Part IV)
 - Vault reorder with the Lore Gallery as the primary view and category filters (Phase 6); category-themed packs (Phase 7); seasons and pack composition (open questions)
@@ -146,7 +147,7 @@ masked in the admin config; sports season and simulation procedures require the 
 - Premium: payments/checkout, tiered rate limits, export quotas, history limits, ThinkPages Pro account tiers ([premium-features.md](../reference/premium-features.md))
 
 ### ThinkPages
-- ThinkTanks group chat ([thinktanks.md](../systems/thinktanks.md) :89)
+- ~~ThinkTanks group chat~~ ✅ #48: the Chat tab is mounted
 - Joint working papers
 
 ### Labs
@@ -175,26 +176,27 @@ masked in the admin config; sports season and simulation procedures require the 
 
 ## 5. Operations & infrastructure
 
-- **Postgres backup/restore:** `db:backup` and `db:restore` are stubs; production uses `pg_dump` by hand.
-- **`deploy:rollback`:** a v1.2-era script, out of step with the current deploy.
+- ~~**Postgres backup/restore:** stubs~~ ✅ #37: `db:backup` / `db:restore` (`scripts/setup/backup-db.ts`, `restore-db.ts`), a dump before every deploy's `db push`, and the nightly `db-backup` job.
+- ~~**`deploy:rollback`:** a v1.2-era script~~ ✅ 2026-10-05: `scripts/deployment/rollback-deployment.sh <remote-branch> [--restore <dump>] [--yes]` wraps the release guide's rollback.
 - **Cron:** enable jobs one at a time via `CRON_ENABLED_JOBS` (none run by default).
-- **Redis in production** (required: realtime across processes and shared rate limits depend on it) and a rate-limit load test.
+- **Redis in production** (required: realtime across processes and shared rate limits depend on it) and a rate-limit load test. `/api/health` reports Redis state since 2026-10-05.
 - **Drop unused Prisma models** (all of `c15t.prisma` and others): the `chore/drop-unused-prisma-models` branch is not on origin. The code audit lists 57 fully dead models ([§8](code-audit-2026-09-30.md#8-dead-schema)); the drop is operator-gated and needs backups first.
 - **AuditLog `target` index:** in the schema, but with no migration.
 - **Incident-response runbook:** referenced but missing.
 - **Discord bot admin session:** the bot calls `admin.getSystemStatus` (admin-only); the runbook doesn't cover how it authenticates.
 - **Leftovers:**
   - `scripts/post-build.sh` prints `pm2 restart ixstats` (no such app).
-  - Unwired: `scripts/deployment/deploy-to-production.sh`, `scripts/start-production.js`, `scripts/verify-router-splits.ts`.
-  - `scripts/audit/arch-baseline.json` still lists the deleted `labs/design-bible` page.
+  - Unwired: `scripts/start-production.js`, `scripts/verify-router-splits.ts` (`deploy-to-production.sh` was deleted
+    2026-10-05).
+  - ~~`scripts/audit/arch-baseline.json` still lists the deleted `labs/design-bible` page~~ ✅ rebuilt 2026-10-05.
 
 ## 6. Code health & tech debt
 
 From the status blocks in [`docs/audits/`](../audits/):
 
 - **Git-ignored fixtures:** three checks read files CI doesn't have — `next.config.js`, `public/icons/game-icons-manifest.json` and `public/data/vector-seeds/`. They now run only where the file exists (dev machines, the server), so CI doesn't cover them; tracking the assets would restore that coverage.
-- **`audit:arch` reports 15 files over their ceiling** (non-blocking in CI) — split them or add them to `RELAXED_FILES`. The 52 source files ≥800 lines are tracked in [src-monolith-candidates.md](../audits/src-monolith-candidates.md).
-- **`docs:sync` undercounts procedures:** `extractApiInventory` reports 901 procedures (runtime count 958) because it misses spread and `mergeRouters` routers.
+- **`audit:arch` is non-blocking in CI.** Since 2026-10-05 its baseline holds real line counts for 38 files, so growth past a recorded size fails the check; split the large files or add them to `RELAXED_FILES`, then make it blocking. The 52 source files ≥800 lines are tracked in [src-monolith-candidates.md](../audits/src-monolith-candidates.md).
+- **`docs:sync` procedure count:** `extractApiInventory` reported 901 procedures against a runtime count of 958 because it missed spread and `mergeRouters` routers; it reports 922 on 2026-10-05.
 - **Service layer:** 199 router files query `ctx.db` directly.
 - **Arch guard coverage:** no pre-commit hook for `audit:arch`; the router-split parity check covers 5 routers.
 - **Logging:** 6 `logger.*` calls against ~1,700 `console.*`; decide the framework's fate.
@@ -222,12 +224,12 @@ From the status blocks in [`docs/audits/`](../audits/):
 ## 7. Documentation gaps
 
 - **Help center (see [help.md](../systems/help.md)):**
-  - 13 of 54 articles are not in the `helpSections` registry (`src/app/help/_components/HelpExplorer.tsx`): `defense/*` (6), `diplomacy/scenarios`, `economy/modeling`, `government/synergy`, and `intelligence/{executive-operations,forecasting,strategic-intelligence,unified-overview}`. Register or delete them; `strategic-intelligence` and `unified-overview` have no inbound links at all. Add a `systems` filter and refresh stale hub descriptions (Embassies, Intel).
-  - Shipped systems with no article:
-    - Realms, nation claims (`/setup`) and `/r/[realm]`; the passport and verified wiki accounts;
-    - Atlas `/maps` and the map editor; WikiOS, the Canvas editor and Lorewards; Stash; Forum;
-    - MyCountry → Economy & Budget; how to get Premium;
-    - MyLeague/MyClub; Onoma;
+  - ✅ All 55 articles in `src/content/help/` are registered in `src/app/help/_lib/help-sections.ts` (a test checks it),
+    and Realms, the IxnayID passport, Atlas maps, the map editor, WikiOS, Stash, Forum, MyCountry economy and Premium
+    now have articles.
+  - Shipped systems still with no article:
+    - the Canvas editor and Lorewards;
+    - MyLeague/MyClub; Onoma; Vexel;
     - ribbons and the showcase shelf; Vault import, crafting and shop items;
     - the activity feed, Blurbs, hashtags, Explore/country profiles; the Halo command palette; Settings.
   - Articles now carry "Preview feature" / "Not available yet" notes for Intelligence, Defense (Premium), diplomatic missions and crisis responses; remove them as those features land.

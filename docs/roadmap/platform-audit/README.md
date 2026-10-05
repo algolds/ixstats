@@ -20,7 +20,7 @@ environment has no bot token and its network policy blocks `discord.com`; see [t
 
 ---
 
-## 0. Status since the audit (updated 2026-09-30, after #48)
+## 0. Status since the audit (updated 2026-10-05, after #48 and #49)
 
 The audit describes `rose-garden` @ `e91e6b0b2`. The same day, PR #48 merged ten parallel fix branches and the
 owner's 17-item bug list into `rose-garden` (`67e937a3f`). Items below are marked **✅ fixed**, **◐ partly fixed**
@@ -55,28 +55,26 @@ or left as found. The area reports are unchanged snapshots; this page tracks sta
   text), cached author lookups, and per-article canonical URLs.
 - **Docs:** SYSTEM_STATUS ratings were corrected and the "Gold Master" badges removed (section 9).
 
-**Still open, in priority order:**
+**Closed by #49 (2026-09-30):** PR #49 closed the seven loops this list held:
 
-1. **Issue consequences → stats.** Resolving an issue still creates no `StorytellerEffect`. There are still two
-   sources of stat truth and no progression job. Rankings refresh only from the admin button.
-2. **First elections** (MC-2). Bills still can't pass.
-3. **Inbox UI** for foreign-policy proposals and alliance invites (the backend now exists).
-4. **Social pull:**
-   - mention notifications (the href is still `/content/<id>` and the text says "Someone");
-   - person follows;
-   - the trending job;
-   - post-as-yourself.
-5. **IxnayID-first economy:**
-   - account-level welcome bonus and achievements;
-   - background achievement evaluation;
-   - a passport showcase;
-   - ribbons as real records (the rack is now empty until they exist).
-6. **Realms as places** and a realm-aware builder.
-7. **Remaining truth fixes:**
-   - Diplomatic Standing is fixed at 70;
-   - the Trending tab is empty;
-   - passport privacy is still session-only (now labelled so);
-   - the "Capacity" band shows directive slots, and directives don't consume CivCap.
+1. ✅ **Issue consequences → stats.** GDP and population consequences create phased level `StorytellerEffect`s, issue
+   stability deltas survive recalculation, and the `stat-progression` job persists stats and monthly history.
+2. ✅ **First elections** (MC-2). Elections are scheduled once a legislature has at least 2 parties; bills can pass.
+3. ✅ **Inbox UI** for foreign-policy proposals and alliance invites (MyCountry diplomacy Inbox; 14-day expiry).
+4. ✅ **Social pull:** mention notifications fixed, persona follows, the `thinkpages-trending` job, and a personal
+   persona for post-as-yourself.
+5. ✅ **IxnayID-first economy:** the welcome bonus at account creation, 19 account-level achievements, background
+   evaluation (`achievements-evaluate`), a passport showcase, and ribbons derived from real unlocks.
+6. ◐ **Realms as places** and a realm-aware builder: nation caps, the nav and passport nation switcher, realm boards, a
+   `/realms` directory (in the sidebar since 2026-10-05) and a realm filter on the ThinkPages feed. The dashboard
+   feed and trending are not realm-scoped.
+7. ✅ **Remaining truth fixes:** Diplomatic Standing is computed, the Trending tab has real data or an honest empty
+   state, passport privacy is persisted and enforced on the server, and the Capacity band shows real CivCap.
+
+**Still open:** the owner actions above; PR #49's known gaps (no region filter on rankings, DMs can't be sent as a
+persona or country, appointed chambers are still seated by the vote simulation); the GDP-growth trigger unit bug in
+national issues. [ROADMAP.md](../ROADMAP.md) and [ACTION_PLAN_2026-10-05.md](../ACTION_PLAN_2026-10-05.md) track the
+rest.
 
 The decisions the owner still owes (crafting pacing, FP expiry, passport privacy model, WikiOS Template/Category
 policy, prediction stakes, premium for staff) are listed in PR #48.
