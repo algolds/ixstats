@@ -1,9 +1,9 @@
 # 🎯 Halo — Facet UI Contextual Overlay & Command Palette
 
-**Parent Platform Layer:** Facet UI Design System (`FACET_VERSION = 3.1` / `HALO_VERSION = 5`)  
+**Parent Platform Layer:** Facet UI Design System (`FACET_VERSION = 4` / `HALO_VERSION = 6`)  
 **Subsystems:** Contextual Floating Capsule, `Cmd+K` Command Palette, Unified Notification Tray, Plugin Registry  
 **Primary Action:** `NAVIGATE` | **Domain Accent:** Universal Slate / Context-Adaptive  
-**Status:** ✅ Live (Halo v5); see [SYSTEM_STATUS.md](SYSTEM_STATUS.md)  
+**Status:** ✅ Live (Halo v6: standard chrome glass with no glow); see [SYSTEM_STATUS.md](SYSTEM_STATUS.md)  
 
 > **Facet UI Architecture:** **Halo** (contextual overlay & command palette) and **Cuelume** (audio-tactile haptic feedback) are documented alongside the **Facet UI Design System**, but Halo is an app shell, not a Facet primitive: the Facet primitives do not import Halo, while Halo imports `trpc/react`, `app/builder`, `wiki-os`, stores and auth. Plugin components follow the `<Name>Halo` naming convention (e.g., `WikiHalo`, `ForumHalo`, `MyCountryHalo`, `BuilderHalo`, `SportsLiveHalo`). Code identifiers intentionally retain the `DI*` prefix (`src/components/halo/`, `useDIPlugin`, `types.ts`, `DIPlugin`, `DIAction`, `DIBadge`) to prevent wide merge churn across active branches.
 
@@ -24,7 +24,6 @@ src/components/halo/
 ├── types.ts                      # DIPlugin, DIAction, DIBadge, SearchResult interfaces
 ├── presets.ts                    # Capsule size presets (compact, large, tall, …)
 ├── HaloPrimitives.tsx            # Shared capsule context & UI primitives
-├── DynamicIslandEffects.tsx      # Shared glass style constants (legacy file name)
 ├── HaloTourContext.tsx           # Onboarding and visual wayfinding guide
 ├── HaloTourTooltip.tsx           # Tooltip callouts for Halo controls
 ├── views/                        # Core Halo system views ONLY

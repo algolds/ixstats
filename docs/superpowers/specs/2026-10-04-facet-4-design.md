@@ -1,7 +1,7 @@
 # Facet 4: a content-typed material system
 
-Date: 2026-10-04. Status: design approved in conversation, awaiting written-spec review.
-Supersedes `docs/reference/facet-design-system.md` (the 2026-10-02 reset) once the foundation lands.
+Date: 2026-10-04. Status: implemented (foundation + sidebar); per-app sweep in progress (2026-10-05).
+Superseded the 2026-10-02 reset; [`docs/reference/facet-design-system.md`](../../reference/facet-design-system.md) is now the Facet 4 reference.
 
 ## 1. Why
 
