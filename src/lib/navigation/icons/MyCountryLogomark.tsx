@@ -4,8 +4,9 @@ import { cn } from "~/lib/utils/cn";
 /**
  * The MyCountry mark (a globe wearing a crown), the single source of the SVG. It lives in
  * `src/lib` so the navigation map (which must not import from components) can use it as the
- * MyCountry app icon; Decorative by default (the app row carries the label). Drawn in `currentColor` so the sidebar's
- * `text-tint` role colours it gold. Sized by its container like any icon (`size-*`).
+ * MyCountry app icon. Decorative by default (the app row carries the label). Drawn in
+ * `currentColor` so the sidebar's `text-tint` role colours it gold. Sized by its container
+ * like any icon (`size-*`).
  */
 export function MyCountryLogomark({ className, ...props }: SVGProps<SVGSVGElement>) {
   return (

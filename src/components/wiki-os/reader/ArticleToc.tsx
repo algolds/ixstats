@@ -14,14 +14,15 @@ const SCROLL_TOP_OFFSET = 90;
 export function TocButton({ tocLength, onClick }: { tocLength: number; onClick?: () => void }) {
   if (!onClick) return null;
   const label = tocLength > 0 ? "Contents" : "Page info";
+  const name = tocLength > 0 ? "Table of contents" : label;
   return (
     <Button
       type="button"
       variant="outline"
       size="xs"
       onClick={onClick}
-      title={tocLength > 0 ? "Table of contents" : label}
-      aria-label={tocLength > 0 ? "Table of contents" : label}
+      title={name}
+      aria-label={name}
       className="border-separator bg-surface text-label-secondary hover:text-label rounded-control gap-2 xl:hidden"
     >
       <List className="h-3.5 w-3.5" aria-hidden="true" />

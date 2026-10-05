@@ -231,6 +231,8 @@ export function AppSidebar({
   const isCollapsed = collapsed ?? false;
   const mainApps = apps.filter((app) => app.placement !== "footer");
   const footerApps = apps.filter((app) => app.placement === "footer");
+  // The wallet shortcut only exists while the Vault app is in the nav (it can be switched off).
+  const vaultVisible = apps.some((app) => app.id === "vault");
   const list = { pathname, searchParams, apps, expanded, onToggle, badges, onAction };
 
   return (
@@ -277,7 +279,7 @@ export function AppSidebar({
 
         <div className="border-separator flex flex-col gap-0.5 border-t p-2">
           {vaultCard && <div className="sidebar-collapsed:hidden pb-1">{vaultCard}</div>}
-          {signedIn && <RailWallet claimable={isPending(badges["daily-reward"])} />}
+          {signedIn && vaultVisible && <RailWallet claimable={isPending(badges["daily-reward"])} />}
           {account && <div className="sidebar-collapsed:justify-center flex">{account}</div>}
           <CollapsedTooltip collapsed={collapsed} label="Expand sidebar">
             <button

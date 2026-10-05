@@ -1,7 +1,11 @@
 /**
  * MyCountry Premium: the one definition the server gate (premiumProcedure), the client
  * ability (defineAbilityFor) and users.getMembershipStatus share. Beta testers get the same
- * tools (`isBetaTesterRole`).
+ * tools (`isBetaTesterRole`), and so do staff, admin and owner roles, which that predicate
+ * includes. Because the server gate fronts the whole premiumProcedure surface, that role set
+ * can use all of it: PvP/PvNPC conflicts, operations, military asset CRUD,
+ * resolveSecurityEvent, the Defense pages and the Map editor. Assigning the beta role is
+ * therefore a grant of every one of those.
  *
  * NEXT_PUBLIC_PREMIUM_FOR_ALL="true" grants premium features (Defense, Intelligence,
  * Map Editor, PvP/PvNPC operations) to every signed-in user — for test and staging builds.

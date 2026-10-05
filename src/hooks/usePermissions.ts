@@ -3,7 +3,7 @@ import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 
 import { isSystemOwner } from "~/lib/auth";
-import { BETA_TESTER_ROLE_NAMES, isBetaTesterRole } from "~/lib/auth/premium";
+import { isBetaTesterRole } from "~/lib/auth/premium";
 
 interface UserRole {
   id: string;
@@ -97,11 +97,7 @@ export function useIsBetaTester(): boolean {
   if (!authUser) return false;
   if (isSystemOwner(authUser.id)) return true;
 
-  const authRole = (authUser.publicMetadata as any)?.role;
-  if (typeof authRole === "string" && BETA_TESTER_ROLE_NAMES.includes(authRole)) {
-    return true;
-  }
-
+  // The database role only: Clerk publicMetadata is not what the server premium gate reads.
   if (isLoading || !permissionUser?.role) return false;
   return isBetaTesterRole(permissionUser.role.name, permissionUser.role.level);
 }

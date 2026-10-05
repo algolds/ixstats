@@ -3,6 +3,7 @@ import { render, screen, within } from "@testing-library/react";
 
 let premium = false;
 let betaTester = false;
+let navSettings: { showCardsTab?: boolean } | undefined;
 
 jest.mock("next/navigation", () => ({
   usePathname: () => "/mycountry",
@@ -28,9 +29,14 @@ jest.mock("~/trpc/react", () => ({
       vault: { getBalance: { invalidate: jest.fn() } },
       cards: { getMyCards: { invalidate: jest.fn() } },
     }),
-    admin: { getNavigationSettings: { useQuery: () => ({ data: undefined }) } },
+    admin: { getNavigationSettings: { useQuery: () => ({ data: navSettings }) } },
     vault: {
-      getBalance: { useQuery: () => ({ data: undefined, isLoading: false }) },
+      getBalance: {
+        useQuery: () => ({
+          data: { credits: 500, canClaimDailyBonus: false, loginStreak: 1 },
+          isLoading: false,
+        }),
+      },
       getTodayEarnings: { useQuery: () => ({ data: undefined }) },
       claimCombinedDailyClaim: { useMutation: () => ({ mutate: jest.fn() }) },
     },
@@ -61,6 +67,7 @@ function sidebarLinks() {
 beforeEach(() => {
   premium = false;
   betaTester = false;
+  navSettings = undefined;
   window.localStorage.setItem(
     "ixstats:dailyReward:autoOpened:shell-user",
     new Date().toISOString().slice(0, 10)
@@ -88,5 +95,28 @@ describe("FacetShell MyCountry Defense gating", () => {
   it("shows Defense to beta testers", () => {
     betaTester = true;
     expect(sidebarLinks().getByRole("link", { name: "Defense" })).toBeInTheDocument();
+  });
+});
+
+describe("FacetShell Vault visibility", () => {
+  it("shows the Vault card in the sidebar footer while the Vault app is visible", () => {
+    const { container } = render(
+      <AppShell>
+        <p>Page</p>
+      </AppShell>
+    );
+    expect(container.querySelector('[data-slot="sidebar-vault-card"]')).not.toBeNull();
+  });
+
+  it("shows no Vault card and no Wallet rail link when the Vault app is switched off", () => {
+    navSettings = { showCardsTab: false };
+    const { container } = render(
+      <AppShell>
+        <p>Page</p>
+      </AppShell>
+    );
+    expect(container.querySelector('[data-slot="sidebar-vault-card"]')).toBeNull();
+    expect(screen.queryByRole("link", { name: "Wallet" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Vault" })).toBeNull();
   });
 });

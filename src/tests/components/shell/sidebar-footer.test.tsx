@@ -181,7 +181,24 @@ describe("AppSidebar footer", () => {
     });
 
     it("is not rendered signed out", () => {
-      renderSidebar({ collapsed: true, signedIn: false, vaultCard: undefined });
+      renderSidebar({
+        collapsed: true,
+        signedIn: false,
+        vaultCard: undefined,
+        apps: getVisibleApps({ signedIn: false, isAdmin: false }),
+      });
+      expect(screen.queryByRole("link", { name: "Wallet" })).toBeNull();
+    });
+
+    it("is not rendered when the Vault app is hidden", () => {
+      renderSidebar({
+        collapsed: true,
+        apps: getVisibleApps({
+          signedIn: true,
+          isAdmin: false,
+          navigationSettings: { showCardsTab: false },
+        }),
+      });
       expect(screen.queryByRole("link", { name: "Wallet" })).toBeNull();
     });
   });
