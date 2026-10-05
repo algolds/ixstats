@@ -83,9 +83,11 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
           EARN_ACTIVE: "Active Gameplay",
           EARN_CARDS: "Card Activities",
           EARN_SOCIAL: "Social Engagement",
+          EARN_BONUS: "Bonuses",
           DAILY_LOGIN: "Daily Bonus",
         };
-        return labels[source] || source.replace(/_/g, " ");
+        const plain = source.replace(/_/g, " ").toLowerCase();
+        return labels[source] || plain.charAt(0).toUpperCase() + plain.slice(1);
       };
 
       const sources = Object.entries(summary.breakdown).map(([type, amount]) => ({

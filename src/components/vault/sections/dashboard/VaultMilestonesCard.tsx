@@ -28,9 +28,11 @@ export function VaultMilestonesCard({
 
   return (
     <Card padding="lg" className="overflow-hidden">
-      <div className="flex items-center justify-between">
-        <CardTitle icon={<Trophy />}>Achievements &amp; rank</CardTitle>
-        <span className="text-footnote text-yellow-ink flex items-center gap-1 font-semibold">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <CardTitle icon={<Trophy />} className="whitespace-nowrap">
+          Achievements &amp; rank
+        </CardTitle>
+        <span className="text-footnote text-yellow-ink flex items-center gap-1 font-semibold whitespace-nowrap">
           <Award aria-hidden className="h-3.5 w-3.5" />
           <span className={cn(myRank !== "Unranked" && "tabular-nums")}>{myRank}</span>
           <span>
