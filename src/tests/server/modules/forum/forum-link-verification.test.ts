@@ -19,7 +19,7 @@ const T0 = new Date(
 function setup(profile: ForumProfileProof | null, now = T0, secret: string | null = SECRET) {
   const db = createMockPrisma();
   db.$transaction.mockImplementation((cb: (tx: unknown) => unknown) => cb(db));
-  const syncProfile = jest.fn(async () => true);
+  const syncProfile = jest.fn(async (_clerkUserId: string) => true);
   const service = createForumLinkService(db as never, {
     secret,
     lookupUser: async (name) => (name.toLowerCase() === "realowner" ? FORUM_USER : null),

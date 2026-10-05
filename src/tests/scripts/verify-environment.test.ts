@@ -1,7 +1,8 @@
 import { describe, it, expect } from "@jest/globals";
 import { checkProductionRequired } from "../../../scripts/deployment/verify-environment";
 
-const valid = {
+const valid: NodeJS.ProcessEnv = {
+  NODE_ENV: "production",
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_live_x",
   CLERK_SECRET_KEY: "sk_live_x",
   IXTIME_BOT_SECRET: "bot",

@@ -142,7 +142,7 @@ describe("geoEditor.runPipeline — unreadable images", () => {
 
 describe("geoEditor.importPipelineResult — region metrics", () => {
   function importDb() {
-    const db = {
+    const models = {
       realm: { findUnique: jest.fn().mockResolvedValue({ id: "r_eurth" }) },
       mapLayer: {
         updateMany: jest.fn().mockResolvedValue({ count: 0 }),
@@ -152,9 +152,11 @@ describe("geoEditor.importPipelineResult — region metrics", () => {
         deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
         createMany: jest.fn().mockResolvedValue({ count: 0 }),
       },
-      $transaction: jest.fn((fn: (tx: unknown) => unknown) => fn(db)),
     };
-    return db;
+    // The transaction client is the same object, so writes land on the same mocks.
+    return Object.assign(models, {
+      $transaction: jest.fn((fn: (tx: unknown) => unknown) => fn(models)),
+    });
   }
 
   it("stores each region's centroid, bounding box and area, as the parser computes them", async () => {

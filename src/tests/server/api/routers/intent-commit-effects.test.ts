@@ -48,7 +48,7 @@ function makeDb() {
       update: jest.fn(),
     },
     country: { findUnique: jest.fn(async () => ({ name: "Testland" })) },
-    storytellerEffect: { create: jest.fn(async () => ({})) },
+    storytellerEffect: { create: jest.fn(async (_args: object) => ({})) },
     budgetAllocation: { findFirst: jest.fn(async () => null), update: jest.fn() },
   };
 }

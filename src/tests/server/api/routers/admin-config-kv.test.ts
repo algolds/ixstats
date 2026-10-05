@@ -6,7 +6,7 @@ import { readConfigKeys, writeConfigKeys } from "~/server/shared/config-kv";
 function makeDb(rows: { key: string; value: string }[] = []) {
   const db = {
     systemConfig: {
-      findMany: jest.fn(async () => rows),
+      findMany: jest.fn(async (_args: object) => rows),
       upsert: jest.fn((args: object) => args),
     },
     $transaction: jest.fn(async (ops: object[]) => ops),

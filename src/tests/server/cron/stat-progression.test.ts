@@ -115,7 +115,9 @@ describe("history period", () => {
 });
 
 describe("runStatProgression", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
   it("persists the projection into current* and never writes a baseline column", async () => {
     const db = makeDb([country("a")]);

@@ -139,10 +139,10 @@ function makeDb({ ownerUserId = "owner_db" }: { ownerUserId?: string } = {}) {
       findUnique: jest.fn(async ({ where }: { where: { id: string } }) =>
         where.id === ISSUE.id ? ISSUE : null
       ),
-      findMany: jest.fn(async () => [ISSUE]),
+      findMany: jest.fn(async (_args: object) => [ISSUE]),
       findFirst: jest.fn(async () => null),
       count: jest.fn(async () => 1),
-      update: jest.fn(async () => ISSUE),
+      update: jest.fn(async (_args: object) => ISSUE),
     },
     intent: {
       findUnique: jest.fn(
@@ -155,7 +155,10 @@ function makeDb({ ownerUserId = "owner_db" }: { ownerUserId?: string } = {}) {
     governmentComponent: { findMany: jest.fn(async () => []) },
     budgetAllocation: { findMany: jest.fn(async () => []) },
     governmentStructure: { findUnique: jest.fn(async () => null) },
-    policy: { findMany: jest.fn(async () => []), findFirst: jest.fn(async () => null) },
+    policy: {
+      findMany: jest.fn(async (_args: object) => []),
+      findFirst: jest.fn(async () => null),
+    },
   };
 }
 
