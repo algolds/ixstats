@@ -16,7 +16,7 @@ If you collect NationStates trading cards, you can copy your deck into your IxSt
 
 1. **Enter nation.** Type your NationStates nation name.
 2. **Visit NS link.** Open the NationStates verification page we link to, while logged in to that nation on NationStates.
-3. **Paste code.** Copy the code NationStates shows you and paste it back here, then choose **Verify Ownership**.
+3. **Paste code.** Copy the code NationStates shows you and paste it back here, then choose **Verify ownership**.
 4. **Import.** Your deck's cards are added to your Vault.
 
 ## The import bonus

@@ -22,7 +22,7 @@ The in-app help center at `/help` holds plain, task-oriented player guides. Arti
 
 ## Sections
 
-**Coverage (5 October 2026):** 63 articles in 13 folders, all registered, in 11 hub sections. An article's folder does not have to match its section (for example `gameplay/national-issues` is listed under MyCountry).
+**Coverage (5 October 2026):** 68 articles in 13 folders, all registered, in 11 hub sections. An article's folder does not have to match its section (for example `gameplay/national-issues` is listed under MyCountry).
 
 | Hub section | Articles | Key system guide |
 | :--- | :--- | :--- |
@@ -32,9 +32,9 @@ The in-app help center at `/help` holds plain, task-oriented player guides. Arti
 | **Diplomacy** | mycountry/diplomacy, diplomacy/{embassies, cultural, scenarios, npc-personalities} | [diplomacy.md](./diplomacy.md), [npc-ai.md](./npc-ai.md) |
 | **Defense** | mycountry/defense, defense/{equipment, stability} | [defense.md](./defense.md) |
 | **The World** | world/{maps, realms, countries, explore}, gameplay/{simulation, world-events} | [maps.md](./maps.md), [realms.md](./realms.md), [explore-and-country-profiles.md](./explore-and-country-profiles.md), [crisis-events.md](./crisis-events.md) |
-| **Wiki & Lore** | wiki/{wikios, stash} | [WIKIOS.md](./wikios/WIKIOS.md), [stash.md](./stash.md) |
-| **Vault, Cards & Rewards** | vault/{overview, ixcredits, card-packs, trading, lore-cards, ns-import}, gameplay/{achievements, leaderboards} | [ixcredits.md](./ixcredits.md), [cards.md](./cards.md), [achievements.md](./achievements.md) |
-| **Community** | social/{thinkpages, thinkshare, thinktanks, forum, blurbs} | [social.md](./social.md), [thinktanks.md](./thinktanks.md), [forum.md](./forum.md) |
+| **Wiki & Lore** | wiki/{wikios, lorewards, stash} | [WIKIOS.md](./wikios/WIKIOS.md), [stash.md](./stash.md), [ixnayid-passport.md](./ixnayid-passport.md) (Lorewards on the passport) |
+| **Vault, Cards & Rewards** | vault/{overview, ixcredits, card-packs, shop-items, crafting, trading, lore-cards, ns-import}, gameplay/{achievements, ribbons, leaderboards} | [ixcredits.md](./ixcredits.md), [cards.md](./cards.md), [myvault.md](./myvault.md), [achievements.md](./achievements.md), [ixnayid-passport.md](./ixnayid-passport.md) (showcase) |
+| **Community** | social/{thinkpages, activity-feed, thinkshare, thinktanks, forum, blurbs} | [social.md](./social.md), [thinktanks.md](./thinktanks.md), [forum.md](./forum.md) |
 | **Labs** | labs/{overview, myleague-myclub, onoma, vexel} | [myleague.md](./myleague.md), [onoma-roadmap.md](./onoma-roadmap.md), [vexel.md](./vexel.md) |
 | **For Admins** | admin/{cms-overview, reference-data} | [admin-cms.md](./admin-cms.md) |
 
@@ -73,7 +73,8 @@ To retire an article, delete the file, remove its registry entry, add the old pa
 ## Known gaps
 
 - Articles are not versioned against the code; the tests catch broken links and missing files, not stale facts.
-- A few articles document known product gaps so players aren't misled (trade tab settings not saved, crisis counts empty). Remove those notes when the gaps close.
+- A few articles document known product gaps so players aren't misled (trade tab settings not saved, crisis counts empty, the Mythic Fusion recipe, cosmetics visible only to their owner, the Archetype Proposal Token doing nothing). Remove those notes when the gaps close.
+- `/util/lorewards` (and `/wiki/lorewards`) redirect to `/achievements?tab=wiki-lore`, but that page has no tabs and no Lorewards; the Lorewards article sends players to the passport instead.
 
 ---
 

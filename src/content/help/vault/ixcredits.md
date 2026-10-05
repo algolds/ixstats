@@ -64,7 +64,7 @@ The dividend comes from your first (earliest-created) nation, whichever nation y
 - **Auctions:** bids and buyouts, plus a listing fee of 5 IxC (10 for featured). See [Auctions & Trading](/help/vault/trading).
 - **Trades:** you can add IxCredits to either side of a trade offer.
 - **Lore card requests:** 50 IxC to ask for a wiki article to become a card, refunded if rejected. See [Lore Cards](/help/vault/lore-cards).
-- **Vault Shop items** (cosmetics such as profile glows, frames and badges, and card capacity boosts) when the shop has them.
+- **Vault Shop items** (cosmetics such as profile glows, frames and badges, card capacity boosts and MyLeague licences) when the shop has them. See [Vault Shop Items](/help/vault/shop-items).
 
 ## Vault level
 

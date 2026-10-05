@@ -4,8 +4,8 @@ description: How achievements unlock, what they pay, and how they show as ribbon
 badge: Vault, Cards & Rewards
 prevHref: /help/vault/ns-import
 prevLabel: Importing NationStates Cards
-nextHref: /help/gameplay/leaderboards
-nextLabel: Leaderboards
+nextHref: /help/gameplay/ribbons
+nextLabel: Ribbons & Your Showcase
 ---
 
 ## How achievements work
@@ -39,7 +39,7 @@ Some achievements also award a card or a pack. Achievement IxCredits don't count
 
 - The header shows **Total Unlocked**, **Achievement Points** and your **Global Rank**, with a link to the [Global Leaderboards](/leaderboards).
 - Filter the catalog by category and rarity, search it, and switch between grid and list. Secret achievements stay hidden until you unlock them.
-- Turn on the **Showcase Shelf** to display your highlights.
+- Turn on the **Showcase shelf** to show your rarest unlocks. See [Ribbons & Your Showcase](/help/gameplay/ribbons#the-achievements-showcase-shelf).
 
 ## Ribbons
 
@@ -47,9 +47,11 @@ Every unlocked achievement is also a **ribbon**. The stripe colour shows the cat
 
 - Your [passport](/help/getting-started/ixnayid) shows your full ribbon rack and a signature shelf of three ribbons: the three you pin, or your three rarest.
 - Your nations' profiles show your top three ribbons in the header.
-- Pin ribbons from your passport with **Edit Passport**. Hiding Achievements there hides your ribbons everywhere.
+- Pin ribbons from your passport with **Edit passport**. Hiding Achievements there hides your ribbons everywhere.
+
+More in [Ribbons & Your Showcase](/help/gameplay/ribbons).
 
 ## Good to know
 
 - Nation achievements are checked against the nation you're playing as, so a player with several nations can unlock the same scale milestones from any of them.
-- Wiki writing is recognised separately through [Lorewards](/help/wiki/wikios#lorewards).
+- Wiki writing is recognised separately through [Lorewards](/help/wiki/lorewards).

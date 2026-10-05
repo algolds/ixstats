@@ -2,8 +2,8 @@
 title: ThinkPages & the Feed
 description: Post to the feed as yourself or a persona, follow and react, use hashtags, and answer Blurbs prompts.
 badge: Community
-nextHref: /help/social/thinkshare
-nextLabel: Messages
+nextHref: /help/social/activity-feed
+nextLabel: The Activity Feed & Hashtags
 ---
 
 ## What ThinkPages is
@@ -21,7 +21,7 @@ The Dashboard feed has four tabs:
 
 The Dashboard also shows current [Blurbs](#blurbs-topic-tuesday) prompts and trending topics beside the feed.
 
-A realm-only feed is on each [realm board](/help/world/realms#realm-boards).
+A realm-only feed is on each [realm board](/help/world/realms#realm-boards). What else shows in the feed, following nations, and how hashtags trend: [The Activity Feed & Hashtags](/help/social/activity-feed).
 
 ## Personas
 

@@ -75,3 +75,16 @@ export function validateMaterialCriteria(
   }
   return null;
 }
+
+/**
+ * How many material cards a recipe consumes: one per specific card id, and `quantity`
+ * (default 1) per criterion. The workbench shows one slot per card.
+ */
+export function materialSlotCount(required: unknown): number {
+  if (!Array.isArray(required)) return 0;
+  return required.reduce<number>((sum, material) => {
+    if (typeof material !== "object" || material === null) return sum + 1;
+    const quantity = (material as MaterialCriterion).quantity ?? 1;
+    return sum + Math.max(1, Math.floor(quantity));
+  }, 0);
+}

@@ -10,7 +10,11 @@ import { craftingRecipesRouter } from "~/server/api/routers/crafting/recipes";
 import { createCallerFactory } from "~/server/api/trpc";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
-import { normalizeSuccessRate, validateMaterialCriteria } from "~/lib/cards/crafting-rules";
+import {
+  materialSlotCount,
+  normalizeSuccessRate,
+  validateMaterialCriteria,
+} from "~/lib/cards/crafting-rules";
 
 const createCaller = createCallerFactory(craftingRecipesRouter);
 
@@ -169,5 +173,19 @@ describe("crafting rules", () => {
     ).toBeNull();
     expect(validateMaterialCriteria(mats, [{ rarity: "RARE", quantity: 1 }])).toMatch(/extra/);
     expect(validateMaterialCriteria(mats, [{ type: "LORE", quantity: 2 }])).toMatch(/Need 2/);
+  });
+
+  it("gives the workbench one slot per consumed card", () => {
+    // Seeded "Common Fusion" takes two Commons from one criterion
+    expect(materialSlotCount([{ rarity: "COMMON", quantity: 2 }])).toBe(2);
+    expect(
+      materialSlotCount([
+        { rarity: "ULTRA_RARE", quantity: 2 },
+        { rarity: "EPIC", quantity: 1 },
+      ])
+    ).toBe(3);
+    expect(materialSlotCount([{ rarity: "RARE" }])).toBe(1);
+    expect(materialSlotCount(["card-a", "card-b"])).toBe(2);
+    expect(materialSlotCount(null)).toBe(0);
   });
 });

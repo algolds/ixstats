@@ -396,6 +396,13 @@ export const helpSections: HelpSection[] = [
         tags: ["wiki", "wikios", "editing", "lorewards"],
       },
       {
+        id: "lorewards",
+        title: "Lorewards",
+        description: "Awards for wiki writing, what a win pays, and where your laurels show.",
+        path: "/help/wiki/lorewards",
+        tags: ["lorewards", "wiki", "awards", "laurels", "streak", "lore medals"],
+      },
+      {
         id: "stash",
         title: "Stash",
         description: "Save wiki pages, quotes and forum threads into collections.",
@@ -432,6 +439,20 @@ export const helpSections: HelpSection[] = [
         tags: ["packs", "cards", "shop"],
       },
       {
+        id: "shop-items",
+        title: "Vault Shop Items",
+        description: "Cosmetics and account upgrades in the Vault Shop, and equipping cosmetics.",
+        path: "/help/vault/shop-items",
+        tags: ["shop", "store", "cosmetics", "upgrades", "card capacity", "license"],
+      },
+      {
+        id: "crafting",
+        title: "Crafting Cards",
+        description: "Fusion and Evolution recipes that turn your cards into a rarer card.",
+        path: "/help/vault/crafting",
+        tags: ["crafting", "fusion", "evolution", "recipes", "cards"],
+      },
+      {
         id: "trading",
         title: "Auctions & Trading",
         description: "Auction cards, bid, buy outright, and trade directly with players.",
@@ -460,6 +481,13 @@ export const helpSections: HelpSection[] = [
         tags: ["achievements", "ribbons", "rewards"],
       },
       {
+        id: "ribbons",
+        title: "Ribbons & Your Showcase",
+        description: "Reading ribbons, pinning signature ribbons, and the showcase shelves.",
+        path: "/help/gameplay/ribbons",
+        tags: ["ribbons", "showcase", "passport", "signature ribbons", "achievements"],
+      },
+      {
         id: "leaderboards",
         title: "Leaderboards",
         description: "Rank nations by GDP, population, achievements and more.",
@@ -480,6 +508,14 @@ export const helpSections: HelpSection[] = [
         description: "Post to the feed as yourself or a persona, follow, react, and use hashtags.",
         path: "/help/social/thinkpages",
         tags: ["thinkpages", "feed", "posts", "personas", "blurbs"],
+      },
+      {
+        id: "activity-feed",
+        title: "The Activity Feed & Hashtags",
+        description:
+          "What the feed shows, following nations and personas, hashtags and trending topics.",
+        path: "/help/social/activity-feed",
+        tags: ["feed", "activity", "hashtags", "trending", "following"],
       },
       {
         id: "thinkshare",

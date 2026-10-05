@@ -28,7 +28,7 @@ You can have one embassy per nation. The estimate of cost and approval time show
 
 ## Not available yet
 
-- **Embassy upgrades** show as "Coming Soon".
+- **Embassy upgrades**: there's no way to raise an embassy's level.
 - **Diplomatic missions** (sending envoys on trade or cultural missions from an embassy) were removed and can't be started. Older guides that described missions now point here.
 - Embassies do not give trade or "shared component" bonuses.
 

@@ -4,8 +4,8 @@ description: Buying packs in the Vault Shop, opening them, and how pack odds wor
 badge: Vault, Cards & Rewards
 prevHref: /help/vault/ixcredits
 prevLabel: IxCredits
-nextHref: /help/vault/trading
-nextLabel: Auctions & Trading
+nextHref: /help/vault/shop-items
+nextLabel: Vault Shop Items
 ---
 
 ## Where packs are
@@ -21,7 +21,7 @@ Packs are sold in the **Vault Shop**: [Vault → Marketplace](/vault/marketplace
 
 ## Odds
 
-Every card in a pack rolls its rarity separately against that pack's odds. As a guide, the default odds are Common 65%, Uncommon 25%, Rare 7%, Ultra Rare 2%, Epic 0.9% and Legendary 0.1%; each pack sets its own, and pricier packs have better odds. Some packs mention a guaranteed minimum rarity, but that guarantee isn't applied yet, so every card is a fresh roll.
+Every card in a pack rolls its rarity separately against that pack's odds. As a guide, the default odds are Common 65%, Uncommon 25%, Rare 7%, Ultra Rare 2%, Epic 0.9% and Legendary 0.1%; each pack sets its own, and pricier packs have better odds. If a pack guarantees a minimum rarity and none of its cards reach it, the last card is raised to that rarity.
 
 ## Kinds of packs
 

@@ -328,10 +328,12 @@ Do this once Phase 1 has made the content true. Each step is S–M.
 6. **Add the 11 orphans to the hub:** the 7 platform-audit files (or archive them per step 1), both Facet 4 specs,
    `systems/realms.md` and `systems/ixnayid-passport.md`.
 7. **Stop the drift from coming back.**
-   - Extend `docs:check`'s link validator from 14 in-scope docs to all of `docs/**` and `src/**/README.md`, anchors
-     included.
+   - ~~Extend `docs:check`'s link validator from 14 in-scope docs to all of `docs/**` and `src/**/README.md`, anchors
+     included.~~ Done: it covers every tracked `docs/**`, `src/**/README.md`, `scripts/**/README.md` and
+     `src/content/**` file, plus `README.md` and `CHANGELOG.md`.
    - Require a `**Last updated:**` line in every `docs/` file; 47 have no date today.
-   - Make the hub count claims (routers, procedures, models, schema files) generated blocks, like the version matrix.
+   - ~~Make the hub count claims (routers, procedures, models, schema files) generated blocks, like the version
+     matrix.~~ Done: inline `BEGIN_DOCS:COUNT:<key>` markers, rewritten by `docs:sync`.
    - Add the doc updates to the PR checklist for any PR that closes a roadmap ID.
 
 ---

@@ -2,8 +2,8 @@
 title: Stash
 description: Save wiki pages, quotes, images and forum threads into your own collections.
 badge: Wiki & Lore
-prevHref: /help/wiki/wikios
-prevLabel: The Wiki (WikiOS)
+prevHref: /help/wiki/lorewards
+prevLabel: Lorewards
 ---
 
 ## What Stash is

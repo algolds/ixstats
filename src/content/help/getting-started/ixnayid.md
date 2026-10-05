@@ -28,9 +28,9 @@ A player's **wiki user profile** now opens their passport on the Work tab (`/id/
 
 ## Edit your passport and privacy
 
-1. Open your own passport and choose **Edit Passport**. The card flips to its settings side.
-2. Switch sections on or off: Achievements, Civic Accolades (Lorewards), Focus, Forum Discussions, IxCredits (your whole Vault) and Activity History. Hidden sections are hidden from everyone, including you, so you see what visitors see.
-3. Write a signature (up to 60 characters) and pin up to three **signature ribbons** from achievements you've unlocked.
+1. Open your own passport and choose **Edit passport**. The card flips to its settings side.
+2. Switch sections on or off: Achievements, Civic accolades ([Lorewards](/help/wiki/lorewards)), Focus, Forum activity, IxCredits (your whole Vault) and Activity history. Hidden sections are hidden from everyone, including you, so you see what visitors see.
+3. Write a signature (up to 60 characters) and pin up to three **signature ribbons** from achievements you've unlocked. See [Ribbons & Your Showcase](/help/gameplay/ribbons).
 4. Choose **Done** to save.
 
 Your Realms and Work tabs are always public.

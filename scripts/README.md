@@ -53,7 +53,7 @@ scripts/
 | Script | Purpose & Command |
 | :--- | :--- |
 | [`scripts/audit/audit-arch.ts`](audit/audit-arch.ts) | **Architecture Guard**: Enforces ≤700L ceiling per file (500L for hooks; ratcheted via `arch-baseline.json`), blocks cross-router imports, server boundary leaks, and residue (`bun run audit:arch`). |
-| [`scripts/docs/sync-reference-docs.ts`](docs/sync-reference-docs.ts) | **Reference Docs Synchronizer**: Synchronizes AST-derived API inventory and version matrix across canonical docs (`bun run docs:sync` / `bun run docs:check`). |
+| [`scripts/docs/sync-reference-docs.ts`](docs/sync-reference-docs.ts) | **Reference Docs Synchronizer**: Synchronizes the AST-derived API inventory, version matrices and inline `BEGIN_DOCS:COUNT:<key>` counts (routers, procedures, schema files, models, enums, migrations), and checks relative links and `#anchors` in every tracked `docs/**`, `README.md`, `CHANGELOG.md`, `scripts/**/README.md`, `src/**/README.md` and `src/content/**` markdown file (`bun run docs:sync` / `bun run docs:check`). |
 | [`scripts/audit/validate-script-targets.ts`](audit/validate-script-targets.ts) | **Script Target Validator**: Validates script paths, configs, and Bun package-manager usage (`bun run validate:script-targets`). |
 | [`scripts/split-router-template.ts`](split-router-template.ts) | **ts-morph Router Splitter**: AST-based code splitter for refactoring oversized flat routers into `mergeRouters` subdirs; runs its own AST parity check after each split. |
 | [`scripts/audit/audit-trpc-wiring.ts`](audit/audit-trpc-wiring.ts) | Cross-references Prisma models against tRPC router endpoints (77 routers, ~900 procedures) and reports coverage gaps (`bun run audit:wiring`). |

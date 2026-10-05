@@ -73,7 +73,7 @@ Your IxCredits balance, daily login bonus (claim it here), streak, Vault level a
 
 ## Cosmetics
 
-Items you've bought in the Vault Shop. You can equip and unequip them, but equipped cosmetics don't show anywhere yet.
+Items you've bought in the Vault Shop. Equip and unequip cosmetics here. Equipped cosmetics show only to you for now (a badge on your own forum posts, and your profile in Halo's wiki panel). See [Vault Shop Items](/help/vault/shop-items).
 
 ## NationStates cards
 

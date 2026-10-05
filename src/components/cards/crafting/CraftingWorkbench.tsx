@@ -20,6 +20,7 @@ import { CardDisplay } from "../display/CardDisplay";
 import { CraftingAnimation } from "./CraftingAnimation";
 import type { CardInstance } from "~/types/cards-display";
 import { Card } from "~/components/ui/card";
+import { materialSlotCount } from "~/lib/cards/crafting-rules";
 
 /**
  * Card slot for drag-drop or click to add
@@ -99,15 +100,14 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
     },
   });
 
-  // Initialize card slots based on recipe
+  // Initialize card slots based on recipe: one slot per card consumed, so a criterion
+  // with quantity 2 gets two slots
   React.useEffect(() => {
     if (recipeData) {
-      const materials = recipeData.requiredCardIds as any[];
-      const slots: CardSlot[] = materials.map((material, index) => ({
-        id: `slot-${index}`,
-        card: null,
-        required: true,
-      }));
+      const slots: CardSlot[] = Array.from(
+        { length: materialSlotCount(recipeData.requiredCardIds) },
+        (_, index) => ({ id: `slot-${index}`, card: null, required: true })
+      );
       // oxlint-disable-next-line
       setCardSlots(slots);
     }
