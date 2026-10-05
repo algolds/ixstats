@@ -122,7 +122,7 @@
     "test:watch": "jest --watch",
     "test:wiring": "bun scripts/audit/verify-live-data-wiring.ts",
     "ts:check:server": "tsc --noEmit -p tsconfig.server.json",
-    "typecheck": "bun run typecheck:ui && bun run typecheck:server && bun run typecheck:trpc && bun run typecheck:db && bun run typecheck:scripts",
+    "typecheck": "bun run typecheck:ui && bun run typecheck:server && bun run typecheck:trpc && bun run typecheck:db && bun run typecheck:scripts && bun run typecheck:tests",
     "wiki:seed:categories": "bun scripts/sync-wikios-categories.ts",
     "wiki:clean:categories": "bun scripts/cleanup-wikios-categories.ts",
     "wiki:clean:summaries": "bun scripts/cleanup-wikios-sync-summaries.ts",

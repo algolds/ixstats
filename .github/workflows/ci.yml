@@ -60,6 +60,9 @@ jobs:
       - name: Typecheck (scripts, proxy, instrumentation, content)
         run: bun run typecheck:scripts
 
+      - name: Typecheck (tests)
+        run: bun run typecheck:tests
+
       - name: Validate script targets
         run: bun run validate:script-targets
 
