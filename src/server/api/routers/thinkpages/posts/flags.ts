@@ -1,12 +1,12 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 export const thinkpagesPostsFlagsRouter = createTRPCRouter({
   // ===== THINKSHARE (MESSAGING) ENDPOINTS =====
 
   // Flag a post for moderation
-  flagPost: protectedProcedure
+  flagPost: rateLimitedMutationProcedure
     .input(
       z.object({
         postId: z.string(),

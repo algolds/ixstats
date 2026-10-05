@@ -12,7 +12,12 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, lightMutationProcedure, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  lightMutationProcedure,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
 import { LedgerError, getOrCreateVault, spendCreditsTx } from "~/lib/vault/vault-ledger";
 import { clearUserPerksCache } from "~/lib/vault/vault-perks";
@@ -227,7 +232,7 @@ export const vaultStoreRouter = createTRPCRouter({
   /**
    * Toggle equipped status of a cosmetic item for the logged-in user
    */
-  toggleEquipCosmetic: protectedProcedure
+  toggleEquipCosmetic: rateLimitedMutationProcedure
     .input(z.object({ itemId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       try {

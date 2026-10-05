@@ -3,7 +3,12 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 
 /**
  * Cards router for IxCards system
@@ -12,7 +17,7 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/
 export const cardsCollectionsRouter = createTRPCRouter({
   // ─── Collection CRUD ─────────────────────────────────────────────
 
-  createCollection: protectedProcedure
+  createCollection: rateLimitedMutationProcedure
     .input(
       z.object({
         name: z.string().min(1).max(100),
@@ -66,7 +71,7 @@ export const cardsCollectionsRouter = createTRPCRouter({
       });
     }),
 
-  addToCollection: protectedProcedure
+  addToCollection: rateLimitedMutationProcedure
     .input(
       z.object({
         collectionId: z.string().min(1),
@@ -97,7 +102,7 @@ export const cardsCollectionsRouter = createTRPCRouter({
       });
     }),
 
-  deleteCollection: protectedProcedure
+  deleteCollection: rateLimitedMutationProcedure
     .input(z.object({ collectionId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.user.id;

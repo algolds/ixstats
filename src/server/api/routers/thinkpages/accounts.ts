@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { isSystemOwner } from "~/lib/auth";
 import { assertCountryWriteAccess, getRoleName } from "~/server/shared/country-authorization";
@@ -54,7 +59,7 @@ const CreateAccountSchema = thinkpagesAccountBaseSchema;
 
 export const thinkpagesAccountsRouter = createTRPCRouter({
   // Update ThinkPages Feed Account
-  updateAccount: protectedProcedure
+  updateAccount: rateLimitedMutationProcedure
     .input(
       z.object({
         accountId: z.string(),
@@ -151,105 +156,107 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
     }),
 
   // Create ThinkPages Feed Account - For Feed only (not ThinkTanks/ThinkShare)
-  createAccount: protectedProcedure.input(CreateAccountSchema).mutation(async ({ ctx, input }) => {
-    const { db } = ctx;
-    const clerkUserId = ctx.auth?.userId;
+  createAccount: rateLimitedMutationProcedure
+    .input(CreateAccountSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+      const clerkUserId = ctx.auth?.userId;
 
-    if (!clerkUserId) {
-      throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "You must be logged in to create accounts",
+      if (!clerkUserId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to create accounts",
+        });
+      }
+
+      // Account limit per clerk user, set in Admin → ThinkPages (the personal persona does not count)
+      const maxAccounts = await maxThinkpagesAccountsPerUser(db);
+      const existingAccounts = await db.thinkpagesAccount.findMany({
+        where: { clerkUserId, accountType: { not: PERSONAL_ACCOUNT_TYPE } },
       });
-    }
 
-    // Account limit per clerk user, set in Admin → ThinkPages (the personal persona does not count)
-    const maxAccounts = await maxThinkpagesAccountsPerUser(db);
-    const existingAccounts = await db.thinkpagesAccount.findMany({
-      where: { clerkUserId, accountType: { not: PERSONAL_ACCOUNT_TYPE } },
-    });
+      if (existingAccounts.length >= maxAccounts) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `You have reached the maximum of ${maxAccounts} ThinkPages accounts per user`,
+        });
+      }
 
-    if (existingAccounts.length >= maxAccounts) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: `You have reached the maximum of ${maxAccounts} ThinkPages accounts per user`,
+      // Check username availability
+      const existingUsername = await db.thinkpagesAccount.findUnique({
+        where: { username: input.username },
       });
-    }
 
-    // Check username availability
-    const existingUsername = await db.thinkpagesAccount.findUnique({
-      where: { username: input.username },
-    });
+      if (existingUsername) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Username is already taken",
+        });
+      }
 
-    if (existingUsername) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Username is already taken",
+      // The caller must own (or be an admin for) the country the persona is attached to
+      await assertCountryWriteAccess(ctx, input.countryId);
+
+      // Verify country exists
+      const country = await db.country.findUnique({
+        where: { id: input.countryId },
       });
-    }
 
-    // The caller must own (or be an admin for) the country the persona is attached to
-    await assertCountryWriteAccess(ctx, input.countryId);
+      if (!country) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Country not found",
+        });
+      }
 
-    // Verify country exists
-    const country = await db.country.findUnique({
-      where: { id: input.countryId },
-    });
+      // Check account type limit for this country
+      const existingCountryAccounts = existingAccounts.filter(
+        (a) => a.countryId === input.countryId && a.isActive
+      );
 
-    if (!country) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "Country not found",
+      const typeCounts = {
+        citizen: existingCountryAccounts.filter((a) => a.accountType === "citizen").length,
+        government: existingCountryAccounts.filter((a) => a.accountType === "government").length,
+        media: existingCountryAccounts.filter((a) => a.accountType === "media").length,
+      };
+
+      const maxLimits = {
+        citizen: 17,
+        government: 5,
+        media: 10,
+      };
+
+      const requestedType = input.accountType as keyof typeof maxLimits;
+      if (requestedType in maxLimits && typeCounts[requestedType] >= maxLimits[requestedType]) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `You have reached the maximum of ${maxLimits[requestedType]} ${requestedType} accounts for this country`,
+        });
+      }
+
+      // Create the account
+      const lastNameVal = input.lastName || "";
+      const displayName = lastNameVal ? `${input.firstName} ${lastNameVal}` : input.firstName;
+      const account = await db.thinkpagesAccount.create({
+        data: {
+          clerkUserId,
+          countryId: input.countryId,
+          accountType: input.accountType,
+          username: input.username,
+          displayName,
+          firstName: input.firstName,
+          lastName: lastNameVal,
+          bio: input.bio || "",
+          verified: false,
+          postingFrequency: input.postingFrequency,
+          politicalLean: input.politicalLean,
+          personality: input.personality,
+          profileImageUrl: input.profileImageUrl || null,
+        },
       });
-    }
 
-    // Check account type limit for this country
-    const existingCountryAccounts = existingAccounts.filter(
-      (a) => a.countryId === input.countryId && a.isActive
-    );
-
-    const typeCounts = {
-      citizen: existingCountryAccounts.filter((a) => a.accountType === "citizen").length,
-      government: existingCountryAccounts.filter((a) => a.accountType === "government").length,
-      media: existingCountryAccounts.filter((a) => a.accountType === "media").length,
-    };
-
-    const maxLimits = {
-      citizen: 17,
-      government: 5,
-      media: 10,
-    };
-
-    const requestedType = input.accountType as keyof typeof maxLimits;
-    if (requestedType in maxLimits && typeCounts[requestedType] >= maxLimits[requestedType]) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: `You have reached the maximum of ${maxLimits[requestedType]} ${requestedType} accounts for this country`,
-      });
-    }
-
-    // Create the account
-    const lastNameVal = input.lastName || "";
-    const displayName = lastNameVal ? `${input.firstName} ${lastNameVal}` : input.firstName;
-    const account = await db.thinkpagesAccount.create({
-      data: {
-        clerkUserId,
-        countryId: input.countryId,
-        accountType: input.accountType,
-        username: input.username,
-        displayName,
-        firstName: input.firstName,
-        lastName: lastNameVal,
-        bio: input.bio || "",
-        verified: false,
-        postingFrequency: input.postingFrequency,
-        politicalLean: input.politicalLean,
-        personality: input.personality,
-        profileImageUrl: input.profileImageUrl || null,
-      },
-    });
-
-    return account;
-  }),
+      return account;
+    }),
 
   // Get ThinkPages Feed Accounts by Country - For Feed only
   getAccountsByCountry: publicProcedure
@@ -296,7 +303,7 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
   }),
 
   // Create (or return) the caller's personal persona: one per user, tied to no country
-  ensurePersonalAccount: protectedProcedure
+  ensurePersonalAccount: rateLimitedMutationProcedure
     .input(
       z
         .object({

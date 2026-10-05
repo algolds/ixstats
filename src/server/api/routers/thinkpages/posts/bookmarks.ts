@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 
 export const thinkpagesPostsBookmarksRouter = createTRPCRouter({
   // ===== THINKSHARE (MESSAGING) ENDPOINTS =====
 
   // Bookmark or unbookmark a post
-  bookmarkPost: protectedProcedure
+  bookmarkPost: rateLimitedMutationProcedure
     .input(
       z.object({
         postId: z.string(),

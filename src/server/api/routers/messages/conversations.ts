@@ -3,7 +3,11 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { mapMessagingErrors, messagingFor } from "./_service";
 
 const MessageFolderSchema = z.enum([
@@ -78,7 +82,7 @@ export const messagesConversationsRouter = createTRPCRouter({
   /**
    * Mark all conversations/messages as read for the current user.
    */
-  markAllAsRead: protectedProcedure.mutation(async ({ ctx }) => {
+  markAllAsRead: rateLimitedMutationProcedure.mutation(async ({ ctx }) => {
     const messagingService = messagingFor(ctx);
 
     return await messagingService.markAllAsRead(ctx.auth.userId);
@@ -87,7 +91,7 @@ export const messagesConversationsRouter = createTRPCRouter({
   /**
    * Create a conversation (source-aware).
    */
-  createConversation: protectedProcedure
+  createConversation: rateLimitedMutationProcedure
     .input(
       z.object({
         participantIds: z.array(z.string().min(1)),

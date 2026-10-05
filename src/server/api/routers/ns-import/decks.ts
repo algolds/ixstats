@@ -1,6 +1,10 @@
 import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { nsApiClient } from "~/lib/nationstates/api-client";
 import { TRPCError } from "@trpc/server";
 import { getVaultConfig, vaultService } from "~/lib/vault/vault-service";
@@ -316,7 +320,7 @@ export const nsImportDecksRouter = createTRPCRouter({
   /**
    * Import trading cards from a NationStates nation
    */
-  importDeck: protectedProcedure
+  importDeck: rateLimitedMutationProcedure
     .input(
       z.object({
         verificationId: z.string(),

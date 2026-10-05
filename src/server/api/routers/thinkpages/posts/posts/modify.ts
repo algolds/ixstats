@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 // Import the wiki search service
 import { validateNoXSS } from "~/lib/utils";
@@ -7,7 +7,7 @@ import { invalidateFeeds, loadPostForModeration } from "../../post-utils";
 
 export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
   // Update post content (edit post)
-  updatePost: protectedProcedure
+  updatePost: rateLimitedMutationProcedure
     .input(
       z.object({
         postId: z.string(),
@@ -98,7 +98,7 @@ export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
     }),
 
   // Delete post (soft delete)
-  deletePost: protectedProcedure
+  deletePost: rateLimitedMutationProcedure
     .input(
       z.object({
         postId: z.string(),
@@ -192,7 +192,7 @@ export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
   // ===== THINKSHARE (MESSAGING) ENDPOINTS =====
 
   // Pin/unpin a post
-  pinPost: protectedProcedure
+  pinPost: rateLimitedMutationProcedure
     .input(
       z.object({
         postId: z.string(),

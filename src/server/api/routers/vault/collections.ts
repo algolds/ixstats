@@ -16,6 +16,7 @@ import {
   createTRPCRouter,
   protectedProcedure,
   rateLimitedPublicProcedure,
+  rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 
 async function requireOwnCollection(db: PrismaClient, collectionId: string, userId: string) {
@@ -92,7 +93,7 @@ export const vaultCollectionsRouter = createTRPCRouter({
   /**
    * Create a new collection
    */
-  createCollection: protectedProcedure
+  createCollection: rateLimitedMutationProcedure
     .input(
       z.object({
         name: z.string().min(1).max(100),
@@ -130,7 +131,7 @@ export const vaultCollectionsRouter = createTRPCRouter({
   /**
    * Update collection (owner only)
    */
-  updateCollection: protectedProcedure
+  updateCollection: rateLimitedMutationProcedure
     .input(
       z.object({
         collectionId: z.string().min(1),
@@ -162,7 +163,7 @@ export const vaultCollectionsRouter = createTRPCRouter({
   /**
    * Delete collection (owner only)
    */
-  deleteCollection: protectedProcedure
+  deleteCollection: rateLimitedMutationProcedure
     .input(z.object({ collectionId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -298,7 +299,7 @@ export const vaultCollectionsRouter = createTRPCRouter({
   /**
    * Like/unlike a collection
    */
-  likeCollection: protectedProcedure
+  likeCollection: rateLimitedMutationProcedure
     .input(
       z.object({
         collectionId: z.string().min(1),
@@ -339,7 +340,7 @@ export const vaultCollectionsRouter = createTRPCRouter({
   /**
    * Add comment to collection
    */
-  addCollectionComment: protectedProcedure
+  addCollectionComment: rateLimitedMutationProcedure
     .input(
       z.object({
         collectionId: z.string().min(1),

@@ -8,7 +8,12 @@
 import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import {
@@ -194,7 +199,7 @@ function viewerMembership(
 
 export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
   // Create a new ThinkTank group
-  createThinktank: protectedProcedure
+  createThinktank: rateLimitedMutationProcedure
     .input(
       z.object({
         name: z.string().min(1).max(100),
@@ -395,7 +400,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
     }),
 
   // Update a ThinkTank group
-  updateThinktank: protectedProcedure
+  updateThinktank: rateLimitedMutationProcedure
     .input(
       z.object({
         groupId: z.string(),
@@ -457,7 +462,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       return group;
     }),
 
-  deleteThinktank: protectedProcedure
+  deleteThinktank: rateLimitedMutationProcedure
     .input(z.object({ groupId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -541,7 +546,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
   /**
    * Update ThinkTank group settings (including multi-persona posting toggle)
    */
-  updateGroupSettings: protectedProcedure
+  updateGroupSettings: rateLimitedMutationProcedure
     .input(
       z.object({
         groupId: z.string(),
@@ -658,7 +663,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
   /**
    * Create a group post / Think in a ThinkTank
    */
-  createGroupPost: protectedProcedure
+  createGroupPost: rateLimitedMutationProcedure
     .input(
       z.object({
         groupId: z.string(),
@@ -737,7 +742,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
    * Remove a post from a group's feed (moderation). Group owners and admins may do this; on a realm board
    * that is the realm's moderators. The post leaves the group feed and is hidden everywhere else.
    */
-  removeGroupPost: protectedProcedure
+  removeGroupPost: rateLimitedMutationProcedure
     .input(z.object({ groupId: z.string(), postId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -766,7 +771,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
     }),
 
   // Invite users to a ThinkTank group
-  inviteToThinktank: protectedProcedure
+  inviteToThinktank: rateLimitedMutationProcedure
     .input(
       z.object({
         groupId: z.string(),

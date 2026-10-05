@@ -3,7 +3,12 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { getUserCards } from "~/lib/cards/card-service";
 import { CardRarity } from "@prisma/client";
 import { globalCache } from "~/lib/cache";
@@ -392,7 +397,7 @@ export const cardsInventoryRouter = createTRPCRouter({
   /**
    * Junk cards for credits payout based on rarity
    */
-  junkCards: protectedProcedure
+  junkCards: rateLimitedMutationProcedure
     .input(
       z.object({
         ownershipIds: z.array(z.string()).min(1),

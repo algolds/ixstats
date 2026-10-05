@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { notificationHooks } from "~/lib/notifications/hooks";
@@ -294,106 +294,110 @@ async function bumpEngagementCounters(
 }
 
 export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
-  createPost: protectedProcedure.input(CreatePostSchema).mutation(async ({ ctx, input }) => {
-    const { db } = ctx;
+  createPost: rateLimitedMutationProcedure
+    .input(CreatePostSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
 
-    const clerkUserId = ctx.auth?.userId;
-    if (!clerkUserId) {
-      throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "You must be logged in to create posts",
-      });
-    }
-    const account = await requirePostingAccount(db, input.accountId, clerkUserId);
-
-    const postType = input.repostOfId ? "repost" : input.parentPostId ? "reply" : "original";
-
-    const poll = input.poll
-      ? await db.poll.create({
-          data: {
-            question: input.poll.question,
-            description: input.poll.description,
-            pollType: input.poll.pollType,
-            multiple: input.poll.multiple,
-            options: { create: input.poll.options.map((label) => ({ label })) },
-          },
-        })
-      : null;
-
-    const post = await db.thinkpagesPost.create({
-      data: {
-        accountId: input.accountId,
-        content: input.content,
-        hashtags: input.hashtags ? JSON.stringify(input.hashtags) : null,
-        visualizations: input.visualizations ? JSON.stringify(input.visualizations) : null,
-        postType,
-        parentPostId: input.parentPostId,
-        repostOfId: input.repostOfId,
-        visibility: input.visibility,
-        ixTimeTimestamp: new Date(), // Store real-world time for social media timestamps
-        pollId: poll?.id ?? null,
-      } as any,
-      include: postAuthorsInclude,
-    });
-
-    if (input.mediaUrls?.length) {
-      await db.mediaAttachment.createMany({ data: mediaAttachmentData(post.id, input.mediaUrls) });
-    }
-
-    await db.thinkpagesAccount.update({
-      where: { id: input.accountId },
-      data: { postCount: { increment: 1 } },
-    });
-
-    await bumpEngagementCounters(db, input);
-
-    const actorName = personaDisplayName(account);
-    // Private and draft posts can only be opened by their author, so they notify nobody.
-    const notifiable = NOTIFIABLE_VISIBILITIES.has(post.visibility);
-
-    if (input.mentions?.length) {
-      await recordMentions(
-        db,
-        post,
-        { content: input.content, mentions: input.mentions },
-        { clerkUserId, actorName, notifiable }
-      );
-    }
-
-    if (notifiable) await notifyRepost(post, input, { clerkUserId, actorName });
-
-    // Notify if this is a reply. Skip replies to any of the caller's own personas (keyed by
-    // owning user, not persona).
-    if (input.parentPostId && post.parentPost) {
-      const parentPost = await db.thinkpagesPost.findUnique({
-        where: { id: input.parentPostId },
-        select: { id: true, accountId: true, account: { select: { clerkUserId: true } } },
-      });
-
-      if (parentPost && parentPost.account.clerkUserId !== clerkUserId) {
-        await notificationHooks
-          .onThinkPageActivity({
-            thinkpageId: post.id,
-            title: input.content.substring(0, 50),
-            action: "commented",
-            authorId: account.clerkUserId,
-            authorName: actorName,
-            targetUserId: parentPost.account.clerkUserId,
-          })
-          .catch(logNotifyFailure("reply"));
+      const clerkUserId = ctx.auth?.userId;
+      if (!clerkUserId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to create posts",
+        });
       }
-    }
+      const account = await requirePostingAccount(db, input.accountId, clerkUserId);
 
-    const creditsEarned = await awardPostCredits(db, clerkUserId, post, {
-      postType,
-      accountId: input.accountId,
-    });
+      const postType = input.repostOfId ? "repost" : input.parentPostId ? "reply" : "original";
 
-    await mirrorToDiscord(db, post, account, input);
+      const poll = input.poll
+        ? await db.poll.create({
+            data: {
+              question: input.poll.question,
+              description: input.poll.description,
+              pollType: input.poll.pollType,
+              multiple: input.poll.multiple,
+              options: { create: input.poll.options.map((label) => ({ label })) },
+            },
+          })
+        : null;
 
-    queueAchievementCheck(clerkUserId);
-    await invalidateFeeds();
+      const post = await db.thinkpagesPost.create({
+        data: {
+          accountId: input.accountId,
+          content: input.content,
+          hashtags: input.hashtags ? JSON.stringify(input.hashtags) : null,
+          visualizations: input.visualizations ? JSON.stringify(input.visualizations) : null,
+          postType,
+          parentPostId: input.parentPostId,
+          repostOfId: input.repostOfId,
+          visibility: input.visibility,
+          ixTimeTimestamp: new Date(), // Store real-world time for social media timestamps
+          pollId: poll?.id ?? null,
+        } as any,
+        include: postAuthorsInclude,
+      });
 
-    return { ...post, creditsEarned };
-  }),
+      if (input.mediaUrls?.length) {
+        await db.mediaAttachment.createMany({
+          data: mediaAttachmentData(post.id, input.mediaUrls),
+        });
+      }
+
+      await db.thinkpagesAccount.update({
+        where: { id: input.accountId },
+        data: { postCount: { increment: 1 } },
+      });
+
+      await bumpEngagementCounters(db, input);
+
+      const actorName = personaDisplayName(account);
+      // Private and draft posts can only be opened by their author, so they notify nobody.
+      const notifiable = NOTIFIABLE_VISIBILITIES.has(post.visibility);
+
+      if (input.mentions?.length) {
+        await recordMentions(
+          db,
+          post,
+          { content: input.content, mentions: input.mentions },
+          { clerkUserId, actorName, notifiable }
+        );
+      }
+
+      if (notifiable) await notifyRepost(post, input, { clerkUserId, actorName });
+
+      // Notify if this is a reply. Skip replies to any of the caller's own personas (keyed by
+      // owning user, not persona).
+      if (input.parentPostId && post.parentPost) {
+        const parentPost = await db.thinkpagesPost.findUnique({
+          where: { id: input.parentPostId },
+          select: { id: true, accountId: true, account: { select: { clerkUserId: true } } },
+        });
+
+        if (parentPost && parentPost.account.clerkUserId !== clerkUserId) {
+          await notificationHooks
+            .onThinkPageActivity({
+              thinkpageId: post.id,
+              title: input.content.substring(0, 50),
+              action: "commented",
+              authorId: account.clerkUserId,
+              authorName: actorName,
+              targetUserId: parentPost.account.clerkUserId,
+            })
+            .catch(logNotifyFailure("reply"));
+        }
+      }
+
+      const creditsEarned = await awardPostCredits(db, clerkUserId, post, {
+        postType,
+        accountId: input.accountId,
+      });
+
+      await mirrorToDiscord(db, post, account, input);
+
+      queueAchievementCheck(clerkUserId);
+      await invalidateFeeds();
+
+      return { ...post, creditsEarned };
+    }),
 });

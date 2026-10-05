@@ -6,6 +6,7 @@ import {
   createTRPCRouter,
   protectedProcedure,
   rateLimitedPublicProcedure,
+  rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import type { PrismaClient } from "@prisma/client";
 import { viewerRealmId } from "~/server/api/trpc/realm-scope";
@@ -101,7 +102,7 @@ export const usersPreferencesRouter = createTRPCRouter({
     );
   }),
 
-  updateWikiPreferences: protectedProcedure
+  updateWikiPreferences: rateLimitedMutationProcedure
     .input(
       z.object({
         wikiAutoScan: z.boolean().optional(),
@@ -252,7 +253,7 @@ export const usersPreferencesRouter = createTRPCRouter({
     };
   }),
 
-  updatePrivacyConfig: protectedProcedure
+  updatePrivacyConfig: rateLimitedMutationProcedure
     .input(
       z.object({
         directMessages: z.enum(["everyone", "followers", "verified", "nobody"]).optional(),
@@ -311,7 +312,7 @@ export const usersPreferencesRouter = createTRPCRouter({
 
   // ─── Blocking & Muting Management ────────────────────────────────────
 
-  blockAccount: protectedProcedure
+  blockAccount: rateLimitedMutationProcedure
     .input(z.object({ identifier: z.string().min(1).max(100) }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.auth.userId;
@@ -370,13 +371,13 @@ export const usersPreferencesRouter = createTRPCRouter({
       });
     }),
 
-  unblockAccount: protectedProcedure
+  unblockAccount: rateLimitedMutationProcedure
     .input(z.object({ connectionId: z.string() }))
     .mutation(({ ctx, input }) =>
       deleteOwnConnection(ctx.db, ctx.auth.userId, input.connectionId, "Blocked connection")
     ),
 
-  muteAccount: protectedProcedure
+  muteAccount: rateLimitedMutationProcedure
     .input(z.object({ identifier: z.string().min(1).max(100) }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.auth.userId;
@@ -409,13 +410,13 @@ export const usersPreferencesRouter = createTRPCRouter({
       });
     }),
 
-  unmuteAccount: protectedProcedure
+  unmuteAccount: rateLimitedMutationProcedure
     .input(z.object({ connectionId: z.string() }))
     .mutation(({ ctx, input }) =>
       deleteOwnConnection(ctx.db, ctx.auth.userId, input.connectionId, "Muted connection")
     ),
 
-  addMutedKeyword: protectedProcedure
+  addMutedKeyword: rateLimitedMutationProcedure
     .input(z.object({ keyword: z.string().min(1).max(50) }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.auth.userId;
@@ -429,13 +430,13 @@ export const usersPreferencesRouter = createTRPCRouter({
       });
     }),
 
-  removeMutedKeyword: protectedProcedure
+  removeMutedKeyword: rateLimitedMutationProcedure
     .input(z.object({ connectionId: z.string() }))
     .mutation(({ ctx, input }) =>
       deleteOwnConnection(ctx.db, ctx.auth.userId, input.connectionId, "Keyword filter")
     ),
 
-  clearSearchHistory: protectedProcedure.mutation(async () => {
+  clearSearchHistory: rateLimitedMutationProcedure.mutation(async () => {
     return { success: true, timestamp: new Date().toISOString() };
   }),
 

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 import { notificationHooks } from "~/lib/notifications/hooks";
@@ -190,12 +190,12 @@ export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
   // ===== THINKTANKS (GROUPS) ENDPOINTS =====
 
   // Join a ThinkTank group as the caller. Private and invite-only groups need an open invite.
-  joinThinktank: protectedProcedure
+  joinThinktank: rateLimitedMutationProcedure
     .input(z.object({ groupId: z.string() }))
     .mutation(({ ctx, input }) => joinGroup(ctx, ctx.auth.userId, input)),
 
   // Leave a ThinkTank group (the caller's own membership)
-  leaveThinktank: protectedProcedure
+  leaveThinktank: rateLimitedMutationProcedure
     .input(
       z.object({
         groupId: z.string(),

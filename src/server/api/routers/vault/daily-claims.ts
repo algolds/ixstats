@@ -11,7 +11,12 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  adminProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/cache";
@@ -20,7 +25,7 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
   /**
    * Get vault balance and stats for a user
    */
-  claimDailyBonus: protectedProcedure.mutation(async ({ ctx }) => {
+  claimDailyBonus: rateLimitedMutationProcedure.mutation(async ({ ctx }) => {
     try {
       if (!ctx.auth?.userId) {
         throw new Error("User ID not found in authentication context");
@@ -67,7 +72,7 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
   /**
    * Claim combined daily claim (credits jackpot OR random card)
    */
-  claimCombinedDailyClaim: protectedProcedure
+  claimCombinedDailyClaim: rateLimitedMutationProcedure
     .input(z.object({ choice: z.enum(["CREDITS", "CARD"]) }))
     .mutation(async ({ ctx, input }) => {
       try {

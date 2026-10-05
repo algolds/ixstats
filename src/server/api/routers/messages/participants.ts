@@ -3,7 +3,11 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { messagingFor, mapMessagingErrors } from "./_service";
 
@@ -11,7 +15,7 @@ export const messagesParticipantsRouter = createTRPCRouter({
   /**
    * Leave a conversation (marks participant as inactive).
    */
-  leaveConversation: protectedProcedure
+  leaveConversation: rateLimitedMutationProcedure
     .input(
       z.object({
         conversationId: z.string(),
@@ -37,7 +41,7 @@ export const messagesParticipantsRouter = createTRPCRouter({
   /**
    * Add a participant to a conversation.
    */
-  addParticipant: protectedProcedure
+  addParticipant: rateLimitedMutationProcedure
     .input(
       z.object({
         conversationId: z.string(),
@@ -63,7 +67,7 @@ export const messagesParticipantsRouter = createTRPCRouter({
   /**
    * Mark messages as read.
    */
-  markMessagesAsRead: protectedProcedure
+  markMessagesAsRead: rateLimitedMutationProcedure
     .input(
       z.object({
         conversationId: z.string(),

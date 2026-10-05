@@ -1,7 +1,6 @@
 import { z } from "zod/v4";
 import {
   createTRPCRouter,
-  protectedProcedure,
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
@@ -128,7 +127,7 @@ export const heraldryMutationsRouter = createTRPCRouter({
       });
     }),
 
-  importCommonsCharge: protectedProcedure
+  importCommonsCharge: rateLimitedMutationProcedure
     .input(
       z.object({
         name: z.string().min(1),

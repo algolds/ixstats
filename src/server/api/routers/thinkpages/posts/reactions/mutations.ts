@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 // Import the wiki search service
 import { notificationHooks } from "~/lib/notifications/hooks";
@@ -76,32 +76,73 @@ const AddReactionSchema = z.object({
 
 export const thinkpagesPostsReactionsMutationsRouter = createTRPCRouter({
   // Add reaction to post
-  addReaction: protectedProcedure.input(AddReactionSchema).mutation(async ({ ctx, input }) => {
-    const { db } = ctx;
-    const clerkUserId = ctx.auth?.userId;
+  addReaction: rateLimitedMutationProcedure
+    .input(AddReactionSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+      const clerkUserId = ctx.auth?.userId;
 
-    const { account, post, reactionCounts, existingReaction } = await loadReactionState(
-      db,
-      clerkUserId,
-      input.postId,
-      input.accountId,
-      "You must be logged in to react to posts"
-    );
+      const { account, post, reactionCounts, existingReaction } = await loadReactionState(
+        db,
+        clerkUserId,
+        input.postId,
+        input.accountId,
+        "You must be logged in to react to posts"
+      );
 
-    if (existingReaction) {
-      if (existingReaction.reactionType === input.reactionType) {
-        // Same reaction - remove it (toggle behavior)
+      if (existingReaction) {
+        if (existingReaction.reactionType === input.reactionType) {
+          // Same reaction - remove it (toggle behavior)
+          await (db as any).$transaction(async (tx: any) => {
+            reactionCounts[existingReaction.reactionType] =
+              (reactionCounts[existingReaction.reactionType] || 1) - 1;
+
+            await tx.postReaction.delete({
+              where: {
+                postId_accountId: {
+                  postId: input.postId,
+                  accountId: input.accountId,
+                },
+              },
+            });
+
+            await tx.thinkpagesPost.update({
+              where: { id: input.postId },
+              data: countersData(reactionCounts),
+            });
+          });
+
+          // Sync removal to Discord if message exists
+          const match = post.content.match(/\[DiscordMsg:(\d+)\]/);
+          if (match && match[1]) {
+            try {
+              const { removeDiscordReaction } = await import("~/lib/discord/ixtwitter-sync");
+              removeDiscordReaction(match[1], existingReaction.reactionType).catch((err: unknown) =>
+                console.error("[ThinkPages] Remove Discord reaction promise error:", err)
+              );
+            } catch (error) {
+              console.error("[ThinkPages] Failed to trigger Discord reaction removal:", error);
+            }
+          }
+
+          await invalidateFeeds();
+          return { removed: true };
+        }
+
+        // Different reaction - update it
         await (db as any).$transaction(async (tx: any) => {
           reactionCounts[existingReaction.reactionType] =
             (reactionCounts[existingReaction.reactionType] || 1) - 1;
+          reactionCounts[input.reactionType] = (reactionCounts[input.reactionType] || 0) + 1;
 
-          await tx.postReaction.delete({
+          await tx.postReaction.update({
             where: {
               postId_accountId: {
                 postId: input.postId,
                 accountId: input.accountId,
               },
             },
+            data: { reactionType: input.reactionType },
           });
 
           await tx.thinkpagesPost.update({
@@ -110,132 +151,93 @@ export const thinkpagesPostsReactionsMutationsRouter = createTRPCRouter({
           });
         });
 
-        // Sync removal to Discord if message exists
+        // Sync reaction update to Discord
         const match = post.content.match(/\[DiscordMsg:(\d+)\]/);
         if (match && match[1]) {
           try {
-            const { removeDiscordReaction } = await import("~/lib/discord/ixtwitter-sync");
-            removeDiscordReaction(match[1], existingReaction.reactionType).catch((err: unknown) =>
-              console.error("[ThinkPages] Remove Discord reaction promise error:", err)
-            );
+            const { addDiscordReaction, removeDiscordReaction } =
+              await import("~/lib/discord/ixtwitter-sync");
+            removeDiscordReaction(match[1], existingReaction.reactionType)
+              .then(() => addDiscordReaction(match[1], input.reactionType))
+              .catch((err: unknown) =>
+                console.error("[ThinkPages] Sync update Discord reaction error:", err)
+              );
           } catch (error) {
-            console.error("[ThinkPages] Failed to trigger Discord reaction removal:", error);
+            console.error("[ThinkPages] Failed to trigger Discord reaction update:", error);
           }
         }
 
         await invalidateFeeds();
-        return { removed: true };
-      }
+        return { updated: true, reactionType: input.reactionType };
+      } else {
+        // New reaction - create it
+        const reaction = await (db as any).$transaction(async (tx: any) => {
+          reactionCounts[input.reactionType] = (reactionCounts[input.reactionType] || 0) + 1;
 
-      // Different reaction - update it
-      await (db as any).$transaction(async (tx: any) => {
-        reactionCounts[existingReaction.reactionType] =
-          (reactionCounts[existingReaction.reactionType] || 1) - 1;
-        reactionCounts[input.reactionType] = (reactionCounts[input.reactionType] || 0) + 1;
-
-        await tx.postReaction.update({
-          where: {
-            postId_accountId: {
+          const newReaction = await tx.postReaction.create({
+            data: {
               postId: input.postId,
               accountId: input.accountId,
+              reactionType: input.reactionType,
             },
-          },
-          data: { reactionType: input.reactionType },
+          });
+
+          await tx.thinkpagesPost.update({
+            where: { id: input.postId },
+            data: countersData(reactionCounts),
+          });
+
+          return newReaction;
         });
 
-        await tx.thinkpagesPost.update({
-          where: { id: input.postId },
-          data: countersData(reactionCounts),
-        });
-      });
-
-      // Sync reaction update to Discord
-      const match = post.content.match(/\[DiscordMsg:(\d+)\]/);
-      if (match && match[1]) {
-        try {
-          const { addDiscordReaction, removeDiscordReaction } =
-            await import("~/lib/discord/ixtwitter-sync");
-          removeDiscordReaction(match[1], existingReaction.reactionType)
-            .then(() => addDiscordReaction(match[1], input.reactionType))
-            .catch((err: unknown) =>
-              console.error("[ThinkPages] Sync update Discord reaction error:", err)
+        // Sync reaction creation to Discord if message exists
+        const match = post.content.match(/\[DiscordMsg:(\d+)\]/);
+        if (match && match[1]) {
+          try {
+            const { addDiscordReaction } = await import("~/lib/discord/ixtwitter-sync");
+            addDiscordReaction(match[1], input.reactionType).catch((err: unknown) =>
+              console.error("[ThinkPages] Add Discord reaction promise error:", err)
             );
-        } catch (error) {
-          console.error("[ThinkPages] Failed to trigger Discord reaction update:", error);
+          } catch (error) {
+            console.error("[ThinkPages] Failed to trigger Discord reaction sync:", error);
+          }
         }
-      }
 
-      await invalidateFeeds();
-      return { updated: true, reactionType: input.reactionType };
-    } else {
-      // New reaction - create it
-      const reaction = await (db as any).$transaction(async (tx: any) => {
-        reactionCounts[input.reactionType] = (reactionCounts[input.reactionType] || 0) + 1;
+        // 🔔 Notify post author of new reaction (likes only)
+        if (input.reactionType === "like") {
+          const postWithAuthor = await db.thinkpagesPost.findUnique({
+            where: { id: input.postId },
+            select: {
+              accountId: true,
+              content: true,
+              account: { select: { clerkUserId: true } },
+            },
+          });
 
-        const newReaction = await tx.postReaction.create({
-          data: {
-            postId: input.postId,
-            accountId: input.accountId,
-            reactionType: input.reactionType,
-          },
-        });
-
-        await tx.thinkpagesPost.update({
-          where: { id: input.postId },
-          data: countersData(reactionCounts),
-        });
-
-        return newReaction;
-      });
-
-      // Sync reaction creation to Discord if message exists
-      const match = post.content.match(/\[DiscordMsg:(\d+)\]/);
-      if (match && match[1]) {
-        try {
-          const { addDiscordReaction } = await import("~/lib/discord/ixtwitter-sync");
-          addDiscordReaction(match[1], input.reactionType).catch((err: unknown) =>
-            console.error("[ThinkPages] Add Discord reaction promise error:", err)
-          );
-        } catch (error) {
-          console.error("[ThinkPages] Failed to trigger Discord reaction sync:", error);
+          // Notifications are keyed by Clerk user id, so target the owning user of the author
+          // persona (not the persona id), and skip likes on the caller's own personas.
+          const authorClerkUserId = postWithAuthor?.account?.clerkUserId;
+          if (postWithAuthor && authorClerkUserId && authorClerkUserId !== clerkUserId) {
+            await notificationHooks
+              .onThinkPageActivity({
+                thinkpageId: input.postId,
+                title: postWithAuthor.content.substring(0, 50),
+                action: "liked",
+                authorId: clerkUserId,
+                authorName: personaDisplayName(account),
+                targetUserId: authorClerkUserId,
+              })
+              .catch((err) => console.error("[ThinkPages] Failed to send like notification:", err));
+          }
         }
+
+        await invalidateFeeds();
+        return reaction;
       }
-
-      // 🔔 Notify post author of new reaction (likes only)
-      if (input.reactionType === "like") {
-        const postWithAuthor = await db.thinkpagesPost.findUnique({
-          where: { id: input.postId },
-          select: {
-            accountId: true,
-            content: true,
-            account: { select: { clerkUserId: true } },
-          },
-        });
-
-        // Notifications are keyed by Clerk user id, so target the owning user of the author
-        // persona (not the persona id), and skip likes on the caller's own personas.
-        const authorClerkUserId = postWithAuthor?.account?.clerkUserId;
-        if (postWithAuthor && authorClerkUserId && authorClerkUserId !== clerkUserId) {
-          await notificationHooks
-            .onThinkPageActivity({
-              thinkpageId: input.postId,
-              title: postWithAuthor.content.substring(0, 50),
-              action: "liked",
-              authorId: clerkUserId,
-              authorName: personaDisplayName(account),
-              targetUserId: authorClerkUserId,
-            })
-            .catch((err) => console.error("[ThinkPages] Failed to send like notification:", err));
-        }
-      }
-
-      await invalidateFeeds();
-      return reaction;
-    }
-  }),
+    }),
 
   // Remove reaction
-  removeReaction: protectedProcedure
+  removeReaction: rateLimitedMutationProcedure
     .input(
       z.object({
         postId: z.string(),

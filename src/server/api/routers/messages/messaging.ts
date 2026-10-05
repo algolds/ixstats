@@ -3,7 +3,12 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  adminProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { validateNoXSS } from "~/lib/utils";
 import { messagingFor, mapMessagingErrors } from "./_service";
 
@@ -93,7 +98,7 @@ export const messagesMessagingRouter = createTRPCRouter({
   /**
    * Send a message (source-aware).
    */
-  sendMessage: protectedProcedure
+  sendMessage: rateLimitedMutationProcedure
     .input(
       z.object({
         conversationId: z.string(),
@@ -141,7 +146,7 @@ export const messagesMessagingRouter = createTRPCRouter({
   /**
    * Edit a message.
    */
-  editMessage: protectedProcedure
+  editMessage: rateLimitedMutationProcedure
     .input(
       z.object({
         messageId: z.string(),
@@ -168,7 +173,7 @@ export const messagesMessagingRouter = createTRPCRouter({
   /**
    * Delete a message (soft delete).
    */
-  deleteMessage: protectedProcedure
+  deleteMessage: rateLimitedMutationProcedure
     .input(z.object({ messageId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const messagingService = messagingFor(ctx);
@@ -187,7 +192,7 @@ export const messagesMessagingRouter = createTRPCRouter({
   /**
    * Clear all system notifications for a user.
    */
-  clearAllSystemNotifications: protectedProcedure
+  clearAllSystemNotifications: rateLimitedMutationProcedure
     .input(z.object({ userId: z.string().optional().default("") }))
     .mutation(async ({ ctx }) => {
       const messagingService = messagingFor(ctx);
@@ -198,7 +203,7 @@ export const messagesMessagingRouter = createTRPCRouter({
   /**
    * Add reaction to a message.
    */
-  addReaction: protectedProcedure
+  addReaction: rateLimitedMutationProcedure
     .input(
       z.object({
         messageId: z.string(),
@@ -225,7 +230,7 @@ export const messagesMessagingRouter = createTRPCRouter({
   /**
    * Remove reaction from a message.
    */
-  removeReaction: protectedProcedure
+  removeReaction: rateLimitedMutationProcedure
     .input(
       z.object({
         messageId: z.string(),
