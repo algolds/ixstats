@@ -112,7 +112,7 @@ describe("accuracy-normalizer", () => {
 describe("azgaar-normalizer", () => {
   it("converts a generated world graph into normalized GeoJSON layers and country entities", () => {
     const world = generateWorld({ seed: 42, cellCount: 500 });
-    const normalized = normalizeAzgaarGraph(world.graph, 42);
+    const normalized = normalizeAzgaarGraph(world.graph!, 42);
 
     expect(normalized.metadata.seed).toBe(42);
     expect(normalized.layers.political).toBeDefined();
@@ -160,9 +160,9 @@ describe("Scientific & Earth-Like Geographical Accuracy Audit Suite (85%+ High-B
 
     for (const seed of seeds) {
       const world = generateWorld({ seed, cellCount: 1500 });
-      const normalized = normalizeAzgaarGraph(world.graph, seed);
+      const normalized = normalizeAzgaarGraph(world.graph!, seed);
 
-      const report = auditGeographicalAccuracy(world.graph, normalized.layers);
+      const report = auditGeographicalAccuracy(world.graph!, normalized.layers);
 
       expect(report.compositeScore).toBeGreaterThanOrEqual(85);
       expect(report.passesThreshold).toBe(true);

@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node", "jest"],
+    "tsBuildInfoFile": ".next/cache/tsbuildinfo.tests",
+    "incremental": true
+  },
+  "include": [
+    "src/tests",
+    "src/tests/setup*.d.ts",
+    "jest-mocks",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx"
+  ],
+  "exclude": [
+    /* Fake source trees that scripts/audit/audit-arch.ts parses as text; their imports resolve against the fixture root, not this project. */
+    "src/tests/fixtures/audit-arch",
+    "**/node_modules",
+    "**/.*",
+    ".next"
+  ]
+}

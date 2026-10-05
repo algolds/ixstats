@@ -6,6 +6,7 @@ import {
   generateSeasonSummary,
   generateAudioBroadcast,
 } from "~/lib/sports/commentary/narrator";
+import type { EventTraceStep } from "~/lib/sports/types";
 
 describe("narrator tests", () => {
   const originalFetch = global.fetch;
@@ -23,7 +24,9 @@ describe("narrator tests", () => {
 
   test("narrateEvents fallback when disabled", async () => {
     process.env.SPORTS_LLM_COMMENTARY = "false";
-    const events = [{ t: 1, type: "tactical", description: "Match starts" }];
+    const events: EventTraceStep[] = [
+      { t: 1, type: "tactic_shift", description: "Match starts", team: "home" },
+    ];
     const result = await narrateEvents(events, { sport: "soccer" });
     expect(result).toEqual(["Match starts"]);
   });
@@ -43,7 +46,9 @@ describe("narrator tests", () => {
     });
     global.fetch = mockFetch;
 
-    const events = [{ t: 1, type: "tactical", description: "Match starts" }];
+    const events: EventTraceStep[] = [
+      { t: 1, type: "tactic_shift", description: "Match starts", team: "home" },
+    ];
     const result = await narrateEvents(events, { sport: "soccer" });
     expect(result).toEqual(["The whistle blows!"]);
     expect(mockFetch).toHaveBeenCalled();
@@ -154,7 +159,9 @@ describe("narrator tests", () => {
         ok: true,
         json: async () => ({ choices: [{ message: { content } }] }),
       });
-    const events = [{ t: 1, type: "tactical", description: "Match starts" }];
+    const events: EventTraceStep[] = [
+      { t: 1, type: "tactic_shift", description: "Match starts", team: "home" },
+    ];
 
     test("narrateEvents ignores a custom URL that comes without its own key", async () => {
       const mockFetch = okReply(JSON.stringify({ commentary: ["Kick-off!"] }));

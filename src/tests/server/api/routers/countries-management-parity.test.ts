@@ -392,7 +392,7 @@ describe("countries.createCountry field mapping matches the pre-refactor mapping
   const router = createTRPCRouter(managementCreateProcedures);
 
   it.each(CASES)("%s", async (_label, econ) => {
-    const create = jest.fn(({ data }: { data: object }) =>
+    const create = jest.fn(({ data }: { data: { realmId?: string | null } }) =>
       Promise.resolve({ id: "c_new", ...data })
     );
     const db: any = {

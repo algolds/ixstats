@@ -122,7 +122,7 @@ function makeDb({ ownerUserId = "owner_db" }: { ownerUserId?: string } = {}) {
       ),
       findMany: jest.fn(async () => [issueRow]),
       count: jest.fn(async () => 1),
-      update: jest.fn(async () => ({})),
+      update: jest.fn(async (_args: object) => ({})),
     },
   };
 }

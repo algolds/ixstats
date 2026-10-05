@@ -209,7 +209,7 @@ describe("countries.getAll and getSelectList scope through realmWhere (ruling E-
 
   const admin = { ...eurthViewer(), role: { name: "admin", level: 10 } };
   const member = { ...eurthViewer(), role: { name: "member", level: 100 } };
-  type Caller = ReturnType<ReturnType<typeof createCallerFactory<typeof directory>>>;
+  type Caller = ReturnType<typeof directory.createCaller>;
   const listings: Array<[string, (caller: Caller) => Promise<object>]> = [
     ["getAll", (caller) => caller.getAll({ realm: ALL_REALMS })],
     ["getSelectList", (caller) => caller.getSelectList({ realm: ALL_REALMS })],

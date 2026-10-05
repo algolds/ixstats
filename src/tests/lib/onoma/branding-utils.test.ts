@@ -41,8 +41,6 @@ describe("ipaToSpokenText", () => {
 // src/lib/onoma/browser-speech.test.ts
 // Onoma Lab — Browser speech spelling utility unit tests
 
-import { ipaToSpeechSpelling } from "~/lib/onoma/branding-utils";
-
 describe("ipaToSpeechSpelling", () => {
   it("translates common IPA names to readable spelling syllables with proper stressed capitalization", () => {
     expect(ipaToSpeechSpelling("/ʃəˈnoʊmə/")).toBe("shuh-NOH-muh");

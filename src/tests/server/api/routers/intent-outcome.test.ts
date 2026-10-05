@@ -43,7 +43,7 @@ function makeDb(intent: IntentFixture | null) {
       findMany: jest.fn(async () => []),
     },
     countryChangeLog: {
-      findMany: jest.fn(async () => [
+      findMany: jest.fn(async (_args: object) => [
         {
           id: "log_1",
           targetField: "unemploymentRate",
@@ -63,7 +63,9 @@ function makeDb(intent: IntentFixture | null) {
       ]),
     },
     storytellerEffect: {
-      findMany: jest.fn(async () => [{ id: "fx_1", value: 0.000583, duration: 1, isActive: true }]),
+      findMany: jest.fn(async (_args: object) => [
+        { id: "fx_1", value: 0.000583, duration: 1, isActive: true },
+      ]),
     },
     governmentComponent: { findMany: jest.fn(async () => []) },
     budgetAllocation: { findMany: jest.fn(async () => []) },

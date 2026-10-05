@@ -20,7 +20,9 @@ import { createMockPrisma } from "~/tests/helpers/mock-db";
 
 const notifyMock = jest.mocked(notificationAPI.create);
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
 describe("latestBudgetYearUpTo", () => {
   it("picks the latest year at or before the current one", () => {

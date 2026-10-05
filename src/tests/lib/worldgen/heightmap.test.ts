@@ -6,7 +6,7 @@ describe("Heightmap & Topographic Elevation Coverage", () => {
 
     for (const seed of seeds) {
       const world = generateWorld({ seed, cellCount: 1500 });
-      const { cells } = world.graph;
+      const { cells } = world.graph!;
 
       const zoneSet = new Set<number>();
       let landCount = 0;

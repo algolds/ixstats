@@ -133,6 +133,7 @@
     "typecheck:scripts": "bun scripts/verification/run-typecheck.ts tsconfig.scripts.json",
     "typecheck:file": "tsc --noEmit --skipLibCheck",
     "typecheck:server": "bun scripts/verification/run-typecheck.ts tsconfig.server.json",
+    "typecheck:tests": "bun scripts/verification/run-typecheck.ts tsconfig.tests.json",
     "typecheck:trpc": "bun scripts/verification/run-typecheck.ts tsconfig.trpc.json",
     "typecheck:ui": "bun scripts/verification/run-typecheck.ts tsconfig.ui.json",
     "validate:migrations": "bun scripts/audit/validate-migration-safety.ts",

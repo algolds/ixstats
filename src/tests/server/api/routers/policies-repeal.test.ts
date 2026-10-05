@@ -31,8 +31,8 @@ function policiesDb(policy: Record<string, unknown> | null) {
         }
       ),
     },
-    storytellerEffect: { updateMany: jest.fn(async () => ({ count: 1 })) },
-    policyEffectLog: { create: jest.fn(async () => ({})) },
+    storytellerEffect: { updateMany: jest.fn(async (_args: object) => ({ count: 1 })) },
+    policyEffectLog: { create: jest.fn(async (_args: object) => ({})) },
   };
 }
 

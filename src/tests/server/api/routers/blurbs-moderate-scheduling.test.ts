@@ -35,7 +35,9 @@ function adminCaller() {
 const SCHEDULING = ["scheduledFor", "closedAt", "isRecurring"];
 
 describe("blurbs prompt scheduling fields", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
   it("createPrompt ignores scheduling input and writes no scheduling columns", async () => {
     await adminCaller().createPrompt({

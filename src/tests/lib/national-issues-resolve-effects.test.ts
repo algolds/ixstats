@@ -94,7 +94,9 @@ const gdpShock = {
 };
 
 describe("NationalIssuesConsequences.resolveIssue", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
   it("persists approval and stability to the columns the Standing bands read", async () => {
     const db = makeDb({ consequences: [approval, stability] });

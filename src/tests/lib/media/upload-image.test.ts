@@ -19,14 +19,12 @@ describe("uploadImageFile", () => {
   });
 
   it("posts the file as multipart form data and returns the uploaded URL", async () => {
-    const fetchMock = jest.fn<typeof fetch>(async () =>
+    const fetchMock = jest.fn<ReturnType<typeof fetch>, Parameters<typeof fetch>>(async () =>
       jsonResponse({ success: true, url: "/images/uploads/uploaded_1_abc_dance.png" })
     );
     global.fetch = fetchMock;
 
-    await expect(uploadImageFile(file)).resolves.toBe(
-      "/images/uploads/uploaded_1_abc_dance.png"
-    );
+    await expect(uploadImageFile(file)).resolves.toBe("/images/uploads/uploaded_1_abc_dance.png");
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0]!;

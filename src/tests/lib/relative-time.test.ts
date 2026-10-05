@@ -12,7 +12,9 @@ describe("timeAgo (single relative-time formatter, plan 345)", () => {
     jest.useFakeTimers();
     jest.setSystemTime(NOW);
   });
-  afterAll(() => jest.useRealTimers());
+  afterAll(() => {
+    jest.useRealTimers();
+  });
 
   it("pins the ladder the UI relies on", () => {
     expect(timeAgo(ago(0))).toBe("just now");

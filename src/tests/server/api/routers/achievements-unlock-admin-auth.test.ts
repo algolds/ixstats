@@ -73,8 +73,10 @@ describe("achievements.unlock is admin-only", () => {
     expect(achievementService.unlockSpecific).toHaveBeenCalledWith(
       "victim_clerk_id",
       "first_steps",
-      db
+      expect.anything()
     );
+    // The grant runs against the request's own db client.
+    expect(jest.mocked(achievementService.unlockSpecific).mock.calls[0]?.[2]).toBe(db);
     expect(result.creditsEarned).toBe(5);
   });
 });

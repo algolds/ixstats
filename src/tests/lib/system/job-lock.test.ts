@@ -13,7 +13,7 @@ function makeDb(initiallyHeldBy?: string) {
   const leases = new Map<string, string>();
   if (initiallyHeldBy) leases.set("passive-income", initiallyHeldBy);
   const $queryRaw = jest.fn(
-    async (_strings: TemplateStringsArray, name: string, holder: string) => {
+    async (_strings: TemplateStringsArray, name: string, holder: string, _leaseSeconds: number) => {
       if (!leases.has(name)) leases.set(name, holder);
       return [{ holder: leases.get(name)! }];
     }

@@ -23,7 +23,9 @@ import {
 const findMany = (db as unknown as { systemConfig: { findMany: jest.Mock } }).systemConfig.findMany;
 
 describe("Loreward scoring weights", () => {
-  beforeEach(() => findMany.mockReset());
+  beforeEach(() => {
+    findMany.mockReset();
+  });
 
   it("falls back to the defaults when nothing is stored", async () => {
     findMany.mockResolvedValue([]);
