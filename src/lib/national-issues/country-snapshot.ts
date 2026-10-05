@@ -201,6 +201,12 @@ function parseActivePolicies(policies: Array<{ name: string; calculatedEffects: 
   return { activePoliciesList, policySettings };
 }
 
+/** `Country.actualGdpGrowth` (a decimal) as percent, rounded to avoid float noise (0.07 → 7). */
+export function growthDecimalToPercent(growth: number | null | undefined): number {
+  if (typeof growth !== "number" || !Number.isFinite(growth)) return 0;
+  return Math.round(growth * 100 * 1e6) / 1e6;
+}
+
 function coreFields(country: CountryCoreRow) {
   return {
     id: country.id,
@@ -214,7 +220,9 @@ function coreFields(country: CountryCoreRow) {
     currentPopulation: country.currentPopulation,
     currentGdpPerCapita: country.currentGdpPerCapita,
     currentTotalGdp: country.currentTotalGdp,
-    actualGdpGrowth: country.actualGdpGrowth ?? 0,
+    // Stored as a decimal (0.03 = 3%); trigger conditions and the {{gdpGrowth}} variable use
+    // percent, like every other rate in the snapshot.
+    actualGdpGrowth: growthDecimalToPercent(country.actualGdpGrowth),
     unemploymentRate: country.unemploymentRate ?? 0,
     inflationRate: country.inflationRate ?? 0,
     tradeBalance: country.tradeBalance ?? 0,
