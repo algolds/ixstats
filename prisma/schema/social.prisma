@@ -433,15 +433,21 @@ model PostBookmark {
 }
 
 model PostFlag {
-  id        String   @id @default(cuid())
-  userId    String
-  postId    String
-  reason    String?
-  createdAt DateTime @default(now())
+  id         String    @id @default(cuid())
+  userId     String
+  postId     String
+  reason     String?
+  createdAt  DateTime  @default(now())
+  /// Moderation state (SL-10): "open" until an admin resolves it as "dismissed" or "removed".
+  status     String    @default("open")
+  resolvedAt DateTime?
+  /// Clerk id of the admin who resolved the flag.
+  resolvedBy String?
 
   @@unique([userId, postId])
   @@index([userId], map: "PostFlag_userId_idx")
   @@index([postId], map: "PostFlag_postId_idx")
+  @@index([status, createdAt])
 }
 
 model ActivityFeed {

@@ -28,6 +28,8 @@ Read it end to end once before starting. Every command here is meant to be run b
     `realm_officers`, `realm_embassies` and `realm_board_bans` tables; a nullable `Poll.realmId`. `db push` applies
     them with no data-loss prompt
   - ThinkPages post views (2026-10-05, additive, SL-8): a `ThinkpagesPostViewDay` table (post, day, views)
+  - ThinkPages flag queue (2026-10-05, additive, SL-10): `PostFlag.status` (default `open`), `resolvedAt`,
+    `resolvedBy` and a `(status, createdAt)` index
 - **Profile URLs:** `/@user` becomes the canonical profile URL.
 
 ## What prod looked like on 2026-09-27 (read-only check)

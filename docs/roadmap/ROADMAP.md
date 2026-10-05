@@ -295,7 +295,8 @@ the spine.
 - **Notifications:** email and push digests if wanted (SL-5). The 12 unused hooks are removed and a test keeps the admin
   registry to hooks that fire (SL-6).
 - **Privacy:** full enforcement of the remaining toggles (SL-4). *Needs M0 #7.*
-- **Moderation:** bookmarks list; flag moderation queue (SL-10).
+- ✅ **Moderation (SL-10, 2026-10-05):** a Saved posts list for bookmarks; an admin flag queue that dismisses flags or
+  removes the post.
 - ✅ **Follows:** persona follows with real counts, notifications and a Following feed (SL-9, #49).
 - **ThinkShare encryption:** build it or drop the fields (Decision D7).
 

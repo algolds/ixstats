@@ -260,7 +260,6 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
       () =>
         flagPostMutation.mutateAsync({
           postId: post.id,
-          userId: currentUserAccountId,
           reason: flagReason,
         }),
       "Post flagged",
