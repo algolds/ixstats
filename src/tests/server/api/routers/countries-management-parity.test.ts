@@ -413,6 +413,7 @@ describe("countries.createCountry field mapping matches the pre-refactor mapping
           Promise.resolve({ id: where.id, status: "active", settings: null })
         ),
       },
+      realmPage: { findFirst: jest.fn().mockResolvedValue(null) },
       country: {
         findFirst: jest.fn().mockResolvedValue(null),
         count: jest.fn().mockResolvedValue(0),

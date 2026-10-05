@@ -489,6 +489,18 @@ export const managementCreateProcedures = {
           message: `A country named "${input.name}" already exists in this realm`,
         });
       }
+      // A nation page of the realm's lore index is taken by claiming it (ruling E-f), which checks wiki
+      // authorship and prefills the nation from the page; the builder must not found it around the claim.
+      const nationPage = await ctx.db.realmPage.findFirst({
+        where: { realmId, kind: "nation", title: { equals: input.name, mode: "insensitive" } },
+        select: { title: true },
+      });
+      if (nationPage) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `"${nationPage.title}" is a nation of this realm's lore: claim it on the realm page`,
+        });
+      }
 
       await ensureDefaultRole(ctx.db, player, userId);
 

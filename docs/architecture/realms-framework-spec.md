@@ -135,7 +135,8 @@ ThinkPages feed and its global-feed setting, and the nav chip (a player switches
 realm's page, or with the nation switcher in the nav user menu and on their passport's Realms tab). Also
 still open: archived-realm handling (read-only,
 excluded from crons and payouts — decision 21), the WikiOS front page as a portal to every realm's lore and
-realm-tagged forum content (decision 3), and pre-filling the builder from a claimed nation page (E-f).
+realm-tagged forum content (decision 3). A claimed nation page now prefills the nation its approval creates
+from the page's infobox (E-f, AT-3; [realms.md §4](../systems/realms.md#4-realm-page-rrealm)).
 Phases 2 (Founding), 3 (Playing) and 4 (Social & governance) have not started as phases; the Eurth slice
 pulled forward only the pieces listed above (lore index import, nation-page claims, realm-scoped queries and
 maps, PNG realm maps, the realm hub, Play as).

@@ -8,7 +8,7 @@ import { IxStatsCalculator } from "~/lib/economy/calculations";
 import type { BaseCountryData } from "~/types/ixstats";
 
 /** Values the builder may supply; missing, empty or zero values fall back to the defaults. */
-interface BaselineCountryInitial {
+export interface BaselineCountryInitial {
   continent?: string;
   region?: string;
   baselinePopulation?: number;

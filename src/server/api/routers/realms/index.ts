@@ -21,6 +21,7 @@ import {
   type NationAssignedEvent,
 } from "~/server/modules/realms";
 import { notifyClaimRejected } from "~/server/modules/realms/realms.notices";
+import { fetchNationPagePrefill } from "~/server/modules/realms/realms.prefill";
 import { fetchPageCreator } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { parsePrismaError } from "~/lib/prisma-error";
 import { REALM_SLUG_PATTERN } from "~/lib/realms/realm-slug";
@@ -59,6 +60,7 @@ const claims = (db: PrismaClient) =>
     fetchPageCreator,
     onNationAssigned: (event) => onNationAssigned(db, event),
     onClaimRejected: notifyClaimRejected,
+    fetchNationPrefill: fetchNationPagePrefill,
   });
 
 const CLAIM_ERROR_CODES = {

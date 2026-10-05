@@ -69,7 +69,6 @@ partly done item.
 
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
-| AT-3 | UNFINISHED | Builder in any realm. Left: prefill from a claimed nation page (the builder is realm-aware with nation caps since #49) | `countries/management/create.ts` | M |
 | AT-9 | STUB | Labs map pipeline enrichment is placeholder data (now labelled "sample data"); `GeographicResource` has no writer | `lib/maps/pipeline/enrichment-pipeline.ts` | M |
 | AT-14 | UNFINISHED | Storylines can't be created, so the pin timeline never appears | `geo/features/storyPins.ts` | M |
 | AT-15 | DEAD | Unused map models (`WorldTemplate`, `ProceduralWorld`, `Transport*` segments, `ElevationZone`, `Territory`); `SharedVertex` written, never read | `maps.prisma` | S |
@@ -197,7 +196,6 @@ See §1 above (password rotation, CSP).
 - Per-realm feed and a global-feed setting (decision 2): the dashboard feed and trending are not realm-scoped
 - WikiOS front page as a portal to every realm's lore; realm-tagged forum (decision 3)
 - Per-realm calendar label (a new realm settings key)
-- Builder prefill from a claimed nation page (Eurth E-f; AT-3)
 - Procedural realm generation: the wizard option and the `Realm.seed` / `generationParams` writes (M)
 
 **MyCountry statecraft** ([design PRDs](../systems/mycountry-design-philosophy-and-prds.md), [game loops](../systems/statecraft/statecraft-game-loops.md))

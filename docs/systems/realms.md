@@ -153,6 +153,15 @@ board posts, and claimable nations. The sidebar (stacked under the main column b
 claims in this realm (`realms.myClaims({ realmSlug })`) and the claimable nations. A claimable nation the viewer
 claimed shows **Pending review**, or the rejection's reason with **Claim again**.
 
+**Claimed nation pages prefill their nation (AT-3):** approving a claim on a nation page (by a moderator, or at
+once for the page's verified creator) first reads the page's infobox (`fetchNationPagePrefill` in
+`realms.prefill.ts`, the builder's wiki import parser `parseInfoboxWithTemplates`), then creates the Country with
+its population, GDP per capita, area, continent, government, flag and coat of arms instead of the placeholder
+baseline, and a NationalIdentity (official name, capital, largest city, motto, currency, languages, demonym,
+anthem, religion). MyCountry and the builder's editor open on those values. Implausible figures are dropped; an
+unreachable page (8 second limit) or a page without an infobox gives the plain baseline. The builder refuses to
+found a nation named after one of the realm's nation pages (`countries.createCountry`): those are claimed.
+
 **Claim notices (AT-5):** a rejected claim notifies its claimant (`notifyClaimRejected` in `realms.notices.ts`,
 event `realmsNotification`): a moderator's rejection with its reason, an automatic one when another player took the
 nation first, and rival pending claims turned away by an approval. It goes through `notificationAPI.create`, so the

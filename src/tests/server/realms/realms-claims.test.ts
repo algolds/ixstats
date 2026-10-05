@@ -1009,3 +1009,81 @@ describe("claimants see their claims and hear about rejections (AT-5)", () => {
     );
   });
 });
+
+describe("a claimed nation page prefills its new country (AT-3)", () => {
+  const pendingPage = {
+    id: "cl1",
+    status: "pending",
+    userId: "u1",
+    countryId: null,
+    realmId: EURTH,
+    wikiSource: "iiwiki",
+    wikiPageTitle: "Aurelia",
+    realm: { ownerId: "system", slug: "eurth", status: "active" },
+    user: { clerkUserId: "clerk_u1" },
+    country: null,
+  };
+  const prefill = {
+    country: { baselinePopulation: 4_200_000, government: "Federal republic" },
+    identity: { officialName: "Federal Republic of Aurelia", capitalCity: "Port Aurel" },
+  };
+
+  it("an approval reads the page first and founds the nation with its figures and identity", async () => {
+    const { db, deps } = pageSetup();
+    const fetchNationPrefill = jest.fn().mockResolvedValue(prefill);
+    const service = createClaimsService(db, { ...deps, fetchNationPrefill });
+    db.realmClaim.findUnique.mockResolvedValue(pendingPage);
+    await service.reviewClaim(admin, "cl1", { approve: true });
+    expect(fetchNationPrefill).toHaveBeenCalledWith("iiwiki", "Aurelia");
+    expect(fetchNationPrefill.mock.invocationCallOrder[0]).toBeLessThan(
+      db.$transaction.mock.invocationCallOrder[0]
+    );
+    const data = db.country.create.mock.calls[0][0].data;
+    expect(data).toMatchObject({
+      name: "Aurelia",
+      baselinePopulation: 4_200_000,
+      governmentType: "Federal republic",
+      nationalIdentity: {
+        create: {
+          countryName: "Aurelia",
+          officialName: "Federal Republic of Aurelia",
+          capitalCity: "Port Aurel",
+        },
+      },
+    });
+  });
+
+  it("the verified creator's instant approval is prefilled too", async () => {
+    const { db, deps } = pageSetup();
+    const fetchNationPrefill = jest.fn().mockResolvedValue(prefill);
+    const service = createClaimsService(db, { ...deps, fetchNationPrefill });
+    await service.claimNationPage(actor, EURTH, "Aurelia");
+    expect(db.country.create.mock.calls[0][0].data).toMatchObject({
+      baselinePopulation: 4_200_000,
+      nationalIdentity: { create: expect.objectContaining({ capitalCity: "Port Aurel" }) },
+    });
+  });
+
+  it("a failed read founds the nation with the plain baseline", async () => {
+    const { db, deps } = pageSetup();
+    const fetchNationPrefill = jest.fn().mockRejectedValue(new Error("wiki down"));
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    const service = createClaimsService(db, { ...deps, fetchNationPrefill });
+    db.realmClaim.findUnique.mockResolvedValue(pendingPage);
+    await expect(service.reviewClaim(admin, "cl1", { approve: true })).resolves.toEqual({
+      status: "approved",
+    });
+    const data = db.country.create.mock.calls[0][0].data;
+    expect(data.baselinePopulation).toBe(1_000_000);
+    expect(data).not.toHaveProperty("nationalIdentity");
+    warn.mockRestore();
+  });
+
+  it("claiming an existing country reads no page", async () => {
+    const { db, deps } = setup();
+    const fetchNationPrefill = jest.fn();
+    const service = createClaimsService(db, { ...deps, fetchNationPrefill });
+    await service.claimCountry(actor, "c1");
+    expect(fetchNationPrefill).not.toHaveBeenCalled();
+  });
+});
