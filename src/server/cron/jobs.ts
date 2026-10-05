@@ -159,7 +159,7 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     load: async () => (await import("~/lib/diplomacy/drift-cron")).runDiplomaticDrift,
   },
   {
-    // Debits national treasuries every 6 h.
+    // Every 6 h: expires lapsed policies and debits policy upkeep, once per budget year (PL-8).
     name: "policy-maintenance",
     defaultSchedule: "0 */6 * * *",
     lockName: "policy-maintenance",

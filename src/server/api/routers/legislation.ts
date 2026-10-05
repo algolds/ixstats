@@ -100,7 +100,7 @@ export const legislationRouter = createTRPCRouter({
         id: b.id,
         name: b.name,
         description: b.description,
-        status: b.status, // in_committee | active | rejected
+        status: b.status, // in_committee | active | rejected | repealed | expired
         gdpEffect: b.gdpEffect,
         createdAt: b.createdAt,
         meta: parseMeta(b.reviewNotes),

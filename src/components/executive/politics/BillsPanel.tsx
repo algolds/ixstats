@@ -22,6 +22,7 @@ import {
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { Card } from "~/components/ui/card";
 import { IDEOLOGY_OPTIONS } from "./ideologies";
+import { RepealPolicyButton } from "./RepealPolicyButton";
 
 interface BillsPanelProps {
   countryId: string;
@@ -41,6 +42,14 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   rejected: {
     label: "Rejected",
     className: "bg-red/10 text-red-ink border-0",
+  },
+  repealed: {
+    label: "Repealed",
+    className: "bg-fill-3 text-label-secondary border-0",
+  },
+  expired: {
+    label: "Expired",
+    className: "bg-fill-3 text-label-secondary border-0",
   },
 };
 
@@ -264,6 +273,13 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                             >
                               Call vote
                             </Button>
+                          )}
+                          {canManage && bill.status === "active" && (
+                            <RepealPolicyButton
+                              policyId={bill.id}
+                              policyName={bill.name}
+                              onRepealed={() => void refetch()}
+                            />
                           )}
                         </div>
                       </div>
