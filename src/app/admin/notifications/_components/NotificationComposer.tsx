@@ -178,6 +178,9 @@ const PRESETS = [
   },
 ];
 
+const FILTERED_BY_PREFERENCES =
+  "The recipient's notification preferences filter out this category or level.";
+
 export function NotificationComposer() {
   const { userId } = useAuth();
   const notify = useNotify();
@@ -189,7 +192,11 @@ export function NotificationComposer() {
   });
 
   const createNotificationMutation = api.notifications.createNotification.useMutation({
-    onSuccess: () => {
+    onSuccess: (sent) => {
+      if (!sent) {
+        notify.warning("Not delivered", FILTERED_BY_PREFERENCES);
+        return;
+      }
       notify.success("Platform alert broadcasted successfully");
       setForm(emptyForm);
     },
@@ -197,7 +204,11 @@ export function NotificationComposer() {
   });
 
   const sendBroadcastMutation = api.messages.sendAdminBroadcast.useMutation({
-    onSuccess: () => {
+    onSuccess: (sent) => {
+      if (!sent) {
+        notify.warning("Not delivered", FILTERED_BY_PREFERENCES);
+        return;
+      }
       notify.success("System Message published to inbox feed");
       setForm(emptyForm);
     },
