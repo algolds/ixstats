@@ -5,12 +5,30 @@
 import { render } from "@testing-library/react";
 
 jest.mock("~/components/wiki-os/shared/WikiOSLayout", () => ({
-  WikiOSLayout: ({ title, children }: { title?: string; children: React.ReactNode }) => (
+  // Like the real layout: the title is the page's h1 unless the page opts out with hideTitleHeading.
+  WikiOSLayout: ({
+    title,
+    hideTitleHeading,
+    children,
+  }: {
+    title?: string;
+    hideTitleHeading?: boolean;
+    children: React.ReactNode;
+  }) => (
     <main>
-      {title ? <h1>{title}</h1> : null}
+      {title && !hideTitleHeading ? <h1>{title}</h1> : null}
       {children}
     </main>
   ),
+}));
+jest.mock("~/app/(wiki-os)/util/categories/_components/DomainCategoriesGrid", () => ({
+  DomainCategoriesGrid: () => null,
+}));
+jest.mock("~/app/(wiki-os)/util/categories/_components/AlphabetIndexBar", () => ({
+  AlphabetIndexBar: () => null,
+}));
+jest.mock("~/app/(wiki-os)/util/categories/_components/SovereignNationsGrid", () => ({
+  SovereignNationsGrid: () => null,
 }));
 jest.mock("~/components/diff-viewer", () => ({ DiffViewer: () => null }));
 jest.mock("~/components/wiki-os/templates/VisualInfoboxPreviewCard", () => ({
@@ -29,18 +47,23 @@ jest.mock("~/trpc/react", () => {
         unwatchPage: { useMutation: mutation },
         searchTemplates: { useQuery: query },
         getTemplateData: { useQuery: query },
+        searchCategories: { useQuery: query },
       },
+      countries: { getSelectList: { useQuery: query } },
     },
   };
 });
 
 import WatchlistPage from "~/app/(wiki-os)/util/watchlist/page";
 import WikiTemplatesPage from "~/app/(wiki-os)/util/templates/page";
+import CategoriesIndexPage from "~/app/(wiki-os)/util/categories/page";
 
 describe("WikiOS utility pages", () => {
   it.each([
     ["/util/watchlist", WatchlistPage],
     ["/util/templates", WikiTemplatesPage],
+    // hideTitleHeading and no title: the page's own header card carries the one h1.
+    ["/util/categories", CategoriesIndexPage],
   ])("%s renders exactly one h1", (_route, Page) => {
     const { container } = render(<Page />);
     expect(container.querySelectorAll("h1")).toHaveLength(1);

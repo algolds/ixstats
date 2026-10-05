@@ -341,8 +341,14 @@
   /* The editors fill what is left of the viewport: everything above them (shell top offset,
      header, tabs row) is measured by WikiOSContentWrapper into --wikios-chrome-height, minus a
      bottom gap. dvh follows mobile browser bars. */
-  .wikios-ve-container {
+  /* Declared once for both editors. It must sit on the editors themselves, not on an ancestor:
+     var() resolves where the property is declared, and --wikios-chrome-height is set on <main>. */
+  .wikios-ve-container,
+  .wikios-editor-modern {
     --wikios-editor-height: calc(100dvh - var(--wikios-chrome-height, 0px) - 1rem);
+  }
+
+  .wikios-ve-container {
     display: flex;
     flex-direction: column;
     height: var(--wikios-editor-height);
@@ -711,7 +717,6 @@
      --------------------------------------------------------------------------- */
 
   .wikios-editor-modern {
-    --wikios-editor-height: calc(100dvh - var(--wikios-chrome-height, 0px) - 1rem);
     display: flex;
     flex-direction: column;
     height: var(--wikios-editor-height);

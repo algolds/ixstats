@@ -73,11 +73,13 @@ describe("useNotificationBadge title handling", () => {
     expect(document.title).toBe("(2) Second - IxStats");
 
     view.rerender(<App page={null} />);
-    // Sidecar still mounted; with no page mounted the title stays clean of stale "First".
-    expect(document.title).not.toContain("First");
+    // Sidecar still mounted: the page's cleanup leaves its own title (without the badge, which the
+    // next unread change re-applies), never the first page's.
+    expect(document.title).toBe("Second - IxStats");
 
     view.unmount();
-    expect(document.title).not.toContain("First");
+    // The sidecar's cleanup strips any prefix and leaves the current title alone.
+    expect(document.title).toBe("Second - IxStats");
   });
 
   it("strips the prefix on unmount without touching the rest of the title", () => {

@@ -39,10 +39,19 @@ export function WikiOSContentWrapper({
     };
     publish();
     if (typeof ResizeObserver === "undefined") return;
-    // The tabs row can wrap and the header can change height; either moves the body.
-    const observer = new ResizeObserver(publish);
+    // The tabs row can wrap and the header can change height; either moves the body. Publishing
+    // changes layout (the editors resize), so it waits for the next frame instead of running inside
+    // the observer callback, which would raise "ResizeObserver loop completed" warnings.
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(publish);
+    });
     observer.observe(main);
-    return () => observer.disconnect();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
   }, []);
 
   useEffect(() => {
