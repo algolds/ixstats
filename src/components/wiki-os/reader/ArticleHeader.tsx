@@ -15,7 +15,6 @@ import { CategoryBreadcrumb } from "./CategoryBreadcrumb";
 import { withBasePath } from "~/lib/base-path";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { detectMediaType } from "~/lib/wiki-os/transformers/media-theme";
-import type { ActiveCountryData } from "~/components/wiki-os/shared/ActiveCountryUnifiedWidget";
 import type { FlagColors } from "~/lib/flags/flag-color-extractor";
 import { TocButton } from "./ArticleToc";
 import { EditorialMastheadHeader } from "./headers/EditorialMastheadHeader";
@@ -51,7 +50,7 @@ export interface ArticleHeaderProps {
   title: string;
   lastModified: string | null;
   wikiSource?: string;
-  countryData?: ActiveCountryData | Record<string, unknown> | null;
+  countryData?: Record<string, unknown> | null;
   featuredImageUrl?: string | null;
   themeColors?: ArticleThemeColors | null;
   authorInfo?: ArticleAuthorInfo | null;

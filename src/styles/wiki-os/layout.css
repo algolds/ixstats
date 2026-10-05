@@ -48,18 +48,6 @@
     padding: 16px 20px 24px;
   }
 
-  .wikios-article-title {
-    font-family: var(--wikios-font-reading);
-    font-size: 32px;
-    font-weight: 600;
-    letter-spacing: -0.015em;
-    color: var(--wikios-text);
-    margin: 0 0 4px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--wikios-border);
-    line-height: 1.2;
-  }
-
   /* ---------------------------------------------------------------------------
      Article Reader Layout (Flush Hero/Infobox + Outset Gutter TOC)
      --------------------------------------------------------------------------- */

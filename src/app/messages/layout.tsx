@@ -21,7 +21,7 @@ export default function MessagesLayout({ children }: { children: React.ReactNode
       {/* Messages is a ThinkPages section (app-sections.ts), so it carries the ThinkPages tint. */}
       <div data-app="thinkpages" className="relative min-h-screen">
         <PortalTintSync />
-        <DashboardSidebarLayout disableCollapse={true}>{children}</DashboardSidebarLayout>
+        <DashboardSidebarLayout>{children}</DashboardSidebarLayout>
       </div>
     </Suspense>
   );

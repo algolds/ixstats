@@ -76,7 +76,7 @@ function IxnayIdPassportCanvas({ cleanUsername }: { cleanUsername: string }) {
 
   if (isLoading) {
     return (
-      <DashboardSidebarLayout disableCollapse={true}>
+      <DashboardSidebarLayout>
         <div className="mx-auto w-full max-w-5xl space-y-8 px-4 py-6 sm:px-6">
           <div className="flex items-start gap-6">
             <Skeleton className="rounded-sheet h-24 w-24 shrink-0" />
@@ -98,7 +98,7 @@ function IxnayIdPassportCanvas({ cleanUsername }: { cleanUsername: string }) {
 
   if (error || !data) {
     return (
-      <DashboardSidebarLayout disableCollapse={true}>
+      <DashboardSidebarLayout>
         <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6">
           <Card>
             <EmptyState
@@ -113,7 +113,7 @@ function IxnayIdPassportCanvas({ cleanUsername }: { cleanUsername: string }) {
   }
 
   return (
-    <DashboardSidebarLayout disableCollapse={true}>
+    <DashboardSidebarLayout>
       <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
         <MidRibbonPassportDocument
           cleanUsername={cleanUsername}

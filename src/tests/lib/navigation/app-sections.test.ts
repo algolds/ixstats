@@ -138,7 +138,6 @@ const HIDDEN_SUBNAVS: { file: string; marker: string }[] = [
   { file: "app/admin/_components/AdminSidebarLayout.tsx", marker: "data-app-subnav" },
   { file: "app/settings/_components/SettingsContent.tsx", marker: "data-app-subnav" },
   { file: "components/forum/shared/ForumLayout.tsx", marker: "data-app-subnav" },
-  { file: "components/wiki-os/shared/WikiOSUnifiedSidebar.tsx", marker: "data-app-subnav" },
 ];
 
 function sourceHrefs(file: string): string[] {

@@ -56,6 +56,9 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
   );
 
   const hide = useCallback(() => {
+    // mouseleave fires (capture) for the <a> and its <sup>; an uncleared first timer would still
+    // close the tooltip after the pointer had moved onto it.
+    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
     hideTimeoutRef.current = setTimeout(() => setOpen(false), 150);
   }, []);
 

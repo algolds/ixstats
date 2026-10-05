@@ -42,4 +42,34 @@ describe("per-app sidebars are migrated to the source list", () => {
   it("the daily reward does not auto-open on chromeless routes", () => {
     expect(read("src/components/shell/AppShell.tsx")).toMatch(/autoOpen=\{!chromeless\}/);
   });
+
+  it("wiki: no unified sidebar; article tabs and a New page action", () => {
+    const exists = (p: string) => fs.existsSync(path.join(ROOT, p));
+    for (const gone of [
+      "src/components/wiki-os/shared/WikiOSUnifiedSidebar.tsx",
+      "src/components/wiki-os/shared/WikiOSProfileWidget.tsx",
+      "src/components/wiki-os/shared/ActiveCountryUnifiedWidget.tsx",
+      "src/components/wiki-os/shared/FisheyeRailItem.tsx",
+    ]) {
+      expect(exists(gone)).toBe(false);
+    }
+    expect(read("src/components/wiki-os/shared/WikiOSLayout.tsx")).not.toMatch(
+      /DashboardSidebarLayout|WikiOSUnifiedSidebar/
+    );
+    const wiki = [
+      "src/components/wiki-os/reader/ArticleRenderer.tsx",
+      "src/components/wiki-os/shared/WikiOSLayout.tsx",
+      "src/components/wiki-os/reader/WikiArticleTabs.tsx",
+      "src/components/wiki-os/shared/WikiPageActions.tsx",
+    ]
+      .map(read)
+      .join("\n");
+    expect(wiki).toMatch(/TabsTrigger[^>]*>\s*Read|"Read"/);
+    expect(wiki).toMatch(/New page/);
+  });
+
+  it("no layout renders a collapsible rail any more", () => {
+    const layout = read("src/components/dashboard/sidebar/DashboardSidebarLayout.tsx");
+    expect(layout).not.toMatch(/sidebarContent|useSidebar|RailBalancer/);
+  });
 });

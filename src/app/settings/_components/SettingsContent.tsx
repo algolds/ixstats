@@ -173,7 +173,7 @@ export function SettingsContent() {
           {/* Phone title under the new navigation shell (nothing with the flag off). */}
           <ShellPageHeader title="Settings" className="relative" />
 
-          <DashboardSidebarLayout disableCollapse={true}>
+          <DashboardSidebarLayout>
             {/* Incomplete Setup Banner */}
             {setupStatus === "needs-setup" && (
               <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">

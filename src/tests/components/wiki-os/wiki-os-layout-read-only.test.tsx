@@ -1,47 +1,25 @@
-import type { ReactNode } from "react";
-import { act, render } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 
 const mockPush = jest.fn();
-const mockSidebar = jest.fn();
 let mockPathname = "/wiki/Portal:Eurth";
+let mockSignedIn = true;
 
 jest.mock("next/navigation", () => ({
   usePathname: () => mockPathname,
   useRouter: () => ({ push: mockPush, replace: jest.fn() }),
 }));
-jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({ useWikiAuth: () => ({ isSignedIn: true }) }));
+jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({
+  useWikiAuth: () => ({ isSignedIn: mockSignedIn }),
+}));
 jest.mock("~/components/wiki-os/shared/WikiContext", () => ({
   useWikiContext: () => ({ articleTitle: "Portal:Eurth", setActiveModal: jest.fn() }),
 }));
 jest.mock("~/hooks/useWikiPrefetch", () => ({ useWikiPrefetch: () => undefined }));
-jest.mock("~/components/dashboard/sidebar/DashboardSidebarLayout", () => ({
-  DashboardSidebarLayout: ({
-    sidebarContent,
-    children,
-  }: {
-    sidebarContent: ReactNode;
-    children: ReactNode;
-  }) => (
-    <div>
-      {sidebarContent}
-      {children}
-    </div>
-  ),
+jest.mock("~/components/wiki-os/shared/CreatePageModal", () => ({
+  CreatePageModal: ({ open }: { open: boolean }) => (open ? <div>create page dialog</div> : null),
 }));
-jest.mock("~/components/wiki-os/shared/WikiOSUnifiedSidebar", () => ({
-  WikiOSUnifiedSidebar: (props: { isSpecialPage: boolean }) => {
-    mockSidebar(props);
-    return null;
-  },
-}));
-jest.mock("~/components/wiki-os/shared/WikiOSContentWrapper", () => ({
-  WikiOSContentWrapper: ({ children }: { children: ReactNode }) => <main>{children}</main>,
-}));
-jest.mock("~/components/wiki-os/shared/SearchModal", () => ({ SearchModal: () => null }));
-jest.mock("~/components/wiki-os/shared/CreatePageModal", () => ({ CreatePageModal: () => null }));
 jest.mock("~/components/wiki-os/shared/WikiOSLogomark", () => ({ WikiOSLogomark: () => null }));
-
 
 function renderLayout(readOnly?: boolean) {
   return render(
@@ -51,39 +29,67 @@ function renderLayout(readOnly?: boolean) {
   );
 }
 
-describe("WikiOSLayout for another wiki's page (read-only, ruling E-l)", () => {
+const hasTabs = () => screen.queryByRole("tablist", { name: "Article views" }) !== null;
+const hasPageTools = () => screen.queryByRole("button", { name: "Page tools" }) !== null;
+
+describe("WikiOSLayout without a rail", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockPathname = "/wiki/Portal:Eurth";
+    mockSignedIn = true;
   });
 
   it.each([
-    ["/wiki/Aurelia", false],
-    ["/wiki/Aurelia/talk", false],
-    ["/wiki/search", true],
-    ["/wiki/recent-changes", true],
-    ["/wiki/Special:Random", true],
-    ["/wiki/special%3Arandom", true],
-    ["/util/search", true],
-    ["/stashes", true],
-    ["/blurbs/abc", true],
-    ["/dashboard", true],
-  ])("%s: special page = %s (unchanged for IxWiki pages)", (pathname, special) => {
+    ["/wiki/Aurelia", true],
+    ["/wiki/Aurelia/talk", true],
+    ["/wiki/Aurelia/edit", true],
+    ["/wiki/search", false],
+    ["/wiki/recent-changes", false],
+    ["/wiki/Special:Random", false],
+    ["/wiki/special%3Arandom", false],
+    ["/util/search", false],
+    ["/stashes", false],
+    ["/blurbs/abc", false],
+    ["/dashboard", false],
+  ])("%s: article tabs and page tools = %s", (pathname, article) => {
     mockPathname = pathname;
     renderLayout();
-    expect(mockSidebar).toHaveBeenLastCalledWith(
-      expect.objectContaining({ isSpecialPage: special })
-    );
+    expect(hasTabs()).toBe(article);
+    expect(hasPageTools()).toBe(article);
   });
 
-  it("shows no page tools (edit, margin, history, backlinks)", () => {
-    renderLayout(true);
-    expect(mockSidebar).toHaveBeenLastCalledWith(expect.objectContaining({ isSpecialPage: true }));
-  });
-
-  it("an IxWiki article keeps its page tools", () => {
+  it("keeps the article tabs on its history page, without the page tools", () => {
+    mockPathname = "/util/history/Aurelia";
     renderLayout();
-    expect(mockSidebar).toHaveBeenLastCalledWith(expect.objectContaining({ isSpecialPage: false }));
+    expect(screen.getByRole("tab", { name: "History" }).getAttribute("aria-selected")).toBe("true");
+    expect(hasPageTools()).toBe(false);
+  });
+
+  it("offers Edit to a signed-in reader only", () => {
+    mockPathname = "/wiki/Aurelia";
+    const { unmount } = renderLayout();
+    expect(screen.getByRole("tab", { name: "Edit" })).toBeTruthy();
+    unmount();
+
+    mockSignedIn = false;
+    renderLayout();
+    expect(screen.queryByRole("tab", { name: "Edit" })).toBeNull();
+  });
+
+  it("every page offers New page, which opens the create dialog", () => {
+    mockPathname = "/util/search";
+    renderLayout();
+    expect(screen.queryByText("create page dialog")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "New page" }));
+    expect(screen.getByText("create page dialog")).toBeTruthy();
+  });
+
+  it("shows no tabs or page tools on another wiki's page, but still New page", () => {
+    mockPathname = "/wiki/Aurelia";
+    renderLayout(true);
+    expect(hasTabs()).toBe(false);
+    expect(hasPageTools()).toBe(false);
+    expect(screen.getByRole("button", { name: "New page" })).toBeTruthy();
   });
 
   it("the edit shortcut does nothing", () => {

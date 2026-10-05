@@ -52,7 +52,6 @@ export function DashboardRouter({ initialCountryId = "" }: DashboardRouterProps)
           <DashboardHero collapsed={heroCollapsed} onCollapsedChange={setHeroCollapsed} />
         ) : undefined
       }
-      disableCollapse={true}
     >
       <UnifiedDashboardSection globalStats={globalStats} />
     </DashboardSidebarLayout>

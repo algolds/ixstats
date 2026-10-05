@@ -12,7 +12,7 @@
  * `sections`; use `match` for extra path prefixes that belong to it (sub-pages, legacy aliases) and
  * `group` to list it under a sub-heading (admin, settings).
  *
- * Under the new shell the apps' own sub-navigation (vault, admin, settings, WikiOS, forum) is hidden
+ * Under the new shell the apps' own sub-navigation (vault, admin, settings, forum) is hidden
  * with `data-app-subnav` (`src/styles/facet/shell.css`), so every destination it offered must be
  * listed here.
  */
@@ -304,9 +304,8 @@ export const APPS: readonly AppDefinition[] = [
     tint: "wiki",
     match: ["/wiki", "/util", "/blurbs", "/stashes"],
     navSetting: "showWikiTab",
-    // WikiOS utilities live under /util; the /wiki/<tool> routes are redirect stubs. Mirrors the
-    // WikiOS rail's navigation (WikiOSUnifiedSidebar), which is hidden under the new shell; the
-    // rail's search, create-page and page tools stay.
+    // WikiOS utilities live under /util; the /wiki/<tool> routes are redirect stubs. WikiOS has no rail
+    // of its own: search is a section here, and page creation and page tools live in the page header.
     sections: [
       {
         id: "main",

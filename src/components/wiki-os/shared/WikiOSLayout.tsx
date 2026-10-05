@@ -5,11 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useWikiOSShortcuts } from "~/components/wiki-os/shared/useWikiOSShortcuts";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
+import { WikiArticleTabs } from "~/components/wiki-os/reader/WikiArticleTabs";
 import { api } from "~/trpc/react";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { WIKIOS_VERSION } from "~/lib/buildVersion";
 import { stripBasePath } from "~/lib/base-path";
-import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
+import { getArticleRoute, isNonArticlePath } from "~/lib/wiki-os/article-route";
 import { useWikiPrefetch } from "~/hooks/useWikiPrefetch";
 import {
   Popover,
@@ -20,61 +21,10 @@ import {
 } from "~/components/ui/popover";
 
 // Sibling component imports
-import { SearchModal } from "./SearchModal";
-import { WikiOSUnifiedSidebar } from "./WikiOSUnifiedSidebar";
+import { WikiPageActions } from "./WikiPageActions";
 import { WikiOSContentWrapper } from "./WikiOSContentWrapper";
 import { CreatePageModal } from "./CreatePageModal";
 import { WikiOSLogomark } from "./WikiOSLogomark";
-
-const RESERVED_WIKI_SLUGS = new Set([
-  "lorewards",
-  "diff",
-  "watchlist",
-  "search",
-  "random",
-  "repository",
-  "recent-changes",
-  "categories",
-  "whatlinkshere",
-  "user",
-  "history",
-  "contributions",
-  "utilities",
-  "templates",
-  "sandbox",
-]);
-
-/**
- * A path that is NOT an editable wiki article: the reserved /wiki/* tool routes, the Special: namespace, and
- * anything not under /wiki/<slug> (util, library and other routes). Article pages (/wiki/<Title> and their
- * /edit, /talk sub-routes) are NOT special, so the page tools (Edit / Talk / History / What Links Here) render
- * for them. NOTE: previously this matched every "/wiki/" path, which hid page tools on all articles.
- */
-function isNonArticlePath(cleanPath: string): boolean {
-  const wikiSlug = cleanPath.match(/^\/wiki\/([^/]+)/)?.[1];
-  if (!wikiSlug) return true;
-  const slug = decodeURIComponent(wikiSlug);
-  return RESERVED_WIKI_SLUGS.has(slug) || /^special:/i.test(slug);
-}
-
-/** First match wins, so the broad `/util` rule shadows the /util/* tools listed after it. */
-const SIDEBAR_ACTIVE_RULES: ReadonlyArray<[id: string, pattern: RegExp]> = [
-  ["talk", /\/talk/],
-  ["edit", /\/edit/],
-  ["categories", /\/(?:util|wiki)\/categories/],
-  ["recent", /\/(?:util|wiki)\/recent/],
-  ["templates", /\/(?:util|wiki)\/templates/],
-  ["utilities", /^\/util|\/wiki\/utilities/],
-  ["lorewards", /\/(?:util|wiki)\/lorewards/],
-  ["blurbs", /\/blurbs/],
-  ["stashes", /\/stashes/],
-  ["images", /\/(?:util|wiki)\/repository/],
-  ["stashes", /\/(?:util|wiki)\/watchlist/],
-  ["random", /\/(?:util|wiki)\/random/],
-  ["search", /\/(?:util|wiki)\/search/],
-  ["history", /\/(?:util|wiki)\/history/],
-  ["main", /^\/wiki(?:\/Main_Page)?$/],
-];
 
 export function WikiOSLayout({
   title,
@@ -90,9 +40,8 @@ export function WikiOSLayout({
 }) {
   useWikiOSShortcuts(readOnly);
   useWikiPrefetch();
-  const { articleTitle, setActiveModal } = useWikiContext();
+  const { articleTitle } = useWikiContext();
   const pathname = usePathname();
-  const [searchOpen, setSearchOpen] = useState(false);
   const [createPageOpen, setCreatePageOpen] = useState(false);
 
   // Check URL params to auto-open page creation modal
@@ -107,7 +56,6 @@ export function WikiOSLayout({
   }, []);
 
   const activeTitle = title || articleTitle || "";
-  const slug = activeTitle ? encodeURIComponent(activeTitle.replace(/ /g, "_")) : null;
 
   const isMainPage =
     activeTitle === "Main Page" ||
@@ -140,41 +88,35 @@ export function WikiOSLayout({
 
   const { isSignedIn } = useWikiAuth();
 
-  const activeId =
-    SIDEBAR_ACTIVE_RULES.find(([, re]) => re.test(stripBasePath(pathname)))?.[0] ?? null;
+  const cleanPath = stripBasePath(pathname);
+  // Another wiki's page is read-only: no tabs, and none of the article's own tools.
+  const articleRoute = readOnly ? null : getArticleRoute(cleanPath);
+  const hasArticleTools = !(readOnly || isMainPage || isNonArticlePath(cleanPath));
 
-  // A "special page" has no page tools: the Main Page, a non-article path, or another wiki's page (read-only).
-  const isSpecialPage = readOnly || isMainPage || isNonArticlePath(stripBasePath(pathname));
-
-  const sidebarContent = (
-    <WikiOSUnifiedSidebar
-      activeId={activeId}
-      onSearchClick={() => setSearchOpen(true)}
-      onCreatePageClick={() => setCreatePageOpen(true)}
-      title={activeTitle}
-      slug={slug}
-      isSignedIn={isSignedIn}
-      setActiveModal={setActiveModal}
-      countryData={countryData}
-      isSpecialPage={isSpecialPage}
-      pathname={pathname}
+  const tabs = articleRoute && (
+    <WikiArticleTabs slug={articleRoute.slug} active={articleRoute.tab} canEdit={isSignedIn} />
+  );
+  const actions = (
+    <WikiPageActions
+      onNewPage={() => setCreatePageOpen(true)}
+      pageTools={{
+        title: activeTitle,
+        isSignedIn,
+        country: countryData,
+        articleTools: hasArticleTools,
+      }}
     />
   );
 
   return (
     <div className="wikios-shell wikios-root">
-      <DashboardSidebarLayout
-        sidebarContent={sidebarContent}
-        defaultCollapsed={true}
-        disableCollapse={false}
-        expandedWidthClassName="w-48"
-        expandedWidthStyle="12rem"
-        disableGlobalHover={true}
+      <WikiOSContentWrapper
+        title={hideTitleHeading ? undefined : title}
+        actions={actions}
+        tabs={tabs}
       >
-        <WikiOSContentWrapper title={hideTitleHeading ? undefined : title}>
-          {children}
-        </WikiOSContentWrapper>
-      </DashboardSidebarLayout>
+        {children}
+      </WikiOSContentWrapper>
 
       <footer className="wikios-main-footer text-label-secondary border-separator text-footnote mt-16 flex flex-col items-center justify-center gap-4 border-t pt-8 pb-10 text-center font-[var(--wikios-font-brand)]">
         <Popover>
@@ -213,8 +155,6 @@ export function WikiOSLayout({
         </div>
       </footer>
 
-      {/* Search Modal */}
-      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
       <CreatePageModal open={createPageOpen} onClose={() => setCreatePageOpen(false)} />
     </div>
   );

@@ -868,15 +868,6 @@
 
   /* Citation hover tooltip */
 
-  .wikios-cite-tooltip {
-    position: fixed;
-    z-index: var(--z-index-tooltip);
-    transform: translate(-50%, -100%);
-    padding-bottom: 8px;
-    pointer-events: auto;
-    max-width: min(420px, 90vw);
-  }
-
   /* The popover overlay is the surface; this only sets the footnote's reading face. */
   .wikios-cite-tooltip-inner {
     font-family: var(--wikios-font-reading);
@@ -1871,10 +1862,6 @@
   @media (max-width: 768px) {
     .wikios-content {
       padding: 16px;
-    }
-
-    .wikios-article-title {
-      font-size: 24px;
     }
 
     .wikios-backlinks-list {

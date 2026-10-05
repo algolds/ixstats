@@ -58,4 +58,45 @@ describe("citation tooltip surface", () => {
     expect(rule).not.toMatch(/background|border|box-shadow|padding/);
     expect(css).not.toContain(".wikios-cite-tooltip-inner::after");
   });
+
+  describe("hide delay", () => {
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
+
+    it("stays open when the pointer moves from the citation onto the tooltip within the delay", () => {
+      render(<Harness />);
+      const link = screen.getByRole("link", { name: "[1]" });
+      act(() => {
+        fireEvent.mouseEnter(link);
+      });
+      // The capture-phase mouseleave fires for the <a> and again for its <sup class="reference">.
+      act(() => {
+        fireEvent.mouseLeave(link);
+        fireEvent.mouseLeave(link.closest("sup")!);
+      });
+      act(() => {
+        jest.advanceTimersByTime(100);
+        fireEvent.mouseEnter(screen.getByRole("tooltip"));
+      });
+      act(() => {
+        jest.advanceTimersByTime(200);
+      });
+      expect(screen.getByRole("tooltip").getAttribute("data-state")).toBe("open");
+    });
+
+    it("closes once the pointer has left for longer than the delay", () => {
+      render(<Harness />);
+      const link = screen.getByRole("link", { name: "[1]" });
+      act(() => {
+        fireEvent.mouseEnter(link);
+        fireEvent.mouseLeave(link);
+      });
+      act(() => {
+        jest.advanceTimersByTime(200);
+      });
+      expect(screen.queryByRole("tooltip")?.getAttribute("data-state") ?? "closed").not.toBe(
+        "open"
+      );
+    });
+  });
 });
