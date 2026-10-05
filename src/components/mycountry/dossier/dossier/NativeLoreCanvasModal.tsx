@@ -2,7 +2,7 @@
 
 import { Input } from "~/components/ui/input";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { FloppyDisk as Save, Page as FileText } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
@@ -32,12 +32,16 @@ export function NativeLoreCanvasModal({
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
   const [clearance, setClearance] = useState<LoreClearance>(initialClearance);
+  // The editor's latest complete wikitext, so "Save document" saves what is on screen even when
+  // the editor's own save was never pressed. A ref, not state: feeding it back as initialHtml
+  // would reset the editor on every keystroke.
+  const liveContent = useRef<string | null>(null);
 
   const handleSave = () => {
     if (!title.trim()) return;
     onSave({
       title: title.trim(),
-      content,
+      content: liveContent.current ?? content,
       clearance,
     });
     onClose();
@@ -111,6 +115,9 @@ export function NativeLoreCanvasModal({
                 onSave={async (html) => setContent(html)}
                 onCancel={onClose}
                 onSwitchToSource={(_dirty, currentHtml) => setContent(currentHtml)}
+                onSerializedWikitext={(result) => {
+                  if (result.complete) liveContent.current = result.wikitext;
+                }}
               />
             </Card>
           </div>
