@@ -1,5 +1,7 @@
 # Caching & Rate Limiting Architecture
 
+**Last updated:** 2026-10-05
+
 **Location**: `src/lib/cache/` (`trpc-cache.ts`, `rate-limiter.ts`, `redis-client.ts`, `external-api-cache.ts`, `advanced-cache-system.ts`) · `src/server/shared/layer-cache.ts` · `src/lib/wiki-os/adapters/mediawiki/bridge/`  
 **Layers**: In-process Maps · Redis (shared client, in-memory fallback) · PostgreSQL stores (`ExternalApiCache`, `WikiCache`, `WikiArticle`, `WikiRevision`)
 

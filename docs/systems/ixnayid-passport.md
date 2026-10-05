@@ -1,5 +1,7 @@
 # IxnayID Passport
 
+**Last updated:** 2026-09-30
+
 **Routes:** `/@user`, `/id/[username]`, `/r/[realm]/[username]` | **Module:** `src/server/modules/identity/` | **Router:** `api.ixnayid` (`src/server/api/routers/ixnayid/`) | **UI:** `src/components/passport/`
 
 The passport is the public face of an IxnayID account. It is readable signed-out; the viewer's id only decides ownership (the Edit Passport control and the settings on the back face).

@@ -1,5 +1,7 @@
 # 🏛️ Statecraft Economic & Statistical Calculus
 
+**Last updated:** 2026-10-05
+
 **Parent Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
 **Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
 **Scope:** Mathematical formulas, worked examples, and deterministic rules for growth caps, tax brackets, and vitality indices.  

@@ -1,5 +1,7 @@
 # 🏛️ MyCountry Suite — Executive Simulation & Governance
 
+**Last updated:** 2026-10-05
+
 **Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
 **Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
 **Primary Action:** `GOVERN` | **Domain Accent:** Amber Gold (`#F59E0B` / `--color-amber-500`)  

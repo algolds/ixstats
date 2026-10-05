@@ -1,5 +1,7 @@
 # 💎 Vault — Metagame Incentives, Social Economy & Collectibles
 
+**Last updated:** 2026-10-05
+
 **Parent App Suite:** Vault (`IXVAULT_VERSION = 2` → `VERSIONS.apps.ixvault` in `src/lib/buildVersion.ts`, dev codename `IxVault`)  
 **Subsystems:** Metagame Progression, 3D Cards & Showcase, Booster Pack Gacha, Atomic Credit Ledger, Marketplace & Trading, Achievements (`ACHIEVEMENTS_VERSION = 2`)  
 **Primary Action:** `COLLECT` | **Domain Accent:** Burnished Copper (`#D97706` / `--color-amber-600`)  

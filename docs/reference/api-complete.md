@@ -1,5 +1,7 @@
 # Complete tRPC API Reference
 
+**Last updated:** 2026-10-05
+
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->

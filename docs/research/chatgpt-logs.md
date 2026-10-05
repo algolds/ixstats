@@ -1,3 +1,5 @@
+**Last updated:** 2026-08-20
+
 After reading both documents, I think there is one idea that is much more important than anything about Issues, Policies, CivCap, or NationStates itself.
 
 Your philosophy is **not** "simulate a country."

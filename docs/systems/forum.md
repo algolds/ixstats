@@ -1,5 +1,7 @@
 # 🗨️ IxForum App — Community Discourse
 
+**Last updated:** 2026-09-30
+
 **Parent App Suite:** IxForum (`IXFORUM_VERSION = 1.4` platform-inherited)  
 **Subsystems:** XenForo Native Bridge, Category Boards, IxnayID account linking  
 **Primary Action:** `DEBATE` | **Domain Accent:** Warm Orange (`#F97316` / `--color-orange-500`)  

@@ -1,5 +1,7 @@
 # Data & Database Architecture
 
+**Last updated:** 2026-10-05
+
 **Database Engine**: PostgreSQL with PostGIS Extension  
 **ORM**: Prisma 6.19.3 (Multi-file Schema Architecture, `prisma.config.ts` → `prisma/schema`)  
 **Location**: `prisma/schema/*.prisma` (21 schema files, 338 models, 33 enums) · `src/server/db.ts`

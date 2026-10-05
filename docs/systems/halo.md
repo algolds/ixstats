@@ -1,5 +1,7 @@
 # 🎯 Halo — Facet UI Contextual Overlay & Command Palette
 
+**Last updated:** 2026-10-05
+
 **Parent Platform Layer:** Facet UI Design System (`FACET_VERSION = 4` / `HALO_VERSION = 6`)  
 **Subsystems:** Contextual Floating Capsule, `Cmd+K` Command Palette, Unified Notification Tray, Plugin Registry  
 **Primary Action:** `NAVIGATE` | **Domain Accent:** Universal Slate / Context-Adaptive  

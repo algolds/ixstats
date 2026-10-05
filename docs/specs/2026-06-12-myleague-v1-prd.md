@@ -1,4 +1,6 @@
 # 🏟️ PRODUCT REQUIREMENTS DOCUMENT (PRD)
+
+**Last updated:** 2026-09-29
 ## ⚔️ IxStats Feature: MyLeague (Sports & Competition System)
 
 | | |

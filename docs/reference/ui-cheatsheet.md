@@ -1,5 +1,7 @@
 # Frontend & UI Component Cheatsheet
 
+**Last updated:** 2026-10-02
+
 > **Quick Reference for IxStates UI Engineering**  
 > **Stack**: Next.js 16 App Router · React 19 · Tailwind CSS v4 · TypeScript 7.0 · Radix UI · Iconoir · Cuelume Haptics  
 > **Design Language**: **Facet** (opaque cards, glass only for floating chrome; see [facet-design-system.md](facet-design-system.md))

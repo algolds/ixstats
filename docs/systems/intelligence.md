@@ -1,5 +1,7 @@
 # 🏛️ MyCountry Intelligence & Recon (Folded into Defense)
 
+**Last updated:** 2026-10-02
+
 **Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
 **Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
 **Primary Action:** `SURVEY` | **Domain Accent:** Dark Indigo / Amber Gold  

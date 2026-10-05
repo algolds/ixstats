@@ -1,5 +1,7 @@
 # 💎 Vault Cards & Booster Packs Engine
 
+**Last updated:** 2026-10-05
+
 **Parent App Suite:** Vault (`IXVAULT_VERSION = 2`, dev codename `IxVault`)  
 **Subsystems:** 3D Card Engine, Booster Pack Gacha, Crafting & Recycling, NS Import Bridge  
 **Primary Action:** `COLLECT` | **Domain Accent:** Burnished Copper (`#D97706` / `--color-amber-600`)  

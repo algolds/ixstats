@@ -1,5 +1,7 @@
 # Geographical report for Caphiria
 
+**Last updated:** 2026-09-22
+
 ## Executive summary
 
 Caphiria covers 4,723,109 square kilometers, which equals 1,823,602 square miles. This represents roughly 3.17 percent of Earth's total land area, making it comparable in total surface area to India. The territory spans 3,591 kilometers from north to south and 3,929 kilometers from east to west in the southern hemisphere.

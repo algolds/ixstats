@@ -1,5 +1,7 @@
 # Developer Onboarding
 
+**Last updated:** 2026-10-05
+
 **Audience:** new developers joining IxStats, including those new to professional dev workflows.
 **Goal:** get you from a fresh Windows laptop to running IxStats locally and making your first change.
 

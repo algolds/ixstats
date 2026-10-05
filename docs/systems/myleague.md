@@ -1,5 +1,7 @@
 # 🧪 MyLeague & MyClub — Sports Simulation Studio (Labs)
 
+**Last updated:** 2026-09-30
+
 **Parent Layer:** Labs (Experimental & Incubation Studio)  
 **Subsystems:** League Workspace, Franchise Management (MyClub), Match Simulation Engine, Athlete Cards  
 **Primary Action:** `COMPETE` | **Domain Accent:** Emerald Green / Sports Gold  

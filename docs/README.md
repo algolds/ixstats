@@ -55,7 +55,8 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | **Defense** | [systems/defense.md](systems/defense.md) | Branches, units, procurement, readiness, threats | 🔒 Premium |
 | **Intelligence** | [systems/intelligence.md](systems/intelligence.md) | Where recon and fog live now; no standalone dashboard | 🟡 Partial |
 | **Synergies** | [reference/synergies.md](reference/synergies.md) | 45 additive + 45 conflicting government component relationships | ✅ Live |
-| Statecraft game loops | [systems/statecraft/statecraft-game-loops.md](systems/statecraft/statecraft-game-loops.md) | IN → SEE → OUT → RIPPLE loop design | 📐 Design (partly built) |
+| Scheduled changes | [systems/scheduled-changes.md](systems/scheduled-changes.md) | Delayed-effect pipeline with no producer (decision D11) | 🟡 Built, unused |
+| Statecraft game loops | [systems/statecraft/statecraft-game-loops.md](systems/statecraft/statecraft-game-loops.md) · [UI demos](systems/statecraft/ui-demos/index.html) ([briefing](systems/statecraft/ui-demos/1-briefing.html), [desk](systems/statecraft/ui-demos/2-desk.html), [situation table](systems/statecraft/ui-demos/3-situation-table.html), [ticker](systems/statecraft/ui-demos/4-ticker.html), [console](systems/statecraft/ui-demos/5-console.html)) | IN → SEE → OUT → RIPPLE loop design | 📐 Design (partly built) |
 | Design philosophy & PRDs | [systems/mycountry-design-philosophy-and-prds.md](systems/mycountry-design-philosophy-and-prds.md) | Design bible and statecraft PRDs, with a status matrix | 📐 Design (partly built) |
 
 ### 🌍 Atlas & Realms — geography and worlds
@@ -96,6 +97,7 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | :--- | :--- | :--- | :---: |
 | **IxForum** | [systems/forum.md](systems/forum.md) | XenForo bridge: read, write, stash, IxnayID account linking | ✅ Live |
 | **IxnayID passport** | [systems/ixnayid-passport.md](systems/ixnayid-passport.md) | Public passport, showcase, privacy settings, nation switcher | ✅ Live |
+| **Explore & country profiles** | [systems/explore-and-country-profiles.md](systems/explore-and-country-profiles.md) | `/countries`, `/explore`, the country profile and its public record | ✅ Live |
 
 ### ⚙️ Concord — living world
 | System | Document | Scope | Status |
@@ -111,6 +113,9 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | **Halo** | [systems/halo.md](systems/halo.md) | Contextual overlay, plugins, `Cmd+K` palette | ✅ Live |
 | **Admin CMS** | [systems/admin-cms.md](systems/admin-cms.md) · [app README](../src/app/admin/README.md) | Admin sections, reference catalogs, RBAC, persisted audit log | ✅ Live |
 | **Help center** | [systems/help.md](systems/help.md) · [app README](../src/app/help/README.md) | Markdown help in `src/content/help/` (63 articles, all registered) | ✅ Live |
+| **Notifications** | [systems/notifications.md](systems/notifications.md) | In-app notifications, the Halo tray, event switches, per-user category and urgency preferences | ✅ Live (in-app only) |
+| **Settings** | [systems/settings.md](systems/settings.md) | `/settings` panels and what each control does; admin settings wired on 2026-10-05 | ✅ Live |
+| **Demo mode** | [systems/demo-mode.md](systems/demo-mode.md) | The demo-country switch for system owners | 🟡 Read-side only |
 
 ### 🧪 Labs
 | System | Document | Scope | Status |

@@ -1,5 +1,7 @@
 # Hugging Face Spaces & AI Resource Offloading Guide
 
+**Last updated:** 2026-09-29
+
 This guide describes how to deploy the Kokoro TTS engine to a free Hugging Face Space to completely offload its PyTorch memory (1.6 GB) and CPU cycles from your 8GB VPS. It also outlines other AI services that can be offloaded there.
 
 ---
