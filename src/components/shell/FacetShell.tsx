@@ -28,6 +28,7 @@ import { useSidebarCollapsed } from "~/lib/navigation/use-sidebar-collapsed";
 import { useNavExpanded } from "~/lib/navigation/use-nav-expanded";
 import { AccountMenu } from "./AccountMenu";
 import { AppSidebar } from "./AppSidebar";
+import { SidebarVaultCard } from "./SidebarVaultCard";
 import { TabBar } from "./TabBar";
 import { ShellHalo } from "./ShellHalo";
 import { useNavBadges } from "./use-nav-badges";
@@ -100,6 +101,8 @@ export function FacetShell() {
                 onToggle={toggle}
                 badges={badges}
                 onAction={onAction}
+                signedIn={signedIn}
+                vaultCard={signedIn ? <SidebarVaultCard /> : undefined}
                 account={<AccountMenu layout="sidebar" collapsed={collapsed} />}
               />
               <TabBar

@@ -26,6 +26,7 @@ jest.mock("~/trpc/react", () => ({
       getBalance: {
         useQuery: () => ({ data: { canClaimDailyBonus: true, loginStreak: 2 }, isLoading: false }),
       },
+      getTodayEarnings: { useQuery: () => ({ data: undefined }) },
       claimCombinedDailyClaim: { useMutation: () => ({ mutate: jest.fn() }) },
     },
   },

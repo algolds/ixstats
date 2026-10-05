@@ -31,6 +31,7 @@ jest.mock("~/trpc/react", () => ({
     admin: { getNavigationSettings: { useQuery: () => ({ data: undefined }) } },
     vault: {
       getBalance: { useQuery: () => ({ data: undefined, isLoading: false }) },
+      getTodayEarnings: { useQuery: () => ({ data: undefined }) },
       claimCombinedDailyClaim: { useMutation: () => ({ mutate: jest.fn() }) },
     },
   },

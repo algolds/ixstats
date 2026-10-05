@@ -216,6 +216,16 @@ function AccountPanel({ onClose }: { onClose?: () => void }) {
           </button>
         </li>
       </ul>
+
+      {/* The sidebar's footer links hide while it is collapsed and the phone tab bar has none. */}
+      <p className="border-separator text-caption text-label-secondary flex items-center gap-3 border-t px-2.5 pt-2 pb-1">
+        <Link href="/privacy" onClick={done} className="hover:text-label hover:underline">
+          Privacy
+        </Link>
+        <Link href="/terms" onClick={done} className="hover:text-label hover:underline">
+          Terms
+        </Link>
+      </p>
     </div>
   );
 }

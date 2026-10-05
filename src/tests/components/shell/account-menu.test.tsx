@@ -100,6 +100,12 @@ describe("AccountMenu identity rows", () => {
     expect(screen.getByRole("link", { name: "Wiki profile" })).toBeInTheDocument();
   });
 
+  it("keeps Privacy and Terms reachable here, for the collapsed rail and the phone sheet", () => {
+    render(<AccountMenu layout="sheet" />);
+    expect(screen.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy");
+    expect(screen.getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/terms");
+  });
+
   it("shows none of the three rows when signed out", () => {
     signedIn = false;
     render(<AccountMenu layout="sheet" />);

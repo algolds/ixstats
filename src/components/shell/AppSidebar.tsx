@@ -21,7 +21,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { SidebarCollapse, SidebarExpand } from "iconoir-react";
+import { SidebarCollapse, SidebarExpand, Wallet } from "iconoir-react";
 
 import { cn } from "~/lib/utils/cn";
 import { focusRing } from "~/components/ui/button";
@@ -38,6 +38,7 @@ import {
   type SearchParamsLike,
 } from "~/lib/navigation/app-sections";
 import { SourceList, isPending, sourceRowClassName } from "./SourceList";
+import { SidebarFooterLinks } from "./SidebarFooterLinks";
 
 interface AppSidebarProps {
   /** Current pathname without the base path. */
@@ -51,6 +52,13 @@ interface AppSidebarProps {
   onCollapsedChange: (collapsed: boolean) => void;
   /** The account row (`AccountMenu`, or its sign-in button) pinned at the bottom. */
   account?: React.ReactNode;
+  /** Signed in: shows the rail wallet and the Feedback link. */
+  signedIn?: boolean;
+  /**
+   * The expanded wallet card (`SidebarVaultCard`), above the account row. A slot because it owns
+   * tRPC queries and this component stays presentational.
+   */
+  vaultCard?: React.ReactNode;
   /** Opened apps and section groups, remembered by the host. */
   expanded: ReadonlySet<string>;
   onToggle: (id: string) => void;
@@ -104,6 +112,26 @@ function RailGlyph({ app, showDot }: { app: AppDefinition; showDot: boolean }) {
         />
       )}
     </>
+  );
+}
+
+/** The collapsed form of the wallet card: one icon to the Vault, dotted while a reward waits. */
+function RailWallet({ claimable }: { claimable: boolean }) {
+  return (
+    <div data-app="vault" className="sidebar-collapsed:flex hidden justify-center">
+      <Tooltip content="Wallet" side="right" sideOffset={8}>
+        <Link href="/vault" aria-label="Wallet" className={railButtonClassName(false)}>
+          <Wallet aria-hidden className="size-5" />
+          {claimable && (
+            <span
+              role="img"
+              aria-label="Daily reward ready"
+              className="bg-tint ring-background absolute top-1 right-1 size-2 rounded-full ring-2"
+            />
+          )}
+        </Link>
+      </Tooltip>
+    </div>
   );
 }
 
@@ -189,6 +217,8 @@ export function AppSidebar({
   collapsed,
   onCollapsedChange,
   account,
+  signedIn = false,
+  vaultCard,
   expanded,
   onToggle,
   badges,
@@ -246,6 +276,8 @@ export function AppSidebar({
         </nav>
 
         <div className="border-separator flex flex-col gap-0.5 border-t p-2">
+          {vaultCard && <div className="sidebar-collapsed:hidden pb-1">{vaultCard}</div>}
+          {signedIn && <RailWallet claimable={isPending(badges["daily-reward"])} />}
           {account && <div className="sidebar-collapsed:justify-center flex">{account}</div>}
           <CollapsedTooltip collapsed={collapsed} label="Expand sidebar">
             <button
@@ -270,6 +302,7 @@ export function AppSidebar({
               </span>
             </button>
           </CollapsedTooltip>
+          <SidebarFooterLinks signedIn={signedIn} className="sidebar-collapsed:hidden" />
         </div>
       </FacetMaterial>
     </aside>
