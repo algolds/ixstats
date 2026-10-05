@@ -11,20 +11,10 @@ import {
   Lock,
   Key as KeyIcon,
   ShieldAlert,
-  Trash,
   OpenNewWindow as ExternalLink,
   SystemRestart as Loader2,
-  Check,
   Search,
-  Plus,
-  Xmark,
-  ChatBubble as MessageCircle,
-  Sparks as Sparkles,
-  Globe,
-  Coins,
   Group as Users,
-  Activity,
-  Filter,
 } from "iconoir-react";
 import { useClerk } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
@@ -44,7 +34,13 @@ import {
 } from "~/components/ui/select";
 import type { PrivacyConfig } from "~/server/api/routers/users/preferences";
 
-type FilterTab = "blocked" | "muted" | "keywords";
+/*
+ * Only settings the server enforces are shown (SL-4): blocking and muting, ThinkTank invite
+ * permissions and appearing in ThinkTank invite search. The other PrivacyConfig keys (DM, mention
+ * and trade permissions, online status, read receipts, indexing, telemetry, recommendations),
+ * muted words and "clear history" have nothing behind them yet, so they are hidden.
+ */
+type FilterTab = "blocked" | "muted";
 type Icon = React.ComponentType<{ className?: string }>;
 type FilterAccount = {
   id: string;
@@ -56,7 +52,7 @@ type FilterAccount = {
 const GLYPH = "bg-muted/60 text-foreground";
 
 interface SelectRowSpec {
-  key: "directMessages" | "mentions" | "tradeOffers" | "thinktankInvites";
+  key: "thinktankInvites";
   label: string;
   description: string;
   icon: Icon;
@@ -64,40 +60,6 @@ interface SelectRowSpec {
 }
 
 const SELECT_ROWS: SelectRowSpec[] = [
-  {
-    key: "directMessages",
-    label: "Direct messages",
-    description: "Who can send you direct messages in ThinkShare",
-    icon: MessageCircle,
-    options: [
-      ["everyone", "Everyone"],
-      ["followers", "Followers only"],
-      ["verified", "Verified accounts only"],
-      ["nobody", "Nobody"],
-    ],
-  },
-  {
-    key: "mentions",
-    label: "Mentions and tags",
-    description: "Who can tag or mention you in ThinkPages posts and comments",
-    icon: Sparkles,
-    options: [
-      ["everyone", "Everyone"],
-      ["followers", "People you follow"],
-      ["nobody", "Nobody"],
-    ],
-  },
-  {
-    key: "tradeOffers",
-    label: "Trade and gift offers",
-    description: "Who can send you card trades or Vault gifts",
-    icon: Coins,
-    options: [
-      ["everyone", "Everyone"],
-      ["followers", "Followers only"],
-      ["nobody", "Disabled"],
-    ],
-  },
   {
     key: "thinktankInvites",
     label: "ThinkTank invites",
@@ -112,89 +74,22 @@ const SELECT_ROWS: SelectRowSpec[] = [
 ];
 
 interface SwitchRowSpec {
-  key: Exclude<keyof PrivacyConfig, SelectRowSpec["key"]>;
+  key: "searchDiscoverable";
   id: string;
   label: string;
   description: string;
   icon: Icon;
 }
 
-const SWITCH_ROWS: Record<
-  "interactions" | "discovery" | "services" | "diagnostics",
-  SwitchRowSpec[]
-> = {
-  interactions: [
-    {
-      key: "messageRequestFiltering",
-      id: "dm-filtering",
-      label: "Message request filtering",
-      description: "Move messages from accounts you do not follow to a requests folder",
-      icon: Filter,
-    },
-  ],
-  discovery: [
-    {
-      key: "searchDiscoverable",
-      id: "search-discoverable",
-      label: "Appear in search and directories",
-      description: "Let your profile and country appear in global search and leaderboards",
-      icon: Search,
-    },
-    {
-      key: "searchEngineIndexing",
-      id: "search-engine-indexing",
-      label: "Search engine indexing",
-      description: "Let search engines such as Google and Bing index your public profile",
-      icon: Globe,
-    },
-    {
-      key: "showOnlineStatus",
-      id: "online-status",
-      label: "Online status",
-      description: "Show when you are active on ThinkPages or browsing the map",
-      icon: Activity,
-    },
-    {
-      key: "dmReadReceipts",
-      id: "read-receipts",
-      label: "Read receipts",
-      description: "Tell senders when you have read their ThinkShare messages",
-      icon: Check,
-    },
-  ],
-  services: [
-    {
-      key: "showDiscordTag",
-      id: "show-discord-tag",
-      label: "Show Discord tag on profile",
-      description: "Show your connected Discord username on your public profile",
-      icon: Users,
-    },
-    {
-      key: "showWikiAttribution",
-      id: "show-wiki-attribution",
-      label: "Wiki author attribution",
-      description: "Link your profile to wiki articles and lore you contributed",
-      icon: Globe,
-    },
-  ],
-  diagnostics: [
-    {
-      key: "diagnosticTelemetry",
-      id: "diagnostic-telemetry",
-      label: "Anonymous diagnostics",
-      description: "Send anonymous error reports and load metrics to help improve IxStats",
-      icon: Activity,
-    },
-    {
-      key: "personalizedRecommendations",
-      id: "personalized-recommendations",
-      label: "Personalized recommendations",
-      description: "Use your collection, viewing history and topics to tailor recommendations",
-      icon: Sparkles,
-    },
-  ],
-};
+const DISCOVERY_ROWS: SwitchRowSpec[] = [
+  {
+    key: "searchDiscoverable",
+    id: "search-discoverable",
+    label: "Appear in invite search",
+    description: "Let ThinkTank owners find you by name when inviting members",
+    icon: Search,
+  },
+];
 
 function FilterForm(props: {
   icon: Icon;
@@ -307,9 +202,8 @@ function AccountList(props: {
 function BlockingFilters(props: {
   blockedAccounts: FilterAccount[];
   mutedAccounts: FilterAccount[];
-  mutedKeywords: Array<{ id: string; keyword: string }>;
 }) {
-  const { blockedAccounts, mutedAccounts, mutedKeywords } = props;
+  const { blockedAccounts, mutedAccounts } = props;
   const notify = useNotify();
   const utils = api.useUtils();
 
@@ -317,7 +211,6 @@ function BlockingFilters(props: {
   const [inputs, setInputs] = useState<Record<FilterTab, string>>({
     blocked: "",
     muted: "",
-    keywords: "",
   });
   const setInput = (tab: FilterTab) => (value: string) =>
     setInputs((prev) => ({ ...prev, [tab]: value }));
@@ -355,14 +248,6 @@ function BlockingFilters(props: {
   const unmuteMutation = api.users.unmuteAccount.useMutation(
     listMutation("Account unmuted", "Failed to unmute account", "press")
   );
-  const addKeywordMutation = api.users.addMutedKeyword.useMutation(
-    listMutation("Keyword filter added", "Failed to add keyword filter", "bloom", () =>
-      setInput("keywords")("")
-    )
-  );
-  const removeKeywordMutation = api.users.removeMutedKeyword.useMutation(
-    listMutation("Keyword filter removed", "Failed to remove keyword", "press")
-  );
 
   return (
     <div className="space-y-4 p-4">
@@ -378,7 +263,6 @@ function BlockingFilters(props: {
         options={[
           { value: "blocked", label: `Blocked accounts (${blockedAccounts.length})` },
           { value: "muted", label: `Muted accounts (${mutedAccounts.length})` },
-          { value: "keywords", label: `Muted words (${mutedKeywords.length})` },
         ]}
       />
 
@@ -398,7 +282,7 @@ function BlockingFilters(props: {
             <EmptyListNotice
               icon={UserXmark}
               title="No blocked accounts"
-              text="Blocked accounts cannot message you, invite you to ThinkTanks or tag you in ThinkPages."
+              text="Blocked accounts cannot message you or invite you to ThinkTanks, and their posts leave your ThinkPages feed."
             />
           ) : (
             <AccountList
@@ -428,7 +312,7 @@ function BlockingFilters(props: {
             <EmptyListNotice
               icon={EyeOff}
               title="No muted accounts"
-              text="Muted accounts are hidden from your feeds and notifications, and they are not told."
+              text="Posts by muted accounts are hidden from your ThinkPages feed, and they are not told."
             />
           ) : (
             <AccountList
@@ -437,50 +321,6 @@ function BlockingFilters(props: {
               onAction={(connectionId) => unmuteMutation.mutate({ connectionId })}
               pending={unmuteMutation.isPending}
             />
-          )}
-        </div>
-      )}
-
-      {activeFilterTab === "keywords" && (
-        <div className="space-y-3">
-          <FilterForm
-            icon={Filter}
-            value={inputs.keywords}
-            onChange={setInput("keywords")}
-            placeholder="Word, phrase or hashtag to filter"
-            onSubmit={(keyword) => addKeywordMutation.mutate({ keyword })}
-            pending={addKeywordMutation.isPending}
-            buttonIcon={<Plus className="h-3.5 w-3.5" />}
-            buttonLabel="Add word"
-          />
-          {mutedKeywords.length === 0 ? (
-            <EmptyListNotice
-              icon={Filter}
-              title="No muted words"
-              text="Posts and notifications containing these words are hidden from your feed."
-            />
-          ) : (
-            <div className="flex flex-wrap gap-1.5 p-1">
-              {mutedKeywords.map((item) => (
-                <span
-                  key={item.id}
-                  className="border-separator bg-surface-secondary text-foreground rounded-control-sm inline-flex items-center gap-1.5 border px-2.5 py-1 text-xs font-medium"
-                >
-                  <span>{item.keyword}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      soundEffects.press();
-                      removeKeywordMutation.mutate({ connectionId: item.id });
-                    }}
-                    className="text-muted-foreground hover:text-foreground cursor-pointer"
-                    title="Remove word"
-                  >
-                    <Xmark className="h-3 w-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
           )}
         </div>
       )}
@@ -617,21 +457,9 @@ export function PrivacySecurityPanel() {
     },
   });
 
-  const clearHistoryMutation = api.users.clearSearchHistory.useMutation({
-    onSuccess: () => {
-      soundEffects.bloom();
-      notify.success("Search history and recent profiles cleared");
-    },
-    onError: () => {
-      soundEffects.error();
-      notify.error("Failed to clear search history");
-    },
-  });
-
   const config = privacyData?.config;
   const blockedAccounts = privacyData?.blockedAccounts ?? [];
   const mutedAccounts = privacyData?.mutedAccounts ?? [];
-  const mutedKeywords = privacyData?.mutedKeywords ?? [];
 
   const setOption = <K extends keyof PrivacyConfig>(key: K, value: PrivacyConfig[K]) =>
     updateConfigMutation.mutate({ [key]: value } as Partial<PrivacyConfig>);
@@ -655,25 +483,18 @@ export function PrivacySecurityPanel() {
       <SettingsHeader
         title="Privacy & Security"
         category="Platform & preferences"
-        description="Blocking, who can contact you, discoverability, diagnostics and your data."
+        description="Blocking, ThinkTank invites, invite search and your data."
       />
 
       <SettingsGroup
-        title="Blocking and filtering"
-        description="Stop accounts from messaging or tagging you, or appearing in your ThinkPages feeds."
+        title="Blocking and muting"
+        description="Stop accounts from messaging you or appearing in your ThinkPages feeds."
       >
-        <BlockingFilters
-          blockedAccounts={blockedAccounts}
-          mutedAccounts={mutedAccounts}
-          mutedKeywords={mutedKeywords}
-        />
+        <BlockingFilters blockedAccounts={blockedAccounts} mutedAccounts={mutedAccounts} />
       </SettingsGroup>
 
-      <SettingsGroup
-        title="Interactions"
-        description="Who can message you, tag you and send you trades."
-      >
-        {SELECT_ROWS.map((row, i) => (
+      <SettingsGroup title="Interactions" description="Who can invite you to ThinkTanks.">
+        {SELECT_ROWS.map((row) => (
           <React.Fragment key={row.key}>
             <SettingsRow
               label={row.label}
@@ -703,23 +524,15 @@ export function PrivacySecurityPanel() {
                 </SelectContent>
               </Select>
             </SettingsRow>
-            {/* The request-filtering switch sits right after the direct-message selector */}
-            {i === 0 && renderSwitchRows(SWITCH_ROWS.interactions)}
           </React.Fragment>
         ))}
       </SettingsGroup>
 
-      <SettingsGroup
-        title="Discovery and visibility"
-        description="Where you appear in search, whether you show as online and read receipts."
-      >
-        {renderSwitchRows(SWITCH_ROWS.discovery)}
+      <SettingsGroup title="Discovery" description="Whether others can find you by name.">
+        {renderSwitchRows(DISCOVERY_ROWS)}
       </SettingsGroup>
 
-      <SettingsGroup
-        title="Connected services"
-        description="Trading card indexing and linked accounts."
-      >
+      <SettingsGroup title="Connected services" description="Trading card indexing.">
         <SettingsRow
           label="NationStates card deck"
           description="Remove your card data from public search or unlink your deck"
@@ -747,34 +560,6 @@ export function PrivacySecurityPanel() {
               <span>Takedown and opt-out</span>
             </Button>
           </div>
-        </SettingsRow>
-        {renderSwitchRows(SWITCH_ROWS.services)}
-      </SettingsGroup>
-
-      <SettingsGroup
-        title="Diagnostics and personalization"
-        description="Diagnostics, recommendations and recent search history."
-      >
-        {renderSwitchRows(SWITCH_ROWS.diagnostics)}
-        <SettingsRow
-          label="Search and browsing history"
-          description="Clear cached search suggestions and recently visited countries"
-          icon={Trash}
-          glyphClass={GLYPH}
-        >
-          <Button
-            type="button"
-            onClick={() => {
-              soundEffects.press();
-              clearHistoryMutation.mutate();
-            }}
-            disabled={clearHistoryMutation.isPending}
-            data-cuelume-press="soft"
-            variant="secondary"
-            size="sm"
-          >
-            Clear history
-          </Button>
         </SettingsRow>
       </SettingsGroup>
 

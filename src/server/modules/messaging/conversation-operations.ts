@@ -16,10 +16,12 @@ import {
   type MessagingDependencies,
 } from "./contracts";
 import {
+  MessagingBlockedError,
   MessagingForbiddenError,
   MessagingNotFoundError,
   MessagingValidationError,
 } from "./errors";
+import { recipientsBlockingSender } from "~/server/shared/user-blocks";
 
 export class MessagingConversationOperations {
   private db: any;
@@ -37,6 +39,11 @@ export class MessagingConversationOperations {
     }
 
     const isGroup = allParticipants.length > 2;
+
+    // Nobody who has blocked the creator can be pulled into a conversation with them.
+    if ((await recipientsBlockingSender(this.db, actorId, allParticipants)).length > 0) {
+      throw new MessagingBlockedError();
+    }
 
     return await this.db.$transaction(async (tx: any) => {
       const conversation = await tx.thinkshareConversation.create({

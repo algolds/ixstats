@@ -15,7 +15,8 @@ import {
   type RemoveReactionInput,
   type MessagingDependencies,
 } from "./contracts";
-import { MessagingForbiddenError, MessagingNotFoundError } from "./errors";
+import { MessagingBlockedError, MessagingForbiddenError, MessagingNotFoundError } from "./errors";
+import { recipientsBlockingSender } from "~/server/shared/user-blocks";
 
 const EXEMPT_ROLES = new Set(["admin", "system-owner", "owner", "staff"]);
 const EXEMPT_MEMBERSHIP_TIERS = new Set(["premium", "pro", "vip"]);
@@ -53,6 +54,20 @@ export class MessagingMessageOperations {
     const targetConvId = conv?.id || input.conversationId;
     const participant = await this.findSendingParticipant(actorId, targetConvId, conv);
     if (!participant) throw new MessagingForbiddenError();
+
+    // A direct conversation goes quiet once the other person blocks the sender.
+    if ((conv ?? participant.conversation)?.type === "direct") {
+      const others = await this.db.conversationParticipant.findMany({
+        where: { conversationId: targetConvId, userId: { not: actorId }, isActive: true },
+        select: { userId: true },
+      });
+      const blocking = await recipientsBlockingSender(
+        this.db,
+        actorId,
+        others.map((p: { userId: string }) => p.userId)
+      );
+      if (blocking.length > 0) throw new MessagingBlockedError();
+    }
 
     const message = await this.db.$transaction(async (tx: any) => {
       const createdMsg = await tx.thinkshareMessage.create({

@@ -6,6 +6,7 @@ import type { Prisma } from "@prisma/client";
 import { globalCache } from "~/lib/cache";
 import { postInclude, transformPost } from "./post-utils";
 import { realmFeedWhere } from "./realm-feed";
+import { hiddenThinkpagesAccountIds } from "~/server/shared/user-blocks";
 
 interface PostDateFields {
   createdAt?: string | Date | null;
@@ -106,7 +107,10 @@ export const thinkpagesFeedRouter = createTRPCRouter({
   // Get feed
   getFeed: rateLimitedPublicProcedure.input(GetFeedSchema).query(async ({ ctx, input }) => {
     try {
-      const cacheKey = `thinkpages_feed:${input.countryId || "all"}:${input.realmId || "all"}:${input.hashtag || "all"}:${input.filter}:${input.limit}:${input.cursor || "none"}`;
+      // Posts by accounts the viewer blocked or muted are left out (and cached per viewer).
+      const hiddenAccountIds = await hiddenThinkpagesAccountIds(ctx.db, ctx.auth?.userId);
+      const viewerScope = hiddenAccountIds.length ? `:viewer:${ctx.auth?.userId}` : "";
+      const cacheKey = `thinkpages_feed:${input.countryId || "all"}:${input.realmId || "all"}:${input.hashtag || "all"}:${input.filter}:${input.limit}:${input.cursor || "none"}${viewerScope}`;
 
       const cached = await globalCache.get<{ posts: any[]; nextCursor: string | null }>(cacheKey);
       if (cached) {
@@ -122,6 +126,10 @@ export const thinkpagesFeedRouter = createTRPCRouter({
       const whereClause: any = {
         visibility: "public",
       };
+
+      if (hiddenAccountIds.length) {
+        whereClause.accountId = { notIn: hiddenAccountIds };
+      }
 
       if ((input as any).countryId) {
         whereClause.account = {
