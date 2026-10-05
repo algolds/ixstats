@@ -37,7 +37,9 @@ jest.mock("~/trpc/react", () => ({
         },
       },
     },
-    useUtils: () => ({ realms: { getBySlug: { invalidate: mockInvalidate } } }),
+    useUtils: () => ({
+      realms: { getBySlug: { invalidate: mockInvalidate }, region: { invalidate: jest.fn() } },
+    }),
   },
 }));
 
