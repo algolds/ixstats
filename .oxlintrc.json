@@ -6,7 +6,7 @@
     "suspicious": "warn",
     "pedantic": "off"
   },
-  "options": { "maxWarnings": 2100 },
+  "options": { "maxWarnings": 25 },
   "rules": {
     // Unused vars - replaces eslint-plugin-unused-imports (auto-fixable, respects ^_)
     "eslint/no-unused-vars": "off",

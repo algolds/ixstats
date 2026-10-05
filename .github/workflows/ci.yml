@@ -41,9 +41,9 @@ jobs:
         run: bun run audit:arch
         continue-on-error: true
 
-      - name: "Lint (Strict) (2026-08-20 baseline: non-blocking pending lint cleanups)"
+      # 0 errors and 25 warnings on 2026-10-05; the limit only ratchets down.
+      - name: Lint (strict)
         run: bun run lint:strict
-        continue-on-error: true
 
       - name: Typecheck (UI)
         run: bun run typecheck:ui
