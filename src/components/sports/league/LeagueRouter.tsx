@@ -8,7 +8,13 @@ import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { SportsShell } from "~/components/sports/core/SportsShell";
 import { useUrlSyncedSection } from "~/components/sports/core/useUrlSyncedSection";
-import { type SportsNavSection } from "~/components/sports/core/SportsSidebarNav";
+import {
+  LEAGUE_SECTION_TABS,
+  type SportsNavSection,
+} from "~/components/sports/core/sportsSections";
+import { SportsSectionTabs } from "~/components/sports/core/SportsSectionTabs";
+import { PageHeader } from "~/components/shell/PageHeader";
+import { ControlSlider } from "iconoir-react";
 import {
   LeagueControlDeck,
   ReigningChampionWidget,
@@ -84,13 +90,13 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
   );
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [controlsOpen, setControlsOpen] = useState(false);
   const [editTeamId, setEditTeamId] = useState<string | null>(null);
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
   const [celebratingChampion, setCelebratingChampion] = useState<{
     championName: string;
     seasonNumber: number;
   } | null>(null);
-
 
   // Client-side instant navigation with URL synchronization
   const handleNavigate = useCallback((section: SportsNavSection) => {
@@ -214,12 +220,18 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
   const isBoxing = league?.archetype === "bracket" || league?.sportPreset === "boxing";
   const isF1 = league?.archetype === "circuit" || league?.sportPreset === "f1";
 
-  const visibleSections = useMemo<SportsNavSection[]>(() => {
-    const sections: SportsNavSection[] = ["overview", "standings", "schedule", "teams", "history"];
-    if (isBoxing) sections.splice(3, 0, "bracket");
-    if (isF1) sections.splice(3, 0, "races");
-    if (hasDraftPicks) sections.splice(sections.length - 1, 0, "draft");
-    return sections;
+  const sectionTabs = useMemo(() => {
+    const shown = new Set<SportsNavSection>([
+      "overview",
+      "standings",
+      "schedule",
+      "teams",
+      "history",
+    ]);
+    if (isBoxing) shown.add("bracket");
+    if (isF1) shown.add("races");
+    if (hasDraftPicks) shown.add("draft");
+    return LEAGUE_SECTION_TABS.filter((tab) => shown.has(tab.id));
   }, [isBoxing, isF1, hasDraftPicks]);
 
   // Computed on the server: createdByUserId is a database id, not the Clerk id `useUser` returns.
@@ -367,9 +379,10 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
     </div>
   );
 
-  const hasSidebarExtra = canManageLeague || Boolean(lastCompletedSeason?.champion);
+  const sideLabel = canManageLeague ? "League controls" : "Reigning champion";
+  const hasSideContent = canManageLeague || Boolean(lastCompletedSeason?.champion);
 
-  const sidebarExtra = hasSidebarExtra ? (
+  const sideContent = hasSideContent ? (
     <div className="space-y-4">
       {canManageLeague && (
         <LeagueControlDeck
@@ -495,14 +508,42 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
   return (
     <>
       <SportsShell
-        activeSection={activeSection}
-        onNavigate={handleNavigate}
         sportPreset={league.sportPreset}
-        visibleSections={visibleSections}
+        header={
+          <PageHeader
+            title={league.name}
+            subtitle={sportTheme.name}
+            back={{ href: "/myleague", label: "Leagues" }}
+            className="-mx-2"
+            actions={
+              hasSideContent ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="xl:hidden"
+                  onClick={() => setControlsOpen(true)}
+                >
+                  <ControlSlider />
+                  {sideLabel}
+                </Button>
+              ) : undefined
+            }
+          />
+        }
         heroSection={heroSection}
-        sidebarExtra={sidebarExtra}
+        sideContent={sideContent}
+        sideTitle={sideLabel}
+        sideOpen={controlsOpen}
+        onSideOpenChange={setControlsOpen}
       >
-        {renderSectionContent()}
+        <SportsSectionTabs
+          label="League views"
+          tabs={sectionTabs}
+          active={activeSection}
+          onChange={handleNavigate}
+        >
+          {renderSectionContent()}
+        </SportsSectionTabs>
       </SportsShell>
 
       {/* Match Center Dialog */}

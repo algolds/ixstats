@@ -4,6 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { Xmark, Shield, User, Activity, ArrowRight } from "iconoir-react";
 import { api } from "~/trpc/react";
+import type { SportsFocusType } from "~/lib/sports/contracts";
 import { useSportsFocus } from "./SportsFocusProvider";
 import { AthleteCareerHistory } from "./AthleteCareerHistory";
 import { getSportTheme } from "~/lib/sports/theming";
@@ -13,7 +14,6 @@ import { Button } from "~/components/ui/button";
 import { attributeBadgeClass } from "~/components/sports/rating";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { cn } from "~/lib/utils";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
@@ -387,33 +387,30 @@ function MatchFocusContent({ matchId }: { matchId: string }) {
   );
 }
 
-// Primary SportsFocusPanel (Desktop Docked Rail)
-export function SportsFocusPanel({
-  sportPreset,
-  className,
-}: {
-  sportPreset?: string;
-  className?: string;
-}) {
+const FOCUS_TITLES: Record<SportsFocusType, string> = {
+  organization: "Club details",
+  athlete: "Athlete details",
+  match: "Match details",
+  competition: "Competition details",
+};
+
+/** The Inspector title for a focused entity. */
+export function sportsFocusTitle(type: SportsFocusType): string {
+  return FOCUS_TITLES[type];
+}
+
+/** The focused entity's details; the shell hosts it in the Inspector. */
+export function SportsFocusPanel({ sportPreset }: { sportPreset?: string }) {
   const { focus, clearFocus } = useSportsFocus();
 
   if (!focus) return null;
 
   return (
-    <aside
-      className={cn(
-        "bg-surface border-separator shadow-card rounded-card w-80 shrink-0 border p-5 xl:w-96",
-        className
-      )}
-    >
-      {/* Header bar with dismiss */}
-      <div className="border-separator mb-4 flex items-center justify-between border-b pb-4">
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="capitalize">
-            {focus.type} Focus
-          </Badge>
-        </div>
-
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-2">
+        <Badge variant="secondary" className="capitalize">
+          {focus.type} Focus
+        </Badge>
         <Button
           variant="ghost"
           size="icon-sm"
@@ -426,7 +423,6 @@ export function SportsFocusPanel({
         </Button>
       </div>
 
-      {/* Body switched on focus.type */}
       {focus.type === "organization" && (
         <OrganizationFocusContent organizationId={focus.id} sportPreset={sportPreset} />
       )}
@@ -434,32 +430,6 @@ export function SportsFocusPanel({
       {focus.type === "athlete" && <AthleteFocusContent athleteId={focus.id} />}
 
       {focus.type === "match" && <MatchFocusContent matchId={focus.id} />}
-    </aside>
-  );
-}
-
-// Mobile SportsFocusSheet (Fallback for <1024px Viewports)
-export function SportsFocusSheet({ sportPreset }: { sportPreset?: string }) {
-  const { focus, clearFocus } = useSportsFocus();
-
-  return (
-    <Sheet open={!!focus} onOpenChange={(open) => !open && clearFocus()}>
-      <SheetContent
-        side="bottom"
-        className="rounded-t-sheet border-separator bg-surface max-h-[85vh] overflow-y-auto border-t p-6"
-      >
-        <SheetHeader className="pb-4">
-          <SheetTitle className="text-eyebrow text-label-secondary">{focus?.type} Focus</SheetTitle>
-        </SheetHeader>
-
-        {focus?.type === "organization" && (
-          <OrganizationFocusContent organizationId={focus.id} sportPreset={sportPreset} />
-        )}
-
-        {focus?.type === "athlete" && <AthleteFocusContent athleteId={focus.id} />}
-
-        {focus?.type === "match" && <MatchFocusContent matchId={focus.id} />}
-      </SheetContent>
-    </Sheet>
+    </div>
   );
 }

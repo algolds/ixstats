@@ -46,8 +46,8 @@ Boxing (`bracket`) exposes a **Bracket** tab; F1 (`circuit`) exposes a **Race Re
   (active/paused/completed/archived), text search, and a card grid. Custom (user-created) leagues
   are badged.
 - **Create League wizard** — `LeagueCreator` multi-step dialog: pick sport preset, configure, review.
-- **League workspace** — HUD banner (season, team count, progression, reigning champion), sidebar
-  brand card + champion widget, and tabbed content.
+- **League workspace** — HUD banner (season, team count, progression, reigning champion), league
+  controls and the champion widget in the Inspector, and tabbed content.
 - **Standings** — position/record/points table (`StandingsTable`), with promotion/relegation zones when
   configured on the league.
 - **Schedule** — match cards grouped by match day plus the **`LeagueControlDeck`** simulation controls
@@ -80,7 +80,7 @@ Page components are thin; the workspace is `LeagueRouter` in `src/components/spo
 | Component | Role |
 |-----------|------|
 | `LeagueCreator` | Multi-step create-league dialog |
-| `SportsShell` / `SportsSidebarNav` / `SportsCommandBar` (`src/components/sports/core/`) | Shared workspace shell + section nav (also used by MyClub) |
+| `SportsShell` / `SportsSectionTabs` (`src/components/sports/core/`) | Shared workspace shell (page header, Inspector for the focus panel) + section tabs (also used by MyClub) |
 | `SportsFocusProvider` / `SportsFocusPanel` | URL-reflected Focus panel for teams, athletes, and matches |
 | `LeagueMasthead`, `LeagueBrandWidgets`, `LeagueControlDeck`, `MatchdayTape`, `NextMatchCountdown` | Header, brand/champion widgets, simulation controls |
 | `tabs/League*Tab.tsx` (`BracketView`, `RaceResults`, `DraftPicksView`) | Tab content views |

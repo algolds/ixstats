@@ -81,6 +81,19 @@ describe("per-app sidebars are migrated to the source list", () => {
     expect(thread).toMatch(/Share/);
   });
 
+  it("sports: no left nav, command bar or main-column Card; tabs and Inspector instead", () => {
+    const exists = (p: string) => fs.existsSync(path.join(ROOT, p));
+    expect(exists("src/components/sports/core/SportsSidebarNav.tsx")).toBe(false);
+    expect(exists("src/components/sports/core/SportsCommandBar.tsx")).toBe(false);
+    const shell = read("src/components/sports/core/SportsShell.tsx");
+    expect(shell).not.toMatch(/<aside|SportsSidebarNav|SportsCommandBar/);
+    expect(shell).not.toMatch(/<Card\b/);
+    expect(shell + read("src/components/sports/core/SportsFocusPanel.tsx")).toMatch(/<Inspector\b/);
+    expect(read("src/components/sports/core/SportsSectionTabs.tsx")).toMatch(/TabsList|<Tabs\b/);
+    expect(read("src/components/sports/league/LeagueRouter.tsx")).toMatch(/<SportsSectionTabs\b/);
+    expect(read("src/components/sports/club/ClubRouter.tsx")).toMatch(/<SportsSectionTabs\b/);
+  });
+
   it("no layout renders a collapsible rail any more", () => {
     const layout = read("src/components/dashboard/sidebar/DashboardSidebarLayout.tsx");
     expect(layout).not.toMatch(/sidebarContent|useSidebar|RailBalancer/);

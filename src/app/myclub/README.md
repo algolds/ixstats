@@ -14,11 +14,11 @@ All routes require authentication (`AuthenticationGuard` in `layout.tsx`).
 | Route | Description |
 |-------|-------------|
 | `/myclub` | Lobby — Apple-cards carousel of teams you own, with record / season / capacity. Empty state links to MyLeague |
-| `/myclub/[teamId]` | Team dashboard — 6-section sidebar workspace (see Features). Unowned teams show a Claim card; teams owned by others show Access Denied |
+| `/myclub/[teamId]` | Team dashboard — 6-tab workspace (see Features). Unowned teams show a Claim card; teams owned by others show Access Denied |
 | `/myclub/[teamId]/season/[seasonId]` | Season detail — per-team match results (expandable commentary), full standings table, season stats |
 
-The team dashboard is a single-page sidebar router (`ClubRouter` inside the shared `SportsShell` +
-`SportsSidebarNav`), not separate Next.js routes. The lobby deep-links into a section via `?tab=roster`.
+The team dashboard is a single-page tab router (`ClubRouter` inside the shared `SportsShell` +
+`SportsSectionTabs`), not separate Next.js routes. The lobby deep-links into a section via `?tab=roster`.
 
 ## Key Features
 
@@ -47,7 +47,7 @@ MyLeague season-transition engine (Markov talent generator); MyClub only display
 |-------|----------|
 | Pages | `src/app/myclub/{page,layout}.tsx`, `[teamId]/page.tsx`, `[teamId]/season/[seasonId]/page.tsx` |
 | MyClub components | `src/components/sports/club/` — `ClubRouter`, `sections/Club{Overview,Roster,Tactics,Transfers,Management,History}Section`, `SquadRosterTable`, `ClubResultsCard`, `SponsorWalletDeck`, `RevenueCollector`, `PlayerTrainingButton`, `TeamTrainingButton`, `LineupBuilder` |
-| Shared shell | `SportsShell`, `SportsSidebarNav`, `SportsFocusProvider` (`src/components/sports/core/`) |
+| Shared shell | `SportsShell`, `SportsSectionTabs`, `SportsFocusProvider` (`src/components/sports/core/`) |
 | Reused MyLeague components | `TeamSettingsModal`, `MatchTickerSim` (`src/components/sports/league/`) |
 | Sports UI | `src/components/sports/` — `PlayerCard`, `Scoreboard`, `PlayerMatchup`, `MatchCommentary`, `PositionTooltip`, `TeamLineup` |
 | Presets | `src/lib/sports/presets.ts` (`SPORT_PRESETS`, rating vectors) |

@@ -22,9 +22,11 @@ import {
 import { withBasePath } from "~/lib/base-path";
 import { SPORT_PRESETS } from "~/lib/sports/presets";
 import { SportsShell } from "~/components/sports/core/SportsShell";
-import { SportsCommandBar } from "~/components/sports/core/SportsCommandBar";
 import { useUrlSyncedSection } from "~/components/sports/core/useUrlSyncedSection";
-import { type SportsNavSection, CLUB_NAV_ITEMS } from "~/components/sports/core/SportsSidebarNav";
+import { CLUB_SECTION_TABS, type SportsNavSection } from "~/components/sports/core/sportsSections";
+import { SportsSectionTabs } from "~/components/sports/core/SportsSectionTabs";
+import { PageHeader } from "~/components/shell/PageHeader";
+import { getSportTheme } from "~/lib/sports/theming";
 import { TeamSettingsModal } from "~/components/sports/league/TeamSettingsModal";
 import { SPORT_EMOJIS, type SportPresetKey } from "~/lib/sports/presets";
 import { ArrowLeft, Trophy, Shield, Settings, MapPin, WhiteFlag as Flag } from "iconoir-react";
@@ -61,7 +63,6 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
   const [selectedPlayer, setSelectedPlayer] = useState<RosterPlayerItem | null>(null);
   const [listPrice, setListPrice] = useState<number>(100);
   const [settingsOpen, setSettingsOpen] = useState(false);
-
 
   // Client-side instant navigation with URL synchronization
   const handleNavigate = useCallback((section: SportsNavSection) => {
@@ -280,7 +281,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-label text-title-1">{team.name}</h1>
+              <h2 className="text-label text-title-1">{team.name}</h2>
               {team.shortName && <Badge variant="default">{team.shortName}</Badge>}
             </div>
             <div className="text-label-secondary text-footnote mt-1 flex flex-wrap items-center gap-3">
@@ -389,26 +390,25 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
   return (
     <>
       <SportsShell
-        activeSection={activeSection}
-        onNavigate={handleNavigate}
-        mode="club"
         sportPreset={team.league?.sportPreset}
-        commandBar={
-          <SportsCommandBar
+        header={
+          <PageHeader
             title={team.name}
-            lobbyHref="/myclub"
-            lobbyLabel="MyClub Lobby"
-            activeSectionLabel={CLUB_NAV_ITEMS.find((item) => item.id === activeSection)?.label}
-            sportPreset={team.league?.sportPreset}
-            logo={team.logo}
-            color={team.color}
-            canManage={true}
-            onOpenSettings={() => setSettingsOpen(true)}
+            subtitle={getSportTheme(team.league?.sportPreset).name}
+            back={{ href: "/myclub", label: "MyClub" }}
+            className="-mx-2"
           />
         }
         heroSection={heroSection}
       >
-        {renderSectionContent()}
+        <SportsSectionTabs
+          label="Club views"
+          tabs={CLUB_SECTION_TABS}
+          active={activeSection}
+          onChange={handleNavigate}
+        >
+          {renderSectionContent()}
+        </SportsSectionTabs>
       </SportsShell>
 
       {/* List Player on Transfer Market Dialog */}

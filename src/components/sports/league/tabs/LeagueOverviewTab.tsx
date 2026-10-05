@@ -20,7 +20,7 @@ import { withBasePath } from "~/lib/base-path";
 import { NextMatchCountdown } from "~/components/sports/league/NextMatchCountdown";
 import { LatestResults, type MatchEvent } from "~/components/sports/LatestResults";
 import { StandingsTable, type StandingsRow } from "~/components/sports/StandingsTable";
-import type { SportsNavSection } from "~/components/sports/core/SportsSidebarNav";
+import type { SportsNavSection } from "~/components/sports/core/sportsSections";
 import { cn } from "~/lib/utils";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { Card } from "~/components/ui/card";

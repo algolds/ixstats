@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
-import { ArrowLeft, Trophy, Play, Settings, SystemRestart as Loader2 } from "iconoir-react";
+import { Trophy, Play, Settings, SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { withBasePath } from "~/lib/base-path";
@@ -73,31 +72,14 @@ export function LeagueMasthead({
         className
       )}
     >
-      {/* Breadcrumbs & Utilities */}
-      <div className="border-separator mb-5 flex flex-wrap items-center justify-between gap-3 border-b pb-4">
-        <div className="text-footnote text-label-secondary flex items-center gap-2 font-semibold">
-          <Link
-            href={withBasePath("/myleague")}
-            className="hover:text-label flex items-center gap-2 transition-colors"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Leagues</span>
-          </Link>
-          <span className="text-label-tertiary">/</span>
-          <span className="capitalize">{sportTheme.name}</span>
-          <span className="text-label-tertiary">/</span>
-          <span className="text-label max-w-[200px] truncate font-semibold sm:max-w-[300px]">
-            {league.name}
-          </span>
-        </div>
-
-        {canManageLeague && onOpenSettings && (
+      {canManageLeague && onOpenSettings && (
+        <div className="border-separator mb-5 flex justify-end border-b pb-4">
           <Button size="sm" variant="outline" onClick={handleSettingsClick} className="px-3">
             <Settings className="h-3.5 w-3.5" />
             <span>Manage league</span>
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Masthead Main Identity Row */}
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -117,7 +99,7 @@ export function LeagueMasthead({
 
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-title-1 sm:text-large-title text-label">{league.name}</h1>
+              <h2 className="text-title-1 sm:text-large-title text-label">{league.name}</h2>
               <Badge
                 variant="outline"
                 className={cn("text-eyebrow px-3 py-0.5", sportTheme.badgeClass)}
