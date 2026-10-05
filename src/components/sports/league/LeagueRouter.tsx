@@ -361,7 +361,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
         canManageLeague={canManageLeague}
         onOpenSettings={() => setSettingsOpen(true)}
         onSimulateMatchDay={
-          activeSeason && nextMatchDay
+          canManageLeague && activeSeason && nextMatchDay
             ? () => simulateMatchDay.mutate({ seasonId: activeSeason.id, matchDay: nextMatchDay })
             : undefined
         }
@@ -492,11 +492,18 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
             onNavigate={handleNavigate}
             onTeamClick={(tId) => focusOrganization(tId)}
             onMatchClick={handleMatchClick}
-            onSimulateMatchDay={(sId: string, mDay: number) =>
-              simulateMatchDay.mutate({ seasonId: sId, matchDay: mDay })
+            onSimulateMatchDay={
+              canManageLeague
+                ? (sId: string, mDay: number) =>
+                    simulateMatchDay.mutate({ seasonId: sId, matchDay: mDay })
+                : undefined
             }
             isSimulatingMatchDay={simulateMatchDay.isPending}
-            onTransitionSeason={(sId: string) => transitionSeason.mutate({ seasonId: sId })}
+            onTransitionSeason={
+              canManageLeague
+                ? (sId: string) => transitionSeason.mutate({ seasonId: sId })
+                : undefined
+            }
             isTransitioningSeason={transitionSeason.isPending}
             onStartSeason={(lId: string) => startSeason.mutate({ leagueId: lId })}
             isStartingSeason={startSeason.isPending}
@@ -596,7 +603,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
       <SportsCommandPalette
         onNavigateSection={(sec) => handleNavigate(sec as SportsNavSection)}
         onSimulateNext={
-          activeSeason && schedule?.matches
+          canManageLeague && activeSeason && schedule?.matches
             ? () => {
                 const nextMatch = schedule.matches.find((m) => m.status === "scheduled");
                 if (nextMatch) {

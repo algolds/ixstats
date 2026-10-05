@@ -66,7 +66,8 @@ interface LeagueOverviewTabProps {
   onNavigate: (section: SportsNavSection) => void;
   onTeamClick: (teamId: string) => void;
   onMatchClick: (matchId: string) => void;
-  onSimulateMatchDay: (seasonId: string, matchDay: number) => void;
+  /** Omitted for viewers who don't manage the league (the server refuses them). */
+  onSimulateMatchDay?: (seasonId: string, matchDay: number) => void;
   isSimulatingMatchDay?: boolean;
   onTransitionSeason?: (seasonId: string) => void;
   isTransitioningSeason?: boolean;
@@ -114,7 +115,7 @@ export function LeagueOverviewTab({
   }, [standings]);
 
   const handleSimulate = () => {
-    if (!activeSeason || !nextMatchDay) return;
+    if (!activeSeason || !nextMatchDay || !onSimulateMatchDay) return;
     onSimulateMatchDay(activeSeason.id, nextMatchDay);
   };
 
@@ -167,7 +168,9 @@ export function LeagueOverviewTab({
                   {nextMatchDay ? `Round ${nextMatchDay}` : "Championship"}
                 </h3>
                 <p className="text-callout text-label-secondary">
-                  Simulate matches for this round to update standings and results.
+                  {onSimulateMatchDay
+                    ? "Simulate matches for this round to update standings and results."
+                    : "The league's manager simulates each round."}
                 </p>
 
                 {nextMatchIxTime && (
@@ -176,24 +179,26 @@ export function LeagueOverviewTab({
                   </div>
                 )}
 
-                <Button
-                  onClick={handleSimulate}
-                  disabled={isSimulatingMatchDay}
-                  size="lg"
-                  className="w-full"
-                >
-                  {isSimulatingMatchDay ? (
-                    <>
-                      <Loader2 className="animate-spin" />
-                      <span>Simulating...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Play className="fill-current" />
-                      <span>Simulate Round (Space)</span>
-                    </>
-                  )}
-                </Button>
+                {onSimulateMatchDay && (
+                  <Button
+                    onClick={handleSimulate}
+                    disabled={isSimulatingMatchDay}
+                    size="lg"
+                    className="w-full"
+                  >
+                    {isSimulatingMatchDay ? (
+                      <>
+                        <Loader2 className="animate-spin" />
+                        <span>Simulating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="fill-current" />
+                        <span>Simulate Round (Space)</span>
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             ) : latestSeason?.status === "completed" ? (
               <div className="space-y-3">
