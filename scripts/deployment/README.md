@@ -21,7 +21,7 @@ The repository consolidates production deployment tooling behind a single canoni
    - Production service lifecycle is managed on the VPS via PM2 (`pm2 startOrReload ecosystem.config.cjs`, called from `deploy-production.sh`).
    - Maps standalone instance is managed via `ecosystem.ixworld.config.cjs`; the standalone WebSocket backend (`ws-backend.mjs`, PM2 `ixstats-ws`) and cron runner (`cron-runner.mjs`, PM2 `ixstats-cron`) run as separate processes.
    - The `ecosystem*.config.cjs` files are server-local (git-ignored). [`ecosystem.config.example.cjs`](../../ecosystem.config.example.cjs) is the tracked template (`ixstats-cron`, `ixstats-ws`, `ixstats-ixtwitter`). `deploy-production.sh` fails if the PM2 reload fails, and warns if the file is missing.
-   - Node process runs standalone on port 3550 with basePath `/projects/ixstates`.
+   - Node process runs standalone on port 3550 with basePath `/projects/ixstates`. `next.config.js` is server-local (git-ignored) as well; [`next.config.example.js`](../../next.config.example.js) is its tracked template, so mirror changes to the server copy there.
    - Env files: `server.mjs`, `ws-backend.mjs` and `cron-runner.mjs` load them through `load-env.mjs` in the order `.env.production.local`, `.env.local`, `.env.production`, `.env` (first file to set a key wins; real env vars always win). `start-production.sh` sources `.env.production` and then `.env.production.local`, so the secrets file wins there too.
 
 3. **Schema Migration Strategy**:

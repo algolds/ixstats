@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { PrismaClient } from "@prisma/client";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 
 const cardImageTypeSchema = z.enum([
@@ -17,24 +17,6 @@ const cardImageTypeSchema = z.enum([
   "defense",
   "diplomacy",
 ]);
-
-/** The signed-in user must belong to the country whose card images they change. */
-async function requireOwnedCountry(
-  ctx: { auth?: { userId?: string | null } | null; db: PrismaClient },
-  countryId: string
-) {
-  const clerkUserId = ctx.auth?.userId;
-  if (!clerkUserId) {
-    throw new Error("Not authenticated");
-  }
-
-  const country = await ctx.db.country.findFirst({
-    where: { id: countryId, users: { some: { clerkUserId } } },
-  });
-  if (!country) {
-    throw new Error("Country not found or you do not have permission to modify it");
-  }
-}
 
 export const cardImagesRouter = createTRPCRouter({
   /**
@@ -94,7 +76,7 @@ export const cardImagesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      await requireOwnedCountry(ctx, input.countryId);
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       // Upsert the card image
       const { imageUrl, isCustom, presetKey } = input;
@@ -120,7 +102,7 @@ export const cardImagesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      await requireOwnedCountry(ctx, input.countryId);
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       // Delete the card image
       await ctx.db.cardBackgroundImage.delete({

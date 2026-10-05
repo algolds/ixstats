@@ -128,6 +128,22 @@ describe("wikios stash identity", () => {
     expect(mockDb.stash.create).not.toHaveBeenCalled();
   });
 
+  it("does not stash into a named stash that belongs to someone else", async () => {
+    mockDb.stash.findFirst.mockResolvedValue(null);
+    mockDb.stashItem.upsert.mockClear();
+    const caller = createCallerFactory(wikiosStashRouter)(ctx());
+
+    await expect(caller.stashPage({ pageTitle: "Caphiria", stashId: "other" })).rejects.toThrow(
+      "Stash not found"
+    );
+    expect(mockDb.stash.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "other", userId: { in: ["db_user_1", "user_clerk_1"] } },
+      })
+    );
+    expect(mockDb.stashItem.upsert).not.toHaveBeenCalled();
+  });
+
   it("does not delete a stash that belongs to someone else", async () => {
     mockDb.stash.findUnique.mockResolvedValue({
       id: "other",

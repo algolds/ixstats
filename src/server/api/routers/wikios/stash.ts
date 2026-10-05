@@ -109,6 +109,13 @@ export const wikiosStashRouter = createTRPCRouter({
       if (!stashId) {
         const defaultStash = await getOrCreateDefaultStash(db, userIds, userId);
         stashId = defaultStash.id;
+      } else {
+        // A named stash must be one of the caller's own.
+        const owned = await db.stash.findFirst({
+          where: { id: stashId, userId: { in: userIds } },
+          select: { id: true },
+        });
+        if (!owned) throw new Error("Stash not found");
       }
       const pageSlug = encodeURIComponent(input.pageTitle.replace(/ /g, "_"));
       let resolvedType = input.contentType;

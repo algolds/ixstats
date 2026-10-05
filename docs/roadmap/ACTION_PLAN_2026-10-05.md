@@ -27,8 +27,9 @@ All five phases were worked the same day on `rose-garden`; the commits and merge
   WikiOS edit integrity, uploads and the `wikios` rate limits wait on it), D2 (defense force structure).
 - **Signed off by the owner (2026-10-05):** annual policy upkeep, the stability policy scale (×10), Vexel attach (now
   renders on save), notification preferences applying to saved rows, and the earnings kill switch also blocking
-  auctions, trades and junking. Crafting is deprecated for now (the workbench and recipes are off). D6 and "failed crafting rolls consume materials": moot: crafting deprecated 2026-10-05.
-- **Engineering still open:** typecheck `src/tests` (≈890 errors); Vexel PNG rendering; blocking inside group chats;
+  auctions, trades and junking. Crafting is deprecated for now (the workbench and recipes are off); D6 and "failed
+  crafting rolls consume materials" are moot.
+- **Engineering still open:** Vexel PNG rendering;
   crisis-event producer and meeting decisions on the event spine (M4); M3–M7 as planned. The live backlog is
   [backlog.md](backlog.md).
 - **Ops still open:** deploy 1.4 (runbook), Redis on in production, remove the nginx CSP override, run the web process

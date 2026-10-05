@@ -106,7 +106,7 @@ code-health track runs throughout.
 | Branch model (D13, decided): promote `rose-garden` → `development` → `master`; `master` stays production and the default branch; Dependabot targets `rose-garden` (done); obsolete Dependabot PRs closed (done) | PL-14, PL-15 | S | Partial: CI and the security scan run on `master`, `development` and `rose-garden`; `dependabot.yml` cleaned up (2026-10-05). Dependabot and scheduled workflows read config from `master` only, so these take effect after promotion |
 | Fix or delete the failing scheduled workflows (security scan → `bun audit`; image validation; Gemini triage and review need `GEMINI_API_KEY` or removal) | PL-14 | S | Partial: the security scan uses `bun audit` and `image-validation.yml` is deleted (2026-10-05); Gemini (D15) open |
 | Fix the 5 rules-of-hooks errors, set `--max-warnings` to ~160, make `lint:strict` blocking | PL-17 | S | ✅ Done (2026-10-05): 0 errors and 25 warnings; `--max-warnings 25` and the CI step is blocking |
-| Typecheck tests, `proxy.ts`, `instrumentation.ts`, `content` and `scripts/` in CI; add `typecheck:db` | PL-16 | S | Mostly done (2026-10-05): `typecheck:db` and `typecheck:scripts` (scripts, prisma seeds, proxy, instrumentation, content) run in CI. Left: `src/tests` (≈890 type errors) — ratchet it down before adding it |
+| Typecheck tests, `proxy.ts`, `instrumentation.ts`, `content` and `scripts/` in CI; add `typecheck:db` | PL-16 | S | ✅ Done (2026-10-05): `typecheck:db`, `typecheck:scripts` (scripts, prisma seeds, proxy, instrumentation, content) and `typecheck:tests` run in CI and in `bun run typecheck` |
 | Fix the 7 package scripts that fail on import | PL-5 | S | ✅ Done (2026-10-05); the `check:script-imports` CI step keeps them working |
 | `audit:arch`: split the 15 files over the ceiling or add them to `RELAXED_FILES`, then make it blocking | PF§6 | M | ✅ Done (2026-10-05): the oversized files are split (or the navigation table relaxed; the WikiOS templates router frozen until #52), no cross-router imports remain, and the CI step is blocking |
 
@@ -116,7 +116,7 @@ code-health track runs throughout.
 | Deploy rose-garden via [the runbook](../operations/deploy-rose-garden-2026-09.md) (Realms schema, backfill, Eurth) | runbook | M | Open (ops) |
 | Redis in production (required for realtime across processes and for shared rate limits) | PF§5 | S | Partial: `/api/health` reports Redis state and `verify:environment` recommends `REDIS_ENABLED` in production (2026-10-05); enabling it on the server is ops |
 | Market WebSocket Redis bridge | PL-4 | M | ✅ Done (2026-10-05, `src/server/market-broadcast-bridge.ts`) |
-| Commit `ecosystem.config.example.cjs`; run the web process under PM2 | PL-12 | S | Partial: the template (cron, ws, ixtwitter) is committed and a failed PM2 reload fails the deploy (2026-10-05); the web app still runs from `start-production.sh` |
+| Commit `ecosystem.config.example.cjs`; run the web process under PM2 | PL-12 | S | Partial: the template (cron, ws, ixtwitter) is committed and a failed PM2 reload fails the deploy (2026-10-05); `next.config.js` stays per-environment and git-ignored, with `next.config.example.js` as its committed template (2026-10-05). Left (ops): the web app still runs from `start-production.sh` |
 | Rewrite the rollback script around tags and the real restart | PL-13 | S | ✅ Done (2026-10-05): `rollback-deployment.sh` checks out a rollback branch from the `master` remote, optionally restores a pre-deploy dump and redeploys |
 | CSP: ~~propagate the nonce on request headers~~ (done, [#46](https://github.com/algolds/ixstats/pull/46)) → remove the nginx override and check for violations → drop `'unsafe-inline'` | PL-2, PF§1 | M | Partial: production no longer allows `http:` images or `ws:` sockets (2026-10-05); nginx override and `'unsafe-inline'` remain |
 
@@ -329,8 +329,9 @@ Run throughout, preferably in PRs that already touch the area.
   Needs M0 backups and Decisions D1, D2, D5 and D9.
 - **Dead code:** ✅ MC-18 is closed: a re-check on 2026-10-05 (static, dynamic and string imports) found every file the audit listed already deleted. PL-18, WK-18 and SL-25 are done (2026-10-05), as is AT-16. (The dead intelligence calculator, `calculator.ts` and
   `live-data-transformers.ts`, is already deleted; the models it alone wrote remain in the schema.)
-- **Tests:** router tests for the 35 untested routers, largest first (thinkpages, lore-cards, national-issues, forum, blurbs,
-  card-market).
+- **Tests:** every one of the 69 routers has a router-level test (2026-10-05). Left: the 63 sub-router files no test
+  imports, largest first (`wikios/templates`, `wikios/page-content`, `admin/worldEvents`, `admin/wiki`,
+  `diplomaticScenarios/scenarios`).
 - **Size ratchet:** reduce the 52 files of 800+ lines; `audit:arch` becomes blocking in M1. The baseline holds real
   line counts since 2026-10-05, so a file can no longer grow past its recorded size unnoticed.
 - **Refactors:** a service layer over direct `ctx.db` in 199 router files; one shared CivCap module (MC-21).
@@ -357,7 +358,7 @@ Owner calls that block or reshape roadmap items. For each, the recommendation fr
 | D9 | Unused Prisma models | Approve the drop list in [backlog §5](backlog.md#5-dead-schema) (57 models) | Approve after M0 backups | Code health |
 | D10 | Narrator/LLM | Wire it into issues and decisions, or retire it | Retire until M4 needs it | WK-12 |
 | D11 | ScheduledChange pipeline | Use it for impact-delayed edits, or delete it | Delete unless M4 needs delays | MC-6 |
-| D12 | Forum moderation | In-app, or XenForo only | XenForo only; fix the help copy | WK-20 |
+| D12 | Forum moderation | **Decided:** XenForo only; the forum help article says so (WK-20 done, 2026-10-05) | — | WK-20 |
 | D13 | Branch model | **Decided (2026-09-30):** `rose-garden` is the maintainer's nightly branch, `development` the junior devs' stable-but-experimental branch, `master` production; work is promoted up by merge PRs ([contributing.md](../processes/contributing.md#branches)) | — | PL-14 |
 | D14 | Vercel | Keep the `vercel.json` disable, or disconnect the integration | Disconnect | — |
 | D15 | Gemini workflows | Add `GEMINI_API_KEY`, or delete the workflows | Delete (Codex review already runs) | PL-14 |

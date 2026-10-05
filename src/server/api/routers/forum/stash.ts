@@ -4,6 +4,7 @@
 // and handles account linking + profile sync.
 
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -31,7 +32,14 @@ export const forumStashRouter = createTRPCRouter({
       const { db } = await import("~/server/db");
       // Get or create the user's default stash
       let targetStashId = input.stashId;
-      if (!targetStashId) {
+      if (targetStashId) {
+        // A named stash must be one of the caller's own.
+        const owned = await db.stash.findFirst({
+          where: { id: targetStashId, userId: { in: requireWikiUserIds(ctx) } },
+          select: { id: true },
+        });
+        if (!owned) throw new TRPCError({ code: "NOT_FOUND", message: "Stash not found" });
+      } else {
         const defaultStash = await db.stash.findFirst({
           where: { userId: { in: requireWikiUserIds(ctx) }, isDefault: true },
         });
@@ -80,7 +88,11 @@ export const forumStashRouter = createTRPCRouter({
 
       if (input.stashId) {
         await db.stashItem.deleteMany({
-          where: { stashId: input.stashId, pageTitle },
+          where: {
+            stashId: input.stashId,
+            pageTitle,
+            stash: { userId: { in: requireWikiUserIds(ctx) } },
+          },
         });
       } else {
         // Remove from all user's stashes
