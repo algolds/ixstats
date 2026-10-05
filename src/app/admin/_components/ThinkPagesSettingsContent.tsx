@@ -7,14 +7,14 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
-import { Switch } from "~/components/ui/switch";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Globe, FloppyDisk as Save, RssFeed as Rss, Send } from "iconoir-react";
+import { Globe, FloppyDisk as Save, RssFeed as Rss } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
 import { Card } from "~/components/ui/card";
+import { ThinkPagesDiscordFeedCard } from "./ThinkPagesDiscordFeedCard";
 
 export function ThinkPagesSettingsContent() {
   usePageTitle({ title: "Admin - ThinkPages Panel" });
@@ -23,7 +23,7 @@ export function ThinkPagesSettingsContent() {
     <div className="space-y-6">
       <PageHeader
         title="ThinkPages settings"
-        subtitle="Feed properties, character limits, auto-news election logs and Discord feed mirroring."
+        subtitle="Account limits and the Discord feed mirror."
       />
 
       <Tabs defaultValue="platform" className="w-full">
@@ -49,7 +49,7 @@ export function ThinkPagesSettingsContent() {
         </TabsContent>
 
         <TabsContent value="discord" className="mt-4 focus-visible:outline-none">
-          <DiscordMirrorTab />
+          <ThinkPagesDiscordFeedCard />
         </TabsContent>
       </Tabs>
     </div>
@@ -142,9 +142,7 @@ function PlatformSettingsTab() {
         <div className="border-separator flex items-center justify-between border-b pb-4">
           <div>
             <h3 className="text-label text-caption">ThinkPages Platform Settings</h3>
-            <p className="text-label-secondary text-footnote mt-0.5">
-              Limits, automated news publishing, and content moderation rules
-            </p>
+            <p className="text-label-secondary text-footnote mt-0.5">Per-user account limit</p>
           </div>
           <Button size="sm" onClick={handleSave} disabled={saveMutation.isPending || configLoading}>
             <Save className="mr-2 h-3.5 w-3.5" />
@@ -169,122 +167,8 @@ function PlatformSettingsTab() {
               max={100}
             />
           </div>
-
-          <div className="border-separator bg-fill-3 rounded-row flex flex-col justify-between gap-3 border p-4 sm:flex-row sm:items-center">
-            <div>
-              <Label className="text-label text-caption">Post character length cap</Label>
-              <p className="text-label-secondary text-footnote">
-                Maximum allowed character length for post content (excluding blurb header tags)
-              </p>
-            </div>
-            <Input
-              type="number"
-              value={settings.maxCharLength}
-              onChange={(e) => handleToggle("maxCharLength", parseInt(e.target.value) || 280)}
-              className="rounded-control-sm md:text-footnote h-(--control-height-sm) w-28 font-mono"
-              min={280}
-              max={10000}
-            />
-          </div>
-
-          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
-            <div>
-              <Label className="text-label text-caption">Election Results Auto-News</Label>
-              <p className="text-label-secondary text-footnote">
-                Automatically publish detailed election outcomes to the ThinkPages feed
-              </p>
-            </div>
-            <Switch
-              checked={settings.autoNewsElections}
-              onCheckedChange={(checked) => handleToggle("autoNewsElections", checked)}
-              className="scale-90"
-            />
-          </div>
-
-          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
-            <div>
-              <Label className="text-label text-caption">Passed Directives Auto-News</Label>
-              <p className="text-label-secondary text-footnote">
-                Broadcast newly declared national directives and policy milestones
-              </p>
-            </div>
-            <Switch
-              checked={settings.autoNewsPolicies}
-              onCheckedChange={(checked) => handleToggle("autoNewsPolicies", checked)}
-              className="scale-90"
-            />
-          </div>
-
-          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
-            <div>
-              <Label className="text-label text-caption">Media & card attachments</Label>
-              <p className="text-label-secondary text-footnote">
-                Allow attaching vault cards, flags, and image links in replies
-              </p>
-            </div>
-            <Switch
-              checked={settings.commentAttachments}
-              onCheckedChange={(checked) => handleToggle("commentAttachments", checked)}
-              className="scale-90"
-            />
-          </div>
         </div>
       </Card>
     </div>
-  );
-}
-
-// 2. Discord Mirror Tab
-
-function DiscordMirrorTab() {
-  const notify = useNotify();
-  const [webhookUrl, setWebhookUrl] = useState("");
-  const [isSending, setIsSending] = useState(false);
-
-  const handleTestWebhook = () => {
-    if (!webhookUrl) {
-      notify.error("Validation Error", "Please provide a valid Discord Webhook URL.");
-      return;
-    }
-
-    setIsSending(true);
-    setTimeout(() => {
-      setIsSending(false);
-      notify.success("Test Dispatched", "Sample broadcast was sent to the Discord channel.");
-    }, 600);
-  };
-
-  return (
-    <Card className="space-y-5 p-5">
-      <div>
-        <h3 className="text-label text-caption">Discord ThinkPages Mirror</h3>
-        <p className="text-label-secondary text-footnote mt-0.5">
-          Mirror trending thinkpage posts and breaking news bulletins directly to a Discord webhook
-          channel
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        <div>
-          <Label className="text-label text-caption mb-2 block">Discord Webhook URL</Label>
-          <Input
-            value={webhookUrl}
-            onChange={(e) => setWebhookUrl(e.target.value)}
-            placeholder="https://discord.com/api/webhooks/..."
-            className="rounded-control-sm md:text-footnote h-(--control-height-sm) font-mono"
-          />
-        </div>
-
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleTestWebhook}
-          disabled={isSending || !webhookUrl}
-        >
-          <Send className="mr-2 h-3.5 w-3.5" />
-          {isSending ? "Sending Test..." : "Send Test Broadcast"}
-        </Button>
-      </div>
-    </Card>
   );
 }

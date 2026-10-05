@@ -44,6 +44,7 @@ interface EnhancedAccountManagerProps {
   inModal?: boolean;
 }
 
+/** Default per-user account limit until the admin-configured one loads. */
 const MAX_ACCOUNTS = 25;
 
 const TYPE_STYLES = {
@@ -193,6 +194,7 @@ export function EnhancedAccountManager({
   const notify = useNotify();
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [favoriteAccounts, setFavoriteAccounts] = useState<string[]>([]);
+  const { data: maxAccounts = MAX_ACCOUNTS } = api.thinkpages.getAccountLimit.useQuery();
 
   const updateAccountMutation = api.thinkpages.updateAccount.useMutation({
     onSuccess: () => {
@@ -288,7 +290,7 @@ export function EnhancedAccountManager({
         </AnimatePresence>
       </div>
 
-      {isOwner && accounts.length < MAX_ACCOUNTS && (
+      {isOwner && accounts.length < maxAccounts && (
         <Button
           onClick={(e) => {
             e.preventDefault();
@@ -301,7 +303,7 @@ export function EnhancedAccountManager({
           type="button"
         >
           <Plus aria-hidden="true" />
-          Create New Account ({MAX_ACCOUNTS - accounts.length} remaining)
+          Create New Account ({maxAccounts - accounts.length} remaining)
         </Button>
       )}
 
@@ -336,7 +338,7 @@ export function EnhancedAccountManager({
         <div className="flex items-center justify-between">
           <h3 className="text-title-3 text-label">Account manager</h3>
           <Badge variant="outline" className="tabular-nums">
-            {accounts.length}/{MAX_ACCOUNTS}
+            {accounts.length}/{maxAccounts}
           </Badge>
         </div>
         <PreText className="text-body text-label-secondary">
