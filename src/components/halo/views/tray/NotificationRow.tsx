@@ -137,7 +137,6 @@ export function NotificationRow({
 
             <div className="flex shrink-0 flex-col items-end gap-1">
               <span className="text-label-secondary text-caption tabular-nums">
-                // oxlint-disable-next-line
                 {relTime(n.timestamp || n.createdAt || Date.now())}
               </span>
               <motion.div animate={{ rotate: isExpanded ? 90 : 0 }} transition={{ duration: 0.15 }}>
