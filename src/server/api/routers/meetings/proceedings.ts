@@ -10,6 +10,7 @@ import {
 } from "~/server/api/trpc";
 import { assertCountryResourceWriteAccess } from "~/server/shared/country-authorization";
 import { resolveMeetingCountryId } from "~/server/shared/country-resource-owner";
+import { CountryEventSpine } from "~/lib/activity";
 
 /** A meeting in one of these statuses is over and cannot be concluded (again). */
 const CLOSED_MEETING_STATUSES = ["completed", "cancelled"];
@@ -74,7 +75,9 @@ export const meetingsProceedingsRouter = createTRPCRouter({
   /**
    * Conclude a meeting: record the overall outcome (`CabinetMeeting.notes`) and one
    * MeetingDecision per decided agenda item, set each item's status and outcome, and mark the
-   * meeting completed. Host country owner or privileged roles only.
+   * meeting completed. Each decision is also written to the host country's event spine as a
+   * ledger entry (no stat change; decisions do not become policies). Host country owner or
+   * privileged roles only.
    */
   concludeMeeting: lightMutationProcedure
     .input(
@@ -94,14 +97,16 @@ export const meetingsProceedingsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      await assertCountryResourceWriteAccess(
-        ctx,
-        await resolveMeetingCountryId(ctx.db, input.meetingId),
-        "Meeting"
-      );
+      const countryId = await resolveMeetingCountryId(ctx.db, input.meetingId);
+      await assertCountryResourceWriteAccess(ctx, countryId, "Meeting");
       const meeting = await ctx.db.cabinetMeeting.findUnique({
         where: { id: input.meetingId },
-        select: { id: true, status: true, agendaItems: { select: { id: true, title: true } } },
+        select: {
+          id: true,
+          status: true,
+          title: true,
+          agendaItems: { select: { id: true, title: true } },
+        },
       });
       if (!meeting) throw new TRPCError({ code: "NOT_FOUND", message: "Meeting not found" });
       if (CLOSED_MEETING_STATUSES.includes(meeting.status)) {
@@ -120,7 +125,8 @@ export const meetingsProceedingsRouter = createTRPCRouter({
         seen.add(d.agendaItemId);
       }
 
-      return ctx.db.$transaction(async (tx) => {
+      const spineEntries: { decisionId: string; description: string }[] = [];
+      const concluded = await ctx.db.$transaction(async (tx) => {
         // Guarded on status so two concurrent submissions cannot both conclude it.
         const { count } = await tx.cabinetMeeting.updateMany({
           where: { id: meeting.id, status: { notIn: CLOSED_MEETING_STATUSES } },
@@ -133,7 +139,7 @@ export const meetingsProceedingsRouter = createTRPCRouter({
         for (const d of input.decisions) {
           const title = agendaTitles.get(d.agendaItemId)!;
           const outcome = d.notes || DECISION_LABEL[d.decision];
-          await tx.meetingDecision.create({
+          const decision = await tx.meetingDecision.create({
             data: {
               meetingId: meeting.id,
               agendaItemId: d.agendaItemId,
@@ -146,6 +152,12 @@ export const meetingsProceedingsRouter = createTRPCRouter({
             where: { id: d.agendaItemId },
             data: { status: AGENDA_ITEM_STATUS[d.decision], outcome },
           });
+          spineEntries.push({
+            decisionId: decision.id,
+            description:
+              `Cabinet meeting "${meeting.title}": ${title} ${DECISION_LABEL[d.decision].toLowerCase()}` +
+              (d.notes ? ` (${d.notes})` : ""),
+          });
         }
 
         return tx.cabinetMeeting.findUnique({
@@ -153,5 +165,20 @@ export const meetingsProceedingsRouter = createTRPCRouter({
           include: { agendaItems: true, decisions: true },
         });
       });
+
+      // Best-effort after commit: the spine logs (and swallows) a failed ledger write.
+      if (countryId) {
+        for (const entry of spineEntries) {
+          await CountryEventSpine.recordCountryEvent({
+            db: ctx.db,
+            countryId,
+            sourceType: "meeting",
+            sourceId: entry.decisionId,
+            description: entry.description,
+          });
+        }
+      }
+
+      return concluded;
     }),
 });

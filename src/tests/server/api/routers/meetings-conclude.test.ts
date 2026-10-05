@@ -15,6 +15,7 @@ function meetingsDb(countryId: string, status = "scheduled") {
       id: "m1",
       countryId,
       status,
+      title: "Spring cabinet",
       notes: null as string | null,
       completedAt: null as Date | null,
     },
@@ -40,10 +41,12 @@ function meetingsDb(countryId: string, status = "scheduled") {
     },
     meetingDecision: {
       create: jest.fn(async ({ data }: { data: Record<string, unknown> }) => {
-        state.decisions.push(data);
-        return data;
+        const row = { id: `d${state.decisions.length + 1}`, ...data };
+        state.decisions.push(row);
+        return row;
       }),
     },
+    countryChangeLog: { create: jest.fn(async () => ({})) },
     meetingAgendaItem: {
       update: jest.fn(async ({ where, data }: { where: { id: string }; data: object }) => {
         const item = state.agendaItems.find((a) => a.id === where.id)!;
@@ -96,6 +99,35 @@ describe("meetings.concludeMeeting", () => {
       "deferred",
     ]);
     expect(result?.decisions).toHaveLength(2);
+
+    // Each decision is written to the host country's event spine as a ledger entry.
+    expect(db.countryChangeLog.create.mock.calls.map((c: any[]) => c[0].data)).toEqual([
+      expect.objectContaining({
+        countryId: CALLER_COUNTRY,
+        sourceType: "meeting",
+        sourceId: "d1",
+        description: 'Cabinet meeting "Spring cabinet": Budget review approved',
+      }),
+      expect.objectContaining({
+        countryId: CALLER_COUNTRY,
+        sourceType: "meeting",
+        sourceId: "d2",
+        description: 'Cabinet meeting "Spring cabinet": Port expansion deferred (Needs costing)',
+      }),
+    ]);
+  });
+
+  it("writes nothing to the spine when the meeting cannot be concluded", async () => {
+    const db = meetingsDb(CALLER_COUNTRY, "completed");
+    const caller = meetingsRouter.createCaller(createIdorContext(db));
+    await expect(
+      caller.concludeMeeting({
+        meetingId: "m1",
+        outcome: "Again",
+        decisions: [{ agendaItemId: "a1", decision: "approved" }],
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(db.countryChangeLog.create).not.toHaveBeenCalled();
   });
 
   it("rejects concluding another country's meeting", async () => {
