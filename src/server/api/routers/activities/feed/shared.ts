@@ -1,7 +1,7 @@
 // Feed-item builders shared by the global and following feeds.
 
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { formatPollForClient } from "../../thinkpages/post-utils";
+import { formatPollForClient } from "~/server/shared/thinkpages-post-utils";
 
 /** Poll with per-option vote counts, as both feeds include it. */
 export const POLL_INCLUDE = {

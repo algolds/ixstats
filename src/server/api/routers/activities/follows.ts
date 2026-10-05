@@ -10,7 +10,7 @@ import { globalCache } from "~/lib/cache";
 import {
   ensurePersonalAccount,
   findPersonalAccount,
-} from "~/server/api/routers/thinkpages/personal-account";
+} from "~/server/shared/thinkpages-personal-account";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 /** Persona follow input: the persona to follow, and optionally which of the caller's personas follows. */

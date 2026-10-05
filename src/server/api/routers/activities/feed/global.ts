@@ -5,7 +5,7 @@ import { getRecentChanges as getWikiBridgeRecentChanges } from "~/lib/wiki-os/ad
 import { getForumActivity } from "~/server/modules/forum";
 import { globalCache } from "~/lib/cache";
 import { hiddenThinkpagesAccountIds } from "~/server/shared/user-blocks";
-import { formatPollForClient } from "../../thinkpages/post-utils";
+import { formatPollForClient } from "~/server/shared/thinkpages-post-utils";
 import {
   activityFeedItem,
   countryFeedUser,

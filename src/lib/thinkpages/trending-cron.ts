@@ -4,7 +4,7 @@
  * trending hashtags to `TrendingTopic`, and reconciles the denormalised engagement counters
  * (`likeCount`, `replyCount`, `repostCount`) with the real rows.
  */
-import { resolveReactionCounts } from "~/server/api/routers/thinkpages/post-utils";
+import { resolveReactionCounts } from "~/server/shared/thinkpages-post-utils";
 import {
   TRENDING_CONFIG,
   computeTrendingTopics,

@@ -11,7 +11,7 @@ import {
   getRealmBoardAccess,
   groupPostTag,
   syncRealmBoardMembers,
-} from "~/server/api/routers/thinkpages/thinktanks/realm-board";
+} from "~/server/shared/realm-board";
 
 /** How far back "board activity" in the directory looks. */
 const BOARD_ACTIVITY_WINDOW_DAYS = 7;
