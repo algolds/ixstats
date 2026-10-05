@@ -30,6 +30,8 @@ import { useAuctionBid } from "~/hooks/marketplace/useAuctionBid";
 import { useAuctionWebSocket } from "~/hooks/marketplace/useAuctionWebSocket";
 import { CardDetailsModal } from "~/components/cards/display/CardDetailsModal";
 import type { CardInstance } from "~/types/cards-display";
+import { CardRarity } from "~/lib/cards/enums";
+import { getRarityConfig, CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { AuctionCardItem } from "./auctions/AuctionCardItem";
 import { CreateAuctionModal } from "./auctions/CreateAuctionModal";
@@ -131,7 +133,7 @@ export function VaultAuctionsTab() {
       id: c.id,
       title: c.title ?? "Unknown",
       description: c.description ?? "",
-      artwork: c.artwork ?? "/images/cards/placeholder-nation.png",
+      artwork: c.artwork ?? CARD_ARTWORK_PLACEHOLDER,
       artworkVariants: null,
       cardType: c.cardType as any,
       rarity: c.rarity as any,
@@ -217,12 +219,11 @@ export function VaultAuctionsTab() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All rarities</SelectItem>
-            <SelectItem value="COMMON">Common</SelectItem>
-            <SelectItem value="UNCOMMON">Uncommon</SelectItem>
-            <SelectItem value="RARE">Rare</SelectItem>
-            <SelectItem value="EPIC">Epic</SelectItem>
-            <SelectItem value="LEGENDARY">Legendary</SelectItem>
-            <SelectItem value="MYTHIC">Mythic</SelectItem>
+            {Object.values(CardRarity).map((rarity) => (
+              <SelectItem key={rarity} value={rarity}>
+                {getRarityConfig(rarity).label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select

@@ -22,6 +22,7 @@ import { api } from "~/trpc/react";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { formatDistanceToNow } from "date-fns";
 import { CardHolographicCover } from "../display/CardHolographicCover";
+import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
 
 /**
  * TradeNegotiation component props
@@ -85,7 +86,7 @@ function TradeSideCard({
                 title={ownership.cards.title}
               />
               <Image
-                src={ownership.cards.artwork || "/images/cards/placeholder-nation.png"}
+                src={ownership.cards.artwork || CARD_ARTWORK_PLACEHOLDER}
                 alt={ownership.cards.title}
                 fill
                 className="object-cover"

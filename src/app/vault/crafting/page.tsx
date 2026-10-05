@@ -5,6 +5,7 @@ import { api } from "~/trpc/react";
 import { CraftingWorkbench } from "~/components/cards/crafting/CraftingWorkbench";
 import type { CardInstance } from "~/types/cards-display";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
 
 export default function VaultCraftingPage() {
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
@@ -21,7 +22,7 @@ export default function VaultCraftingPage() {
       isLocked: o.isLocked ?? false,
       title: o.cards.title,
       description: o.cards.description || "",
-      artwork: o.cards.artwork || "/images/cards/placeholder-nation.png",
+      artwork: o.cards.artwork || CARD_ARTWORK_PLACEHOLDER,
       artworkVariants: o.cards.artworkVariants || null,
       cardType: o.cards.cardType,
       rarity: o.cards.rarity,

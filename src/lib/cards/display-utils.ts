@@ -24,6 +24,9 @@ import {
 import { computeSpecialStats, type SpecialStats } from "~/lib/country-geo";
 import { rgbToHex } from "~/lib/color";
 
+/** Artwork shown when a card has none (a tracked asset in public/). */
+export const CARD_ARTWORK_PLACEHOLDER = "/images/placeholder-flag.svg";
+
 /**
  * Rarity constants (matching database string values)
  */
