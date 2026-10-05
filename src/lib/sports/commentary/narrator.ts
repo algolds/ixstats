@@ -2,6 +2,21 @@ import type { EventTraceStep } from "../resolver";
 import { isAllowedLlmApiUrl } from "~/lib/narrator/llm-url";
 import { chatCompletion, resolveLlmEndpoint, type LLMConfig } from "~/lib/narrator/llm-chat";
 
+/**
+ * A caller-supplied config is honoured only when it brings its own API key and,
+ * if it names an endpoint, that endpoint is an allowlisted LLM host. Otherwise it
+ * is dropped and the SPORTS_LLM_* environment applies, so the server's key is
+ * never sent to a URL the caller chose (SSRF / key exfiltration).
+ */
+export function sanitizeLlmConfig(config?: LLMConfig): LLMConfig | undefined {
+  if (!config?.apiKey) return undefined;
+  if (config.apiUrl && !isAllowedLlmApiUrl(config.apiUrl)) {
+    console.warn("[sports-narrator] Custom API URL is invalid or its host is not allowed.");
+    return undefined;
+  }
+  return config;
+}
+
 const isLlmEnabled = (config?: LLMConfig) =>
   config?.apiKey ? true : process.env.SPORTS_LLM_COMMENTARY === "true";
 
@@ -85,9 +100,10 @@ export async function narrateEvents(
   options: { sport: string; config?: LLMConfig }
 ): Promise<string[]> {
   const fallback = events.map((e) => e.description);
-  if (!isLlmEnabled(options.config) || events.length === 0) return fallback;
+  const config = sanitizeLlmConfig(options.config);
+  if (!isLlmEnabled(config) || events.length === 0) return fallback;
 
-  const llm = resolveSportsLlm(options.config);
+  const llm = resolveSportsLlm(config);
   if (!llm.apiKey) {
     console.warn(
       "[sports-narrator] SPORTS_LLM_API_KEY is not configured; falling back to templates."
@@ -125,19 +141,9 @@ async function queryLLM(
   systemPrompt: string,
   userPrompt: string,
   jsonMode = false,
-  config?: LLMConfig
+  rawConfig?: LLMConfig
 ): Promise<string> {
-  // Prevent SSRF and API key exfiltration
-  if (config?.apiUrl) {
-    if (!config.apiKey) {
-      console.warn("[sports-narrator] Custom API URL provided without matching API key.");
-      return "";
-    }
-    if (!isAllowedLlmApiUrl(config.apiUrl)) {
-      console.warn("[sports-narrator] Custom API URL is invalid or its host is not allowed.");
-      return "";
-    }
-  }
+  const config = sanitizeLlmConfig(rawConfig);
   if (!isLlmEnabled(config)) return "";
 
   const llm = resolveSportsLlm(config);
@@ -300,20 +306,14 @@ Champion: ${championName}`;
  * Queries a Kokoro TTS Hugging Face Inference Endpoint or Space.
  * Falls back to null on failure.
  */
-export async function generateAudioBroadcast(
-  commentary: string[],
-  config?: {
-    apiKey?: string;
-    apiUrl?: string;
-  }
-): Promise<string | null> {
-  const isEnabled = process.env.SPORTS_TTS_ENABLED === "true" || !!config?.apiUrl;
-  if (!isEnabled || commentary.length === 0) {
+export async function generateAudioBroadcast(commentary: string[]): Promise<string | null> {
+  // Server configuration only: the TTS key must never be sent to a caller-chosen URL.
+  if (process.env.SPORTS_TTS_ENABLED !== "true" || commentary.length === 0) {
     return null;
   }
 
-  const apiUrl = config?.apiUrl || process.env.SPORTS_TTS_API_URL;
-  const apiKey = config?.apiKey || process.env.SPORTS_TTS_API_KEY;
+  const apiUrl = process.env.SPORTS_TTS_API_URL;
+  const apiKey = process.env.SPORTS_TTS_API_KEY;
 
   if (!apiUrl) {
     console.warn("[sports-narrator] SPORTS_TTS_API_URL is not configured.");

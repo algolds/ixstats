@@ -85,3 +85,57 @@ describe("viewerCanManage on public league/match queries", () => {
     expect(result.viewerCanManage).toBe(true);
   });
 });
+
+describe("match commentary regeneration", () => {
+  function dbWithCommentary() {
+    const db = mockDb();
+    db.sportMatch.findUnique.mockResolvedValue({
+      id: "match_1",
+      status: "completed",
+      matchStats: {
+        trace: [{ t: 1, type: "tactical", description: "Kick-off" }],
+        commentary: ["Kick-off!"],
+      },
+      season: { ...season, league: { ...league, sportPreset: "soccer" } },
+    });
+    return db;
+  }
+
+  it("serves cached commentary to anyone without regenerating", async () => {
+    const db = dbWithCommentary();
+    await expect(
+      callerAs(OTHER_DB_ID, db).generateMatchCommentary({ matchId: "match_1" })
+    ).resolves.toEqual({ commentary: ["Kick-off!"] });
+    expect(db.sportMatch.update).not.toHaveBeenCalled();
+  });
+
+  it("refuses a forced regenerate from a user who does not manage the league", async () => {
+    const db = dbWithCommentary();
+    await expect(
+      callerAs(OTHER_DB_ID, db).generateMatchCommentary({
+        matchId: "match_1",
+        force: true,
+        config: { apiUrl: "https://attacker.example/collect" },
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(db.sportMatch.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("sports admin endpoints require an admin", () => {
+  it("getAdminGlobalStats rejects an ordinary user", async () => {
+    await expect(callerAs(OTHER_DB_ID, mockDb()).getAdminGlobalStats()).rejects.toThrow(
+      /Admin privileges required/
+    );
+  });
+
+  it("testLLMNarrator rejects an ordinary user", async () => {
+    await expect(
+      callerAs(OTHER_DB_ID, mockDb()).testLLMNarrator({
+        sport: "soccer",
+        events: ["Goal"],
+        config: { apiUrl: "https://attacker.example/collect" },
+      })
+    ).rejects.toThrow(/Admin privileges required/);
+  });
+});

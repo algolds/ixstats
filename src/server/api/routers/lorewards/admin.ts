@@ -1,11 +1,6 @@
 import type { LorewardEntry } from "@prisma/client";
 import { z } from "zod/v4";
-import {
-  createTRPCRouter,
-  publicProcedure,
-  protectedProcedure,
-  adminProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import * as fs from "fs";
 import { fullSync, scoreDailyWikiOS } from "~/lib/lorewards";
@@ -121,7 +116,7 @@ export const lorewardsAdminRouter = createTRPCRouter({
     }),
 
   /** Cross-validation history with agreement rate. */
-  getCrossValidationHistory: publicProcedure
+  getCrossValidationHistory: adminProcedure
     .input(
       z.object({
         limit: z.number().min(1).max(100).default(30),
@@ -154,7 +149,7 @@ export const lorewardsAdminRouter = createTRPCRouter({
     }),
 
   /** Active Blacklist configuration */
-  getBlacklist: protectedProcedure.query(async () => {
+  getBlacklist: adminProcedure.query(async () => {
     try {
       const statePath = "/ixwiki/shared/bots/discord/lorewards-state.json";
       if (fs.existsSync(statePath)) {

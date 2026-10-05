@@ -62,4 +62,14 @@ describe("WK-9: Lorewards admin procedures", () => {
     await expect(caller.getBlacklist()).rejects.toThrow(/Authentication required/);
     warnSpy.mockRestore();
   });
+
+  it("does not serve the blacklist to an ordinary user", async () => {
+    await expect(userCaller().getBlacklist()).rejects.toThrow(/Admin privileges required/);
+  });
+
+  it("does not serve cross-validation history to an ordinary user", async () => {
+    await expect(userCaller().getCrossValidationHistory({ limit: 10, offset: 0 })).rejects.toThrow(
+      /Admin privileges required/
+    );
+  });
 });

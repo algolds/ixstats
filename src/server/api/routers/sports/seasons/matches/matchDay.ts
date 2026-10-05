@@ -49,7 +49,7 @@ function narrateInBackground(
       const dbConfig = await getGlobalLLMConfig(db);
       const commentary = await narrateEvents(trace, { sport, config: dbConfig });
       if (!commentary || commentary.length === 0) return;
-      const broadcastAudio = await generateAudioBroadcast(commentary, dbConfig);
+      const broadcastAudio = await generateAudioBroadcast(commentary);
       const latest = await db.sportMatch.findUnique({
         where: { id: matchId },
         select: { matchStats: true },

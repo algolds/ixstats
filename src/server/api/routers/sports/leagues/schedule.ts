@@ -3,13 +3,18 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+  rateLimitedPublicProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { persistSeasonSchedule } from "~/lib/sports";
 import { IxTime } from "~/lib/ixtime";
 import { recalculateStandings } from "./helpers";
 import { TEAM_BADGE } from "~/server/api/routers/sports/_shared";
-import { assertOwnsLeague } from "~/server/api/routers/sports/league-access";
+import { assertOwnsLeague, viewerCanManageLeague } from "~/server/api/routers/sports/league-access";
 
 export const leaguesScheduleRouter = createTRPCRouter({
   getSchedule: publicProcedure
@@ -190,7 +195,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
       }
     }),
 
-  generateMatchCommentary: publicProcedure
+  generateMatchCommentary: rateLimitedPublicProcedure
     .input(
       z.object({
         matchId: z.string(),
@@ -214,7 +219,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
           include: {
             season: {
               include: {
-                league: { select: { sportPreset: true } },
+                league: { select: { sportPreset: true, createdByUserId: true } },
               },
             },
           },
@@ -232,11 +237,17 @@ export const leaguesScheduleRouter = createTRPCRouter({
         }
 
         // Cache-first: commentary is deterministic per match, so serve the stored
-        // copy for free unless an owner explicitly forces a regenerate. This makes
+        // copy for free unless the league's manager forces a regenerate. This makes
         // reloads instant and bounds LLM cost to one call per match.
         const cached = stats.commentary as string[] | undefined;
-        if (!input.force && cached && cached.length > 0) {
-          return { commentary: cached };
+        if (cached && cached.length > 0) {
+          if (!input.force) return { commentary: cached };
+          if (!viewerCanManageLeague(ctx, match.season.league)) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Only the league's manager can regenerate commentary",
+            });
+          }
         }
 
         // Generating fresh commentary hits a paid LLM — gate it behind auth so
@@ -252,7 +263,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
           config: input.config,
         });
 
-        const broadcastAudio = await generateAudioBroadcast(commentary, input.config);
+        const broadcastAudio = await generateAudioBroadcast(commentary);
 
         // Save back to database
         const updatedStats = {
