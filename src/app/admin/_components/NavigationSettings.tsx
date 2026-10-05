@@ -12,7 +12,6 @@ import {
   EyeClosed as EyeOff,
   FloppyDisk as Save,
   Check,
-  Shield,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -23,6 +22,7 @@ export function NavigationSettings() {
     showWikiTab: true,
     showCardsTab: true,
     showLabsTab: true,
+    // No switches for these two: nothing reads them (Defense follows MyCountry Premium access).
     showIntelligenceTab: false,
     showDefenseTab: false,
     showMapsTab: true,
@@ -187,64 +187,6 @@ export function NavigationSettings() {
             id="labs-tab"
             checked={localSettings.showLabsTab}
             onCheckedChange={(checked) => handleToggle("showLabsTab", checked)}
-          />
-        </div>
-
-        <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-control border-green/20 bg-green/10 border p-2">
-              {localSettings.showIntelligenceTab ? (
-                <Eye className="text-green h-4 w-4" />
-              ) : (
-                <EyeOff className="text-label-secondary h-4 w-4" />
-              )}
-            </div>
-            <div>
-              <Label
-                htmlFor="intelligence-tab"
-                className="text-body flex items-center gap-1 font-medium"
-              >
-                <Shield className="text-label-secondary h-4 w-4" />
-                Intelligence tab
-              </Label>
-              <p className="text-label-secondary text-footnote">
-                Show/hide the Intelligence navigation tab
-              </p>
-            </div>
-          </div>
-          <Switch
-            id="intelligence-tab"
-            checked={localSettings.showIntelligenceTab}
-            onCheckedChange={(checked) => handleToggle("showIntelligenceTab", checked)}
-          />
-        </div>
-
-        <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-control border-red/20 bg-red/10 border p-2">
-              {localSettings.showDefenseTab ? (
-                <Eye className="text-red h-4 w-4" />
-              ) : (
-                <EyeOff className="text-label-secondary h-4 w-4" />
-              )}
-            </div>
-            <div>
-              <Label
-                htmlFor="defense-tab"
-                className="text-body flex items-center gap-1 font-medium"
-              >
-                <Shield className="text-label-secondary h-4 w-4" />
-                Defense tab
-              </Label>
-              <p className="text-label-secondary text-footnote">
-                Show/hide the Defense & Security navigation tab in MyCountry
-              </p>
-            </div>
-          </div>
-          <Switch
-            id="defense-tab"
-            checked={localSettings.showDefenseTab}
-            onCheckedChange={(checked) => handleToggle("showDefenseTab", checked)}
           />
         </div>
 
