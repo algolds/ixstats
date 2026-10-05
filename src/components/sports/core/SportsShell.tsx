@@ -57,6 +57,8 @@ export function SportsShell({
           }}
           // The focus lives in the aside at xl, so widening must not clear it.
           resetSheetOnWiden={false}
+          // Only the controls sheet's own flag resets (so narrowing again does not reopen it).
+          onWiden={() => onSideOpenChange?.(false)}
           className="space-y-4"
         >
           {focus && <SportsFocusPanel sportPreset={sportPreset} />}

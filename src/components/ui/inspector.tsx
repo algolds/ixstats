@@ -27,6 +27,12 @@ interface InspectorProps {
    * (a focused entity), so widening moves it into the aside instead of clearing it.
    */
   resetSheetOnWiden?: boolean;
+  /**
+   * Fired on a real narrow-to-wide crossing (never while hydrating), whatever `resetSheetOnWiden`
+   * says. For owners that keep a UI flag for the sheet (a "controls open" boolean) and must clear it
+   * without touching what the aside still shows.
+   */
+  onWiden?: () => void;
   children: React.ReactNode;
   className?: string;
 }
@@ -45,6 +51,7 @@ export function Inspector({
   open,
   onOpenChange,
   resetSheetOnWiden = true,
+  onWiden,
   children,
   className,
 }: InspectorProps) {
@@ -59,9 +66,12 @@ export function Inspector({
       wasWide.current = window.matchMedia(INSPECTOR_QUERY).matches;
       return;
     }
-    if (resetSheetOnWiden && wide && !wasWide.current && open) onOpenChange(false);
+    const widened = wide && !wasWide.current;
     wasWide.current = wide;
-  }, [wide, open, onOpenChange, resetSheetOnWiden]);
+    if (!widened) return;
+    if (resetSheetOnWiden && open) onOpenChange(false);
+    onWiden?.();
+  }, [wide, open, onOpenChange, resetSheetOnWiden, onWiden]);
 
   return (
     <>

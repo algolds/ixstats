@@ -205,4 +205,52 @@ describe("Inspector", () => {
     expect(onOpenChange).not.toHaveBeenCalled();
     expect(document.querySelector('[data-slot="inspector"]')).toHaveTextContent("toc");
   });
+
+  describe("onWiden", () => {
+    it("fires once on a real narrow-to-wide crossing, even when the sheet state is left alone", () => {
+      installMatchMedia(false);
+      const onWiden = jest.fn();
+      const onOpenChange = jest.fn();
+      render(
+        <Inspector
+          title="Contents"
+          open
+          onOpenChange={onOpenChange}
+          resetSheetOnWiden={false}
+          onWiden={onWiden}
+        >
+          toc
+        </Inspector>
+      );
+      expect(onWiden).not.toHaveBeenCalled();
+      resizeTo(true);
+      expect(onWiden).toHaveBeenCalledTimes(1);
+      expect(onOpenChange).not.toHaveBeenCalled();
+      // Narrowing again is not a widening.
+      resizeTo(false);
+      expect(onWiden).toHaveBeenCalledTimes(1);
+      resizeTo(true);
+      expect(onWiden).toHaveBeenCalledTimes(2);
+    });
+
+    it("does not fire when the viewport starts wide or while hydrating", () => {
+      installMatchMedia(true);
+      const onWiden = jest.fn();
+      const tree = (
+        <Inspector title="Contents" open={false} onOpenChange={() => {}} onWiden={onWiden}>
+          toc
+        </Inspector>
+      );
+      const container = document.createElement("div");
+      document.body.appendChild(container);
+      container.innerHTML = renderToString(tree);
+      let root!: ReturnType<typeof hydrateRoot>;
+      act(() => {
+        root = hydrateRoot(container, tree);
+      });
+      expect(onWiden).not.toHaveBeenCalled();
+      act(() => root.unmount());
+      container.remove();
+    });
+  });
 });
