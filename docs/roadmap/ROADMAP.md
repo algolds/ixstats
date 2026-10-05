@@ -327,7 +327,7 @@ Run throughout, preferably in PRs that already touch the area.
 
 - **Dead schema:** drop the 57 fully dead models, and the always-empty ones once their feature is decided ([backlog §5](backlog.md#5-dead-schema)).
   Needs M0 backups and Decisions D1, D2, D5 and D9.
-- **Dead code:** re-check the remaining MC-18 components. PL-18, WK-18 and SL-25 are done (2026-10-05), as is AT-16. (The dead intelligence calculator, `calculator.ts` and
+- **Dead code:** ✅ MC-18 is closed: a re-check on 2026-10-05 (static, dynamic and string imports) found every file the audit listed already deleted. PL-18, WK-18 and SL-25 are done (2026-10-05), as is AT-16. (The dead intelligence calculator, `calculator.ts` and
   `live-data-transformers.ts`, is already deleted; the models it alone wrote remain in the schema.)
 - **Tests:** router tests for the 35 untested routers, largest first (thinkpages, lore-cards, national-issues, forum, blurbs,
   card-market).

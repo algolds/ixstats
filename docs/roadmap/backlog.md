@@ -61,7 +61,6 @@ partly done item.
 |---|---|---|---|---|
 | MC-3 | UNFINISHED | Defense force structure can't be created (branch and unit CRUD deleted in plan 312), so PvNPC strength is 0. Waits on D2 | `security/military.ts:64-74`; `DeploymentWizard.tsx:136` | M–L |
 | MC-6 | DEAD | The ScheduledChange pipeline (service, cron job, `usePendingLocks`) has no producer. Use or delete (D11); see [scheduled-changes.md](../systems/scheduled-changes.md) | `server/modules/scheduled-changes/service.ts` | M |
-| MC-18 | DEAD | Zero-importer files. Left: the other components listed in the audit (re-check each; `builder-validation.ts` is in use, `tax-revenue-mapping.ts` and `government-preview/*` are gone) | — | S |
 | MC-19 | DEAD | Area models read but never written outside the seed (`Treaty`, `DiplomaticChannel`, `TaxPolicy`, `QuickActionTemplate`, `VitalityHistory`, …) | `prisma/schema/*` | S |
 
 ### Atlas, Realms & identity (AT)
