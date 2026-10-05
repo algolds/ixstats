@@ -34,20 +34,23 @@ export async function notifyClubMatchResult(
     const title = `${emoji} ${teamName} ${teamScore}–${opponentScore} ${opponentName}`;
     const body = `Matchday ${matchDay} · ${leagueName}: ${teamName} ${outcome} ${teamScore}–${opponentScore} vs ${opponentName}.`;
 
-    // 1. In-app notification (the bell).
-    await prisma.notification.create({
-      data: {
-        userId,
-        title,
-        message: body,
-        href: `/myclub/${args.teamId}`,
-        type: "sports_result",
-        category: "sports",
-        source: "SportsNews",
-        priority: "low",
-        severity: "informational",
-      },
-    });
+    // 1. In-app notification (the bell), unless the owner's preferences filter it out
+    //    (sports results are "low" priority, so a higher minimum urgency hides them).
+    const { recipientAccepts } = await import("~/lib/notifications/recipient-preferences");
+    if (await recipientAccepts(userId, "sports", "low"))
+      await prisma.notification.create({
+        data: {
+          userId,
+          title,
+          message: body,
+          href: `/myclub/${args.teamId}`,
+          type: "sports_result",
+          category: "sports",
+          source: "SportsNews",
+          priority: "low",
+          severity: "informational",
+        },
+      });
 
     // 2. Durable record in a per-user system DM channel.
     let convo = await prisma.thinkshareConversation.findFirst({
