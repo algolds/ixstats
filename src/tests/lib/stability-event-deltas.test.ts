@@ -133,7 +133,9 @@ function viewDefensePanel(db: ReturnType<typeof makeDb>) {
 }
 
 describe("stability event deltas", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
   it("creates the missing row from the formula, then applies the issue delta", async () => {
     formulaMock.mockReturnValue(formula(70));

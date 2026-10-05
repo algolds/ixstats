@@ -88,6 +88,10 @@ function makeSnapshot(overrides: Partial<CountrySnapshot> = {}): CountrySnapshot
     currentIxTime: IxTime.getCurrentIxTime(),
     currentIxYear: 2040,
     currentIxMonth: 1,
+    activePoliciesList: [],
+    policySettings: {},
+    activeIntents: [],
+    activeIntentCategories: [],
     ...overrides,
   };
 }

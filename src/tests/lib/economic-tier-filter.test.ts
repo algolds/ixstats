@@ -49,6 +49,6 @@ describe("economic tier filter", () => {
     expect(nations.filter((n) => matchesTierFilter(n.economicTier, "all"))).toHaveLength(
       nations.length
     );
-    expect(matchesTierFilter(null, "Developed")).toBe(false);
+    expect(matchesTierFilter(null, EconomicTier.DEVELOPED)).toBe(false);
   });
 });

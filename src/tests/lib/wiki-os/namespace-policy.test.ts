@@ -1,11 +1,14 @@
 /** @jest-environment node */
 import { checkEditPolicy, parseWikiTitle } from "~/lib/wiki-os/namespace-policy";
 
-const user = { isAdmin: false, linkedWikiUsername: "Alice" };
-const unlinked = { isAdmin: false, linkedWikiUsername: null };
-const admin = { isAdmin: true, linkedWikiUsername: null };
+type EditPolicyIdentity = Parameters<typeof checkEditPolicy>[1];
 
-const allowed = (title: string, identity = user) => checkEditPolicy(title, identity).allowed;
+const user: EditPolicyIdentity = { isAdmin: false, linkedWikiUsername: "Alice" };
+const unlinked: EditPolicyIdentity = { isAdmin: false, linkedWikiUsername: null };
+const admin: EditPolicyIdentity = { isAdmin: true, linkedWikiUsername: null };
+
+const allowed = (title: string, identity: EditPolicyIdentity = user) =>
+  checkEditPolicy(title, identity).allowed;
 
 describe("parseWikiTitle", () => {
   it("splits a namespace prefix the way MediaWiki does", () => {

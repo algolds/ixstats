@@ -1,4 +1,4 @@
-import {
+import type {
   WikiTextNode,
   WikiDocument,
   WikiParagraphBlock,
@@ -40,6 +40,7 @@ describe("wiki-ast", () => {
     templateName: "Infobox country",
     variantId: "sovereign",
     params: { capital: "Vilena", motto: "Liberté, Ordre, Concorde" },
+    raw: "{{Infobox country|capital=Vilena|motto=Liberté, Ordre, Concorde}}",
     children: [{ text: "" }],
   };
 

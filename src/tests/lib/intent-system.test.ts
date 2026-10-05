@@ -92,7 +92,7 @@ describe("ThinkPages Intent Auto-Summation", () => {
       thinkpagesAccount: {
         findFirst: jest.fn<() => Promise<any>>().mockResolvedValue(null),
         findUnique: jest.fn<() => Promise<any>>().mockResolvedValue(null),
-        create: jest.fn<() => Promise<any>>().mockImplementation((args: any) =>
+        create: jest.fn<(args: { data: object }) => Promise<any>>().mockImplementation((args) =>
           Promise.resolve({
             id: "account_789",
             ...args.data,
@@ -105,7 +105,7 @@ describe("ThinkPages Intent Auto-Summation", () => {
         }),
       },
       thinkpagesPost: {
-        create: jest.fn<() => Promise<any>>().mockImplementation((args: any) =>
+        create: jest.fn<(args: { data: object }) => Promise<any>>().mockImplementation((args) =>
           Promise.resolve({
             id: "post_999",
             ...args.data,

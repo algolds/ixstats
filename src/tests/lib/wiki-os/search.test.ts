@@ -7,7 +7,10 @@
 // Unit tests for WikiOS fast search and wikitext summary extractor.
 
 import { describe, it, expect } from "@jest/globals";
-import { extractIntroFromWikitext } from "~/lib/wiki-os/core/native-search-service";
+import {
+  extractIntroFromWikitext,
+  NativeSearchService,
+} from "~/lib/wiki-os/core/native-search-service";
 
 describe("WikiOS Search & Summary Service", () => {
   it("extracts clean introductory prose from complex wikitext", () => {
@@ -57,9 +60,6 @@ The '''Vandover Republic''' is a coastal federation<ref>Official Gazette, 2024.<
 /**
  * advanced-search.test.ts — Unit tests for WikiOS Advanced Search Engine
  */
-
-import { describe, it, expect } from "@jest/globals";
-import { NativeSearchService } from "~/lib/wiki-os/core/native-search-service";
 
 describe("NativeSearchService Search Suite", () => {
   it("handles empty and whitespace-only queries gracefully", async () => {

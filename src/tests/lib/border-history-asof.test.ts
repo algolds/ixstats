@@ -87,11 +87,11 @@ describe("mergeBordersAsOf", () => {
       { countryId: "D", geometry: square(0, 0, 5, 5), changedAt: new Date("2026-01-01") },
     ];
     const snapshotGeom = history[0]?.geometry;
+    const originalGeom = original.geometry;
     const result = mergeBordersAsOf([original], history, new Date("2026-06-01"));
     expect(result[0]).not.toBe(original);
-    expect(original.geometry).toBe(
-      square(0, 0, 1, 1).geometry !== undefined ? original.geometry : original.geometry
-    );
+    expect(original.geometry).toBe(originalGeom);
+    expect((original.geometry as Polygon).coordinates[0]?.[1]?.[0]).toBe(1);
     expect(history[0]?.geometry).toBe(snapshotGeom);
   });
 });
