@@ -73,15 +73,10 @@ partly done item.
 | AT-3 | UNFINISHED | Builder in any realm. Left: prefill from a claimed nation page (the builder is realm-aware with nation caps since #49) | `countries/management/create.ts` | M |
 | AT-5 | UNFINISHED | Claimants can't see their claim status (`realms.myClaims` has no caller); rejections send no notification | `routers/realms/index.ts`; `realms.claims.ts` | S |
 | AT-6 | UNFINISHED | Realm directory filtered by `visibility` and status. Left: `/realms` lists open realms but `visibility` is unused | `realms.hub.ts` | M |
-| AT-7 | BUG | `Realm.status` isn't enforced: draft and archived realms render and accept claims | `realms.hub.ts`; `realms.claims.ts` | S |
 | AT-8 | UNFINISHED | A realm's founder can't be assigned (no `ownerId` or thumbnail update, no delete) | `routers/realms/index.ts` | S |
 | AT-9 | STUB | Labs map pipeline enrichment is placeholder data (now labelled "sample data"); `GeographicResource` has no writer | `lib/maps/pipeline/enrichment-pipeline.ts` | M |
-| AT-11 | UNFINISHED | SmartPlacement suggestions never wired; snap-to-coastline button never gets its handler | `editor/FeaturePropertyPanel.tsx` | S |
 | AT-14 | UNFINISHED | Storylines can't be created, so the pin timeline never appears | `geo/features/storyPins.ts` | M |
 | AT-15 | DEAD | Unused map models (`WorldTemplate`, `ProceduralWorld`, `Transport*` segments, `ElevationZone`, `Territory`); `SharedVertex` written, never read | `maps.prisma` | S |
-| AT-16 | DEAD | `users.createCountry` and `ixnayid.lookupWikiUser` have no callers; `rebuildAdjacency` is never called, so PNG-imported realms get no neighbours | `geo/editor/borders.ts` | S |
-| AT-19 | BUG | The admin Realm Users tab assumes one realm per user | `RealmUsersTab.tsx` | S |
-| AT-20 | DEBT | The map editor uses native `alert()` and leaves debug `console.log` calls | `useEditorGeoDataState.ts` | S |
 
 ### WikiOS, forum, help & admin (WK)
 
@@ -137,7 +132,6 @@ partly done item.
 | PL-16 | DEBT | `src/tests` isn't typechecked in CI (≈890 errors on 2026-10-05; scripts, seeds, proxy, instrumentation and content are) | `ci.yml` | M |
 | PL-18 | DEAD | Left: `AdvancedCacheSystem` (`lib/cache/advanced-cache-system.ts`), `image-cache-service`, `readOnlyProcedure`, `cleanupOldAuctions` (re-check each) | — | S |
 | PL-19 | DEBT | Env hygiene: declared variables never read; `.env.example` missing many | `src/env.ts` | S |
-| PL-21 | FLAGGED | `editableByOwner` is never read, so that map permission isn't enforced | `maps.prisma:59,104` | S |
 | PL-22 | DEBT | Production logs every Prisma query as an event | `server/db.ts:123` | S |
 
 **Router test gaps:** 35 of 69 routers had no router-level test on 2026-09-30; the largest are thinkpages, lore-cards,
