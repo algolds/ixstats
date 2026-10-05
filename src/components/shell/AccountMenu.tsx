@@ -2,8 +2,9 @@
 
 /**
  * The signed-in player's account in the shell: avatar (country flag once a nation is linked),
- * name and country; the nation switcher, a link to the nation's page, IxnayID connections, the
- * external account manager and sign out. Signed out, it is the sign-in button.
+ * name and country; your country (MyCountry), your passport and wiki profiles, the nation
+ * switcher, a link to the nation's page, IxnayID connections, the external account manager and
+ * sign out. Signed out, it is the sign-in button.
  *
  * `layout="sidebar"` is a popover opened from the AppSidebar's footer row; `layout="sheet"` is the
  * same panel inline in the TabBar's More sheet.
@@ -11,11 +12,24 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Crown, LogOut, Link as LinkIcon, Settings, User, WarningCircle } from "iconoir-react";
+import {
+  Crown,
+  LogOut,
+  Link as LinkIcon,
+  OpenBook,
+  Settings,
+  User,
+  UserCircle,
+  WarningCircle,
+} from "iconoir-react";
 
 import { useAuth, useUser, SignInButton } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { useCountryFlag } from "~/hooks/useCountryFlags";
+import { useUserCountry } from "~/hooks/useUserCountry";
+import { normalizeFlagUrl } from "~/lib/flags/normalization";
+import { getWikiProfilePath } from "~/lib/wiki-os/profile-url";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { cn } from "~/lib/utils/cn";
 import { createAbsoluteUrl } from "~/lib/utils/url-utils";
 import { getNationUrl } from "~/lib/utils/slug-utils";
@@ -81,6 +95,55 @@ function Avatar({
   );
 }
 
+/** Your country, passport and wiki profile: what the per-app player and wiki widgets offered. */
+function IdentityLinks({ onClose }: { onClose?: () => void }) {
+  const { user } = useUser();
+  const { country } = useUserCountry();
+  // Only the open panel mounts this, so the wiki lookup does not run on every page.
+  const { data: wikiProfile } = api.wikios.getAuthorProfile.useQuery(undefined, {
+    enabled: Boolean(user),
+    staleTime: 5 * 60_000,
+  });
+  const done = () => onClose?.();
+  // A passport handle drops the trailing underscore Clerk adds to usernames; the passport also
+  // resolves a raw wiki username, so the wiki link falls back to the account username.
+  const accountName = user?.username ?? "";
+  const passportHandle = accountName.replace(/_$/, "");
+  const wikiName = wikiProfile?.displayName ?? accountName;
+
+  return (
+    <ul className="flex flex-col gap-0.5 pb-1">
+      {country && (
+        <li>
+          <Link href="/mycountry" onClick={done} className={itemClass}>
+            <span aria-hidden className="flex size-4 shrink-0 items-center justify-center">
+              <UnifiedCountryFlag
+                countryName={country.name}
+                flagUrl={normalizeFlagUrl(country.flag)}
+                size="xs"
+                showTooltip={false}
+              />
+            </span>
+            <span className="min-w-0 flex-1 truncate">{country.name}</span>
+          </Link>
+        </li>
+      )}
+      <li>
+        <Link href={`/@${encodeURIComponent(passportHandle)}`} onClick={done} className={itemClass}>
+          <UserCircle aria-hidden className="size-4 shrink-0" />
+          Your profile
+        </Link>
+      </li>
+      <li>
+        <Link href={getWikiProfilePath(wikiName)} onClick={done} className={itemClass}>
+          <OpenBook aria-hidden className="size-4 shrink-0" />
+          Wiki profile
+        </Link>
+      </li>
+    </ul>
+  );
+}
+
 function AccountPanel({ onClose }: { onClose?: () => void }) {
   const { signOut } = useAuth();
   const { user, name, countryName, flagUrl, needsSetup } = useAccount();
@@ -101,6 +164,8 @@ function AccountPanel({ onClose }: { onClose?: () => void }) {
           </p>
         </div>
       </div>
+
+      <IdentityLinks onClose={onClose} />
 
       <NationSwitcher onSwitched={done} className="border-separator -mx-1 border-t pt-1 pb-1" />
 
