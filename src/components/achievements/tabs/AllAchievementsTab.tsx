@@ -137,7 +137,6 @@ function GroupedSeriesCard({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={springSmooth}
-      variant={isUnlocked ? "hero" : undefined}
       interactive={isUnlocked}
       className={cn(
         "flex flex-col justify-between overflow-hidden p-5",

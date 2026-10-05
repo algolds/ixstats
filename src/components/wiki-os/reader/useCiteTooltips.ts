@@ -101,7 +101,6 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
   return createElement(
     VirtualAnchorPopover,
     {
-      surface: "none",
       anchor: tooltip?.anchor ?? null,
       open,
       onOpenChange: (next: boolean) => {
