@@ -153,6 +153,10 @@ bun run db:generate
 echo "💾 Backing up production database (backups/ixstats-<UTC timestamp>.dump)..."
 if bun run db:backup; then
     echo "✅ Database backup completed"
+    # One line per deploy: when, the commit going live, and the dump to restore if it must be undone
+    # (read by scripts/deployment/rollback-deployment.sh --restore).
+    LATEST_DUMP=$(ls -1t backups/ixstats-*.dump 2>/dev/null | head -n 1 || true)
+    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) $(git rev-parse --short HEAD 2>/dev/null || echo unknown) ${LATEST_DUMP:-none}" >> backups/deploy-history.log
 else
     echo "❌ Database backup failed - aborting deployment before the schema sync"
     exit 1
@@ -190,8 +194,13 @@ fi
 
 # Reload standalone PM2 processes (cron, websockets, sync)
 echo "🔄 Reloading PM2 processes (cron, websockets, sync)..."
-if command -v pm2 &> /dev/null; then
-    pm2 startOrReload ecosystem.config.cjs --update-env --silent || true
+if ! command -v pm2 &> /dev/null; then
+    echo "⚠️  pm2 not found: cron, websockets and IxTwitter sync were NOT reloaded"
+elif [ ! -f ecosystem.config.cjs ]; then
+    echo "⚠️  ecosystem.config.cjs missing (template: ecosystem.config.example.cjs): PM2 processes were NOT reloaded"
+else
+    # A failed reload aborts the deploy instead of leaving stale cron/ws processes running silently.
+    pm2 startOrReload ecosystem.config.cjs --update-env --silent
 fi
 
 # Display production configuration

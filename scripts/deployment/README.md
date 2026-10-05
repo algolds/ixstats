@@ -15,12 +15,12 @@ The repository consolidates production deployment tooling behind a single canoni
 
 1. **Canonical Production Entrypoint**:
    - `scripts/deploy-production.sh` is the sole authoritative production deployment entrypoint.
-   - Stale/duplicate entrypoints are deprecated and removed from active package aliases (`deploy:production` pruned). The legacy `scripts/deployment/deploy-to-production.sh` file still exists in this directory but is not wired to any script or workflow — do not use it.
+   - Stale/duplicate entrypoints are removed: the `deploy:production` alias and the legacy `scripts/deployment/deploy-to-production.sh` (2026-10-05). There is no staging environment, so `deploy-to-staging.sh` (which pointed at the production checkout) is removed too.
 
 2. **Process Ownership Strategy**:
    - Production service lifecycle is managed on the VPS via PM2 (`pm2 startOrReload ecosystem.config.cjs`, called from `deploy-production.sh`).
    - Maps standalone instance is managed via `ecosystem.ixworld.config.cjs`; the standalone WebSocket backend (`ws-backend.mjs`, PM2 `ixstats-ws`) and cron runner (`cron-runner.mjs`, PM2 `ixstats-cron`) run as separate processes.
-   - The `ecosystem*.config.cjs` files are server-local (git-ignored); they are not in the repository.
+   - The `ecosystem*.config.cjs` files are server-local (git-ignored). [`ecosystem.config.example.cjs`](../../ecosystem.config.example.cjs) is the tracked template (`ixstats-cron`, `ixstats-ws`, `ixstats-ixtwitter`). `deploy-production.sh` fails if the PM2 reload fails, and warns if the file is missing.
    - Node process runs standalone on port 3550 with basePath `/projects/ixstates`.
 
 3. **Schema Migration Strategy**:
@@ -50,9 +50,7 @@ Validates:
 
 | Script | Alias | Notes |
 | --- | --- | --- |
-| `deploy-to-staging.sh` | `bun run deploy:staging` | Staging deploy |
-| `rollback-deployment.sh` | `bun run deploy:rollback` | Roll back to the previous release |
+| `rollback-deployment.sh` | `bun run deploy:rollback -- <remote-branch> [--restore <dump>]` | Checks out a rollback branch, optionally restores the pre-deploy dump listed in `backups/deploy-history.log`, then redeploys with `ALLOW_NON_MASTER_DEPLOY=1` ([release guide](../../docs/operations/release-guide.md#rollback)) |
 | `post-deployment-validation.ts` | `bun run post:deploy:validate` | Post-deploy smoke checks |
 | `verify-environment.ts` | `bun run verify:environment` | Environment variable verification |
 | `setup-monitoring.ts` | `bun run setup:monitoring` | Monitoring setup |
-| `deploy-to-production.sh` | — | Legacy, unwired (see above) |
