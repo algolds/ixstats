@@ -66,6 +66,7 @@ function Trailing({ badge }: { badge: NavBadge | undefined }) {
       </span>
     ) : null;
   }
+  // Only the `action` kind is left (the union is count | action), so the label is its text.
   return <span className="text-footnote text-label-secondary tabular-nums">{badge.label}</span>;
 }
 

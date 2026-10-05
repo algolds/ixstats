@@ -4,7 +4,7 @@ import { cn } from "~/lib/utils/cn";
 /**
  * The MyCountry mark (a globe wearing a crown), the single source of the SVG. It lives in
  * `src/lib` so the navigation map (which must not import from components) can use it as the
- * MyCountry app icon; `mycountry-logo.tsx` re-exports it. Drawn in `currentColor` so the sidebar's
+ * MyCountry app icon; Decorative by default (the app row carries the label). Drawn in `currentColor` so the sidebar's
  * `text-tint` role colours it gold. Sized by its container like any icon (`size-*`).
  */
 export function MyCountryLogomark({ className, ...props }: SVGProps<SVGSVGElement>) {
@@ -16,8 +16,7 @@ export function MyCountryLogomark({ className, ...props }: SVGProps<SVGSVGElemen
       strokeWidth={1.5}
       strokeLinecap="round"
       strokeLinejoin="round"
-      aria-label="MyCountry mark"
-      role="img"
+      aria-hidden="true"
       className={cn("size-[1em] shrink-0", className)}
       {...props}
     >

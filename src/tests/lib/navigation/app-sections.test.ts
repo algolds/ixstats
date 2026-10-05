@@ -164,6 +164,14 @@ describe("app section map routes", () => {
     expect(getTintForPath(home, active)).toBe("thinkpages");
   });
 
+  it("gives /mycountry/intelligence (no row of its own) Defense's highlight and crimson tint", () => {
+    const mycountry = getAppForPath("/mycountry/intelligence")!;
+    expect(mycountry.id).toBe("mycountry");
+    const active = getActiveSectionId(mycountry, "/mycountry/intelligence", null);
+    expect(active).toBe("defense");
+    expect(getTintForPath(mycountry, active)).toBe("intel");
+  });
+
   it("keeps Home untinted on its own pages", () => {
     expect(getTintForPath(getApp("home"), "messages")).toBeUndefined();
   });

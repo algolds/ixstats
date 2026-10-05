@@ -40,6 +40,7 @@ jest.mock("next/link", () => ({
 jest.mock("~/trpc/react", () => ({
   api: { intent: { getStatus: { useQuery: () => ({ data: undefined }) } } },
 }));
+jest.mock("~/hooks/useHasMycountryPremium", () => ({ useHasMycountryPremium: () => false }));
 jest.mock("~/components/mycountry/shared/primitives", () => ({
   useCountryData: () => ({ country: mockCountry }),
 }));

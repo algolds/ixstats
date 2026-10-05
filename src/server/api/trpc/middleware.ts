@@ -7,7 +7,7 @@ import { t } from "./init";
 import { rateLimiter } from "~/lib/cache";
 import { isDatabaseReadOnly } from "~/server/db";
 import { isSystemOwner } from "~/lib/auth";
-import { hasPremiumTier } from "~/lib/auth/premium";
+import { hasPremiumTier, isBetaTesterRole } from "~/lib/auth/premium";
 import { getRoleName, isPrivilegedCountryWriter } from "~/server/shared/country-authorization";
 import { touchLastSeen } from "./last-seen";
 import {
@@ -311,8 +311,12 @@ export const premiumMiddleware = t.middleware(async ({ ctx, next }) => {
   }
 
   const membershipTier = ctx.user.membershipTier || "basic";
-  // hasPremiumTier also honours NEXT_PUBLIC_PREMIUM_FOR_ALL (test builds).
-  const isPremium = hasPremiumTier(membershipTier);
+  // hasPremiumTier also honours NEXT_PUBLIC_PREMIUM_FOR_ALL (test builds). Beta testers and the
+  // system owner get the same tools, matching what the client shows them.
+  const isPremium =
+    hasPremiumTier(membershipTier) ||
+    isSystemOwner(ctx.auth.userId) ||
+    isBetaTesterRole(ctx.user.role?.name, ctx.user.role?.level);
 
   if (!isPremium) {
     console.warn(

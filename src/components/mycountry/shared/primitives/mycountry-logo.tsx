@@ -197,6 +197,3 @@ export function MyCountryLogo({
     </motion.div>
   );
 }
-
-// The navigation icon: one SVG source in `src/lib` (the navigation map cannot import components).
-export { MyCountryLogomark } from "~/lib/navigation/icons/MyCountryLogomark";

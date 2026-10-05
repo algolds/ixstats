@@ -84,10 +84,7 @@ export type NavIcon = ComponentType<SVGProps<SVGSVGElement>>;
 type NavBadgeKey =
   "diplomacy-inbox" | "daily-reward" | "messages-unread" | "issues-pending" | "whats-new";
 export type NavAction = "daily-reward";
-export type NavBadge =
-  | { kind: "count"; value: number }
-  | { kind: "value"; label: string }
-  | { kind: "action"; label: string };
+export type NavBadge = { kind: "count"; value: number } | { kind: "action"; label: string };
 export type NavBadges = Partial<Record<NavBadgeKey, NavBadge>>;
 
 /** `data-app` tint keys (tokens.css). Omitted = the default (indigo) tint. */
@@ -277,6 +274,8 @@ export const APPS: readonly AppDefinition[] = [
         href: "/mycountry/defense",
         icon: Shield,
         tint: "intel",
+        // Intelligence has no row of its own; its page keeps Defense's highlight and crimson tint.
+        match: ["/mycountry/intelligence"],
         requires: "mycountry-premium",
       },
     ],

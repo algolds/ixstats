@@ -13,7 +13,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
-import { useAbility } from "~/components/providers/AbilityProvider";
+import { useHasMycountryPremium } from "~/hooks/useHasMycountryPremium";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { CooldownTimer } from "../ExecutiveHome";
 import type { CommandNavMode } from "../command-nav-mode";
@@ -85,8 +85,8 @@ export function UnifiedGlassCommandBar({
 }: UnifiedGlassCommandBarProps) {
   const router = useRouter();
   const { country } = useCountryData();
-  // The map editor is a premium feature (same ability as the server gate), so others never see the entry.
-  const canUseMapEditor = useAbility().can("access", "MyCountryFeature", "map-editor");
+  // The map editor is a MyCountry Premium tool (beta testers included), so others never see the entry.
+  const canUseMapEditor = useHasMycountryPremium("map-editor");
 
   const profileHref = country?.slug ? `/countries/${country.slug}` : "/countries";
 

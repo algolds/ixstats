@@ -2,6 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 
 let canUseMapEditor = false;
+let betaTester = false;
 const can = jest.fn((action: string, subject: string, field?: string) => {
   return action === "access" && subject === "MyCountryFeature" && field === "map-editor"
     ? canUseMapEditor
@@ -24,6 +25,7 @@ jest.mock("~/trpc/react", () => ({
 jest.mock("~/components/providers/AbilityProvider", () => ({
   useAbility: () => ({ can, cannot: (...args: Parameters<typeof can>) => !can(...args) }),
 }));
+jest.mock("~/hooks/usePermissions", () => ({ useIsBetaTester: () => betaTester }));
 jest.mock("~/components/mycountry/shared/primitives", () => ({
   useCountryData: () => ({ country: { name: "Pelaxia" } }),
 }));
@@ -36,6 +38,7 @@ function renderBar() {
 }
 
 beforeEach(() => {
+  betaTester = false;
   globalThis.IntersectionObserver = class {
     observe() {}
     unobserve() {}
@@ -55,6 +58,16 @@ describe("MyCountry header Map editor action", () => {
       "/mycountry/map-editor"
     );
     expect(can).toHaveBeenCalledWith("access", "MyCountryFeature", "map-editor");
+  });
+
+  it("links to the map editor for a beta tester without premium", () => {
+    canUseMapEditor = false;
+    betaTester = true;
+    renderBar();
+    expect(screen.getByRole("link", { name: "Open map editor" })).toHaveAttribute(
+      "href",
+      "/mycountry/map-editor"
+    );
   });
 
   it("is absent for everyone else", () => {

@@ -3,6 +3,7 @@ import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 
 import { isSystemOwner } from "~/lib/auth";
+import { BETA_TESTER_ROLE_NAMES, isBetaTesterRole } from "~/lib/auth/premium";
 
 interface UserRole {
   id: string;
@@ -97,20 +98,12 @@ export function useIsBetaTester(): boolean {
   if (isSystemOwner(authUser.id)) return true;
 
   const authRole = (authUser.publicMetadata as any)?.role;
-  if (
-    typeof authRole === "string" &&
-    ["admin", "owner", "staff", "beta_tester", "beta-tester", "beta"].includes(authRole)
-  ) {
+  if (typeof authRole === "string" && BETA_TESTER_ROLE_NAMES.includes(authRole)) {
     return true;
   }
 
   if (isLoading || !permissionUser?.role) return false;
-  const roleName = permissionUser.role.name;
-  return (
-    ["owner", "admin", "staff", "beta_tester", "beta-tester", "beta"].includes(roleName) ||
-    permissionUser.role.level <= 20 ||
-    permissionUser.role.level === 90
-  );
+  return isBetaTesterRole(permissionUser.role.name, permissionUser.role.level);
 }
 
 // Hook to check if user has access to Narrator feature (system owners, admins, staff, beta testers)

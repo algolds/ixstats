@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { KeyCommand as Command } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { useAbility } from "~/components/providers/AbilityProvider";
+import { useHasMycountryPremium } from "~/hooks/useHasMycountryPremium";
 import { PremiumPreviewFrame } from "~/components/mycountry/shared/primitives";
 import { PoliticsDrillDown } from "./PoliticsDrillDown";
 import { EconomyDrillDown } from "./EconomyDrillDown";
@@ -56,7 +56,7 @@ function DomainSurfaceComponent({
   section,
   onDeclare,
 }: DomainSurfaceProps): React.JSX.Element {
-  const ability = useAbility();
+  const hasDefenseAccess = useHasMycountryPremium("defense");
   const domain = SECTION_TO_DOMAIN[section];
   const meta = DOMAIN_META[domain];
 
@@ -85,10 +85,7 @@ function DomainSurfaceComponent({
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="min-w-0 space-y-6 lg:col-span-2">
           {domain === "defense" ? (
-            <PremiumPreviewFrame
-              feature="defense"
-              locked={!ability.can("access", "MyCountryFeature", "defense")}
-            >
+            <PremiumPreviewFrame feature="defense" locked={!hasDefenseAccess}>
               <DefenseCommandPanel countryId={countryId} />
             </PremiumPreviewFrame>
           ) : domain === "relations" ? (
