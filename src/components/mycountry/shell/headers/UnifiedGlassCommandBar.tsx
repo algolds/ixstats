@@ -16,6 +16,8 @@ import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { CooldownTimer } from "../ExecutiveHome";
 import type { CommandNavMode } from "../command-nav-mode";
 import { PageHeader } from "~/components/shell/PageHeader";
+import { assetUrl } from "~/lib/base-path";
+import { FlagBanner } from "./FlagBanner";
 
 interface UnifiedGlassCommandBarProps {
   mode: CommandNavMode;
@@ -63,8 +65,10 @@ function DirectiveStatusLine({ countryId }: { countryId?: string }) {
 }
 
 /**
- * The MyCountry page header: the country's name and identity, and a toolbar (Profile, Editor) with
- * the one Declare Directive button. Section switching is the global source list.
+ * The MyCountry page header: the country's name and identity over its flag as cover art, and a
+ * toolbar (Profile, Editor) with the one Declare Directive button. The banner is the identity art
+ * (no small flag beside the title) and collapses with the header. Section switching is the global
+ * source list.
  */
 export function UnifiedGlassCommandBar({
   mode,
@@ -86,10 +90,12 @@ export function UnifiedGlassCommandBar({
     .join(" · ");
 
   const identity = [subtitle, realmName].filter(Boolean).join(" · ");
+  const flagUrl = assetUrl(country?.flagUrl || country?.flag);
 
   return (
     <PageHeader
       title={country?.name ?? "MyCountry"}
+      backdrop={flagUrl ? <FlagBanner src={flagUrl} /> : undefined}
       subtitle={
         <>
           {identity ? <p>{identity}</p> : null}

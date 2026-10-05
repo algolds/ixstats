@@ -37,6 +37,12 @@ export interface PageHeaderProps {
   leading?: React.ReactNode;
   /** Trailing toolbar actions (buttons, a dropdown menu). */
   actions?: React.ReactNode;
+  /**
+   * Decorative art behind the expanded header (a cover image with its own scrim). It is clipped to
+   * the header's rounded box, fades out once the header collapses, and never reaches the compact
+   * toolbar. The slot owns no readability: the art must bring its own scrim.
+   */
+  backdrop?: React.ReactNode;
   className?: string;
 }
 
@@ -71,7 +77,15 @@ function useCollapsed(
   return collapsed;
 }
 
-export function PageHeader({ title, subtitle, back, leading, actions, className }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  subtitle,
+  back,
+  leading,
+  actions,
+  backdrop,
+  className,
+}: PageHeaderProps) {
   const toolbarRef = React.useRef<HTMLDivElement>(null);
   const titleRef = React.useRef<HTMLHeadingElement>(null);
   const collapsed = useCollapsed(toolbarRef, titleRef);
@@ -81,8 +95,22 @@ export function PageHeader({ title, subtitle, back, leading, actions, className 
     <header
       data-slot="page-header"
       data-collapsed={collapsed ? "" : undefined}
-      className={cn("flex flex-col", className)}
+      // `isolate` keeps the backdrop's negative z-index inside the header, above the page.
+      className={cn("flex flex-col", backdrop != null && "relative isolate", className)}
     >
+      {backdrop != null && (
+        <div
+          aria-hidden="true"
+          data-slot="page-header-backdrop"
+          className={cn(
+            "rounded-card pointer-events-none absolute inset-0 -z-10 overflow-hidden print:hidden",
+            fade,
+            collapsed ? "opacity-0" : "opacity-100"
+          )}
+        >
+          {backdrop}
+        </div>
+      )}
       <div
         ref={toolbarRef}
         data-slot="page-header-toolbar"
@@ -90,7 +118,8 @@ export function PageHeader({ title, subtitle, back, leading, actions, className 
       >
         <div
           className={cn(
-            "flex h-14 items-center gap-2 px-2",
+            "flex h-14 items-center gap-2",
+            backdrop != null ? "px-4" : "px-2",
             hasToolbarContent ? "relative" : "absolute inset-x-0 top-0",
             !hasToolbarContent && !collapsed && "pointer-events-none"
           )}
@@ -134,7 +163,12 @@ export function PageHeader({ title, subtitle, back, leading, actions, className 
         </div>
       </div>
 
-      <div className="flex items-center gap-4 px-2 pt-2 pb-4">
+      <div
+        className={cn(
+          "flex items-center gap-4",
+          backdrop != null ? "px-4 pt-2 pb-6" : "px-2 pt-2 pb-4"
+        )}
+      >
         {leading}
         <div className="flex min-w-0 flex-col gap-1">
           <h1 ref={titleRef} className="text-large-title text-label">

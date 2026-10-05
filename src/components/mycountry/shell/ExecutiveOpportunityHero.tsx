@@ -15,8 +15,6 @@ import {
   deriveOpportunity,
 } from "./opportunityRules";
 import { STATUS_TEXT } from "./status-tone";
-import { FlagWatermark } from "~/components/ui/facet/identity/FlagWatermark";
-import { assetUrl } from "~/lib/base-path";
 import { Card } from "~/components/ui/card";
 
 interface ExecutiveOpportunityHeroProps {
@@ -95,7 +93,6 @@ function ExecutiveOpportunityHeroComponent({
           run: () => onOpenDrill?.(drillKind),
         }
       : null;
-  const flagUrl = assetUrl(country?.flagUrl || country?.flag);
 
   return (
     <AnimatePresence mode="wait" initial={false}>
@@ -109,7 +106,6 @@ function ExecutiveOpportunityHeroComponent({
         className="w-full"
       >
         <Card className="p-5 sm:p-6">
-          <FlagWatermark src={flagUrl} />
           <Button
             type="button"
             variant="ghost"

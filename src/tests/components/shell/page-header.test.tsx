@@ -91,3 +91,28 @@ describe("PageHeader", () => {
     expect(toolbar.className).toContain("top-(--shell-header-top)");
   });
 });
+
+describe("PageHeader backdrop", () => {
+  it("renders the backdrop behind the expanded header only, clipped to the header box", () => {
+    const { container } = render(
+      <PageHeader
+        title="Pelaxia"
+        actions={<button type="button">Go</button>}
+        backdrop={<img alt="" src="/banner.png" />}
+      />
+    );
+    const backdrop = container.querySelector('[data-slot="page-header-backdrop"]')!;
+    expect(backdrop).toHaveAttribute("aria-hidden", "true");
+    expect(backdrop.className).toContain("overflow-hidden");
+    expect(backdrop.className).toContain("rounded-card");
+    expect(backdrop.querySelector("img")).toHaveAttribute("src", "/banner.png");
+    expect(container.querySelector('[data-slot="page-header-toolbar"]')!.contains(backdrop)).toBe(
+      false
+    );
+  });
+
+  it("is unchanged without a backdrop", () => {
+    const { container } = render(<PageHeader title="Help" />);
+    expect(container.querySelector('[data-slot="page-header-backdrop"]')).toBeNull();
+  });
+});
