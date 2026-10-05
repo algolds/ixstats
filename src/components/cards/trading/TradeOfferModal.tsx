@@ -30,6 +30,7 @@ import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 import { Badge } from "~/components/ui/badge";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { StepIndicator } from "~/components/ui/step-indicator";
+import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
 
 interface TradeOfferModalProps {
   open: boolean;
@@ -45,7 +46,7 @@ function toCardInstance(ownership: any): CardInstance {
     id: ownership.id,
     title: ownership.cards.title,
     description: ownership.cards.description || "",
-    artwork: ownership.cards.artwork || "/images/cards/placeholder-nation.png",
+    artwork: ownership.cards.artwork || CARD_ARTWORK_PLACEHOLDER,
     artworkVariants: ownership.cards.artworkVariants || null,
     cardType: ownership.cards.cardType,
     rarity: ownership.cards.rarity,

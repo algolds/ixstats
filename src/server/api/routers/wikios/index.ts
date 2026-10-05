@@ -5,13 +5,17 @@
  * `api.wikios.*` is byte-identical to the former monolith — no call sites change.
  *
  * Domains:
- *  - page-content:          article rendering, history, page metadata
- *  - search-categories:     search, advanced search, category tree, stats
- *  - templates:             template registry (search, data, preview, sync)
- *  - editing:               wikitext conversion, save, upload, rollback
- *  - stash:                 lore stash CRUD and item management
+ *  - page-content:          article rendering, sections, images, infobox, page metadata
+ *  - history-diff:          revision history, diffs, revision content
+ *  - search:                search, advanced search, recent changes, random page, site stats
+ *  - categories:            category members, parents, tree and autocomplete
+ *  - templates:             template registry (search, data, preview)
+ *  - editing:               preview, save, upload, revert, rollback, restore
+ *  - stash:                 stash CRUD and item management
  *  - watchlist-annotations: user watchlist + page annotations
- *  - user-talk:             user info, contributions, talk pages, backlinks
+ *  - user-talk:             author profiles, user info, contributions, backlinks
+ *  - discussions:           Margin discussion threads and comments
+ *  - utilities:             maintenance reports (orphans, dead ends, broken redirects) and audit logs
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { wikiosPageContentRouter } from "./page-content";

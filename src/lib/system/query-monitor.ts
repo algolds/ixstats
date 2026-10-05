@@ -21,7 +21,7 @@ export class QueryPerformanceMonitor {
   // Fixed-size ring buffer: recording is O(1) with no per-query array reallocation
   private readonly buffer: QueryMetrics[] = [];
   private readonly capacity: number;
-  private readonly slowThresholdMs: number;
+  readonly slowThresholdMs: number;
   private head = 0; // next write position
   private count = 0;
 

@@ -16,7 +16,7 @@ The Vault Cards system provides 3D holographic collectibles integrating sovereig
 - **Multi-Source Card Types**: NATION, LORE, NS_IMPORT, SPECIAL, COMMUNITY
 - **Lore Categories**: 13-value `LoreCategory` enum (`prisma/schema/enums.prisma`) with per-category icons and themes
 - **Ownership & Upgrades**: Serial numbers, escrow locking (`isLocked` while listed/traded), card XP/leveling, and crafting
-- **Pack Mechanics**: Data-driven `CardPack` rows (`packType` BASIC, PREMIUM, ELITE, EVENT, LIMITED seeded; THEMED/SEASONAL defined in `PackType` but unseeded)
+- **Pack Mechanics**: Data-driven `CardPack` rows (`packType` BASIC, PREMIUM, ELITE and EVENT seeded; THEMED/SEASONAL defined in `PackType` but unseeded; limited releases are EVENT packs with `limitedQuantity`)
 - **Card Recycling & Junking**: Recycle unlocked cards for instant IxCredits based on rarity
 - **Marketplace & P2P Trading**: Live auctions with fee schedules (`cardMarket`), peer-to-peer trade offers with escrow (`trading`)
 - **Attribution & Compliance**: Legally-sound attribution footer for NationStates imports and self-service takedown verification

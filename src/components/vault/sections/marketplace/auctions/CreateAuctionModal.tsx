@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
 
 interface CreateAuctionModalProps {
   open: boolean;
@@ -53,7 +54,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
           ownershipId: ownership.id,
           title: ownership.cards?.title ?? "Unknown",
           rarity: ownership.cards?.rarity ?? "COMMON",
-          artwork: ownership.cards?.artwork || "/images/cards/placeholder-nation.png",
+          artwork: ownership.cards?.artwork || CARD_ARTWORK_PLACEHOLDER,
           marketValue: ownership.cards?.marketValue || 0,
           cardType: ownership.cards?.cardType ?? "NS_IMPORT",
         })) || [],

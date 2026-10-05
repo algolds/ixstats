@@ -11,6 +11,7 @@ import {
   expectedPackJunkValue,
 } from "~/lib/cards/valuation";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
+import { PackType } from "~/lib/cards/enums";
 
 type SeedPack = (typeof packs)[number];
 const cases = packs.map((p: SeedPack) => [p.id, p] as const);
@@ -18,6 +19,11 @@ const cases = packs.map((p: SeedPack) => [p.id, p] as const);
 describe("pack junk expected value", () => {
   it("covers all 20 seeded packs", () => {
     expect(packs).toHaveLength(20);
+  });
+
+  it("seeds only valid PackType values", () => {
+    const valid: readonly string[] = Object.values(PackType);
+    expect(packs.filter((p: SeedPack) => !valid.includes(p.packType))).toEqual([]);
   });
 
   it.each(cases)("%s: junk EV is clearly below the price at the default rate", (_id, pack) => {

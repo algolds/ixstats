@@ -38,14 +38,12 @@ import {
 } from "iconoir-react";
 import { PackHolographicCover } from "~/components/cards/pack-opening/PackHolographicCover";
 import { cn } from "~/lib/utils/cn";
+import { PackType } from "~/lib/cards/enums";
 
-const PACK_TYPES = [
-  { value: "BASIC", label: "Basic" },
-  { value: "PREMIUM", label: "Premium" },
-  { value: "ELITE", label: "Elite" },
-  { value: "EVENT", label: "Event" },
-  { value: "LIMITED", label: "Limited" },
-];
+const PACK_TYPES = Object.values(PackType).map((value) => ({
+  value,
+  label: value.charAt(0) + value.slice(1).toLowerCase(),
+}));
 
 const RARITY_OPTIONS = [
   { value: "none", label: "None" },
@@ -62,14 +60,13 @@ const PACK_TYPE_COLORS: Record<string, { bg: string; text: string; border: strin
   PREMIUM: { bg: "bg-yellow/20", text: "text-yellow", border: "border-yellow/30" },
   ELITE: { bg: "bg-purple/20", text: "text-purple", border: "border-purple/30" },
   EVENT: { bg: "bg-red/20", text: "text-red", border: "border-red/30" },
-  LIMITED: { bg: "bg-red/20", text: "text-red", border: "border-red/30" },
 };
 
 interface PackFormData {
   name: string;
   description: string;
   artwork: string;
-  packType: string;
+  packType: PackType;
   priceCredits: number;
   cardCount: number;
   guaranteedRarity: string;
@@ -455,7 +452,7 @@ export function CardPacksAdmin() {
                 <label className="text-label text-body mb-2 block font-medium">Pack Type *</label>
                 <Select
                   value={formData.packType}
-                  onValueChange={(v) => setFormData({ ...formData, packType: v })}
+                  onValueChange={(v) => setFormData({ ...formData, packType: v as PackType })}
                 >
                   <SelectTrigger>
                     <SelectValue />

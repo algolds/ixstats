@@ -130,13 +130,13 @@ RATE_LIMIT_ENABLED=false
 | Variable | Purpose |
 | --- | --- |
 | `BASE_PATH` | Manually override Next.js basePath (production scripts default to `/projects/ixstates`) |
-| `ENABLE_COMPRESSION` | Read by `src/proxy.ts`. (`ENABLE_CACHING` and `CACHE_TTL_SECONDS` are declared in `src/env.ts` but nothing reads them) |
+| `ENABLE_COMPRESSION` | Read by `src/proxy.ts` |
 | `CLERK_SECRET_KEY` | Clerk backend secret (**required in production**) |
 | `CRON_SECRET` | Bearer token for the `/api/cron/*` HTTP triggers (**required in production**, ≥32 chars) |
 | `CRON_ENABLED_JOBS` | Comma-separated job names from `src/server/cron/jobs.ts` (or `*`) that `cron-runner.mjs` schedules; unset/empty schedules none |
 | `DATABASE_URL` | Prisma connection string (PostgreSQL) |
 | `DATABASE_READONLY` | `"true"` puts the Prisma client in read-only mode |
-| `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_GUILD_ID` | Discord bot configuration (image proxy, IxTwitter sync, guild member sync) |
+| `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID` | Discord bot configuration (image proxy, IxTwitter sync, guild member sync) |
 | `DISCORD_WEBHOOK_ENABLED`, `DISCORD_WEBHOOK_URL` | Error/alert webhook delivery |
 | `IXTIME_BOT_URL` | Internal IxTime bot endpoint |
 | `IXTIME_BOT_SECRET` | Secret the Discord bot sends to `/api/ixtime/sync-from-bot` (**required in production**) |
@@ -161,7 +161,6 @@ RATE_LIMIT_ENABLED=false
 | `NEXT_PUBLIC_APP_URL` | External URL for absolute links; also an allowed WebSocket origin |
 | `NEXT_PUBLIC_BASE_PATH` | Client-side base path override |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk public key for authentication widgets (**required in production**) |
-| `NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS` | UI toggle for experimental intelligence tips |
 | `NEXT_PUBLIC_IXTIME_BOT_URL` | Browser-accessible IxTime endpoint |
 | `NEXT_PUBLIC_MEDIAWIKI_URL` | Public wiki URL for builder imports |
 | `NEXT_PUBLIC_ENABLE_WEBSOCKET`, `NEXT_PUBLIC_WS_PORT` | ThinkPages WebSocket client configuration |

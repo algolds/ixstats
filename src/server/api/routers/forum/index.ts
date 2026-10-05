@@ -5,10 +5,10 @@
  * `api.forum.*` is byte-identical to the former monolith — no call sites change.
  *
  * Domains:
- *  - reading:  public read endpoints (recent threads, forums, threads, posts, members, search)
- *  - stash:    LoreStash integration for forum threads (stash / unstash / list)
- *  - writing:  write endpoints that require a linked forum account (create/reply/edit/delete, react, bookmark, mark-read)
- *  - account:  moderation (admin), XenForo alert sync, and forum account linking/sync
+ *  - reading:  public read endpoints (recent threads, forums, a thread with its posts, members, search)
+ *  - stash:    Stash integration for forum threads (stash / unstash / is-stashed / list)
+ *  - writing:  write endpoints that require a linked forum account (create/reply/edit/delete, react, mark-read)
+ *  - account:  forum account link status
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { forumReadingRouter } from "./reading";

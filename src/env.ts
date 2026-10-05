@@ -21,7 +21,6 @@ export const env = createEnv({
         : z.string().optional(),
     // Optional: Discord Bot Configuration (if needed for direct bot integration)
     DISCORD_BOT_TOKEN: z.string().optional(),
-    DISCORD_CLIENT_ID: z.string().optional(),
     DISCORD_GUILD_ID: z.string().optional(),
     // Clerk Authentication Configuration - Required in production
     CLERK_SECRET_KEY:
@@ -40,12 +39,8 @@ export const env = createEnv({
     RATE_LIMIT_WINDOW_MS: z.string().optional().default("60000"),
     // Performance & Optimization
     ENABLE_COMPRESSION: z.string().optional().default("true"),
-    ENABLE_CACHING: z.string().optional().default("true"),
-    CACHE_TTL_SECONDS: z.string().optional().default("3600"),
     // IxWiki Local Path (for same-server optimization)
     IXWIKI_LOCAL_PATH: z.string().optional(),
-    // Admin contact email (used in API User-Agents for external services)
-    ADMIN_EMAIL: z.string().email().optional(),
     // NationStates verification secret (required for NS nation verification)
     NS_VERIFICATION_SECRET: z.string().optional(),
     // XenForo Forum API Configuration
@@ -59,8 +54,6 @@ export const env = createEnv({
     IXWIKI_DB_USER: z.string().optional().default("ixwiki"),
     IXWIKI_DB_PASSWORD: z.string().optional(),
     IXWIKI_DB_NAME: z.string().optional().default("ixwiki"),
-    // IxWiki image base URL (for file/image serving)
-    IXWIKI_IMAGE_BASE_URL: z.string().optional().default("https://ixwiki.com/images"),
     // Server port
     PORT: z.string().optional().default("3550"),
     // Vercel URL (auto-set by Vercel)
@@ -166,8 +159,6 @@ export const env = createEnv({
         : z.string().optional(),
     // App URL for client-side self-referencing
     NEXT_PUBLIC_APP_URL: z.string().url().optional(),
-    // Enable intel suggestions feature flag
-    NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS: z.string().optional().default("false"),
     // Giphy API key for ThinkPages composer
     NEXT_PUBLIC_GIPHY_API_KEY: z.string().optional(),
     // Sign-in page URL for Halo sign-in links (defaults to /sign-in)
@@ -195,13 +186,11 @@ export const env = createEnv({
     IXTIME_BOT_URL: process.env.IXTIME_BOT_URL,
     IXTIME_BOT_SECRET: process.env.IXTIME_BOT_SECRET,
     DISCORD_BOT_TOKEN: process.env.DISCORD_BOT_TOKEN,
-    DISCORD_CLIENT_ID: process.env.DISCORD_CLIENT_ID,
     DISCORD_GUILD_ID: process.env.DISCORD_GUILD_ID,
     NEXT_PUBLIC_BASE_PATH: process.env.NEXT_PUBLIC_BASE_PATH,
     NEXT_PUBLIC_IXTIME_BOT_URL: process.env.NEXT_PUBLIC_IXTIME_BOT_URL,
     NEXT_PUBLIC_MEDIAWIKI_URL: process.env.NEXT_PUBLIC_MEDIAWIKI_URL,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-    NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS: process.env.NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS,
     // Clerk Authentication Configuration
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
@@ -217,12 +206,8 @@ export const env = createEnv({
     RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS,
     // Performance
     ENABLE_COMPRESSION: process.env.ENABLE_COMPRESSION,
-    ENABLE_CACHING: process.env.ENABLE_CACHING,
-    CACHE_TTL_SECONDS: process.env.CACHE_TTL_SECONDS,
     // IxWiki Local Path
     IXWIKI_LOCAL_PATH: process.env.IXWIKI_LOCAL_PATH,
-    // Admin Email
-    ADMIN_EMAIL: process.env.ADMIN_EMAIL,
     // NationStates
     NS_VERIFICATION_SECRET: process.env.NS_VERIFICATION_SECRET,
     // XenForo Forum
@@ -235,7 +220,6 @@ export const env = createEnv({
     IXWIKI_DB_USER: process.env.IXWIKI_DB_USER,
     IXWIKI_DB_PASSWORD: process.env.IXWIKI_DB_PASSWORD,
     IXWIKI_DB_NAME: process.env.IXWIKI_DB_NAME,
-    IXWIKI_IMAGE_BASE_URL: process.env.IXWIKI_IMAGE_BASE_URL,
     NEXT_PUBLIC_GIPHY_API_KEY: process.env.NEXT_PUBLIC_GIPHY_API_KEY,
     // Server
     PORT: process.env.PORT,

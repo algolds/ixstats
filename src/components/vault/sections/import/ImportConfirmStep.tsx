@@ -18,6 +18,7 @@ import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 import { Card } from "~/components/ui/card";
+import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
 
 export interface ImportResult {
   cardsImported: number;
@@ -195,7 +196,7 @@ export function ImportCompleteStep({
                     rarity={card.rarity || "COMMON"}
                     title={card.title}
                   />
-                  {card.artwork && card.artwork !== "/images/cards/placeholder-nation.png" && (
+                  {card.artwork && card.artwork !== CARD_ARTWORK_PLACEHOLDER && (
                     <img
                       src={proxyCardArtwork(card.artwork)}
                       alt={card.title}

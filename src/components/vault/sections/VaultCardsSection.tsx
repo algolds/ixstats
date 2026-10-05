@@ -12,6 +12,7 @@ import { useVaultCardsState } from "./cards/useVaultCardsState";
 import { InventoryTab } from "./cards/InventoryTab";
 import { CollectionsTab } from "./cards/CollectionsTab";
 import { CardGalleryTab } from "./cards/CardGalleryTab";
+import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
 
 const LoreCardGenerator = dynamic(
   () => import("~/components/cards/lore/LoreCardGenerator").then((m) => m.LoreCardGenerator),
@@ -56,7 +57,7 @@ export function VaultCardsSection() {
         isLocked: ownership.isLocked,
         title: String(cardData.title ?? ""),
         description: String(cardData.description || ""),
-        artwork: String(cardData.artwork || "/images/cards/placeholder-nation.png"),
+        artwork: String(cardData.artwork || CARD_ARTWORK_PLACEHOLDER),
         artworkVariants: (cardData.artworkVariants as any) || null,
         cardType: cardData.cardType as any,
         rarity: cardData.rarity as any,

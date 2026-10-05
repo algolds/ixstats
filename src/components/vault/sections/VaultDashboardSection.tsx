@@ -10,6 +10,7 @@ import { VaultRecentActivityCard, type ActivityEntry } from "./dashboard/VaultRe
 import { VaultShowcaseGrid } from "./dashboard/VaultShowcaseGrid";
 import { VaultWalletCard } from "./dashboard/VaultWalletCard";
 import { DailyRewardStatus } from "~/components/vault/DailyRewardProvider";
+import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
 
 interface VaultDashboardSectionProps {
   onNavigate?: (section: any) => void;
@@ -113,7 +114,7 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
           id: cardObj.id ?? ownership.id,
           title: cardObj.title ?? "Unknown",
           description: cardObj.description || "",
-          artwork: cardObj.artwork || "/images/cards/placeholder-nation.png",
+          artwork: cardObj.artwork || CARD_ARTWORK_PLACEHOLDER,
           artworkVariants: cardObj.artworkVariants || null,
           cardType: cardObj.cardType ?? "NS_IMPORT",
           rarity: cardObj.rarity ?? "COMMON",

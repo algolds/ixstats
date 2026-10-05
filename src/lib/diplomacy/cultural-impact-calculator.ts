@@ -18,6 +18,7 @@ import {
   type TransitionContext,
 } from "./markov-engine";
 import type { CulturalScenarioType } from "./cultural-scenario-generator";
+import { IxTime } from "~/lib/ixtime";
 
 interface CulturalExchangeData {
   id: string;
@@ -130,7 +131,7 @@ export class CulturalImpactCalculator {
           targetCountryId: exchange.participantCountryIds[0] || "",
           details: { culturalImpact: outcome.culturalImpactChange },
           timestamp: new Date().toISOString(),
-          ixTimeTimestamp: Date.now(),
+          ixTimeTimestamp: IxTime.getCurrentIxTime(),
         },
       ],
       actionHistory: {

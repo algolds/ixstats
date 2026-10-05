@@ -52,7 +52,7 @@ const getPackConfig = (packType: string) => {
       icon: Sparkles,
       label: "Premium",
     };
-  if (type.includes("EVENT") || type.includes("LIMITED"))
+  if (type.includes("EVENT"))
     return {
       color: "text-red",
       borderColor: "border-red/30",

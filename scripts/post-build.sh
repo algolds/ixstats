@@ -44,6 +44,7 @@ fi
 echo "✅ Post-build script completed successfully!"
 echo ""
 echo "Next steps:"
-echo "  1. Restart the PM2 process: pm2 restart ixstats"
-echo "  2. Or run the production start script: ./start-production.sh"
+echo "  1. Restart the web app: ./start-production.sh (it is not a PM2 app)"
+echo "  2. Reload the PM2 processes (ixstats-cron, ixstats-ws, ixstats-ixtwitter):"
+echo "     pm2 startOrReload ecosystem.config.cjs --update-env"
 

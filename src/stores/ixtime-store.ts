@@ -26,7 +26,7 @@ interface IxTimeActions {
 type IxTimeStore = IxTimeState & IxTimeActions;
 
 const initialState: IxTimeState = {
-  ixTimeTimestamp: Date.now(),
+  ixTimeTimestamp: IxTime.getCurrentIxTime(),
   ixTimeFormatted: "",
   multiplier: 2,
   isPaused: false,

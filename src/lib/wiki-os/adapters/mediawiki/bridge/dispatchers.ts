@@ -1,7 +1,8 @@
-// src/lib/wiki-os/bridge/dispatchers.ts
+// src/lib/wiki-os/adapters/mediawiki/bridge/dispatchers.ts
 // Public dispatchers routing requests across PostgreSQL (IxWiki) and HTTP (IIWiki/AltHistory).
 
 import { parseInfobox, parseCoordTemplate } from "~/lib/wiki-os/transformers/infobox-parser";
+import { cleanExcerpt } from "~/lib/wiki-os/transformers/wikitext-parser";
 import {
   type WikiSource,
   type WikiSearchResult,
@@ -32,7 +33,6 @@ import {
   ixwikiGetRandomPage,
   ixwikiResolveRedirect,
   ixwikiGetRevisionWikitext,
-  ixwikiGetCurrentRevMeta,
   ixwikiFullTextSearch,
   ixwikiGetParentCategories,
   ixwikiGetImageMeta,
@@ -45,9 +45,6 @@ import {
   fetchPageImagesHttp as httpGetPageImages,
   httpGetCategoryMembers,
 } from "./http-reader";
-
-// Re-exported from image-url (shared with client-safe code)
-export { getImageUrl } from "~/lib/wiki-os/transformers/image-url";
 
 const wikitextPromises = new Map<string, Promise<WikiArticle | null>>();
 
@@ -354,13 +351,6 @@ export async function getRevisionWikitext(ref: string) {
 }
 
 /**
- * Get current revision metadata (revid + timestamp) via direct MySQL.
- */
-export async function getCurrentRevMeta(title: string) {
-  return ixwikiGetCurrentRevMeta(title);
-}
-
-/**
  * Full-text search via MySQL searchindex table.
  */
 export async function fullTextSearch(
@@ -428,9 +418,6 @@ export async function getPageImages(
 ) {
   return httpGetPageImages(title, opts);
 }
-
-import { cleanExcerpt, cleanWikiMarkup } from "~/lib/wiki-os/transformers/wikitext-parser";
-export { cleanWikiMarkup };
 
 /**
  * Extract the intro paragraph from raw wikitext.

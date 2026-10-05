@@ -13,6 +13,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
+import { getVaultConfig } from "~/lib/vault/vault-perks";
 import { baseCardCapacity } from "~/lib/cards/general-settings";
 import { grantNewPlayerBonus, NEW_PLAYER_BONUS_ON_VAULT_OPEN } from "~/lib/vault/vault-bonus";
 import { budgetVaultCalculator } from "~/lib/economy/budget-vault-calculator";
@@ -54,12 +55,15 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       // Guaranteed non-null by protectedProcedure's authMiddleware.
       const userId = ctx.auth.userId;
       const balance = await vaultService.getBalance(userId, ctx.db as any);
+      // Same curve as the ledger and the crafting gate: configured XP per level.
+      const { xpPerLevel } = await getVaultConfig(ctx.db);
+      const vaultLevel = Math.floor(balance.vaultXp / xpPerLevel) + 1;
 
       return {
-        vaultLevel: balance.vaultLevel,
+        vaultLevel,
         vaultXp: balance.vaultXp,
-        nextLevelXp: balance.vaultLevel * 1000,
-        progress: (balance.vaultXp % 1000) / 1000,
+        nextLevelXp: vaultLevel * xpPerLevel,
+        progress: (balance.vaultXp % xpPerLevel) / xpPerLevel,
       };
     } catch (error) {
       console.error("[Vault Router] Error getting vault level:", error);

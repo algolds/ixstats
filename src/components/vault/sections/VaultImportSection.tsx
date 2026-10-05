@@ -18,6 +18,7 @@ import {
   type ImportResult,
 } from "./import/ImportConfirmStep";
 import { Button } from "~/components/ui/button";
+import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
 
 interface VaultImportSectionProps {
   initialTab?: string | null;
@@ -72,7 +73,7 @@ function ImportDeckTab() {
         cards: (data.cards ?? []).map((c: any) => ({
           id: c.id,
           title: c.title ?? "Unknown card",
-          artwork: c.artwork ?? "/images/cards/placeholder-nation.png",
+          artwork: c.artwork ?? CARD_ARTWORK_PLACEHOLDER,
           rarity: c.rarity ?? "COMMON",
           season: c.season ?? 1,
           marketValue: c.marketValue ?? 0,

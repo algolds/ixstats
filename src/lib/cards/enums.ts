@@ -23,6 +23,20 @@ export const CardRarity = {
 export type CardRarity = (typeof CardRarity)[keyof typeof CardRarity];
 
 /**
+ * Card pack types (Prisma `PackType`)
+ */
+export const PackType = {
+  BASIC: "BASIC",
+  PREMIUM: "PREMIUM",
+  ELITE: "ELITE",
+  THEMED: "THEMED",
+  SEASONAL: "SEASONAL",
+  EVENT: "EVENT",
+} as const;
+
+export type PackType = (typeof PackType)[keyof typeof PackType];
+
+/**
  * Card types/categories
  */
 export const CardType = {

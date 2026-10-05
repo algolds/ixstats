@@ -9,7 +9,7 @@ import { Input } from "~/components/ui/input";
 import { Stat } from "~/components/ui/stat";
 import { IxCreditsSymbol } from "../../../IxCreditsSymbol";
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
-import { getRarityTheme } from "~/lib/cards/display-utils";
+import { getRarityTheme, CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
 import type { MarketAuctionItem } from "./types";
 
 export function AuctionCardItem({
@@ -55,7 +55,7 @@ export function AuctionCardItem({
         className="border-separator rounded-control-sm relative h-14 w-12 shrink-0 cursor-pointer overflow-hidden border"
       >
         <CardHolographicCover cardType="NS_IMPORT" rarity={rarity} title={title} />
-        {artwork && artwork !== "/images/cards/placeholder-nation.png" && (
+        {artwork && artwork !== CARD_ARTWORK_PLACEHOLDER && (
           <img
             src={artwork}
             alt={title}

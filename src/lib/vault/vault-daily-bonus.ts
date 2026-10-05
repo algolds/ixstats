@@ -5,6 +5,7 @@ import { grantCardXp } from "~/lib/cards/xp-utils";
 import { allocateSerialNumberTx } from "~/lib/cards/serial-number";
 import { syncUserToForum } from "~/server/modules/forum";
 import { newCardOwnershipId } from "~/lib/cards/ownership-id";
+import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -316,7 +317,7 @@ export async function claimCombinedDailyClaim(
         id: card.id,
         title: card.title,
         rarity: card.rarity,
-        artwork: card.artwork || "/images/cards/placeholder-nation.png",
+        artwork: card.artwork || CARD_ARTWORK_PLACEHOLDER,
       },
       streak,
       message: `Claimed daily card: ${card.title}!`,
