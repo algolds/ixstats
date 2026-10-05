@@ -60,7 +60,6 @@
 
 **Keys (see `src/env.ts`):**
 - `DISCORD_BOT_TOKEN` - Bot authentication token (image proxy, IxTwitter sync)
-- `DISCORD_CLIENT_ID` - Application (client) ID
 - `DISCORD_GUILD_ID` - Guild used for member sync
 - `IXTIME_BOT_SECRET` - Shared secret the bot sends to `/api/ixtime/sync-from-bot` (**required in production**)
 - `BOT_API_KEY` - Key the bot sends to `/api/bot/lorewards/sync`
@@ -163,7 +162,6 @@ redis://[username:password@]host:port/database
 
    # Discord Bot (if needed for local development)
    DISCORD_BOT_TOKEN="your_actual_token_here"
-   DISCORD_CLIENT_ID="your_app_id_here"
    IXTIME_BOT_SECRET="your_generated_secret_here"
 
    # Cron Secret
