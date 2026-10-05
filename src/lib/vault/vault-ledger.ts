@@ -160,14 +160,24 @@ export async function checkDailyCap(
   }
 }
 
+/**
+ * Earn types the global earning kill switch stops. REFUND is deliberately exempt: a refund
+ * returns credits the user already paid, it doesn't mint new ones, so it must still land
+ * while earning is off. ADMIN_ADJUSTMENT stays open so admins can still correct balances.
+ */
+const KILL_SWITCHED_EARN_TYPES: ReadonlySet<VaultTransactionType> = new Set([
+  "EARN_ACTIVE",
+  "EARN_SOCIAL",
+  "EARN_PASSIVE",
+  "EARN_BONUS",
+  "EARN_CARDS",
+]);
+
 function assertEarnAllowed(config: VaultConfig, type: VaultTransactionType): void {
   if (config.isMaintenanceMode) {
     throw new LedgerError("MAINTENANCE", "Vault economy is currently in maintenance mode.");
   }
-  if (
-    !config.isEarningEnabled &&
-    (type === "EARN_ACTIVE" || type === "EARN_SOCIAL" || type === "EARN_PASSIVE")
-  ) {
+  if (!config.isEarningEnabled && KILL_SWITCHED_EARN_TYPES.has(type)) {
     throw new LedgerError("EARNING_DISABLED", "Earning credits is currently disabled globally.");
   }
 }

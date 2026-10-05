@@ -7,8 +7,9 @@
  * exchange-config / card-valuation.
  *
  * All bonuses post as VaultTransactionType.EARN_BONUS — deliberately outside the
- * EARN_ACTIVE/EARN_SOCIAL daily caps and the global isEarningEnabled gate, so an
- * onboarding bonus always lands and big achievement rewards aren't silently truncated.
+ * EARN_ACTIVE/EARN_SOCIAL daily caps, so big achievement rewards aren't silently truncated.
+ * The global isEarningEnabled kill switch does stop them: the grant reports not granted
+ * and records nothing, so its idempotency key stays free.
  */
 
 import { type PrismaClient } from "@prisma/client";
