@@ -55,6 +55,8 @@ export function SportsShell({
             clearFocus();
             onSideOpenChange?.(false);
           }}
+          // The focus lives in the aside at xl, so widening must not clear it.
+          resetSheetOnWiden={false}
           className="space-y-4"
         >
           {focus && <SportsFocusPanel sportPreset={sportPreset} />}

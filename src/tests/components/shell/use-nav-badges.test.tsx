@@ -11,10 +11,10 @@ const folderCountsQuery = jest.fn();
 
 jest.mock("~/hooks/useUserCountry", () => ({ useUserCountry: () => ({ country }) }));
 jest.mock("~/components/mycountry/domains/diplomacy/inbox/useDiplomacyInbox", () => ({
-  useDiplomacyInboxCount: (_id: string | undefined, enabled: boolean) => ({
-    ...(inboxEnabled(enabled), {}),
-    count: enabled ? inboxCount : 0,
-  }),
+  useDiplomacyInboxCount: (_id: string | undefined, enabled: boolean) => {
+    inboxEnabled(enabled);
+    return { count: enabled ? inboxCount : 0 };
+  },
 }));
 jest.mock("~/lib/flags/normalization", () => ({
   normalizeFlagUrl: (u: string) => (flagNormalizes ? `norm:${u}` : null),
