@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
+import { CrisisSignal } from "./CrisisSignal";
 import { ExecutiveOpportunityHero } from "./ExecutiveOpportunityHero";
 import { ExecutiveAgenda } from "./ExecutiveAgenda";
 import { StandingBands } from "./StandingBands";
@@ -77,6 +78,7 @@ function ExecutiveHomeComponent({
 
   return (
     <div className="space-y-6">
+      <CrisisSignal />
       <ExecutiveOpportunityHero
         countryId={countryId}
         onOpenDrill={onOpenDrill}

@@ -101,3 +101,22 @@ describe("Home, Messages, Sports and Help in the map", () => {
     });
   });
 });
+
+describe("badges recovered from the old player widget", () => {
+  it("MyCountry Overview carries pending actions and Directives the pending issues", () => {
+    const sections = app("mycountry").sections;
+    expect(sections.find((s) => s.id === "overview")?.badge).toBe("actions-pending");
+    expect(sections.find((s) => s.id === "executive")?.badge).toBe("issues-pending");
+  });
+
+  it("Help links the community Discord as an external section that is never current", () => {
+    const help = app("help");
+    const discord = help.sections.find((s) => s.id === "discord");
+    expect(discord).toMatchObject({
+      label: "Ixnay Discord",
+      href: "https://discord.gg/mgXAEYdqkd",
+      external: true,
+    });
+    expect(getActiveSectionId(help, "/help", null)).not.toBe("discord");
+  });
+});

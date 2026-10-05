@@ -319,3 +319,16 @@ describe("SourceList", () => {
     }
   });
 });
+
+describe("SourceList external sections", () => {
+  it("opens the Discord invite in a new tab without opener access and never marks it current", () => {
+    const { nav, onNavigate } = setup("/help", { expanded: ["help"] });
+    const link = within(nav).getByRole("link", { name: "Ixnay Discord" });
+    expect(link).toHaveAttribute("href", "https://discord.gg/mgXAEYdqkd");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    expect(link).not.toHaveAttribute("aria-current");
+    fireEvent.click(link);
+    expect(onNavigate).toHaveBeenCalled();
+  });
+});

@@ -17,6 +17,7 @@
  */
 
 import type { ComponentType, SVGProps } from "react";
+import { DiscordLogomark } from "./icons/DiscordLogomark";
 import { WikiLogomark } from "./icons/WikiLogomark";
 import {
   Activity,
@@ -88,6 +89,8 @@ type NavBadgeKey =
   | "vault-balance"
   | "daily-reward"
   | "messages-unread"
+  | "issues-pending"
+  | "actions-pending"
   | "whats-new";
 export type NavAction = "daily-reward";
 export type NavBadge =
@@ -150,6 +153,8 @@ interface AppSection {
   action?: NavAction;
   /** A normal link that is listed only while its badge is present (e.g. "What's new"). */
   conditional?: true;
+  /** An absolute URL outside the app: opens in a new tab, and is never the current section. */
+  external?: true;
 }
 
 export interface AppDefinition {
@@ -223,8 +228,22 @@ export const APPS: readonly AppDefinition[] = [
     match: ["/mycountry"],
     requiresAuth: true,
     sections: [
-      { id: "overview", label: "Overview", href: "/mycountry", icon: Crown, exact: true },
-      { id: "executive", label: "Directives", href: "/mycountry/executive", icon: Building },
+      {
+        id: "overview",
+        label: "Overview",
+        href: "/mycountry",
+        icon: Crown,
+        exact: true,
+        // The agenda card (pending cabinet meeting actions) lives on the Overview.
+        badge: "actions-pending",
+      },
+      {
+        id: "executive",
+        label: "Directives",
+        href: "/mycountry/executive",
+        icon: Building,
+        badge: "issues-pending",
+      },
       { id: "economy", label: "Economy", href: "/mycountry/economy", icon: StatsReport },
       {
         id: "diplomacy",
@@ -436,7 +455,16 @@ export const APPS: readonly AppDefinition[] = [
     // row links to the same page).
     match: ["/help", "/changelog"],
     navSetting: "showHelpTab",
-    sections: [{ id: "changelog", label: "What's new", href: "/changelog", icon: Clock }],
+    sections: [
+      { id: "changelog", label: "What's new", href: "/changelog", icon: Clock },
+      {
+        id: "discord",
+        label: "Ixnay Discord",
+        href: "https://discord.gg/mgXAEYdqkd",
+        icon: DiscordLogomark,
+        external: true,
+      },
+    ],
   },
   {
     id: "admin",
@@ -679,7 +707,7 @@ export function getActiveSectionId(
   let best: { id: string; score: number } | undefined;
   for (const section of app.sections) {
     // An action row shares its app's route; it is never "where you are".
-    if (section.action) continue;
+    if (section.action || section.external) continue;
     const { path: sectionPath, query } = splitHref(section.href);
     let score = -1;
     const queryKeys = [...query.keys()];

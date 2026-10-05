@@ -27,6 +27,24 @@ export function useNavBadges(signedIn: boolean): NavBadges {
     refetchInterval: 60_000,
     refetchOnWindowFocus: false,
   });
+  // Counted as the old dashboard player widget did: pending issues (shown on Directives) and the
+  // pending action items of cabinet meetings (on the Overview, where the agenda lives).
+  const countryId = signedIn ? country?.id : undefined;
+  const forCountry = {
+    enabled: Boolean(countryId),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  };
+  const { data: pendingIssues } = api.nationalIssues.getPendingCount.useQuery(
+    { countryId: countryId ?? "" },
+    forCountry
+  );
+  const { data: meetings } = api.meetings.getMeetings.useQuery(
+    { countryId: countryId ?? "" },
+    forCountry
+  );
+  const pendingActions =
+    meetings?.flatMap((m) => m.actionItems).filter((a) => a.status === "pending").length ?? 0;
   // The server snapshot is the running build, so the flag never renders (or mismatches) before hydration.
   const seenVersion = useSyncExternalStore(
     subscribeSeenVersion,
@@ -45,6 +63,9 @@ export function useNavBadges(signedIn: boolean): NavBadges {
     if (inbox.count > 0) badges["diplomacy-inbox"] = { kind: "count", value: inbox.count };
     const unread = folderCounts?.inbox ?? 0;
     if (unread > 0) badges["messages-unread"] = { kind: "count", value: unread };
+    const issues = pendingIssues?.total ?? 0;
+    if (issues > 0) badges["issues-pending"] = { kind: "count", value: issues };
+    if (pendingActions > 0) badges["actions-pending"] = { kind: "count", value: pendingActions };
     if (unseenBuild) badges["whats-new"] = { kind: "action", label: "New" };
     if (balance) {
       badges["vault-balance"] = {
@@ -59,5 +80,14 @@ export function useNavBadges(signedIn: boolean): NavBadges {
       }
     }
     return badges;
-  }, [signedIn, country, inbox.count, balance, folderCounts?.inbox, unseenBuild]);
+  }, [
+    signedIn,
+    country,
+    inbox.count,
+    balance,
+    folderCounts?.inbox,
+    pendingIssues?.total,
+    pendingActions,
+    unseenBuild,
+  ]);
 }

@@ -70,7 +70,10 @@ function isRedirectStub(file: string): boolean {
 
 const allLinks = APPS.flatMap((app) => [
   { owner: app.id, href: app.href },
-  ...app.sections.map((section) => ({ owner: `${app.id}/${section.id}`, href: section.href })),
+  // External links (the Discord invite) leave the app, so there is no page of ours to resolve.
+  ...app.sections
+    .filter((section) => !section.external)
+    .map((section) => ({ owner: `${app.id}/${section.id}`, href: section.href })),
 ]);
 
 describe("app section map routes", () => {

@@ -98,10 +98,16 @@ function SectionRow({ section, ctx }: { section: Section; ctx: Ctx }) {
   const Icon = section.icon;
   const badge = section.badge ? ctx.badges[section.badge] : undefined;
   const active = section.id === ctx.activeSectionId;
+  // An external invite leaves the app, so it is a plain anchor in a new tab, never the current row.
+  const RowLink = section.external ? "a" : Link;
+  const externalProps = section.external
+    ? ({ target: "_blank", rel: "noopener noreferrer" } as const)
+    : {};
   return (
     <li>
-      <Link
+      <RowLink
         href={section.href}
+        {...externalProps}
         aria-current={active ? "page" : undefined}
         onClick={ctx.onNavigate}
         className={cn(
@@ -123,7 +129,7 @@ function SectionRow({ section, ctx }: { section: Section; ctx: Ctx }) {
         <span className="relative">
           <Trailing badge={badge} />
         </span>
-      </Link>
+      </RowLink>
     </li>
   );
 }
