@@ -64,13 +64,10 @@ describe("VaultService - Upgrades & Perks", () => {
         select: {
           metadata: true,
         },
-        orderBy: { createdAt: "desc" },
-        take: 100,
       });
       expect(mockDb.vaultStoreItem.findMany).toHaveBeenCalledWith({
         where: {
           id: { in: ["item_cap_50", "item_cap_100"] },
-          isActive: true,
         },
         select: {
           id: true,
