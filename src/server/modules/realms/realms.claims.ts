@@ -19,6 +19,7 @@ import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
 import { canModerateRealm, isRealmOpen, isSiteAdmin, type RealmActor } from "./realms.access";
 import { assignNation, NationOwnershipError } from "./realms.ownership";
 import { capReachedMessage, nationCapacity } from "./realms.nation-cap";
+import type { NationPagePrefill } from "./realms.prefill";
 
 type ClaimErrorCode =
   | "NOT_FOUND"
@@ -46,10 +47,25 @@ export interface NationAssignedEvent {
   countryName: string;
 }
 
+/** A claim turned down (by a moderator, or automatically when a rival claim won): the claimant is told why. */
+export interface ClaimRejectedEvent {
+  clerkUserId: string;
+  nationName: string;
+  realmSlug: string | null;
+  reason: string;
+}
+
 interface ClaimsDeps {
   fetchPageCreator: (source: ProofSource, title: string) => Promise<string | null>;
   /** Side effects linkCountry used to run: notification, one-time new-player bonus, profile cache. Runs after commit. */
   onNationAssigned: (event: NationAssignedEvent) => Promise<void>;
+  /** Tell a claimant their claim was rejected (AT-5). Runs after commit; failures never undo the decision. */
+  onClaimRejected?: (event: ClaimRejectedEvent) => Promise<void>;
+  /**
+   * AT-3: what a nation page's infobox gives the country its approval creates (baseline and identity). Read
+   * before the approving transaction; a failure creates the nation with the plain baseline.
+   */
+  fetchNationPrefill?: (wikiSource: string, title: string) => Promise<NationPagePrefill>;
 }
 
 type ClaimsDb = Pick<
@@ -68,7 +84,8 @@ interface NationPage {
 
 /** What an approval hands over: an existing country, or a nation page whose country is created then. */
 type ClaimTarget =
-  { kind: "country"; countryId: string; countryName: string } | { kind: "page"; page: NationPage };
+  | { kind: "country"; countryId: string; countryName: string; realmSlug: string | null }
+  | { kind: "page"; page: NationPage };
 
 interface ClaimDecision {
   status: "approved" | "rejected";
@@ -108,12 +125,29 @@ function assertRealmOpen(realmId: string, status: string | null | undefined): vo
     throw new ClaimError("REALM_CLOSED", "This realm is not open for claims");
 }
 const pending = (claimId: string) => ({ claimId, status: "pending" as const, autoApproved: false });
+const RIVAL_REJECTION = "Another claim for this nation was approved";
 const rivalRejected = () => ({
   status: "rejected",
   reviewedBy: AUTO_REVIEWER,
   reviewedAt: new Date(),
-  rejectionReason: "Another claim for this nation was approved",
+  rejectionReason: RIVAL_REJECTION,
 });
+
+/** Turn away the other pending claims for a nation that was just handed over; returns their claimants. */
+async function rejectRivals(tx: ClaimsTx, where: Prisma.RealmClaimWhereInput): Promise<string[]> {
+  const rivals = await tx.realmClaim.findMany({
+    where,
+    select: { user: { select: { clerkUserId: true } } },
+  });
+  await tx.realmClaim.updateMany({ where, data: rivalRejected() });
+  return (rivals ?? []).map((r) => r.user.clerkUserId);
+}
+
+/** What a hand-over produced: the nation, and the claimants whose rival claims it turned away. */
+interface HandOver {
+  country: { id: string; name: string };
+  rivals: string[];
+}
 
 async function nationExists(
   client: Pick<PrismaClient, "country">,
@@ -131,19 +165,30 @@ function uniqueAsTaken(error: Error): never {
   throw parsePrismaError(error)?.type === "unique_constraint" ? nationTaken() : error;
 }
 
-/** Ruling E-f: the claimed nation's Country with baseline data. A slug taken elsewhere gets -<realm slug> (E-g). */
-async function createNationCountry(tx: ClaimsTx, page: NationPage) {
+/**
+ * Ruling E-f: the claimed nation's Country with baseline data, prefilled from the page's infobox when it gave
+ * anything (AT-3). A slug taken elsewhere gets -<realm slug> (E-g).
+ */
+async function createNationCountry(
+  tx: ClaimsTx,
+  page: NationPage,
+  prefill: NationPagePrefill | null
+) {
   if (await nationExists(tx, page.realmId, page.title)) throw nationTaken();
   const slug = generateSlug(page.title);
   const slugTaken = await tx.country.findUnique({ where: { slug }, select: { id: true } });
+  const identity = prefill && Object.keys(prefill.identity).length > 0 ? prefill.identity : null;
   return tx.country
     .create({
       data: {
-        ...buildBaselineCountryData(page.title),
+        ...buildBaselineCountryData(page.title, prefill?.country),
         slug: slugTaken ? `${slug}-${page.realmSlug}` : slug,
         realmId: page.realmId,
         wikiSource: page.wikiSource,
         wikiPageTitle: page.title,
+        ...(identity && {
+          nationalIdentity: { create: { countryName: page.title, ...identity } },
+        }),
       },
       select: { id: true, name: true },
     })
@@ -179,32 +224,36 @@ async function takeMapRegion(tx: ClaimsTx, countryId: string, page: NationPage):
 async function handOver(
   tx: ClaimsTx,
   claim: { id: string; userId: string },
-  target: ClaimTarget
-): Promise<{ id: string; name: string }> {
+  target: ClaimTarget,
+  prefill: NationPagePrefill | null = null
+): Promise<HandOver> {
   if (target.kind === "country") {
     await assignNation(tx, { userId: claim.userId, countryId: target.countryId });
-    await tx.realmClaim.updateMany({
-      where: { countryId: target.countryId, status: "pending", id: { not: claim.id } },
-      data: rivalRejected(),
+    const rivals = await rejectRivals(tx, {
+      countryId: target.countryId,
+      status: "pending",
+      id: { not: claim.id },
     });
-    return { id: target.countryId, name: target.countryName };
+    return { country: { id: target.countryId, name: target.countryName }, rivals };
   }
   const { page } = target;
-  const country = await createNationCountry(tx, page);
+  const country = await createNationCountry(tx, page, prefill);
   await assignNation(tx, { userId: claim.userId, countryId: country.id });
   await takeMapRegion(tx, country.id, page);
   await tx.realmClaim.update({ where: { id: claim.id }, data: { countryId: country.id } });
-  await tx.realmClaim.updateMany({
-    where: {
-      realmId: page.realmId,
-      wikiPageTitle: page.title,
-      status: "pending",
-      id: { not: claim.id },
-    },
-    data: rivalRejected(),
+  const rivals = await rejectRivals(tx, {
+    realmId: page.realmId,
+    wikiPageTitle: page.title,
+    status: "pending",
+    id: { not: claim.id },
   });
-  return country;
+  return { country, rivals };
 }
+
+const targetName = (target: ClaimTarget) =>
+  target.kind === "country" ? target.countryName : target.page.title;
+const targetRealmSlug = (target: ClaimTarget) =>
+  target.kind === "country" ? target.realmSlug : target.page.realmSlug;
 
 function claimTarget(claim: {
   realmId: string;
@@ -215,7 +264,12 @@ function claimTarget(claim: {
   country: { name: string } | null;
 }): ClaimTarget | null {
   if (claim.countryId) {
-    return { kind: "country", countryId: claim.countryId, countryName: claim.country?.name ?? "" };
+    return {
+      kind: "country",
+      countryId: claim.countryId,
+      countryName: claim.country?.name ?? "",
+      realmSlug: claim.realm.slug,
+    };
   }
   if (!claim.wikiPageTitle || !claim.wikiSource) return null;
   return {
@@ -268,6 +322,34 @@ async function approvedClaim(
 }
 
 export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
+  /** Tell each claimant why their claim was turned down; a failed notice is logged, never thrown. */
+  async function notifyRejected(events: ClaimRejectedEvent[]): Promise<void> {
+    if (!deps.onClaimRejected) return;
+    for (const event of events) {
+      await deps
+        .onClaimRejected(event)
+        .catch((e: Error) => console.error("[realms] claim rejection notice failed:", e));
+    }
+  }
+
+  /** AT-3: a nation page's prefill, read before the approving transaction; null for an existing country. */
+  async function prefillFor(target: ClaimTarget): Promise<NationPagePrefill | null> {
+    if (target.kind !== "page" || !deps.fetchNationPrefill) return null;
+    return deps.fetchNationPrefill(target.page.wikiSource, target.page.title).catch((e: Error) => {
+      console.warn("[realms] nation page prefill failed:", e);
+      return null;
+    });
+  }
+
+  /** The rivals a hand-over turned away, told their claim lost. */
+  const rivalNotices = (target: ClaimTarget, rivals: string[]): ClaimRejectedEvent[] =>
+    rivals.map((clerkUserId) => ({
+      clerkUserId,
+      nationName: targetName(target),
+      realmSlug: targetRealmSlug(target),
+      reason: RIVAL_REJECTION,
+    }));
+
   async function isVerifiedCreator(
     userId: string,
     country: { name: string; wikiSource: string | null; wikiPageTitle: string | null }
@@ -305,7 +387,7 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
         ownerUserId: true,
         wikiSource: true,
         wikiPageTitle: true,
-        realm: { select: { settings: true, status: true } },
+        realm: { select: { settings: true, status: true, slug: true } },
       },
     });
     if (!country) throw new ClaimError("NOT_FOUND", "Country not found");
@@ -327,12 +409,14 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     pendingId: string | null,
     target: ClaimTarget
   ) {
-    const { claimId, country } = await db
+    const prefill = await prefillFor(target);
+    const { claimId, country, rivals } = await db
       .$transaction(async (tx) => {
         const claim = await approvedClaim(tx, filed, pendingId);
-        return { claimId: claim.id, country: await handOver(tx, claim, target) };
+        return { claimId: claim.id, ...(await handOver(tx, claim, target, prefill)) };
       })
       .catch(ownershipAsClaimError);
+    await notifyRejected(rivalNotices(target, rivals));
     await deps.onNationAssigned({
       userId: actor.id,
       clerkUserId: actor.clerkUserId,
@@ -365,7 +449,12 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
       actor,
       { realmId: country.realmId, userId: actor.id, countryId },
       { countryId },
-      { kind: "country", countryId, countryName: country.name },
+      {
+        kind: "country",
+        countryId,
+        countryName: country.name,
+        realmSlug: country.realm?.slug ?? null,
+      },
       await isVerifiedCreator(actor.id, country)
     );
   }
@@ -413,13 +502,20 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     );
   }
 
-  async function reject(claimId: string, reviewer: string, reason: string) {
+  /** Reject a pending claim with a reason, then tell its claimant (AT-5). */
+  async function reject(
+    claimId: string,
+    reviewer: string,
+    reason: string,
+    notice: Omit<ClaimRejectedEvent, "reason">
+  ) {
     await decide(db, claimId, {
       status: "rejected",
       reviewedBy: reviewer,
       reviewedAt: new Date(),
       rejectionReason: reason,
     });
+    await notifyRejected([{ ...notice, reason }]);
     return { status: "rejected" as const };
   }
 
@@ -441,22 +537,28 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
       throw new ClaimError("FORBIDDEN", "Only this realm's moderators can review claims");
     const target = claimTarget(claim);
     if (claim.status !== "pending" || !target) throw notPending();
+    const notice = {
+      clerkUserId: claim.user.clerkUserId,
+      nationName: targetName(target),
+      realmSlug: claim.realm.slug,
+    };
     if (!decision.approve) {
       const reason = decision.reason?.trim() ?? "";
       if (reason.length < 3) throw new ClaimError("REASON_REQUIRED", "Give the player a reason");
-      return reject(claimId, actor.clerkUserId, reason);
+      return reject(claimId, actor.clerkUserId, reason, notice);
     }
     // A claim filed before the realm closed can still be rejected, but no longer approved.
     assertRealmOpen(claim.realmId, claim.realm.status);
-    let country: { id: string; name: string };
+    const prefill = await prefillFor(target);
+    let handed: HandOver;
     try {
-      country = await db.$transaction(async (tx) => {
+      handed = await db.$transaction(async (tx) => {
         await decide(tx, claimId, {
           status: "approved",
           reviewedBy: actor.clerkUserId,
           reviewedAt: new Date(),
         });
-        return handOver(tx, claim, target);
+        return handOver(tx, claim, target, prefill);
       });
     } catch (error) {
       if (error instanceof NationOwnershipError) {
@@ -464,10 +566,12 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
           error.code === "ALREADY_OWNED"
             ? "The nation was taken by another player first"
             : error.message;
-        return reject(claimId, AUTO_REVIEWER, `Automatically rejected: ${why}`);
+        return reject(claimId, AUTO_REVIEWER, `Automatically rejected: ${why}`, notice);
       }
       throw error;
     }
+    const { country, rivals } = handed;
+    await notifyRejected(rivalNotices(target, rivals));
     await deps.onNationAssigned({
       userId: claim.userId,
       clerkUserId: claim.user.clerkUserId,
@@ -501,11 +605,23 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     });
   }
 
-  async function myClaims(actor: RealmActor) {
+  /**
+   * The player's own claims, newest first, with their status and (once rejected) the reason — optionally in one
+   * realm (AT-5). Only the claimant's own rows; reviewer ids stay internal.
+   */
+  async function myClaims(actor: RealmActor, realmSlug?: string) {
     return db.realmClaim.findMany({
-      where: { userId: actor.id },
+      where: { userId: actor.id, ...(realmSlug && { realm: { slug: realmSlug } }) },
       orderBy: { createdAt: "desc" },
-      include: {
+      take: 100,
+      select: {
+        id: true,
+        status: true,
+        autoApproved: true,
+        rejectionReason: true,
+        wikiPageTitle: true,
+        createdAt: true,
+        reviewedAt: true,
         realm: { select: { name: true, slug: true } },
         country: { select: { id: true, name: true, slug: true } },
       },

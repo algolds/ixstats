@@ -107,6 +107,7 @@ function setup() {
   const deps = {
     fetchPageCreator: jest.fn().mockResolvedValue("Kir"),
     onNationAssigned: jest.fn().mockResolvedValue(undefined),
+    onClaimRejected: jest.fn().mockResolvedValue(undefined),
   };
   return { db, deps, claims: createClaimsService(db, deps) };
 }
@@ -922,5 +923,167 @@ describe("realm status (AT-7)", () => {
     await expect(
       claims.reviewClaim(admin, "cl1", { approve: false, reason: "Realm archived" })
     ).resolves.toEqual({ status: "rejected" });
+  });
+});
+
+describe("claimants see their claims and hear about rejections (AT-5)", () => {
+  const pending = {
+    id: "cl1",
+    status: "pending",
+    userId: "u1",
+    countryId: "c1",
+    realmId: "default",
+    realm: { ownerId: "system", slug: "ixworld" },
+    user: { clerkUserId: "clerk_u1" },
+    country: { name: "Aurelia" },
+  };
+
+  it("a moderator's rejection tells the claimant the nation and the reason", async () => {
+    const { db, deps, claims } = setup();
+    db.realmClaim.findUnique.mockResolvedValue(pending);
+    await claims.reviewClaim(admin, "cl1", { approve: false, reason: " Not your nation " });
+    expect(deps.onClaimRejected).toHaveBeenCalledWith({
+      clerkUserId: "clerk_u1",
+      nationName: "Aurelia",
+      realmSlug: "ixworld",
+      reason: "Not your nation",
+    });
+  });
+
+  it("an automatic rejection (the nation was taken first) is announced too", async () => {
+    const { db, deps, claims } = setup();
+    db.realmClaim.findUnique.mockResolvedValue(pending);
+    db.country.findUnique.mockResolvedValue({ ...country, ownerUserId: "u2" });
+    await claims.reviewClaim(admin, "cl1", { approve: true });
+    expect(deps.onClaimRejected).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clerkUserId: "clerk_u1",
+        reason: expect.stringContaining("another player"),
+      })
+    );
+  });
+
+  it("an approval tells the rival claimants it turned away", async () => {
+    const { db, deps, claims } = setup();
+    db.realmClaim.findUnique.mockResolvedValue(pending);
+    db.realmClaim.findMany.mockResolvedValue([{ user: { clerkUserId: "clerk_rival" } }]);
+    await claims.reviewClaim(admin, "cl1", { approve: true });
+    expect(db.realmClaim.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { countryId: "c1", status: "pending", id: { not: "cl1" } } })
+    );
+    expect(deps.onClaimRejected).toHaveBeenCalledWith({
+      clerkUserId: "clerk_rival",
+      nationName: "Aurelia",
+      realmSlug: "ixworld",
+      reason: "Another claim for this nation was approved",
+    });
+    expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);
+  });
+
+  it("a failing notice never undoes the decision", async () => {
+    const { db, deps, claims } = setup();
+    db.realmClaim.findUnique.mockResolvedValue(pending);
+    deps.onClaimRejected.mockRejectedValue(new Error("notifications down"));
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    await expect(
+      claims.reviewClaim(admin, "cl1", { approve: false, reason: "Not yours" })
+    ).resolves.toEqual({ status: "rejected" });
+    error.mockRestore();
+  });
+
+  it("myClaims lists only the player's own claims, optionally in one realm, with the reason", async () => {
+    const { db, claims } = setup();
+    await claims.myClaims(actor, "eurth");
+    expect(db.realmClaim.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: "u1", realm: { slug: "eurth" } },
+        orderBy: { createdAt: "desc" },
+        select: expect.objectContaining({ status: true, rejectionReason: true }),
+      })
+    );
+    const select = db.realmClaim.findMany.mock.calls[0][0].select;
+    expect(select).not.toHaveProperty("reviewedBy");
+    await claims.myClaims(actor);
+    expect(db.realmClaim.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({ where: { userId: "u1" } })
+    );
+  });
+});
+
+describe("a claimed nation page prefills its new country (AT-3)", () => {
+  const pendingPage = {
+    id: "cl1",
+    status: "pending",
+    userId: "u1",
+    countryId: null,
+    realmId: EURTH,
+    wikiSource: "iiwiki",
+    wikiPageTitle: "Aurelia",
+    realm: { ownerId: "system", slug: "eurth", status: "active" },
+    user: { clerkUserId: "clerk_u1" },
+    country: null,
+  };
+  const prefill = {
+    country: { baselinePopulation: 4_200_000, government: "Federal republic" },
+    identity: { officialName: "Federal Republic of Aurelia", capitalCity: "Port Aurel" },
+  };
+
+  it("an approval reads the page first and founds the nation with its figures and identity", async () => {
+    const { db, deps } = pageSetup();
+    const fetchNationPrefill = jest.fn().mockResolvedValue(prefill);
+    const service = createClaimsService(db, { ...deps, fetchNationPrefill });
+    db.realmClaim.findUnique.mockResolvedValue(pendingPage);
+    await service.reviewClaim(admin, "cl1", { approve: true });
+    expect(fetchNationPrefill).toHaveBeenCalledWith("iiwiki", "Aurelia");
+    expect(fetchNationPrefill.mock.invocationCallOrder[0]).toBeLessThan(
+      db.$transaction.mock.invocationCallOrder[0]
+    );
+    const data = db.country.create.mock.calls[0][0].data;
+    expect(data).toMatchObject({
+      name: "Aurelia",
+      baselinePopulation: 4_200_000,
+      governmentType: "Federal republic",
+      nationalIdentity: {
+        create: {
+          countryName: "Aurelia",
+          officialName: "Federal Republic of Aurelia",
+          capitalCity: "Port Aurel",
+        },
+      },
+    });
+  });
+
+  it("the verified creator's instant approval is prefilled too", async () => {
+    const { db, deps } = pageSetup();
+    const fetchNationPrefill = jest.fn().mockResolvedValue(prefill);
+    const service = createClaimsService(db, { ...deps, fetchNationPrefill });
+    await service.claimNationPage(actor, EURTH, "Aurelia");
+    expect(db.country.create.mock.calls[0][0].data).toMatchObject({
+      baselinePopulation: 4_200_000,
+      nationalIdentity: { create: expect.objectContaining({ capitalCity: "Port Aurel" }) },
+    });
+  });
+
+  it("a failed read founds the nation with the plain baseline", async () => {
+    const { db, deps } = pageSetup();
+    const fetchNationPrefill = jest.fn().mockRejectedValue(new Error("wiki down"));
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    const service = createClaimsService(db, { ...deps, fetchNationPrefill });
+    db.realmClaim.findUnique.mockResolvedValue(pendingPage);
+    await expect(service.reviewClaim(admin, "cl1", { approve: true })).resolves.toEqual({
+      status: "approved",
+    });
+    const data = db.country.create.mock.calls[0][0].data;
+    expect(data.baselinePopulation).toBe(1_000_000);
+    expect(data).not.toHaveProperty("nationalIdentity");
+    warn.mockRestore();
+  });
+
+  it("claiming an existing country reads no page", async () => {
+    const { db, deps } = setup();
+    const fetchNationPrefill = jest.fn();
+    const service = createClaimsService(db, { ...deps, fetchNationPrefill });
+    await service.claimCountry(actor, "c1");
+    expect(fetchNationPrefill).not.toHaveBeenCalled();
   });
 });

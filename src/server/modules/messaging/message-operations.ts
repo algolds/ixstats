@@ -17,6 +17,7 @@ import {
 } from "./contracts";
 import { MessagingBlockedError, MessagingForbiddenError, MessagingNotFoundError } from "./errors";
 import { recipientsBlockingSender } from "~/server/shared/user-blocks";
+import { realmBoardChatRestriction } from "~/server/shared/realm-board";
 
 const EXEMPT_ROLES = new Set(["admin", "system-owner", "owner", "staff"]);
 const EXEMPT_MEMBERSHIP_TIERS = new Set(["premium", "pro", "vip"]);
@@ -54,6 +55,14 @@ export class MessagingMessageOperations {
     const targetConvId = conv?.id || input.conversationId;
     const participant = await this.findSendingParticipant(actorId, targetConvId, conv);
     if (!participant) throw new MessagingForbiddenError();
+
+    // A board mute or ban covers the realm board's chat as well as its posts.
+    const restricted = await realmBoardChatRestriction(
+      this.db,
+      conv ?? participant.conversation,
+      actorId
+    );
+    if (restricted) throw new MessagingBlockedError(restricted);
 
     // A direct conversation goes quiet once the other person blocks the sender.
     if ((conv ?? participant.conversation)?.type === "direct") {

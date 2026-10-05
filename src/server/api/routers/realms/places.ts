@@ -6,6 +6,7 @@ import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { realmSettings } from "~/server/modules/realms/realms.settings";
+import { isRealmHiddenFrom, type RealmActor } from "~/server/modules/realms/realms.access";
 import {
   ensureRealmBoard,
   getRealmBoardAccess,
@@ -16,7 +17,10 @@ import {
 /** How far back "board activity" in the directory looks. */
 const BOARD_ACTIVITY_WINDOW_DAYS = 7;
 
-/** Realms the directory lists: active public realms, plus IxWorld whatever its row says. */
+/**
+ * Realms the directory lists: active public realms, plus IxWorld whatever its row says (AT-6). Unlisted realms are
+ * reachable by link only and never listed; draft and generating realms are shown only to their staff, by link.
+ */
 export const DIRECTORY_REALM_WHERE = {
   OR: [{ id: DEFAULT_REALM_ID }, { visibility: "public", status: "active" }],
 };
@@ -99,14 +103,17 @@ export async function listRealmDirectory(db: PrismaClient, viewerUserId: string 
 
 /**
  * Open a realm's board: create it on first use, bring the caller's membership in line with the nations
- * they own there (and drop members who no longer own one), and say what the caller may do.
+ * they own there (and drop members who no longer own one), and say what the caller may do. A draft or
+ * generating realm's board opens for its staff only (AT-6).
  */
-export async function openRealmBoard(db: PrismaClient, slug: string, clerkUserId: string | null) {
+export async function openRealmBoard(db: PrismaClient, slug: string, viewer: RealmActor | null) {
+  const clerkUserId = viewer?.clerkUserId ?? null;
   const realm = await db.realm.findUnique({
     where: { slug },
-    select: { id: true, slug: true, name: true, ownerId: true },
+    select: { id: true, slug: true, name: true, ownerId: true, status: true },
   });
-  if (!realm) throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
+  if (!realm || isRealmHiddenFrom(viewer, realm))
+    throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
 
   const { groupId } = await ensureRealmBoard(db, realm);
   const group = await db.thinktankGroup.findUnique({

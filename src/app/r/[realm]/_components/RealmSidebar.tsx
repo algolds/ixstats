@@ -16,8 +16,10 @@ import {
 } from "~/components/ui/select";
 import { cn, createUrl, formatPercent, formatYears } from "~/lib/utils";
 import { formatCompact, timeAgo } from "~/lib/format/compact";
+import { assetUrl } from "~/lib/base-path";
 
 type Overview = NonNullable<RouterOutputs["realms"]["region"]["overview"]>;
+type Happening = RouterOutputs["realms"]["region"]["happenings"]["items"][number];
 
 function Panel({
   title,
@@ -275,7 +277,11 @@ export function EmbassiesPanel({ overview }: { overview: Overview }) {
               className="hover:bg-fill-4 rounded-row text-label text-body flex items-center gap-2 p-2"
             >
               {realm.thumbnail ? (
-                <img src={realm.thumbnail} alt="" className="size-5 rounded-sm object-cover" />
+                <img
+                  src={assetUrl(realm.thumbnail) ?? ""}
+                  alt=""
+                  className="size-5 rounded-sm object-cover"
+                />
               ) : (
                 <span className="bg-fill-3 size-5 rounded-sm" aria-hidden="true" />
               )}
@@ -288,10 +294,39 @@ export function EmbassiesPanel({ overview }: { overview: Overview }) {
   );
 }
 
-export function HappeningsPanel({ slug }: { slug: string }) {
-  const { data: items, isLoading } = api.realms.region.happenings.useQuery({ slug });
+/** One happening: its text (linked when it has a page) and how long ago. */
+export function HappeningLine({ item }: { item: Happening }) {
   return (
-    <Panel title="Happenings">
+    <li className="text-footnote">
+      {item.href ? (
+        <Link href={createUrl(item.href)} className="text-label hover:underline">
+          {item.text}
+        </Link>
+      ) : (
+        <span className="text-label">{item.text}</span>
+      )}
+      <span className="text-label-secondary"> · {timeAgo(item.at)}</span>
+    </li>
+  );
+}
+
+export function HappeningsPanel({ slug }: { slug: string }) {
+  const { data, isLoading } = api.realms.region.happenings.useQuery({ slug });
+  const items = data?.items;
+  return (
+    <Panel
+      title="Happenings"
+      action={
+        items?.length ? (
+          <Link
+            href={createUrl(`/r/${encodeURIComponent(slug)}/happenings`)}
+            className="text-tint text-footnote hover:underline"
+          >
+            See all
+          </Link>
+        ) : undefined
+      }
+    >
       {isLoading ? (
         <p className="text-label-secondary text-footnote">Loading…</p>
       ) : !items?.length ? (
@@ -299,16 +334,7 @@ export function HappeningsPanel({ slug }: { slug: string }) {
       ) : (
         <ul className="flex flex-col gap-2">
           {items.map((item) => (
-            <li key={item.id} className="text-footnote">
-              {item.href ? (
-                <Link href={createUrl(item.href)} className="text-label hover:underline">
-                  {item.text}
-                </Link>
-              ) : (
-                <span className="text-label">{item.text}</span>
-              )}
-              <span className="text-label-secondary"> · {timeAgo(item.at)}</span>
-            </li>
+            <HappeningLine key={item.id} item={item} />
           ))}
         </ul>
       )}

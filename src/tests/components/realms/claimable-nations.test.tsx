@@ -30,6 +30,7 @@ jest.mock("~/hooks/useNotify", () => ({ useNotify: () => mockNotify }));
 jest.mock("~/trpc/react", () => ({
   api: {
     realms: {
+      myClaims: { useQuery: () => ({ data: [] }) },
       claimNationPage: {
         useMutation: (opts: MutationOptions) => {
           options = opts;
@@ -38,7 +39,11 @@ jest.mock("~/trpc/react", () => ({
       },
     },
     useUtils: () => ({
-      realms: { getBySlug: { invalidate: mockInvalidate }, region: { invalidate: jest.fn() } },
+      realms: {
+        getBySlug: { invalidate: mockInvalidate },
+        region: { invalidate: jest.fn() },
+        myClaims: { invalidate: jest.fn() },
+      },
     }),
   },
 }));

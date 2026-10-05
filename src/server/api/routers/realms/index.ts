@@ -20,6 +20,8 @@ import {
   withMaxNationsPerUser,
   type NationAssignedEvent,
 } from "~/server/modules/realms";
+import { notifyClaimRejected } from "~/server/modules/realms/realms.notices";
+import { fetchNationPagePrefill } from "~/server/modules/realms/realms.prefill";
 import { fetchPageCreator } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { parsePrismaError } from "~/lib/prisma-error";
 import { REALM_SLUG_PATTERN } from "~/lib/realms/realm-slug";
@@ -57,6 +59,8 @@ const claims = (db: PrismaClient) =>
   createClaimsService(db, {
     fetchPageCreator,
     onNationAssigned: (event) => onNationAssigned(db, event),
+    onClaimRejected: notifyClaimRejected,
+    fetchNationPrefill: fetchNationPagePrefill,
   });
 
 const CLAIM_ERROR_CODES = {
@@ -113,7 +117,10 @@ export const realmsRouter = createTRPCRouter({
       return claims(ctx.db).claimNationPage(ctx.user, realm.id, input.title).catch(claimError);
     }),
 
-  myClaims: protectedProcedure.query(({ ctx }) => claims(ctx.db).myClaims(ctx.user)),
+  /** The player's own claims and their status (pending, approved, rejected with the reason), optionally in one realm. */
+  myClaims: protectedProcedure
+    .input(z.object({ realmSlug: z.string().min(1).max(100).optional() }).optional())
+    .query(({ ctx, input }) => claims(ctx.db).myClaims(ctx.user, input?.realmSlug)),
 
   /** The player's nations in every realm, grouped by realm, for the nation switcher. */
   myNations: protectedProcedure.query(({ ctx }) =>
@@ -241,5 +248,5 @@ export const realmsRouter = createTRPCRouter({
   /** Open a realm's board (created on first open) and sync the caller's membership from their nations. */
   getBoard: publicProcedure
     .input(z.object({ slug: z.string().min(1).max(100) }))
-    .query(({ ctx, input }) => openRealmBoard(ctx.db, input.slug, ctx.auth?.userId ?? null)),
+    .query(({ ctx, input }) => openRealmBoard(ctx.db, input.slug, ctx.user ?? null)),
 });

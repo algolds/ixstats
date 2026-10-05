@@ -8,9 +8,13 @@ import { createUrl } from "~/lib/utils";
 import { SearchField } from "~/components/ui/search-field";
 import { ClaimableNations } from "../../_components/ClaimableNations";
 import { LeaveRealmButton } from "../../_components/LeaveRealmButton";
+import { MyClaims } from "../../_components/MyClaims";
 import { PlayAsNation } from "../../_components/PlayAsNation";
 
-/** Every nation of the realm, the viewer's own first (with Play as and Leave realm), then claimable pages. */
+/**
+ * Every nation of the realm, the viewer's own first (with Play as and Leave realm), then the viewer's claims here
+ * and the claimable pages.
+ */
 export default function RealmNationsPage({ params }: { params: Promise<{ realm: string }> }) {
   const { realm: slug } = use(params);
   const { data: realm, isLoading } = api.realms.getBySlug.useQuery({ slug });
@@ -88,6 +92,8 @@ export default function RealmNationsPage({ params }: { params: Promise<{ realm: 
           </ul>
         )}
       </section>
+
+      <MyClaims realmSlug={realm.slug} />
 
       {realm.claimsOpen && realm.nationPages.length > 0 && (
         <ClaimableNations realmSlug={realm.slug} pages={realm.nationPages} />

@@ -7,6 +7,7 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { useViewerRealmId } from "~/hooks/useViewerRealmId";
 import { createUrl } from "~/lib/utils";
+import { assetUrl } from "~/lib/base-path";
 import {
   Select,
   SelectContent,
@@ -15,6 +16,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { RealmFeed } from "~/app/r/[realm]/_components/RealmFeed";
+import { MyClaims } from "~/app/r/[realm]/_components/MyClaims";
 import { Badge } from "~/components/ui/badge";
 import { SearchField } from "~/components/ui/search-field";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
@@ -60,14 +62,22 @@ function RealmCard({ realm }: { realm: DirectoryRealm }) {
         className="bg-fill-3 block h-24"
       >
         {realm.bannerUrl && (
-          <img src={realm.bannerUrl} alt="" className="h-full w-full object-cover" />
+          <img
+            src={assetUrl(realm.bannerUrl) ?? ""}
+            alt=""
+            className="h-full w-full object-cover"
+          />
         )}
       </Link>
       <div className="flex flex-1 flex-col gap-3 p-5">
         <div className="flex items-center gap-3">
           <div className="border-separator bg-fill-3 rounded-row flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden border">
             {realm.thumbnail ? (
-              <img src={realm.thumbnail} alt="" className="h-full w-full object-cover" />
+              <img
+                src={assetUrl(realm.thumbnail) ?? ""}
+                alt=""
+                className="h-full w-full object-cover"
+              />
             ) : (
               <Globe className="h-5 w-5" />
             )}
@@ -151,6 +161,8 @@ export default function RealmsDirectoryPage() {
           Worlds you can play in. Each realm has its own nations and a board where they talk.
         </p>
       </header>
+
+      <MyClaims />
 
       {isLoading ? (
         <p className="text-label-secondary text-body">Loading realms…</p>

@@ -68,10 +68,6 @@ partly done item.
 
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
-| AT-3 | UNFINISHED | Builder in any realm. Left: prefill from a claimed nation page (the builder is realm-aware with nation caps since #49) | `countries/management/create.ts` | M |
-| AT-5 | UNFINISHED | Claimants can't see their claim status (`realms.myClaims` has no caller); rejections send no notification | `routers/realms/index.ts`; `realms.claims.ts` | S |
-| AT-6 | UNFINISHED | Realm directory filtered by `visibility` and status. Left: `/realms` lists open realms but `visibility` is unused | `realms.hub.ts` | M |
-| AT-8 | UNFINISHED | A realm's founder can't be assigned (no `ownerId` or thumbnail update, no delete) | `routers/realms/index.ts` | S |
 | AT-9 | STUB | Labs map pipeline enrichment is placeholder data (labelled "sample data"). Left: the Labs pipeline only, because a generated world is not persisted (no `Country` rows, so nothing to attach real profiles or resources to). Persisted countries get real `GeographicResource` rows from PostGIS since 2026-10-05 | `lib/maps/pipeline/enrichment-pipeline.ts` | M |
 | AT-15 | DEAD | Unused map models (`WorldTemplate`, `ProceduralWorld`, `Transport*` segments, `ElevationZone`, `Territory`); `SharedVertex` written, never read | `maps.prisma` | S |
 
@@ -194,12 +190,11 @@ See §1 above (password rotation, CSP).
 
 **Realms Phases 2–4** ([realms-framework-spec.md](../architecture/realms-framework-spec.md))
 - Public founding application (decisions 6–7)
-- Founder tooling: settings, moderation, removing nations, succession using `lastSeenAt` (decisions 20–21; needs AT-8)
+- Founder tooling: settings, moderation, removing nations, succession using `lastSeenAt` (decisions 20–21)
 - Archived realms: read-only, excluded from crons and payouts (decision 21)
 - Per-realm feed and a global-feed setting (decision 2): the dashboard feed and trending are not realm-scoped
 - WikiOS front page as a portal to every realm's lore; realm-tagged forum (decision 3)
 - Per-realm calendar label (a new realm settings key)
-- Builder prefill from a claimed nation page (Eurth E-f; AT-3)
 - Procedural realm generation: the wizard option and the `Realm.seed` / `generationParams` writes (M)
 
 **MyCountry statecraft** ([design PRDs](../systems/mycountry-design-philosophy-and-prds.md), [game loops](../systems/statecraft/statecraft-game-loops.md))

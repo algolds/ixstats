@@ -8,6 +8,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { createUrl } from "~/lib/utils";
 import { parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
+import { ClaimStatusBadge, type MyClaim } from "./MyClaims";
 
 interface NationPageItem {
   title: string;
@@ -26,8 +27,15 @@ export function ClaimableNations({
   const notify = useNotify();
   const utils = api.useUtils();
   const [submitted, setSubmitted] = useState<ReadonlySet<string>>(new Set());
+  const { data: myClaims } = api.realms.myClaims.useQuery({ realmSlug }, { enabled: !!isSignedIn });
+  // Newest first: the first claim per page is the one that counts (a rejected claim can be filed again).
+  const latestClaim = new Map<string, MyClaim>();
+  for (const c of myClaims ?? []) {
+    if (c.wikiPageTitle && !latestClaim.has(c.wikiPageTitle)) latestClaim.set(c.wikiPageTitle, c);
+  }
   const claim = api.realms.claimNationPage.useMutation({
     onSuccess: (result, { title }) => {
+      void utils.realms.myClaims.invalidate();
       if (result.status === "approved") {
         notify.success(`${title} is yours`, "Manage it from MyCountry.");
         void utils.realms.getBySlug.invalidate({ slug: realmSlug });
@@ -63,29 +71,36 @@ export function ClaimableNations({
       </p>
       <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {pages.map((page) => {
-          const isSubmitted = submitted.has(page.title);
+          const mine = latestClaim.get(page.title);
+          const isPending = submitted.has(page.title) || mine?.status === "pending";
+          const rejected = !isPending && mine?.status === "rejected" ? mine : null;
           return (
-            <li
-              key={page.title}
-              className="hover:bg-fill-3 rounded-row flex items-center gap-2 p-2"
-            >
-              <Link
-                href={createUrl(wikiReaderPath(page.title, parseWikiSource(page.wikiSource)))}
-                className="text-label text-body truncate hover:underline"
-              >
-                {page.title}
-              </Link>
-              {isSignedIn && (
-                <Button
-                  size="xs"
-                  variant="outline"
-                  className="ml-auto"
-                  aria-label={`Claim ${page.title}`}
-                  disabled={claim.isPending || isSubmitted}
-                  onClick={() => claim.mutate({ realmSlug, title: page.title })}
+            <li key={page.title} className="hover:bg-fill-3 rounded-row flex flex-col gap-1 p-2">
+              <div className="flex items-center gap-2">
+                <Link
+                  href={createUrl(wikiReaderPath(page.title, parseWikiSource(page.wikiSource)))}
+                  className="text-label text-body truncate hover:underline"
                 >
-                  {isSubmitted ? "Pending review" : "Claim"}
-                </Button>
+                  {page.title}
+                </Link>
+                {rejected && <ClaimStatusBadge status="rejected" />}
+                {isSignedIn && (
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    className="ml-auto"
+                    aria-label={`Claim ${page.title}`}
+                    disabled={claim.isPending || isPending}
+                    onClick={() => claim.mutate({ realmSlug, title: page.title })}
+                  >
+                    {isPending ? "Pending review" : rejected ? "Claim again" : "Claim"}
+                  </Button>
+                )}
+              </div>
+              {rejected?.rejectionReason && (
+                <p className="text-label-secondary text-footnote">
+                  Your claim was rejected: {rejected.rejectionReason}
+                </p>
               )}
             </li>
           );

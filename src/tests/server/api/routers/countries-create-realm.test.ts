@@ -48,6 +48,8 @@ interface Scenario {
   /** Nations the player owns per realm. */
   held?: Record<string, number>;
   nameTaken?: boolean;
+  /** The name is a nation page of the realm's lore index. */
+  nationPage?: string;
 }
 
 function setup(s: Scenario = {}) {
@@ -68,6 +70,9 @@ function setup(s: Scenario = {}) {
       ),
       update: jest.fn().mockResolvedValue({}),
       updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+    },
+    realmPage: {
+      findFirst: jest.fn().mockResolvedValue(s.nationPage ? { title: s.nationPage } : null),
     },
     realm: {
       findUnique: jest.fn(({ where }: { where: { id: string } }) => {
@@ -188,6 +193,23 @@ describe("countries.createCountry — realm and cap", () => {
       closed.caller.createCountry(input({ realmId: "old" }) as never)
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(closed.db.country.create).not.toHaveBeenCalled();
+  });
+
+  it("a name that is a nation page of the realm must be claimed, not built (AT-3)", async () => {
+    const { db, caller } = setup({ nationPage: "New Aurelia" });
+    await expect(caller.createCountry(input() as never)).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: expect.stringMatching(/claim it on the realm page/),
+    });
+    expect(db.realmPage.findFirst).toHaveBeenCalledWith({
+      where: {
+        realmId: "default",
+        kind: "nation",
+        title: { equals: "New Aurelia", mode: "insensitive" },
+      },
+      select: { title: true },
+    });
+    expect(db.country.create).not.toHaveBeenCalled();
   });
 
   it("a name already used in the realm is CONFLICT before anything is written", async () => {

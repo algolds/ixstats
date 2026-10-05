@@ -146,6 +146,45 @@ describe("realms.getBoard", () => {
       /Realm not found/
     );
   });
+
+  it("a draft or generating realm's board opens for its founder only (AT-6)", async () => {
+    for (const status of ["draft", "generating"]) {
+      const db = makeDb({ boardExists: true });
+      db.realm.findUnique.mockResolvedValue({
+        id: "eurth",
+        slug: "eurth",
+        name: "Eurth",
+        ownerId: FOUNDER,
+        status,
+      });
+      await expect(callerAs(OUTSIDER, db).getBoard({ slug: "eurth" })).rejects.toThrow(
+        /Realm not found/
+      );
+      await expect(callerAs(null, db).getBoard({ slug: "eurth" })).rejects.toThrow(
+        /Realm not found/
+      );
+      await expect(callerAs(FOUNDER, db).getBoard({ slug: "eurth" })).resolves.toMatchObject({
+        canModerate: true,
+      });
+    }
+  });
+
+  it("an unlisted or archived realm's board stays readable by link", async () => {
+    for (const status of ["active", "archived"]) {
+      const db = makeDb({ boardExists: true });
+      db.realm.findUnique.mockResolvedValue({
+        id: "eurth",
+        slug: "eurth",
+        name: "Eurth",
+        ownerId: FOUNDER,
+        status,
+        visibility: "unlisted",
+      });
+      await expect(callerAs(OUTSIDER, db).getBoard({ slug: "eurth" })).resolves.toMatchObject({
+        canPost: false,
+      });
+    }
+  });
 });
 
 describe("realms.directory", () => {

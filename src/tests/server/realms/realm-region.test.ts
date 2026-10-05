@@ -175,6 +175,56 @@ describe("Manage permissions", () => {
       })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
+
+  it("lets appearance officers change the thumbnail, https only (AT-8)", async () => {
+    const db = makeDb(realmRow({ officers: [{ userId: OFFICER, powers: ["appearance"] }] }));
+    await callerAs(OFFICER, db).region.updateAppearance({
+      slug: "eurth",
+      thumbnail: "https://img.example/thumb.png",
+    });
+    expect(db.realm.update).toHaveBeenLastCalledWith({
+      where: { id: "eurth" },
+      data: { thumbnail: "https://img.example/thumb.png" },
+    });
+    await callerAs(OFFICER, db).region.updateAppearance({ slug: "eurth", thumbnail: null });
+    expect(db.realm.update).toHaveBeenLastCalledWith({
+      where: { id: "eurth" },
+      data: { thumbnail: null },
+    });
+    await expect(
+      callerAs(OFFICER, db).region.updateAppearance({
+        slug: "eurth",
+        thumbnail: "http://img.example/thumb.png",
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("accepts a banner uploaded through the image upload route", async () => {
+    const db = makeDb();
+    const uploaded = "/images/uploads/uploaded_1759600000000_ab12cd34_banner.png";
+    await callerAs(FOUNDER, db).region.updateAppearance({ slug: "eurth", bannerUrl: uploaded });
+    expect(db.realm.update).toHaveBeenLastCalledWith({
+      where: { id: "eurth" },
+      data: { bannerUrl: uploaded },
+    });
+    await expect(
+      callerAs(FOUNDER, db).region.updateAppearance({
+        slug: "eurth",
+        bannerUrl: "/images/uploads/../../etc/passwd",
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("refuses a thumbnail change from an officer without the appearance power", async () => {
+    const db = makeDb();
+    await expect(
+      callerAs(OFFICER, db).region.updateAppearance({
+        slug: "eurth",
+        thumbnail: "https://img.example/thumb.png",
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(db.realm.update).not.toHaveBeenCalled();
+  });
 });
 
 describe("embassies", () => {
@@ -451,6 +501,24 @@ describe("overview and happenings", () => {
     expect(await callerAs(FOUNDER, db).region.overview({ slug: "eurth" })).not.toBeNull();
   });
 
+  it("leaves draft partner realms out of the embassies panel (AT-6)", async () => {
+    const db = overviewDb();
+    db.realmEmbassy.findMany.mockResolvedValue([
+      {
+        fromRealmId: "eurth",
+        fromRealm: { id: "eurth", name: "Eurth", slug: "eurth" },
+        toRealm: { id: "terra", name: "Terra", slug: "terra" },
+      },
+    ]);
+    db.realm.findMany.mockResolvedValue([]);
+    await callerAs(PLAYER, db).region.overview({ slug: "eurth" });
+    expect(db.realm.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: { in: ["terra"] }, status: { notIn: ["draft", "generating"] } },
+      })
+    );
+  });
+
   it("lists happenings newest first", async () => {
     const db = makeDb();
     db.country.findMany.mockImplementation(async ({ take }: any) =>
@@ -467,11 +535,131 @@ describe("overview and happenings", () => {
         toRealm: { name: "Terra", slug: "terra" },
       },
     ]);
-    const items = await callerAs(PLAYER, db).region.happenings({ slug: "eurth" });
+    const { items, nextCursor } = await callerAs(PLAYER, db).region.happenings({ slug: "eurth" });
     expect(items.map((i) => i.text)).toEqual([
       "An embassy with Terra opened",
       "Aurelia was founded",
     ]);
     expect(items[0]?.href).toBe("/r/terra");
+    expect(nextCursor).toBeNull();
+  });
+
+  it("pages through the history with a cursor", async () => {
+    const db = makeDb();
+    const day = (d: number) => new Date(Date.UTC(2026, 0, d));
+    const nations = [5, 4, 3, 2, 1].map((d) => ({
+      id: `c${d}`,
+      name: `Nation ${d}`,
+      slug: null,
+      createdAt: day(d),
+    }));
+    db.country.findMany.mockImplementation(async ({ where, take }: any) => {
+      if (!take) return [];
+      const before: Date | undefined = where.createdAt?.lt;
+      return nations.filter((n) => !before || n.createdAt < before).slice(0, take);
+    });
+    const caller = callerAs(PLAYER, db).region;
+    const first = await caller.happenings({ slug: "eurth", limit: 2 });
+    expect(first.items.map((i) => i.text)).toEqual([
+      "Nation 5 was founded",
+      "Nation 4 was founded",
+    ]);
+    expect(first.nextCursor).toBe(day(4).toISOString());
+    // Every source reads one more than the page to know whether more remain.
+    expect(db.country.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 3 }));
+
+    const second = await caller.happenings({ slug: "eurth", limit: 2, cursor: first.nextCursor });
+    expect(second.items.map((i) => i.text)).toEqual([
+      "Nation 3 was founded",
+      "Nation 2 was founded",
+    ]);
+    expect(db.realmClaim.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ reviewedAt: { lt: day(4) } }),
+      })
+    );
+    const last = await caller.happenings({ slug: "eurth", limit: 2, cursor: second.nextCursor });
+    expect(last.items.map((i) => i.text)).toEqual(["Nation 1 was founded"]);
+    expect(last.nextCursor).toBeNull();
+  });
+
+  it("filters by kind, reading only the chosen sources", async () => {
+    const db = makeDb();
+    await callerAs(PLAYER, db).region.happenings({ slug: "eurth", kinds: ["embassy"] });
+    expect(db.realmEmbassy.findMany).toHaveBeenCalled();
+    expect(db.realmClaim.findMany).not.toHaveBeenCalled();
+    expect(db.realmOfficer.findMany).not.toHaveBeenCalled();
+    expect(db.country.findMany).not.toHaveBeenCalled();
+    expect(db.activityFeed.findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("deleting a realm (AT-8)", () => {
+  function deletableDb(countries = 0, regions = 0) {
+    const db = mockDb();
+    db.realm.findUnique.mockResolvedValue({
+      id: "eurth",
+      slug: "eurth",
+      name: "Eurth",
+      _count: { countries },
+    });
+    db.mapLayer.count.mockResolvedValue(regions);
+    db.realmBoard.findUnique.mockResolvedValue({ groupId: "board1" });
+    return db;
+  }
+
+  it("is for site admins only", async () => {
+    const db = deletableDb();
+    await expect(
+      callerAs(FOUNDER, db).region.deleteRealm({ realmId: "eurth", confirmSlug: "eurth" })
+    ).rejects.toThrow();
+    expect(db.realm.delete).not.toHaveBeenCalled();
+  });
+
+  it("never deletes IxWorld", async () => {
+    const db = deletableDb();
+    await expect(
+      callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "default", confirmSlug: "ixworld" })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(db.realm.delete).not.toHaveBeenCalled();
+  });
+
+  it("needs the realm's slug typed", async () => {
+    const db = deletableDb();
+    await expect(
+      callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: "Eurth!" })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(db.realm.delete).not.toHaveBeenCalled();
+  });
+
+  it("refuses a realm that still has nations or map regions, and moves nothing", async () => {
+    const withNations = deletableDb(3);
+    await expect(
+      callerAs(ADMIN, withNations, admin).region.deleteRealm({
+        realmId: "eurth",
+        confirmSlug: "eurth",
+      })
+    ).rejects.toMatchObject({ code: "CONFLICT", message: expect.stringContaining("3 nations") });
+    expect(withNations.realm.delete).not.toHaveBeenCalled();
+    expect(withNations.country.updateMany).not.toHaveBeenCalled();
+
+    const withMap = deletableDb(0, 12);
+    await expect(
+      callerAs(ADMIN, withMap, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: "eurth" })
+    ).rejects.toMatchObject({ code: "CONFLICT", message: expect.stringContaining("map regions") });
+    expect(withMap.realm.delete).not.toHaveBeenCalled();
+  });
+
+  it("deletes an empty realm and retires its board", async () => {
+    const db = deletableDb();
+    await expect(
+      callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: " eurth " })
+    ).resolves.toEqual({ success: true, slug: "eurth" });
+    expect(db.thinktankGroup.updateMany).toHaveBeenCalledWith({
+      where: { id: "board1" },
+      data: { isActive: false },
+    });
+    expect(db.realmBoard.delete).toHaveBeenCalledWith({ where: { realmId: "eurth" } });
+    expect(db.realm.delete).toHaveBeenCalledWith({ where: { id: "eurth" } });
   });
 });

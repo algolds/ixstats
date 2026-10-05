@@ -13,6 +13,8 @@ import {
 } from "~/server/api/trpc";
 import {
   BOARD_RESTRICTIONS,
+  HAPPENING_KINDS,
+  isRealmImageUrl,
   MAX_REALM_TAGS,
   REALM_POWERS,
   REALM_TAGS,
@@ -41,6 +43,7 @@ import {
   updateRealmFactbook,
   updateRealmOfficer,
 } from "~/server/modules/realms/realms.region-actions";
+import { deleteRealm } from "~/server/modules/realms/realms.admin";
 
 function regionError(error: Error): never {
   if (error instanceof RealmRegionError)
@@ -55,11 +58,12 @@ const officerInput = z.object({
   title: z.string().trim().min(1).max(60),
   powers: z.array(z.enum(REALM_POWERS)).max(REALM_POWERS.length),
 });
-const bannerUrl = z
+/** A banner or thumbnail: an https:// address or an uploaded image (see `isRealmImageUrl`), or "" for none. */
+const realmImage = z
   .string()
   .trim()
   .max(1000)
-  .refine((url) => url === "" || /^https:\/\/[^\s]+$/i.test(url), "Use an https:// image address");
+  .refine(isRealmImageUrl, "Use an https:// image address or upload an image");
 
 export const realmRegionRouter = createTRPCRouter({
   /** The front page and header: banner, stats, factbook, officers, embassies, poll, board preview. */
@@ -67,11 +71,25 @@ export const realmRegionRouter = createTRPCRouter({
     .input(z.object({ slug }))
     .query(({ ctx, input }) => getRealmOverview(ctx.db, input.slug, ctx.user ?? null)),
 
-  /** New nations, claims, embassies, officers and the nations' game events, newest first. */
+  /**
+   * New nations, claims, embassies, officers and the nations' game events, newest first, a page at a time:
+   * `cursor` is the previous page's `nextCursor`; `kinds` filters.
+   */
   happenings: publicProcedure
-    .input(z.object({ slug }))
+    .input(
+      z.object({
+        slug,
+        cursor: z.string().datetime().nullish(),
+        kinds: z.array(z.enum(HAPPENING_KINDS)).max(HAPPENING_KINDS.length).optional(),
+        limit: z.number().int().min(1).max(50).optional(),
+      })
+    )
     .query(({ ctx, input }) =>
-      getRealmHappenings(ctx.db, input.slug, ctx.user ?? null).catch(regionError)
+      getRealmHappenings(ctx.db, input.slug, ctx.user ?? null, {
+        before: input.cursor ? new Date(input.cursor) : null,
+        kinds: input.kinds,
+        limit: input.limit,
+      }).catch(regionError)
     ),
 
   /** The Manage tab (founder and officers): each section the caller's powers allow. */
@@ -83,7 +101,8 @@ export const realmRegionRouter = createTRPCRouter({
     .input(
       z.object({
         slug,
-        bannerUrl: bannerUrl.nullable().optional(),
+        bannerUrl: realmImage.nullable().optional(),
+        thumbnail: realmImage.nullable().optional(),
         description: z.string().trim().max(1000).nullable().optional(),
         tags: z.array(z.enum(REALM_TAGS)).max(MAX_REALM_TAGS).optional(),
       })
@@ -168,6 +187,14 @@ export const realmRegionRouter = createTRPCRouter({
       await globalCache.delete(`user_profile:${ctx.user.clerkUserId}`);
       return result;
     }),
+
+  /**
+   * Site admins: delete a realm created by mistake (AT-8), confirmed by its slug. Refuses IxWorld and any realm
+   * that still has nations or map regions; archive those instead.
+   */
+  deleteRealm: adminProcedure
+    .input(z.object({ realmId: z.string().min(1), confirmSlug: z.string().max(100) }))
+    .mutation(({ ctx, input }) => deleteRealm(ctx.db, ctx.user, input).catch(regionError)),
 
   /** Site admins: set a realm's founder, or hand it back to staff (`clerkUserId: null`). */
   assignFounder: adminProcedure

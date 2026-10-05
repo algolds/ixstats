@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-10-05
 **Routes:** `/realms` (directory) · `/r/[realm]` (realm page: Overview) · `/r/[realm]/board` · `/r/[realm]/nations` ·
-`/r/[realm]/manage` · `/admin/realms`
+`/r/[realm]/manage` · `/r/[realm]/happenings` · `/admin/realms`
 **Code:** `src/server/api/routers/realms/` (`index.ts`, `places.ts`, `region.ts`), `src/server/modules/realms/`
 (`realms.region.ts`, `realms.region-actions.ts`), `src/app/r/[realm]/(region)/`, `src/lib/realms/realm-region.ts`,
 `src/server/api/routers/thinkpages/thinktanks/realm-board.ts`, `src/server/api/routers/thinkpages/realm-feed.ts`
@@ -24,11 +24,24 @@ one realm.
 - every realm with `visibility: "public"` and `status: "active"`;
 - IxWorld (`DEFAULT_REALM_ID`), whatever its row says.
 
-Unlisted realms stay readable by link only (`/r/[realm]`). The rule is `DIRECTORY_REALM_WHERE` in `places.ts`.
+**Visibility and status rule (AT-6):**
 
-The realm page (`realms.getBySlug`) follows `Realm.status` (`isRealmOpen` / `isRealmPublished` in
-`realms.access.ts`): a draft or generating realm is shown only to its moderators; an archived realm stays
-readable but takes no claims. Claims (filing, and approving a pending one) need an active realm or IxWorld.
+| Realm | Listed (directory, its feed picker, embassy proposals) | Reachable by link (page, board, `?realm=`) |
+| :---- | :---- | :---- |
+| Public and active, or IxWorld | Yes | Yes |
+| Unlisted and active | No | Yes |
+| Archived | No | Yes, read-only and closed to claims |
+| Draft or generating | No | Only its staff (founder, site admins) |
+
+- Listing is `DIRECTORY_REALM_WHERE` in `places.ts`. Nothing else lists realms to other players.
+- The builder's realm picker also offers an active unlisted realm to the player who founded it or holds a nation
+  there (their own realm, not a listing).
+- Draft and generating realms are hidden by `isRealmHiddenFrom` / `isRealmPublished` (`realms.access.ts`): the realm
+  page and header (`getBySlug`, `region.overview`, happenings, Manage), its board (`realms.getBoard`), the
+  `?realm=<slug>` scope of the countries directory, leaderboards and maps (`resolveViewerRealmId`, which falls back
+  to IxWorld as for an unknown slug), and other realms' embassy panels.
+- Claims (filing, and approving a pending one) need an active realm or IxWorld (`isRealmOpen`).
+- The realm feed (`thinkpages.getFeed({ realmId })`) takes a realm id, which only the pages above hand out.
 
 Each row reports only counted facts:
 
@@ -45,6 +58,9 @@ each realm as a banner card with links to its page and board, and can be searche
 sorted (name, most nations, most active board, newest) and filtered by tag; only tags some realm uses are
 offered. It shows "Join · claim a nation" (or "Claim another nation") while the viewer is under the realm's cap. The link goes to the realm page, where
 claiming happens (`ClaimableNations`, `realms.claimNationPage`).
+
+Signed-in players with claims see **Your claims** above the list (`realms.myClaims`, the `MyClaims` component): each
+claim's nation and realm, its status (pending review, approved, rejected) and a rejection's reason.
 
 Below the list, a **realm feed** panel shows the ThinkPages feed for one realm. It defaults to the realm of
 the viewer's active nation (`useViewerRealmId`), or to **All realms** when signed out, and a selector
@@ -94,7 +110,9 @@ The page has three tabs:
 
 The board is the **Board** tab of the realm page. Board moderation (section 4):
 
-- a **muted** nation's owner can read and chat but not post (`createGroupPost` refuses with the reason);
+- a **muted** nation's owner can read but not post or chat: `createGroupPost` refuses with the reason, and so
+  does `sendMessage` for the board's ThinkShare conversation (`realmBoardChatRestriction`, checked only for a
+  ThinkTank chat whose group is a realm board);
 - a **banned** nation's owner is not a board member (no posts, no chat): the ban deactivates their member row
   and chat participant at once (`removeFromRealmBoard`), and a ban on any one of a player's nations there
   counts;
@@ -114,7 +132,7 @@ The NationStates-style region page. Every tab shares a layout (`(region)/layout.
 description and tags, a key-stats strip (nations, population, founded, founder) and the tab bar: **Overview**,
 **Board**, **Nations**, **Map** (opens `/maps?realm=`) and, for the founder and officers, **Manage**.
 `realms.region.overview` serves the header and front page in one call; it hides draft and generating realms
-from everyone but their staff, like `getBySlug`.
+from everyone but their staff, like `getBySlug` (§1, visibility rule).
 
 **Overview:** the factbook (or the description), "Read the lore" to the realm's `Portal:` page, the latest five
 board posts, and claimable nations. The sidebar (stacked under the main column below 1024px) has:
@@ -126,9 +144,29 @@ board posts, and claimable nations. The sidebar (stacked under the main column b
 - **Realm poll:** the one open poll (`Poll.realmId`); owners of a nation in the realm vote (`polls.vote` checks);
 - **Embassies:** realms with an active embassy;
 - **Happenings** (`realms.region.happenings`): new nations, approved claims, embassies opened, officers
-  appointed and the realm's nations' public game events (`ActivityFeed`), newest first. Composed on read.
+  appointed and the realm's nations' public game events (`ActivityFeed`), newest first. Composed on read. The
+  panel shows the latest 15 and links to **See all** (`/r/[realm]/happenings`): the whole history, filtered by
+  kind (`kinds`) and loaded a page at a time (`cursor` is the previous page's `nextCursor`, the oldest time it
+  showed; each source reads one more than the page to know whether more remain).
 
-**Nations:** every nation, the viewer's first, with **Play as** and **Leave realm** on their own. Leaving
+**Nations:** every nation, the viewer's first, with **Play as** and **Leave realm** on their own, then the viewer's
+claims in this realm (`realms.myClaims({ realmSlug })`) and the claimable nations. A claimable nation the viewer
+claimed shows **Pending review**, or the rejection's reason with **Claim again**.
+
+**Claimed nation pages prefill their nation (AT-3):** approving a claim on a nation page (by a moderator, or at
+once for the page's verified creator) first reads the page's infobox (`fetchNationPagePrefill` in
+`realms.prefill.ts`, the builder's wiki import parser `parseInfoboxWithTemplates`), then creates the Country with
+its population, GDP per capita, area, continent, government, flag and coat of arms instead of the placeholder
+baseline, and a NationalIdentity (official name, capital, largest city, motto, currency, languages, demonym,
+anthem, religion). MyCountry and the builder's editor open on those values. Implausible figures are dropped; an
+unreachable page (8 second limit) or a page without an infobox gives the plain baseline. The builder refuses to
+found a nation named after one of the realm's nation pages (`countries.createCountry`): those are claimed.
+
+**Claim notices (AT-5):** a rejected claim notifies its claimant (`notifyClaimRejected` in `realms.notices.ts`,
+event `realmsNotification`): a moderator's rejection with its reason, an automatic one when another player took the
+nation first, and rival pending claims turned away by an approval. It goes through `notificationAPI.create`, so the
+recipient's preferences apply (`recipientAccepts`: the system category and minimum urgency). Approvals notify
+through `onNationAssigned` ("Country Assigned"). Leaving
 (`realms.region.abandonNation`) needs the nation's name typed; the nation is released (unclaimed), its board
 restriction cleared, and the player loses an officer post if it was their last nation there.
 
@@ -144,14 +182,26 @@ Manage action and makes an archived realm read-only. Officers must own a nation 
 Site admins assign founders in `/admin/realms` (the Founder column, `realms.region.assignFounder`); until then a
 realm is administered by staff.
 
+**Deleting a realm (AT-8):** site admins delete a realm created by mistake from `/admin/realms`
+(`realms.region.deleteRealm`, `realms.admin.ts`), confirmed by typing its slug. It refuses IxWorld, and any realm
+that still has nations or map regions: deleting never releases, moves or deletes a nation, so such a realm is
+archived instead (status Archived: read-only, closed to claims). An empty realm's claims, lore index, officers,
+embassies, board restrictions and polls go with it, and its board group is deactivated.
+
 ### Manage tab (`/r/[realm]/manage`)
 
-Sections follow the caller's powers: **Appearance** (banner `https://` address, description, up to five tags
-from `REALM_TAGS`), **Factbook** (the WikiOS canvas editor or wikitext; saved as wikitext plus rendered,
+Sections follow the caller's powers: **Appearance** (banner and thumbnail, each uploaded or given as an `https://`
+address; description; up to five tags from `REALM_TAGS`), **Factbook** (the WikiOS canvas editor or wikitext; saved as wikitext plus rendered,
 sanitized HTML), **Officers**, **Claims** (founder only; the admin claims list narrowed to the realm),
 **Embassies** (propose to a directory realm; the other realm accepts or declines; either side closes; a
 proposal crossing one from the other realm opens the embassy at once), **Poll** (one open at a time, 2 to 10
 options, optional end date) and **Board moderation**.
+
+**Banner and thumbnail uploads:** the Appearance fields upload through the site's image upload route
+(`/api/upload/image` via `uploadImageFile`: signed in, rate limited, PNG/JPG/GIF/WEBP/SVG only, 5MB, SVG
+sanitized), the same path flags and coats of arms use, and keep the address field as an alternative.
+`updateAppearance` accepts only an `https://` address or a file that route produced (`/images/uploads/uploaded_…`,
+`isRealmImageUrl`); pages render either through `assetUrl`.
 
 ## 5. Known gaps
 
@@ -159,9 +209,6 @@ options, optional end date) and **Board moderation**.
 - Chat participants who lose their last nation are removed on the next time anyone opens the board, not the
   moment the nation changes hands.
 - The `/dashboard` feed and trending are not realm-scoped. The realm feed is shown only on `/realms` and the board.
-- A mute stops board posts, not chat messages.
-- The banner is an image address; there is no upload.
-- Happenings has no history page beyond the latest 15 items.
 
 ## 6. Map and transport isolation
 

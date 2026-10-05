@@ -35,6 +35,7 @@ import {
   TableCell,
 } from "~/components/ui/table";
 import { Card } from "~/components/ui/card";
+import { DeleteRealmButton } from "./DeleteRealmButton";
 
 const STATUS_COLORS: Record<string, string> = {
   active: "bg-green/10 text-green border-green/20",
@@ -458,14 +459,19 @@ export function RealmsTab() {
                         </Button>
                       </span>
                     ) : (
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label={`Edit ${realm.name}`}
-                        onClick={() => startEdit(realm)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      <span className="inline-flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`Edit ${realm.name}`}
+                          onClick={() => startEdit(realm)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <DeleteRealmButton
+                          realm={{ ...realm, countryCount: realm._count.countries }}
+                        />
+                      </span>
                     )}
                   </TableCell>
                 </TableRow>

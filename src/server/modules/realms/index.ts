@@ -13,6 +13,7 @@ export {
   hasRealmPower,
   realmPowers,
   type RealmOfficerGrant,
+  isRealmHiddenFrom,
   isRealmOpen,
   isRealmPublished,
   isSiteAdmin,
@@ -26,5 +27,10 @@ export {
   pointActiveNation,
   releaseNation,
 } from "./realms.ownership";
-export { ClaimError, createClaimsService, type NationAssignedEvent } from "./realms.claims";
+export {
+  ClaimError,
+  createClaimsService,
+  type ClaimRejectedEvent,
+  type NationAssignedEvent,
+} from "./realms.claims";
 export { getRealmHub } from "./realms.hub";

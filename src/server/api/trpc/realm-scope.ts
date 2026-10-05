@@ -5,10 +5,18 @@ import { isSiteAdmin, resolveViewerRealmId, type RealmActor } from "~/server/mod
 export { realmScopeInput };
 
 export function viewerRealmId(
-  ctx: { db: Pick<PrismaClient, "realm">; user?: { country?: { realmId?: string | null } | null } | null },
+  ctx: {
+    db: Pick<PrismaClient, "realm">;
+    user?: (Partial<RealmActor> & { country?: { realmId?: string | null } | null }) | null;
+  },
   realmSlug?: string
 ): Promise<string> {
-  return resolveViewerRealmId(ctx.db, { realmSlug, activeRealmId: ctx.user?.country?.realmId });
+  const viewer = ctx.user?.id && ctx.user.clerkUserId ? (ctx.user as RealmActor) : null;
+  return resolveViewerRealmId(ctx.db, {
+    realmSlug,
+    activeRealmId: ctx.user?.country?.realmId,
+    viewer,
+  });
 }
 
 /**
