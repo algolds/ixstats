@@ -159,7 +159,7 @@ A nation's issues are its private inbox. Every `nationalIssues` player procedure
 ## Cabinet Meetings Subsystem
 
 - Scheduling via `src/server/api/routers/quickactions/meetings.ts` (`createMeeting`, which also writes an `ActivitySchedule` row) and `src/server/api/routers/meetings/` (`createMeeting`, `getMeetings`, `addAgendaItem`, `recordAttendance`, officials). UI: `src/components/executive/actions/MeetingScheduler.tsx`.
-- Meetings are **schedule-only today**: the complete/decide/implement mutations were deleted as zero-caller procedures (plans 312/332), so meeting outcomes are not yet recorded or routed through the `CountryEventSpine`.
+- **Concluding:** `meetings.concludeMeeting` (host country owner only, rate limited) stores the outcome in `CabinetMeeting.notes`, writes one `MeetingDecision` per decided agenda item (`approved`, `rejected` or `deferred`, with optional notes), sets each item's `status`/`outcome`, and marks the meeting `completed`. UI: the Cabinet tab of the Politics drill-down lists open meetings with a Conclude dialog and concluded ones with their decisions (`CabinetMeetingsPanel.tsx`, `ConcludeMeetingDialog.tsx`). Decisions are recorded only; they are not yet routed through the `CountryEventSpine` or turned into policies.
 
 ---
 
