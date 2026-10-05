@@ -5,11 +5,16 @@ import { api } from "~/trpc/react";
 import { Signal } from "~/components/ui/signal";
 
 /**
- * Active crises as a persistent Signal at the top of the Overview (the old dashboard player widget
- * showed the same count). Renders nothing while there are none. Critical crises escalate the tone.
+ * Crises affecting this nation as a persistent Signal at the top of the Overview (the old
+ * dashboard player widget showed the same count). The query is scoped to the player's country, so
+ * the count is the nation's, not the world's. Renders nothing while there are none; critical
+ * crises escalate the tone.
  */
-export function CrisisSignal() {
-  const { data } = api.crisisEvents.getStatistics.useQuery({ timeframe: "month" });
+export function CrisisSignal({ countryId }: { countryId: string }) {
+  const { data } = api.crisisEvents.getStatistics.useQuery(
+    { timeframe: "month", countryId },
+    { enabled: !!countryId }
+  );
   const active = data?.activeEvents ?? 0;
   if (active === 0) return null;
   const critical = (data?.criticalEvents ?? 0) > 0;

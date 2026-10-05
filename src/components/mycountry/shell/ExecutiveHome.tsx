@@ -78,7 +78,7 @@ function ExecutiveHomeComponent({
 
   return (
     <div className="space-y-6">
-      <CrisisSignal />
+      <CrisisSignal countryId={countryId} />
       <ExecutiveOpportunityHero
         countryId={countryId}
         onOpenDrill={onOpenDrill}
