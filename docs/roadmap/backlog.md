@@ -289,7 +289,7 @@ See §1 above (password rotation, CSP).
 - **Help center:** shipped systems still with no article: Lorewards; ribbons and the showcase shelf; Vault import, crafting and shop items; the activity feed and hashtags. Remove the "Preview feature" / "Not available yet" notes as features land ([help.md](../systems/help.md)).
 - **Specs to retire once implemented and confirmed:** the realms foundation, realms Eurth and route travel-time specs; [myleague-top5-features](../systems/myleague-top5-features.md), [sports-llm-commentary](../research/sports-llm-commentary.md), [myleague-lore-integration](../systems/myleague-lore-integration.md) (mostly obsolete); [deploy-rose-garden-2026-09](../operations/deploy-rose-garden-2026-09.md) after the 1.4 release. Move them to [docs/history/](../history/README.md).
 - **Trim:** [rate-limiting.md](../operations/rate-limiting.md) (~1,350 lines, mostly sketches); [refactoring.md](../processes/refactoring.md) (~1,000 lines of generic guidance).
-- **Phase 4 follow-ups** ([action plan](ACTION_PLAN_2026-10-05.md#phase-4--consolidate-the-documentation-set)): extend `docs:check`'s link validator to all of `docs/**` and `src/**/README.md` with anchors; make the hub's count claims generated blocks; one MyLeague system doc; Onoma and Stash subfolders; add doc updates to the PR checklist.
+- **Phase 4 follow-ups** ([action plan](ACTION_PLAN_2026-10-05.md#phase-4--consolidate-the-documentation-set)): one MyLeague system doc; Onoma and Stash subfolders; add doc updates to the PR checklist.
 
 ## 4. Platform audit leftovers (PA)
 

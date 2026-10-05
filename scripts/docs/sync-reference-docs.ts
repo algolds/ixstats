@@ -6,7 +6,7 @@
  * 2. Framework and runtime versions from package.json
  * 3. Exact AST-derived tRPC router and procedure inventory from src/server/api/root.ts
  * 4. Prisma database model inventory from prisma/schema/*.prisma
- * 5. Relative link, anchor, and repository path validation across canonical documentation
+ * 5. Relative link and anchor validation across all tracked markdown (see LINK_CHECK_PATHSPECS)
  *
  * Usage:
  *   bun scripts/docs/sync-reference-docs.ts          # Sync/write generated blocks
@@ -16,6 +16,7 @@
 
 import * as fs from "fs";
 import * as path from "path";
+import { spawnSync } from "child_process";
 import { Project, SyntaxKind, type Node, type SourceFile } from "ts-morph";
 import { VERSIONS, type ReleaseChannel } from "../../src/lib/buildVersion";
 
@@ -136,6 +137,68 @@ export function getPrismaModelCount(rootDir = DEFAULT_ROOT): number {
     if (matches) total += matches.length;
   }
   return total;
+}
+
+/** Counts `.prisma` schema files, models and enums under prisma/schema. */
+export function getPrismaSchemaCounts(rootDir = DEFAULT_ROOT): {
+  schemaFiles: number;
+  models: number;
+  enums: number;
+} {
+  const schemaDir = path.join(rootDir, "prisma/schema");
+  if (!fs.existsSync(schemaDir)) return { schemaFiles: 0, models: 0, enums: 0 };
+
+  const files = fs.readdirSync(schemaDir).filter((f) => f.endsWith(".prisma"));
+  let enums = 0;
+  for (const file of files) {
+    const content = fs.readFileSync(path.join(schemaDir, file), "utf-8");
+    enums += content.match(/^enum\s+\w+/gm)?.length ?? 0;
+  }
+  return { schemaFiles: files.length, models: getPrismaModelCount(rootDir), enums };
+}
+
+/** Counts migrations in prisma/migrations (migration folders and loose `.sql` files). */
+export function getMigrationCount(rootDir = DEFAULT_ROOT): number {
+  const dir = path.join(rootDir, "prisma/migrations");
+  if (!fs.existsSync(dir)) return 0;
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .filter((e) => e.isDirectory() || e.name.endsWith(".sql")).length;
+}
+
+/**
+ * Values for inline generated counts. A doc embeds one as
+ * `<!-- BEGIN_DOCS:COUNT:routers -->77<!-- END_DOCS:COUNT:routers -->`;
+ * `docs:sync` rewrites the number and `docs:check` fails when it drifts.
+ */
+export type DocCountKey =
+  "routers" | "procedures" | "schemaFiles" | "models" | "enums" | "migrations";
+
+export function collectDocCounts(
+  rootDir = DEFAULT_ROOT,
+  api: Pick<ApiInventoryResult, "totalRouters" | "totalProcedures"> = extractApiInventory(rootDir)
+): Record<DocCountKey, number> {
+  const schema = getPrismaSchemaCounts(rootDir);
+  return {
+    routers: api.totalRouters,
+    procedures: api.totalProcedures,
+    schemaFiles: schema.schemaFiles,
+    models: schema.models,
+    enums: schema.enums,
+    migrations: getMigrationCount(rootDir),
+  };
+}
+
+const COUNT_MARKER_REGEX =
+  /<!-- BEGIN_DOCS:COUNT:([\w-]+) -->([\s\S]*?)<!-- END_DOCS:COUNT:\1 -->/g;
+
+/** Count keys used in `content` that collectDocCounts does not provide. */
+export function findUnknownCountKeys(content: string, counts: Record<string, number>): string[] {
+  const unknown = new Set<string>();
+  for (const m of content.matchAll(COUNT_MARKER_REGEX)) {
+    if (!(m[1]! in counts)) unknown.add(m[1]!);
+  }
+  return [...unknown];
 }
 
 /**
@@ -348,7 +411,9 @@ export function extractApiInventory(rootDir = DEFAULT_ROOT): ApiInventoryResult 
               for (const sym of symbolsToResolve) {
                 const targetFile = importMap.get(sym);
                 if (targetFile) {
-                  routerInfo.sourceFiles.add(path.relative(rootDir, targetFile).replace(/\\/g, "/"));
+                  routerInfo.sourceFiles.add(
+                    path.relative(rootDir, targetFile).replace(/\\/g, "/")
+                  );
                   const sf = proj.getSourceFile(targetFile) ?? proj.addSourceFileAtPath(targetFile);
                   const fileProcs = resolveSymbolProcedures(sym, sf);
                   if (fileProcs.length === 0) {
@@ -507,12 +572,240 @@ export function generateApiInventoryTableMarkdown(api = extractApiInventory()): 
 
 /**
  * 4. Link, Anchor & Repository Path Validator
+ *
+ * Covers every tracked markdown file named by LINK_CHECK_PATHSPECS (plus the
+ * synced IN_SCOPE_DOCS). Checks relative file links and `#anchors` into
+ * markdown files using GitHub's heading-slug rules. Links that start with `/`
+ * in src/content/help and src/content/legal are in-app routes and are skipped.
  */
+
+/** Git pathspecs for the markdown the link validator covers. */
+export const LINK_CHECK_PATHSPECS = [
+  "README.md",
+  "CHANGELOG.md",
+  ":(glob)docs/**/*.md",
+  ":(glob)scripts/**/README.md",
+  ":(glob)src/**/README.md",
+  ":(glob)src/content/**/*.md",
+];
+
+/** Markdown whose `/`-rooted links are in-app routes, not repository paths. */
+const IN_APP_ROUTE_DIRS = ["src/content/help/", "src/content/legal/"];
+
+function walkMarkdown(rootDir: string, relDir: string, out: string[]): void {
+  const absDir = path.join(rootDir, relDir);
+  if (!fs.existsSync(absDir)) return;
+  for (const entry of fs.readdirSync(absDir, { withFileTypes: true })) {
+    if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
+    const rel = relDir ? `${relDir}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) walkMarkdown(rootDir, rel, out);
+    else if (entry.name.endsWith(".md")) out.push(rel);
+  }
+}
+
+/** Mirrors LINK_CHECK_PATHSPECS for the directory-walk fallback. */
+export function matchesLinkCheckScope(rel: string): boolean {
+  if (!rel.endsWith(".md")) return false;
+  if (rel === "README.md" || rel === "CHANGELOG.md") return true;
+  if (rel.startsWith("docs/") || rel.startsWith("src/content/")) return true;
+  return (rel.startsWith("scripts/") || rel.startsWith("src/")) && rel.endsWith("/README.md");
+}
+
+/**
+ * Lists the markdown files the link validator covers: tracked files from git
+ * (falling back to a directory walk outside a git checkout) plus the synced
+ * IN_SCOPE_DOCS.
+ */
+export function listLinkCheckedDocs(rootDir = DEFAULT_ROOT): string[] {
+  const files = new Set<string>();
+  let fromGit: string[] = [];
+  try {
+    const res = spawnSync("git", ["ls-files", "-z", "--", ...LINK_CHECK_PATHSPECS], {
+      cwd: rootDir,
+      encoding: "utf-8",
+    });
+    if (res.status === 0 && typeof res.stdout === "string") {
+      fromGit = res.stdout.split("\0").filter(Boolean);
+    }
+  } catch {
+    fromGit = [];
+  }
+
+  if (fromGit.length > 0) {
+    // Tracked files deleted in the working tree are not checked.
+    for (const f of fromGit) if (fs.existsSync(path.join(rootDir, f))) files.add(f);
+  } else {
+    const walked: string[] = [];
+    walkMarkdown(rootDir, "", walked);
+    for (const f of walked) if (matchesLinkCheckScope(f)) files.add(f);
+  }
+
+  for (const f of IN_SCOPE_DOCS) files.add(f);
+  return [...files].sort();
+}
+
+const HTML_ENTITIES: Record<string, string> = {
+  "&amp;": "&",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": '"',
+  "&#39;": "'",
+  "&nbsp;": " ",
+};
+
+/**
+ * GitHub heading slug (github-slugger rules) for one heading's source text.
+ * Inline markdown is reduced to its rendered text first; duplicate suffixes
+ * (`-1`, `-2`) are added by the caller.
+ */
+export function githubSlug(headingText: string): string {
+  const text = headingText
+    .replace(/&(?:amp|lt|gt|quot|#39|nbsp);/g, (e) => HTML_ENTITIES[e] ?? e)
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/\[([^\]]*)\]\[[^\]]*\]/g, "$1")
+    .replace(/<[^>]+>/g, "")
+    .replace(/(`+)(.*?)\1/g, "$2")
+    .replace(/(\*{1,3}|~~)(\S(?:.*?\S)?)\1/g, "$2")
+    .replace(/(^|[^\p{L}\p{N}_])(_{1,3})(\S(?:.*?\S)?)\2(?=$|[^\p{L}\p{N}_])/gu, "$1$3")
+    .trim();
+  return text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{M}\p{N}\p{Pc} -]/gu, "")
+    .replace(/ /g, "-");
+}
+
+/** Blanks inline code spans so links shown as code are not checked. */
+function stripInlineCode(line: string): string {
+  return line.replace(/(`+)(?:(?!\1).)+?\1/g, (m) => " ".repeat(m.length));
+}
+
+export interface ParsedMarkdown {
+  anchors: Set<string>;
+  links: Array<{ line: number; text: string; target: string }>;
+}
+
+const LINK_REGEX =
+  /!?\[((?:[^[\]]|\[[^\]]*\])*)\]\(\s*(<[^>]*>|(?:[^\s()]|\([^\s()]*\))+)(?:\s+(?:"[^"]*"|'[^']*'|\([^)]*\)))?\s*\)/g;
+const REF_DEF_REGEX = /^ {0,3}\[([^\]]+)\]:\s*(<[^>]*>|\S+)/;
+const HTML_ID_REGEX = /<[a-z][^>]*?\s(?:id|name)\s*=\s*["']([^"']+)["']/gi;
+const SETEXT_REGEX = /^ {0,3}(=+|-+)\s*$/;
+
+/**
+ * Parses markdown into its anchor set (GitHub heading slugs plus explicit
+ * `id`/`name` attributes) and outgoing links. Code fences, HTML comments,
+ * inline code and front matter are skipped.
+ */
+export function parseMarkdown(content: string): ParsedMarkdown {
+  const lines = content.split(/\r?\n/);
+  const anchors = new Set<string>();
+  const links: ParsedMarkdown["links"] = [];
+  const slugCounts = new Map<string, number>();
+
+  const addHeading = (raw: string) => {
+    const base = githubSlug(raw);
+    const seen = slugCounts.get(base) ?? 0;
+    slugCounts.set(base, seen + 1);
+    anchors.add(seen === 0 ? base : `${base}-${seen}`);
+  };
+
+  let start = 0;
+  if (lines[0]?.trim() === "---") {
+    const end = lines.findIndex((l, idx) => idx > 0 && /^(---|\.\.\.)\s*$/.test(l));
+    if (end > 0) start = end + 1;
+  }
+
+  let fence: string | null = null;
+  let inComment = false;
+  for (let i = start; i < lines.length; i++) {
+    let line = lines[i]!;
+
+    const fenceMatch = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+    if (fence) {
+      if (
+        fenceMatch &&
+        fenceMatch[1]![0] === fence[0] &&
+        fenceMatch[1]!.length >= fence.length &&
+        fenceMatch[2]!.trim() === ""
+      ) {
+        fence = null;
+      }
+      continue;
+    }
+    if (fenceMatch) {
+      fence = fenceMatch[1]!;
+      continue;
+    }
+
+    if (inComment) {
+      const close = line.indexOf("-->");
+      if (close === -1) continue;
+      inComment = false;
+      line = line.slice(close + 3);
+    }
+    line = line.replace(/<!--.*?-->/g, "");
+    const open = line.indexOf("<!--");
+    if (open !== -1) {
+      inComment = true;
+      line = line.slice(0, open);
+    }
+
+    HTML_ID_REGEX.lastIndex = 0;
+    let idMatch: RegExpExecArray | null;
+    while ((idMatch = HTML_ID_REGEX.exec(line)) !== null) anchors.add(idMatch[1]!.toLowerCase());
+
+    const atx = line.match(/^ {0,3}#{1,6}(?:\s+(.*?))?(?:\s+#+)?\s*$/);
+    if (atx) {
+      addHeading(atx[1] ?? "");
+    } else if (i > start && SETEXT_REGEX.test(line)) {
+      const prev = lines[i - 1] ?? "";
+      if (
+        prev.trim() !== "" &&
+        !/^ {0,3}(#|>|[-*+]\s|\d+[.)]\s|\||```|~~~)/.test(prev) &&
+        !SETEXT_REGEX.test(prev)
+      ) {
+        addHeading(prev.trim());
+      }
+    }
+
+    const scan = stripInlineCode(line);
+    const refDef = scan.match(REF_DEF_REGEX);
+    if (refDef) {
+      links.push({ line: i + 1, text: refDef[1]!, target: refDef[2]! });
+      continue;
+    }
+    LINK_REGEX.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = LINK_REGEX.exec(scan)) !== null) {
+      links.push({ line: i + 1, text: m[1]!, target: m[2]! });
+    }
+  }
+
+  return { anchors, links };
+}
+
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 export function validateDocLinks(
   rootDir = DEFAULT_ROOT,
-  docFiles = IN_SCOPE_DOCS
+  docFiles: string[] = listLinkCheckedDocs(rootDir)
 ): LinkValidationIssue[] {
   const issues: LinkValidationIssue[] = [];
+  const parsedCache = new Map<string, ParsedMarkdown>();
+  const readParsed = (absFile: string): ParsedMarkdown => {
+    let parsed = parsedCache.get(absFile);
+    if (!parsed) {
+      parsed = parseMarkdown(fs.readFileSync(absFile, "utf-8"));
+      parsedCache.set(absFile, parsed);
+    }
+    return parsed;
+  };
 
   for (const relFile of docFiles) {
     const absFile = path.join(rootDir, relFile);
@@ -528,85 +821,46 @@ export function validateDocLinks(
       continue;
     }
 
-    const content = fs.readFileSync(absFile, "utf-8");
-    const lines = content.split("\n");
+    const isRouteDoc = IN_APP_ROUTE_DIRS.some((d) => relFile.startsWith(d));
 
-    // Extract headings for anchor resolution in this file
-    const headings = new Set<string>();
-    for (const l of lines) {
-      const hMatch = l.match(/^#{1,6}\s+(.+)$/);
-      if (hMatch && hMatch[1]) {
-        const slug = hMatch[1]
-          .toLowerCase()
-          .replace(/[^\w\s-]/g, "")
-          .replace(/\s+/g, "-")
-          .replace(/-+/g, "-");
-        headings.add(slug);
+    for (const { line, text, target: rawTarget } of readParsed(absFile).links) {
+      const target = rawTarget.replace(/^<|>$/g, "").trim();
+      const report = (reason: string) =>
+        issues.push({ file: relFile, line, linkText: text, target, reason });
+
+      if (target.startsWith("file://")) {
+        report(`Forbidden local machine link (file:// protocol is not allowed in canonical docs)`);
+        continue;
       }
-    }
+      if (target.startsWith("/home/") || target.startsWith("/Users/")) {
+        report(`Forbidden absolute machine path in link`);
+        continue;
+      }
+      // Web URLs and other schemes (http, https, mailto, …)
+      if (/^[a-z][a-z0-9+.-]*:/i.test(target)) continue;
+      // In-app routes in player-facing content
+      if (target.startsWith("/") && isRouteDoc) continue;
+      if (target === "" || target === "#") continue;
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]!;
+      const hashIdx = target.indexOf("#");
+      const pathPart = (hashIdx === -1 ? target : target.slice(0, hashIdx)).replace(/\?.*$/, "");
+      const anchor = hashIdx === -1 ? "" : safeDecode(target.slice(hashIdx + 1));
 
-      // 1. Markdown Links [text](target)
-      const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-      let match: RegExpExecArray | null;
-      while ((match = linkRegex.exec(line)) !== null) {
-        const text = match[1]!;
-        const target = match[2]!.trim();
-
-        // Check for forbidden machine / file:// links
-        if (target.startsWith("file://")) {
-          issues.push({
-            file: relFile,
-            line: i + 1,
-            linkText: text,
-            target,
-            reason: `Forbidden local machine link (file:// protocol is not allowed in canonical docs)`,
-          });
+      let resolved = absFile;
+      if (pathPart) {
+        const decoded = safeDecode(pathPart);
+        resolved = decoded.startsWith("/")
+          ? path.join(rootDir, decoded)
+          : path.resolve(path.dirname(absFile), decoded);
+        if (!fs.existsSync(resolved)) {
+          report(`Target file or directory not found: "${pathPart}"`);
           continue;
         }
+      }
 
-        if (target.startsWith("/home/") || target.startsWith("/Users/")) {
-          issues.push({
-            file: relFile,
-            line: i + 1,
-            linkText: text,
-            target,
-            reason: `Forbidden absolute machine path in link`,
-          });
-          continue;
-        }
-
-        // Skip web URLs
-        if (
-          target.startsWith("http://") ||
-          target.startsWith("https://") ||
-          target.startsWith("mailto:")
-        ) {
-          continue;
-        }
-
-        // Anchor in current file
-        if (target.startsWith("#")) {
-          const anchor = target.slice(1);
-          // Optional: if non-empty, check headings
-          continue;
-        }
-
-        // Relative path
-        const [targetPath, targetAnchor] = target.split("#");
-        if (targetPath) {
-          const resolved = path.resolve(path.dirname(absFile), targetPath);
-          if (!fs.existsSync(resolved)) {
-            issues.push({
-              file: relFile,
-              line: i + 1,
-              linkText: text,
-              target,
-              reason: `Target file or directory not found: "${targetPath}"`,
-            });
-          }
+      if (anchor && resolved.endsWith(".md") && fs.statSync(resolved).isFile()) {
+        if (!readParsed(resolved).anchors.has(anchor.toLowerCase())) {
+          report(`Anchor "#${anchor}" not found in ${path.relative(rootDir, resolved)}`);
         }
       }
     }
@@ -624,6 +878,7 @@ export function syncDocumentContent(
     versionMatrix?: string;
     frameworkMatrix?: string;
     apiInventory?: string;
+    counts?: Record<string, number>;
   }
 ): { newContent: string; changed: boolean } {
   let updated = content;
@@ -649,6 +904,15 @@ export function syncDocumentContent(
     );
   }
 
+  const counts = options.counts;
+  if (counts) {
+    updated = updated.replace(COUNT_MARKER_REGEX, (whole, key: string) =>
+      key in counts
+        ? `<!-- BEGIN_DOCS:COUNT:${key} -->${counts[key]!.toLocaleString("en-US")}<!-- END_DOCS:COUNT:${key} -->`
+        : whole
+    );
+  }
+
   return {
     newContent: updated,
     changed: updated !== content,
@@ -658,20 +922,34 @@ export function syncDocumentContent(
 export function runDocsSync(rootDir = DEFAULT_ROOT, write = true): DocsValidationResult {
   const versionMatrix = generateVersionMatrixMarkdown();
   const frameworkMatrix = generateFrameworkMatrixMarkdown();
-  const apiInventory = generateApiInventoryTableMarkdown();
+  const api = extractApiInventory(rootDir);
+  const apiInventory = generateApiInventoryTableMarkdown(api);
+  const counts = collectDocCounts(rootDir, api);
 
-  const linkIssues = validateDocLinks(rootDir, IN_SCOPE_DOCS);
+  const docFiles = listLinkCheckedDocs(rootDir);
+  const linkIssues = validateDocLinks(rootDir, docFiles);
   const staleFiles: string[] = [];
 
-  for (const relFile of IN_SCOPE_DOCS) {
+  // Generated blocks may live in any checked doc, not only IN_SCOPE_DOCS.
+  for (const relFile of docFiles) {
     const absFile = path.join(rootDir, relFile);
     if (!fs.existsSync(absFile)) continue;
 
     const original = fs.readFileSync(absFile, "utf-8");
+    for (const key of findUnknownCountKeys(original, counts)) {
+      linkIssues.push({
+        file: relFile,
+        line: original.slice(0, original.indexOf(`BEGIN_DOCS:COUNT:${key} `)).split("\n").length,
+        linkText: `COUNT:${key}`,
+        target: key,
+        reason: `Unknown generated count "${key}" (known: ${Object.keys(counts).join(", ")})`,
+      });
+    }
     const { newContent, changed } = syncDocumentContent(original, {
       versionMatrix,
       frameworkMatrix,
       apiInventory,
+      counts,
     });
 
     if (changed) {
@@ -719,7 +997,7 @@ export function runCLI(): void {
       console.log("✓ All canonical reference documents and links are up to date.");
     } else {
       console.log(
-        `✓ Reference documentation synchronized successfully across ${IN_SCOPE_DOCS.length} files.`
+        `✓ Reference documentation synchronized successfully across ${listLinkCheckedDocs().length} files.`
       );
     }
     process.exit(0);

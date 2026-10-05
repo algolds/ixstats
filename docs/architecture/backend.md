@@ -3,7 +3,7 @@
 **Last updated:** 2026-10-05
 
 **Framework**: tRPC 11.18.0 · Prisma 6.19.3 · Next.js 16 route handlers + custom Node `http` server (`server.mjs`) · TypeScript 7.0.2  
-**Location**: `src/server/api/` (77 routers registered in `root.ts`, 928 procedures — the generated count is in [`api-complete.md`](../reference/api-complete.md)) · `src/server/db.ts` · `src/server/shared/`
+**Location**: `src/server/api/` (<!-- BEGIN_DOCS:COUNT:routers -->77<!-- END_DOCS:COUNT:routers --> routers registered in `root.ts`, <!-- BEGIN_DOCS:COUNT:procedures -->928<!-- END_DOCS:COUNT:procedures --> procedures — the generated count is in [`api-complete.md`](../reference/api-complete.md)) · `src/server/db.ts` · `src/server/shared/`
 
 ---
 
@@ -17,7 +17,7 @@ src/server/
 ├── shared/                           # Shared cross-router primitives (layer-cache, helpers)
 └── api/
     ├── trpc/                         # tRPC context, middleware, and procedure builders (index.ts re-exports)
-    ├── root.ts                       # Master appRouter composing all 77 routers
+    ├── root.ts                       # Master appRouter composing every router
     └── routers/                      # Domain routers (flat or subdir-organized)
         ├── countries/                # Countries router (crud, metrics, forecasts, search)
         ├── government/               # Government structure, departments, cabinet, legislation
