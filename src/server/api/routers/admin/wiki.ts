@@ -4,18 +4,25 @@ import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { invalidateConfigCache } from "~/lib/config-service";
 import { generateSlug } from "~/lib/utils";
 import { invalidateCache } from "~/lib/cache";
-import { scoreDailyWikiOS } from "~/lib/lorewards";
-import type { ScoringWeights } from "~/lib/lorewards";
+import {
+  DEFAULT_WEIGHTS,
+  loadScoringWeights,
+  lorewardWeightKey,
+  scoreDailyWikiOS,
+  TUNABLE_WEIGHTS,
+} from "~/lib/lorewards";
 import { fetchTemplateData, categorizeTemplate } from "~/lib/wiki-os/templates/template-registry";
-import { readConfigKeys, writeConfigKeys } from "./_config-kv";
+import { writeConfigKeys } from "./_config-kv";
 
-const LOREWARD_WEIGHT_DEFAULTS: Record<string, number> = {
-  lorewardWeight_bytesAdded: 1.0,
-  lorewardWeight_proseRatio: 1.5,
-  lorewardWeight_editDepth: 1.2,
-  lorewardWeight_collaborationBonus: 1.3,
-  lorewardWeight_newArticleBonus: 1.5,
-};
+/** The scorer's tunable weights (WK-8): prose weight is a 0-1 blend, the rest bonuses/multipliers. */
+const TunableWeightsInput = z.object({
+  proseWeight: z.number().min(0).max(1),
+  depthMaxBonus: z.number().min(0).max(5),
+  noveltyBonus: z.number().min(0).max(5),
+  importanceMaxBonus: z.number().min(0).max(5),
+  listPenalty: z.number().min(0).max(5),
+  minorOnlyPenalty: z.number().min(0).max(5),
+}) satisfies z.ZodType<Record<(typeof TUNABLE_WEIGHTS)[number], number>>;
 
 export const adminWikiRouter = createTRPCRouter({
   setWikiLink: adminProcedure
@@ -250,25 +257,22 @@ export const adminWikiRouter = createTRPCRouter({
     return templates;
   }),
 
+  /** The weights daily scoring uses (stored values over the scorer's defaults). */
   getLorewardWeights: adminProcedure.query(async ({ ctx }) => {
-    const stored = await readConfigKeys(ctx.db, Object.keys(LOREWARD_WEIGHT_DEFAULTS));
-    const weights: Record<string, number> = { ...LOREWARD_WEIGHT_DEFAULTS };
-    for (const [key, value] of Object.entries(stored)) weights[key] = parseFloat(value);
-    return weights;
+    const weights = await loadScoringWeights(ctx.db);
+    return Object.fromEntries(TUNABLE_WEIGHTS.map((f) => [f, weights[f]])) as Record<
+      (typeof TUNABLE_WEIGHTS)[number],
+      number
+    >;
   }),
 
   saveLorewardWeights: adminProcedure
-    .input(
-      z.object({
-        lorewardWeight_bytesAdded: z.number(),
-        lorewardWeight_proseRatio: z.number(),
-        lorewardWeight_editDepth: z.number(),
-        lorewardWeight_collaborationBonus: z.number(),
-        lorewardWeight_newArticleBonus: z.number(),
-      })
-    )
+    .input(TunableWeightsInput)
     .mutation(async ({ ctx, input }) => {
-      const updates = Object.entries(input).map(([key, value]) => ({ key, value: String(value) }));
+      const updates = TUNABLE_WEIGHTS.map((field) => ({
+        key: lorewardWeightKey(field),
+        value: String(input[field]),
+      }));
       await writeConfigKeys(ctx.db, updates, (key) => `Loreward weight parameter for ${key}`);
       invalidateConfigCache();
       return { success: true };
@@ -399,29 +403,10 @@ export const adminWikiRouter = createTRPCRouter({
     }),
 
   previewLorewardScoring: adminProcedure
-    .input(
-      z.object({
-        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-        proseWeight: z.number(),
-        collaborativeBonus: z.number(),
-        depthMaxBonus: z.number(),
-        noveltyBonus: z.number(),
-        importanceMaxBonus: z.number(),
-      })
-    )
+    .input(TunableWeightsInput.extend({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
     .query(async ({ input }) => {
-      const tempWeights: ScoringWeights = {
-        proseWeight: input.proseWeight,
-        collaborativeBonus: input.collaborativeBonus,
-        depthMaxBonus: input.depthMaxBonus,
-        noveltyBonus: input.noveltyBonus,
-        importanceMaxBonus: input.importanceMaxBonus,
-        listPenalty: 0.3,
-        minorOnlyPenalty: 0.2,
-        minSingleEdit: 1000,
-      };
-      const result = await scoreDailyWikiOS(input.date, tempWeights);
-      return result;
+      const { date, ...tunable } = input;
+      return scoreDailyWikiOS(date, { ...DEFAULT_WEIGHTS, ...tunable });
     }),
 
   syncWikiTemplateByName: adminProcedure

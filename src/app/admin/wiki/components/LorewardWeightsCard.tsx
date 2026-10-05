@@ -25,12 +25,14 @@ import {
 } from "~/components/ui/table";
 import { Card } from "~/components/ui/card";
 
+/** The scorer's own weights (lib/lorewards/scoring.ts), read by daily scoring. */
 const WEIGHT_SLIDERS = [
-  { key: "lorewardWeight_bytesAdded", label: "Bytes added weight" },
-  { key: "lorewardWeight_proseRatio", label: "Prose ratio weight" },
-  { key: "lorewardWeight_editDepth", label: "Edit depth weight" },
-  { key: "lorewardWeight_collaborationBonus", label: "Collaboration bonus weight" },
-  { key: "lorewardWeight_newArticleBonus", label: "New article bonus weight" },
+  { key: "proseWeight", label: "Prose weight (0 ignores prose share, 1 uses it fully)", max: 1 },
+  { key: "depthMaxBonus", label: "Edit depth: maximum bonus", max: 2 },
+  { key: "noveltyBonus", label: "New article multiplier", max: 3 },
+  { key: "importanceMaxBonus", label: "Inbound links: maximum bonus", max: 2 },
+  { key: "listPenalty", label: "List article multiplier", max: 1 },
+  { key: "minorOnlyPenalty", label: "Minor-edits-only multiplier", max: 1 },
 ] as const;
 
 export function LorewardWeightsCard() {
@@ -84,20 +86,12 @@ export function LorewardWeightsCard() {
     try {
       const current = await utils.admin.previewLorewardScoring.fetch({
         date: previewDate,
-        proseWeight: weights.lorewardWeight_proseRatio,
-        collaborativeBonus: weights.lorewardWeight_collaborationBonus,
-        depthMaxBonus: weights.lorewardWeight_editDepth,
-        noveltyBonus: weights.lorewardWeight_newArticleBonus,
-        importanceMaxBonus: 0.2,
+        ...weights,
       });
 
       const simulated = await utils.admin.previewLorewardScoring.fetch({
         date: previewDate,
-        proseWeight: tempWeights.lorewardWeight_proseRatio,
-        collaborativeBonus: tempWeights.lorewardWeight_collaborationBonus,
-        depthMaxBonus: tempWeights.lorewardWeight_editDepth,
-        noveltyBonus: tempWeights.lorewardWeight_newArticleBonus,
-        importanceMaxBonus: 0.2,
+        ...tempWeights,
       });
 
       setCurrentPreviewData(current);
@@ -160,7 +154,7 @@ export function LorewardWeightsCard() {
           {tempWeights ? (
             <form onSubmit={handleSaveWeights} className="space-y-4">
               <div className="space-y-4">
-                {WEIGHT_SLIDERS.map(({ key, label }) => (
+                {WEIGHT_SLIDERS.map(({ key, label, max }) => (
                   <div key={key} className="space-y-2">
                     <div className="text-caption flex justify-between">
                       <span id={`loreward-${key}`} className="text-label">
@@ -173,8 +167,8 @@ export function LorewardWeightsCard() {
                     <Slider
                       aria-labelledby={`loreward-${key}`}
                       min={0}
-                      max={3}
-                      step={0.1}
+                      max={max}
+                      step={0.05}
                       value={[Number(tempWeights[key] ?? 0)]}
                       onValueChange={([v]) => {
                         if (v !== undefined) handleWeightChange(key, v);
