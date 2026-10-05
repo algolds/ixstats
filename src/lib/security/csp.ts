@@ -23,9 +23,11 @@ export function buildCSPTemplate(standalone: boolean): string {
     `default-src 'self'`,
     scriptSrc,
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
-    `img-src 'self' data: blob: https: http:`,
+    // Production drops plain http:/ws: (upgrade-insecure-requests rewrites them to https/wss
+    // anyway); development keeps ws: for the local sockets.
+    isDevelopment ? `img-src 'self' data: blob: https: http:` : `img-src 'self' data: blob: https:`,
     `font-src 'self' https://fonts.gstatic.com data:`,
-    `connect-src 'self' https: wss: ws:`,
+    isDevelopment ? `connect-src 'self' https: wss: ws:` : `connect-src 'self' https: wss:`,
     `frame-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com https://maps.ixwiki.com`,
     `worker-src 'self' blob:`,
     `media-src 'self' https://ixwiki.com data: blob:`,

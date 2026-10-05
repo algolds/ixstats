@@ -13,4 +13,10 @@ describe("CSP template", () => {
     expect(csp).toContain("object-src 'none'");
     expect(csp).toContain("frame-ancestors 'none'");
   });
+
+  it("allows no plain http: images or ws: sockets outside development", () => {
+    const csp = buildCSPTemplate(false);
+    expect(csp).toMatch(/img-src 'self' data: blob: https:;/);
+    expect(csp).toMatch(/connect-src 'self' https: wss:;/);
+  });
 });
