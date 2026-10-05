@@ -26,4 +26,32 @@ describe("shell.css hooks", () => {
     expect(root).toContain("--shell-tabbar-height: calc(4rem + env(safe-area-inset-bottom));");
     expect(css).toMatch(/min-width: 1024px\) \{\s*:root \{[^}]*--shell-sidebar-width: 16rem;/);
   });
+
+  it("sizes the sidebar and the Inspector gutter as 1 : 4 : 1.25 from 1280px, with clamps", () => {
+    const wide = css.match(/min-width: 1280px\) \{([\s\S]*?)\n  \}\n/)?.[1] ?? "";
+    expect(wide).toContain("--shell-unit: calc(100vw / 6.25);");
+    expect(wide).toContain("--shell-sidebar-width: clamp(14rem, var(--shell-unit), 18rem);");
+    expect(wide).toContain(
+      "--shell-inspector-width: clamp(18rem, calc(var(--shell-unit) * 1.25), 22rem);"
+    );
+  });
+
+  it("has no Inspector gutter below 1280px and keeps the collapsed sidebar at 4rem", () => {
+    const root = css.match(/@layer base \{\s*:root \{([^}]*)\}/)?.[1] ?? "";
+    expect(root).toContain("--shell-inspector-width: 0px;");
+    expect(css).toMatch(/:root\[data-sidebar="collapsed"\] \{\s*--shell-sidebar-width: 4rem;/);
+    // Collapsed must still win at 1280px: it is declared after the wide :root rule.
+    expect(css.lastIndexOf("--shell-sidebar-width: 4rem")).toBeGreaterThan(
+      css.indexOf("clamp(14rem")
+    );
+  });
+
+  it("reserves the Inspector column on every page's main, and zeroes it on chromeless routes", () => {
+    expect(css).toMatch(
+      /\[data-shell-main\] \{[^}]*padding-right: var\(--shell-inspector-width\);/
+    );
+    expect(css).toMatch(
+      /\[data-app-shell\]\[data-chromeless\] \{[^}]*--shell-inspector-width: 0px;/
+    );
+  });
 });

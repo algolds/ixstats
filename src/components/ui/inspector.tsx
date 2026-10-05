@@ -16,7 +16,7 @@ interface InspectorProps {
   className?: string;
 }
 
-/** The one optional trailing column of a page: entity details, contents or supporting data. */
+/** The one optional trailing column of a page, pinned into the shell's reserved gutter: entity details, contents or supporting data. */
 export function Inspector({ title, open, onOpenChange, children, className }: InspectorProps) {
   const wide = useMediaQuery(INSPECTOR_QUERY);
   if (wide) {
@@ -24,7 +24,13 @@ export function Inspector({ title, open, onOpenChange, children, className }: In
       <aside
         aria-label={title}
         data-slot="inspector"
-        className={cn("sticky top-(--shell-top-offset) w-80 shrink-0 self-start", className)}
+        className={cn(
+          // Pinned into the column shell.css reserves on <main>; it scrolls on its own, so the
+          // page behind never has to make room for it.
+          "fixed top-(--shell-top-offset) right-0 bottom-0 w-(--shell-inspector-width)",
+          "overflow-y-auto py-6 pr-4",
+          className
+        )}
       >
         {children}
       </aside>

@@ -271,8 +271,8 @@ export function UnifiedDashboardSection({
       className="space-y-5 pb-16 sm:pb-20 md:space-y-7 md:pb-24"
     >
       <motion.div variants={staggerItem}>
-        <div className="flex gap-5 lg:gap-6">
-          <div className="flex min-w-0 flex-1 flex-col space-y-5">
+        <>
+          <div className="flex min-w-0 flex-col space-y-5">
             <motion.div variants={staggerItem} className="flex items-center gap-2">
               <SegmentedControl
                 options={tabs}
@@ -342,7 +342,7 @@ export function UnifiedDashboardSection({
               {tierDistribution && <EconomicTiersCard tiers={tierDistribution} />}
             </div>
           </Inspector>
-        </div>
+        </>
       </motion.div>
 
       {showAccountCreation && isCountryDataReady && (

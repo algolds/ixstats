@@ -43,26 +43,24 @@ export function SportsShell({
         {header}
         {heroSection}
 
-        <div className="flex items-start gap-6">
-          <main className="w-full min-w-0 flex-1">{children}</main>
-
-          {hasInspector && (
-            <Inspector
-              title={focus ? sportsFocusTitle(focus.type) : sideTitle}
-              open={Boolean(focus) || sideOpen}
-              onOpenChange={(open) => {
-                if (open) return;
-                clearFocus();
-                onSideOpenChange?.(false);
-              }}
-              className="space-y-4"
-            >
-              {focus && <SportsFocusPanel sportPreset={sportPreset} />}
-              {sideContent}
-            </Inspector>
-          )}
-        </div>
+        <main className="w-full min-w-0">{children}</main>
       </div>
+
+      {hasInspector && (
+        <Inspector
+          title={focus ? sportsFocusTitle(focus.type) : sideTitle}
+          open={Boolean(focus) || sideOpen}
+          onOpenChange={(open) => {
+            if (open) return;
+            clearFocus();
+            onSideOpenChange?.(false);
+          }}
+          className="space-y-4"
+        >
+          {focus && <SportsFocusPanel sportPreset={sportPreset} />}
+          {sideContent}
+        </Inspector>
+      )}
     </div>
   );
 }

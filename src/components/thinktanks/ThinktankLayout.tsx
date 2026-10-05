@@ -22,14 +22,14 @@ export function ThinktankLayout({
   onDirectoryOpenChange,
 }: ThinktankLayoutProps) {
   return (
-    <div className="flex gap-5 lg:gap-6">
-      <Card className={`flex min-w-0 flex-1 flex-col overflow-hidden ${PANEL_HEIGHT}`}>
+    <>
+      <Card className={`flex min-w-0 flex-col overflow-hidden ${PANEL_HEIGHT}`}>
         {workspacePanel}
       </Card>
 
       <Inspector title="ThinkTanks" open={directoryOpen} onOpenChange={onDirectoryOpenChange}>
         <Card className={`flex flex-col overflow-hidden ${PANEL_HEIGHT}`}>{directoryPanel}</Card>
       </Inspector>
-    </div>
+    </>
   );
 }

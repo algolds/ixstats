@@ -89,6 +89,12 @@ describe("Home, Messages, Sports and Help in the map", () => {
     expect(app("wiki").icon).toBe(WikiLogomark);
   });
 
+  it("resolves /changelog to Help so its permanent row highlights there", () => {
+    const help = app("help");
+    expect(getAppForPath("/changelog")?.id).toBe("help");
+    expect(getActiveSectionId(help, "/changelog", null)).toBe("changelog");
+  });
+
   it("keeps a permanent changelog row under Help", () => {
     expect(app("help").sections.find((s) => s.href === "/changelog")).toMatchObject({
       label: "What's new",

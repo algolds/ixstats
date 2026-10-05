@@ -56,6 +56,24 @@ describe("Inspector", () => {
     expect(screen.getByRole("complementary", { name: "Contents" })).toHaveTextContent("toc");
   });
 
+  it("pins into the column the shell reserves, instead of laying out beside the page", () => {
+    wide = true;
+    render(<Inspector title="Contents" open={false} onOpenChange={() => {}}>toc</Inspector>);
+    const aside = screen.getByRole("complementary", { name: "Contents" });
+    for (const cls of [
+      "fixed",
+      "right-0",
+      "bottom-0",
+      "top-(--shell-top-offset)",
+      "w-(--shell-inspector-width)",
+      "overflow-y-auto",
+    ]) {
+      expect(aside).toHaveClass(cls);
+    }
+    expect(aside).not.toHaveClass("sticky");
+    expect(aside).not.toHaveClass("w-80");
+  });
+
   it("is a sheet below 1280px", () => {
     wide = false;
     render(<Inspector title="Contents" open onOpenChange={() => {}}>toc</Inspector>);

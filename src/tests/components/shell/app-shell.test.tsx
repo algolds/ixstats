@@ -71,6 +71,12 @@ describe("AppShell", () => {
     expect(shell).toHaveAttribute("data-app", "vault");
   });
 
+  it("applies a section's tint override to the canvas (MyLeague is teal, not Labs' sky)", () => {
+    mockPathname = "/myleague";
+    const { container } = render(<Shell />);
+    expect(container.querySelector("[data-app-shell]")).toHaveAttribute("data-app", "sports");
+  });
+
   it("gives chromeless routes no canvas wash", () => {
     mockPathname = "/maps";
     const { container } = render(<Shell />);

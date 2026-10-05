@@ -191,7 +191,7 @@ export const APPS: readonly AppDefinition[] = [
     href: "/dashboard",
     icon: HomeSimple,
     // /feed, /achievements and /hashtags are not listed but stay Home's, so the sidebar keeps its place.
-    match: ["/", "/dashboard", "/feed", "/achievements", "/hashtags", "/changelog", "/messages"],
+    match: ["/", "/dashboard", "/feed", "/achievements", "/hashtags", "/messages"],
     requiresAuth: true,
     sections: [
       { id: "dashboard", label: "Dashboard", href: "/dashboard", icon: StatsReport },
@@ -432,7 +432,9 @@ export const APPS: readonly AppDefinition[] = [
     label: "Help",
     href: "/help",
     icon: HelpCircle,
-    match: ["/help"],
+    // /changelog is Help's so its permanent "What's new" row highlights there (Home's conditional
+    // row links to the same page).
+    match: ["/help", "/changelog"],
     navSetting: "showHelpTab",
     sections: [{ id: "changelog", label: "What's new", href: "/changelog", icon: Clock }],
   },

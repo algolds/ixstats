@@ -9,6 +9,13 @@
 
    Shell variables (read them; don't redefine them in feature code):
    --shell-sidebar-width   Width the AppSidebar takes at ≥1024px (16rem / 4rem collapsed; 0 below).
+                           From 1280px it is proportional: 1 unit, clamped to 14rem..18rem.
+   --shell-inspector-width The right-hand column every page reserves from 1280px (1.25 units,
+                           clamped to 18rem..22rem; 0 below, where the Inspector is a sheet). The
+                           Inspector pins into it; <main> pads for it, so the content column is
+                           the same width and position on every page (sidebar : content :
+                           inspector = 1 : 4 : 1.25).
+   --shell-unit            100vw / 6.25, the 1 of that ratio. Read-only helper for the two above.
    --shell-tabbar-height   Space the TabBar takes at the bottom below 1024px (0 at ≥1024px).
    --shell-top-offset      `top` for sticky rails so they clear the Halo band.
    --shell-header-top      `top` for a sticky page toolbar (PageHeader).
@@ -32,6 +39,7 @@
     --shell-top-offset: calc(4.5rem + env(safe-area-inset-top));
     --shell-header-top: 0px;
     --shell-halo-reserve: 11rem;
+    --shell-inspector-width: 0px;
   }
 
   @media (min-width: 1024px) {
@@ -40,23 +48,38 @@
       --shell-tabbar-height: 0px;
       --shell-halo-reserve: 25rem;
     }
+  }
 
+  @media (min-width: 1280px) {
+    :root {
+      --shell-unit: calc(100vw / 6.25);
+      --shell-sidebar-width: clamp(14rem, var(--shell-unit), 18rem);
+      --shell-inspector-width: clamp(18rem, calc(var(--shell-unit) * 1.25), 22rem);
+    }
+  }
+
+  /* After both width rules so the collapsed rail stays 4rem at every width. */
+  @media (min-width: 1024px) {
     :root[data-sidebar="collapsed"] {
       --shell-sidebar-width: 4rem;
     }
   }
 
-  /* Chromeless routes (Maps, the full-screen map editors): no sidebar, no tab bar. */
+  /* Chromeless routes (Maps, the full-screen map editors): no sidebar, tab bar or Inspector gutter. */
   [data-app-shell][data-chromeless] {
     --shell-sidebar-width: 0px;
     --shell-tabbar-height: 0px;
+    --shell-inspector-width: 0px;
   }
 }
 
 @layer components {
-  /* The sidebar pushes content; the tab bar reserves the bottom. */
+  /* The sidebar pushes content, the Inspector gutter is reserved on the right (whether or not the
+     page has an Inspector, so the content column never changes width between pages), and the tab
+     bar reserves the bottom. */
   [data-shell-main] {
     padding-left: var(--shell-sidebar-width);
+    padding-right: var(--shell-inspector-width);
     padding-bottom: var(--shell-tabbar-height);
   }
 }
