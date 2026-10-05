@@ -80,6 +80,21 @@ export const helpSections: HelpSection[] = [
         tags: ["menu", "search", "shortcuts", "settings", "halo"],
       },
       {
+        id: "halo",
+        title: "Halo & the Sidebar",
+        description:
+          "The sidebar and tab bar, and Halo: search, notifications, messages and quick settings.",
+        path: "/help/getting-started/halo",
+        tags: ["halo", "sidebar", "navigation", "search", "notifications", "shortcuts"],
+      },
+      {
+        id: "settings",
+        title: "Your Settings",
+        description: "What each Settings panel does, and which options don't have an effect yet.",
+        path: "/help/getting-started/settings",
+        tags: ["settings", "preferences", "privacy", "appearance", "notifications"],
+      },
+      {
         id: "ixtime",
         title: "The World Clock (IxTime)",
         description: "The shared world clock runs at twice real speed. What that means for you.",
@@ -163,6 +178,13 @@ export const helpSections: HelpSection[] = [
         description: "Add cities, provinces, landmarks and routes to your nation on the map.",
         path: "/help/mycountry/map-editor",
         tags: ["map", "editor", "cities", "provinces", "routes"],
+      },
+      {
+        id: "canvas-editor",
+        title: "The Canvas Editor",
+        description: "Write wiki articles and dossier lore visually, without wikitext.",
+        path: "/help/mycountry/canvas-editor",
+        tags: ["canvas", "editor", "dossier", "lore", "wiki"],
       },
     ],
   },
@@ -337,6 +359,14 @@ export const helpSections: HelpSection[] = [
         tags: ["countries", "explore", "profile", "factbook"],
       },
       {
+        id: "explore",
+        title: "Explore & Comparing Nations",
+        description:
+          "Filter and sort every nation in your realm, compare them, and browse collections.",
+        path: "/help/world/explore",
+        tags: ["explore", "compare", "filter", "countries", "collections"],
+      },
+      {
         id: "simulation",
         title: "How the World Moves",
         description: "What changes on its own, what only changes when someone acts, and when.",
@@ -472,6 +502,13 @@ export const helpSections: HelpSection[] = [
         path: "/help/social/forum",
         tags: ["forum", "threads", "discussion"],
       },
+      {
+        id: "blurbs",
+        title: "Blurbs",
+        description: "Answer weekly community prompts as your nation, and suggest new ones.",
+        path: "/help/social/blurbs",
+        tags: ["blurbs", "prompts", "topic tuesday", "lore"],
+      },
     ],
   },
   {
@@ -486,6 +523,27 @@ export const helpSections: HelpSection[] = [
         description: "The experimental tools: language generation, sports leagues, flags.",
         path: "/help/labs/overview",
         tags: ["labs", "onoma", "myleague", "myclub", "vexel"],
+      },
+      {
+        id: "myleague-myclub",
+        title: "MyLeague & MyClub",
+        description: "Run simulated sports leagues, claim a team, and manage it.",
+        path: "/help/labs/myleague-myclub",
+        tags: ["myleague", "myclub", "sports", "league", "club", "transfers"],
+      },
+      {
+        id: "onoma",
+        title: "Onoma",
+        description: "Generate names for your nation and build the language behind them.",
+        path: "/help/labs/onoma",
+        tags: ["onoma", "names", "language", "conlang", "generator"],
+      },
+      {
+        id: "vexel",
+        title: "Vexel",
+        description: "Design a coat of arms, read its blazon, export and publish it.",
+        path: "/help/labs/vexel",
+        tags: ["vexel", "heraldry", "coat of arms", "flags", "blazon"],
       },
     ],
   },
