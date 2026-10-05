@@ -53,7 +53,7 @@ ThinkTanks are dedicated research and policy drafting rooms for alliances, inter
 - **Group Feed**: Asynchronous notes, lore drafts, and critique requests with quick intent tags.
 - **Role-Based Membership**: Group ownership, admin/member roles, invitations, and member roster management.
 - **Realm Boards**: every realm has a board ThinkTank at `/r/[realm]/board`. Anyone can read it, owners of a nation in the realm post there, and its posts also appear in the realm-filtered feed (`thinkpages.getFeed({ realmId })`). See [ThinkTanks §4a](./thinktanks.md#4a-realm-boards-type-realm_board) and [Realms](./realms.md).
-- **Joint Working Papers** *(pending)*: `CollaborativeDoc` CRUD procedures and a `ThinktankPapersTab` component exist, but the Docs tab is not yet mounted in the workspace. Real-time group chat is likewise deferred (see [ThinkTanks](./thinktanks.md#roadmap-pillars-deferred--future-phases)).
+- **Joint Working Papers and group chat**: the workspace mounts a Docs tab (`ThinktankPapersTab`, `CollaborativeDoc` CRUD) and a Chat tab on the group's linked ThinkShare conversation (see [ThinkTanks](./thinktanks.md#pillars-34-chat-and-docs)).
 
 ---
 

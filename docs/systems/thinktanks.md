@@ -1,7 +1,7 @@
 # ThinkTanks — Collaborative Groups & Research Engine
 
-**Last updated:** August 2026  
-**Status:** 🟡 Partial — ThinkTanks v2 (Feed + Members live; Docs and Chat deferred); see [SYSTEM_STATUS.md](SYSTEM_STATUS.md)  
+**Last updated:** 2026-10-05  
+**Status:** 🟡 Partial — ThinkTanks v2 (Feed, Members, Docs and Chat tabs live; no invite inbox or join-by-code); see [SYSTEM_STATUS.md](SYSTEM_STATUS.md)  
 **Route:** `/thinktanks` · `/thinktanks/[groupId]` · realm boards at `/r/[realm]/board`  
 **Design System:** Facet Glass Physics (see [Facet Design System](../reference/facet-design-system.md); there is no `/apple-design` route)  
 
@@ -60,13 +60,14 @@ ThinkTanks focuses on streamlined asynchronous lore collaboration and membership
                   ┌───────────────────────────────┐
                   │       ThinkTank Workspace     │
                   └───────────────┬───────────────┘
-                          ┌───────┴───────┐
-                          ▼               ▼
-                      [ 📰 Feed ]     [ 👥 Members ]
-                    Asynchronous      Roster, Roles
-                    Notes & Lore      & Sovereignty
-                    Intent Tags          Badges
+          ┌───────────────┬───────┴───────┬───────────────┐
+          ▼               ▼               ▼               ▼
+      [ Feed ]       [ Members ]      [ Docs ]        [ Chat ]
+    Notes & lore    Roster, roles   Group papers    Linked ThinkShare
+    intent tags     and badges                      conversation
 ```
+
+The tabs are mounted in `ThinktankWorkspace.tsx`.
 
 ### Pillar 1: Feed (`ThinktankFeedTab.tsx`)
 - **Asynchronous Notes & Timeline**: Chronological feed of discussions, lore concepts, and announcements.
@@ -85,7 +86,7 @@ ThinkTanks focuses on streamlined asynchronous lore collaboration and membership
 
 ---
 
-### Roadmap Pillars (Deferred / Future Phases)
+### Pillars 3–4: Chat and Docs
 - **Group Chat (`ThinktankChatTab.tsx`)** — *live*: the workspace's Chat tab uses the group's linked `ThinkshareConversation` (`conversationId`); only active members can join it.
 - **Collaborative Docs (`ThinktankPapersTab.tsx`)** — *live*: Split-view editor for creating, searching, editing, and versioning group articles and policy drafts. It is the workspace's Docs tab.
 
@@ -182,7 +183,7 @@ ThinkTanks utilizes models defined across `prisma/schema/social.prisma`:
 | :--- | :--- |
 | **`ThinktankGroup`** | Group entity (`id`, `name`, `description`, `category`, `avatar`, `type`, `settings`, `memberCount`, `conversationId`, `createdBy`) |
 | **`ThinktankMember`** | User membership and role (`id`, `groupId`, `userId`, `role`: `owner` \| `admin` \| `member`, `isActive`, `joinedAt`) |
-| **`ThinktankMessage`** | Group chat message (reserved for the deferred Chat pillar) |
+| **`ThinktankMessage`** | Unused: the Chat tab uses the linked `ThinkshareConversation` instead |
 | **`ThinktankInvite`** | Invitation record (`invitedBy`, `invitedUser`, `inviteCode`, `expiresAt`, `isUsed`) |
 | **`CollaborativeDoc`** | Shared document (`id`, `groupId`, `title`, `content`, `version`, `createdBy`, `lastEditBy`, `isPublic`, `createdAt`, `updatedAt`) |
 | **`ThinkshareConversation`** | Linked real-time chat channel for group discussions |
@@ -207,7 +208,7 @@ All ThinkTank operations are exposed via the `thinkpages` tRPC router (`src/serv
 | `api.thinkpages.getGroupFeed` | Query | `{ groupId: string, limit?: number, cursor?: string }` | Returns group timeline posts with author accounts and reactions |
 | `api.thinkpages.createGroupPost` | Mutation | `{ groupId, accountId?, content, hashtags?, mediaUrls? }` | Publishes a note to the group feed (realm boards: see §4a) |
 | `api.thinkpages.removeGroupPost` | Mutation | `{ groupId, postId }` | Group owners and admins (realm-board moderators) remove a post from the group feed and hide it |
-| `api.thinkpages.getThinktankDocuments` / `createThinktankDocument` / `updateThinktankDocument` / `deleteThinktankDocument` | Query / Mutation | `{ groupId }` / `{ groupId, title, content?, isPublic? }` / … | Collaborative doc CRUD (backend for the deferred Docs pillar) |
+| `api.thinkpages.getThinktankDocuments` / `createThinktankDocument` / `updateThinktankDocument` / `deleteThinktankDocument` | Query / Mutation | `{ groupId }` / `{ groupId, title, content?, isPublic? }` / … | Collaborative doc CRUD (backs the Docs tab) |
 
 ---
 
